@@ -1,0 +1,14 @@
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
+import { api } from '@/lib/api'
+import type { User } from '@/types'
+
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<User | null>(null)
+  const loading = ref(false)
+  async function load() { try { user.value = await api.get<User>('/auth/me') } catch { user.value = null } }
+  async function login(email: string, password: string) { await api.csrf(); const result = await api.post<{ user: User }>('/auth/login', { email, password }); user.value = result.user }
+  async function register(name: string, email: string, password: string, password_confirmation: string) { await api.csrf(); const result = await api.post<{ user: User }>('/auth/register', { name, email, password, password_confirmation }); user.value = result.user }
+  async function logout() { await api.post('/auth/logout'); user.value = null }
+  return { user, loading, load, login, register, logout }
+})

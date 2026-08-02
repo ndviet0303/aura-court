@@ -1,0 +1,21 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Dependencies and generated assets
+backend/vendor/
+frontend/node_modules/
+frontend/dist/
+backend/storage/logs/
+backend/storage/framework/cache/data/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/bootstrap/cache/*.php
+
+# Tooling / OS files
+.DS_Store
+.idea/
+.vscode/
+*.log
