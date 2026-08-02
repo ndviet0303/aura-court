@@ -2,6 +2,7 @@ variables:
   DOCKER_REGISTRY: "$CI_REGISTRY"
   BASE_IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH"
   API_IMAGE_NAME: "$BASE_IMAGE_NAME/api"
+  SERVER_IMAGE_NAME: "$BASE_IMAGE_NAME/server"
   DOCKER_TAG: "latest"
   DOCKER_PLATFORM: "linux/amd64"
   DOCKER_BUILDKIT: "1"
@@ -43,6 +44,18 @@ build_api:
         "$BACKEND_PATH"
     - docker push "$API_IMAGE_NAME:$DOCKER_TAG"
     - docker push "$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - |
+      docker build \
+        --platform="$DOCKER_PLATFORM" \
+        --build-arg API_IMAGE="$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        --cache-from="$SERVER_IMAGE_NAME:$DOCKER_TAG" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -f devops/build/booking.prod.Dockerfile \
+        -t "$SERVER_IMAGE_NAME:$DOCKER_TAG" \
+        -t "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        .
+    - docker push "$SERVER_IMAGE_NAME:$DOCKER_TAG"
+    - docker push "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
 
 deploy_to_portainer:
   image: debian:trixie-slim

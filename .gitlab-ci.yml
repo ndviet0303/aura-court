@@ -17,6 +17,7 @@ workflow:
 
 variables:
   API_IMAGE_NAME: "$CI_REGISTRY_IMAGE/api"
+  SERVER_IMAGE_NAME: "$CI_REGISTRY_IMAGE/server"
 
 include:
   - local: .gitlab/ci/backend.gitlab-ci.yml
