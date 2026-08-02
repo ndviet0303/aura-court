@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Services\BookingService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
@@ -80,5 +82,39 @@ class BookingController extends Controller
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
         return ['booking' => $booking->load(['court', 'slots']), 'payment' => $this->payments->qrPayload($booking), 'status' => $booking->status];
+    }
+
+    public function demoPay(Request $request, Booking $booking)
+    {
+        abort_unless(app()->environment(['local', 'testing']), 404);
+        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        abort_unless($booking->status === 'pending_payment', 422, 'Booking không ở trạng thái chờ thanh toán.');
+        abort_if($booking->payment_expires_at?->isPast(), 422, 'Phiên thanh toán đã hết hạn.');
+
+        return DB::transaction(function () use ($booking) {
+            $payment = $booking->payments()->latest()->first();
+            if ($payment instanceof Payment) {
+                $payment->update([
+                    'status' => 'paid',
+                    'amount' => $booking->total_amount,
+                    'payload' => array_merge($payment->payload ?? [], ['demo' => true, 'paid_at' => now()->toIso8601String()]),
+                    'received_at' => now(),
+                ]);
+            } else {
+                $booking->payments()->create([
+                    'provider' => 'demo',
+                    'external_transaction_id' => 'demo-'.$booking->code,
+                    'amount' => $booking->total_amount,
+                    'transfer_code' => $booking->code,
+                    'status' => 'paid',
+                    'payload' => ['demo' => true],
+                    'received_at' => now(),
+                ]);
+            }
+            $booking->update(['status' => 'confirmed']);
+            $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
+
+            return ['status' => 'confirmed', 'booking' => $booking->fresh(['court', 'slots', 'payments'])];
+        });
     }
 }

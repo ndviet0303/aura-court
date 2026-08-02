@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::post('bookings/{booking:code}/reschedule', [BookingController::class, 'reschedule']);
         Route::get('bookings/{booking:code}/payment-status', [BookingController::class, 'paymentStatus']);
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
+        Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);
 
         Route::prefix('admin')->middleware('admin')->group(function () {
             Route::get('courts', [CourtController::class, 'adminIndex']);

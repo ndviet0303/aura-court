@@ -86,5 +86,10 @@ export const useBookingStore = defineStore('booking', () => {
     return api.get<{ status: string; payment: unknown; expiresAt: string }>(`/bookings/${payment.value.code}/payment-status`)
   }
 
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus }
+  async function demoPay() {
+    if (!payment.value) throw new Error('Chưa có phiên thanh toán.')
+    return api.post<{ status: string; booking: Booking }>(`/bookings/${payment.value.code}/demo-pay`)
+  }
+
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay }
 })
