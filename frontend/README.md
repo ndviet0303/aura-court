@@ -1,73 +1,55 @@
-# frontend
+# Aura Court Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + TypeScript SPA cho Aura Court, build bằng Vite và deploy trên Cloudflare Workers.
 
-## Recommended IDE Setup
+## Lệnh phát triển
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+```bash
+npm ci
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Các lệnh kiểm tra:
 
-```sh
+```bash
+npm run type-check
+npm run test:unit -- --run
 npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
 npm run lint
 ```
 
-### Deploy to Cloudflare Workers
+## Biến môi trường
 
-```sh
+`VITE_API_URL` là cấu hình build-time, dùng làm fallback cho origin API:
+
+```env
+VITE_API_URL=https://court-api.ziet.dev
+```
+
+Worker runtime đọc thêm biến public `PUBLIC_API_URL` từ Cloudflare Workers và trả qua `/runtime-config.json`. Không đưa secret vào frontend.
+
+## Deploy Cloudflare Workers
+
+`wrangler.jsonc` dùng entrypoint `worker.ts`, binding `ASSETS` và phục vụ SPA từ `dist`.
+
+Cloudflare build settings:
+
+- Root directory: `frontend`
+- Build command: `npm ci && npm run build`
+- Deploy command: `npx wrangler deploy`
+
+Deploy thủ công:
+
+```bash
 npm ci
 npm run build
 npx wrangler deploy
 ```
 
-The Worker entrypoint (`worker.ts`) serves the Vite build and exposes
-`/runtime-config.json` for non-secret runtime configuration. Add this plain
-variable in Cloudflare Workers → Settings → Variables and secrets:
+Sau khi Worker chạy, thêm biến Plaintext trong **Settings → Variables and secrets**:
 
-```text
+```env
 PUBLIC_API_URL=https://court-api.ziet.dev
 ```
 
-Do not put API keys or other secrets in this frontend Worker. The compiled
-`VITE_API_URL` remains as a build-time fallback for the current app.
+Không thêm `APP_KEY`, mật khẩu SMTP, SePay secret hoặc thông tin database vào Worker frontend.
