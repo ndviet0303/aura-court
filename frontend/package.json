@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
-    "deploy:pages": "npx wrangler pages deploy ./dist --project-name aura-court-frontend",
+    "deploy:worker": "npx wrangler deploy",
     "type-check": "vue-tsc --build",
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",

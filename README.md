@@ -45,13 +45,13 @@ docker compose up -d app queue scheduler db
 
 Docker Compose chỉ chạy Laravel API, queue, scheduler và PostgreSQL. Cache/session/queue dùng database; scheduler tự giải phóng booking quá hạn mỗi phút.
 
-## Deploy frontend lên Cloudflare Pages
+## Deploy frontend lên Cloudflare Workers
 
-Kết nối repository GitLab này với Cloudflare Pages, chọn thư mục gốc `frontend`, sau đó cấu hình:
+Kết nối repository GitLab này với Cloudflare Workers, chọn thư mục gốc `frontend`, sau đó cấu hình:
 
 - Build command: `npm ci && npm run build`
 - Output directory: `dist`
 - Environment variable: `VITE_API_URL=https://api.example.com` (origin public của Laravel API)
-- Để trống Deploy command trong Pages Git integration; không dùng `npx wrangler deploy` (đó là Workers).
+- Deploy command: `npx wrangler deploy`
 
-Deploy trực tiếp bằng CLI: `npm run build && npm run deploy:pages`. Trên backend production cần đặt `FRONTEND_URL`, `VITE_API_URL`, `CORS_ALLOWED_ORIGINS` và `SANCTUM_STATEFUL_DOMAINS` theo domain Cloudflare Pages. Nếu frontend và API khác site, bật `SESSION_SAME_SITE=none` cùng `SESSION_SECURE_COOKIE=true` trên HTTPS.
+Deploy trực tiếp bằng CLI: `npm run build && npm run deploy:worker`. Trên backend production cần đặt `FRONTEND_URL`, `VITE_API_URL`, `CORS_ALLOWED_ORIGINS` và `SANCTUM_STATEFUL_DOMAINS` theo domain frontend. Nếu frontend và API khác site, bật `SESSION_SAME_SITE=none` cùng `SESSION_SECURE_COOKIE=true` trên HTTPS.
