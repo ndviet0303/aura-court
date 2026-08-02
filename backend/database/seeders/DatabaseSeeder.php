@@ -29,6 +29,14 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => $now,
         ])->save();
 
+        $demoAdmin = User::firstOrNew(['email' => 'admin-demo@demo.auracourt.vn']);
+        $demoAdmin->forceFill([
+            'name' => 'Quản trị demo',
+            'password' => Hash::make('Demo12345!'),
+            'role' => 'admin',
+            'email_verified_at' => $now,
+        ])->save();
+
         $customers = collect(range(1, 24))->map(function (int $number) use ($now): User {
             $user = User::firstOrNew(['email' => sprintf('khach%02d@demo.auracourt.vn', $number)]);
             $user->forceFill([
