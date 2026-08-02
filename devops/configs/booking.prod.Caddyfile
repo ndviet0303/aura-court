@@ -2,7 +2,7 @@
     auto_https off
 }
 
-:8000 {
+:8080 {
     root * /app/booking-api/public
     encode gzip
     php_server

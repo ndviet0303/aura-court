@@ -19,6 +19,6 @@ ENV APP_ENV=production \
     SEPAY_ENABLED=true \
     SEPAY_BASE_URL=https://my.sepay.vn
 
-EXPOSE 8000
+EXPOSE 8080
 
 RUN chown -R www-data:www-data /app/booking-api/storage /app/booking-api/bootstrap/cache
