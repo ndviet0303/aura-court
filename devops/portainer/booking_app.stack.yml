@@ -1,43 +1,12 @@
 name: booking_app
 
-x-booking-runtime-environment: &booking-runtime-environment
-  APP_KEY: ${APP_KEY}
-  APP_ENV: ${APP_ENV}
-  APP_DEBUG: ${APP_DEBUG}
-  APP_URL: ${APP_URL}
-  FRONTEND_URL: ${FRONTEND_URL}
-  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-  SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS}
-  SESSION_DRIVER: ${SESSION_DRIVER}
-  SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE}
-  SESSION_SAME_SITE: ${SESSION_SAME_SITE}
-  DB_CONNECTION: ${DB_CONNECTION}
-  DB_DATABASE: ${DB_DATABASE}
-  DB_HOST: ${DB_HOST}
-  DB_PORT: ${DB_PORT:-5432}
-  DB_USERNAME: ${DB_USERNAME}
-  DB_PASSWORD: ${DB_PASSWORD}
-  CACHE_STORE: ${CACHE_STORE}
-  QUEUE_CONNECTION: ${QUEUE_CONNECTION}
-  MAIL_MAILER: ${MAIL_MAILER}
-  MAIL_HOST: ${MAIL_HOST}
-  MAIL_PORT: ${MAIL_PORT:-587}
-  MAIL_USERNAME: ${MAIL_USERNAME}
-  MAIL_PASSWORD: ${MAIL_PASSWORD}
-  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
-  MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Aura Court}
-  SEPAY_ENABLED: ${SEPAY_ENABLED}
-  SEPAY_BANK: ${SEPAY_BANK}
-  SEPAY_ACCOUNT: ${SEPAY_ACCOUNT}
-  SEPAY_API_KEY: ${SEPAY_API_KEY}
-  SEPAY_HMAC_SECRET: ${SEPAY_HMAC_SECRET}
-
 services:
   court-server:
     image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
     container_name: court-server
     restart: unless-stopped
-    environment: *booking-runtime-environment
+    env_file:
+      - ./booking-api.prod.env
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/up || exit 1"]
       interval: 30s
@@ -53,9 +22,10 @@ services:
     image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
     container_name: booking-queue
     restart: unless-stopped
+    env_file:
+      - ./booking-api.prod.env
     working_dir: /app/booking-api
     command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
-    environment: *booking-runtime-environment
     healthcheck:
       disable: true
     networks:
@@ -65,9 +35,10 @@ services:
     image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
     container_name: booking-scheduler
     restart: unless-stopped
+    env_file:
+      - ./booking-api.prod.env
     working_dir: /app/booking-api
     command: php artisan schedule:work
-    environment: *booking-runtime-environment
     healthcheck:
       disable: true
     networks:
