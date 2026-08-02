@@ -1,7 +1,7 @@
 FROM php:8.5-fpm-alpine
 
 RUN apk add --no-cache icu-dev libzip-dev oniguruma-dev postgresql-dev $PHPIZE_DEPS \
-    && docker-php-ext-install pdo_pgsql mbstring intl opcache \
+    && docker-php-ext-install -j1 pdo_pgsql mbstring intl opcache \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del $PHPIZE_DEPS
