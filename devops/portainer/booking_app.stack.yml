@@ -2,31 +2,21 @@ name: booking_app
 
 x-booking-runtime-environment: &booking-runtime-environment
   APP_KEY: ${APP_KEY}
-  APP_ENV: production
-  APP_DEBUG: "false"
   APP_URL: ${APP_URL}
   FRONTEND_URL: ${FRONTEND_URL}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
   SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS}
-  SESSION_DRIVER: database
-  SESSION_SECURE_COOKIE: "true"
-  SESSION_SAME_SITE: none
-  DB_CONNECTION: pgsql
   DB_DATABASE: ${DB_DATABASE}
   DB_HOST: ${DB_HOST}
   DB_PORT: ${DB_PORT:-5432}
   DB_USERNAME: ${DB_USERNAME}
   DB_PASSWORD: ${DB_PASSWORD}
-  CACHE_STORE: ${CACHE_STORE}
-  QUEUE_CONNECTION: ${QUEUE_CONNECTION}
-  MAIL_MAILER: smtp
   MAIL_HOST: ${MAIL_HOST}
   MAIL_PORT: ${MAIL_PORT:-587}
   MAIL_USERNAME: ${MAIL_USERNAME}
   MAIL_PASSWORD: ${MAIL_PASSWORD}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
   MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Aura Court}
-  SEPAY_ENABLED: "true"
   SEPAY_BANK: ${SEPAY_BANK}
   SEPAY_ACCOUNT: ${SEPAY_ACCOUNT}
   SEPAY_API_KEY: ${SEPAY_API_KEY}
@@ -37,6 +27,8 @@ services:
     image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
     container_name: court-server
     restart: unless-stopped
+    env_file:
+      - ../env/booking-api.prod.env
     environment: *booking-runtime-environment
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8000/up || exit 1"]
@@ -53,6 +45,8 @@ services:
     image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
     container_name: booking-queue
     restart: unless-stopped
+    env_file:
+      - ../env/booking-api.prod.env
     working_dir: /app/booking-api
     command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
     environment: *booking-runtime-environment
@@ -65,6 +59,8 @@ services:
     image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
     container_name: booking-scheduler
     restart: unless-stopped
+    env_file:
+      - ../env/booking-api.prod.env
     working_dir: /app/booking-api
     command: php artisan schedule:work
     environment: *booking-runtime-environment
