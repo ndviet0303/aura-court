@@ -4,7 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json([
+        'name' => 'Aura Court API',
+        'version' => 'v1',
+        'status' => 'ok',
+        'docs' => '/api/v1',
+    ]);
 });
 
 Route::get('/reset-password/{token}', function (Request $request, string $token) {
