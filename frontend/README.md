@@ -52,3 +52,22 @@ npm run test:unit
 ```sh
 npm run lint
 ```
+
+### Deploy to Cloudflare Workers
+
+```sh
+npm ci
+npm run build
+npx wrangler deploy
+```
+
+The Worker entrypoint (`worker.ts`) serves the Vite build and exposes
+`/runtime-config.json` for non-secret runtime configuration. Add this plain
+variable in Cloudflare Workers → Settings → Variables and secrets:
+
+```text
+PUBLIC_API_URL=https://court-api.ziet.dev
+```
+
+Do not put API keys or other secrets in this frontend Worker. The compiled
+`VITE_API_URL` remains as a build-time fallback for the current app.

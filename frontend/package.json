@@ -22,6 +22,7 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260801.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^24.13.3",
@@ -44,7 +45,8 @@
     "vite-plugin-vue-devtools": "^8.1.5",
     "vitest": "^4.1.10",
     "vue-eslint-parser": "^10.4.1",
-    "vue-tsc": "^3.3.7"
+    "vue-tsc": "^3.3.7",
+    "wrangler": "^4.118.0"
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"
