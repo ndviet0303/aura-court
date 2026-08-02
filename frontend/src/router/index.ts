@@ -11,6 +11,7 @@ import AdminManageView from '../views/AdminManageView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import NotFoundView from '../views/NotFoundView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -40,6 +41,7 @@ const router = createRouter({
     { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true } },
     { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true } },
+    { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   ],
 })
 

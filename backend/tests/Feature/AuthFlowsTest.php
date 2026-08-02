@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -23,7 +23,7 @@ class AuthFlowsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.');
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
     }
 
     public function test_reset_password_updates_the_password_and_redirect_route_points_to_frontend(): void
