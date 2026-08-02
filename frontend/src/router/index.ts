@@ -13,6 +13,7 @@ import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import { useAuthStore } from '@/stores/auth'
+import { applySeo } from '@/lib/seo'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,7 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: { title: 'Aura Court | Đặt sân cầu lông trực tuyến', description: 'Xem sân còn trống, chọn khung giờ yêu thích và đặt sân cầu lông trong vài giây.' },
     },
     {
       path: '/about',
@@ -29,19 +31,20 @@ const router = createRouter({
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
+      meta: { title: 'Về Aura Court | Không gian cầu lông chuyên nghiệp', description: 'Khám phá tiêu chuẩn sân, trải nghiệm đặt sân và tinh thần thể thao của Aura Court.' },
     },
-    { path: '/login', name: 'login', component: LoginView },
-    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView },
-    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView },
-    { path: '/courts', name: 'courts', component: CourtsView },
-    { path: '/courts/:id', name: 'court-detail', component: CourtDetailView },
-    { path: '/courts/:id/schedule', name: 'schedule', component: ScheduleView },
-    { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true } },
-    { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true } },
-    { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true } },
-    { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true } },
-    { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true } },
-    { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
+    { path: '/login', name: 'login', component: LoginView, meta: { title: 'Đăng nhập | Aura Court', indexable: false } },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { title: 'Quên mật khẩu | Aura Court', indexable: false } },
+    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { title: 'Đặt lại mật khẩu | Aura Court', indexable: false } },
+    { path: '/courts', name: 'courts', component: CourtsView, meta: { title: 'Danh sách sân cầu lông | Aura Court', description: 'Tìm sân cầu lông phù hợp, xem giá và khung giờ còn trống tại Aura Court.' } },
+    { path: '/courts/:id', name: 'court-detail', component: CourtDetailView, meta: { title: 'Chi tiết sân cầu lông | Aura Court', description: 'Xem thông tin sân, bảng giá và lịch trống để chọn khung giờ phù hợp.', indexable: false } },
+    { path: '/courts/:id/schedule', name: 'schedule', component: ScheduleView, meta: { title: 'Lịch sân cầu lông | Aura Court', description: 'Chọn ngày và khung giờ còn trống để bắt đầu đặt sân.', indexable: false } },
+    { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true, title: 'Lịch đặt sân | Aura Court', indexable: false } },
+    { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, title: 'Thanh toán đặt sân | Aura Court', indexable: false } },
+    { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true, title: 'Báo cáo quản trị | Aura Court', indexable: false } },
+    { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true, title: 'Quản lý sân | Aura Court', indexable: false } },
+    { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true, title: 'Hồ sơ cá nhân | Aura Court', indexable: false } },
+    { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Không tìm thấy trang | Aura Court', indexable: false } },
   ],
 })
 
@@ -51,5 +54,7 @@ router.beforeEach(async (to) => {
   if (to.meta.auth && !auth.user) return { name: 'login', query: { redirect: to.fullPath } }
   if (to.meta.admin && auth.user?.role !== 'admin') return { name: 'home' }
 })
+
+router.afterEach((to) => applySeo(to))
 
 export default router

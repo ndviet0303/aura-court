@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /booking
+Disallow: /payment
+Disallow: /admin
+Disallow: /profile
+Disallow: /reset-password
+
+Sitemap: https://court.ziet.dev/sitemap.xml

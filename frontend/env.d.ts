@@ -2,5 +2,11 @@
 
 import 'vue-router'
 declare module 'vue-router' {
-  interface RouteMeta { auth?: boolean; admin?: boolean }
+  interface RouteMeta {
+    auth?: boolean
+    admin?: boolean
+    title?: string
+    description?: string
+    indexable?: boolean
+  }
 }
