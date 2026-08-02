@@ -1,5 +1,6 @@
 name: booking_app
 
+# Upload this file together with booking-api.prod.env to Portainer.
 services:
   court-server:
     image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
