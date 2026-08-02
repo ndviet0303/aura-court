@@ -36,9 +36,9 @@ x-booking-runtime-environment: &booking-runtime-environment
   SEPAY_HMAC_SECRET: ${SEPAY_HMAC_SECRET}
 
 services:
-  booking-app:
+  court-server:
     image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
-    container_name: booking-app
+    container_name: court-server
     restart: unless-stopped
     environment: *booking-runtime-environment
     healthcheck:
