@@ -25,9 +25,8 @@ RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 # the final /app/ptb-api path and the environment supplied by Portainer.
 RUN php artisan event:cache
 
-# Runtime configuration is injected by Portainer/deployment. Do not ship the
-# build-time local .env into the production image where it can override it.
-RUN rm -f .env
+# Portainer environment variables override the defaults from this template at
+# runtime.
 
 # Stage 2: Final
 FROM alpine:latest AS final
