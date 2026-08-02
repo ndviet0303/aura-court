@@ -12,6 +12,11 @@ class CourtController extends Controller
         return Court::where('is_active', true)->with('priceSlots')->orderBy('id')->get();
     }
 
+    public function adminIndex()
+    {
+        return Court::with(['priceSlots', 'blocks' => fn ($query) => $query->latest('starts_at')])->orderBy('id')->get();
+    }
+
     public function store(Request $request)
     {
         return response()->json(Court::create($request->validate(['name' => 'required|string|max:120', 'description' => 'nullable|string', 'image_url' => 'nullable|url', 'is_active' => 'boolean'])), 201);

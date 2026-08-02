@@ -36,7 +36,7 @@ const router = createRouter({
     { path: '/courts/:id', name: 'court-detail', component: CourtDetailView },
     { path: '/courts/:id/schedule', name: 'schedule', component: ScheduleView },
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true } },
-    { path: '/payment', name: 'payment', component: PaymentView, meta: { auth: true } },
+    { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true } },
     { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true } },
     { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true } },

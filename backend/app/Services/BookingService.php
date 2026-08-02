@@ -20,7 +20,22 @@ class BookingService
         }
 
         $zone = config('app.timezone');
-        $local = collect($startsAt)->map(fn (string $value) => Carbon::parse($value, $zone)->startOfHour())->sort()->values();
+        $local = collect($startsAt)->map(function (string $value) use ($zone) {
+            try {
+                $time = Carbon::parse($value)->setTimezone($zone);
+            } catch (\Throwable) {
+                throw ValidationException::withMessages(['slots' => 'Thời gian slot không hợp lệ.']);
+            }
+
+            if ($time->minute !== 0 || $time->second !== 0) {
+                throw ValidationException::withMessages(['slots' => 'Slot phải bắt đầu đúng giờ.']);
+            }
+            if ($time->isPast()) {
+                throw ValidationException::withMessages(['slots' => 'Không thể đặt slot trong quá khứ.']);
+            }
+
+            return $time;
+        })->sort()->values();
         if ($local->unique(fn (Carbon $time) => $time->toIso8601String())->count() !== $local->count()) {
             throw ValidationException::withMessages(['slots' => 'Không được chọn slot trùng nhau.']);
         }
@@ -43,7 +58,8 @@ class BookingService
 
                 $resolved = $local->map(function (Carbon $time) use ($prices) {
                     $price = $prices->first(fn ($slot) => $slot->weekday === $time->dayOfWeekIso
-                        && substr($slot->starts_at, 0, 5) === $time->format('H:i'));
+                        && substr($slot->starts_at, 0, 5) === $time->format('H:i')
+                        && substr($slot->ends_at, 0, 5) === $time->copy()->addHour()->format('H:i'));
                     if (! $price) {
                         throw ValidationException::withMessages(['slots' => "Slot {$time->format('H:i')} chưa mở bán."]);
                     }
@@ -116,6 +132,71 @@ class BookingService
             }
 
             return $booking->fresh(['court', 'slots', 'refunds']);
+        });
+    }
+
+    public function cancelSlots(Booking $booking, array $slotIds, ?string $reason = null): Booking
+    {
+        $slots = $booking->slots()->whereIn('id', $slotIds)->whereIn('status', ['held', 'confirmed'])->get();
+        if ($slots->isEmpty()) {
+            throw ValidationException::withMessages(['slots' => 'Không có slot hợp lệ để hủy.']);
+        }
+        if ($slots->count() === $booking->slots()->whereIn('status', ['held', 'confirmed'])->count()) {
+            return $this->cancel($booking, $reason);
+        }
+        if ($booking->status !== 'confirmed') {
+            throw ValidationException::withMessages(['booking' => 'Chỉ booking đã xác nhận mới được hủy từng slot.']);
+        }
+        foreach ($slots as $slot) {
+            if (now()->greaterThan($slot->starts_at->copy()->subHours(2))) {
+                abort(409, 'Slot chỉ được hủy trước giờ chơi ít nhất 2 giờ.');
+            }
+        }
+
+        return DB::transaction(function () use ($booking, $slots, $reason) {
+            $amount = $slots->sum('unit_price');
+            $slots->each->update(['status' => 'cancelled']);
+            $booking->refunds()->create(['amount' => $amount, 'status' => 'pending', 'note' => $reason]);
+
+            return $booking->fresh(['court', 'slots', 'refunds']);
+        });
+    }
+
+    public function createRecurring(int $userId, int $courtId, array $startsAt, int $weeks): array
+    {
+        if ($weeks < 2 || $weeks > 12) {
+            throw ValidationException::withMessages(['weeks' => 'Số tuần phải từ 2 đến 12.']);
+        }
+        $base = collect($startsAt)->map(fn (string $value) => Carbon::parse($value))->sort()->values();
+        if ($base->isEmpty()) {
+            throw ValidationException::withMessages(['slots' => 'Cần ít nhất một slot.']);
+        }
+        $series = collect();
+
+        DB::transaction(function () use ($userId, $courtId, $base, $weeks, &$series) {
+            for ($week = 0; $week < $weeks; $week++) {
+                $series->push($this->create($userId, $courtId, $base->map(fn (Carbon $time) => $time->copy()->addWeeks($week)->toIso8601String())->all()));
+            }
+        });
+
+        return $series->all();
+    }
+
+    public function reschedule(Booking $booking, int $courtId, array $startsAt): Booking
+    {
+        if (! in_array($booking->status, ['pending_payment', 'confirmed'], true)) {
+            throw ValidationException::withMessages(['booking' => 'Booking không thể đổi lịch.']);
+        }
+        $firstSlot = $booking->slots()->orderBy('starts_at')->first();
+        if ($booking->status === 'confirmed' && $firstSlot && now()->greaterThan($firstSlot->starts_at->copy()->subHours(2))) {
+            abort(409, 'Booking chỉ được đổi trước giờ chơi ít nhất 2 giờ.');
+        }
+
+        return DB::transaction(function () use ($booking, $courtId, $startsAt) {
+            $replacement = $this->create($booking->user_id, $courtId, $startsAt);
+            $this->cancel($booking, 'Đổi lịch sang booking '.$replacement->code);
+
+            return $replacement;
         });
     }
 }

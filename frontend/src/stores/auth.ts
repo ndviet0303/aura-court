@@ -26,7 +26,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function forgotPassword(email: string) { await api.post('/auth/forgot-password', { email }) }
   async function resetPassword(email: string, token: string, password: string, password_confirmation: string) { await api.post('/auth/reset-password', { email, token, password, password_confirmation }) }
   async function updateProfile(name: string) { user.value = await api.patch<User>('/profile', { name }) }
+  async function changePassword(current_password: string, password: string, password_confirmation: string) { await api.patch('/profile/password', { current_password, password, password_confirmation }) }
+  async function resendVerification() { await api.post('/auth/email/verification-notification') }
   async function logout() { await api.post('/auth/logout'); user.value = null }
 
-  return { user, loading, load, login, register, forgotPassword, resetPassword, updateProfile, logout }
+  return { user, loading, load, login, register, forgotPassword, resetPassword, updateProfile, changePassword, resendVerification, logout }
 })

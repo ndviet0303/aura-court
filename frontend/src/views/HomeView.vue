@@ -11,7 +11,7 @@ const visibleSlots = computed(() => store.slots.filter((slot) => { const hour = 
 
 async function loadAvailability() { if (selected.value) { try { await store.loadAvailability(selected.value, date.value) } catch { /* store exposes the user-facing error */ } } }
 async function chooseCourt() { await loadAvailability() }
-async function submit() { if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } }); if (!store.selectedSlots.length) return; loading.value = true; error.value = ''; try { await store.createBooking(); router.push('/payment') } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tạo booking.') } finally { loading.value = false } }
+async function submit() { if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } }); if (!store.selectedSlots.length) return; loading.value = true; error.value = ''; try { const result = await store.createBooking(); router.push('/payment/' + result.booking.code) } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tạo booking.') } finally { loading.value = false } }
 function scrollToAvailability() { document.getElementById('availability')?.scrollIntoView({ behavior: 'smooth' }) }
 
 onMounted(async () => { try { await store.loadCourts(); selected.value = store.courts[0]?.id || null; await loadAvailability() } catch { /* store exposes the user-facing error */ } })

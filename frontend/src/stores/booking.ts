@@ -60,6 +60,18 @@ export const useBookingStore = defineStore('booking', () => {
     return payment.value
   }
 
+  async function loadPayment(code: string) {
+    const result = await api.get<{ payment: PaymentInfo; status: string }>('/bookings/' + code + '/payment')
+    payment.value = result.payment
+    persistPayment()
+    return result
+  }
+
+  function clearPayment() {
+    payment.value = null
+    sessionStorage.removeItem(paymentStorageKey)
+  }
+
   async function createBooking() {
     const result = await api.post<{ booking: Booking; payment: PaymentInfo }>('/bookings', { court_id: selectedCourt.value, slots: selectedSlots.value.map((slot) => slot.startsAt) })
     current.value = result.booking
@@ -74,5 +86,5 @@ export const useBookingStore = defineStore('booking', () => {
     return api.get<{ status: string; payment: unknown; expiresAt: string }>(`/bookings/${payment.value.code}/payment-status`)
   }
 
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loadCourts, loadAvailability, toggle, createBooking, restorePayment, refreshPaymentStatus }
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus }
 })

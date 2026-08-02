@@ -1,19 +1,30 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { errorMessage } from '@/lib/api'
 import { useBookingStore } from '@/stores/booking'
 
-const store = useBookingStore(); const payment = computed(() => store.payment); const status = ref('pending_payment'); const error = ref(''); let timer: number | undefined
+const store = useBookingStore(); const route = useRoute(); const payment = computed(() => store.payment); const status = ref('pending_payment'); const error = ref(''); let timer: number | undefined
 const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
 const statusLabel = computed(() => ({ pending_payment: 'Chờ thanh toán', confirmed: 'Đã thanh toán', expired: 'Đã hết hạn', cancelled: 'Đã hủy' }[status.value] || status.value))
 
 async function poll() {
-  try { const result = await store.refreshPaymentStatus(); if (result) { status.value = result.status } }
+  try { const result = await store.refreshPaymentStatus(); if (result) { status.value = result.status; if (['confirmed', 'expired', 'cancelled', 'refunded'].includes(result.status) && timer) window.clearInterval(timer) } }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể cập nhật trạng thái thanh toán.') }
 }
 
-onMounted(() => { store.restorePayment(); poll(); timer = window.setInterval(poll, 5000) })
+onMounted(async () => {
+  try {
+    if (route.params.code) {
+      const result = await store.loadPayment(String(route.params.code))
+      status.value = result.status
+    } else {
+      store.restorePayment()
+    }
+    await poll()
+    if (status.value === 'pending_payment') timer = window.setInterval(poll, 5000)
+  } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tải phiên thanh toán.') }
+})
 onUnmounted(() => { if (timer) window.clearInterval(timer) })
 </script>
 

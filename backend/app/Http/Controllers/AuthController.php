@@ -57,4 +57,15 @@ class AuthController extends Controller
 
         return $status === Password::PASSWORD_RESET ? ['message' => 'Mật khẩu đã được cập nhật.'] : response()->json(['message' => __($status)], 422);
     }
+
+    public function changePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password:web'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+        $request->user()->update(['password' => $data['password']]);
+
+        return ['message' => 'Mật khẩu đã được cập nhật.'];
+    }
 }

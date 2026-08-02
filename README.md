@@ -8,7 +8,8 @@ Monorepo gồm Laravel 13 REST API và Vue 3 TypeScript SPA cho đặt sân cầ
 cd backend
 cp .env.example .env
 php artisan key:generate
-DB_CONNECTION=sqlite DB_DATABASE=database/database.sqlite php artisan migrate --seed
+# Cấu hình DB_CONNECTION=pgsql, DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD trong .env
+php artisan migrate --seed
 php artisan serve
 
 cd ../frontend

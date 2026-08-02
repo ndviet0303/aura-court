@@ -24,6 +24,14 @@ class BookingController extends Controller
         return response()->json(['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)], 201);
     }
 
+    public function recurring(Request $request)
+    {
+        $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'slots' => 'required|array|min:1|max:12', 'slots.*' => 'date', 'weeks' => 'required|integer|min:2|max:12']);
+        $bookings = $this->bookings->createRecurring($request->user()->id, $data['court_id'], $data['slots'], $data['weeks']);
+
+        return response()->json(['bookings' => collect($bookings)->map(fn (Booking $booking) => ['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)])->values()], 201);
+    }
+
     public function show(Request $request, Booking $booking)
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
@@ -38,10 +46,39 @@ class BookingController extends Controller
         return $this->bookings->cancel($booking, $request->input('reason'));
     }
 
+    public function cancelSlots(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $data = $request->validate(['slot_ids' => 'required|array|min:1', 'slot_ids.*' => 'integer', 'reason' => 'nullable|string|max:255']);
+
+        return $this->bookings->cancelSlots($booking, $data['slot_ids'], $data['reason'] ?? null);
+    }
+
+    public function reschedule(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id, 403);
+        $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'slots' => 'required|array|min:1|max:12', 'slots.*' => 'date']);
+        $replacement = $this->bookings->reschedule($booking, $data['court_id'], $data['slots']);
+
+        return response()->json(['booking' => $replacement, 'payment' => $this->payments->qrPayload($replacement)], 201);
+    }
+
     public function paymentStatus(Request $request, Booking $booking)
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
+        if ($booking->status === 'pending_payment' && $booking->payment_expires_at?->isPast()) {
+            $this->bookings->expirePending();
+            $booking->refresh();
+        }
+
         return ['status' => $booking->status, 'payment' => $booking->payments()->latest()->first(), 'expiresAt' => $booking->payment_expires_at];
+    }
+
+    public function payment(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+
+        return ['booking' => $booking->load(['court', 'slots']), 'payment' => $this->payments->qrPayload($booking), 'status' => $booking->status];
     }
 }
