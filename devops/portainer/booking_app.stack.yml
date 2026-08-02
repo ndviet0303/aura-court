@@ -24,7 +24,7 @@ x-booking-runtime-environment: &booking-runtime-environment
 
 services:
   court-server:
-    image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
+    image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
     container_name: court-server
     restart: unless-stopped
     env_file:
@@ -42,7 +42,7 @@ services:
       - production
 
   booking-queue:
-    image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
+    image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
     container_name: booking-queue
     restart: unless-stopped
     env_file:
@@ -56,7 +56,7 @@ services:
       - production
 
   booking-scheduler:
-    image: ${SERVER_IMAGE:-registry.gitlab.com/bantool/ziet-projects/booking/server:latest}
+    image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
     container_name: booking-scheduler
     restart: unless-stopped
     env_file:
