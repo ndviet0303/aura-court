@@ -1,9 +1,17 @@
 export type ApiError = { message: string; errors?: Record<string, string[]> }
 
+export function errorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.length > 0) return message
+  }
+  return fallback
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const xsrf = document.cookie.split('; ').find((part) => part.startsWith('XSRF-TOKEN='))?.split('=')[1]
   const response = await fetch(`/api/v1${path}`, {
-    credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}), ...(options.headers ?? {}) }, ...options,
+    credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}), ...options.headers }, ...options,
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw data as ApiError

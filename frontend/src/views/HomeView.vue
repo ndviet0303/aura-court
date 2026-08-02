@@ -3,11 +3,11 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
+import { errorMessage } from '@/lib/api'
 const store = useBookingStore(); const auth = useAuthStore(); const router = useRouter(); const date = ref(new Date().toISOString().slice(0, 10)); const selected = ref(1); const loading = ref(false); const error = ref('')
 const total = computed(() => store.selectedSlots.reduce((sum, slot) => sum + slot.price, 0)); const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value); const image = (index: number) => store.courts[index]?.image_url || `/aura/court-${index + 4}.jpg`
 onMounted(async () => { await store.loadCourts(); if (store.courts[0]) { selected.value = store.courts[0].id; await store.loadAvailability(selected.value, date.value) } })
-async function chooseCourt(id: number) { selected.value = id; await store.loadAvailability(id, date.value) }
-async function submit() { if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } }); if (!store.selectedSlots.length) return; loading.value = true; error.value = ''; try { await store.createBooking(); router.push('/payment') } catch (e: any) { error.value = e.message || 'Không thể tạo booking.' } finally { loading.value = false } }
+async function submit() { if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } }); if (!store.selectedSlots.length) return; loading.value = true; error.value = ''; try { await store.createBooking(); router.push('/payment') } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tạo booking.') } finally { loading.value = false } }
 function scrollToAvailability() { document.getElementById('availability')?.scrollIntoView({ behavior: 'smooth' }) }
 </script>
 <template>
