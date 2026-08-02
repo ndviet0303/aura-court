@@ -3,6 +3,7 @@ variables:
   BASE_IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH"
   API_IMAGE_NAME: "$BASE_IMAGE_NAME/api"
   DOCKER_TAG: "latest"
+  DOCKER_PLATFORM: "linux/amd64"
   DOCKER_BUILDKIT: "1"
   DOCKER_HOST: "unix:///var/run/docker.sock"
   DOCKER_TLS_CERTDIR: ""
@@ -33,6 +34,7 @@ build_api:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
     - |
       docker build \
+        --platform="$DOCKER_PLATFORM" \
         -f "$BACKEND_PATH/Dockerfile" \
         --cache-from="$API_IMAGE_NAME:$DOCKER_TAG" \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
