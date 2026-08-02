@@ -1,0 +1,235 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-secondary-fixed":"#1a1c1c","tertiary-container":"#dfdcdc","surface-dim":"#d9dadb","surface-container":"#edeeef","tertiary-fixed":"#e4e2e1","surface-bright":"#f8f9fa","primary-fixed-dim":"#e7bbc6","on-secondary-fixed-variant":"#454747","on-tertiary-fixed-variant":"#474747","error":"#ba1a1a","on-tertiary":"#ffffff","surface":"#f8f9fa","surface-container-low":"#f3f4f5","inverse-primary":"#e7bbc6","inverse-on-surface":"#f0f1f2","secondary":"#5d5f5f","on-surface-variant":"#4f4446","on-error-container":"#93000a","primary-fixed":"#ffd9e2","on-tertiary-fixed":"#1b1c1c","on-primary-container":"#7a5761","surface-tint":"#78555e","on-tertiary-container":"#616160","on-primary":"#ffffff","surface-container-high":"#e7e8e9","on-error":"#ffffff","on-surface":"#191c1d","on-secondary-container":"#616363","primary-container":"#ffd1dc","outline-variant":"#d3c3c5","on-background":"#191c1d","inverse-surface":"#2e3132","error-container":"#ffdad6","background":"#f8f9fa","surface-container-lowest":"#ffffff","secondary-fixed-dim":"#c6c6c7","surface-variant":"#e1e3e4","tertiary":"#5f5e5e","outline":"#817476","surface-container-highest":"#e1e3e4","on-primary-fixed-variant":"#5e3e47","secondary-container":"#dfe0e0","tertiary-fixed-dim":"#c8c6c6","on-secondary":"#ffffff","secondary-fixed":"#e2e2e2","on-primary-fixed":"#2d141c","primary":"#78555e"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin-mobile":"16px","margin-desktop":"64px","base":"4px","md":"24px","xl":"80px","gutter":"24px","sm":"16px","lg":"48px","xs":"8px"},"fontFamily":{"headline-md":["Inter"],"body-lg":["Inter"],"headline-lg":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"headline-lg-mobile":["Inter"],"label-sm":["Inter"]},"fontSize":{"headline-md":["24px",{"lineHeight":"32px","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-xl":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","fontWeight":"600"}],"label-sm":["14px",{"lineHeight":"20px","letterSpacing":"0.05em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop flex items-center justify-between"><div class="flex items-center gap-xs"><img alt="Aura Court Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkbhGN5A48mITaKURKuBrDUKGbKLnw__QOYPMoC8JqjnP5C3RW-dOrXP-YAvRRgcgiCmM3B5PFfOkBzfgBZBBx1nMyfDh5WqCLIAn1_Mi2lP3ti-wV7CXrxLJxIJr3Kd52Rh9UO0OBUMnl0Dd1VR14xhjQ0FwBiDhrHn0LGuZ52vv8Q_zbZm-eQvVMvDL2zQVQiKVUpN6RvXpFrCH5IKP3OYjmFJtSKMv8xh7jFBbM3r8cDbzgJfdJ"/><span class="font-headline-md text-headline-md text-on-surface tracking-tight">Aura Court</span></div><nav class="hidden md:flex items-center gap-lg" data-active-classes="text-primary font-semibold underline underline-offset-8"><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="home" href="#">Home</a><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="court-list" href="#">Court List</a><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="my-bookings" href="#">My Bookings</a><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="promotions" href="#">Promotions</a></nav><div class="flex items-center gap-sm"><a class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center cursor-pointer hover:bg-primary-fixed-dim transition-colors" data-path="profile" href="#"><span class="material-symbols-outlined text-on-primary-container text-[20px]">person</span></a></div></div></header><main class="flex-1 pt-20 w-full"><div class="flex flex-col w-full">
+<!-- Dynamic Background Element -->
+<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+<div class="absolute -top-[10%] -left-[5%] w-[40%] h-[60%] rounded-full bg-primary-fixed/20 blur-[120px] opacity-60"></div>
+<div class="absolute top-[40%] -right-[10%] w-[35%] h-[50%] rounded-full bg-surface-container-highest blur-[100px] opacity-40"></div>
+</div>
+<div class="relative z-10 max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop w-full py-xl">
+<div class="flex flex-col lg:flex-row gap-xl items-start">
+<!-- Left Column: Checkout Details -->
+<div class="w-full lg:w-7/12 flex flex-col gap-lg">
+<!-- Stepper / Breadcrumb -->
+<div class="flex items-center gap-sm text-label-sm font-label-sm text-on-surface-variant uppercase tracking-[0.2em]">
+<span class="text-primary font-bold">01 Selection</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">02 Checkout</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="opacity-40">03 Confirmation</span>
+</div>
+<section class="flex flex-col gap-md">
+<h2 class="text-headline-xl font-headline-xl text-on-surface">Review & Pay</h2>
+<!-- User Details Form -->
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-sm">
+<div class="flex items-center justify-between mb-lg">
+<h3 class="text-headline-md font-headline-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+                Player Details
+              </h3>
+<button class="text-label-sm font-label-sm text-primary hover:underline transition-all">Edit Profile</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="flex flex-col gap-xs">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">Full Name</label>
+<input class="border-b-2 border-outline-variant py-sm text-body-lg font-body-lg text-on-surface focus:outline-none focus:border-primary bg-transparent" readonly="" type="text" value="Alexander Mitchell"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">Email Address</label>
+<input class="border-b-2 border-outline-variant py-sm text-body-lg font-body-lg text-on-surface focus:outline-none focus:border-primary bg-transparent" readonly="" type="email" value="a.mitchell@aura.com"/>
+</div>
+<div class="flex flex-col gap-xs md:col-span-2">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">Phone Number</label>
+<input class="border-b-2 border-outline-variant py-sm text-body-lg font-body-lg text-on-surface focus:outline-none focus:border-primary bg-transparent" readonly="" type="tel" value="+1 (555) 892-0431"/>
+</div>
+</div>
+</div>
+<!-- Payment Methods -->
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-sm">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-lg flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+              Payment Method
+            </h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Method: Card -->
+<label class="relative group cursor-pointer">
+<input checked="" class="peer absolute opacity-0" name="payment" type="radio" value="card"/>
+<div class="p-md border-2 border-surface-container-high rounded-lg flex flex-col items-center gap-xs text-center transition-all peer-checked:border-primary peer-checked:bg-primary-container/20 group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-peer-checked:text-primary">credit_card</span>
+<span class="text-label-sm font-label-sm">Credit Card</span>
+</div>
+</label>
+<!-- Method: MoMo/E-wallet -->
+<label class="relative group cursor-pointer">
+<input class="peer absolute opacity-0" name="payment" type="radio" value="wallet"/>
+<div class="p-md border-2 border-surface-container-high rounded-lg flex flex-col items-center gap-xs text-center transition-all peer-checked:border-primary peer-checked:bg-primary-container/20 group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-peer-checked:text-primary">account_balance_wallet</span>
+<span class="text-label-sm font-label-sm">E-wallet</span>
+</div>
+</label>
+<!-- Method: QR Pay -->
+<label class="relative group cursor-pointer">
+<input class="peer absolute opacity-0" name="payment" type="radio" value="qr"/>
+<div class="p-md border-2 border-surface-container-high rounded-lg flex flex-col items-center gap-xs text-center transition-all peer-checked:border-primary peer-checked:bg-primary-container/20 group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-peer-checked:text-primary">qr_code_2</span>
+<span class="text-label-sm font-label-sm">QR Pay</span>
+</div>
+</label>
+</div>
+<!-- Card Details (Interactive Area) -->
+<div class="mt-lg flex flex-col gap-md transition-all duration-500" id="card-details">
+<div class="flex flex-col gap-xs">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">Card Number</label>
+<div class="relative">
+<input class="w-full border-b-2 border-outline-variant py-sm text-body-lg font-body-lg text-on-surface focus:outline-none focus:border-primary bg-transparent placeholder:text-outline" placeholder="**** **** **** 4421" type="text"/>
+<div class="absolute right-0 bottom-2 flex gap-xs">
+<span class="material-symbols-outlined text-outline">credit_card</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<div class="flex flex-col gap-xs">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">Expiry</label>
+<input class="border-b-2 border-outline-variant py-sm text-body-lg font-body-lg text-on-surface focus:outline-none focus:border-primary bg-transparent" placeholder="MM/YY" type="text"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">CVC</label>
+<input class="border-b-2 border-outline-variant py-sm text-body-lg font-body-lg text-on-surface focus:outline-none focus:border-primary bg-transparent" placeholder="***" type="text"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Order Summary (Sticky) -->
+<aside class="w-full lg:w-5/12 lg:sticky lg:top-24">
+<div class="bg-on-secondary-fixed text-on-tertiary rounded-xl p-lg shadow-xl relative overflow-hidden">
+<!-- Subtle Glow -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+<h3 class="text-headline-md font-headline-md mb-lg flex items-center gap-xs">
+<span class="material-symbols-outlined">receipt_long</span>
+            Booking Summary
+          </h3>
+<div class="flex flex-col gap-md">
+<!-- Court Card -->
+<div class="flex gap-md bg-white/5 p-md rounded-lg">
+<div class="w-24 h-24 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close up professional badminton court floor with sharp white lines, soft morning sunlight hitting the surface, premium athletic indoor sports facility environment, clean and minimalist aesthetic with soft pink accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfBbVUrFwpImkUeAXmMLkV2umb8oQfig3f2psiLn-0GXM_SX4204n3DBcByXrv1vG-3s3ojepzTJJ43q7hIOm4xGhJAcdCQpvIckDQQWsFW9DOSDumilXwAlgThEl82xtPYFDdCNc8VGdP5G_AEdYaGZOdSQHOjfilv1AmIeLigxyB4m_7AC4J-qUZmyjJ1z5K-kMN4x5ddX65TF43F5NhI-jtRcRM3ZJTxKncoKp9z5lzqxPQBsae"/>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-label-sm font-label-sm text-primary uppercase tracking-widest">Premium Court</span>
+<span class="text-headline-md font-headline-md leading-tight">Elite Studio 04</span>
+<span class="text-body-md font-body-md opacity-70">Sky Garden Level</span>
+</div>
+</div>
+<!-- Details List -->
+<div class="flex flex-col gap-sm pt-md border-t border-white/10">
+<div class="flex justify-between items-center">
+<span class="text-body-md font-body-md opacity-70">Date</span>
+<span class="text-body-md font-body-md font-semibold text-on-tertiary">Oct 24, 2024</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-body-md font-body-md opacity-70">Time Slot</span>
+<span class="text-body-md font-body-md font-semibold text-on-tertiary">18:00 — 20:00 (2h)</span>
+</div>
+</div>
+<!-- Cost Calculations -->
+<div class="flex flex-col gap-sm pt-md border-t border-white/10">
+<div class="flex justify-between items-center">
+<span class="text-body-md font-body-md opacity-70">Subtotal</span>
+<span class="text-body-md font-body-md text-on-tertiary">$48.00</span>
+</div>
+<div class="flex justify-between items-center text-primary-fixed">
+<span class="text-body-md font-body-md">Member Discount (15%)</span>
+<span class="text-body-md font-body-md font-semibold">- $7.20</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-body-md font-body-md opacity-70">Service Fee</span>
+<span class="text-body-md font-body-md text-on-tertiary">$1.50</span>
+</div>
+</div>
+<!-- Total -->
+<div class="flex justify-between items-end pt-lg">
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm opacity-50 uppercase tracking-widest">Total Amount</span>
+<span class="text-headline-xl font-headline-xl text-on-tertiary">$42.30</span>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-lg py-md rounded-lg font-label-sm uppercase tracking-widest transition-all flex items-center gap-xs group" id="submit-payment">
+                Pay Now
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Extra Info -->
+<div class="mt-lg px-md flex flex-col gap-sm">
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+            Secure encrypted payment processing
+          </p>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">history</span>
+            Free cancellation up to 24h before
+          </p>
+</div>
+</aside>
+</div>
+</div>
+<!-- Confirmation Modal (Hidden by default) -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-md opacity-0 pointer-events-none transition-all duration-500 scale-95" id="success-modal">
+<div class="absolute inset-0 bg-on-surface/40 backdrop-blur-md"></div>
+<div class="relative bg-surface-container-lowest max-w-md w-full rounded-2xl p-xl shadow-2xl flex flex-col items-center text-center gap-lg">
+<div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-md">
+<span class="material-symbols-outlined text-[56px] animate-bounce">check_circle</span>
+</div>
+<div class="flex flex-col gap-xs">
+<h2 class="text-headline-xl font-headline-xl text-on-surface">Booking Confirmed!</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant">Your court is ready. A confirmation receipt has been sent to your email.</p>
+</div>
+<div class="w-full bg-surface-container p-lg rounded-xl flex flex-col gap-sm">
+<div class="flex justify-between text-label-sm font-label-sm">
+<span class="opacity-60">Booking ID:</span>
+<span class="font-bold">#AURA-99210-XC</span>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm">
+<span class="opacity-60">Entry Code:</span>
+<span class="font-bold tracking-[0.3em] text-primary">8 4 2 1</span>
+</div>
+</div>
+<button class="w-full bg-on-secondary-fixed text-on-tertiary py-md rounded-lg font-label-sm uppercase tracking-widest hover:opacity-90 transition-opacity" onclick="location.reload()">
+        Done
+      </button>
+</div>
+</div>
+<script>
+    document.getElementById('submit-payment').addEventListener('click', function() {
+      const btn = this;
+      const modal = document.getElementById('success-modal');
+      
+      // Visual feedback on button
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Processing...';
+      btn.classList.add('pointer-events-none', 'opacity-80');
+
+      setTimeout(() => {
+        modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+        modal.classList.add('opacity-100', 'scale-100');
+      }, 1500);
+    });
+
+    // Simple interaction for payment method switching
+    const paymentRadios = document.querySelectorAll('input[name="payment"]');
+    const cardSection = document.getElementById('card-details');
+
+    paymentRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value !== 'card') {
+          cardSection.style.opacity = '0.3';
+          cardSection.style.pointerEvents = 'none';
+        } else {
+          cardSection.style.opacity = '1';
+          cardSection.style.pointerEvents = 'auto';
+        }
+      });
+    });
+  </script>
+</div></main><footer class="w-full bg-surface-container-low py-lg mt-xl"><div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop"><div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-lg"><div class="flex flex-col gap-sm"><span class="font-headline-md text-headline-md text-on-surface">Aura Court</span><p class="text-body-md font-body-md text-on-surface-variant">Elevating your game through effortless booking and premium lifestyle facilities.</p></div><div class="flex flex-col gap-sm"><span class="text-label-sm font-label-sm text-on-surface uppercase tracking-widest">Contact</span><p class="text-body-md font-body-md text-on-surface-variant">hello@auracourt.com<br/>+1 (555) 012-3456</p></div><div class="flex flex-col gap-sm"><span class="text-label-sm font-label-sm text-on-surface uppercase tracking-widest">Socials</span><div class="flex gap-sm"><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">public</span><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">share</span><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">chat</span></div></div></div><div class="pt-md border-t border-outline-variant text-center text-label-sm font-label-sm text-on-tertiary-fixed-variant">© 2024 Aura Court. All rights reserved.</div></div></footer></body></html>

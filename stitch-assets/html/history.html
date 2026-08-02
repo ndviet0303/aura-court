@@ -1,0 +1,222 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-secondary-fixed":"#1a1c1c","tertiary-container":"#dfdcdc","surface-dim":"#d9dadb","surface-container":"#edeeef","tertiary-fixed":"#e4e2e1","surface-bright":"#f8f9fa","primary-fixed-dim":"#e7bbc6","on-secondary-fixed-variant":"#454747","on-tertiary-fixed-variant":"#474747","error":"#ba1a1a","on-tertiary":"#ffffff","surface":"#f8f9fa","surface-container-low":"#f3f4f5","inverse-primary":"#e7bbc6","inverse-on-surface":"#f0f1f2","secondary":"#5d5f5f","on-surface-variant":"#4f4446","on-error-container":"#93000a","primary-fixed":"#ffd9e2","on-tertiary-fixed":"#1b1c1c","on-primary-container":"#7a5761","surface-tint":"#78555e","on-tertiary-container":"#616160","on-primary":"#ffffff","surface-container-high":"#e7e8e9","on-error":"#ffffff","on-surface":"#191c1d","on-secondary-container":"#616363","primary-container":"#ffd1dc","outline-variant":"#d3c3c5","on-background":"#191c1d","inverse-surface":"#2e3132","error-container":"#ffdad6","background":"#f8f9fa","surface-container-lowest":"#ffffff","secondary-fixed-dim":"#c6c6c7","surface-variant":"#e1e3e4","tertiary":"#5f5e5e","outline":"#817476","surface-container-highest":"#e1e3e4","on-primary-fixed-variant":"#5e3e47","secondary-container":"#dfe0e0","tertiary-fixed-dim":"#c8c6c6","on-secondary":"#ffffff","secondary-fixed":"#e2e2e2","on-primary-fixed":"#2d141c","primary":"#78555e"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin-mobile":"16px","margin-desktop":"64px","base":"4px","md":"24px","xl":"80px","gutter":"24px","sm":"16px","lg":"48px","xs":"8px"},"fontFamily":{"headline-md":["Inter"],"body-lg":["Inter"],"headline-lg":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"headline-lg-mobile":["Inter"],"label-sm":["Inter"]},"fontSize":{"headline-md":["24px",{"lineHeight":"32px","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-xl":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","fontWeight":"600"}],"label-sm":["14px",{"lineHeight":"20px","letterSpacing":"0.05em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop flex items-center justify-between"><div class="flex items-center gap-xs"><img alt="Aura Court Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkbhGN5A48mITaKURKuBrDUKGbKLnw__QOYPMoC8JqjnP5C3RW-dOrXP-YAvRRgcgiCmM3B5PFfOkBzfgBZBBx1nMyfDh5WqCLIAn1_Mi2lP3ti-wV7CXrxLJxIJr3Kd52Rh9UO0OBUMnl0Dd1VR14xhjQ0FwBiDhrHn0LGuZ52vv8Q_zbZm-eQvVMvDL2zQVQiKVUpN6RvXpFrCH5IKP3OYjmFJtSKMv8xh7jFBbM3r8cDbzgJfdJ"/><span class="font-headline-md text-headline-md text-on-surface tracking-tight">Aura Court</span></div><nav class="hidden md:flex items-center gap-lg" data-active-classes="text-primary font-semibold underline underline-offset-8"><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="home" href="#">Home</a><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="court-list" href="#">Court List</a><a aria-current="page" class="transition-colors text-primary font-semibold underline underline-offset-8" data-path="my-bookings" href="#">My Bookings</a><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="promotions" href="#">Promotions</a></nav><div class="flex items-center gap-sm"><a class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center cursor-pointer hover:bg-primary-fixed-dim transition-colors" data-path="profile" href="#"><span class="material-symbols-outlined text-on-primary-container text-[20px]">person</span></a></div></div></header><main class="flex-1 pt-20 w-full"><div class="flex flex-col w-full">
+<!-- Main Grid Layout -->
+<div class="max-w-[1280px] mx-auto w-full px-margin-mobile lg:px-margin-desktop py-lg">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- User Profile Sidebar (Left) -->
+<aside class="lg:col-span-3 flex flex-col gap-lg">
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-sm flex flex-col items-center text-center">
+<div class="relative w-32 h-32 mb-md">
+<div class="absolute inset-0 rounded-full bg-gradient-to-tr from-primary/20 to-transparent animate-pulse"></div>
+<img class="w-full h-full object-cover rounded-full border-4 border-surface-container" data-alt="A professional studio portrait of a young athletic person with a friendly expression, soft studio lighting, clean minimalist background, high-end lifestyle photography, neutral tones with pastel pink accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjdjESpnPaRUvODURYNpB496Co0TLr8Z3zZetFEZyaUws_t861KuDJRAoZpFitNgODGkWxolMZFJLC4EaJJdIdVencfiY-Qt4LImpl4OdLCRAWN5v_h-4ds659FJ081IGwwDJ3rSjWWNGOJWqy5I2iplp9y1-F_RBR4KwRny4OaWvCYCjf4rwFdMWatpWwo0BZRa_N970F8novlYuOtqEcxJwgFzG2VkraPlO-MyWQEvEZWb6Y1ZB9"/>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Alex Thompson</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mb-md">Member since Jan 2023</p>
+<div class="w-full space-y-base">
+<div class="flex items-center gap-sm p-sm rounded-lg bg-primary-container/30 text-primary">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span class="text-label-sm font-label-sm">My Bookings</span>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+<span class="text-label-sm font-label-sm">Favorite Courts</span>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span class="text-label-sm font-label-sm">Billing</span>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="text-label-sm font-label-sm">Settings</span>
+</div>
+</div>
+</div>
+<!-- Loyalty Card -->
+<div class="bg-primary text-on-primary rounded-xl p-lg relative overflow-hidden shadow-xl">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-on-primary/10 rounded-full blur-3xl"></div>
+<span class="text-label-sm font-label-sm uppercase tracking-widest opacity-80">Pro Player Status</span>
+<div class="mt-md mb-xs flex items-baseline gap-xs">
+<span class="text-headline-xl font-headline-xl">2,450</span>
+<span class="text-label-sm font-label-sm opacity-80">pts</span>
+</div>
+<div class="w-full h-1 bg-on-primary/20 rounded-full mt-sm">
+<div class="w-3/4 h-full bg-on-primary rounded-full"></div>
+</div>
+<p class="text-label-sm font-label-sm mt-md opacity-90">550 pts until next reward</p>
+</div>
+</aside>
+<!-- Bookings Content (Right) -->
+<main class="lg:col-span-9 flex flex-col gap-lg">
+<!-- Tabs -->
+<div class="flex gap-lg border-b border-outline-variant overflow-x-auto no-scrollbar">
+<button class="pb-md px-base text-label-sm font-label-sm border-b-2 border-primary text-primary whitespace-nowrap">Upcoming (2)</button>
+<button class="pb-md px-base text-label-sm font-label-sm border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap">Past Sessions</button>
+<button class="pb-md px-base text-label-sm font-label-sm border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap">Cancelled</button>
+</div>
+<!-- Booking Sections -->
+<section class="flex flex-col gap-md">
+<div class="flex justify-between items-center">
+<h3 class="text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant">Active Sessions</h3>
+<span class="text-label-sm font-label-sm text-primary cursor-pointer hover:underline">Sync to Calendar</span>
+</div>
+<!-- Card: Upcoming 1 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow grid grid-cols-1 md:grid-cols-12">
+<div class="md:col-span-3 h-48 md:h-auto overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A sleek, modern indoor badminton court with premium wood flooring, soft natural lighting through high windows, minimal branding, and a serene atmospheric vibe. Soft pink highlights on the court markers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8yvWYjup2I88Tan9yZJvnrIXoACfUVzy_lQK11upipLUQdTCWGXsoQkuM4koEHvlP_3F_UDHuaViKycr59oTJlRwNSx8nry5aibvZw5M87_5r5iVu8NYluyFdWf53Yn5G2fjISTB1Ktv5_fDMXWFNUsDy2iY9YsZLTZFv-9azyOemN-ZuU-vqlNIB4Fq0bjz3XVx41Zt_tzl9s0ELHv1P-0A-sGV0KymchKml_u6JlYsSOgSWt_TZ"/>
+</div>
+<div class="md:col-span-9 p-lg flex flex-col md:flex-row justify-between gap-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs mb-xs">
+<span class="px-xs py-[2px] rounded bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-bold uppercase tracking-wider">Confirmed</span>
+</div>
+<h4 class="text-headline-md font-headline-md text-on-surface">Grand Arena • Court 04</h4>
+<div class="flex flex-wrap gap-md mt-sm text-on-surface-variant">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="text-body-md font-body-md">Saturday, Oct 12</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="text-body-md font-body-md">09:00 AM - 11:00 AM</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row md:flex-col justify-end items-end gap-sm">
+<button class="w-full sm:w-auto px-lg py-md rounded-lg bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:bg-primary transition-colors">View Ticket</button>
+<button class="w-full sm:w-auto px-lg py-md rounded-lg border border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-error/5 hover:text-error hover:border-error/20 transition-all">Cancel Booking</button>
+</div>
+</div>
+</div>
+<!-- Card: Upcoming 2 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow grid grid-cols-1 md:grid-cols-12">
+<div class="md:col-span-3 h-48 md:h-auto overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Close up of a professional badminton shuttlecock resting on a court line, macro photography with shallow depth of field, soft pastel pink and grey tones, clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD73500UvHOuhxJG5xtlR4XHWboAF7I_6f7wMETxhfSdhorgik919b3QiP5CMQsbxJxl7DX_E5-C4QDA26GfvpAkVtd371R2GEjhX2TintsvFFPaPZjMGm1nOtsEOGKjgeEw-LoIa6v7l3-AzdCuHCfFegpupXMzk-B0DwzLoxaorMVTcn_Px-TWmQIZgMU52Nr6jdMaSjzl-J-SGig1HY18Xoxn3AN8Pw63aHg3nrHpOEY9eJemjpl"/>
+</div>
+<div class="md:col-span-9 p-lg flex flex-col md:flex-row justify-between gap-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs mb-xs">
+<span class="px-xs py-[2px] rounded bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider">Pending Payment</span>
+</div>
+<h4 class="text-headline-md font-headline-md text-on-surface">Skyline Sports • Court 01</h4>
+<div class="flex flex-wrap gap-md mt-sm text-on-surface-variant">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="text-body-md font-body-md">Wednesday, Oct 16</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="text-body-md font-body-md">06:00 PM - 07:00 PM</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row md:flex-col justify-end items-end gap-sm">
+<button class="w-full sm:w-auto px-lg py-md rounded-lg bg-primary text-on-primary font-label-sm text-label-sm hover:shadow-lg transition-all">Pay Now</button>
+<button class="w-full sm:w-auto px-lg py-md rounded-lg border border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-error/5 hover:text-error hover:border-error/20 transition-all">Cancel</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Past Sessions Section -->
+<section class="flex flex-col gap-md mt-md">
+<div class="flex justify-between items-center">
+<h3 class="text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant">Recently Played</h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Showing last 3 months</span>
+</div>
+<div class="space-y-sm">
+<!-- Row: Past 1 -->
+<div class="bg-surface-container-low rounded-xl p-md flex items-center justify-between gap-md group hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">sports_tennis</span>
+</div>
+<div class="flex flex-col">
+<span class="text-body-md font-headline-md text-on-surface">Clubhouse Prime • Court 02</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Sep 28, 2024 • 10:00 AM</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden sm:flex flex-col text-right">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Status</span>
+<span class="text-label-sm font-label-sm text-on-secondary-fixed-variant">Completed</span>
+</div>
+<div class="flex gap-xs">
+<button class="px-md py-xs rounded-lg border border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-lowest transition-colors">Details</button>
+<button class="px-md py-xs rounded-lg bg-primary-container/50 text-on-primary-container font-label-sm text-label-sm hover:bg-primary-container transition-colors">Review</button>
+</div>
+</div>
+</div>
+<!-- Row: Past 2 -->
+<div class="bg-surface-container-low rounded-xl p-md flex items-center justify-between gap-md group hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">sports_tennis</span>
+</div>
+<div class="flex flex-col">
+<span class="text-body-md font-headline-md text-on-surface">The Loft Courts • Court 12</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Sep 22, 2024 • 04:00 PM</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden sm:flex flex-col text-right">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Status</span>
+<span class="text-label-sm font-label-sm text-on-secondary-fixed-variant">Completed</span>
+</div>
+<div class="flex gap-xs">
+<button class="px-md py-xs rounded-lg border border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-lowest transition-colors">Details</button>
+<button class="px-md py-xs rounded-lg border border-primary/20 text-primary font-label-sm text-label-sm">Reviewed ★★★★★</button>
+</div>
+</div>
+</div>
+<!-- Row: Cancelled -->
+<div class="bg-surface-container-low/50 rounded-xl p-md flex items-center justify-between gap-md opacity-60">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant/40">
+<span class="material-symbols-outlined">event_busy</span>
+</div>
+<div class="flex flex-col">
+<span class="text-body-md font-headline-md text-on-surface line-through">Grand Arena • Court 04</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Sep 15, 2024 • 09:00 AM</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden sm:flex flex-col text-right">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Status</span>
+<span class="text-label-sm font-label-sm text-error">Cancelled</span>
+</div>
+<button class="px-md py-xs rounded-lg border border-outline-variant text-on-surface-variant font-label-sm text-label-sm">Rebook</button>
+</div>
+</div>
+</div>
+<button class="mt-md py-md w-full rounded-xl border-2 border-dashed border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:border-primary/40 hover:text-primary transition-all">
+            Load More Bookings
+          </button>
+</section>
+</main>
+</div>
+</div>
+<!-- Micro-interaction Script -->
+<script>
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        if(this.textContent.includes('Review')) {
+          this.classList.add('scale-95');
+          setTimeout(() => this.classList.remove('scale-95'), 150);
+        }
+      });
+    });
+
+    // Simple Tab Switch Simulation
+    const tabs = document.querySelectorAll('button[class*="whitespace-nowrap"]');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => {
+          t.classList.remove('border-primary', 'text-primary');
+          t.classList.add('border-transparent', 'text-on-surface-variant');
+        });
+        tab.classList.add('border-primary', 'text-primary');
+        tab.classList.remove('border-transparent', 'text-on-surface-variant');
+      });
+    });
+  </script>
+</div></main><footer class="w-full bg-surface-container-low py-lg mt-xl"><div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop"><div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-lg"><div class="flex flex-col gap-sm"><span class="font-headline-md text-headline-md text-on-surface">Aura Court</span><p class="text-body-md font-body-md text-on-surface-variant">Elevating your game through effortless booking and premium lifestyle facilities.</p></div><div class="flex flex-col gap-sm"><span class="text-label-sm font-label-sm text-on-surface uppercase tracking-widest">Contact</span><p class="text-body-md font-body-md text-on-surface-variant">hello@auracourt.com<br/>+1 (555) 012-3456</p></div><div class="flex flex-col gap-sm"><span class="text-label-sm font-label-sm text-on-surface uppercase tracking-widest">Socials</span><div class="flex gap-sm"><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">public</span><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">share</span><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">chat</span></div></div></div><div class="pt-md border-t border-outline-variant text-center text-label-sm font-label-sm text-on-tertiary-fixed-variant">© 2024 Aura Court. All rights reserved.</div></div></footer></body></html>

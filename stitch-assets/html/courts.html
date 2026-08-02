@@ -1,0 +1,302 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-primary-fixed":"#2d141c","tertiary-fixed":"#e4e2e1","tertiary-fixed-dim":"#c8c6c6","primary-fixed":"#ffd9e2","primary":"#78555e","tertiary":"#5f5e5e","tertiary-container":"#dfdcdc","inverse-primary":"#e7bbc6","on-error-container":"#93000a","primary-container":"#ffd1dc","on-tertiary":"#ffffff","secondary-fixed-dim":"#c6c6c7","background":"#f8f9fa","on-error":"#ffffff","on-primary":"#ffffff","error-container":"#ffdad6","surface-dim":"#d9dadb","secondary-fixed":"#e2e2e2","on-tertiary-fixed":"#1b1c1c","on-secondary-fixed":"#1a1c1c","on-secondary-fixed-variant":"#454747","primary-fixed-dim":"#e7bbc6","surface-bright":"#f8f9fa","surface-container-high":"#e7e8e9","on-surface":"#191c1d","error":"#ba1a1a","on-background":"#191c1d","outline-variant":"#d3c3c5","on-primary-container":"#7a5761","on-tertiary-container":"#616160","on-tertiary-fixed-variant":"#474747","inverse-on-surface":"#f0f1f2","on-primary-fixed-variant":"#5e3e47","outline":"#817476","inverse-surface":"#2e3132","secondary-container":"#dfe0e0","surface":"#f8f9fa","surface-container-highest":"#e1e3e4","on-surface-variant":"#4f4446","surface-container-lowest":"#ffffff","surface-tint":"#78555e","on-secondary-container":"#616363","secondary":"#5d5f5f","surface-container":"#edeeef","on-secondary":"#ffffff","surface-container-low":"#f3f4f5","surface-variant":"#e1e3e4"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin-mobile":"16px","gutter":"24px","md":"24px","xl":"80px","base":"4px","xs":"8px","lg":"48px","sm":"16px","margin-desktop":"64px"},"fontFamily":{"headline-md":["Inter"],"headline-lg-mobile":["Inter"],"label-sm":["Inter"],"body-lg":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"headline-lg":["Inter"]},"fontSize":{"headline-md":["24px",{"lineHeight":"32px","fontWeight":"600"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","fontWeight":"600"}],"label-sm":["14px",{"lineHeight":"20px","letterSpacing":"0.05em","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-xl":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop flex items-center justify-between"><div class="flex items-center gap-xs"><img alt="Aura Court Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkbhGN5A48mITaKURKuBrDUKGbKLnw__QOYPMoC8JqjnP5C3RW-dOrXP-YAvRRgcgiCmM3B5PFfOkBzfgBZBBx1nMyfDh5WqCLIAn1_Mi2lP3ti-wV7CXrxLJxIJr3Kd52Rh9UO0OBUMnl0Dd1VR14xhjQ0FwBiDhrHn0LGuZ52vv8Q_zbZm-eQvVMvDL2zQVQiKVUpN6RvXpFrCH5IKP3OYjmFJtSKMv8xh7jFBbM3r8cDbzgJfdJ"/><span class="font-headline-md text-headline-md text-on-surface tracking-tight">Aura Court</span></div><nav class="hidden md:flex items-center gap-lg" data-active-classes="text-primary font-semibold"><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="home" href="#">Home</a><a aria-current="page" class="transition-colors text-primary font-semibold" data-path="court-list" href="#">Court List</a><a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" data-path="my-bookings" href="#">My Bookings</a></nav><div class="flex items-center gap-sm"><div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center cursor-pointer hover:bg-primary-fixed-dim transition-colors"><span class="material-symbols-outlined text-on-primary-container text-[20px]">person</span></div></div></div></header><main class="flex-1 pt-20 w-full"><div class="flex flex-col w-full">
+<!-- Dynamic Filter Bar & Content Wrapper -->
+<div class="flex flex-col lg:flex-row w-full max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop py-md lg:py-xl gap-lg">
+<!-- Sidebar: Filters -->
+<aside class="w-full lg:w-72 flex-shrink-0">
+<div class="sticky top-28 flex flex-col gap-lg">
+<div class="flex flex-col gap-xs">
+<span class="text-label-sm font-label-sm text-primary uppercase tracking-[0.2em]">Refine Search</span>
+<div class="h-1 w-12 bg-primary-container rounded-full"></div>
+</div>
+<!-- Location Filter -->
+<div class="flex flex-col gap-sm">
+<label class="text-label-sm font-label-sm text-on-surface">Location</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-none rounded-lg px-sm py-3 text-body-md font-body-md text-on-surface appearance-none focus:ring-2 focus:ring-primary-container outline-none transition-all cursor-pointer">
+<option>All Districts</option>
+<option>Downtown Core</option>
+<option>West Horizon</option>
+<option>East Garden</option>
+<option>Northern Peak</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Price Range -->
+<div class="flex flex-col gap-sm">
+<div class="flex justify-between items-center">
+<label class="text-label-sm font-label-sm text-on-surface">Price Range</label>
+<span class="text-label-sm font-label-sm text-primary" id="price-val">$20 - $80</span>
+</div>
+<input class="w-full accent-primary cursor-pointer h-1.5 bg-surface-container-highest rounded-lg appearance-none" id="price-slider" max="150" min="10" type="range" value="80"/>
+</div>
+<!-- Time Slots (Bento Chips) -->
+<div class="flex flex-col gap-sm">
+<label class="text-label-sm font-label-sm text-on-surface">Preferred Time</label>
+<div class="grid grid-cols-2 gap-xs">
+<button class="time-chip px-xs py-2 rounded-lg bg-surface-container-low text-label-sm font-label-sm text-on-surface-variant hover:bg-primary-container/30 transition-all border border-transparent active:border-primary-container">Morning</button>
+<button class="time-chip px-xs py-2 rounded-lg bg-primary-container text-label-sm font-label-sm text-on-primary-container border border-primary-container">Afternoon</button>
+<button class="time-chip px-xs py-2 rounded-lg bg-surface-container-low text-label-sm font-label-sm text-on-surface-variant hover:bg-primary-container/30 transition-all border border-transparent">Evening</button>
+<button class="time-chip px-xs py-2 rounded-lg bg-surface-container-low text-label-sm font-label-sm text-on-surface-variant hover:bg-primary-container/30 transition-all border border-transparent">Night</button>
+</div>
+</div>
+<!-- Rating Filter -->
+<div class="flex flex-col gap-sm">
+<label class="text-label-sm font-label-sm text-on-surface">Min. Rating</label>
+<div class="flex gap-xs">
+<template id="star-template">
+<span class="material-symbols-outlined text-[20px] cursor-pointer text-surface-container-highest hover:text-primary-fixed-dim transition-colors">star</span>
+</template>
+<div class="flex" id="star-rating"></div>
+</div>
+</div>
+<button class="w-full mt-sm py-4 bg-on-primary-fixed text-surface rounded-xl font-label-sm text-label-sm tracking-widest uppercase hover:opacity-90 transition-opacity shadow-md">
+          Reset Filters
+        </button>
+</div>
+</aside>
+<!-- Main Content: Court Grid -->
+<section class="flex-1">
+<!-- Header Area -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-lg gap-sm">
+<div class="flex flex-col gap-xs">
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Premium Courts</h1>
+<p class="text-body-md font-body-md text-on-surface-variant">Discover 24 curated spaces for your next match.</p>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="text-label-sm font-label-sm">Sort by:</span>
+<button class="flex items-center gap-base text-label-sm font-label-sm text-on-surface">
+            Popularity <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<!-- Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-gutter">
+<!-- Court Card 1 -->
+<div class="group relative bg-surface-container-lowest rounded-[24px] overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Interior of a luxury badminton hall with high ceilings, polished wooden floors, bright LED lighting, and professional nets. The walls are soft white with pastel pink accents. A modern aesthetic with high-end sports equipment visible in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZl-fAOLIDA8DxKzee0JOzrMdJQFr_WQzvJX9ekWyzAmyeVWGMVEQXqD8fU8lZcpjNq96-rbOL7_zqzuvnj85n7MVlWNbm62QJlFKcXM-NiiOBbqoqWSvsKC-1IeR73qBfkUUdqviUwGKvPzz8OOnMR_aTEl4A_Tj77hJc6JHO9rTLXQMRWI1SVTTudq0OsGPthyhqbOus32EBIV7c4dPkZTHUTFm6A2nb2tjzEIcQ285_5s1LLt-9"/>
+<div class="absolute top-4 left-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-label-sm font-label-sm text-on-surface uppercase tracking-wider">Available</span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-sm bg-gradient-to-t from-on-surface-variant/40 to-transparent">
+<div class="flex gap-xs">
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-label-sm uppercase text-on-surface">Professional</span>
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-label-sm uppercase text-on-surface">A/C</span>
+</div>
+</div>
+</div>
+<div class="p-md flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<h3 class="text-headline-md font-headline-md text-on-surface">Apex Arena Central</h3>
+<p class="text-body-md font-body-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> 12 Velocity Way, Downtown
+                </p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-headline-md font-headline-md text-primary">$45</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">/ hour</span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/30 w-full"></div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-xs">
+<div class="flex text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]">star_half</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(124)</span>
+</div>
+<button class="bg-primary text-on-primary px-sm py-2 rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors shadow-sm">Book Now</button>
+</div>
+</div>
+</div>
+<!-- Court Card 2 -->
+<div class="group relative bg-surface-container-lowest rounded-[24px] overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Minimalist badminton court with sleek grey flooring and crisp white lines. The architecture features large industrial windows letting in soft, diffused morning light. The color palette is neutral with soft rose gold metallic fixtures and modern seating areas." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWKZNdjVymCQLwAomi3hBtRFCviR3wrfcdGuwyMa2p5aA5eRcPoqcneDmIQPKHFcUTp9ClWokdu2Eyk-f4u5cyIRTobu6p9A0YXIaMsiyhbhayPpHFSu_XS9ygIFHO6zYWffAQuSKvwWPyTaZFEXxXw6hN1mWKF_2K1AJoWQDp2lhafp8dzYcC91IPF6pkpVJZNBoYkj5ubP8TRpHSdCB7LyfECpBECBDJc2s5ecMrfmBWtZ6sbm7I"/>
+<div class="absolute top-4 left-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-label-sm font-label-sm text-on-surface uppercase tracking-wider">Available</span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-sm bg-gradient-to-t from-on-surface-variant/40 to-transparent">
+<div class="flex gap-xs">
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-label-sm uppercase text-on-surface">Training Hub</span>
+<span class="bg-surface-container-lowest/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-label-sm uppercase text-on-surface">Lockers</span>
+</div>
+</div>
+</div>
+<div class="p-md flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<h3 class="text-headline-md font-headline-md text-on-surface">The Loft Pavilion</h3>
+<p class="text-body-md font-body-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> 88 Skyview Terrace, East
+                </p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-headline-md font-headline-md text-primary">$38</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">/ hour</span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/30 w-full"></div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-xs">
+<div class="flex text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(98)</span>
+</div>
+<button class="bg-primary text-on-primary px-sm py-2 rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors shadow-sm">Book Now</button>
+</div>
+</div>
+</div>
+<!-- Court Card 3 -->
+<div class="group relative bg-surface-container-lowest rounded-[24px] overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="High-contrast badminton facility at dusk with vibrant neon light accents against dark grey walls. The courts are lit with specialized spotlighting creating a dramatic, performance-focused atmosphere. Wide shot showing multiple courts in a row." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfcwMzbX9drPfgkdTadf1kgQanzJ_voM3Xxq5spchtUouF-dtEL1oEgPPReOW4ebH41eszN-3QY5JFp7dz4cYF45weY5CRn7XByx25GXuffa0g7hno_gC89aMYONQbAYKIC3Tt17jRZ1R2jOEJgv-GXgenf7tA6UmnV4uJTSlKRZkMqWsrlTngCQEZZ5QOiW1Xwy7_uOZoAMueOu2BHRX6oWKxeqCtHeLci30-abF3pAMID1j0ctdg"/>
+<div class="absolute top-4 left-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">block</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Booked</span>
+</div>
+</div>
+<div class="p-md flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<div class="flex flex-col opacity-60">
+<h3 class="text-headline-md font-headline-md text-on-surface">Neon Zenith Court</h3>
+<p class="text-body-md font-body-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> 5 Midnight St, North District
+                </p>
+</div>
+<div class="flex flex-col items-end opacity-60">
+<span class="text-headline-md font-headline-md text-primary">$52</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">/ hour</span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/30 w-full"></div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-xs opacity-60">
+<div class="flex text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]">star</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(215)</span>
+</div>
+<button class="bg-surface-container-high text-on-surface-variant px-sm py-2 rounded-lg font-label-sm text-label-sm cursor-not-allowed">Join Waitlist</button>
+</div>
+</div>
+</div>
+<!-- Court Card 4 -->
+<div class="group relative bg-surface-container-lowest rounded-[24px] overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="An open-concept athletic club with badminton courts adjacent to a stylish cafe area. High-end materials like marble and light oak wood are used throughout. People in athletic gear are blurred in motion on the courts. Soft afternoon sunlight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjZ1V_1HU5YiT3qz5J1fkdfvKvYckt1mYgOq2w22U5XjJZL3u_I5RAe-H_Y73DAQtYaOtbNma5y9p6kVLjr2YasrdF9n7-5Ct5oxx0QEEgP1FYVuxLaf8a96X6cVOjfs5KjAyGj88oK6TPYw0YKzRAemKkB5hGh3krQGtaRwicllyMdJ1ImyJbbBalMhaAvapSp5eP3Co1zMejjoWqWI3Xbb9lPxslOn9R0UlBVeuKwVFAhmFogTef"/>
+<div class="absolute top-4 left-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-label-sm font-label-sm text-on-surface uppercase tracking-wider">Available</span>
+</div>
+<div class="absolute top-4 right-4 bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-[10px] font-label-sm uppercase tracking-tighter shadow-sm animate-pulse">Hot Deal</div>
+</div>
+<div class="p-md flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<h3 class="text-headline-md font-headline-md text-on-surface">Club Aura Elite</h3>
+<p class="text-body-md font-body-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> 202 Serene Blvd, West Side
+                </p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-headline-md font-headline-md text-primary">$32</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant line-through">$40</span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/30 w-full"></div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-xs">
+<div class="flex text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]">star</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(56)</span>
+</div>
+<button class="bg-primary text-on-primary px-sm py-2 rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors shadow-sm">Book Now</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="mt-xl flex justify-center items-center gap-sm">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-primary text-on-primary font-label-sm text-label-sm">1</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high font-label-sm text-label-sm transition-colors">2</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high font-label-sm text-label-sm transition-colors">3</button>
+<span class="text-on-surface-variant px-xs">...</span>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high font-label-sm text-label-sm transition-colors">12</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</section>
+</div>
+<script>
+    // Slider interactivity
+    const slider = document.getElementById('price-slider');
+    const display = document.getElementById('price-val');
+    slider.addEventListener('input', (e) => {
+      display.textContent = `$20 - $${e.target.value}`;
+    });
+
+    // Rating Star Interactivity
+    const starContainer = document.getElementById('star-rating');
+    const starTemplate = document.getElementById('star-template');
+    let currentRating = 4;
+
+    function renderStars() {
+      starContainer.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const star = starTemplate.content.cloneNode(true).querySelector('span');
+        if (i <= currentRating) {
+          star.classList.add('text-primary');
+          star.style.fontVariationSettings = "'FILL' 1";
+        }
+        star.addEventListener('click', () => {
+          currentRating = i;
+          renderStars();
+        });
+        starContainer.appendChild(star);
+      }
+    }
+    renderStars();
+
+    // Chip selection
+    const chips = document.querySelectorAll('.time-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => {
+          c.classList.remove('bg-primary-container', 'text-on-primary-container', 'border-primary-container');
+          c.classList.add('bg-surface-container-low', 'text-on-surface-variant', 'border-transparent');
+        });
+        chip.classList.add('bg-primary-container', 'text-on-primary-container', 'border-primary-container');
+        chip.classList.remove('bg-surface-container-low', 'text-on-surface-variant', 'border-transparent');
+      });
+    });
+  </script>
+</div></main><footer class="w-full bg-surface-container-low py-lg mt-xl"><div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin-desktop"><div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-lg"><div class="flex flex-col gap-sm"><span class="font-headline-md text-headline-md text-on-surface">Aura Court</span><p class="text-body-md font-body-md text-on-surface-variant">Elevating your game through effortless booking and premium lifestyle facilities.</p></div><div class="flex flex-col gap-sm"><span class="text-label-sm font-label-sm text-on-surface uppercase tracking-widest">Contact</span><p class="text-body-md font-body-md text-on-surface-variant">hello@auracourt.com<br/>+1 (555) 012-3456</p></div><div class="flex flex-col gap-sm"><span class="text-label-sm font-label-sm text-on-surface uppercase tracking-widest">Socials</span><div class="flex gap-sm"><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">public</span><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">share</span><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">chat</span></div></div></div><div class="pt-md border-t border-outline-variant text-center text-label-sm font-label-sm text-on-tertiary-fixed-variant">© 2024 Aura Court. All rights reserved.</div></div></footer></body></html>

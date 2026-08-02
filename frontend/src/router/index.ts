@@ -3,6 +3,10 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import BookingView from '../views/BookingView.vue'
 import AdminView from '../views/AdminView.vue'
+import CourtsView from '../views/CourtsView.vue'
+import ScheduleView from '../views/ScheduleView.vue'
+import CourtDetailView from '../views/CourtDetailView.vue'
+import PaymentView from '../views/PaymentView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -22,7 +26,11 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/courts', name: 'courts', component: CourtsView },
+    { path: '/courts/:id', name: 'court-detail', component: CourtDetailView },
+    { path: '/courts/:id/schedule', name: 'schedule', component: ScheduleView },
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true } },
+    { path: '/payment', name: 'payment', component: PaymentView, meta: { auth: true } },
     { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true } },
   ],
 })
