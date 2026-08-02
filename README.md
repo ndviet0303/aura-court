@@ -52,5 +52,6 @@ Kết nối repository GitLab này với Cloudflare Pages, chọn thư mục g�
 - Build command: `npm ci && npm run build`
 - Output directory: `dist`
 - Environment variable: `VITE_API_URL=https://api.example.com` (origin public của Laravel API)
+- Để trống Deploy command trong Pages Git integration; không dùng `npx wrangler deploy` (đó là Workers).
 
-Có thể dùng `frontend/wrangler.jsonc` để deploy trực tiếp bằng Wrangler. Trên backend production cần đặt `FRONTEND_URL`, `VITE_API_URL`, `CORS_ALLOWED_ORIGINS` và `SANCTUM_STATEFUL_DOMAINS` theo domain Cloudflare Pages. Nếu frontend và API khác site, bật `SESSION_SAME_SITE=none` cùng `SESSION_SECURE_COOKIE=true` trên HTTPS.
+Deploy trực tiếp bằng CLI: `npm run build && npm run deploy:pages`. Trên backend production cần đặt `FRONTEND_URL`, `VITE_API_URL`, `CORS_ALLOWED_ORIGINS` và `SANCTUM_STATEFUL_DOMAINS` theo domain Cloudflare Pages. Nếu frontend và API khác site, bật `SESSION_SAME_SITE=none` cùng `SESSION_SECURE_COOKIE=true` trên HTTPS.
