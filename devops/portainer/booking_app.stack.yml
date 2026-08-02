@@ -17,8 +17,8 @@ x-booking-runtime-environment: &booking-runtime-environment
   DB_PORT: ${DB_PORT:-5432}
   DB_USERNAME: ${DB_USERNAME}
   DB_PASSWORD: ${DB_PASSWORD}
-  CACHE_STORE: database
-  QUEUE_CONNECTION: database
+  CACHE_STORE: ${CACHE_STORE}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION}
   MAIL_MAILER: smtp
   MAIL_HOST: ${MAIL_HOST}
   MAIL_PORT: ${MAIL_PORT:-587}
