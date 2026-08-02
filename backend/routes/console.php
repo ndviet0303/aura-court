@@ -10,4 +10,3 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::call(fn () => app(BookingService::class)->expirePending())->everyMinute();
-Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping();

@@ -38,6 +38,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === 'admin';
     }
 
+    public function isDemo(): bool
+    {
+        return str_ends_with(strtolower($this->email), '@demo.auracourt.vn');
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new ResetPasswordNotification($token));

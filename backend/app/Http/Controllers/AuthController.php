@@ -43,6 +43,9 @@ class AuthController extends Controller
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => ['required', 'email']]);
+        if (User::where('email', $request->input('email'))->first()?->isDemo()) {
+            return ['message' => 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.'];
+        }
         Password::sendResetLink($request->only('email'));
 
         return ['message' => 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.'];

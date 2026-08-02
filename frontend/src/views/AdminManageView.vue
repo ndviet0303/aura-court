@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { api, errorMessage } from '@/lib/api'
 import type { Court, CourtBlock, PriceSlot, Refund } from '@/types'
 import TimePicker from '@/components/TimePicker.vue'
 import DateTimePicker from '@/components/DateTimePicker.vue'
+import { useAuthStore } from '@/stores/auth'
 
 type CourtForm = { name: string; description: string; image_url: string; is_active: boolean }
 type PriceForm = { weekday: number; starts_at: string; ends_at: string; price: number }
 type BlockForm = { starts_at: string; ends_at: string; reason: string }
 
 const courts = ref<Court[]>([])
+const auth = useAuthStore()
+const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email.endsWith('@demo.auracourt.vn'))
 const refunds = ref<Refund[]>([])
 const error = ref('')
 const notice = ref('')
@@ -50,6 +53,20 @@ async function saveCourt() {
   saving.value = true; error.value = ''; notice.value = ''
   try {
     const payload = { ...courtForm.value, image_url: courtForm.value.image_url || null }
+    if (isDemoAdmin.value) {
+      if (editingCourt.value) {
+        courts.value = courts.value.map((court) => court.id === editingCourt.value ? { ...court, ...payload, image_url: payload.image_url || undefined } : court)
+        notice.value = 'Đã mô phỏng cập nhật sân (không ghi vào dữ liệu thật).'
+      } else {
+        const syntheticId = -Date.now()
+        courts.value = [...courts.value, { ...payload, id: syntheticId, image_url: payload.image_url || undefined, price_slots: [], blocks: [] }]
+        priceForms.value[syntheticId] = emptyPrice()
+        blockForms.value[syntheticId] = emptyBlock()
+        notice.value = 'Đã mô phỏng tạo sân (không ghi vào dữ liệu thật).'
+      }
+      startCreate()
+      return
+    }
     if (editingCourt.value) await api.patch(`/admin/courts/${editingCourt.value}`, payload)
     else await api.post('/admin/courts', payload)
     notice.value = editingCourt.value ? 'Đã cập nhật sân.' : 'Đã tạo sân mới.'
@@ -60,22 +77,36 @@ async function saveCourt() {
 
 async function deactivateCourt(court: Court) {
   if (!confirm(`Ngừng mở ${court.name}?`)) return
+  if (isDemoAdmin.value) { court.is_active = false; notice.value = 'Đã mô phỏng ngừng mở sân (không ghi vào dữ liệu thật).'; return }
   try { await api.delete(`/admin/courts/${court.id}`); notice.value = 'Đã ngừng mở sân.'; await load() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể ngừng mở sân.') }
 }
 
 async function activateCourt(court: Court) {
+  if (isDemoAdmin.value) { court.is_active = true; notice.value = 'Đã mô phỏng mở lại sân (không ghi vào dữ liệu thật).'; return }
   try { await api.patch('/admin/courts/' + court.id, { is_active: true }); notice.value = 'Đã mở lại sân.'; await load() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể mở lại sân.') }
 }
 
 async function savePrice(court: Court) {
+  if (isDemoAdmin.value) {
+    const form = priceForms.value[court.id]!
+    const prices = [...(court.price_slots || [])]
+    const index = prices.findIndex((price) => price.weekday === form.weekday && price.starts_at.slice(0, 5) === form.starts_at)
+    const next = { ...form, id: index >= 0 ? prices[index]?.id : -Date.now(), court_id: court.id, is_active: true }
+    if (index >= 0) prices[index] = next
+    else prices.push(next)
+    court.price_slots = prices
+    notice.value = `Đã mô phỏng lưu giá cho ${court.name} (không ghi vào dữ liệu thật).`
+    return
+  }
   try { await api.post(`/admin/courts/${court.id}/prices`, priceForms.value[court.id]); notice.value = `Đã lưu giá cho ${court.name}.`; await load() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể lưu giá.') }
 }
 
 async function deletePrice(court: Court, price: PriceSlot) {
   if (!price.id || !confirm('Xóa khung giá này?')) return
+  if (isDemoAdmin.value) { court.price_slots = (court.price_slots || []).filter((item) => item.id !== price.id); notice.value = 'Đã mô phỏng xóa khung giá (không ghi vào dữ liệu thật).'; return }
   try { await api.delete('/admin/courts/' + court.id + '/prices/' + price.id); notice.value = 'Đã xóa khung giá.'; await load() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể xóa khung giá.') }
 }
@@ -83,17 +114,20 @@ async function deletePrice(court: Court, price: PriceSlot) {
 async function saveBlock(court: Court) {
   const block = blockForms.value[court.id]!
   if (!block.starts_at || !block.ends_at) { error.value = 'Nhập đầy đủ thời gian khóa sân.'; return }
+  if (isDemoAdmin.value) { court.blocks = [...(court.blocks || []), { ...block, id: -Date.now(), court_id: court.id }]; notice.value = `Đã mô phỏng khóa lịch ${court.name} (không ghi vào dữ liệu thật).`; blockForms.value[court.id] = emptyBlock(); return }
   try { await api.post(`/admin/courts/${court.id}/blocks`, block); notice.value = `Đã khóa lịch ${court.name}.`; blockForms.value[court.id] = emptyBlock() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể khóa lịch.') }
 }
 
 async function deleteBlock(court: Court, block: CourtBlock) {
   if (!confirm('Mở khóa lịch này?')) return
+  if (isDemoAdmin.value) { court.blocks = (court.blocks || []).filter((item) => item.id !== block.id); notice.value = 'Đã mô phỏng mở khóa lịch (không ghi vào dữ liệu thật).'; return }
   try { await api.delete('/admin/courts/' + court.id + '/blocks/' + block.id); notice.value = 'Đã mở khóa lịch.'; await load() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể mở khóa lịch.') }
 }
 
 async function processRefund(refund: Refund, status: 'processed' | 'rejected') {
+  if (isDemoAdmin.value) { refunds.value = refunds.value.filter((item) => item.id !== refund.id); notice.value = status === 'processed' ? 'Đã mô phỏng duyệt hoàn tiền.' : 'Đã mô phỏng từ chối hoàn tiền.'; return }
   try { await api.patch(`/admin/refunds/${refund.id}`, { status }); notice.value = status === 'processed' ? 'Đã duyệt hoàn tiền.' : 'Đã từ chối hoàn tiền.'; await load() }
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể xử lý hoàn tiền.') }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CourtController;
 use App\Http\Controllers\SepayWebhookController;
+use App\Http\Middleware\SimulateDemoMutations;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -47,7 +48,7 @@ Route::prefix('v1')->group(function () {
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
         Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);
 
-        Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::prefix('admin')->middleware(['admin', SimulateDemoMutations::class])->group(function () {
             Route::get('courts', [CourtController::class, 'adminIndex']);
             Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
             Route::get('bookings', [AdminController::class, 'bookings']);

@@ -56,8 +56,6 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
-    'demo_mode' => filter_var(env('DEMO_MODE', false), FILTER_VALIDATE_BOOL),
-
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

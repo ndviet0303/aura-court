@@ -19,6 +19,18 @@ npm run dev
 
 Frontend dev server proxy `/api` và `/sanctum` tới `http://localhost:8000`.
 
+## Cấp tài khoản trải nghiệm
+
+Không hiển thị tài khoản demo công khai trên trang đăng nhập. Khi cần gửi quyền truy cập riêng, chạy:
+
+```bash
+cd backend
+php artisan demo:issue                 # tài khoản khách hàng
+php artisan demo:issue --admin          # tài khoản quản trị
+```
+
+Lệnh in email và mật khẩu một lần để gửi riêng cho người trải nghiệm. Các thao tác quản trị của tài khoản demo chỉ mô phỏng trong phiên và được backend bảo vệ bằng rollback giao dịch; đặt sân và thanh toán của người dùng vẫn ghi dữ liệu thật.
+
 ## Docker production
 
 ```bash
