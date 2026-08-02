@@ -40,10 +40,10 @@ cp backend/.env.example backend/.env
 docker compose build
 docker compose run --rm app php artisan key:generate --show
 docker compose run --rm app php artisan migrate --seed --force
-docker compose up -d app queue scheduler db redis
+docker compose up -d app queue scheduler db
 ```
 
-Docker Compose chỉ chạy Laravel API, queue, scheduler, PostgreSQL và Redis. Scheduler tự giải phóng booking quá hạn mỗi phút; queue xử lý các tác vụ nền.
+Docker Compose chỉ chạy Laravel API, queue, scheduler và PostgreSQL. Cache/session/queue dùng database; scheduler tự giải phóng booking quá hạn mỗi phút.
 
 ## Deploy frontend lên Cloudflare Pages
 
