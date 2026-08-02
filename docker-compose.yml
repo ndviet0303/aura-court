@@ -33,14 +33,6 @@ services:
       - laravel_storage:/var/www/html/storage
     restart: unless-stopped
 
-  web:
-    build:
-      context: .
-      dockerfile: docker/frontend.Dockerfile
-    depends_on: [app]
-    ports: ["80:80"]
-    restart: unless-stopped
-
   db:
     image: postgres:17-alpine
     environment:

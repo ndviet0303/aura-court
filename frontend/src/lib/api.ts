@@ -1,5 +1,8 @@
 export type ApiError = { message: string; errors?: Record<string, string[]> }
 
+export const apiOrigin = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+export const apiUrl = (path: string) => `${apiOrigin}/api/v1${path}`
+
 export function errorMessage(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null && 'message' in error) {
     const message = (error as { message?: unknown }).message
@@ -10,7 +13,7 @@ export function errorMessage(error: unknown, fallback: string): string {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const xsrf = document.cookie.split('; ').find((part) => part.startsWith('XSRF-TOKEN='))?.split('=')[1]
-  const response = await fetch(`/api/v1${path}`, {
+  const response = await fetch(apiUrl(path), {
     credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}), ...options.headers }, ...options,
   })
   const data = await response.json().catch(() => ({}))
@@ -19,7 +22,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  csrf: () => fetch('/sanctum/csrf-cookie', { credentials: 'include' }),
+  csrf: () => fetch(`${apiOrigin}/sanctum/csrf-cookie`, { credentials: 'include' }),
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),

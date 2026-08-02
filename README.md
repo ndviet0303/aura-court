@@ -31,7 +31,7 @@ php artisan demo:issue --admin          # tài khoản quản trị
 
 Lệnh in email và mật khẩu một lần để gửi riêng cho người trải nghiệm. Các thao tác quản trị của tài khoản demo chỉ mô phỏng trong phiên và được backend bảo vệ bằng rollback giao dịch; đặt sân và thanh toán của người dùng vẫn ghi dữ liệu thật.
 
-## Docker production
+## Docker production (API)
 
 ```bash
 cp .env.example .env
@@ -40,7 +40,17 @@ cp backend/.env.example backend/.env
 docker compose build
 docker compose run --rm app php artisan key:generate --show
 docker compose run --rm app php artisan migrate --seed --force
-docker compose up -d
+docker compose up -d app queue scheduler db redis
 ```
 
-Đặt HTTPS ở reverse proxy của VPS hoặc bổ sung chứng chỉ vào service `web`. Scheduler tự giải phóng booking quá hạn mỗi phút; queue xử lý các tác vụ nền.
+Docker Compose chỉ chạy Laravel API, queue, scheduler, PostgreSQL và Redis. Scheduler tự giải phóng booking quá hạn mỗi phút; queue xử lý các tác vụ nền.
+
+## Deploy frontend lên Cloudflare Pages
+
+Kết nối repository GitLab này với Cloudflare Pages, chọn thư mục gốc `frontend`, sau đó cấu hình:
+
+- Build command: `npm ci && npm run build`
+- Output directory: `dist`
+- Environment variable: `VITE_API_URL=https://api.example.com` (origin public của Laravel API)
+
+Có thể dùng `frontend/wrangler.jsonc` để deploy trực tiếp bằng Wrangler. Trên backend production cần đặt `FRONTEND_URL`, `VITE_API_URL`, `CORS_ALLOWED_ORIGINS` và `SANCTUM_STATEFUL_DOMAINS` theo domain Cloudflare Pages. Nếu frontend và API khác site, bật `SESSION_SAME_SITE=none` cùng `SESSION_SECURE_COOKIE=true` trên HTTPS.

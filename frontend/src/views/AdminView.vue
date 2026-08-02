@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { api, errorMessage } from '@/lib/api'
+import { api, apiOrigin, errorMessage } from '@/lib/api'
 import DatePicker from '@/components/DatePicker.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -21,7 +21,7 @@ const auth = useAuthStore()
 const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email.endsWith('@demo.auracourt.vn'))
 const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 const statusLabel = (value: string) => ({ pending_payment: 'Chờ thanh toán', confirmed: 'Đã xác nhận', cancelled: 'Đã hủy', expired: 'Đã hết hạn', refunded: 'Đã hoàn tiền', no_show: 'Vắng mặt' }[value] || value)
-const csvUrl = computed(() => '/api/v1/admin/reports.csv?from=' + encodeURIComponent(from.value) + '&to=' + encodeURIComponent(to.value))
+const csvUrl = computed(() => apiOrigin + '/api/v1/admin/reports.csv?from=' + encodeURIComponent(from.value) + '&to=' + encodeURIComponent(to.value))
 
 async function load() {
   loading.value = true
