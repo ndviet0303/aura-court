@@ -1,53 +1,47 @@
-# Build the Laravel application and its vendor dependencies once.
-FROM php:8.5-fpm-alpine AS base
+# Stage 1: Composer
+FROM php:8.5-alpine AS base
 
-RUN apk add --no-cache \
-        git \
-        unzip \
-        icu-dev \
-        libzip-dev \
-        oniguruma-dev \
-        postgresql-dev \
-        $PHPIZE_DEPS \
-    && docker-php-ext-install -j1 pdo_pgsql mbstring intl opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apk del $PHPIZE_DEPS
+# Install necessary packages
+# Install necessary packages
+RUN apk update && apk add --no-cache \
+    git \
+    unzip
 
+# RUN adduser -D -h /home/drnxloc drnxloc
+
+# Copy composer binary from the official composer image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+COPY . /build/
+
+# Set the working directory
 WORKDIR /build
-COPY composer.json composer.lock ./
-RUN composer install \
-        --no-dev \
-        --no-interaction \
-        --no-progress \
-        --prefer-dist \
-        --optimize-autoloader \
-        --ignore-platform-reqs \
-        --no-scripts
 
-COPY . ./
-RUN cp .env.example .env \
-    && composer dump-autoload --optimize --no-scripts \
-    && php artisan event:cache \
-    && rm -f .env \
-    && mkdir -p \
-        storage/framework/cache/data \
-        storage/framework/sessions \
-        storage/framework/views \
-        storage/logs \
-        bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+RUN cp .env.example .env
 
-# Keep the PHP runtime from the build stage. A plain alpine:latest final stage
-# would discard PHP and make the API/queue/scheduler commands unusable.
-FROM base AS final
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
+# Cache events only. Runtime configuration and closure routes must resolve from
+# the final /app/ptb-api path and the environment supplied by Portainer.
+RUN php artisan event:cache
+
+# Runtime configuration is injected by Portainer/deployment. Do not ship the
+# build-time local .env into the production image where it can override it.
+RUN rm -f .env
+
+# Stage 2: Final
+FROM alpine:latest AS final
+
+# Copy the application from the composer stage
+COPY --from=base /build /app
+RUN mkdir -p \
+        /app/storage/framework/cache/data \
+        /app/storage/framework/sessions \
+        /app/storage/framework/views \
+        /app/storage/logs
+
+# Set the working directory
 WORKDIR /app
-RUN cp -a /build/. /app/ \
-    && chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
-USER www-data
-EXPOSE 9000
-CMD ["php-fpm", "-F"]
+# Expose port or other settings as needed
+# EXPOSE 8000
