@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, errorMessage } from '@/lib/api'
+import DatePicker from '@/components/DatePicker.vue'
 
 type AdminReport = { bookings: number; confirmed: number; revenue: number; pendingRefunds: number }
 type AdminBooking = { id: number; code: string; status: string; total_amount: number; user?: { name: string; email?: string }; court?: { name: string }; slots?: { starts_at: string }[] }
@@ -60,7 +61,7 @@ onMounted(load)
       <a class="btn" :href="csvUrl">Tải CSV</a>
     </div>
     <form class="panel admin-form" @submit.prevent="load">
-      <div class="admin-form-grid compact"><label>Từ ngày<input v-model="from" type="date" /></label><label>Đến ngày<input v-model="to" type="date" /></label><label>Trạng thái<select v-model="status"><option value="">Tất cả</option><option value="pending_payment">Chờ thanh toán</option><option value="confirmed">Đã xác nhận</option><option value="cancelled">Đã hủy</option><option value="no_show">Vắng mặt</option></select></label><button class="btn" :disabled="loading">{{ loading ? 'Đang tải…' : 'Lọc' }}</button></div>
+      <div class="admin-form-grid compact"><label>Từ ngày<DatePicker v-model="from" /></label><label>Đến ngày<DatePicker v-model="to" /></label><label>Trạng thái<select v-model="status"><option value="">Tất cả</option><option value="pending_payment">Chờ thanh toán</option><option value="confirmed">Đã xác nhận</option><option value="cancelled">Đã hủy</option><option value="no_show">Vắng mặt</option></select></label><button class="btn" :disabled="loading">{{ loading ? 'Đang tải…' : 'Lọc' }}</button></div>
     </form>
     <p v-if="error" class="error">{{ error }}</p>
     <div v-if="report" class="grid"><div class="card"><p class="muted">Tổng lịch đặt</p><h2>{{ report.bookings }}</h2></div><div class="card"><p class="muted">Đã xác nhận</p><h2>{{ report.confirmed }}</h2></div><div class="card"><p class="muted">Doanh thu</p><h2>{{ money(report.revenue) }}</h2></div><div class="card"><p class="muted">Chờ hoàn</p><h2>{{ money(report.pendingRefunds) }}</h2></div></div>
