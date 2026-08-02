@@ -1,0 +1,24 @@
+stages:
+  - app_build
+  - server_build
+  - deploy
+
+default:
+  tags:
+    - macos
+
+workflow:
+  rules:
+    # Prefer merge-request pipelines when a branch already has an MR.
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+    - when: never
+
+variables:
+  API_IMAGE_NAME: "$CI_REGISTRY_IMAGE/api"
+  SERVER_IMAGE_NAME: "$CI_REGISTRY_IMAGE/server"
+
+include:
+  - local: .gitlab/ci/backend.gitlab-ci.yml

@@ -1,0 +1,76 @@
+variables:
+  DOCKER_REGISTRY: "$CI_REGISTRY"
+  BASE_IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH"
+  API_IMAGE_NAME: "$BASE_IMAGE_NAME/api"
+  SERVER_IMAGE_NAME: "$BASE_IMAGE_NAME/server"
+  DOCKER_TAG: "latest"
+  DOCKER_BUILDKIT: "1"
+  DOCKER_HOST: "unix:///var/run/docker.sock"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+  BACKEND_PATH: "backend/"
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .docker/cache
+
+.if-mr-to-dev-main: &if-mr-to-dev-main
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" &&
+    ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" ||
+    $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
+
+api_build:
+  image: docker:latest
+  stage: app_build
+  rules:
+    - <<: *if-mr-to-dev-main
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH)'
+  before_script:
+    - mkdir -p .docker/cache
+  script:
+    - echo "Logging into GitLab Container Registry..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
+    - |
+      docker build \
+        -f "$BACKEND_PATH/Dockerfile" \
+        --cache-from="$API_IMAGE_NAME:$DOCKER_TAG" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -t "$API_IMAGE_NAME:$DOCKER_TAG" \
+        -t "$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        "$BACKEND_PATH"
+    - docker push "$API_IMAGE_NAME:$DOCKER_TAG"
+    - docker push "$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+
+server_build:
+  image: docker:latest
+  stage: server_build
+  needs: [api_build]
+  rules:
+    - <<: *if-mr-to-dev-main
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH)'
+  script:
+    - echo "Logging into GitLab Container Registry..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
+    - docker build -f docker/frontend.Dockerfile -t "$SERVER_IMAGE_NAME:$DOCKER_TAG" -t "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" .
+    - docker push "$SERVER_IMAGE_NAME:$DOCKER_TAG"
+    - docker push "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+
+deploy_to_portainer:
+  image: debian:trixie-slim
+  stage: deploy
+  needs: [api_build, server_build]
+  rules:
+    - <<: *if-mr-to-dev-main
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH) && $PORTAINER_WEBHOOK_URLS'
+  before_script:
+    - apt-get update -y && apt-get install -y jq curl
+  script:
+    - |
+      set -euo pipefail
+      echo "Deploying booking images to Portainer..."
+      for item in $(echo "$PORTAINER_WEBHOOK_URLS" | jq -r '.[]'); do
+        echo "Processing Portainer webhook: $item"
+        curl -fsS -X POST "$item"
+      done
