@@ -9,8 +9,8 @@ COPY --from=api /app /app/booking-api
 # The API image is built with a temporary .env for Composer/Artisan build steps;
 # runtime configuration must come from Portainer instead.
 RUN rm -f /app/booking-api/.env
-COPY configs/booking.prod.Caddyfile /etc/frankenphp/Caddyfile
-COPY configs/php.ini-production "$PHP_INI_DIR/php.ini"
+COPY devops/configs/booking.prod.Caddyfile /etc/frankenphp/Caddyfile
+COPY devops/configs/php.ini-production "$PHP_INI_DIR/php.ini"
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
