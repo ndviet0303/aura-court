@@ -1,6 +1,5 @@
 stages:
-  - app_build
-  - server_build
+  - build
   - deploy
 
 default:

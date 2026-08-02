@@ -20,9 +20,9 @@ cache:
     ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" ||
     $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
 
-api_build:
+build_images:
   image: docker:latest
-  stage: app_build
+  stage: build
   rules:
     - <<: *if-mr-to-dev-main
       when: manual
@@ -42,25 +42,21 @@ api_build:
         "$BACKEND_PATH"
     - docker push "$API_IMAGE_NAME:$DOCKER_TAG"
     - docker push "$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
-
-server_build:
-  image: docker:latest
-  stage: server_build
-  needs: [api_build]
-  rules:
-    - <<: *if-mr-to-dev-main
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH)'
-  script:
-    - echo "Logging into GitLab Container Registry..."
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
-    - docker build -f docker/frontend.Dockerfile -t "$SERVER_IMAGE_NAME:$DOCKER_TAG" -t "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" .
+    - |
+      docker build \
+        -f docker/frontend.Dockerfile \
+        --cache-from="$SERVER_IMAGE_NAME:$DOCKER_TAG" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -t "$SERVER_IMAGE_NAME:$DOCKER_TAG" \
+        -t "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        .
     - docker push "$SERVER_IMAGE_NAME:$DOCKER_TAG"
     - docker push "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
 
 deploy_to_portainer:
   image: debian:trixie-slim
   stage: deploy
-  needs: [api_build, server_build]
+  needs: [build_images]
   rules:
     - <<: *if-mr-to-dev-main
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH) && $PORTAINER_WEBHOOK_URLS'
