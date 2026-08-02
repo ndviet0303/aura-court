@@ -22,3 +22,10 @@ select:focus-visible { border-color:var(--pink-dark); box-shadow:0 0 0 3px rgba(
 .admin-form-grid select { min-height:43px; }
 input[type='number'] { appearance:textfield; }
 input[type='number']::-webkit-inner-spin-button,input[type='number']::-webkit-outer-spin-button { appearance:none; margin:0; }
+.demo-site-notice { display:flex; align-items:flex-start; justify-content:center; gap:10px; padding:10px 24px; border-bottom:1px solid #e9c6ce; background:#fff8fa; color:#6f3040; font-size:12px; line-height:1.5; }
+.demo-site-notice .material-symbols-outlined { flex:0 0 auto; margin-top:1px; color:var(--pink-dark); font-size:18px; }
+.demo-site-notice p { max-width:1120px; margin:0; }
+.demo-site-notice strong { letter-spacing:.04em; }
+.demo-payment-warning { display:grid; gap:4px; margin-bottom:20px; padding:12px 14px; border:1px solid #e9c6ce; border-radius:12px; background:#fff8fa; color:#6f3040; text-align:left; font-size:12px; line-height:1.5; }
+.demo-payment-warning strong { font-size:13px; }
+@media (max-width:560px) { .demo-site-notice { justify-content:flex-start; padding:10px 16px; font-size:11px; } }

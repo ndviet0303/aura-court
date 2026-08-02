@@ -10,6 +10,6 @@ const auth = useAuthStore()
     <nav class="main-nav"><RouterLink to="/">Trang chủ</RouterLink><RouterLink to="/courts">Danh sách sân</RouterLink><RouterLink v-if="auth.user" to="/booking">Lịch đặt sân</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin">Quản trị</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin/manage">Quản lý</RouterLink></nav>
     <div class="nav-actions"><RouterLink v-if="!auth.user" to="/login" class="icon-button" aria-label="Đăng nhập">person</RouterLink><template v-else><RouterLink to="/profile" class="icon-button" aria-label="Hồ sơ">account_circle</RouterLink><button class="icon-button" aria-label="Đăng xuất" @click="auth.logout">logout</button></template></div>
   </header>
-  <main class="site-main"><RouterView /></main>
-  <footer class="site-footer"><div class="footer-inner"><span class="brand footer-brand"><img src="/aura/logo.png" alt="" /> Aura Court</span><span>© 2026 Aura Court · Đặt sân cầu lông.</span><span>Chính sách · Hỗ trợ</span></div></footer>
+  <main class="site-main"><div class="demo-site-notice" role="note"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>ĐÂY LÀ WEBSITE DEMO.</strong> Dữ liệu, giá và luồng đặt sân chỉ phục vụ trình diễn; không tạo thành cam kết cung cấp dịch vụ. Không chuyển tiền thật hoặc nhập thông tin nhạy cảm.</p></div><RouterView /></main>
+  <footer class="site-footer"><div class="footer-inner"><span class="brand footer-brand"><img src="/aura/logo.png" alt="" /> Aura Court</span><span>© 2026 Aura Court · Bản demo trình diễn.</span><span>Chính sách · Hỗ trợ</span></div></footer>
 </template>
