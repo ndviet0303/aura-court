@@ -3,6 +3,8 @@ import { defineStore } from 'pinia'
 import { api } from '@/lib/api'
 import type { AvailabilitySlot, Booking, Court, PaymentInfo } from '@/types'
 
+const paymentStorageKey = 'aura-court-payment'
+
 export const useBookingStore = defineStore('booking', () => {
   const courts = ref<Court[]>([])
   const slots = ref<AvailabilitySlot[]>([])
@@ -10,26 +12,67 @@ export const useBookingStore = defineStore('booking', () => {
   const selectedSlots = ref<AvailabilitySlot[]>([])
   const current = ref<Booking | null>(null)
   const payment = ref<PaymentInfo | null>(null)
+  const error = ref('')
+
   async function loadCourts() {
-    try { courts.value = await api.get<Court[]>('/courts') }
-    catch {
-      courts.value = [
-        { id: 1, name: 'Zenith Arena', description: 'Sân tiêu chuẩn · Quận 1', image_url: '/aura/court-4.jpg' },
-        { id: 2, name: 'Lakeside Pavilion', description: 'Không gian thoáng · Quận 2', image_url: '/aura/court-5.jpg' },
-        { id: 3, name: 'Skyline Courts', description: 'Sân cao cấp · Bình Thạnh', image_url: '/aura/court-6.jpg' },
-      ]
+    error.value = ''
+    try {
+      courts.value = await api.get<Court[]>('/courts')
+    } catch (cause) {
+      courts.value = []
+      error.value = 'Không thể tải danh sách sân. Vui lòng thử lại.'
+      throw cause
     }
   }
+
   async function loadAvailability(courtId: number, date: string) {
     selectedCourt.value = courtId
-    try { slots.value = await api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`) }
-    catch {
-      const base = new Date(`${date}T06:00:00+07:00`)
-      slots.value = Array.from({ length: 17 }, (_, index) => { const start = new Date(base.getTime() + index * 60 * 60 * 1000); return { startsAt: start.toISOString(), endsAt: new Date(start.getTime() + 3600000).toISOString(), price: index >= 11 ? 180000 : 120000, available: ![2, 8, 14].includes(index) } })
+    error.value = ''
+    try {
+      slots.value = await api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`)
+    } catch (cause) {
+      slots.value = []
+      error.value = 'Không thể tải lịch sân. Vui lòng thử lại.'
+      throw cause
+    } finally {
+      selectedSlots.value = []
     }
-    selectedSlots.value = []
   }
-  function toggle(slot: AvailabilitySlot) { if (!slot.available) return; const index = selectedSlots.value.findIndex((item) => item.startsAt === slot.startsAt); if (index >= 0) selectedSlots.value.splice(index, 1); else selectedSlots.value.push(slot); selectedSlots.value.sort((a, b) => a.startsAt.localeCompare(b.startsAt)) }
-  async function createBooking() { const result = await api.post<{ booking: Booking; payment: PaymentInfo }>('/bookings', { court_id: selectedCourt.value, slots: selectedSlots.value.map((slot) => slot.startsAt) }); current.value = result.booking; payment.value = result.payment; return result }
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, loadCourts, loadAvailability, toggle, createBooking }
+
+  function toggle(slot: AvailabilitySlot) {
+    if (!slot.available) return
+    const index = selectedSlots.value.findIndex((item) => item.startsAt === slot.startsAt)
+    if (index >= 0) selectedSlots.value.splice(index, 1)
+    else selectedSlots.value.push(slot)
+    selectedSlots.value.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+  }
+
+  function persistPayment() {
+    if (payment.value) sessionStorage.setItem(paymentStorageKey, JSON.stringify(payment.value))
+  }
+
+  function restorePayment() {
+    if (payment.value) return payment.value
+    try {
+      const saved = sessionStorage.getItem(paymentStorageKey)
+      if (saved) payment.value = JSON.parse(saved) as PaymentInfo
+    } catch { sessionStorage.removeItem(paymentStorageKey) }
+    return payment.value
+  }
+
+  async function createBooking() {
+    const result = await api.post<{ booking: Booking; payment: PaymentInfo }>('/bookings', { court_id: selectedCourt.value, slots: selectedSlots.value.map((slot) => slot.startsAt) })
+    current.value = result.booking
+    payment.value = result.payment
+    persistPayment()
+    return result
+  }
+
+  async function refreshPaymentStatus() {
+    restorePayment()
+    if (!payment.value) return null
+    return api.get<{ status: string; payment: unknown; expiresAt: string }>(`/bookings/${payment.value.code}/payment-status`)
+  }
+
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loadCourts, loadAvailability, toggle, createBooking, restorePayment, refreshPaymentStatus }
 })

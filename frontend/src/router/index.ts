@@ -7,6 +7,10 @@ import CourtsView from '../views/CourtsView.vue'
 import ScheduleView from '../views/ScheduleView.vue'
 import CourtDetailView from '../views/CourtDetailView.vue'
 import PaymentView from '../views/PaymentView.vue'
+import AdminManageView from '../views/AdminManageView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import ResetPasswordView from '../views/ResetPasswordView.vue'
+import ProfileView from '../views/ProfileView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -26,12 +30,16 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView },
+    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView },
     { path: '/courts', name: 'courts', component: CourtsView },
     { path: '/courts/:id', name: 'court-detail', component: CourtDetailView },
     { path: '/courts/:id/schedule', name: 'schedule', component: ScheduleView },
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true } },
     { path: '/payment', name: 'payment', component: PaymentView, meta: { auth: true } },
     { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true } },
+    { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true } },
+    { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true } },
   ],
 })
 
