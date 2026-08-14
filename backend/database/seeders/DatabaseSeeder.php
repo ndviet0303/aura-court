@@ -10,6 +10,7 @@ use App\Models\CourtPriceSlot;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\User;
+use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -21,10 +22,25 @@ class DatabaseSeeder extends Seeder
         $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
         $now = Carbon::now($timezone);
 
+        $venue = Venue::updateOrCreate(
+            ['slug' => 'aura-court'],
+            ['name' => 'Aura Court', 'is_active' => true],
+        );
+
         $admin = User::firstOrNew(['email' => env('SEED_ADMIN_EMAIL', 'admin@example.com')]);
         $admin->forceFill([
             'name' => 'Quản trị viên',
             'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'ChangeMe123!')),
+            'role' => 'admin',
+            'email_verified_at' => $now,
+        ])->save();
+
+        $demoAdmin = User::firstOrNew([
+            'email' => env('SEED_DEMO_ADMIN_EMAIL', 'demo-20260811@demo.auracourt.vn'),
+        ]);
+        $demoAdmin->forceFill([
+            'name' => 'Quản trị demo',
+            'password' => Hash::make(env('SEED_DEMO_ADMIN_PASSWORD', 'Demo12345!')),
             'role' => 'admin',
             'email_verified_at' => $now,
         ])->save();
@@ -56,6 +72,7 @@ class DatabaseSeeder extends Seeder
                         ? 'Sân cao cấp, không gian rộng và phù hợp thi đấu đôi.'
                         : 'Sân cầu lông tiêu chuẩn, ánh sáng tốt và mặt sân êm.',
                     'image_url' => sprintf('/aura/court-%d.jpg', ($index % 6) + 1),
+                    'venue_id' => $venue->id,
                     'is_active' => true,
                 ],
             );

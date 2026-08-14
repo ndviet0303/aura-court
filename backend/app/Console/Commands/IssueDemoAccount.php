@@ -33,13 +33,14 @@ class IssueDemoAccount extends Command
         }
 
         $password = Str::random(14);
-        $user = User::create([
+        $user = new User;
+        $user->forceFill([
             'name' => $this->option('name') ?: ($this->option('admin') ? 'Quản trị demo' : 'Khách demo'),
             'email' => $email,
             'password' => Hash::make($password),
             'role' => $this->option('admin') ? 'admin' : 'customer',
             'email_verified_at' => now(),
-        ]);
+        ])->save();
 
         $this->info('Đã cấp tài khoản demo #'.$user->id.'.');
         $this->line('Email: '.$email);

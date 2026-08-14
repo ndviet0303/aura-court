@@ -17,6 +17,7 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('courts', [CourtController::class, 'index']);
+    Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
     Route::get('availability', AvailabilityController::class);
     Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
 
@@ -49,6 +50,10 @@ Route::prefix('v1')->group(function () {
         Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);
 
         Route::prefix('admin')->middleware(['admin', SimulateDemoMutations::class])->group(function () {
+            Route::get('venues', [AdminController::class, 'venues']);
+            Route::post('venues', [AdminController::class, 'storeVenue']);
+            Route::patch('venues/{venue}', [AdminController::class, 'updateVenue']);
+            Route::delete('venues/{venue}', [AdminController::class, 'destroyVenue']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
             Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
             Route::get('bookings', [AdminController::class, 'bookings']);

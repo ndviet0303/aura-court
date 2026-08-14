@@ -9,6 +9,7 @@ x-booking-runtime-environment: &booking-runtime-environment
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://court.ziet.dev}
   SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-court.ziet.dev}
   SESSION_DRIVER: ${SESSION_DRIVER:-database}
+  SESSION_DOMAIN: ${SESSION_DOMAIN:-.ziet.dev}
   SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
   SESSION_SAME_SITE: ${SESSION_SAME_SITE:-none}
   DB_CONNECTION: ${DB_CONNECTION:-pgsql}

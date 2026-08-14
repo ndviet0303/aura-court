@@ -13,5 +13,6 @@ class EnsureAdmin
         abort_unless($request->user()?->isAdmin(), 403, 'Admin access required.');
 
         return $next($request);
+
     }
 }

@@ -8,11 +8,101 @@ use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
 use App\Models\Payment;
 use App\Models\Refund;
+use App\Models\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
+    public function venues()
+    {
+        return Venue::withCount('courts')->orderBy('name')->get();
+    }
+
+    public function storeVenue(Request $request)
+    {
+        $data = $this->validatedVenue($request);
+        $venue = Venue::create($data + ['slug' => $this->uniqueSlug($data['name'])]);
+
+        return response()->json($venue, 201);
+    }
+
+    public function updateVenue(Request $request, Venue $venue)
+    {
+        if ($request->hasAny(['name', 'address', 'google_maps_url'])) {
+            $data = $this->validatedVenue($request);
+            $venue->update($data);
+        }
+        if ($request->has('is_active')) {
+            $venue->update($request->validate(['is_active' => 'boolean']));
+        }
+
+        return $venue->fresh();
+    }
+
+    public function destroyVenue(Venue $venue)
+    {
+        $venue->update(['is_active' => false]);
+
+        return ['message' => 'Đã ngừng hoạt động địa điểm.'];
+    }
+
+    public function showVenue(string $slug)
+    {
+        return Venue::where('slug', $slug)->where('is_active', true)->firstOrFail();
+    }
+
+    private function validatedVenue(Request $request): array
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:120',
+            'address' => 'required|string|max:255',
+            'google_maps_url' => 'required|url|max:2048',
+            'is_active' => 'boolean',
+        ]);
+
+        if (! $this->isGoogleMapsUrl($data['google_maps_url'])) {
+            throw ValidationException::withMessages([
+                'google_maps_url' => 'Chỉ chấp nhận liên kết Google Maps HTTPS hợp lệ.',
+            ]);
+        }
+
+        return $data;
+    }
+
+    private function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'venue';
+        $slug = $base;
+        $suffix = 2;
+        while (Venue::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$suffix++;
+        }
+
+        return $slug;
+    }
+
+    private function isGoogleMapsUrl(string $value): bool
+    {
+        $parts = parse_url($value);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = (string) ($parts['path'] ?? '');
+        if (($parts['scheme'] ?? '') !== 'https') {
+            return false;
+        }
+        if ($host === 'maps.app.goo.gl') {
+            return true;
+        }
+        if ($host === 'goo.gl') {
+            return str_starts_with($path, '/maps');
+        }
+
+        return (bool) preg_match('/^(?:(?:www|maps)\.)?google\.(?:[a-z]{2,3}|(?:com|co)\.[a-z]{2})$/', $host)
+            && (bool) preg_match('#^/maps(?:/|$)#', $path);
+    }
+
     public function bookings(Request $request)
     {
         return Booking::with(['user', 'court', 'slots', 'refunds'])->when($request->status, fn ($q, $status) => $q->where('status', $status))->when($request->date, fn ($q, $date) => $q->whereHas('slots', fn ($s) => $s->whereDate('starts_at', $date)))->latest()->paginate(30);

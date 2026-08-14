@@ -7,7 +7,7 @@ const auth = useAuthStore()
 <template>
   <header class="topbar">
     <RouterLink to="/" class="brand"><img src="/aura/logo.png" alt="Aura Court" /><span>Aura Court</span></RouterLink>
-    <nav class="main-nav"><RouterLink to="/">Trang chủ</RouterLink><RouterLink to="/courts">Danh sách sân</RouterLink><RouterLink v-if="auth.user" to="/booking">Lịch đặt sân</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin">Quản trị</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin/manage">Quản lý</RouterLink></nav>
+    <nav class="main-nav"><RouterLink to="/">Trang chủ</RouterLink><RouterLink to="/courts">Danh sách sân</RouterLink><RouterLink v-if="auth.user" to="/booking">Lịch đặt sân</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin">Quản trị</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin/manage">Quản lý sân</RouterLink><RouterLink v-if="auth.user?.role === 'admin'" to="/admin/venues">Địa điểm</RouterLink></nav>
     <div class="nav-actions"><RouterLink v-if="!auth.user" to="/login" class="icon-button" aria-label="Đăng nhập">person</RouterLink><template v-else><RouterLink to="/profile" class="icon-button" aria-label="Hồ sơ">account_circle</RouterLink><button class="icon-button" aria-label="Đăng xuất" @click="auth.logout">logout</button></template></div>
   </header>
   <main class="site-main"><div class="demo-site-notice" role="note"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>ĐÂY LÀ WEBSITE DEMO.</strong> Dữ liệu, giá và luồng đặt sân chỉ phục vụ trình diễn; không tạo thành cam kết cung cấp dịch vụ. Không chuyển tiền thật hoặc nhập thông tin nhạy cảm.</p></div><RouterView /></main>

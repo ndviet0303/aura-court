@@ -12,6 +12,8 @@ import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
+import VenueDirectionsView from '../views/VenueDirectionsView.vue'
+import AdminVenuesView from '../views/AdminVenuesView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { applySeo } from '@/lib/seo'
 
@@ -39,10 +41,12 @@ const router = createRouter({
     { path: '/courts', name: 'courts', component: CourtsView, meta: { title: 'Danh sách sân cầu lông | Aura Court', description: 'Tìm sân cầu lông phù hợp, xem giá và khung giờ còn trống tại Aura Court.' } },
     { path: '/courts/:id', name: 'court-detail', component: CourtDetailView, meta: { title: 'Chi tiết sân cầu lông | Aura Court', description: 'Xem thông tin sân, bảng giá và lịch trống để chọn khung giờ phù hợp.', indexable: false } },
     { path: '/courts/:id/schedule', name: 'schedule', component: ScheduleView, meta: { title: 'Lịch sân cầu lông | Aura Court', description: 'Chọn ngày và khung giờ còn trống để bắt đầu đặt sân.', indexable: false } },
+    { path: '/venues/:slug/directions', name: 'venue-directions', component: VenueDirectionsView, meta: { title: 'Chỉ đường đến Aura Court', description: 'Xem địa chỉ và mở Google Maps để đến Aura Court.' } },
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true, title: 'Lịch đặt sân | Aura Court', indexable: false } },
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, title: 'Thanh toán đặt sân | Aura Court', indexable: false } },
     { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true, title: 'Báo cáo quản trị | Aura Court', indexable: false } },
     { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true, title: 'Quản lý sân | Aura Court', indexable: false } },
+    { path: '/admin/venues', name: 'admin-venues', component: AdminVenuesView, meta: { auth: true, admin: true, title: 'Quản lý địa điểm | Aura Court', indexable: false } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true, title: 'Hồ sơ cá nhân | Aura Court', indexable: false } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Không tìm thấy trang | Aura Court', indexable: false } },
   ],

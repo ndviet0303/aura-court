@@ -3,6 +3,9 @@
   "name": "booing",
   "main": "./worker.ts",
   "compatibility_date": "2026-08-02",
+  "vars": {
+    "PUBLIC_API_URL": "https://court-api.ziet.dev"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

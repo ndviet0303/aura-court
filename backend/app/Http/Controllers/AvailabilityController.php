@@ -12,7 +12,11 @@ class AvailabilityController extends Controller
     {
         $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'date' => 'required|date_format:Y-m-d']);
         $date = Carbon::createFromFormat('Y-m-d', $data['date'], config('app.timezone'))->startOfDay();
-        $court = Court::whereKey($data['court_id'])->where('is_active', true)->with(['priceSlots' => fn ($q) => $q->where('weekday', $date->dayOfWeekIso)->where('is_active', true)->orderBy('starts_at'), 'blocks'])->firstOrFail();
+        $court = Court::whereKey($data['court_id'])
+            ->where('is_active', true)
+            ->whereHas('venue', fn ($query) => $query->where('is_active', true))
+            ->with(['priceSlots' => fn ($q) => $q->where('weekday', $date->dayOfWeekIso)->where('is_active', true)->orderBy('starts_at'), 'blocks'])
+            ->firstOrFail();
         $existing = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])->with('slots')->get()->flatMap->slots;
 
         return $court->priceSlots->map(function ($slot) use ($date, $existing, $court) {

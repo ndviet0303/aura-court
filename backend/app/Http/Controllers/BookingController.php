@@ -15,7 +15,7 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
-        return $request->user()->bookings()->with(['court', 'slots', 'refunds'])->latest()->paginate(20);
+        return $request->user()->bookings()->with(['court.venue', 'slots', 'refunds'])->latest()->paginate(20);
     }
 
     public function store(Request $request)
@@ -38,7 +38,7 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
-        return $booking->load(['court', 'slots', 'payments', 'refunds']);
+        return $booking->load(['court.venue', 'slots', 'payments', 'refunds']);
     }
 
     public function cancel(Request $request, Booking $booking)
@@ -81,7 +81,7 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
-        return ['booking' => $booking->load(['court', 'slots']), 'payment' => $this->payments->qrPayload($booking), 'status' => $booking->status];
+        return ['booking' => $booking->load(['court.venue', 'slots']), 'payment' => $this->payments->qrPayload($booking), 'status' => $booking->status];
     }
 
     public function demoPay(Request $request, Booking $booking)
@@ -114,7 +114,7 @@ class BookingController extends Controller
             $booking->update(['status' => 'confirmed']);
             $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
 
-            return ['status' => 'confirmed', 'booking' => $booking->fresh(['court', 'slots', 'payments'])];
+            return ['status' => 'confirmed', 'booking' => $booking->fresh(['court.venue', 'slots', 'payments'])];
         });
     }
 }

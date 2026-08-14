@@ -8,6 +8,7 @@ use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Refund;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\BookingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,7 +29,7 @@ class BookingFlowsTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $court = $this->actingAs($admin)->postJson('/api/v1/admin/courts', ['name' => 'Sân Test'])->assertCreated()->json();
+        $court = $this->actingAs($admin)->postJson('/api/v1/admin/courts', ['name' => 'Sân Test', 'venue_id' => Venue::firstOrFail()->id])->assertCreated()->json();
         $courtId = $court['id'];
 
         $this->actingAs($admin)->postJson("/api/v1/admin/courts/{$courtId}/prices", [

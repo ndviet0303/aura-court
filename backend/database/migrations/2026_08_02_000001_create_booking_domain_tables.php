@@ -90,14 +90,14 @@ return new class extends Migration
         });
 
         // A slot may have historical rows, but only one held/confirmed row at a time.
-        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['pgsql', 'sqlite'], true)) {
             Schema::getConnection()->statement("CREATE UNIQUE INDEX booking_slots_active_unique ON booking_slots (court_id, starts_at) WHERE status IN ('held', 'confirmed')");
         }
     }
 
     public function down(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['pgsql', 'sqlite'], true)) {
             Schema::getConnection()->statement('DROP INDEX IF EXISTS booking_slots_active_unique');
         }
         Schema::dropIfExists('refunds');

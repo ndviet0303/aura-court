@@ -14,12 +14,14 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(email: string, password: string) {
     await api.csrf()
     const result = await api.post<{ user: User }>('/auth/login', { email, password })
+    await api.csrf()
     user.value = result.user
   }
 
   async function register(name: string, email: string, password: string, password_confirmation: string) {
     await api.csrf()
     const result = await api.post<{ user: User }>('/auth/register', { name, email, password, password_confirmation })
+    await api.csrf()
     user.value = result.user
   }
 

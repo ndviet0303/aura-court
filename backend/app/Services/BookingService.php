@@ -45,7 +45,9 @@ class BookingService
             }
         }
 
-        $court = Court::query()->whereKey($courtId)->where('is_active', true)->firstOrFail();
+        $court = Court::query()->whereKey($courtId)->where('is_active', true)
+            ->whereHas('venue', fn ($query) => $query->where('is_active', true))
+            ->firstOrFail();
         $booking = null;
         try {
             $booking = DB::transaction(function () use ($userId, $court, $local) {
@@ -87,10 +89,12 @@ class BookingService
                     ]);
                 }
 
-                return $booking->load(['court', 'slots']);
+                return $booking->load(['court.venue', 'slots']);
             });
         } catch (QueryException $exception) {
-            if (str_contains($exception->getMessage(), 'booking_slots_active_unique')) {
+            if (str_contains($exception->getMessage(), 'booking_slots_active_unique')
+                || (str_contains(strtolower($exception->getMessage()), 'unique constraint') && str_contains($exception->getMessage(), 'booking_slots'))
+            ) {
                 abort(409, 'Một hoặc nhiều slot vừa được người khác đặt.');
             }
             throw $exception;

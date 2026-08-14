@@ -1,6 +1,7 @@
 export type User = { id: number; name: string; email: string; role: 'customer' | 'admin'; email_verified_at?: string | null }
+export type Venue = { id: number; name: string; slug: string; address: string | null; google_maps_url: string | null; is_active: boolean; share_url: string; courts_count?: number }
 export type CourtBlock = { id: number; court_id: number; starts_at: string; ends_at: string; reason?: string }
-export type Court = { id: number; name: string; description?: string; image_url?: string; is_active?: boolean; price_slots?: PriceSlot[]; blocks?: CourtBlock[] }
+export type Court = { id: number; name: string; venue: Venue; description?: string; image_url?: string; is_active?: boolean; price_slots?: PriceSlot[]; blocks?: CourtBlock[] }
 export type PriceSlot = { id?: number; court_id?: number; weekday: number; starts_at: string; ends_at: string; price: number; is_active?: boolean }
 export type AvailabilitySlot = { startsAt: string; endsAt: string; price: number; available: boolean }
 export type Booking = { id: number; code: string; status: string; total_amount: number; payment_expires_at?: string; court: Court; slots: { id?: number; starts_at: string; ends_at: string; unit_price: number }[] }

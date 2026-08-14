@@ -28,22 +28,51 @@ export function errorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+async function csrfCookie(): Promise<Response> {
+  await runtimeConfigReady
+
+  return fetch(`${apiOrigin}/sanctum/csrf-cookie`, { credentials: 'include' })
+}
+
+function xsrfHeader(): Record<string, string> {
+  const cookie = document.cookie.split('; ').find((part) => part.startsWith('XSRF-TOKEN='))
+  const value = cookie?.slice(cookie.indexOf('=') + 1)
+
+  return value ? { 'X-XSRF-TOKEN': decodeURIComponent(value) } : {}
+}
+
+function send(path: string, options: RequestInit): Promise<Response> {
+  return fetch(apiUrl(path), {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...xsrfHeader(),
+      ...options.headers,
+    },
+    ...options,
+  })
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   await runtimeConfigReady
-  const xsrf = document.cookie.split('; ').find((part) => part.startsWith('XSRF-TOKEN='))?.split('=')[1]
-  const response = await fetch(apiUrl(path), {
-    credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}), ...options.headers }, ...options,
-  })
+  let response = await send(path, options)
+
+  // Laravel regenerates the CSRF token together with the session after login.
+  // Refresh and retry once when a tab still holds the previous token. A 419 is
+  // returned before the controller runs, so retrying cannot duplicate a write.
+  if (response.status === 419) {
+    await csrfCookie()
+    response = await send(path, options)
+  }
+
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw data as ApiError
   return data as T
 }
 
 export const api = {
-  csrf: async () => {
-    await runtimeConfigReady
-    return fetch(`${apiOrigin}/sanctum/csrf-cookie`, { credentials: 'include' })
-  },
+  csrf: csrfCookie,
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),

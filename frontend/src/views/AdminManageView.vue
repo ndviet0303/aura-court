@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, errorMessage } from '@/lib/api'
-import type { Court, CourtBlock, PriceSlot, Refund } from '@/types'
+import type { Court, CourtBlock, PriceSlot, Refund, Venue } from '@/types'
 import TimePicker from '@/components/TimePicker.vue'
 import DateTimePicker from '@/components/DateTimePicker.vue'
 import { useAuthStore } from '@/stores/auth'
 
-type CourtForm = { name: string; description: string; image_url: string; is_active: boolean }
+type CourtForm = { name: string; venue_id: number; description: string; image_url: string; is_active: boolean }
 type PriceForm = { weekday: number; starts_at: string; ends_at: string; price: number }
 type BlockForm = { starts_at: string; ends_at: string; reason: string }
 
 const courts = ref<Court[]>([])
+const venues = ref<Venue[]>([])
+const activeVenues = computed(() => venues.value.filter((venue) => venue.is_active))
 const auth = useAuthStore()
 const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email.endsWith('@demo.auracourt.vn'))
 const refunds = ref<Refund[]>([])
 const error = ref('')
 const notice = ref('')
 const saving = ref(false)
-const courtForm = ref<CourtForm>({ name: '', description: '', image_url: '', is_active: true })
+const courtForm = ref<CourtForm>({ name: '', venue_id: 0, description: '', image_url: '', is_active: true })
 const editingCourt = ref<number | null>(null)
 const priceForms = ref<Record<number, PriceForm>>({})
 const blockForms = ref<Record<number, BlockForm>>({})
@@ -30,7 +32,9 @@ const blockForm = (courtId: number) => blockForms.value[courtId]!
 async function load() {
   error.value = ''
   try {
-    courts.value = await api.get<Court[]>('/admin/courts')
+    const [loadedCourts, loadedVenues] = await Promise.all([api.get<Court[]>('/admin/courts'), api.get<Venue[]>('/admin/venues')])
+    courts.value = loadedCourts
+    venues.value = loadedVenues
     courts.value.forEach((court) => {
       priceForms.value[court.id] ||= emptyPrice()
       blockForms.value[court.id] ||= emptyBlock()
@@ -41,12 +45,12 @@ async function load() {
 
 function startEdit(court: Court) {
   editingCourt.value = court.id
-  courtForm.value = { name: court.name, description: court.description || '', image_url: court.image_url || '', is_active: court.is_active !== false }
+  courtForm.value = { name: court.name, venue_id: court.venue.id, description: court.description || '', image_url: court.image_url || '', is_active: court.is_active !== false }
 }
 
 function startCreate() {
   editingCourt.value = null
-  courtForm.value = { name: '', description: '', image_url: '', is_active: true }
+  courtForm.value = { name: '', venue_id: activeVenues.value[0]?.id || 0, description: '', image_url: '', is_active: true }
 }
 
 async function saveCourt() {
@@ -55,11 +59,13 @@ async function saveCourt() {
     const payload = { ...courtForm.value, image_url: courtForm.value.image_url || null }
     if (isDemoAdmin.value) {
       if (editingCourt.value) {
-        courts.value = courts.value.map((court) => court.id === editingCourt.value ? { ...court, ...payload, image_url: payload.image_url || undefined } : court)
+        courts.value = courts.value.map((court) => court.id === editingCourt.value ? { ...court, ...payload, venue: venues.value.find((venue) => venue.id === payload.venue_id) || court.venue, image_url: payload.image_url || undefined } : court)
         notice.value = 'Đã mô phỏng cập nhật sân (không ghi vào dữ liệu thật).'
       } else {
         const syntheticId = -Date.now()
-        courts.value = [...courts.value, { ...payload, id: syntheticId, image_url: payload.image_url || undefined, price_slots: [], blocks: [] }]
+        const venue = activeVenues.value.find((item) => item.id === payload.venue_id)
+        if (!venue) throw new Error('Chưa có địa điểm hoạt động để gán cho sân.')
+        courts.value = [...courts.value, { ...payload, id: syntheticId, venue, image_url: payload.image_url || undefined, price_slots: [], blocks: [] }]
         priceForms.value[syntheticId] = emptyPrice()
         blockForms.value[syntheticId] = emptyBlock()
         notice.value = 'Đã mô phỏng tạo sân (không ghi vào dữ liệu thật).'
@@ -140,7 +146,7 @@ onMounted(load)
     <div class="row"><div><div class="eyebrow">Vận hành</div><h1 class="page-title">Quản lý sân</h1><p class="muted">Quản lý sân, giá theo khung giờ, lịch khóa và hoàn tiền.</p></div><button class="btn" @click="startCreate">+ Thêm sân</button></div>
     <p v-if="error" class="error">{{ error }}</p><p v-if="notice" class="notice">{{ notice }}</p>
 
-    <form class="panel admin-form" @submit.prevent="saveCourt"><h2>{{ editingCourt ? 'Cập nhật sân' : 'Tạo sân mới' }}</h2><div class="admin-form-grid"><label>Tên sân<input v-model="courtForm.name" required maxlength="120" /></label><label>Ảnh URL<input v-model="courtForm.image_url" type="url" placeholder="https://..." /></label><label class="wide">Mô tả<textarea v-model="courtForm.description" rows="2" /></label></div><div class="actions"><button class="btn" :disabled="saving">{{ saving ? 'Đang lưu…' : 'Lưu sân' }}</button><button v-if="editingCourt" type="button" class="btn secondary" @click="startCreate">Hủy</button></div></form>
+    <form class="panel admin-form" @submit.prevent="saveCourt"><h2>{{ editingCourt ? 'Cập nhật sân' : 'Tạo sân mới' }}</h2><div class="admin-form-grid"><label>Tên sân<input v-model="courtForm.name" required maxlength="120" /></label><label>Địa điểm<select v-model.number="courtForm.venue_id" required><option v-for="venue in activeVenues" :key="venue.id" :value="venue.id">{{ venue.name }}</option></select></label><label>Ảnh URL<input v-model="courtForm.image_url" type="url" placeholder="https://..." /></label><label class="wide">Mô tả<textarea v-model="courtForm.description" rows="2" /></label></div><p v-if="!activeVenues.length" class="error">Chưa có địa điểm đang hoạt động. Hãy mở hoặc tạo địa điểm trước khi thêm sân.</p><div class="actions"><button class="btn" :disabled="saving || !activeVenues.length">{{ saving ? 'Đang lưu…' : 'Lưu sân' }}</button><button v-if="editingCourt" type="button" class="btn secondary" @click="startCreate">Hủy</button></div></form>
 
     <div class="admin-court-list"><article v-for="court in courts" :key="court.id" class="panel admin-court"><div class="row"><div><h2>{{ court.name }} <span class="badge" :class="{ 'badge-danger': court.is_active === false }">{{ court.is_active === false ? 'Đã ngừng' : 'Đang mở' }}</span></h2><p class="muted">{{ court.description || 'Chưa có mô tả' }}</p></div><div class="actions"><button class="link-button" @click="startEdit(court)">Sửa</button><button v-if="court.is_active !== false" class="link-button danger" @click="deactivateCourt(court)">Ngừng mở</button><button v-else class="link-button" @click="activateCourt(court)">Mở lại</button></div></div><div class="admin-form-grid compact"><label>Thứ (1–7)<input v-model.number="priceForm(court.id).weekday" type="number" min="1" max="7" /></label><label>Bắt đầu<TimePicker v-model="priceForm(court.id).starts_at" /></label><label>Kết thúc<TimePicker v-model="priceForm(court.id).ends_at" /></label><label>Giá/giờ<input v-model.number="priceForm(court.id).price" type="number" min="0" step="1000" /></label><button class="btn" @click="savePrice(court)">Lưu giá</button></div><div class="price-list"><span v-for="price in (court.price_slots || [])" :key="price.id || `${price.weekday}-${price.starts_at}`" class="badge">T{{ price.weekday }} {{ price.starts_at.slice(0,5) }} · {{ new Intl.NumberFormat('vi-VN').format(price.price) }}₫<button class="link-button danger" @click="deletePrice(court, price)">×</button></span></div><div class="admin-form-grid compact block-row"><label>Bắt đầu khóa<DateTimePicker v-model="blockForm(court.id).starts_at" /></label><label>Kết thúc khóa<DateTimePicker v-model="blockForm(court.id).ends_at" /></label><label>Lý do<input v-model="blockForm(court.id).reason" placeholder="Bảo trì" /></label><button class="btn secondary" @click="saveBlock(court)">Khóa lịch</button></div><div v-if="court.blocks?.length" class="price-list"><span v-for="block in court.blocks" :key="block.id" class="badge">Khóa {{ new Date(block.starts_at).toLocaleString() }}–{{ new Date(block.ends_at).toLocaleTimeString() }} <button class="link-button" @click="deleteBlock(court, block)">Mở</button></span></div></article></div>
 
