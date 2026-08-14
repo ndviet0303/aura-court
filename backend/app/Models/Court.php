@@ -45,4 +45,14 @@ class Court extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function waitlistEntries(): HasMany
+    {
+        return $this->hasMany(WaitlistEntry::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
 }

@@ -15,13 +15,13 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
-        return $request->user()->bookings()->with(['court.venue', 'slots', 'refunds'])->latest()->paginate(20);
+        return $request->user()->bookings()->with(['court.venue', 'slots', 'refunds', 'review'])->latest()->paginate(20);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'slots' => 'required|array|min:1|max:12', 'slots.*' => 'date']);
-        $booking = $this->bookings->create($request->user()->id, $data['court_id'], $data['slots']);
+        $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'slots' => 'required|array|min:1|max:12', 'slots.*' => 'date', 'coupon_code' => 'nullable|string|max:40']);
+        $booking = $this->bookings->create($request->user()->id, $data['court_id'], $data['slots'], $data['coupon_code'] ?? null);
 
         return response()->json(['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)], 201);
     }
@@ -114,7 +114,39 @@ class BookingController extends Controller
             $booking->update(['status' => 'confirmed']);
             $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
 
+            $this->payments->notifyConfirmed($booking->fresh(['user', 'court']));
+
             return ['status' => 'confirmed', 'booking' => $booking->fresh(['court.venue', 'slots', 'payments'])];
         });
+    }
+
+    public function calendar(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $booking->load(['court.venue', 'slots']);
+        $escape = static fn (string $value): string => str_replace(['\\', ';', ',', "\n"], ['\\\\', '\\;', '\\,', '\\n'], $value);
+        $events = $booking->slots->whereIn('status', ['held', 'confirmed'])->map(function ($slot) use ($booking, $escape) {
+            $start = $slot->starts_at->utc()->format('Ymd\\THis\\Z');
+            $end = $slot->ends_at->utc()->format('Ymd\\THis\\Z');
+            $location = $booking->court->venue?->address ?: $booking->court->venue?->name ?: 'Aura Court';
+
+            return implode("\r\n", [
+                'BEGIN:VEVENT',
+                'UID:'.$booking->code.'-'.$slot->id.'@auracourt',
+                'DTSTAMP:'.now()->utc()->format('Ymd\\THis\\Z'),
+                'DTSTART:'.$start,
+                'DTEND:'.$end,
+                'SUMMARY:'.$escape('Đặt sân '.$booking->court->name),
+                'LOCATION:'.$escape($location),
+                'DESCRIPTION:Booking '.$booking->code,
+                'END:VEVENT',
+            ]);
+        })->implode("\r\n");
+        $ics = implode("\r\n", ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Aura Court//Booking//VI', 'CALSCALE:GREGORIAN', $events, 'END:VCALENDAR', '']);
+
+        return response($ics, 200, [
+            'Content-Type' => 'text/calendar; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$booking->code.'.ics"',
+        ]);
     }
 }

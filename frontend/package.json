@@ -8,6 +8,7 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
+    "test:e2e": "playwright test",
     "build-only": "vite build",
     "deploy:worker": "npx wrangler deploy",
     "type-check": "vue-tsc --build",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260801.1",
+    "@playwright/test": "^1.62.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^24.13.3",

@@ -1,4 +1,5 @@
 stages:
+  - test
   - build
   - deploy
 
@@ -21,3 +22,4 @@ variables:
 
 include:
   - local: .gitlab/ci/backend.gitlab-ci.yml
+  - local: .gitlab/ci/frontend.gitlab-ci.yml

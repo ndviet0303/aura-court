@@ -1,11 +1,16 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CourtController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SepayWebhookController;
+use App\Http\Controllers\WaitlistController;
 use App\Http\Middleware\SimulateDemoMutations;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -17,6 +22,7 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('courts', [CourtController::class, 'index']);
+    Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
     Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
     Route::get('availability', AvailabilityController::class);
     Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
@@ -47,7 +53,17 @@ Route::prefix('v1')->group(function () {
         Route::post('bookings/{booking:code}/reschedule', [BookingController::class, 'reschedule']);
         Route::get('bookings/{booking:code}/payment-status', [BookingController::class, 'paymentStatus']);
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
+        Route::get('bookings/{booking:code}/calendar.ics', [BookingController::class, 'calendar']);
         Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
+        Route::get('waitlist', [WaitlistController::class, 'index']);
+        Route::post('waitlist', [WaitlistController::class, 'store']);
+        Route::delete('waitlist/{waitlist}', [WaitlistController::class, 'destroy']);
+        Route::post('coupons/preview', [PromotionController::class, 'preview']);
+        Route::get('membership', [PromotionController::class, 'membership']);
+        Route::post('reviews', [ReviewController::class, 'store']);
 
         Route::prefix('admin')->middleware(['admin', SimulateDemoMutations::class])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
@@ -70,6 +86,12 @@ Route::prefix('v1')->group(function () {
             Route::patch('refunds/{refund}', [AdminController::class, 'processRefund']);
             Route::get('reports', [AdminController::class, 'report']);
             Route::get('reports.csv', [AdminController::class, 'reportCsv']);
+            Route::get('audit-logs', [AuditLogController::class, 'index']);
+            Route::get('coupons', [PromotionController::class, 'coupons']);
+            Route::post('coupons', [PromotionController::class, 'storeCoupon']);
+            Route::get('membership-plans', [PromotionController::class, 'plans']);
+            Route::post('membership-plans', [PromotionController::class, 'storePlan']);
+            Route::post('memberships', [PromotionController::class, 'assignMembership']);
         });
     });
 });

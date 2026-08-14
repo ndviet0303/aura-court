@@ -12,6 +12,7 @@ import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
+import NotificationsView from '../views/NotificationsView.vue'
 import VenueDirectionsView from '../views/VenueDirectionsView.vue'
 import AdminVenuesView from '../views/AdminVenuesView.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -48,6 +49,7 @@ const router = createRouter({
     { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true, title: 'Quản lý sân | Aura Court', indexable: false } },
     { path: '/admin/venues', name: 'admin-venues', component: AdminVenuesView, meta: { auth: true, admin: true, title: 'Quản lý địa điểm | Aura Court', indexable: false } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true, title: 'Hồ sơ cá nhân | Aura Court', indexable: false } },
+    { path: '/notifications', name: 'notifications', component: NotificationsView, meta: { auth: true, title: 'Thông báo | Aura Court', indexable: false } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Không tìm thấy trang | Aura Court', indexable: false } },
   ],
 })

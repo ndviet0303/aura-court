@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 type CourtForm = { name: string; venue_id: number; description: string; image_url: string; is_active: boolean }
 type PriceForm = { weekday: number; starts_at: string; ends_at: string; price: number }
 type BlockForm = { starts_at: string; ends_at: string; reason: string }
+type Coupon = { id: number; code: string; discount_type: 'fixed' | 'percent'; discount_value: number; usage_count: number; usage_limit?: number | null; is_active: boolean }
 
 const courts = ref<Court[]>([])
 const venues = ref<Venue[]>([])
@@ -23,6 +24,8 @@ const courtForm = ref<CourtForm>({ name: '', venue_id: 0, description: '', image
 const editingCourt = ref<number | null>(null)
 const priceForms = ref<Record<number, PriceForm>>({})
 const blockForms = ref<Record<number, BlockForm>>({})
+const coupons = ref<Coupon[]>([])
+const couponForm = ref({ code: '', discount_type: 'percent' as 'fixed' | 'percent', discount_value: 10, usage_limit: 10 })
 
 const emptyPrice = (): PriceForm => ({ weekday: 1, starts_at: '06:00', ends_at: '07:00', price: 100000 })
 const emptyBlock = (): BlockForm => ({ starts_at: '', ends_at: '', reason: '' })
@@ -40,6 +43,7 @@ async function load() {
       blockForms.value[court.id] ||= emptyBlock()
     })
     refunds.value = (await api.get<{ data: Refund[] }>('/admin/refunds')).data
+    coupons.value = (await api.get<{ data: Coupon[] }>('/admin/coupons')).data
   } catch (cause: unknown) { error.value = errorMessage(cause, 'Không tải được dữ liệu quản trị.') }
 }
 
@@ -138,6 +142,15 @@ async function processRefund(refund: Refund, status: 'processed' | 'rejected') {
   catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể xử lý hoàn tiền.') }
 }
 
+async function createCoupon() {
+  try {
+    await api.post('/admin/coupons', couponForm.value)
+    notice.value = 'Đã tạo mã giảm giá.'
+    couponForm.value = { code: '', discount_type: 'percent', discount_value: 10, usage_limit: 10 }
+    await load()
+  } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tạo mã giảm giá.') }
+}
+
 onMounted(load)
 </script>
 
@@ -151,5 +164,6 @@ onMounted(load)
     <div class="admin-court-list"><article v-for="court in courts" :key="court.id" class="panel admin-court"><div class="row"><div><h2>{{ court.name }} <span class="badge" :class="{ 'badge-danger': court.is_active === false }">{{ court.is_active === false ? 'Đã ngừng' : 'Đang mở' }}</span></h2><p class="muted">{{ court.description || 'Chưa có mô tả' }}</p></div><div class="actions"><button class="link-button" @click="startEdit(court)">Sửa</button><button v-if="court.is_active !== false" class="link-button danger" @click="deactivateCourt(court)">Ngừng mở</button><button v-else class="link-button" @click="activateCourt(court)">Mở lại</button></div></div><div class="admin-form-grid compact"><label>Thứ (1–7)<input v-model.number="priceForm(court.id).weekday" type="number" min="1" max="7" /></label><label>Bắt đầu<TimePicker v-model="priceForm(court.id).starts_at" /></label><label>Kết thúc<TimePicker v-model="priceForm(court.id).ends_at" /></label><label>Giá/giờ<input v-model.number="priceForm(court.id).price" type="number" min="0" step="1000" /></label><button class="btn" @click="savePrice(court)">Lưu giá</button></div><div class="price-list"><span v-for="price in (court.price_slots || [])" :key="price.id || `${price.weekday}-${price.starts_at}`" class="badge">T{{ price.weekday }} {{ price.starts_at.slice(0,5) }} · {{ new Intl.NumberFormat('vi-VN').format(price.price) }}₫<button class="link-button danger" @click="deletePrice(court, price)">×</button></span></div><div class="admin-form-grid compact block-row"><label>Bắt đầu khóa<DateTimePicker v-model="blockForm(court.id).starts_at" /></label><label>Kết thúc khóa<DateTimePicker v-model="blockForm(court.id).ends_at" /></label><label>Lý do<input v-model="blockForm(court.id).reason" placeholder="Bảo trì" /></label><button class="btn secondary" @click="saveBlock(court)">Khóa lịch</button></div><div v-if="court.blocks?.length" class="price-list"><span v-for="block in court.blocks" :key="block.id" class="badge">Khóa {{ new Date(block.starts_at).toLocaleString() }}–{{ new Date(block.ends_at).toLocaleTimeString() }} <button class="link-button" @click="deleteBlock(court, block)">Mở</button></span></div></article></div>
 
     <section class="panel" style="margin-top:24px"><h2>Yêu cầu hoàn tiền</h2><p v-if="!refunds.length" class="muted">Không có yêu cầu đang chờ.</p><div v-else class="table-wrap"><table class="table"><thead><tr><th>Mã đặt sân</th><th>Khách</th><th>Số tiền</th><th>Thao tác</th></tr></thead><tbody><tr v-for="refund in refunds" :key="refund.id"><td>{{ refund.booking.code }}</td><td>{{ refund.booking.user?.name }}</td><td>{{ new Intl.NumberFormat('vi-VN').format(refund.amount) }}₫</td><td class="actions"><button class="link-button" @click="processRefund(refund, 'processed')">Duyệt</button><button class="link-button danger" @click="processRefund(refund, 'rejected')">Từ chối</button></td></tr></tbody></table></div></section>
+    <section class="panel" style="margin-top:24px"><h2>Coupon</h2><form class="admin-form-grid compact" @submit.prevent="createCoupon"><label>Mã<input v-model="couponForm.code" required maxlength="40" placeholder="WELCOME10" /></label><label>Loại<select v-model="couponForm.discount_type"><option value="percent">Phần trăm</option><option value="fixed">Số tiền</option></select></label><label>Giá trị<input v-model.number="couponForm.discount_value" type="number" min="1" required /></label><label>Lượt dùng<input v-model.number="couponForm.usage_limit" type="number" min="1" required /></label><button class="btn">Tạo mã</button></form><div class="price-list"><span v-for="coupon in coupons" :key="coupon.id" class="badge">{{ coupon.code }} · {{ coupon.discount_value }}{{ coupon.discount_type === 'percent' ? '%' : '₫' }} · {{ coupon.usage_count }}/{{ coupon.usage_limit || '∞' }}</span></div></section>
   </section>
 </template>

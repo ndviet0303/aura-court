@@ -72,8 +72,8 @@ export const useBookingStore = defineStore('booking', () => {
     sessionStorage.removeItem(paymentStorageKey)
   }
 
-  async function createBooking() {
-    const result = await api.post<{ booking: Booking; payment: PaymentInfo }>('/bookings', { court_id: selectedCourt.value, slots: selectedSlots.value.map((slot) => slot.startsAt) })
+  async function createBooking(couponCode?: string) {
+    const result = await api.post<{ booking: Booking; payment: PaymentInfo }>('/bookings', { court_id: selectedCourt.value, slots: selectedSlots.value.map((slot) => slot.startsAt), coupon_code: couponCode || undefined })
     current.value = result.booking
     payment.value = result.payment
     persistPayment()

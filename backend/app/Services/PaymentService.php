@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Notifications\AuraBookingNotification;
 use Illuminate\Support\Facades\DB;
 
 class PaymentService
@@ -24,7 +25,8 @@ class PaymentService
             return;
         }
 
-        DB::transaction(function () use ($data, $raw, $externalId) {
+        $confirmedBooking = null;
+        DB::transaction(function () use ($data, $raw, $externalId, &$confirmedBooking) {
             if (Payment::where('external_transaction_id', $externalId)->exists()) {
                 return;
             }
@@ -45,7 +47,22 @@ class PaymentService
             if ($valid) {
                 $booking->update(['status' => 'confirmed']);
                 $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
+                $confirmedBooking = $booking->fresh(['user', 'court']);
             }
         });
+        if ($confirmedBooking) {
+            $this->notifyConfirmed($confirmedBooking);
+        }
+    }
+
+    public function notifyConfirmed(Booking $booking): void
+    {
+        $booking->loadMissing(['user', 'court']);
+        $booking->user->notify(new AuraBookingNotification(
+            'payment_confirmed',
+            'Thanh toán đã được xác nhận',
+            "Booking {$booking->code} tại {$booking->court->name} đã thanh toán thành công.",
+            '/booking',
+        ));
     }
 }

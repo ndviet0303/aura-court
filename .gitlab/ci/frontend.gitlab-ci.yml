@@ -1,0 +1,30 @@
+frontend_check:
+  image: node:24-bookworm
+  stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - cd frontend
+    - npm ci
+    - npm run type-check
+    - npm run test:unit -- --run
+    - npm run build
+
+frontend_e2e:
+  image: mcr.microsoft.com/playwright:v1.62.1-noble
+  stage: test
+  needs: [frontend_check]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - cd frontend
+    - npm ci
+    - npm run test:e2e
+  artifacts:
+    when: on_failure
+    paths:
+      - frontend/test-results/
+      - frontend/playwright-report/
+    expire_in: 7 days

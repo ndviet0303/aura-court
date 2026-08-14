@@ -13,6 +13,8 @@ class CourtController extends Controller
         return Court::where('is_active', true)
             ->whereHas('venue', fn ($query) => $query->where('is_active', true))
             ->with(['priceSlots', 'venue'])
+            ->withCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
+            ->withAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating')
             ->orderBy('id')
             ->get();
     }

@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::call(fn () => app(BookingService::class)->expirePending())->everyMinute();
+Schedule::call(fn () => app(BookingService::class)->notifyExpiring())->everyMinute();

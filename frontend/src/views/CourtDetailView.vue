@@ -25,7 +25,7 @@ function openMaps(): void {
         <div>
           <h1 class="page-title">{{ court.name }}</h1>
           <p class="muted">{{ court.description || 'Sân cầu lông trong nhà với ánh sáng chuyên nghiệp và không gian thoải mái.' }}</p>
-          <div class="detail-stats"><span><strong>4.9</strong> đánh giá</span><span><strong>60 phút</strong> khung giờ</span><span><strong>06–23</strong> mở cửa</span></div>
+          <div class="detail-stats"><span><strong>{{ court.reviews_avg_rating ? Number(court.reviews_avg_rating).toFixed(1) : '—' }}</strong>{{ court.reviews_count || 0 }} đánh giá</span><span><strong>60 phút</strong> khung giờ</span><span><strong>06–23</strong> mở cửa</span></div>
           <div class="actions">
             <RouterLink :to="`/courts/${court.id}/schedule`" class="btn">Chọn giờ đặt <span class="material-symbols-outlined">arrow_forward</span></RouterLink>
             <button v-if="court.venue.google_maps_url" class="btn secondary" @click="openMaps">Mở Google Maps</button>

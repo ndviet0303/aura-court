@@ -4,13 +4,15 @@ import { api, apiOrigin, errorMessage } from '@/lib/api'
 import DatePicker from '@/components/DatePicker.vue'
 import { useAuthStore } from '@/stores/auth'
 
-type AdminReport = { bookings: number; confirmed: number; revenue: number; pendingRefunds: number }
+type AdminReport = { bookings: number; confirmed: number; revenue: number; pendingRefunds: number; occupancyRate?: number; byHour?: { hour: string; bookings: number }[] }
 type AdminBooking = { id: number; code: string; status: string; total_amount: number; user?: { name: string; email?: string }; court?: { name: string }; slots?: { starts_at: string }[] }
 type ReviewPayment = { id: number; amount: number; transfer_code?: string; booking?: { code: string; user?: { email: string }; court?: { name: string } } }
+type AuditLog = { id: number; action: string; user?: { name: string; email: string }; metadata?: Record<string, unknown>; created_at: string }
 
 const report = ref<AdminReport | null>(null)
 const bookings = ref<AdminBooking[]>([])
 const payments = ref<ReviewPayment[]>([])
+const auditLogs = ref<AuditLog[]>([])
 const from = ref('')
 const to = ref('')
 const status = ref('')
@@ -34,6 +36,7 @@ async function load() {
     report.value = await api.get<AdminReport>('/admin/reports?' + query)
     bookings.value = (await api.get<{ data: AdminBooking[] }>('/admin/bookings?' + query)).data
     payments.value = (await api.get<{ data: ReviewPayment[] }>('/admin/payments')).data
+    auditLogs.value = (await api.get<{ data: AuditLog[] }>('/admin/audit-logs')).data
   } catch (cause: unknown) {
     error.value = errorMessage(cause, 'Không tải được dữ liệu quản trị.')
   } finally {
@@ -75,8 +78,10 @@ onMounted(load)
       <div class="admin-form-grid compact"><label>Từ ngày<DatePicker v-model="from" /></label><label>Đến ngày<DatePicker v-model="to" /></label><label>Trạng thái<select v-model="status"><option value="">Tất cả</option><option value="pending_payment">Chờ thanh toán</option><option value="confirmed">Đã xác nhận</option><option value="cancelled">Đã hủy</option><option value="no_show">Vắng mặt</option></select></label><button class="btn" :disabled="loading">{{ loading ? 'Đang tải…' : 'Lọc' }}</button></div>
     </form>
     <p v-if="error" class="error">{{ error }}</p><p v-if="notice" class="notice">{{ notice }}</p>
-    <div v-if="report" class="grid"><div class="card"><p class="muted">Tổng lịch đặt</p><h2>{{ report.bookings }}</h2></div><div class="card"><p class="muted">Đã xác nhận</p><h2>{{ report.confirmed }}</h2></div><div class="card"><p class="muted">Doanh thu</p><h2>{{ money(report.revenue) }}</h2></div><div class="card"><p class="muted">Chờ hoàn</p><h2>{{ money(report.pendingRefunds) }}</h2></div></div>
+    <div v-if="report" class="grid"><div class="card"><p class="muted">Tổng lịch đặt</p><h2>{{ report.bookings }}</h2></div><div class="card"><p class="muted">Đã xác nhận</p><h2>{{ report.confirmed }}</h2></div><div class="card"><p class="muted">Doanh thu</p><h2>{{ money(report.revenue) }}</h2></div><div class="card"><p class="muted">Tỷ lệ lấp đầy</p><h2>{{ report.occupancyRate || 0 }}%</h2></div><div class="card"><p class="muted">Chờ hoàn</p><h2>{{ money(report.pendingRefunds) }}</h2></div></div>
+    <section v-if="report?.byHour?.length" class="card" style="margin-top:22px"><h2>Khung giờ phổ biến</h2><div class="price-list"><span v-for="item in report.byHour" :key="item.hour" class="badge">{{ item.hour }} · {{ item.bookings }} lượt</span></div></section>
     <section class="card" style="margin-top:22px"><h2>Giao dịch cần kiểm tra</h2><p v-if="!payments.length" class="muted">Không có giao dịch chờ xử lý.</p><div v-else class="table-wrap"><table class="table"><thead><tr><th>Mã đặt sân</th><th>Khách</th><th>Số tiền</th><th>Thao tác</th></tr></thead><tbody><tr v-for="payment in payments" :key="payment.id"><td>{{ payment.booking?.code || 'Không khớp' }}</td><td>{{ payment.booking?.user?.email || '—' }}</td><td>{{ money(payment.amount) }}</td><td class="actions"><button class="link-button" @click="reviewPayment(payment, 'paid')">Xác nhận</button><button class="link-button danger" @click="reviewPayment(payment, 'rejected')">Từ chối</button></td></tr></tbody></table></div></section>
     <section class="card" style="margin-top:22px"><h2>Lịch đặt sân gần đây</h2><div class="table-wrap"><table class="table"><thead><tr><th>Mã</th><th>Khách</th><th>Sân</th><th>Trạng thái</th><th>Tổng tiền</th><th></th></tr></thead><tbody><tr v-for="booking in bookings" :key="booking.id"><td>{{ booking.code }}</td><td>{{ booking.user?.name }}</td><td>{{ booking.court?.name }}</td><td>{{ statusLabel(booking.status) }}</td><td>{{ money(booking.total_amount) }}</td><td><button v-if="booking.status === 'confirmed'" class="link-button danger" @click="markNoShow(booking)">Vắng mặt</button></td></tr></tbody></table></div></section>
+    <section class="card" style="margin-top:22px"><h2>Nhật ký quản trị</h2><p v-if="!auditLogs.length" class="muted">Chưa có thao tác được ghi nhận.</p><div v-else class="table-wrap"><table class="table"><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody><tr v-for="log in auditLogs" :key="log.id"><td>{{ new Date(log.created_at).toLocaleString('vi-VN') }}</td><td>{{ log.user?.name || log.user?.email || '—' }}</td><td>{{ log.action }}</td><td>{{ JSON.stringify(log.metadata || {}) }}</td></tr></tbody></table></div></section>
   </section>
 </template>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
+use App\Notifications\AuraBookingNotification;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,12 @@ use Illuminate\Validation\ValidationException;
 
 class BookingService
 {
-    public function create(int $userId, int $courtId, array $startsAt): Booking
+    public function __construct(
+        private readonly DiscountService $discounts,
+        private readonly WaitlistService $waitlists,
+    ) {}
+
+    public function create(int $userId, int $courtId, array $startsAt, ?string $couponCode = null): Booking
     {
         if (count($startsAt) < 1 || count($startsAt) > 12) {
             throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 12 slot.']);
@@ -50,7 +56,7 @@ class BookingService
             ->firstOrFail();
         $booking = null;
         try {
-            $booking = DB::transaction(function () use ($userId, $court, $local) {
+            $booking = DB::transaction(function () use ($userId, $court, $local, $couponCode) {
                 $prices = $court->priceSlots()->where('is_active', true)->get();
                 $blocks = $court->blocks()->where(function ($query) use ($local) {
                     $query->where('starts_at', '<', $local->last()->copy()->addHour()->utc())
@@ -69,11 +75,16 @@ class BookingService
                     return [$time, (int) $price->price];
                 });
 
+                $subtotal = $resolved->sum(fn ($row) => $row[1]);
+                $discount = $this->discounts->reserve($userId, $subtotal, $couponCode);
                 $booking = Booking::create([
                     'code' => 'BK'.strtoupper(Str::random(12)),
                     'user_id' => $userId,
                     'court_id' => $court->id,
-                    'total_amount' => $resolved->sum(fn ($row) => $row[1]),
+                    'coupon_id' => $discount['coupon']?->id,
+                    'total_amount' => $discount['total'],
+                    'discount_amount' => $discount['discount'],
+                    'membership_discount_amount' => $discount['membership_discount'],
                     'status' => 'pending_payment',
                     'payment_expires_at' => now()->addMinutes(15),
                 ]);
@@ -89,7 +100,7 @@ class BookingService
                     ]);
                 }
 
-                return $booking->load(['court.venue', 'slots']);
+                return $booking->load(['user', 'court.venue', 'slots', 'coupon']);
             });
         } catch (QueryException $exception) {
             if (str_contains($exception->getMessage(), 'booking_slots_active_unique')
@@ -100,17 +111,66 @@ class BookingService
             throw $exception;
         }
 
+        $booking->user->notify(new AuraBookingNotification(
+            'booking_created',
+            'Lịch đặt sân đã được giữ',
+            "Booking {$booking->code} đã được giữ. Vui lòng hoàn tất thanh toán trước ".($booking->payment_expires_at?->setTimezone(config('app.timezone'))->format('H:i d/m')).'.',
+            '/payment/'.$booking->code,
+        ));
+
         return $booking;
     }
 
     public function expirePending(): int
     {
-        return DB::transaction(function () {
+        $result = DB::transaction(function () {
             $bookings = Booking::query()->where('status', 'pending_payment')
                 ->where('payment_expires_at', '<', now())->lockForUpdate()->get();
+            $slots = [];
             foreach ($bookings as $booking) {
+                $booking->loadMissing(['user', 'coupon', 'slots']);
+                foreach ($booking->slots->where('status', 'held') as $slot) {
+                    $slots[] = [$slot->court_id, $slot->starts_at];
+                }
                 $booking->update(['status' => 'expired']);
                 $booking->slots()->where('status', 'held')->update(['status' => 'expired']);
+                if ($booking->coupon_id && ! $booking->coupon_usage_released_at) {
+                    $this->discounts->release($booking->coupon);
+                    $booking->update(['coupon_usage_released_at' => now()]);
+                }
+            }
+
+            return ['count' => $bookings->count(), 'bookings' => $bookings, 'slots' => $slots];
+        });
+
+        foreach ($result['bookings'] as $booking) {
+            $booking->user->notify(new AuraBookingNotification(
+                'booking_expired',
+                'Phiên giữ sân đã hết hạn',
+                "Booking {$booking->code} đã hết thời gian thanh toán và được giải phóng.",
+                '/booking',
+            ));
+        }
+        $this->notifyWaitlist($result['slots']);
+
+        return $result['count'];
+    }
+
+    public function notifyExpiring(): int
+    {
+        return DB::transaction(function () {
+            $bookings = Booking::query()->with('user')->where('status', 'pending_payment')
+                ->whereNull('payment_expiring_notified_at')
+                ->whereBetween('payment_expires_at', [now(), now()->addMinutes(5)])
+                ->lockForUpdate()->get();
+            foreach ($bookings as $booking) {
+                $booking->update(['payment_expiring_notified_at' => now()]);
+                $booking->user->notify(new AuraBookingNotification(
+                    'booking_expiring',
+                    'Sắp hết thời gian giữ sân',
+                    "Booking {$booking->code} sẽ hết hạn thanh toán trong khoảng 5 phút.",
+                    '/payment/'.$booking->code,
+                ));
             }
 
             return $bookings->count();
@@ -127,16 +187,25 @@ class BookingService
             abort(409, 'Booking chỉ được hủy trước giờ chơi ít nhất 2 giờ.');
         }
 
-        return DB::transaction(function () use ($booking, $reason) {
+        $slotRefs = $booking->slots()->whereIn('status', ['held', 'confirmed'])->get()->map(fn (BookingSlot $slot) => [$slot->court_id, $slot->starts_at])->all();
+        $wasPending = $booking->status === 'pending_payment';
+        $result = DB::transaction(function () use ($booking, $reason, $wasPending) {
             $newStatus = $booking->status === 'confirmed' ? 'refund_pending' : 'cancelled';
             $booking->update(['status' => $newStatus, 'cancelled_at' => now(), 'cancellation_reason' => $reason]);
             $booking->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => 'cancelled']);
             if ($newStatus === 'refund_pending') {
                 $booking->refunds()->firstOrCreate(['status' => 'pending'], ['amount' => $booking->total_amount]);
             }
+            if ($wasPending && $booking->coupon_id && ! $booking->coupon_usage_released_at) {
+                $this->discounts->release($booking->coupon);
+                $booking->update(['coupon_usage_released_at' => now()]);
+            }
 
             return $booking->fresh(['court', 'slots', 'refunds']);
         });
+        $this->notifyWaitlist($slotRefs);
+
+        return $result;
     }
 
     public function cancelSlots(Booking $booking, array $slotIds, ?string $reason = null): Booking
@@ -157,13 +226,17 @@ class BookingService
             }
         }
 
-        return DB::transaction(function () use ($booking, $slots, $reason) {
+        $slotRefs = $slots->map(fn (BookingSlot $slot) => [$slot->court_id, $slot->starts_at])->all();
+        $result = DB::transaction(function () use ($booking, $slots, $reason) {
             $amount = $slots->sum('unit_price');
             $slots->each->update(['status' => 'cancelled']);
             $booking->refunds()->create(['amount' => $amount, 'status' => 'pending', 'note' => $reason]);
 
             return $booking->fresh(['court', 'slots', 'refunds']);
         });
+        $this->notifyWaitlist($slotRefs);
+
+        return $result;
     }
 
     public function createRecurring(int $userId, int $courtId, array $startsAt, int $weeks): array
@@ -202,5 +275,12 @@ class BookingService
 
             return $replacement;
         });
+    }
+
+    private function notifyWaitlist(array $slots): void
+    {
+        foreach ($slots as [$courtId, $startsAt]) {
+            $this->waitlists->notifyForSlot($courtId, $startsAt);
+        }
     }
 }

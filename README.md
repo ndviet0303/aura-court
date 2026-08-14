@@ -28,6 +28,8 @@ API root trả JSON trạng thái, còn toàn bộ endpoint phiên bản hiện 
 - Thanh toán QR VietQR/SePay, webhook xác nhận và polling trạng thái thanh toán.
 - Trang lịch sử đặt sân, hồ sơ và thông báo lỗi 404.
 - Khu vực quản trị: CRUD sân, giá theo khung giờ, khóa sân, quản lý booking/thanh toán, hoàn tiền và báo cáo CSV.
+- Danh sách chờ theo slot, thông báo email/in-app, coupon và membership giảm giá.
+- Xuất lịch đặt sân dạng Google Calendar/iCal, đánh giá sân, dashboard occupancy theo giờ và audit log quản trị.
 - Tài khoản demo quản trị được mô phỏng trong phiên; thao tác quản trị demo được rollback để không phá dữ liệu thật.
 
 ## Chạy backend local
@@ -184,6 +186,7 @@ Frontend:
 cd frontend
 npm run type-check
 npm run test:unit -- --run
+npm run test:e2e
 npm run build
 npx wrangler deploy --dry-run
 ```
