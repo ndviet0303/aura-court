@@ -32,7 +32,7 @@ build_api:
     - mkdir -p .docker/cache
   script:
     - echo "Logging into GitLab Container Registry..."
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
+    - echo "$DEPLOY_PASSWORD" | docker login -u "$DEPLOY_USERNAME" --password-stdin "$DOCKER_REGISTRY"
     - |
       docker build \
         --platform="$DOCKER_PLATFORM" \
