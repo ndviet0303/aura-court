@@ -49,11 +49,12 @@ SMTP Brevo dùng cho email reset mật khẩu. SePay dùng cho webhook và trạ
 
 ## Worker và scheduler
 
-Redis không được dùng. Queue dùng database:
+Cache, queue, distributed locks, và pub/sub dùng Redis quản lý:
 
 ```bash
-php artisan queue:work --sleep=3 --tries=3 --timeout=90
+php artisan queue:work redis --sleep=3 --tries=3 --timeout=90
 php artisan schedule:work
+php artisan realtime:work
 ```
 
 Scheduler tự giải phóng booking đang giữ quá hạn.

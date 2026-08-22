@@ -96,5 +96,6 @@ export const apiV2 = {
   get: <T>(path: string) => requestAt<T>(apiV2Url(path)),
   post: <T>(path: string, body?: unknown, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'POST', body: body ? JSON.stringify(body) : undefined, headers: { 'Idempotency-Key': key } }),
   patch: <T>(path: string, body: unknown, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'PATCH', body: JSON.stringify(body), headers: { 'Idempotency-Key': key } }),
+  put: <T>(path: string, body: unknown, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'PUT', body: JSON.stringify(body), headers: { 'Idempotency-Key': key } }),
   delete: <T>(path: string, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'DELETE', headers: { 'Idempotency-Key': key } }),
 }

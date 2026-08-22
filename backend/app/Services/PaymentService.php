@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
+    public function __construct(private readonly FinancialPostingService $financials) {}
+
     public function qrPayload(Booking $booking): array
     {
         $account = config('services.sepay.account');
@@ -47,6 +49,8 @@ class PaymentService
             if ($valid) {
                 $booking->update(['status' => 'confirmed']);
                 $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
+                $payment->loadMissing('booking.court.venue');
+                $this->financials->postLegacyBookingPayment($booking->fresh(['court.venue']), $payment);
                 $confirmedBooking = $booking->fresh(['user', 'court']);
             }
         });

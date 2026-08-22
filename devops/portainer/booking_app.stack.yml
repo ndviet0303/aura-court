@@ -18,8 +18,28 @@ x-booking-runtime-environment: &booking-runtime-environment
   DB_PORT: ${DB_PORT:-5432}
   DB_USERNAME: ${DB_USERNAME}
   DB_PASSWORD: ${DB_PASSWORD}
-  CACHE_STORE: ${CACHE_STORE:-database}
-  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+  CACHE_STORE: ${CACHE_STORE:-redis}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
+  REDIS_CLIENT: ${REDIS_CLIENT:-phpredis}
+  REDIS_URL: ${REDIS_URL}
+  REDIS_HOST: ${REDIS_HOST}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  REDIS_PASSWORD: ${REDIS_PASSWORD}
+  REDIS_DB: ${REDIS_DB:-0}
+  REDIS_CACHE_DB: ${REDIS_CACHE_DB:-1}
+  REDIS_QUEUE: ${REDIS_QUEUE:-default}
+  PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-payos}
+  PAYOS_BASE_URL: ${PAYOS_BASE_URL:-https://api-merchant.payos.vn}
+  PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID}
+  PAYOS_API_KEY: ${PAYOS_API_KEY}
+  PAYOS_WEBHOOK_SECRET: ${PAYOS_WEBHOOK_SECRET}
+  PLATFORM_COMMISSION_BPS: ${PLATFORM_COMMISSION_BPS:-500}
+  PAYMENT_PROVIDER_FEE_BPS: ${PAYMENT_PROVIDER_FEE_BPS:-0}
+  MINIMUM_PAYOUT_AMOUNT: ${MINIMUM_PAYOUT_AMOUNT:-500000}
+  SETTLEMENT_DELAY_DAYS: ${SETTLEMENT_DELAY_DAYS:-2}
+  FEATURE_MARKETPLACE_PAYOUTS: ${FEATURE_MARKETPLACE_PAYOUTS:-false}
+  PILOT_ORGANIZATION_IDS: ${PILOT_ORGANIZATION_IDS}
+  OBSERVABILITY_LOG_CHANNEL: ${OBSERVABILITY_LOG_CHANNEL:-structured}
   MAIL_MAILER: ${MAIL_MAILER:-smtp}
   MAIL_HOST: ${MAIL_HOST}
   MAIL_PORT: ${MAIL_PORT:-587}
@@ -68,6 +88,18 @@ services:
     restart: unless-stopped
     working_dir: /app/booking-api
     command: php artisan schedule:work
+    environment: *booking-runtime-environment
+    healthcheck:
+      disable: true
+    networks:
+      - production
+
+  booking-realtime:
+    image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
+    container_name: booking-realtime
+    restart: unless-stopped
+    working_dir: /app/booking-api
+    command: php artisan realtime:work
     environment: *booking-runtime-environment
     healthcheck:
       disable: true

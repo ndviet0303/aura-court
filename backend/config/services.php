@@ -25,6 +25,18 @@ return [
         'hmac_secret' => env('SEPAY_HMAC_SECRET'),
     ],
 
+    'payments' => [
+        'default_provider' => env('PAYMENT_PROVIDER', 'payos'),
+    ],
+
+    'payos' => [
+        'base_url' => env('PAYOS_BASE_URL', 'https://api-merchant.payos.vn'),
+        'client_id' => env('PAYOS_CLIENT_ID'),
+        'api_key' => env('PAYOS_API_KEY'),
+        'webhook_secret' => env('PAYOS_WEBHOOK_SECRET'),
+        'timeout' => env('PAYOS_TIMEOUT', 10),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

@@ -6,6 +6,7 @@ services:
     env_file: ./backend/.env
     depends_on:
       db: { condition: service_healthy }
+      redis: { condition: service_healthy }
     volumes:
       - laravel_storage:/var/www/html/storage
     restart: unless-stopped
@@ -16,7 +17,7 @@ services:
       dockerfile: Dockerfile
     env_file: ./backend/.env
     command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
-    depends_on: [app, db]
+    depends_on: [app, db, redis]
     volumes:
       - laravel_storage:/var/www/html/storage
     restart: unless-stopped
@@ -27,7 +28,18 @@ services:
       dockerfile: Dockerfile
     env_file: ./backend/.env
     command: php artisan schedule:work
-    depends_on: [app, db]
+    depends_on: [app, db, redis]
+    volumes:
+      - laravel_storage:/var/www/html/storage
+    restart: unless-stopped
+
+  realtime:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file: ./backend/.env
+    command: php artisan realtime:work
+    depends_on: [app, redis]
     volumes:
       - laravel_storage:/var/www/html/storage
     restart: unless-stopped
@@ -46,6 +58,18 @@ services:
       retries: 10
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes: [booking_redisdata:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   booking_pgdata:
   laravel_storage:
+  booking_redisdata:

@@ -1,0 +1,28 @@
+groups:
+  - name: aura-court-marketplace
+    rules:
+      - alert: AuraCourtApiErrorRateHigh
+        expr: sum(rate({app="aura-court"}[5m]) * on (level) (level="error")) > 0.01
+        for: 3m
+        labels: { severity: warning }
+        annotations: { summary: "Aura Court API error rate is elevated" }
+      - alert: AuraCourtQueueLag
+        expr: aura_court_queue_depth{queue="default"} > 30
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Aura Court queue lag exceeds pilot threshold" }
+      - alert: AuraCourtWebhookFailures
+        expr: increase(aura_court_webhook_verification_failed_total[5m]) > 5
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "Payment webhook verification failures detected" }
+      - alert: AuraCourtPayoutMismatch
+        expr: abs(aura_court_reconciliation_mismatch_vnd) > 0
+        for: 15m
+        labels: { severity: critical }
+        annotations: { summary: "Payout reconciliation mismatch remains unresolved" }
+      - alert: AuraCourtLockContention
+        expr: increase(aura_court_lock_contention_total[5m]) > 5
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Reservation or financial lock contention is elevated" }

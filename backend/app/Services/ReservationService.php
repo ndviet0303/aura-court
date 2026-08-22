@@ -170,6 +170,7 @@ class ReservationService
             $message = strtolower($exception->getMessage());
             if (str_contains($message, 'reservation_entitlements_active_unique')
                 || (str_contains($message, 'reservation_entitlements') && str_contains($message, 'unique'))) {
+                app(ObservabilityService::class)->metric('reservation.overbooking_conflict');
                 abort(409, 'The selected court-time is no longer available.');
             }
             throw $exception;

@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Venue;
 use App\Services\AuditLogger;
+use App\Services\FinancialPostingService;
 use App\Services\PaymentService;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class AdminController extends Controller
     public function __construct(
         private readonly AuditLogger $audits,
         private readonly PaymentService $paymentsService,
+        private readonly FinancialPostingService $financials,
     ) {}
 
     public function venues()
@@ -219,6 +221,10 @@ class AdminController extends Controller
         if ($data['status'] === 'processed') {
             $hasActiveSlots = $refund->booking->slots()->whereIn('status', ['held', 'confirmed'])->exists();
             $refund->booking()->update(['status' => $hasActiveSlots ? 'confirmed' : 'refunded']);
+            $organizationId = $refund->booking->loadMissing('court.venue')->court?->venue?->organization_id;
+            if ($organizationId) {
+                $this->financials->postRefund($organizationId, $refund->booking->code, (int) $refund->amount, (string) $refund->id, ['legacy_refund_id' => $refund->id]);
+            }
         } else {
             $hasActiveSlots = $refund->booking->slots()->whereIn('status', ['held', 'confirmed'])->exists();
             $refund->booking()->update(['status' => $hasActiveSlots ? 'confirmed' : 'cancelled']);
