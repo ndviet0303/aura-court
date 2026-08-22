@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -38,6 +39,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === 'admin';
     }
 
+    public function isPlatformAdmin(): bool
+    {
+        return $this->role === 'platform_admin' || $this->role === 'admin';
+    }
+
     public function isDemo(): bool
     {
         return str_ends_with(strtolower($this->email), '@demo.auracourt.vn');
@@ -46,6 +52,36 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new ResetPasswordNotification($token));
+    }
+
+    public function organizationMembers(): HasMany
+    {
+        return $this->hasMany(OrganizationMember::class);
+    }
+
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'organization_members')
+            ->withPivot(['role', 'permissions', 'status'])
+            ->withTimestamps();
+    }
+
+    public function roleInOrganization(int $organizationId): ?string
+    {
+        $member = $this->organizationMembers()
+            ->where('organization_id', $organizationId)
+            ->where('status', 'active')
+            ->first();
+
+        return $member?->role;
+    }
+
+    public function hasRoleInOrganization(int $organizationId, string|array $roles): bool
+    {
+        $roles = (array) $roles;
+        $currentRole = $this->roleInOrganization($organizationId);
+
+        return $currentRole !== null && in_array($currentRole, $roles, true);
     }
 
     public function bookings(): HasMany

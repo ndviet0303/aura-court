@@ -6,11 +6,16 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CourtController;
+use App\Http\Controllers\LegacyBookingAdapterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SepayWebhookController;
+use App\Http\Controllers\V2PriceRuleController;
+use App\Http\Controllers\V2ReservationController;
 use App\Http\Controllers\WaitlistController;
+use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -48,6 +53,8 @@ Route::prefix('v1')->group(function () {
         Route::post('bookings', [BookingController::class, 'store'])->middleware('verified');
         Route::post('bookings/recurring', [BookingController::class, 'recurring'])->middleware('verified');
         Route::get('bookings/{booking:code}', [BookingController::class, 'show']);
+        Route::post('bookings/{booking:code}/sync-v2', [LegacyBookingAdapterController::class, 'sync']);
+        Route::get('legacy/reservations/{reservation}', [LegacyBookingAdapterController::class, 'projection']);
         Route::post('bookings/{booking:code}/cancel', [BookingController::class, 'cancel']);
         Route::post('bookings/{booking:code}/cancel-slots', [BookingController::class, 'cancelSlots']);
         Route::post('bookings/{booking:code}/reschedule', [BookingController::class, 'reschedule']);
@@ -64,6 +71,15 @@ Route::prefix('v1')->group(function () {
         Route::post('coupons/preview', [PromotionController::class, 'preview']);
         Route::get('membership', [PromotionController::class, 'membership']);
         Route::post('reviews', [ReviewController::class, 'store']);
+
+        // Organizations endpoints
+        Route::get('organizations', [OrganizationController::class, 'index']);
+        Route::get('organizations/{organization}', [OrganizationController::class, 'show']);
+        Route::patch('organizations/{organization}', [OrganizationController::class, 'update']);
+        Route::get('organizations/{organization}/members', [OrganizationController::class, 'members']);
+        Route::post('organizations/{organization}/members', [OrganizationController::class, 'addMember']);
+        Route::patch('organizations/{organization}/members/{member}', [OrganizationController::class, 'updateMemberRole']);
+        Route::delete('organizations/{organization}/members/{member}', [OrganizationController::class, 'removeMember']);
 
         Route::prefix('admin')->middleware(['admin', SimulateDemoMutations::class])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
@@ -93,5 +109,32 @@ Route::prefix('v1')->group(function () {
             Route::post('membership-plans', [PromotionController::class, 'storePlan']);
             Route::post('memberships', [PromotionController::class, 'assignMembership']);
         });
+    });
+});
+
+// v2 API Route Group with Tenant Isolation Middleware
+Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('organizations', [OrganizationController::class, 'index']);
+        Route::get('organizations/{organization}', [OrganizationController::class, 'show']);
+        Route::patch('organizations/{organization}', [OrganizationController::class, 'update']);
+        Route::get('organizations/{organization}/members', [OrganizationController::class, 'members']);
+        Route::post('organizations/{organization}/members', [OrganizationController::class, 'addMember']);
+        Route::patch('organizations/{organization}/members/{member}', [OrganizationController::class, 'updateMemberRole']);
+        Route::delete('organizations/{organization}/members/{member}', [OrganizationController::class, 'removeMember']);
+
+        // Reservation commands are the canonical v2 write path. Each command
+        // controller delegates to IdempotencyService and persists its outcome.
+        Route::get('reservations', [V2ReservationController::class, 'index']);
+        Route::post('price-quotes', [V2ReservationController::class, 'quote']);
+        Route::get('price-rules', [V2PriceRuleController::class, 'index']);
+        Route::get('pricing/calendar', [V2ReservationController::class, 'pricingCalendar']);
+        Route::post('price-rules', [V2PriceRuleController::class, 'store']);
+        Route::patch('price-rules/{rule}', [V2PriceRuleController::class, 'update']);
+        Route::delete('price-rules/{rule}', [V2PriceRuleController::class, 'destroy']);
+        Route::post('reservations', [V2ReservationController::class, 'store']);
+        Route::get('reservations/{reservation}', [V2ReservationController::class, 'show']);
+        Route::post('reservations/{reservation}/confirm', [V2ReservationController::class, 'confirm']);
+        Route::post('reservations/{reservation}/cancel', [V2ReservationController::class, 'cancel']);
     });
 });

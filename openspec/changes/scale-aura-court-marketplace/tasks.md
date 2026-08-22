@@ -1,34 +1,34 @@
 ## 1. Phase 0 — Readiness gate
 
-- [ ] 1.1 Define the PSP capability test matrix for collection, verified webhooks, refunds, beneficiary/KYC onboarding, payouts, status retrieval, and idempotency.
-- [ ] 1.2 Execute the selected PSP sandbox tests and record a finance/compliance go-no-go decision with accountable operating owners.
-- [ ] 1.3 Produce payment, KYC, payout-failure, reconciliation, and incident exception runbooks.
-- [ ] 1.4 Inventory legacy venue, court, booking, payment, coupon, membership, and notification data; define organization backfill mappings and reconciliation checksums.
-- [ ] 1.5 Rehearse the expand-contract migration and rollback against a production-like data copy; verify `/api/v1` historical booking responses.
-- [ ] 1.6 Build repeatable load and concurrency suites for read peak, booking/payment writes, 2,000 sessions, and 100-way court-time contention.
-- [ ] 1.7 Rehearse PostgreSQL backup/restore and record RPO/RTO evidence.
-- [ ] 1.8 Define pilot cohort approvals, feature-flag ownership, SLO dashboards, alerts, and phase-entry review templates.
+- [x] 1.1 Define the PSP capability test matrix for collection, verified webhooks, refunds, beneficiary/KYC onboarding, payouts, status retrieval, and idempotency.
+- [x] 1.2 Execute the selected PSP sandbox tests and record a finance/compliance go-no-go decision with accountable operating owners.
+- [x] 1.3 Produce payment, KYC, payout-failure, reconciliation, and incident exception runbooks.
+- [x] 1.4 Inventory legacy venue, court, booking, payment, coupon, membership, and notification data; define organization backfill mappings and reconciliation checksums.
+- [x] 1.5 Rehearse the expand-contract migration and rollback against a production-like data copy; verify `/api/v1` historical booking responses.
+- [x] 1.6 Build repeatable load and concurrency suites for read peak, booking/payment writes, 2,000 sessions, and 100-way court-time contention.
+- [x] 1.7 Rehearse PostgreSQL backup/restore and record RPO/RTO evidence.
+- [x] 1.8 Define pilot cohort approvals, feature-flag ownership, SLO dashboards, alerts, and phase-entry review templates.
 
 ## 2. Phase 1 — Organization and access foundation
 
-- [ ] 2.1 Add organization, organization-member, role, and venue/court ownership schema with reversible migrations and legacy backfill support.
-- [ ] 2.2 Define and enforce the organization role-permission matrix for owner, venue manager, cashier, staff, customer, and platform administrator.
-- [ ] 2.3 Add organization resolution to authenticated requests, jobs, exports, cache keys, and realtime channel authorization.
-- [ ] 2.4 Configure a non-owner application database role, transaction-scoped tenant context, and PostgreSQL RLS policies for tenant-owned tables.
-- [ ] 2.5 Add the audited elevated platform-administration path for finance, KYC, and operational exceptions.
-- [ ] 2.6 Build organization owner views for profile, venue, court, operating hours, closures, employees, and role-managed access.
-- [ ] 2.7 Add automated tenant-isolation and role-matrix tests for HTTP endpoints, raw data access, jobs, exports, cache keys, and realtime channels.
+- [x] 2.1 Add organization, organization-member, role, and venue/court ownership schema with reversible migrations and legacy backfill support.
+- [x] 2.2 Define and enforce the organization role-permission matrix for owner, venue manager, cashier, staff, customer, and platform administrator.
+- [x] 2.3 Add organization resolution to authenticated requests, jobs, exports, cache keys, and realtime channel authorization.
+- [x] 2.4 Configure a non-owner application database role, transaction-scoped tenant context, and PostgreSQL RLS policies for tenant-owned tables.
+- [x] 2.5 Add the audited elevated platform-administration path for finance, KYC, and operational exceptions.
+- [x] 2.6 Build organization owner views for profile, venue, court, operating hours, closures, employees, and role-managed access.
+- [x] 2.7 Add automated tenant-isolation and role-matrix tests for HTTP endpoints, raw data access, jobs, exports, cache keys, and realtime channels.
 
 ## 3. Phase 1 — V2 reservations, pricing, and compatibility
 
-- [ ] 3.1 Add v2 reservation, reservation-slot, entitlement, price-rule, price-quote, and idempotency-record schemas with organization ownership.
-- [ ] 3.2 Implement price-rule precedence, quote expiry, and immutable accepted-quote snapshots.
-- [ ] 3.3 Implement v2 reservation holds and confirmation using PostgreSQL transactions and active-inventory uniqueness constraints.
-- [ ] 3.4 Implement durable `Idempotency-Key` handling for every v2 state-changing command, including replay and request-hash conflict responses.
-- [ ] 3.5 Backfill legacy booking history into compatibility mappings; validate record counts, amounts, ownership, and slot history.
-- [ ] 3.6 Build the `/api/v1` adapter/projection for supported legacy reads and commands backed by the canonical v2 write path.
-- [ ] 3.7 Build owner pricing calendar and customer reservation/quote views against `/api/v2`.
-- [ ] 3.8 Add API, migration, pricing, idempotency, and concurrent-inventory integration tests.
+- [x] 3.1 Add v2 reservation, reservation-slot, entitlement, price-rule, price-quote, and idempotency-record schemas with organization ownership.
+- [x] 3.2 Implement price-rule precedence, quote expiry, and immutable accepted-quote snapshots.
+- [x] 3.3 Implement v2 reservation holds and confirmation using PostgreSQL transactions and active-inventory uniqueness constraints.
+- [x] 3.4 Implement durable `Idempotency-Key` handling for every v2 state-changing command, including replay and request-hash conflict responses.
+- [x] 3.5 Backfill legacy booking history into compatibility mappings; validate record counts, amounts, ownership, and slot history.
+- [x] 3.6 Build the `/api/v1` adapter/projection for supported legacy reads and commands backed by the canonical v2 write path.
+- [x] 3.7 Build owner pricing calendar and customer reservation/quote views against `/api/v2`.
+- [x] 3.8 Add API, migration, pricing, idempotency, and concurrent-inventory integration tests.
 
 ## 4. Phase 1 — Financial and asynchronous foundation
 
