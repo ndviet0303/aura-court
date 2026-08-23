@@ -13,21 +13,26 @@ export const useBookingStore = defineStore('booking', () => {
   const current = ref<Booking | null>(null)
   const payment = ref<PaymentInfo | null>(null)
   const error = ref('')
+  const loading = ref(false)
 
   async function loadCourts() {
     error.value = ''
+    loading.value = true
     try {
       courts.value = await api.get<Court[]>('/courts')
     } catch (cause) {
       courts.value = []
       error.value = 'Không thể tải danh sách sân. Vui lòng thử lại.'
       throw cause
+    } finally {
+      loading.value = false
     }
   }
 
   async function loadAvailability(courtId: number, date: string) {
     selectedCourt.value = courtId
     error.value = ''
+    loading.value = true
     try {
       slots.value = await api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`)
     } catch (cause) {
@@ -35,6 +40,7 @@ export const useBookingStore = defineStore('booking', () => {
       error.value = 'Không thể tải lịch sân. Vui lòng thử lại.'
       throw cause
     } finally {
+      loading.value = false
       selectedSlots.value = []
     }
   }
@@ -91,5 +97,5 @@ export const useBookingStore = defineStore('booking', () => {
     return api.post<{ status: string; booking: Booking }>(`/bookings/${payment.value.code}/demo-pay`)
   }
 
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay }
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay }
 })

@@ -1,10 +1,14 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import DatePicker from '../DatePicker.vue'
+import { i18n } from '@/i18n'
 
 describe('DatePicker', () => {
   it('renders a themed calendar and emits the selected date', async () => {
-    const wrapper = mount(DatePicker, { props: { modelValue: '2026-08-03' } })
+    const wrapper = mount(DatePicker, {
+      props: { modelValue: '2026-08-03' },
+      global: { plugins: [i18n] },
+    })
 
     expect(wrapper.get('.date-picker-trigger').text()).toContain('03/08/2026')
     await wrapper.get('.date-picker-trigger').trigger('click')

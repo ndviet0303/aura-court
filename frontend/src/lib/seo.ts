@@ -1,7 +1,5 @@
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-
-const defaultTitle = 'Aura Court | Đặt sân cầu lông trực tuyến'
-const defaultDescription = 'Xem sân còn trống, chọn khung giờ yêu thích và đặt sân cầu lông trong vài giây.'
+import { i18n } from '@/i18n'
 
 function setMeta(attribute: 'name' | 'property', key: string, content: string): void {
   let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`)
@@ -24,8 +22,23 @@ function setCanonical(url: string): void {
 }
 
 export function applySeo(route: RouteLocationNormalizedLoaded): void {
-  const title = typeof route.meta.title === 'string' ? route.meta.title : defaultTitle
-  const description = typeof route.meta.description === 'string' ? route.meta.description : defaultDescription
+  const t = i18n.global.t
+
+  let title = t('seo.homeTitle')
+  let description = t('seo.homeDesc')
+
+  if (typeof route.meta.titleKey === 'string') {
+    title = t(route.meta.titleKey)
+  } else if (typeof route.meta.title === 'string') {
+    title = route.meta.title
+  }
+
+  if (typeof route.meta.descriptionKey === 'string') {
+    description = t(route.meta.descriptionKey)
+  } else if (typeof route.meta.description === 'string') {
+    description = route.meta.description
+  }
+
   const indexable = route.meta.indexable !== false
   const canonical = new URL(route.path, window.location.origin).toString()
 

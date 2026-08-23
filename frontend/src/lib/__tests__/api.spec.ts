@@ -7,7 +7,8 @@ describe('API CSRF recovery', () => {
   })
 
   it('refreshes the CSRF cookie and retries a 419 response once', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+    let bookingCalls = 0
+    const fetchMock = vi.fn<typeof fetch>(async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
       const url = String(input)
 
       if (url === '/runtime-config.json') {
@@ -23,12 +24,14 @@ describe('API CSRF recovery', () => {
         return new Response(null, { status: 204 })
       }
 
-      const bookingAttempts = fetchMock.mock.calls.filter(([request]) => String(request).endsWith('/api/v1/bookings')).length
+      if (url.endsWith('/api/v1/bookings')) {
+        bookingCalls += 1
+      }
 
       return new Response(
-        JSON.stringify(bookingAttempts === 1 ? { message: 'CSRF token mismatch.' } : { ok: true }),
+        JSON.stringify(bookingCalls === 1 ? { message: 'CSRF token mismatch.' } : { ok: true }),
         {
-          status: bookingAttempts === 1 ? 419 : 200,
+          status: bookingCalls === 1 ? 419 : 200,
           headers: { 'Content-Type': 'application/json' },
         },
       )

@@ -1,3 +1,5 @@
+import { getCurrentLocale } from '@/i18n'
+
 export type ApiError = { message: string; errors?: Record<string, string[]> }
 
 const buildApiOrigin = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -48,15 +50,12 @@ function sendTo(url: string, options: RequestInit): Promise<Response> {
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      'Accept-Language': getCurrentLocale(),
       ...xsrfHeader(),
       ...options.headers,
     },
     ...options,
   })
-}
-
-function send(path: string, options: RequestInit): Promise<Response> {
-  return sendTo(apiUrl(path), options)
 }
 
 async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> {

@@ -1,15 +1,24 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+</script>
+
 <template>
-  <div class="about">
-    <h1>Giới thiệu Aura Court</h1>
+  <div class="page-shell about">
+    <div class="eyebrow">{{ t('common.appName') }}</div>
+    <h1 class="page-title">{{ t('home.heroTitle') }} {{ t('home.heroTitleEmphasis') }}</h1>
+    <p class="muted" style="max-width: 600px; margin-top: 14px;">
+      {{ t('home.heroSubtitle') }}
+    </p>
   </div>
 </template>
 
-<style>
-@media (min-width: 1024px) {
-  .about {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
+<style scoped>
+.about {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 </style>

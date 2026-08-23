@@ -1,17 +1,47 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/lib/api'
 import { useBookingStore } from '@/stores/booking'
+import { formatCurrency } from '@/i18n'
+import AuraLoading from '@/components/AuraLoading.vue'
 
-const store = useBookingStore(); const route = useRoute(); const payment = computed(() => store.payment); const status = ref('pending_payment'); const error = ref(''); const demoLoading = ref(false); const demoMode = import.meta.env.DEV; let timer: number | undefined
-const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
-const statusLabel = computed(() => ({ pending_payment: 'Chờ thanh toán', confirmed: 'Đã thanh toán', expired: 'Đã hết hạn', cancelled: 'Đã hủy', refunded: 'Đã hoàn tiền' }[status.value] || status.value))
-async function demoPay() { demoLoading.value = true; error.value = ''; try { const result = await store.demoPay(); status.value = result.status } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể xác nhận thanh toán demo.') } finally { demoLoading.value = false } }
+const { t } = useI18n()
+const store = useBookingStore()
+const route = useRoute()
+const payment = computed(() => store.payment)
+const status = ref('pending_payment')
+const error = ref('')
+const demoLoading = ref(false)
+const demoMode = import.meta.env.DEV
+let timer: number | undefined
+
+const statusLabel = computed(() => t(`common.status.${status.value}`, status.value))
+
+async function demoPay() {
+  demoLoading.value = true
+  error.value = ''
+  try {
+    const result = await store.demoPay()
+    status.value = result.status
+  } catch (cause: unknown) {
+    error.value = errorMessage(cause, t('common.error'))
+  } finally {
+    demoLoading.value = false
+  }
+}
 
 async function poll() {
-  try { const result = await store.refreshPaymentStatus(); if (result) { status.value = result.status; if (['confirmed', 'expired', 'cancelled', 'refunded'].includes(result.status) && timer) window.clearInterval(timer) } }
-  catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể cập nhật trạng thái thanh toán.') }
+  try {
+    const result = await store.refreshPaymentStatus()
+    if (result) {
+      status.value = result.status
+      if (['confirmed', 'expired', 'cancelled', 'refunded'].includes(result.status) && timer) window.clearInterval(timer)
+    }
+  } catch (cause: unknown) {
+    error.value = errorMessage(cause, t('common.error'))
+  }
 }
 
 onMounted(async () => {
@@ -24,9 +54,60 @@ onMounted(async () => {
     }
     await poll()
     if (status.value === 'pending_payment') timer = window.setInterval(poll, 5000)
-  } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tải phiên thanh toán.') }
+  } catch (cause: unknown) {
+    error.value = errorMessage(cause, t('common.error'))
+  }
 })
 onUnmounted(() => { if (timer) window.clearInterval(timer) })
 </script>
 
-<template><section class="page-shell"><div class="eyebrow">Thanh toán an toàn</div><h1 class="page-title">Xác nhận và thanh toán.</h1><div v-if="payment" class="panel payment"><div class="demo-payment-warning" role="alert"><strong>Thanh toán trong bản demo</strong><span>QR và trạng thái bên dưới chỉ dùng để minh họa. Không chuyển tiền thật.</span></div><span class="badge" :class="{ 'badge-success': status === 'confirmed', 'badge-danger': ['expired','cancelled'].includes(status) }">{{ statusLabel }}</span><h2>{{ money(payment.amount) }}</h2><p class="muted">{{ status === 'confirmed' ? 'Thanh toán đã được xác nhận.' : 'Quét QR bằng ứng dụng ngân hàng và nhập đúng nội dung chuyển khoản.' }}</p><img :src="payment.qrUrl" alt="QR minh họa thanh toán Aura Court"/><div class="panel" style="text-align:left;background:#f8f9fa"><div class="row"><span class="muted">Ngân hàng</span><strong>{{ payment.bank }}</strong></div><div class="row"><span class="muted">Số tài khoản</span><strong>{{ payment.accountNumber || 'Chưa cấu hình' }}</strong></div><div class="row"><span class="muted">Nội dung</span><strong>{{ payment.code }}</strong></div></div><button v-if="demoMode && status === 'pending_payment'" class="btn secondary" style="margin-top:18px" :disabled="demoLoading" @click="demoPay">{{ demoLoading ? 'Đang xác nhận…' : 'Demo: đã thanh toán thành công' }}</button><p v-if="demoMode && status === 'pending_payment'" class="muted" style="margin-top:8px">Chỉ hiển thị ở môi trường phát triển.</p><p v-if="error" class="error">{{ error }}</p><RouterLink to="/booking" class="btn" style="display:inline-block;margin-top:18px">Xem lịch đã đặt</RouterLink></div><div v-else class="panel payment"><h2>Chưa có phiên thanh toán</h2><p class="muted">Hãy chọn sân và khung giờ trước.</p><RouterLink to="/courts" class="btn">Chọn sân</RouterLink></div></section></template>
+<template>
+  <section class="page-shell">
+    <div class="eyebrow">{{ t('payment.eyebrow') }}</div>
+    <h1 class="page-title">{{ t('payment.title') }}</h1>
+    <div v-if="payment" class="panel payment">
+      <div class="demo-payment-warning" role="alert">
+        <strong>{{ t('payment.demoWarningTitle') }}</strong>
+        <span>{{ t('payment.demoWarningDesc') }}</span>
+      </div>
+      <span class="badge" :class="{ 'badge-success': status === 'confirmed', 'badge-danger': ['expired','cancelled'].includes(status) }">
+        {{ statusLabel }}
+      </span>
+      <h2>{{ formatCurrency(payment.amount) }}</h2>
+      <p class="muted">
+        {{ status === 'confirmed' ? t('payment.confirmedDesc') : t('payment.pendingDesc') }}
+      </p>
+      <img :src="payment.qrUrl" :alt="t('payment.title')" />
+      <div class="panel" style="text-align:left;background:#f8f9fa">
+        <div class="row">
+          <span class="muted">{{ t('payment.bank') }}</span>
+          <strong>{{ payment.bank }}</strong>
+        </div>
+        <div class="row">
+          <span class="muted">{{ t('payment.accountNumber') }}</span>
+          <strong>{{ payment.accountNumber || t('payment.notConfigured') }}</strong>
+        </div>
+        <div class="row">
+          <span class="muted">{{ t('payment.transferContent') }}</span>
+          <strong>{{ payment.code }}</strong>
+        </div>
+      </div>
+      <button v-if="demoMode && status === 'pending_payment'" class="btn secondary" style="margin-top:18px; display:inline-flex; align-items:center; justify-content:center; gap:8px;" :disabled="demoLoading" @click="demoPay">
+        <AuraLoading v-if="demoLoading" size="sm" :showLogo="false" style="padding:0" />
+        <span>{{ demoLoading ? t('payment.demoProcessing') : t('payment.demoPayBtn') }}</span>
+      </button>
+      <p v-if="demoMode && status === 'pending_payment'" class="muted" style="margin-top:8px">
+        {{ t('payment.demoOnlyNote') }}
+      </p>
+      <p v-if="error" class="error">{{ error }}</p>
+      <RouterLink to="/booking" class="btn" style="display:inline-block;margin-top:18px">
+        {{ t('payment.viewBookings') }}
+      </RouterLink>
+    </div>
+    <div v-else class="panel payment">
+      <h2>{{ t('payment.noPaymentSession') }}</h2>
+      <p class="muted">{{ t('payment.noPaymentDesc') }}</p>
+      <RouterLink to="/courts" class="btn">{{ t('payment.chooseCourt') }}</RouterLink>
+    </div>
+  </section>
+</template>
