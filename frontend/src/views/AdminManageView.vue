@@ -853,9 +853,10 @@ onMounted(load)
             </div>
 
             <div class="aura-field">
-              <label class="aura-label">
-                <span>Cụm sân trực thuộc <span class="text-pink">*</span></span>
-              </label>
+              <div class="aura-label-row">
+                <span class="aura-label">Cụm sân trực thuộc <span class="text-pink">*</span></span>
+                <RouterLink to="/admin/venues" class="aura-text-btn text-[11px]">+ Tạo cụm sân</RouterLink>
+              </div>
               <select v-model.number="courtForm.venue_id" class="aura-select" required>
                 <option v-for="venue in activeVenues" :key="venue.id" :value="venue.id">
                   {{ venue.name }}

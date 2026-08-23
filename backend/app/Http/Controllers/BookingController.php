@@ -81,7 +81,26 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
-        return ['booking' => $booking->load(['court.venue', 'slots']), 'payment' => $this->payments->qrPayload($booking), 'status' => $booking->status];
+        return [
+            'booking' => $booking->load(['court.venue', 'slots']),
+            'payment' => $this->payments->qrPayload($booking),
+            'stripe' => $this->payments->stripePayload($booking),
+            'status' => $booking->status,
+        ];
+    }
+
+    public function stripePay(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $data = $request->validate([
+            'card_number' => 'nullable|string|max:30',
+            'card_expiry' => 'nullable|string|max:10',
+            'card_cvc' => 'nullable|string|max:10',
+            'card_name' => 'nullable|string|max:120',
+            'stripe_token' => 'nullable|string|max:255',
+        ]);
+
+        return $this->payments->processStripePayment($booking, $data);
     }
 
     public function demoPay(Request $request, Booking $booking)

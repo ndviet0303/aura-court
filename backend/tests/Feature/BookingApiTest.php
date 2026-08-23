@@ -51,4 +51,68 @@ class BookingApiTest extends TestCase
         $this->assertDatabaseHas('payments', ['booking_id' => $booking->id, 'status' => 'paid']);
         $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
     }
+
+    public function test_customer_receives_sepay_and_stripe_payloads_on_payment_endpoint(): void
+    {
+        $user = User::factory()->create();
+        $court = Court::create(['name' => 'Sân Test Cổng', 'is_active' => true]);
+        $date = now(config('app.timezone'))->addDays(2)->setTime(14, 0);
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 150000, 'is_active' => true]);
+        $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
+
+        $response = $this->actingAs($user)->getJson("/api/v1/bookings/{$booking->code}/payment");
+        $response->assertOk()
+            ->assertJsonPath('payment.provider', 'sepay')
+            ->assertJsonPath('stripe.provider', 'stripe')
+            ->assertJsonPath('status', 'pending_payment');
+    }
+
+    public function test_customer_can_pay_via_stripe_endpoint(): void
+    {
+        $user = User::factory()->create();
+        $court = Court::create(['name' => 'Sân Stripe Pay', 'is_active' => true]);
+        $date = now(config('app.timezone'))->addDays(2)->setTime(16, 0);
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '16:00', 'ends_at' => '17:00', 'price' => 180000, 'is_active' => true]);
+        $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
+
+        $response = $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/stripe-pay", [
+            'card_number' => '4242 4242 4242 4242',
+            'card_expiry' => '12/28',
+            'card_cvc' => '123',
+            'card_name' => 'John Doe',
+        ]);
+
+        $response->assertOk()->assertJsonPath('status', 'confirmed');
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('payments', ['booking_id' => $booking->id, 'provider' => 'stripe', 'status' => 'paid']);
+        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
+    }
+
+    public function test_stripe_webhook_confirms_booking_payment(): void
+    {
+        $user = User::factory()->create();
+        $court = Court::create(['name' => 'Sân Webhook Stripe', 'is_active' => true]);
+        $date = now(config('app.timezone'))->addDays(2)->setTime(18, 0);
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '18:00', 'ends_at' => '19:00', 'price' => 200000, 'is_active' => true]);
+        $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
+
+        $payload = [
+            'id' => 'evt_test_123',
+            'type' => 'payment_intent.succeeded',
+            'data' => [
+                'object' => [
+                    'id' => 'pi_test_123',
+                    'metadata' => ['booking_code' => $booking->code],
+                    'amount' => 200000,
+                ],
+            ],
+        ];
+
+        $this->postJson('/api/v1/webhooks/stripe', $payload)
+            ->assertOk()
+            ->assertJsonPath('received', true);
+
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('payments', ['booking_id' => $booking->id, 'provider' => 'stripe', 'status' => 'paid']);
+    }
 }

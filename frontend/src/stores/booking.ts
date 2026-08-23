@@ -69,8 +69,11 @@ export const useBookingStore = defineStore('booking', () => {
   }
 
   async function loadPayment(code: string) {
-    const result = await api.get<{ payment: PaymentInfo; status: string }>('/bookings/' + code + '/payment')
+    const result = await api.get<{ booking?: Booking; payment: PaymentInfo; status: string }>('/bookings/' + code + '/payment')
     payment.value = result.payment
+    if (result.booking) {
+      current.value = result.booking
+    }
     persistPayment()
     return result
   }
@@ -94,10 +97,28 @@ export const useBookingStore = defineStore('booking', () => {
     return api.get<{ status: string; payment: unknown; expiresAt: string }>(`/bookings/${payment.value.code}/payment-status`)
   }
 
-  async function demoPay() {
-    if (!payment.value) throw new Error('Chưa có phiên thanh toán.')
-    return api.post<{ status: string; booking: Booking }>(`/bookings/${payment.value.code}/demo-pay`)
+  async function stripePay(cardDetails: { cardNumber?: string; cardExpiry?: string; cardCvc?: string; cardName?: string } = {}) {
+    restorePayment()
+    const code = payment.value?.code || current.value?.code
+    if (!code) throw new Error('Chưa có phiên thanh toán.')
+    const result = await api.post<{ status: string; booking: Booking }>(`/bookings/${code}/stripe-pay`, {
+      card_number: cardDetails.cardNumber,
+      card_expiry: cardDetails.cardExpiry,
+      card_cvc: cardDetails.cardCvc,
+      card_name: cardDetails.cardName,
+    })
+    if (result.booking) current.value = result.booking
+    return result
   }
 
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, courtsLoading, slotsLoading, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay }
+  async function demoPay() {
+    restorePayment()
+    const code = payment.value?.code || current.value?.code
+    if (!code) throw new Error('Chưa có phiên thanh toán.')
+    const result = await api.post<{ status: string; booking: Booking }>(`/bookings/${code}/demo-pay`)
+    if (result.booking) current.value = result.booking
+    return result
+  }
+
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, courtsLoading, slotsLoading, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay, stripePay }
 })

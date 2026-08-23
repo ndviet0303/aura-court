@@ -19,6 +19,7 @@ use App\Http\Middleware\RequireOrganizationRole;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SepayWebhookController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\V2PriceRuleController;
 use App\Http\Controllers\V2ReservationController;
 use App\Http\Controllers\WaitlistController;
@@ -43,6 +44,7 @@ Route::prefix('v1')->group(function () {
     Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
     Route::get('availability', AvailabilityController::class);
     Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
+    Route::post('webhooks/stripe', StripeWebhookController::class)->withoutMiddleware('throttle:api');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', fn (Request $request) => $request->user());
@@ -82,6 +84,7 @@ Route::prefix('v1')->group(function () {
         Route::post('bookings/{booking:code}/reschedule', [BookingController::class, 'reschedule']);
         Route::get('bookings/{booking:code}/payment-status', [BookingController::class, 'paymentStatus']);
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
+        Route::post('bookings/{booking:code}/stripe-pay', [BookingController::class, 'stripePay']);
         Route::get('bookings/{booking:code}/calendar.ics', [BookingController::class, 'calendar']);
         Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);
         Route::get('notifications', [NotificationController::class, 'index']);

@@ -295,74 +295,87 @@ onMounted(load)
 
     <!-- MODAL: Create / Edit Venue -->
     <div v-if="showVenueModal" class="modal-backdrop" @click.self="showVenueModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="flex items-center gap-xs">
-            <span class="material-symbols-outlined text-pink">location_on</span>
-            <h3 class="font-semibold text-lg">{{ editingId ? 'Cập nhật địa điểm' : 'Thêm địa điểm mới' }}</h3>
+      <div class="aura-venue-modal">
+        <!-- Header -->
+        <div class="aura-modal-header">
+          <div class="aura-header-left">
+            <div class="aura-icon-box">
+              <span class="material-symbols-outlined">location_on</span>
+            </div>
+            <div>
+              <h3 class="aura-modal-title">{{ editingId ? 'Cập nhật địa điểm' : 'Thêm địa điểm mới' }}</h3>
+              <p class="aura-modal-sub">Quản lý tên cụm sân, địa chỉ và liên kết Google Maps</p>
+            </div>
           </div>
-          <button type="button" class="btn-close" @click="showVenueModal = false">
+          <button type="button" class="aura-btn-close" aria-label="Đóng" @click="showVenueModal = false">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form class="modal-body space-y-4" @submit.prevent="save">
-          <div class="form-group">
-            <label class="form-label">Tên địa điểm / Chi nhánh:</label>
+        <form class="aura-modal-body" @submit.prevent="save">
+          <div class="aura-field">
+            <label class="aura-label">Tên địa điểm / Chi nhánh <span class="text-pink">*</span></label>
             <input
               v-model="form.name"
               type="text"
-              class="form-input"
+              class="aura-input"
               placeholder="VD: Aura Center Thảo Điền"
               required
               maxlength="120"
             />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Địa chỉ chi tiết:</label>
+          <div class="aura-field">
+            <label class="aura-label">Địa chỉ chi tiết <span class="text-pink">*</span></label>
             <input
               v-model="form.address"
               type="text"
-              class="form-input"
+              class="aura-input"
               placeholder="VD: 12 Quốc Hương, Thảo Điền, TP. Thủ Đức"
               required
               maxlength="255"
             />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Link Google Maps (HTTPS):</label>
+          <div class="aura-field">
+            <label class="aura-label">Link Google Maps (HTTPS) <span class="text-pink">*</span></label>
             <input
               v-model="form.google_maps_url"
               type="url"
-              class="form-input"
+              class="aura-input"
               placeholder="https://maps.google.com/?q=..."
               required
             />
           </div>
 
-          <div class="form-group">
-            <label class="flex items-center gap-2 cursor-pointer">
+          <!-- Status Box -->
+          <div class="aura-status-box">
+            <div class="aura-status-text">
+              <span class="aura-status-name">Cho phép địa điểm hoạt động công khai</span>
+              <span class="aura-status-desc">Hiển thị cụm sân trên ứng dụng để khách hàng tìm kiếm</span>
+            </div>
+            <label class="aura-switch">
               <input v-model="form.is_active" type="checkbox" />
-              <span class="font-medium text-sm">Cho phép địa điểm hoạt động công khai</span>
+              <span class="aura-slider"></span>
             </label>
           </div>
 
-          <div class="modal-footer">
+          <!-- Footer -->
+          <div class="aura-modal-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="aura-btn-secondary"
               @click="showVenueModal = false"
             >
               {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
-              class="btn btn-primary"
+              class="aura-btn-primary"
               :disabled="saving"
             >
-              {{ saving ? t('common.submitting') : 'Lưu địa điểm' }}
+              <span v-if="saving" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              <span>{{ saving ? t('common.submitting') : (editingId ? 'Cập nhật địa điểm' : 'Lưu địa điểm') }}</span>
             </button>
           </div>
         </form>
@@ -673,12 +686,12 @@ onMounted(load)
   background: var(--soft, #e7e8e9);
 }
 
-/* Modals */
+/* Aura Venue Modal Premium Design */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
   z-index: 999;
   display: flex;
   align-items: center;
@@ -686,16 +699,17 @@ onMounted(load)
   padding: 16px;
 }
 
-.modal-card {
-  background: var(--surface, #ffffff);
-  border-radius: 20px;
-  padding: 24px;
+.aura-venue-modal {
   width: 100%;
-  max-width: 520px;
-  border: 1px solid var(--border, #e0e4ea);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  max-width: 540px;
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: var(--ink, #ffffff);
   animation: modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--ink, #191c1d);
+  box-sizing: border-box;
 }
 
 @keyframes modal-enter {
@@ -709,90 +723,227 @@ onMounted(load)
   }
 }
 
-.modal-header {
+.aura-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--border, #e0e4ea);
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
 }
 
-.btn-close {
+.aura-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.aura-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--pink-light, rgba(248, 180, 196, 0.12));
+  border: 1px solid var(--outline, rgba(248, 180, 196, 0.25));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pink-dark, #f8b4c4);
+  flex-shrink: 0;
+}
+
+.aura-icon-box .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.aura-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.aura-modal-sub {
+  font-size: 12px;
+  color: var(--muted, #9ca3af);
+  margin: 2px 0 0;
+}
+
+.aura-btn-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: none;
   background: transparent;
-  color: var(--muted, #6c757d);
+  color: var(--muted, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 4px;
+  transition: all 0.15s ease;
 }
 
-.form-group {
+.aura-btn-close:hover {
+  background: var(--soft, rgba(255, 255, 255, 0.08));
+  color: var(--ink, #ffffff);
+}
+
+.aura-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aura-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.form-label {
-  font-size: 13px;
+.aura-label {
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--ink, #191c1d);
+  color: var(--ink, #e5e7eb);
 }
 
-.form-input {
+.aura-input {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border, #cbd5e1);
-  font-size: 14px;
-  background: var(--surface-subtle, #f8f9fa);
-  color: var(--ink, #191c1d);
+  border-radius: 12px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+  font-size: 13.5px;
   font-family: inherit;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
-.form-input:focus {
+.aura-input:focus {
   outline: none;
-  border-color: var(--pink-dark, #78555e);
-  box-shadow: 0 0 0 3px rgba(120, 85, 94, 0.15);
+  border-color: var(--pink-dark, #f8b4c4);
+  box-shadow: 0 0 0 3px rgba(248, 180, 196, 0.15);
+  background: var(--surface, #1e2025);
 }
 
-.modal-footer {
+/* Status Box */
+.aura-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+}
+
+.aura-status-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+  display: block;
+}
+
+.aura-status-desc {
+  font-size: 11.5px;
+  color: var(--muted, #9ca3af);
+  display: block;
+  margin-top: 1px;
+}
+
+/* Switch Toggle */
+.aura-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.aura-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.aura-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--outline, #4b5563);
+  transition: 0.25s ease;
+  border-radius: 24px;
+}
+
+.aura-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.aura-switch input:checked + .aura-slider {
+  background-color: var(--pink-dark, #f8b4c4);
+}
+
+.aura-switch input:checked + .aura-slider:before {
+  transform: translateX(20px);
+  background-color: #3d2b31;
+}
+
+/* Footer */
+.aura-modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid var(--border, #e0e4ea);
+  margin-top: 4px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
 }
 
-.btn {
-  padding: 10px 20px;
+.aura-btn-secondary {
+  padding: 9px 18px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #d1d5db);
+  transition: all 0.15s ease;
 }
 
-.btn-primary {
+.aura-btn-secondary:hover {
+  background: var(--soft, rgba(255, 255, 255, 0.12));
+  color: var(--ink, #ffffff);
+}
+
+.aura-btn-primary {
+  padding: 9px 24px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
   background: var(--pink, #ffd1dc);
+  border: none;
   color: var(--pink-dark, #78555e);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
 }
 
-.btn-primary:hover {
+.aura-btn-primary:hover:not(:disabled) {
   filter: brightness(1.08);
-}
-
-.btn-secondary {
-  background: var(--surface-subtle, #e7e8e9);
-  color: var(--ink, #191c1d);
-  border: 1px solid var(--border, #e0e4ea);
-}
-
-.btn-secondary:hover {
-  background: var(--soft, #dfe0e0);
+  transform: translateY(-1px);
 }
 </style>

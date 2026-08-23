@@ -33,12 +33,19 @@ return [
     'sepay' => [
         'bank' => env('SEPAY_BANK', 'VCB'),
         'account' => env('SEPAY_ACCOUNT'),
+        'account_name' => env('SEPAY_ACCOUNT_NAME', 'AURA COURT'),
         'api_key' => env('SEPAY_API_KEY'),
         'hmac_secret' => env('SEPAY_HMAC_SECRET'),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
     'payments' => [
-        'default_provider' => env('PAYMENT_PROVIDER', 'payos'),
+        'default_provider' => env('PAYMENT_PROVIDER', 'sepay'),
     ],
 
     'payos' => [
