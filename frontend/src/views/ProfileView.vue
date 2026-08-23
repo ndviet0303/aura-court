@@ -59,14 +59,14 @@ const socialProviderName = computed(() => {
 const playLevelInfo = computed(() => {
   switch (playLevel.value) {
     case 'beginner':
-      return { label: t('profile.levelBeginner'), icon: '🌱', desc: 'Mới làm quen bộ môn cầu lông' }
+      return { label: t('profile.levelBeginner'), icon: 'spa', desc: 'Mới làm quen bộ môn cầu lông' }
     case 'advanced':
-      return { label: t('profile.levelAdvanced'), icon: '⚡', desc: 'Kỹ thuật tốt, thường xuyên giao lưu cọ xát' }
+      return { label: t('profile.levelAdvanced'), icon: 'bolt', desc: 'Kỹ thuật tốt, thường xuyên giao lưu cọ xát' }
     case 'pro':
-      return { label: t('profile.levelPro'), icon: '🏆', desc: 'Thi đấu chuyên nghiệp, đẳng cấp cao' }
+      return { label: t('profile.levelPro'), icon: 'military_tech', desc: 'Thi đấu chuyên nghiệp, đẳng cấp cao' }
     case 'intermediate':
     default:
-      return { label: t('profile.levelIntermediate'), icon: '🏸', desc: 'Nắm vững luật và các đường cầu cơ bản' }
+      return { label: t('profile.levelIntermediate'), icon: 'sports_tennis', desc: 'Nắm vững luật và các đường cầu cơ bản' }
   }
 })
 
@@ -189,11 +189,20 @@ onMounted(async () => {
           <!-- Badges on top right of cover -->
           <div class="cover-top-actions">
             <span class="badge-role" :class="auth.user?.role">
-              <span class="badge-icon">{{ auth.user?.role === 'admin' ? '👑' : '🏸' }}</span>
+              <span class="material-symbols-outlined icon-16">{{ auth.user?.role === 'admin' ? 'admin_panel_settings' : 'sports_tennis' }}</span>
               {{ auth.user?.role === 'admin' ? t('profile.roleAdmin') : t('profile.roleCustomer') }}
             </span>
             <span v-if="auth.user?.social_provider" class="badge-social">
-              {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }} {{ socialProviderName }}
+              <svg v-if="auth.user?.social_provider === 'google'" class="brand-svg-14" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              <svg v-else class="brand-svg-14" viewBox="0 0 24 24" fill="#1877F2">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              {{ socialProviderName }}
             </span>
           </div>
         </div>
@@ -212,25 +221,24 @@ onMounted(async () => {
             <div class="name-row">
               <h1 class="athlete-display-name">{{ auth.user?.name || 'Aura Athlete' }}</h1>
               <span v-if="auth.user?.email_verified_at" class="pill-verified" :title="t('profile.emailVerified')">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="check-icon">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-                </svg>
+                <span class="material-symbols-outlined icon-16">verified</span>
                 {{ t('profile.emailVerified') }}
               </span>
               <span v-else class="pill-unverified">
-                ⚠️ {{ t('profile.emailUnverified') }}
+                <span class="material-symbols-outlined icon-16">warning</span>
+                {{ t('profile.emailUnverified') }}
               </span>
             </div>
 
             <div class="meta-subrow">
               <span class="meta-item">
-                <span class="meta-icon">✉️</span> {{ auth.user?.email }}
+                <span class="material-symbols-outlined icon-16">mail</span> {{ auth.user?.email }}
               </span>
               <span v-if="auth.user?.phone" class="meta-item">
-                <span class="meta-icon">📞</span> {{ auth.user.phone }}
+                <span class="material-symbols-outlined icon-16">call</span> {{ auth.user.phone }}
               </span>
               <span class="meta-item">
-                <span class="meta-icon">🎯</span> {{ playLevelInfo.label }}
+                <span class="material-symbols-outlined icon-16">military_tech</span> {{ playLevelInfo.label }}
               </span>
             </div>
 
@@ -277,7 +285,9 @@ onMounted(async () => {
               :class="{ active: activeTab === 'general' }"
               @click="activeTab = 'general'"
             >
-              <span class="tab-icon-box">👤</span>
+              <span class="tab-icon-box">
+                <span class="material-symbols-outlined">person</span>
+              </span>
               <div class="tab-text-wrap">
                 <span class="tab-title">{{ t('profile.tabGeneral') }}</span>
                 <span class="tab-subtitle">Họ tên, SĐT & Trình độ</span>
@@ -290,7 +300,9 @@ onMounted(async () => {
               :class="{ active: activeTab === 'security' }"
               @click="activeTab = 'security'"
             >
-              <span class="tab-icon-box">🔒</span>
+              <span class="tab-icon-box">
+                <span class="material-symbols-outlined">lock</span>
+              </span>
               <div class="tab-text-wrap">
                 <span class="tab-title">{{ t('profile.tabSecurity') }}</span>
                 <span class="tab-subtitle">{{ isSocialUserWithoutPassword ? 'Thiết lập mật khẩu' : 'Đổi mật khẩu' }}</span>
@@ -304,7 +316,9 @@ onMounted(async () => {
               :class="{ active: activeTab === 'membership' }"
               @click="activeTab = 'membership'"
             >
-              <span class="tab-icon-box">⭐</span>
+              <span class="tab-icon-box">
+                <span class="material-symbols-outlined">workspace_premium</span>
+              </span>
               <div class="tab-text-wrap">
                 <span class="tab-title">{{ t('profile.tabMembership') }}</span>
                 <span class="tab-subtitle">Đặc quyền giảm giá</span>
@@ -317,7 +331,9 @@ onMounted(async () => {
               :class="{ active: activeTab === 'shortcuts' }"
               @click="activeTab = 'shortcuts'"
             >
-              <span class="tab-icon-box">⚡</span>
+              <span class="tab-icon-box">
+                <span class="material-symbols-outlined">bolt</span>
+              </span>
               <div class="tab-text-wrap">
                 <span class="tab-title">{{ t('profile.tabQuickLinks') }}</span>
                 <span class="tab-subtitle">Quản lý & Lối tắt</span>
@@ -328,13 +344,13 @@ onMounted(async () => {
           <!-- VIP Perk Widget in Sidebar -->
           <div class="sidebar-perk-widget">
             <div class="widget-header">
-              <span class="widget-icon">🏸</span>
+              <span class="material-symbols-outlined text-gold">sports_tennis</span>
               <span class="widget-badge">Aura Badminton</span>
             </div>
             <h3 class="widget-title">Trải nghiệm sân đỉnh cao</h3>
             <p class="widget-desc">Sân thảm BWF tiêu chuẩn quốc tế, đèn chống lóa và đặt lịch nhanh 24/7.</p>
             <RouterLink to="/v2/reservations" class="widget-btn">
-              Đặt sân trực tuyến →
+              Đặt sân trực tuyến <span class="material-symbols-outlined icon-14 inline-icon">arrow_forward</span>
             </RouterLink>
           </div>
         </aside>
@@ -343,12 +359,12 @@ onMounted(async () => {
         <main class="stitch-content-panel">
           <!-- Global Alerts -->
           <div v-if="notice" class="stitch-alert alert-success" role="alert">
-            <span class="alert-icon">✓</span>
+            <span class="material-symbols-outlined alert-icon">check_circle</span>
             <span class="alert-text">{{ notice }}</span>
           </div>
 
           <div v-if="error" class="stitch-alert alert-error" role="alert">
-            <span class="alert-icon">✕</span>
+            <span class="material-symbols-outlined alert-icon">error</span>
             <span class="alert-text">{{ error }}</span>
           </div>
 
@@ -365,7 +381,7 @@ onMounted(async () => {
                 <div class="form-field">
                   <label for="f-name" class="field-label">{{ t('profile.fullName') }} <span class="req">*</span></label>
                   <div class="input-wrap">
-                    <span class="prefix-icon">👤</span>
+                    <span class="material-symbols-outlined prefix-icon">person</span>
                     <input
                       id="f-name"
                       v-model="name"
@@ -382,7 +398,7 @@ onMounted(async () => {
                 <div class="form-field">
                   <label for="f-phone" class="field-label">{{ t('profile.phone') }}</label>
                   <div class="input-wrap">
-                    <span class="prefix-icon">📞</span>
+                    <span class="material-symbols-outlined prefix-icon">call</span>
                     <input
                       id="f-phone"
                       v-model="phone"
@@ -399,7 +415,7 @@ onMounted(async () => {
               <div class="form-field">
                 <label class="field-label">{{ t('auth.email') }}</label>
                 <div class="input-wrap disabled-wrap">
-                  <span class="prefix-icon">✉️</span>
+                  <span class="material-symbols-outlined prefix-icon">mail</span>
                   <input
                     type="email"
                     :value="auth.user?.email"
@@ -419,7 +435,7 @@ onMounted(async () => {
                     :class="{ active: playLevel === 'beginner' }"
                   >
                     <input type="radio" v-model="playLevel" value="beginner" class="sr-only" />
-                    <span class="skill-icon">🌱</span>
+                    <span class="material-symbols-outlined skill-symbol">spa</span>
                     <span class="skill-title">{{ t('profile.levelBeginner') }}</span>
                     <span class="skill-sub">Mới chơi</span>
                   </label>
@@ -429,7 +445,7 @@ onMounted(async () => {
                     :class="{ active: playLevel === 'intermediate' }"
                   >
                     <input type="radio" v-model="playLevel" value="intermediate" class="sr-only" />
-                    <span class="skill-icon">🏸</span>
+                    <span class="material-symbols-outlined skill-symbol">sports_tennis</span>
                     <span class="skill-title">{{ t('profile.levelIntermediate') }}</span>
                     <span class="skill-sub">Phong trào</span>
                   </label>
@@ -439,7 +455,7 @@ onMounted(async () => {
                     :class="{ active: playLevel === 'advanced' }"
                   >
                     <input type="radio" v-model="playLevel" value="advanced" class="sr-only" />
-                    <span class="skill-icon">⚡</span>
+                    <span class="material-symbols-outlined skill-symbol">bolt</span>
                     <span class="skill-title">{{ t('profile.levelAdvanced') }}</span>
                     <span class="skill-sub">Bán chuyên</span>
                   </label>
@@ -449,7 +465,7 @@ onMounted(async () => {
                     :class="{ active: playLevel === 'pro' }"
                   >
                     <input type="radio" v-model="playLevel" value="pro" class="sr-only" />
-                    <span class="skill-icon">🏆</span>
+                    <span class="material-symbols-outlined skill-symbol">military_tech</span>
                     <span class="skill-title">{{ t('profile.levelPro') }}</span>
                     <span class="skill-sub">Chuyên nghiệp</span>
                   </label>
@@ -459,6 +475,7 @@ onMounted(async () => {
               <div class="form-footer">
                 <button type="submit" class="stitch-btn-primary" :disabled="loading">
                   <span v-if="loading" class="spin-loader"></span>
+                  <span class="material-symbols-outlined icon-18" v-else>save</span>
                   {{ loading ? t('common.loading') : t('profile.saveChanges') }}
                 </button>
               </div>
@@ -472,7 +489,15 @@ onMounted(async () => {
               <div v-if="isSocialUserWithoutPassword" class="social-notice-box">
                 <div class="notice-top">
                   <span class="social-tag">
-                    {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }}
+                    <svg v-if="auth.user?.social_provider === 'google'" class="brand-svg-14" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                    </svg>
+                    <svg v-else class="brand-svg-14" viewBox="0 0 24 24" fill="#1877F2">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
                     {{ t('profile.socialLoginBadge') }} {{ socialProviderName }}
                   </span>
                 </div>
@@ -491,7 +516,7 @@ onMounted(async () => {
               <div v-if="!isSocialUserWithoutPassword" class="form-field">
                 <label for="f-curr-pwd" class="field-label">{{ t('profile.currentPassword') }} <span class="req">*</span></label>
                 <div class="input-wrap">
-                  <span class="prefix-icon">🔑</span>
+                  <span class="material-symbols-outlined prefix-icon">key</span>
                   <input
                     id="f-curr-pwd"
                     v-model="currentPassword"
@@ -505,7 +530,7 @@ onMounted(async () => {
                     class="toggle-eye-btn"
                     @click="showCurrentPassword = !showCurrentPassword"
                   >
-                    {{ showCurrentPassword ? '👁️' : '👁️‍🗨️' }}
+                    <span class="material-symbols-outlined">{{ showCurrentPassword ? 'visibility' : 'visibility_off' }}</span>
                   </button>
                 </div>
               </div>
@@ -515,7 +540,7 @@ onMounted(async () => {
                 <div class="form-field">
                   <label for="f-new-pwd" class="field-label">{{ t('profile.newPassword') }} <span class="req">*</span></label>
                   <div class="input-wrap">
-                    <span class="prefix-icon">🔒</span>
+                    <span class="material-symbols-outlined prefix-icon">lock</span>
                     <input
                       id="f-new-pwd"
                       v-model="newPassword"
@@ -530,7 +555,7 @@ onMounted(async () => {
                       class="toggle-eye-btn"
                       @click="showNewPassword = !showNewPassword"
                     >
-                      {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
+                      <span class="material-symbols-outlined">{{ showNewPassword ? 'visibility' : 'visibility_off' }}</span>
                     </button>
                   </div>
 
@@ -554,7 +579,7 @@ onMounted(async () => {
                 <div class="form-field">
                   <label for="f-conf-pwd" class="field-label">{{ t('profile.confirmNewPassword') }} <span class="req">*</span></label>
                   <div class="input-wrap">
-                    <span class="prefix-icon">🛡️</span>
+                    <span class="material-symbols-outlined prefix-icon">shield</span>
                     <input
                       id="f-conf-pwd"
                       v-model="passwordConfirmation"
@@ -569,13 +594,14 @@ onMounted(async () => {
                       class="toggle-eye-btn"
                       @click="showConfirmPassword = !showConfirmPassword"
                     >
-                      {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+                      <span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility' : 'visibility_off' }}</span>
                     </button>
                   </div>
 
                   <!-- Password Match Pill -->
                   <div v-if="passwordConfirmation" class="match-pill" :class="{ matched: passwordsMatch }">
-                    <span>{{ passwordsMatch ? '✓ ' + t('auth.passwordMatch') : '✕ ' + t('auth.passwordsDoNotMatch') }}</span>
+                    <span class="material-symbols-outlined icon-14 inline-icon">{{ passwordsMatch ? 'check_circle' : 'cancel' }}</span>
+                    <span>{{ passwordsMatch ? t('auth.passwordMatch') : t('auth.passwordsDoNotMatch') }}</span>
                   </div>
                 </div>
               </div>
@@ -587,6 +613,7 @@ onMounted(async () => {
                   :disabled="passwordLoading || (newPassword.length > 0 && !passwordsMatch)"
                 >
                   <span v-if="passwordLoading" class="spin-loader"></span>
+                  <span class="material-symbols-outlined icon-18" v-else>lock_reset</span>
                   {{ passwordLoading ? t('common.loading') : (isSocialUserWithoutPassword ? t('profile.setPasswordBtn') : t('profile.passwordSection')) }}
                 </button>
               </div>
@@ -602,7 +629,10 @@ onMounted(async () => {
 
             <div v-if="membership" class="luxury-vip-card">
               <div class="vip-top-row">
-                <div class="vip-crest-badge">AURA CLUB VIP</div>
+                <div class="vip-crest-badge">
+                  <span class="material-symbols-outlined icon-16">workspace_premium</span>
+                  AURA CLUB VIP
+                </div>
                 <div class="vip-tier-name">{{ membership.plan.name }}</div>
               </div>
               <div class="vip-body-grid">
@@ -618,11 +648,14 @@ onMounted(async () => {
             </div>
 
             <div v-else class="empty-state-card">
-              <div class="empty-glow-icon">⭐</div>
+              <div class="empty-glow-icon">
+                <span class="material-symbols-outlined icon-48 text-gold">workspace_premium</span>
+              </div>
               <h3 class="empty-title">Chưa kích hoạt gói VIP</h3>
               <p class="empty-desc">{{ t('profile.vipNone') }}</p>
               <RouterLink to="/v2/reservations" class="stitch-btn-secondary">
-                🏸 {{ t('profile.bookCourtNow') }}
+                <span class="material-symbols-outlined icon-18">sports_tennis</span>
+                {{ t('profile.bookCourtNow') }}
               </RouterLink>
             </div>
           </div>
@@ -636,39 +669,47 @@ onMounted(async () => {
 
             <div class="bento-shortcuts-grid">
               <RouterLink to="/bookings" class="bento-shortcut-item">
-                <div class="bento-icon-sq">📅</div>
+                <div class="bento-icon-sq">
+                  <span class="material-symbols-outlined">calendar_month</span>
+                </div>
                 <div class="bento-info">
                   <h4 class="bento-h">{{ t('profile.myBookings') }}</h4>
                   <p class="bento-p">Xem các lịch sân đã đặt và hóa đơn thanh toán</p>
                 </div>
-                <span class="bento-arrow">→</span>
+                <span class="material-symbols-outlined bento-arrow">arrow_forward</span>
               </RouterLink>
 
               <RouterLink v-if="auth.user?.role === 'admin'" to="/admin/organization" class="bento-shortcut-item admin-theme">
-                <div class="bento-icon-sq">🏢</div>
+                <div class="bento-icon-sq">
+                  <span class="material-symbols-outlined">domain</span>
+                </div>
                 <div class="bento-info">
                   <h4 class="bento-h">{{ t('profile.manageOrg') }}</h4>
                   <p class="bento-p">Cấu hình cụm sân, thời gian biểu và giá giờ vàng</p>
                 </div>
-                <span class="bento-arrow">→</span>
+                <span class="material-symbols-outlined bento-arrow">arrow_forward</span>
               </RouterLink>
 
               <RouterLink to="/v2/reservations" class="bento-shortcut-item">
-                <div class="bento-icon-sq">🏸</div>
+                <div class="bento-icon-sq">
+                  <span class="material-symbols-outlined">sports_tennis</span>
+                </div>
                 <div class="bento-info">
                   <h4 class="bento-h">{{ t('profile.bookCourtNow') }}</h4>
                   <p class="bento-p">Tìm sân trống và đặt ngay theo thời gian thực</p>
                 </div>
-                <span class="bento-arrow">→</span>
+                <span class="material-symbols-outlined bento-arrow">arrow_forward</span>
               </RouterLink>
 
               <button type="button" class="bento-shortcut-item danger-theme" @click="handleLogout">
-                <div class="bento-icon-sq">🚪</div>
+                <div class="bento-icon-sq">
+                  <span class="material-symbols-outlined">logout</span>
+                </div>
                 <div class="bento-info">
                   <h4 class="bento-h">{{ t('profile.logoutAccount') }}</h4>
                   <p class="bento-p">Đăng xuất khỏi phiên đăng nhập trên thiết bị này</p>
                 </div>
-                <span class="bento-arrow">⏻</span>
+                <span class="material-symbols-outlined bento-arrow">power_settings_new</span>
               </button>
             </div>
           </div>
@@ -718,6 +759,40 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 28px;
+}
+
+/* Icons Utilities */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.icon-14 {
+  font-size: 14px !important;
+}
+
+.icon-16 {
+  font-size: 16px !important;
+}
+
+.icon-18 {
+  font-size: 18px !important;
+}
+
+.icon-48 {
+  font-size: 48px !important;
+}
+
+.inline-icon {
+  display: inline-flex;
+  vertical-align: text-bottom;
+}
+
+.brand-svg-14 {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 /* 1. HERO COVER & ATHLETE CARD */
@@ -784,7 +859,7 @@ onMounted(async () => {
 .badge-social {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 6px 14px;
   border-radius: 9999px;
   font-size: 12px;
@@ -885,11 +960,6 @@ onMounted(async () => {
   background: rgba(16, 185, 129, 0.15);
   color: #10b981;
   border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.check-icon {
-  width: 14px;
-  height: 14px;
 }
 
 .pill-unverified {
@@ -1009,7 +1079,7 @@ onMounted(async () => {
   padding: 14px 16px;
   border-radius: 16px;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
@@ -1033,12 +1103,13 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .nav-tab-btn.active .tab-icon-box {
   background: rgba(255, 140, 58, 0.2);
+  color: #ff8c3a;
 }
 
 .tab-text-wrap {
@@ -1111,7 +1182,9 @@ onMounted(async () => {
 }
 
 .widget-btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   font-weight: 700;
   color: #ff8c3a;
@@ -1233,7 +1306,8 @@ onMounted(async () => {
 .prefix-icon {
   position: absolute;
   left: 14px;
-  font-size: 16px;
+  color: var(--text-muted);
+  font-size: 20px;
   pointer-events: none;
 }
 
@@ -1274,12 +1348,14 @@ onMounted(async () => {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  opacity: 0.7;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toggle-eye-btn:hover {
-  opacity: 1;
+  color: var(--text-primary);
 }
 
 /* Skill Cards Grid */
@@ -1320,8 +1396,9 @@ onMounted(async () => {
   box-shadow: 0 0 16px rgba(255, 140, 58, 0.2);
 }
 
-.skill-icon {
-  font-size: 24px;
+.skill-symbol {
+  font-size: 28px !important;
+  color: #ff8c3a;
   margin-bottom: 2px;
 }
 
@@ -1402,6 +1479,9 @@ onMounted(async () => {
 }
 
 .match-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-top: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -1498,6 +1578,9 @@ onMounted(async () => {
 }
 
 .vip-crest-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -1545,7 +1628,13 @@ onMounted(async () => {
 }
 
 .empty-glow-icon {
-  font-size: 48px;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(251, 191, 36, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-title {
@@ -1605,7 +1694,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  color: var(--text-primary);
   flex-shrink: 0;
 }
 
@@ -1627,7 +1716,7 @@ onMounted(async () => {
 }
 
 .bento-arrow {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--text-muted);
   transition: transform 0.2s ease;
 }
