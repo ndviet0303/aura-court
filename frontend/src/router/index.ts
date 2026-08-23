@@ -36,6 +36,7 @@ const router = createRouter({
     },
     { path: '/login', name: 'login', component: LoginView, meta: { titleKey: 'seo.loginTitle', indexable: false } },
     { path: '/register', name: 'register', component: LoginView, meta: { titleKey: 'auth.registerTitle', indexable: false }, props: { initialMode: 'register' } },
+    { path: '/onboarding', name: 'onboarding', component: () => import('../views/OnboardingView.vue'), meta: { auth: true, title: 'Thiết lập tài khoản | Aura Court', indexable: false } },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { titleKey: 'seo.forgotPasswordTitle', indexable: false } },
     { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { titleKey: 'seo.resetPasswordTitle', indexable: false } },
     { path: '/terms', name: 'terms', component: () => import('../views/TermsView.vue'), meta: { titleKey: 'seo.termsTitle', descriptionKey: 'seo.termsDesc' } },

@@ -30,12 +30,68 @@ export const useAuthStore = defineStore('auth', () => {
     loaded.value = true
   }
 
-  async function register(name: string, email: string, password: string, password_confirmation: string) {
+  async function register(
+    name: string,
+    email: string,
+    password: string,
+    password_confirmation: string,
+    extra?: {
+      account_type?: 'customer' | 'court_owner'
+      organization_name?: string
+      phone?: string
+      venue_address?: string
+      courts_count?: number
+    }
+  ) {
     await api.csrf()
-    const result = await api.post<{ user: User }>('/auth/register', { name, email, password, password_confirmation })
+    const result = await api.post<{ user: User; account_type?: string }>('/auth/register', {
+      name,
+      email,
+      password,
+      password_confirmation,
+      ...extra,
+    })
     await api.csrf()
     user.value = result.user
     loaded.value = true
+    return result.user
+  }
+
+  async function socialLogin(
+    provider: 'google' | 'facebook',
+    email: string,
+    name: string,
+    provider_id?: string,
+    account_type?: 'customer' | 'court_owner'
+  ) {
+    await api.csrf()
+    const result = await api.post<{ user: User }>('/auth/social-login', {
+      provider,
+      email,
+      name,
+      provider_id,
+      account_type,
+    })
+    await api.csrf()
+    user.value = result.user
+    loaded.value = true
+    return result.user
+  }
+
+  async function completeOnboarding(payload: {
+    account_type: 'customer' | 'court_owner'
+    phone?: string
+    play_level?: string
+    organization_name?: string
+    venue_address?: string
+    courts_count?: number
+  }) {
+    await api.csrf()
+    const result = await api.post<{ user: User }>('/auth/onboarding', payload)
+    await api.csrf()
+    user.value = result.user
+    loaded.value = true
+    return result.user
   }
 
   async function forgotPassword(email: string) {
@@ -75,6 +131,8 @@ export const useAuthStore = defineStore('auth', () => {
     load,
     login,
     register,
+    socialLogin,
+    completeOnboarding,
     forgotPassword,
     resetPassword,
     updateProfile,

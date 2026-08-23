@@ -39,7 +39,7 @@ describe('LoginView', () => {
     expect(wrapper.find('.auth-submit-btn').exists()).toBe(true)
   })
 
-  it('switches to register mode when clicking register tab', async () => {
+  it('switches to register mode and displays registration inputs', async () => {
     const wrapper = mount(LoginView, {
       global: {
         plugins: [i18n],
@@ -48,9 +48,23 @@ describe('LoginView', () => {
 
     const tabs = wrapper.findAll('.auth-tab-btn')
     expect(tabs.length).toBe(2)
-    // Click register tab
     await tabs[1]!.trigger('click')
+
     expect(wrapper.find('input[name="name"]').exists()).toBe(true)
+    expect(wrapper.find('input[name="email"]').exists()).toBe(true)
+    expect(wrapper.find('input[name="password"]').exists()).toBe(true)
     expect(wrapper.find('input[name="password_confirmation"]').exists()).toBe(true)
+  })
+
+  it('renders Google and Facebook social login buttons', () => {
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.find('.google-btn').exists()).toBe(true)
+    expect(wrapper.find('.facebook-btn').exists()).toBe(true)
+    expect(wrapper.find('.social-divider').exists()).toBe(true)
   })
 })

@@ -31,6 +31,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);
+    Route::post('auth/social-login', [AuthController::class, 'socialLogin']);
+    Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
+    Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('courts', [CourtController::class, 'index']);
@@ -41,6 +44,7 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', fn (Request $request) => $request->user());
+        Route::post('auth/onboarding', [AuthController::class, 'onboarding']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::post('auth/email/verification-notification', function (Request $request) {
             if (! $request->user()->hasVerifiedEmail()) {
