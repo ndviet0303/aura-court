@@ -202,7 +202,9 @@ class AuthController extends Controller
             }
 
             Auth::login($user, true);
-            $request->session()->regenerate();
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
 
             if (! $user->onboarded) {
                 return redirect("{$frontendUrl}/onboarding");

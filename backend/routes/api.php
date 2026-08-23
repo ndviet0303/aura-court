@@ -32,8 +32,10 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);
     Route::post('auth/social-login', [AuthController::class, 'socialLogin']);
-    Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
-    Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);
+    Route::middleware('web')->group(function () {
+        Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
+        Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);
+    });
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('courts', [CourtController::class, 'index']);
