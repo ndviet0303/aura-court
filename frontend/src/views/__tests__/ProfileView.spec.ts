@@ -64,6 +64,7 @@ describe('ProfileView', () => {
       phone: '0988111222',
       play_level: 'advanced',
       onboarded: true,
+      password_set: true,
     }
     auth.loaded = true
 
@@ -84,5 +85,39 @@ describe('ProfileView', () => {
     // Click Shortcuts tab
     await tabs[3]!.trigger('click')
     expect(wrapper.find('.shortcuts-grid').exists()).toBe(true)
+  })
+
+  it('renders set password mode without current password for social users', async () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 2,
+      name: 'Google User',
+      email: 'google@gmail.com',
+      role: 'customer',
+      onboarded: true,
+      password_set: false,
+      social_provider: 'google',
+    }
+    auth.loaded = true
+
+    const wrapper = mount(ProfileView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    // Banner shows social badge
+    expect(wrapper.find('.social-provider-badge').exists()).toBe(true)
+
+    // Switch to security tab
+    const tabs = wrapper.findAll('.tab-item')
+    await tabs[1]!.trigger('click')
+
+    // Current password input should NOT exist
+    expect(wrapper.find('#p-current-pwd').exists()).toBe(false)
+    // New password and confirm password inputs DO exist
+    expect(wrapper.find('#p-new-pwd').exists()).toBe(true)
+    expect(wrapper.find('#p-confirm-pwd').exists()).toBe(true)
+    expect(wrapper.find('.social-setup-banner').exists()).toBe(true)
   })
 })

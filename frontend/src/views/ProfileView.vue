@@ -59,6 +59,16 @@ const playLevelLabel = computed(() => {
   }
 })
 
+const isSocialUserWithoutPassword = computed(() => {
+  return auth.user?.password_set === false
+})
+
+const socialProviderName = computed(() => {
+  if (auth.user?.social_provider === 'google') return 'Google'
+  if (auth.user?.social_provider === 'facebook') return 'Facebook'
+  return 'Mạng xã hội'
+})
+
 const passwordStrength = computed(() => {
   const p = newPassword.value
   if (!p) return 0
@@ -102,7 +112,11 @@ async function updatePassword() {
   error.value = ''
   notice.value = ''
   try {
-    await auth.changePassword(currentPassword.value, newPassword.value, passwordConfirmation.value)
+    await auth.changePassword(
+      isSocialUserWithoutPassword.value ? '' : currentPassword.value,
+      newPassword.value,
+      passwordConfirmation.value
+    )
     currentPassword.value = ''
     newPassword.value = ''
     passwordConfirmation.value = ''
@@ -175,6 +189,10 @@ onMounted(async () => {
 
               <span v-if="auth.user?.play_level" class="level-badge">
                 🎯 {{ playLevelLabel }}
+              </span>
+
+              <span v-if="auth.user?.social_provider" class="social-provider-badge">
+                {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }} {{ socialProviderName }}
               </span>
 
               <span v-if="auth.user?.email_verified_at" class="verified-badge">
@@ -381,14 +399,24 @@ onMounted(async () => {
       <!-- TAB 2: Security & Password -->
       <section v-if="activeTab === 'security'" class="profile-card card animate-fade-in">
         <div class="card-header">
-          <h2 class="card-title">{{ t('profile.passwordSection') }}</h2>
-          <p class="card-subtitle">{{ t('profile.passwordSubtitle') }}</p>
+          <div v-if="isSocialUserWithoutPassword" class="social-setup-banner">
+            <span class="social-icon-pill">
+              {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }}
+              {{ t('profile.socialLoginBadge') }} {{ socialProviderName }}
+            </span>
+            <h2 class="card-title" style="margin-top: 10px;">{{ t('profile.setPasswordTitle') }}</h2>
+            <p class="card-subtitle">{{ t('profile.setPasswordSubtitle', { provider: socialProviderName }) }}</p>
+          </div>
+          <div v-else>
+            <h2 class="card-title">{{ t('profile.passwordSection') }}</h2>
+            <p class="card-subtitle">{{ t('profile.passwordSubtitle') }}</p>
+          </div>
         </div>
 
         <form @submit.prevent="updatePassword" class="profile-form">
           <div class="form-grid">
-            <!-- Current Password -->
-            <div class="form-group full-width">
+            <!-- Current Password (only shown if password already set) -->
+            <div v-if="!isSocialUserWithoutPassword" class="form-group full-width">
               <label for="p-current-pwd" class="form-label">{{ t('profile.currentPassword') }} <span class="required">*</span></label>
               <div class="input-container">
                 <span class="input-icon">🔑</span>
@@ -396,7 +424,7 @@ onMounted(async () => {
                   id="p-current-pwd"
                   v-model="currentPassword"
                   :type="showCurrentPassword ? 'text' : 'password'"
-                  required
+                  :required="!isSocialUserWithoutPassword"
                   minlength="8"
                   class="profile-input"
                 />
@@ -481,7 +509,7 @@ onMounted(async () => {
           <div class="form-actions">
             <button type="submit" class="btn-primary" :disabled="passwordLoading || (newPassword.length > 0 && !passwordsMatch)">
               <span v-if="passwordLoading" class="spinner-inline"></span>
-              {{ passwordLoading ? t('common.loading') : t('profile.passwordSection') }}
+              {{ passwordLoading ? t('common.loading') : (isSocialUserWithoutPassword ? t('profile.setPasswordBtn') : t('profile.passwordSection')) }}
             </button>
           </div>
         </form>
@@ -700,6 +728,19 @@ onMounted(async () => {
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
+.social-provider-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
 .verified-badge {
   display: inline-flex;
   align-items: center;
@@ -710,6 +751,27 @@ onMounted(async () => {
   font-weight: 600;
   background: rgba(59, 130, 246, 0.12);
   color: #60a5fa;
+}
+
+.social-setup-banner {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(131, 56, 236, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  margin-bottom: 20px;
+}
+
+.social-icon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
 }
 
 .unverified-badge {

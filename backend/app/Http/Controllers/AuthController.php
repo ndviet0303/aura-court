@@ -30,6 +30,8 @@ class AuthController extends Controller
             'password' => $data['password'],
             'role' => 'customer',
             'onboarded' => false,
+            'password_set' => true,
+            'social_provider' => null,
         ]);
 
         Auth::login($user);
@@ -73,7 +75,7 @@ class AuthController extends Controller
     {
         $data = $request->validate(['token' => ['required'], 'email' => ['required', 'email'], 'password' => ['required', 'min:8', 'confirmed']]);
         $status = Password::reset($data, function (User $user, string $password) {
-            $user->forceFill(['password' => Hash::make($password)])->save();
+            $user->forceFill(['password' => Hash::make($password), 'password_set' => true])->save();
         });
 
         return $status === Password::PASSWORD_RESET ? ['message' => 'Mật khẩu đã được cập nhật.'] : response()->json(['message' => __($status)], 422);
@@ -81,13 +83,41 @@ class AuthController extends Controller
 
     public function changePassword(Request $request)
     {
+        $user = $request->user();
+
+        if (! $user->password_set) {
+            $data = $request->validate([
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ]);
+            $user->update([
+                'password' => $data['password'],
+                'password_set' => true,
+            ]);
+
+            return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
+        }
+
         $data = $request->validate([
             'current_password' => ['required', 'current_password:web'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
-        $request->user()->update(['password' => $data['password']]);
+        $user->update(['password' => $data['password']]);
 
-        return ['message' => 'Mật khẩu đã được cập nhật.'];
+        return ['message' => 'Mật khẩu đã được cập nhật.', 'user' => $user->fresh()];
+    }
+
+    public function setPassword(Request $request)
+    {
+        $user = $request->user();
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+        $user->update([
+            'password' => $data['password'],
+            'password_set' => true,
+        ]);
+
+        return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
     }
 
     public function socialLogin(Request $request)
@@ -108,6 +138,8 @@ class AuthController extends Controller
                 'password' => Hash::make(Str::random(32)),
                 'role' => 'customer',
                 'onboarded' => false,
+                'password_set' => false,
+                'social_provider' => $data['provider'],
             ]);
             $user->email_verified_at = now();
             $user->save();
@@ -196,6 +228,8 @@ class AuthController extends Controller
                     'password' => Hash::make(Str::random(32)),
                     'role' => 'customer',
                     'onboarded' => false,
+                    'password_set' => false,
+                    'social_provider' => $provider,
                 ]);
                 $user->email_verified_at = now();
                 $user->save();
