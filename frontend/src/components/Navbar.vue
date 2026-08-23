@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
+}
 
 const userName = computed(() => {
   if (auth.user?.name) return auth.user.name
@@ -77,7 +83,7 @@ const isBookingActive = computed(() => {
             class="logout-icon-btn"
             :aria-label="$t('nav.logout')"
             :title="$t('nav.logout')"
-            @click="auth.logout"
+            @click="handleLogout"
           >
             <span class="material-symbols-outlined">logout</span>
           </button>

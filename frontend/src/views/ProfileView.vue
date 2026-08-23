@@ -150,10 +150,8 @@ async function resendVerification() {
 }
 
 async function handleLogout() {
-  if (window.confirm(t('auth.logoutConfirm'))) {
-    await auth.logout()
-    router.push('/login')
-  }
+  await auth.logout()
+  router.push('/login')
 }
 
 onMounted(async () => {
