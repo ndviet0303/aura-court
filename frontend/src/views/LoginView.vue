@@ -27,6 +27,14 @@ onMounted(() => {
   } else {
     mode.value = 'login'
   }
+
+  if (route.query.error) {
+    if (route.query.msg) {
+      error.value = `Đăng nhập thất bại: ${decodeURIComponent(String(route.query.msg))}`
+    } else {
+      error.value = 'Đăng nhập mạng xã hội không thành công. Vui lòng thử lại.'
+    }
+  }
 })
 
 watch(

@@ -213,8 +213,12 @@ class AuthController extends Controller
             }
 
             return redirect("{$frontendUrl}/");
-        } catch (\Throwable) {
-            return redirect("{$frontendUrl}/login?error=oauth_failed");
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('OAuth Callback Error: ' . $e->getMessage(), [
+                'provider' => $provider,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect("{$frontendUrl}/login?error=oauth_failed&msg=" . urlencode($e->getMessage()));
         }
     }
 
