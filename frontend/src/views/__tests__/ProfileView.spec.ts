@@ -49,8 +49,8 @@ describe('ProfileView', () => {
     })
 
     expect(wrapper.find('.athlete-display-name').text()).toBe('Nguyen Van A')
-    expect(wrapper.find('.athlete-avatar-circle').text()).toContain('NA')
-    expect(wrapper.find('.stitch-nav-menu').exists()).toBe(true)
+    expect(wrapper.find('.avatar-initials-badge').text()).toContain('NA')
+    expect(wrapper.find('.stitch-tabs-bar').exists()).toBe(true)
   })
 
   it('switches tabs between general, security, membership, and shortcuts', async () => {
@@ -73,7 +73,7 @@ describe('ProfileView', () => {
       },
     })
 
-    const tabs = wrapper.findAll('.nav-tab-btn')
+    const tabs = wrapper.findAll('.tab-btn')
     expect(tabs.length).toBe(4)
 
     // Click Security tab
@@ -83,7 +83,7 @@ describe('ProfileView', () => {
 
     // Click Shortcuts tab
     await tabs[3]!.trigger('click')
-    expect(wrapper.find('.bento-shortcuts-grid').exists()).toBe(true)
+    expect(wrapper.find('.shortcuts-soft-grid').exists()).toBe(true)
   })
 
   it('renders set password mode without current password for social users', async () => {
@@ -109,7 +109,7 @@ describe('ProfileView', () => {
     expect(wrapper.find('.badge-social').exists()).toBe(true)
 
     // Switch to security tab
-    const tabs = wrapper.findAll('.nav-tab-btn')
+    const tabs = wrapper.findAll('.tab-btn')
     await tabs[1]!.trigger('click')
 
     // Current password input should NOT exist
@@ -117,6 +117,6 @@ describe('ProfileView', () => {
     // New password and confirm password inputs DO exist
     expect(wrapper.find('#f-new-pwd').exists()).toBe(true)
     expect(wrapper.find('#f-conf-pwd').exists()).toBe(true)
-    expect(wrapper.find('.social-notice-box').exists()).toBe(true)
+    expect(wrapper.find('.social-alert-card').exists()).toBe(true)
   })
 })
