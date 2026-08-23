@@ -215,11 +215,11 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, rgba(0, 0, 0, 0.08));
   border-radius: 9999px;
   padding: 6px 12px 6px 8px;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -229,8 +229,8 @@ onBeforeUnmount(() => {
 
 .lang-trigger:hover,
 .lang-trigger.open {
-  background: #ffffff;
-  border-color: #78555e;
+  background: var(--surface, #ffffff);
+  border-color: var(--pink-dark, #78555e);
   box-shadow: 0 2px 8px rgba(120, 85, 94, 0.12);
 }
 
@@ -256,13 +256,13 @@ onBeforeUnmount(() => {
 .lang-text {
   font-size: 13px;
   letter-spacing: 0.02em;
-  color: #2b1f22;
+  color: var(--ink, #2b1f22);
   font-weight: 700;
 }
 
 .lang-arrow {
   font-size: 18px;
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
   transition: transform 0.18s ease;
   line-height: 1;
 }
@@ -278,11 +278,11 @@ onBeforeUnmount(() => {
   right: 0;
   z-index: 60;
   width: 170px;
-  background: #ffffff;
-  border: 1px solid rgba(211, 195, 197, 0.5);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, rgba(211, 195, 197, 0.5));
   border-radius: 14px;
   padding: 5px;
-  box-shadow: 0 10px 28px rgba(25, 28, 29, 0.12);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -298,7 +298,7 @@ onBeforeUnmount(() => {
   padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   font-size: 13px;
   font-weight: 600;
   text-align: left;
@@ -306,13 +306,13 @@ onBeforeUnmount(() => {
 }
 
 .lang-option:hover {
-  background: #fbf5f7;
-  color: #78555e;
+  background: var(--soft, #fbf5f7);
+  color: var(--pink-dark, #78555e);
 }
 
 .lang-option.selected {
-  background: #ffd9e2;
-  color: #5e3e47;
+  background: var(--pink-light, #ffd9e2);
+  color: var(--pink-dark, #5e3e47);
   font-weight: 700;
 }
 
@@ -334,7 +334,7 @@ onBeforeUnmount(() => {
 
 .check-icon {
   font-size: 17px;
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
 }
 
 /* Transitions */

@@ -28,6 +28,11 @@ export default {
       refundPolicy: 'Chính sách hoàn hủy',
       copyright: '© 2026 Aura Court. Bản quyền đã được bảo lưu.',
     },
+    theme: {
+      toggle: 'Chuyển chế độ sáng / tối',
+      light: 'Chế độ Sáng',
+      dark: 'Chế độ Tối',
+    },
     currency: '₫',
     perHour: '/giờ',
     fromPrice: 'Từ {price}/giờ',

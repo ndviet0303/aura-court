@@ -105,11 +105,11 @@ onMounted(() => {
 
 .modal-card {
   position: relative;
-  background: #ffffff;
-  border: 1px solid rgba(225, 227, 228, 0.8);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, rgba(225, 227, 228, 0.8));
   border-radius: 24px;
   padding: 36px 32px 30px;
-  box-shadow: 0 24px 60px rgba(25, 28, 29, 0.16), 0 8px 24px rgba(120, 85, 94, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(120, 85, 94, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -121,8 +121,8 @@ onMounted(() => {
   top: 18px;
   right: 18px;
   border: 0;
-  background: #f4f5f6;
-  color: #5d5f5f;
+  background: var(--soft, #f4f5f6);
+  color: var(--muted, #5d5f5f);
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -133,8 +133,8 @@ onMounted(() => {
 }
 
 .modal-close-btn:hover {
-  background: #ffd1dc;
-  color: #5e3e47;
+  background: var(--pink-light, #ffd1dc);
+  color: var(--pink-dark, #5e3e47);
 }
 
 .modal-close-btn .material-symbols-outlined {
@@ -145,11 +145,11 @@ onMounted(() => {
   width: 64px;
   height: 64px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #ffd1dc 0%, #ffd9e2 100%);
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
   display: grid;
   place-items: center;
-  color: #78555e;
-  box-shadow: 0 8px 20px rgba(255, 209, 220, 0.6);
+  color: var(--pink-dark, #78555e);
+  box-shadow: 0 8px 20px rgba(255, 209, 220, 0.3);
   margin-bottom: 16px;
 }
 
@@ -162,8 +162,8 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
-  color: #78555e;
-  background: #fce4ec;
+  color: var(--pink-dark, #78555e);
+  background: var(--pink-light, #fce4ec);
   padding: 4px 12px;
   border-radius: 999px;
   margin-bottom: 10px;
@@ -173,33 +173,34 @@ onMounted(() => {
 .modal-title {
   font-size: 22px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   letter-spacing: -0.03em;
   margin: 0 0 14px;
   line-height: 1.3;
 }
 
 .modal-body {
+  margin-bottom: 26px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 12px;
 }
 
 .modal-text {
   font-size: 14px;
-  line-height: 1.55;
-  color: #5d5f5f;
+  line-height: 1.6;
+  color: var(--muted, #5d5f5f);
   margin: 0;
 }
 
 .modal-text.highlight {
-  color: #191c1d;
-  font-weight: 600;
-  background: #faf7f8;
+  font-size: 13px;
+  background: var(--soft, #fdf6f7);
   padding: 10px 14px;
   border-radius: 12px;
-  border: 1px dashed rgba(211, 195, 197, 0.8);
+  border-left: 3px solid var(--pink-dark, #78555e);
+  text-align: left;
+  color: var(--ink, #493339);
 }
 
 .modal-actions {

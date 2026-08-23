@@ -94,12 +94,13 @@ import { RouterLink } from 'vue-router'
 
 <style scoped>
 .site-footer {
-  background: #ffffff;
-  border-top: 1px solid rgba(225, 227, 228, 0.7);
+  background: var(--surface, #ffffff);
+  border-top: 1px solid var(--outline, rgba(225, 227, 228, 0.7));
   margin-top: 60px;
   position: relative;
   z-index: 10;
   width: 100%;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .footer-container {
@@ -138,10 +139,10 @@ import { RouterLink } from 'vue-router'
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  background: #ffd9e2;
+  background: var(--pink-light, #ffd9e2);
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 8px rgba(255, 209, 220, 0.5);
+  box-shadow: 0 2px 8px rgba(255, 209, 220, 0.3);
 }
 
 .brand-img {
@@ -153,14 +154,15 @@ import { RouterLink } from 'vue-router'
 .brand-name {
   font-size: 20px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   letter-spacing: -0.03em;
+  transition: color 0.3s ease;
 }
 
 .brand-tagline {
   font-size: 13.5px;
   line-height: 1.6;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
   margin: 0;
   max-width: 360px;
 }
@@ -169,26 +171,26 @@ import { RouterLink } from 'vue-router'
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #f8f9fa;
-  border: 1px solid #e7e8e9;
+  background: var(--soft, #f8f9fa);
+  border: 1px solid var(--outline, #e7e8e9);
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 12.5px;
   font-weight: 600;
-  color: #5e3e47;
+  color: var(--pink-dark, #5e3e47);
   width: fit-content;
 }
 
 .icon-clock {
   font-size: 16px;
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
 }
 
 /* Column Titles & Links */
 .col-title {
   font-size: 14px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   letter-spacing: 0.02em;
   margin: 0 0 4px;
   text-transform: uppercase;
@@ -206,13 +208,13 @@ import { RouterLink } from 'vue-router'
 .col-links a {
   text-decoration: none;
   font-size: 13.5px;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
   transition: color 0.18s ease, transform 0.18s ease;
   display: inline-block;
 }
 
 .col-links a:hover {
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
   transform: translateX(2px);
 }
 
@@ -228,7 +230,7 @@ import { RouterLink } from 'vue-router'
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
   text-decoration: none;
 }
 
@@ -237,12 +239,12 @@ import { RouterLink } from 'vue-router'
 }
 
 .contact-link:hover {
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
 }
 
 .contact-icon {
   font-size: 18px;
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
 }
 
 /* Social Buttons */
@@ -257,8 +259,8 @@ import { RouterLink } from 'vue-router'
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #f4f5f6;
-  color: #5d5f5f;
+  background: var(--soft, #f4f5f6);
+  color: var(--muted, #5d5f5f);
   display: grid;
   place-items: center;
   text-decoration: none;
@@ -266,8 +268,8 @@ import { RouterLink } from 'vue-router'
 }
 
 .social-btn:hover {
-  background: #ffd9e2;
-  color: #5e3e47;
+  background: var(--pink-light, #ffd9e2);
+  color: var(--pink-dark, #5e3e47);
   transform: translateY(-2px);
 }
 
@@ -278,14 +280,14 @@ import { RouterLink } from 'vue-router'
 /* Bottom Bar */
 .footer-bottom {
   padding-top: 24px;
-  border-top: 1px solid #edf0f1;
+  border-top: 1px solid var(--outline, #edf0f1);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
   font-size: 12.5px;
-  color: #817476;
+  color: var(--muted, #817476);
 }
 
 .copyright {
@@ -299,8 +301,8 @@ import { RouterLink } from 'vue-router'
 }
 
 .demo-chip {
-  background: #fce4ec;
-  color: #78555e;
+  background: var(--pink-light, #fce4ec);
+  color: var(--pink-dark, #78555e);
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11.5px;
@@ -308,7 +310,7 @@ import { RouterLink } from 'vue-router'
 }
 
 .divider {
-  color: #d3c3c5;
+  color: var(--outline, #d3c3c5);
 }
 
 /* Responsive */

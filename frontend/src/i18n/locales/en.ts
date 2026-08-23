@@ -28,6 +28,11 @@ export default {
       refundPolicy: 'Refund & Cancellation',
       copyright: '© 2026 Aura Court. All rights reserved.',
     },
+    theme: {
+      toggle: 'Toggle light / dark theme',
+      light: 'Light Mode',
+      dark: 'Dark Mode',
+    },
     currency: '₫',
     perHour: '/hour',
     fromPrice: 'From {price}/hr',

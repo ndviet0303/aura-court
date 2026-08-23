@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -60,6 +61,7 @@ const isBookingActive = computed(() => {
 
       <!-- Right Actions & Profile -->
       <div class="nav-right">
+        <ThemeToggle />
         <LanguageSwitcher />
 
         <div v-if="auth.user" class="user-profile-group">
@@ -104,11 +106,12 @@ const isBookingActive = computed(() => {
   width: 100%;
   z-index: 50;
   height: 78px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--topbar-bg, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--outline, rgba(0, 0, 0, 0.06));
   box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .topbar-inner {
@@ -137,11 +140,11 @@ const isBookingActive = computed(() => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #ffd9e2;
+  background: var(--pink-light, #ffd9e2);
   display: grid;
   place-items: center;
   transition: transform 0.2s ease;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .brand:hover .brand-logo-box {
@@ -157,8 +160,9 @@ const isBookingActive = computed(() => {
 .brand-title {
   font-size: 21px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   letter-spacing: -0.03em;
+  transition: color 0.3s ease;
 }
 
 /* Floating Center Capsule Nav */
@@ -166,10 +170,11 @@ const isBookingActive = computed(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f4f5f6;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--surface-subtle, #f4f5f6);
+  border: 1px solid var(--outline, rgba(0, 0, 0, 0.05));
   border-radius: 9999px;
   padding: 4px 6px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .nav-pill-link {
@@ -178,18 +183,18 @@ const isBookingActive = computed(() => {
   border-radius: 9999px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .nav-pill-link:hover {
-  color: #78555e;
+  color: var(--pink-dark, #78555e);
 }
 
 .nav-pill-link.active,
 .nav-pill-link.router-link-exact-active {
-  background: #6e4752;
+  background: var(--pink-dark, #6e4752);
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(110, 71, 82, 0.25);
@@ -199,7 +204,7 @@ const isBookingActive = computed(() => {
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   flex-shrink: 0;
 }
 
@@ -220,14 +225,15 @@ const isBookingActive = computed(() => {
 .user-name {
   font-size: 13.5px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
+  transition: color 0.3s ease;
 }
 
 .user-badge {
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #8c5b67;
+  color: var(--pink-dark, #8c5b67);
   text-transform: uppercase;
   margin-top: 1px;
 }
@@ -236,8 +242,8 @@ const isBookingActive = computed(() => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #ffd9e2;
-  color: #5e3e47;
+  background: var(--pink-light, #ffd9e2);
+  color: var(--pink-dark, #5e3e47);
   display: grid;
   place-items: center;
   text-decoration: none;
@@ -256,7 +262,7 @@ const isBookingActive = computed(() => {
 .logout-icon-btn {
   border: 0;
   background: transparent;
-  color: #817476;
+  color: var(--muted, #817476);
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -267,7 +273,7 @@ const isBookingActive = computed(() => {
 }
 
 .logout-icon-btn:hover {
-  background: #f3f4f5;
+  background: var(--soft, #f3f4f5);
   color: #ba1a1a;
 }
 
