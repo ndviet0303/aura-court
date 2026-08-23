@@ -60,7 +60,16 @@ Route::prefix('v1')->group(function () {
 
             return ['message' => 'Email đã được xác thực.'];
         })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
-        Route::patch('profile', fn (Request $request) => $request->user()->update($request->validate(['name' => 'sometimes|string|max:120'])) ? $request->user()->fresh() : $request->user());
+        Route::patch('profile', function (Request $request) {
+            $data = $request->validate([
+                'name' => 'sometimes|string|max:120',
+                'phone' => 'nullable|string|max:30',
+                'play_level' => 'nullable|string|max:50',
+            ]);
+            $user = $request->user();
+            $user->update($data);
+            return response()->json($user->fresh());
+        });
         Route::patch('profile/password', [AuthController::class, 'changePassword']);
         Route::get('bookings', [BookingController::class, 'index']);
         Route::post('bookings', [BookingController::class, 'store'])->middleware('verified');
