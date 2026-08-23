@@ -55,6 +55,8 @@ const router = createRouter({
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, titleKey: 'seo.paymentTitle', indexable: false } },
     { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, admin: true, titleKey: 'seo.adminTitle', indexable: false } },
     { path: '/admin/manage', name: 'admin-manage', component: AdminManageView, meta: { auth: true, admin: true, title: 'Quản lý sân | Aura Court', indexable: false } },
+    { path: '/admin/schedule', name: 'admin-schedule', component: () => import('../views/AdminScheduleView.vue'), meta: { auth: true, admin: true, title: 'Lịch hoạt động & Bảo trì | Aura Court', indexable: false } },
+    { path: '/admin/operating-hours', redirect: '/admin/schedule' },
     { path: '/admin/venues', name: 'admin-venues', component: AdminVenuesView, meta: { auth: true, admin: true, title: 'Quản lý địa điểm | Aura Court', indexable: false } },
     { path: '/admin/organization', name: 'admin-organization', component: () => import('../views/OrganizationOwnerView.vue'), meta: { auth: true, title: 'Quản trị Tổ chức | Aura Court', indexable: false } },
     { path: '/admin/pricing', name: 'admin-pricing', component: () => import('../views/V2PricingCalendarView.vue'), meta: { auth: true, title: 'Lịch giá v2 | Aura Court', indexable: false } },

@@ -42,11 +42,27 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        $admin = User::firstOrNew(['email' => env('SEED_ADMIN_EMAIL', 'admin@example.com')]);
+        $admin = User::firstOrNew(['email' => 'admin@auracourt.vn']);
         $admin->forceFill([
-            'name' => 'Quản trị viên',
-            'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'ChangeMe123!')),
+            'name' => 'Aura Administrator',
+            'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'Admin@123456')),
             'role' => 'admin',
+            'phone' => '0988888888',
+            'play_level' => 'advanced',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => $now,
+        ])->save();
+
+        $adminExample = User::firstOrNew(['email' => env('SEED_ADMIN_EMAIL', 'admin@example.com')]);
+        $adminExample->forceFill([
+            'name' => 'Quản trị viên',
+            'password' => Hash::make(env('SEED_ADMIN_PASSWORD', 'Admin@123456')),
+            'role' => 'admin',
+            'phone' => '0912345678',
+            'play_level' => 'advanced',
+            'onboarded' => true,
+            'password_set' => true,
             'email_verified_at' => $now,
         ])->save();
 
@@ -55,8 +71,10 @@ class DatabaseSeeder extends Seeder
         ]);
         $demoAdmin->forceFill([
             'name' => 'Quản trị demo',
-            'password' => Hash::make(env('SEED_DEMO_ADMIN_PASSWORD', 'Demo12345!')),
+            'password' => Hash::make(env('SEED_DEMO_ADMIN_PASSWORD', 'Admin@123456')),
             'role' => 'admin',
+            'onboarded' => true,
+            'password_set' => true,
             'email_verified_at' => $now,
         ])->save();
 

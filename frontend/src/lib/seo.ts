@@ -26,6 +26,7 @@ export function applySeo(route: RouteLocationNormalizedLoaded): void {
 
   let title = t('seo.homeTitle')
   let description = t('seo.homeDesc')
+  const defaultImage = `${window.location.origin}/og-image.jpg`
 
   if (typeof route.meta.titleKey === 'string') {
     title = t(route.meta.titleKey)
@@ -48,7 +49,9 @@ export function applySeo(route: RouteLocationNormalizedLoaded): void {
   setMeta('property', 'og:title', title)
   setMeta('property', 'og:description', description)
   setMeta('property', 'og:url', canonical)
+  setMeta('property', 'og:image', defaultImage)
   setMeta('name', 'twitter:title', title)
   setMeta('name', 'twitter:description', description)
+  setMeta('name', 'twitter:image', defaultImage)
   setCanonical(canonical)
 }

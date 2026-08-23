@@ -1208,3 +1208,41 @@ input[type='number']::-webkit-outer-spin-button {
   appearance: none;
   margin: 0;
 }
+
+/* Global Admin Navigation Tab Bar */
+.admin-tab-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border, #e0e4ea);
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted, #6c757d);
+  text-decoration: none;
+  background: var(--surface-subtle, #f3f4f5);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-nav-item:hover {
+  background: var(--soft, #e7e8e9);
+  color: var(--ink, #191c1d);
+}
+
+.admin-nav-item.active {
+  background: var(--pink, #ffd1dc);
+  color: var(--pink-dark, #78555e);
+  font-weight: 600;
+}
+
