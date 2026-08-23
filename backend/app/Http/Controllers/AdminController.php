@@ -16,6 +16,7 @@ use App\Services\PaymentService;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -263,5 +264,30 @@ class AdminController extends Controller
             }
             fclose($output);
         }, 'booking-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|file|mimes:jpeg,png,jpg,webp,avif,gif|max:10240',
+        ]);
+
+        $file = $request->file('image');
+        $filename = 'courts/' . Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+        $disk = config('filesystems.disks.r2.key') ? 'r2' : (config('filesystems.disks.s3.key') ? 's3' : 'public');
+
+        try {
+            Storage::disk($disk)->putFileAs('', $file, $filename, 'public');
+            $url = Storage::disk($disk)->url($filename);
+        } catch (\Throwable $e) {
+            $path = Storage::disk('public')->putFileAs('courts', $file, Str::uuid() . '.' . $file->getClientOriginalExtension(), 'public');
+            $url = Storage::disk('public')->url($path);
+        }
+
+        return response()->json([
+            'url' => $url,
+            'filename' => $filename,
+        ]);
     }
 }

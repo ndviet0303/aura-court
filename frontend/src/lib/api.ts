@@ -45,13 +45,21 @@ function xsrfHeader(): Record<string, string> {
 }
 
 function sendTo(url: string, options: RequestInit): Promise<Response> {
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+  const baseHeaders: Record<string, string> = {
+    Accept: 'application/json',
+    'Accept-Language': getCurrentLocale(),
+    ...xsrfHeader(),
+  }
+
+  if (!isFormData) {
+    baseHeaders['Content-Type'] = 'application/json'
+  }
+
   return fetch(url, {
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'Accept-Language': getCurrentLocale(),
-      ...xsrfHeader(),
+      ...baseHeaders,
       ...options.headers,
     },
     ...options,
@@ -86,7 +94,11 @@ function idempotencyKey(): string {
 export const api = {
   csrf: csrfCookie,
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'POST',
+      body: typeof FormData !== 'undefined' && body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 }

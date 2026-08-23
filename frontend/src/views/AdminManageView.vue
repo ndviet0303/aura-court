@@ -6,6 +6,7 @@ import { api, errorMessage } from '@/lib/api'
 import type { Court, CourtBlock, PriceSlot, Refund, Venue } from '@/types'
 import TimePicker from '@/components/TimePicker.vue'
 import DateTimePicker from '@/components/DateTimePicker.vue'
+import SelectDropdown from '@/components/SelectDropdown.vue'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDateTime } from '@/i18n'
 
@@ -51,6 +52,124 @@ const showCouponModal = ref(false)
 const couponForm = ref({ code: '', discount_type: 'percent' as 'fixed' | 'percent', discount_value: 10, usage_limit: 20 })
 
 const activeVenues = computed(() => venues.value.filter((venue) => venue.is_active))
+
+const venueDropdownOptions = computed(() =>
+  activeVenues.value.map((venue) => ({
+    value: venue.id,
+    label: venue.name,
+    sublabel: venue.address || undefined,
+    icon: 'location_on',
+  }))
+)
+
+const selectedVenueForCourt = computed(() =>
+  activeVenues.value.find((v) => v.id === courtForm.value.venue_id)
+)
+
+const courtImagePresets = [
+  {
+    name: 'Yonex BWF',
+    sub: 'Thảm chuẩn 5 lớp',
+    url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Thảm Xanh',
+    sub: 'Sân đôi phong trào',
+    url: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Indoor VIP',
+    sub: 'Nhà thi đấu kín',
+    url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Đèn LED Pro',
+    sub: 'Chiếu sáng 500 Lux',
+    url: 'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?auto=format&fit=crop&w=800&q=80',
+  },
+]
+
+const courtDescriptionTags = [
+  { label: 'Thảm BWF 5 lớp tiêu chuẩn', icon: 'layers' },
+  { label: 'Đèn LED chống chói 500 Lux', icon: 'light_mode' },
+  { label: 'Điều hòa không khí trung tâm', icon: 'ac_unit' },
+  { label: 'Ghế nghỉ trọng tài & VĐV', icon: 'chair' },
+  { label: 'Bảng điểm điện tử LED', icon: 'scoreboard' },
+  { label: 'Thảm giảm chấn bảo vệ khớp gối', icon: 'fitness_center' },
+]
+
+function toggleDescriptionTag(tagLabel: string) {
+  if (!courtForm.value.description) {
+    courtForm.value.description = tagLabel
+    return
+  }
+  if (courtForm.value.description.includes(tagLabel)) {
+    courtForm.value.description = courtForm.value.description
+      .replace(new RegExp(`(^|,\\s*)` + tagLabel.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')), '')
+      .replace(/^,\s*/, '')
+      .trim()
+  } else {
+    courtForm.value.description = `${courtForm.value.description}, ${tagLabel}`
+  }
+}
+
+// R2 Upload State & Handlers
+const uploadingImage = ref(false)
+const uploadError = ref('')
+const isDragging = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function triggerFileInput() {
+  fileInput.value?.click()
+}
+
+async function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  uploadError.value = ''
+  uploadingImage.value = true
+
+  if (isDemoAdmin.value) {
+    setTimeout(() => {
+      courtForm.value.image_url = URL.createObjectURL(file)
+      uploadingImage.value = false
+    }, 600)
+    return
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const res = await api.post<{ url: string; filename: string }>('/admin/upload', formData)
+    courtForm.value.image_url = res.url
+  } catch (err: unknown) {
+    uploadError.value = errorMessage(err, 'Không thể tải ảnh lên Cloudflare R2.')
+  } finally {
+    uploadingImage.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault()
+  isDragging.value = true
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault()
+  isDragging.value = false
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault()
+  isDragging.value = false
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+  const fakeEvent = { target: { files: [file] } } as unknown as Event
+  handleFileUpload(fakeEvent)
+}
 
 // Filtered Courts
 const filteredCourts = computed(() => {
@@ -699,80 +818,166 @@ onMounted(load)
 
     <!-- MODAL 1: Create / Edit Court -->
     <div v-if="showCourtModal" class="modal-backdrop" @click.self="showCourtModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="flex items-center gap-xs">
-            <span class="material-symbols-outlined text-pink">sports_tennis</span>
-            <h3 class="font-semibold text-lg">{{ editingCourt ? 'Cập nhật sân' : 'Thêm sân mới' }}</h3>
+      <div class="aura-court-modal">
+        <!-- Header -->
+        <div class="aura-modal-header">
+          <div class="aura-header-left">
+            <div class="aura-icon-box">
+              <span class="material-symbols-outlined">sports_tennis</span>
+            </div>
+            <div>
+              <h3 class="aura-modal-title">{{ editingCourt ? 'Cập nhật sân thi đấu' : 'Thêm sân thi đấu mới' }}</h3>
+              <p class="aura-modal-sub">Cấu hình thông số và tải ảnh lưu trữ Cloudflare R2</p>
+            </div>
           </div>
-          <button type="button" class="btn-close" @click="showCourtModal = false">
+          <button type="button" class="aura-btn-close" aria-label="Đóng" @click="showCourtModal = false">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form class="modal-body space-y-4" @submit.prevent="saveCourt">
-          <div class="form-group">
-            <label class="form-label">Tên sân:</label>
+        <form class="aura-modal-body" @submit.prevent="saveCourt">
+          <!-- Row 1: Tên sân & Cụm sân -->
+          <div class="aura-form-grid-2">
+            <div class="aura-field">
+              <label class="aura-label">
+                <span>Tên sân thi đấu <span class="text-pink">*</span></span>
+              </label>
+              <input
+                v-model="courtForm.name"
+                type="text"
+                class="aura-input"
+                placeholder="VD: Sân 1 - Yonex BWF"
+                required
+                maxlength="120"
+              />
+            </div>
+
+            <div class="aura-field">
+              <label class="aura-label">
+                <span>Cụm sân trực thuộc <span class="text-pink">*</span></span>
+              </label>
+              <select v-model.number="courtForm.venue_id" class="aura-select" required>
+                <option v-for="venue in activeVenues" :key="venue.id" :value="venue.id">
+                  {{ venue.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 2: Cloudflare R2 Upload Image Box -->
+          <div class="aura-field">
+            <div class="aura-label-row">
+              <span class="aura-label">Hình ảnh sân (Cloudflare R2)</span>
+              <button
+                v-if="courtForm.image_url"
+                type="button"
+                class="aura-text-btn"
+                @click="courtForm.image_url = ''"
+              >
+                Xóa ảnh
+              </button>
+            </div>
+
             <input
-              v-model="courtForm.name"
-              type="text"
-              class="form-input"
-              placeholder="VD: Sân 1 - Thảm BWF Cầu Giấy"
-              required
-              maxlength="120"
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              style="display: none;"
+              @change="handleFileUpload"
             />
+
+            <!-- Preview if image selected -->
+            <div v-if="courtForm.image_url" class="aura-img-preview-card" @click="triggerFileInput">
+              <img :src="courtForm.image_url" alt="Ảnh sân" class="aura-preview-img" />
+              <div class="aura-preview-overlay">
+                <span class="aura-r2-tag">
+                  <span class="material-symbols-outlined text-xs">cloud_done</span>
+                  <span>Cloudflare R2</span>
+                </span>
+                <span class="aura-change-hint">
+                  <span class="material-symbols-outlined text-sm">photo_camera</span>
+                  <span>Đổi ảnh khác</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Upload Dropzone if no image -->
+            <div
+              v-else
+              class="aura-upload-dropzone"
+              :class="{ 'is-dragging': isDragging }"
+              @click="triggerFileInput"
+              @dragover="onDragOver"
+              @dragleave="onDragLeave"
+              @drop="onDrop"
+            >
+              <div class="aura-upload-icon-circle">
+                <span v-if="uploadingImage" class="material-symbols-outlined animate-spin text-lg text-pink">progress_activity</span>
+                <span v-else class="material-symbols-outlined text-xl text-pink">cloud_upload</span>
+              </div>
+              <div class="aura-upload-text">
+                <p class="aura-upload-title">{{ uploadingImage ? 'Đang tải ảnh lên Cloudflare R2...' : 'Tải ảnh sân lên Cloudflare R2' }}</p>
+                <p class="aura-upload-hint">Kéo thả hoặc nhấp để chọn tệp (JPG, PNG, WebP tối đa 10MB)</p>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="aura-presets-bar">
+              <span class="aura-presets-label">Mẫu nhanh:</span>
+              <div class="aura-presets-list">
+                <button
+                  v-for="preset in courtImagePresets"
+                  :key="preset.name"
+                  type="button"
+                  class="aura-preset-chip"
+                  :class="{ active: courtForm.image_url === preset.url }"
+                  @click="courtForm.image_url = preset.url"
+                >
+                  {{ preset.name }}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Địa điểm / Cụm sân:</label>
-            <select v-model.number="courtForm.venue_id" class="form-input" required>
-              <option v-for="venue in activeVenues" :key="venue.id" :value="venue.id">
-                {{ venue.name }} ({{ venue.address }})
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Ảnh đại diện URL (tùy chọn):</label>
-            <input
-              v-model="courtForm.image_url"
-              type="url"
-              class="form-input"
-              placeholder="https://images.unsplash.com/..."
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Mô tả đặc điểm sân:</label>
+          <!-- Row 3: Mô tả & Tiện ích sân -->
+          <div class="aura-field">
+            <label class="aura-label">Mô tả & Tiện ích tiêu chuẩn</label>
             <textarea
               v-model="courtForm.description"
-              class="form-input"
-              rows="3"
-              placeholder="VD: Sân thảm BWF tiêu chuẩn 5 lớp, đèn LED chống chói 500 Lux..."
+              class="aura-textarea"
+              rows="2"
+              placeholder="VD: Thảm BWF 5 lớp, đèn LED chống chói 500 Lux, điều hòa trung tâm..."
             ></textarea>
           </div>
 
-          <div class="form-group">
-            <label class="flex items-center gap-2 cursor-pointer">
+          <!-- Row 4: Status Toggle Row -->
+          <div class="aura-status-box">
+            <div class="aura-status-text">
+              <span class="aura-status-name">Cho phép mở đặt lịch trực tuyến</span>
+              <span class="aura-status-desc">Hiển thị công khai trên ứng dụng để khách hàng đặt sân</span>
+            </div>
+            <label class="aura-switch">
               <input v-model="courtForm.is_active" type="checkbox" />
-              <span class="font-medium text-sm">Cho phép sân hoạt động và mở đặt lịch</span>
+              <span class="aura-slider"></span>
             </label>
           </div>
 
-          <div class="modal-footer">
+          <!-- Footer -->
+          <div class="aura-modal-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="aura-btn-secondary"
               @click="showCourtModal = false"
             >
               {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
-              class="btn btn-primary"
-              :disabled="saving || !activeVenues.length"
+              class="aura-btn-primary"
+              :disabled="saving || uploadingImage || !activeVenues.length"
             >
-              {{ saving ? t('common.submitting') : 'Lưu sân' }}
+              <span v-if="saving" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              <span>{{ saving ? t('common.submitting') : (editingCourt ? 'Cập nhật sân' : 'Lưu sân mới') }}</span>
             </button>
           </div>
         </form>
@@ -1827,5 +2032,430 @@ onMounted(load)
 
 .btn-secondary:hover {
   background: var(--soft, #dfe0e0);
+}
+
+/* Court Modal Spacious Redesign */
+/* Aura Court Modal Premium Design */
+.aura-court-modal {
+  width: 100%;
+  max-width: 580px;
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: var(--ink, #ffffff);
+  animation: modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.aura-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.aura-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.aura-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--pink-light, rgba(248, 180, 196, 0.12));
+  border: 1px solid var(--outline, rgba(248, 180, 196, 0.25));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pink-dark, #f8b4c4);
+  flex-shrink: 0;
+}
+
+.aura-icon-box .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.aura-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.aura-modal-sub {
+  font-size: 12px;
+  color: var(--muted, #9ca3af);
+  margin: 2px 0 0;
+}
+
+.aura-btn-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aura-btn-close:hover {
+  background: var(--soft, rgba(255, 255, 255, 0.08));
+  color: var(--ink, #ffffff);
+}
+
+.aura-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aura-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 540px) {
+  .aura-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.aura-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aura-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aura-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink, #e5e7eb);
+}
+
+.aura-text-btn {
+  font-size: 11.5px;
+  color: var(--pink-dark, #f8b4c4);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.aura-text-btn:hover {
+  opacity: 0.8;
+}
+
+.aura-input,
+.aura-select,
+.aura-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+  font-size: 13.5px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.aura-input:focus,
+.aura-select:focus,
+.aura-textarea:focus {
+  outline: none;
+  border-color: var(--pink-dark, #f8b4c4);
+  box-shadow: 0 0 0 3px rgba(248, 180, 196, 0.15);
+  background: var(--surface, #1e2025);
+}
+
+.aura-select {
+  cursor: pointer;
+}
+
+.aura-textarea {
+  resize: vertical;
+  min-height: 56px;
+}
+
+/* Upload Dropzone */
+.aura-upload-dropzone {
+  border: 1.5px dashed var(--border, rgba(255, 255, 255, 0.15));
+  border-radius: 14px;
+  padding: 14px 18px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.02));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aura-upload-dropzone:hover,
+.aura-upload-dropzone.is-dragging {
+  border-color: var(--pink-dark, #f8b4c4);
+  background: var(--pink-light, rgba(248, 180, 196, 0.06));
+}
+
+.aura-upload-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--pink-light, rgba(248, 180, 196, 0.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aura-upload-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+  margin: 0;
+}
+
+.aura-upload-hint {
+  font-size: 11.5px;
+  color: var(--muted, #9ca3af);
+  margin: 2px 0 0;
+}
+
+/* Preview Card */
+.aura-img-preview-card {
+  position: relative;
+  height: 110px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  cursor: pointer;
+  background: #000;
+}
+
+.aura-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.aura-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 30%, rgba(0,0,0,0.7) 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.aura-r2-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.aura-change-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* Presets Bar */
+.aura-presets-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.aura-presets-label {
+  font-size: 11.5px;
+  color: var(--muted, #9ca3af);
+}
+
+.aura-presets-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.aura-preset-chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--ink, #d1d5db);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aura-preset-chip:hover {
+  border-color: var(--pink-dark, #f8b4c4);
+  color: var(--ink, #ffffff);
+}
+
+.aura-preset-chip.active {
+  background: var(--pink-light, rgba(248, 180, 196, 0.15));
+  border-color: var(--pink-dark, #f8b4c4);
+  color: var(--pink-dark, #f8b4c4);
+  font-weight: 600;
+}
+
+/* Status Box */
+.aura-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+}
+
+.aura-status-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+  display: block;
+}
+
+.aura-status-desc {
+  font-size: 11.5px;
+  color: var(--muted, #9ca3af);
+  display: block;
+  margin-top: 1px;
+}
+
+/* Switch Toggle */
+.aura-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.aura-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.aura-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--outline, #4b5563);
+  transition: 0.25s ease;
+  border-radius: 24px;
+}
+
+.aura-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.aura-switch input:checked + .aura-slider {
+  background-color: var(--pink-dark, #f8b4c4);
+}
+
+.aura-switch input:checked + .aura-slider:before {
+  transform: translateX(20px);
+  background-color: #3d2b31;
+}
+
+/* Footer */
+.aura-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.aura-btn-secondary {
+  padding: 9px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #d1d5db);
+  transition: all 0.15s ease;
+}
+
+.aura-btn-secondary:hover {
+  background: var(--soft, rgba(255, 255, 255, 0.12));
+  color: var(--ink, #ffffff);
+}
+
+.aura-btn-primary {
+  padding: 9px 24px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--pink, #ffd1dc);
+  border: none;
+  color: var(--pink-dark, #78555e);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+}
+
+.aura-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 </style>

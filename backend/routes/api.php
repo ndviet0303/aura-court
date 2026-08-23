@@ -130,6 +130,7 @@ Route::prefix('v1')->group(function () {
             Route::get('membership-plans', [PromotionController::class, 'plans']);
             Route::post('membership-plans', [PromotionController::class, 'storePlan']);
             Route::post('memberships', [PromotionController::class, 'assignMembership']);
+            Route::post('upload', [AdminController::class, 'upload']);
         });
     });
 });
