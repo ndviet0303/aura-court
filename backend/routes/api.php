@@ -118,6 +118,7 @@ Route::prefix('v1')->group(function () {
             Route::get('payments', [AdminController::class, 'payments']);
             Route::patch('payments/{payment}', [AdminController::class, 'reviewPayment']);
             Route::post('courts/{court}/prices', [AdminController::class, 'prices']);
+            Route::post('courts/{court}/prices/bulk', [AdminController::class, 'bulkPrices']);
             Route::patch('courts/{court}/prices/{price}', [AdminController::class, 'updatePrice']);
             Route::delete('courts/{court}/prices/{price}', [AdminController::class, 'destroyPrice']);
             Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);

@@ -62,6 +62,50 @@ const venueDropdownOptions = computed(() =>
   }))
 )
 
+const venueFilterOptions = computed(() => [
+  { value: 'all', label: `Tất cả địa điểm (${venues.value.length})`, icon: 'domain' },
+  ...venues.value.map((v) => ({
+    value: v.id,
+    label: v.name,
+    sublabel: v.address || undefined,
+    icon: 'location_on',
+  })),
+])
+
+const statusFilterOptions = [
+  { value: 'all', label: 'Tất cả trạng thái', icon: 'filter_list' },
+  { value: 'active', label: 'Đang mở cửa', icon: 'check_circle' },
+  { value: 'inactive', label: 'Đã tạm ngừng', icon: 'pause_circle' },
+]
+
+const bulkScopeOptions = computed(() => [
+  {
+    value: 'current',
+    label: selectedWeekdayTab.value === 0 ? 'Tất cả 7 ngày trong tuần' : `Chỉ áp dụng cho Thứ ${selectedWeekdayTab.value}`,
+    icon: 'today',
+  },
+  { value: 'weekdays', label: 'Thứ 2 đến Thứ 6 (Ngày trong tuần)', icon: 'date_range' },
+  { value: 'weekends', label: 'Thứ 7 & Chủ Nhật (Cuối tuần)', icon: 'event' },
+  { value: 'all', label: 'Tất cả các ngày (Cả tuần)', icon: 'calendar_month' },
+])
+
+const bulkStartHourOptions = Array.from({ length: 18 }, (_, i) => ({
+  value: i + 5,
+  label: `${String(i + 5).padStart(2, '0')}:00`,
+}))
+
+const bulkEndHourOptions = computed(() =>
+  Array.from({ length: 18 }, (_, i) => ({
+    value: i + 6,
+    label: `${String(i + 6).padStart(2, '0')}:00`,
+  })).filter((opt) => opt.value > bulkStartHour.value)
+)
+
+const discountTypeOptions = [
+  { value: 'percent', label: 'Phần trăm (%)', icon: 'percent' },
+  { value: 'fixed', label: 'Số tiền cố định (₫)', icon: 'payments' },
+]
+
 const selectedVenueForCourt = computed(() =>
   activeVenues.value.find((v) => v.id === courtForm.value.venue_id)
 )
@@ -310,11 +354,217 @@ async function toggleCourtStatus(court: Court) {
   }
 }
 
-// Price Slot Modal
+// Price Slot Modal State & Methods
+const selectedWeekdayTab = ref<number>(1)
+const bulkScope = ref<'current' | 'weekdays' | 'weekends' | 'all'>('current')
+const bulkStartHour = ref<number>(6)
+const bulkEndHour = ref<number>(23)
+const bulkPrice = ref<number>(100000)
+const inlineEditingSlotId = ref<number | null>(null)
+const inlineEditingPrice = ref<number>(100000)
+const bulkSaving = ref<boolean>(false)
+
+const weekdayList = [
+  { id: 1, label: 'Thứ 2', short: 'T2' },
+  { id: 2, label: 'Thứ 3', short: 'T3' },
+  { id: 3, label: 'Thứ 4', short: 'T4' },
+  { id: 4, label: 'Thứ 5', short: 'T5' },
+  { id: 5, label: 'Thứ 6', short: 'T6' },
+  { id: 6, label: 'Thứ 7', short: 'T7', isWeekend: true },
+  { id: 7, label: 'Chủ nhật', short: 'CN', isWeekend: true },
+]
+
+const modalPriceSlots = computed(() => {
+  if (!selectedCourtForPrice.value?.price_slots) return []
+  return [...selectedCourtForPrice.value.price_slots].sort((a, b) => {
+    if (a.weekday !== b.weekday) return a.weekday - b.weekday
+    return a.starts_at.localeCompare(b.starts_at)
+  })
+})
+
+const activeWeekdaySlots = computed(() => {
+  const all = modalPriceSlots.value
+  if (selectedWeekdayTab.value === 0) return all
+  return all.filter((s) => s.weekday === selectedWeekdayTab.value)
+})
+
+const modalPricingStats = computed(() => {
+  const slots = activeWeekdaySlots.value
+  if (!slots.length) return { count: 0, min: 0, max: 0, avg: 0 }
+  const prices = slots.map((s) => s.price)
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
+  return { count: slots.length, min, max, avg }
+})
+
+const morningSlots = computed(() => activeWeekdaySlots.value.filter((s) => {
+  const h = parseInt(s.starts_at.slice(0, 2), 10)
+  return h >= 6 && h < 12
+}))
+
+const afternoonSlots = computed(() => activeWeekdaySlots.value.filter((s) => {
+  const h = parseInt(s.starts_at.slice(0, 2), 10)
+  return h >= 12 && h < 17
+}))
+
+const peakSlots = computed(() => activeWeekdaySlots.value.filter((s) => {
+  const h = parseInt(s.starts_at.slice(0, 2), 10)
+  return h >= 17 && h < 22
+}))
+
+const nightSlots = computed(() => activeWeekdaySlots.value.filter((s) => {
+  const h = parseInt(s.starts_at.slice(0, 2), 10)
+  return h >= 22 || h < 6
+}))
+
 function openPriceModal(court: Court) {
   selectedCourtForPrice.value = court
-  priceForm.value = { weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 120000 }
+  selectedWeekdayTab.value = 1
+  priceForm.value = { weekday: 1, starts_at: '06:00', ends_at: '07:00', price: 100000 }
+  bulkPrice.value = 100000
+  bulkStartHour.value = 6
+  bulkEndHour.value = 23
+  bulkScope.value = 'current'
+  inlineEditingSlotId.value = null
   showPriceModal.value = true
+}
+
+async function applyBulkPricing() {
+  if (!selectedCourtForPrice.value) return
+  bulkSaving.value = true
+  error.value = ''
+  notice.value = ''
+  try {
+    const court = selectedCourtForPrice.value
+    let targetWeekdays: number[] = []
+    if (bulkScope.value === 'current') {
+      targetWeekdays = selectedWeekdayTab.value === 0 ? [1, 2, 3, 4, 5, 6, 7] : [selectedWeekdayTab.value]
+    } else if (bulkScope.value === 'weekdays') {
+      targetWeekdays = [1, 2, 3, 4, 5]
+    } else if (bulkScope.value === 'weekends') {
+      targetWeekdays = [6, 7]
+    } else {
+      targetWeekdays = [1, 2, 3, 4, 5, 6, 7]
+    }
+
+    if (isDemoAdmin.value) {
+      const prices = [...(court.price_slots || [])]
+      for (const w of targetWeekdays) {
+        for (let h = bulkStartHour.value; h < bulkEndHour.value; h++) {
+          const startsAt = `${String(h).padStart(2, '0')}:00`
+          const endsAt = `${String(h + 1).padStart(2, '0')}:00`
+          const idx = prices.findIndex((p) => p.weekday === w && p.starts_at.slice(0, 5) === startsAt)
+          const item = {
+            id: idx >= 0 ? prices[idx]!.id : -Math.floor(Date.now() + Math.random() * 1000),
+            court_id: court.id,
+            weekday: w,
+            starts_at: startsAt,
+            ends_at: endsAt,
+            price: bulkPrice.value,
+            is_active: true,
+          }
+          if (idx >= 0) prices[idx] = item
+          else prices.push(item)
+        }
+      }
+      court.price_slots = prices
+      notice.value = `Đã mô phỏng áp dụng mức giá ${formatCurrency(bulkPrice.value)}/giờ.`
+      return
+    }
+
+    const res = await api.post<{ message: string; slots?: PriceSlot[] }>(`/admin/courts/${court.id}/prices/bulk`, {
+      weekdays: targetWeekdays,
+      start_hour: bulkStartHour.value,
+      end_hour: bulkEndHour.value,
+      price: bulkPrice.value,
+    })
+    notice.value = res.message || 'Đã cập nhật khung giá hàng loạt.'
+    await load()
+    selectedCourtForPrice.value = courts.value.find((c) => c.id === court.id) || court
+  } catch (cause: unknown) {
+    error.value = errorMessage(cause, 'Không thể cập nhật khung giá hàng loạt.')
+  } finally {
+    bulkSaving.value = false
+  }
+}
+
+async function applyPreset(type: 'standard' | 'peak' | 'weekend') {
+  if (!selectedCourtForPrice.value) return
+  if (type === 'standard') {
+    bulkScope.value = 'weekdays'
+    bulkStartHour.value = 6
+    bulkEndHour.value = 17
+    bulkPrice.value = 100000
+  } else if (type === 'peak') {
+    bulkScope.value = 'weekdays'
+    bulkStartHour.value = 17
+    bulkEndHour.value = 22
+    bulkPrice.value = 130000
+  } else if (type === 'weekend') {
+    bulkScope.value = 'weekends'
+    bulkStartHour.value = 6
+    bulkEndHour.value = 23
+    bulkPrice.value = 140000
+  }
+  await applyBulkPricing()
+}
+
+function startInlineEdit(slot: PriceSlot) {
+  inlineEditingSlotId.value = slot.id || null
+  inlineEditingPrice.value = slot.price
+}
+
+function cancelInlineEdit() {
+  inlineEditingSlotId.value = null
+}
+
+async function saveInlineEdit(slot: PriceSlot) {
+  if (!selectedCourtForPrice.value) return
+  saving.value = true
+  error.value = ''
+  try {
+    const court = selectedCourtForPrice.value
+    const startsAt = slot.starts_at.slice(0, 5)
+    const endsAt = slot.ends_at.slice(0, 5)
+
+    if (isDemoAdmin.value) {
+      const prices = [...(court.price_slots || [])]
+      const idx = prices.findIndex((p) => p.id === slot.id)
+      if (idx >= 0) {
+        prices[idx] = { ...prices[idx]!, price: inlineEditingPrice.value }
+        court.price_slots = prices
+      }
+      inlineEditingSlotId.value = null
+      notice.value = `Đã cập nhật giá khung ${startsAt} - ${endsAt}.`
+      return
+    }
+
+    if (slot.id && slot.id > 0) {
+      await api.patch(`/admin/courts/${court.id}/prices/${slot.id}`, { price: inlineEditingPrice.value })
+    } else {
+      await api.post(`/admin/courts/${court.id}/prices`, {
+        weekday: slot.weekday,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        price: inlineEditingPrice.value,
+      })
+    }
+
+    inlineEditingSlotId.value = null
+    notice.value = `Đã cập nhật giá khung ${startsAt} - ${endsAt}.`
+    await load()
+    selectedCourtForPrice.value = courts.value.find((c) => c.id === court.id) || court
+  } catch (cause: unknown) {
+    error.value = errorMessage(cause, 'Không thể cập nhật giá.')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function quickAdjustPrice(slot: PriceSlot, delta: number) {
+  inlineEditingPrice.value = Math.max(0, slot.price + delta)
+  await saveInlineEdit(slot)
 }
 
 async function savePriceSlot() {
@@ -339,7 +589,6 @@ async function savePriceSlot() {
     await api.post(`/admin/courts/${court.id}/prices`, priceForm.value)
     notice.value = `Đã lưu khung giá cho ${court.name}.`
     await load()
-    // refresh modal court ref
     selectedCourtForPrice.value = courts.value.find((c) => c.id === court.id) || court
   } catch (cause: unknown) {
     error.value = errorMessage(cause, 'Không thể lưu khung giá.')
@@ -349,7 +598,7 @@ async function savePriceSlot() {
 }
 
 async function deletePriceSlot(price: PriceSlot) {
-  if (!selectedCourtForPrice.value || !price.id || !confirm('Xóa khung giá này?')) return
+  if (!selectedCourtForPrice.value || !price.id || !confirm(`Xóa khung giá ${price.starts_at.slice(0, 5)} - ${price.ends_at.slice(0, 5)}?`)) return
   const court = selectedCourtForPrice.value
   if (isDemoAdmin.value) {
     court.price_slots = (court.price_slots || []).filter((item) => item.id !== price.id)
@@ -571,16 +820,23 @@ onMounted(load)
       </div>
 
       <div class="filter-controls-group">
-        <select v-model="selectedVenueFilter" class="filter-select">
-          <option value="all">Tất cả địa điểm ({{ venues.length }})</option>
-          <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
-        </select>
+        <div class="filter-select-wrapper">
+          <SelectDropdown
+            v-model="selectedVenueFilter"
+            :options="venueFilterOptions"
+            variant="bordered"
+            aria-label="Lọc theo địa điểm"
+          />
+        </div>
 
-        <select v-model="statusFilter" class="filter-select">
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Đang mở cửa</option>
-          <option value="inactive">Đã tạm ngừng</option>
-        </select>
+        <div class="filter-select-wrapper">
+          <SelectDropdown
+            v-model="statusFilter"
+            :options="statusFilterOptions"
+            variant="bordered"
+            aria-label="Lọc theo trạng thái"
+          />
+        </div>
       </div>
     </div>
 
@@ -857,11 +1113,12 @@ onMounted(load)
                 <span class="aura-label">Cụm sân trực thuộc <span class="text-pink">*</span></span>
                 <RouterLink to="/admin/venues" class="aura-text-btn text-[11px]">+ Tạo cụm sân</RouterLink>
               </div>
-              <select v-model.number="courtForm.venue_id" class="aura-select" required>
-                <option v-for="venue in activeVenues" :key="venue.id" :value="venue.id">
-                  {{ venue.name }}
-                </option>
-              </select>
+              <SelectDropdown
+                v-model="courtForm.venue_id"
+                :options="venueDropdownOptions"
+                placeholder="Chọn cụm sân cơ sở..."
+                variant="bordered"
+              />
             </div>
           </div>
 
@@ -985,94 +1242,429 @@ onMounted(load)
       </div>
     </div>
 
-    <!-- MODAL 2: Court Pricing Setup -->
+    <!-- MODAL 2: Court Pricing Setup (Enhanced Aura Modern) -->
     <div v-if="showPriceModal" class="modal-backdrop" @click.self="showPriceModal = false">
-      <div class="modal-card max-w-xl">
-        <div class="modal-header">
-          <div class="flex items-center gap-xs">
-            <span class="material-symbols-outlined text-pink">price_change</span>
+      <div class="aura-pricing-modal-card">
+        <!-- Header -->
+        <div class="pricing-modal-header">
+          <div class="pricing-title-group">
+            <div class="pricing-icon-badge">
+              <span class="material-symbols-outlined">payments</span>
+            </div>
             <div>
-              <h3 class="font-semibold text-lg">Bảng giá: {{ selectedCourtForPrice?.name }}</h3>
-              <p class="muted text-xs">Cấu hình đơn giá theo từng thứ và khung giờ</p>
+              <div class="flex items-center gap-2">
+                <h3 class="pricing-modal-title">Cài đặt bảng giá: {{ selectedCourtForPrice?.name }}</h3>
+                <span class="court-venue-badge">
+                  <span class="material-symbols-outlined text-xs">location_on</span>
+                  {{ selectedCourtForPrice?.venue?.name || 'Aura Court' }}
+                </span>
+              </div>
+              <p class="pricing-modal-subtitle">
+                Quản lý khung giá theo từng thứ trong tuần, thiết lập giờ vàng/cao điểm hoặc áp dụng giá hàng loạt.
+              </p>
             </div>
           </div>
-          <button type="button" class="btn-close" @click="showPriceModal = false">
+          <button type="button" class="pricing-btn-close" @click="showPriceModal = false" aria-label="Đóng">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <div class="modal-body space-y-4">
-          <!-- Form to add new price slot -->
-          <form class="p-3 rounded-xl bg-surface-low border border-border space-y-3" @submit.prevent="savePriceSlot">
-            <h4 class="font-semibold text-sm">+ Thêm / Cập nhật khung giá:</h4>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div class="form-group">
-                <label class="text-xs font-semibold">Thứ (1-7):</label>
-                <select v-model.number="priceForm.weekday" class="form-input text-xs">
-                  <option :value="1">Thứ 2</option>
-                  <option :value="2">Thứ 3</option>
-                  <option :value="3">Thứ 4</option>
-                  <option :value="4">Thứ 5</option>
-                  <option :value="5">Thứ 6</option>
-                  <option :value="6">Thứ 7</option>
-                  <option :value="7">Chủ nhật</option>
-                </select>
+        <!-- Metrics Overview Bar -->
+        <div class="pricing-metrics-bar">
+          <div class="metric-item">
+            <span class="metric-label">Số khung giờ</span>
+            <span class="metric-value">{{ modalPricingStats.count }} / 17 khung</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Giá thấp nhất</span>
+            <span class="metric-value text-emerald">{{ modalPricingStats.count ? formatCurrency(modalPricingStats.min) : '--' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Giá cao nhất</span>
+            <span class="metric-value text-pink-accent">{{ modalPricingStats.count ? formatCurrency(modalPricingStats.max) : '--' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Giá trung bình</span>
+            <span class="metric-value text-primary">{{ modalPricingStats.count ? formatCurrency(modalPricingStats.avg) : '--' }}</span>
+          </div>
+        </div>
+
+        <!-- Weekday Navigation Tabs -->
+        <div class="weekday-tabs-nav">
+          <button
+            type="button"
+            class="weekday-tab-pill"
+            :class="{ active: selectedWeekdayTab === 0 }"
+            @click="selectedWeekdayTab = 0"
+          >
+            <span class="tab-main-text">Tất cả các thứ</span>
+            <span class="tab-count-badge">{{ modalPriceSlots.length }}</span>
+          </button>
+          <button
+            v-for="day in weekdayList"
+            :key="day.id"
+            type="button"
+            class="weekday-tab-pill"
+            :class="{ active: selectedWeekdayTab === day.id, 'weekend-pill': day.isWeekend }"
+            @click="selectedWeekdayTab = day.id"
+          >
+            <span class="tab-main-text">{{ day.label }}</span>
+            <span v-if="day.isWeekend" class="tab-tag">Cuối tuần</span>
+            <span class="tab-count-badge">
+              {{ modalPriceSlots.filter((s) => s.weekday === day.id).length }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="pricing-modal-body">
+          
+          <!-- Section 1: Quick Presets & Bulk Tool -->
+          <div class="pricing-tool-panel">
+            <div class="tool-panel-header">
+              <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-pink-accent">bolt</span>
+                <span class="font-bold text-sm">Công cụ áp dụng nhanh & Cập nhật hàng loạt</span>
               </div>
-
-              <div class="form-group">
-                <label class="text-xs font-semibold">Bắt đầu:</label>
-                <TimePicker v-model="priceForm.starts_at" />
-              </div>
-
-              <div class="form-group">
-                <label class="text-xs font-semibold">Kết thúc:</label>
-                <TimePicker v-model="priceForm.ends_at" />
-              </div>
-
-              <div class="form-group">
-                <label class="text-xs font-semibold">Giá (₫/giờ):</label>
-                <input
-                  v-model.number="priceForm.price"
-                  type="number"
-                  step="1000"
-                  class="form-input text-xs"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="flex justify-end">
-              <button type="submit" class="btn btn-primary text-xs py-1.5 px-3" :disabled="saving">
-                {{ saving ? 'Đang lưu…' : 'Lưu khung giá' }}
-              </button>
-            </div>
-          </form>
-
-          <!-- Current price slots list -->
-          <div class="space-y-2">
-            <h4 class="font-semibold text-sm">Danh sách khung giá đang áp dụng:</h4>
-            <div v-if="selectedCourtForPrice?.price_slots?.length" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
-              <div
-                v-for="p in selectedCourtForPrice.price_slots"
-                :key="p.id"
-                class="p-2.5 rounded-lg bg-surface border border-border flex items-center justify-between"
-              >
-                <div>
-                  <span class="font-semibold text-sm">Thứ {{ p.weekday }}: {{ p.starts_at.slice(0, 5) }} – {{ p.ends_at.slice(0, 5) }}</span>
-                  <p class="text-xs text-primary font-bold">{{ formatCurrency(p.price) }}/giờ</p>
-                </div>
-                <button
-                  type="button"
-                  class="btn-delete-slot"
-                  title="Xóa khung giá"
-                  @click="deletePriceSlot(p)"
-                >
-                  <span class="material-symbols-outlined icon-16">delete</span>
+              <!-- Presets -->
+              <div class="presets-row">
+                <span class="text-xs text-muted">Mẫu cấu hình nhanh:</span>
+                <button type="button" class="btn-preset" @click="applyPreset('standard')">
+                  🌅 Giờ thường (100k)
+                </button>
+                <button type="button" class="btn-preset btn-preset-peak" @click="applyPreset('peak')">
+                  ⚡ Giờ cao điểm (130k)
+                </button>
+                <button type="button" class="btn-preset btn-preset-weekend" @click="applyPreset('weekend')">
+                  🎉 Cuối tuần (140k)
                 </button>
               </div>
             </div>
-            <p v-else class="muted text-xs py-3 text-center">Chưa có khung giá riêng nào.</p>
+
+            <!-- Bulk Form -->
+            <form class="bulk-form-grid" @submit.prevent="applyBulkPricing">
+              <div class="bulk-form-field">
+                <label class="bulk-label">Phạm vi áp dụng:</label>
+                <SelectDropdown
+                  v-model="bulkScope"
+                  :options="bulkScopeOptions"
+                  variant="bordered"
+                />
+              </div>
+
+              <div class="bulk-form-field">
+                <label class="bulk-label">Khung giờ:</label>
+                <div class="hour-range-inputs">
+                  <div class="flex-1">
+                    <SelectDropdown
+                      v-model="bulkStartHour"
+                      :options="bulkStartHourOptions"
+                      variant="bordered"
+                    />
+                  </div>
+                  <span class="range-sep">→</span>
+                  <div class="flex-1">
+                    <SelectDropdown
+                      v-model="bulkEndHour"
+                      :options="bulkEndHourOptions"
+                      variant="bordered"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="bulk-form-field price-input-col">
+                <label class="bulk-label">Mức giá áp dụng (₫/giờ):</label>
+                <div class="price-input-wrapper">
+                  <input
+                    v-model.number="bulkPrice"
+                    type="number"
+                    step="5000"
+                    min="0"
+                    class="bulk-input-price"
+                    required
+                  />
+                  <div class="quick-price-chips">
+                    <button type="button" class="price-chip" @click="bulkPrice = 80000">80k</button>
+                    <button type="button" class="price-chip" @click="bulkPrice = 100000">100k</button>
+                    <button type="button" class="price-chip" @click="bulkPrice = 120000">120k</button>
+                    <button type="button" class="price-chip" @click="bulkPrice = 140000">140k</button>
+                    <button type="button" class="price-chip" @click="bulkPrice = 160000">160k</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bulk-action-col">
+                <button
+                  type="submit"
+                  class="btn-apply-bulk"
+                  :disabled="bulkSaving"
+                >
+                  <span v-if="bulkSaving" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  <span v-else class="material-symbols-outlined text-sm">auto_fix_high</span>
+                  <span>{{ bulkSaving ? 'Đang cập nhật…' : 'Áp dụng khung giá' }}</span>
+                </button>
+              </div>
+            </form>
           </div>
+
+          <!-- Section 2: Detailed Hourly Slots Grid -->
+          <div class="hourly-matrix-section">
+            <div class="matrix-header-row">
+              <div class="flex items-center gap-2">
+                <h4 class="matrix-title">
+                  {{ selectedWeekdayTab === 0 ? 'Toàn bộ khung giờ đã thiết lập' : `Chi tiết 17 khung giờ (${weekdayList.find(w => w.id === selectedWeekdayTab)?.label || ''})` }}
+                </h4>
+                <span class="active-count-tag">{{ activeWeekdaySlots.length }} khung hoạt động</span>
+              </div>
+              <span class="muted text-xs">💡 Bấm vào mức giá để chỉnh sửa trực tiếp tại chỗ</span>
+            </div>
+
+            <!-- Slots Grid Groups -->
+            <div v-if="activeWeekdaySlots.length" class="sessions-container">
+              
+              <!-- Sáng -->
+              <div v-if="morningSlots.length" class="session-block">
+                <div class="session-label">
+                  <span class="session-icon">🌅</span>
+                  <span>Buổi sáng (06:00 – 12:00)</span>
+                </div>
+                <div class="hourly-slots-grid">
+                  <div
+                    v-for="slot in morningSlots"
+                    :key="slot.id"
+                    class="hour-slot-card"
+                    :class="{ 'editing-card': inlineEditingSlotId === slot.id }"
+                  >
+                    <div class="slot-card-top">
+                      <span v-if="selectedWeekdayTab === 0" class="slot-weekday-tag">T{{ slot.weekday }}</span>
+                      <span class="slot-time-badge">{{ slot.starts_at.slice(0, 5) }} – {{ slot.ends_at.slice(0, 5) }}</span>
+                    </div>
+
+                    <!-- Inline edit mode -->
+                    <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
+                      <input
+                        v-model.number="inlineEditingPrice"
+                        type="number"
+                        step="5000"
+                        class="inline-price-input"
+                        @keyup.enter="saveInlineEdit(slot)"
+                        @keyup.esc="cancelInlineEdit"
+                        autoFocus
+                      />
+                      <div class="inline-actions">
+                        <button type="button" class="btn-inline-save" @click="saveInlineEdit(slot)" title="Lưu">
+                          <span class="material-symbols-outlined icon-16">check</span>
+                        </button>
+                        <button type="button" class="btn-inline-cancel" @click="cancelInlineEdit" title="Hủy">
+                          <span class="material-symbols-outlined icon-16">close</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Normal display mode -->
+                    <div v-else class="slot-card-body" @click="startInlineEdit(slot)">
+                      <div class="price-display-box">
+                        <span class="price-num">{{ formatCurrency(slot.price) }}</span>
+                        <span class="price-unit">/h</span>
+                      </div>
+                      <div class="slot-card-actions" @click.stop>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, -10000)" title="Giảm 10k">-10k</button>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, 10000)" title="Tăng 10k">+10k</button>
+                        <button type="button" class="btn-mini-del" @click="deletePriceSlot(slot)" title="Xóa">
+                          <span class="material-symbols-outlined icon-14">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chiều -->
+              <div v-if="afternoonSlots.length" class="session-block">
+                <div class="session-label">
+                  <span class="session-icon">☀️</span>
+                  <span>Buổi chiều (12:00 – 17:00)</span>
+                </div>
+                <div class="hourly-slots-grid">
+                  <div
+                    v-for="slot in afternoonSlots"
+                    :key="slot.id"
+                    class="hour-slot-card"
+                    :class="{ 'editing-card': inlineEditingSlotId === slot.id }"
+                  >
+                    <div class="slot-card-top">
+                      <span v-if="selectedWeekdayTab === 0" class="slot-weekday-tag">T{{ slot.weekday }}</span>
+                      <span class="slot-time-badge">{{ slot.starts_at.slice(0, 5) }} – {{ slot.ends_at.slice(0, 5) }}</span>
+                    </div>
+
+                    <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
+                      <input
+                        v-model.number="inlineEditingPrice"
+                        type="number"
+                        step="5000"
+                        class="inline-price-input"
+                        @keyup.enter="saveInlineEdit(slot)"
+                        @keyup.esc="cancelInlineEdit"
+                      />
+                      <div class="inline-actions">
+                        <button type="button" class="btn-inline-save" @click="saveInlineEdit(slot)" title="Lưu">
+                          <span class="material-symbols-outlined icon-16">check</span>
+                        </button>
+                        <button type="button" class="btn-inline-cancel" @click="cancelInlineEdit" title="Hủy">
+                          <span class="material-symbols-outlined icon-16">close</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div v-else class="slot-card-body" @click="startInlineEdit(slot)">
+                      <div class="price-display-box">
+                        <span class="price-num">{{ formatCurrency(slot.price) }}</span>
+                        <span class="price-unit">/h</span>
+                      </div>
+                      <div class="slot-card-actions" @click.stop>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, -10000)">-10k</button>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, 10000)">+10k</button>
+                        <button type="button" class="btn-mini-del" @click="deletePriceSlot(slot)">
+                          <span class="material-symbols-outlined icon-14">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Giờ vàng / Tối -->
+              <div v-if="peakSlots.length" class="session-block peak-session-block">
+                <div class="session-label">
+                  <span class="session-icon">⚡</span>
+                  <span class="font-bold text-pink-accent">Giờ cao điểm tối (17:00 – 22:00)</span>
+                  <span class="peak-tag">PEAK HOURS</span>
+                </div>
+                <div class="hourly-slots-grid">
+                  <div
+                    v-for="slot in peakSlots"
+                    :key="slot.id"
+                    class="hour-slot-card peak-card"
+                    :class="{ 'editing-card': inlineEditingSlotId === slot.id }"
+                  >
+                    <div class="slot-card-top">
+                      <span v-if="selectedWeekdayTab === 0" class="slot-weekday-tag">T{{ slot.weekday }}</span>
+                      <span class="slot-time-badge peak-time-badge">{{ slot.starts_at.slice(0, 5) }} – {{ slot.ends_at.slice(0, 5) }}</span>
+                    </div>
+
+                    <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
+                      <input
+                        v-model.number="inlineEditingPrice"
+                        type="number"
+                        step="5000"
+                        class="inline-price-input"
+                        @keyup.enter="saveInlineEdit(slot)"
+                        @keyup.esc="cancelInlineEdit"
+                      />
+                      <div class="inline-actions">
+                        <button type="button" class="btn-inline-save" @click="saveInlineEdit(slot)" title="Lưu">
+                          <span class="material-symbols-outlined icon-16">check</span>
+                        </button>
+                        <button type="button" class="btn-inline-cancel" @click="cancelInlineEdit" title="Hủy">
+                          <span class="material-symbols-outlined icon-16">close</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div v-else class="slot-card-body" @click="startInlineEdit(slot)">
+                      <div class="price-display-box">
+                        <span class="price-num text-pink-accent">{{ formatCurrency(slot.price) }}</span>
+                        <span class="price-unit">/h</span>
+                      </div>
+                      <div class="slot-card-actions" @click.stop>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, -10000)">-10k</button>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, 10000)">+10k</button>
+                        <button type="button" class="btn-mini-del" @click="deletePriceSlot(slot)">
+                          <span class="material-symbols-outlined icon-14">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Đêm muộn -->
+              <div v-if="nightSlots.length" class="session-block">
+                <div class="session-label">
+                  <span class="session-icon">🌙</span>
+                  <span>Đêm muộn (22:00 – 23:00)</span>
+                </div>
+                <div class="hourly-slots-grid">
+                  <div
+                    v-for="slot in nightSlots"
+                    :key="slot.id"
+                    class="hour-slot-card"
+                    :class="{ 'editing-card': inlineEditingSlotId === slot.id }"
+                  >
+                    <div class="slot-card-top">
+                      <span v-if="selectedWeekdayTab === 0" class="slot-weekday-tag">T{{ slot.weekday }}</span>
+                      <span class="slot-time-badge">{{ slot.starts_at.slice(0, 5) }} – {{ slot.ends_at.slice(0, 5) }}</span>
+                    </div>
+
+                    <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
+                      <input
+                        v-model.number="inlineEditingPrice"
+                        type="number"
+                        step="5000"
+                        class="inline-price-input"
+                        @keyup.enter="saveInlineEdit(slot)"
+                        @keyup.esc="cancelInlineEdit"
+                      />
+                      <div class="inline-actions">
+                        <button type="button" class="btn-inline-save" @click="saveInlineEdit(slot)" title="Lưu">
+                          <span class="material-symbols-outlined icon-16">check</span>
+                        </button>
+                        <button type="button" class="btn-inline-cancel" @click="cancelInlineEdit" title="Hủy">
+                          <span class="material-symbols-outlined icon-16">close</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div v-else class="slot-card-body" @click="startInlineEdit(slot)">
+                      <div class="price-display-box">
+                        <span class="price-num">{{ formatCurrency(slot.price) }}</span>
+                        <span class="price-unit">/h</span>
+                      </div>
+                      <div class="slot-card-actions" @click.stop>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, -10000)">-10k</button>
+                        <button type="button" class="btn-mini-adjust" @click="quickAdjustPrice(slot, 10000)">+10k</button>
+                        <button type="button" class="btn-mini-del" @click="deletePriceSlot(slot)">
+                          <span class="material-symbols-outlined icon-14">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Empty slots state -->
+            <div v-else class="empty-slots-state">
+              <span class="material-symbols-outlined empty-icon">event_busy</span>
+              <p class="font-semibold text-sm">Chưa có khung giá nào cho ngày này</p>
+              <p class="muted text-xs">Hãy sử dụng công cụ áp dụng nhanh ở trên để tạo 17 khung giờ chuẩn chỉ với 1 thao tác.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="pricing-modal-footer">
+          <div class="flex items-center gap-2 text-xs text-muted">
+            <span class="material-symbols-outlined text-sm text-pink-accent">verified</span>
+            <span>Mọi thay đổi bảng giá sẽ có hiệu lực ngay lập tức cho các lượt đặt sân mới.</span>
+          </div>
+          <button type="button" class="aura-btn-primary" @click="showPriceModal = false">
+            <span class="material-symbols-outlined text-sm">done_all</span>
+            <span>Hoàn tất & Đóng</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1161,10 +1753,11 @@ onMounted(load)
           <div class="grid grid-cols-2 gap-3">
             <div class="form-group">
               <label class="form-label">Loại giảm:</label>
-              <select v-model="couponForm.discount_type" class="form-input">
-                <option value="percent">Phần trăm (%)</option>
-                <option value="fixed">Số tiền cố định (₫)</option>
-              </select>
+              <SelectDropdown
+                v-model="couponForm.discount_type"
+                :options="discountTypeOptions"
+                variant="bordered"
+              />
             </div>
             <div class="form-group">
               <label class="form-label">Giá trị giảm:</label>
@@ -2458,5 +3051,631 @@ onMounted(load)
 .aura-btn-primary:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   ENHANCED PRICING MANAGEMENT MODAL STYLES
+   ========================================================================== */
+.aura-pricing-modal-card {
+  background: var(--surface, #1e2025);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 1020px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: modal-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--ink, #191c1d);
+  overflow: hidden;
+}
+
+.pricing-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--surface, #1e2025);
+}
+
+.pricing-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pricing-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(248, 180, 196, 0.12);
+  color: var(--pink-dark, #f8b4c4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pricing-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+  margin: 0;
+}
+
+.court-venue-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--muted, #9ca3af);
+}
+
+.pricing-modal-subtitle {
+  font-size: 12px;
+  color: var(--muted, #9ca3af);
+  margin: 3px 0 0;
+}
+
+.pricing-btn-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.04));
+  color: var(--muted, #9ca3af);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.pricing-btn-close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Metrics Bar */
+.pricing-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.03));
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: var(--muted, #9ca3af);
+}
+
+.metric-value {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+}
+
+.text-emerald { color: #34d399 !important; }
+.text-pink-accent { color: var(--pink-dark, #f8b4c4) !important; }
+
+/* Weekday Tabs Navigation */
+.weekday-tabs-nav {
+  display: flex;
+  gap: 6px;
+  padding: 10px 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--surface, #1e2025);
+}
+
+.weekday-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #9ca3af);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.weekday-tab-pill:hover {
+  color: var(--ink, #ffffff);
+  border-color: var(--pink-dark, #f8b4c4);
+}
+
+.weekday-tab-pill.active {
+  background: var(--pink, #ffd1dc);
+  color: var(--pink-dark, #78555e);
+  border-color: var(--pink, #ffd1dc);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(248, 180, 196, 0.25);
+}
+
+.weekday-tab-pill.active .tab-tag {
+  background: rgba(120, 85, 94, 0.15);
+  color: var(--pink-dark, #78555e);
+}
+
+.weekday-tab-pill.active .tab-count-badge {
+  background: rgba(120, 85, 94, 0.15);
+  color: var(--pink-dark, #78555e);
+}
+
+.tab-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.tab-count-badge {
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted, #9ca3af);
+}
+
+/* Modal Body */
+.pricing-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Tool Panel (Presets & Bulk) */
+.pricing-tool-panel {
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 14px 18px;
+}
+
+.tool-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.presets-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-preset {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--ink, #d1d5db);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-preset:hover {
+  border-color: var(--pink-dark, #f8b4c4);
+  color: var(--ink, #ffffff);
+  transform: translateY(-1px);
+}
+
+.btn-preset-peak {
+  border-color: rgba(248, 180, 196, 0.3);
+  color: var(--pink-dark, #f8b4c4);
+}
+
+.btn-preset-weekend {
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #34d399;
+}
+
+/* Bulk Form Grid */
+.bulk-form-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1.2fr 1.7fr auto;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+@media (max-width: 860px) {
+  .bulk-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bulk-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bulk-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #9ca3af);
+}
+
+.bulk-select,
+.bulk-input-price {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+  font-size: 12.5px;
+}
+
+.hour-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bulk-select-sm {
+  flex: 1;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+  font-size: 12px;
+}
+
+.range-sep {
+  font-weight: 700;
+  color: var(--muted, #9ca3af);
+}
+
+.price-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.quick-price-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.price-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--muted, #9ca3af);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.price-chip:hover {
+  color: var(--pink-dark, #f8b4c4);
+  border-color: var(--pink-dark, #f8b4c4);
+}
+
+.btn-apply-bulk {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--pink, #ffd1dc);
+  color: var(--pink-dark, #78555e);
+  border: none;
+  font-weight: 700;
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-apply-bulk:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Hourly Matrix Section */
+.hourly-matrix-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.matrix-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matrix-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+  margin: 0;
+}
+
+.active-count-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.sessions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.session-block {
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.peak-session-block {
+  border-color: rgba(248, 180, 196, 0.25);
+  background: linear-gradient(180deg, rgba(248, 180, 196, 0.04) 0%, var(--surface-subtle, rgba(255, 255, 255, 0.02)) 100%);
+}
+
+.session-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+  margin-bottom: 10px;
+}
+
+.session-icon {
+  font-size: 14px;
+}
+
+.peak-tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--pink-dark, #f8b4c4);
+  color: #3d2b31;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+
+.hourly-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.hour-slot-card {
+  background: var(--surface, #1e2025);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.hour-slot-card:hover {
+  border-color: var(--pink-dark, #f8b4c4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.peak-card {
+  border-color: rgba(248, 180, 196, 0.2);
+}
+
+.hour-slot-card.editing-card {
+  border-color: var(--pink-dark, #f8b4c4);
+  background: rgba(248, 180, 196, 0.06);
+}
+
+.slot-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.slot-weekday-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--pink-dark, #f8b4c4);
+  background: rgba(248, 180, 196, 0.12);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.slot-time-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+}
+
+.peak-time-badge {
+  color: var(--pink-dark, #f8b4c4);
+}
+
+.slot-card-body {
+  cursor: pointer;
+}
+
+.price-display-box {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.price-num {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink, #ffffff);
+}
+
+.price-unit {
+  font-size: 10.5px;
+  color: var(--muted, #9ca3af);
+}
+
+.slot-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.btn-mini-adjust {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--muted, #9ca3af);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-mini-adjust:hover {
+  color: var(--ink, #ffffff);
+  border-color: var(--pink-dark, #f8b4c4);
+}
+
+.btn-mini-del {
+  border: none;
+  background: transparent;
+  color: var(--muted, #9ca3af);
+  cursor: pointer;
+  padding: 1px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.btn-mini-del:hover {
+  color: #ef4444;
+}
+
+.inline-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.inline-price-input {
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--pink-dark, #f8b4c4);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+}
+
+.inline-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.btn-inline-save {
+  flex: 1;
+  height: 22px;
+  background: #34d399;
+  color: #064e3b;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-inline-cancel {
+  height: 22px;
+  width: 22px;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.05));
+  color: var(--muted, #9ca3af);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-slots-state {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--muted, #9ca3af);
+}
+
+.empty-slots-state .empty-icon {
+  font-size: 40px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+
+.pricing-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--surface, #1e2025);
+  gap: 12px;
 }
 </style>

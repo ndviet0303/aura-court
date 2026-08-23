@@ -134,6 +134,44 @@ class AdminController extends Controller
         return response()->json($price, 201);
     }
 
+    public function bulkPrices(Request $request, Court $court)
+    {
+        $data = $request->validate([
+            'weekdays' => 'required|array|min:1',
+            'weekdays.*' => 'integer|min:1|max:7',
+            'start_hour' => 'required|integer|min:0|max:23',
+            'end_hour' => 'required|integer|gt:start_hour|max:24',
+            'price' => 'required|integer|min:0',
+        ]);
+
+        $createdOrUpdated = [];
+        foreach ($data['weekdays'] as $weekday) {
+            for ($hour = $data['start_hour']; $hour < $data['end_hour']; $hour++) {
+                $startsAt = sprintf('%02d:00', $hour);
+                $endsAt = sprintf('%02d:00', $hour + 1);
+                $slot = $court->priceSlots()->updateOrCreate(
+                    ['weekday' => $weekday, 'starts_at' => $startsAt],
+                    ['ends_at' => $endsAt, 'price' => $data['price'], 'is_active' => true]
+                );
+                $createdOrUpdated[] = $slot;
+            }
+        }
+
+        $this->audits->record($request, 'price.bulk_updated', null, [
+            'court_id' => $court->id,
+            'weekdays' => $data['weekdays'],
+            'start_hour' => $data['start_hour'],
+            'end_hour' => $data['end_hour'],
+            'price' => $data['price'],
+            'count' => count($createdOrUpdated),
+        ]);
+
+        return response()->json([
+            'message' => 'Đã cập nhật khung giá hàng loạt.',
+            'slots' => $court->priceSlots()->orderBy('weekday')->orderBy('starts_at')->get(),
+        ]);
+    }
+
     public function blocks(Request $request, Court $court)
     {
         $data = $request->validate(['starts_at' => 'required|date', 'ends_at' => 'required|date|after:starts_at', 'reason' => 'nullable|string|max:255']);
