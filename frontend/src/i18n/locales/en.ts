@@ -225,6 +225,7 @@ export default {
     demoCustomerBtn: 'Customer Demo',
     logoutConfirm: 'Are you sure you want to log out?',
     invalidCredentials: 'Invalid email or password.',
+    passwordMatch: 'Passwords match.',
     passwordsDoNotMatch: 'Passwords do not match.',
     passwordStrength: {
       title: 'Password strength:',

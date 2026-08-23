@@ -225,6 +225,7 @@ export default {
     demoCustomerBtn: 'Khách hàng Demo',
     logoutConfirm: 'Bạn có chắc chắn muốn đăng xuất?',
     invalidCredentials: 'Thông tin đăng nhập hoặc mật khẩu chưa chính xác.',
+    passwordMatch: 'Mật khẩu xác nhận trùng khớp.',
     passwordsDoNotMatch: 'Mật khẩu xác nhận không trùng khớp.',
     passwordStrength: {
       title: 'Độ mạnh mật khẩu:',
