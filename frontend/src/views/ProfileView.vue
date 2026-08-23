@@ -28,8 +28,9 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// Membership
+// Membership & stats
 const membership = ref<Membership | null>(null)
+const bookingsCount = ref<number | null>(null)
 
 // State
 const error = ref('')
@@ -45,20 +46,6 @@ const userInitials = computed(() => {
   return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase()
 })
 
-const playLevelLabel = computed(() => {
-  switch (auth.user?.play_level) {
-    case 'beginner':
-      return t('profile.levelBeginner')
-    case 'advanced':
-      return t('profile.levelAdvanced')
-    case 'pro':
-      return t('profile.levelPro')
-    case 'intermediate':
-    default:
-      return t('profile.levelIntermediate')
-  }
-})
-
 const isSocialUserWithoutPassword = computed(() => {
   return auth.user?.password_set === false
 })
@@ -67,6 +54,20 @@ const socialProviderName = computed(() => {
   if (auth.user?.social_provider === 'google') return 'Google'
   if (auth.user?.social_provider === 'facebook') return 'Facebook'
   return 'Mạng xã hội'
+})
+
+const playLevelInfo = computed(() => {
+  switch (playLevel.value) {
+    case 'beginner':
+      return { label: t('profile.levelBeginner'), icon: '🌱', desc: 'Mới làm quen bộ môn cầu lông' }
+    case 'advanced':
+      return { label: t('profile.levelAdvanced'), icon: '⚡', desc: 'Kỹ thuật tốt, thường xuyên giao lưu cọ xát' }
+    case 'pro':
+      return { label: t('profile.levelPro'), icon: '🏆', desc: 'Thi đấu chuyên nghiệp, đẳng cấp cao' }
+    case 'intermediate':
+    default:
+      return { label: t('profile.levelIntermediate'), icon: '🏸', desc: 'Nắm vững luật và các đường cầu cơ bản' }
+  }
 })
 
 const passwordStrength = computed(() => {
@@ -156,7 +157,16 @@ onMounted(async () => {
     playLevel.value = auth.user.play_level || 'intermediate'
   }
   try {
-    membership.value = (await api.get<{ membership: Membership | null }>('/membership')).membership
+    const [memRes, bookRes] = await Promise.allSettled([
+      api.get<{ membership: Membership | null }>('/membership'),
+      api.get<{ bookings?: unknown[] }>('/bookings'),
+    ])
+    if (memRes.status === 'fulfilled') {
+      membership.value = memRes.value.membership
+    }
+    if (bookRes.status === 'fulfilled' && Array.isArray(bookRes.value.bookings)) {
+      bookingsCount.value = bookRes.value.bookings.length
+    }
   } catch {
     // optional
   }
@@ -164,56 +174,72 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="profile-page-wrapper">
-    <!-- Background Glow Aura -->
-    <div class="profile-glow-blob" aria-hidden="true"></div>
+  <div class="stitch-profile-root">
+    <!-- Ambient Backdrop Aura Glow -->
+    <div class="ambient-glow-top" aria-hidden="true"></div>
+    <div class="ambient-glow-bottom" aria-hidden="true"></div>
 
-    <div class="profile-container">
-      <!-- Top Athlete Banner -->
-      <section class="athlete-banner card">
-        <div class="banner-content">
-          <div class="avatar-column">
-            <div class="athlete-avatar">
-              <span class="avatar-text">{{ userInitials }}</span>
-              <div class="avatar-glow"></div>
+    <div class="stitch-profile-container">
+      <!-- 1. HERO COVER & ATHLETE CARD -->
+      <section class="profile-hero-card">
+        <div class="hero-cover-pattern">
+          <div class="pattern-mesh"></div>
+          <div class="cover-gradient-overlay"></div>
+          
+          <!-- Badges on top right of cover -->
+          <div class="cover-top-actions">
+            <span class="badge-role" :class="auth.user?.role">
+              <span class="badge-icon">{{ auth.user?.role === 'admin' ? '👑' : '🏸' }}</span>
+              {{ auth.user?.role === 'admin' ? t('profile.roleAdmin') : t('profile.roleCustomer') }}
+            </span>
+            <span v-if="auth.user?.social_provider" class="badge-social">
+              {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }} {{ socialProviderName }}
+            </span>
+          </div>
+        </div>
+
+        <div class="hero-profile-body">
+          <div class="avatar-wrapper">
+            <div class="avatar-ring">
+              <div class="athlete-avatar-circle">
+                <span>{{ userInitials }}</span>
+              </div>
             </div>
+            <span class="status-dot" title="Tài khoản đang hoạt động"></span>
           </div>
 
-          <div class="info-column">
-            <div class="athlete-meta-header">
-              <span class="role-badge" :class="auth.user?.role">
-                <span v-if="auth.user?.role === 'admin'" class="badge-icon">👑</span>
-                <span v-else class="badge-icon">🏸</span>
-                {{ auth.user?.role === 'admin' ? t('profile.roleAdmin') : t('profile.roleCustomer') }}
-              </span>
-
-              <span v-if="auth.user?.play_level" class="level-badge">
-                🎯 {{ playLevelLabel }}
-              </span>
-
-              <span v-if="auth.user?.social_provider" class="social-provider-badge">
-                {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }} {{ socialProviderName }}
-              </span>
-
-              <span v-if="auth.user?.email_verified_at" class="verified-badge">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="icon-svg">
+          <div class="athlete-details-col">
+            <div class="name-row">
+              <h1 class="athlete-display-name">{{ auth.user?.name || 'Aura Athlete' }}</h1>
+              <span v-if="auth.user?.email_verified_at" class="pill-verified" :title="t('profile.emailVerified')">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="check-icon">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
                 </svg>
                 {{ t('profile.emailVerified') }}
               </span>
-              <span v-else class="unverified-badge">
+              <span v-else class="pill-unverified">
                 ⚠️ {{ t('profile.emailUnverified') }}
               </span>
             </div>
 
-            <h1 class="athlete-name">{{ auth.user?.name || 'Athlete' }}</h1>
-            <p class="athlete-email">{{ auth.user?.email }}</p>
+            <div class="meta-subrow">
+              <span class="meta-item">
+                <span class="meta-icon">✉️</span> {{ auth.user?.email }}
+              </span>
+              <span v-if="auth.user?.phone" class="meta-item">
+                <span class="meta-icon">📞</span> {{ auth.user.phone }}
+              </span>
+              <span class="meta-item">
+                <span class="meta-icon">🎯</span> {{ playLevelInfo.label }}
+              </span>
+            </div>
 
-            <div v-if="!auth.user?.email_verified_at" class="verify-action-box">
+            <!-- Email Verification Callout if unverified -->
+            <div v-if="!auth.user?.email_verified_at" class="verification-callout">
               <span>{{ t('profile.emailUnverified') }}.</span>
               <button
                 type="button"
-                class="btn-resend-verify"
+                class="btn-resend-link"
                 :disabled="verificationLoading"
                 @click="resendVerification"
               >
@@ -222,590 +248,678 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Quick Stats / VIP summary pill -->
-          <div class="vip-summary-column" v-if="membership">
-            <div class="vip-mini-card">
-              <div class="vip-tag">VIP {{ membership.plan.name }}</div>
-              <div class="vip-discount">-{{ membership.plan.discount_percent }}% OFF</div>
-              <div class="vip-expiry">{{ formatDate(membership.ends_at) }}</div>
+          <!-- Quick Stat Counters -->
+          <div class="stats-pills-row">
+            <div class="stat-pill">
+              <span class="stat-num">{{ bookingsCount !== null ? bookingsCount : '—' }}</span>
+              <span class="stat-label">Lịch đặt sân</span>
+            </div>
+            <div class="stat-pill vip-pill" v-if="membership">
+              <span class="stat-num text-gold">-{{ membership.plan.discount_percent }}%</span>
+              <span class="stat-label">VIP {{ membership.plan.name }}</span>
+            </div>
+            <div class="stat-pill" v-else>
+              <span class="stat-num">Standard</span>
+              <span class="stat-label">Hạng thành viên</span>
             </div>
           </div>
         </div>
-
-        <!-- Tab Navigation Bar -->
-        <nav class="profile-tabs-nav" aria-label="Profile navigation">
-          <button
-            type="button"
-            class="tab-item"
-            :class="{ active: activeTab === 'general' }"
-            @click="activeTab = 'general'"
-          >
-            <span class="tab-icon">👤</span>
-            {{ t('profile.tabGeneral') }}
-          </button>
-          <button
-            type="button"
-            class="tab-item"
-            :class="{ active: activeTab === 'security' }"
-            @click="activeTab = 'security'"
-          >
-            <span class="tab-icon">🔒</span>
-            {{ t('profile.tabSecurity') }}
-          </button>
-          <button
-            type="button"
-            class="tab-item"
-            :class="{ active: activeTab === 'membership' }"
-            @click="activeTab = 'membership'"
-          >
-            <span class="tab-icon">⭐</span>
-            {{ t('profile.tabMembership') }}
-          </button>
-          <button
-            type="button"
-            class="tab-item"
-            :class="{ active: activeTab === 'shortcuts' }"
-            @click="activeTab = 'shortcuts'"
-          >
-            <span class="tab-icon">⚡</span>
-            {{ t('profile.tabQuickLinks') }}
-          </button>
-        </nav>
       </section>
 
-      <!-- Global Notice / Error Alerts -->
-      <div v-if="notice" class="alert-box alert-success" role="alert">
-        <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-        </svg>
-        <span>{{ notice }}</span>
-      </div>
-
-      <div v-if="error" class="alert-box alert-error" role="alert">
-        <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-        </svg>
-        <span>{{ error }}</span>
-      </div>
-
-      <!-- TAB 1: General Info -->
-      <section v-if="activeTab === 'general'" class="profile-card card animate-fade-in">
-        <div class="card-header">
-          <h2 class="card-title">{{ t('profile.tabGeneral') }}</h2>
-          <p class="card-subtitle">{{ t('profile.subtitle') }}</p>
-        </div>
-
-        <form @submit.prevent="updateGeneralProfile" class="profile-form">
-          <div class="form-grid">
-            <!-- Full Name -->
-            <div class="form-group">
-              <label for="p-name" class="form-label">{{ t('profile.fullName') }} <span class="required">*</span></label>
-              <div class="input-container">
-                <span class="input-icon">👤</span>
-                <input
-                  id="p-name"
-                  v-model="name"
-                  type="text"
-                  required
-                  maxlength="120"
-                  class="profile-input"
-                  :placeholder="t('auth.namePlaceholder')"
-                />
+      <!-- 2. MAIN BENTO GRID (Navigation & Content) -->
+      <div class="stitch-layout-grid">
+        <!-- LEFT SIDEBAR: Nav Pills & Summary Cards -->
+        <aside class="stitch-sidebar">
+          <nav class="stitch-nav-menu">
+            <button
+              type="button"
+              class="nav-tab-btn"
+              :class="{ active: activeTab === 'general' }"
+              @click="activeTab = 'general'"
+            >
+              <span class="tab-icon-box">👤</span>
+              <div class="tab-text-wrap">
+                <span class="tab-title">{{ t('profile.tabGeneral') }}</span>
+                <span class="tab-subtitle">Họ tên, SĐT & Trình độ</span>
               </div>
-            </div>
-
-            <!-- Phone Number -->
-            <div class="form-group">
-              <label for="p-phone" class="form-label">{{ t('profile.phone') }}</label>
-              <div class="input-container">
-                <span class="input-icon">📞</span>
-                <input
-                  id="p-phone"
-                  v-model="phone"
-                  type="tel"
-                  maxlength="30"
-                  class="profile-input"
-                  :placeholder="t('profile.phonePlaceholder')"
-                />
-              </div>
-            </div>
-
-            <!-- Email (Read-only) -->
-            <div class="form-group full-width">
-              <label class="form-label">{{ t('auth.email') }}</label>
-              <div class="input-container disabled-container">
-                <span class="input-icon">✉️</span>
-                <input
-                  type="email"
-                  :value="auth.user?.email"
-                  disabled
-                  class="profile-input disabled-input"
-                />
-              </div>
-            </div>
-
-            <!-- Play Level Selection -->
-            <div class="form-group full-width">
-              <label class="form-label">{{ t('profile.playLevel') }}</label>
-              <div class="play-level-grid">
-                <label
-                  class="level-card"
-                  :class="{ active: playLevel === 'beginner' }"
-                >
-                  <input type="radio" v-model="playLevel" value="beginner" class="sr-only" />
-                  <span class="level-icon">🌱</span>
-                  <span class="level-name">{{ t('profile.levelBeginner') }}</span>
-                </label>
-
-                <label
-                  class="level-card"
-                  :class="{ active: playLevel === 'intermediate' }"
-                >
-                  <input type="radio" v-model="playLevel" value="intermediate" class="sr-only" />
-                  <span class="level-icon">🏸</span>
-                  <span class="level-name">{{ t('profile.levelIntermediate') }}</span>
-                </label>
-
-                <label
-                  class="level-card"
-                  :class="{ active: playLevel === 'advanced' }"
-                >
-                  <input type="radio" v-model="playLevel" value="advanced" class="sr-only" />
-                  <span class="level-icon">⚡</span>
-                  <span class="level-name">{{ t('profile.levelAdvanced') }}</span>
-                </label>
-
-                <label
-                  class="level-card"
-                  :class="{ active: playLevel === 'pro' }"
-                >
-                  <input type="radio" v-model="playLevel" value="pro" class="sr-only" />
-                  <span class="level-icon">🏆</span>
-                  <span class="level-name">{{ t('profile.levelPro') }}</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn-primary" :disabled="loading">
-              <span v-if="loading" class="spinner-inline"></span>
-              {{ loading ? t('common.loading') : t('profile.saveChanges') }}
             </button>
-          </div>
-        </form>
-      </section>
 
-      <!-- TAB 2: Security & Password -->
-      <section v-if="activeTab === 'security'" class="profile-card card animate-fade-in">
-        <div class="card-header">
-          <div v-if="isSocialUserWithoutPassword" class="social-setup-banner">
-            <span class="social-icon-pill">
-              {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }}
-              {{ t('profile.socialLoginBadge') }} {{ socialProviderName }}
-            </span>
-            <h2 class="card-title" style="margin-top: 10px;">{{ t('profile.setPasswordTitle') }}</h2>
-            <p class="card-subtitle">{{ t('profile.setPasswordSubtitle', { provider: socialProviderName }) }}</p>
-          </div>
-          <div v-else>
-            <h2 class="card-title">{{ t('profile.passwordSection') }}</h2>
-            <p class="card-subtitle">{{ t('profile.passwordSubtitle') }}</p>
-          </div>
-        </div>
+            <button
+              type="button"
+              class="nav-tab-btn"
+              :class="{ active: activeTab === 'security' }"
+              @click="activeTab = 'security'"
+            >
+              <span class="tab-icon-box">🔒</span>
+              <div class="tab-text-wrap">
+                <span class="tab-title">{{ t('profile.tabSecurity') }}</span>
+                <span class="tab-subtitle">{{ isSocialUserWithoutPassword ? 'Thiết lập mật khẩu' : 'Đổi mật khẩu' }}</span>
+              </div>
+              <span v-if="isSocialUserWithoutPassword" class="tab-indicator-badge">Mới</span>
+            </button>
 
-        <form @submit.prevent="updatePassword" class="profile-form">
-          <div class="form-grid">
-            <!-- Current Password (only shown if password already set) -->
-            <div v-if="!isSocialUserWithoutPassword" class="form-group full-width">
-              <label for="p-current-pwd" class="form-label">{{ t('profile.currentPassword') }} <span class="required">*</span></label>
-              <div class="input-container">
-                <span class="input-icon">🔑</span>
-                <input
-                  id="p-current-pwd"
-                  v-model="currentPassword"
-                  :type="showCurrentPassword ? 'text' : 'password'"
-                  :required="!isSocialUserWithoutPassword"
-                  minlength="8"
-                  class="profile-input"
-                />
-                <button
-                  type="button"
-                  class="password-toggle-btn"
-                  @click="showCurrentPassword = !showCurrentPassword"
-                >
-                  {{ showCurrentPassword ? '👁️' : '👁️‍🗨️' }}
+            <button
+              type="button"
+              class="nav-tab-btn"
+              :class="{ active: activeTab === 'membership' }"
+              @click="activeTab = 'membership'"
+            >
+              <span class="tab-icon-box">⭐</span>
+              <div class="tab-text-wrap">
+                <span class="tab-title">{{ t('profile.tabMembership') }}</span>
+                <span class="tab-subtitle">Đặc quyền giảm giá</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="nav-tab-btn"
+              :class="{ active: activeTab === 'shortcuts' }"
+              @click="activeTab = 'shortcuts'"
+            >
+              <span class="tab-icon-box">⚡</span>
+              <div class="tab-text-wrap">
+                <span class="tab-title">{{ t('profile.tabQuickLinks') }}</span>
+                <span class="tab-subtitle">Quản lý & Lối tắt</span>
+              </div>
+            </button>
+          </nav>
+
+          <!-- VIP Perk Widget in Sidebar -->
+          <div class="sidebar-perk-widget">
+            <div class="widget-header">
+              <span class="widget-icon">🏸</span>
+              <span class="widget-badge">Aura Badminton</span>
+            </div>
+            <h3 class="widget-title">Trải nghiệm sân đỉnh cao</h3>
+            <p class="widget-desc">Sân thảm BWF tiêu chuẩn quốc tế, đèn chống lóa và đặt lịch nhanh 24/7.</p>
+            <RouterLink to="/v2/reservations" class="widget-btn">
+              Đặt sân trực tuyến →
+            </RouterLink>
+          </div>
+        </aside>
+
+        <!-- RIGHT CONTENT PANEL -->
+        <main class="stitch-content-panel">
+          <!-- Global Alerts -->
+          <div v-if="notice" class="stitch-alert alert-success" role="alert">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">{{ notice }}</span>
+          </div>
+
+          <div v-if="error" class="stitch-alert alert-error" role="alert">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">{{ error }}</span>
+          </div>
+
+          <!-- TAB 1: General Info -->
+          <div v-if="activeTab === 'general'" class="stitch-card-pane">
+            <div class="pane-header">
+              <h2 class="pane-title">{{ t('profile.tabGeneral') }}</h2>
+              <p class="pane-subtitle">{{ t('profile.subtitle') }}</p>
+            </div>
+
+            <form @submit.prevent="updateGeneralProfile" class="stitch-form">
+              <div class="form-row-2">
+                <!-- Full Name -->
+                <div class="form-field">
+                  <label for="f-name" class="field-label">{{ t('profile.fullName') }} <span class="req">*</span></label>
+                  <div class="input-wrap">
+                    <span class="prefix-icon">👤</span>
+                    <input
+                      id="f-name"
+                      v-model="name"
+                      type="text"
+                      required
+                      maxlength="120"
+                      class="stitch-input"
+                      :placeholder="t('auth.namePlaceholder')"
+                    />
+                  </div>
+                </div>
+
+                <!-- Phone -->
+                <div class="form-field">
+                  <label for="f-phone" class="field-label">{{ t('profile.phone') }}</label>
+                  <div class="input-wrap">
+                    <span class="prefix-icon">📞</span>
+                    <input
+                      id="f-phone"
+                      v-model="phone"
+                      type="tel"
+                      maxlength="30"
+                      class="stitch-input"
+                      :placeholder="t('profile.phonePlaceholder')"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email (Disabled) -->
+              <div class="form-field">
+                <label class="field-label">{{ t('auth.email') }}</label>
+                <div class="input-wrap disabled-wrap">
+                  <span class="prefix-icon">✉️</span>
+                  <input
+                    type="email"
+                    :value="auth.user?.email"
+                    disabled
+                    class="stitch-input disabled-input"
+                  />
+                </div>
+                <span class="field-hint">Địa chỉ email được sử dụng để nhận mã vé và biên lai đặt sân.</span>
+              </div>
+
+              <!-- Play Level Cards -->
+              <div class="form-field">
+                <label class="field-label">{{ t('profile.playLevel') }}</label>
+                <div class="skill-cards-grid">
+                  <label
+                    class="skill-card-item"
+                    :class="{ active: playLevel === 'beginner' }"
+                  >
+                    <input type="radio" v-model="playLevel" value="beginner" class="sr-only" />
+                    <span class="skill-icon">🌱</span>
+                    <span class="skill-title">{{ t('profile.levelBeginner') }}</span>
+                    <span class="skill-sub">Mới chơi</span>
+                  </label>
+
+                  <label
+                    class="skill-card-item"
+                    :class="{ active: playLevel === 'intermediate' }"
+                  >
+                    <input type="radio" v-model="playLevel" value="intermediate" class="sr-only" />
+                    <span class="skill-icon">🏸</span>
+                    <span class="skill-title">{{ t('profile.levelIntermediate') }}</span>
+                    <span class="skill-sub">Phong trào</span>
+                  </label>
+
+                  <label
+                    class="skill-card-item"
+                    :class="{ active: playLevel === 'advanced' }"
+                  >
+                    <input type="radio" v-model="playLevel" value="advanced" class="sr-only" />
+                    <span class="skill-icon">⚡</span>
+                    <span class="skill-title">{{ t('profile.levelAdvanced') }}</span>
+                    <span class="skill-sub">Bán chuyên</span>
+                  </label>
+
+                  <label
+                    class="skill-card-item"
+                    :class="{ active: playLevel === 'pro' }"
+                  >
+                    <input type="radio" v-model="playLevel" value="pro" class="sr-only" />
+                    <span class="skill-icon">🏆</span>
+                    <span class="skill-title">{{ t('profile.levelPro') }}</span>
+                    <span class="skill-sub">Chuyên nghiệp</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="stitch-btn-primary" :disabled="loading">
+                  <span v-if="loading" class="spin-loader"></span>
+                  {{ loading ? t('common.loading') : t('profile.saveChanges') }}
                 </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB 2: Security & Password -->
+          <div v-if="activeTab === 'security'" class="stitch-card-pane">
+            <div class="pane-header">
+              <!-- Special Banner for Social Users -->
+              <div v-if="isSocialUserWithoutPassword" class="social-notice-box">
+                <div class="notice-top">
+                  <span class="social-tag">
+                    {{ auth.user?.social_provider === 'google' ? '🌐' : '📘' }}
+                    {{ t('profile.socialLoginBadge') }} {{ socialProviderName }}
+                  </span>
+                </div>
+                <h3 class="notice-title">{{ t('profile.setPasswordTitle') }}</h3>
+                <p class="notice-desc">{{ t('profile.setPasswordSubtitle', { provider: socialProviderName }) }}</p>
+              </div>
+
+              <div v-else>
+                <h2 class="pane-title">{{ t('profile.passwordSection') }}</h2>
+                <p class="pane-subtitle">{{ t('profile.passwordSubtitle') }}</p>
               </div>
             </div>
 
-            <!-- New Password -->
-            <div class="form-group">
-              <label for="p-new-pwd" class="form-label">{{ t('profile.newPassword') }} <span class="required">*</span></label>
-              <div class="input-container">
-                <span class="input-icon">🔒</span>
-                <input
-                  id="p-new-pwd"
-                  v-model="newPassword"
-                  :type="showNewPassword ? 'text' : 'password'"
-                  required
-                  minlength="8"
-                  class="profile-input"
-                  :placeholder="t('auth.passwordPlaceholder')"
-                />
-                <button
-                  type="button"
-                  class="password-toggle-btn"
-                  @click="showNewPassword = !showNewPassword"
-                >
-                  {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
-                </button>
+            <form @submit.prevent="updatePassword" class="stitch-form">
+              <!-- Current Password (only if already set) -->
+              <div v-if="!isSocialUserWithoutPassword" class="form-field">
+                <label for="f-curr-pwd" class="field-label">{{ t('profile.currentPassword') }} <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <span class="prefix-icon">🔑</span>
+                  <input
+                    id="f-curr-pwd"
+                    v-model="currentPassword"
+                    :type="showCurrentPassword ? 'text' : 'password'"
+                    :required="!isSocialUserWithoutPassword"
+                    minlength="8"
+                    class="stitch-input"
+                  />
+                  <button
+                    type="button"
+                    class="toggle-eye-btn"
+                    @click="showCurrentPassword = !showCurrentPassword"
+                  >
+                    {{ showCurrentPassword ? '👁️' : '👁️‍🗨️' }}
+                  </button>
+                </div>
               </div>
 
-              <!-- Strength Bar -->
-              <div v-if="newPassword" class="strength-meter">
-                <div class="strength-bar-bg">
-                  <div
-                    class="strength-bar-fill"
-                    :style="{ width: `${passwordStrength}%` }"
-                    :class="{
-                      weak: passwordStrength <= 25,
-                      medium: passwordStrength > 25 && passwordStrength <= 75,
-                      strong: passwordStrength > 75,
-                    }"
-                  ></div>
+              <div class="form-row-2">
+                <!-- New Password -->
+                <div class="form-field">
+                  <label for="f-new-pwd" class="field-label">{{ t('profile.newPassword') }} <span class="req">*</span></label>
+                  <div class="input-wrap">
+                    <span class="prefix-icon">🔒</span>
+                    <input
+                      id="f-new-pwd"
+                      v-model="newPassword"
+                      :type="showNewPassword ? 'text' : 'password'"
+                      required
+                      minlength="8"
+                      class="stitch-input"
+                      :placeholder="t('auth.passwordPlaceholder')"
+                    />
+                    <button
+                      type="button"
+                      class="toggle-eye-btn"
+                      @click="showNewPassword = !showNewPassword"
+                    >
+                      {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
+                    </button>
+                  </div>
+
+                  <!-- Password Strength Meter -->
+                  <div v-if="newPassword" class="password-meter-wrap">
+                    <div class="meter-bar-track">
+                      <div
+                        class="meter-bar-progress"
+                        :style="{ width: `${passwordStrength}%` }"
+                        :class="{
+                          weak: passwordStrength <= 25,
+                          med: passwordStrength > 25 && passwordStrength <= 75,
+                          strong: passwordStrength > 75,
+                        }"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Confirm New Password -->
+                <div class="form-field">
+                  <label for="f-conf-pwd" class="field-label">{{ t('profile.confirmNewPassword') }} <span class="req">*</span></label>
+                  <div class="input-wrap">
+                    <span class="prefix-icon">🛡️</span>
+                    <input
+                      id="f-conf-pwd"
+                      v-model="passwordConfirmation"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      required
+                      minlength="8"
+                      class="stitch-input"
+                      :placeholder="t('auth.passwordConfirmPlaceholder')"
+                    />
+                    <button
+                      type="button"
+                      class="toggle-eye-btn"
+                      @click="showConfirmPassword = !showConfirmPassword"
+                    >
+                      {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+                    </button>
+                  </div>
+
+                  <!-- Password Match Pill -->
+                  <div v-if="passwordConfirmation" class="match-pill" :class="{ matched: passwordsMatch }">
+                    <span>{{ passwordsMatch ? '✓ ' + t('auth.passwordMatch') : '✕ ' + t('auth.passwordsDoNotMatch') }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-footer">
+                <button
+                  type="submit"
+                  class="stitch-btn-primary"
+                  :disabled="passwordLoading || (newPassword.length > 0 && !passwordsMatch)"
+                >
+                  <span v-if="passwordLoading" class="spin-loader"></span>
+                  {{ passwordLoading ? t('common.loading') : (isSocialUserWithoutPassword ? t('profile.setPasswordBtn') : t('profile.passwordSection')) }}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB 3: VIP Membership -->
+          <div v-if="activeTab === 'membership'" class="stitch-card-pane">
+            <div class="pane-header">
+              <h2 class="pane-title">{{ t('profile.vipTitle') }}</h2>
+              <p class="pane-subtitle">{{ t('profile.vipSubtitle') }}</p>
+            </div>
+
+            <div v-if="membership" class="luxury-vip-card">
+              <div class="vip-top-row">
+                <div class="vip-crest-badge">AURA CLUB VIP</div>
+                <div class="vip-tier-name">{{ membership.plan.name }}</div>
+              </div>
+              <div class="vip-body-grid">
+                <div class="vip-feature-box">
+                  <span class="feature-label">{{ t('profile.vipDiscount') }}</span>
+                  <span class="feature-val">-{{ membership.plan.discount_percent }}%</span>
+                </div>
+                <div class="vip-feature-box">
+                  <span class="feature-label">{{ t('profile.vipExpires') }}</span>
+                  <span class="feature-val">{{ formatDate(membership.ends_at) }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Confirm New Password -->
-            <div class="form-group">
-              <label for="p-confirm-pwd" class="form-label">{{ t('profile.confirmNewPassword') }} <span class="required">*</span></label>
-              <div class="input-container">
-                <span class="input-icon">🛡️</span>
-                <input
-                  id="p-confirm-pwd"
-                  v-model="passwordConfirmation"
-                  :type="showConfirmPassword ? 'text' : 'password'"
-                  required
-                  minlength="8"
-                  class="profile-input"
-                  :placeholder="t('auth.passwordConfirmPlaceholder')"
-                />
-                <button
-                  type="button"
-                  class="password-toggle-btn"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                >
-                  {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
-                </button>
-              </div>
-
-              <div v-if="passwordConfirmation" class="match-indicator" :class="{ matched: passwordsMatch }">
-                <span>{{ passwordsMatch ? '✓ ' + t('auth.passwordMatch') : '✕ ' + t('auth.passwordsDoNotMatch') }}</span>
-              </div>
+            <div v-else class="empty-state-card">
+              <div class="empty-glow-icon">⭐</div>
+              <h3 class="empty-title">Chưa kích hoạt gói VIP</h3>
+              <p class="empty-desc">{{ t('profile.vipNone') }}</p>
+              <RouterLink to="/v2/reservations" class="stitch-btn-secondary">
+                🏸 {{ t('profile.bookCourtNow') }}
+              </RouterLink>
             </div>
           </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn-primary" :disabled="passwordLoading || (newPassword.length > 0 && !passwordsMatch)">
-              <span v-if="passwordLoading" class="spinner-inline"></span>
-              {{ passwordLoading ? t('common.loading') : (isSocialUserWithoutPassword ? t('profile.setPasswordBtn') : t('profile.passwordSection')) }}
-            </button>
+          <!-- TAB 4: Shortcuts & Quick Actions -->
+          <div v-if="activeTab === 'shortcuts'" class="stitch-card-pane">
+            <div class="pane-header">
+              <h2 class="pane-title">{{ t('profile.tabQuickLinks') }}</h2>
+              <p class="pane-subtitle">{{ t('profile.subtitle') }}</p>
+            </div>
+
+            <div class="bento-shortcuts-grid">
+              <RouterLink to="/bookings" class="bento-shortcut-item">
+                <div class="bento-icon-sq">📅</div>
+                <div class="bento-info">
+                  <h4 class="bento-h">{{ t('profile.myBookings') }}</h4>
+                  <p class="bento-p">Xem các lịch sân đã đặt và hóa đơn thanh toán</p>
+                </div>
+                <span class="bento-arrow">→</span>
+              </RouterLink>
+
+              <RouterLink v-if="auth.user?.role === 'admin'" to="/admin/organization" class="bento-shortcut-item admin-theme">
+                <div class="bento-icon-sq">🏢</div>
+                <div class="bento-info">
+                  <h4 class="bento-h">{{ t('profile.manageOrg') }}</h4>
+                  <p class="bento-p">Cấu hình cụm sân, thời gian biểu và giá giờ vàng</p>
+                </div>
+                <span class="bento-arrow">→</span>
+              </RouterLink>
+
+              <RouterLink to="/v2/reservations" class="bento-shortcut-item">
+                <div class="bento-icon-sq">🏸</div>
+                <div class="bento-info">
+                  <h4 class="bento-h">{{ t('profile.bookCourtNow') }}</h4>
+                  <p class="bento-p">Tìm sân trống và đặt ngay theo thời gian thực</p>
+                </div>
+                <span class="bento-arrow">→</span>
+              </RouterLink>
+
+              <button type="button" class="bento-shortcut-item danger-theme" @click="handleLogout">
+                <div class="bento-icon-sq">🚪</div>
+                <div class="bento-info">
+                  <h4 class="bento-h">{{ t('profile.logoutAccount') }}</h4>
+                  <p class="bento-p">Đăng xuất khỏi phiên đăng nhập trên thiết bị này</p>
+                </div>
+                <span class="bento-arrow">⏻</span>
+              </button>
+            </div>
           </div>
-        </form>
-      </section>
-
-      <!-- TAB 3: VIP Membership -->
-      <section v-if="activeTab === 'membership'" class="profile-card card animate-fade-in">
-        <div class="card-header">
-          <h2 class="card-title">{{ t('profile.vipTitle') }}</h2>
-          <p class="card-subtitle">{{ t('profile.vipSubtitle') }}</p>
-        </div>
-
-        <div v-if="membership" class="vip-deluxe-card">
-          <div class="vip-card-header">
-            <div class="vip-shield">AURA VIP</div>
-            <div class="vip-plan-title">{{ membership.plan.name }}</div>
-          </div>
-          <div class="vip-card-body">
-            <div class="vip-stat">
-              <span class="vip-stat-label">{{ t('profile.vipDiscount') }}</span>
-              <span class="vip-stat-val">{{ membership.plan.discount_percent }}%</span>
-            </div>
-            <div class="vip-stat">
-              <span class="vip-stat-label">{{ t('profile.vipExpires') }}</span>
-              <span class="vip-stat-val">{{ formatDate(membership.ends_at) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="empty-vip-state">
-          <div class="empty-icon">⭐</div>
-          <p class="empty-text">{{ t('profile.vipNone') }}</p>
-          <RouterLink to="/v2/reservations" class="btn-secondary">
-            🏸 {{ t('profile.bookCourtNow') }}
-          </RouterLink>
-        </div>
-      </section>
-
-      <!-- TAB 4: Shortcuts & Management -->
-      <section v-if="activeTab === 'shortcuts'" class="profile-card card animate-fade-in">
-        <div class="card-header">
-          <h2 class="card-title">{{ t('profile.tabQuickLinks') }}</h2>
-          <p class="card-subtitle">{{ t('profile.subtitle') }}</p>
-        </div>
-
-        <div class="shortcuts-grid">
-          <RouterLink to="/bookings" class="shortcut-card">
-            <div class="shortcut-icon-box">📅</div>
-            <div class="shortcut-text">
-              <div class="shortcut-title">{{ t('profile.myBookings') }}</div>
-              <div class="shortcut-desc">Xem và quản lý các lịch đặt sân hiện tại</div>
-            </div>
-            <span class="shortcut-arrow">→</span>
-          </RouterLink>
-
-          <RouterLink v-if="auth.user?.role === 'admin'" to="/admin/organization" class="shortcut-card admin-shortcut">
-            <div class="shortcut-icon-box">🏢</div>
-            <div class="shortcut-text">
-              <div class="shortcut-title">{{ t('profile.manageOrg') }}</div>
-              <div class="shortcut-desc">Cấu hình cụm sân, thời gian biểu và giá thuê</div>
-            </div>
-            <span class="shortcut-arrow">→</span>
-          </RouterLink>
-
-          <RouterLink to="/v2/reservations" class="shortcut-card">
-            <div class="shortcut-icon-box">🏸</div>
-            <div class="shortcut-text">
-              <div class="shortcut-title">{{ t('profile.bookCourtNow') }}</div>
-              <div class="shortcut-desc">Đặt sân online theo thời gian thực</div>
-            </div>
-            <span class="shortcut-arrow">→</span>
-          </RouterLink>
-
-          <button type="button" class="shortcut-card danger-shortcut" @click="handleLogout">
-            <div class="shortcut-icon-box">🚪</div>
-            <div class="shortcut-text">
-              <div class="shortcut-title">{{ t('profile.logoutAccount') }}</div>
-              <div class="shortcut-desc">Đăng xuất khỏi phiên làm việc hiện tại</div>
-            </div>
-            <span class="shortcut-arrow">⏻</span>
-          </button>
-        </div>
-      </section>
+        </main>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.profile-page-wrapper {
+.stitch-profile-root {
   position: relative;
   min-height: calc(100vh - 120px);
-  padding: 32px 16px 64px;
-  max-width: 1040px;
+  padding: 32px 16px 80px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 
-.profile-glow-blob {
+/* Ambient Lights */
+.ambient-glow-top {
   position: absolute;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 600px;
-  height: 350px;
-  background: radial-gradient(circle, rgba(230, 92, 0, 0.08) 0%, rgba(200, 40, 0, 0.03) 50%, transparent 70%);
+  top: 0;
+  left: 20%;
+  width: 500px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 122, 26, 0.08) 0%, transparent 70%);
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
-.profile-container {
+.ambient-glow-bottom {
+  position: absolute;
+  bottom: 10%;
+  right: 15%;
+  width: 450px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(131, 56, 236, 0.06) 0%, transparent 70%);
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stitch-profile-container {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
-/* Athlete Hero Banner */
-.athlete-banner {
-  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-card, rgba(20, 20, 25, 0.7)) 100%);
+/* 1. HERO COVER & ATHLETE CARD */
+.profile-hero-card {
+  background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 24px;
+  border-radius: 28px;
   overflow: hidden;
-  padding: 0;
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35);
 }
 
-.banner-content {
-  padding: 32px 32px 24px;
+.hero-cover-pattern {
+  position: relative;
+  height: 140px;
+  background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #431407 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 18px 24px;
+}
+
+.pattern-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.8;
+}
+
+.cover-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+.cover-top-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  color: #ff8c3a;
+  border: 1px solid rgba(255, 140, 58, 0.4);
+}
+
+.badge-role.admin {
+  color: #c4b5fd;
+  border-color: rgba(196, 181, 253, 0.4);
+}
+
+.badge-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  color: #93c5fd;
+  border: 1px solid rgba(147, 197, 253, 0.4);
+}
+
+.hero-profile-body {
+  position: relative;
+  padding: 0 32px 32px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 @media (min-width: 768px) {
-  .banner-content {
+  .hero-profile-body {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-end;
   }
 }
 
-.avatar-column {
-  display: flex;
-  justify-content: center;
+.avatar-wrapper {
+  position: relative;
+  margin-top: -50px;
+  width: 108px;
+  height: 108px;
+  flex-shrink: 0;
 }
 
-.athlete-avatar {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  border-radius: 28px;
+.avatar-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 32px;
+  padding: 4px;
   background: linear-gradient(135deg, #ff7a1a 0%, #e63946 50%, #8338ec 100%);
+  box-shadow: 0 12px 28px -6px rgba(230, 57, 70, 0.5);
+}
+
+.athlete-avatar-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 28px;
+  background: var(--surface, #18181b);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-weight: 800;
-  font-size: 32px;
+  font-weight: 900;
+  font-size: 34px;
   letter-spacing: -0.02em;
-  box-shadow: 0 10px 25px -5px rgba(230, 57, 70, 0.4);
 }
 
-.avatar-glow {
+.status-dot {
   position: absolute;
-  inset: -2px;
-  border-radius: 30px;
-  background: linear-gradient(135deg, #ff7a1a, transparent 70%);
-  opacity: 0.6;
-  z-index: -1;
+  bottom: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 3px solid var(--surface, #18181b);
 }
 
-.info-column {
+.athlete-details-col {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.athlete-meta-header {
+.name-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
-.role-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  background: rgba(230, 92, 0, 0.15);
-  color: #ff8c3a;
-  border: 1px solid rgba(230, 92, 0, 0.3);
-}
-
-.role-badge.admin {
-  background: rgba(131, 56, 236, 0.15);
-  color: #b185ff;
-  border-color: rgba(131, 56, 236, 0.3);
-}
-
-.level-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.25);
-}
-
-.social-provider-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.verified-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(59, 130, 246, 0.12);
-  color: #60a5fa;
-}
-
-.social-setup-banner {
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(131, 56, 236, 0.05) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  margin-bottom: 20px;
-}
-
-.social-icon-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 700;
-  background: rgba(59, 130, 246, 0.18);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-}
-
-.unverified-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-}
-
-.icon-svg {
-  width: 14px;
-  height: 14px;
-}
-
-.athlete-name {
+.athlete-display-name {
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--text-primary);
   margin: 0;
   line-height: 1.2;
 }
 
-.athlete-email {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin: 0;
+.pill-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.verify-action-box {
+.check-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.pill-unverified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.meta-subrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.verification-callout {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -814,96 +928,216 @@ onMounted(async () => {
   color: #f87171;
 }
 
-.btn-resend-verify {
+.btn-resend-link {
   background: transparent;
   border: none;
   color: #60a5fa;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.vip-summary-column {
+.stats-pills-row {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
-.vip-mini-card {
+.stat-pill {
   padding: 12px 18px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255, 170, 0, 0.15) 0%, rgba(230, 57, 70, 0.1) 100%);
-  border: 1px solid rgba(255, 170, 0, 0.35);
+  border-radius: 18px;
+  background: var(--surface-input, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--outline);
   text-align: center;
+  min-width: 100px;
 }
 
-.vip-tag {
+.stat-num {
+  display: block;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  display: block;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.text-gold {
   color: #fbbf24;
+}
+
+/* 2. BENTO GRID LAYOUT */
+.stitch-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 900px) {
+  .stitch-layout-grid {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+/* Sidebar Nav */
+.stitch-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stitch-nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 24px;
+  padding: 12px;
+}
+
+.nav-tab-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.nav-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-tab-btn.active {
+  background: rgba(255, 140, 58, 0.12);
+  border: 1px solid rgba(255, 140, 58, 0.3);
+}
+
+.tab-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.nav-tab-btn.active .tab-icon-box {
+  background: rgba(255, 140, 58, 0.2);
+}
+
+.tab-text-wrap {
+  flex: 1;
+}
+
+.tab-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.nav-tab-btn.active .tab-title {
+  color: #ff8c3a;
+}
+
+.tab-subtitle {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tab-indicator-badge {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #ff7a1a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.vip-discount {
-  font-size: 18px;
-  font-weight: 900;
-  color: #fff;
-  margin: 2px 0;
+/* Sidebar Perk Widget */
+.sidebar-perk-widget {
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(230, 92, 0, 0.08) 0%, rgba(131, 56, 236, 0.05) 100%);
+  border: 1px solid rgba(255, 140, 58, 0.25);
 }
 
-.vip-expiry {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-/* Tabs Navigation */
-.profile-tabs-nav {
-  display: flex;
-  border-top: 1px solid var(--outline);
-  background: rgba(0, 0, 0, 0.15);
-  overflow-x: auto;
-}
-
-.tab-item {
-  flex: 1;
-  min-width: 120px;
+.widget-header {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  padding: 16px 14px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  margin-bottom: 12px;
 }
 
-.tab-item:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.tab-item.active {
+.widget-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   color: #ff8c3a;
-  border-bottom-color: #ff8c3a;
-  background: rgba(255, 140, 58, 0.06);
+  text-transform: uppercase;
 }
 
-/* Alert Boxes */
-.alert-box {
+.widget-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.widget-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.widget-btn {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ff8c3a;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.widget-btn:hover {
+  transform: translateX(4px);
+}
+
+/* Content Panel */
+.stitch-content-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stitch-alert {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .alert-success {
@@ -918,86 +1152,95 @@ onMounted(async () => {
   color: #f87171;
 }
 
-.alert-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-/* Profile Form Card */
-.profile-card {
+.stitch-card-pane {
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 24px;
+  border-radius: 28px;
   padding: 32px;
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.2);
+  animation: paneFadeIn 0.25s ease-out;
 }
 
-.card-header {
-  margin-bottom: 24px;
+@keyframes paneFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.card-title {
+.pane-header {
+  margin-bottom: 26px;
+}
+
+.pane-title {
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--text-primary);
   margin: 0 0 6px;
 }
 
-.card-subtitle {
-  font-size: 14px;
+.pane-subtitle {
+  font-size: 13px;
   color: var(--text-muted);
   margin: 0;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+/* Stitch Form Controls */
+.stitch-form {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
 @media (min-width: 640px) {
-  .form-grid {
+  .form-row-2 {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-.form-group {
+.form-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-label {
+.field-label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
-.required {
+.req {
   color: #ef4444;
 }
 
-.input-container {
+.input-wrap {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.input-icon {
+.prefix-icon {
   position: absolute;
   left: 14px;
   font-size: 16px;
   pointer-events: none;
 }
 
-.profile-input {
+.stitch-input {
   width: 100%;
   padding: 13px 14px 13px 44px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface-input, rgba(0, 0, 0, 0.2));
   color: var(--text-primary);
@@ -1005,24 +1248,29 @@ onMounted(async () => {
   transition: all 0.2s ease;
 }
 
-.profile-input:focus {
+.stitch-input:focus {
   outline: none;
   border-color: #ff8c3a;
-  box-shadow: 0 0 0 3px rgba(255, 140, 58, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 140, 58, 0.18);
 }
 
-.disabled-container {
+.disabled-wrap {
   opacity: 0.65;
 }
 
 .disabled-input {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.12);
   cursor: not-allowed;
 }
 
-.password-toggle-btn {
+.field-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.toggle-eye-btn {
   position: absolute;
-  right: 12px;
+  right: 14px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1030,30 +1278,30 @@ onMounted(async () => {
   opacity: 0.7;
 }
 
-.password-toggle-btn:hover {
+.toggle-eye-btn:hover {
   opacity: 1;
 }
 
-/* Play Level Selection Grid */
-.play-level-grid {
+/* Skill Cards Grid */
+.skill-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
 @media (min-width: 640px) {
-  .play-level-grid {
+  .skill-cards-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-.level-card {
+.skill-card-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 16px 12px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--outline);
   background: rgba(0, 0, 0, 0.15);
   cursor: pointer;
@@ -1061,121 +1309,164 @@ onMounted(async () => {
   text-align: center;
 }
 
-.level-card:hover {
+.skill-card-item:hover {
   border-color: rgba(255, 140, 58, 0.4);
-  background: rgba(255, 140, 58, 0.04);
+  background: rgba(255, 140, 58, 0.05);
 }
 
-.level-card.active {
+.skill-card-item.active {
   border-color: #ff8c3a;
   background: rgba(255, 140, 58, 0.12);
-  box-shadow: 0 0 15px rgba(255, 140, 58, 0.15);
+  box-shadow: 0 0 16px rgba(255, 140, 58, 0.2);
 }
 
-.level-icon {
-  font-size: 22px;
+.skill-icon {
+  font-size: 24px;
+  margin-bottom: 2px;
 }
 
-.level-name {
+.skill-title {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
-/* Strength & Match Meters */
-.strength-meter {
+.skill-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Social Setup Banner */
+.social-notice-box {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(131, 56, 236, 0.06) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  margin-bottom: 22px;
+}
+
+.social-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.notice-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-primary);
+  margin: 10px 0 4px;
+}
+
+.notice-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Password Meters */
+.password-meter-wrap {
   margin-top: 6px;
 }
 
-.strength-bar-bg {
+.meter-bar-track {
   height: 4px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   overflow: hidden;
 }
 
-.strength-bar-fill {
+.meter-bar-progress {
   height: 100%;
   transition: all 0.3s ease;
 }
 
-.strength-bar-fill.weak {
+.meter-bar-progress.weak {
   background: #ef4444;
 }
 
-.strength-bar-fill.medium {
+.meter-bar-progress.med {
   background: #f59e0b;
 }
 
-.strength-bar-fill.strong {
+.meter-bar-progress.strong {
   background: #10b981;
 }
 
-.match-indicator {
+.match-pill {
   margin-top: 6px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: #f87171;
 }
 
-.match-indicator.matched {
+.match-pill.matched {
   color: #34d399;
 }
 
-.form-actions {
-  margin-top: 28px;
+/* Buttons */
+.form-footer {
+  margin-top: 10px;
   display: flex;
   justify-content: flex-end;
 }
 
-.btn-primary {
+.stitch-btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 13px 28px;
-  border-radius: 12px;
+  padding: 13px 30px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #ff7a1a 0%, #e63946 100%);
   color: #fff;
   border: none;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(230, 57, 70, 0.3);
+  box-shadow: 0 4px 15px rgba(230, 57, 70, 0.35);
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(230, 57, 70, 0.45);
+.stitch-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(230, 57, 70, 0.5);
 }
 
-.btn-primary:disabled {
+.stitch-btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-secondary {
+.stitch-btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border: 1px solid var(--outline);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-secondary:hover {
+.stitch-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #ff8c3a;
 }
 
-.spinner-inline {
+.spin-loader {
   width: 14px;
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -1190,23 +1481,23 @@ onMounted(async () => {
   }
 }
 
-/* VIP Deluxe Card */
-.vip-deluxe-card {
+/* VIP Deluxe Display */
+.luxury-vip-card {
   padding: 28px;
-  border-radius: 20px;
+  border-radius: 24px;
   background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #451a03 100%);
   border: 1px solid rgba(251, 191, 36, 0.4);
-  box-shadow: 0 15px 35px -10px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 15px 35px -10px rgba(251, 191, 36, 0.25);
 }
 
-.vip-card-header {
+.vip-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
 }
 
-.vip-shield {
+.vip-crest-badge {
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -1217,13 +1508,13 @@ onMounted(async () => {
   border: 1px solid rgba(251, 191, 36, 0.5);
 }
 
-.vip-plan-title {
+.vip-tier-name {
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 900;
   color: #fff;
 }
 
-.vip-card-body {
+.vip-body-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -1231,58 +1522,65 @@ onMounted(async () => {
   padding-top: 20px;
 }
 
-.vip-stat-label {
+.feature-label {
   display: block;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 4px;
 }
 
-.vip-stat-val {
-  font-size: 20px;
-  font-weight: 800;
+.feature-val {
+  font-size: 22px;
+  font-weight: 900;
   color: #fbbf24;
 }
 
-.empty-vip-state {
+.empty-state-card {
   text-align: center;
-  padding: 32px 16px;
+  padding: 40px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
-.empty-icon {
+.empty-glow-icon {
   font-size: 48px;
 }
 
-.empty-text {
-  font-size: 14px;
-  color: var(--text-muted);
-  max-width: 420px;
+.empty-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
   margin: 0;
 }
 
-/* Shortcuts Grid */
-.shortcuts-grid {
+.empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 400px;
+  margin: 0;
+}
+
+/* Bento Shortcuts */
+.bento-shortcuts-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
 }
 
 @media (min-width: 640px) {
-  .shortcuts-grid {
+  .bento-shortcuts-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-.shortcut-card {
+.bento-shortcut-item {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
-  border-radius: 16px;
+  padding: 18px 20px;
+  border-radius: 20px;
   background: var(--surface-input, rgba(0, 0, 0, 0.2));
   border: 1px solid var(--outline);
   text-decoration: none;
@@ -1293,83 +1591,68 @@ onMounted(async () => {
   text-align: left;
 }
 
-.shortcut-card:hover {
+.bento-shortcut-item:hover {
   transform: translateY(-2px);
   border-color: #ff8c3a;
-  background: rgba(255, 140, 58, 0.05);
+  background: rgba(255, 140, 58, 0.06);
 }
 
-.shortcut-icon-box {
-  width: 48px;
-  height: 48px;
+.bento-icon-sq {
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
-.shortcut-text {
+.bento-info {
   flex: 1;
 }
 
-.shortcut-title {
-  font-size: 15px;
-  font-weight: 700;
+.bento-h {
+  font-size: 14px;
+  font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin: 0 0 2px;
 }
 
-.shortcut-desc {
-  font-size: 12px;
+.bento-p {
+  font-size: 11px;
   color: var(--text-muted);
+  margin: 0;
 }
 
-.shortcut-arrow {
+.bento-arrow {
   font-size: 18px;
   color: var(--text-muted);
   transition: transform 0.2s ease;
 }
 
-.shortcut-card:hover .shortcut-arrow {
+.bento-shortcut-item:hover .bento-arrow {
   transform: translateX(4px);
   color: #ff8c3a;
 }
 
-.admin-shortcut:hover {
+.admin-theme:hover {
   border-color: #8338ec;
-  background: rgba(131, 56, 236, 0.05);
+  background: rgba(131, 56, 236, 0.06);
 }
 
-.admin-shortcut:hover .shortcut-arrow {
+.admin-theme:hover .bento-arrow {
   color: #8338ec;
 }
 
-.danger-shortcut:hover {
+.danger-theme:hover {
   border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(239, 68, 68, 0.06);
 }
 
-.danger-shortcut:hover .shortcut-arrow {
+.danger-theme:hover .bento-arrow {
   color: #ef4444;
-}
-
-/* Animations */
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .sr-only {

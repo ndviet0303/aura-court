@@ -48,10 +48,9 @@ describe('ProfileView', () => {
       },
     })
 
-    expect(wrapper.find('.athlete-name').text()).toBe('Nguyen Van A')
-    expect(wrapper.find('.athlete-email').text()).toBe('nva@example.com')
-    expect(wrapper.find('.athlete-avatar').text()).toContain('NA')
-    expect(wrapper.find('.profile-tabs-nav').exists()).toBe(true)
+    expect(wrapper.find('.athlete-display-name').text()).toBe('Nguyen Van A')
+    expect(wrapper.find('.athlete-avatar-circle').text()).toContain('NA')
+    expect(wrapper.find('.stitch-nav-menu').exists()).toBe(true)
   })
 
   it('switches tabs between general, security, membership, and shortcuts', async () => {
@@ -74,17 +73,17 @@ describe('ProfileView', () => {
       },
     })
 
-    const tabs = wrapper.findAll('.tab-item')
+    const tabs = wrapper.findAll('.nav-tab-btn')
     expect(tabs.length).toBe(4)
 
     // Click Security tab
     await tabs[1]!.trigger('click')
-    expect(wrapper.find('#p-current-pwd').exists()).toBe(true)
-    expect(wrapper.find('#p-new-pwd').exists()).toBe(true)
+    expect(wrapper.find('#f-curr-pwd').exists()).toBe(true)
+    expect(wrapper.find('#f-new-pwd').exists()).toBe(true)
 
     // Click Shortcuts tab
     await tabs[3]!.trigger('click')
-    expect(wrapper.find('.shortcuts-grid').exists()).toBe(true)
+    expect(wrapper.find('.bento-shortcuts-grid').exists()).toBe(true)
   })
 
   it('renders set password mode without current password for social users', async () => {
@@ -107,17 +106,17 @@ describe('ProfileView', () => {
     })
 
     // Banner shows social badge
-    expect(wrapper.find('.social-provider-badge').exists()).toBe(true)
+    expect(wrapper.find('.badge-social').exists()).toBe(true)
 
     // Switch to security tab
-    const tabs = wrapper.findAll('.tab-item')
+    const tabs = wrapper.findAll('.nav-tab-btn')
     await tabs[1]!.trigger('click')
 
     // Current password input should NOT exist
-    expect(wrapper.find('#p-current-pwd').exists()).toBe(false)
+    expect(wrapper.find('#f-curr-pwd').exists()).toBe(false)
     // New password and confirm password inputs DO exist
-    expect(wrapper.find('#p-new-pwd').exists()).toBe(true)
-    expect(wrapper.find('#p-confirm-pwd').exists()).toBe(true)
-    expect(wrapper.find('.social-setup-banner').exists()).toBe(true)
+    expect(wrapper.find('#f-new-pwd').exists()).toBe(true)
+    expect(wrapper.find('#f-conf-pwd').exists()).toBe(true)
+    expect(wrapper.find('.social-notice-box').exists()).toBe(true)
   })
 })
