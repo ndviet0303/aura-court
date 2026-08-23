@@ -8,7 +8,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import { formatCurrency, formatTime } from '@/i18n'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
-import AuraLoading from '@/components/AuraLoading.vue'
 
 const { t } = useI18n()
 const route = useRoute()

@@ -39,10 +39,10 @@ import { RouterLink } from 'vue-router'
         <div class="footer-col">
           <h3 class="col-title">{{ $t('common.footer.support') }}</h3>
           <ul class="col-links">
-            <li><RouterLink to="/about">{{ $t('common.footer.courtRules') }}</RouterLink></li>
-            <li><RouterLink to="/about">{{ $t('common.footer.refundPolicy') }}</RouterLink></li>
-            <li><RouterLink to="/about">{{ $t('common.footer.termsOfService') }}</RouterLink></li>
-            <li><RouterLink to="/about">{{ $t('common.footer.privacyPolicy') }}</RouterLink></li>
+            <li><RouterLink to="/terms#court-rules">{{ $t('common.footer.courtRules') }}</RouterLink></li>
+            <li><RouterLink to="/terms#refund-policy">{{ $t('common.footer.refundPolicy') }}</RouterLink></li>
+            <li><RouterLink to="/terms">{{ $t('common.footer.termsOfService') }}</RouterLink></li>
+            <li><RouterLink to="/privacy">{{ $t('common.footer.privacyPolicy') }}</RouterLink></li>
           </ul>
         </div>
 
@@ -85,7 +85,7 @@ import { RouterLink } from 'vue-router'
         <div class="bottom-links">
           <span class="demo-chip">{{ $t('common.demoFooter') }}</span>
           <span class="divider">·</span>
-          <span>{{ $t('common.privacyAndSupport') }}</span>
+          <RouterLink to="/terms" class="footer-bottom-link">{{ $t('common.privacyAndSupport') }}</RouterLink>
         </div>
       </div>
     </div>
@@ -311,6 +311,16 @@ import { RouterLink } from 'vue-router'
 
 .divider {
   color: var(--outline, #d3c3c5);
+}
+
+.footer-bottom-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.footer-bottom-link:hover {
+  color: var(--pink-dark, #78555e);
 }
 
 /* Responsive */

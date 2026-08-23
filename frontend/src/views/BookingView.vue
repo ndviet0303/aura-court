@@ -6,7 +6,6 @@ import { api, apiOrigin, errorMessage } from '@/lib/api'
 import { formatCurrency, formatDateTime } from '@/i18n'
 import type { Booking } from '@/types'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
-import AuraLoading from '@/components/AuraLoading.vue'
 
 const { t } = useI18n()
 const bookings = ref<Booking[]>([])
