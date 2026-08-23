@@ -17,8 +17,9 @@ const isGalleryOpen = ref(false)
 const activePhotoIndex = ref(0)
 
 const court = computed(() => {
-  const targetId = Number(route.params.id)
-  return store.courts.find((item: Court) => item.id === targetId) || store.courts[0]
+  const param = String(route.params.slug || route.params.id || '')
+  if (!param) return store.courts[0]
+  return store.courts.find((item: Court) => item.slug === param || String(item.id) === param) || store.courts[0]
 })
 
 // Gallery photos list
@@ -386,7 +387,7 @@ function openMaps(): void {
 
               <!-- CTA Button -->
               <RouterLink
-                :to="{ path: `/courts/${court.id}/schedule`, query: { duration: selectedDuration } }"
+                :to="{ path: `/courts/${court.slug || court.id}/schedule`, query: { duration: selectedDuration } }"
                 class="book-cta-btn"
               >
                 <span>{{ t('courtDetail.confirmAndBook') }}</span>

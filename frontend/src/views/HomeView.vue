@@ -183,7 +183,7 @@ onMounted(async () => {
       <RouterLink
         v-for="(court, index) in store.courts"
         :key="court.id"
-        :to="`/courts/${court.id}`"
+        :to="`/courts/${court.slug || court.id}`"
         class="court-card"
       >
         <div class="court-card-image">

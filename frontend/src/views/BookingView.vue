@@ -372,7 +372,7 @@ onMounted(load)
                 <!-- Reschedule -->
                 <RouterLink
                   v-if="booking.status === 'confirmed' && !isCompleted(booking)"
-                  :to="'/courts/' + booking.court.id + '/schedule?reschedule=' + booking.code"
+                  :to="'/courts/' + (booking.court.slug || booking.court.id) + '/schedule?reschedule=' + booking.code"
                   class="btn secondary sm"
                 >
                   <span class="material-symbols-outlined icon-18">update</span>

@@ -28,6 +28,7 @@ describe('CourtDetailView', () => {
       {
         id: 1,
         name: 'Sân 01 - Tiêu Chuẩn',
+        slug: 'san-01-tieu-chuan',
         venue: {
           id: 1,
           name: 'Aura Center Thảo Điền',
@@ -70,6 +71,7 @@ describe('CourtDetailView', () => {
       {
         id: 1,
         name: 'Sân 01',
+        slug: 'san-01',
         venue: {
           id: 1,
           name: 'Aura Center',
@@ -97,7 +99,7 @@ describe('CourtDetailView', () => {
     // Click 2.0h duration
     const durationBtns = wrapper.findAll('.duration-btn')
     expect(durationBtns.length).toBe(4)
-    await durationBtns[2].trigger('click') // 2.0h
+    await durationBtns[2]?.trigger('click') // 2.0h
     expect(wrapper.find('.estimate-amount').text()).toContain('200.000')
   })
 
@@ -107,6 +109,7 @@ describe('CourtDetailView', () => {
       {
         id: 1,
         name: 'Sân 01',
+        slug: 'san-01',
         venue: {
           id: 1,
           name: 'Aura Center',

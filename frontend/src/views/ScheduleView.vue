@@ -83,11 +83,18 @@ function selectCourt(courtId: number) {
   fetchAvailability()
 }
 
+function resolveCourtFromParam(param: string | undefined): Court | undefined {
+  if (!param) return undefined
+  return store.courts.find((c: Court) => c.slug === param || String(c.id) === param)
+}
+
 onMounted(async () => {
   try {
     await store.loadCourts()
-    if (route.params.id) {
-      selectedCourtId.value = Number(route.params.id)
+    const param = String(route.params.slug || route.params.id || '')
+    const found = resolveCourtFromParam(param)
+    if (found) {
+      selectedCourtId.value = found.id
     } else if (store.courts.length > 0 && store.courts[0]) {
       selectedCourtId.value = store.courts[0].id
     }
@@ -98,11 +105,14 @@ onMounted(async () => {
 })
 
 watch(
-  () => route.params.id,
-  (newId) => {
-    if (newId) {
-      selectedCourtId.value = Number(newId)
-      fetchAvailability()
+  () => route.params.slug || route.params.id,
+  (newParam) => {
+    if (newParam) {
+      const found = resolveCourtFromParam(String(newParam))
+      if (found) {
+        selectedCourtId.value = found.id
+        fetchAvailability()
+      }
     }
   }
 )

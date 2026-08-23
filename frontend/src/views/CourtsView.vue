@@ -320,7 +320,7 @@ const timeChips = [
               <div class="court-title-row">
                 <div>
                   <h3 class="aura-court-name">
-                    <RouterLink :to="`/courts/${court.id}`">
+                    <RouterLink :to="`/courts/${court.slug || court.id}`">
                       {{ court.name }}
                     </RouterLink>
                   </h3>
@@ -357,10 +357,10 @@ const timeChips = [
                 </div>
 
                 <div class="card-action-btns">
-                  <RouterLink :to="`/courts/${court.id}`" class="btn secondary sm">
+                  <RouterLink :to="`/courts/${court.slug || court.id}`" class="btn secondary sm">
                     {{ t('courts.courtDetail') }}
                   </RouterLink>
-                  <RouterLink :to="`/courts/${court.id}/schedule`" class="btn sm">
+                  <RouterLink :to="`/courts/${court.slug || court.id}/schedule`" class="btn sm">
                     {{ t('courts.bookNow') }}
                   </RouterLink>
                 </div>

@@ -22,12 +22,22 @@ class DatabaseSeeder extends Seeder
         $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
         $now = Carbon::now($timezone);
 
-        $venue = Venue::updateOrCreate(
+        $venue1 = Venue::updateOrCreate(
             ['slug' => 'aura-court'],
             [
-                'name' => 'Aura Court',
-                'address' => '22 Đường Quốc Hương, Phường Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh',
-                'google_maps_url' => 'https://maps.google.com/?q=22+Quoc+Huong+Thao+Dien+Thu+Duc+Ho+Chi+Minh',
+                'name' => 'Aura Court Cầu Giấy',
+                'address' => 'Số 18 Phố Duy Tân, Phường Dịch Vọng Hậu, Quận Cầu Giấy, Hà Nội',
+                'google_maps_url' => 'https://maps.google.com/?q=18+Duy+Tan+Dich+Vong+Hau+Cau+Giay+Ha+Noi',
+                'is_active' => true,
+            ],
+        );
+
+        $venue2 = Venue::updateOrCreate(
+            ['slug' => 'aura-arena-quan-ngua'],
+            [
+                'name' => 'Aura Arena Quần Ngựa',
+                'address' => 'Cung Thể Thao Quần Ngựa, 30 Đường Văn Cao, Phường Liễu Giai, Quận Ba Đình, Hà Nội',
+                'google_maps_url' => 'https://maps.google.com/?q=Cung+The+Thao+Quan+Ngua+30+Van+Cao+Ba+Dinh+Ha+Noi',
                 'is_active' => true,
             ],
         );
@@ -62,22 +72,68 @@ class DatabaseSeeder extends Seeder
             return $user;
         });
 
-        $courtNames = [
-            'Sân 1', 'Sân 2', 'Sân 3', 'Sân 4',
-            'Sân 5 VIP', 'Sân 6 VIP', 'Sân 7 Đôi', 'Sân 8 Đôi',
+        $courtDefs = [
+            [
+                'name' => 'Sân 1 - Thảm BWF Cầu Giấy',
+                'slug' => 'san-1-tham-bwf-cau-giay',
+                'description' => 'Sân cầu lông thảm BWF tiêu chuẩn 5 lớp, hệ thống đèn LED 500 Lux chống chói.',
+                'venue_id' => $venue1->id,
+            ],
+            [
+                'name' => 'Sân 2 - Tiêu Chuẩn Cầu Giấy',
+                'slug' => 'san-2-tieu-chuan-cau-giay',
+                'description' => 'Mặt sàn cao cấp êm ái, trần cao 9.5m chuẩn thi đấu phong trào và bán chuyên.',
+                'venue_id' => $venue1->id,
+            ],
+            [
+                'name' => 'Sân 3 - Tiêu Chuẩn Cầu Giấy',
+                'slug' => 'san-3-tieu-chuan-cau-giay',
+                'description' => 'Hệ thống đèn trần định hướng, không gian thoáng mát và thông gió liên tục.',
+                'venue_id' => $venue1->id,
+            ],
+            [
+                'name' => 'Sân 4 - VIP Đơn/Đôi Cầu Giấy',
+                'slug' => 'san-4-vip-cau-giay',
+                'description' => 'Sân VIP không gian rộng rãi, có khu ghế nghỉ riêng biệt và điều hòa mát mẻ.',
+                'venue_id' => $venue1->id,
+            ],
+            [
+                'name' => 'Sân 5 - VIP Tournament Cầu Giấy',
+                'slug' => 'san-5-vip-tournament-cau-giay',
+                'description' => 'Sân thi đấu giải quốc gia, thảm chuyên dụng đàn hồi cao giảm tối đa chấn thương.',
+                'venue_id' => $venue1->id,
+            ],
+            [
+                'name' => 'Sân 6 - Khán Đài Quần Ngựa',
+                'slug' => 'san-6-khan-dai-quan-ngua',
+                'description' => 'Sân trung tâm Cung Thể Thao Quần Ngựa có khán đài mini, thảm thi đấu BWF cao cấp.',
+                'venue_id' => $venue2->id,
+            ],
+            [
+                'name' => 'Sân 7 - Tiêu Chuẩn Quần Ngựa',
+                'slug' => 'san-7-tieu-chuan-quan-ngua',
+                'description' => 'Sân tập luyện và giao lưu câu lạc bộ tại Ba Đình, tiện nghi đầy đủ và bãi xe rộng.',
+                'venue_id' => $venue2->id,
+            ],
+            [
+                'name' => 'Sân 8 - Pro Replay Quần Ngựa',
+                'slug' => 'san-8-pro-replay-quan-ngua',
+                'description' => 'Sân công nghệ cao trang bị hệ thống camera xem lại pha cầu (VAR/Replay) thông minh.',
+                'venue_id' => $venue2->id,
+            ],
         ];
+
         $courts = collect();
         $timestamp = $now->toDateTimeString();
 
-        foreach ($courtNames as $index => $name) {
+        foreach ($courtDefs as $index => $def) {
             $court = Court::updateOrCreate(
-                ['name' => $name],
+                ['slug' => $def['slug']],
                 [
-                    'description' => $index >= 4
-                        ? 'Sân cao cấp, không gian rộng và phù hợp thi đấu đôi.'
-                        : 'Sân cầu lông tiêu chuẩn, ánh sáng tốt và mặt sân êm.',
+                    'name' => $def['name'],
+                    'description' => $def['description'],
                     'image_url' => sprintf('/aura/court-%d.jpg', ($index % 6) + 1),
-                    'venue_id' => $venue->id,
+                    'venue_id' => $def['venue_id'],
                     'is_active' => true,
                 ],
             );
