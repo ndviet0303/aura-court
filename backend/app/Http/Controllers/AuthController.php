@@ -119,7 +119,36 @@ class AuthController extends Controller
         return response()->json(['user' => $user], 200);
     }
 
-    public function redirectToProvider(string $provider)
+    protected function resolveOAuthRedirectUri(Request $request, string $provider): string
+    {
+        $configured = config("services.{$provider}.redirect");
+        $host = $request->getHost();
+
+        if (in_array($host, ['ziet-mac', 'ziet-mac.local', '192.168.1.181'], true)) {
+            $scheme = $request->getScheme();
+            $port = $request->getPort() ? ':' . $request->getPort() : ':8000';
+            return "{$scheme}://{$host}{$port}/api/v1/auth/{$provider}/callback";
+        }
+
+        return $configured ?: ($request->getSchemeAndHttpHost() . "/api/v1/auth/{$provider}/callback");
+    }
+
+    protected function resolveFrontendUrl(Request $request): string
+    {
+        $host = $request->getHost();
+
+        if (in_array($host, ['ziet-mac', 'ziet-mac.local', '192.168.1.181'], true)) {
+            return "http://{$host}:5173";
+        }
+
+        if ($host === 'court-api.ziet.dev') {
+            return 'https://court.ziet.dev';
+        }
+
+        return rtrim((string) config('app.frontend_url', 'http://localhost:5173'), '/');
+    }
+
+    public function redirectToProvider(Request $request, string $provider)
     {
         if (! in_array($provider, ['google', 'facebook'], true)) {
             return response()->json(['message' => 'Provider không được hỗ trợ.'], 400);
@@ -133,23 +162,27 @@ class AuthController extends Controller
             ]);
         }
 
+        $redirectUri = $this->resolveOAuthRedirectUri($request, $provider);
+
         /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
         $driver = \Laravel\Socialite\Facades\Socialite::driver($provider);
-        return response()->json(['url' => $driver->stateless()->redirect()->getTargetUrl()]);
+        return response()->json(['url' => $driver->redirectUrl($redirectUri)->stateless()->redirect()->getTargetUrl()]);
     }
 
     public function handleProviderCallback(Request $request, string $provider)
     {
+        $frontendUrl = $this->resolveFrontendUrl($request);
+
         if (! in_array($provider, ['google', 'facebook'], true)) {
-            return redirect(config('app.frontend_url', 'http://localhost:5173') . '/login?error=invalid_provider');
+            return redirect("{$frontendUrl}/login?error=invalid_provider");
         }
 
-        $frontendUrl = rtrim((string) config('app.frontend_url', 'http://localhost:5173'), '/');
-
         try {
+            $redirectUri = $this->resolveOAuthRedirectUri($request, $provider);
+
             /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
             $driver = \Laravel\Socialite\Facades\Socialite::driver($provider);
-            $socialUser = $driver->stateless()->user();
+            $socialUser = $driver->redirectUrl($redirectUri)->stateless()->user();
 
             $email = $socialUser->getEmail() ?: ($socialUser->getId() . '@facebook.auracourt.vn');
             $name = $socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete');
