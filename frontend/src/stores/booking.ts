@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '@/lib/api'
 import type { AvailabilitySlot, Booking, Court, PaymentInfo } from '@/types'
@@ -13,11 +13,13 @@ export const useBookingStore = defineStore('booking', () => {
   const current = ref<Booking | null>(null)
   const payment = ref<PaymentInfo | null>(null)
   const error = ref('')
-  const loading = ref(false)
+  const courtsLoading = ref(false)
+  const slotsLoading = ref(false)
+  const loading = computed(() => courtsLoading.value || slotsLoading.value)
 
   async function loadCourts() {
     error.value = ''
-    loading.value = true
+    courtsLoading.value = true
     try {
       courts.value = await api.get<Court[]>('/courts')
     } catch (cause) {
@@ -25,14 +27,14 @@ export const useBookingStore = defineStore('booking', () => {
       error.value = 'Không thể tải danh sách sân. Vui lòng thử lại.'
       throw cause
     } finally {
-      loading.value = false
+      courtsLoading.value = false
     }
   }
 
   async function loadAvailability(courtId: number, date: string) {
     selectedCourt.value = courtId
     error.value = ''
-    loading.value = true
+    slotsLoading.value = true
     try {
       slots.value = await api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`)
     } catch (cause) {
@@ -40,7 +42,7 @@ export const useBookingStore = defineStore('booking', () => {
       error.value = 'Không thể tải lịch sân. Vui lòng thử lại.'
       throw cause
     } finally {
-      loading.value = false
+      slotsLoading.value = false
       selectedSlots.value = []
     }
   }
@@ -97,5 +99,5 @@ export const useBookingStore = defineStore('booking', () => {
     return api.post<{ status: string; booking: Booking }>(`/bookings/${payment.value.code}/demo-pay`)
   }
 
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay }
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, courtsLoading, slotsLoading, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay }
 })

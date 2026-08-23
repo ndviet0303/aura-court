@@ -7,6 +7,7 @@ import DatePicker from '@/components/DatePicker.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import { formatCurrency, formatTime } from '@/i18n'
+import type { AvailabilitySlot, Court } from '@/types'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const { t } = useI18n()
@@ -16,8 +17,8 @@ const auth = useAuthStore()
 const store = useBookingStore()
 const date = ref(new Date(Date.now() + 86400000).toISOString().slice(0, 10))
 const couponCode = ref('')
-const court = computed(() => store.courts.find((item) => item.id === Number(route.params.id)) || store.courts[0])
-const unavailableSlots = computed(() => store.slots.filter((slot) => !slot.available))
+const court = computed(() => store.courts.find((item: Court) => item.id === Number(route.params.id)) || store.courts[0])
+const unavailableSlots = computed(() => store.slots.filter((slot: AvailabilitySlot) => !slot.available))
 const error = ref('')
 const notice = ref('')
 const loading = ref(false)
@@ -59,7 +60,7 @@ async function next() {
   loading.value = true
   error.value = ''
   try {
-    const payload = { court_id: court.value?.id, slots: store.selectedSlots.map((slot) => slot.startsAt) }
+    const payload = { court_id: court.value?.id, slots: store.selectedSlots.map((slot: AvailabilitySlot) => slot.startsAt) }
     const result = route.query.reschedule
       ? await api.post<{ booking: { code: string } }>('/bookings/' + route.query.reschedule + '/reschedule', payload)
       : await store.createBooking(couponCode.value)
@@ -85,15 +86,15 @@ async function next() {
         </div>
         <DatePicker v-model="date" @change="refresh" />
       </div>
-      <div v-if="store.loading && !store.slots.length" class="slot-grid">
-        <SkeletonLoader v-for="i in 10" :key="i" type="rect" height="52px" rounded="10px" />
+      <div v-if="store.slotsLoading || (store.loading && !store.slots.length)" class="slot-grid">
+        <SkeletonLoader type="slot" :count="10" />
       </div>
       <div v-else class="slot-grid">
         <button
           v-for="slot in store.slots"
           :key="slot.startsAt"
           class="slot"
-          :class="{ selected: store.selectedSlots.some((item) => item.startsAt === slot.startsAt), unavailable: !slot.available }"
+          :class="{ selected: store.selectedSlots.some((item: AvailabilitySlot) => item.startsAt === slot.startsAt), unavailable: !slot.available }"
           :disabled="!slot.available"
           @click="store.toggle(slot)"
         >

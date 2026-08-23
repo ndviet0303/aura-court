@@ -5,8 +5,11 @@ import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/lib/api'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
+import type { AvailabilitySlot, Court } from '@/types'
 import { formatCurrency, formatTime } from '@/i18n'
 import DatePicker from '@/components/DatePicker.vue'
+import SelectDropdown from '@/components/SelectDropdown.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const { t } = useI18n()
 const store = useBookingStore()
@@ -18,9 +21,22 @@ const timeFilter = ref('all')
 const loading = ref(false)
 const error = ref('')
 
-const total = computed(() => store.selectedSlots.reduce((sum, slot) => sum + slot.price, 0))
+const courtOptions = computed(() =>
+  store.courts.map((court: Court) => ({
+    value: court.id,
+    label: court.name,
+  }))
+)
+
+const timeOptions = computed(() => [
+  { value: 'all', label: t('home.search.allSlots') },
+  { value: 'morning', label: t('home.search.morning') },
+  { value: 'evening', label: t('home.search.evening') },
+])
+
+const total = computed(() => store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0))
 const image = (index: number) => store.courts[index]?.image_url || `/aura/court-${index + 4}.jpg`
-const visibleSlots = computed(() => store.slots.filter((slot) => {
+const visibleSlots = computed(() => store.slots.filter((slot: AvailabilitySlot) => {
   const hour = Number(new Date(slot.startsAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hour12: false }))
   return timeFilter.value === 'morning' ? hour < 17 : timeFilter.value === 'evening' ? hour >= 17 : true
 }))
@@ -102,9 +118,13 @@ onMounted(async () => {
   <section class="search-strip">
     <div class="search-field">
       <label>{{ t('home.search.court') }}</label>
-      <select v-model.number="selected" @change="chooseCourt">
-        <option v-for="court in store.courts" :key="court.id" :value="court.id">{{ court.name }}</option>
-      </select>
+      <SelectDropdown
+        v-model="selected"
+        :options="courtOptions"
+        :placeholder="t('home.search.court')"
+        :aria-label="t('home.search.court')"
+        @change="chooseCourt"
+      />
     </div>
     <div class="search-field">
       <label>{{ t('home.search.date') }}</label>
@@ -112,11 +132,12 @@ onMounted(async () => {
     </div>
     <div class="search-field">
       <label>{{ t('home.search.timeSlot') }}</label>
-      <select v-model="timeFilter">
-        <option value="all">{{ t('home.search.allSlots') }}</option>
-        <option value="morning">{{ t('home.search.morning') }}</option>
-        <option value="evening">{{ t('home.search.evening') }}</option>
-      </select>
+      <SelectDropdown
+        v-model="timeFilter"
+        :options="timeOptions"
+        :placeholder="t('home.search.timeSlot')"
+        :aria-label="t('home.search.timeSlot')"
+      />
     </div>
     <button class="search-action" :aria-label="t('home.search.searchAction')" @click="scrollToAvailability">search</button>
   </section>
@@ -132,12 +153,17 @@ onMounted(async () => {
       </RouterLink>
     </div>
     <p v-if="store.error" class="error">{{ store.error }}</p>
-    <div v-if="visibleSlots.length" class="slot-preview">
+
+    <!-- Time Slots Loading / Loaded States -->
+    <div v-if="store.slotsLoading" class="slot-preview">
+      <SkeletonLoader type="slot" :count="8" />
+    </div>
+    <div v-else-if="visibleSlots.length" class="slot-preview">
       <button
         v-for="slot in visibleSlots"
         :key="slot.startsAt"
         class="slot"
-        :class="{ selected: store.selectedSlots.some((item) => item.startsAt === slot.startsAt), unavailable: !slot.available }"
+        :class="{ selected: store.selectedSlots.some((item: AvailabilitySlot) => item.startsAt === slot.startsAt), unavailable: !slot.available }"
         :disabled="!slot.available"
         @click="store.toggle(slot)"
       >
@@ -148,7 +174,12 @@ onMounted(async () => {
     <div v-else class="muted" style="margin: 16px 0 28px;">
       {{ t('home.availability.noSlots') }}
     </div>
-    <div class="court-grid">
+
+    <!-- Courts Grid Loading / Loaded States -->
+    <div v-if="store.courtsLoading && !store.courts.length" class="court-grid">
+      <SkeletonLoader type="court-card" :count="3" />
+    </div>
+    <div v-else class="court-grid">
       <RouterLink
         v-for="(court, index) in store.courts"
         :key="court.id"

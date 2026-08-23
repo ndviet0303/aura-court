@@ -3,12 +3,13 @@ import { computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBookingStore } from '@/stores/booking'
-import AuraLoading from '@/components/AuraLoading.vue'
+import type { Court } from '@/types'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const store = useBookingStore()
-const court = computed(() => store.courts.find((item) => item.id === Number(route.params.id)) || store.courts[0])
+const court = computed(() => store.courts.find((item: Court) => item.id === Number(route.params.id)) || store.courts[0])
 
 onMounted(async () => {
   try { await store.loadCourts() } catch { /* store exposes the error */ }
@@ -22,8 +23,8 @@ function openMaps(): void {
 <template>
   <section class="page-shell">
     <p v-if="store.error" class="error">{{ store.error }}</p>
-    <div v-if="store.loading && !store.courts.length" style="padding: 60px 0;">
-      <AuraLoading size="lg" :text="t('common.loading')" />
+    <div v-if="(store.courtsLoading || store.loading) && !store.courts.length" style="margin-top: 10px;">
+      <SkeletonLoader type="court-detail" />
     </div>
     <template v-else-if="court">
       <div class="eyebrow">{{ court.venue.name }} / {{ court.name }}</div>
