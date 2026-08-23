@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 import SiteFooter from '@/components/SiteFooter.vue'
 import DemoWarningModal from '@/components/DemoWarningModal.vue'
 import { isRouteNavigating } from '@/stores/navigation'
+
+const route = useRoute()
+const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
 </script>
 
 <template>
@@ -21,7 +25,7 @@ import { isRouteNavigating } from '@/stores/navigation'
     <RouterView />
   </main>
 
-  <SiteFooter />
+  <SiteFooter v-if="!isAdminRoute" />
 </template>
 
 <style scoped>

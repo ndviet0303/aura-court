@@ -115,35 +115,7 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="page-shell admin-dashboard-shell">
-    <!-- Admin Navigation Tab Bar -->
-    <nav class="admin-tab-nav" aria-label="Admin Navigation">
-      <RouterLink to="/admin" class="admin-nav-item active">
-        <span class="material-symbols-outlined">analytics</span>
-        <span>{{ t('admin.reports') }}</span>
-      </RouterLink>
-      <RouterLink to="/admin/manage" class="admin-nav-item">
-        <span class="material-symbols-outlined">sports_tennis</span>
-        <span>{{ t('admin.manageCourts') }}</span>
-      </RouterLink>
-      <RouterLink to="/admin/schedule" class="admin-nav-item">
-        <span class="material-symbols-outlined">schedule</span>
-        <span>{{ t('admin.scheduleManage') }}</span>
-      </RouterLink>
-      <RouterLink to="/admin/venues" class="admin-nav-item">
-        <span class="material-symbols-outlined">location_on</span>
-        <span>{{ t('admin.manageVenues') }}</span>
-      </RouterLink>
-      <RouterLink to="/admin/pricing" class="admin-nav-item">
-        <span class="material-symbols-outlined">price_change</span>
-        <span>{{ t('admin.pricingCalendar') }}</span>
-      </RouterLink>
-      <RouterLink to="/admin/organization" class="admin-nav-item">
-        <span class="material-symbols-outlined">corporate_fare</span>
-        <span>{{ t('admin.organization') }}</span>
-      </RouterLink>
-    </nav>
-
+  <div class="admin-dashboard-content-wrap">
     <!-- Header Section -->
     <header class="admin-dashboard-header">
       <div class="header-content">
@@ -406,11 +378,11 @@ onMounted(load)
         </table>
       </div>
     </section>
-  </main>
+  </div>
 </template>
 
 <style scoped>
-.admin-dashboard-shell {
+.admin-dashboard-content-wrap {
   max-width: 1280px;
   margin: 0 auto;
   padding: 30px 24px 90px;

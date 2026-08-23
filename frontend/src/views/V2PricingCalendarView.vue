@@ -31,10 +31,10 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="page-shell">
-    <section class="row"><div><div class="eyebrow">API v2 · Owner</div><h1 class="page-title">Lịch giá</h1><p class="muted">Date exception → peak → weekly → base. Quy tắc mới không làm thay đổi quote đã chấp nhận.</p></div></section>
+  <div class="p-6 md:p-10 max-w-6xl mx-auto w-full">
+    <section class="row"><div><div class="eyebrow">API v2 · Owner</div><h1 class="page-title">Lịch giá Nâng cao v2</h1><p class="muted">Date exception → peak → weekly → base. Quy tắc mới không làm thay đổi quote đã chấp nhận.</p></div></section>
     <p v-if="error" class="error">{{ error }}</p><p v-if="notice" class="notice">{{ notice }}</p>
     <section class="card" style="margin-top: 18px"><h2>Thêm quy tắc</h2><form class="row" style="margin-top: 14px; align-items: end" @submit.prevent="addRule"><label class="field">Loại<select v-model="form.type"><option value="base">Base</option><option value="weekly">Weekly</option><option value="peak">Peak</option><option value="date_exception">Date exception</option></select></label><label class="field">Giá<input v-model.number="form.price" type="number" min="0" /></label><label v-if="form.type === 'weekly'" class="field">Thứ<input v-model.number="form.weekday" type="number" min="1" max="7" /></label><label v-if="['date_exception', 'holiday'].includes(form.type)" class="field">Ngày<input v-model="form.exception_date" type="date" /></label><label v-if="form.type !== 'base'" class="field">Bắt đầu<input v-model="form.starts_at" type="time" /></label><label v-if="form.type !== 'base'" class="field">Kết thúc<input v-model="form.ends_at" type="time" /></label><button class="btn">Thêm quy tắc</button></form></section>
     <section class="card" style="margin-top: 18px"><h2>Quy tắc đang áp dụng</h2><div v-for="rule in rules" :key="rule.id" class="row" style="padding: 14px 0; border-bottom: 1px solid var(--line)"><div><strong>{{ rule.type }}</strong><p class="muted">v{{ rule.version }} · {{ rule.starts_at || 'cả ngày' }}<span v-if="rule.ends_at">–{{ rule.ends_at }}</span></p></div><div class="actions"><strong>{{ money(rule.price) }}</strong><button class="link-button danger" @click="deactivate(rule)">Tắt</button></div></div></section>
-  </main>
+  </div>
 </template>

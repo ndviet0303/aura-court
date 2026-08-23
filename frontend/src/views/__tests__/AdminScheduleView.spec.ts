@@ -6,6 +6,7 @@ import { i18n } from '@/i18n'
 import { api } from '@/lib/api'
 
 vi.mock('vue-router', () => ({
+  useRoute: () => ({ path: '/admin/schedule' }),
   RouterLink: {
     props: ['to'],
     template: '<a :href="typeof to === \'object\' ? to.path : to"><slot /></a>',

@@ -1,0 +1,67 @@
+/* ==========================================================================
+   Buttons & Interactive Actions
+   ========================================================================== */
+
+.btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 24px;
+  background: var(--pink-dark);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.25s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(120, 85, 94, 0.2);
+}
+
+.btn.secondary {
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--outline);
+}
+
+.btn.pink {
+  background: var(--pink-light);
+  color: var(--pink-dark);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+  align-items: center;
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--pink-dark);
+}
+
+.search-action {
+  border: 0;
+  background: var(--pink-light);
+  color: var(--pink-dark);
+  border-radius: 12px;
+  font-family: 'Material Symbols Outlined';
+  font-size: 22px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.2s ease;
+}
+
+.search-action:hover {
+  transform: scale(1.05);
+}

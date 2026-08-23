@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Design Tokens & CSS Variables (Light / Dark Themes)
+   ========================================================================== */
+
+:root {
+  --bg: #eff1f4;
+  --background: #eff1f4;
+  --surface: #ffffff;
+  --soft: #e5e8ec;
+  --surface-subtle: #f5f6f8;
+  --ink: #191c1d;
+  --foreground: #191c1d;
+  --muted: #5d5f5f;
+  --pink: #ffd1dc;
+  --pink-dark: #78555e;
+  --pink-light: #ffd9e2;
+  --outline: #d8dce2;
+  --mint: #d9f0e4;
+  --coral: #ffdad6;
+  --topbar-bg: rgba(255, 255, 255, 0.94);
+  --border: #e0e4ea;
+  --card-bg: #ffffff;
+  --input-bg: transparent;
+}
+
+html.dark {
+  --bg: #18191d;
+  --background: #18191d;
+  --surface: #22242a;
+  --soft: #2b2e36;
+  --surface-subtle: #262930;
+  --ink: #f3f4f6;
+  --foreground: #f3f4f6;
+  --muted: #9ca3af;
+  --pink: #78555e;
+  --pink-dark: #f8b4c4;
+  --pink-light: #3d2b31;
+  --outline: #383c46;
+  --mint: #1c382b;
+  --coral: #451d1d;
+  --topbar-bg: rgba(24, 25, 29, 0.94);
+  --border: #353942;
+  --card-bg: #22242a;
+  --input-bg: #2b2e36;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg);
+  color: var(--ink);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.site-main {
+  flex: 1 0 auto;
+  padding-top: 78px;
+  width: 100%;
+}
+
+.container {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.1em;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  vertical-align: middle;
+  -webkit-font-smoothing: antialiased;
+}

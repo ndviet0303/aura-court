@@ -1,0 +1,386 @@
+/* ==========================================================================
+   Forms, Input Controls, Selects & Pickers
+   ========================================================================== */
+
+.form {
+  max-width: 460px;
+  margin: 60px auto;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 15px;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 2px solid var(--outline);
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.field input:focus {
+  border-color: var(--pink-dark);
+}
+
+/* Custom Select Controls */
+select {
+  appearance: none;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 42px 11px 14px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2378555e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+select option {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+html.dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23f8b4c4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+html.dark select option {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+select:hover {
+  border-color: var(--pink-dark);
+}
+
+select:focus-visible {
+  border-color: var(--pink-dark);
+  box-shadow: 0 0 0 3px rgba(120, 85, 94, 0.16);
+  outline: 0;
+}
+
+.field select {
+  padding: 11px 42px 11px 14px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background-color: var(--surface);
+}
+
+.search-field select {
+  min-height: 0;
+  padding: 0 26px 0 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-position: right 0 center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-form-grid select {
+  min-height: 43px;
+}
+
+input[type='number'] {
+  appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Admin Forms */
+.admin-form {
+  margin: 28px 0;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.admin-form-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.admin-form-grid input,
+.admin-form-grid textarea {
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+  padding: 10px;
+  font: inherit;
+  font-weight: 400;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.admin-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.admin-form-grid.compact {
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+}
+
+/* Date & Time Picker */
+.date-picker {
+  position: relative;
+  min-width: 176px;
+}
+
+.date-picker-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 2px solid var(--outline);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.date-picker-trigger:focus-visible {
+  outline: 2px solid var(--pink-dark);
+  outline-offset: 3px;
+}
+
+.date-picker-placeholder {
+  color: var(--muted);
+}
+
+.date-picker-popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 302px;
+  padding: 16px;
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+}
+
+.date-picker-header,
+.date-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.date-picker-header strong {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.date-picker-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.date-picker-nav button,
+.date-picker-action {
+  border: 0;
+  background: transparent;
+  color: var(--pink-dark);
+  cursor: pointer;
+}
+
+.date-picker-nav button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.date-picker-nav button:hover,
+.date-picker-action:hover {
+  background: var(--pink-light);
+}
+
+.date-picker-weekdays,
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.date-picker-weekdays {
+  margin: 18px 0 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.date-picker-day {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.date-picker-day:hover:not(:disabled) {
+  background: var(--pink-light);
+  color: var(--pink-dark);
+}
+
+.date-picker-day.muted {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.date-picker-day.today {
+  box-shadow: inset 0 0 0 1px var(--pink-dark);
+}
+
+.date-picker-day.selected {
+  background: var(--pink-dark);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.date-picker-day:disabled {
+  color: var(--outline);
+  cursor: not-allowed;
+}
+
+.date-picker-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--outline);
+}
+
+.date-picker-action {
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.search-field .date-picker-trigger {
+  padding: 0;
+  border: 0;
+}
+
+.admin-form-grid .date-picker-trigger {
+  padding: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+}
+
+.time-picker {
+  position: relative;
+  min-width: 110px;
+}
+
+.time-picker-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.time-picker-trigger:focus-visible {
+  outline: 2px solid var(--pink-dark);
+  outline-offset: 2px;
+}
+
+.time-picker-popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 224px;
+  max-height: 250px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+}
+
+.time-picker-option {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 8px 4px;
+  font-size: 12px;
+}
+
+.time-picker-option:hover,
+.time-picker-option.selected {
+  background: var(--pink-light);
+  color: var(--pink-dark);
+  font-weight: 700;
+}
+
+.date-time-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-time-picker .date-picker {
+  flex: 1;
+  min-width: 145px;
+}
+
+.date-time-picker .date-picker-trigger {
+  padding: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+}
+
+.date-time-picker .time-picker {
+  flex: 0 0 108px;
+}

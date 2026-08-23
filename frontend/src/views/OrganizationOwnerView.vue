@@ -110,7 +110,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
+  <div class="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 max-w-7xl mx-auto w-full">
     <div class="max-w-6xl mx-auto">
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
@@ -318,5 +318,5 @@ onMounted(() => {
         </div>
       </section>
     </div>
-  </main>
+  </div>
 </template>

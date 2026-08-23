@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Typography & Feedback Elements
+   ========================================================================== */
+
+.page-title {
+  font-size: 42px;
+  letter-spacing: -0.055em;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+.eyebrow {
+  color: var(--pink-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.eyebrow:before {
+  content: '';
+  width: 48px;
+  height: 2px;
+  background: var(--pink-dark);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: #ba1a1a;
+  margin: 12px 0;
+}
+
+.notice {
+  color: #315b49;
+  background: var(--mint);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.danger {
+  color: #ba1a1a;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 6px 11px;
+  background: var(--mint);
+  color: #315b49;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-success {
+  background: var(--mint);
+  color: #315b49;
+}
+
+.badge-danger {
+  background: var(--coral);
+  color: #8b332d;
+}
+
+.tag {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
