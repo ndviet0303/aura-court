@@ -642,8 +642,9 @@ onMounted(async () => {
 .stitch-profile-page {
   min-height: calc(100vh - 120px);
   padding: 32px 16px 80px;
-  background-color: var(--surface-muted, #f8f9fa);
-  color: var(--text-primary, #1a1a1a);
+  background-color: var(--bg);
+  color: var(--ink);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .stitch-profile-wrap {
@@ -685,11 +686,12 @@ onMounted(async () => {
 
 /* 1. TOP SUMMARY CARD */
 .stitch-summary-card {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, #ededed);
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .summary-card-inner {
@@ -735,7 +737,7 @@ onMounted(async () => {
   right: 4px;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
   color: #ffffff;
   font-size: 10px;
@@ -781,10 +783,22 @@ onMounted(async () => {
   border: 1px solid #fed7aa;
 }
 
+html.dark .badge-role {
+  background: rgba(234, 88, 12, 0.15);
+  color: #fb923c;
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
 .badge-level {
   background: #f0fdf4;
   color: #15803d;
   border: 1px solid #bbf7d0;
+}
+
+html.dark .badge-level {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
 }
 
 .badge-verified {
@@ -793,10 +807,22 @@ onMounted(async () => {
   border: 1px solid #bfdbfe;
 }
 
+html.dark .badge-verified {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
 .badge-unverified {
   background: #fef2f2;
   color: #b91c1c;
   border: 1px solid #fecaca;
+}
+
+html.dark .badge-unverified {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .badge-social {
@@ -805,10 +831,16 @@ onMounted(async () => {
   border: 1px solid #e2e8f0;
 }
 
+html.dark .badge-social {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
 .athlete-display-name {
   font-size: 22px;
   font-weight: 800;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
   margin: 0;
   line-height: 1.2;
 }
@@ -818,7 +850,7 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--text-muted, #666666);
+  color: var(--muted);
   margin: 0;
 }
 
@@ -834,7 +866,7 @@ onMounted(async () => {
 .btn-resend-link {
   background: transparent;
   border: none;
-  color: #2563eb;
+  color: #60a5fa;
   font-size: 12px;
   font-weight: 700;
   text-decoration: underline;
@@ -845,8 +877,9 @@ onMounted(async () => {
 .stitch-tabs-bar {
   display: flex;
   overflow-x: auto;
-  border-top: 1px solid var(--outline, #ededed);
-  background: var(--surface, #ffffff);
+  border-top: 1px solid var(--outline);
+  background: var(--surface);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .tab-btn {
@@ -859,7 +892,7 @@ onMounted(async () => {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted, #666666);
+  color: var(--muted);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -868,14 +901,18 @@ onMounted(async () => {
 }
 
 .tab-btn:hover {
-  color: var(--text-primary, #1a1a1a);
-  background: rgba(0, 0, 0, 0.02);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-btn.active {
-  color: var(--text-primary, #1a1a1a);
-  border-bottom-color: #ffd1dc;
+  color: var(--ink);
+  border-bottom-color: #ffb6c5;
   font-weight: 700;
+}
+
+html.dark .tab-btn.active {
+  border-bottom-color: #f8b4c4;
 }
 
 .mini-tag {
@@ -900,24 +937,25 @@ onMounted(async () => {
 }
 
 .alert-success {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #15803d;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
 }
 
 .alert-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
 }
 
 /* 2. MAIN CARD PANE */
 .stitch-main-card {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, #ededed);
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .pane-body {
@@ -933,13 +971,13 @@ onMounted(async () => {
 .heading-title {
   font-size: 18px;
   font-weight: 800;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
   margin: 0 0 4px;
 }
 
 .heading-sub {
   font-size: 13px;
-  color: var(--text-muted, #666666);
+  color: var(--muted);
   margin: 0;
 }
 
@@ -975,7 +1013,7 @@ onMounted(async () => {
 .minimal-label {
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
 }
 
 .req {
@@ -992,29 +1030,29 @@ onMounted(async () => {
   position: absolute;
   left: 0;
   font-size: 18px;
-  color: var(--text-muted, #888888);
+  color: var(--muted);
   pointer-events: none;
 }
 
 .minimal-input {
   width: 100%;
   border: none;
-  border-bottom: 2px solid var(--outline, #ededed);
+  border-bottom: 2px solid var(--outline);
   border-radius: 0;
   background: transparent;
   padding: 8px 10px 8px 30px;
   font-size: 14px;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
   transition: border-color 0.2s ease;
 }
 
 .minimal-input:focus {
   outline: none;
-  border-bottom-color: #ffd1dc;
+  border-bottom-color: #ffb6c5;
 }
 
 .disabled-input {
-  color: var(--text-muted, #888888);
+  color: var(--muted);
   cursor: not-allowed;
   border-bottom-style: dashed;
 }
@@ -1024,8 +1062,15 @@ onMounted(async () => {
   right: 0;
   background: transparent;
   border: none;
-  color: var(--text-muted, #888888);
+  color: var(--muted);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-eye-btn:hover {
+  color: var(--ink);
 }
 
 /* Skill Cards Grid */
@@ -1050,21 +1095,26 @@ onMounted(async () => {
   gap: 6px;
   padding: 16px 12px;
   border-radius: 12px;
-  border: 1px solid var(--outline, #ededed);
-  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline);
+  background: var(--surface);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
 }
 
 .skill-card-box:hover {
-  background: var(--surface-muted, #f8f9fa);
-  border-color: #ffd1dc;
+  background: var(--surface-subtle);
+  border-color: #ffb6c5;
 }
 
 .skill-card-box.active {
   background: #ffe8ed;
-  border-color: #ffd1dc;
+  border-color: #ffb6c5;
+}
+
+html.dark .skill-card-box.active {
+  background: rgba(255, 182, 197, 0.15);
+  border-color: #f8b4c4;
 }
 
 .skill-ico {
@@ -1072,11 +1122,11 @@ onMounted(async () => {
 }
 
 .text-green {
-  color: #16a34a;
+  color: #22c55e;
 }
 
 .text-orange {
-  color: #ea580c;
+  color: #f97316;
 }
 
 .text-yellow {
@@ -1084,17 +1134,17 @@ onMounted(async () => {
 }
 
 .text-gold {
-  color: #ca8a04;
+  color: #f59e0b;
 }
 
 .text-brand {
-  color: #e11d48;
+  color: #f43f5e;
 }
 
 .skill-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
 }
 
 /* Form Actions */
@@ -1102,7 +1152,7 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   padding-top: 16px;
-  border-top: 1px solid var(--outline, #ededed);
+  border-top: 1px solid var(--outline);
 }
 
 .stitch-cta-btn {
@@ -1118,10 +1168,21 @@ onMounted(async () => {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 182, 197, 0.3);
 }
 
 .stitch-cta-btn:hover:not(:disabled) {
   background: #ffb6c5;
+  transform: translateY(-1px);
+}
+
+html.dark .stitch-cta-btn {
+  background: #ffb6c5;
+  color: #121212;
+}
+
+html.dark .stitch-cta-btn:hover:not(:disabled) {
+  background: #ffa4b6;
 }
 
 .stitch-cta-btn:disabled {
@@ -1152,6 +1213,11 @@ onMounted(async () => {
   border: 1px solid #bae6fd;
 }
 
+html.dark .social-alert-card {
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
 .social-pill-badge {
   display: inline-flex;
   align-items: center;
@@ -1165,11 +1231,20 @@ onMounted(async () => {
   text-transform: uppercase;
 }
 
+html.dark .social-pill-badge {
+  background: rgba(14, 165, 233, 0.2);
+  color: #7dd3fc;
+}
+
 .social-alert-title {
   font-size: 15px;
   font-weight: 800;
   color: #0369a1;
   margin: 6px 0 2px;
+}
+
+html.dark .social-alert-title {
+  color: #7dd3fc;
 }
 
 .social-alert-sub {
@@ -1178,10 +1253,14 @@ onMounted(async () => {
   margin: 0;
 }
 
+html.dark .social-alert-sub {
+  color: #bae6fd;
+}
+
 /* Password Meters */
 .meter-bar-track {
   height: 3px;
-  background: #e5e7eb;
+  background: var(--soft);
   border-radius: 2px;
   margin-top: 4px;
   overflow: hidden;
@@ -1226,6 +1305,11 @@ onMounted(async () => {
   border: 1px solid #fde68a;
 }
 
+html.dark .vip-soft-card {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
 .vip-row-head {
   display: flex;
   justify-content: space-between;
@@ -1243,17 +1327,26 @@ onMounted(async () => {
   color: #92400e;
 }
 
+html.dark .vip-soft-tag {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
+}
+
 .vip-soft-tier {
   font-size: 18px;
   font-weight: 800;
   color: #78350f;
 }
 
+html.dark .vip-soft-tier {
+  color: #fbbf24;
+}
+
 .vip-row-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  border-top: 1px solid #fef3c7;
+  border-top: 1px solid rgba(251, 191, 36, 0.2);
   padding-top: 16px;
 }
 
@@ -1263,9 +1356,14 @@ onMounted(async () => {
   color: #92400e;
 }
 
+html.dark .metric-label {
+  color: #fde68a;
+}
+
 .metric-val {
   font-size: 18px;
   font-weight: 800;
+  color: var(--ink);
 }
 
 .empty-soft-box {
@@ -1281,7 +1379,7 @@ onMounted(async () => {
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: #ffe8ed;
+  background: rgba(255, 182, 197, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1290,12 +1388,13 @@ onMounted(async () => {
 .empty-h {
   font-size: 15px;
   font-weight: 700;
+  color: var(--ink);
   margin: 0;
 }
 
 .empty-p {
   font-size: 13px;
-  color: var(--text-muted, #666666);
+  color: var(--muted);
   max-width: 360px;
   margin: 0;
 }
@@ -1306,9 +1405,9 @@ onMounted(async () => {
   gap: 6px;
   padding: 10px 20px;
   border-radius: 10px;
-  border: 1px solid var(--outline, #ededed);
+  border: 1px solid var(--outline);
   background: transparent;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
@@ -1317,8 +1416,8 @@ onMounted(async () => {
 }
 
 .stitch-outline-btn:hover {
-  background: var(--surface-muted, #f8f9fa);
-  border-color: #ffd1dc;
+  background: var(--surface-subtle);
+  border-color: #ffb6c5;
 }
 
 /* Shortcuts */
@@ -1340,8 +1439,8 @@ onMounted(async () => {
   gap: 14px;
   padding: 16px 18px;
   border-radius: 12px;
-  border: 1px solid var(--outline, #ededed);
-  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline);
+  background: var(--surface);
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -1350,19 +1449,19 @@ onMounted(async () => {
 }
 
 .shortcut-card:hover {
-  border-color: #ffd1dc;
-  background: #fff8f9;
+  border-color: #ffb6c5;
+  background: var(--surface-subtle);
 }
 
 .shortcut-icon-circle {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: #f8f9fa;
+  background: var(--soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary, #1a1a1a);
+  color: var(--ink);
   flex-shrink: 0;
 }
 
@@ -1373,23 +1472,24 @@ onMounted(async () => {
 .shortcut-title {
   font-size: 13px;
   font-weight: 700;
+  color: var(--ink);
   margin: 0 0 2px;
 }
 
 .shortcut-desc {
   font-size: 11px;
-  color: var(--text-muted, #666666);
+  color: var(--muted);
   margin: 0;
 }
 
 .shortcut-chevron {
   font-size: 18px;
-  color: var(--text-muted, #888888);
+  color: var(--muted);
 }
 
 .danger-card:hover {
-  border-color: #fecaca;
-  background: #fef2f2;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .danger-icon {
