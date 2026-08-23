@@ -19,6 +19,11 @@ const userName = computed(() => {
   return auth.user ? 'Alex Nguyen' : 'Khách'
 })
 
+const defaultAvatarUrl = computed(() => {
+  const id = auth.user?.id || 1
+  return id % 2 === 0 ? '/avatars/athlete-girl.jpg' : '/avatars/athlete-boy.jpg'
+})
+
 const userRoleBadge = computed(() => {
   if (auth.user?.role === 'admin') return 'ADMIN'
   if (auth.user) return 'PRO MEMBER'
@@ -76,7 +81,7 @@ const isBookingActive = computed(() => {
             <span class="user-badge">{{ userRoleBadge }}</span>
           </RouterLink>
           <RouterLink to="/profile" class="user-avatar-btn" :aria-label="$t('nav.profile')" :title="$t('nav.profile')">
-            <span class="material-symbols-outlined">person</span>
+            <img :src="defaultAvatarUrl" :alt="userName" class="user-avatar-img" />
           </RouterLink>
           <button
             type="button"
@@ -245,20 +250,30 @@ const isBookingActive = computed(() => {
 }
 
 .user-avatar-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  overflow: hidden;
   background: var(--pink-light, #ffd9e2);
   color: var(--pink-dark, #5e3e47);
   display: grid;
   place-items: center;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 6px rgba(120, 85, 94, 0.12);
+  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.15);
+  border: 1.5px solid var(--outline);
+  flex-shrink: 0;
 }
 
 .user-avatar-btn:hover {
   transform: scale(1.05);
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .user-avatar-btn .material-symbols-outlined {
