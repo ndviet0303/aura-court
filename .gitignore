@@ -20,3 +20,4 @@ backend/bootstrap/cache/*.php
 .idea/
 .vscode/
 *.log
+frontend/public/aura-fb-logo.jpg

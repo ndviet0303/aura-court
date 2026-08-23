@@ -151,12 +151,8 @@ class AuthController extends Controller
             $driver = \Laravel\Socialite\Facades\Socialite::driver($provider);
             $socialUser = $driver->stateless()->user();
 
-            $email = $socialUser->getEmail();
+            $email = $socialUser->getEmail() ?: ($socialUser->getId() . '@facebook.auracourt.vn');
             $name = $socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete');
-
-            if (! $email) {
-                return redirect("{$frontendUrl}/login?error=no_email");
-            }
 
             $user = User::where('email', $email)->first();
 
