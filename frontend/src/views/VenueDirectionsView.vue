@@ -27,7 +27,16 @@ async function copyAddress(): Promise<void> {
 }
 
 function openMaps(): void {
-  if (venue.value?.google_maps_url) window.open(venue.value.google_maps_url, '_blank', 'noopener,noreferrer')
+  const v = venue.value
+  const mapsUrl = v?.google_maps_url
+  if (mapsUrl && (mapsUrl.startsWith('http://') || mapsUrl.startsWith('https://'))) {
+    window.open(mapsUrl, '_blank', 'noopener,noreferrer')
+    return
+  }
+  const venueName = v?.name || 'Aura Court'
+  const venueAddress = v?.address || '22 Đường Quốc Hương, Phường Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh'
+  const query = encodeURIComponent(`${venueName} ${venueAddress}`)
+  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer')
 }
 </script>
 
@@ -51,7 +60,7 @@ function openMaps(): void {
       <h2>{{ t('directions.address') }}</h2>
       <p class="venue-address">{{ venue.address || t('common.loading') }}</p>
       <div class="actions">
-        <button type="button" class="btn" :disabled="!venue.google_maps_url" @click="openMaps">
+        <button type="button" class="btn" @click="openMaps">
           {{ t('directions.openGoogleMaps') }} <span class="material-symbols-outlined">open_in_new</span>
         </button>
         <button type="button" class="btn secondary" :disabled="!venue.address" @click="copyAddress">

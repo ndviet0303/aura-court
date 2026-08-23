@@ -231,6 +231,8 @@ const isBookingActive = computed(() => {
   align-items: flex-end;
   text-decoration: none;
   line-height: 1.25;
+  max-width: 160px;
+  min-width: 0;
 }
 
 .user-name {
@@ -238,6 +240,11 @@ const isBookingActive = computed(() => {
   font-weight: 700;
   color: var(--ink, #191c1d);
   transition: color 0.3s ease;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
 }
 
 .user-badge {
@@ -247,6 +254,7 @@ const isBookingActive = computed(() => {
   color: var(--pink-dark, #8c5b67);
   text-transform: uppercase;
   margin-top: 1px;
+  white-space: nowrap;
 }
 
 .user-avatar-btn {
@@ -300,6 +308,12 @@ const isBookingActive = computed(() => {
 
 .logout-icon-btn .material-symbols-outlined {
   font-size: 18px;
+}
+
+@media (max-width: 1150px) {
+  .user-meta {
+    max-width: 110px;
+  }
 }
 
 @media (max-width: 960px) {

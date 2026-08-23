@@ -24,7 +24,12 @@ class DatabaseSeeder extends Seeder
 
         $venue = Venue::updateOrCreate(
             ['slug' => 'aura-court'],
-            ['name' => 'Aura Court', 'is_active' => true],
+            [
+                'name' => 'Aura Court',
+                'address' => '22 Đường Quốc Hương, Phường Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh',
+                'google_maps_url' => 'https://maps.google.com/?q=22+Quoc+Huong+Thao+Dien+Thu+Duc+Ho+Chi+Minh',
+                'is_active' => true,
+            ],
         );
 
         $admin = User::firstOrNew(['email' => env('SEED_ADMIN_EMAIL', 'admin@example.com')]);
