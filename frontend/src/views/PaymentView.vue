@@ -7,7 +7,7 @@ import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatTime } from '@/i18n'
 import AuraLoading from '@/components/AuraLoading.vue'
-import type { Booking, Court } from '@/types'
+import type { AvailabilitySlot, Booking, Court } from '@/types'
 
 const { t, locale } = useI18n()
 const store = useBookingStore()
@@ -19,10 +19,14 @@ const router = useRouter()
 const status = ref('pending_payment')
 const error = ref('')
 const copyNotice = ref('')
-const demoLoading = ref(false)
-const demoMode = import.meta.env.DEV || true
 const selectedMethod = ref<'qr' | 'card'>('qr')
 const showSuccessModal = ref(false)
+
+// Coupon / Promo Code State
+const couponCode = ref('')
+const couponLoading = ref(false)
+const couponError = ref('')
+const couponSuccess = ref('')
 
 // Card mock inputs (Stripe)
 const cardNumber = ref('')
@@ -41,7 +45,7 @@ const booking = computed<Booking | null>(() => store.current)
 const court = computed<Court | null>(() => {
   if (booking.value?.court) return booking.value.court
   if (store.selectedCourt) {
-    return store.courts.find((c) => c.id === store.selectedCourt) || null
+    return store.courts.find((c: Court) => c.id === store.selectedCourt) || null
   }
   return null
 })
@@ -106,10 +110,14 @@ const calculatedSubtotal = computed(() => {
     return (booking.value.total_amount || 0) + (booking.value.discount_amount || 0) + (booking.value.membership_discount_amount || 0)
   }
   if (store.selectedSlots.length) {
-    return store.selectedSlots.reduce((sum, s) => sum + s.price, 0)
+    return store.selectedSlots.reduce((sum: number, s: AvailabilitySlot) => sum + s.price, 0)
   }
   return payment.value?.amount || 0
 })
+
+const appliedCoupon = computed(() => booking.value?.coupon || null)
+const couponDiscount = computed(() => booking.value?.discount_amount || 0)
+const membershipDiscount = computed(() => booking.value?.membership_discount_amount || 0)
 
 const totalDiscount = computed(() => {
   if (booking.value) {
@@ -168,21 +176,39 @@ async function copyToClipboard(text: string, label: string) {
   }
 }
 
-// Payment Handlers
-async function demoPay() {
-  demoLoading.value = true
+// Coupon Handlers
+async function applyCoupon() {
+  if (!couponCode.value.trim()) return
+  couponLoading.value = true
+  couponError.value = ''
+  couponSuccess.value = ''
   error.value = ''
   try {
-    const result = await store.demoPay()
-    status.value = result.status
-    if (result.status === 'confirmed') {
-      showSuccessModal.value = true
-      if (timer) window.clearInterval(timer)
-    }
+    await store.applyCoupon(couponCode.value.trim())
+    couponSuccess.value = t('payment.couponAppliedSuccess')
+    couponCode.value = ''
+    setTimeout(() => {
+      couponSuccess.value = ''
+    }, 4000)
   } catch (cause: unknown) {
-    error.value = errorMessage(cause, t('common.error'))
+    couponError.value = errorMessage(cause, t('common.error'))
   } finally {
-    demoLoading.value = false
+    couponLoading.value = false
+  }
+}
+
+async function removeCoupon() {
+  couponLoading.value = true
+  couponError.value = ''
+  couponSuccess.value = ''
+  error.value = ''
+  try {
+    await store.applyCoupon('')
+    couponCode.value = ''
+  } catch (cause: unknown) {
+    couponError.value = errorMessage(cause, t('common.error'))
+  } finally {
+    couponLoading.value = false
   }
 }
 
@@ -582,28 +608,6 @@ onUnmounted(() => {
               </form>
             </div>
 
-            <!-- Sandbox / Demo Simulation Action -->
-            <div v-if="demoMode && status === 'pending_payment'" class="demo-sandbox-card">
-              <div class="demo-card-header">
-                <span class="material-symbols-outlined demo-icon">science</span>
-                <div class="demo-info">
-                  <strong>{{ t('payment.demoWarningTitle') }}</strong>
-                  <p>{{ t('payment.demoWarningDesc') }}</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                class="btn-demo-pay"
-                :disabled="demoLoading"
-                @click="demoPay"
-              >
-                <AuraLoading v-if="demoLoading" size="sm" :showLogo="false" />
-                <span v-else class="material-symbols-outlined">bolt</span>
-                <span>{{ demoLoading ? t('payment.demoProcessing') : t('payment.demoPayBtn') }}</span>
-              </button>
-            </div>
-
             <div v-if="error" class="error-banner" role="alert">
               <span class="material-symbols-outlined icon-20">error</span>
               <span>{{ error }}</span>
@@ -654,15 +658,83 @@ onUnmounted(() => {
               </div>
             </div>
 
+            <!-- Voucher / Coupon Code Block -->
+            <div v-if="status === 'pending_payment'" class="summary-coupon-block">
+              <div class="coupon-block-header">
+                <span class="material-symbols-outlined icon-16">confirmation_number</span>
+                <span class="coupon-block-label">{{ t('payment.applyCoupon') }}</span>
+              </div>
+
+              <!-- If coupon is applied -->
+              <div v-if="appliedCoupon || couponDiscount > 0" class="applied-coupon-pill">
+                <div class="applied-coupon-info">
+                  <span class="material-symbols-outlined coupon-check-icon">check_circle</span>
+                  <div class="applied-coupon-text">
+                    <strong class="applied-coupon-code">{{ appliedCoupon?.code || booking?.coupon?.code || 'COUPON' }}</strong>
+                    <span class="applied-coupon-desc">-{{ formatCurrency(couponDiscount) }}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn-remove-coupon"
+                  :disabled="couponLoading"
+                  :title="t('payment.removeCouponBtn')"
+                  @click="removeCoupon"
+                >
+                  <AuraLoading v-if="couponLoading" size="sm" :showLogo="false" />
+                  <span v-else class="material-symbols-outlined icon-16">close</span>
+                </button>
+              </div>
+
+              <!-- Input to apply coupon -->
+              <form v-else class="coupon-input-group" @submit.prevent="applyCoupon">
+                <input
+                  v-model="couponCode"
+                  type="text"
+                  class="coupon-text-input"
+                  :placeholder="t('payment.couponPlaceholder')"
+                  maxlength="40"
+                  :disabled="couponLoading"
+                />
+                <button
+                  type="submit"
+                  class="btn-apply-coupon"
+                  :disabled="!couponCode.trim() || couponLoading"
+                >
+                  <AuraLoading v-if="couponLoading" size="sm" :showLogo="false" />
+                  <span v-else>{{ t('payment.applyCouponBtn') }}</span>
+                </button>
+              </form>
+
+              <!-- Feedback messages -->
+              <div v-if="couponError" class="coupon-msg error" role="alert">
+                <span class="material-symbols-outlined icon-14">error</span>
+                <span>{{ couponError }}</span>
+              </div>
+              <div v-if="couponSuccess" class="coupon-msg success" role="status">
+                <span class="material-symbols-outlined icon-14">check_circle</span>
+                <span>{{ couponSuccess }}</span>
+              </div>
+            </div>
+
             <!-- Cost Calculations -->
             <div class="summary-costs-block">
               <div class="summary-row">
                 <span class="row-label">{{ t('payment.subtotal') }}</span>
                 <span class="row-value">{{ formatCurrency(calculatedSubtotal) }}</span>
               </div>
-              <div v-if="totalDiscount > 0" class="summary-row discount-row">
+              <div v-if="membershipDiscount > 0" class="summary-row discount-row">
                 <span class="row-label">{{ t('payment.memberDiscount') }}</span>
-                <span class="row-value">- {{ formatCurrency(totalDiscount) }}</span>
+                <span class="row-value">- {{ formatCurrency(membershipDiscount) }}</span>
+              </div>
+              <div v-if="couponDiscount > 0" class="summary-row discount-row coupon-highlight">
+                <span class="row-label">
+                  {{ t('payment.couponDiscount') }}
+                  <span v-if="appliedCoupon?.code || booking?.coupon?.code" class="code-badge">
+                    ({{ appliedCoupon?.code || booking?.coupon?.code }})
+                  </span>
+                </span>
+                <span class="row-value">- {{ formatCurrency(couponDiscount) }}</span>
               </div>
               <div class="summary-row">
                 <span class="row-label">{{ t('payment.serviceFee') }}</span>
@@ -1530,83 +1602,156 @@ html.dark .detail-value.highlight-num {
   align-items: center;
   gap: 6px;
   font-size: 0.75rem;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-/* Demo Sandbox Box */
-.demo-sandbox-card {
-  margin-top: 24px;
-  background: rgba(255, 209, 220, 0.25);
-  border: 1px dashed var(--pink-dark);
-  border-radius: 12px;
-  padding: 18px;
-}
-
-html.dark .demo-sandbox-card {
-  background: rgba(120, 85, 94, 0.25);
-  border-color: var(--pink);
-}
-
-.demo-card-header {
+/* Coupon / Voucher Code Summary Styles */
+.summary-coupon-block {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 16px 0;
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 14px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.demo-icon {
-  font-size: 24px;
-  color: var(--pink-dark);
+.coupon-block-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
 }
 
-html.dark .demo-icon {
-  color: var(--pink);
+.applied-coupon-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 209, 220, 0.12);
+  border: 1px solid rgba(255, 209, 220, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 
-.demo-info strong {
-  display: block;
+.applied-coupon-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coupon-check-icon {
+  color: #34d399;
+  font-size: 18px;
+}
+
+.applied-coupon-text {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.applied-coupon-code {
   font-size: 0.875rem;
-  color: var(--ink);
-  margin-bottom: 2px;
+  font-weight: 700;
+  color: var(--pink);
+  letter-spacing: 0.05em;
 }
 
-.demo-info p {
+.applied-coupon-desc {
   font-size: 0.75rem;
-  color: var(--muted);
-  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
 }
 
-.btn-demo-pay {
-  width: 100%;
+.btn-remove-coupon {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: var(--pink-dark);
-  color: #ffffff;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-html.dark .btn-demo-pay {
+.btn-remove-coupon:hover:not(:disabled) {
+  color: #ff8080;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.coupon-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-text-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  text-transform: uppercase;
+}
+
+.coupon-text-input:focus {
+  border-color: var(--pink);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.coupon-text-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: none;
+}
+
+.btn-apply-coupon {
   background: var(--pink);
   color: #2d141c;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, transform 0.15s ease;
 }
 
-.btn-demo-pay:hover:not(:disabled) {
-  opacity: 0.9;
+.btn-apply-coupon:hover:not(:disabled) {
+  opacity: 0.92;
   transform: translateY(-1px);
 }
 
-.btn-demo-pay:disabled {
-  opacity: 0.6;
+.btn-apply-coupon:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.coupon-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.coupon-msg.error {
+  color: #ff9b9b;
+}
+
+.coupon-msg.success {
+  color: #6ee7b7;
+}
+
+.code-badge {
+  font-size: 0.6875rem;
+  background: rgba(255, 209, 220, 0.2);
+  color: var(--pink);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  margin-left: 4px;
 }
 
 .error-banner {

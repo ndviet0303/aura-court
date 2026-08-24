@@ -82,11 +82,28 @@ class BookingController extends Controller
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
         return [
-            'booking' => $booking->load(['court.venue', 'slots']),
+            'booking' => $booking->load(['court.venue', 'slots', 'coupon']),
             'payment' => $this->payments->qrPayload($booking),
             'stripe' => $this->payments->stripePayload($booking),
             'status' => $booking->status,
         ];
+    }
+
+    public function applyCoupon(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $data = $request->validate([
+            'coupon_code' => 'nullable|string|max:40',
+        ]);
+
+        $updated = $this->bookings->applyCoupon($booking, $data['coupon_code'] ?? null);
+
+        return response()->json([
+            'booking' => $updated->load(['court.venue', 'slots', 'coupon']),
+            'payment' => $this->payments->qrPayload($updated),
+            'stripe' => $this->payments->stripePayload($updated),
+            'status' => $updated->status,
+        ]);
     }
 
     public function stripePay(Request $request, Booking $booking)

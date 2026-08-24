@@ -120,5 +120,18 @@ export const useBookingStore = defineStore('booking', () => {
     return result
   }
 
-  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, courtsLoading, slotsLoading, loadCourts, loadAvailability, toggle, createBooking, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay, stripePay }
+  async function applyCoupon(couponCode?: string) {
+    restorePayment()
+    const code = payment.value?.code || current.value?.code
+    if (!code) throw new Error('Chưa có phiên thanh toán.')
+    const result = await api.post<{ booking: Booking; payment: PaymentInfo; status: string }>(`/bookings/${code}/coupon`, {
+      coupon_code: couponCode || null,
+    })
+    current.value = result.booking
+    payment.value = result.payment
+    persistPayment()
+    return result
+  }
+
+  return { courts, slots, selectedCourt, selectedSlots, current, payment, error, loading, courtsLoading, slotsLoading, loadCourts, loadAvailability, toggle, createBooking, applyCoupon, restorePayment, loadPayment, clearPayment, refreshPaymentStatus, demoPay, stripePay }
 })

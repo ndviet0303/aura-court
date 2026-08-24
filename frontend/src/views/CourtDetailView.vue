@@ -39,14 +39,14 @@ const galleryPhotos = computed(() => {
 // Pricing calculations
 const basePrice = computed(() => {
   if (court.value?.price_slots && court.value.price_slots.length > 0) {
-    return Math.min(...court.value.price_slots.map((s) => s.price))
+    return Math.min(...court.value.price_slots.map((s: { price: number }) => s.price))
   }
   return 120000
 })
 
 const peakPrice = computed(() => {
   if (court.value?.price_slots && court.value.price_slots.length > 0) {
-    return Math.max(...court.value.price_slots.map((s) => s.price))
+    return Math.max(...court.value.price_slots.map((s: { price: number }) => s.price))
   }
   return Math.round(basePrice.value * 1.35)
 })

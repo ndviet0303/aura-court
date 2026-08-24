@@ -84,6 +84,7 @@ Route::prefix('v1')->group(function () {
         Route::post('bookings/{booking:code}/reschedule', [BookingController::class, 'reschedule']);
         Route::get('bookings/{booking:code}/payment-status', [BookingController::class, 'paymentStatus']);
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
+        Route::post('bookings/{booking:code}/coupon', [BookingController::class, 'applyCoupon']);
         Route::post('bookings/{booking:code}/stripe-pay', [BookingController::class, 'stripePay']);
         Route::get('bookings/{booking:code}/calendar.ics', [BookingController::class, 'calendar']);
         Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);

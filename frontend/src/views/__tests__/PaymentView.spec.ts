@@ -99,4 +99,28 @@ describe('PaymentView', () => {
     expect(wrapper.find('.empty-payment-panel').exists()).toBe(true)
     expect(wrapper.find('.btn-choose-court').exists()).toBe(true)
   })
+
+  it('renders coupon input and does not render sandbox button', () => {
+    const store = useBookingStore()
+    store.payment = {
+      code: 'BK-2026-TEST',
+      amount: 150000,
+      bank: 'MB Bank',
+      accountNumber: '0987654321',
+      qrUrl: 'https://img.vietqr.io/image/MB-0987654321-compact.png',
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }
+
+    const wrapper = mount(PaymentView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.find('.summary-coupon-block').exists()).toBe(true)
+    expect(wrapper.find('.coupon-text-input').exists()).toBe(true)
+    expect(wrapper.find('.btn-apply-coupon').exists()).toBe(true)
+    expect(wrapper.find('.demo-sandbox-card').exists()).toBe(false)
+    expect(wrapper.find('.btn-demo-pay').exists()).toBe(false)
+  })
 })
