@@ -364,6 +364,28 @@ const inlineEditingSlotId = ref<number | null>(null)
 const inlineEditingPrice = ref<number>(100000)
 const bulkSaving = ref<boolean>(false)
 
+const formattedBulkPrice = computed({
+  get: () => {
+    if (bulkPrice.value == null || isNaN(bulkPrice.value) || bulkPrice.value === 0) return ''
+    return Number(bulkPrice.value).toLocaleString('vi-VN')
+  },
+  set: (val: string) => {
+    const numeric = parseInt(val.replace(/\D/g, ''), 10)
+    bulkPrice.value = isNaN(numeric) ? 0 : numeric
+  },
+})
+
+const formattedInlinePrice = computed({
+  get: () => {
+    if (inlineEditingPrice.value == null || isNaN(inlineEditingPrice.value) || inlineEditingPrice.value === 0) return ''
+    return Number(inlineEditingPrice.value).toLocaleString('vi-VN')
+  },
+  set: (val: string) => {
+    const numeric = parseInt(val.replace(/\D/g, ''), 10)
+    inlineEditingPrice.value = isNaN(numeric) ? 0 : numeric
+  },
+})
+
 const weekdayList = [
   { id: 1, label: 'Thứ 2', short: 'T2' },
   { id: 2, label: 'Thứ 3', short: 'T3' },
@@ -1011,21 +1033,23 @@ onMounted(load)
                 <td>
                   <strong class="refund-amount-text">{{ formatCurrency(refund.amount) }}</strong>
                 </td>
-                <td class="table-actions-cell">
-                  <button
-                    type="button"
-                    class="btn-table-action btn-approve"
-                    @click="processRefund(refund, 'processed')"
-                  >
-                    Duyệt
-                  </button>
-                  <button
-                    type="button"
-                    class="btn-table-action btn-reject"
-                    @click="processRefund(refund, 'rejected')"
-                  >
-                    Từ chối
-                  </button>
+                <td class="table-actions-td">
+                  <div class="table-actions-wrap">
+                    <button
+                      type="button"
+                      class="btn-table-action btn-approve"
+                      @click="processRefund(refund, 'processed')"
+                    >
+                      Duyệt
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-table-action btn-reject"
+                      @click="processRefund(refund, 'rejected')"
+                    >
+                      Từ chối
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1377,11 +1401,11 @@ onMounted(load)
                 <label class="bulk-label">Mức giá áp dụng (₫/giờ):</label>
                 <div class="price-input-wrapper">
                   <input
-                    v-model.number="bulkPrice"
-                    type="number"
-                    step="5000"
-                    min="0"
+                    v-model="formattedBulkPrice"
+                    type="text"
+                    inputmode="numeric"
                     class="bulk-input-price"
+                    placeholder="VD: 100.000"
                     required
                   />
                   <div class="quick-price-chips">
@@ -1444,10 +1468,11 @@ onMounted(load)
                     <!-- Inline edit mode -->
                     <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
                       <input
-                        v-model.number="inlineEditingPrice"
-                        type="number"
-                        step="5000"
+                        v-model="formattedInlinePrice"
+                        type="text"
+                        inputmode="numeric"
                         class="inline-price-input"
+                        placeholder="VD: 100.000"
                         @keyup.enter="saveInlineEdit(slot)"
                         @keyup.esc="cancelInlineEdit"
                         autoFocus
@@ -1500,10 +1525,11 @@ onMounted(load)
 
                     <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
                       <input
-                        v-model.number="inlineEditingPrice"
-                        type="number"
-                        step="5000"
+                        v-model="formattedInlinePrice"
+                        type="text"
+                        inputmode="numeric"
                         class="inline-price-input"
+                        placeholder="VD: 100.000"
                         @keyup.enter="saveInlineEdit(slot)"
                         @keyup.esc="cancelInlineEdit"
                       />
@@ -1555,10 +1581,11 @@ onMounted(load)
 
                     <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
                       <input
-                        v-model.number="inlineEditingPrice"
-                        type="number"
-                        step="5000"
+                        v-model="formattedInlinePrice"
+                        type="text"
+                        inputmode="numeric"
                         class="inline-price-input"
+                        placeholder="VD: 100.000"
                         @keyup.enter="saveInlineEdit(slot)"
                         @keyup.esc="cancelInlineEdit"
                       />
@@ -1609,10 +1636,11 @@ onMounted(load)
 
                     <div v-if="inlineEditingSlotId === slot.id" class="inline-edit-box">
                       <input
-                        v-model.number="inlineEditingPrice"
-                        type="number"
-                        step="5000"
+                        v-model="formattedInlinePrice"
+                        type="text"
+                        inputmode="numeric"
                         class="inline-price-input"
+                        placeholder="VD: 100.000"
                         @keyup.enter="saveInlineEdit(slot)"
                         @keyup.esc="cancelInlineEdit"
                       />
@@ -2401,19 +2429,33 @@ onMounted(load)
   font-weight: 700;
 }
 
-.table-actions-cell {
-  display: flex;
+.table-actions-td {
+  white-space: nowrap;
+  width: 1%;
+  vertical-align: middle;
+}
+
+.table-actions-wrap {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
 .btn-table-action {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
   font-weight: 700;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  line-height: 1.2;
 }
 
 .btn-approve {
@@ -2422,7 +2464,8 @@ onMounted(load)
 }
 
 .btn-approve:hover {
-  background: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.28);
+  transform: translateY(-1px);
 }
 
 .btn-reject {
@@ -2431,7 +2474,8 @@ onMounted(load)
 }
 
 .btn-reject:hover {
-  background: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.28);
+  transform: translateY(-1px);
 }
 
 /* Coupon Tickets */
