@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
@@ -8,6 +8,8 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const topbar = ref<HTMLElement | null>(null)
+const openMenu = ref<'booking' | 'community' | null>(null)
 
 async function handleLogout() {
   await auth.logout()
@@ -33,10 +35,40 @@ const userRoleBadge = computed(() => {
 const isBookingActive = computed(() => {
   return route.path.startsWith('/booking') || route.path.startsWith('/payment')
 })
+
+const isCommunityActive = computed(() => {
+  return route.path.startsWith('/resale') || route.path.startsWith('/marketplace') || route.path.startsWith('/matchmaking') || route.path.startsWith('/social-tournaments')
+})
+
+function toggleMenu(menu: 'booking' | 'community') {
+  openMenu.value = openMenu.value === menu ? null : menu
+}
+
+function closeMenu() {
+  openMenu.value = null
+}
+
+function closeMenuOnOutsideClick(event: MouseEvent) {
+  if (topbar.value && !topbar.value.contains(event.target as Node)) closeMenu()
+}
+
+function closeMenuOnEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape') closeMenu()
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeMenuOnOutsideClick)
+  document.addEventListener('keydown', closeMenuOnEscape)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeMenuOnOutsideClick)
+  document.removeEventListener('keydown', closeMenuOnEscape)
+})
 </script>
 
 <template>
-  <header class="topbar">
+  <header ref="topbar" class="topbar">
     <div class="topbar-inner">
       <!-- Brand Left -->
       <RouterLink to="/" class="brand" title="Aura Court">
@@ -51,15 +83,52 @@ const isBookingActive = computed(() => {
         <RouterLink to="/" class="nav-pill-link" :class="{ active: route.path === '/' }">
           {{ $t('nav.home') }}
         </RouterLink>
-        <RouterLink to="/courts" class="nav-pill-link" :class="{ active: route.path.startsWith('/courts') }">
-          {{ $t('nav.courts') }}
-        </RouterLink>
-        <RouterLink to="/booking" class="nav-pill-link" :class="{ active: isBookingActive }">
-          {{ $t('nav.booking') }}
-        </RouterLink>
-        <RouterLink to="/resale" class="nav-pill-link" :class="{ active: route.path.startsWith('/resale') || route.path.startsWith('/marketplace') }">
-          {{ $t('nav.resale') }}
-        </RouterLink>
+        <div class="nav-dropdown" :class="{ open: openMenu === 'booking' }">
+          <button
+            type="button"
+            class="nav-pill-link nav-dropdown-trigger"
+            :class="{ active: route.path.startsWith('/courts') || isBookingActive }"
+            aria-haspopup="menu"
+            :aria-expanded="openMenu === 'booking'"
+            @click.stop="toggleMenu('booking')"
+          >
+            <span>{{ $t('nav.bookingGroup') }}</span>
+            <span class="material-symbols-outlined nav-dropdown-arrow" aria-hidden="true">expand_more</span>
+          </button>
+          <div v-if="openMenu === 'booking'" class="nav-dropdown-menu" role="menu">
+            <RouterLink to="/courts" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">stadium</span>
+              <span>{{ $t('nav.courts') }}</span>
+            </RouterLink>
+            <RouterLink to="/booking" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">calendar_month</span>
+              <span>{{ $t('nav.booking') }}</span>
+            </RouterLink>
+          </div>
+        </div>
+        <div class="nav-dropdown" :class="{ open: openMenu === 'community' }">
+          <button
+            type="button"
+            class="nav-pill-link nav-dropdown-trigger"
+            :class="{ active: isCommunityActive }"
+            aria-haspopup="menu"
+            :aria-expanded="openMenu === 'community'"
+            @click.stop="toggleMenu('community')"
+          >
+            <span>{{ $t('nav.community') }}</span>
+            <span class="material-symbols-outlined nav-dropdown-arrow" aria-hidden="true">expand_more</span>
+          </button>
+          <div v-if="openMenu === 'community'" class="nav-dropdown-menu" role="menu">
+            <RouterLink to="/resale" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">swap_horiz</span>
+              <span>{{ $t('nav.resale') }}</span>
+            </RouterLink>
+            <RouterLink to="/matchmaking" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">sports_tennis</span>
+              <span>{{ $t('nav.matchmaking') }}</span>
+            </RouterLink>
+          </div>
+        </div>
         <RouterLink to="/about" class="nav-pill-link" :class="{ active: route.path === '/about' }">
           {{ $t('nav.promotions') }}
         </RouterLink>
@@ -193,7 +262,7 @@ const isBookingActive = computed(() => {
 
 .nav-pill-link {
   text-decoration: none;
-  padding: 8px 20px;
+  padding: 7px 16px;
   border-radius: 9999px;
   font-size: 13.5px;
   font-weight: 600;
@@ -202,16 +271,77 @@ const isBookingActive = computed(() => {
   white-space: nowrap;
 }
 
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-dropdown-arrow {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.nav-dropdown.open .nav-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  min-width: 210px;
+  padding: 8px;
+  transform: translateX(-50%);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #d8dce2);
+  border-radius: 14px;
+  box-shadow: 0 14px 32px rgba(25, 28, 29, 0.16);
+  z-index: 20;
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: var(--ink, #191c1d);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-dropdown-item .material-symbols-outlined {
+  color: var(--pink-dark, #78555e);
+  font-size: 19px;
+}
+
+.nav-dropdown-item:hover,
+.nav-dropdown-item.router-link-active {
+  background: var(--surface-subtle, #f5f6f8);
+  color: var(--pink-dark, #78555e);
+}
+
 .nav-pill-link:hover {
   color: var(--pink-dark, #78555e);
 }
 
 .nav-pill-link.active,
 .nav-pill-link.router-link-exact-active {
-  background: var(--pink-dark, #6e4752);
-  color: #ffffff;
+  background: var(--nav-active-bg, #78555e);
+  color: var(--nav-active-text, #ffffff);
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(110, 71, 82, 0.25);
+  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.22);
 }
 
 /* Right Section */
@@ -326,6 +456,12 @@ const isBookingActive = computed(() => {
   .nav-pill-link {
     padding: 6px 14px;
     font-size: 12.5px;
+  }
+
+  .nav-dropdown-menu {
+    left: auto;
+    right: 0;
+    transform: none;
   }
 }
 

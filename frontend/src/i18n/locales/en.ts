@@ -64,9 +64,12 @@ export default {
   },
   nav: {
     home: 'Home',
+    bookingGroup: 'Bookings',
+    community: 'Community',
     courts: 'Court List',
     booking: 'My Bookings',
     resale: 'Resale Market',
+    matchmaking: 'Matchmaking',
     promotions: 'Promotions',
     notifications: 'Notifications',
     admin: 'Admin',

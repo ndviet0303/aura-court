@@ -64,9 +64,12 @@ export default {
   },
   nav: {
     home: 'Trang chủ',
+    bookingGroup: 'Đặt sân',
+    community: 'Cộng đồng',
     courts: 'Danh sách sân',
     booking: 'Lịch đặt sân',
     resale: 'Chợ nhượng sân',
+    matchmaking: 'Tìm kèo',
     promotions: 'Ưu đãi',
     notifications: 'Thông báo',
     admin: 'Quản trị',

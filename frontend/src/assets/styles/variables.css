@@ -34,6 +34,20 @@
   --live-bg: rgba(255, 209, 220, 0.35);
   --live-text: #78555e;
   --live-border: #78555e;
+  --nav-active-bg: #78555e;
+  --nav-active-text: #ffffff;
+
+  /* Semantic aliases used by feature pages */
+  --primary: #78555e;
+  --primary-container: #ffd1dc;
+  --on-primary: #ffffff;
+  --on-primary-container: #7a5761;
+  --on-surface: #191c1d;
+  --on-surface-variant: #4f4446;
+  --surface-bright: #f8f9fa;
+  --surface-container: #edeeef;
+  --surface-container-high: #e7e8e9;
+  --outline-variant: #d3c3c5;
 }
 
 html.dark {
@@ -68,6 +82,20 @@ html.dark {
   --live-bg: rgba(248, 180, 196, 0.15);
   --live-text: #f8b4c4;
   --live-border: #f8b4c4;
+  --nav-active-bg: #f8b4c4;
+  --nav-active-text: #201317;
+
+  /* Semantic aliases used by feature pages */
+  --primary: #f8b4c4;
+  --primary-container: #53333e;
+  --on-primary: #201317;
+  --on-primary-container: #ffd5df;
+  --on-surface: #f3f4f6;
+  --on-surface-variant: #c0c4cc;
+  --surface-bright: #292c33;
+  --surface-container: #2b2e36;
+  --surface-container-high: #353943;
+  --outline-variant: #4a4e59;
 }
 
 #app {
