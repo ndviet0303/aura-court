@@ -1602,6 +1602,10 @@ html.dark .detail-value.highlight-num {
   align-items: center;
   gap: 6px;
   font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
 /* Coupon / Voucher Code Summary Styles */
 .summary-coupon-block {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
