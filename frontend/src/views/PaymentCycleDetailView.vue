@@ -188,11 +188,22 @@ async function loadCycleData() {
   const invoiceParam = route.params.id as string
 
   try {
-    // 1. First fetch series list to obtain invoices context
-    const seriesRes = await apiV2.get<{ data: RecurringSeries[] }>('/recurring-series').catch(() => ({ data: [] }))
-    const seriesList = seriesRes.data || []
-    
-    // Collect all invoices across user series
+    const isSpecificInvoice = invoiceParam && invoiceParam !== 'latest'
+
+    // Fetch in parallel using Promise.allSettled to eliminate waterfall latency
+    const [invDetailResult, seriesResult] = await Promise.allSettled([
+      isSpecificInvoice
+        ? apiV2.get<{ invoice: MonthlyInvoice; occurrences: RecurringOccurrence[] }>(`/monthly-invoices/${invoiceParam}`)
+        : Promise.resolve(null),
+      apiV2.get<{ data: RecurringSeries[] }>('/recurring-series').catch(() => ({ data: [] })),
+    ])
+
+    // Process series context & collected invoices
+    const seriesList =
+      seriesResult.status === 'fulfilled' && seriesResult.value && 'data' in seriesResult.value
+        ? (seriesResult.value as { data: RecurringSeries[] }).data || []
+        : []
+
     const invoicesCollected: MonthlyInvoice[] = []
     seriesList.forEach((s) => {
       if (s.invoices) {
@@ -206,26 +217,22 @@ async function loadCycleData() {
     })
     allInvoices.value = invoicesCollected
 
-    // 2. Try fetching specific invoice via backend API
-    if (invoiceParam && invoiceParam !== 'latest') {
-      try {
-        const invDetail = await apiV2.get<{ invoice: MonthlyInvoice; occurrences: RecurringOccurrence[] }>(`/monthly-invoices/${invoiceParam}`)
-        if (invDetail?.invoice) {
-          invoice.value = invDetail.invoice
-          occurrences.value = invDetail.occurrences || []
-          if (invDetail.invoice.series) {
-            currentSeries.value = invDetail.invoice.series as RecurringSeries
-          }
-          return
+    // Process specific invoice detail if fulfilled
+    if (invDetailResult.status === 'fulfilled' && invDetailResult.value) {
+      const invDetail = invDetailResult.value
+      if (invDetail?.invoice) {
+        invoice.value = invDetail.invoice
+        occurrences.value = invDetail.occurrences || []
+        if (invDetail.invoice.series) {
+          currentSeries.value = invDetail.invoice.series as RecurringSeries
         }
-      } catch {
-        // Fallback to searching in collected invoices
+        return
       }
     }
 
     // Fallback: match invoice from seriesList or generate realistic mock statement
     let matchedInvoice: MonthlyInvoice | undefined
-    if (invoiceParam && invoiceParam !== 'latest') {
+    if (isSpecificInvoice) {
       matchedInvoice = invoicesCollected.find((inv) => String(inv.id) === String(invoiceParam))
     }
     if (!matchedInvoice && invoicesCollected.length > 0) {
