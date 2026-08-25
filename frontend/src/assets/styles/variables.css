@@ -21,6 +21,19 @@
   --border: #e0e4ea;
   --card-bg: #ffffff;
   --input-bg: transparent;
+
+  /* Semantic status tokens */
+  --success-bg: #e8f5e9;
+  --success-text: #2e7d32;
+  --warning-bg: #fff3e0;
+  --warning-text: #ef6c00;
+  --error-bg: #ffebee;
+  --error-text: #c62828;
+  --purple-bg: #f3e5f5;
+  --purple-text: #7b1fa2;
+  --live-bg: rgba(255, 209, 220, 0.35);
+  --live-text: #78555e;
+  --live-border: #78555e;
 }
 
 html.dark {
@@ -42,6 +55,19 @@ html.dark {
   --border: #353942;
   --card-bg: #22242a;
   --input-bg: #2b2e36;
+
+  /* Semantic status tokens in Dark Mode */
+  --success-bg: rgba(46, 125, 50, 0.25);
+  --success-text: #4ade80;
+  --warning-bg: rgba(239, 108, 0, 0.25);
+  --warning-text: #fb923c;
+  --error-bg: rgba(198, 40, 40, 0.25);
+  --error-text: #f87171;
+  --purple-bg: rgba(123, 31, 162, 0.25);
+  --purple-text: #c084fc;
+  --live-bg: rgba(248, 180, 196, 0.15);
+  --live-text: #f8b4c4;
+  --live-border: #f8b4c4;
 }
 
 #app {
