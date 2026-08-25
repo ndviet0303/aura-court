@@ -141,10 +141,16 @@ onMounted(load)
         <h1 class="page-title">{{ t('booking.title') }}</h1>
         <p class="muted">{{ t('booking.subtitle') }}</p>
       </div>
-      <RouterLink to="/courts" class="btn btn-new-booking">
-        <span class="material-symbols-outlined icon-18">add</span>
-        <span>{{ t('booking.bookNew') }}</span>
-      </RouterLink>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <RouterLink to="/recurring-booking" class="btn" style="background: var(--pink-light); color: var(--pink-dark); font-weight: 700; border: 1px solid var(--pink);">
+          <span class="material-symbols-outlined icon-18">event_repeat</span>
+          <span>Đặt sân định kỳ</span>
+        </RouterLink>
+        <RouterLink to="/courts" class="btn btn-new-booking">
+          <span class="material-symbols-outlined icon-18">add</span>
+          <span>{{ t('booking.bookNew') }}</span>
+        </RouterLink>
+      </div>
     </header>
 
     <p v-if="error" class="error" style="margin-bottom: 20px">{{ error }}</p>
@@ -169,6 +175,11 @@ onMounted(load)
               <span>{{ t('booking.title') }}</span>
               <span class="nav-count">{{ bookings.length }}</span>
             </div>
+            <RouterLink to="/recurring-booking" class="sidebar-nav-item">
+              <span class="material-symbols-outlined icon-18">event_repeat</span>
+              <span>Đặt sân định kỳ</span>
+              <span class="nav-count" style="background: var(--pink-light); color: var(--pink-dark); font-weight: 700;">PRO</span>
+            </RouterLink>
             <RouterLink to="/courts" class="sidebar-nav-item">
               <span class="material-symbols-outlined icon-18">sports_tennis</span>
               <span>{{ t('nav.courts') }}</span>

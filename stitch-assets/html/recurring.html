@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Recurring Court Booking &amp; Series Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#78555e",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#5d5f5f",
+                        "on-surface-variant": "#4f4446",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#ffd9e2",
+                        "tertiary-container": "#dfdcdc",
+                        "surface": "#f8f9fa",
+                        "surface-container-high": "#e7e8e9",
+                        "outline-variant": "#d3c3c5",
+                        "on-primary-fixed-variant": "#5e3e47",
+                        "tertiary-fixed-dim": "#c8c6c6",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "surface-container-low": "#f3f4f5",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#191c1d",
+                        "tertiary-fixed": "#e4e2e1",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-secondary-fixed-variant": "#454747",
+                        "error": "#ba1a1a",
+                        "primary": "#78555e",
+                        "tertiary": "#5f5e5e",
+                        "surface-dim": "#d9dadb",
+                        "surface-variant": "#e1e3e4",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#e7bbc6",
+                        "primary-container": "#ffd1dc",
+                        "outline": "#817476",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-bright": "#f8f9fa",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#616363",
+                        "on-primary-container": "#7a5761",
+                        "primary-fixed-dim": "#e7bbc6",
+                        "on-primary-fixed": "#2d141c",
+                        "surface-container": "#edeeef",
+                        "secondary-fixed": "#e2e2e2",
+                        "secondary-container": "#dfe0e0",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#2e3132",
+                        "on-surface": "#191c1d",
+                        "background": "#f8f9fa",
+                        "on-tertiary-container": "#616160",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "8px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "md": "24px",
+                        "margin-desktop": "64px",
+                        "sm": "16px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #191c1d; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- Top Navigation Placeholder (Hidden for this specific transactional view based on rules) -->
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+<!-- Breadcrumb -->
+<nav class="mb-lg">
+<ol class="flex items-center space-x-2 text-label-sm text-secondary">
+<li><a class="hover:text-primary transition-colors" href="#">Trang chủ</a></li>
+<li><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></li>
+<li class="text-on-surface font-semibold">Đặt sân cố định / Định kỳ (Recurring Series)</li>
+</ol>
+</nav>
+<!-- KPI Section -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/50">
+<div class="flex justify-between items-start mb-sm">
+<p class="font-label-sm text-secondary uppercase tracking-wider">Gói định kỳ đang chạy</p>
+<span class="material-symbols-outlined text-primary-container" data-icon="event_repeat">event_repeat</span>
+</div>
+<p class="font-headline-lg text-on-surface">3</p>
+<p class="font-body-md text-secondary mt-1">Đang hoạt động</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/50">
+<div class="flex justify-between items-start mb-sm">
+<p class="font-label-sm text-secondary uppercase tracking-wider">Lịch thi đấu tuần này</p>
+<span class="material-symbols-outlined text-primary-container" data-icon="calendar_month">calendar_month</span>
+</div>
+<p class="font-headline-lg text-on-surface">5</p>
+<p class="font-body-md text-secondary mt-1">Buổi sắp tới</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 bg-error/10 px-3 py-1 rounded-bl-lg">
+<span class="text-error font-label-sm text-[12px]">Đến hạn</span>
+</div>
+<div class="flex justify-between items-start mb-sm mt-2">
+<p class="font-label-sm text-secondary uppercase tracking-wider">Hóa đơn đến hạn</p>
+<span class="material-symbols-outlined text-error" data-icon="receipt_long">receipt_long</span>
+</div>
+<p class="font-headline-lg text-on-surface">1</p>
+<p class="font-body-md text-secondary mt-1">Chờ thanh toán</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/50">
+<div class="flex justify-between items-start mb-sm">
+<p class="font-label-sm text-secondary uppercase tracking-wider">Tổng chiết khấu hội viên</p>
+<span class="material-symbols-outlined text-primary-container" data-icon="savings">savings</span>
+</div>
+<p class="font-headline-lg text-on-surface">1.250k</p>
+<p class="font-body-md text-secondary mt-1">Đã tiết kiệm</p>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+<!-- Section 1: Create New Series (Bento/Structured Form) -->
+<section class="lg:col-span-7">
+<h2 class="font-headline-md text-on-surface mb-md">Tạo lịch định kỳ mới</h2>
+<div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/50">
+<form class="space-y-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-xs">Cơ sở (Venue)</label>
+<select class="w-full bg-transparent border-0 border-b-2 border-surface-container-high focus:border-primary-container focus:ring-0 py-sm font-body-md text-on-surface transition-colors cursor-pointer">
+<option>Sân Cầu Lông Aura - Quận 1</option>
+<option>Aura Premium - Quận 7</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-xs">Sân (Court)</label>
+<select class="w-full bg-transparent border-0 border-b-2 border-surface-container-high focus:border-primary-container focus:ring-0 py-sm font-body-md text-on-surface transition-colors cursor-pointer">
+<option>Sân 1 (Thảm Tinsue)</option>
+<option>Sân 2 (Thảm Yonex)</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-sm">Tần suất</label>
+<div class="flex flex-wrap gap-sm">
+<button class="px-md py-xs rounded-full border border-primary-container bg-primary-container/20 text-on-primary-container font-label-sm hover:bg-primary-container/40 transition-colors" type="button">Hàng tuần</button>
+<button class="px-md py-xs rounded-full border border-outline-variant bg-transparent text-secondary font-label-sm hover:border-primary-container hover:text-on-surface transition-colors" type="button">2 tuần 1 lần</button>
+<button class="px-md py-xs rounded-full border border-outline-variant bg-transparent text-secondary font-label-sm hover:border-primary-container hover:text-on-surface transition-colors" type="button">Hàng tháng</button>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-sm">Thứ trong tuần</label>
+<div class="flex flex-wrap gap-xs">
+<button class="w-10 h-10 rounded-full border border-outline-variant text-secondary font-label-sm flex items-center justify-center hover:bg-surface-container transition-colors" type="button">T2</button>
+<button class="w-10 h-10 rounded-full border border-primary-container bg-primary-container text-on-primary-container font-label-sm flex items-center justify-center shadow-[0_4px_14px_rgba(255,209,220,0.4)]" type="button">T3</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant text-secondary font-label-sm flex items-center justify-center hover:bg-surface-container transition-colors" type="button">T4</button>
+<button class="w-10 h-10 rounded-full border border-primary-container bg-primary-container text-on-primary-container font-label-sm flex items-center justify-center shadow-[0_4px_14px_rgba(255,209,220,0.4)]" type="button">T5</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant text-secondary font-label-sm flex items-center justify-center hover:bg-surface-container transition-colors" type="button">T6</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant text-secondary font-label-sm flex items-center justify-center hover:bg-surface-container transition-colors" type="button">T7</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant text-secondary font-label-sm flex items-center justify-center hover:bg-surface-container transition-colors" type="button">CN</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-xs">Khung giờ</label>
+<input class="w-full bg-transparent border-0 border-b-2 border-surface-container-high focus:border-primary-container focus:ring-0 py-sm font-body-md text-on-surface transition-colors cursor-pointer" type="time" value="18:00"/>
+</div>
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-xs">Thời lượng</label>
+<select class="w-full bg-transparent border-0 border-b-2 border-surface-container-high focus:border-primary-container focus:ring-0 py-sm font-body-md text-on-surface transition-colors cursor-pointer">
+<option>2 Giờ</option>
+<option>3 Giờ</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-xs">Ngày bắt đầu</label>
+<input class="w-full bg-transparent border-0 border-b-2 border-surface-container-high focus:border-primary-container focus:ring-0 py-sm font-body-md text-on-surface transition-colors cursor-pointer" type="date"/>
+</div>
+<div>
+<label class="block font-label-sm text-on-surface-variant mb-xs">Kéo dài trong</label>
+<select class="w-full bg-transparent border-0 border-b-2 border-surface-container-high focus:border-primary-container focus:ring-0 py-sm font-body-md text-on-surface transition-colors cursor-pointer">
+<option>3 Tháng (24 Buổi)</option>
+<option>6 Tháng (48 Buổi)</option>
+</select>
+</div>
+</div>
+<!-- Schedule Preview -->
+<div class="bg-surface rounded-lg p-md border border-outline-variant/30 mt-md">
+<h3 class="font-label-sm text-on-surface mb-sm">Xem trước lịch (Dự kiến)</h3>
+<div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+<div class="flex justify-between items-center py-2 border-b border-surface-container-high">
+<span class="font-body-md text-on-surface">T3, 12/09 - 18:00</span>
+<span class="font-label-sm text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">check_circle</span> Trống</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-container-high">
+<span class="font-body-md text-on-surface">T5, 14/09 - 18:00</span>
+<span class="font-label-sm text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">check_circle</span> Trống</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-container-high opacity-60 bg-error-container/20 px-2 rounded">
+<span class="font-body-md text-on-surface line-through">T3, 19/09 - 18:00</span>
+<span class="font-label-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span> Trùng lịch</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-container-high">
+<span class="font-body-md text-on-surface">T5, 21/09 - 18:00</span>
+<span class="font-label-sm text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">check_circle</span> Trống</span>
+</div>
+</div>
+<div class="mt-md pt-md border-t border-surface-container-high flex justify-between items-center">
+<span class="font-body-md text-secondary">Tạm tính (23 buổi):</span>
+<div class="text-right">
+<span class="font-label-sm text-secondary line-through block">4.600.000 đ</span>
+<span class="font-headline-md text-on-surface">3.910.000 đ</span>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container font-label-sm py-4 rounded-lg hover:bg-[#ffb6c7] transition-colors duration-300" type="button">
+                            Xác nhận toàn bộ lịch &amp; Tạo hóa đơn
+                        </button>
+</form>
+</div>
+</section>
+<!-- Section 2: Management Sidebar -->
+<section class="lg:col-span-5 space-y-xl">
+<div>
+<h2 class="font-headline-md text-on-surface mb-md">Quản lý Lịch Định Kỳ</h2>
+<!-- Active Series Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/50 mb-md relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h3 class="font-label-sm text-on-surface">Aura Quận 1 - Sân 2</h3>
+<p class="font-body-md text-secondary">T3, T5 hàng tuần • 18:00 - 20:00</p>
+</div>
+<span class="bg-tertiary-container/50 text-on-surface-variant font-label-sm px-2 py-1 rounded text-[12px]">01/09 - 31/12</span>
+</div>
+<div class="mt-md">
+<div class="flex justify-between font-label-sm text-secondary mb-1">
+<span>Tiến độ</span>
+<span>Đã chơi 8/32 buổi</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-2">
+<div class="bg-primary-container h-2 rounded-full" style="width: 25%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Upcoming Occurrences -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/50">
+<h3 class="font-label-sm text-secondary uppercase tracking-wider mb-sm">Buổi sắp tới</h3>
+<ul class="space-y-sm">
+<li class="flex items-center justify-between p-sm rounded-lg bg-surface border border-outline-variant/30">
+<div>
+<p class="font-label-sm text-on-surface">Ngày mai, 18:00</p>
+<p class="font-body-md text-secondary text-sm">Sân 2, Quận 1</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 rounded-full text-secondary hover:text-primary hover:bg-primary-container/20 transition-colors" title="Chuyển nhượng sang Chợ">
+<span class="material-symbols-outlined text-[20px]" data-icon="storefront">storefront</span>
+</button>
+<button class="p-2 rounded-full text-secondary hover:text-error hover:bg-error-container/20 transition-colors" title="Báo vắng / Dời lịch">
+<span class="material-symbols-outlined text-[20px]" data-icon="event_busy">event_busy</span>
+</button>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Monthly Invoices -->
+<div>
+<h2 class="font-headline-md text-on-surface mb-md">Hóa Đơn Hàng Tháng</h2>
+<div class="space-y-md">
+<div class="bg-surface-container-lowest rounded-xl p-md border border-error/30 bg-error/5">
+<div class="flex justify-between items-center mb-sm">
+<h3 class="font-label-sm text-on-surface">Kỳ thanh toán Tháng 10</h3>
+<span class="text-error font-label-sm bg-error/10 px-2 py-1 rounded">Quá hạn 2 ngày</span>
+</div>
+<p class="font-headline-md text-on-surface mb-md">1.250.000 đ</p>
+<div class="flex gap-sm">
+<button class="flex-1 bg-surface-container border border-outline-variant text-on-surface font-label-sm py-2 rounded hover:bg-surface-container-high transition-colors">VNPay</button>
+<button class="flex-1 bg-surface-container border border-outline-variant text-on-surface font-label-sm py-2 rounded hover:bg-surface-container-high transition-colors">MoMo</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Policy Note -->
+<div class="mt-lg p-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-start gap-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+<p class="font-body-md text-secondary text-sm">
+                        Hệ thống sẽ tự động gửi nhắc nhở thanh toán 7 ngày trước mỗi kỳ. Nếu không thanh toán đúng hạn, lịch cố định có thể bị tạm ngưng để nhường chỗ cho khách khác.
+                    </p>
+</div>
+</section>
+</div>
+</main>
+<style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e1e3e4; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #c6c6c7; }
+    </style>
+</body></html>

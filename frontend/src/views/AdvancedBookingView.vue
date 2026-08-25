@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { apiV2, errorMessage } from '@/lib/api'
 
 type Invoice = { id: number; amount: number; status: string; due_at: string }
@@ -66,7 +67,9 @@ onMounted(load)
 
 <template>
   <main class="page-shell">
-    <section class="row"><div><div class="eyebrow">API v2 · Advanced booking</div><h1 class="page-title">Lịch định kỳ & marketplace</h1><p class="muted">Lịch dài hạn, chia tiền và chuyển suất đặt sân có kiểm soát.</p></div></section>
+    <section class="row"><div><div class="eyebrow">API v2 · Advanced booking</div><h1 class="page-title">Lịch định kỳ & marketplace</h1><p class="muted">Lịch dài hạn, chia tiền và chuyển suất đặt sân có kiểm soát.</p></div>
+      <div style="margin-left: auto"><RouterLink to="/recurring-booking" class="btn" style="background: var(--pink); color: #191c1d; font-weight: 700;">✨ Mở Giao diện Đặt sân Định kỳ</RouterLink></div>
+    </section>
     <p v-if="error" class="error">{{ error }}</p><p v-if="notice" class="notice">{{ notice }}</p>
     <section class="card" style="margin-top: 18px"><h2>Tạo lịch định kỳ</h2><form class="row" style="margin-top: 14px; align-items: end" @submit.prevent="createSeries"><label class="field">Mã sân<input v-model="form.court_id" type="number" min="1" required /></label><label class="field">Lặp<select v-model="form.frequency"><option value="weekly">Hàng tuần</option><option value="monthly">Hàng tháng</option></select></label><label class="field">Bắt đầu<input v-model="form.starts_at" type="datetime-local" required /></label><label class="field">Đến ngày<input v-model="form.until" type="date" /></label><label class="field">Số lần<input v-model.number="form.occurrences" type="number" min="1" max="104" /></label><button class="btn" :disabled="loading">Xác nhận toàn bộ lịch</button></form></section>
     <section class="card" style="margin-top: 18px"><h2>Hóa đơn định kỳ</h2><div v-for="item in series" :key="item.id" class="panel" style="margin-top: 12px"><div class="row"><strong>{{ item.frequency }} · {{ item.status }}</strong><span>{{ money(item.total_amount) }}</span></div><div v-for="invoice in item.invoices" :key="invoice.id" class="row" style="padding-top: 10px"><span>Hóa đơn #{{ invoice.id }} · hạn {{ date(invoice.due_at) }}</span><div class="actions"><strong>{{ money(invoice.amount) }}</strong><button v-if="invoice.status === 'pending'" class="link-button" @click="payInvoice(invoice)">Thanh toán</button><span v-else class="badge">{{ invoice.status }}</span></div></div></div><p v-if="!series.length" class="muted">Chưa có lịch định kỳ.</p></section>
