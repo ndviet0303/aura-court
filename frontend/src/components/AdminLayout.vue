@@ -94,6 +94,16 @@ function closeMobileSidebar() {
           </RouterLink>
 
           <RouterLink
+            to="/admin/contracts"
+            class="sidebar-nav-item"
+            :class="{ active: route.path.startsWith('/admin/contracts') }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">contract</span>
+            <span class="nav-label">Hợp đồng định kỳ</span>
+          </RouterLink>
+
+          <RouterLink
             to="/admin/venues"
             class="sidebar-nav-item"
             :class="{ active: route.path === '/admin/venues' }"

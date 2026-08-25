@@ -2157,14 +2157,15 @@ html.dark .trust-icon {
 }
 
 .ticket-val.entry-pin {
-  font-size: 1.125rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  color: var(--pink-dark);
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: #e11d48;
 }
 
 html.dark .ticket-val.entry-pin {
-  color: var(--pink);
+  color: #ff6584;
+  text-shadow: 0 0 10px rgba(255, 101, 132, 0.35);
 }
 
 .modal-actions-group {
@@ -2191,8 +2192,9 @@ html.dark .ticket-val.entry-pin {
 }
 
 html.dark .btn-modal-primary {
-  background: var(--pink);
-  color: #2d141c;
+  background: var(--pink-dark);
+  color: #1e1317;
+  font-weight: 800;
 }
 
 .btn-modal-primary:hover {
