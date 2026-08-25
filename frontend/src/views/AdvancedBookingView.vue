@@ -68,7 +68,10 @@ onMounted(load)
 <template>
   <main class="page-shell">
     <section class="row"><div><div class="eyebrow">API v2 · Advanced booking</div><h1 class="page-title">Lịch định kỳ & marketplace</h1><p class="muted">Lịch dài hạn, chia tiền và chuyển suất đặt sân có kiểm soát.</p></div>
-      <div style="margin-left: auto"><RouterLink to="/recurring-booking" class="btn" style="background: var(--pink); color: #191c1d; font-weight: 700;">✨ Mở Giao diện Đặt sân Định kỳ</RouterLink></div>
+      <div style="margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap;">
+        <RouterLink to="/resale" class="btn" style="background: #78555e; color: #ffffff; font-weight: 700;">🏪 Mở Chợ Nhượng Sân</RouterLink>
+        <RouterLink to="/recurring-booking" class="btn" style="background: var(--pink); color: #191c1d; font-weight: 700;">✨ Mở Đặt sân Định kỳ</RouterLink>
+      </div>
     </section>
     <p v-if="error" class="error">{{ error }}</p><p v-if="notice" class="notice">{{ notice }}</p>
     <section class="card" style="margin-top: 18px"><h2>Tạo lịch định kỳ</h2><form class="row" style="margin-top: 14px; align-items: end" @submit.prevent="createSeries"><label class="field">Mã sân<input v-model="form.court_id" type="number" min="1" required /></label><label class="field">Lặp<select v-model="form.frequency"><option value="weekly">Hàng tuần</option><option value="monthly">Hàng tháng</option></select></label><label class="field">Bắt đầu<input v-model="form.starts_at" type="datetime-local" required /></label><label class="field">Đến ngày<input v-model="form.until" type="date" /></label><label class="field">Số lần<input v-model.number="form.occurrences" type="number" min="1" max="104" /></label><button class="btn" :disabled="loading">Xác nhận toàn bộ lịch</button></form></section>

@@ -1,9 +1,25 @@
 import { getCurrentLocale } from '@/i18n'
 
-export type ApiError = { message: string; errors?: Record<string, string[]> }
+export type ApiError = {
+  message: string
+  errors?: Record<string, string[]>
+  status?: number
+  code?: string | number
+}
+
+export type QueryParams = Record<string, string | number | boolean | undefined | null>
+
+export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
+  params?: QueryParams
+  idempotencyKey?: string
+}
 
 const buildApiOrigin = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 export let apiOrigin = buildApiOrigin
+
+export function getApiOrigin(): string {
+  return apiOrigin
+}
 
 // The Worker can provide a public API origin at runtime. Keep the compiled
 // Vite value as a fallback so the app still works during local development and
@@ -20,28 +36,69 @@ const runtimeConfigReady = fetch('/runtime-config.json', {
   })
   .catch(() => undefined)
 
-export const apiUrl = (path: string) => `${apiOrigin}/api/v1${path}`
-export const apiV2Url = (path: string) => `${apiOrigin}/api/v2${path}`
+function appendQueryParams(url: string, params?: QueryParams): string {
+  if (!params) return url
+  const entries = Object.entries(params).filter(([_, value]) => value !== undefined && value !== null)
+  if (entries.length === 0) return url
 
-export function errorMessage(error: unknown, fallback: string): string {
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    const message = (error as { message?: unknown }).message
-    if (typeof message === 'string' && message.length > 0) return message
+  const separator = url.includes('?') ? '&' : '?'
+  const searchParams = new URLSearchParams()
+  for (const [key, val] of entries) {
+    searchParams.append(key, String(val))
   }
+  return `${url}${separator}${searchParams.toString()}`
+}
+
+export const apiUrl = (path: string, params?: QueryParams) =>
+  appendQueryParams(`${apiOrigin}/api/v1${path.startsWith('/') ? path : `/${path}`}`, params)
+
+export const apiV2Url = (path: string, params?: QueryParams) =>
+  appendQueryParams(`${apiOrigin}/api/v2${path.startsWith('/') ? path : `/${path}`}`, params)
+
+export function errorMessage(error: unknown, fallback: string = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): string {
+  if (!error) return fallback
+  if (typeof error === 'string') return error
+
+  if (typeof error === 'object') {
+    const err = error as Record<string, unknown>
+    // Handle Laravel validation errors object: { errors: { field: ['message'] } }
+    if (err.errors && typeof err.errors === 'object') {
+      const fieldErrors = Object.values(err.errors as Record<string, string[]>)
+      const firstError = fieldErrors.flat().find((msg) => typeof msg === 'string' && msg.length > 0)
+      if (firstError) return firstError
+    }
+
+    if (typeof err.message === 'string' && err.message.length > 0) {
+      return err.message
+    }
+  }
+
   return fallback
 }
 
 async function csrfCookie(): Promise<Response> {
   await runtimeConfigReady
-
   return fetch(`${apiOrigin}/sanctum/csrf-cookie`, { credentials: 'include' })
 }
 
 function xsrfHeader(): Record<string, string> {
+  if (typeof document === 'undefined') return {}
   const cookie = document.cookie.split('; ').find((part) => part.startsWith('XSRF-TOKEN='))
   const value = cookie?.slice(cookie.indexOf('=') + 1)
-
   return value ? { 'X-XSRF-TOKEN': decodeURIComponent(value) } : {}
+}
+
+function normalizeBody(body: unknown): { bodyPayload?: BodyInit; isFormData: boolean } {
+  if (body === undefined || body === null) {
+    return { bodyPayload: undefined, isFormData: false }
+  }
+  if (typeof FormData !== 'undefined' && body instanceof FormData) {
+    return { bodyPayload: body, isFormData: true }
+  }
+  if (typeof body === 'string' || body instanceof Blob || body instanceof ArrayBuffer) {
+    return { bodyPayload: body as BodyInit, isFormData: false }
+  }
+  return { bodyPayload: JSON.stringify(body), isFormData: false }
 }
 
 function sendTo(url: string, options: RequestInit): Promise<Response> {
@@ -79,34 +136,145 @@ async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> 
   }
 
   const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw data as ApiError
+  if (!response.ok) {
+    throw {
+      message: data?.message || `Yêu cầu thất bại (${response.status})`,
+      errors: data?.errors,
+      status: response.status,
+      ...data,
+    } as ApiError
+  }
   return data as T
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  return requestAt<T>(apiUrl(path), options)
+export function idempotencyKey(): string {
+  return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
-function idempotencyKey(): string {
-  return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+function parseOptions(optOrKey?: ApiRequestOptions | string): ApiRequestOptions {
+  if (!optOrKey) return {}
+  if (typeof optOrKey === 'string') {
+    return { idempotencyKey: optOrKey }
+  }
+  return optOrKey
 }
 
+function buildHeaders(options?: ApiRequestOptions, defaultIdempotent = false): Record<string, string> {
+  const headers: Record<string, string> = {
+    ...((options?.headers as Record<string, string>) || {}),
+  }
+  if (options?.idempotencyKey) {
+    headers['Idempotency-Key'] = options.idempotencyKey
+  } else if (defaultIdempotent && !headers['Idempotency-Key']) {
+    headers['Idempotency-Key'] = idempotencyKey()
+  }
+  return headers
+}
+
+/**
+ * API v1 Client
+ */
 export const api = {
   csrf: csrfCookie,
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body?: unknown) =>
-    request<T>(path, {
+  get: <T>(path: string, options?: ApiRequestOptions) => {
+    const opts = parseOptions(options)
+    return requestAt<T>(apiUrl(path, opts.params), {
+      ...opts,
+      method: 'GET',
+      headers: buildHeaders(opts),
+    })
+  },
+  post: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    const { bodyPayload } = normalizeBody(body)
+    return requestAt<T>(apiUrl(path, opts.params), {
+      ...opts,
       method: 'POST',
-      body: typeof FormData !== 'undefined' && body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
-    }),
-  patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+      body: bodyPayload,
+      headers: buildHeaders(opts),
+    })
+  },
+  put: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    const { bodyPayload } = normalizeBody(body)
+    return requestAt<T>(apiUrl(path, opts.params), {
+      ...opts,
+      method: 'PUT',
+      body: bodyPayload,
+      headers: buildHeaders(opts),
+    })
+  },
+  patch: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    const { bodyPayload } = normalizeBody(body)
+    return requestAt<T>(apiUrl(path, opts.params), {
+      ...opts,
+      method: 'PATCH',
+      body: bodyPayload,
+      headers: buildHeaders(opts),
+    })
+  },
+  delete: <T>(path: string, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    return requestAt<T>(apiUrl(path, opts.params), {
+      ...opts,
+      method: 'DELETE',
+      headers: buildHeaders(opts),
+    })
+  },
 }
 
+/**
+ * API v2 Client (with automatic idempotency header support for mutations)
+ */
 export const apiV2 = {
-  get: <T>(path: string) => requestAt<T>(apiV2Url(path)),
-  post: <T>(path: string, body?: unknown, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'POST', body: body ? JSON.stringify(body) : undefined, headers: { 'Idempotency-Key': key } }),
-  patch: <T>(path: string, body: unknown, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'PATCH', body: JSON.stringify(body), headers: { 'Idempotency-Key': key } }),
-  put: <T>(path: string, body: unknown, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'PUT', body: JSON.stringify(body), headers: { 'Idempotency-Key': key } }),
-  delete: <T>(path: string, key = idempotencyKey()) => requestAt<T>(apiV2Url(path), { method: 'DELETE', headers: { 'Idempotency-Key': key } }),
+  csrf: csrfCookie,
+  get: <T>(path: string, options?: ApiRequestOptions) => {
+    const opts = parseOptions(options)
+    return requestAt<T>(apiV2Url(path, opts.params), {
+      ...opts,
+      method: 'GET',
+      headers: buildHeaders(opts),
+    })
+  },
+  post: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    const { bodyPayload } = normalizeBody(body)
+    return requestAt<T>(apiV2Url(path, opts.params), {
+      ...opts,
+      method: 'POST',
+      body: bodyPayload,
+      headers: buildHeaders(opts, true),
+    })
+  },
+  put: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    const { bodyPayload } = normalizeBody(body)
+    return requestAt<T>(apiV2Url(path, opts.params), {
+      ...opts,
+      method: 'PUT',
+      body: bodyPayload,
+      headers: buildHeaders(opts, true),
+    })
+  },
+  patch: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    const { bodyPayload } = normalizeBody(body)
+    return requestAt<T>(apiV2Url(path, opts.params), {
+      ...opts,
+      method: 'PATCH',
+      body: bodyPayload,
+      headers: buildHeaders(opts, true),
+    })
+  },
+  delete: <T>(path: string, options?: ApiRequestOptions | string) => {
+    const opts = parseOptions(options)
+    return requestAt<T>(apiV2Url(path, opts.params), {
+      ...opts,
+      method: 'DELETE',
+      headers: buildHeaders(opts, true),
+    })
+  },
 }

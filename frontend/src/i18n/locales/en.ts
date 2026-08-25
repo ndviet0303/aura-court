@@ -66,6 +66,7 @@ export default {
     home: 'Home',
     courts: 'Court List',
     booking: 'My Bookings',
+    resale: 'Resale Market',
     promotions: 'Promotions',
     notifications: 'Notifications',
     admin: 'Admin',

@@ -57,6 +57,9 @@ const isBookingActive = computed(() => {
         <RouterLink to="/booking" class="nav-pill-link" :class="{ active: isBookingActive }">
           {{ $t('nav.booking') }}
         </RouterLink>
+        <RouterLink to="/resale" class="nav-pill-link" :class="{ active: route.path.startsWith('/resale') || route.path.startsWith('/marketplace') }">
+          {{ $t('nav.resale') }}
+        </RouterLink>
         <RouterLink to="/about" class="nav-pill-link" :class="{ active: route.path === '/about' }">
           {{ $t('nav.promotions') }}
         </RouterLink>

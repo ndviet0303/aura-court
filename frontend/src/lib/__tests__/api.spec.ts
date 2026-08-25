@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-describe('API CSRF recovery', () => {
+describe('API Client & Helpers', () => {
   beforeEach(() => {
     vi.resetModules()
     document.cookie = 'XSRF-TOKEN=initial; path=/'
@@ -20,7 +20,6 @@ describe('API CSRF recovery', () => {
 
       if (url.endsWith('/sanctum/csrf-cookie')) {
         document.cookie = 'XSRF-TOKEN=refreshed; path=/'
-
         return new Response(null, { status: 204 })
       }
 
@@ -70,5 +69,38 @@ describe('API CSRF recovery', () => {
     const headers = postCall?.[1]?.headers as Record<string, string>
     expect(headers['Content-Type']).toBe('application/json')
     expect(headers['Idempotency-Key']).toBeDefined()
+  })
+
+  it('appends query params correctly for GET requests in api and apiV2', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (input: RequestInfo | URL): Promise<Response> => {
+      const url = String(input)
+      if (url === '/runtime-config.json') {
+        return new Response(JSON.stringify({ apiUrl: 'https://api.example.test' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ url, ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { api, apiV2 } = await import('../api')
+    const res1 = await api.get<{ url: string }>('/courts', { params: { status: 'open', page: 2 } })
+    expect(res1.url).toBe('https://api.example.test/api/v1/courts?status=open&page=2')
+
+    const res2 = await apiV2.get<{ url: string }>('/marketplace/listings', { params: { venue: 'center' } })
+    expect(res2.url).toBe('https://api.example.test/api/v2/marketplace/listings?venue=center')
+  })
+
+  it('extracts error messages from various error formats using errorMessage', async () => {
+    const { errorMessage } = await import('../api')
+
+    expect(errorMessage('Lỗi trực tiếp')).toBe('Lỗi trực tiếp')
+    expect(errorMessage({ message: 'Thông báo lỗi từ API' })).toBe('Thông báo lỗi từ API')
+    expect(errorMessage({ errors: { phone: ['Số điện thoại không hợp lệ'] } })).toBe('Số điện thoại không hợp lệ')
+    expect(errorMessage(null, 'Lỗi mặc định')).toBe('Lỗi mặc định')
   })
 })

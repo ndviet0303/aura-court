@@ -66,6 +66,7 @@ export default {
     home: 'Trang chủ',
     courts: 'Danh sách sân',
     booking: 'Lịch đặt sân',
+    resale: 'Chợ nhượng sân',
     promotions: 'Ưu đãi',
     notifications: 'Thông báo',
     admin: 'Quản trị',

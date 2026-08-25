@@ -50,6 +50,8 @@ const router = createRouter({
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true, titleKey: 'seo.bookingTitle', indexable: false } },
     { path: '/reservations-v2', name: 'reservations-v2', component: () => import('../views/V2ReservationView.vue'), meta: { auth: true, title: 'Báo giá & lịch đặt v2 | Aura Court', indexable: false } },
     { path: '/advanced-booking', name: 'advanced-booking', component: () => import('../views/AdvancedBookingView.vue'), meta: { auth: true, title: 'Lịch định kỳ & marketplace | Aura Court', indexable: false } },
+    { path: '/resale', name: 'resale-marketplace', component: () => import('../views/ResaleMarketplaceView.vue'), meta: { auth: true, title: 'Chợ Nhượng Sân | Aura Court', indexable: false } },
+    { path: '/marketplace', redirect: '/resale' },
     { path: '/recurring-booking', name: 'recurring-booking', component: () => import('../views/RecurringBookingView.vue'), meta: { auth: true, title: 'Đặt sân định kỳ & Lịch cố định | Aura Court', indexable: false } },
     { path: '/recurring-booking/cycles/:id', name: 'payment-cycle-detail', component: () => import('../views/PaymentCycleDetailView.vue'), meta: { auth: true, title: 'Chi tiết kỳ thanh toán | Aura Court', indexable: false } },
     { path: '/billing-cycles/:id', redirect: (to) => `/recurring-booking/cycles/${to.params.id}` },
