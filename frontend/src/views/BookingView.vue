@@ -134,20 +134,33 @@ onMounted(load)
 
 <template>
   <main class="page-shell">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <ol class="breadcrumb-list">
+        <li>
+          <RouterLink to="/" class="breadcrumb-link">{{ t('nav.home') }}</RouterLink>
+        </li>
+        <li>
+          <span class="breadcrumb-separator material-symbols-outlined">chevron_right</span>
+        </li>
+        <li class="breadcrumb-current">{{ t('booking.title') }}</li>
+      </ol>
+    </nav>
+
     <!-- Top Header -->
     <header class="bookings-page-header">
       <div class="header-content">
-        <div class="eyebrow">{{ t('booking.eyebrow') }}</div>
-        <h1 class="page-title">{{ t('booking.title') }}</h1>
-        <p class="muted">{{ t('booking.subtitle') }}</p>
+        <span class="eyebrow-pill">{{ t('booking.eyebrow') }}</span>
+        <h1 class="page-main-title">{{ t('booking.title') }}</h1>
+        <p class="page-subtitle">{{ t('booking.subtitle') }}</p>
       </div>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <RouterLink to="/recurring-booking" class="btn" style="background: var(--pink-light); color: var(--pink-dark); font-weight: 700; border: 1px solid var(--pink);">
+      <div class="header-action-group">
+        <RouterLink to="/recurring-booking" class="btn secondary">
           <span class="material-symbols-outlined icon-18">event_repeat</span>
           <span>Đặt sân định kỳ</span>
         </RouterLink>
         <RouterLink to="/courts" class="btn btn-new-booking">
-          <span class="material-symbols-outlined icon-18">add</span>
+          <span class="material-symbols-outlined icon-18">add_circle</span>
           <span>{{ t('booking.bookNew') }}</span>
         </RouterLink>
       </div>
@@ -167,32 +180,45 @@ onMounted(load)
             <div class="avatar-badge">{{ userInitials }}</div>
           </div>
           <h2 class="user-name">{{ auth.user?.name || 'Aura Member' }}</h2>
-          <p class="user-meta muted">{{ auth.user?.email }}</p>
+          <!-- Quick Stats Grid -->
+          <div class="sidebar-stats-grid">
+            <button
+              type="button"
+              class="stat-box"
+              :class="{ active: activeTab === 'all' }"
+              @click="activeTab = 'all'"
+              title="Xem tất cả lịch"
+            >
+              <strong class="stat-value">{{ bookings.length }}</strong>
+              <span class="stat-label">Tổng lượt</span>
+            </button>
 
-          <div class="sidebar-nav-list">
-            <div class="sidebar-nav-item active">
-              <span class="material-symbols-outlined icon-18">calendar_today</span>
-              <span>{{ t('booking.title') }}</span>
-              <span class="nav-count">{{ bookings.length }}</span>
-            </div>
-            <RouterLink to="/recurring-booking" class="sidebar-nav-item">
-              <span class="material-symbols-outlined icon-18">event_repeat</span>
-              <span>Đặt sân định kỳ</span>
-              <span class="nav-count" style="background: var(--pink-light); color: var(--pink-dark); font-weight: 700;">PRO</span>
-            </RouterLink>
-            <RouterLink to="/courts" class="sidebar-nav-item">
-              <span class="material-symbols-outlined icon-18">sports_tennis</span>
-              <span>{{ t('nav.courts') }}</span>
-            </RouterLink>
-            <RouterLink to="/profile" class="sidebar-nav-item">
-              <span class="material-symbols-outlined icon-18">person</span>
-              <span>{{ t('nav.profile') }}</span>
-            </RouterLink>
+            <button
+              type="button"
+              class="stat-box"
+              :class="{ active: activeTab === 'upcoming' }"
+              @click="activeTab = 'upcoming'"
+              title="Xem lịch sắp tới"
+            >
+              <strong class="stat-value text-accent">{{ upcomingCount }}</strong>
+              <span class="stat-label">Sắp tới</span>
+            </button>
+
+            <button
+              type="button"
+              class="stat-box"
+              :class="{ active: activeTab === 'completed' }"
+              @click="activeTab = 'completed'"
+              title="Xem trận đã thi đấu"
+            >
+              <strong class="stat-value">{{ completedCount }}</strong>
+              <span class="stat-label">Đã chơi</span>
+            </button>
           </div>
         </div>
 
         <!-- Aura Club Loyalty Status Card -->
-        <div class="loyalty-card">
+        <RouterLink to="/profile" class="loyalty-card" title="Xem chi tiết hạng thành viên & điểm thưởng">
           <div class="loyalty-glow"></div>
           <div class="loyalty-header">
             <span class="loyalty-eyebrow">Aura Club Status</span>
@@ -209,9 +235,9 @@ onMounted(load)
             ></div>
           </div>
           <p class="loyalty-subtext">
-            {{ completedCount }} trận đã thi đấu · Tích điểm ưu đãi
+            {{ completedCount }} trận đã thi đấu · Xem ưu đãi ➔
           </p>
-        </div>
+        </RouterLink>
       </aside>
 
       <!-- Right Main Content: Tabs & Booking Cards -->
@@ -267,13 +293,19 @@ onMounted(load)
             <span class="material-symbols-outlined icon-32">event_available</span>
           </div>
           <h3>{{ t('booking.empty') }}</h3>
-          <p class="muted" style="max-width: 420px">
+          <p class="muted" style="max-width: 440px">
             Khám phá các sân cầu lông tiêu chuẩn BWF và đặt lịch thi đấu ngay hôm nay.
           </p>
-          <RouterLink to="/courts" class="btn" style="margin-top: 10px">
-            <span class="material-symbols-outlined icon-18">add</span>
-            {{ t('booking.bookNew') }}
-          </RouterLink>
+          <div class="empty-action-group">
+            <RouterLink to="/courts" class="btn">
+              <span class="material-symbols-outlined icon-18">add_circle</span>
+              <span>{{ t('booking.bookNew') }}</span>
+            </RouterLink>
+            <RouterLink to="/recurring-booking" class="btn secondary">
+              <span class="material-symbols-outlined icon-18">event_repeat</span>
+              <span>Đặt sân định kỳ</span>
+            </RouterLink>
+          </div>
         </div>
 
         <!-- Bookings List -->
@@ -313,18 +345,16 @@ onMounted(load)
 
             <!-- Slots and Schedule Info -->
             <div class="booking-slots-info">
-              <div class="info-row">
-                <span class="material-symbols-outlined icon-18 muted">calendar_month</span>
-                <div class="slots-tags-list">
-                  <span
-                    v-for="slot in booking.slots"
-                    :key="slot.id || slot.starts_at"
-                    class="slot-time-pill"
-                  >
-                    {{ formatDateTime(slot.starts_at) }}
-                    <small class="slot-price-tag">({{ formatCurrency(slot.unit_price) }})</small>
-                  </span>
-                </div>
+              <div class="slots-tags-list">
+                <span
+                  v-for="slot in booking.slots"
+                  :key="slot.id || slot.starts_at"
+                  class="slot-time-pill"
+                >
+                  <span class="material-symbols-outlined icon-16">calendar_month</span>
+                  <span>{{ formatDateTime(slot.starts_at) }}</span>
+                  <span class="slot-price-tag">({{ formatCurrency(slot.unit_price) }})</span>
+                </span>
               </div>
 
               <!-- Multi-slot cancel checkboxes if confirmed -->
@@ -420,18 +450,18 @@ onMounted(load)
                 @submit.prevent="submitReview(booking)"
               >
                 <div class="review-head">
-                  <span class="material-symbols-outlined icon-20 text-yellow">star</span>
+                  <span class="material-symbols-outlined icon-18 text-yellow">star</span>
                   <strong>{{ t('booking.rateTitle') }}</strong>
                 </div>
                 <div class="review-inputs-row">
-                  <div class="field" style="width: 130px">
+                  <div class="review-field select-field">
                     <select v-model.number="draft(booking).rating" class="review-select">
                       <option v-for="r in [5, 4, 3, 2, 1]" :key="r" :value="r">
                         {{ r }} ★ / 5
                       </option>
                     </select>
                   </div>
-                  <div class="field" style="flex: 1">
+                  <div class="review-field input-field">
                     <input
                       v-model="draft(booking).body"
                       type="text"
@@ -440,7 +470,7 @@ onMounted(load)
                       maxlength="2000"
                     />
                   </div>
-                  <button type="submit" class="btn sm">
+                  <button type="submit" class="btn btn-submit-review">
                     {{ t('booking.submitReview') }}
                   </button>
                 </div>
@@ -477,7 +507,44 @@ onMounted(load)
 .page-shell {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 40px 24px 90px;
+  padding: 28px 28px 80px;
+  box-sizing: border-box;
+}
+
+/* Breadcrumbs */
+.breadcrumb-nav {
+  margin-bottom: 20px;
+}
+
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted, #5d5f5f);
+}
+
+.breadcrumb-link {
+  color: var(--muted, #5d5f5f);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumb-link:hover {
+  color: var(--ink, #191c1d);
+}
+
+.breadcrumb-separator {
+  font-size: 16px;
+  color: var(--muted, #5d5f5f);
+}
+
+.breadcrumb-current {
+  color: var(--ink, #191c1d);
+  font-weight: 600;
 }
 
 /* Page Header */
@@ -485,29 +552,62 @@ onMounted(load)
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 16px;
+  gap: 20px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border, #e0e4ea);
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
-.header-content h1 {
-  margin: 6px 0 6px;
+.eyebrow-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--pink-dark, #78555e);
+  background: var(--pink-light, #ffd9e2);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+:global(html.dark) .eyebrow-pill {
+  background: #3d2b31;
+  color: #f8b4c4;
+}
+
+.page-main-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink, #191c1d);
+  margin: 0 0 6px;
+}
+
+.page-subtitle {
+  font-size: 14.5px;
+  color: var(--muted, #5d5f5f);
+  margin: 0;
+  max-width: 650px;
+}
+
+.header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .btn-new-booking {
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 /* Main Layout */
 .bookings-layout {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
 }
 
 @media (min-width: 1024px) {
@@ -515,6 +615,7 @@ onMounted(load)
     display: grid;
     grid-template-columns: 290px 1fr;
     align-items: flex-start;
+    gap: 28px;
   }
 }
 
@@ -573,6 +674,10 @@ onMounted(load)
   border: 2px solid var(--card-bg, #ffffff);
 }
 
+:global(html.dark) .avatar-badge {
+  color: #18191d;
+}
+
 .user-name {
   font-size: 18px;
   font-weight: 800;
@@ -582,52 +687,72 @@ onMounted(load)
 
 .user-meta {
   font-size: 12.5px;
-  margin: 0 0 20px;
+  margin: 0 0 16px;
 }
 
-.sidebar-nav-list {
+.sidebar-stats-grid {
   width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border, #e0e4ea);
+}
+
+.stat-box {
+  background: var(--surface-subtle, #f5f6f8);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 10px 4px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.sidebar-nav-item {
-  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted, #5d5f5f);
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.sidebar-nav-item:hover {
-  background: var(--surface-subtle, #f5f6f8);
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
   color: var(--ink, #191c1d);
 }
 
-.sidebar-nav-item.active {
+:global(html.dark) .stat-box {
+  background: var(--surface-subtle, #262930);
+  border-color: var(--border, #353942);
+}
+
+.stat-box:hover {
+  transform: translateY(-2px);
+  border-color: var(--pink-dark, #78555e);
+  background: var(--soft, #e5e8ec);
+}
+
+.stat-box.active {
   background: var(--pink-light, #ffd9e2);
+  border-color: var(--pink, #ffd1dc);
+}
+
+:global(html.dark) .stat-box.active {
+  background: var(--pink-light, #3d2b31);
+  border-color: rgba(248, 180, 196, 0.3);
+}
+
+.stat-value {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.stat-value.text-accent {
   color: var(--pink-dark, #78555e);
-  font-weight: 700;
 }
 
-:global(html.dark) .sidebar-nav-item.active {
-  background: var(--pink-dark, #78555e);
-  color: #ffffff;
+:global(html.dark) .stat-value.text-accent {
+  color: var(--pink-dark, #f8b4c4);
 }
 
-.nav-count {
-  margin-left: auto;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--surface, #ffffff);
+.stat-label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--muted, #5d5f5f);
+  white-space: nowrap;
 }
 
 /* Loyalty Card */
@@ -639,6 +764,14 @@ onMounted(load)
   padding: 20px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(120, 85, 94, 0.25);
+  display: block;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.loyalty-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(120, 85, 94, 0.35);
 }
 
 .loyalty-glow {
@@ -729,7 +862,7 @@ onMounted(load)
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
@@ -745,8 +878,9 @@ onMounted(load)
 }
 
 :global(html.dark) .tab-btn.active {
-  background: var(--pink-dark, #78555e);
-  color: #ffffff;
+  background: var(--pink-light, #3d2b31);
+  color: var(--pink-dark, #f8b4c4);
+  border-color: rgba(248, 180, 196, 0.3);
 }
 
 .tab-badge {
@@ -755,11 +889,18 @@ onMounted(load)
   border-radius: 999px;
   background: var(--surface-subtle, #e5e8ec);
   color: var(--ink, #191c1d);
+  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
-.tab-badge.active-tag {
+.tab-btn.active .tab-badge {
   background: var(--pink-dark, #78555e);
   color: #ffffff;
+}
+
+:global(html.dark) .tab-btn.active .tab-badge {
+  background: var(--pink-dark, #f8b4c4);
+  color: #18191d;
 }
 
 /* Bookings List */
@@ -809,6 +950,11 @@ onMounted(load)
   display: grid;
   place-items: center;
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .court-badge-icon {
+  background: var(--surface-subtle, #262930);
+  color: var(--pink-dark, #f8b4c4);
 }
 
 .court-name {
@@ -875,6 +1021,11 @@ onMounted(load)
   color: #fca5a5;
 }
 
+:global(html.dark) .status-completed {
+  background: var(--pink-light, #3d2b31);
+  color: var(--pink-dark, #f8b4c4);
+}
+
 .booking-card-divider {
   height: 1px;
   background: var(--border, #e0e4ea);
@@ -885,13 +1036,8 @@ onMounted(load)
 .booking-slots-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.info-row {
-  display: flex;
-  align-items: flex-start;
   gap: 10px;
+  margin-bottom: 14px;
 }
 
 .slots-tags-list {
@@ -903,21 +1049,28 @@ onMounted(load)
 .slot-time-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 8px 14px;
   background: var(--surface-subtle, #f5f6f8);
-  border-radius: 8px;
-  font-size: 12.5px;
+  border: 1px solid var(--border, #e0e4ea);
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 600;
+  color: var(--ink, #191c1d);
 }
 
 :global(html.dark) .slot-time-pill {
   background: var(--surface-subtle, #262930);
+  border-color: var(--border, #353942);
 }
 
 .slot-price-tag {
   color: var(--pink-dark, #78555e);
   font-weight: 700;
+}
+
+:global(html.dark) .slot-price-tag {
+  color: var(--pink-dark, #f8b4c4);
 }
 
 /* Cancel multi-slot */
@@ -926,11 +1079,13 @@ onMounted(load)
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--surface-subtle, #f5f6f8);
+  border: 1px solid var(--border, #e0e4ea);
   font-size: 12px;
 }
 
 :global(html.dark) .cancel-slots-select-wrap {
   background: var(--surface-subtle, #262930);
+  border-color: var(--border, #353942);
 }
 
 .cancel-slots-label {
@@ -958,8 +1113,7 @@ onMounted(load)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 18px;
-  padding-top: 16px;
+  padding-top: 14px;
   border-top: 1px dashed var(--border, #e0e4ea);
   gap: 16px;
   flex-wrap: wrap;
@@ -974,13 +1128,15 @@ onMounted(load)
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--muted, #5d5f5f);
 }
 
 .total-amount {
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--ink, #191c1d);
+  line-height: 1.2;
 }
 
 .booking-action-buttons {
@@ -995,41 +1151,29 @@ onMounted(load)
   color: #ffffff;
 }
 
-.btn.sm {
-  padding: 8px 14px;
-  font-size: 12px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-}
-
-.btn.danger {
-  color: #ba1a1a;
-  border-color: #ffdad6;
-}
-
-.btn.danger:hover {
-  background: #ffdad6;
-  color: #ba1a1a;
+:global(html.dark) .btn-pay-now {
+  background: var(--pink-dark, #f8b4c4);
+  color: #18191d;
+  font-weight: 800;
 }
 
 /* Review Box */
 .review-container {
   margin-top: 16px;
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid var(--border, #e0e4ea);
 }
 
 .review-form-box {
   background: var(--surface-subtle, #f5f6f8);
-  border-radius: 12px;
-  padding: 14px;
+  border: 1px solid var(--border, #e0e4ea);
+  border-radius: 14px;
+  padding: 16px;
 }
 
 :global(html.dark) .review-form-box {
   background: var(--surface-subtle, #262930);
+  border-color: var(--border, #353942);
 }
 
 .review-head {
@@ -1037,7 +1181,9 @@ onMounted(load)
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  margin-bottom: 10px;
+  font-weight: 700;
+  color: var(--ink, #191c1d);
+  margin-bottom: 12px;
 }
 
 .text-yellow {
@@ -1047,28 +1193,73 @@ onMounted(load)
 .review-inputs-row {
   display: flex;
   gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+.review-field.select-field {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.review-field.input-field {
+  flex: 1;
+  min-width: 0;
 }
 
 .review-select,
 .review-input {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--outline, #d8dce2);
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e0e4ea);
   background: var(--card-bg, #ffffff);
   color: var(--ink, #191c1d);
-  font-size: 13px;
+  font-size: 13.5px;
   outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
 }
 
 :global(html.dark) .review-select,
 :global(html.dark) .review-input {
   background: var(--card-bg, #22242a);
+  border-color: var(--border, #353942);
 }
 
-.review-input {
-  width: 100%;
+.review-select:focus,
+.review-input:focus {
+  border-color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .review-select:focus,
+:global(html.dark) .review-input:focus {
+  border-color: var(--pink-dark, #f8b4c4);
+}
+
+.btn-submit-review {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: #ffd1dc;
+  color: #191c1d;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 209, 220, 0.35);
+  white-space: nowrap;
+}
+
+.btn-submit-review:hover {
+  background: #ffb6c7;
+  transform: translateY(-1px);
 }
 
 .reviewed-badge-box {
@@ -1128,4 +1319,19 @@ onMounted(load)
   place-items: center;
   color: var(--pink-dark, #78555e);
 }
+
+:global(html.dark) .empty-icon-circle {
+  background: var(--pink-light, #3d2b31);
+  color: var(--pink-dark, #f8b4c4);
+}
+
+.empty-action-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
 </style>
+

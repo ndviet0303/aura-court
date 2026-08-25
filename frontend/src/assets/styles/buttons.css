@@ -3,35 +3,124 @@
    ========================================================================== */
 
 .btn {
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 999px;
-  padding: 14px 24px;
+  padding: 10px 22px;
   background: var(--pink-dark);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: 0.25s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   text-decoration: none;
+  line-height: 1.4;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+/* In Dark Mode, --pink-dark is pastel pink, so primary button text must be dark for contrast */
+html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary) {
+  color: #1e1317;
+  font-weight: 800;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(120, 85, 94, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(120, 85, 94, 0.22);
+  filter: brightness(1.04);
 }
 
-.btn.secondary {
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(120, 85, 94, 0.15);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--pink-dark);
+  outline-offset: 2px;
+}
+
+/* Secondary / Outline Variant */
+.btn.secondary,
+.btn.outline,
+.btn-secondary {
   color: var(--ink);
-  background: transparent;
-  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  box-shadow: none;
 }
 
-.btn.pink {
+.btn.secondary:hover,
+.btn.outline:hover,
+.btn-secondary:hover {
+  background: var(--soft);
+  border-color: var(--pink-dark);
+  color: var(--pink-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Pink / Tint Variant */
+.btn.pink,
+.btn-pink {
   background: var(--pink-light);
   color: var(--pink-dark);
+  border: 1px solid var(--pink);
+}
+
+.btn.pink:hover,
+.btn-pink:hover {
+  background: var(--pink);
+  color: var(--ink);
+}
+
+/* Danger / Destructive Variant */
+.btn.danger,
+.btn-danger {
+  color: var(--error-text, #c62828);
+  background: transparent;
+  border: 1px solid var(--error-bg, #ffdad6);
+  box-shadow: none;
+}
+
+.btn.danger:hover,
+.btn-danger:hover {
+  background: var(--error-bg, #ffebee);
+  color: var(--error-text, #b71c1c);
+  border-color: var(--error-text, #c62828);
+}
+
+/* Ghost / Plain Variant */
+.btn.ghost,
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.btn.ghost:hover,
+.btn-ghost:hover {
+  background: var(--surface-subtle);
+  color: var(--pink-dark);
+}
+
+/* Size Variants */
+.btn.sm,
+.btn-sm {
+  padding: 7px 15px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.btn.lg,
+.btn-lg {
+  padding: 13px 28px;
+  font-size: 15px;
+  gap: 10px;
 }
 
 .actions {
@@ -47,6 +136,14 @@
   background: none;
   cursor: pointer;
   color: var(--pink-dark);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.link-button:hover {
+  text-decoration: underline;
 }
 
 .search-action {
