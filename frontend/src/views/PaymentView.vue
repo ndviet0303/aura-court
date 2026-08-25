@@ -365,6 +365,25 @@ onUnmounted(() => {
             </div>
           </div>
 
+          <!-- Group Split Bill Shortcut Banner -->
+          <div class="panel split-bill-shortcut-panel">
+            <div class="split-shortcut-content">
+              <div class="split-shortcut-left">
+                <div class="split-icon-badge">
+                  <span class="material-symbols-outlined">group_add</span>
+                </div>
+                <div class="split-text-wrap">
+                  <h3 class="split-title">Chia tiền & Thanh toán nhóm</h3>
+                  <p class="split-desc">Tự động chia đều hoặc chia theo món, tạo mã VietQR riêng cho từng bạn chơi.</p>
+                </div>
+              </div>
+              <RouterLink :to="`/split-bill/${booking?.code || store.current?.code || 'AC-88924'}`" class="btn-split-shortcut">
+                <span>Chia tiền ngay</span>
+                <span class="material-symbols-outlined icon-16">arrow_forward</span>
+              </RouterLink>
+            </div>
+          </div>
+
           <!-- Payment Methods Card -->
           <div class="panel payment-methods-panel">
             <div class="panel-header">
@@ -2271,5 +2290,108 @@ html.dark .btn-modal-primary {
 .modal-pop-leave-to {
   opacity: 0;
   transform: scale(0.95);
+}
+
+.split-bill-shortcut-panel {
+  background: linear-gradient(135deg, rgba(255, 209, 220, 0.35) 0%, var(--card-bg) 100%);
+  border: 1px solid var(--pink);
+  border-left: 4px solid var(--pink-dark);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+html.dark .split-bill-shortcut-panel {
+  background: linear-gradient(135deg, rgba(120, 85, 94, 0.35) 0%, var(--card-bg) 100%);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--pink-dark);
+}
+
+.split-shortcut-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .split-shortcut-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.split-shortcut-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.split-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--pink-light);
+  color: var(--pink-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+html.dark .split-icon-badge {
+  background: rgba(248, 180, 196, 0.15);
+  color: var(--pink-dark);
+}
+
+.split-icon-badge .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.split-text-wrap {
+  flex: 1;
+}
+
+.split-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.split-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-split-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: var(--pink-dark);
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+html.dark .btn-split-shortcut {
+  background: var(--pink-dark);
+  color: #1e1317;
+}
+
+.btn-split-shortcut:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 </style>

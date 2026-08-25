@@ -257,9 +257,9 @@ export default {
   payment: {
     eyebrow: 'Secure Checkout',
     title: 'Review & Pay',
-    stepSelection: '01 Selection',
-    stepCheckout: '02 Checkout',
-    stepConfirmation: '03 Confirmation',
+    stepSelection: 'Selection',
+    stepCheckout: 'Checkout',
+    stepConfirmation: 'Confirmation',
     playerDetails: 'Player Details',
     editProfile: 'Edit Profile',
     fullName: 'Full Name',

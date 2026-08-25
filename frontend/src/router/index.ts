@@ -57,6 +57,8 @@ const router = createRouter({
     { path: '/social-tournaments', name: 'social-tournaments', component: () => import('../views/SocialTournamentView.vue'), meta: { auth: true, title: 'Người chơi & giải đấu | Aura Court', indexable: false } },
     { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue'), meta: { auth: true, title: 'POS & cashier | Aura Court', indexable: false } },
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, titleKey: 'seo.paymentTitle', indexable: false } },
+    { path: '/split-bill/:code?', name: 'split-bill', component: () => import('../views/GroupSplitBillView.vue'), meta: { auth: true, title: 'Chia tiền & Quyết toán nhóm | Aura Court', indexable: false } },
+    { path: '/group-split/:code?', redirect: (to) => `/split-bill/${to.params.code || ''}` },
     {
       path: '/admin',
       component: () => import('@/components/AdminLayout.vue'),

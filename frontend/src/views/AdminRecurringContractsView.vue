@@ -1394,45 +1394,50 @@ onMounted(async () => {
             class="policy-tab-btn"
             :class="{ active: activePolicyTab === 'terms' }"
             @click="activePolicyTab = 'terms'"
+            title="1. Thời Hạn & Điều Kiện Ký Kết"
           >
             <span class="material-symbols-outlined icon-18">contract</span>
-            <span>1. Thời Hạn & Điều Kiện</span>
+            <span class="tab-text">1. Điều Kiện HĐ</span>
           </button>
           <button
             type="button"
             class="policy-tab-btn"
             :class="{ active: activePolicyTab === 'discounts' }"
             @click="activePolicyTab = 'discounts'"
+            title="2. Chính Sách Chiết Khấu & Ưu Đãi"
           >
             <span class="material-symbols-outlined icon-18">percent</span>
-            <span>2. Chiết Khấu & Ưu Đãi</span>
+            <span class="tab-text">2. Chiết Khấu</span>
           </button>
           <button
             type="button"
             class="policy-tab-btn"
             :class="{ active: activePolicyTab === 'deposit' }"
             @click="activePolicyTab = 'deposit'"
+            title="3. Quy Định Tiền Cọc & Thu Phí"
           >
             <span class="material-symbols-outlined icon-18">account_balance_wallet</span>
-            <span>3. Tiền Cọc & Thu Phí</span>
+            <span class="tab-text">3. Tiền Cọc</span>
           </button>
           <button
             type="button"
             class="policy-tab-btn"
             :class="{ active: activePolicyTab === 'reschedule' }"
             @click="activePolicyTab = 'reschedule'"
+            title="4. Chính Sách Dời Lịch & Bảo Lưu"
           >
             <span class="material-symbols-outlined icon-18">event_repeat</span>
-            <span>4. Dời Lịch & Bảo Lưu</span>
+            <span class="tab-text">4. Dời Lịch</span>
           </button>
           <button
             type="button"
             class="policy-tab-btn"
             :class="{ active: activePolicyTab === 'cancellation' }"
             @click="activePolicyTab = 'cancellation'"
+            title="5. Quy Định Hủy Hợp Đồng & Hoàn Cọc"
           >
             <span class="material-symbols-outlined icon-18">cancel</span>
-            <span>5. Hủy HĐ & Hoàn Cọc</span>
+            <span class="tab-text">5. Hủy Hợp Đồng</span>
           </button>
         </div>
 
@@ -2901,53 +2906,60 @@ html.dark .btn-primary-pink:hover {
 
 .policy-nav-tabs {
   display: flex;
-  background: var(--surface-subtle, #f1f5f9);
-  border-bottom: 1px solid var(--border, #e2e8f0);
-  overflow-x: auto;
-  padding: 10px 24px 0;
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  padding: 6px;
+  margin: 18px 24px 4px;
   gap: 6px;
-  scrollbar-width: none;
-}
-
-.policy-nav-tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .policy-tab-btn {
-  flex: 1;
-  min-width: 140px;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 10px 8px;
   border: none;
   background: transparent;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
-  color: var(--muted, #64748b);
-  border-radius: 10px 10px 0 0;
+  color: var(--muted, #94a3b8);
+  border-radius: 10px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.policy-tab-btn .icon-18 {
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.policy-tab-btn .tab-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .policy-tab-btn:hover {
-  color: var(--ink, #191c1d);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink, #ffffff);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .policy-tab-btn.active {
-  color: var(--pink-dark, #ffd1dc);
-  background: var(--surface, #ffffff);
-  border-top: 2px solid var(--pink-dark, #ffd1dc);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  color: #2d141c !important;
+  background: #ffd1dc !important;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .policy-content-area {
-  padding: 24px 28px;
+  padding: 20px 28px 28px;
   background: var(--bg, #f8f9fa);
-  max-height: calc(85vh - 150px);
+  max-height: calc(85vh - 160px);
   overflow-y: auto;
 }
 

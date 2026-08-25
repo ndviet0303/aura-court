@@ -257,9 +257,9 @@ export default {
   payment: {
     eyebrow: 'Thanh toán an toàn',
     title: 'Xác nhận & Thanh toán',
-    stepSelection: '01 Chọn sân',
-    stepCheckout: '02 Thanh toán',
-    stepConfirmation: '03 Hoàn tất',
+    stepSelection: 'Chọn sân',
+    stepCheckout: 'Thanh toán',
+    stepConfirmation: 'Hoàn tất',
     playerDetails: 'Thông tin người chơi',
     editProfile: 'Sửa hồ sơ',
     fullName: 'Họ và tên',
