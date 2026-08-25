@@ -22,12 +22,12 @@ class RecurringSeriesService
     public function createAndConfirm(User $user, int $organizationId, array $data): RecurringSeries
     {
         $frequency = strtolower((string) ($data['frequency'] ?? ''));
-        if (! in_array($frequency, ['weekly', 'monthly'], true)) {
-            throw ValidationException::withMessages(['frequency' => 'Frequency must be weekly or monthly.']);
+        if (! in_array($frequency, ['weekly', 'biweekly', 'monthly'], true)) {
+            throw ValidationException::withMessages(['frequency' => 'Frequency must be weekly, biweekly or monthly.']);
         }
-        $firstStart = Carbon::parse($data['starts_at'], config('app.timezone'))->setMinute(0)->setSecond(0);
-        $firstEnd = isset($data['ends_at']) ? Carbon::parse($data['ends_at'], config('app.timezone')) : $firstStart->copy()->addHour();
-        $horizon = isset($data['until']) ? Carbon::parse($data['until'], config('app.timezone')) : $firstStart->copy()->addMonths(12);
+        $firstStart = Carbon::parse($data['starts_at'])->setTimezone(config('app.timezone'))->setSecond(0);
+        $firstEnd = isset($data['ends_at']) ? Carbon::parse($data['ends_at'])->setTimezone(config('app.timezone'))->setSecond(0) : $firstStart->copy()->addHour();
+        $horizon = isset($data['until']) ? Carbon::parse($data['until'])->setTimezone(config('app.timezone'))->setSecond(0) : $firstStart->copy()->addMonths(12);
         if ($horizon->greaterThan($firstStart->copy()->addMonths(12))) {
             throw ValidationException::withMessages(['until' => 'A recurring series may not exceed a 12-month horizon.']);
         }
@@ -126,7 +126,11 @@ class RecurringSeriesService
             if ($requested > 0 && count($starts) >= $requested) {
                 break;
             }
-            $current = $frequency === 'weekly' ? $current->addWeek() : $current->addMonthNoOverflow();
+            $current = match ($frequency) {
+                'weekly' => $current->addWeek(),
+                'biweekly' => $current->addWeeks(2),
+                default => $current->addMonthNoOverflow(),
+            };
         }
         return $starts;
     }

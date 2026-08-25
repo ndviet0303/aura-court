@@ -36,8 +36,28 @@ class AdvancedBookingController extends Controller
     public function createSeries(Request $request)
     {
         $organization = $this->organization($request);
-        $data = $request->validate(['court_id' => 'required|integer', 'frequency' => 'required|in:weekly,monthly', 'starts_at' => 'required|date', 'ends_at' => 'nullable|date|after:starts_at', 'until' => 'nullable|date|after_or_equal:starts_at', 'occurrences' => 'nullable|integer|min:1|max:104']);
+        $data = $request->validate(['court_id' => 'required|integer', 'frequency' => 'required|in:weekly,biweekly,monthly', 'starts_at' => 'required|date', 'ends_at' => 'nullable|date|after:starts_at', 'until' => 'nullable|date|after_or_equal:starts_at', 'occurrences' => 'nullable|integer|min:1|max:104', 'coupon_code' => 'nullable|string|max:40']);
         return $this->idempotency->run($request, fn () => response()->json(['series' => $this->recurring->createAndConfirm($request->user(), $organization->id, $data)], 201));
+    }
+
+    public function invoice(Request $request, MonthlyInvoice $invoice)
+    {
+        $organization = $this->organization($request);
+        abort_unless($invoice->organization_id === $organization->id && $invoice->series()->where('user_id', $request->user()->id)->exists(), 404);
+        
+        $invoice->load(['series.court.venue', 'series.user']);
+        
+        $occurrences = \App\Models\RecurringOccurrence::query()
+            ->where('recurring_series_id', $invoice->recurring_series_id)
+            ->whereBetween('starts_at', [$invoice->period_start->copy()->startOfDay(), $invoice->period_end->copy()->endOfDay()])
+            ->with(['reservation'])
+            ->orderBy('starts_at')
+            ->get();
+            
+        return response()->json([
+            'invoice' => $invoice,
+            'occurrences' => $occurrences,
+        ]);
     }
 
     public function payInvoice(Request $request, MonthlyInvoice $invoice)

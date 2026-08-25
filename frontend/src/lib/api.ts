@@ -58,11 +58,11 @@ function sendTo(url: string, options: RequestInit): Promise<Response> {
 
   return fetch(url, {
     credentials: 'include',
+    ...options,
     headers: {
       ...baseHeaders,
-      ...options.headers,
+      ...(options.headers as Record<string, string> | undefined),
     },
-    ...options,
   })
 }
 

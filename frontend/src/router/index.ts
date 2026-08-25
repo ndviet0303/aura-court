@@ -51,6 +51,8 @@ const router = createRouter({
     { path: '/reservations-v2', name: 'reservations-v2', component: () => import('../views/V2ReservationView.vue'), meta: { auth: true, title: 'Báo giá & lịch đặt v2 | Aura Court', indexable: false } },
     { path: '/advanced-booking', name: 'advanced-booking', component: () => import('../views/AdvancedBookingView.vue'), meta: { auth: true, title: 'Lịch định kỳ & marketplace | Aura Court', indexable: false } },
     { path: '/recurring-booking', name: 'recurring-booking', component: () => import('../views/RecurringBookingView.vue'), meta: { auth: true, title: 'Đặt sân định kỳ & Lịch cố định | Aura Court', indexable: false } },
+    { path: '/recurring-booking/cycles/:id', name: 'payment-cycle-detail', component: () => import('../views/PaymentCycleDetailView.vue'), meta: { auth: true, title: 'Chi tiết kỳ thanh toán | Aura Court', indexable: false } },
+    { path: '/billing-cycles/:id', redirect: (to) => `/recurring-booking/cycles/${to.params.id}` },
     { path: '/recurring', redirect: '/recurring-booking' },
     { path: '/social-tournaments', name: 'social-tournaments', component: () => import('../views/SocialTournamentView.vue'), meta: { auth: true, title: 'Người chơi & giải đấu | Aura Court', indexable: false } },
     { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue'), meta: { auth: true, title: 'POS & cashier | Aura Court', indexable: false } },

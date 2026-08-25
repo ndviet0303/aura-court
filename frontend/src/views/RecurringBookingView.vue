@@ -4,6 +4,10 @@ import { RouterLink } from 'vue-router'
 import { api, apiV2, errorMessage } from '@/lib/api'
 import type { Court, Venue } from '@/types'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import SelectDropdown from '@/components/SelectDropdown.vue'
+import DatePicker from '@/components/DatePicker.vue'
+import TimePicker from '@/components/TimePicker.vue'
+import ErrorModal from '@/components/ErrorModal.vue'
 
 interface MonthlyInvoice {
   id: number
@@ -55,6 +59,41 @@ const submitting = ref(false)
 const payingInvoiceId = ref<number | null>(null)
 const error = ref('')
 const successNotice = ref('')
+
+// Error modal state
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Đã có lỗi xảy ra')
+const errorModalMessage = ref('')
+const errorModalDetails = ref<string[]>([])
+const errorModalCode = ref<string | number | null>(null)
+
+function triggerErrorModal(cause: unknown, defaultMsg = 'Không thể thực hiện thao tác.') {
+  errorModalTitle.value = 'Thông báo lỗi'
+  errorModalCode.value = null
+  errorModalDetails.value = []
+
+  if (typeof cause === 'object' && cause !== null) {
+    const err = cause as { message?: string; errors?: Record<string, string[]>; status?: number }
+    errorModalMessage.value = err.message || defaultMsg
+    if (err.status) {
+      errorModalCode.value = err.status
+    }
+    if (err.errors && typeof err.errors === 'object') {
+      const list: string[] = []
+      for (const messages of Object.values(err.errors)) {
+        if (Array.isArray(messages)) {
+          list.push(...messages)
+        }
+      }
+      errorModalDetails.value = list
+    }
+  } else {
+    errorModalMessage.value = defaultMsg
+  }
+  showErrorModal.value = true
+}
+
+const todayDateString = new Date().toISOString().split('T')[0] ?? ''
 
 // Data
 const seriesList = ref<RecurringSeries[]>([])
@@ -138,6 +177,39 @@ const selectedCourtObj = computed(() => {
   return courts.value.find((c) => c.id === Number(form.value.court_id))
 })
 
+// Dropdown option sets
+const venueOptions = computed(() => {
+  return venues.value.map((v) => ({
+    value: v.id,
+    label: v.name,
+    sublabel: v.address || undefined,
+    icon: 'storefront',
+  }))
+})
+
+const courtOptions = computed(() => {
+  return filteredCourts.value.map((c) => ({
+    value: c.id,
+    label: c.name,
+    sublabel: `${money(getCourtPrice(c))}/h`,
+    icon: 'sports_tennis',
+  }))
+})
+
+const durationOptions = [
+  { value: 1, label: '1 Giờ' },
+  { value: 1.5, label: '1.5 Giờ (90 phút)' },
+  { value: 2, label: '2 Giờ (Tiêu chuẩn)' },
+  { value: 3, label: '3 Giờ (Thi đấu)' },
+]
+
+const presetOptions = [
+  { value: 1, label: '1 Tháng (khoảng 4-8 buổi)', sublabel: 'Giảm 10%' },
+  { value: 3, label: '3 Tháng (Chiết khấu 15%)', sublabel: 'Khuyên dùng' },
+  { value: 6, label: '6 Tháng (Chiết khấu 20%)', sublabel: 'Tiết kiệm cao' },
+  { value: 12, label: '12 Tháng (Ưu đãi VIP 20%)', sublabel: 'Gói năm' },
+]
+
 // Generate schedule preview
 const schedulePreview = computed<PreviewSlot[]>(() => {
   if (!form.value.startDate || !form.value.startTime || form.value.selectedWeekdays.length === 0) {
@@ -158,27 +230,50 @@ const schedulePreview = computed<PreviewSlot[]>(() => {
 
   let counter = 0
   const maxLimit = 104
+  const freq = form.value.frequency
+  const startTimestamp = start.getTime()
 
   while (current <= end && counter < maxLimit) {
     const dayOfWeek = current.getDay()
+    const diffDays = Math.floor((current.getTime() - startTimestamp) / (1000 * 60 * 60 * 24))
+    const diffWeeks = Math.floor(diffDays / 7)
+
+    let shouldInclude = false
     if (form.value.selectedWeekdays.includes(dayOfWeek)) {
-      const slotStart = new Date(current)
-      slotStart.setHours(hours, minutes, 0, 0)
-      const slotEnd = new Date(slotStart)
-      slotEnd.setHours(slotStart.getHours() + form.value.durationHours)
+      if (freq === 'weekly') {
+        shouldInclude = true
+      } else if (freq === 'biweekly') {
+        shouldInclude = diffWeeks % 2 === 0
+      } else if (freq === 'monthly') {
+        // Lặp vào tuần đầu tiên của mỗi tháng
+        const dayOfMonth = current.getDate()
+        shouldInclude = dayOfMonth <= 7
+      }
+    }
+
+    if (shouldInclude) {
+      const pad = (n: number) => n.toString().padStart(2, '0')
+      const year = current.getFullYear()
+      const month = pad(current.getMonth() + 1)
+      const day = pad(current.getDate())
+      const startLocalStr = `${year}-${month}-${day}T${pad(hours)}:${pad(minutes)}:00`
+      const endTotalMinutes = hours * 60 + minutes + Math.round(form.value.durationHours * 60)
+      const endH = Math.floor(endTotalMinutes / 60)
+      const endM = endTotalMinutes % 60
+      const endLocalStr = `${year}-${month}-${day}T${pad(endH)}:${pad(endM)}:00`
 
       const dayItem = weekdayOptions.find((w) => w.day === dayOfWeek)
-      const dateFormatted = `${dayItem?.label || 'T'}, ${current.getDate().toString().padStart(2, '0')}/${(current.getMonth() + 1).toString().padStart(2, '0')}`
+      const dateFormatted = `${dayItem?.label || 'T'}, ${day}/${month}`
 
       // Conflict logic
-      const isPast = slotStart.getTime() < Date.now()
+      const isPast = new Date(year, current.getMonth(), current.getDate(), hours, minutes).getTime() < Date.now()
       const isSimulatedConflict = counter === 5 && months >= 3
 
       list.push({
         dateStr: dateFormatted,
-        timeStr: `${form.value.startTime} - ${slotEnd.getHours().toString().padStart(2, '0')}:${slotEnd.getMinutes().toString().padStart(2, '0')}`,
-        startsAt: slotStart.toISOString(),
-        endsAt: slotEnd.toISOString(),
+        timeStr: `${form.value.startTime} - ${pad(endH)}:${pad(endM)}`,
+        startsAt: startLocalStr,
+        endsAt: endLocalStr,
         dayName: dayItem?.name || '',
         available: !isPast && !isSimulatedConflict,
         courtName,
@@ -219,8 +314,65 @@ const totalDiscountAmount = computed(() => {
   return Math.round(totalOriginalPrice.value * discountPercent.value)
 })
 
+// Coupon state
+interface CouponData {
+  id: number
+  code: string
+  discount_type: 'fixed' | 'percent'
+  discount_value: number
+  max_discount?: number | null
+}
+
+const couponInput = ref('')
+const appliedCoupon = ref<CouponData | null>(null)
+const couponDiscountAmount = ref(0)
+const couponLoading = ref(false)
+const couponMessage = ref('')
+const couponError = ref('')
+
+async function applyCoupon(codeToApply?: string) {
+  const code = (codeToApply || couponInput.value).trim().toUpperCase()
+  if (!code) return
+
+  couponLoading.value = true
+  couponError.value = ''
+  couponMessage.value = ''
+
+  try {
+    const baseTotal = totalOriginalPrice.value - totalDiscountAmount.value
+    const res = await api.post<{
+      coupon: CouponData | null
+      coupon_discount: number
+    }>('/coupons/preview', {
+      subtotal: baseTotal,
+      code,
+    })
+
+    if (res.coupon && res.coupon_discount > 0) {
+      appliedCoupon.value = res.coupon
+      couponDiscountAmount.value = res.coupon_discount
+      couponMessage.value = `Áp dụng mã ${res.coupon.code} thành công!`
+      couponInput.value = ''
+    } else {
+      couponError.value = 'Mã giảm giá không áp dụng được cho đơn này.'
+    }
+  } catch (cause: unknown) {
+    couponError.value = errorMessage(cause, 'Mã giảm giá không hợp lệ hoặc đã hết hạn.')
+  } finally {
+    couponLoading.value = false
+  }
+}
+
+function removeCoupon() {
+  appliedCoupon.value = null
+  couponDiscountAmount.value = 0
+  couponInput.value = ''
+  couponMessage.value = ''
+  couponError.value = ''
+}
+
 const finalEstimatedPrice = computed(() => {
-  return totalOriginalPrice.value - totalDiscountAmount.value
+  return Math.max(0, totalOriginalPrice.value - totalDiscountAmount.value - couponDiscountAmount.value)
 })
 
 // KPI Metrics
@@ -381,12 +533,15 @@ async function handleCreateSeries() {
       starts_at: firstSlot.startsAt,
       until: lastSlot.endsAt,
       occurrences: schedulePreview.value.length,
+      coupon_code: appliedCoupon.value?.code || undefined,
     })
 
     successNotice.value = '🎉 Đã xác nhận thành công toàn bộ lịch định kỳ & lập hóa đơn chu kỳ đầu tiên!'
     await loadData()
   } catch (cause: unknown) {
-    error.value = errorMessage(cause, 'Không thể tạo lịch định kỳ. Vui lòng kiểm tra lại thông tin.')
+    const msg = errorMessage(cause, 'Không thể tạo lịch định kỳ. Vui lòng kiểm tra lại thông tin.')
+    error.value = msg
+    triggerErrorModal(cause, msg)
   } finally {
     submitting.value = false
   }
@@ -405,7 +560,9 @@ async function handlePayInvoice(invoice: MonthlyInvoice, method: string) {
     successNotice.value = `Đã thanh toán thành công hóa đơn #${invoice.id} qua ${method}!`
     await loadData()
   } catch (cause: unknown) {
-    error.value = errorMessage(cause, 'Không thể thanh toán hóa đơn.')
+    const msg = errorMessage(cause, 'Không thể thanh toán hóa đơn.')
+    error.value = msg
+    triggerErrorModal(cause, msg)
   } finally {
     payingInvoiceId.value = null
   }
@@ -547,24 +704,28 @@ onMounted(() => {
 
           <div class="wizard-card">
             <form @submit.prevent="handleCreateSeries" class="wizard-form">
-              <!-- Venue & Court Select -->
+              <!-- Venue & Court Select with Aura SelectDropdown -->
               <div class="form-row-grid">
                 <div class="form-group">
-                  <label class="form-label" for="venue-select">Cơ sở (Venue)</label>
-                  <select id="venue-select" v-model="form.venue_id" class="form-select-underlined">
-                    <option v-for="venue in venues" :key="venue.id" :value="venue.id">
-                      {{ venue.name }} {{ venue.address ? `· ${venue.address}` : '' }}
-                    </option>
-                  </select>
+                  <label class="form-label">Cơ sở (Venue)</label>
+                  <SelectDropdown
+                    v-model="form.venue_id"
+                    :options="venueOptions"
+                    placeholder="Chọn cơ sở"
+                    variant="bordered"
+                    aria-label="Chọn cơ sở"
+                  />
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="court-select">Sân (Court)</label>
-                  <select id="court-select" v-model="form.court_id" class="form-select-underlined">
-                    <option v-for="court in filteredCourts" :key="court.id" :value="court.id">
-                      {{ court.name }} ({{ money(getCourtPrice(court)) }}/h)
-                    </option>
-                  </select>
+                  <label class="form-label">Sân (Court)</label>
+                  <SelectDropdown
+                    v-model="form.court_id"
+                    :options="courtOptions"
+                    placeholder="Chọn sân"
+                    variant="bordered"
+                    aria-label="Chọn sân"
+                  />
                 </div>
               </div>
 
@@ -617,51 +778,41 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Time & Duration -->
+              <!-- Time & Duration with Aura TimePicker and SelectDropdown -->
               <div class="form-row-grid">
                 <div class="form-group">
-                  <label class="form-label" for="start-time-input">Khung giờ bắt đầu</label>
-                  <input
-                    id="start-time-input"
-                    v-model="form.startTime"
-                    type="time"
-                    class="form-input-underlined"
-                    required
-                  />
+                  <label class="form-label">Khung giờ bắt đầu</label>
+                  <TimePicker v-model="form.startTime" placeholder="Chọn giờ" />
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="duration-select">Thời lượng mỗi buổi</label>
-                  <select id="duration-select" v-model.number="form.durationHours" class="form-select-underlined">
-                    <option :value="1">1 Giờ</option>
-                    <option :value="1.5">1.5 Giờ (90 phút)</option>
-                    <option :value="2">2 Giờ</option>
-                    <option :value="3">3 Giờ</option>
-                  </select>
+                  <label class="form-label">Thời lượng mỗi buổi</label>
+                  <SelectDropdown
+                    v-model="form.durationHours"
+                    :options="durationOptions"
+                    placeholder="Thời lượng"
+                    variant="bordered"
+                    aria-label="Thời lượng mỗi buổi"
+                  />
                 </div>
               </div>
 
-              <!-- Start Date & Period Duration -->
+              <!-- Start Date & Period Duration with Aura DatePicker and SelectDropdown -->
               <div class="form-row-grid">
                 <div class="form-group">
-                  <label class="form-label" for="start-date-input">Ngày bắt đầu kỳ</label>
-                  <input
-                    id="start-date-input"
-                    v-model="form.startDate"
-                    type="date"
-                    class="form-input-underlined"
-                    required
-                  />
+                  <label class="form-label">Ngày bắt đầu kỳ</label>
+                  <DatePicker v-model="form.startDate" :min="todayDateString" placeholder="Chọn ngày" />
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="preset-select">Kéo dài trong</label>
-                  <select id="preset-select" v-model.number="form.durationPreset" class="form-select-underlined">
-                    <option :value="1">1 Tháng (khoảng 4-8 buổi)</option>
-                    <option :value="3">3 Tháng (Chiết khấu 15%)</option>
-                    <option :value="6">6 Tháng (Chiết khấu 20%)</option>
-                    <option :value="12">12 Tháng (Ưu đãi VIP 20%)</option>
-                  </select>
+                  <label class="form-label">Kéo dài trong</label>
+                  <SelectDropdown
+                    v-model="form.durationPreset"
+                    :options="presetOptions"
+                    placeholder="Kéo dài trong"
+                    variant="bordered"
+                    aria-label="Kéo dài trong"
+                  />
                 </div>
               </div>
 
@@ -696,6 +847,89 @@ onMounted(() => {
                   </div>
                 </div>
 
+                <!-- Voucher / Coupon Code Section -->
+                <div class="coupon-section">
+                  <div class="coupon-title-row">
+                    <label class="coupon-label" for="coupon-code-input">
+                      <span class="material-symbols-outlined">confirmation_number</span>
+                      <span>Mã giảm giá ưu đãi (Voucher)</span>
+                    </label>
+                  </div>
+
+                  <!-- If coupon is already applied -->
+                  <div v-if="appliedCoupon" class="applied-coupon-card">
+                    <div class="applied-coupon-left">
+                      <span class="material-symbols-outlined applied-icon">check_circle</span>
+                      <div>
+                        <strong class="applied-code">{{ appliedCoupon.code }}</strong>
+                        <p class="applied-desc">Đã giảm -{{ money(couponDiscountAmount) }}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-remove-coupon"
+                      title="Gỡ mã giảm giá"
+                      @click="removeCoupon"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <!-- Coupon Input Form -->
+                  <div v-else class="coupon-input-row">
+                    <div class="coupon-input-wrapper">
+                      <span class="material-symbols-outlined coupon-field-icon">local_offer</span>
+                      <input
+                        id="coupon-code-input"
+                        v-model="couponInput"
+                        type="text"
+                        placeholder="Nhập mã (VD: AURA2026, AURAVIP)"
+                        class="coupon-text-input"
+                        :disabled="couponLoading"
+                        @keydown.enter.prevent="applyCoupon()"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-apply-coupon"
+                      :disabled="couponLoading || !couponInput.trim()"
+                      @click="applyCoupon()"
+                    >
+                      <span v-if="couponLoading" class="mini-spinner"></span>
+                      <span v-else>Áp dụng</span>
+                    </button>
+                  </div>
+
+                  <!-- Quick Coupon Pills -->
+                  <div v-if="!appliedCoupon" class="quick-coupon-pills">
+                    <span class="quick-title">Gợi ý:</span>
+                    <button
+                      type="button"
+                      class="quick-pill"
+                      @click="applyCoupon('AURA2026')"
+                    >
+                      AURA2026 (-10%)
+                    </button>
+                    <button
+                      type="button"
+                      class="quick-pill"
+                      @click="applyCoupon('AURAVIP')"
+                    >
+                      AURAVIP (-15%)
+                    </button>
+                    <button
+                      type="button"
+                      class="quick-pill"
+                      @click="applyCoupon('CHAOBANMOI')"
+                    >
+                      CHAOBANMOI (-50k)
+                    </button>
+                  </div>
+
+                  <p v-if="couponError" class="coupon-status-error">{{ couponError }}</p>
+                  <p v-if="couponMessage" class="coupon-status-success">{{ couponMessage }}</p>
+                </div>
+
                 <!-- Price Summary -->
                 <div class="price-summary-box">
                   <div class="summary-line">
@@ -709,6 +943,10 @@ onMounted(() => {
                   <div class="summary-line highlight-discount">
                     <span>Chiết khấu hội viên định kỳ (-{{ discountPercent * 100 }}%):</span>
                     <span class="discount-val">-{{ money(totalDiscountAmount) }}</span>
+                  </div>
+                  <div v-if="couponDiscountAmount > 0" class="summary-line highlight-coupon">
+                    <span>Mã giảm giá ({{ appliedCoupon?.code }}):</span>
+                    <span class="discount-val">-{{ money(couponDiscountAmount) }}</span>
                   </div>
                   <div class="summary-total-line">
                     <span>Thành tiền chu kỳ:</span>
@@ -853,6 +1091,14 @@ onMounted(() => {
 
                 <div class="invoice-amount-row">
                   <span class="invoice-price">{{ money(inv.amount) }}</span>
+                  <RouterLink
+                    :to="`/recurring-booking/cycles/${inv.id}`"
+                    class="btn-view-statement"
+                    title="Xem chi tiết kỳ thanh toán"
+                  >
+                    <span>Chi tiết kỳ</span>
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                  </RouterLink>
                 </div>
 
                 <div v-if="inv.status === 'pending' || inv.status === 'overdue'" class="payment-buttons-row">
@@ -966,6 +1212,15 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Error Notification Modal -->
+    <ErrorModal
+      v-model:open="showErrorModal"
+      :title="errorModalTitle"
+      :message="errorModalMessage"
+      :details="errorModalDetails"
+      :error-code="errorModalCode"
+    />
   </main>
 </template>
 
@@ -1198,13 +1453,6 @@ onMounted(() => {
   margin: 0;
 }
 
-.sub-block-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
 .badge-soft {
   font-size: 12px;
   background: var(--soft);
@@ -1261,7 +1509,6 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
-.form-select-underlined,
 .form-input-underlined {
   width: 100%;
   background: transparent;
@@ -1275,7 +1522,6 @@ onMounted(() => {
   transition: border-color 0.2s;
 }
 
-.form-select-underlined:focus,
 .form-input-underlined:focus {
   border-bottom-color: var(--pink-dark);
 }
@@ -1447,6 +1693,201 @@ onMounted(() => {
   font-size: 15px;
 }
 
+/* Coupon Section */
+.coupon-section {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--card-bg);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coupon-title-row {
+  display: flex;
+  align-items: center;
+}
+
+.coupon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.coupon-label .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--pink-dark);
+}
+
+.coupon-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.coupon-field-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.coupon-text-input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.coupon-text-input:focus {
+  border-color: var(--pink-dark);
+}
+
+.btn-apply-coupon {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #ffd1dc;
+  color: #191c1d;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-apply-coupon:hover:not(:disabled) {
+  background: #ffb6c7;
+}
+
+.btn-apply-coupon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.applied-coupon-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(46, 125, 50, 0.08);
+  border: 1px solid rgba(46, 125, 50, 0.25);
+}
+
+.applied-coupon-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.applied-icon {
+  font-size: 20px;
+  color: #2e7d32;
+}
+
+.applied-code {
+  font-size: 13px;
+  color: #2e7d32;
+  letter-spacing: 0.05em;
+}
+
+.applied-desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.btn-remove-coupon {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-coupon:hover {
+  color: var(--error-text);
+  background: rgba(198, 40, 40, 0.1);
+}
+
+.quick-coupon-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.quick-title {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.quick-pill {
+  border: 1px dashed var(--border);
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-pill:hover {
+  border-color: var(--pink-dark);
+  color: var(--pink-dark);
+  background: var(--pink-light);
+}
+
+.coupon-status-error {
+  font-size: 12px;
+  color: var(--error-text);
+  margin: 0;
+}
+
+.coupon-status-success {
+  font-size: 12px;
+  color: #2e7d32;
+  margin: 0;
+}
+
+.mini-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #191c1d;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
 /* Price Summary */
 .price-summary-box {
   margin-top: 16px;
@@ -1534,6 +1975,12 @@ onMounted(() => {
 .management-block {
   display: flex;
   flex-direction: column;
+}
+
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .series-cards-stack {
@@ -1747,6 +2194,9 @@ onMounted(() => {
 }
 
 .invoice-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 12px;
 }
 
@@ -1754,6 +2204,28 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.btn-view-statement {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-view-statement:hover {
+  background: var(--primary-container, #ffd1dc);
+}
+
+.btn-view-statement .material-symbols-outlined {
+  font-size: 14px;
 }
 
 .payment-buttons-row {

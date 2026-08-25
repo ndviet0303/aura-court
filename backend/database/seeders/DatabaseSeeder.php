@@ -4,9 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Booking;
 use App\Models\BookingSlot;
+use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
+use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\User;
@@ -22,6 +25,53 @@ class DatabaseSeeder extends Seeder
         $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
         $now = Carbon::now($timezone);
 
+        Coupon::updateOrCreate(
+            ['code' => 'AURA2026'],
+            [
+                'discount_type' => 'percent',
+                'discount_value' => 10,
+                'max_discount' => 200000,
+                'min_spend' => 100000,
+                'is_active' => true,
+                'starts_at' => $now->copy()->subDays(10),
+                'ends_at' => $now->copy()->addMonths(12),
+            ]
+        );
+
+        Coupon::updateOrCreate(
+            ['code' => 'AURAVIP'],
+            [
+                'discount_type' => 'percent',
+                'discount_value' => 15,
+                'max_discount' => 500000,
+                'min_spend' => 200000,
+                'is_active' => true,
+                'starts_at' => $now->copy()->subDays(10),
+                'ends_at' => $now->copy()->addMonths(12),
+            ]
+        );
+
+        Coupon::updateOrCreate(
+            ['code' => 'CHAOBANMOI'],
+            [
+                'discount_type' => 'fixed',
+                'discount_value' => 50000,
+                'min_spend' => 100000,
+                'is_active' => true,
+                'starts_at' => $now->copy()->subDays(10),
+                'ends_at' => $now->copy()->addMonths(12),
+            ]
+        );
+
+        $org = Organization::updateOrCreate(
+            ['slug' => 'aura-badminton-club'],
+            [
+                'name' => 'Aura Badminton Club',
+                'status' => 'active',
+                'settings' => ['currency' => 'VND', 'timezone' => 'Asia/Ho_Chi_Minh'],
+            ]
+        );
+
         $venue1 = Venue::updateOrCreate(
             ['slug' => 'aura-court'],
             [
@@ -29,6 +79,7 @@ class DatabaseSeeder extends Seeder
                 'address' => 'Số 18 Phố Duy Tân, Phường Dịch Vọng Hậu, Quận Cầu Giấy, Hà Nội',
                 'google_maps_url' => 'https://maps.google.com/?q=18+Duy+Tan+Dich+Vong+Hau+Cau+Giay+Ha+Noi',
                 'is_active' => true,
+                'organization_id' => $org->id,
             ],
         );
 
@@ -39,6 +90,7 @@ class DatabaseSeeder extends Seeder
                 'address' => 'Cung Thể Thao Quần Ngựa, 30 Đường Văn Cao, Phường Liễu Giai, Quận Ba Đình, Hà Nội',
                 'google_maps_url' => 'https://maps.google.com/?q=Cung+The+Thao+Quan+Ngua+30+Van+Cao+Ba+Dinh+Ha+Noi',
                 'is_active' => true,
+                'organization_id' => $org->id,
             ],
         );
 
@@ -54,6 +106,11 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => $now,
         ])->save();
 
+        OrganizationMember::updateOrCreate(
+            ['organization_id' => $org->id, 'user_id' => $admin->id],
+            ['role' => 'organization_owner', 'status' => 'active', 'permissions' => ['*']]
+        );
+
         $adminExample = User::firstOrNew(['email' => env('SEED_ADMIN_EMAIL', 'admin@example.com')]);
         $adminExample->forceFill([
             'name' => 'Quản trị viên',
@@ -65,6 +122,11 @@ class DatabaseSeeder extends Seeder
             'password_set' => true,
             'email_verified_at' => $now,
         ])->save();
+
+        OrganizationMember::updateOrCreate(
+            ['organization_id' => $org->id, 'user_id' => $adminExample->id],
+            ['role' => 'organization_owner', 'status' => 'active', 'permissions' => ['*']]
+        );
 
         $demoAdmin = User::firstOrNew([
             'email' => env('SEED_DEMO_ADMIN_EMAIL', 'demo-20260811@demo.auracourt.vn'),
@@ -78,7 +140,29 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => $now,
         ])->save();
 
-        $customers = collect(range(1, 24))->map(function (int $number) use ($now): User {
+        OrganizationMember::updateOrCreate(
+            ['organization_id' => $org->id, 'user_id' => $demoAdmin->id],
+            ['role' => 'organization_owner', 'status' => 'active', 'permissions' => ['*']]
+        );
+
+        $demoUser = User::firstOrNew(['email' => 'user@example.com']);
+        $demoUser->forceFill([
+            'name' => 'Khách hàng Demo',
+            'password' => Hash::make('Password@123456'),
+            'role' => 'customer',
+            'phone' => '0901234567',
+            'play_level' => 'intermediate',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => $now,
+        ])->save();
+
+        OrganizationMember::updateOrCreate(
+            ['organization_id' => $org->id, 'user_id' => $demoUser->id],
+            ['role' => 'customer', 'status' => 'active']
+        );
+
+        $customers = collect(range(1, 24))->map(function (int $number) use ($now, $org): User {
             $user = User::firstOrNew(['email' => sprintf('khach%02d@demo.auracourt.vn', $number)]);
             $user->forceFill([
                 'name' => sprintf('Khách hàng %02d', $number),
@@ -86,6 +170,11 @@ class DatabaseSeeder extends Seeder
                 'role' => 'customer',
                 'email_verified_at' => $now->copy()->subDays($number),
             ])->save();
+
+            OrganizationMember::updateOrCreate(
+                ['organization_id' => $org->id, 'user_id' => $user->id],
+                ['role' => 'customer', 'status' => 'active']
+            );
 
             return $user;
         });

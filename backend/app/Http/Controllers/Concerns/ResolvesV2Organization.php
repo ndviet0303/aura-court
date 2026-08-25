@@ -17,6 +17,18 @@ trait ResolvesV2Organization
         $organization = $context->getOrganization();
         if (! $organization) {
             $organization = $user->organizations()->where('organizations.status', 'active')->first();
+            if (! $organization) {
+                $organization = Organization::where('status', 'active')->first();
+                if ($organization && ! $organization->hasMember($user->id)) {
+                    \App\Models\OrganizationMember::firstOrCreate([
+                        'organization_id' => $organization->id,
+                        'user_id' => $user->id,
+                    ], [
+                        'role' => 'customer',
+                        'status' => 'active',
+                    ]);
+                }
+            }
             if ($organization) {
                 $context->setOrganization($organization);
             }

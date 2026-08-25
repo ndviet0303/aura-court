@@ -46,4 +46,29 @@ describe('API CSRF recovery', () => {
     const retriedRequest = fetchMock.mock.calls[3]?.[1]
     expect(new Headers(retriedRequest?.headers).get('X-XSRF-TOKEN')).toBe('refreshed')
   })
+
+  it('preserves Content-Type and custom headers on apiV2 requests', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input)
+      if (url === '/runtime-config.json') {
+        return new Response(JSON.stringify({ apiUrl: 'https://api.example.test' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ success: true, headers: init?.headers }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { apiV2 } = await import('../api')
+    await apiV2.post('/recurring-series', { court_id: 1 })
+
+    const postCall = fetchMock.mock.calls[1]
+    const headers = postCall?.[1]?.headers as Record<string, string>
+    expect(headers['Content-Type']).toBe('application/json')
+    expect(headers['Idempotency-Key']).toBeDefined()
+  })
 })

@@ -168,6 +168,7 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
 
         Route::get('recurring-series', [AdvancedBookingController::class, 'series']);
         Route::post('recurring-series', [AdvancedBookingController::class, 'createSeries']);
+        Route::get('monthly-invoices/{invoice}', [AdvancedBookingController::class, 'invoice']);
         Route::post('monthly-invoices/{invoice}/pay', [AdvancedBookingController::class, 'payInvoice']);
         Route::middleware('feature:marketplace_split_payments')->group(function () {
             Route::post('reservations/{reservation}/split', [AdvancedBookingController::class, 'createSplit']);

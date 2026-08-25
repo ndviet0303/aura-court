@@ -25,7 +25,7 @@ class ResolveTenantContext
             $organization = Organization::where('slug', $orgSlug)->first();
         } elseif ($request->user()) {
             // Default to user's first active organization if not explicitly requested
-            $organization = $request->user()->organizations()->where('status', 'active')->first();
+            $organization = $request->user()->organizations()->where('organizations.status', 'active')->first();
         }
 
         if ($organization) {

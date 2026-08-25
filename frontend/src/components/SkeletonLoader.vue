@@ -336,6 +336,11 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 16px;
+}
+
+.skeleton-card:last-child {
+  margin-bottom: 0;
 }
 
 @keyframes shimmer-wave {

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import RecurringBookingView from '../RecurringBookingView.vue'
+import { i18n } from '@/i18n'
 import { api, apiV2 } from '@/lib/api'
 
 vi.mock('vue-router', () => ({
@@ -87,7 +88,11 @@ describe('RecurringBookingView', () => {
   })
 
   it('renders KPI stats and active series', async () => {
-    const wrapper = mount(RecurringBookingView)
+    const wrapper = mount(RecurringBookingView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
     await flushPromises()
 
     expect(wrapper.text()).toContain('Đặt Sân Cố Định & Quản Lý Lịch Định Kỳ')
@@ -98,7 +103,11 @@ describe('RecurringBookingView', () => {
   })
 
   it('allows interacting with weekday circles and frequency selector', async () => {
-    const wrapper = mount(RecurringBookingView)
+    const wrapper = mount(RecurringBookingView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
     await flushPromises()
 
     const weekdayButtons = wrapper.findAll('.weekday-circle-btn')
@@ -115,7 +124,11 @@ describe('RecurringBookingView', () => {
   it('submits recurring series creation', async () => {
     vi.mocked(apiV2.post).mockResolvedValueOnce({ data: { id: 11 } })
 
-    const wrapper = mount(RecurringBookingView)
+    const wrapper = mount(RecurringBookingView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
     await flushPromises()
 
     const form = wrapper.find('form.wizard-form')
