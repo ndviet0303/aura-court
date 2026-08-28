@@ -69,6 +69,8 @@ Route::prefix('v1')->group(function () {
                 'name' => 'sometimes|string|max:120',
                 'phone' => 'nullable|string|max:30',
                 'play_level' => 'nullable|string|max:50',
+                'favorite_sports' => 'nullable|array',
+                'avatar_url' => 'nullable|string|max:255',
             ]);
             $user = $request->user();
             $user->update($data);

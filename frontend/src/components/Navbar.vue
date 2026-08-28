@@ -22,6 +22,7 @@ const userName = computed(() => {
 })
 
 const defaultAvatarUrl = computed(() => {
+  if (auth.user?.avatar_url) return auth.user.avatar_url
   const id = auth.user?.id || 1
   return id % 2 === 0 ? '/avatars/athlete-girl.jpg' : '/avatars/athlete-boy.jpg'
 })

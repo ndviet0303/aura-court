@@ -1,4 +1,4 @@
-export type User = { id: number; name: string; email: string; role: 'customer' | 'admin'; phone?: string | null; play_level?: string | null; onboarded?: boolean; password_set?: boolean; social_provider?: string | null; email_verified_at?: string | null }
+export type User = { id: number; name: string; email: string; role: 'customer' | 'admin'; phone?: string | null; play_level?: string | null; favorite_sports?: string[] | null; avatar_url?: string | null; onboarded?: boolean; password_set?: boolean; social_provider?: string | null; email_verified_at?: string | null }
 export type SportType = 'badminton' | 'football_5v5' | 'football_7v7' | 'tennis' | 'pickleball' | 'basketball' | 'volleyball' | 'table_tennis';
 export type SportZone = { id: number; venue_id: number; name: string; sport_type: SportType; slot_duration: number; description?: string | null; is_active: boolean; courts_count?: number; courts?: Court[]; venue?: Venue }
 export type Venue = { id: number; name: string; slug: string; address: string | null; google_maps_url: string | null; is_active: boolean; share_url: string; courts_count?: number; sport_zones?: SportZone[] }

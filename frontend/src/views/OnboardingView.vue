@@ -36,10 +36,10 @@ onMounted(async () => {
 })
 
 const playLevels = [
-  { value: 'beginner', label: 'Mới bắt đầu', desc: 'Mới làm quen với cầu lông, chơi giải trí cuối tuần' },
-  { value: 'intermediate', label: 'Phong trào', desc: 'Nắm vững luật và kỹ thuật cơ bản, chơi đều đặn' },
-  { value: 'advanced', label: 'Bán chuyên', desc: 'Kỹ thuật tốt, thể lực cao, thường xuyên giao lưu cọ xát' },
-  { value: 'pro', label: 'Chuyên nghiệp', desc: 'Thi đấu các giải phong trào và chuyên nghiệp' },
+  { value: 'beginner', label: 'Mới bắt đầu', desc: 'Mới làm quen với các bộ môn, chơi giải trí rèn luyện sức khỏe' },
+  { value: 'intermediate', label: 'Phong trào', desc: 'Nắm vững luật và kỹ thuật cơ bản, chơi thể thao đều đặn' },
+  { value: 'advanced', label: 'Bán chuyên', desc: 'Kỹ thuật tốt, thể lực cao, thường xuyên thi đấu giao lưu' },
+  { value: 'pro', label: 'Chuyên nghiệp', desc: 'Thi đấu các giải phong trào và giải đấu chuyên nghiệp' },
 ]
 
 const isOwner = computed(() => accountType.value === 'court_owner')

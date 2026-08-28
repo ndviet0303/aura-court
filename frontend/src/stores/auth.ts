@@ -102,7 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
     await api.post('/auth/reset-password', { email, token, password, password_confirmation })
   }
 
-  async function updateProfile(payload: string | { name?: string; phone?: string; play_level?: string }) {
+  async function updateProfile(payload: string | { name?: string; phone?: string; play_level?: string; favorite_sports?: string[]; avatar_url?: string }) {
     const body = typeof payload === 'string' ? { name: payload } : payload
     user.value = await api.patch<User>('/profile', body)
     return user.value

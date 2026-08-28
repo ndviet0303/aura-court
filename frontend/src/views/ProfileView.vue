@@ -19,6 +19,8 @@ const activeTab = ref<Tab>('general')
 const name = ref(auth.user?.name || '')
 const phone = ref(auth.user?.phone || '')
 const playLevel = ref(auth.user?.play_level || 'intermediate')
+const favoriteSports = ref<string[]>(auth.user?.favorite_sports || ['badminton'])
+const selectedAvatar = ref(auth.user?.avatar_url || '')
 
 // Password Form
 const currentPassword = ref('')
@@ -39,6 +41,32 @@ const loading = ref(false)
 const passwordLoading = ref(false)
 const verificationLoading = ref(false)
 
+const availableSports = [
+  { id: 'badminton', name: 'Cầu lông', icon: 'sports_tennis', emoji: '🏸' },
+  { id: 'football_5v5', name: 'Bóng đá 5v5', icon: 'sports_soccer', emoji: '⚽' },
+  { id: 'football_7v7', name: 'Bóng đá 7v7', icon: 'sports_soccer', emoji: '⚽' },
+  { id: 'tennis', name: 'Tennis', icon: 'sports_tennis', emoji: '🎾' },
+  { id: 'pickleball', name: 'Pickleball', icon: 'sports_tennis', emoji: '🏓' },
+  { id: 'basketball', name: 'Bóng rổ', icon: 'sports_basketball', emoji: '🏀' },
+  { id: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball', emoji: '🏐' },
+  { id: 'table_tennis', name: 'Bóng bàn', icon: 'table_restaurant', emoji: '🏓' },
+]
+
+const avatarPresets = [
+  { id: 'athlete-boy', url: '/avatars/athlete-boy.jpg', label: 'VĐV Nam' },
+  { id: 'athlete-girl', url: '/avatars/athlete-girl.jpg', label: 'VĐV Nữ' },
+]
+
+function toggleSport(sportId: string) {
+  if (favoriteSports.value.includes(sportId)) {
+    if (favoriteSports.value.length > 1) {
+      favoriteSports.value = favoriteSports.value.filter((id) => id !== sportId)
+    }
+  } else {
+    favoriteSports.value.push(sportId)
+  }
+}
+
 const userInitials = computed(() => {
   if (!auth.user?.name) return 'AC'
   const parts = auth.user.name.trim().split(/\s+/)
@@ -46,8 +74,9 @@ const userInitials = computed(() => {
   return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase()
 })
 
-const defaultAvatarUrl = computed(() => {
-  // Rotate cute avatar based on user id or email
+const currentAvatarUrl = computed(() => {
+  if (selectedAvatar.value) return selectedAvatar.value
+  if (auth.user?.avatar_url) return auth.user.avatar_url
   const id = auth.user?.id || 1
   return id % 2 === 0 ? '/avatars/athlete-girl.jpg' : '/avatars/athlete-boy.jpg'
 })
@@ -76,6 +105,10 @@ const playLevelLabel = computed(() => {
   }
 })
 
+const selectedSportsList = computed(() => {
+  return availableSports.filter((s) => favoriteSports.value.includes(s.id))
+})
+
 const passwordStrength = computed(() => {
   const p = newPassword.value
   if (!p) return 0
@@ -101,6 +134,8 @@ async function updateGeneralProfile() {
       name: name.value.trim(),
       phone: phone.value.trim(),
       play_level: playLevel.value,
+      favorite_sports: favoriteSports.value,
+      avatar_url: selectedAvatar.value || undefined,
     })
     notice.value = t('profile.saveSuccess')
   } catch (cause: unknown) {
@@ -159,6 +194,12 @@ onMounted(async () => {
     name.value = auth.user.name || ''
     phone.value = auth.user.phone || ''
     playLevel.value = auth.user.play_level || 'intermediate'
+    if (auth.user.favorite_sports && Array.isArray(auth.user.favorite_sports) && auth.user.favorite_sports.length > 0) {
+      favoriteSports.value = auth.user.favorite_sports
+    }
+    if (auth.user.avatar_url) {
+      selectedAvatar.value = auth.user.avatar_url
+    }
   }
   try {
     const [memRes, bookRes] = await Promise.allSettled([
@@ -184,9 +225,9 @@ onMounted(async () => {
       <section class="stitch-summary-card">
         <div class="summary-card-inner">
           <div class="summary-hero-row">
-            <!-- Cute Meme Avatar -->
+            <!-- Cute Athlete Avatar -->
             <div class="avatar-box">
-              <img :src="defaultAvatarUrl" :alt="auth.user?.name" class="avatar-img" />
+              <img :src="currentAvatarUrl" :alt="auth.user?.name" class="avatar-img" />
               <div class="avatar-initials-badge">{{ userInitials }}</div>
             </div>
 
@@ -199,8 +240,13 @@ onMounted(async () => {
                 </span>
 
                 <span class="badge-pill badge-level">
-                  <span class="material-symbols-outlined icon-14">sports_tennis</span>
+                  <span class="material-symbols-outlined icon-14">directions_run</span>
                   {{ playLevelLabel }}
+                </span>
+
+                <span v-for="sport in selectedSportsList" :key="sport.id" class="badge-pill badge-sport">
+                  <span class="sport-emoji">{{ sport.emoji }}</span>
+                  <span>{{ sport.name }}</span>
                 </span>
 
                 <span v-if="auth.user?.email_verified_at" class="badge-pill badge-verified">
@@ -364,6 +410,28 @@ onMounted(async () => {
               </div>
             </div>
 
+            <!-- Multi-sport Selection Section -->
+            <div class="form-group full-width sport-pref-section">
+              <div class="pref-label-group">
+                <label class="minimal-label">{{ t('profile.favoriteSports') }}</label>
+                <span class="pref-sub-hint">{{ t('profile.favoriteSportsHint') }}</span>
+              </div>
+              <div class="sports-chips-grid">
+                <button
+                  v-for="sport in availableSports"
+                  :key="sport.id"
+                  type="button"
+                  class="sport-chip-card"
+                  :class="{ active: favoriteSports.includes(sport.id) }"
+                  @click="toggleSport(sport.id)"
+                >
+                  <span class="sport-chip-emoji">{{ sport.emoji }}</span>
+                  <span class="sport-chip-name">{{ sport.name }}</span>
+                  <span v-if="favoriteSports.includes(sport.id)" class="material-symbols-outlined chip-check-icon">check_circle</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Skill Level Selection -->
             <div class="form-group full-width skill-section">
               <label class="minimal-label">{{ t('profile.playLevel') }}</label>
@@ -382,7 +450,7 @@ onMounted(async () => {
                   :class="{ active: playLevel === 'intermediate' }"
                 >
                   <input type="radio" v-model="playLevel" value="intermediate" class="sr-only" />
-                  <span class="material-symbols-outlined skill-ico text-orange">sports_tennis</span>
+                  <span class="material-symbols-outlined skill-ico text-orange">directions_run</span>
                   <span class="skill-name">{{ t('profile.levelIntermediate') }}</span>
                 </label>
 
@@ -574,8 +642,8 @@ onMounted(async () => {
             </div>
             <h3 class="empty-h">{{ t('profile.vipPlan') }}</h3>
             <p class="empty-p">{{ t('profile.vipNone') }}</p>
-            <RouterLink to="/v2/reservations" class="stitch-outline-btn">
-              🏸 {{ t('profile.bookCourtNow') }}
+            <RouterLink to="/courts" class="stitch-outline-btn">
+              🏟️ {{ t('profile.bookCourtNow') }}
             </RouterLink>
           </div>
         </div>
@@ -594,7 +662,40 @@ onMounted(async () => {
               </div>
               <div class="shortcut-text">
                 <h4 class="shortcut-title">{{ t('profile.myBookings') }}</h4>
-                <p class="shortcut-desc">Xem lịch sân đã đặt và biên lai</p>
+                <p class="shortcut-desc">Xem lịch sân đã đặt và biên lai thanh toán</p>
+              </div>
+              <span class="material-symbols-outlined shortcut-chevron">chevron_right</span>
+            </RouterLink>
+
+            <RouterLink to="/courts" class="shortcut-card">
+              <div class="shortcut-icon-circle">
+                <span class="material-symbols-outlined">stadium</span>
+              </div>
+              <div class="shortcut-text">
+                <h4 class="shortcut-title">{{ t('profile.bookCourtNow') }}</h4>
+                <p class="shortcut-desc">Tìm sân trống đa môn thể thao và đặt trực tuyến</p>
+              </div>
+              <span class="material-symbols-outlined shortcut-chevron">chevron_right</span>
+            </RouterLink>
+
+            <RouterLink to="/matchmaking" class="shortcut-card">
+              <div class="shortcut-icon-circle">
+                <span class="material-symbols-outlined">groups</span>
+              </div>
+              <div class="shortcut-text">
+                <h4 class="shortcut-title">{{ t('profile.matchmakingShortcut') }}</h4>
+                <p class="shortcut-desc">Tìm đồng đội, đối thủ giao lưu các môn</p>
+              </div>
+              <span class="material-symbols-outlined shortcut-chevron">chevron_right</span>
+            </RouterLink>
+
+            <RouterLink to="/resale" class="shortcut-card">
+              <div class="shortcut-icon-circle">
+                <span class="material-symbols-outlined">swap_horiz</span>
+              </div>
+              <div class="shortcut-text">
+                <h4 class="shortcut-title">{{ t('profile.resaleShortcut') }}</h4>
+                <p class="shortcut-desc">Chợ nhượng vé sân & pass lịch chơi an toàn</p>
               </div>
               <span class="material-symbols-outlined shortcut-chevron">chevron_right</span>
             </RouterLink>
@@ -605,18 +706,7 @@ onMounted(async () => {
               </div>
               <div class="shortcut-text">
                 <h4 class="shortcut-title">{{ t('profile.manageOrg') }}</h4>
-                <p class="shortcut-desc">Quản lý cụm sân và bảng giá</p>
-              </div>
-              <span class="material-symbols-outlined shortcut-chevron">chevron_right</span>
-            </RouterLink>
-
-            <RouterLink to="/v2/reservations" class="shortcut-card">
-              <div class="shortcut-icon-circle">
-                <span class="material-symbols-outlined">sports_tennis</span>
-              </div>
-              <div class="shortcut-text">
-                <h4 class="shortcut-title">{{ t('profile.bookCourtNow') }}</h4>
-                <p class="shortcut-desc">Tìm sân trống và đặt trực tuyến</p>
+                <p class="shortcut-desc">Quản lý cụm sân, khu thể thao và bảng giá</p>
               </div>
               <span class="material-symbols-outlined shortcut-chevron">chevron_right</span>
             </RouterLink>
@@ -799,6 +889,22 @@ html.dark .badge-level {
   background: rgba(34, 197, 94, 0.15);
   color: #4ade80;
   border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-sport {
+  background: #fdf2f8;
+  color: #9d174d;
+  border: 1px solid #fbcfe8;
+}
+
+html.dark .badge-sport {
+  background: rgba(244, 114, 182, 0.15);
+  color: #f472b6;
+  border-color: rgba(244, 114, 182, 0.3);
+}
+
+.sport-emoji {
+  font-size: 12px;
 }
 
 .badge-verified {
@@ -1073,6 +1179,69 @@ html.dark .tab-btn.active {
   color: var(--ink);
 }
 
+/* Multi-sport Chips Grid */
+.sport-pref-section {
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.pref-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+
+.pref-sub-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sports-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sport-chip-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sport-chip-card:hover {
+  border-color: var(--pink, #ffd1dc);
+  background: var(--pink-light, #fff5f7);
+  transform: translateY(-1px);
+}
+
+.sport-chip-card.active {
+  background: var(--nav-active-bg, #78555e);
+  color: var(--nav-active-text, #ffffff);
+  border-color: var(--pink-dark, #78555e);
+  box-shadow: 0 3px 10px rgba(120, 85, 94, 0.2);
+}
+
+.sport-chip-emoji {
+  font-size: 15px;
+}
+
+.chip-check-icon {
+  font-size: 16px !important;
+  color: inherit;
+}
+
 /* Skill Cards Grid */
 .skill-cards-grid {
   display: grid;
@@ -1214,8 +1383,8 @@ html.dark .stitch-cta-btn:hover:not(:disabled) {
 }
 
 html.dark .social-alert-card {
-  background: rgba(14, 165, 233, 0.12);
-  border-color: rgba(14, 165, 233, 0.3);
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.25);
 }
 
 .social-pill-badge {
@@ -1249,26 +1418,27 @@ html.dark .social-alert-title {
 
 .social-alert-sub {
   font-size: 12px;
-  color: #0c4a6e;
+  color: #0284c7;
   margin: 0;
 }
 
 html.dark .social-alert-sub {
-  color: #bae6fd;
+  color: #94a3b8;
 }
 
-/* Password Meters */
+/* Meter Bar */
 .meter-bar-track {
-  height: 3px;
-  background: var(--soft);
+  width: 100%;
+  height: 4px;
+  background: var(--outline);
   border-radius: 2px;
-  margin-top: 4px;
   overflow: hidden;
+  margin-top: 4px;
 }
 
 .meter-bar-fill {
   height: 100%;
-  transition: all 0.3s ease;
+  transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 .meter-bar-fill.weak {
@@ -1283,6 +1453,7 @@ html.dark .social-alert-sub {
   background: #10b981;
 }
 
+/* Match Pill */
 .match-pill {
   display: inline-flex;
   align-items: center;
@@ -1299,95 +1470,85 @@ html.dark .social-alert-sub {
 
 /* VIP Card */
 .vip-soft-card {
+  border-radius: 16px;
   padding: 24px;
-  border-radius: 14px;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-}
-
-html.dark .vip-soft-card {
-  background: rgba(251, 191, 36, 0.1);
-  border-color: rgba(251, 191, 36, 0.3);
+  background: linear-gradient(135deg, rgba(255, 209, 220, 0.25) 0%, rgba(255, 182, 197, 0.1) 100%);
+  border: 1px solid rgba(255, 182, 197, 0.4);
 }
 
 .vip-row-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
 .vip-soft-tag {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   padding: 4px 10px;
   border-radius: 9999px;
-  background: #fef3c7;
-  color: #92400e;
-}
-
-html.dark .vip-soft-tag {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fcd34d;
+  background: #1a1a1a;
+  color: #ffffff;
 }
 
 .vip-soft-tier {
   font-size: 18px;
   font-weight: 800;
-  color: #78350f;
-}
-
-html.dark .vip-soft-tier {
-  color: #fbbf24;
+  color: var(--ink);
 }
 
 .vip-row-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  border-top: 1px solid rgba(251, 191, 36, 0.2);
-  padding-top: 16px;
+}
+
+.metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .metric-label {
-  display: block;
-  font-size: 12px;
-  color: #92400e;
-}
-
-html.dark .metric-label {
-  color: #fde68a;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .metric-val {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--ink);
 }
 
+/* Empty State */
 .empty-soft-box {
-  text-align: center;
-  padding: 32px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  border: 1px dashed var(--outline);
+  border-radius: 16px;
+  gap: 12px;
 }
 
 .empty-icon-wrap {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(255, 182, 197, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 209, 220, 0.3);
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
 }
 
 .empty-h {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: var(--ink);
   margin: 0;
 }
@@ -1395,7 +1556,7 @@ html.dark .metric-label {
 .empty-p {
   font-size: 13px;
   color: var(--muted);
-  max-width: 360px;
+  max-width: 380px;
   margin: 0;
 }
 
@@ -1403,16 +1564,16 @@ html.dark .metric-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 20px;
+  padding: 10px 24px;
   border-radius: 10px;
   border: 1px solid var(--outline);
-  background: transparent;
+  background: var(--surface);
   color: var(--ink);
   font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  margin-top: 6px;
+  font-weight: 700;
+  cursor: pointer;
   transition: all 0.2s ease;
+  margin-top: 8px;
 }
 
 .stitch-outline-btn:hover {
@@ -1420,7 +1581,7 @@ html.dark .metric-label {
   border-color: #ffb6c5;
 }
 
-/* Shortcuts */
+/* Shortcuts Grid */
 .shortcuts-soft-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1438,29 +1599,31 @@ html.dark .metric-label {
   align-items: center;
   gap: 14px;
   padding: 16px 18px;
-  border-radius: 12px;
+  border-radius: 14px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
   border: 1px solid var(--outline);
-  background: var(--surface);
   text-decoration: none;
-  color: inherit;
+  color: var(--ink);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
 }
 
 .shortcut-card:hover {
+  background: var(--surface);
   border-color: #ffb6c5;
-  background: var(--surface-subtle);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .shortcut-icon-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  display: grid;
+  place-items: center;
   color: var(--ink);
   flex-shrink: 0;
 }
@@ -1470,41 +1633,40 @@ html.dark .metric-label {
 }
 
 .shortcut-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ink);
   margin: 0 0 2px;
+  color: var(--ink);
 }
 
 .shortcut-desc {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   margin: 0;
 }
 
 .shortcut-chevron {
-  font-size: 18px;
   color: var(--muted);
+  font-size: 20px;
+}
+
+.admin-border {
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+.danger-card {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .danger-card:hover {
-  border-color: rgba(239, 68, 68, 0.4);
   background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
 }
 
 .danger-icon {
+  background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 </style>
