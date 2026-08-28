@@ -127,6 +127,10 @@ onBeforeUnmount(() => {
               <span class="material-symbols-outlined">sports_tennis</span>
               <span>{{ $t('nav.matchmaking') }}</span>
             </RouterLink>
+            <RouterLink to="/matchmaking/create" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">add_circle</span>
+              <span>{{ $t('nav.createMatch') }}</span>
+            </RouterLink>
           </div>
         </div>
         <RouterLink to="/about" class="nav-pill-link" :class="{ active: route.path === '/about' }">

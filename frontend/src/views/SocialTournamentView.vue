@@ -629,10 +629,10 @@ onMounted(load)
             </p>
           </div>
 
-          <button class="btn-create-match" @click="openCreateModal">
+          <RouterLink to="/matchmaking/create" class="btn-create-match">
             <span class="material-symbols-outlined icon">add</span>
             <span>Tạo Kèo Mới</span>
-          </button>
+          </RouterLink>
         </div>
 
         <!-- Filter Bar (Stitch Design) -->
@@ -799,7 +799,7 @@ onMounted(load)
           </p>
           <div class="empty-state-actions">
             <button class="btn-reset-filters" @click="resetFilters">Đặt lại bộ lọc</button>
-            <button class="btn-create-match" @click="openCreateModal">Tạo Kèo Mới Ngay</button>
+            <RouterLink to="/matchmaking/create" class="btn-create-match">Tạo Kèo Mới Ngay</RouterLink>
           </div>
         </div>
       </section>
