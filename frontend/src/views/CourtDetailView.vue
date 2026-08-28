@@ -167,6 +167,32 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft') prevPhoto()
 }
 
+function formatCourtDisplayName(courtName?: string, venueName?: string): string {
+  if (!courtName) return ''
+  let cleaned = courtName
+  if (venueName) {
+    const venueShort = venueName.replace(/^Aura\s+(Court|Arena|Complex|Sport Center|Center)?\s*/i, '').trim()
+    if (venueShort && venueShort.length >= 2) {
+      const reg = new RegExp(`\\s*[-–—]?\\s*${venueShort}\\s*$`, 'i')
+      cleaned = cleaned.replace(reg, '').trim()
+    }
+  }
+  return cleaned
+}
+
+function formatZoneDisplayName(zoneName?: string, venueName?: string): string {
+  if (!zoneName) return ''
+  let cleaned = zoneName
+  if (venueName) {
+    const venueShort = venueName.replace(/^Aura\s+(Court|Arena|Complex|Sport Center|Center)?\s*/i, '').trim()
+    if (venueShort && venueShort.length >= 2) {
+      const reg = new RegExp(`\\s*[-–—]?\\s*${venueShort}\\s*$`, 'i')
+      cleaned = cleaned.replace(reg, '').trim()
+    }
+  }
+  return cleaned
+}
+
 function openMaps(): void {
   const v = court.value?.venue
   const mapsUrl = v?.google_maps_url
@@ -242,7 +268,7 @@ function openMaps(): void {
                 </span>
                 <span v-if="court.sport_zone" class="premium-badge" style="background: var(--surface); border: 1px solid var(--border); color: var(--ink);">
                   <span class="material-symbols-outlined badge-icon text-pink">category</span>
-                  {{ court.sport_zone.name }} (Khung {{ court.sport_zone.slot_duration }} phút)
+                  {{ formatZoneDisplayName(court.sport_zone.name, court.venue?.name) }} (Khung {{ court.sport_zone.slot_duration }} phút)
                 </span>
                 <div class="rating-display">
                   <span class="material-symbols-outlined star-icon">star</span>
@@ -251,7 +277,7 @@ function openMaps(): void {
                 </div>
               </div>
 
-              <h1 class="court-title">{{ court.venue?.name ? `${court.venue.name} — ` : '' }}{{ court.name }}</h1>
+              <h1 class="court-title">{{ court.venue?.name ? `${court.venue.name} — ` : '' }}{{ formatCourtDisplayName(court.name, court.venue?.name) }}</h1>
 
               <div class="address-row" role="button" tabindex="0" @click="openMaps" @keydown.enter="openMaps" title="Nhấn để mở chỉ đường Google Maps">
                 <span class="material-symbols-outlined loc-icon">location_on</span>
@@ -270,7 +296,7 @@ function openMaps(): void {
                   <div class="zone-card-header">
                     <div class="zone-title-box">
                       <span class="material-symbols-outlined text-pink icon-18">sports</span>
-                      <strong>{{ group.zoneName }}</strong>
+                      <strong>{{ formatZoneDisplayName(group.zoneName, court.venue?.name) }}</strong>
                     </div>
                     <span class="zone-duration-badge">{{ group.slotDuration }} phút/lượt</span>
                   </div>
@@ -283,7 +309,7 @@ function openMaps(): void {
                       :class="{ 'is-current': c.id === court.id }"
                     >
                       <span class="material-symbols-outlined icon-14">sports_tennis</span>
-                      <span>{{ c.name }}</span>
+                      <span>{{ formatCourtDisplayName(c.name, court.venue?.name) }}</span>
                     </RouterLink>
                   </div>
                 </div>

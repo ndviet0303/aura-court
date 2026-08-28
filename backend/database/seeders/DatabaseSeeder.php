@@ -272,7 +272,7 @@ class DatabaseSeeder extends Seeder
             [
                 'venue_slug' => 'aura-court',
                 'key' => 'cg-badminton',
-                'name' => 'Khu Sân Cầu Lông Tiêu Chuẩn Cầu Giấy',
+                'name' => 'Khu Sân Cầu Lông Tiêu Chuẩn',
                 'sport_type' => 'badminton',
                 'slot_duration' => 60,
                 'description' => 'Khu sân cầu lông thảm BWF cao cấp, trần cao 9.5m, ánh sáng LED 500 Lux',
@@ -280,7 +280,7 @@ class DatabaseSeeder extends Seeder
             [
                 'venue_slug' => 'aura-court',
                 'key' => 'cg-pickleball',
-                'name' => 'Khu Sân Pickleball Dynamic Cầu Giấy',
+                'name' => 'Khu Sân Pickleball Dynamic',
                 'sport_type' => 'pickleball',
                 'slot_duration' => 60,
                 'description' => 'Cụm sân pickleball mặt phủ sơn acrylic 5 lớp giảm chấn, hệ thống lưới chuyên nghiệp',
@@ -288,7 +288,7 @@ class DatabaseSeeder extends Seeder
             [
                 'venue_slug' => 'aura-court',
                 'key' => 'cg-table-tennis',
-                'name' => 'Khu Sân Bóng Bàn Tiêu Chuẩn Cầu Giấy',
+                'name' => 'Khu Sân Bóng Bàn Tiêu Chuẩn',
                 'sport_type' => 'table_tennis',
                 'slot_duration' => 60,
                 'description' => 'Bàn bóng bàn thi đấu Double Fish ITTF Approved, sàn cao su chống trơn trượt',
@@ -444,7 +444,7 @@ class DatabaseSeeder extends Seeder
         $courtDefs = [
             // Cầu lông - Cầu Giấy (5 sân)
             [
-                'name' => 'Sân 1 - Thảm BWF Cầu Giấy',
+                'name' => 'Sân 1 - Thảm BWF Tiêu Chuẩn',
                 'slug' => 'san-1-tham-bwf-cau-giay',
                 'description' => 'Sân cầu lông thảm BWF tiêu chuẩn 5 lớp, hệ thống đèn LED 500 Lux chống chói.',
                 'venue_slug' => 'aura-court',
@@ -454,7 +454,7 @@ class DatabaseSeeder extends Seeder
                 'sport_type' => 'badminton',
             ],
             [
-                'name' => 'Sân 2 - Tiêu Chuẩn Cầu Giấy',
+                'name' => 'Sân 2 - Tiêu Chuẩn',
                 'slug' => 'san-2-tieu-chuan-cau-giay',
                 'description' => 'Mặt sàn cao cấp êm ái, trần cao 9.5m chuẩn thi đấu phong trào và bán chuyên.',
                 'venue_slug' => 'aura-court',
@@ -464,7 +464,7 @@ class DatabaseSeeder extends Seeder
                 'sport_type' => 'badminton',
             ],
             [
-                'name' => 'Sân 3 - Tiêu Chuẩn Cầu Giấy',
+                'name' => 'Sân 3 - Tiêu Chuẩn',
                 'slug' => 'san-3-tieu-chuan-cau-giay',
                 'description' => 'Hệ thống đèn trần định hướng, không gian thoáng mát và thông gió liên tục.',
                 'venue_slug' => 'aura-court',
@@ -474,7 +474,7 @@ class DatabaseSeeder extends Seeder
                 'sport_type' => 'badminton',
             ],
             [
-                'name' => 'Sân 4 - VIP Đơn/Đôi Cầu Giấy',
+                'name' => 'Sân 4 - VIP Đơn/Đôi',
                 'slug' => 'san-4-vip-cau-giay',
                 'description' => 'Sân VIP không gian rộng rãi, có khu ghế nghỉ riêng biệt và điều hòa mát mẻ.',
                 'venue_slug' => 'aura-court',
@@ -484,7 +484,7 @@ class DatabaseSeeder extends Seeder
                 'sport_type' => 'badminton',
             ],
             [
-                'name' => 'Sân 5 - VIP Tournament Cầu Giấy',
+                'name' => 'Sân 5 - VIP Tournament',
                 'slug' => 'san-5-vip-tournament-cau-giay',
                 'description' => 'Sân thi đấu giải quốc gia, thảm chuyên dụng đàn hồi cao giảm tối đa chấn thương.',
                 'venue_slug' => 'aura-court',
@@ -496,7 +496,7 @@ class DatabaseSeeder extends Seeder
 
             // Pickleball - Cầu Giấy (2 sân)
             [
-                'name' => 'Sân Pickleball 1 - Aura Neon Cầu Giấy',
+                'name' => 'Sân Pickleball 1 - Aura Neon',
                 'slug' => 'san-pickleball-1-neon-cau-giay',
                 'description' => 'Sân Pickleball hiện đại phủ Acrylic 5 lớp, viền line neon dạ quang nổi bật.',
                 'venue_slug' => 'aura-court',
@@ -506,7 +506,7 @@ class DatabaseSeeder extends Seeder
                 'sport_type' => 'pickleball',
             ],
             [
-                'name' => 'Sân Pickleball 2 - Dynamic Pro Cầu Giấy',
+                'name' => 'Sân Pickleball 2 - Dynamic Pro',
                 'slug' => 'san-pickleball-2-dynamic-cau-giay',
                 'description' => 'Sân Pickleball cao cấp tiêu chuẩn USA Pickleball, lưới kéo cáp chống rung.',
                 'venue_slug' => 'aura-court',
@@ -518,7 +518,7 @@ class DatabaseSeeder extends Seeder
 
             // Bóng bàn - Cầu Giấy (1 sân)
             [
-                'name' => 'Sân Bóng Bàn 1 - Double Fish ITTF Cầu Giấy',
+                'name' => 'Sân Bóng Bàn 1 - Double Fish ITTF',
                 'slug' => 'san-bong-ban-1-double-fish-cau-giay',
                 'description' => 'Bàn bóng bàn thi đấu Double Fish chuẩn quốc tế, thảm đỏ cao su chống trượt.',
                 'venue_slug' => 'aura-court',
