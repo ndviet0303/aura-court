@@ -264,7 +264,7 @@ function openMaps(): void {
 
             <!-- Other Courts at this Venue Grouped by Zone -->
             <section v-if="venueCourtsByZone.length > 0" class="info-section">
-              <h2 class="section-heading">Phân khu & Sân chơi tại cơ sở này</h2>
+              <h2 class="section-heading">{{ t('courtDetail.siblingCourtsTitle') }}</h2>
               <div class="venue-zones-container">
                 <div v-for="group in venueCourtsByZone" :key="group.zoneName" class="zone-card-item">
                   <div class="zone-card-header">

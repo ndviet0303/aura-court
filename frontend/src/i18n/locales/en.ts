@@ -211,6 +211,7 @@ export default {
     closeGallery: 'Close',
     prevPhoto: 'Previous',
     nextPhoto: 'Next',
+    siblingCourtsTitle: 'Switch to other courts at this venue',
   },
   schedule: {
     eyebrow: 'Live Schedule',

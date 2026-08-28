@@ -211,6 +211,7 @@ export default {
     closeGallery: 'Đóng',
     prevPhoto: 'Ảnh trước',
     nextPhoto: 'Ảnh sau',
+    siblingCourtsTitle: 'Chuyển nhanh sang sân khác cùng cơ sở',
   },
   schedule: {
     eyebrow: 'Lịch sân trực tiếp',
