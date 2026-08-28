@@ -35,15 +35,31 @@ class AuraBookingNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage)
-            ->subject($this->title.' · Aura Court')
-            ->greeting('Xin chào '.$notifiable->name.',')
-            ->line($this->body);
+        $frontendUrl = rtrim((string) (config('app.frontend_url') ?: config('app.url')), '/');
+
+        $actionFullUrl = null;
         if ($this->actionUrl) {
-            $message->action('Mở Aura Court', rtrim(config('app.url'), '/').$this->actionUrl);
+            if (str_starts_with($this->actionUrl, 'http://') || str_starts_with($this->actionUrl, 'https://')) {
+                $actionFullUrl = $this->actionUrl;
+            } else {
+                $actionFullUrl = $frontendUrl . '/' . ltrim($this->actionUrl, '/');
+            }
         }
 
-        return $message->line('Đây là email tự động từ Aura Court.');
+        $logoUrl = $frontendUrl . '/aura/badge-logo.png';
+
+        return (new MailMessage)
+            ->subject($this->title . ' · Aura Court')
+            ->view('emails.booking-notification', [
+                'user' => $notifiable,
+                'title' => $this->title,
+                'bodyText' => $this->body,
+                'actionUrl' => $actionFullUrl,
+                'actionText' => 'Mở Aura Court',
+                'event' => $this->event,
+                'logoUrl' => $logoUrl,
+                'frontendUrl' => $frontendUrl,
+            ]);
     }
 
     private function payload(): array
