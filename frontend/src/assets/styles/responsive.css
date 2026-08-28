@@ -60,18 +60,30 @@
     grid-template-columns: 1fr;
   }
 
+  .search-hub-section {
+    margin-top: -20px;
+    padding: 0 16px;
+  }
+
   .search-strip {
-    margin: -30px 18px 0;
+    margin: 0;
     grid-template-columns: 1fr;
+    padding: 10px;
   }
 
   .search-field {
     border-right: 0;
     border-bottom: 1px solid var(--outline);
+    padding: 8px 12px;
+  }
+
+  .search-field:last-of-type {
+    border-bottom: none;
   }
 
   .search-action {
     height: 48px;
+    margin-top: 4px;
   }
 
   .slot-grid {

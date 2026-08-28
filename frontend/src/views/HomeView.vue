@@ -139,50 +139,57 @@ onMounted(async () => {
     </div>
   </section>
 
-  <!-- Multi-sport Categories Bar -->
-  <section class="container" style="margin-top: -10px; margin-bottom: 20px;">
-    <div class="sport-categories-strip">
-      <button
-        v-for="cat in sportCategories"
-        :key="cat.id"
-        type="button"
-        class="sport-category-btn"
-        :class="{ active: sportTypeFilter === cat.id }"
-        @click="selectSportCategory(cat.id)"
-      >
-        <span class="material-symbols-outlined icon-20">{{ cat.icon }}</span>
-        <span>{{ cat.name }}</span>
-      </button>
+  <!-- Search & Multi-sport Hub Section -->
+  <section class="search-hub-section">
+    <div class="search-hub-container">
+      <!-- Multi-sport Categories Bar -->
+      <div class="sport-categories-strip" role="tablist" aria-label="Môn thể thao">
+        <button
+          v-for="cat in sportCategories"
+          :key="cat.id"
+          type="button"
+          role="tab"
+          :aria-selected="sportTypeFilter === cat.id"
+          class="sport-category-btn"
+          :class="{ active: sportTypeFilter === cat.id }"
+          @click="selectSportCategory(cat.id)"
+        >
+          <span class="material-symbols-outlined">{{ cat.icon }}</span>
+          <span>{{ cat.name }}</span>
+        </button>
+      </div>
+
+      <!-- Main Search Strip -->
+      <div class="search-strip">
+        <div class="search-field">
+          <label>{{ t('home.search.court') }}</label>
+          <SelectDropdown
+            v-model="selected"
+            :options="courtOptions"
+            :placeholder="t('home.search.court')"
+            :aria-label="t('home.search.court')"
+            @change="chooseCourt"
+          />
+        </div>
+        <div class="search-field">
+          <label>{{ t('home.search.date') }}</label>
+          <DatePicker v-model="date" @change="loadAvailability" />
+        </div>
+        <div class="search-field">
+          <label>{{ t('home.search.timeSlot') }}</label>
+          <SelectDropdown
+            v-model="timeFilter"
+            :options="timeOptions"
+            :placeholder="t('home.search.timeSlot')"
+            :aria-label="t('home.search.timeSlot')"
+          />
+        </div>
+        <button class="search-action" :aria-label="t('home.search.searchAction')" @click="scrollToAvailability">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+      </div>
     </div>
   </section>
-
-  <section class="search-strip">
-    <div class="search-field">
-      <label>{{ t('home.search.court') }}</label>
-      <SelectDropdown
-        v-model="selected"
-        :options="courtOptions"
-        :placeholder="t('home.search.court')"
-        :aria-label="t('home.search.court')"
-        @change="chooseCourt"
-      />
-    </div>
-    <div class="search-field">
-      <label>{{ t('home.search.date') }}</label>
-      <DatePicker v-model="date" @change="loadAvailability" />
-    </div>
-    <div class="search-field">
-      <label>{{ t('home.search.timeSlot') }}</label>
-      <SelectDropdown
-        v-model="timeFilter"
-        :options="timeOptions"
-        :placeholder="t('home.search.timeSlot')"
-        :aria-label="t('home.search.timeSlot')"
-      />
-    </div>
-    <button class="search-action" :aria-label="t('home.search.searchAction')" @click="scrollToAvailability">search</button>
-  </section>
-
 
   <section class="section" id="availability">
     <div class="section-head">
@@ -277,44 +284,4 @@ onMounted(async () => {
   </div>
   <p v-if="error" class="error container">{{ error }}</p>
 </template>
-
-<style scoped>
-.sport-categories-strip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 8px 4px 12px;
-  scrollbar-width: none;
-}
-.sport-categories-strip::-webkit-scrollbar {
-  display: none;
-}
-.sport-category-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  border: 1px solid var(--border, #e0e4ea);
-  background: var(--surface, #ffffff);
-  color: var(--ink, #1a202c);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.sport-category-btn:hover {
-  border-color: var(--pink, #ffd1dc);
-  background: var(--pink-light, #fff5f7);
-  color: var(--pink-dark, #78555e);
-}
-.sport-category-btn.active {
-  background: var(--pink-dark, #78555e);
-  color: #ffffff;
-  border-color: var(--pink-dark, #78555e);
-  box-shadow: 0 4px 12px rgba(120, 85, 94, 0.25);
-}
-</style>
 

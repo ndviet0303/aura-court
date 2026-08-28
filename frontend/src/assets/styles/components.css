@@ -6,7 +6,7 @@
 .hero {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 90px 24px 120px;
+  padding: 80px 24px 68px;
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   gap: 70px;
@@ -70,20 +70,85 @@
   color: var(--ink);
 }
 
+/* Search Hub Section & Sport Categories Strip */
+.search-hub-section {
+  max-width: 1020px;
+  margin: -32px auto 0;
+  padding: 0 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.search-hub-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sport-categories-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sport-categories-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.sport-category-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.sport-category-btn .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.sport-category-btn:hover {
+  border-color: var(--pink);
+  background: var(--pink-light);
+  color: var(--pink-dark);
+  transform: translateY(-1px);
+}
+
+.sport-category-btn.active {
+  background: var(--nav-active-bg, var(--pink-dark));
+  color: var(--nav-active-text, #ffffff);
+  border-color: var(--pink-dark);
+  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.28);
+  transform: translateY(-1px);
+}
+
 /* Search Strip */
 .search-strip {
-  max-width: 950px;
-  margin: -42px auto 0;
-  position: relative;
-  z-index: 5;
+  width: 100%;
   background: var(--card-bg);
   border-radius: 18px;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
-  padding: 14px;
+  padding: 12px 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 58px;
+  grid-template-columns: 1.15fr 0.95fr 1fr 58px;
   gap: 4px;
   border: 1px solid var(--border);
+  box-sizing: border-box;
 }
 
 .search-field {
