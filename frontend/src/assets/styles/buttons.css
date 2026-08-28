@@ -148,17 +148,43 @@ html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-s
 
 .search-action {
   border: 0;
-  background: var(--pink-light);
-  color: var(--pink-dark);
-  border-radius: 12px;
-  font-family: 'Material Symbols Outlined';
-  font-size: 22px;
+  background: linear-gradient(135deg, #ffd1dc 0%, #ffb6c5 100%);
+  color: #78555e;
+  border-radius: 14px;
   cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(255, 182, 197, 0.4);
 }
 
 .search-action:hover {
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #ffb6c5 0%, #ffa4b6 100%);
+  color: #5d4249;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 182, 197, 0.55);
 }
+
+.search-action:active {
+  transform: translateY(0);
+}
+
+.search-action .material-symbols-outlined {
+  font-size: 24px !important;
+  color: inherit;
+  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+}
+
+html.dark .search-action {
+  background: linear-gradient(135deg, #ffb6c5 0%, #f8b4c4 100%);
+  color: #121212;
+  box-shadow: 0 4px 16px rgba(255, 182, 197, 0.35);
+}
+
+html.dark .search-action:hover {
+  background: linear-gradient(135deg, #ffa4b6 0%, #f497aa 100%);
+  color: #000000;
+  box-shadow: 0 6px 22px rgba(255, 182, 197, 0.5);
+}
+

@@ -94,6 +94,11 @@ async function submit() {
   }
 }
 
+async function handleSearch() {
+  await loadAvailability()
+  scrollToAvailability()
+}
+
 function scrollToAvailability() {
   document.getElementById('availability')?.scrollIntoView({ behavior: 'smooth' })
 }
@@ -184,7 +189,12 @@ onMounted(async () => {
             :aria-label="t('home.search.timeSlot')"
           />
         </div>
-        <button class="search-action" :aria-label="t('home.search.searchAction')" @click="scrollToAvailability">
+        <button
+          type="button"
+          class="search-action"
+          :aria-label="t('home.search.searchAction')"
+          @click="handleSearch"
+        >
           <span class="material-symbols-outlined">search</span>
         </button>
       </div>
