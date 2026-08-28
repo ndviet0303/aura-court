@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { apiV2, errorMessage } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
+import { getAvatarUrl } from '@/lib/avatar'
 
 interface Match {
   id: number
@@ -122,35 +123,35 @@ const inviteNetwork = ref<AthletePartner[]>([
     id: 1,
     name: 'Marcus Trần',
     level: 'Advanced (Level 4)',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: getAvatarUrl('Marcus Trần'),
     selected: false,
   },
   {
     id: 2,
     name: 'Elena Ryan',
     level: 'Pro (Level 5)',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
+    avatar: getAvatarUrl('Elena Ryan'),
     selected: false,
   },
   {
     id: 3,
     name: 'David Khoa',
     level: 'Intermediate (Level 3)',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+    avatar: getAvatarUrl('David Khoa'),
     selected: false,
   },
   {
     id: 4,
     name: 'Phương Linh',
     level: 'Intermediate (Level 3)',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
+    avatar: getAvatarUrl('Phương Linh'),
     selected: false,
   },
   {
     id: 5,
     name: 'Tuấn Anh',
     level: 'Beginner (Level 2)',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    avatar: getAvatarUrl('Tuấn Anh'),
     selected: false,
   },
 ])
@@ -184,11 +185,11 @@ const demoMatches: Match[] = [
     min_skill: 3,
     max_skill: 4,
     host_name: 'Minh Hoàng',
-    host_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    host_avatar: getAvatarUrl('Minh Hoàng'),
     description: 'Tìm thêm 2 bạn đánh đôi nam hoặc nam nữ trình độ trung bình - khá (Level 3-4). Đánh vui vẻ, chia đều tiền sân & nước.',
     participants: [
-      { id: 1, name: 'Minh Hoàng (Host)', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', skill_level: 4, is_host: true },
-      { id: 2, name: 'Hồng Ngọc', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80', skill_level: 3, is_host: false },
+      { id: 1, name: 'Minh Hoàng (Host)', avatar: getAvatarUrl('Minh Hoàng'), skill_level: 4, is_host: true },
+      { id: 2, name: 'Hồng Ngọc', avatar: getAvatarUrl('Hồng Ngọc'), skill_level: 3, is_host: false },
     ],
     auto_matchmaking: true,
   },
@@ -206,12 +207,12 @@ const demoMatches: Match[] = [
     min_skill: 4,
     max_skill: 5,
     host_name: 'Elena Ryan',
-    host_avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
+    host_avatar: getAvatarUrl('Elena Ryan'),
     description: 'Trận đấu dành cho VĐV bán chuyên và nâng cao (Level 4+). Tốc độ cầu nhanh, chiến thuật đơn & đôi.',
     participants: [
-      { id: 3, name: 'Elena Ryan (Host)', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80', skill_level: 5, is_host: true },
-      { id: 4, name: 'Quốc Bảo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', skill_level: 4, is_host: false },
-      { id: 5, name: 'Bảo Trâm', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80', skill_level: 4, is_host: false },
+      { id: 3, name: 'Elena Ryan (Host)', avatar: getAvatarUrl('Elena Ryan'), skill_level: 5, is_host: true },
+      { id: 4, name: 'Quốc Bảo', avatar: getAvatarUrl('Quốc Bảo'), skill_level: 4, is_host: false },
+      { id: 5, name: 'Bảo Trâm', avatar: getAvatarUrl('Bảo Trâm'), skill_level: 4, is_host: false },
     ],
     auto_matchmaking: false,
   },
@@ -229,12 +230,12 @@ const demoMatches: Match[] = [
     min_skill: 1,
     max_skill: 3,
     host_name: 'David Khoa',
-    host_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+    host_avatar: getAvatarUrl('David Khoa'),
     description: 'Sân thoáng mát, rèn luyện thể lực sáng thứ 7. Chào đón tất cả các bạn mới chơi hoặc cơ bản (Level 1-3).',
     participants: [
-      { id: 6, name: 'David Khoa (Host)', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', skill_level: 2, is_host: true },
-      { id: 7, name: 'Văn Hùng', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', skill_level: 2, is_host: false },
-      { id: 8, name: 'Thu Thảo', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', skill_level: 1, is_host: false },
+      { id: 6, name: 'David Khoa (Host)', avatar: getAvatarUrl('David Khoa'), skill_level: 2, is_host: true },
+      { id: 7, name: 'Văn Hùng', avatar: getAvatarUrl('Văn Hùng'), skill_level: 2, is_host: false },
+      { id: 8, name: 'Thu Thảo', avatar: getAvatarUrl('Thu Thảo'), skill_level: 1, is_host: false },
     ],
     auto_matchmaking: true,
   },
@@ -252,11 +253,11 @@ const demoMatches: Match[] = [
     min_skill: 3,
     max_skill: 4,
     host_name: 'Vũ Nam',
-    host_avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
+    host_avatar: getAvatarUrl('Vũ Nam'),
     description: 'Tìm 2 tay vợt đánh đôi nam năng động, sân có máy lạnh và thảm chuẩn quốc tế.',
     participants: [
-      { id: 9, name: 'Vũ Nam (Host)', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80', skill_level: 3, is_host: true },
-      { id: 10, name: 'Thế Vinh', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', skill_level: 4, is_host: false },
+      { id: 9, name: 'Vũ Nam (Host)', avatar: getAvatarUrl('Vũ Nam'), skill_level: 3, is_host: true },
+      { id: 10, name: 'Thế Vinh', avatar: getAvatarUrl('Thế Vinh'), skill_level: 4, is_host: false },
     ],
     auto_matchmaking: true,
   },
@@ -451,15 +452,15 @@ async function handleCreateMatch(): Promise<void> {
         visibility: matchForm.value.visibility,
         min_skill: matchForm.value.skill_level,
         max_skill: Math.min(5, matchForm.value.skill_level + 1),
-        host_name: auth.user?.name || 'Alex Nguyễn',
-        host_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+        host_name: auth.user?.name || 'Aura Athlete',
+        host_avatar: getAvatarUrl(auth.user?.name, auth.user?.avatar_url),
         description: matchForm.value.description,
         auto_matchmaking: matchForm.value.auto_matchmaking,
         participants: [
           {
             id: auth.user?.id || 99,
-            name: (auth.user?.name || 'Alex Nguyễn') + ' (Host)',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+            name: (auth.user?.name || 'Aura Athlete') + ' (Host)',
+            avatar: getAvatarUrl(auth.user?.name, auth.user?.avatar_url),
             skill_level: matchForm.value.skill_level,
             is_host: true,
           },
@@ -495,15 +496,19 @@ async function joinMatch(match: Match): Promise<void> {
       await apiV2.post(`/social/matches/${match.id}/join`)
     } catch {
       // optimistic update
-      match.joined_count = Math.min(match.required_participants, match.joined_count + 1)
       if (!match.participants) match.participants = []
-      match.participants.push({
-        id: auth.user?.id || 888,
-        name: auth.user?.name || 'Bạn (Đã tham gia)',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
-        skill_level: profile.value.skill_level,
-        is_host: false,
-      })
+      const myId = auth.user?.id || 888
+      const alreadyJoined = match.participants.some((p) => p.id === myId || (auth.user?.name && p.name === auth.user.name))
+      if (!alreadyJoined) {
+        match.joined_count = Math.min(match.required_participants, match.joined_count + 1)
+        match.participants.push({
+          id: myId,
+          name: auth.user?.name || 'Bạn',
+          avatar: getAvatarUrl(auth.user?.name, auth.user?.avatar_url),
+          skill_level: profile.value.skill_level,
+          is_host: false,
+        })
+      }
     }
     showNotice('✨ Bạn đã tham gia kèo giao lưu thành công!')
     if (selectedMatch.value?.id === match.id) {
@@ -706,7 +711,7 @@ onMounted(load)
               <div class="host-info-flex">
                 <div class="host-avatar-ring">
                   <img
-                    :src="match.host_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'"
+                    :src="getAvatarUrl(match.host_name, match.host_avatar)"
                     :alt="match.host_name || 'Host'"
                     class="host-avatar-img"
                   />
@@ -950,7 +955,7 @@ onMounted(load)
             <div class="athlete-header-row">
               <div class="athlete-avatar-lg">
                 <img
-                  :src="auth.user?.role === 'admin' ? '/avatars/athlete-boy.jpg' : '/avatars/athlete-girl.jpg'"
+                  :src="getAvatarUrl(auth.user?.name, auth.user?.avatar_url)"
                   alt="Avatar"
                   class="w-full h-full object-cover"
                 />
@@ -1347,7 +1352,7 @@ onMounted(load)
                 :key="p.id"
                 class="participant-row"
               >
-                <img :src="p.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'" :alt="p.name" class="p-avatar" />
+                <img :src="getAvatarUrl(p.name, p.avatar)" :alt="p.name" class="p-avatar" />
                 <div class="p-info">
                   <div class="p-name">{{ p.name }}</div>
                   <div class="p-skill">Trình độ: {{ getSkillLabel(p.skill_level) }}</div>

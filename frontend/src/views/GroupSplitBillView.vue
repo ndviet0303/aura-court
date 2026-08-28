@@ -62,11 +62,12 @@ const totalBill = computed(() => items.value.reduce((sum, item) => sum + item.to
 
 // --- Split Mode ---
 type SplitMode = 'equal' | 'itemized' | 'custom' | 'time'
+import { getAvatarUrl } from '@/lib/avatar'
+
 const splitMode = ref<SplitMode>('equal')
 
 const defaultAvatarUrl = computed(() => {
-  const id = auth.user?.id || 1
-  return id % 2 === 0 ? '/avatars/athlete-girl.jpg' : '/avatars/athlete-boy.jpg'
+  return getAvatarUrl(auth.user?.name, auth.user?.avatar_url)
 })
 
 // --- Members State ---
@@ -93,7 +94,7 @@ const members = ref<Member[]>([
     paid: true,
     method: 'VietQR',
     paidAt: '10:38:42',
-    avatar: '/avatars/athlete-boy.jpg',
+    avatar: getAvatarUrl('Trần Quốc Bảo'),
     timeMinutes: 120,
     customPercent: 25,
   },
@@ -106,7 +107,7 @@ const members = ref<Member[]>([
     paid: true,
     method: 'MoMo',
     paidAt: '10:41:09',
-    avatar: '/avatars/athlete-boy.jpg',
+    avatar: getAvatarUrl('Lê Minh Triết'),
     timeMinutes: 120,
     customPercent: 25,
   },
@@ -118,7 +119,7 @@ const members = ref<Member[]>([
     amount: 150000,
     paid: false,
     method: '',
-    avatar: '/avatars/athlete-girl.jpg',
+    avatar: getAvatarUrl('Phạm Thu Hà'),
     timeMinutes: 120,
     customPercent: 25,
   },
@@ -132,7 +133,7 @@ const liveTransactions = ref<TransactionLog[]>([
     memberName: 'Lê Minh Triết',
     amount: 150000,
     method: 'MoMo',
-    avatar: '/avatars/athlete-boy.jpg',
+    avatar: getAvatarUrl('Lê Minh Triết'),
   },
   {
     id: 'tx-2',
@@ -140,7 +141,7 @@ const liveTransactions = ref<TransactionLog[]>([
     memberName: 'Trần Quốc Bảo',
     amount: 150000,
     method: 'VietQR (MB Bank)',
-    avatar: '/avatars/athlete-boy.jpg',
+    avatar: getAvatarUrl('Trần Quốc Bảo'),
   },
   {
     id: 'tx-3',
@@ -332,7 +333,7 @@ const newMemberMinutes = ref(120)
 function addMember() {
   if (!newMemberName.value.trim()) return
   const newId = members.value.length ? Math.max(...members.value.map((m) => m.id)) + 1 : 1
-  const assignedAvatar = members.value.length % 2 === 0 ? '/avatars/athlete-boy.jpg' : '/avatars/athlete-girl.jpg'
+  const assignedAvatar = getAvatarUrl(newMemberName.value.trim())
   members.value.push({
     id: newId,
     name: newMemberName.value.trim(),

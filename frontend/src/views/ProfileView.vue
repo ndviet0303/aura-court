@@ -67,18 +67,15 @@ function toggleSport(sportId: string) {
   }
 }
 
+import { getAvatarUrl, getUserInitials } from '@/lib/avatar'
+
 const userInitials = computed(() => {
-  if (!auth.user?.name) return 'AC'
-  const parts = auth.user.name.trim().split(/\s+/)
-  if (parts.length === 1) return (parts[0]?.substring(0, 2) ?? 'AC').toUpperCase()
-  return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase()
+  return getUserInitials(auth.user?.name)
 })
 
 const currentAvatarUrl = computed(() => {
   if (selectedAvatar.value) return selectedAvatar.value
-  if (auth.user?.avatar_url) return auth.user.avatar_url
-  const id = auth.user?.id || 1
-  return id % 2 === 0 ? '/avatars/athlete-girl.jpg' : '/avatars/athlete-boy.jpg'
+  return getAvatarUrl(auth.user?.name, auth.user?.avatar_url)
 })
 
 const isSocialUserWithoutPassword = computed(() => {
