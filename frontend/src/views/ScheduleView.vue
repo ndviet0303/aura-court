@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, errorMessage } from '@/lib/api'
+import { getEcho, subscribeToVenue } from '@/lib/echo'
 import DatePicker from '@/components/DatePicker.vue'
 import SelectDropdown from '@/components/SelectDropdown.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
@@ -88,6 +89,27 @@ function resolveCourtFromParam(param: string | undefined): Court | undefined {
   return store.courts.find((c: Court) => c.slug === param || String(c.id) === param)
 }
 
+let unsubscribeVenue: (() => void) | null = null
+
+function updateVenueSubscription() {
+  if (unsubscribeVenue) {
+    unsubscribeVenue()
+    unsubscribeVenue = null
+  }
+  const venueId = court.value?.venue_id || court.value?.venue?.id
+  if (venueId) {
+    unsubscribeVenue = subscribeToVenue(venueId, (event) => {
+      if (event.court_id === selectedCourtId.value) {
+        fetchAvailability()
+      }
+    })
+  }
+}
+
+function handleOnlineOrFocus() {
+  fetchAvailability()
+}
+
 onMounted(async () => {
   try {
     await store.loadCourts()
@@ -99,8 +121,39 @@ onMounted(async () => {
       selectedCourtId.value = store.courts[0].id
     }
     await fetchAvailability()
+    updateVenueSubscription()
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnlineOrFocus)
+      window.addEventListener('focus', handleOnlineOrFocus)
+      try {
+        const echo = getEcho()
+        const connector = (echo as unknown as { connector?: { pusher?: { connection?: { bind: (e: string, fn: () => void) => void } } } }).connector
+        connector?.pusher?.connection?.bind('connected', handleOnlineOrFocus)
+      } catch {
+        /* ignore */
+      }
+    }
   } catch {
     error.value = store.error
+  }
+})
+
+onUnmounted(() => {
+  if (unsubscribeVenue) {
+    unsubscribeVenue()
+    unsubscribeVenue = null
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('online', handleOnlineOrFocus)
+    window.removeEventListener('focus', handleOnlineOrFocus)
+    try {
+      const echo = getEcho()
+      const connector = (echo as unknown as { connector?: { pusher?: { connection?: { unbind: (e: string, fn: () => void) => void } } } }).connector
+      connector?.pusher?.connection?.unbind('connected', handleOnlineOrFocus)
+    } catch {
+      /* ignore */
+    }
   }
 })
 
@@ -112,10 +165,15 @@ watch(
       if (found) {
         selectedCourtId.value = found.id
         fetchAvailability()
+        updateVenueSubscription()
       }
     }
-  }
+  },
 )
+
+watch(selectedCourtId, () => {
+  updateVenueSubscription()
+})
 
 async function joinWaitlist(slot: { startsAt: string }) {
   if (!auth.user) {

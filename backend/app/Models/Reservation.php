@@ -13,6 +13,40 @@ class Reservation extends Model
 {
     use BelongsToTenant;
 
+    protected static function booted(): void
+    {
+        static::saved(function (Reservation $reservation): void {
+            $court = $reservation->court ?? Court::find($reservation->court_id);
+            if ($court && $court->venue_id) {
+                \App\Events\CourtStatusUpdated::dispatch(
+                    venueId: (int) $court->venue_id,
+                    courtId: (int) $court->id,
+                    status: $reservation->status === 'cancelled' ? 'available' : 'booked',
+                    metadata: [
+                        'reservation_id' => $reservation->id,
+                        'code' => $reservation->code,
+                        'status' => $reservation->status,
+                    ]
+                );
+            }
+        });
+
+        static::deleted(function (Reservation $reservation): void {
+            $court = $reservation->court ?? Court::find($reservation->court_id);
+            if ($court && $court->venue_id) {
+                \App\Events\CourtStatusUpdated::dispatch(
+                    venueId: (int) $court->venue_id,
+                    courtId: (int) $court->id,
+                    status: 'available',
+                    metadata: [
+                        'reservation_id' => $reservation->id,
+                        'event' => 'deleted',
+                    ]
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

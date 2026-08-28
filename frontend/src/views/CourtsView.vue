@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBookingStore } from '@/stores/booking'
@@ -7,6 +7,7 @@ import { formatCurrency } from '@/i18n'
 import type { Court } from '@/types'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import SelectDropdown from '@/components/SelectDropdown.vue'
+import { subscribeToVenue } from '@/lib/echo'
 
 const { t } = useI18n()
 const store = useBookingStore()
@@ -19,6 +20,8 @@ const selectedTimeFilter = ref<string>('all')
 const minRating = ref<number>(0)
 const sortBy = ref<string>('popular')
 
+let unsubscribes: Array<() => void> = []
+
 // Image fallback
 const image = (court: Court, index: number) =>
   court.image_url || `/aura/court-${(index % 4) + 1}.jpg`
@@ -26,10 +29,42 @@ const image = (court: Court, index: number) =>
 onMounted(async () => {
   try {
     await store.loadCourts()
+    setupWebSocketSubscriptions()
   } catch {
     /* store exposes the error */
   }
 })
+
+onUnmounted(() => {
+  unsubscribes.forEach((unsub) => unsub())
+  unsubscribes = []
+})
+
+function setupWebSocketSubscriptions() {
+  unsubscribes.forEach((unsub) => unsub())
+  unsubscribes = []
+
+  const venueIds = new Set<number>()
+  store.courts.forEach((court: Court) => {
+    if (court.venue_id) venueIds.add(court.venue_id)
+    else if (court.venue?.id) venueIds.add(court.venue.id)
+  })
+
+  venueIds.forEach((venueId) => {
+    unsubscribes.push(
+      subscribeToVenue(venueId, (event) => {
+        const targetCourt = store.courts.find((c) => c.id === event.court_id)
+        if (targetCourt) {
+          if (event.status === 'maintenance') {
+            targetCourt.is_active = false
+          } else if (event.status === 'available') {
+            targetCourt.is_active = true
+          }
+        }
+      }),
+    )
+  })
+}
 
 // Venue options
 const venueOptions = computed(() => {

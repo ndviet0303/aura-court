@@ -1,7 +1,7 @@
 export type User = { id: number; name: string; email: string; role: 'customer' | 'admin'; phone?: string | null; play_level?: string | null; onboarded?: boolean; password_set?: boolean; social_provider?: string | null; email_verified_at?: string | null }
 export type Venue = { id: number; name: string; slug: string; address: string | null; google_maps_url: string | null; is_active: boolean; share_url: string; courts_count?: number }
 export type CourtBlock = { id: number; court_id: number; starts_at: string; ends_at: string; reason?: string }
-export type Court = { id: number; name: string; slug?: string; venue: Venue; description?: string; image_url?: string; is_active?: boolean; price_slots?: PriceSlot[]; blocks?: CourtBlock[]; reviews_count?: number; reviews_avg_rating?: number | null }
+export type Court = { id: number; name: string; slug?: string; venue_id?: number; venue: Venue; description?: string; image_url?: string; is_active?: boolean; price_slots?: PriceSlot[]; blocks?: CourtBlock[]; reviews_count?: number; reviews_avg_rating?: number | null }
 export type PriceSlot = { id?: number; court_id?: number; weekday: number; starts_at: string; ends_at: string; price: number; is_active?: boolean }
 export type AvailabilitySlot = { startsAt: string; endsAt: string; price: number; available: boolean }
 export type Coupon = { id: number; code: string; discount_type: 'fixed' | 'percent'; discount_value: number; max_discount?: number | null; min_spend?: number | null }

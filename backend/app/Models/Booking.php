@@ -11,6 +11,40 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason'])]
 class Booking extends Model
 {
+    protected static function booted(): void
+    {
+        static::saved(function (Booking $booking): void {
+            $court = $booking->court ?? Court::find($booking->court_id);
+            if ($court && $court->venue_id) {
+                \App\Events\CourtStatusUpdated::dispatch(
+                    venueId: (int) $court->venue_id,
+                    courtId: (int) $court->id,
+                    status: in_array($booking->status, ['cancelled', 'refunded'], true) ? 'available' : 'booked',
+                    metadata: [
+                        'booking_id' => $booking->id,
+                        'code' => $booking->code,
+                        'status' => $booking->status,
+                    ]
+                );
+            }
+        });
+
+        static::deleted(function (Booking $booking): void {
+            $court = $booking->court ?? Court::find($booking->court_id);
+            if ($court && $court->venue_id) {
+                \App\Events\CourtStatusUpdated::dispatch(
+                    venueId: (int) $court->venue_id,
+                    courtId: (int) $court->id,
+                    status: 'available',
+                    metadata: [
+                        'booking_id' => $booking->id,
+                        'event' => 'deleted',
+                    ]
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

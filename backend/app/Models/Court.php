@@ -29,6 +29,14 @@ class Court extends Model
             if ($court->isDirty('name') && ! $court->slug) {
                 $court->slug = Str::slug($court->name);
             }
+            if ($court->isDirty('is_active') && $court->venue_id) {
+                \App\Events\CourtStatusUpdated::dispatch(
+                    venueId: (int) $court->venue_id,
+                    courtId: (int) $court->id,
+                    status: $court->is_active ? 'available' : 'maintenance',
+                    metadata: ['court_id' => $court->id, 'is_active' => $court->is_active]
+                );
+            }
         });
     }
 
