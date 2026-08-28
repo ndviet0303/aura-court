@@ -290,7 +290,10 @@ onMounted(async () => {
 
   <div v-if="store.selectedSlots.length" class="floating-booking">
     <span>{{ t('home.floating.summary', { count: store.selectedSlots.length, total: formatCurrency(total) }) }}</span>
-    <button class="btn pink" :disabled="loading" @click="submit">{{ t('home.floating.proceed') }}</button>
+    <button class="btn btn-floating-proceed" :disabled="loading" @click="submit">
+      <span>{{ t('home.floating.proceed') }}</span>
+      <span class="material-symbols-outlined icon-18">arrow_forward</span>
+    </button>
   </div>
   <p v-if="error" class="error container">{{ error }}</p>
 </template>

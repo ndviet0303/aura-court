@@ -23,7 +23,7 @@
 }
 
 /* In Dark Mode, --pink-dark is pastel pink, so primary button text must be dark for contrast */
-html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary) {
+html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(.btn-pink) {
   color: #1e1317;
   font-weight: 800;
 }
@@ -75,6 +75,19 @@ html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-s
 .btn-pink:hover {
   background: var(--pink);
   color: var(--ink);
+}
+
+html.dark .btn.pink,
+html.dark .btn-pink {
+  background: rgba(248, 180, 196, 0.18);
+  color: #f8b4c4;
+  border: 1px solid rgba(248, 180, 196, 0.4);
+}
+
+html.dark .btn.pink:hover,
+html.dark .btn-pink:hover {
+  background: rgba(248, 180, 196, 0.3);
+  color: #ffffff;
 }
 
 /* Danger / Destructive Variant */
