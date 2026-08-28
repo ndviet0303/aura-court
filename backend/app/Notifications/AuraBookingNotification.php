@@ -35,18 +35,21 @@ class AuraBookingNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $frontendUrl = rtrim((string) (config('app.frontend_url') ?: config('app.url')), '/');
+        $frontendUrl = (string) (config('app.frontend_url') ?: config('app.url') ?: 'https://court.ziet.dev');
+        $publicDomain = (str_contains($frontendUrl, 'localhost') || str_contains($frontendUrl, '127.0.0.1'))
+            ? 'https://court.ziet.dev'
+            : rtrim($frontendUrl, '/');
 
         $actionFullUrl = null;
         if ($this->actionUrl) {
             if (str_starts_with($this->actionUrl, 'http://') || str_starts_with($this->actionUrl, 'https://')) {
                 $actionFullUrl = $this->actionUrl;
             } else {
-                $actionFullUrl = $frontendUrl . '/' . ltrim($this->actionUrl, '/');
+                $actionFullUrl = $publicDomain . '/' . ltrim($this->actionUrl, '/');
             }
         }
 
-        $logoUrl = $frontendUrl . '/aura/badge-logo.png';
+        $logoUrl = $publicDomain . '/aura/badge-logo.png';
 
         return (new MailMessage)
             ->subject($this->title . ' · Aura Court')
@@ -58,7 +61,7 @@ class AuraBookingNotification extends Notification implements ShouldQueue
                 'actionText' => 'Mở Aura Court',
                 'event' => $this->event,
                 'logoUrl' => $logoUrl,
-                'frontendUrl' => $frontendUrl,
+                'frontendUrl' => $publicDomain,
             ]);
     }
 

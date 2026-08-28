@@ -9,8 +9,11 @@ class VerifyEmailNotification extends BaseVerifyEmail
 {
     protected function buildMailMessage($url): MailMessage
     {
-        $frontendUrl = rtrim((string) (config('app.frontend_url') ?: config('app.url')), '/');
-        $logoUrl = $frontendUrl . '/aura/badge-logo.png';
+        $frontendUrl = (string) (config('app.frontend_url') ?: config('app.url') ?: 'https://court.ziet.dev');
+        $publicDomain = (str_contains($frontendUrl, 'localhost') || str_contains($frontendUrl, '127.0.0.1'))
+            ? 'https://court.ziet.dev'
+            : rtrim($frontendUrl, '/');
+        $logoUrl = $publicDomain . '/aura/badge-logo.png';
 
         return (new MailMessage)
             ->subject('Xác thực địa chỉ Email · Aura Court')
@@ -18,7 +21,7 @@ class VerifyEmailNotification extends BaseVerifyEmail
                 'user' => null, // will be passed or extracted
                 'url' => $url,
                 'logoUrl' => $logoUrl,
-                'frontendUrl' => $frontendUrl,
+                'frontendUrl' => $publicDomain,
             ]);
     }
 
@@ -30,8 +33,11 @@ class VerifyEmailNotification extends BaseVerifyEmail
             return call_user_func(static::$toMailCallback, $notifiable, $verificationUrl);
         }
 
-        $frontendUrl = rtrim((string) (config('app.frontend_url') ?: config('app.url')), '/');
-        $logoUrl = $frontendUrl . '/aura/badge-logo.png';
+        $frontendUrl = (string) (config('app.frontend_url') ?: config('app.url') ?: 'https://court.ziet.dev');
+        $publicDomain = (str_contains($frontendUrl, 'localhost') || str_contains($frontendUrl, '127.0.0.1'))
+            ? 'https://court.ziet.dev'
+            : rtrim($frontendUrl, '/');
+        $logoUrl = $publicDomain . '/aura/badge-logo.png';
 
         return (new MailMessage)
             ->subject('Xác thực địa chỉ Email · Aura Court')
@@ -39,7 +45,7 @@ class VerifyEmailNotification extends BaseVerifyEmail
                 'user' => $notifiable,
                 'url' => $verificationUrl,
                 'logoUrl' => $logoUrl,
-                'frontendUrl' => $frontendUrl,
+                'frontendUrl' => $publicDomain,
             ]);
     }
 }

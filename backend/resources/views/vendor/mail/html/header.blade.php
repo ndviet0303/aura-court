@@ -1,7 +1,10 @@
 @props(['url'])
 @php
-    $brandUrl = config('app.frontend_url') ?: config('app.url');
-    $logoSrc = rtrim((string) $brandUrl, '/') . '/aura/badge-logo.png';
+    $rawFrontend = (string) (config('app.frontend_url') ?: config('app.url') ?: 'https://court.ziet.dev');
+    $brandUrl = (str_contains($rawFrontend, 'localhost') || str_contains($rawFrontend, '127.0.0.1'))
+        ? 'https://court.ziet.dev'
+        : rtrim($rawFrontend, '/');
+    $logoSrc = $brandUrl . '/aura/badge-logo.png';
 @endphp
 <tr>
 <td class="header" style="padding: 28px 32px 22px; background: linear-gradient(135deg, #ffd1dc 0%, #ffd9e2 50%, #fbe8ec 100%); border-radius: 24px 24px 0 0; text-align: left; border-bottom: 1px solid rgba(120,85,94,0.12);">

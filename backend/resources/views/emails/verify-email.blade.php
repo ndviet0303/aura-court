@@ -29,8 +29,8 @@
                                     <td style="vertical-align:middle;">
                                         <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                                             <tr>
-                                                <td style="width:48px;height:48px;background-color:#ffffff;border-radius:14px;text-align:center;vertical-align:middle;box-shadow:0 4px 12px rgba(120,85,94,0.15);">
-                                                    <img src="{{ $logoUrl }}" width="30" height="30" alt="Aura Court" style="display:inline-block;vertical-align:middle;border-radius:6px;">
+                                                <td style="width:48px;height:48px;background-color:#ffffff;border-radius:14px;text-align:center;vertical-align:middle;box-shadow:0 4px 12px rgba(120,85,94,0.15);overflow:hidden;">
+                                                    <img src="{{ $logoUrl }}" width="32" height="32" alt="AC" style="display:block;margin:0 auto;border:none;border-radius:6px;max-width:32px;max-height:32px;">
                                                 </td>
                                                 <td style="padding-left:14px;vertical-align:middle;">
                                                     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:#191c1d;line-height:1.2;">Aura Court</div>
