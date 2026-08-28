@@ -17,11 +17,15 @@ export const useBookingStore = defineStore('booking', () => {
   const slotsLoading = ref(false)
   const loading = computed(() => courtsLoading.value || slotsLoading.value)
 
-  async function loadCourts() {
+  async function loadCourts(params?: { sport_type?: string; venue_id?: number }) {
     error.value = ''
     courtsLoading.value = true
     try {
-      courts.value = await api.get<Court[]>('/courts')
+      const query = new URLSearchParams()
+      if (params?.sport_type && params.sport_type !== 'all') query.set('sport_type', params.sport_type)
+      if (params?.venue_id) query.set('venue_id', String(params.venue_id))
+      const qs = query.toString() ? `?${query.toString()}` : ''
+      courts.value = await api.get<Court[]>(`/courts${qs}`)
     } catch (cause) {
       courts.value = []
       error.value = 'Không thể tải danh sách sân. Vui lòng thử lại.'
@@ -30,6 +34,7 @@ export const useBookingStore = defineStore('booking', () => {
       courtsLoading.value = false
     }
   }
+
 
   async function loadAvailability(courtId: number, date: string) {
     selectedCourt.value = courtId

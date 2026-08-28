@@ -22,6 +22,28 @@ const court = computed(() => {
   return store.courts.find((item: Court) => item.slug === param || String(item.id) === param) || store.courts[0]
 })
 
+const venueCourtsByZone = computed(() => {
+  if (!court.value?.venue_id && !court.value?.venue?.id) return []
+  const venueId = court.value.venue_id || court.value.venue?.id
+  const siblingCourts = store.courts.filter((c: Court) => (c.venue_id || c.venue?.id) === venueId)
+
+  const groups = new Map<string, { zoneName: string; sportType: string; slotDuration: number; courts: Court[] }>()
+
+  siblingCourts.forEach((c: Court) => {
+    const key = c.sport_zone ? String(c.sport_zone.id) : 'default'
+    const zoneName = c.sport_zone?.name || 'Khu Sân Cầu Lông'
+    const sportType = c.sport_zone?.sport_type || 'badminton'
+    const slotDuration = c.sport_zone?.slot_duration || 60
+
+    if (!groups.has(key)) {
+      groups.set(key, { zoneName, sportType, slotDuration, courts: [] })
+    }
+    groups.get(key)!.courts.push(c)
+  })
+
+  return Array.from(groups.values())
+})
+
 // Gallery photos list
 const galleryPhotos = computed(() => {
   const primary = court.value?.image_url || '/aura/court-4.jpg'
@@ -35,6 +57,7 @@ const galleryPhotos = computed(() => {
     '/aura/court-0.jpg',
   ]
 })
+
 
 // Pricing calculations
 const basePrice = computed(() => {
@@ -217,6 +240,10 @@ function openMaps(): void {
                   <span class="material-symbols-outlined badge-icon">verified</span>
                   {{ t('courtDetail.premiumVenue') }}
                 </span>
+                <span v-if="court.sport_zone" class="premium-badge" style="background: var(--surface); border: 1px solid var(--border); color: var(--ink);">
+                  <span class="material-symbols-outlined badge-icon text-pink">category</span>
+                  {{ court.sport_zone.name }} (Khung {{ court.sport_zone.slot_duration }} phút)
+                </span>
                 <div class="rating-display">
                   <span class="material-symbols-outlined star-icon">star</span>
                   <strong>{{ rating }}</strong>
@@ -235,12 +262,43 @@ function openMaps(): void {
 
             <div class="section-divider"></div>
 
+            <!-- Other Courts at this Venue Grouped by Zone -->
+            <section v-if="venueCourtsByZone.length > 0" class="info-section">
+              <h2 class="section-heading">Phân khu & Sân chơi tại cơ sở này</h2>
+              <div class="venue-zones-container">
+                <div v-for="group in venueCourtsByZone" :key="group.zoneName" class="zone-card-item">
+                  <div class="zone-card-header">
+                    <div class="zone-title-box">
+                      <span class="material-symbols-outlined text-pink icon-18">sports</span>
+                      <strong>{{ group.zoneName }}</strong>
+                    </div>
+                    <span class="zone-duration-badge">{{ group.slotDuration }} phút/lượt</span>
+                  </div>
+                  <div class="zone-courts-pills">
+                    <RouterLink
+                      v-for="c in group.courts"
+                      :key="c.id"
+                      :to="`/courts/${c.slug || c.id}`"
+                      class="zone-court-pill"
+                      :class="{ 'is-current': c.id === court.id }"
+                    >
+                      <span class="material-symbols-outlined icon-14">sports_tennis</span>
+                      <span>{{ c.name }}</span>
+                    </RouterLink>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="section-divider"></div>
+
             <!-- About Section -->
             <section class="info-section">
               <h2 class="section-heading">{{ t('courtDetail.aboutTitle') }}</h2>
               <p class="court-desc">
                 {{ court.description || t('courtDetail.aboutDefaultDesc') }}
               </p>
+
 
               <!-- Court Specs Grid -->
               <div class="specs-grid">
@@ -1545,4 +1603,68 @@ html.dark .sticky-booking-card {
     max-height: 50vh;
   }
 }
+
+.venue-zones-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.zone-card-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border, #e0e4ea);
+  background: var(--surface, #ffffff);
+}
+.zone-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.zone-title-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink, #1a202c);
+}
+.zone-duration-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--pink-light, #fff5f7);
+  color: var(--pink-dark, #78555e);
+}
+.zone-courts-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.zone-court-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e0e4ea);
+  background: var(--surface-subtle, #f8f9fa);
+  color: var(--ink, #1a202c);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.zone-court-pill:hover {
+  border-color: var(--pink, #ffd1dc);
+  background: var(--pink-light, #fff5f7);
+}
+.zone-court-pill.is-current {
+  background: var(--pink-dark, #78555e);
+  color: #ffffff;
+  border-color: var(--pink-dark, #78555e);
+  font-weight: 600;
+}
 </style>
+

@@ -42,6 +42,8 @@ Route::prefix('v1')->group(function () {
     Route::get('courts', [CourtController::class, 'index']);
     Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
     Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
+    Route::get('sport-zones', [\App\Http\Controllers\SportZoneController::class, 'index']);
+    Route::get('sport-zones/{sportZone}', [\App\Http\Controllers\SportZoneController::class, 'show']);
     Route::get('availability', AvailabilityController::class);
     Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
     Route::post('webhooks/stripe', StripeWebhookController::class)->withoutMiddleware('throttle:api');
@@ -112,6 +114,7 @@ Route::prefix('v1')->group(function () {
             Route::post('venues', [AdminController::class, 'storeVenue']);
             Route::patch('venues/{venue}', [AdminController::class, 'updateVenue']);
             Route::delete('venues/{venue}', [AdminController::class, 'destroyVenue']);
+            Route::apiResource('sport-zones', \App\Http\Controllers\SportZoneController::class)->except(['create', 'edit']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
             Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
             Route::get('bookings', [AdminController::class, 'bookings']);

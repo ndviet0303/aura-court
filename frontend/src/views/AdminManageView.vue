@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, errorMessage } from '@/lib/api'
-import type { Court, CourtBlock, PriceSlot, Refund, Venue } from '@/types'
+import type { Court, CourtBlock, PriceSlot, Refund, SportZone, Venue } from '@/types'
 import TimePicker from '@/components/TimePicker.vue'
 import DateTimePicker from '@/components/DateTimePicker.vue'
 import SelectDropdown from '@/components/SelectDropdown.vue'
@@ -15,7 +15,7 @@ const auth = useAuthStore()
 const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email?.endsWith('@demo.auracourt.vn'))
 
 // Types
-type CourtForm = { name: string; venue_id: number; description: string; image_url: string; is_active: boolean }
+type CourtForm = { name: string; venue_id: number; sport_zone_id: number | null; description: string; image_url: string; is_active: boolean }
 type PriceForm = { weekday: number; starts_at: string; ends_at: string; price: number }
 type BlockForm = { starts_at: string; ends_at: string; reason: string }
 type Coupon = { id: number; code: string; discount_type: 'fixed' | 'percent'; discount_value: number; usage_count: number; usage_limit?: number | null; is_active: boolean }
@@ -23,6 +23,7 @@ type Coupon = { id: number; code: string; discount_type: 'fixed' | 'percent'; di
 // State
 const courts = ref<Court[]>([])
 const venues = ref<Venue[]>([])
+const sportZones = ref<SportZone[]>([])
 const refunds = ref<Refund[]>([])
 const coupons = ref<Coupon[]>([])
 const error = ref('')
@@ -38,7 +39,7 @@ const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
 // Modals State
 const showCourtModal = ref(false)
 const editingCourt = ref<number | null>(null)
-const courtForm = ref<CourtForm>({ name: '', venue_id: 0, description: '', image_url: '', is_active: true })
+const courtForm = ref<CourtForm>({ name: '', venue_id: 0, sport_zone_id: null, description: '', image_url: '', is_active: true })
 
 const showPriceModal = ref(false)
 const selectedCourtForPrice = ref<Court | null>(null)
@@ -61,6 +62,19 @@ const venueDropdownOptions = computed(() =>
     icon: 'location_on',
   }))
 )
+
+const sportZoneDropdownOptions = computed(() => {
+  const filtered = sportZones.value.filter(z => z.venue_id === courtForm.value.venue_id && z.is_active)
+  return [
+    { value: 0, label: 'Mặc định (Khu Cầu Lông)', icon: 'sports_tennis' },
+    ...filtered.map(z => ({
+      value: z.id,
+      label: `${z.name} (${z.slot_duration}p)`,
+      icon: 'category',
+    }))
+  ]
+})
+
 
 const venueFilterOptions = computed(() => [
   { value: 'all', label: `Tất cả địa điểm (${venues.value.length})`, icon: 'domain' },
@@ -235,14 +249,16 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [loadedCourts, loadedVenues, loadedRefunds, loadedCoupons] = await Promise.all([
+    const [loadedCourts, loadedVenues, loadedZones, loadedRefunds, loadedCoupons] = await Promise.all([
       api.get<Court[]>('/admin/courts'),
       api.get<Venue[]>('/admin/venues'),
+      api.get<SportZone[]>('/admin/sport-zones'),
       api.get<{ data: Refund[] }>('/admin/refunds'),
       api.get<{ data: Coupon[] }>('/admin/coupons'),
     ])
     courts.value = loadedCourts
     venues.value = loadedVenues
+    sportZones.value = loadedZones || []
     refunds.value = loadedRefunds.data || []
     coupons.value = loadedCoupons.data || []
   } catch (cause: unknown) {
@@ -258,6 +274,7 @@ function startCreateCourt() {
   courtForm.value = {
     name: '',
     venue_id: activeVenues.value[0]?.id || 0,
+    sport_zone_id: 0,
     description: '',
     image_url: '',
     is_active: true,
@@ -270,6 +287,7 @@ function startEditCourt(court: Court) {
   courtForm.value = {
     name: court.name,
     venue_id: court.venue?.id || activeVenues.value[0]?.id || 0,
+    sport_zone_id: court.sport_zone_id || 0,
     description: court.description || '',
     image_url: court.image_url || '',
     is_active: court.is_active !== false,
@@ -282,7 +300,11 @@ async function saveCourt() {
   error.value = ''
   notice.value = ''
   try {
-    const payload = { ...courtForm.value, image_url: courtForm.value.image_url || null }
+    const payload = {
+      ...courtForm.value,
+      sport_zone_id: courtForm.value.sport_zone_id ? courtForm.value.sport_zone_id : null,
+      image_url: courtForm.value.image_url || null,
+    }
     if (isDemoAdmin.value) {
       if (editingCourt.value) {
         courts.value = courts.value.map((c) =>
@@ -291,6 +313,7 @@ async function saveCourt() {
                 ...c,
                 ...payload,
                 venue: venues.value.find((v) => v.id === payload.venue_id) || c.venue,
+                sport_zone: sportZones.value.find((z) => z.id === payload.sport_zone_id) || null,
                 image_url: payload.image_url || undefined,
               }
             : c
@@ -298,19 +321,28 @@ async function saveCourt() {
         notice.value = 'Đã mô phỏng cập nhật sân (không ghi vào dữ liệu thật).'
       } else {
         const syntheticId = -Date.now()
-        const venue = activeVenues.value.find((item) => item.id === payload.venue_id)
-        if (!venue) throw new Error('Chưa có địa điểm hoạt động để gán cho sân.')
-        courts.value = [
-          ...courts.value,
-          {
-            ...payload,
-            id: syntheticId,
-            venue,
-            image_url: payload.image_url || undefined,
-            price_slots: [],
-            blocks: [],
+        const newCourt: Court = {
+          id: syntheticId,
+          name: payload.name,
+          venue_id: payload.venue_id,
+          sport_zone_id: payload.sport_zone_id,
+          venue: venues.value.find((v) => v.id === payload.venue_id) || {
+            id: payload.venue_id,
+            name: 'Địa điểm đã chọn',
+            slug: 'selected-venue',
+            address: 'Địa chỉ mẫu',
+            google_maps_url: 'https://maps.app.goo.gl/demo',
+            is_active: true,
+            share_url: `${window.location.origin}/venues/selected-venue/directions`,
           },
-        ]
+          sport_zone: sportZones.value.find((z) => z.id === payload.sport_zone_id) || null,
+          description: payload.description || undefined,
+          image_url: payload.image_url || undefined,
+          is_active: payload.is_active,
+          price_slots: [],
+          blocks: [],
+        }
+        courts.value = [newCourt, ...courts.value]
         notice.value = 'Đã mô phỏng tạo sân mới (không ghi vào dữ liệu thật).'
       }
       showCourtModal.value = false
@@ -319,7 +351,7 @@ async function saveCourt() {
 
     if (editingCourt.value) {
       await api.patch(`/admin/courts/${editingCourt.value}`, payload)
-      notice.value = 'Đã cập nhật thông tin sân.'
+      notice.value = 'Đã cập nhật sân thành công.'
     } else {
       await api.post('/admin/courts', payload)
       notice.value = 'Đã tạo sân mới thành công.'
@@ -1144,7 +1176,21 @@ onMounted(load)
                 variant="bordered"
               />
             </div>
+
+            <div class="aura-field">
+              <div class="aura-label-row">
+                <span class="aura-label">Phân khu môn thể thao</span>
+                <RouterLink to="/admin/venues" class="aura-text-btn text-[11px]">+ Quản lý khu</RouterLink>
+              </div>
+              <SelectDropdown
+                v-model="courtForm.sport_zone_id"
+                :options="sportZoneDropdownOptions"
+                placeholder="Chọn phân khu môn thể thao..."
+                variant="bordered"
+              />
+            </div>
           </div>
+
 
           <!-- Row 2: Cloudflare R2 Upload Image Box -->
           <div class="aura-field">

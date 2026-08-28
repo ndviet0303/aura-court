@@ -18,13 +18,37 @@ const router = useRouter()
 const date = ref(new Date().toISOString().slice(0, 10))
 const selected = ref<number | null>(null)
 const timeFilter = ref('all')
+const sportTypeFilter = ref('all')
 const loading = ref(false)
 const error = ref('')
+
+const sportCategories = [
+  { id: 'all', name: 'Tất cả môn', icon: 'apps' },
+  { id: 'badminton', name: 'Cầu lông', icon: 'sports_tennis' },
+  { id: 'football_5v5', name: 'Bóng đá 5v5', icon: 'sports_soccer' },
+  { id: 'football_7v7', name: 'Bóng đá 7v7', icon: 'sports_soccer' },
+  { id: 'tennis', name: 'Tennis', icon: 'sports_tennis' },
+  { id: 'pickleball', name: 'Pickleball', icon: 'sports_tennis' },
+  { id: 'basketball', name: 'Bóng rổ', icon: 'sports_basketball' },
+  { id: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball' },
+  { id: 'table_tennis', name: 'Bóng bàn', icon: 'table_restaurant' },
+]
+
+async function selectSportCategory(sportId: string) {
+  sportTypeFilter.value = sportId
+  try {
+    await store.loadCourts({ sport_type: sportId })
+    selected.value = store.courts[0]?.id || null
+    await loadAvailability()
+  } catch {
+    /* store handles error */
+  }
+}
 
 const courtOptions = computed(() =>
   store.courts.map((court: Court) => ({
     value: court.id,
-    label: court.name,
+    label: `${court.name}${court.sport_zone ? ` (${court.sport_zone.name})` : ''}`,
   }))
 )
 
@@ -115,6 +139,23 @@ onMounted(async () => {
     </div>
   </section>
 
+  <!-- Multi-sport Categories Bar -->
+  <section class="container" style="margin-top: -10px; margin-bottom: 20px;">
+    <div class="sport-categories-strip">
+      <button
+        v-for="cat in sportCategories"
+        :key="cat.id"
+        type="button"
+        class="sport-category-btn"
+        :class="{ active: sportTypeFilter === cat.id }"
+        @click="selectSportCategory(cat.id)"
+      >
+        <span class="material-symbols-outlined icon-20">{{ cat.icon }}</span>
+        <span>{{ cat.name }}</span>
+      </button>
+    </div>
+  </section>
+
   <section class="search-strip">
     <div class="search-field">
       <label>{{ t('home.search.court') }}</label>
@@ -141,6 +182,7 @@ onMounted(async () => {
     </div>
     <button class="search-action" :aria-label="t('home.search.searchAction')" @click="scrollToAvailability">search</button>
   </section>
+
 
   <section class="section" id="availability">
     <div class="section-head">
@@ -235,3 +277,44 @@ onMounted(async () => {
   </div>
   <p v-if="error" class="error container">{{ error }}</p>
 </template>
+
+<style scoped>
+.sport-categories-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 4px 12px;
+  scrollbar-width: none;
+}
+.sport-categories-strip::-webkit-scrollbar {
+  display: none;
+}
+.sport-category-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--border, #e0e4ea);
+  background: var(--surface, #ffffff);
+  color: var(--ink, #1a202c);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sport-category-btn:hover {
+  border-color: var(--pink, #ffd1dc);
+  background: var(--pink-light, #fff5f7);
+  color: var(--pink-dark, #78555e);
+}
+.sport-category-btn.active {
+  background: var(--pink-dark, #78555e);
+  color: #ffffff;
+  border-color: var(--pink-dark, #78555e);
+  box-shadow: 0 4px 12px rgba(120, 85, 94, 0.25);
+}
+</style>
+

@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { api, errorMessage } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
-import type { Venue } from '@/types'
+import type { SportType, SportZone, Venue } from '@/types'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -21,6 +21,117 @@ const notice = ref('')
 const saving = ref(false)
 const loading = ref(false)
 const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email?.endsWith('@demo.auracourt.vn'))
+
+// Sport Zones State
+const showZonesModal = ref(false)
+const selectedVenueForZones = ref<Venue | null>(null)
+const zones = ref<SportZone[]>([])
+const loadingZones = ref(false)
+const showZoneEditModal = ref(false)
+const editingZoneId = ref<number | null>(null)
+const zoneForm = ref<{ name: string; sport_type: SportType; slot_duration: number; description: string; is_active: boolean }>({
+  name: '',
+  sport_type: 'badminton',
+  slot_duration: 60,
+  description: '',
+  is_active: true,
+})
+
+const sportTypeOptions: { value: SportType; label: string; icon: string }[] = [
+  { value: 'badminton', label: 'Cầu lông', icon: 'sports_tennis' },
+  { value: 'football_5v5', label: 'Bóng đá 5 người', icon: 'sports_soccer' },
+  { value: 'football_7v7', label: 'Bóng đá 7 người', icon: 'sports_soccer' },
+  { value: 'tennis', label: 'Tennis', icon: 'sports_tennis' },
+  { value: 'pickleball', label: 'Pickleball', icon: 'sports_tennis' },
+  { value: 'basketball', label: 'Bóng rổ', icon: 'sports_basketball' },
+  { value: 'volleyball', label: 'Bóng chuyền', icon: 'sports_volleyball' },
+  { value: 'table_tennis', label: 'Bóng bàn', icon: 'table_restaurant' },
+]
+
+const slotDurationOptions = [
+  { value: 30, label: '30 phút' },
+  { value: 45, label: '45 phút' },
+  { value: 60, label: '60 phút (1 giờ)' },
+  { value: 90, label: '90 phút (1.5 giờ)' },
+  { value: 120, label: '120 phút (2 giờ)' },
+]
+
+async function openZonesModal(venue: Venue) {
+  selectedVenueForZones.value = venue
+  showZonesModal.value = true
+  await loadZones(venue.id)
+}
+
+async function loadZones(venueId: number) {
+  loadingZones.value = true
+  try {
+    zones.value = await api.get<SportZone[]>(`/admin/sport-zones?venue_id=${venueId}`)
+  } catch (cause) {
+    error.value = errorMessage(cause, 'Không thể tải danh sách khu thể thao.')
+  } finally {
+    loadingZones.value = false
+  }
+}
+
+function startCreateZone() {
+  if (!selectedVenueForZones.value) return
+  editingZoneId.value = null
+  zoneForm.value = {
+    name: 'Khu Sân Cầu Lông',
+    sport_type: 'badminton',
+    slot_duration: 60,
+    description: '',
+    is_active: true,
+  }
+  showZoneEditModal.value = true
+}
+
+function startEditZone(zone: SportZone) {
+  editingZoneId.value = zone.id
+  zoneForm.value = {
+    name: zone.name,
+    sport_type: zone.sport_type,
+    slot_duration: zone.slot_duration,
+    description: zone.description || '',
+    is_active: zone.is_active,
+  }
+  showZoneEditModal.value = true
+}
+
+async function saveZone() {
+  if (!selectedVenueForZones.value) return
+  saving.value = true
+  try {
+    if (editingZoneId.value) {
+      await api.patch(`/admin/sport-zones/${editingZoneId.value}`, zoneForm.value)
+      notice.value = 'Đã cập nhật khu vực thể thao.'
+    } else {
+      await api.post('/admin/sport-zones', {
+        ...zoneForm.value,
+        venue_id: selectedVenueForZones.value.id,
+      })
+      notice.value = 'Đã thêm khu vực thể thao mới.'
+    }
+    showZoneEditModal.value = false
+    await loadZones(selectedVenueForZones.value.id)
+    await load()
+  } catch (cause) {
+    error.value = errorMessage(cause, 'Không thể lưu khu vực thể thao.')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function toggleZone(zone: SportZone) {
+  try {
+    await api.patch(`/admin/sport-zones/${zone.id}`, { is_active: !zone.is_active })
+    zone.is_active = !zone.is_active
+    notice.value = zone.is_active ? 'Đã mở lại khu vực thể thao.' : 'Đã tạm ngừng khu vực thể thao.'
+  } catch (cause) {
+    error.value = errorMessage(cause, 'Không thể đổi trạng thái khu vực.')
+  }
+}
+
 
 async function makeQr(venue: Venue): Promise<void> {
   try {
@@ -269,6 +380,15 @@ onMounted(load)
 
           <!-- Actions Toolbar -->
           <div class="venue-actions-toolbar">
+            <button
+              type="button"
+              class="card-action-btn secondary-action"
+              @click="openZonesModal(venue)"
+            >
+              <span class="material-symbols-outlined icon-16">category</span>
+              <span>Khu thể thao</span>
+            </button>
+
             <a
               v-if="venue.google_maps_url"
               :href="venue.google_maps_url"
@@ -312,52 +432,77 @@ onMounted(load)
           </button>
         </div>
 
-        <form class="aura-modal-body" @submit.prevent="save">
-          <div class="aura-field">
-            <label class="aura-label">Tên địa điểm / Chi nhánh <span class="text-pink">*</span></label>
-            <input
-              v-model="form.name"
-              type="text"
-              class="aura-input"
-              placeholder="VD: Aura Center Thảo Điền"
-              required
-              maxlength="120"
-            />
-          </div>
-
-          <div class="aura-field">
-            <label class="aura-label">Địa chỉ chi tiết <span class="text-pink">*</span></label>
-            <input
-              v-model="form.address"
-              type="text"
-              class="aura-input"
-              placeholder="VD: 12 Quốc Hương, Thảo Điền, TP. Thủ Đức"
-              required
-              maxlength="255"
-            />
-          </div>
-
-          <div class="aura-field">
-            <label class="aura-label">Link Google Maps (HTTPS) <span class="text-pink">*</span></label>
-            <input
-              v-model="form.google_maps_url"
-              type="url"
-              class="aura-input"
-              placeholder="https://maps.google.com/?q=..."
-              required
-            />
-          </div>
-
-          <!-- Status Box -->
-          <div class="aura-status-box">
-            <div class="aura-status-text">
-              <span class="aura-status-name">Cho phép địa điểm hoạt động công khai</span>
-              <span class="aura-status-desc">Hiển thị cụm sân trên ứng dụng để khách hàng tìm kiếm</span>
+        <!-- Form -->
+        <form @submit.prevent="save">
+          <div class="aura-modal-body">
+            <!-- Venue Name -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Tên địa điểm / Cơ sở</span>
+                <span class="text-error">*</span>
+              </label>
+              <div class="aura-input-wrapper">
+                <span class="material-symbols-outlined aura-input-icon">domain</span>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  class="aura-input"
+                  placeholder="Ví dụ: Aura Court - Chi nhánh Quận 7"
+                  required
+                />
+              </div>
             </div>
-            <label class="aura-switch">
-              <input v-model="form.is_active" type="checkbox" />
-              <span class="aura-slider"></span>
-            </label>
+
+            <!-- Address -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Địa chỉ chi tiết</span>
+                <span class="text-error">*</span>
+              </label>
+              <div class="aura-input-wrapper">
+                <span class="material-symbols-outlined aura-input-icon">pin_drop</span>
+                <input
+                  v-model="form.address"
+                  type="text"
+                  class="aura-input"
+                  placeholder="Ví dụ: 123 Đường Số 7, Tân Phong, Quận 7, TP.HCM"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Google Maps URL -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Liên kết Google Maps</span>
+                <span class="text-error">*</span>
+              </label>
+              <div class="aura-input-wrapper">
+                <span class="material-symbols-outlined aura-input-icon">link</span>
+                <input
+                  v-model="form.google_maps_url"
+                  type="url"
+                  class="aura-input"
+                  placeholder="https://maps.app.goo.gl/... hoặc https://google.com/maps..."
+                  required
+                />
+              </div>
+              <p class="aura-help-text">
+                Dán link chia sẻ Google Maps để hệ thống tự động sinh mã QR và link chỉ đường chuẩn xác cho khách hàng.
+              </p>
+            </div>
+
+            <!-- Status Active Toggle -->
+            <div class="aura-toggle-group">
+              <div class="aura-toggle-info">
+                <span class="aura-toggle-title">Mở cửa đón khách</span>
+                <span class="aura-toggle-sub">Nếu tắt, địa điểm này sẽ không hiển thị trên trang đặt sân của khách hàng.</span>
+              </div>
+              <label class="aura-switch">
+                <input v-model="form.is_active" type="checkbox" />
+                <span class="aura-slider"></span>
+              </label>
+            </div>
           </div>
 
           <!-- Footer -->
@@ -381,6 +526,208 @@ onMounted(load)
         </form>
       </div>
     </div>
+
+    <!-- MODAL: List Sport Zones of Venue -->
+    <div v-if="showZonesModal" class="modal-backdrop" @click.self="showZonesModal = false">
+      <div class="aura-venue-modal" style="max-width: 640px;">
+        <div class="aura-modal-header">
+          <div class="aura-header-left">
+            <div class="aura-icon-box">
+              <span class="material-symbols-outlined">category</span>
+            </div>
+            <div>
+              <h3 class="aura-modal-title">Khu vực thể thao · {{ selectedVenueForZones?.name }}</h3>
+              <p class="aura-modal-sub">Các môn thể thao và phân khu đang vận hành tại cơ sở này</p>
+            </div>
+          </div>
+          <button type="button" class="aura-btn-close" aria-label="Đóng" @click="showZonesModal = false">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="aura-modal-body">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm font-semibold text-ink">Danh sách phân khu ({{ zones.length }})</span>
+            <button type="button" class="btn btn-primary btn-sm flex items-center gap-xs" @click="startCreateZone">
+              <span class="material-symbols-outlined icon-16">add</span>
+              <span>Thêm khu môn mới</span>
+            </button>
+          </div>
+
+          <div v-if="loadingZones" class="py-8 text-center text-muted">
+            <span class="material-symbols-outlined animate-spin icon-24">progress_activity</span>
+            <p class="text-sm mt-2">Đang tải danh sách phân khu...</p>
+          </div>
+
+          <div v-else-if="!zones.length" class="py-8 text-center text-muted border border-dashed rounded-xl p-4">
+            <span class="material-symbols-outlined icon-32 text-muted">sports_soccer</span>
+            <p class="text-sm mt-2">Chưa có khu vực thể thao nào.</p>
+            <button type="button" class="btn btn-outline btn-sm mt-3" @click="startCreateZone">
+              Tạo khu vực đầu tiên
+            </button>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="zone in zones"
+              :key="zone.id"
+              class="p-3 border rounded-xl flex items-center justify-between gap-3 bg-paper"
+              :class="{ 'opacity-60': !zone.is_active }"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-pink-50 text-pink-dark flex items-center justify-center font-bold">
+                  <span class="material-symbols-outlined">{{ sportTypeOptions.find(o => o.value === zone.sport_type)?.icon || 'sports' }}</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-semibold text-sm text-ink">{{ zone.name }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="zone.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
+                      {{ zone.is_active ? 'Đang mở' : 'Tạm dừng' }}
+                    </span>
+                  </div>
+                  <div class="text-xs text-muted mt-0.5 flex items-center gap-2">
+                    <span>Môn: {{ sportTypeOptions.find(o => o.value === zone.sport_type)?.label || zone.sport_type }}</span>
+                    <span>•</span>
+                    <span>Khung: {{ zone.slot_duration }} phút</span>
+                    <span>•</span>
+                    <span>{{ zone.courts_count || 0 }} sân</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="btn-icon-xs text-muted hover:text-ink"
+                  title="Đổi trạng thái"
+                  @click="toggleZone(zone)"
+                >
+                  <span class="material-symbols-outlined icon-18">{{ zone.is_active ? 'pause' : 'play_arrow' }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon-xs text-muted hover:text-ink"
+                  title="Chỉnh sửa"
+                  @click="startEditZone(zone)"
+                >
+                  <span class="material-symbols-outlined icon-18">edit</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="aura-modal-footer">
+          <button type="button" class="aura-btn-secondary" @click="showZonesModal = false">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Add / Edit Sport Zone Details -->
+    <div v-if="showZoneEditModal" class="modal-backdrop" @click.self="showZoneEditModal = false">
+      <div class="aura-venue-modal" style="max-width: 500px;">
+        <div class="aura-modal-header">
+          <div class="aura-header-left">
+            <div class="aura-icon-box">
+              <span class="material-symbols-outlined">edit</span>
+            </div>
+            <div>
+              <h3 class="aura-modal-title">{{ editingZoneId ? 'Chỉnh sửa Phân khu' : 'Tạo Phân khu Thể thao mới' }}</h3>
+              <p class="aura-modal-sub">{{ selectedVenueForZones?.name }}</p>
+            </div>
+          </div>
+          <button type="button" class="aura-btn-close" aria-label="Đóng" @click="showZoneEditModal = false">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <form @submit.prevent="saveZone">
+          <div class="aura-modal-body">
+            <!-- Zone Name -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Tên phân khu</span>
+                <span class="text-error">*</span>
+              </label>
+              <div class="aura-input-wrapper">
+                <span class="material-symbols-outlined aura-input-icon">badge</span>
+                <input
+                  v-model="zoneForm.name"
+                  type="text"
+                  class="aura-input"
+                  placeholder="Ví dụ: Khu Cầu Lông Tầng 2, Sân Bóng Mini..."
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Sport Type Selector -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Môn thể thao</span>
+                <span class="text-error">*</span>
+              </label>
+              <select v-model="zoneForm.sport_type" class="aura-input" required>
+                <option v-for="opt in sportTypeOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Slot Duration -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Độ dài khung giờ đặt (Slot Duration)</span>
+                <span class="text-error">*</span>
+              </label>
+              <select v-model="zoneForm.slot_duration" class="aura-input" required>
+                <option v-for="opt in slotDurationOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+              <p class="aura-help-text">
+                Ví dụ: Cầu lông / Pickleball thường là 60 phút, Bóng đá thường là 90 phút.
+              </p>
+            </div>
+
+            <!-- Description -->
+            <div class="aura-form-group">
+              <label class="aura-form-label">
+                <span>Mô tả ngắn</span>
+              </label>
+              <input
+                v-model="zoneForm.description"
+                type="text"
+                class="aura-input"
+                placeholder="Ví dụ: Cụm 4 sân sàn gỗ chuẩn BWF, đèn chống chói"
+              />
+            </div>
+
+            <!-- Active Status -->
+            <div class="aura-toggle-group">
+              <div class="aura-toggle-info">
+                <span class="aura-toggle-title">Kích hoạt mở đặt sân</span>
+              </div>
+              <label class="aura-switch">
+                <input v-model="zoneForm.is_active" type="checkbox" />
+                <span class="aura-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="aura-modal-footer">
+            <button type="button" class="aura-btn-secondary" @click="showZoneEditModal = false">
+              Hủy
+            </button>
+            <button type="submit" class="aura-btn-primary" :disabled="saving">
+              <span>{{ saving ? 'Đang lưu...' : 'Lưu phân khu' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -390,6 +737,7 @@ onMounted(load)
   margin: 0 auto;
   padding: 30px 24px 90px;
 }
+
 
 /* Header */
 .admin-venues-header {

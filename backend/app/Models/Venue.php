@@ -27,8 +27,14 @@ class Venue extends Model
         return $this->hasMany(Court::class);
     }
 
+    public function sportZones(): HasMany
+    {
+        return $this->hasMany(SportZone::class);
+    }
+
     public function getShareUrlAttribute(): string
     {
         return rtrim((string) config('app.frontend_url'), '/').'/venues/'.$this->slug.'/directions';
     }
 }
+

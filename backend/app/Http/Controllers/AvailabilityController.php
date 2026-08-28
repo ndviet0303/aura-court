@@ -15,13 +15,14 @@ class AvailabilityController extends Controller
         $court = Court::whereKey($data['court_id'])
             ->where('is_active', true)
             ->whereHas('venue', fn ($query) => $query->where('is_active', true))
-            ->with(['priceSlots' => fn ($q) => $q->where('weekday', $date->dayOfWeekIso)->where('is_active', true)->orderBy('starts_at'), 'blocks'])
+            ->with(['priceSlots' => fn ($q) => $q->where('weekday', $date->dayOfWeekIso)->where('is_active', true)->orderBy('starts_at'), 'blocks', 'sportZone'])
             ->firstOrFail();
         $existing = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])->with('slots')->get()->flatMap->slots;
+        $duration = (int) ($court->sportZone?->slot_duration ?: 60);
 
-        return $court->priceSlots->map(function ($slot) use ($date, $existing, $court) {
+        return $court->priceSlots->map(function ($slot) use ($date, $existing, $court, $duration) {
             $start = Carbon::parse($date->format('Y-m-d').' '.$slot->starts_at, config('app.timezone'));
-            $end = $start->copy()->addHour();
+            $end = $start->copy()->addMinutes($duration);
             $blocked = $court->blocks->contains(fn ($block) => $block->starts_at->lt($end->copy()->utc()) && $block->ends_at->gt($start->copy()->utc()));
             $booked = $existing->contains(fn ($item) => $item->starts_at->equalTo($start->copy()->utc()) && in_array($item->status, ['held', 'confirmed']));
 
@@ -29,3 +30,4 @@ class AvailabilityController extends Controller
         })->values();
     }
 }
+

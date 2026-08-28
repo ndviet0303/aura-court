@@ -28,9 +28,15 @@ class AdminController extends Controller
         private readonly FinancialPostingService $financials,
     ) {}
 
-    public function venues()
+    public function venues(Request $request)
     {
-        return Venue::withCount('courts')->orderBy('name')->get();
+        return Venue::withCount('courts')
+            ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->withCount('courts')])
+            ->when($request->query('sport_type'), function ($q, $sportType) {
+                $q->whereHas('sportZones', fn ($z) => $z->where('sport_type', $sportType)->where('is_active', true));
+            })
+            ->orderBy('name')
+            ->get();
     }
 
     public function storeVenue(Request $request)
@@ -39,7 +45,15 @@ class AdminController extends Controller
         $venue = Venue::create($data + ['slug' => $this->uniqueSlug($data['name'])]);
         $this->audits->record($request, 'venue.created', $venue);
 
-        return response()->json($venue, 201);
+        // Automatically create a default sport zone for the new venue
+        $venue->sportZones()->create([
+            'name' => 'Khu Cầu Lông',
+            'sport_type' => 'badminton',
+            'slot_duration' => 60,
+            'is_active' => true,
+        ]);
+
+        return response()->json($venue->load('sportZones'), 201);
     }
 
     public function updateVenue(Request $request, Venue $venue)
@@ -53,7 +67,7 @@ class AdminController extends Controller
         }
         $this->audits->record($request, 'venue.updated', $venue, ['fields' => array_keys($request->all())]);
 
-        return $venue->fresh();
+        return $venue->fresh('sportZones');
     }
 
     public function destroyVenue(Venue $venue)
@@ -66,8 +80,12 @@ class AdminController extends Controller
 
     public function showVenue(string $slug)
     {
-        return Venue::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        return Venue::where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->with(['courts' => fn ($c) => $c->where('is_active', true)->with('priceSlots')])])
+            ->firstOrFail();
     }
+
 
     private function validatedVenue(Request $request): array
     {

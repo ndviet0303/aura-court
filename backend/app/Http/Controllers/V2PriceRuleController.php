@@ -17,7 +17,14 @@ class V2PriceRuleController extends Controller
     {
         $organization = $this->organization($request);
 
-        return response()->json(['rules' => PriceRule::query()->where('organization_id', $organization->id)->latest()->get()]);
+        return response()->json(['rules' => PriceRule::query()
+            ->where('organization_id', $organization->id)
+            ->when($request->query('venue_id'), fn ($q, $venueId) => $q->where('venue_id', $venueId))
+            ->when($request->query('sport_zone_id'), fn ($q, $zoneId) => $q->where('sport_zone_id', $zoneId))
+            ->when($request->query('court_id'), fn ($q, $courtId) => $q->where('court_id', $courtId))
+            ->with(['venue', 'sportZone', 'court'])
+            ->latest()
+            ->get()]);
     }
 
     public function store(Request $request)
@@ -29,7 +36,7 @@ class V2PriceRuleController extends Controller
         return $this->idempotency->run($request, function () use ($organization, $data) {
             $rule = PriceRule::create(array_merge($data, ['organization_id' => $organization->id, 'version' => 1]));
 
-            return response()->json(['rule' => $rule], 201);
+            return response()->json(['rule' => $rule->load(['venue', 'sportZone', 'court'])], 201);
         });
     }
 
@@ -43,7 +50,7 @@ class V2PriceRuleController extends Controller
         return $this->idempotency->run($request, function () use ($record, $data) {
             $record->update(array_merge($data, ['version' => $record->version + 1]));
 
-            return response()->json(['rule' => $record->fresh()]);
+            return response()->json(['rule' => $record->fresh(['venue', 'sportZone', 'court'])]);
         });
     }
 
@@ -66,6 +73,7 @@ class V2PriceRuleController extends Controller
 
         return $request->validate([
             'venue_id' => $prefix.'nullable|integer',
+            'sport_zone_id' => $prefix.'nullable|integer',
             'court_id' => $prefix.'nullable|integer',
             'type' => $prefix.'required|in:base,weekly,peak,date_exception,holiday',
             'weekday' => $prefix.'nullable|integer|min:1|max:7',
@@ -79,3 +87,4 @@ class V2PriceRuleController extends Controller
         ]);
     }
 }
+

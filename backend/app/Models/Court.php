@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'slug', 'venue_id', 'description', 'image_url', 'is_active'])]
+#[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'is_active'])]
 class Court extends Model
 {
     protected static function booted(): void
@@ -53,6 +53,11 @@ class Court extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
+    }
+
+    public function sportZone(): BelongsTo
+    {
+        return $this->belongsTo(SportZone::class);
     }
 
     public function blocks(): HasMany

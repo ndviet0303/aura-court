@@ -14,11 +14,24 @@ const store = useBookingStore()
 
 // Filter states
 const searchQuery = ref('')
+const selectedSportType = ref<string>('all')
 const selectedVenue = ref<string>('all')
 const maxPrice = ref<number>(500000)
 const selectedTimeFilter = ref<string>('all')
 const minRating = ref<number>(0)
 const sortBy = ref<string>('popular')
+
+const sportOptions = [
+  { value: 'all', label: 'Tất cả môn thể thao' },
+  { value: 'badminton', label: '🏸 Cầu lông' },
+  { value: 'football_5v5', label: '⚽ Bóng đá 5v5' },
+  { value: 'football_7v7', label: '⚽ Bóng đá 7v7' },
+  { value: 'tennis', label: '🎾 Tennis' },
+  { value: 'pickleball', label: '🏓 Pickleball' },
+  { value: 'basketball', label: '🏀 Bóng rổ' },
+  { value: 'volleyball', label: '🏐 Bóng chuyền' },
+  { value: 'table_tennis', label: '🏓 Bóng bàn' },
+]
 
 let unsubscribes: Array<() => void> = []
 
@@ -118,6 +131,11 @@ const filteredCourts = computed(() => {
     )
   }
 
+  // Filter by Sport Type
+  if (selectedSportType.value !== 'all') {
+    result = result.filter((court: Court) => court.sport_zone?.sport_type === selectedSportType.value)
+  }
+
   // Filter by Venue
   if (selectedVenue.value !== 'all') {
     result = result.filter((court: Court) => court.venue?.name === selectedVenue.value)
@@ -143,8 +161,10 @@ const filteredCourts = computed(() => {
   return result
 })
 
+
 function resetFilters(): void {
   searchQuery.value = ''
+  selectedSportType.value = 'all'
   selectedVenue.value = 'all'
   maxPrice.value = 500000
   selectedTimeFilter.value = 'all'
@@ -174,6 +194,16 @@ const timeChips = [
           <div class="sidebar-header">
             <span class="sidebar-eyebrow">{{ t('courts.refineSearch') }}</span>
             <div class="eyebrow-accent"></div>
+          </div>
+
+          <!-- Sport Type Filter -->
+          <div class="filter-group">
+            <label class="filter-label">Môn thể thao</label>
+            <SelectDropdown
+              v-model="selectedSportType"
+              :options="sportOptions"
+              placeholder="Chọn môn thể thao..."
+            />
           </div>
 
           <!-- Search Input -->
@@ -207,6 +237,7 @@ const timeChips = [
               :placeholder="t('courts.filterLocation')"
             />
           </div>
+
 
           <!-- Price Range Slider -->
           <div class="filter-group">
