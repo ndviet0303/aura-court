@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
@@ -16,13 +20,9 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:190', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $data = $request->validated();
 
         $user = User::create([
             'name' => $data['name'],
@@ -40,9 +40,9 @@ class AuthController extends Controller
         return response()->json(['user' => $user], 201);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
+        $data = $request->validated();
         if (! Auth::attempt($data, true)) {
             return response()->json(['message' => 'Thông tin đăng nhập không đúng.'], 422);
         }
@@ -60,20 +60,20 @@ class AuthController extends Controller
         return response()->json(['message' => 'Đã đăng xuất.']);
     }
 
-    public function forgotPassword(Request $request)
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
-        $request->validate(['email' => ['required', 'email']]);
-        if (User::where('email', $request->input('email'))->first()?->isDemo()) {
+        $data = $request->validated();
+        if (User::where('email', $data['email'])->first()?->isDemo()) {
             return ['message' => 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.'];
         }
-        Password::sendResetLink($request->only('email'));
+        Password::sendResetLink(['email' => $data['email']]);
 
         return ['message' => 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.'];
     }
 
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
-        $data = $request->validate(['token' => ['required'], 'email' => ['required', 'email'], 'password' => ['required', 'min:8', 'confirmed']]);
+        $data = $request->validated();
         $status = Password::reset($data, function (User $user, string $password) {
             $user->forceFill(['password' => Hash::make($password), 'password_set' => true])->save();
         });

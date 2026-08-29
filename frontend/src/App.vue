@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import Navbar from '@/components/Navbar.vue'
-import SiteFooter from '@/components/SiteFooter.vue'
-import DemoWarningModal from '@/components/DemoWarningModal.vue'
+import Navbar from '@/shared/layouts/Navbar.vue'
+import SiteFooter from '@/shared/layouts/SiteFooter.vue'
+import DemoWarningModal from '@/shared/components/DemoWarningModal.vue'
 import { isRouteNavigating } from '@/stores/navigation'
 
 const route = useRoute()

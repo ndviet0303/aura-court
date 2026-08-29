@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
+use App\Domain\Payment\Actions\ProcessQrPayment;
+use App\Domain\Payment\Actions\ProcessStripePayment;
 use App\Models\Booking;
-use App\Models\Payment;
 use App\Notifications\AuraBookingNotification;
-use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
-    public function __construct(private readonly FinancialPostingService $financials) {}
+    public function __construct(
+        private readonly FinancialPostingService $financials,
+        private readonly ProcessStripePayment $processStripePaymentAction,
+        private readonly ProcessQrPayment $processQrPaymentAction,
+    ) {}
 
     public function qrPayload(Booking $booking): array
     {
@@ -46,34 +50,7 @@ class PaymentService
 
     public function processStripePayment(Booking $booking, array $cardDetails = []): array
     {
-        abort_unless($booking->status === 'pending_payment', 422, 'Booking không ở trạng thái chờ thanh toán.');
-        abort_if($booking->payment_expires_at?->isPast(), 422, 'Phiên thanh toán đã hết hạn.');
-
-        return DB::transaction(function () use ($booking, $cardDetails) {
-            $payment = $booking->payments()->create([
-                'provider' => 'stripe',
-                'external_transaction_id' => 'ch_'.strtolower($booking->code).'_'.substr(md5(uniqid()), 0, 12),
-                'amount' => $booking->total_amount,
-                'transfer_code' => $booking->code,
-                'status' => 'paid',
-                'payload' => array_merge($cardDetails, [
-                    'brand' => $cardDetails['brand'] ?? 'visa',
-                    'last4' => isset($cardDetails['card_number']) ? substr(preg_replace('/\D/', '', (string) $cardDetails['card_number']), -4) : '4242',
-                    'paid_at' => now()->toIso8601String(),
-                ]),
-                'received_at' => now(),
-            ]);
-
-            $booking->update(['status' => 'confirmed']);
-            $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
-            $payment->loadMissing('booking.court.venue');
-            $this->financials->postLegacyBookingPayment($booking->fresh(['court.venue']), $payment);
-
-            $confirmedBooking = $booking->fresh(['user', 'court']);
-            $this->notifyConfirmed($confirmedBooking);
-
-            return ['status' => 'confirmed', 'booking' => $booking->fresh(['court.venue', 'slots', 'payments'])];
-        });
+        return $this->processStripePaymentAction->execute($booking, $cardDetails);
     }
 
     public function handleStripeWebhook(array $data, string $raw, string $signature): void
@@ -91,41 +68,7 @@ class PaymentService
 
     public function handleWebhook(array $data, string $raw): void
     {
-        $externalId = (string) ($data['id'] ?? '');
-        if ($externalId === '') {
-            return;
-        }
-
-        $confirmedBooking = null;
-        DB::transaction(function () use ($data, $raw, $externalId, &$confirmedBooking) {
-            if (Payment::where('external_transaction_id', $externalId)->exists()) {
-                return;
-            }
-            $code = trim((string) ($data['code'] ?? $data['content'] ?? ''));
-            $booking = Booking::where('code', $code)->lockForUpdate()->first();
-            $amount = (int) ($data['transferAmount'] ?? $data['amount'] ?? 0);
-            $valid = $booking && ($data['transferType'] ?? 'in') === 'in' && $amount >= $booking->total_amount
-                && $booking->status === 'pending_payment' && $booking->payment_expires_at?->isFuture();
-            $payment = Payment::create([
-                'booking_id' => $booking?->id,
-                'external_transaction_id' => $externalId,
-                'amount' => $amount,
-                'transfer_code' => $code,
-                'status' => $valid ? 'paid' : 'manual_review',
-                'payload' => json_decode($raw, true),
-                'received_at' => now(),
-            ]);
-            if ($valid) {
-                $booking->update(['status' => 'confirmed']);
-                $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
-                $payment->loadMissing('booking.court.venue');
-                $this->financials->postLegacyBookingPayment($booking->fresh(['court.venue']), $payment);
-                $confirmedBooking = $booking->fresh(['user', 'court']);
-            }
-        });
-        if ($confirmedBooking) {
-            $this->notifyConfirmed($confirmedBooking);
-        }
+        $this->processQrPaymentAction->execute($data, $raw);
     }
 
     public function notifyConfirmed(Booking $booking): void

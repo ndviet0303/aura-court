@@ -61,6 +61,65 @@ class PosController extends Controller
         return $this->idempotency->run($request, fn () => response()->json(['shift' => $this->pos->closeShift($shift, $request->user(), $data['declared_cash'], $data['note'] ?? null)]));
     }
 
+    public function shifts(Request $request)
+    {
+        $organization = $this->organization($request);
+        $query = CashShift::where('organization_id', $organization->id)
+            ->with(['reconciliation', 'cashier:id,name,email'])
+            ->latest('opened_at');
+
+        if ($request->has('status') && in_array($request->status, ['open', 'closed'])) {
+            $query->where('status', $request->status);
+        }
+
+        return $query->paginate((int) ($request->get('per_page', 20)));
+    }
+
+    public function activeShift(Request $request)
+    {
+        $organization = $this->organization($request);
+        $shift = CashShift::where('organization_id', $organization->id)
+            ->where('cashier_id', $request->user()->id)
+            ->where('status', 'open')
+            ->with(['cashier:id,name,email'])
+            ->latest('opened_at')
+            ->first();
+
+        if (!$shift) {
+            $shift = CashShift::where('organization_id', $organization->id)
+                ->where('status', 'open')
+                ->with(['cashier:id,name,email'])
+                ->latest('opened_at')
+                ->first();
+        }
+
+        return response()->json(['shift' => $shift]);
+    }
+
+    public function reviewReconciliation(Request $request, CashShift $shift)
+    {
+        $organization = $this->organization($request);
+        abort_unless($shift->organization_id === $organization->id, 404);
+        $data = $request->validate(['status' => 'required|in:matched,approved,exception,rejected', 'note' => 'nullable|string|max:2000']);
+        
+        $reconciliation = $shift->reconciliation ?: new \App\Models\ShiftReconciliation([
+            'organization_id' => $organization->id,
+            'cash_shift_id' => $shift->id,
+            'variance' => $shift->variance ?? 0,
+        ]);
+
+        $reconciliation->status = $data['status'];
+        if (isset($data['note'])) {
+            $reconciliation->note = ($reconciliation->note ? $reconciliation->note . " | " : "") . $data['note'];
+        }
+        $reconciliation->reviewed_by = $request->user()->id;
+        $reconciliation->reviewed_at = now();
+        $reconciliation->save();
+
+        return response()->json(['reconciliation' => $reconciliation, 'shift' => $shift->fresh('reconciliation')]);
+    }
+
+
     public function membershipPlans(Request $request)
     {
         $organization = $this->organization($request);

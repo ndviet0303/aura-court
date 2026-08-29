@@ -167,34 +167,37 @@ function closeMobileSidebar() {
         <div class="nav-section-label mt-4">MỞ RỘNG & DỊCH VỤ</div>
         <nav class="sidebar-nav" aria-label="Admin Secondary Navigation">
           <RouterLink
-            to="/pos"
+            to="/admin/pos"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/pos' }"
+            :class="{ active: route.path === '/admin/pos' || route.path === '/pos' || route.path.startsWith('/admin/pos') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">point_of_sale</span>
-            <span class="nav-label">POS & Thu ngân</span>
+            <span class="nav-label">Bán lẻ POS & Thu ngân</span>
           </RouterLink>
 
           <RouterLink
-            to="/social-tournaments"
+            to="/admin/shifts"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/social-tournaments' }"
+            :class="{ active: route.path.startsWith('/admin/shift') || route.path.startsWith('/admin/cash-reconciliation') }"
             @click="closeMobileSidebar"
           >
-            <span class="material-symbols-outlined nav-icon">groups</span>
-            <span class="nav-label">Người chơi & Giải đấu</span>
+            <span class="material-symbols-outlined nav-icon">receipt_long</span>
+            <span class="nav-label">Quản lý Ca & Đối soát</span>
           </RouterLink>
 
           <RouterLink
-            to="/advanced-booking"
+            to="/admin/inventory"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/advanced-booking' }"
+            :class="{ active: route.path.startsWith('/admin/inventory') || route.path === '/admin/warehouse' || route.path === '/admin/stock' }"
             @click="closeMobileSidebar"
           >
-            <span class="material-symbols-outlined nav-icon">event_repeat</span>
-            <span class="nav-label">Lịch đặt định kỳ</span>
+            <span class="material-symbols-outlined nav-icon">inventory_2</span>
+            <span class="nav-label">Kho & Hàng hóa</span>
           </RouterLink>
+
+
+
         </nav>
       </div>
 
