@@ -2,8 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\Repositories\BookingRepositoryInterface;
+use App\Contracts\Repositories\CourtBlockRepositoryInterface;
+use App\Contracts\Repositories\PaymentRepositoryInterface;
+use App\Contracts\Repositories\RefundRepositoryInterface;
+use App\Contracts\Repositories\VenueRepositoryInterface;
+use App\Contracts\Storage\FileStorageServiceInterface;
+use App\Domain\Admin\Actions\CreateVenue;
+use App\Domain\Admin\Actions\ManageCourtBlocks;
+use App\Domain\Admin\Actions\ManageCourtPrices;
+use App\Domain\Admin\Actions\ProcessRefund;
+use App\Domain\Admin\Actions\ReviewPayment;
+use App\Domain\Admin\Actions\UpdateVenue;
 use App\Http\Controllers\Controller;
-
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
@@ -13,59 +24,51 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Venue;
 use App\Services\Infrastructure\AuditLogger;
-use App\Services\Finance\FinancialPostingService;
-use App\Services\Payment\PaymentService;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
     public function __construct(
+        private readonly VenueRepositoryInterface $venues,
+        private readonly CourtBlockRepositoryInterface $courtBlocks,
+        private readonly BookingRepositoryInterface $bookings,
+        private readonly PaymentRepositoryInterface $payments,
+        private readonly RefundRepositoryInterface $refunds,
         private readonly AuditLogger $audits,
-        private readonly PaymentService $paymentsService,
-        private readonly FinancialPostingService $financials,
+        private readonly FileStorageServiceInterface $fileStorage,
+        private readonly CreateVenue $createVenueAction,
+        private readonly UpdateVenue $updateVenueAction,
+        private readonly ManageCourtPrices $manageCourtPricesAction,
+        private readonly ManageCourtBlocks $manageCourtBlocksAction,
+        private readonly ReviewPayment $reviewPaymentAction,
+        private readonly ProcessRefund $processRefundAction,
     ) {}
 
     public function venues(Request $request)
     {
-        return Venue::withCount('courts')
-            ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->withCount('courts')])
-            ->when($request->query('sport_type'), function ($q, $sportType) {
-                $q->whereHas('sportZones', fn ($z) => $z->where('sport_type', $sportType)->where('is_active', true));
-            })
-            ->orderBy('name')
-            ->get();
+        return $this->venues->getActiveVenuesWithCourts($request->query('sport_type'));
     }
 
     public function storeVenue(Request $request)
     {
         $data = $this->validatedVenue($request);
-        $venue = Venue::create($data + ['slug' => $this->uniqueSlug($data['name'])]);
+        $venue = $this->createVenueAction->execute($data);
         $this->audits->record($request, 'venue.created', $venue);
 
-        // Automatically create a default sport zone for the new venue
-        $venue->sportZones()->create([
-            'name' => 'Khu Cầu Lông',
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
-        return response()->json($venue->load('sportZones'), 201);
+        return response()->json($venue, 201);
     }
 
     public function updateVenue(Request $request, Venue $venue)
     {
         if ($request->hasAny(['name', 'address', 'google_maps_url'])) {
             $data = $this->validatedVenue($request);
-            $venue->update($data);
+            $this->updateVenueAction->execute($venue, $data);
         }
         if ($request->has('is_active')) {
-            $venue->update($request->validate(['is_active' => 'boolean']));
+            $this->updateVenueAction->execute($venue, $request->validate(['is_active' => 'boolean']));
         }
         $this->audits->record($request, 'venue.updated', $venue, ['fields' => array_keys($request->all())]);
 
@@ -74,7 +77,7 @@ class AdminController extends Controller
 
     public function destroyVenue(Venue $venue)
     {
-        $venue->update(['is_active' => false]);
+        $this->updateVenueAction->execute($venue, ['is_active' => false]);
         $this->audits->record(request(), 'venue.deactivated', $venue);
 
         return ['message' => 'Đã ngừng hoạt động địa điểm.'];
@@ -82,12 +85,11 @@ class AdminController extends Controller
 
     public function showVenue(string $slug)
     {
-        return Venue::where('slug', $slug)
-            ->where('is_active', true)
-            ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->with(['courts' => fn ($c) => $c->where('is_active', true)->with('priceSlots')])])
-            ->firstOrFail();
-    }
+        $venue = $this->venues->findBySlug($slug);
+        abort_unless($venue, 404);
 
+        return $venue;
+    }
 
     private function validatedVenue(Request $request): array
     {
@@ -105,18 +107,6 @@ class AdminController extends Controller
         }
 
         return $data;
-    }
-
-    private function uniqueSlug(string $name): string
-    {
-        $base = Str::slug($name) ?: 'venue';
-        $slug = $base;
-        $suffix = 2;
-        while (Venue::where('slug', $slug)->exists()) {
-            $slug = $base.'-'.$suffix++;
-        }
-
-        return $slug;
     }
 
     private function isGoogleMapsUrl(string $value): bool
@@ -140,15 +130,23 @@ class AdminController extends Controller
 
     public function bookings(Request $request)
     {
-        return Booking::with(['user', 'court', 'slots', 'refunds'])->when($request->status, fn ($q, $status) => $q->where('status', $status))->when($request->date, fn ($q, $date) => $q->whereHas('slots', fn ($s) => $s->whereDate('starts_at', $date)))->latest()->paginate(30);
+        return $this->bookings->paginateAdminBookings([
+            'status' => $request->status,
+            'date' => $request->date,
+        ], 30);
     }
 
     public function prices(Request $request, Court $court)
     {
-        $data = $request->validate(['weekday' => 'required|integer|min:1|max:7', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i', 'price' => 'required|integer|min:0', 'is_active' => 'boolean']);
-        abort_if($data['ends_at'] !== now()->setTimeFromTimeString($data['starts_at'])->addHour()->format('H:i'), 422, 'Khung giá phải dài đúng 60 phút.');
+        $data = $request->validate([
+            'weekday' => 'required|integer|min:1|max:7',
+            'starts_at' => 'required|date_format:H:i',
+            'ends_at' => 'required|date_format:H:i',
+            'price' => 'required|integer|min:0',
+            'is_active' => 'boolean',
+        ]);
 
-        $price = $court->priceSlots()->updateOrCreate(['weekday' => $data['weekday'], 'starts_at' => $data['starts_at']], $data);
+        $price = $this->manageCourtPricesAction->createOrUpdatePrice($court, $data);
         $this->audits->record($request, 'price.updated', $price, ['court_id' => $court->id]);
 
         return response()->json($price, 201);
@@ -164,18 +162,7 @@ class AdminController extends Controller
             'price' => 'required|integer|min:0',
         ]);
 
-        $createdOrUpdated = [];
-        foreach ($data['weekdays'] as $weekday) {
-            for ($hour = $data['start_hour']; $hour < $data['end_hour']; $hour++) {
-                $startsAt = sprintf('%02d:00', $hour);
-                $endsAt = sprintf('%02d:00', $hour + 1);
-                $slot = $court->priceSlots()->updateOrCreate(
-                    ['weekday' => $weekday, 'starts_at' => $startsAt],
-                    ['ends_at' => $endsAt, 'price' => $data['price'], 'is_active' => true]
-                );
-                $createdOrUpdated[] = $slot;
-            }
-        }
+        $result = $this->manageCourtPricesAction->bulkUpdate($court, $data);
 
         $this->audits->record($request, 'price.bulk_updated', null, [
             'court_id' => $court->id,
@@ -183,20 +170,24 @@ class AdminController extends Controller
             'start_hour' => $data['start_hour'],
             'end_hour' => $data['end_hour'],
             'price' => $data['price'],
-            'count' => count($createdOrUpdated),
+            'count' => $result['count'],
         ]);
 
         return response()->json([
             'message' => 'Đã cập nhật khung giá hàng loạt.',
-            'slots' => $court->priceSlots()->orderBy('weekday')->orderBy('starts_at')->get(),
+            'slots' => $result['slots'],
         ]);
     }
 
     public function blocks(Request $request, Court $court)
     {
-        $data = $request->validate(['starts_at' => 'required|date', 'ends_at' => 'required|date|after:starts_at', 'reason' => 'nullable|string|max:255']);
+        $data = $request->validate([
+            'starts_at' => 'required|date',
+            'ends_at' => 'required|date|after:starts_at',
+            'reason' => 'nullable|string|max:255',
+        ]);
 
-        $block = $court->blocks()->create(['starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at'], 'reason' => $data['reason'] ?? null]);
+        $block = $this->manageCourtBlocksAction->createBlock($court, $data);
         $this->audits->record($request, 'court_block.created', $block, ['court_id' => $court->id]);
 
         return response()->json($block, 201);
@@ -204,20 +195,23 @@ class AdminController extends Controller
 
     public function updatePrice(Request $request, Court $court, CourtPriceSlot $price)
     {
-        abort_unless($price->court_id === $court->id, 404);
-        $data = $request->validate(['weekday' => 'sometimes|integer|min:1|max:7', 'starts_at' => 'sometimes|date_format:H:i', 'ends_at' => 'sometimes|date_format:H:i', 'price' => 'sometimes|integer|min:0', 'is_active' => 'boolean']);
-        $merged = array_merge($price->only(['weekday', 'starts_at', 'ends_at']), $data);
-        abort_if($merged['ends_at'] !== now()->setTimeFromTimeString($merged['starts_at'])->addHour()->format('H:i'), 422, 'Khung giá phải dài đúng 60 phút.');
-        $price->update($data);
-        $this->audits->record($request, 'price.updated', $price, ['court_id' => $court->id, 'fields' => array_keys($data)]);
+        $data = $request->validate([
+            'weekday' => 'sometimes|integer|min:1|max:7',
+            'starts_at' => 'sometimes|date_format:H:i',
+            'ends_at' => 'sometimes|date_format:H:i',
+            'price' => 'sometimes|integer|min:0',
+            'is_active' => 'boolean',
+        ]);
 
-        return $price->fresh();
+        $updated = $this->manageCourtPricesAction->updatePrice($court, $price, $data);
+        $this->audits->record($request, 'price.updated', $updated, ['court_id' => $court->id, 'fields' => array_keys($data)]);
+
+        return $updated;
     }
 
     public function destroyPrice(Court $court, CourtPriceSlot $price)
     {
-        abort_unless($price->court_id === $court->id, 404);
-        $price->delete();
+        $this->manageCourtPricesAction->deletePrice($court, $price);
         $this->audits->record(request(), 'price.deleted', $price, ['court_id' => $court->id]);
 
         return ['message' => 'Đã xóa khung giá.'];
@@ -225,13 +219,12 @@ class AdminController extends Controller
 
     public function blocksIndex(Court $court)
     {
-        return $court->blocks()->latest('starts_at')->paginate(50);
+        return $this->courtBlocks->paginateForCourt($court, 50);
     }
 
     public function destroyBlock(Court $court, CourtBlock $block)
     {
-        abort_unless($block->court_id === $court->id, 404);
-        $block->delete();
+        $this->manageCourtBlocksAction->deleteBlock($court, $block);
         $this->audits->record(request(), 'court_block.deleted', $block, ['court_id' => $court->id]);
 
         return ['message' => 'Đã mở khóa lịch sân.'];
@@ -239,34 +232,32 @@ class AdminController extends Controller
 
     public function refunds(Request $request)
     {
-        return Refund::with(['booking.user', 'booking.court'])->where('status', 'pending')->latest()->paginate(30);
+        return $this->refunds->paginatePending(30);
     }
 
     public function payments(Request $request)
     {
-        return Payment::with(['booking.user', 'booking.court'])->where('status', 'manual_review')->latest()->paginate(30);
+        return $this->payments->paginateManualReview(30);
     }
 
     public function reviewPayment(Request $request, Payment $payment)
     {
-        $data = $request->validate(['status' => 'required|in:paid,rejected', 'note' => 'nullable|string|max:1000']);
-        abort_unless($payment->status === 'manual_review', 409, 'Giao dịch đã được xử lý.');
-        $payment->update(['status' => $data['status'], 'payload' => array_merge($payment->payload ?? [], ['review_note' => $data['note'] ?? null, 'reviewed_at' => now()->toIso8601String(), 'reviewed_by' => $request->user()->id])]);
-        if ($data['status'] === 'paid' && $payment->booking && $payment->booking->status === 'pending_payment' && $payment->amount >= $payment->booking->total_amount && $payment->booking->payment_expires_at?->isFuture()) {
-            $payment->booking()->update(['status' => 'confirmed']);
-            $payment->booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
-            $this->paymentsService->notifyConfirmed($payment->booking->fresh(['user', 'court']));
-        }
-        $this->audits->record($request, 'payment.reviewed', $payment, ['status' => $data['status']]);
+        $data = $request->validate([
+            'status' => 'required|in:paid,rejected',
+            'note' => 'nullable|string|max:1000',
+        ]);
 
-        return $payment->fresh(['booking']);
+        $updated = $this->reviewPaymentAction->execute($payment, $data, $request->user());
+        $this->audits->record($request, 'payment.reviewed', $updated, ['status' => $data['status']]);
+
+        return $updated;
     }
 
     public function noShow(Request $request, Booking $booking)
     {
         abort_unless($booking->status === 'confirmed', 409, 'Booking không ở trạng thái có thể đánh dấu no-show.');
         abort_unless($booking->slots()->where('starts_at', '>', now())->doesntExist(), 409, 'Chưa kết thúc toàn bộ khung giờ.');
-        $booking->update(['status' => 'no_show']);
+        $this->bookings->updateStatus($booking, 'no_show');
         $this->audits->record($request, 'booking.no_show', $booking);
 
         return $booking->fresh(['court', 'slots']);
@@ -274,23 +265,15 @@ class AdminController extends Controller
 
     public function processRefund(Request $request, Refund $refund)
     {
-        $data = $request->validate(['status' => 'required|in:processed,rejected', 'note' => 'nullable|string|max:1000']);
-        abort_unless($refund->status === 'pending', 409, 'Yêu cầu hoàn tiền đã được xử lý.');
-        $refund->update(['status' => $data['status'], 'note' => $data['note'] ?? null, 'processed_by' => $request->user()->id, 'processed_at' => now()]);
-        if ($data['status'] === 'processed') {
-            $hasActiveSlots = $refund->booking->slots()->whereIn('status', ['held', 'confirmed'])->exists();
-            $refund->booking()->update(['status' => $hasActiveSlots ? 'confirmed' : 'refunded']);
-            $organizationId = $refund->booking->loadMissing('court.venue')->court?->venue?->organization_id;
-            if ($organizationId) {
-                $this->financials->postRefund($organizationId, $refund->booking->code, (int) $refund->amount, (string) $refund->id, ['legacy_refund_id' => $refund->id]);
-            }
-        } else {
-            $hasActiveSlots = $refund->booking->slots()->whereIn('status', ['held', 'confirmed'])->exists();
-            $refund->booking()->update(['status' => $hasActiveSlots ? 'confirmed' : 'cancelled']);
-        }
-        $this->audits->record($request, 'refund.processed', $refund, ['status' => $data['status']]);
+        $data = $request->validate([
+            'status' => 'required|in:processed,rejected',
+            'note' => 'nullable|string|max:1000',
+        ]);
 
-        return $refund->fresh(['booking']);
+        $updated = $this->processRefundAction->execute($refund, $data, $request->user());
+        $this->audits->record($request, 'refund.processed', $updated, ['status' => $data['status']]);
+
+        return $updated;
     }
 
     public function report(Request $request)
@@ -305,7 +288,17 @@ class AdminController extends Controller
         }
         $byHour = $confirmedSlots->groupBy(fn (BookingSlot $slot) => $slot->starts_at->setTimezone(config('app.timezone'))->format('H:00'))->map(fn ($items, $hour) => ['hour' => $hour, 'bookings' => $items->count()])->values();
 
-        return ['from' => $from, 'to' => $to, 'bookings' => (clone $base)->count(), 'confirmed' => (clone $base)->where('status', 'confirmed')->count(), 'revenue' => (clone $base)->where('status', 'confirmed')->sum('total_amount'), 'pendingRefunds' => Refund::where('status', 'pending')->whereBetween('created_at', [$from, $to])->sum('amount'), 'occupancyRate' => $capacity > 0 ? round($confirmedSlots->count() / $capacity * 100, 1) : 0, 'byHour' => $byHour, 'byCourt' => (clone $base)->where('status', 'confirmed')->select('court_id', DB::raw('count(*) as bookings'), DB::raw('sum(total_amount) as revenue'))->groupBy('court_id')->with('court:id,name')->get()];
+        return [
+            'from' => $from,
+            'to' => $to,
+            'bookings' => (clone $base)->count(),
+            'confirmed' => (clone $base)->where('status', 'confirmed')->count(),
+            'revenue' => (clone $base)->where('status', 'confirmed')->sum('total_amount'),
+            'pendingRefunds' => Refund::where('status', 'pending')->whereBetween('created_at', [$from, $to])->sum('amount'),
+            'occupancyRate' => $capacity > 0 ? round($confirmedSlots->count() / $capacity * 100, 1) : 0,
+            'byHour' => $byHour,
+            'byCourt' => (clone $base)->where('status', 'confirmed')->select('court_id', DB::raw('count(*) as bookings'), DB::raw('sum(total_amount) as revenue'))->groupBy('court_id')->with('court:id,name')->get(),
+        ];
     }
 
     public function reportCsv(Request $request)
@@ -330,22 +323,8 @@ class AdminController extends Controller
             'image' => 'required|file|mimes:jpeg,png,jpg,webp,avif,gif|max:10240',
         ]);
 
-        $file = $request->file('image');
-        $filename = 'courts/' . Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $result = $this->fileStorage->store($request->file('image'), 'courts');
 
-        $disk = config('filesystems.disks.r2.key') ? 'r2' : (config('filesystems.disks.s3.key') ? 's3' : 'public');
-
-        try {
-            Storage::disk($disk)->putFileAs('', $file, $filename, 'public');
-            $url = Storage::disk($disk)->url($filename);
-        } catch (\Throwable $e) {
-            $path = Storage::disk('public')->putFileAs('courts', $file, Str::uuid() . '.' . $file->getClientOriginalExtension(), 'public');
-            $url = Storage::disk('public')->url($path);
-        }
-
-        return response()->json([
-            'url' => $url,
-            'filename' => $filename,
-        ]);
+        return response()->json($result);
     }
 }

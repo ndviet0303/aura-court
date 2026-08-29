@@ -2,19 +2,12 @@
 
 namespace App\Http\Controllers\Booking;
 
+use App\Contracts\Repositories\BookingRepositoryInterface;
 use App\Http\Controllers\Controller;
-
-use App\Domain\Booking\Actions\ApplyBookingCoupon;
-use App\Domain\Booking\Actions\CancelBooking;
-use App\Domain\Booking\Actions\CancelBookingSlots;
-use App\Domain\Booking\Actions\CreateBooking;
-use App\Domain\Booking\Actions\CreateRecurringBooking;
-use App\Domain\Booking\Actions\RescheduleBooking;
 use App\Http\Requests\Booking\CancelSlotsRequest;
 use App\Http\Requests\Booking\RecurringBookingRequest;
 use App\Http\Requests\Booking\RescheduleBookingRequest;
 use App\Http\Requests\Booking\StoreBookingRequest;
-use App\Http\Requests\Booking\StripePayRequest;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Services\Booking\BookingService;
@@ -25,24 +18,20 @@ use Illuminate\Support\Facades\DB;
 class BookingController extends Controller
 {
     public function __construct(
+        private readonly BookingRepositoryInterface $bookingRepo,
         private readonly BookingService $bookings,
         private readonly PaymentService $payments,
-        private readonly CreateBooking $createBookingAction,
-        private readonly CreateRecurringBooking $createRecurringBookingAction,
-        private readonly CancelBooking $cancelBookingAction,
-        private readonly CancelBookingSlots $cancelBookingSlotsAction,
-        private readonly RescheduleBooking $rescheduleBookingAction,
-        private readonly ApplyBookingCoupon $applyBookingCouponAction,
     ) {}
 
     public function index(Request $request)
     {
-        return $request->user()->bookings()->with(['court.venue', 'slots', 'refunds', 'review'])->latest()->paginate(20);
+        return $this->bookingRepo->paginateUserBookings($request->user()->id, 20);
     }
 
     public function store(StoreBookingRequest $request)
     {
-        $booking = $this->createBookingAction->execute($request->toData());
+        $data = $request->toData();
+        $booking = $this->bookings->create($data->userId, $data->courtId, $data->slots, $data->couponCode);
 
         return response()->json(['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)], 201);
     }
@@ -50,7 +39,7 @@ class BookingController extends Controller
     public function recurring(RecurringBookingRequest $request)
     {
         $data = $request->validated();
-        $bookings = $this->createRecurringBookingAction->execute($request->user()->id, $data['court_id'], $data['slots'], $data['weeks']);
+        $bookings = $this->bookings->createRecurring($request->user()->id, $data['court_id'], $data['slots'], $data['weeks']);
 
         return response()->json(['bookings' => collect($bookings)->map(fn (Booking $booking) => ['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)])->values()], 201);
     }
@@ -66,7 +55,7 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
-        return $this->cancelBookingAction->execute($booking, $request->input('reason'));
+        return $this->bookings->cancel($booking, $request->input('reason'));
     }
 
     public function cancelSlots(CancelSlotsRequest $request, Booking $booking)
@@ -74,14 +63,14 @@ class BookingController extends Controller
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
         $data = $request->validated();
 
-        return $this->cancelBookingSlotsAction->execute($booking, $data['slot_ids'], $data['reason'] ?? null);
+        return $this->bookings->cancelSlots($booking, $data['slot_ids'], $data['reason'] ?? null);
     }
 
     public function reschedule(RescheduleBookingRequest $request, Booking $booking)
     {
         abort_unless($booking->user_id === $request->user()->id, 403);
         $data = $request->validated();
-        $replacement = $this->rescheduleBookingAction->execute($booking, $data['court_id'], $data['slots']);
+        $replacement = $this->bookings->reschedule($booking, $data['court_id'], $data['slots']);
 
         return response()->json(['booking' => $replacement, 'payment' => $this->payments->qrPayload($replacement)], 201);
     }
@@ -117,7 +106,7 @@ class BookingController extends Controller
             'coupon_code' => 'nullable|string|max:40',
         ]);
 
-        $updated = $this->applyBookingCouponAction->execute($booking, $data['coupon_code'] ?? null);
+        $updated = $this->bookings->applyCoupon($booking, $data['coupon_code'] ?? null);
 
         return response()->json([
             'booking' => $updated->load(['court.venue', 'slots', 'coupon']),

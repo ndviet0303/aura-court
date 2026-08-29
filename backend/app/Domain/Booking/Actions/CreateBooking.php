@@ -2,10 +2,12 @@
 
 namespace App\Domain\Booking\Actions;
 
+use App\Contracts\Repositories\BookingRepositoryInterface;
+use App\Contracts\Repositories\CourtBlockRepositoryInterface;
+use App\Contracts\Repositories\CourtPriceSlotRepositoryInterface;
+use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Domain\Booking\DTOs\CreateBookingData;
 use App\Models\Booking;
-use App\Models\BookingSlot;
-use App\Models\Court;
 use App\Notifications\AuraBookingNotification;
 use App\Services\Booking\DiscountService;
 use App\Services\Booking\WaitlistService;
@@ -18,6 +20,10 @@ use Illuminate\Validation\ValidationException;
 class CreateBooking
 {
     public function __construct(
+        private readonly CourtRepositoryInterface $courts,
+        private readonly CourtPriceSlotRepositoryInterface $priceSlots,
+        private readonly CourtBlockRepositoryInterface $courtBlocks,
+        private readonly BookingRepositoryInterface $bookings,
         private readonly DiscountService $discounts,
         private readonly WaitlistService $waitlists,
     ) {}
@@ -57,21 +63,21 @@ class CreateBooking
             }
         }
 
-        $court = Court::query()->whereKey($data->courtId)->where('is_active', true)
-            ->whereHas('venue', fn ($query) => $query->where('is_active', true))
-            ->firstOrFail();
+        $court = $this->courts->findActiveWithActiveVenue($data->courtId);
+        abort_unless($court, 404, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
 
         $userId = $data->userId;
         $couponCode = $data->couponCode;
 
         try {
             $booking = DB::transaction(function () use ($userId, $court, $local, $couponCode) {
-                $prices = $court->priceSlots()->where('is_active', true)->get();
-                $blocks = $court->blocks()->where(function ($query) use ($local) {
-                    $query->where('starts_at', '<', $local->last()->copy()->addHour()->utc())
-                        ->where('ends_at', '>', $local->first()->copy()->utc());
-                })->exists();
-                abort_if($blocks, 409, 'Sân đang bị khóa trong khoảng thời gian đã chọn.');
+                $prices = $this->priceSlots->getActiveForCourt($court);
+                $hasBlock = $this->courtBlocks->hasOverlappingBlock(
+                    $court,
+                    $local->first()->copy()->utc(),
+                    $local->last()->copy()->addHour()->utc()
+                );
+                abort_if($hasBlock, 409, 'Sân đang bị khóa trong khoảng thời gian đã chọn.');
 
                 $resolved = $local->map(function (Carbon $time) use ($prices) {
                     $price = $prices->first(fn ($slot) => $slot->weekday === $time->dayOfWeekIso
@@ -86,7 +92,7 @@ class CreateBooking
 
                 $subtotal = $resolved->sum(fn ($row) => $row[1]);
                 $discount = $this->discounts->reserve($userId, $subtotal, $couponCode);
-                $booking = Booking::create([
+                $booking = $this->bookings->create([
                     'code' => 'BK'.strtoupper(Str::random(12)),
                     'user_id' => $userId,
                     'court_id' => $court->id,
@@ -98,16 +104,17 @@ class CreateBooking
                     'payment_expires_at' => now()->addMinutes(15),
                 ]);
 
+                $slotsData = [];
                 foreach ($resolved as [$time, $price]) {
-                    BookingSlot::create([
-                        'booking_id' => $booking->id,
+                    $slotsData[] = [
                         'court_id' => $court->id,
                         'starts_at' => $time->copy()->utc(),
                         'ends_at' => $time->copy()->addHour()->utc(),
                         'unit_price' => $price,
                         'status' => 'held',
-                    ]);
+                    ];
                 }
+                $this->bookings->createSlots($booking, $slotsData);
 
                 return $booking->load(['user', 'court.venue', 'slots', 'coupon']);
             });
