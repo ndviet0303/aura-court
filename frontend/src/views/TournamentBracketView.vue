@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
+
+const auth = useAuthStore()
 
 interface Player {
   name: string
@@ -409,12 +412,25 @@ onMounted(() => {
             <span>Danh sách giải đấu</span>
           </RouterLink>
 
-          <!-- Live Score Direct CTA -->
-          <RouterLink to="/tournaments/live" class="btn-live-shortcut">
-            <span class="live-ping-dot"></span>
-            <span>Xem Tỷ Số Trực Tiếp</span>
-            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </RouterLink>
+          <!-- Actions right -->
+          <div class="flex items-center gap-3">
+            <RouterLink
+              v-if="auth.user?.role === 'admin'"
+              to="/admin/tournaments"
+              class="btn-live-shortcut"
+              style="background: var(--surface-container-high, #e7e8e9); color: var(--ink, #191c1d); border: 1px solid var(--border, #d3c3c5);"
+            >
+              <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+              <span>Quản Trị Bracket</span>
+            </RouterLink>
+
+            <!-- Live Score Direct CTA -->
+            <RouterLink to="/tournaments/live" class="btn-live-shortcut">
+              <span class="live-ping-dot"></span>
+              <span>Xem Tỷ Số Trực Tiếp</span>
+              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </RouterLink>
+          </div>
         </div>
 
         <!-- Sticky Header with Tournament Title and Tabs -->

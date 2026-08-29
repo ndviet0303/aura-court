@@ -645,8 +645,17 @@ onMounted(() => {
                 <span>Chi Tiết & Nhánh Đấu</span>
               </button>
 
+              <RouterLink
+                v-if="auth.user?.role === 'admin'"
+                to="/admin/tournaments"
+                class="btn-outline-pill"
+              >
+                <span class="material-symbols-outlined">admin_panel_settings</span>
+                <span>Quản Trị Bracket (Admin)</span>
+              </RouterLink>
+
               <button
-                v-if="auth.user"
+                v-else-if="auth.user"
                 type="button"
                 class="btn-outline-pill"
                 @click="openCreateModal"

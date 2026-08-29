@@ -152,6 +152,16 @@ function closeMobileSidebar() {
             <span class="material-symbols-outlined nav-icon">badge</span>
             <span class="nav-label">{{ t('admin.staffManage') }}</span>
           </RouterLink>
+
+          <RouterLink
+            to="/admin/tournaments"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/tournaments' || route.path.startsWith('/admin/tournaments') || route.path === '/admin/bracket' }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">account_tree</span>
+            <span class="nav-label">Giải đấu & Bracket</span>
+          </RouterLink>
         </nav>
 
         <div class="nav-section-label mt-4">MỞ RỘNG & DỊCH VỤ</div>
