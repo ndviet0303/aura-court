@@ -39,13 +39,13 @@ src/
 
 ## Views (Pages)
 
-- Views are **thin orchestrators** — max ~200 lines of `<script setup>`.
+- Views are **thin orchestrators** — ideally <150 lines, max ~200 lines of `<script setup>`.
 - Views compose feature components and call composables. They do NOT contain:
   - Direct API calls (`api.get()`, `apiV2.post()`)
   - Complex business logic
   - Reusable UI patterns
   - Types/interfaces (unless page-local and trivial)
-- A view that exceeds **500 total lines** (template + script + style) must be decomposed.
+- A view that exceeds **250 total lines** (template + script + style) must be decomposed. **God Views (>700 lines) are strictly forbidden.**
 
 ```vue
 <!-- ✅ Good — thin view -->
@@ -133,7 +133,7 @@ export function useBookingCreate() {
 
 - **Shared components** (`shared/components/`): Pure UI atoms and molecules. No domain logic. Props in, events out.
 - **Feature components** (`features/{domain}/components/`): Domain-aware, can access domain stores and composables.
-- Every component file max **400 lines**. Split when exceeding.
+- Every component file max **300 lines**. Split when exceeding.
 - Use `defineProps` and `defineEmits` with TypeScript generics.
 - Prefix shared components with a project prefix: `Aura{Name}.vue`.
 
@@ -144,6 +144,7 @@ export function useBookingCreate() {
 - If state is only used within one component/composable, use local `ref()` instead.
 - Stores use `defineStore` with the Composition API (`setup()` syntax).
 - Stores call domain API modules, not raw `api.get()`.
+- **Legacy Stores (`@/stores/`) are deprecated.** All new state management must be placed inside the relevant `features/{domain}/stores/` module.
 
 ## TypeScript Types
 
@@ -153,6 +154,7 @@ export function useBookingCreate() {
 - Avoid `any`. Use `unknown` for untyped data, then narrow.
 - Export types from the feature's barrel file: `features/{domain}/index.ts`.
 - Inline types/interfaces in views or components are **forbidden** unless trivially small.
+- **Cross-feature type imports** (e.g., `admin` importing a type from `court/types/`) are acceptable. However, cross-feature imports of logic (composables/stores) should be avoided. Shared types used across >2 features should ideally be promoted to `core/types/`.
 
 ```ts
 // ✅ features/booking/types/booking.ts
@@ -189,9 +191,9 @@ export type Booking = {
 
 ## Styling
 
-- Use `<style scoped>` for component styles.
+- Use `<style scoped>` for component styles. **Inline scoped CSS should be the standard for component-specific styles (100% compliance).**
 - Use CSS custom properties for theming (defined in `assets/`).
-- No inline styles in templates unless dynamic and computed.
+- No inline styles (`style="..."`) in templates unless dynamically computed.
 - BEM naming for CSS classes when scoped styles aren't sufficient.
 
 ## Performance
