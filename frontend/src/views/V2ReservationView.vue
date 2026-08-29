@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { apiV2, errorMessage } from '@/lib/api'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 type Quote = { id: number; quote_token: string; total_amount: number; expires_at: string; slot_snapshot: Array<{ starts_at: string; unit_price: number }> }
 type Reservation = { id: number; code: string; status: string; total_amount: number; hold_expires_at?: string; court: { name: string }; slots: Array<{ starts_at: string; unit_price: number }> }
@@ -17,7 +18,7 @@ const formatDate = (value: string) => new Date(value).toLocaleString('vi-VN', { 
 
 async function loadReservations(): Promise<void> {
   try {
-    const response = await apiV2.get<{ data: Reservation[] }>('/reservations')
+    const response = await bookingApi.getReservations<{ data: Reservation[] }>()
     reservations.value = response.data || []
   } catch (cause: unknown) {
     error.value = errorMessage(cause, 'Không tải được lịch đặt v2.')
@@ -29,7 +30,7 @@ async function getQuote(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    const response = await apiV2.post<{ quote: Quote }>('/price-quotes', { court_id: Number(courtId.value), slots: [new Date(slot.value).toISOString()] })
+    const response = await bookingApi.getPriceQuote<{ quote: Quote }>({ court_id: Number(courtId.value), slots: [new Date(slot.value).toISOString()] })
     quote.value = response.quote
     notice.value = 'Báo giá đã được giữ trong 15 phút.'
   } catch (cause: unknown) {
@@ -44,7 +45,7 @@ async function holdReservation(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    await apiV2.post('/reservations', { quote_token: quote.value.quote_token })
+    await bookingApi.holdReservation({ quote_token: quote.value.quote_token })
     quote.value = null
     notice.value = 'Đã giữ lịch. Hãy xác nhận thanh toán để kích hoạt quyền đặt sân.'
     await loadReservations()
@@ -57,7 +58,7 @@ async function holdReservation(): Promise<void> {
 
 async function confirmReservation(reservation: Reservation): Promise<void> {
   try {
-    await apiV2.post(`/reservations/${reservation.code}/confirm`)
+    await bookingApi.confirmReservation(reservation.code)
     notice.value = 'Lịch đặt đã được xác nhận.'
     await loadReservations()
   } catch (cause: unknown) {

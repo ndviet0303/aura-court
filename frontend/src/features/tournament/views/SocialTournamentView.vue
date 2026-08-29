@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { apiV2, errorMessage } from '@/lib/api'
+import { tournamentApi } from '../api/tournamentApi'
+import { socialApi } from '@/features/social/api/socialApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
 
@@ -367,9 +369,9 @@ async function load(): Promise<void> {
   loading.value = true
   try {
     const [profileResponse, matchesResponse, tournamentsResponse] = await Promise.allSettled([
-      apiV2.get<typeof profile.value>('/social/profile'),
-      apiV2.get<{ matches: Match[] }>('/social/matches'),
-      apiV2.get<{ data: Tournament[] }>('/tournaments'),
+      socialApi.getProfile<typeof profile.value>(),
+      socialApi.getMatches<{ matches: Match[] }>(),
+      tournamentApi.list<{ data: Tournament[] }>(),
     ])
 
     if (profileResponse.status === 'fulfilled' && profileResponse.value) {
@@ -396,7 +398,7 @@ async function load(): Promise<void> {
 async function saveProfile(): Promise<void> {
   processing.value = true
   try {
-    await apiV2.put('/social/profile', profile.value)
+    await socialApi.updateProfile(profile.value)
     showNotice('Đã lưu thông tin hồ sơ vận động viên thành công.')
   } catch (cause: unknown) {
     showError(errorMessage(cause, 'Không thể lưu hồ sơ.'))
@@ -436,7 +438,7 @@ async function handleCreateMatch(): Promise<void> {
 
     // Try API post
     try {
-      await apiV2.post('/social/matches', payload)
+      await socialApi.createMatch(payload as any)
     } catch {
       // offline/fallback: prepend to local matches
       const newMatch: Match = {
@@ -493,7 +495,7 @@ async function joinMatch(match: Match): Promise<void> {
   processing.value = true
   try {
     try {
-      await apiV2.post(`/social/matches/${match.id}/join`)
+      await socialApi.joinMatch(match.id)
     } catch {
       // optimistic update
       if (!match.participants) match.participants = []
@@ -526,7 +528,7 @@ async function joinMatch(match: Match): Promise<void> {
 async function createTournament(): Promise<void> {
   processing.value = true
   try {
-    await apiV2.post('/tournaments', {
+    await tournamentApi.create({
       name: tournamentForm.value.name,
       format: tournamentForm.value.format,
       participant_ids: tournamentForm.value.participant_ids.split(',').map((id) => Number(id.trim())),
@@ -542,7 +544,7 @@ async function createTournament(): Promise<void> {
 
 async function openTournament(tournament: Tournament): Promise<void> {
   try {
-    const res = await apiV2.get<{ tournament: Tournament }>(`/tournaments/${tournament.id}`)
+    const res = await tournamentApi.getById<{ tournament: Tournament }>(tournament.id)
     selectedTournament.value = res.tournament
   } catch (cause: unknown) {
     showError(errorMessage(cause, 'Không tải được bracket giải đấu.'))
@@ -552,7 +554,7 @@ async function openTournament(tournament: Tournament): Promise<void> {
 async function scoreFixture(fixture: Fixture): Promise<void> {
   if (!selectedTournament.value || !fixture.participant_one_id) return
   try {
-    await apiV2.post(`/tournaments/${selectedTournament.value.id}/fixtures/${fixture.id}/score`, {
+    await tournamentApi.scoreFixture(selectedTournament.value.id, fixture.id, {
       expected_version: selectedTournament.value.version,
       winner_id: fixture.participant_one_id,
       score: { winner: 21, loser: 18 },

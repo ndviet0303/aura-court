@@ -12,7 +12,11 @@ vi.mock('vue-router', () => ({
   },
 }))
 
-vi.mock('@/lib/api', () => ({
+vi.mock('@/core/api/client', () => ({
+  api: {
+    get: vi.fn().mockResolvedValue({ data: [] }),
+    post: vi.fn().mockResolvedValue({ status: 'ok' }),
+  },
   apiV2: {
     get: vi.fn().mockResolvedValue({ data: [] }),
     post: vi.fn().mockResolvedValue({ status: 'ok' }),

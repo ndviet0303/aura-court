@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+import { financeApi } from '@/features/finance/api/financeApi'
+import { marketplaceApi } from '@/features/marketplace/api/marketplaceApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 type Invoice = { id: number; amount: number; status: string; due_at: string }
 type Series = { id: number; frequency: string; status: string; total_amount: number; invoices: Invoice[] }
@@ -20,8 +23,8 @@ const date = (value: string) => new Date(value).toLocaleString('vi-VN', { timeZo
 async function load(): Promise<void> {
   try {
     const [seriesResponse, listingsResponse] = await Promise.all([
-      apiV2.get<{ data: Series[] }>('/recurring-series'),
-      apiV2.get<{ data: Listing[] }>('/marketplace/listings'),
+      bookingApi.getRecurringSeries<{ data: Series[] }>(),
+      marketplaceApi.getListings<{ data: Listing[] }>(),
     ])
     series.value = seriesResponse.data || []
     listings.value = listingsResponse.data || []
@@ -31,7 +34,7 @@ async function load(): Promise<void> {
 async function createSeries(): Promise<void> {
   loading.value = true
   try {
-    await apiV2.post('/recurring-series', { court_id: Number(form.value.court_id), frequency: form.value.frequency, starts_at: new Date(form.value.starts_at).toISOString(), until: form.value.until ? new Date(form.value.until).toISOString() : undefined, occurrences: form.value.occurrences })
+    await bookingApi.createRecurringSeries({ court_id: Number(form.value.court_id), frequency: form.value.frequency, starts_at: new Date(form.value.starts_at).toISOString(), until: form.value.until ? new Date(form.value.until).toISOString() : undefined, occurrences: form.value.occurrences })
     notice.value = 'Đã xác nhận toàn bộ lịch định kỳ và tạo hóa đơn tháng.'
     await load()
   } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tạo lịch định kỳ.') }
@@ -40,7 +43,7 @@ async function createSeries(): Promise<void> {
 
 async function payInvoice(invoice: Invoice): Promise<void> {
   try {
-    await apiV2.post(`/monthly-invoices/${invoice.id}/pay`, { payment_reference: `web-${invoice.id}-${Date.now()}` })
+    await financeApi.payInvoice(invoice.id, { payment_reference: `web-${invoice.id}-${Date.now()}` })
     notice.value = 'Đã ghi nhận thanh toán hóa đơn.'
     await load()
   } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể thanh toán hóa đơn.') }
@@ -49,14 +52,14 @@ async function payInvoice(invoice: Invoice): Promise<void> {
 async function createSplit(): Promise<void> {
   try {
     const shares = splitForm.value.shares.split(',').map((amount) => ({ amount: Number(amount.trim()) }))
-    await apiV2.post(`/reservations/${splitForm.value.reservation_id}/split`, { shares })
+    await financeApi.createReservationSplit(splitForm.value.reservation_id, { shares })
     notice.value = 'Đã tạo nhóm chia tiền; mỗi người có 15 phút để thanh toán.'
   } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể tạo nhóm chia tiền.') }
 }
 
 async function purchase(listing: Listing): Promise<void> {
   try {
-    const result = await apiV2.post<{ transfer: { status: string } }>(`/marketplace/listings/${listing.id}/purchase`, { buyer_payment_reference: `market-${listing.id}-${Date.now()}` })
+    const result = await marketplaceApi.purchaseListing<{ transfer: { status: string } }>(listing.id, { buyer_payment_reference: `market-${listing.id}-${Date.now()}` })
     notice.value = result.transfer.status === 'completed' ? 'Đã chuyển quyền đặt sân thành công.' : 'Thanh toán cần được xử lý bù trừ.'
     await load()
   } catch (cause: unknown) { error.value = errorMessage(cause, 'Không thể mua suất đặt sân.') }

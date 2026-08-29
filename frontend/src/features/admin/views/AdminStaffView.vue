@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -534,7 +535,7 @@ async function handleAddStaff() {
   try {
     // Attempt real API if available
     try {
-      await api.post('/organizations/1/members', {
+      await adminApi.addOrgMember(1, {
         email: addForm.value.email,
         role: addForm.value.role,
       })
@@ -602,7 +603,7 @@ async function handleUpdateStaff() {
   saving.value = true
   try {
     try {
-      await api.patch(`/organizations/1/members/${memberToEdit.value.id}`, {
+      await adminApi.updateOrgMember(1, memberToEdit.value.id, {
         role: editForm.value.role,
         status: editForm.value.status,
       })
@@ -651,7 +652,7 @@ async function handleDeleteStaff() {
   saving.value = true
   try {
     try {
-      await api.delete(`/organizations/1/members/${memberToDelete.value.id}`)
+      await adminApi.removeOrgMember(1, memberToDelete.value.id)
     } catch {
       // Local state fallback
     }
@@ -715,7 +716,7 @@ onMounted(async () => {
   loading.value = true
   try {
     // Attempt to load venues
-    const res = (await api.get('/admin/venues')) as {
+    const res = (await adminApi.getVenues()) as {
       data?: { venues?: Array<{ id: number; name: string; address?: string }> }
     }
     if (res?.data?.venues && Array.isArray(res.data.venues)) {

@@ -1,15 +1,16 @@
 import { apiV2 } from '@/core/api/client'
-import type { ResaleListing } from '../types/marketplace'
+import type { PurchaseListingPayload, CreateListingPayload } from '../types/marketplace'
 
 export const marketplaceApi = {
-  getListings: () => apiV2.get<ResaleListing[]>('/marketplace/listings'),
+  getListings: <T = { data: any[] }>() =>
+    apiV2.get<T>('/marketplace/listings'),
 
-  createListing: (entitlementId: number, payload: { resale_price: number }) =>
+  purchaseListing: <T = unknown>(listingId: number | string, payload: PurchaseListingPayload) =>
+    apiV2.post<T>(`/marketplace/listings/${listingId}/purchase`, payload),
+
+  listEntitlement: (entitlementId: number | string, payload: CreateListingPayload) =>
     apiV2.post(`/marketplace/entitlements/${entitlementId}/list`, payload),
 
-  purchaseListing: (listingId: number) =>
-    apiV2.post(`/marketplace/listings/${listingId}/purchase`),
-
-  withdrawListing: (listingId: number) =>
+  withdrawListing: (listingId: number | string) =>
     apiV2.post(`/marketplace/listings/${listingId}/withdraw`),
 }

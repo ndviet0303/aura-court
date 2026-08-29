@@ -2,13 +2,17 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
-import type { Court, CourtBlock, PriceSlot, Refund, SportZone, Venue } from '@/types'
-import TimePicker from '@/components/TimePicker.vue'
-import DateTimePicker from '@/components/DateTimePicker.vue'
-import SelectDropdown from '@/components/SelectDropdown.vue'
-import AuraButton from '@/components/AuraButton.vue'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
+import type { Court, CourtBlock, PriceSlot, SportZone, Venue } from '@/features/court/types/court'
+import type { Refund } from '@/features/booking/types/booking'
+import {
+  TimePicker,
+  DateTimePicker,
+  SelectDropdown,
+  AuraButton,
+  SkeletonLoader,
+} from '@/shared/components'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDateTime } from '@/i18n'
 
@@ -203,7 +207,7 @@ async function handleFileUpload(event: Event) {
   try {
     const formData = new FormData()
     formData.append('image', file)
-    const res = await api.post<{ url: string; filename: string }>('/admin/upload', formData)
+    const res = await adminApi.uploadImage(formData)
     courtForm.value.image_url = res.url
   } catch (err: unknown) {
     uploadError.value = errorMessage(err, 'Không thể tải ảnh lên Cloudflare R2.')
@@ -253,11 +257,11 @@ async function load() {
   error.value = ''
   try {
     const [loadedCourts, loadedVenues, loadedZones, loadedRefunds, loadedCoupons] = await Promise.all([
-      api.get<Court[]>('/admin/courts'),
-      api.get<Venue[]>('/admin/venues'),
-      api.get<SportZone[]>('/admin/sport-zones'),
-      api.get<{ data: Refund[] }>('/admin/refunds'),
-      api.get<{ data: Coupon[] }>('/admin/coupons'),
+      adminApi.getCourts(),
+      adminApi.getVenues(),
+      adminApi.getSportZones(),
+      adminApi.getRefunds<{ data: Refund[] }>(),
+      adminApi.getCoupons<{ data: Coupon[] }>(),
     ])
     courts.value = loadedCourts
     venues.value = loadedVenues
@@ -353,10 +357,10 @@ async function saveCourt() {
     }
 
     if (editingCourt.value) {
-      await api.patch(`/admin/courts/${editingCourt.value}`, payload)
+      await adminApi.updateCourt(editingCourt.value, payload)
       notice.value = 'Đã cập nhật sân thành công.'
     } else {
-      await api.post('/admin/courts', payload)
+      await adminApi.createCourt(payload)
       notice.value = 'Đã tạo sân mới thành công.'
     }
     showCourtModal.value = false
@@ -377,10 +381,10 @@ async function toggleCourtStatus(court: Court) {
   }
   try {
     if (nextStatus) {
-      await api.patch(`/admin/courts/${court.id}`, { is_active: true })
+      await adminApi.updateCourt(court.id, { is_active: true })
       notice.value = `Đã mở lại ${court.name}.`
     } else {
-      await api.delete(`/admin/courts/${court.id}`)
+      await adminApi.deleteCourt(court.id)
       notice.value = `Đã ngừng mở ${court.name}.`
     }
     await load()
@@ -530,7 +534,7 @@ async function applyBulkPricing() {
       return
     }
 
-    const res = await api.post<{ message: string; slots?: PriceSlot[] }>(`/admin/courts/${court.id}/prices/bulk`, {
+    const res = await adminApi.bulkCreatePrices(court.id, {
       weekdays: targetWeekdays,
       start_hour: bulkStartHour.value,
       end_hour: bulkEndHour.value,
@@ -598,9 +602,9 @@ async function saveInlineEdit(slot: PriceSlot) {
     }
 
     if (slot.id && slot.id > 0) {
-      await api.patch(`/admin/courts/${court.id}/prices/${slot.id}`, { price: inlineEditingPrice.value })
+      await adminApi.updatePrice(court.id, slot.id, { price: inlineEditingPrice.value })
     } else {
-      await api.post(`/admin/courts/${court.id}/prices`, {
+      await adminApi.createPrice(court.id, {
         weekday: slot.weekday,
         starts_at: startsAt,
         ends_at: endsAt,
@@ -643,7 +647,7 @@ async function savePriceSlot() {
       return
     }
 
-    await api.post(`/admin/courts/${court.id}/prices`, priceForm.value)
+    await adminApi.createPrice(court.id, priceForm.value)
     notice.value = `Đã lưu khung giá cho ${court.name}.`
     await load()
     selectedCourtForPrice.value = courts.value.find((c) => c.id === court.id) || court
@@ -663,7 +667,7 @@ async function deletePriceSlot(price: PriceSlot) {
     return
   }
   try {
-    await api.delete(`/admin/courts/${court.id}/prices/${price.id}`)
+    await adminApi.deletePrice(court.id, price.id)
     notice.value = 'Đã xóa khung giá.'
     await load()
     selectedCourtForPrice.value = courts.value.find((c) => c.id === court.id) || court
@@ -699,7 +703,7 @@ async function saveBlock() {
       return
     }
 
-    await api.post(`/admin/courts/${court.id}/blocks`, blockForm.value)
+    await adminApi.createBlock(court.id, blockForm.value)
     notice.value = `Đã khóa lịch ${court.name}.`
     showBlockModal.value = false
     await load()
@@ -718,7 +722,7 @@ async function deleteBlock(court: Court, block: CourtBlock) {
     return
   }
   try {
-    await api.delete(`/admin/courts/${court.id}/blocks/${block.id}`)
+    await adminApi.deleteBlock(court.id, block.id)
     notice.value = 'Đã mở khóa lịch.'
     await load()
   } catch (cause: unknown) {
@@ -734,7 +738,7 @@ async function processRefund(refund: Refund, status: 'processed' | 'rejected') {
     return
   }
   try {
-    await api.patch(`/admin/refunds/${refund.id}`, { status })
+    await adminApi.processRefund(refund.id, { status })
     notice.value = status === 'processed' ? 'Đã duyệt hoàn tiền thành công.' : 'Đã từ chối hoàn tiền.'
     await load()
   } catch (cause: unknown) {
@@ -767,7 +771,7 @@ async function createCoupon() {
       return
     }
 
-    await api.post('/admin/coupons', {
+    await adminApi.createCoupon({
       ...couponForm.value,
       code: couponForm.value.code.toUpperCase(),
     })

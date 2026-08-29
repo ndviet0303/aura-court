@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { api, apiV2, errorMessage } from '@/lib/api'
+import { financeApi } from '../api/financeApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
-import ErrorModal from '@/components/ErrorModal.vue'
+import { SkeletonLoader, ErrorModal } from '@/shared/components'
 
 interface Court {
   id: number
@@ -193,9 +193,9 @@ async function loadCycleData() {
     // Fetch in parallel using Promise.allSettled to eliminate waterfall latency
     const [invDetailResult, seriesResult] = await Promise.allSettled([
       isSpecificInvoice
-        ? apiV2.get<{ invoice: MonthlyInvoice; occurrences: RecurringOccurrence[] }>(`/monthly-invoices/${invoiceParam}`)
+        ? financeApi.getInvoice<{ invoice: MonthlyInvoice; occurrences: RecurringOccurrence[] }>(invoiceParam)
         : Promise.resolve(null),
-      apiV2.get<{ data: RecurringSeries[] }>('/recurring-series').catch(() => ({ data: [] })),
+      financeApi.getRecurringSeries<{ data: RecurringSeries[] }>().catch(() => ({ data: [] })),
     ])
 
     // Process series context & collected invoices
@@ -383,7 +383,7 @@ async function handleConfirmPayment() {
 
   try {
     const refCode = `${payingMethod.value.toLowerCase()}-${invoice.value.id}-${Date.now()}`
-    await apiV2.post(`/monthly-invoices/${invoice.value.id}/pay`, {
+    await financeApi.payInvoice(invoice.value.id, {
       payment_reference: refCode,
     })
 

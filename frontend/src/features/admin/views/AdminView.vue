@@ -2,8 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, apiOrigin, errorMessage } from '@/lib/api'
-import DatePicker from '@/components/DatePicker.vue'
+import { apiOrigin } from '@/core/api/client'
+import { adminApi } from '../api/adminApi'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+import { errorMessage } from '@/core/utils/errorMessage'
+import { DatePicker } from '@/shared/components'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDateTime } from '@/i18n'
 
@@ -121,11 +124,11 @@ async function load() {
     if (statusFilter.value) query.set('status', statusFilter.value)
 
     const [reportRes, bookingsRes, paymentsRes, courtsRes, auditRes] = await Promise.allSettled([
-      api.get<AdminReport>(`/admin/reports?${query}`),
-      api.get<{ data: AdminBooking[] }>(`/admin/bookings?${query}`),
-      api.get<{ data: ReviewPayment[] }>('/admin/payments'),
-      api.get<CourtItem[]>('/courts'),
-      api.get<{ data: AuditLog[] }>('/admin/audit-logs'),
+      adminApi.getReports<AdminReport>(query.toString()),
+      adminApi.getBookings<{ data: AdminBooking[] }>(query.toString()),
+      adminApi.getPayments<{ data: ReviewPayment[] }>(),
+      bookingApi.getCourts<CourtItem[]>(),
+      adminApi.getAuditLogs<{ data: AuditLog[] }>(),
     ])
 
     if (reportRes.status === 'fulfilled') {
@@ -261,7 +264,7 @@ const courtRevenueData = computed(() => {
 
 async function reviewPayment(payment: ReviewPayment, nextStatus: 'paid' | 'rejected') {
   if (isDemoAdmin.value) {
-    payments.value = payments.value.filter((item) => item.id !== payment.id)
+    payments.value = payments.value.map((item) => (item.id === payment.id ? { ...item, status: nextStatus } : item))
     bookings.value = bookings.value.map((booking) =>
       booking.code === payment.booking?.code ? { ...booking, status: nextStatus === 'paid' ? 'confirmed' : 'cancelled' } : booking
     )
@@ -269,7 +272,7 @@ async function reviewPayment(payment: ReviewPayment, nextStatus: 'paid' | 'rejec
     return
   }
   try {
-    await api.patch(`/admin/payments/${payment.id}`, { status: nextStatus })
+    await adminApi.updatePayment(payment.id, { status: nextStatus })
     notice.value = nextStatus === 'paid' ? 'Đã duyệt thanh toán thành công.' : 'Đã từ chối giao dịch.'
     await load()
   } catch (cause: unknown) {
@@ -285,7 +288,7 @@ async function markNoShow(booking: AdminBooking) {
     return
   }
   try {
-    await api.patch(`/admin/bookings/${booking.id}/no-show`, {})
+    await adminApi.markNoShow(booking.id)
     notice.value = 'Đã đánh dấu vắng mặt cho lượt đặt sân.'
     await load()
   } catch (cause: unknown) {

@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminVenuesView from '../AdminVenuesView.vue'
 import { i18n } from '@/i18n'
-import { api } from '@/lib/api'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/venues' }),
@@ -19,8 +19,14 @@ vi.mock('qrcode', () => ({
   },
 }))
 
-vi.mock('@/lib/api', () => ({
+vi.mock('@/core/api/client', () => ({
   api: {
+    get: vi.fn(),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
+  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),

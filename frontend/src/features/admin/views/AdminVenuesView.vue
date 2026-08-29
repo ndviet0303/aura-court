@@ -3,9 +3,10 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
-import { api, errorMessage } from '@/lib/api'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
-import type { SportType, SportZone, Venue } from '@/types'
+import type { SportType, SportZone, Venue } from '@/features/court/types/court'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -177,7 +178,7 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    venues.value = await api.get<Venue[]>('/admin/venues')
+    venues.value = await adminApi.getVenues()
     await Promise.all(venues.value.map(makeQr))
   } catch (cause: unknown) {
     error.value = errorMessage(cause, 'Không tải được danh sách cụm sân.')
@@ -234,10 +235,10 @@ async function save(): Promise<void> {
     }
 
     if (editingId.value) {
-      await api.patch(`/admin/venues/${editingId.value}`, form.value)
+      await adminApi.updateVenue(editingId.value, form.value)
       notice.value = 'Đã cập nhật địa điểm thành công.'
     } else {
-      await api.post('/admin/venues', form.value)
+      await adminApi.createVenue(form.value)
       notice.value = 'Đã tạo địa điểm mới thành công.'
     }
     showVenueModal.value = false
@@ -257,7 +258,7 @@ async function toggle(venue: Venue): Promise<void> {
     return
   }
   try {
-    await api.patch(`/admin/venues/${venue.id}`, { is_active: active })
+    await adminApi.updateVenue(venue.id, { is_active: active })
     notice.value = active ? 'Đã mở lại cụm sân.' : 'Đã chuyển cụm sân sang trạng thái bảo trì.'
     await load()
   } catch (cause: unknown) {
@@ -275,7 +276,7 @@ async function openZonesModal(venue: Venue) {
 async function loadZones(venueId: number) {
   loadingZones.value = true
   try {
-    zones.value = await api.get<SportZone[]>(`/admin/sport-zones?venue_id=${venueId}`)
+    zones.value = await adminApi.getSportZones(venueId)
   } catch (cause) {
     error.value = errorMessage(cause, 'Không thể tải danh sách khu thể thao.')
   } finally {
@@ -313,10 +314,10 @@ async function saveZone() {
   saving.value = true
   try {
     if (editingZoneId.value) {
-      await api.patch(`/admin/sport-zones/${editingZoneId.value}`, zoneForm.value)
+      await adminApi.updateSportZone(editingZoneId.value, zoneForm.value)
       notice.value = 'Đã cập nhật khu vực thể thao.'
     } else {
-      await api.post('/admin/sport-zones', {
+      await adminApi.createSportZone({
         ...zoneForm.value,
         venue_id: selectedVenueForZones.value.id,
       })
@@ -334,7 +335,7 @@ async function saveZone() {
 
 async function toggleZone(zone: SportZone) {
   try {
-    await api.patch(`/admin/sport-zones/${zone.id}`, { is_active: !zone.is_active })
+    await adminApi.updateSportZone(zone.id, { is_active: !zone.is_active })
     zone.is_active = !zone.is_active
     notice.value = zone.is_active ? 'Đã mở lại khu vực thể thao.' : 'Đã tạm ngừng khu vực thể thao.'
   } catch (cause) {

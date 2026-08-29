@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { api } from '@/lib/api'
+import { financeApi } from '../api/financeApi'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency } from '@/i18n'
 
@@ -273,10 +273,10 @@ async function loadData() {
   error.value = ''
   try {
     const [settlementRes, payoutRes, beneficiaryRes, exceptionsRes] = await Promise.allSettled([
-      api.get<{ data: any[] }>('/v2/finance/settlements'),
-      api.get<{ data: any[] }>('/v2/finance/payouts'),
-      api.get<any[]>('/v2/finance/beneficiaries'),
-      api.get<{ data: any[] }>('/v2/finance/exceptions'),
+      financeApi.getSettlements(),
+      financeApi.getPayouts(),
+      financeApi.getBeneficiaries(),
+      financeApi.getExceptions(),
     ])
 
     if (settlementRes.status === 'fulfilled' && settlementRes.value?.data?.length) {
@@ -311,25 +311,27 @@ async function loadData() {
 
     if (beneficiaryRes.status === 'fulfilled' && beneficiaryRes.value?.length) {
       const b = beneficiaryRes.value[0]
-      const matchingBank = popularBanks.find((item) => item.code === b.bank_code)
-      const fullBankName = matchingBank ? matchingBank.name : (b.bank_code || 'Vietcombank (VCB)')
-      beneficiary.value = {
-        id: b.id,
-        provider: b.provider || 'payos',
-        bank_code: b.bank_code || 'VCB',
-        bank_name: fullBankName,
-        account_number: b.account_number,
-        account_holder: b.account_holder || 'Tài khoản thụ hưởng',
-        tax_id: b.tax_id || '',
-        is_verified: true,
-        updated_at: new Date().toLocaleDateString('vi-VN'),
-      }
-      beneficiaryForm.value = {
-        bank_code: b.bank_code || 'VCB',
-        bank_name: fullBankName,
-        account_number: b.account_number || '',
-        account_holder: b.account_holder || '',
-        tax_id: b.tax_id || '',
+      if (b) {
+        const matchingBank = popularBanks.find((item) => item.code === b.bank_code)
+        const fullBankName = matchingBank ? matchingBank.name : (b.bank_code || 'Vietcombank (VCB)')
+        beneficiary.value = {
+          id: b.id,
+          provider: b.provider || 'payos',
+          bank_code: b.bank_code || 'VCB',
+          bank_name: fullBankName,
+          account_number: b.account_number,
+          account_holder: b.account_holder || 'Tài khoản thụ hưởng',
+          tax_id: b.tax_id || '',
+          is_verified: true,
+          updated_at: new Date().toLocaleDateString('vi-VN'),
+        }
+        beneficiaryForm.value = {
+          bank_code: b.bank_code || 'VCB',
+          bank_name: fullBankName,
+          account_number: b.account_number || '',
+          account_holder: b.account_holder || '',
+          tax_id: b.tax_id || '',
+        }
       }
     }
 
@@ -366,7 +368,7 @@ async function handleCreatePayout() {
   saving.value = true
   error.value = ''
   try {
-    await api.post('/v2/finance/payouts', {
+    await financeApi.createPayout({
       settlement_id: payoutForm.value.settlement_id || 1,
       beneficiary_id: beneficiary.value.id || 1,
       amount: payoutForm.value.amount,
@@ -410,7 +412,7 @@ async function handleUpdateBeneficiary() {
     const selectedBank = popularBanks.find((b) => b.code === beneficiaryForm.value.bank_code)
     const bankName = selectedBank ? selectedBank.name.split(' (')[0] : beneficiaryForm.value.bank_code
 
-    await api.post('/v2/finance/beneficiaries', {
+    await financeApi.createBeneficiary({
       bank_code: beneficiaryForm.value.bank_code,
       account_number: beneficiaryForm.value.account_number,
       account_holder: beneficiaryForm.value.account_holder.toUpperCase(),
@@ -451,7 +453,7 @@ async function handleCreateSnapshot() {
   saving.value = true
   error.value = ''
   try {
-    await api.post('/v2/finance/settlements/snapshot', {
+    await financeApi.snapshotSettlement({
       period_start: snapshotForm.value.period_start,
       period_end: snapshotForm.value.period_end,
     })
@@ -480,7 +482,7 @@ async function handleCreateSnapshot() {
 async function handleApprovePayout(payout: PayoutRecord) {
   saving.value = true
   try {
-    await api.post(`/v2/finance/payouts/${payout.id}/approve`, {})
+    await financeApi.approvePayout(payout.id)
     payout.status = 'approved'
     payout.current_step = 3
     payout.step_description = 'Đã duyệt lệnh rút tiền, chuẩn bị chuyển khoản'
@@ -498,7 +500,7 @@ async function handleApprovePayout(payout: PayoutRecord) {
 async function handleSyncPayoutStatus(payout: PayoutRecord) {
   saving.value = true
   try {
-    await api.post(`/v2/finance/payouts/${payout.id}/status`, {})
+    await financeApi.queryPayoutStatus(payout.id)
     payout.status = 'paid'
     payout.current_step = 5
     payout.completed_at = new Date().toLocaleDateString('vi-VN')

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { apiV2, errorMessage } from '@/lib/api'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -377,11 +378,9 @@ function movePriority(rule: PriceRule, direction: 'up' | 'down') {
 
 // Toggle Rule Active State
 async function toggleRuleActive(rule: PriceRule) {
-  rule.is_active = !rule.is_active
-  notice.value = rule.is_active ? `Đã kích hoạt "${rule.name}".` : `Đã tạm ngưng "${rule.name}".`
-  try {
+   try {
     if (rule.id && rule.id < 900) {
-      await apiV2.patch(`/price-rules/${rule.id}`, { is_active: rule.is_active })
+      await adminApi.updatePriceRule(rule.id, { is_active: rule.is_active })
     }
   } catch {
     // Graceful offline fallback
@@ -447,7 +446,7 @@ async function saveRule() {
       notice.value = `Đã thêm quy tắc mới "${newRule.name}".`
 
       try {
-        await apiV2.post('/price-rules', {
+        await adminApi.createPriceRule({
           type: newRule.type,
           price: newRule.price,
           priority: newRule.priority,
@@ -462,7 +461,7 @@ async function saveRule() {
         // Safe offline mock
       }
     } else {
-      const existing = rules.value.find((r) => r.id === form.value.id)
+      const existing = rules.value.find((r) => r.id === selectedRuleId.value)
       if (existing) {
         existing.name = form.value.name
         existing.type = form.value.type
@@ -470,12 +469,11 @@ async function saveRule() {
         existing.adjustment_type = form.value.adjustment_type
         existing.adjustment_value = Number(form.value.adjustment_value) || 0
         existing.price = calculatedPrice
-        existing.venue_id = form.value.venue_id
         existing.weekdays = [...form.value.weekdays]
-        existing.weekday = form.value.weekdays[0] || null
+        existing.weekday = form.value.weekdays[0] || 1
+        existing.exception_date = form.value.exception_date
         existing.date_start = form.value.date_start
         existing.date_end = form.value.date_end
-        existing.exception_date = form.value.exception_date
         existing.starts_at = form.value.is_all_day ? '00:00' : form.value.starts_at
         existing.ends_at = form.value.is_all_day ? '23:59' : form.value.ends_at
         existing.is_all_day = form.value.is_all_day
@@ -487,7 +485,7 @@ async function saveRule() {
 
         try {
           if (existing.id < 900) {
-            await apiV2.patch(`/price-rules/${existing.id}`, {
+            await adminApi.updatePriceRule(existing.id, {
               type: existing.type,
               price: existing.price,
               priority: existing.priority,
@@ -527,7 +525,7 @@ async function deleteRule(rule: PriceRule) {
     notice.value = `Đã xóa quy tắc "${rule.name}".`
     try {
       if (rule.id < 900) {
-        await apiV2.delete(`/price-rules/${rule.id}`)
+        await adminApi.deletePriceRule(rule.id)
       }
     } catch {
       // Safe offline
@@ -1018,7 +1016,7 @@ function importJson() {
 async function load() {
   loading.value = true
   try {
-    const res = await apiV2.get<{ rules: PriceRule[] }>('/pricing/calendar')
+    const res = await adminApi.getPricingCalendar<{ rules: PriceRule[] }>()
     if (res && res.rules && res.rules.length > 0) {
       rules.value = res.rules.map((r, idx) => ({
         ...r,

@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import V2PricingCalendarView from '../V2PricingCalendarView.vue'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/lib/api'
+import { api, apiV2 } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/pricing' }),
@@ -13,7 +13,13 @@ vi.mock('vue-router', () => ({
   },
 }))
 
-vi.mock('@/lib/api', () => ({
+vi.mock('@/core/api/client', () => ({
+  api: {
+    get: vi.fn(),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
   apiV2: {
     get: vi.fn(),
     post: vi.fn(),

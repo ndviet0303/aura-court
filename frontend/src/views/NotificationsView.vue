@@ -2,10 +2,11 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
+import { notificationApi } from '@/features/notification/api/notificationApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { formatDateTime } from '@/i18n'
-import type { AppNotification } from '@/types'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import type { AppNotification } from '@/features/notification/types/notification'
+import { SkeletonLoader } from '@/shared/components'
 
 const { t } = useI18n()
 const notifications = ref<AppNotification[]>([])
@@ -16,7 +17,7 @@ const loading = ref(true)
 async function load() {
   loading.value = true
   try {
-    const result = await api.get<{ unread: number; notifications: { data: AppNotification[] } }>('/notifications')
+    const result = await notificationApi.list()
     unread.value = result.unread
     notifications.value = result.notifications.data
   } catch (cause: unknown) {
@@ -28,13 +29,13 @@ async function load() {
 
 async function read(notification: AppNotification) {
   if (notification.read_at) return
-  await api.post('/notifications/' + notification.id + '/read')
+  await notificationApi.markAsRead(notification.id)
   notification.read_at = new Date().toISOString()
   unread.value = Math.max(0, unread.value - 1)
 }
 
 async function readAll() {
-  await api.post('/notifications/read-all')
+  await notificationApi.markAllAsRead()
   notifications.value.forEach((item) => { item.read_at ||= new Date().toISOString() })
   unread.value = 0
 }
@@ -71,9 +72,9 @@ onMounted(load)
     >
       <div class="row">
         <div>
-          <strong>{{ notification.data.title }}</strong>
-          <p style="margin:8px 0">{{ notification.data.body }}</p>
-          <RouterLink v-if="notification.data.action_url" :to="notification.data.action_url" class="link-button">
+          <strong>{{ notification.data?.title }}</strong>
+          <p style="margin:8px 0">{{ notification.data?.body }}</p>
+          <RouterLink v-if="notification.data?.action_url" :to="notification.data.action_url" class="link-button">
             {{ t('courts.courtDetail') }}
           </RouterLink>
         </div>

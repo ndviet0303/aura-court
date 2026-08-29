@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { tournamentApi } from '../api/tournamentApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
 
@@ -282,7 +283,7 @@ async function scorePoint(playerNumber: 1 | 2) {
 
     // Sync to backend if tournament API is connected
     try {
-      await apiV2.post(`/tournaments/${match.tournament_id}/fixtures/${match.id}/score`, {
+      await tournamentApi.scoreFixture(match.tournament_id, match.id, {
         expected_version: match.version - 1,
         score: {
           sets: match.sets_history.map((s) => ({ p1: s.p1, p2: s.p2 })),

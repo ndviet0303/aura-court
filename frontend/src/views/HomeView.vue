@@ -2,14 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { errorMessage } from '@/lib/api'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
-import type { AvailabilitySlot, Court } from '@/types'
+import type { AvailabilitySlot, Court } from '@/features/court/types/court'
 import { formatCurrency, formatTime } from '@/i18n'
-import DatePicker from '@/components/DatePicker.vue'
-import SelectDropdown from '@/components/SelectDropdown.vue'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
 
 const { t } = useI18n()
 const store = useBookingStore()

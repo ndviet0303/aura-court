@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { tournamentApi } from '@/features/tournament/api/tournamentApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
 
@@ -1074,7 +1075,7 @@ async function handleSaveDraft() {
   isSaving.value = true
   try {
     try {
-      await apiV2.post('/tournaments', {
+      await tournamentApi.create({
         name: tournament.value.name,
         format: tournament.value.format,
         status: 'draft',
@@ -1095,7 +1096,7 @@ async function handlePublishEvent() {
   isSaving.value = true
   try {
     try {
-      await apiV2.post('/tournaments', {
+      await tournamentApi.create({
         name: tournament.value.name,
         format: tournament.value.format,
         status: 'open',
@@ -1265,7 +1266,7 @@ async function toggleCheckIn(participant: Participant) {
   }
 
   try {
-    await apiV2.post(`/tournament-participants/${participant.id}/check-in`, {
+    await tournamentApi.checkInParticipant(participant.id, {
       checked_in: participant.checkedIn,
     })
   } catch {
@@ -1661,7 +1662,7 @@ onMounted(async () => {
     activeSubNav.value = route.query.tab as any
   }
   try {
-    const res = await apiV2.get<{ data: Array<{ id: number; name: string }> }>('/tournaments')
+    const res = await tournamentApi.list<{ data: Array<{ id: number; name: string }> }>()
     if (res?.data && res.data.length > 0) {
       // Sync active tournament
     }

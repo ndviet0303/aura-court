@@ -1,15 +1,18 @@
-export type User = { id: number; name: string; email: string; role: 'customer' | 'admin'; phone?: string | null; play_level?: string | null; favorite_sports?: string[] | null; avatar_url?: string | null; onboarded?: boolean; password_set?: boolean; social_provider?: string | null; email_verified_at?: string | null }
-export type SportType = 'badminton' | 'football_5v5' | 'football_7v7' | 'tennis' | 'pickleball' | 'basketball' | 'volleyball' | 'table_tennis';
-export type SportZone = { id: number; venue_id: number; name: string; sport_type: SportType; slot_duration: number; description?: string | null; is_active: boolean; courts_count?: number; courts?: Court[]; venue?: Venue }
-export type Venue = { id: number; name: string; slug: string; address: string | null; google_maps_url: string | null; is_active: boolean; share_url: string; courts_count?: number; sport_zones?: SportZone[]; image_url?: string }
-export type CourtBlock = { id: number; court_id: number; starts_at: string; ends_at: string; reason?: string }
-export type Court = { id: number; name: string; slug?: string; venue_id?: number; sport_zone_id?: number | null; venue: Venue; sport_zone?: SportZone | null; description?: string; image_url?: string; is_active?: boolean; price_slots?: PriceSlot[]; blocks?: CourtBlock[]; reviews_count?: number; reviews_avg_rating?: number | null }
-export type PriceSlot = { id?: number; court_id?: number; weekday: number; starts_at: string; ends_at: string; price: number; is_active?: boolean }
-export type AvailabilitySlot = { startsAt: string; endsAt: string; price: number; available: boolean }
-export type Coupon = { id: number; code: string; discount_type: 'fixed' | 'percent'; discount_value: number; max_discount?: number | null; min_spend?: number | null }
-export type Booking = { id: number; code: string; status: string; total_amount: number; discount_amount?: number; membership_discount_amount?: number; payment_expires_at?: string; court: Court; slots: { id?: number; starts_at: string; ends_at: string; unit_price: number }[]; coupon?: Coupon | null; review?: Review | null }
-export type PaymentInfo = { code: string; amount: number; bank: string; accountNumber: string; qrUrl: string; expiresAt: string }
-export type Refund = { id: number; amount: number; status: string; note?: string; booking: Booking & { user?: User } }
-export type Review = { id: number; booking_id: number; rating: number; body?: string | null; user?: User }
-export type AppNotification = { id: string; type: string; data: { event: string; title: string; body: string; action_url?: string | null }; read_at?: string | null; created_at: string }
-export type Membership = { id: number; starts_at: string; ends_at: string; status: string; plan: { name: string; description?: string; discount_percent: number } }
+/**
+ * @deprecated Prefer importing directly from feature types:
+ * - `@/core/types/common`
+ * - `@/features/court/types/court`
+ * - `@/features/booking/types/booking`
+ * - `@/features/auth/types/auth`
+ * - `@/features/notification/types/notification`
+ */
+export * from '@/core/types/common'
+export * from '@/features/court/types/court'
+export * from '@/features/booking/types/booking'
+export * from '@/features/auth/types/auth'
+export * from '@/features/profile/types/profile'
+export * from '@/features/finance/types/finance'
+export * from '@/features/tournament/types/tournament'
+export * from '@/features/marketplace/types/marketplace'
+export * from '@/features/social/types/social'
+export * from '@/features/pos/types/pos'

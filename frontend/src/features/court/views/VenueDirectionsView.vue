@@ -2,8 +2,9 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
-import type { Venue } from '@/types'
+import { courtApi } from '../api/courtApi'
+import { errorMessage } from '@/core/utils/errorMessage'
+import type { Venue } from '../types/court'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -13,7 +14,7 @@ const copied = ref(false)
 
 onMounted(async () => {
   try {
-    venue.value = await api.get<Venue>(`/venues/${encodeURIComponent(String(route.params.slug))}`)
+    venue.value = await courtApi.getVenueBySlug(encodeURIComponent(String(route.params.slug)))
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
   }

@@ -3,7 +3,7 @@ export interface Product {
   sku: string
   barcode?: string
   name: string
-  category: 'drinks' | 'equipment' | 'rental' | 'services' | 'membership' | string
+  category: 'drinks' | 'equipment' | 'rental' | 'services' | 'membership'
   price: number
   cost?: number
   stock_quantity: number

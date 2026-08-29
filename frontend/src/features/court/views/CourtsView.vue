@@ -4,9 +4,8 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBookingStore } from '@/stores/booking'
 import { formatCurrency } from '@/i18n'
-import type { Court } from '@/types'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
-import SelectDropdown from '@/components/SelectDropdown.vue'
+import type { Court } from '../types/court'
+import { SkeletonLoader, SelectDropdown } from '@/shared/components'
 import { subscribeToVenue } from '@/lib/echo'
 
 const { t } = useI18n()

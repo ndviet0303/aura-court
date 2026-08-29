@@ -2,12 +2,13 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { errorMessage } from '@/lib/api'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatTime } from '@/i18n'
-import AuraLoading from '@/components/AuraLoading.vue'
-import type { AvailabilitySlot, Booking, Court } from '@/types'
+import { AuraLoading } from '@/shared/components'
+import type { AvailabilitySlot, Court } from '@/features/court/types/court'
+import type { Booking } from '@/features/booking/types/booking'
 
 const { t, locale } = useI18n()
 const store = useBookingStore()

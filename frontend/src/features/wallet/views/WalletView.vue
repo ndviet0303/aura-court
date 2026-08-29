@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { walletApi } from '../api/walletApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import { SkeletonLoader } from '@/shared/components'
 
 const money = (value: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0).replace('₫', 'đ')
@@ -247,7 +248,7 @@ async function handleDepositSubmit() {
   try {
     // Try backend call if available
     try {
-      await apiV2.post('/wallet/credit', {
+      await walletApi.credit({
         amount: finalAmount,
         method: depositMethod.value,
         wallet_id: depositTargetWalletId.value,
@@ -286,7 +287,7 @@ async function handleDepositSubmit() {
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await apiV2.get<{ balance: number }>('/wallet')
+    const res = await walletApi.getWallet()
     if (res && res.balance > 0) {
       const mainWallet = wallets.value[0]
       if (mainWallet) mainWallet.balance = res.balance

@@ -2,15 +2,14 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { getEcho, subscribeToVenue } from '@/lib/echo'
-import DatePicker from '@/components/DatePicker.vue'
-import SelectDropdown from '@/components/SelectDropdown.vue'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
 import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import { formatCurrency, formatTime } from '@/i18n'
-import type { AvailabilitySlot, Court } from '@/types'
+import type { AvailabilitySlot, Court } from '../types/court'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -181,7 +180,7 @@ async function joinWaitlist(slot: { startsAt: string }) {
     return
   }
   try {
-    await api.post('/waitlist', { court_id: court.value?.id, starts_at: slot.startsAt })
+    await bookingApi.joinWaitlist({ court_id: court.value?.id, starts_at: slot.startsAt })
     notice.value = t('schedule.selectedSlotsCount', { count: 1 })
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
@@ -198,9 +197,10 @@ async function next() {
       slots: store.selectedSlots.map((slot: AvailabilitySlot) => slot.startsAt),
     }
     const result = route.query.reschedule
-      ? await api.post<{ booking: { code: string } }>(
-          '/bookings/' + route.query.reschedule + '/reschedule',
-          payload
+      ? await bookingApi.reschedule(
+          String(route.query.reschedule),
+          Number(court.value?.id),
+          payload.slots
         )
       : await store.createBooking(couponCode.value)
     router.push('/payment/' + result.booking.code)

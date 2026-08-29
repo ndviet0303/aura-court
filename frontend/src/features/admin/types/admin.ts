@@ -5,9 +5,9 @@ import type { User } from '@/core/types/common'
 export type CourtForm = {
   name: string
   venue_id: number
-  sport_zone_id: number | null
-  description: string
-  image_url: string
+  sport_zone_id?: number | null
+  description?: string | null
+  image_url?: string | null
   is_active: boolean
 }
 

@@ -2,8 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
-import type { Membership } from '@/types'
+import { profileApi } from '../api/profileApi'
+import { errorMessage } from '@/core/utils/errorMessage'
+import type { Membership } from '@/core/types/common'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/i18n'
 
@@ -200,8 +201,8 @@ onMounted(async () => {
   }
   try {
     const [memRes, bookRes] = await Promise.allSettled([
-      api.get<{ membership: Membership | null }>('/membership'),
-      api.get<{ bookings?: unknown[] }>('/bookings'),
+      profileApi.getMembership(),
+      profileApi.getBookings(),
     ])
     if (memRes.status === 'fulfilled') {
       membership.value = memRes.value.membership

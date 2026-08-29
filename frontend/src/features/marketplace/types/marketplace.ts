@@ -42,3 +42,12 @@ export interface TransactionLog {
   netReceived?: number
   updatedAt: string
 }
+
+export interface PurchaseListingPayload {
+  buyer_payment_reference: string
+  seller_refund_accepted?: boolean
+}
+
+export interface CreateListingPayload {
+  asking_price: number
+}

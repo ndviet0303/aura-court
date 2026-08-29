@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { apiV2 } from '@/lib/api'
+import { posApi } from '@/features/pos/api/posApi'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -317,7 +317,7 @@ async function handleOpenShift() {
   saving.value = true
   try {
     try {
-      await apiV2.post('/pos/shifts', { opening_cash: openShiftForm.value.opening_cash })
+      await posApi.openShift({ opening_cash: openShiftForm.value.opening_cash })
     } catch {}
 
     const newShift: CashShiftItem = {
@@ -370,7 +370,7 @@ async function handleCloseShift() {
     const variance = finalDeclared - currentExpectedCash.value
 
     try {
-      await apiV2.post(`/pos/shifts/${activeShift.value.id}/close`, {
+      await posApi.closeShift(activeShift.value.id, {
         declared_cash: finalDeclared,
         note: closeShiftForm.value.note + (closeShiftForm.value.variance_reason ? ` | Lý do: ${closeShiftForm.value.variance_reason}` : ''),
       })

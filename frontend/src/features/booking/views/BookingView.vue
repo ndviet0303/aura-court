@@ -2,11 +2,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, apiOrigin, errorMessage } from '@/lib/api'
+import { bookingApi } from '../api/bookingApi'
+import { apiOrigin } from '@/core/api/client'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { formatCurrency, formatDateTime } from '@/i18n'
-import type { Booking } from '@/types'
+import type { Booking } from '../types/booking'
 import { useAuthStore } from '@/stores/auth'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import { SkeletonLoader } from '@/shared/components'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -35,7 +37,7 @@ const defaultAvatarUrl = computed(() => {
 async function load() {
   loading.value = true
   try {
-    const result = await api.get<{ data: Booking[] }>('/bookings')
+    const result = await bookingApi.list()
     bookings.value = result.data || []
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
@@ -89,7 +91,7 @@ function toggleSlot(bookingId: number, slotId?: number) {
 async function cancel(booking: Booking) {
   if (!confirm(t('booking.confirmCancel'))) return
   try {
-    await api.post('/bookings/' + booking.code + '/cancel', { reason: 'User cancelled' })
+    await bookingApi.cancel(booking.code, 'User cancelled')
     notice.value = t('booking.cancelSuccess')
     await load()
   } catch (cause: unknown) {
@@ -101,10 +103,7 @@ async function cancelSelected(booking: Booking) {
   const slotIds = selectedSlots.value[booking.id] || []
   if (!slotIds.length || !confirm(t('booking.confirmCancelSlots'))) return
   try {
-    await api.post('/bookings/' + booking.code + '/cancel-slots', {
-      slot_ids: slotIds,
-      reason: 'User cancelled slots',
-    })
+    await bookingApi.cancelSlots(booking.code, slotIds, 'User cancelled slots')
     selectedSlots.value[booking.id] = []
     notice.value = t('booking.cancelSuccess')
     await load()
@@ -119,7 +118,7 @@ function draft(booking: Booking) {
 
 async function submitReview(booking: Booking) {
   try {
-    await api.post('/reviews', { booking_code: booking.code, ...draft(booking) })
+    await bookingApi.submitReview(booking.code, draft(booking))
     notice.value = t('booking.reviewThanks')
     await load()
   } catch (cause: unknown) {

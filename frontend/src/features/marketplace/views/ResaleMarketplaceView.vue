@@ -1,54 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { marketplaceApi } from '../api/marketplaceApi'
+import type { ResaleListing, UserBookingSlot, TransactionLog } from '../types/marketplace'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { formatCurrency } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
-
-interface ResaleListing {
-  id: number
-  courtName: string
-  venueName: string
-  dateStr: string
-  timeSlot: string
-  timePeriod: 'morning' | 'afternoon' | 'evening'
-  originalPrice: number
-  resalePrice: number
-  badge?: 'urgent' | 'deal' | 'hot'
-  sellerName: string
-  sellerAvatar?: string
-  cutoffAt?: string
-  isFeatured?: boolean
-}
-
-interface UserBookingSlot {
-  id: number
-  entitlementId: number
-  courtName: string
-  venueName: string
-  dateStr: string
-  timeSlot: string
-  originalPrice: number
-  eligible: boolean
-  ineligibleReason?: string
-  dateBadge: {
-    dayOfWeek: string
-    dayNum: string
-  }
-}
-
-interface TransactionLog {
-  id: number
-  listingId?: number
-  courtName: string
-  venueName: string
-  timeSlot: string
-  dateStr: string
-  status: 'active' | 'completed' | 'cancelled'
-  resalePrice: number
-  netReceived?: number
-  updatedAt: string
-}
 
 const auth = useAuthStore()
 const activeTab = ref<'buy' | 'sell'>('buy')
@@ -247,7 +204,7 @@ const filteredListings = computed(() => {
 async function loadData() {
   loading.value = true
   try {
-    const response = await apiV2.get<{ data: any[] }>('/marketplace/listings')
+    const response = await marketplaceApi.getListings()
     if (response.data && response.data.length > 0) {
       // Map API v2 listings into state
       const apiMapped: ResaleListing[] = response.data.map((item, idx) => ({
@@ -293,7 +250,7 @@ async function confirmPurchase() {
   error.value = ''
   
   try {
-    await apiV2.post(`/marketplace/listings/${selectedListingToBuy.value.id}/purchase`, {
+    await marketplaceApi.purchaseListing(selectedListingToBuy.value.id, {
       buyer_payment_reference: `market-buy-${selectedListingToBuy.value.id}-${Date.now()}`,
       seller_refund_accepted: true
     })
@@ -335,7 +292,7 @@ async function confirmCreateListing() {
   error.value = ''
 
   try {
-    await apiV2.post(`/marketplace/entitlements/${selectedSlotToSell.value.entitlementId}/list`, {
+    await marketplaceApi.listEntitlement(selectedSlotToSell.value.entitlementId, {
       asking_price: Number(askingPriceInput.value)
     })
   } catch (err) {
@@ -389,7 +346,7 @@ async function cancelListing(transaction: TransactionLog) {
   if (!confirm(`Bạn có chắc muốn hủy đăng bán suất sân ${transaction.courtName}?`)) return
   try {
     if (transaction.listingId) {
-      await apiV2.post(`/marketplace/listings/${transaction.listingId}/withdraw`)
+      await marketplaceApi.withdrawListing(transaction.listingId)
     }
   } catch (e) {
     console.warn('Fallback withdraw')

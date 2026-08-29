@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { api, errorMessage } from '@/lib/api'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime } from '@/i18n'
-import type { Court, CourtBlock, Venue } from '@/types'
+import type { Court, CourtBlock, Venue } from '@/features/court/types/court'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -218,8 +219,8 @@ async function loadData() {
   error.value = ''
   try {
     const [loadedCourts, loadedVenues] = await Promise.all([
-      api.get<Court[]>('/admin/courts'),
-      api.get<Venue[]>('/admin/venues'),
+      adminApi.getCourts(),
+      adminApi.getVenues(),
     ])
     courts.value = loadedCourts
     venues.value = loadedVenues
@@ -238,7 +239,7 @@ async function loadData() {
 
 async function loadAuditLogs() {
   try {
-    const res = await api.get<{ data: Array<{ id: number; action: string; user?: { name: string }; created_at: string }> }>('/admin/audit-logs')
+    const res = await adminApi.getAuditLogs<{ data: Array<{ id: number; action: string; user?: { name: string }; created_at: string }> }>()
     auditLogs.value = res.data || []
   } catch {
     auditLogs.value = [
@@ -338,7 +339,7 @@ async function saveDowntimeBlock() {
       return
     }
 
-    await api.post(`/admin/courts/${targetCourt.id}/blocks`, payload)
+    await adminApi.createBlock(targetCourt.id, payload)
     notice.value = `Đã lên lịch bảo trì cho ${targetCourt.name}.`
     showDowntimeModal.value = false
     await loadData()
@@ -360,7 +361,7 @@ async function deleteBlock(courtId: number, blockId: number) {
       notice.value = 'Đã gỡ bỏ lịch bảo trì và kích hoạt lại sân.'
       return
     }
-    await api.delete(`/admin/courts/${courtId}/blocks/${blockId}`)
+    await adminApi.deleteBlock(courtId, blockId)
     notice.value = 'Đã gỡ bỏ lịch bảo trì.'
     await loadData()
   } catch (cause: unknown) {

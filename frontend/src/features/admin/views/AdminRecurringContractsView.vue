@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { api, apiV2 } from '@/lib/api'
+import { bookingApi } from '@/features/booking/api/bookingApi'
 
 interface Invoice {
   id: number
@@ -556,7 +556,7 @@ function exportReport() {
 // Fetch live series from backend if available
 onMounted(async () => {
   try {
-    const res = await apiV2.get<{ data?: any[] }>('/recurring-series')
+    const res = await bookingApi.getRecurringSeries<{ data?: any[] }>()
     if (res && Array.isArray(res.data) && res.data.length > 0) {
       // Map live series to contracts if present
     }

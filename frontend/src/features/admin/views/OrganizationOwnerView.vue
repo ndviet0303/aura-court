@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { api, apiV2, errorMessage } from '@/lib/api'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 
 interface Venue {
@@ -118,7 +119,7 @@ function showError(msg: string) {
 async function loadOrganizations(): Promise<void> {
   loading.value = true
   try {
-    const res = await api.get<{ organizations: Organization[] }>('/organizations')
+    const res = await adminApi.getOrganizations<{ organizations: Organization[] }>()
     if (res.organizations && res.organizations.length > 0) {
       organizations.value = res.organizations
       const first = res.organizations[0]
@@ -144,7 +145,7 @@ async function handleSaveChanges(): Promise<void> {
   notice.value = ''
   try {
     try {
-      await api.patch<{ organization: Organization }>(`/organizations/${currentOrg.value.id}`, {
+      await adminApi.updateOrganization(currentOrg.value.id, {
         name: currentOrg.value.name,
         tax_code: currentOrg.value.tax_code,
         support_email: currentOrg.value.support_email,
@@ -178,7 +179,7 @@ async function handleAddMember(): Promise<void> {
   addingMember.value = true
   try {
     try {
-      await api.post(`/organizations/${currentOrg.value.id}/members`, {
+      await adminApi.addOrgMember(currentOrg.value.id, {
         email: newMemberEmail.value.trim(),
         role: newMemberRole.value,
       })

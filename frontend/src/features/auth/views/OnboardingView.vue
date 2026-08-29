@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { errorMessage } from '@/lib/api'
+import { errorMessage } from '@/core/utils/errorMessage'
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()

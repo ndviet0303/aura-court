@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { errorMessage } from '@/lib/api'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()

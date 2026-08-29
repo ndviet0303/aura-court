@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { tournamentApi } from '../api/tournamentApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
 
@@ -356,7 +357,7 @@ const createTournamentForm = ref({
 async function loadTournaments() {
   loading.value = true
   try {
-    const res = await apiV2.get<{ data: Array<{ id: number; name: string; format: string; status: string; version: number; fixtures?: Fixture[] }> }>('/tournaments')
+    const res = await tournamentApi.list<{ data: Array<{ id: number; name: string; format: string; status: string; version: number; fixtures?: Fixture[] }> }>()
     if (res?.data && res.data.length > 0) {
       const remoteItems: TournamentItem[] = res.data.map((item, idx) => {
         const existing = defaultTournaments.find((d) => d.id === item.id)
@@ -453,7 +454,7 @@ async function openBracketModal(tournament: TournamentItem) {
   isBracketModalOpen.value = true
 
   try {
-    const res = await apiV2.get<{ tournament: { id: number; fixtures: Fixture[]; version: number } }>(`/tournaments/${tournament.id}`)
+    const res = await tournamentApi.getById<{ tournament: { id: number; fixtures: Fixture[]; version: number } }>(tournament.id)
     if (res?.tournament?.fixtures) {
       selectedTournament.value.fixtures = res.tournament.fixtures
       selectedTournament.value.version = res.tournament.version
@@ -473,7 +474,7 @@ async function handleScoreFixture(fixture: Fixture, winnerId: number) {
   processing.value = true
   try {
     try {
-      await apiV2.post(`/tournaments/${selectedTournament.value.id}/fixtures/${fixture.id}/score`, {
+      await tournamentApi.scoreFixture(selectedTournament.value.id, fixture.id, {
         expected_version: selectedTournament.value.version,
         winner_id: winnerId,
         score: { sets: [{ p1: 21, p2: 18 }, { p1: 21, p2: 16 }] },
@@ -518,7 +519,7 @@ async function handleCreateTournament() {
     let createdId = Date.now()
 
     try {
-      const res = await apiV2.post<{ tournament: { id: number; name: string; format: string; version: number } }>('/tournaments', {
+      const res = await tournamentApi.create<{ tournament: { id: number; name: string; format: string; version: number } }>({
         name: createTournamentForm.value.name,
         format: createTournamentForm.value.format,
         participant_ids: participantIds.length >= 2 ? participantIds : [101, 102, 103, 104],

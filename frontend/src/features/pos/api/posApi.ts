@@ -15,7 +15,7 @@ export const posApi = {
 
   getActiveShift: () => apiV2.get<PosShift | null>('/pos/shifts/active'),
 
-  openShift: (payload: { initial_cash: number }) => apiV2.post<PosShift>('/pos/shifts', payload),
+  openShift: (payload: { initial_cash?: number; opening_cash?: number } | any) => apiV2.post<PosShift>('/pos/shifts', payload),
 
   closeShift: (shiftId: number, payload: any) => apiV2.post(`/pos/shifts/${shiftId}/close`, payload),
 

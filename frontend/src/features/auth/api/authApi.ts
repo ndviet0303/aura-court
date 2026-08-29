@@ -30,6 +30,9 @@ export const authApi = {
     return result
   },
 
+  getSocialRedirect: (provider: string) =>
+    api.get<{ url?: string | null; demo_mode?: boolean }>(`/auth/${provider}/redirect`),
+
   socialLogin: async (payload: SocialLoginPayload) => {
     await api.csrf()
     const result = await api.post<{ user: User }>('/auth/social-login', payload)

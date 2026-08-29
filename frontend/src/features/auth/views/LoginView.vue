@@ -3,7 +3,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { api, errorMessage } from '@/lib/api'
+import { authApi } from '../api/authApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 interface Props {
   initialMode?: 'login' | 'register'
@@ -152,7 +153,7 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
   socialLoading.value = provider
   error.value = ''
   try {
-    const res = await api.get<{ url?: string | null; demo_mode?: boolean }>(`/auth/${provider}/redirect`).catch(() => null)
+    const res = await authApi.getSocialRedirect(provider).catch(() => null)
     if (res?.url) {
       window.location.href = res.url
       return

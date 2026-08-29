@@ -1,26 +1,29 @@
 import { apiV2 } from '@/core/api/client'
-import type { MatchPost, PlayerProfile } from '../types/social'
+import type {
+  CreateMatchPayload,
+  MatchResponse,
+  InvitePartnerPayload,
+} from '../types/social'
 
 export const socialApi = {
-  getProfile: () => apiV2.get<PlayerProfile>('/social/profile'),
+  createMatch: (payload: CreateMatchPayload) =>
+    apiV2.post<MatchResponse>('/social/matches', payload),
 
-  updateProfile: (payload: Partial<PlayerProfile>) =>
-    apiV2.put<PlayerProfile>('/social/profile', payload),
+  invitePartner: (matchId: number | string, payload: InvitePartnerPayload) =>
+    apiV2.post(`/social/matches/${matchId}/invite`, payload),
 
-  getMatches: () => apiV2.get<MatchPost[]>('/social/matches'),
+  getMatches: <T = { matches?: any[]; data?: any[] }>() =>
+    apiV2.get<T>('/social/matches'),
 
-  createMatch: (payload: any) =>
-    apiV2.post<MatchPost>('/social/matches', payload),
+  getMatch: (id: number | string) =>
+    apiV2.get<MatchResponse>(`/social/matches/${id}`),
 
-  getMatch: (id: number) =>
-    apiV2.get<MatchPost>(`/social/matches/${id}`),
+  joinMatch: (matchId: number | string) =>
+    apiV2.post(`/social/matches/${matchId}/join`),
 
-  invite: (postId: number, payload: { user_id: number }) =>
-    apiV2.post(`/social/matches/${postId}/invite`, payload),
+  getProfile: <T = unknown>() =>
+    apiV2.get<T>('/social/profile'),
 
-  join: (postId: number) =>
-    apiV2.post(`/social/matches/${postId}/join`),
-
-  respondInvitation: (invitationId: number, payload: { status: 'accepted' | 'declined' }) =>
-    apiV2.post(`/social/invitations/${invitationId}/respond`, payload),
+  updateProfile: (payload: unknown) =>
+    apiV2.put('/social/profile', payload),
 }

@@ -24,6 +24,7 @@ export interface Transaction {
 export interface CreditWalletPayload {
   amount: number
   method?: string
+  wallet_id?: string | number
 }
 
 export interface SpendWalletPayload {

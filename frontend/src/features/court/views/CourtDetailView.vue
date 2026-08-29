@@ -4,8 +4,8 @@ import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBookingStore } from '@/stores/booking'
 import { formatCurrency } from '@/i18n'
-import type { Court } from '@/types'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import type { Court } from '../types/court'
+import { SkeletonLoader } from '@/shared/components'
 
 const { t } = useI18n()
 const route = useRoute()

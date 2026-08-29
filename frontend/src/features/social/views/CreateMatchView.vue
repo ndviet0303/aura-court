@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { apiV2, errorMessage } from '@/lib/api'
+import { socialApi } from '../api/socialApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import { getAvatarUrl } from '@/lib/avatar'
@@ -287,7 +288,7 @@ async function handleSubmit(): Promise<void> {
 
     // Try posting to V2 Social API
     try {
-      const res = await apiV2.post<{ match?: { id: number } }>('/social/matches', payload)
+      const res = await socialApi.createMatch(payload)
       if (res?.match?.id) {
         createdPostId = res.match.id
       }
@@ -301,7 +302,7 @@ async function handleSubmit(): Promise<void> {
     if (createdPostId && selectedPartners.length > 0) {
       for (const partner of selectedPartners) {
         try {
-          await apiV2.post(`/social/matches/${createdPostId}/invite`, { invitee_id: partner.id })
+          await socialApi.invitePartner(createdPostId, { invitee_id: partner.id })
         } catch {
           // non-blocking
         }

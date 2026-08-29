@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { api, apiV2, errorMessage } from '@/lib/api'
-import type { Court, Venue } from '@/types'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
-import SelectDropdown from '@/components/SelectDropdown.vue'
-import DatePicker from '@/components/DatePicker.vue'
-import TimePicker from '@/components/TimePicker.vue'
-import ErrorModal from '@/components/ErrorModal.vue'
+import { bookingApi } from '../api/bookingApi'
+import { financeApi } from '@/features/finance/api/financeApi'
+import { errorMessage } from '@/core/utils/errorMessage'
+import type { Court, Venue } from '@/features/court/types/court'
+import {
+  SkeletonLoader,
+  SelectDropdown,
+  DatePicker,
+  TimePicker,
+  ErrorModal,
+} from '@/shared/components'
 
 interface MonthlyInvoice {
   id: number
@@ -340,10 +344,10 @@ async function applyCoupon(codeToApply?: string) {
 
   try {
     const baseTotal = totalOriginalPrice.value - totalDiscountAmount.value
-    const res = await api.post<{
+    const res = await bookingApi.previewCoupon<{
       coupon: CouponData | null
       coupon_discount: number
-    }>('/coupons/preview', {
+    }>({
       subtotal: baseTotal,
       code,
     })
@@ -463,8 +467,8 @@ async function loadData() {
   error.value = ''
   try {
     const [seriesRes, courtsRes] = await Promise.all([
-      apiV2.get<{ data: RecurringSeries[] }>('/recurring-series').catch(() => ({ data: [] })),
-      api.get<Court[]>('/courts').catch(() => []),
+      bookingApi.getRecurringSeries<{ data: RecurringSeries[] }>().catch(() => ({ data: [] })),
+      bookingApi.getCourts().catch(() => []),
     ])
 
     seriesList.value = seriesRes.data || []
@@ -527,7 +531,7 @@ async function handleCreateSeries() {
   successNotice.value = ''
 
   try {
-    await apiV2.post('/recurring-series', {
+    await bookingApi.createRecurringSeries({
       court_id: Number(form.value.court_id),
       frequency: form.value.frequency,
       starts_at: firstSlot.startsAt,
@@ -554,7 +558,7 @@ async function handlePayInvoice(invoice: MonthlyInvoice, method: string) {
   successNotice.value = ''
 
   try {
-    await apiV2.post(`/monthly-invoices/${invoice.id}/pay`, {
+    await financeApi.payInvoice(invoice.id, {
       payment_reference: `${method.toLowerCase()}-${invoice.id}-${Date.now()}`,
     })
     successNotice.value = `Đã thanh toán thành công hóa đơn #${invoice.id} qua ${method}!`

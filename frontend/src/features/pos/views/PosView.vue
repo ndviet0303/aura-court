@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { apiV2, errorMessage } from '@/lib/api'
+import { posApi } from '../api/posApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 
 interface Product {
@@ -615,7 +616,7 @@ async function handleCheckout() {
     }
 
     try {
-      await apiV2.post('/pos/orders', orderPayload)
+      await posApi.completeOrder(orderPayload)
     } catch {
       // Backend fallback simulation
     }
@@ -683,7 +684,7 @@ async function openShift() {
   try {
     loading.value = true
     try {
-      await apiV2.post('/pos/shifts', { opening_cash: shiftOpeningCash.value })
+      await posApi.openShift({ opening_cash: shiftOpeningCash.value })
     } catch {}
 
     activeShift.value = {
@@ -756,7 +757,7 @@ onMounted(async () => {
 
   // Load Products from backend or fallback
   try {
-    const fetched = await apiV2.get<Product[]>('/pos/products')
+    const fetched = await posApi.getProducts()
     if (fetched && fetched.length > 0) {
       products.value = fetched
     } else {
