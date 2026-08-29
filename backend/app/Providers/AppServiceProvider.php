@@ -3,10 +3,10 @@
 namespace App\Providers;
 
 use App\Contracts\Payment\PaymentProviderInterface;
-use App\Services\PayOsPaymentProvider;
-use App\Services\PaymentProviderManager;
-use App\Services\ObservabilityService;
-use App\Services\TenantContext;
+use App\Services\Payment\PayOsPaymentProvider;
+use App\Services\Payment\PaymentProviderManager;
+use App\Services\Infrastructure\ObservabilityService;
+use App\Services\Infrastructure\TenantContext;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;

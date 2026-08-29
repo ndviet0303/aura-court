@@ -3,7 +3,7 @@
 namespace App\Domain\Booking\Actions;
 
 use App\Models\Booking;
-use App\Services\DiscountService;
+use App\Services\Booking\DiscountService;
 use Illuminate\Support\Facades\DB;
 
 class ApplyBookingCoupon

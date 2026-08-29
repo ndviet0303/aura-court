@@ -11,7 +11,7 @@ use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\LegacyBookingBackfillService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

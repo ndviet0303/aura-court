@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\ObservabilityService;
+use App\Services\Infrastructure\ObservabilityService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Queue;
 

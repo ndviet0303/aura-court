@@ -10,7 +10,7 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\User;
 use App\Notifications\AuraBookingNotification;
-use App\Services\BookingService;
+use App\Services\Booking\BookingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;

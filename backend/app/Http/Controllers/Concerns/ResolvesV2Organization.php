@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\Organization;
-use App\Services\TenantContext;
+use App\Services\Infrastructure\TenantContext;
 use Illuminate\Http\Request;
 
 trait ResolvesV2Organization

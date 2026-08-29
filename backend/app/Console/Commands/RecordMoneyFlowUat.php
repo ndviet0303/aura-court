@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\MoneyFlowUatService;
+use App\Services\Infrastructure\MoneyFlowUatService;
 use Illuminate\Console\Command;
 
 class RecordMoneyFlowUat extends Command

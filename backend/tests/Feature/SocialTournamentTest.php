@@ -7,8 +7,8 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\QualifyingActivity;
 use App\Models\User;
-use App\Services\ReputationService;
-use App\Services\TournamentService;
+use App\Services\Social\ReputationService;
+use App\Services\Tournament\TournamentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

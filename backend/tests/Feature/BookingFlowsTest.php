@@ -9,7 +9,7 @@ use App\Models\CourtPriceSlot;
 use App\Models\Refund;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\BookingService;
+use App\Services\Booking\BookingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

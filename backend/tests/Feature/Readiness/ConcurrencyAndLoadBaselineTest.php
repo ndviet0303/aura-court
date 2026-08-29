@@ -6,7 +6,7 @@ use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\BookingService;
+use App\Services\Booking\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;

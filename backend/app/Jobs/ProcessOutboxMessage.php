@@ -3,8 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\OutboxMessage;
-use App\Services\OutboxDispatcher;
-use App\Services\OutboxService;
+use App\Services\Infrastructure\OutboxDispatcher;
+use App\Services\Infrastructure\OutboxService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;

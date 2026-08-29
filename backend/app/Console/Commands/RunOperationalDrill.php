@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\OperationalDrillService;
+use App\Services\Infrastructure\OperationalDrillService;
 use Illuminate\Console\Command;
 
 class RunOperationalDrill extends Command

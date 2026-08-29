@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Organization;
-use App\Services\TenantContext;
+use App\Services\Infrastructure\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

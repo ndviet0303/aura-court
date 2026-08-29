@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\HardeningAcceptanceService;
+use App\Services\Infrastructure\HardeningAcceptanceService;
 use Illuminate\Console\Command;
 
 class RunHardeningAcceptance extends Command

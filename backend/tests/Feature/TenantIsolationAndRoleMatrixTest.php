@@ -7,8 +7,8 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\ElevatedAccessService;
-use App\Services\TenantContext;
+use App\Services\Infrastructure\ElevatedAccessService;
+use App\Services\Infrastructure\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

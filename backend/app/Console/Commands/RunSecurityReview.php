@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\SecurityReviewService;
+use App\Services\Infrastructure\SecurityReviewService;
 use Illuminate\Console\Command;
 
 class RunSecurityReview extends Command

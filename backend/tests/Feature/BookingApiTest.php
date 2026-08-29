@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\User;
-use App\Services\BookingService;
+use App\Services\Booking\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

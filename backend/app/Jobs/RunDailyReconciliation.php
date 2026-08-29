@@ -3,8 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\Organization;
-use App\Services\ReconciliationService;
-use App\Services\TenantContext;
+use App\Services\Finance\ReconciliationService;
+use App\Services\Infrastructure\TenantContext;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\V1AdoptionService;
+use App\Services\Reservation\V1AdoptionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 

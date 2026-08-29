@@ -4,7 +4,7 @@ namespace App\Domain\Booking\Actions;
 
 use App\Models\Booking;
 use App\Models\BookingSlot;
-use App\Services\WaitlistService;
+use App\Services\Booking\WaitlistService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 

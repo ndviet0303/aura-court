@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\V1AdoptionService;
+use App\Services\Reservation\V1AdoptionService;
 use Illuminate\Console\Command;
 
 class V1RetirementReadiness extends Command

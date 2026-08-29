@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\PilotAcceptanceService;
+use App\Services\Infrastructure\PilotAcceptanceService;
 use Illuminate\Console\Command;
 
 class PilotAcceptance extends Command

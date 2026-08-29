@@ -3,8 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\ProviderEvent;
-use App\Services\ProviderEventHandler;
-use App\Services\ProviderWebhookService;
+use App\Services\Payment\ProviderEventHandler;
+use App\Services\Payment\ProviderWebhookService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;

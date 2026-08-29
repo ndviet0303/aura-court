@@ -6,7 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosProduct;
 use App\Models\User;
-use App\Services\PosService;
+use App\Services\POS\PosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;

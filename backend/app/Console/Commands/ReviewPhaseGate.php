@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\PhaseGateReviewService;
+use App\Services\Infrastructure\PhaseGateReviewService;
 use Illuminate\Console\Command;
 
 class ReviewPhaseGate extends Command

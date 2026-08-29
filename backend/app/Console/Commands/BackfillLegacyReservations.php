@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\LegacyBookingBackfillService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Console\Command;
 
 class BackfillLegacyReservations extends Command

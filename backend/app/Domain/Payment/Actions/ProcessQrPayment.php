@@ -5,7 +5,7 @@ namespace App\Domain\Payment\Actions;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Notifications\AuraBookingNotification;
-use App\Services\FinancialPostingService;
+use App\Services\Finance\FinancialPostingService;
 use Illuminate\Support\Facades\DB;
 
 class ProcessQrPayment

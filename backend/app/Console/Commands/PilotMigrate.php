@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\PilotMigrationService;
+use App\Services\Infrastructure\PilotMigrationService;
 use Illuminate\Console\Command;
 
 class PilotMigrate extends Command
