@@ -1,0 +1,292 @@
+<script setup lang="ts">
+import type { StaffMember } from '../../composables/useAdminStaff'
+
+defineProps<{
+  staff: StaffMember[]
+  searchQuery: string
+  selectedRoleFilter: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:searchQuery', val: string): void
+  (e: 'update:selectedRoleFilter', val: string): void
+  (e: 'openInviteModal'): void
+}>()
+</script>
+
+<template>
+  <div class="staff-directory-container">
+    <!-- Toolbar -->
+    <div class="directory-toolbar">
+      <div class="search-wrap">
+        <input
+          :value="searchQuery"
+          type="text"
+          class="header-search-input"
+          placeholder="Tìm theo tên, email, SĐT nhân viên..."
+          @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+        />
+      </div>
+
+      <div class="filter-actions-group">
+        <select
+          :value="selectedRoleFilter"
+          class="role-filter-select"
+          @change="emit('update:selectedRoleFilter', ($event.target as HTMLSelectElement).value)"
+        >
+          <option value="all">Tất cả vai trò</option>
+          <option value="Owner">Chủ hệ thống (Owner)</option>
+          <option value="Manager">Quản lý cơ sở (Manager)</option>
+          <option value="Receptionist">Thu ngân / Lễ tân (Receptionist)</option>
+          <option value="Technician">Kỹ thuật viên sân (Technician)</option>
+          <option value="Referee">Trọng tài giải đấu (Referee)</option>
+        </select>
+
+        <button class="btn-invite-staff btn-primary-cta" @click="emit('openInviteModal')">
+          + Mời Nhân Sự Mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Staff Table Grid -->
+    <div class="staff-table-wrap">
+      <div class="table-header-row">
+        <span>Thành Viên</span>
+        <span>Vai Trò</span>
+        <span>Cơ Sở Phụ Trách</span>
+        <span>Quyền Hạn</span>
+        <span>Trạng Thái</span>
+        <span>Thao Tác</span>
+      </div>
+
+      <div class="table-body-rows">
+        <div
+          v-for="member in staff"
+          :key="member.id"
+          class="table-grid-row"
+        >
+          <div class="member-col">
+            <div class="avatar-box">
+              <img v-if="member.avatar" :src="member.avatar" :alt="member.name" />
+              <span v-else class="initials">{{ member.name.charAt(0) }}</span>
+            </div>
+            <div class="member-info">
+              <strong class="member-name">{{ member.name }}</strong>
+              <span class="member-email">{{ member.email }}</span>
+            </div>
+          </div>
+
+          <div class="role-col">
+            <span class="role-badge" :class="`role-${member.role.toLowerCase()}`">
+              {{ member.role }}
+            </span>
+          </div>
+
+          <div class="venue-col">
+            <span>{{ member.venueName }}</span>
+          </div>
+
+          <div class="perms-col">
+            <span class="perms-badge">{{ member.permissionsCount }} quyền</span>
+          </div>
+
+          <div class="status-col">
+            <span
+              class="status-indicator"
+              :class="member.status === 'active' ? 'active' : 'invited'"
+            >
+              ● {{ member.status === 'active' ? 'Hoạt động' : 'Đã mời' }}
+            </span>
+          </div>
+
+          <div class="actions-col">
+            <button class="btn-action-sm">✏️</button>
+            <button class="btn-action-sm">🔒</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.staff-directory-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.directory-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  flex: 1;
+  min-width: 280px;
+}
+
+.header-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.filter-actions-group {
+  display: flex;
+  gap: 10px;
+}
+
+.role-filter-select {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.btn-invite-staff {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--pink-dark, #db2777);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.staff-table-wrap {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--outline);
+  overflow: hidden;
+}
+
+.table-header-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 80px;
+  padding: 12px 16px;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  border-bottom: 1px solid var(--outline);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.table-body-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-grid-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 80px;
+  padding: 12px 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--outline);
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.table-grid-row:last-child {
+  border-bottom: 0;
+}
+
+.table-grid-row:hover {
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.01));
+}
+
+.member-col {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(236, 72, 153, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--pink-dark, #db2777);
+}
+
+.avatar-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-name {
+  color: var(--ink);
+}
+
+.member-email {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.role-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.role-owner { background: #8b5cf6; color: #fff; }
+.role-manager { background: #3b82f6; color: #fff; }
+.role-receptionist { background: #10b981; color: #fff; }
+.role-technician { background: #f59e0b; color: #fff; }
+.role-referee { background: #ec4899; color: #fff; }
+
+.perms-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.05));
+}
+
+.status-indicator {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-indicator.active { color: #10b981; }
+.status-indicator.invited { color: #f59e0b; }
+
+.actions-col {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-action-sm {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--outline);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+}
+</style>
