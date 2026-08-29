@@ -3,7 +3,7 @@ export interface Product {
   sku: string
   barcode?: string
   name: string
-  category: 'drinks' | 'equipment' | 'rental' | 'services' | 'membership'
+  category: 'drinks' | 'equipment' | 'rental' | 'services' | 'membership' | string
   price: number
   cost?: number
   stock_quantity: number
@@ -44,10 +44,51 @@ export interface CustomerProfile {
 
 export interface PosShift {
   id: number
+  cashier_name?: string
   status: 'open' | 'closed' | string
   opened_at: string
   closed_at?: string
   initial_cash: number
+  opening_cash?: number
+  cash_sales?: number
+  qr_sales?: number
+  wallet_sales?: number
+  expected_cash?: number
+  total_orders?: number
   total_cash?: number
   discrepancy?: number
+  note?: string
+}
+
+export interface Draft {
+  id: string
+  name: string
+  items: Array<{ product_id: number; quantity: number; rental_hours?: number }>
+  reservation_id?: number | null
+  customer_name?: string
+  saved_at: string
+  total_amount: number
+}
+
+export interface OrderReceiptItem {
+  name: string
+  quantity: number
+  price: number
+  total: number
+}
+
+export interface OrderReceipt {
+  order_code: string
+  created_at: string
+  cashier_name: string
+  customer_name?: string
+  court_info?: string
+  items: OrderReceiptItem[]
+  subtotal: number
+  discount_amount: number
+  tax_amount: number
+  grand_total: number
+  payment_method: 'cash' | 'qr' | 'wallet' | 'court_tab' | string
+  cash_tendered?: number
+  cash_change?: number
 }
