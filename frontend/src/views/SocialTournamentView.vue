@@ -814,6 +814,10 @@ onMounted(load)
               Tạo giải đấu phân nhánh tự động, quản lý bracket trực quan và cập nhật tỷ số trận đấu theo chuẩn đồng bộ phiên bản.
             </p>
           </div>
+          <RouterLink to="/tournaments" class="btn-create-match flex items-center gap-2">
+            <span class="material-symbols-outlined icon">emoji_events</span>
+            <span>Màn Hình Giải Đấu Stitch</span>
+          </RouterLink>
         </div>
 
         <div class="tournament-layout-grid">

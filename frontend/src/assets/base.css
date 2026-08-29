@@ -10,6 +10,12 @@
 
 html.dark {
   color-scheme: dark;
+  background-color: #18191d !important;
+}
+
+html.dark body {
+  background-color: #18191d !important;
+  color: #f3f4f6 !important;
 }
 
 * { box-sizing: border-box; }

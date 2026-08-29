@@ -132,6 +132,26 @@ function closeMobileSidebar() {
             <span class="material-symbols-outlined nav-icon">corporate_fare</span>
             <span class="nav-label">{{ t('admin.organization') }}</span>
           </RouterLink>
+
+          <RouterLink
+            to="/admin/payouts"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/payouts' || route.path.startsWith('/admin/payouts') || route.path === '/admin/payouts-settlement' }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">account_balance_wallet</span>
+            <span class="nav-label">{{ t('admin.payoutsSettlement') }}</span>
+          </RouterLink>
+
+          <RouterLink
+            to="/admin/staff"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/staff' || route.path.startsWith('/admin/staff') || route.path === '/admin/permissions' }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">badge</span>
+            <span class="nav-label">{{ t('admin.staffManage') }}</span>
+          </RouterLink>
         </nav>
 
         <div class="nav-section-label mt-4">MỞ RỘNG & DỊCH VỤ</div>
@@ -214,7 +234,9 @@ function closeMobileSidebar() {
 <style scoped>
 .admin-workspace-layout {
   display: flex;
-  min-height: calc(100vh - 78px);
+  height: calc(100vh - 78px);
+  max-height: calc(100vh - 78px);
+  overflow: hidden;
   background: var(--bg, #18191d);
   color: var(--ink);
   position: relative;
@@ -237,10 +259,9 @@ function closeMobileSidebar() {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  position: sticky;
-  top: 78px;
-  height: calc(100vh - 78px);
-  z-index: 95;
+  height: 100%;
+  overflow: hidden;
+  z-index: 900;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -251,6 +272,7 @@ function closeMobileSidebar() {
     left: 0;
     bottom: 0;
     height: 100vh;
+    z-index: 1100;
     transform: translateX(-100%);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   }
@@ -287,6 +309,11 @@ function closeMobileSidebar() {
   flex-shrink: 0;
 }
 
+:global(html.dark) .brand-icon-box {
+  background: #53333e;
+  color: #f8b4c4;
+}
+
 .brand-text {
   display: flex;
   flex-direction: column;
@@ -296,8 +323,13 @@ function closeMobileSidebar() {
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #78555e);
   line-height: 1.2;
+}
+
+:global(html.dark) .brand-title {
+  color: #f8b4c4;
+  text-shadow: 0 0 10px rgba(248, 180, 196, 0.35);
 }
 
 .brand-subtitle {
@@ -306,12 +338,20 @@ function closeMobileSidebar() {
   font-weight: 500;
 }
 
+:global(html.dark) .brand-subtitle {
+  color: #c0c4cc;
+}
+
 .btn-close-sidebar {
   border: none;
   background: transparent;
   color: var(--muted, #6c757d);
   cursor: pointer;
   padding: 4px;
+}
+
+:global(html.dark) .btn-close-sidebar {
+  color: #c0c4cc;
 }
 
 /* Scroll Area */
@@ -331,6 +371,10 @@ function closeMobileSidebar() {
   letter-spacing: 0.08em;
   color: var(--muted, #94a3b8);
   padding: 8px 12px 4px;
+}
+
+:global(html.dark) .nav-section-label {
+  color: #9ca3af;
 }
 
 /* Nav Items */
@@ -359,8 +403,25 @@ function closeMobileSidebar() {
 }
 
 .sidebar-nav-item.active {
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
+  background: var(--primary, #78555e);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+:global(html.dark) .sidebar-nav-item {
+  color: #d1d5db;
+}
+
+:global(html.dark) .sidebar-nav-item:hover {
+  background: #2b2e36;
+  color: #ffffff;
+}
+
+:global(html.dark) .sidebar-nav-item.active {
+  background: #f8b4c4;
+  color: #201317;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(248, 180, 196, 0.3);
 }
 
 .nav-icon {
@@ -384,6 +445,11 @@ function closeMobileSidebar() {
   background: var(--surface-subtle, #f8f9fa);
 }
 
+:global(html.dark) .sidebar-footer {
+  background: #18191d;
+  border-color: var(--border, #353942);
+}
+
 .btn-back-home {
   display: flex;
   align-items: center;
@@ -402,6 +468,15 @@ function closeMobileSidebar() {
   color: var(--ink, #191c1d);
 }
 
+:global(html.dark) .btn-back-home {
+  color: #c0c4cc;
+}
+
+:global(html.dark) .btn-back-home:hover {
+  background: #2b2e36;
+  color: #ffffff;
+}
+
 .user-profile-snippet {
   display: flex;
   align-items: center;
@@ -413,7 +488,7 @@ function closeMobileSidebar() {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #78555e;
+  background: var(--primary, #78555e);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
@@ -421,6 +496,11 @@ function closeMobileSidebar() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+:global(html.dark) .user-avatar-circle {
+  background: #53333e;
+  color: #f8b4c4;
 }
 
 .user-info-text {
@@ -438,15 +518,31 @@ function closeMobileSidebar() {
   text-overflow: ellipsis;
 }
 
+:global(html.dark) .user-name {
+  color: #ffffff;
+}
+
 .user-role {
   font-size: 11px;
   color: var(--muted, #6c757d);
+}
+
+:global(html.dark) .user-role {
+  color: #f8b4c4 !important;
+  font-weight: 600;
+}
+
+:global(html.dark) .admin-sidebar {
+  background: #1e2025;
+  border-color: #353942;
 }
 
 /* Main Container */
 .admin-main-container {
   flex: 1;
   min-width: 0;
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }

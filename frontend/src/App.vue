@@ -11,24 +11,48 @@ const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
 </script>
 
 <template>
-  <Navbar />
-  <!-- Top Navigation Progress Indicator -->
-  <Transition name="progress-fade">
-    <div v-if="isRouteNavigating" class="route-progress-bar" role="progressbar" aria-label="Loading page">
-      <div class="progress-glow"></div>
-    </div>
-  </Transition>
+  <div class="app-shell" :class="{ 'is-admin-shell': isAdminRoute }">
+    <Navbar />
+    <!-- Top Navigation Progress Indicator -->
+    <Transition name="progress-fade">
+      <div v-if="isRouteNavigating" class="route-progress-bar" role="progressbar" aria-label="Loading page">
+        <div class="progress-glow"></div>
+      </div>
+    </Transition>
 
-  <DemoWarningModal />
+    <DemoWarningModal />
 
-  <main class="site-main">
-    <RouterView />
-  </main>
+    <main class="site-main" :class="{ 'is-admin-main': isAdminRoute }">
+      <RouterView />
+    </main>
 
-  <SiteFooter v-if="!isAdminRoute" />
+    <SiteFooter v-if="!isAdminRoute" />
+  </div>
 </template>
 
 <style scoped>
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.is-admin-shell {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  background: var(--bg, #18191d);
+}
+
+.is-admin-main {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  padding-top: 78px;
+  box-sizing: border-box;
+  background: var(--bg, #18191d);
+}
+
 /* Route Progress Bar right under Navbar */
 .route-progress-bar {
   position: fixed;

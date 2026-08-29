@@ -267,8 +267,28 @@ onBeforeUnmount(() => {
   line-height: 1;
 }
 
+:global(html.dark) .lang-arrow {
+  color: #ffffff !important;
+}
+
 .lang-trigger.open .lang-arrow {
   transform: rotate(180deg);
+}
+
+:global(html.dark) .lang-trigger {
+  background: #22242a;
+  border-color: #353942;
+  color: #ffffff;
+}
+
+:global(html.dark) .lang-trigger:hover,
+:global(html.dark) .lang-trigger.open {
+  background: #2b2e36;
+  border-color: rgba(248, 180, 196, 0.4);
+}
+
+:global(html.dark) .lang-text {
+  color: #ffffff !important;
 }
 
 /* Dropdown popover */
@@ -288,6 +308,12 @@ onBeforeUnmount(() => {
   gap: 2px;
 }
 
+:global(html.dark) .lang-menu {
+  background: #22242a;
+  border-color: #353942;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
 .lang-option {
   border: 0;
   background: transparent;
@@ -305,15 +331,29 @@ onBeforeUnmount(() => {
   transition: all 0.15s ease;
 }
 
+:global(html.dark) .lang-option {
+  color: #d1d5db;
+}
+
 .lang-option:hover {
   background: var(--soft, #fbf5f7);
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .lang-option:hover {
+  background: #2b2e36;
+  color: #ffffff;
 }
 
 .lang-option.selected {
   background: var(--pink-light, #ffd9e2);
   color: var(--pink-dark, #5e3e47);
   font-weight: 700;
+}
+
+:global(html.dark) .lang-option.selected {
+  background: #53333e;
+  color: #f8b4c4;
 }
 
 .option-flag-wrap {
@@ -335,6 +375,10 @@ onBeforeUnmount(() => {
 .check-icon {
   font-size: 17px;
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .check-icon {
+  color: #f8b4c4;
 }
 
 /* Transitions */

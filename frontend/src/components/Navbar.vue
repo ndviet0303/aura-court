@@ -33,11 +33,11 @@ const userRoleBadge = computed(() => {
 })
 
 const isBookingActive = computed(() => {
-  return route.path.startsWith('/booking') || route.path.startsWith('/payment')
+  return route.path.startsWith('/booking') || route.path.startsWith('/payment') || route.path.startsWith('/wallet')
 })
 
 const isCommunityActive = computed(() => {
-  return route.path.startsWith('/resale') || route.path.startsWith('/marketplace') || route.path.startsWith('/matchmaking') || route.path.startsWith('/social-tournaments')
+  return route.path.startsWith('/resale') || route.path.startsWith('/marketplace') || route.path.startsWith('/matchmaking') || route.path.startsWith('/social-tournaments') || route.path.startsWith('/tournaments')
 })
 
 function toggleMenu(menu: 'booking' | 'community') {
@@ -104,6 +104,10 @@ onBeforeUnmount(() => {
               <span class="material-symbols-outlined">calendar_month</span>
               <span>{{ $t('nav.booking') }}</span>
             </RouterLink>
+            <RouterLink to="/wallet" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">account_balance_wallet</span>
+              <span>{{ $t('nav.wallet') }}</span>
+            </RouterLink>
           </div>
         </div>
         <div class="nav-dropdown" :class="{ open: openMenu === 'community' }">
@@ -122,6 +126,18 @@ onBeforeUnmount(() => {
             <RouterLink to="/resale" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
               <span class="material-symbols-outlined">swap_horiz</span>
               <span>{{ $t('nav.resale') }}</span>
+            </RouterLink>
+            <RouterLink to="/tournaments" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">emoji_events</span>
+              <span>{{ $t('nav.tournaments') }}</span>
+            </RouterLink>
+            <RouterLink to="/tournaments/bracket" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">account_tree</span>
+              <span>{{ $t('nav.bracket') }}</span>
+            </RouterLink>
+            <RouterLink to="/tournaments/live" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+              <span class="material-symbols-outlined">live_tv</span>
+              <span>{{ $t('nav.liveScore') }}</span>
             </RouterLink>
             <RouterLink to="/matchmaking" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
               <span class="material-symbols-outlined">sports_tennis</span>
@@ -159,6 +175,14 @@ onBeforeUnmount(() => {
           <RouterLink to="/profile" class="user-avatar-btn" :aria-label="$t('nav.profile')" :title="$t('nav.profile')">
             <img :src="defaultAvatarUrl" :alt="userName" class="user-avatar-img" />
           </RouterLink>
+          <RouterLink
+            to="/wallet"
+            class="logout-icon-btn"
+            :aria-label="$t('nav.wallet')"
+            :title="$t('nav.wallet')"
+          >
+            <span class="material-symbols-outlined">account_balance_wallet</span>
+          </RouterLink>
           <button
             type="button"
             class="logout-icon-btn"
@@ -191,7 +215,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 50;
+  z-index: 1000;
   height: 78px;
   background: var(--topbar-bg, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(18px);
@@ -384,14 +408,30 @@ onBeforeUnmount(() => {
   text-align: right;
 }
 
+:global(html.dark) .user-name {
+  color: #ffffff !important;
+}
+
 .user-badge {
   font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--pink-dark, #8c5b67);
+  letter-spacing: 0.06em;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: var(--primary-container, #ffd1dc);
+  color: var(--primary, #78555e);
   text-transform: uppercase;
-  margin-top: 1px;
+  margin-top: 2px;
   white-space: nowrap;
+  display: inline-block;
+  line-height: 1.3;
+}
+
+:global(html.dark) .user-badge {
+  background: rgba(248, 180, 196, 0.22) !important;
+  color: #f8b4c4 !important;
+  border: 1px solid rgba(248, 180, 196, 0.45) !important;
+  box-shadow: 0 0 10px rgba(248, 180, 196, 0.25) !important;
 }
 
 .user-avatar-btn {
@@ -408,6 +448,13 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 8px rgba(120, 85, 94, 0.15);
   border: 1.5px solid var(--outline);
   flex-shrink: 0;
+}
+
+:global(html.dark) .user-avatar-btn {
+  background: #53333e;
+  color: #f8b4c4;
+  border-color: rgba(248, 180, 196, 0.35);
+  box-shadow: 0 2px 10px rgba(248, 180, 196, 0.2);
 }
 
 .user-avatar-btn:hover {

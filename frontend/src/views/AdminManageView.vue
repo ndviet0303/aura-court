@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, errorMessage } from '@/lib/api'
 import type { Court, CourtBlock, PriceSlot, Refund, SportZone, Venue } from '@/types'
 import TimePicker from '@/components/TimePicker.vue'
 import DateTimePicker from '@/components/DateTimePicker.vue'
 import SelectDropdown from '@/components/SelectDropdown.vue'
+import AuraButton from '@/components/AuraButton.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDateTime } from '@/i18n'
 
 const { t } = useI18n()
+const route = useRoute()
 const auth = useAuthStore()
 const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email?.endsWith('@demo.auracourt.vn'))
 
@@ -778,7 +781,15 @@ async function createCoupon() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  if (route.query.venue_id) {
+    const vId = Number(route.query.venue_id)
+    if (!Number.isNaN(vId)) {
+      selectedVenueFilter.value = vId
+    }
+  }
+})
 </script>
 
 <template>
@@ -797,19 +808,29 @@ onMounted(load)
       </div>
 
       <div class="header-actions">
-        <button
-          type="button"
-          class="btn btn-primary flex items-center gap-xs"
+        <AuraButton
+          variant="primary"
+          size="pill"
+          icon="add"
           @click="startCreateCourt"
         >
-          <span class="material-symbols-outlined icon-20">add</span>
-          <span>Thêm sân mới</span>
-        </button>
+          Thêm sân mới
+        </AuraButton>
       </div>
     </header>
 
-    <!-- Stats Summary Row -->
-    <section class="stats-overview-grid">
+    <!-- Stats Summary Row (Loading Skeleton or Real Data) -->
+    <section v-if="loading" class="stats-overview-grid">
+      <div v-for="i in 4" :key="i" class="stat-card skeleton-stat-card">
+        <SkeletonLoader type="avatar" />
+        <div class="skeleton-stat-lines">
+          <SkeletonLoader type="text" width="80px" height="12px" />
+          <SkeletonLoader type="title" width="45px" height="24px" />
+        </div>
+      </div>
+    </section>
+
+    <section v-else class="stats-overview-grid">
       <div class="stat-card">
         <div class="stat-icon-wrap icon-primary">
           <span class="material-symbols-outlined">sports_tennis</span>
@@ -894,8 +915,28 @@ onMounted(load)
       </div>
     </div>
 
+    <!-- Loading Skeleton Grid -->
+    <section v-if="loading" class="courts-cards-grid">
+      <div v-for="i in 6" :key="i" class="court-manage-card skeleton-admin-card">
+        <div class="skeleton-admin-media">
+          <SkeletonLoader type="rect" height="160px" rounded="0" />
+        </div>
+        <div class="court-card-body">
+          <SkeletonLoader type="title" width="75%" height="20px" />
+          <SkeletonLoader type="text" width="90%" height="13px" />
+          <div class="skeleton-badges-row">
+            <SkeletonLoader type="rect" width="100px" height="24px" rounded="9999px" />
+            <SkeletonLoader type="rect" width="90px" height="24px" rounded="9999px" />
+          </div>
+          <div class="skeleton-actions-row">
+            <SkeletonLoader type="rect" height="34px" rounded="8px" />
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Courts Cards Grid -->
-    <section class="courts-cards-grid">
+    <section v-else class="courts-cards-grid">
       <article
         v-for="court in filteredCourts"
         :key="court.id"
@@ -1918,6 +1959,13 @@ onMounted(load)
   margin-bottom: 8px;
 }
 
+:global(html.dark) .eyebrow-tag {
+  background: rgba(248, 180, 196, 0.18);
+  color: #f8b4c4;
+  border: 1px solid rgba(248, 180, 196, 0.35);
+  box-shadow: 0 0 12px rgba(248, 180, 196, 0.15);
+}
+
 /* Stats Overview Grid */
 .stats-overview-grid {
   display: grid;
@@ -1943,6 +1991,12 @@ onMounted(load)
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
+:global(html.dark) .stat-card {
+  background: var(--surface, #22242a);
+  border-color: var(--border, #353942);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
 .stat-icon-wrap {
   width: 44px;
   height: 44px;
@@ -1956,6 +2010,11 @@ onMounted(load)
 .icon-primary {
   background: rgba(255, 209, 220, 0.2);
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .icon-primary {
+  background: rgba(248, 180, 196, 0.18);
+  color: #f8b4c4;
 }
 
 .icon-success {
@@ -1979,12 +2038,20 @@ onMounted(load)
   font-weight: 500;
 }
 
+:global(html.dark) .stat-label {
+  color: #c0c4cc;
+}
+
 .stat-number {
   font-size: 22px;
   font-weight: 800;
   color: var(--ink, #191c1d);
   margin: 2px 0 0;
   line-height: 1;
+}
+
+:global(html.dark) .stat-number {
+  color: #ffffff;
 }
 
 /* Notifications */
@@ -2024,6 +2091,11 @@ onMounted(load)
   gap: 12px;
 }
 
+:global(html.dark) .toolbar-filter-card {
+  background: var(--surface, #22242a);
+  border-color: var(--border, #353942);
+}
+
 @media (min-width: 768px) {
   .toolbar-filter-card {
     flex-direction: row;
@@ -2047,6 +2119,10 @@ onMounted(load)
   font-size: 18px;
 }
 
+:global(html.dark) .search-icon {
+  color: #9ca3af;
+}
+
 .search-input {
   width: 100%;
   padding: 8px 14px 8px 38px;
@@ -2057,6 +2133,16 @@ onMounted(load)
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
+}
+
+:global(html.dark) .search-input {
+  background: var(--surface-container, #2b2e36);
+  border-color: var(--border, #353942);
+  color: #ffffff;
+}
+
+:global(html.dark) .search-input::placeholder {
+  color: #9ca3af;
 }
 
 .filter-controls-group {
@@ -2073,6 +2159,45 @@ onMounted(load)
   color: var(--ink, #191c1d);
   font-size: 13px;
   outline: none;
+}
+
+:global(html.dark) .filter-select {
+  background: var(--surface-container, #2b2e36);
+  border-color: var(--border, #353942);
+  color: #ffffff;
+}
+
+/* Skeleton Loading Helpers */
+.skeleton-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.skeleton-stat-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeleton-admin-card {
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.skeleton-admin-media {
+  height: 160px;
+  width: 100%;
+}
+
+.skeleton-badges-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.skeleton-actions-row {
+  margin-top: auto;
 }
 
 /* Courts Cards Grid */
@@ -2315,13 +2440,24 @@ onMounted(load)
 
 .primary-action {
   flex: 1;
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
+  background: var(--primary, #78555e) !important;
+  color: var(--on-primary, #ffffff) !important;
+  font-weight: 700;
   justify-content: center;
 }
 
 .primary-action:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.1);
+}
+
+:global(html.dark) .primary-action {
+  background: #f8b4c4 !important;
+  color: #201317 !important;
+  font-weight: 800 !important;
+}
+
+:global(html.dark) .primary-action:hover {
+  background: #ffd5df !important;
 }
 
 .secondary-action {
@@ -2699,13 +2835,28 @@ onMounted(load)
 }
 
 .btn-primary {
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--primary, #78555e) !important;
+  color: var(--on-primary, #ffffff) !important;
+  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
+  font-weight: 700;
 }
 
 .btn-primary:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+:global(html.dark) .btn-primary {
+  background: #f8b4c4 !important;
+  color: #201317 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 18px rgba(248, 180, 196, 0.38) !important;
+}
+
+:global(html.dark) .btn-primary:hover {
+  background: #ffd5df !important;
+  color: #201317 !important;
+  box-shadow: 0 6px 24px rgba(248, 180, 196, 0.5) !important;
 }
 
 .btn-secondary {
@@ -3128,19 +3279,32 @@ onMounted(load)
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  background: var(--pink, #ffd1dc);
+  background: var(--primary, #78555e) !important;
   border: none;
-  color: var(--pink-dark, #78555e);
+  color: var(--on-primary, #ffffff) !important;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
   transition: all 0.15s ease;
 }
 
 .aura-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+:global(html.dark) .aura-btn-primary {
+  background: #f8b4c4 !important;
+  color: #201317 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 18px rgba(248, 180, 196, 0.38) !important;
+}
+
+:global(html.dark) .aura-btn-primary:hover:not(:disabled) {
+  background: #ffd5df !important;
+  color: #201317 !important;
+  box-shadow: 0 6px 24px rgba(248, 180, 196, 0.5) !important;
 }
 
 /* ==========================================================================

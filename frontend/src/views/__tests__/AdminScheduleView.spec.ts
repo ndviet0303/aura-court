@@ -53,13 +53,13 @@ describe('AdminScheduleView', () => {
         ]
       }
       if (url === '/admin/audit-logs') {
-        return { data: [{ id: 1, action: 'Cập nhật lịch', user: { name: 'Admin' }, created_at: new Date().toISOString() }] }
+        return { data: [{ id: 1, action: 'Cập nhật lịch hoạt động', user: { name: 'Admin' }, created_at: new Date().toISOString() }] }
       }
       return []
     })
   })
 
-  it('renders standard weekly schedule and special dates panel', async () => {
+  it('renders standard weekly schedule, special dates and maintenance panel', async () => {
     const wrapper = mount(AdminScheduleView, {
       global: {
         plugins: [i18n],
@@ -67,14 +67,14 @@ describe('AdminScheduleView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.find('.page-title').text()).toContain('Lịch hoạt động')
+    expect(wrapper.find('.page-headline').text()).toContain('Lịch hoạt động')
     expect(wrapper.find('.weekly-schedule-card').exists()).toBe(true)
-    expect(wrapper.findAll('.day-schedule-row').length).toBe(7)
-    expect(wrapper.find('.special-dates-panel').exists()).toBe(true)
-    expect(wrapper.find('.maintenance-panel').exists()).toBe(true)
+    expect(wrapper.findAll('.day-row-container').length).toBe(7)
+    expect(wrapper.find('.special-dates-card').exists()).toBe(true)
+    expect(wrapper.find('.maintenance-card').exists()).toBe(true)
   })
 
-  it('allows adding shifts to a weekday', async () => {
+  it('allows adding and removing shifts to a weekday', async () => {
     const wrapper = mount(AdminScheduleView, {
       global: {
         plugins: [i18n],
@@ -82,13 +82,17 @@ describe('AdminScheduleView', () => {
     })
     await flushPromises()
 
-    const firstDay = wrapper.findAll('.day-schedule-row')[0]
+    const firstDay = wrapper.findAll('.day-row-container')[0]
     expect(firstDay).toBeDefined()
     if (firstDay) {
-      expect(firstDay.findAll('.shift-time-block').length).toBe(1)
+      expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
       const addShiftBtn = firstDay.find('.btn-add-shift-link')
       await addShiftBtn.trigger('click')
-      expect(firstDay.findAll('.shift-time-block').length).toBe(2)
+      expect(firstDay.findAll('.shift-time-chip').length).toBe(2)
+
+      const removeShiftBtn = firstDay.find('.btn-delete-shift')
+      await removeShiftBtn.trigger('click')
+      expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
     }
   })
 
@@ -100,15 +104,45 @@ describe('AdminScheduleView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.find('.modal-backdrop').exists()).toBe(false)
-    const openDowntimeBtn = wrapper.find('.btn-schedule-downtime')
+    expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(false)
+    const openDowntimeBtn = wrapper.find('.btn-schedule-downtime-cta')
     await openDowntimeBtn.trigger('click')
 
-    expect(wrapper.find('.modal-backdrop').exists()).toBe(true)
-    expect(wrapper.find('.modal-card h3').text()).toContain('Lên lịch bảo trì')
+    expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(true)
+    expect(wrapper.find('.modal-title-text').text()).toContain('Lên lịch bảo trì')
 
-    const closeBtn = wrapper.find('.btn-close')
+    const closeBtn = wrapper.find('.btn-modal-close')
     await closeBtn.trigger('click')
-    expect(wrapper.find('.modal-backdrop').exists()).toBe(false)
+    expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(false)
+  })
+
+  it('opens Special Date modal and handles additions', async () => {
+    const wrapper = mount(AdminScheduleView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    const addSpecialBtn = wrapper.find('.btn-add-circle')
+    await addSpecialBtn.trigger('click')
+
+    expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(true)
+    expect(wrapper.find('.modal-title-text').text()).toContain('Thêm ngày đặc biệt')
+  })
+
+  it('opens Audit Log modal', async () => {
+    const wrapper = mount(AdminScheduleView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    const auditBtn = wrapper.find('.btn-action-neutral')
+    await auditBtn.trigger('click')
+
+    expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(true)
+    expect(wrapper.find('.modal-title-text').text()).toContain('Nhật ký kiểm toán')
   })
 })

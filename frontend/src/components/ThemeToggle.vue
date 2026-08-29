@@ -48,6 +48,17 @@ const themeStore = useThemeStore()
   box-shadow: 0 3px 10px rgba(120, 85, 94, 0.12);
 }
 
+:global(html.dark) .theme-toggle-btn {
+  background: #22242a;
+  border-color: #353942;
+  color: #f8b4c4;
+}
+
+:global(html.dark) .theme-toggle-btn:hover {
+  background: #2b2e36;
+  border-color: rgba(248, 180, 196, 0.4);
+}
+
 .icon-container {
   position: relative;
   width: 20px;
@@ -74,6 +85,10 @@ const themeStore = useThemeStore()
   opacity: 0;
   transform: rotate(90deg) scale(0.5);
   color: #ffd1dc;
+}
+
+:global(html.dark) .moon-icon {
+  color: #f8b4c4;
 }
 
 /* Dark Mode: Moon is visible, Sun rotated out */

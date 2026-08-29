@@ -103,6 +103,11 @@ import { RouterLink } from 'vue-router'
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
+:global(html.dark) .site-footer {
+  background: var(--surface, #22242a);
+  border-color: var(--border, #353942);
+}
+
 .footer-container {
   max-width: 1280px;
   margin: 0 auto;
@@ -145,6 +150,11 @@ import { RouterLink } from 'vue-router'
   box-shadow: 0 2px 8px rgba(255, 209, 220, 0.3);
 }
 
+:global(html.dark) .brand-icon-box {
+  background: #53333e;
+  box-shadow: 0 2px 8px rgba(248, 180, 196, 0.2);
+}
+
 .brand-img {
   width: 24px;
   height: 24px;
@@ -159,12 +169,20 @@ import { RouterLink } from 'vue-router'
   transition: color 0.3s ease;
 }
 
+:global(html.dark) .brand-name {
+  color: #ffffff;
+}
+
 .brand-tagline {
   font-size: 13.5px;
   line-height: 1.6;
   color: var(--muted, #5d5f5f);
   margin: 0;
   max-width: 360px;
+}
+
+:global(html.dark) .brand-tagline {
+  color: #9ca3af;
 }
 
 .working-hours-pill {
@@ -181,9 +199,19 @@ import { RouterLink } from 'vue-router'
   width: fit-content;
 }
 
+:global(html.dark) .working-hours-pill {
+  background: #2b2e36;
+  border-color: #353942;
+  color: #f8b4c4;
+}
+
 .icon-clock {
   font-size: 16px;
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .icon-clock {
+  color: #f8b4c4;
 }
 
 /* Column Titles & Links */
@@ -194,6 +222,10 @@ import { RouterLink } from 'vue-router'
   letter-spacing: 0.02em;
   margin: 0 0 4px;
   text-transform: uppercase;
+}
+
+:global(html.dark) .col-title {
+  color: #ffffff;
 }
 
 .col-links {
@@ -218,6 +250,14 @@ import { RouterLink } from 'vue-router'
   transform: translateX(2px);
 }
 
+:global(html.dark) .col-links a {
+  color: #9ca3af;
+}
+
+:global(html.dark) .col-links a:hover {
+  color: #f8b4c4;
+}
+
 /* Contact Info */
 .contact-info {
   display: flex;
@@ -234,6 +274,10 @@ import { RouterLink } from 'vue-router'
   text-decoration: none;
 }
 
+:global(html.dark) .contact-item {
+  color: #9ca3af;
+}
+
 .contact-link {
   transition: color 0.18s ease;
 }
@@ -242,9 +286,17 @@ import { RouterLink } from 'vue-router'
   color: var(--pink-dark, #78555e);
 }
 
+:global(html.dark) .contact-link:hover {
+  color: #f8b4c4;
+}
+
 .contact-icon {
   font-size: 18px;
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .contact-icon {
+  color: #f8b4c4;
 }
 
 /* Social Buttons */
@@ -273,6 +325,18 @@ import { RouterLink } from 'vue-router'
   transform: translateY(-2px);
 }
 
+:global(html.dark) .social-btn {
+  background: #2b2e36;
+  color: #cbd5e1;
+  border: 1px solid #353942;
+}
+
+:global(html.dark) .social-btn:hover {
+  background: #53333e;
+  color: #f8b4c4;
+  border-color: rgba(248, 180, 196, 0.4);
+}
+
 .social-btn .material-symbols-outlined {
   font-size: 18px;
 }
@@ -288,6 +352,11 @@ import { RouterLink } from 'vue-router'
   gap: 16px;
   font-size: 12.5px;
   color: var(--muted, #817476);
+}
+
+:global(html.dark) .footer-bottom {
+  border-color: #353942;
+  color: #9ca3af;
 }
 
 .copyright {
@@ -309,8 +378,18 @@ import { RouterLink } from 'vue-router'
   font-weight: 700;
 }
 
+:global(html.dark) .demo-chip {
+  background: rgba(248, 180, 196, 0.18);
+  color: #f8b4c4;
+  border: 1px solid rgba(248, 180, 196, 0.35);
+}
+
 .divider {
   color: var(--outline, #d3c3c5);
+}
+
+:global(html.dark) .divider {
+  color: #4a4e59;
 }
 
 .footer-bottom-link {
@@ -321,6 +400,10 @@ import { RouterLink } from 'vue-router'
 
 .footer-bottom-link:hover {
   color: var(--pink-dark, #78555e);
+}
+
+:global(html.dark) .footer-bottom-link:hover {
+  color: #f8b4c4;
 }
 
 /* Responsive */

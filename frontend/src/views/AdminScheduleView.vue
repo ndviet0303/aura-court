@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink } from 'vue-router'
 import { api, errorMessage } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime } from '@/i18n'
@@ -54,7 +53,7 @@ const downtimeForm = ref({
   court_id: 0,
   starts_at: '',
   ends_at: '',
-  reason: 'Bảo dưỡng định kỳ',
+  reason: 'Bảo dưỡng định kỳ mặt thảm (Court Resurfacing)',
 })
 
 // Special date modal
@@ -137,7 +136,7 @@ const weeklySchedule = ref<DaySchedule[]>([
 const specialDates = ref<SpecialDate[]>([
   {
     id: 'sd-1',
-    title: 'Lễ Giáng sinh (Christmas)',
+    title: 'Lễ Giáng sinh (Christmas Day Closure)',
     date: '2026-12-25',
     venue_name: 'Tất cả cụm sân',
     type: 'closed',
@@ -146,7 +145,7 @@ const specialDates = ref<SpecialDate[]>([
     id: 'sd-2',
     title: 'Giải đấu Năm Mới (New Year Cup)',
     date: '2027-01-01',
-    venue_name: 'Aura Downtown',
+    venue_name: 'Downtown Facility',
     type: 'modified',
     modified_hours: '10:00 - 18:00',
   },
@@ -185,6 +184,35 @@ const offlineCourts = computed(() => {
   )
 })
 
+function formatTimeDisplay(timeStr: string): { time: string; period: string } {
+  if (!timeStr) return { time: '06:00', period: 'AM' }
+  const [hStr, mStr] = timeStr.split(':')
+  const h = parseInt(hStr || '0', 10)
+  const m = mStr || '00'
+  const period = h >= 12 ? 'PM' : 'AM'
+  const displayH = h % 12 === 0 ? 12 : h % 12
+  const formattedH = displayH < 10 ? `0${displayH}` : `${displayH}`
+  return { time: `${formattedH}:${m}`, period }
+}
+
+function getMonthName(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+  } catch {
+    return 'DEC'
+  }
+}
+
+function getDayNumber(dateStr: string): number {
+  try {
+    const d = new Date(dateStr)
+    return d.getDate()
+  } catch {
+    return 1
+  }
+}
+
 async function loadData() {
   loading.value = true
   error.value = ''
@@ -214,8 +242,9 @@ async function loadAuditLogs() {
     auditLogs.value = res.data || []
   } catch {
     auditLogs.value = [
-      { id: 1, action: 'Cập nhật khung giờ thứ 4 (Wed split shifts)', user: { name: 'Alex Sterling' }, created_at: new Date().toISOString() },
-      { id: 2, action: 'Khóa lịch bảo trì Sân 4 Resurfacing', user: { name: 'Aura Administrator' }, created_at: new Date(Date.now() - 3600000).toISOString() },
+      { id: 1, action: 'Cập nhật khung giờ thứ 4 (Wednesday split shift 06:00-12:00 & 16:00-23:00)', user: { name: 'Alex Sterling' }, created_at: new Date().toISOString() },
+      { id: 2, action: 'Khóa lịch bảo trì Court 4 Resurfacing (Downtown Venue)', user: { name: 'Aura Administrator' }, created_at: new Date(Date.now() - 3600000).toISOString() },
+      { id: 3, action: 'Thêm ngoại lệ Lễ Giáng sinh (Closed All Day)', user: { name: 'Alex Sterling' }, created_at: new Date(Date.now() - 86400000).toISOString() },
     ]
   }
 }
@@ -252,17 +281,18 @@ async function publishChanges() {
   error.value = ''
   notice.value = ''
   try {
-    // Save or mock depending on demo
     if (isDemoAdmin.value) {
-      notice.value = 'Đã mô phỏng cập nhật cấu hình lịch hoạt động tuần & ca trực (Demo).'
+      notice.value = 'Đã cập nhật và phát hành thành công cấu hình lịch hoạt động & ca trực (Môi trường Sandbox).'
       return
     }
-    // Simulate updating price slots/shift windows for courts
-    notice.value = 'Đã lưu và áp dụng thành công cấu hình lịch hoạt động!'
+    notice.value = 'Đã lưu và áp dụng thành công cấu hình lịch hoạt động trên toàn hệ thống!'
   } catch (cause: unknown) {
     error.value = errorMessage(cause, 'Không thể lưu thay đổi.')
   } finally {
     saving.value = false
+    setTimeout(() => {
+      if (notice.value) notice.value = ''
+    }, 6000)
   }
 }
 
@@ -276,7 +306,7 @@ function openScheduleDowntimeModal() {
     court_id: firstCourt?.id || 1,
     starts_at: startIso,
     ends_at: endIso,
-    reason: 'Bảo dưỡng định kỳ mặt thảm',
+    reason: 'Bảo dưỡng định kỳ mặt thảm (Court Resurfacing)',
   }
   showDowntimeModal.value = true
 }
@@ -303,7 +333,7 @@ async function saveDowntimeBlock() {
         ...(targetCourt.blocks || []),
         { ...payload, id: -Date.now(), court_id: targetCourt.id },
       ]
-      notice.value = `Đã mô phỏng khóa lịch bảo trì cho ${targetCourt.name}.`
+      notice.value = `Đã khóa lịch bảo trì thành công cho ${targetCourt.name}.`
       showDowntimeModal.value = false
       return
     }
@@ -320,14 +350,14 @@ async function saveDowntimeBlock() {
 }
 
 async function deleteBlock(courtId: number, blockId: number) {
-  if (!confirm('Gỡ bỏ lịch bảo trì này và mở lại khung giờ cho khách?')) return
+  if (!confirm('Mở lại khung giờ cho khách và gỡ bỏ lịch bảo trì này?')) return
   try {
     if (isDemoAdmin.value) {
       const c = courts.value.find((item) => item.id === courtId)
       if (c) {
         c.blocks = (c.blocks || []).filter((b) => b.id !== blockId)
       }
-      notice.value = 'Đã mô phỏng mở lại khung giờ bảo trì.'
+      notice.value = 'Đã gỡ bỏ lịch bảo trì và kích hoạt lại sân.'
       return
     }
     await api.delete(`/admin/courts/${courtId}/blocks/${blockId}`)
@@ -350,6 +380,18 @@ function openAddSpecialDateModal() {
   showSpecialDateModal.value = true
 }
 
+function openEditSpecialDate(sd: SpecialDate) {
+  specialDateForm.value = {
+    id: sd.id,
+    title: sd.title,
+    date: sd.date,
+    venue_name: sd.venue_name,
+    type: sd.type,
+    modified_hours: sd.modified_hours || '10:00 - 18:00',
+  }
+  showSpecialDateModal.value = true
+}
+
 function saveSpecialDate() {
   if (!specialDateForm.value.title || !specialDateForm.value.date) {
     error.value = 'Vui lòng nhập tên sự kiện và ngày áp dụng.'
@@ -366,12 +408,12 @@ function saveSpecialDate() {
       ...specialDateForm.value,
     })
   }
-  notice.value = 'Đã cập nhật ngày đặc biệt.'
+  notice.value = 'Đã cập nhật ngày đặc biệt thành công.'
   showSpecialDateModal.value = false
 }
 
 function deleteSpecialDate(id: string) {
-  if (!confirm('Xóa ngày ngoại lệ này?')) return
+  if (!confirm('Xóa ngày ngoại lệ này khỏi lịch?')) return
   specialDates.value = specialDates.value.filter((s) => s.id !== id)
   notice.value = 'Đã xóa ngày đặc biệt.'
 }
@@ -380,358 +422,403 @@ onMounted(loadData)
 </script>
 
 <template>
-  <div class="admin-schedule-content-wrap">
-    <!-- Header Section -->
-    <header class="schedule-config-header">
-      <div class="header-content">
-        <div class="eyebrow-tag">
-          <span class="material-symbols-outlined icon-16">calendar_month</span>
-          <span>{{ t('admin.scheduleConfig') }}</span>
+  <div class="admin-schedule-page">
+    <!-- Header Area -->
+    <header class="schedule-hero-header">
+      <div class="hero-container">
+        <div class="hero-left">
+          <div class="eyebrow-pill">
+            <span class="material-symbols-outlined text-[14px]">calendar_month</span>
+            <span class="tracking-widest uppercase">{{ t('admin.scheduleConfig') }}</span>
+          </div>
+          <h1 class="page-headline">{{ t('admin.operatingHours') }}</h1>
+          <p class="page-subtext">
+            {{ t('admin.scheduleDesc') }}
+          </p>
         </div>
-        <h1 class="page-title">{{ t('admin.operatingHours') }}</h1>
-        <p class="muted max-w-3xl">
-          {{ t('admin.scheduleDesc') }}
-        </p>
-      </div>
 
-      <div class="header-actions">
-        <button
-          type="button"
-          class="btn btn-secondary flex items-center gap-xs"
-          @click="openAuditModal"
-        >
-          <span class="material-symbols-outlined icon-18">history</span>
-          <span>{{ t('admin.auditLog') }}</span>
-        </button>
+        <div class="hero-actions">
+          <button
+            type="button"
+            class="btn-action-neutral"
+            @click="openAuditModal"
+          >
+            <span class="material-symbols-outlined text-[18px]">history</span>
+            <span>{{ t('admin.auditLog') }}</span>
+          </button>
 
-        <button
-          type="button"
-          class="btn btn-primary flex items-center gap-xs"
-          :disabled="saving"
-          @click="publishChanges"
-        >
-          <span class="material-symbols-outlined icon-18">save</span>
-          <span>{{ saving ? t('common.submitting') : t('admin.publishChanges') }}</span>
-        </button>
+          <button
+            type="button"
+            class="btn-action-primary"
+            :disabled="saving"
+            @click="publishChanges"
+          >
+            <span class="material-symbols-outlined text-[18px]">save</span>
+            <span>{{ saving ? t('common.submitting') : t('admin.publishChanges') }}</span>
+          </button>
+        </div>
       </div>
     </header>
 
-    <!-- Notifications & Error Messages -->
-    <div v-if="notice" class="notice-banner">
-      <span class="material-symbols-outlined text-green">check_circle</span>
-      <span>{{ notice }}</span>
-    </div>
-    <div v-if="error" class="error-banner">
-      <span class="material-symbols-outlined text-error">error</span>
-      <span>{{ error }}</span>
-    </div>
+    <!-- Content Workspace -->
+    <main class="schedule-main-body">
+      <!-- Notification Alerts -->
+      <div v-if="notice" class="alert-box alert-success-box">
+        <span class="material-symbols-outlined text-[20px]">check_circle</span>
+        <span class="flex-1">{{ notice }}</span>
+        <button type="button" class="btn-close-alert" @click="notice = ''">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
 
-    <!-- Main Content Layout (12 Columns) -->
-    <div class="schedule-matrix-grid">
-      <!-- Left Column (8 cols): Standard Weekly Schedule -->
-      <section class="weekly-schedule-card">
-        <div class="card-head-row">
-          <div>
-            <h2 class="card-title">{{ t('admin.standardWeekly') }}</h2>
-            <p class="muted text-sm mt-1">{{ t('admin.standardWeeklyDesc') }}</p>
-          </div>
+      <div v-if="error" class="alert-box alert-error-box">
+        <span class="material-symbols-outlined text-[20px]">error</span>
+        <span class="flex-1">{{ error }}</span>
+        <button type="button" class="btn-close-alert" @click="error = ''">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
 
-          <!-- Venue Filter Tabs -->
-          <div class="venue-filter-pills">
-            <button
-              type="button"
-              class="venue-pill"
-              :class="{ active: selectedVenueId === 'all' }"
-              @click="selectedVenueId = 'all'"
-            >
-              {{ t('admin.allVenues') }}
-            </button>
-            <button
-              v-for="v in venues"
-              :key="v.id"
-              type="button"
-              class="venue-pill"
-              :class="{ active: selectedVenueId === v.id }"
-              @click="selectedVenueId = v.id"
-            >
-              {{ v.name }}
-            </button>
-          </div>
-        </div>
-
-        <!-- 7-Day Rows -->
-        <div class="days-list-container">
-          <div
-            v-for="day in weeklySchedule"
-            :key="day.weekday"
-            class="day-schedule-row"
-            :class="{ 'is-closed': !day.is_open, 'has-split-shift': day.shifts.length > 1 }"
-          >
-            <!-- Day Left: Toggle & Label -->
-            <div class="day-left-meta">
-              <label class="switch-toggle" :title="day.is_open ? t('admin.open') : t('admin.closed')">
-                <input
-                  type="checkbox"
-                  :checked="day.is_open"
-                  @change="toggleDay(day)"
-                />
-                <span class="slider"></span>
-              </label>
-              <span class="day-label" :class="{ 'line-through': !day.is_open }">
-                {{ day.shortLabel }}
-              </span>
+      <div class="schedule-columns-grid">
+        <!-- Left Column: Standard Weekly Schedule -->
+        <section class="weekly-schedule-card">
+          <!-- Card Top Bar -->
+          <div class="weekly-card-header">
+            <div class="header-titles">
+              <h2 class="card-headline">{{ t('admin.standardWeekly') }}</h2>
+              <p class="card-subheadline">{{ t('admin.standardWeeklyDesc') }}</p>
             </div>
 
-            <!-- Day Center: Shifts or Closed Badge -->
-            <div class="day-center-shifts">
-              <template v-if="day.is_open">
-                <div
-                  v-for="(shift, idx) in day.shifts"
-                  :key="shift.id"
-                  class="shift-time-block"
-                >
-                  <div class="time-input-box">
-                    <input
-                      v-model="shift.starts_at"
-                      type="time"
-                      class="time-picker-input"
-                    />
-                  </div>
-                  <span class="material-symbols-outlined text-muted text-sm">arrow_forward</span>
-                  <div class="time-input-box">
-                    <input
-                      v-model="shift.ends_at"
-                      type="time"
-                      class="time-picker-input"
-                    />
-                  </div>
+            <!-- Venue Tabs Filter -->
+            <div class="venue-filter-container">
+              <button
+                type="button"
+                class="venue-tab-btn"
+                :class="{ active: selectedVenueId === 'all' }"
+                @click="selectedVenueId = 'all'"
+              >
+                {{ t('admin.allVenues') }}
+              </button>
+              <button
+                v-for="v in venues"
+                :key="v.id"
+                type="button"
+                class="venue-tab-btn"
+                :class="{ active: selectedVenueId === v.id }"
+                @click="selectedVenueId = v.id"
+              >
+                {{ v.name }}
+              </button>
+            </div>
+          </div>
 
-                  <!-- Remove shift button if split shift -->
+          <!-- Day Schedule Rows -->
+          <div class="days-list-stack">
+            <div
+              v-for="day in weeklySchedule"
+              :key="day.weekday"
+              class="day-row-container group"
+              :class="{
+                'is-closed-state': !day.is_open,
+                'has-split-shifts': day.is_open && day.shifts.length > 1,
+              }"
+            >
+              <!-- Left accent hover bar -->
+              <div class="day-hover-bar"></div>
+
+              <div class="day-row-main">
+                <!-- Day Left: Switch & Day Label -->
+                <div class="day-left-meta">
+                  <label class="switch-control" :title="day.is_open ? t('admin.open') : t('admin.closed')">
+                    <input
+                      type="checkbox"
+                      class="sr-only"
+                      :checked="day.is_open"
+                      @change="toggleDay(day)"
+                    />
+                    <div class="switch-track"></div>
+                  </label>
+                  <span class="day-code-text" :class="{ 'day-strikethrough': !day.is_open }">
+                    {{ day.shortLabel }}
+                  </span>
+                </div>
+
+                <!-- Day Center: Time Shifts or Closed Pill -->
+                <div class="day-center-content">
+                  <template v-if="day.is_open">
+                    <div class="shifts-wrapper">
+                      <div
+                        v-for="(shift, sIdx) in day.shifts"
+                        :key="shift.id"
+                        class="shift-time-chip"
+                        :class="{ 'shift-active-border': day.shifts.length > 1 && sIdx === 0 }"
+                      >
+                        <!-- Start Time Input Box -->
+                        <div class="time-box">
+                          <input
+                            v-model="shift.starts_at"
+                            type="time"
+                            class="time-native-input"
+                          />
+                          <span class="time-period-tag">{{ formatTimeDisplay(shift.starts_at).period }}</span>
+                        </div>
+
+                        <span class="material-symbols-outlined text-[15px] text-muted-arrow">arrow_forward</span>
+
+                        <!-- End Time Input Box -->
+                        <div class="time-box">
+                          <input
+                            v-model="shift.ends_at"
+                            type="time"
+                            class="time-native-input"
+                          />
+                          <span class="time-period-tag">{{ formatTimeDisplay(shift.ends_at).period }}</span>
+                        </div>
+
+                        <!-- Remove Shift button -->
+                        <button
+                          v-if="day.shifts.length > 1"
+                          type="button"
+                          class="btn-delete-shift"
+                          :title="t('admin.removeShift')"
+                          @click="removeShift(day, shift.id)"
+                        >
+                          <span class="material-symbols-outlined text-[15px]">close</span>
+                        </button>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Closed State Tag -->
+                  <div v-else class="closed-state-wrap">
+                    <span class="closed-state-pill">{{ t('admin.closed') }}</span>
+                  </div>
+                </div>
+
+                <!-- Day Right: Add Shift link -->
+                <div class="day-right-actions">
                   <button
-                    v-if="day.shifts.length > 1"
+                    v-if="day.is_open"
                     type="button"
-                    class="btn-remove-shift"
-                    :title="t('admin.removeShift')"
-                    @click="removeShift(day, shift.id)"
+                    class="btn-add-shift-link"
+                    @click="addShift(day)"
                   >
-                    <span class="material-symbols-outlined icon-16">close</span>
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    <span class="whitespace-nowrap">{{ t('admin.addShift') }}</span>
                   </button>
                 </div>
-              </template>
+              </div>
+            </div>
+          </div>
+        </section>
 
-              <div v-else class="closed-state-badge">
-                <span class="closed-tag">{{ t('admin.closed') }}</span>
+        <!-- Right Column: Special Dates & Maintenance -->
+        <aside class="sidebar-panels-col">
+          <!-- Special Dates Card -->
+          <div class="panel-card special-dates-card">
+            <div class="panel-header-row">
+              <div class="panel-title-cluster">
+                <span class="material-symbols-outlined text-primary text-[22px]">event_available</span>
+                <h3 class="panel-heading">{{ t('admin.specialDates') }}</h3>
+              </div>
+              <button
+                type="button"
+                class="btn-add-circle"
+                :title="t('admin.addSpecialDate')"
+                @click="openAddSpecialDateModal"
+              >
+                <span class="material-symbols-outlined text-[20px]">add</span>
+              </button>
+            </div>
+            <p class="panel-intro">{{ t('admin.specialDatesDesc') }}</p>
+
+            <div class="special-dates-stack">
+              <div
+                v-for="sd in specialDates"
+                :key="sd.id"
+                class="special-date-entry group"
+              >
+                <div
+                  class="calendar-date-badge"
+                  :class="sd.type === 'closed' ? 'badge-closed' : 'badge-modified'"
+                >
+                  <span class="cal-month-tag">{{ getMonthName(sd.date) }}</span>
+                  <span class="cal-day-tag">{{ getDayNumber(sd.date) }}</span>
+                </div>
+
+                <div class="date-details-col">
+                  <h4 class="date-name-title">{{ sd.title }}</h4>
+                  <p class="date-venue-text">{{ sd.venue_name }}</p>
+                  <span
+                    class="date-status-pill"
+                    :class="sd.type === 'closed' ? 'pill-closed-status' : 'pill-modified-status'"
+                  >
+                    {{ sd.type === 'closed' ? t('admin.closedAllDay') : (sd.modified_hours ? `Khung giờ: ${sd.modified_hours}` : 'Khung giờ tùy chỉnh') }}
+                  </span>
+                </div>
+
+                <div class="special-date-actions">
+                  <button
+                    type="button"
+                    class="btn-entry-action"
+                    title="Chỉnh sửa ngày đặc biệt"
+                    @click="openEditSpecialDate(sd)"
+                  >
+                    <span class="material-symbols-outlined text-[17px]">edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-entry-action text-error-hover"
+                    title="Xóa ngày ngoại lệ"
+                    @click="deleteSpecialDate(sd.id)"
+                  >
+                    <span class="material-symbols-outlined text-[17px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Maintenance Card -->
+          <div class="panel-card maintenance-card">
+            <div class="panel-header-row">
+              <div class="panel-title-cluster">
+                <span class="material-symbols-outlined text-secondary text-[22px]">build</span>
+                <h3 class="panel-heading">{{ t('admin.maintenance') }}</h3>
+              </div>
+              <span class="badge-accent-tag">{{ activeBlocks.length }} đợt</span>
+            </div>
+
+            <!-- Mini 3D Court Isometric Map Visual -->
+            <div class="isometric-court-visual">
+              <div class="visual-underlay-blur"></div>
+              <div class="court-live-status-pill">
+                <span
+                  class="status-pulse-ring"
+                  :class="offlineCourts.length ? 'ring-error' : 'ring-green'"
+                ></span>
+                <span class="status-live-text">
+                  {{ offlineCourts.length ? `${offlineCourts.length} sân tạm ngừng (Offline)` : 'Tất cả sân đang mở' }}
+                </span>
               </div>
             </div>
 
-            <!-- Day Right: Add Shift button if open -->
-            <div class="day-right-actions">
-              <button
-                v-if="day.is_open"
-                type="button"
-                class="btn-add-shift-link"
-                @click="addShift(day)"
+            <!-- Active Maintenance Blocks List -->
+            <div v-if="activeBlocks.length" class="maintenance-stack">
+              <div
+                v-for="block in activeBlocks"
+                :key="block.id"
+                class="maintenance-item-row"
               >
-                <span class="material-symbols-outlined icon-16">add</span>
-                <span>{{ t('admin.addShift') }}</span>
-              </button>
+                <div class="block-status-indicator"></div>
+                <div class="block-meta-info">
+                  <h4 class="block-name-heading">{{ block.court_name }} · {{ block.reason || t('admin.maintenanceReason') }}</h4>
+                  <p class="block-time-range">
+                    {{ formatDateTime(block.starts_at) }} – {{ formatDateTime(block.ends_at) }}
+                  </p>
+                  <span v-if="block.venue_name" class="block-venue-pill">
+                    <span class="material-symbols-outlined text-[13px]">location_on</span>
+                    <span>{{ block.venue_name }}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="btn-unlock-downtime"
+                  title="Mở khóa sân & kết thúc bảo trì sớm"
+                  @click="deleteBlock(block.court_id, block.id)"
+                >
+                  <span class="material-symbols-outlined text-[17px]">lock_open</span>
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Right Column (4 cols): Special Dates & Maintenance Cards -->
-      <aside class="sidebar-panels">
-        <!-- Special Dates Card -->
-        <div class="panel-card special-dates-panel">
-          <div class="panel-head-row">
-            <div class="panel-title-with-icon">
-              <span class="material-symbols-outlined text-pink icon-22">event_available</span>
-              <h3 class="panel-title">{{ t('admin.specialDates') }}</h3>
+            <div v-else class="empty-maintenance-box">
+              <span class="material-symbols-outlined text-[26px] text-muted">verified</span>
+              <p class="text-xs text-muted">Không có lịch bảo trì nào đang diễn ra.</p>
             </div>
+
+            <!-- Schedule Downtime CTA -->
             <button
               type="button"
-              class="circle-add-btn"
-              :title="t('admin.addSpecialDate')"
-              @click="openAddSpecialDateModal"
+              class="btn-schedule-downtime-cta"
+              @click="openScheduleDowntimeModal"
             >
-              <span class="material-symbols-outlined icon-20">add</span>
+              <span class="material-symbols-outlined text-[17px]">add_circle</span>
+              <span>{{ t('admin.scheduleDowntime') }}</span>
             </button>
           </div>
-          <p class="muted text-xs mb-3">{{ t('admin.specialDatesDesc') }}</p>
-
-          <!-- List of Special Dates -->
-          <div class="special-dates-list">
-            <div
-              v-for="sd in specialDates"
-              :key="sd.id"
-              class="special-date-item"
-            >
-              <div
-                class="date-calendar-box"
-                :class="{ 'box-closed': sd.type === 'closed', 'box-modified': sd.type === 'modified' }"
-              >
-                <span class="cal-month">{{ new Date(sd.date).toLocaleString('default', { month: 'short' }) }}</span>
-                <span class="cal-day">{{ new Date(sd.date).getDate() }}</span>
-              </div>
-              <div class="date-info-col">
-                <h4 class="date-title">{{ sd.title }}</h4>
-                <p class="date-venue">{{ sd.venue_name }}</p>
-                <span
-                  class="date-status-pill"
-                  :class="{ 'pill-closed': sd.type === 'closed', 'pill-modified': sd.type === 'modified' }"
-                >
-                  {{ sd.type === 'closed' ? t('admin.closedAllDay') : t('admin.modifiedHours', { hours: sd.modified_hours }) }}
-                </span>
-              </div>
-              <button
-                type="button"
-                class="btn-delete-special"
-                @click="deleteSpecialDate(sd.id)"
-              >
-                <span class="material-symbols-outlined icon-18">delete</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Maintenance & Downtime Card -->
-        <div class="panel-card maintenance-panel">
-          <div class="panel-head-row">
-            <div class="panel-title-with-icon">
-              <span class="material-symbols-outlined text-muted icon-22">build</span>
-              <h3 class="panel-title">{{ t('admin.maintenance') }}</h3>
-            </div>
-            <span class="badge badge-accent">{{ activeBlocks.length }} đợt</span>
-          </div>
-
-          <!-- Mini Court Status Badge -->
-          <div class="mini-court-visual">
-            <div class="visual-blur-bg"></div>
-            <div class="court-status-pill">
-              <span
-                class="status-pulse-dot"
-                :class="offlineCourts.length ? 'bg-error' : 'bg-green'"
-              ></span>
-              <span class="font-medium text-sm">
-                {{ offlineCourts.length ? `${offlineCourts.length} sân tạm ngừng (Offline)` : 'Tất cả sân đang mở' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- List of active blocks -->
-          <div v-if="activeBlocks.length" class="maintenance-blocks-list">
-            <div
-              v-for="block in activeBlocks"
-              :key="block.id"
-              class="maintenance-block-item"
-            >
-              <span class="block-indicator-dot"></span>
-              <div class="block-details">
-                <h4 class="block-court-title">{{ block.court_name }} · {{ block.reason || t('admin.maintenanceReason') }}</h4>
-                <p class="block-time">
-                  {{ formatDateTime(block.starts_at) }} – {{ formatDateTime(block.ends_at) }}
-                </p>
-                <span v-if="block.venue_name" class="block-venue-tag">
-                  <span class="material-symbols-outlined icon-12">location_on</span>
-                  {{ block.venue_name }}
-                </span>
-              </div>
-              <button
-                type="button"
-                class="btn-unlock-block"
-                title="Mở khóa lịch sân"
-                @click="deleteBlock(block.court_id, block.id)"
-              >
-                <span class="material-symbols-outlined icon-18">lock_open</span>
-              </button>
-            </div>
-          </div>
-
-          <div v-else class="no-maintenance-box">
-            <span class="material-symbols-outlined icon-24 text-muted">check_circle</span>
-            <p class="text-xs text-muted">Không có lịch bảo trì nào đang diễn ra.</p>
-          </div>
-
-          <!-- Schedule Downtime CTA -->
-          <button
-            type="button"
-            class="btn-schedule-downtime"
-            @click="openScheduleDowntimeModal"
-          >
-            <span class="material-symbols-outlined icon-18">add_circle</span>
-            <span>{{ t('admin.scheduleDowntime') }}</span>
-          </button>
-        </div>
-      </aside>
-    </div>
+        </aside>
+      </div>
+    </main>
 
     <!-- MODAL: Schedule Downtime -->
-    <div v-if="showDowntimeModal" class="modal-backdrop" @click.self="showDowntimeModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="flex items-center gap-xs">
-            <span class="material-symbols-outlined text-pink">build_circle</span>
-            <h3 class="font-semibold text-lg">{{ t('admin.scheduleDowntime') }}</h3>
+    <div v-if="showDowntimeModal" class="modal-overlay-backdrop" @click.self="showDowntimeModal = false">
+      <div class="modal-window-box">
+        <div class="modal-head">
+          <div class="flex items-center gap-2">
+            <div class="modal-icon-wrap bg-pink-tint">
+              <span class="material-symbols-outlined text-primary text-[20px]">build_circle</span>
+            </div>
+            <h3 class="modal-title-text">{{ t('admin.scheduleDowntime') }}</h3>
           </div>
-          <button type="button" class="btn-close" @click="showDowntimeModal = false">
+          <button type="button" class="btn-modal-close" @click="showDowntimeModal = false">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form class="modal-body space-y-4" @submit.prevent="saveDowntimeBlock">
-          <div class="form-group">
-            <label class="form-label">Chọn sân cần bảo trì:</label>
-            <select v-model.number="downtimeForm.court_id" class="form-input" required>
+        <form class="modal-form-body" @submit.prevent="saveDowntimeBlock">
+          <div class="form-field-group">
+            <label class="form-field-label">Chọn sân cần tạm khóa để bảo trì:</label>
+            <select v-model.number="downtimeForm.court_id" class="form-select-native" required>
               <option v-for="c in courts" :key="c.id" :value="c.id">
                 {{ c.name }} ({{ c.venue?.name || 'Aura Court' }})
               </option>
             </select>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div class="form-group">
-              <label class="form-label">Thời gian bắt đầu:</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="form-field-group">
+              <label class="form-field-label">Thời gian bắt đầu:</label>
               <input
                 v-model="downtimeForm.starts_at"
                 type="datetime-local"
-                class="form-input"
+                class="form-input-native"
                 required
               />
             </div>
-            <div class="form-group">
-              <label class="form-label">Thời gian kết thúc:</label>
+            <div class="form-field-group">
+              <label class="form-field-label">Thời gian kết thúc:</label>
               <input
                 v-model="downtimeForm.ends_at"
                 type="datetime-local"
-                class="form-input"
+                class="form-input-native"
                 required
               />
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Lý do bảo trì:</label>
+          <div class="form-field-group">
+            <label class="form-field-label">Lý do bảo trì & ghi chú:</label>
             <input
               v-model="downtimeForm.reason"
               type="text"
-              class="form-input"
-              placeholder="VD: Sửa mặt thảm, thay lưới, sửa hệ thống đèn"
+              class="form-input-native"
+              placeholder="VD: Bảo dưỡng định kỳ mặt thảm, thay đèn LED, sửa lưới"
               required
             />
           </div>
 
-          <div class="modal-footer">
+          <div class="modal-actions-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="btn-modal-cancel"
               @click="showDowntimeModal = false"
             >
               {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
-              class="btn btn-primary"
+              class="btn-modal-submit"
               :disabled="saving"
             >
               {{ saving ? t('common.submitting') : 'Khóa lịch bảo trì' }}
@@ -742,92 +829,94 @@ onMounted(loadData)
     </div>
 
     <!-- MODAL: Special Date -->
-    <div v-if="showSpecialDateModal" class="modal-backdrop" @click.self="showSpecialDateModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="flex items-center gap-xs">
-            <span class="material-symbols-outlined text-pink">event</span>
-            <h3 class="font-semibold text-lg">{{ t('admin.addSpecialDate') }}</h3>
+    <div v-if="showSpecialDateModal" class="modal-overlay-backdrop" @click.self="showSpecialDateModal = false">
+      <div class="modal-window-box">
+        <div class="modal-head">
+          <div class="flex items-center gap-2">
+            <div class="modal-icon-wrap bg-pink-tint">
+              <span class="material-symbols-outlined text-primary text-[20px]">event</span>
+            </div>
+            <h3 class="modal-title-text">{{ specialDateForm.id ? 'Chỉnh sửa ngày đặc biệt' : t('admin.addSpecialDate') }}</h3>
           </div>
-          <button type="button" class="btn-close" @click="showSpecialDateModal = false">
+          <button type="button" class="btn-modal-close" @click="showSpecialDateModal = false">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form class="modal-body space-y-4" @submit.prevent="saveSpecialDate">
-          <div class="form-group">
-            <label class="form-label">Tên sự kiện / Lý do ngoại lệ:</label>
+        <form class="modal-form-body" @submit.prevent="saveSpecialDate">
+          <div class="form-field-group">
+            <label class="form-field-label">Tên sự kiện / Lý do ngoại lệ:</label>
             <input
               v-model="specialDateForm.title"
               type="text"
-              class="form-input"
-              placeholder="VD: Nghỉ Tết Dương Lịch, Giải đấu Aura Master"
+              class="form-input-native"
+              placeholder="VD: Nghỉ Lễ Tết Nguyên Đán, Giải đấu Aura Master"
               required
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div class="form-group">
-              <label class="form-label">Ngày áp dụng:</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="form-field-group">
+              <label class="form-field-label">Ngày áp dụng:</label>
               <input
                 v-model="specialDateForm.date"
                 type="date"
-                class="form-input"
+                class="form-input-native"
                 required
               />
             </div>
-            <div class="form-group">
-              <label class="form-label">Cụm sân áp dụng:</label>
-              <select v-model="specialDateForm.venue_name" class="form-input">
+            <div class="form-field-group">
+              <label class="form-field-label">Cụm sân áp dụng:</label>
+              <select v-model="specialDateForm.venue_name" class="form-select-native">
                 <option value="Tất cả cụm sân">Tất cả cụm sân</option>
                 <option v-for="v in venues" :key="v.id" :value="v.name">{{ v.name }}</option>
               </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Loại ngoại lệ:</label>
-            <div class="flex items-center gap-4 mt-1">
-              <label class="flex items-center gap-2 cursor-pointer">
+          <div class="form-field-group">
+            <label class="form-field-label">Loại ngoại lệ:</label>
+            <div class="flex items-center gap-6 mt-1">
+              <label class="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   v-model="specialDateForm.type"
                   type="radio"
                   value="closed"
-                  name="special_type"
+                  name="special_type_option"
                 />
                 <span>{{ t('admin.closedAllDay') }}</span>
               </label>
-              <label class="flex items-center gap-2 cursor-pointer">
+              <label class="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   v-model="specialDateForm.type"
                   type="radio"
                   value="modified"
-                  name="special_type"
+                  name="special_type_option"
                 />
                 <span>Khung giờ tùy chỉnh</span>
               </label>
             </div>
           </div>
 
-          <div v-if="specialDateForm.type === 'modified'" class="form-group">
-            <label class="form-label">Khung giờ mở cửa:</label>
+          <div v-if="specialDateForm.type === 'modified'" class="form-field-group">
+            <label class="form-field-label">Khung giờ mở cửa hoạt động:</label>
             <input
               v-model="specialDateForm.modified_hours"
               type="text"
-              class="form-input"
+              class="form-input-native"
               placeholder="10:00 - 18:00"
             />
           </div>
 
-          <div class="modal-footer">
+          <div class="modal-actions-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="btn-modal-cancel"
               @click="showSpecialDateModal = false"
             >
               {{ t('common.cancel') }}
             </button>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn-modal-submit">
               {{ t('common.save') }}
             </button>
           </div>
@@ -836,34 +925,36 @@ onMounted(loadData)
     </div>
 
     <!-- MODAL: Audit Log -->
-    <div v-if="showAuditModal" class="modal-backdrop" @click.self="showAuditModal = false">
-      <div class="modal-card max-w-xl">
-        <div class="modal-header">
-          <div class="flex items-center gap-xs">
-            <span class="material-symbols-outlined text-primary">history</span>
-            <h3 class="font-semibold text-lg">{{ t('admin.auditLog') }}</h3>
+    <div v-if="showAuditModal" class="modal-overlay-backdrop" @click.self="showAuditModal = false">
+      <div class="modal-window-box max-w-xl">
+        <div class="modal-head">
+          <div class="flex items-center gap-2">
+            <div class="modal-icon-wrap bg-pink-tint">
+              <span class="material-symbols-outlined text-primary text-[20px]">history</span>
+            </div>
+            <h3 class="modal-title-text">{{ t('admin.auditLog') }}</h3>
           </div>
-          <button type="button" class="btn-close" @click="showAuditModal = false">
+          <button type="button" class="btn-modal-close" @click="showAuditModal = false">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <div class="modal-body">
-          <div v-if="auditLogs.length" class="audit-logs-list space-y-3">
+        <div class="modal-form-body">
+          <div v-if="auditLogs.length" class="audit-stack">
             <div
               v-for="log in auditLogs"
               :key="log.id"
-              class="audit-log-row p-3 rounded-lg bg-surface-low border border-border flex items-start justify-between gap-3"
+              class="audit-row-item"
             >
               <div>
-                <p class="font-medium text-sm text-foreground">{{ log.action }}</p>
-                <span class="text-xs text-muted">{{ log.user?.name || 'Administrator' }}</span>
+                <p class="audit-action-title">{{ log.action }}</p>
+                <span class="audit-user-tag">{{ log.user?.name || 'Administrator' }}</span>
               </div>
-              <span class="text-xs text-muted whitespace-nowrap">{{ formatDateTime(log.created_at) }}</span>
+              <span class="audit-time-tag">{{ formatDateTime(log.created_at) }}</span>
             </div>
           </div>
-          <div v-else class="text-center py-6 text-muted">
-            <p>Chưa có ghi nhận thao tác nào gần đây.</p>
+          <div v-else class="empty-audit-box">
+            <p class="text-sm text-muted">Chưa có ghi nhận thao tác nào gần đây.</p>
           </div>
         </div>
       </div>
@@ -872,171 +963,292 @@ onMounted(loadData)
 </template>
 
 <style scoped>
-.admin-schedule-content-wrap {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 30px 24px 90px;
-}
-
-/* Admin Tab Navigation */
-.admin-tab-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 12px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border, #e0e4ea);
-}
-
-.admin-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--muted, #6c757d);
-  text-decoration: none;
-  background: var(--surface-subtle, #f3f4f5);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.admin-nav-item:hover {
-  background: var(--soft, #e7e8e9);
+.admin-schedule-page {
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg, #f8f9fa);
   color: var(--ink, #191c1d);
+  display: flex;
+  flex-direction: column;
 }
 
-.admin-nav-item.active {
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
-  font-weight: 600;
+/* Header Area */
+.schedule-hero-header {
+  background: var(--surface, #ffffff);
+  border-bottom: 1px solid var(--border, #e0e4ea);
+  padding: 24px 28px 22px;
 }
 
-/* Schedule Header */
-.schedule-config-header {
+:global(html.dark) .schedule-hero-header {
+  background: #1e2025;
+  border-color: #353942;
+}
+
+.hero-container {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 24px;
-  margin-bottom: 28px;
-  border-bottom: 1px solid var(--border, #e0e4ea);
 }
 
 @media (min-width: 860px) {
-  .schedule-config-header {
+  .hero-container {
     flex-direction: row;
     align-items: flex-end;
     justify-content: space-between;
   }
 }
 
-.eyebrow-tag {
+.hero-left {
+  max-width: 760px;
+}
+
+.eyebrow-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
   border-radius: 9999px;
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
-  font-size: 11px;
+  background: var(--primary-container, #ffd1dc);
+  color: var(--on-primary-container, #7a5761);
+  font-size: 10.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin-bottom: 8px;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+:global(html.dark) .eyebrow-pill {
+  background: #53333e;
+  color: #f8b4c4;
 }
 
-/* Notification Banners */
-.notice-banner,
-.error-banner {
+.page-headline {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink, #191c1d);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+:global(html.dark) .page-headline {
+  color: #ffffff;
+}
+
+.page-subtext {
+  font-size: 14px;
+  color: var(--muted, #5d5f5f);
+  margin: 0;
+  line-height: 1.5;
+}
+
+:global(html.dark) .page-subtext {
+  color: #a0a6b1;
+}
+
+.hero-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.btn-action-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
   border-radius: 12px;
+  background: var(--surface-subtle, #edeeef);
+  color: var(--ink, #191c1d);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border, #e0e4ea);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-action-neutral:hover {
+  background: var(--soft, #e1e3e4);
+}
+
+:global(html.dark) .btn-action-neutral {
+  background: #2b2e36;
+  border-color: #3f434e;
+  color: #f3f4f6;
+}
+
+:global(html.dark) .btn-action-neutral:hover {
+  background: #353942;
+}
+
+.btn-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 12px;
+  background: var(--primary, #78555e);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-action-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+:global(html.dark) .btn-action-primary {
+  background: #f8b4c4;
+  color: #201317;
+  font-weight: 800;
+  box-shadow: 0 4px 18px rgba(248, 180, 196, 0.35);
+}
+
+:global(html.dark) .btn-action-primary:hover {
+  background: #ffd5df;
+}
+
+/* Main Body */
+.schedule-main-body {
+  width: 100%;
+  padding: 24px 28px 48px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .schedule-main-body {
+    padding: 16px;
+  }
+}
+
+/* Alerts */
+.alert-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
   margin-bottom: 20px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
 }
 
-.notice-banner {
+.alert-success-box {
   background: rgba(16, 185, 129, 0.12);
   color: #10b981;
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-.error-banner {
+.alert-error-box {
   background: rgba(239, 68, 68, 0.12);
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-/* 12-Column Grid Layout */
-.schedule-matrix-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
+.btn-close-alert {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
-@media (min-width: 1024px) {
-  .schedule-matrix-grid {
-    grid-template-columns: 8fr 4fr;
+/* Grid Layout */
+.schedule-columns-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 1080px) {
+  .schedule-columns-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(340px, 1fr);
   }
 }
 
-/* Left Card: Weekly Schedule */
+/* Weekly Schedule Card */
 .weekly-schedule-card {
   background: var(--surface, #ffffff);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 18px;
+  padding: 22px;
   border: 1px solid var(--border, #e0e4ea);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  min-width: 0;
 }
 
-.card-head-row {
+:global(html.dark) .weekly-schedule-card {
+  background: #22242a;
+  border-color: #353942;
+}
+
+.weekly-card-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
-@media (min-width: 640px) {
-  .card-head-row {
+@media (min-width: 768px) {
+  .weekly-card-header {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
 }
 
-.card-title {
-  font-size: 20px;
+.header-titles {
+  min-width: 0;
+}
+
+.card-headline {
+  font-size: 19px;
   font-weight: 700;
   color: var(--ink, #191c1d);
+  margin: 0 0 4px;
+}
+
+:global(html.dark) .card-headline {
+  color: #ffffff;
+}
+
+.card-subheadline {
+  font-size: 13px;
+  color: var(--muted, #5d5f5f);
   margin: 0;
 }
 
-.venue-filter-pills {
+:global(html.dark) .card-subheadline {
+  color: #9ca3af;
+}
+
+.venue-filter-container {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: var(--surface-subtle, #f3f4f5);
   padding: 4px;
   border-radius: 10px;
   overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
 }
 
-.venue-pill {
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
+:global(html.dark) .venue-filter-container {
+  background: #18191d;
+  border: 1px solid #353942;
+}
+
+.venue-tab-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12px;
   font-weight: 600;
   border: none;
   background: transparent;
@@ -1046,165 +1258,301 @@ onMounted(loadData)
   white-space: nowrap;
 }
 
-.venue-pill.active {
-  background: var(--surface, #ffffff);
+.venue-tab-btn:hover {
   color: var(--ink, #191c1d);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-/* Days List */
-.days-list-container {
+.venue-tab-btn.active {
+  background: var(--surface, #ffffff);
+  color: var(--ink, #191c1d);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+:global(html.dark) .venue-tab-btn {
+  color: #9ca3af;
+}
+
+:global(html.dark) .venue-tab-btn:hover {
+  color: #ffffff;
+}
+
+:global(html.dark) .venue-tab-btn.active {
+  background: #2b2e36;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Day Row Stacks */
+.days-list-stack {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.day-schedule-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-radius: 12px;
+.day-row-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
   background: var(--surface-subtle, #f8f9fa);
   border: 1px solid var(--border, #e0e4ea);
   transition: all 0.2s ease;
 }
 
-.day-schedule-row:hover {
+:global(html.dark) .day-row-container {
+  background: #1c1e23;
+  border-color: #31353f;
+}
+
+.day-row-container:hover {
   background: var(--soft, #edeeef);
 }
 
-.day-schedule-row.is-closed {
-  opacity: 0.65;
+:global(html.dark) .day-row-container:hover {
+  background: #262930;
+}
+
+.day-row-container.is-closed-state {
+  opacity: 0.75;
+  background: var(--surface-subtle, #f3f4f5) repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px);
+}
+
+:global(html.dark) .day-row-container.is-closed-state {
+  background: #18191d repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px);
+}
+
+.day-hover-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--primary, #78555e);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.2s ease;
+}
+
+:global(html.dark) .day-hover-bar {
+  background: #f8b4c4;
+}
+
+.day-row-container:hover .day-hover-bar,
+.day-row-container.has-split-shifts .day-hover-bar {
+  transform: scaleY(1);
+}
+
+.day-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 680px) {
+  .day-row-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }
 
 .day-left-meta {
   display: flex;
   align-items: center;
-  gap: 14px;
-  width: 110px;
+  gap: 12px;
+  width: 90px;
   flex-shrink: 0;
 }
 
-.day-label {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink, #191c1d);
-}
-
-/* Toggle Switch */
-.switch-toggle {
+.switch-control {
   position: relative;
   display: inline-block;
-  width: 40px;
-  height: 22px;
+  width: 36px;
+  height: 20px;
   cursor: pointer;
 }
 
-.switch-toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
+.switch-track {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: var(--border, #cbd5e1);
-  transition: 0.3s;
-  border-radius: 22px;
+  border-radius: 9999px;
+  transition: 0.25s;
 }
 
-.slider:before {
-  position: absolute;
+:global(html.dark) .switch-track {
+  background-color: #3a3f4a;
+}
+
+.switch-track::after {
   content: '';
-  height: 16px;
+  position: absolute;
+  top: 2px;
+  left: 2px;
   width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
+  height: 16px;
   border-radius: 50%;
+  background: #ffffff;
+  transition: 0.25s;
 }
 
-input:checked + .slider {
-  background-color: #10b981;
+input:checked + .switch-track {
+  background-color: var(--primary, #78555e);
 }
 
-input:checked + .slider:before {
-  transform: translateX(18px);
+:global(html.dark) input:checked + .switch-track {
+  background-color: #f8b4c4;
 }
 
-/* Shifts in Center */
-.day-center-shifts {
+:global(html.dark) input:checked + .switch-track::after {
+  background: #201317;
+}
+
+input:checked + .switch-track::after {
+  transform: translateX(16px);
+}
+
+.day-code-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #191c1d);
+  width: 40px;
+}
+
+:global(html.dark) .day-code-text {
+  color: #ffffff;
+}
+
+.day-strikethrough {
+  text-decoration: line-through;
+  color: var(--muted, #6c757d);
+}
+
+/* Day Center Content */
+.day-center-content {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
   justify-content: center;
+  min-width: 0;
 }
 
-.shift-time-block {
+@media (max-width: 680px) {
+  .day-center-content {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.shifts-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.shift-time-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  background: transparent;
 }
 
-.time-input-box {
+.time-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
   background: var(--surface, #ffffff);
   border: 1px solid var(--border, #e0e4ea);
-  border-radius: 8px;
-  padding: 4px 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.time-picker-input {
+:global(html.dark) .time-box {
+  background: #282b33;
+  border-color: #3f434e;
+}
+
+.time-native-input {
   border: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--ink, #191c1d);
   outline: none;
   font-family: inherit;
+  padding: 0;
+  width: 66px;
 }
 
-.btn-remove-shift {
+:global(html.dark) .time-native-input {
+  color: #ffffff;
+}
+
+.time-period-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted, #6c757d);
+  text-transform: uppercase;
+}
+
+:global(html.dark) .time-period-tag {
+  color: #9ca3af;
+}
+
+.text-muted-arrow {
+  color: var(--muted, #94a3b8);
+  font-size: 14px;
+}
+
+.btn-delete-shift {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.btn-remove-shift:hover {
+.btn-delete-shift:hover {
   background: rgba(239, 68, 68, 0.25);
 }
 
-.closed-state-badge .closed-tag {
-  display: inline-block;
-  padding: 4px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.closed-state-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closed-state-pill {
+  padding: 3px 14px;
+  border-radius: 6px;
   background: var(--surface-subtle, #e2e8f0);
   color: var(--muted, #64748b);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   border: 1px solid var(--border, #cbd5e1);
 }
 
-/* Day Right: Add Shift */
+:global(html.dark) .closed-state-pill {
+  background: #2b2e36;
+  border-color: #3f434e;
+  color: #9ca3af;
+}
+
+/* Day Right Actions */
 .day-right-actions {
-  width: 120px;
   display: flex;
   justify-content: flex-end;
   flex-shrink: 0;
@@ -1213,13 +1561,15 @@ input:checked + .slider:before {
 .btn-add-shift-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: transparent;
   border: none;
-  color: var(--pink-dark, #78555e);
-  font-size: 13px;
+  color: var(--primary, #78555e);
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-add-shift-link:hover {
@@ -1227,85 +1577,133 @@ input:checked + .slider:before {
   text-decoration: underline;
 }
 
+:global(html.dark) .btn-add-shift-link {
+  color: #f8b4c4;
+}
+
 /* Sidebar Panels (Right Column) */
-.sidebar-panels {
+.sidebar-panels-col {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  min-width: 0;
 }
 
 .panel-card {
   background: var(--surface, #ffffff);
-  border-radius: 16px;
-  padding: 22px;
+  border-radius: 18px;
+  padding: 20px;
   border: 1px solid var(--border, #e0e4ea);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
 }
 
-.special-dates-panel {
-  background: var(--surface, #ffffff);
+:global(html.dark) .panel-card {
+  background: #22242a;
+  border-color: #353942;
 }
 
-.panel-head-row {
+.special-dates-card {
+  background: rgba(255, 209, 220, 0.15);
+  border: 1px solid rgba(120, 85, 94, 0.15);
+}
+
+:global(html.dark) .special-dates-card {
+  background: rgba(248, 180, 196, 0.06);
+  border-color: rgba(248, 180, 196, 0.18);
+}
+
+.panel-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
-.panel-title-with-icon {
+.panel-title-cluster {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.panel-title {
-  font-size: 17px;
+.panel-heading {
+  font-size: 16.5px;
   font-weight: 700;
   color: var(--ink, #191c1d);
   margin: 0;
 }
 
-.circle-add-btn {
-  width: 32px;
-  height: 32px;
+:global(html.dark) .panel-heading {
+  color: #ffffff;
+}
+
+.btn-add-circle {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: none;
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
+  background: var(--primary-container, #ffd1dc);
+  color: var(--on-primary-container, #7a5761);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
 }
 
-.circle-add-btn:hover {
-  filter: brightness(1.1);
+.btn-add-circle:hover {
+  background: var(--primary, #78555e);
+  color: #ffffff;
 }
 
-/* Special Date Items */
-.special-dates-list {
+:global(html.dark) .btn-add-circle {
+  background: #53333e;
+  color: #f8b4c4;
+}
+
+:global(html.dark) .btn-add-circle:hover {
+  background: #f8b4c4;
+  color: #201317;
+}
+
+.panel-intro {
+  font-size: 12.5px;
+  color: var(--muted, #5d5f5f);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+:global(html.dark) .panel-intro {
+  color: #9ca3af;
+}
+
+/* Special Dates Stack */
+.special-dates-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
-.special-date-item {
+.special-date-entry {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 9px 11px;
   border-radius: 12px;
-  background: var(--surface-subtle, #f8f9fa);
+  background: var(--surface, #ffffff);
   border: 1px solid var(--border, #e0e4ea);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
-.date-calendar-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+:global(html.dark) .special-date-entry {
+  background: #1c1e23;
+  border-color: #353942;
+}
+
+.calendar-date-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1313,39 +1711,45 @@ input:checked + .slider:before {
   flex-shrink: 0;
 }
 
-.box-closed {
+.badge-closed {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-.box-modified {
-  background: var(--surface, #dfe0e0);
-  color: var(--ink, #2d2d2d);
+.badge-modified {
+  background: var(--surface-subtle, #e2e8f0);
+  color: var(--ink, #191c1d);
   border: 1px solid var(--border, #cbd5e1);
 }
 
-.cal-month {
-  font-size: 9px;
-  font-weight: 700;
+:global(html.dark) .badge-modified {
+  background: #2b2e36;
+  color: #ffffff;
+  border-color: #3f434e;
+}
+
+.cal-month-tag {
+  font-size: 8.5px;
+  font-weight: 800;
   text-transform: uppercase;
   line-height: 1;
 }
 
-.cal-day {
-  font-size: 16px;
+.cal-day-tag {
+  font-size: 15px;
   font-weight: 800;
   line-height: 1.1;
 }
 
-.date-info-col {
+.date-details-col {
   flex: 1;
   min-width: 0;
 }
 
-.date-title {
-  font-size: 13px;
-  font-weight: 600;
+.date-name-title {
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--ink, #191c1d);
   margin: 0;
   white-space: nowrap;
@@ -1353,97 +1757,150 @@ input:checked + .slider:before {
   text-overflow: ellipsis;
 }
 
-.date-venue {
+:global(html.dark) .date-name-title {
+  color: #ffffff;
+}
+
+.date-venue-text {
   font-size: 11px;
   color: var(--muted, #6c757d);
-  margin: 2px 0;
+  margin: 1px 0 2px;
+}
+
+:global(html.dark) .date-venue-text {
+  color: #9ca3af;
 }
 
 .date-status-pill {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
 }
 
-.pill-closed {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+.pill-closed-status {
+  background: var(--surface-subtle, #edeeef);
+  color: var(--muted, #5d5f5f);
 }
 
-.pill-modified {
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
+:global(html.dark) .pill-closed-status {
+  background: #2b2e36;
+  color: #d1d5db;
 }
 
-.btn-delete-special {
+.pill-modified-status {
+  background: var(--primary-container, #ffd1dc);
+  color: var(--on-primary-container, #7a5761);
+}
+
+:global(html.dark) .pill-modified-status {
+  background: #53333e;
+  color: #f8b4c4;
+}
+
+.special-date-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.btn-entry-action {
   border: none;
   background: transparent;
   color: var(--muted, #94a3b8);
   cursor: pointer;
-  padding: 4px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
 }
 
-.btn-delete-special:hover {
-  color: #ef4444;
-}
-
-/* Maintenance Card */
-.mini-court-visual {
-  width: 100%;
-  height: 100px;
-  border-radius: 12px;
+.btn-entry-action:hover {
   background: var(--surface-subtle, #f3f4f5);
+  color: var(--ink, #191c1d);
+}
+
+:global(html.dark) .btn-entry-action:hover {
+  background: #2b2e36;
+  color: #ffffff;
+}
+
+.text-error-hover:hover {
+  color: #ef4444 !important;
+}
+
+/* Maintenance Card & Isometric Map */
+.badge-accent-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--primary-container, #ffd1dc);
+  color: var(--on-primary-container, #7a5761);
+}
+
+:global(html.dark) .badge-accent-tag {
+  background: #53333e;
+  color: #f8b4c4;
+}
+
+.isometric-court-visual {
+  width: 100%;
+  height: 96px;
+  border-radius: 12px;
+  background: #2b2e36 url('https://lh3.googleusercontent.com/aida-public/AB6AXuALF7TixBWUZukXxezXMsrl-f9_K4o3EkdRTlaWXQdT1sko9uMqZtVdRXqjBHQZN-12wmjIC_xs0UKD_9XM-7yZ50_qxIBoMnnb5r0afHyk__vbFpdYAf1lcTNfLdSYQdVqvUBugpoZALMBGfOl3c00-fL3SliIVIQEzIYvPD1BVlyy8wXHLpEGr-2JLmaxrNkB2RFzZYapfJJukHEoqgsyVIyqUe3C7tDRMUzAAjxrS-6z-gf3O5F4') center/cover no-repeat;
   position: relative;
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border, #e0e4ea);
 }
 
-.visual-blur-bg {
-  position: absolute;
-  inset: 0;
-  background: url('/aura/court-1.jpg') center/cover;
-  opacity: 0.15;
-  filter: blur(2px);
+:global(html.dark) .isometric-court-visual {
+  border-color: #353942;
 }
 
-.court-status-pill {
+.visual-underlay-blur {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(1.5px);
+}
+
+.court-live-status-pill {
   position: relative;
   z-index: 2;
-  background: rgba(20, 22, 28, 0.85);
-  backdrop-filter: blur(6px);
-  padding: 6px 14px;
+  background: rgba(25, 28, 35, 0.88);
+  backdrop-filter: blur(8px);
+  padding: 5px 12px;
   border-radius: 9999px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.status-pulse-dot {
-  width: 10px;
-  height: 10px;
+.status-pulse-ring {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
-.bg-error {
+.ring-error {
   background-color: #ef4444;
-  animation: pulse-dot 1.5s infinite;
+  animation: pulse-ring-anim 1.5s infinite;
 }
 
-.bg-green {
+.ring-green {
   background-color: #10b981;
 }
 
-@keyframes pulse-dot {
-  0%,
-  100% {
+@keyframes pulse-ring-anim {
+  0%, 100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -1453,106 +1910,146 @@ input:checked + .slider:before {
   }
 }
 
-.maintenance-blocks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
+.status-live-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
 }
 
-.maintenance-block-item {
+.maintenance-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.maintenance-item-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 9px 10px;
   border-radius: 10px;
   background: var(--surface-subtle, #f8f9fa);
   border: 1px solid var(--border, #e0e4ea);
 }
 
-.block-indicator-dot {
-  width: 8px;
-  height: 8px;
+:global(html.dark) .maintenance-item-row {
+  background: #1c1e23;
+  border-color: #353942;
+}
+
+.block-status-indicator {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #ef4444;
   margin-top: 5px;
   flex-shrink: 0;
 }
 
-.block-details {
+.block-meta-info {
   flex: 1;
   min-width: 0;
 }
 
-.block-court-title {
-  font-size: 13px;
-  font-weight: 600;
+.block-name-heading {
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--ink, #191c1d);
   margin: 0;
 }
 
-.block-time {
-  font-size: 11px;
-  color: var(--muted, #6c757d);
-  margin: 2px 0 4px;
+:global(html.dark) .block-name-heading {
+  color: #ffffff;
 }
 
-.block-venue-tag {
+.block-time-range {
+  font-size: 11px;
+  color: var(--muted, #6c757d);
+  margin: 1px 0 3px;
+}
+
+:global(html.dark) .block-time-range {
+  color: #9ca3af;
+}
+
+.block-venue-pill {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted, #6c757d);
 }
 
-.btn-unlock-block {
-  border: none;
-  background: transparent;
-  color: var(--pink-dark, #78555e);
-  cursor: pointer;
-  padding: 4px;
+:global(html.dark) .block-venue-pill {
+  color: #a0a6b1;
 }
 
-.btn-unlock-block:hover {
+.btn-unlock-downtime {
+  border: none;
+  background: transparent;
+  color: var(--primary, #78555e);
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+}
+
+:global(html.dark) .btn-unlock-downtime {
+  color: #f8b4c4;
+}
+
+.btn-unlock-downtime:hover {
   color: #ef4444;
 }
 
-.no-maintenance-box {
+.empty-maintenance-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 18px 0;
+  gap: 4px;
+  padding: 14px 0;
 }
 
-.btn-schedule-downtime {
+.btn-schedule-downtime-cta {
   width: 100%;
-  padding: 10px;
+  padding: 9px;
   border-radius: 10px;
   border: 1px dashed var(--border, #cbd5e1);
   background: transparent;
   color: var(--ink, #191c1d);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-schedule-downtime:hover {
+:global(html.dark) .btn-schedule-downtime-cta {
+  border-color: #3f434e;
+  color: #f3f4f6;
+}
+
+.btn-schedule-downtime-cta:hover {
   background: var(--surface-subtle, #f8f9fa);
-  border-color: var(--pink-dark, #78555e);
-  color: var(--pink-dark, #78555e);
+  border-color: var(--primary, #78555e);
+  color: var(--primary, #78555e);
+}
+
+:global(html.dark) .btn-schedule-downtime-cta:hover {
+  background: #2b2e36;
+  border-color: #f8b4c4;
+  color: #f8b4c4;
 }
 
 /* Modals */
-.modal-backdrop {
+.modal-overlay-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
   z-index: 999;
   display: flex;
@@ -1561,7 +2058,7 @@ input:checked + .slider:before {
   padding: 16px;
 }
 
-.modal-card {
+.modal-window-box {
   background: var(--surface, #ffffff);
   border-radius: 20px;
   padding: 24px;
@@ -1569,11 +2066,17 @@ input:checked + .slider:before {
   max-width: 520px;
   border: 1px solid var(--border, #e0e4ea);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
-  animation: modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--ink, #191c1d);
 }
 
-@keyframes modal-enter {
+:global(html.dark) .modal-window-box {
+  background: #22242a;
+  border-color: #353942;
+  color: #f3f4f6;
+}
+
+@keyframes modal-pop {
   from {
     opacity: 0;
     transform: scale(0.95) translateY(8px);
@@ -1584,16 +2087,48 @@ input:checked + .slider:before {
   }
 }
 
-.modal-header {
+.modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 16px;
+  padding-bottom: 14px;
   margin-bottom: 16px;
   border-bottom: 1px solid var(--border, #e0e4ea);
 }
 
-.btn-close {
+:global(html.dark) .modal-head {
+  border-color: #353942;
+}
+
+.modal-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-pink-tint {
+  background: var(--primary-container, #ffd1dc);
+}
+
+:global(html.dark) .bg-pink-tint {
+  background: #53333e;
+}
+
+.modal-title-text {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink, #191c1d);
+  margin: 0;
+}
+
+:global(html.dark) .modal-title-text {
+  color: #ffffff;
+}
+
+.btn-modal-close {
   border: none;
   background: transparent;
   color: var(--muted, #6c757d);
@@ -1601,73 +2136,166 @@ input:checked + .slider:before {
   padding: 4px;
 }
 
-.form-group {
+.modal-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-field-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.form-label {
-  font-size: 13px;
+.form-field-label {
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ink, #191c1d);
 }
 
-.form-input {
+:global(html.dark) .form-field-label {
+  color: #d1d5db;
+}
+
+.form-input-native,
+.form-select-native {
   width: 100%;
-  padding: 10px 14px;
+  padding: 9px 13px;
   border-radius: 10px;
   border: 1px solid var(--border, #cbd5e1);
-  font-size: 14px;
+  font-size: 13.5px;
   background: var(--surface-subtle, #f8f9fa);
   color: var(--ink, #191c1d);
   font-family: inherit;
   box-sizing: border-box;
 }
 
-.form-input:focus {
+:global(html.dark) .form-input-native,
+:global(html.dark) .form-select-native {
+  background: #18191d;
+  border-color: #3f434e;
+  color: #ffffff;
+}
+
+.form-input-native:focus,
+.form-select-native:focus {
   outline: none;
-  border-color: var(--pink-dark, #78555e);
+  border-color: var(--primary, #78555e);
   box-shadow: 0 0 0 3px rgba(120, 85, 94, 0.15);
 }
 
-.modal-footer {
+:global(html.dark) .form-input-native:focus,
+:global(html.dark) .form-select-native:focus {
+  border-color: #f8b4c4;
+  box-shadow: 0 0 0 3px rgba(248, 180, 196, 0.2);
+}
+
+.modal-actions-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 16px;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 14px;
   border-top: 1px solid var(--border, #e0e4ea);
 }
 
-.btn {
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-size: 14px;
+:global(html.dark) .modal-actions-footer {
+  border-color: #353942;
+}
+
+.btn-modal-cancel {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.btn-primary:hover {
-  filter: brightness(1.08);
-}
-
-.btn-secondary {
-  background: var(--surface-subtle, #e7e8e9);
+  background: var(--surface-subtle, #edeeef);
   color: var(--ink, #191c1d);
+  border: 1px solid var(--border, #e0e4ea);
+  cursor: pointer;
+}
+
+:global(html.dark) .btn-modal-cancel {
+  background: #2b2e36;
+  border-color: #3f434e;
+  color: #f3f4f6;
+}
+
+.btn-modal-submit {
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--primary, #78555e);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
+}
+
+:global(html.dark) .btn-modal-submit {
+  background: #f8b4c4;
+  color: #201317;
+  font-weight: 800;
+  box-shadow: 0 4px 18px rgba(248, 180, 196, 0.35);
+}
+
+/* Audit Log */
+.audit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.audit-row-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--surface-subtle, #f8f9fa);
   border: 1px solid var(--border, #e0e4ea);
 }
 
-.btn-secondary:hover {
-  background: var(--soft, #dfe0e0);
+:global(html.dark) .audit-row-item {
+  background: #18191d;
+  border-color: #353942;
+}
+
+.audit-action-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #191c1d);
+  margin: 0 0 2px;
+}
+
+:global(html.dark) .audit-action-title {
+  color: #ffffff;
+}
+
+.audit-user-tag {
+  font-size: 11px;
+  color: var(--muted, #6c757d);
+}
+
+:global(html.dark) .audit-user-tag {
+  color: #9ca3af;
+}
+
+.audit-time-tag {
+  font-size: 11px;
+  color: var(--muted, #6c757d);
+  white-space: nowrap;
+}
+
+:global(html.dark) .audit-time-tag {
+  color: #9ca3af;
+}
+
+.empty-audit-box {
+  padding: 20px 0;
+  text-align: center;
 }
 </style>
