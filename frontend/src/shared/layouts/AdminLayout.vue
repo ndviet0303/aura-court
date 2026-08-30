@@ -196,8 +196,15 @@ function closeMobileSidebar() {
             <span class="nav-label">Kho & Hàng hóa</span>
           </RouterLink>
 
-
-
+          <RouterLink
+            to="/admin/membership"
+            class="sidebar-nav-item"
+            :class="{ active: route.path.startsWith('/admin/membership') || route.path.startsWith('/admin/loyalty') }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">card_membership</span>
+            <span class="nav-label">Gói Hội Viên & Điểm</span>
+          </RouterLink>
         </nav>
       </div>
 

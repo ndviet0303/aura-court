@@ -543,6 +543,7 @@ export default {
     beneficiaryAccount: 'Tài khoản thụ hưởng',
     payoutPolicy: 'Chính sách rút tiền',
     updateBeneficiary: 'Cập nhật thông tin',
+    membershipLoyalty: 'Gói hội viên & Điểm thưởng',
   },
   notFound: {
     code: '404',

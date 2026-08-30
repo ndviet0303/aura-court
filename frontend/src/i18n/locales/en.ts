@@ -543,6 +543,7 @@ export default {
     beneficiaryAccount: 'Beneficiary Account',
     payoutPolicy: 'Withdrawal Policy',
     updateBeneficiary: 'Update Bank Details',
+    membershipLoyalty: 'Membership & Loyalty Plans',
   },
   notFound: {
     code: '404',
