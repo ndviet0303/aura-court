@@ -1,13 +1,13 @@
 # Backend Architecture Rules (Laravel / PHP)
 
-## Layered Architecture
+## Layered Architecture (Clean Architecture / ADR)
 
-All backend code follows a **Domain-driven Layered Architecture** inside `app/`:
+All backend code follows a **Domain-driven Clean Layered Architecture** inside `app/`:
 
 ```
 app/
-├── Domain/{Feature}/        # Pure business logic (no framework deps)
-│   ├── Actions/             # Single-responsibility use cases
+├── Domain/{Feature}/        # Pure business logic & Use cases
+│   ├── Actions/             # Single-responsibility use cases (Injected with Repositories)
 │   ├── DTOs/                # Data Transfer Objects (readonly)
 │   ├── Events/              # Domain events
 │   ├── Exceptions/          # Domain-specific exceptions
@@ -17,28 +17,45 @@ app/
 │   ├── Controllers/{Feature}/
 │   ├── Requests/{Feature}/  # Form Request validation
 │   └── Resources/           # API Resource transformers
-├── Infrastructure/          # External service adapters
-├── Models/                  # Eloquent models (rich, with domain methods)
-├── Contracts/               # Interfaces for all services
-└── Providers/               # Service container bindings
+├── Infrastructure/          # External service adapters & Concrete DB Implementations
+│   ├── Repositories/Eloquent/ # Concrete Eloquent Repository implementations
+│   └── Storage/             # Storage service implementations
+├── Models/                  # Eloquent models (Active Record, entity state methods)
+├── Contracts/               # Interfaces for all services & repositories
+│   ├── Repositories/        # Repository Interfaces (e.g. VenueRepositoryInterface)
+│   └── Storage/             # Storage Interfaces
+└── Providers/               # Service container bindings (RepositoryServiceProvider)
 ```
 
-## Controllers
+---
 
-- Controllers are **thin orchestrators**. They receive a validated request, call an Action, and return a Resource.
-- Never put business logic, raw queries, or notifications in controllers.
-- Group controllers by domain feature: `Controllers/Booking/`, `Controllers/Admin/Venue/`, etc.
+## 1. Unified Call Flow
+Whenever a new feature is added, strictly follow this flow:
+`Controller -> (FormRequest -> DTO) -> Action (Domain Use Case) -> Repository Interface -> Database/Storage`
+
+1. **Controller**: Validates HTTP requests via FormRequest, instantiates DTO, calls Action or Repository for read operations, and transforms output via API Resource.
+2. **Action**: Contains the business rules, calculations, cross-repository orchestrations, and transactions. Never handles HTTP requests directly.
+3. **Repository**: Abstracts all Eloquent queries. Domain Actions must inject Repository Interfaces (`Contracts/Repositories/*`), never call Eloquent queries directly.
+4. **Service Provider**: All Repository Interfaces must be bound to concrete implementations in `app/Providers/RepositoryServiceProvider.php`.
+
+---
+
+## 2. Controllers (Thin Orchestrators)
+
+- Never put business logic, raw SQL/Eloquent queries, file storage manipulations, or notifications in controllers.
+- Group controllers by domain feature: `Controllers/Booking/`, `Controllers/Admin/`, etc.
 - Use single-action or RESTful controllers — never > 7 public methods.
-- Inject Actions and Repositories, never raw Models or DB facade.
+- Inject Actions and Repository Interfaces via constructor injection.
 
 ```php
 // ✅ Good
 public function store(StoreBookingRequest $request, CreateBooking $action): JsonResponse
 {
-    return BookingResource::make($action->execute(CreateBookingData::from($request)));
+    $booking = $action->execute(CreateBookingData::from($request));
+    return response()->json(BookingResource::make($booking), 201);
 }
 
-// ❌ Bad — logic in controller
+// ❌ Bad — logic / DB operations directly in controller
 public function store(Request $request)
 {
     $data = $request->validate([...]);
@@ -47,111 +64,103 @@ public function store(Request $request)
 }
 ```
 
-## Validation
+---
 
-- **Always** use Form Request classes (`app/Http/Requests/`) for input validation.
-- Never use `$request->validate()` inline in controllers.
-- Never use `ValidationException::withMessages()` for input validation — reserve it for domain rule violations in Actions only.
-- Form Requests handle authorization via `authorize()`.
+## 3. Repositories & Dependency Inversion
 
-## Actions (Use Cases)
-
-- One Action = one use case. Name clearly: `CreateBooking`, `CancelBooking`, `ExpirePendingBookings`.
-- Actions live in `Domain/{Feature}/Actions/`.
-- Accept a DTO as input, return a DTO or Model.
-- Actions can call other Actions and domain services, but never call Controllers.
-- DB transactions belong in Actions, not Controllers.
-
-## DTOs (Data Transfer Objects)
-
-- Use `readonly class` for all DTOs (PHP 8.2+).
-- DTOs carry data between layers — they are immutable.
-- Input DTOs have a `static from(FormRequest $request)` factory.
-- Output DTOs are separate from API Resources.
+- **Directory**: Interfaces in `app/Contracts/Repositories/`, Implementations in `app/Infrastructure/Repositories/Eloquent/`.
+- Repositories encapsulate query logic (filtering, eager loading, pagination, locking, create, update, delete).
+- Do not bypass repositories by doing `Model::query()->where(...)` inside Domain Actions.
 
 ```php
-readonly class CreateBookingData
+// ✅ Good: Action uses Repository Interface
+class CreateBooking
 {
     public function __construct(
-        public int $userId,
-        public int $courtId,
-        public array $slots,
-        public ?string $couponCode = null,
+        private readonly CourtRepositoryInterface $courts,
+        private readonly BookingRepositoryInterface $bookings,
     ) {}
 
-    public static function from(StoreBookingRequest $request): self
+    public function execute(CreateBookingData $data): Booking
     {
-        return new self(
-            userId: $request->user()->id,
-            courtId: $request->validated('court_id'),
-            slots: $request->validated('slots'),
-            couponCode: $request->validated('coupon_code'),
-        );
+        $court = $this->courts->findActiveWithActiveVenue($data->courtId);
+        // ...
+        return $this->bookings->create([...]);
+    }
+}
+
+// ❌ Bad: Action calls Eloquent Model directly
+class CreateBooking
+{
+    public function execute(...)
+    {
+        $court = Court::where('id', $id)->firstOrFail();
+        return Booking::create([...]);
     }
 }
 ```
 
-## Models
+---
 
-- Models are **rich** — they contain domain methods, scopes, accessors, relationships.
-- Never put business orchestration in Models (that belongs in Actions).
-- Domain logic that is purely about the entity's own state belongs on the Model.
-- Use Eloquent scopes for reusable query patterns.
+## 4. Validation
 
-```php
-// ✅ Model owns its own state logic
-public function isExpired(): bool
-{
-    return $this->status === 'pending_payment'
-        && $this->payment_expires_at?->isPast();
-}
+- **Always** use Form Request classes (`app/Http/Requests/`) for input validation.
+- Never use `$request->validate()` inline in controllers.
+- Form Requests handle authorization via `authorize()`.
 
-// ❌ Don't put cross-entity orchestration on Models
-public function cancelAndRefund(): void { ... } // belongs in CancelBooking Action
-```
+---
 
-## API Resources
+## 5. Actions (Use Cases)
 
-- All API responses go through `JsonResource` / `ResourceCollection`.
-- Never return raw Models or arrays from controllers.
-- Resources handle transformation, hiding internal fields, and formatting.
+- One Action = one distinct use case. Name clearly with Verb + Noun: `CreateBooking`, `CancelBooking`, `CreateVenue`, `ManageCourtPrices`.
+- Actions live in `Domain/{Feature}/Actions/`.
+- Accept a DTO or primitive types as input, return a Model or DTO.
+- DB transactions (`DB::transaction`) belong in Actions when multiple mutations occur.
 
-## Interfaces / Contracts
+---
 
-- Every external service integration must have an interface in `app/Contracts/`.
-- Bind implementations in service providers.
-- The `Contracts/Payment/` pattern is the gold standard — extend this to all domains.
+## 6. DTOs (Data Transfer Objects)
 
-## Events & Listeners
+- Use `readonly class` for all DTOs (PHP 8.2+).
+- DTOs carry immutable data between layers.
+- Input DTOs have a `static from(FormRequest $request)` factory method.
 
-- Use domain Events for side effects (notifications, audit logs, cache invalidation).
-- Actions dispatch events; Listeners handle cross-cutting concerns.
-- Never put notification logic inside business methods.
+---
 
-## Naming Conventions
+## 7. Storage & Infrastructure Adapters
+
+- Never interact with `Storage::disk(...)` directly in Controllers or Actions.
+- Use `Contracts/Storage/FileStorageServiceInterface` and inject `FileStorageService`.
+- External payment/notification services must implement Contracts defined in `Contracts/`.
+
+---
+
+## 8. Models
+
+- Models are entity definitions with relationships, attribute casts, accessors, and entity-specific state helper methods (`isExpired()`, `hasActiveSlots()`).
+- Never put cross-entity orchestration logic in Models.
+
+---
+
+## 9. Naming Conventions
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Action class | Verb + Noun | `CreateBooking`, `CancelSlots` |
-| DTO | Noun + "Data" | `CreateBookingData`, `BookingResult` |
+| Action class | Verb + Noun | `CreateBooking`, `UpdateVenue` |
+| DTO | Noun + "Data" | `CreateBookingData`, `VenueData` |
+| Repository Interface | Noun + "RepositoryInterface" | `CourtRepositoryInterface` |
+| Eloquent Repository | "Eloquent" + Noun + "Repository" | `EloquentCourtRepository` |
 | Form Request | Verb + Noun + "Request" | `StoreBookingRequest` |
 | Resource | Noun + "Resource" | `BookingResource` |
-| Event | Noun + PastTense | `BookingCreated`, `PaymentReceived` |
+| Event | Noun + PastTense | `BookingCreated` |
 | Exception | Noun + "Exception" | `BookingException` |
-| Interface | Noun + "Interface" or "Contract" | `PaymentProviderInterface` |
 
-## Testing
+---
 
-- Unit test Actions with mocked dependencies.
-- Feature test Controllers via HTTP with `actingAs()`.
-- Never test internal service methods directly — test through Actions.
-
-## General Rules
+## 10. General Rules
 
 - Prefer composition over inheritance.
-- Max cyclomatic complexity per method: 10.
-- Max lines per class: 300. If exceeding, split into smaller Actions.
-- Use PHP 8.2+ features: readonly classes, enums, named arguments, match expressions.
+- Max lines per class: 300.
 - All money values are integers (cents/VND). Never use float for money.
-- Timezone: All storage in UTC. Display in `Asia/Ho_Chi_Minh`. Use Carbon.
+- Timezone: Storage in UTC. Display in `Asia/Ho_Chi_Minh`.
 - Language: Code in English. User-facing messages in Vietnamese (via lang files).
