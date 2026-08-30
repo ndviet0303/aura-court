@@ -19,7 +19,7 @@ export function useCourtDetail() {
     if (bookingStore.courts.length === 0) {
       loading.value = true
       try {
-        await bookingStore.fetchCourts()
+        await bookingStore.loadCourts()
       } catch {
         // Handled by store
       } finally {

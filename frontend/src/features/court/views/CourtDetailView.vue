@@ -19,7 +19,7 @@ const {
 
 <template>
   <div class="court-detail-view-page">
-    <div class="detail-layout-grid">
+    <div v-if="court" class="detail-layout-grid">
       <!-- Left Column (Main Information) -->
       <div class="main-info-col">
         <!-- Hero and Gallery -->
@@ -50,6 +50,7 @@ const {
 
     <!-- Photo Gallery Modal -->
     <CourtGalleryModal
+      v-if="court"
       :show="isGalleryOpen"
       :court="court"
       @close="isGalleryOpen = false"

@@ -2,7 +2,7 @@
 import type { TournamentItem } from '../../composables/useTournamentBracket'
 
 defineProps<{
-  tournament: TournamentItem
+  tournament: TournamentItem | null
   tournaments: TournamentItem[]
   selectedTournamentId: number
   selectedCategory: 'singles_men' | 'doubles_men' | 'mixed_doubles'
@@ -19,12 +19,17 @@ const emit = defineEmits<{
 <template>
   <div class="bracket-header-card">
     <div class="header-main-row">
-      <div class="t-info">
+      <div v-if="tournament" class="t-info">
         <div class="title-row">
           <h1 class="t-title">{{ tournament.name }}</h1>
           <span class="status-pill font-mono">● {{ tournament.status.toUpperCase() }}</span>
         </div>
         <p class="t-sub">📍 {{ tournament.location }} · 📅 {{ tournament.dates }} · 👥 {{ tournament.playersCount }} VĐV</p>
+      </div>
+      <div v-else class="t-info">
+        <div class="title-row">
+          <h1 class="t-title">Giải đấu Aura</h1>
+        </div>
       </div>
 
       <div class="t-selectors">

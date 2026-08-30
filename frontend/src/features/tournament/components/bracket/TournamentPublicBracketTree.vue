@@ -4,7 +4,7 @@ import type { BracketMatch } from '../../composables/useTournamentBracket'
 defineProps<{
   quarters: BracketMatch[]
   semis: BracketMatch[]
-  finalMatch: BracketMatch
+  finalMatch: BracketMatch | null
 }>()
 
 const emit = defineEmits<{
@@ -87,6 +87,7 @@ const emit = defineEmits<{
       <h3 class="col-header highlight">CHUNG KẾT (Finals) 🏆</h3>
       <div class="matches-stack">
         <div
+          v-if="finalMatch"
           class="bracket-match-node finals-node"
           @click="emit('selectMatch', finalMatch)"
         >

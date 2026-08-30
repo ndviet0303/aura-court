@@ -68,7 +68,7 @@ const {
         :items="filteredExceptions"
         :active-tab="activeTab"
         :total-count="exceptions.length"
-        :critical-count="exceptions.filter((e) => e.riskLevel === 'critical').length"
+        :critical-count="exceptions.filter((e) => e.severity === 'critical').length"
         @update:active-tab="activeTab = $event"
         @override="openOverrideDrawer"
       />

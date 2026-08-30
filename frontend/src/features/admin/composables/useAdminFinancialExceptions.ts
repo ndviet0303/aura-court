@@ -16,10 +16,10 @@ export function useAdminFinancialExceptions() {
   const loading = ref(false)
 
   const stats = ref<ExceptionStats>({
-    criticalCount: 0,
+    critical_count: 0,
     pending_count: 0,
-    resolvedCount: 0,
-    totalRiskValue: 0,
+    resolved_count: 0,
+    total_risk_value: 0,
   })
 
   const exceptions = ref<FinancialException[]>([])

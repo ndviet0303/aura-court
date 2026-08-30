@@ -54,7 +54,7 @@ export function useCourtSchedule() {
     loading.value = true
     try {
       if (store.courts.length === 0) {
-        await store.fetchCourts()
+        await store.loadCourts()
       }
       await fetchAvailability()
     } catch {

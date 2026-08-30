@@ -69,6 +69,7 @@ onMounted(async () => {
 
       <div class="summary-col">
         <ScheduleBookingSummary
+          v-if="court"
           :court="court"
           :date="date"
           :selected-slots="store.selectedSlots"
