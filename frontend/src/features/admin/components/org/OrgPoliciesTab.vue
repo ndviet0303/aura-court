@@ -48,7 +48,7 @@ function handleSave() {
         </label>
       </div>
 
-      <div class="form-grid">
+      <div class="form-grid grid-stack-mobile">
         <div class="form-group">
           <label class="form-label">Phí sàn chuyển nhượng P2P (%):</label>
           <input v-model.number="resaleFee" type="number" min="0" max="20" class="form-input" />

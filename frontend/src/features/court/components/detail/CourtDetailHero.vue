@@ -140,4 +140,16 @@ const emit = defineEmits<{
   font-size: 14px;
   line-height: 1.5;
 }
+
+@media (max-width: 640px) {
+  .gallery-main {
+    height: 240px;
+  }
+  .court-header-info {
+    padding: 0 16px;
+  }
+  .court-title {
+    font-size: 20px;
+  }
+}
 </style>

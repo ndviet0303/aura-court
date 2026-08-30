@@ -47,7 +47,7 @@ function handleSave() {
     <h3 class="tab-title">🏢 Hồ Sơ Doanh Nghiệp & Định Danh Thương Hiệu</h3>
 
     <form class="profile-form" @submit.prevent="handleSave">
-      <div class="form-grid">
+      <div class="form-grid grid-stack-mobile">
         <div class="form-group">
           <label class="form-label">Tên doanh nghiệp / Chuỗi sân:</label>
           <input v-model="name" type="text" class="form-input" />

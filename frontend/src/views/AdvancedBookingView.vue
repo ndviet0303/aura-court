@@ -83,3 +83,24 @@ onMounted(load)
     <section class="card" style="margin-top: 18px"><h2>Suất đặt sân đang bán</h2><div v-for="listing in listings" :key="listing.id" class="row" style="padding: 14px 0; border-bottom: 1px solid var(--line)"><div><strong>{{ listing.entitlement.court?.name || 'Sân' }} · {{ date(listing.entitlement.starts_at) }}</strong><p class="muted">Người bán: {{ listing.seller.name }} · hạn {{ date(listing.cutoff_at) }}</p></div><div class="actions"><strong>{{ money(listing.asking_price) }}</strong><button class="btn" @click="purchase(listing)">Mua suất</button></div></div><p v-if="!listings.length" class="muted">Chưa có suất nào đang bán.</p></section>
   </main>
 </template>
+
+<style scoped>
+@media (max-width: 640px) {
+  .row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .field {
+    width: 100%;
+  }
+  .field input, .field select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+</style>

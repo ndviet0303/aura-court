@@ -58,7 +58,8 @@ function formatMoney(amount: number): string {
       </div>
     </div>
 
-    <div class="inventory-table">
+    <div class="table-responsive">
+      <div class="inventory-table">
       <div class="table-hdr">
         <span>Sản Phẩm & SKU</span>
         <span>Danh Mục</span>
@@ -97,6 +98,7 @@ function formatMoney(amount: number): string {
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -149,6 +151,7 @@ function formatMoney(amount: number): string {
   border-radius: 12px;
   border: 1px solid var(--outline);
   overflow: hidden;
+  min-width: 800px;
 }
 
 .table-hdr {

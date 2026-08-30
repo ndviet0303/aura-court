@@ -166,4 +166,10 @@ function formatMoney(amount: number): string {
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(219, 39, 119, 0.25);
 }
+
+@media (max-width: 640px) {
+  .durations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 </style>

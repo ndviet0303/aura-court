@@ -22,7 +22,7 @@ const emit = defineEmits<{
       <div
         v-for="day in schedule"
         :key="day.id"
-        class="day-row-container"
+        class="day-row-container grid-stack-mobile"
       >
         <div class="day-name-col">
           <strong class="day-name">{{ day.dayName }}</strong>

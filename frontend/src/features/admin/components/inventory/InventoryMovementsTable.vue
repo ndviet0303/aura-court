@@ -28,7 +28,8 @@ const emit = defineEmits<{
       </select>
     </div>
 
-    <div class="movements-table">
+    <div class="table-responsive">
+      <div class="movements-table">
       <div class="table-hdr">
         <span>Thời Gian</span>
         <span>Sản Phẩm</span>
@@ -56,6 +57,7 @@ const emit = defineEmits<{
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -97,6 +99,7 @@ const emit = defineEmits<{
   border-radius: 12px;
   border: 1px solid var(--outline);
   overflow: hidden;
+  min-width: 800px;
 }
 
 .table-hdr {

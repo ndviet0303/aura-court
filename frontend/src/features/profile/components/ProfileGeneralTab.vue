@@ -18,7 +18,7 @@ const emit = defineEmits<{
     <h3 class="tab-title">👤 Thông Tin Cá Nhân & Trình Độ</h3>
 
     <form class="profile-form" @submit.prevent="emit('save')">
-      <div class="form-grid">
+      <div class="form-grid grid-stack-mobile">
         <div class="form-group">
           <label class="form-label">Họ và tên hiển thị:</label>
           <input

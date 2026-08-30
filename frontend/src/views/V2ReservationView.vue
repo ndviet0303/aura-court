@@ -95,3 +95,24 @@ onMounted(loadReservations)
     </section>
   </main>
 </template>
+
+<style scoped>
+@media (max-width: 640px) {
+  .row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .field {
+    width: 100%;
+  }
+  .field input, .field select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+</style>

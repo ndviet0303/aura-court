@@ -72,4 +72,15 @@ const emit = defineEmits<{
   background: var(--surface);
   font-size: 13px;
 }
+
+@media (max-width: 640px) {
+  .courts-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .selects-box,
+  .venue-select {
+    width: 100%;
+  }
+}
 </style>

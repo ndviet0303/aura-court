@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
@@ -12,6 +12,11 @@ const route = useRoute()
 const router = useRouter()
 const topbar = ref<HTMLElement | null>(null)
 const openMenu = ref<'booking' | 'community' | null>(null)
+const isMobileMenuOpen = ref(false)
+
+watch(() => route.path, () => {
+  isMobileMenuOpen.value = false
+})
 
 async function handleLogout() {
   await auth.logout()
@@ -52,11 +57,17 @@ function closeMenu() {
 }
 
 function closeMenuOnOutsideClick(event: MouseEvent) {
-  if (topbar.value && !topbar.value.contains(event.target as Node)) closeMenu()
+  if (topbar.value && !topbar.value.contains(event.target as Node)) {
+    closeMenu()
+    isMobileMenuOpen.value = false
+  }
 }
 
 function closeMenuOnEscape(event: KeyboardEvent) {
-  if (event.key === 'Escape') closeMenu()
+  if (event.key === 'Escape') {
+    closeMenu()
+    isMobileMenuOpen.value = false
+  }
 }
 
 onMounted(() => {
@@ -83,7 +94,7 @@ onBeforeUnmount(() => {
       </RouterLink>
 
       <!-- Center Floating Pill Nav -->
-      <nav class="nav-pill-container" aria-label="Main navigation">
+      <nav class="nav-pill-container" :class="{ 'mobile-open': isMobileMenuOpen }" aria-label="Main navigation">
         <RouterLink to="/" class="nav-pill-link" :class="{ active: (route?.path || '') === '/' }">
           {{ $t('nav.home') }}
         </RouterLink>
@@ -170,6 +181,16 @@ onBeforeUnmount(() => {
       <div class="nav-right">
         <ThemeToggle />
         <LanguageSwitcher />
+
+        <button
+          type="button"
+          class="mobile-menu-btn hide-on-desktop"
+          @click="isMobileMenuOpen = !isMobileMenuOpen"
+          :aria-expanded="isMobileMenuOpen"
+          aria-label="Toggle navigation menu"
+        >
+          <span class="material-symbols-outlined">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
+        </button>
 
         <div v-if="auth.user" class="user-profile-group">
           <RouterLink to="/profile" class="user-meta" :title="userName">
@@ -498,6 +519,22 @@ onBeforeUnmount(() => {
   font-size: 18px;
 }
 
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--surface-subtle);
+}
+
 /* User profile loading skeleton */
 .user-profile-skeleton {
   display: flex;
@@ -614,12 +651,45 @@ onBeforeUnmount(() => {
     display: none;
   }
   .nav-pill-container {
-    padding: 3px 4px;
-    gap: 2px;
+    position: absolute;
+    top: 66px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: var(--surface, #ffffff);
+    padding: 16px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+    transform: translateY(-150%);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: stretch;
+  }
+  .nav-pill-container.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
   }
   .nav-pill-link {
-    padding: 5px 11px;
-    font-size: 12px;
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .nav-dropdown-menu {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    background: var(--surface-subtle);
+    margin-top: 8px;
+    width: 100%;
+  }
+  .mobile-menu-btn {
+    display: flex;
   }
 }
 </style>
