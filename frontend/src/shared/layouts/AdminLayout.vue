@@ -144,6 +144,16 @@ function closeMobileSidebar() {
           </RouterLink>
 
           <RouterLink
+            to="/admin/reconciliation"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/reconciliation' || route.path.startsWith('/admin/reconciliation') || route.path.startsWith('/admin/financial-reconciliation') }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">analytics</span>
+            <span class="nav-label">Đối soát & Cảnh báo</span>
+          </RouterLink>
+
+          <RouterLink
             to="/admin/financial-exceptions"
             class="sidebar-nav-item"
             :class="{ active: route.path === '/admin/financial-exceptions' || route.path.startsWith('/admin/exceptions') || route.path.startsWith('/admin/audit') }"

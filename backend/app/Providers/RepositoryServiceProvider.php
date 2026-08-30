@@ -23,6 +23,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
+use App\Contracts\Repositories\ReconciliationRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Storage\FileStorageService;
 use Illuminate\Support\ServiceProvider;
 
@@ -42,6 +44,7 @@ class RepositoryServiceProvider extends ServiceProvider
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,
         AuditLogRepositoryInterface::class => EloquentAuditLogRepository::class,
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,
+        ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
     ];
 
