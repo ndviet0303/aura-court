@@ -188,30 +188,30 @@ const communityItems = [
 }
 
 .drawer-nav-row:hover {
-  background: var(--surface-subtle, #f7f3ed);
-  color: var(--primary, #6b2d3f);
+  background: var(--surface-subtle, #FAF7F3);
+  color: #6B2D3F;
 }
 
-:global(html.dark) .drawer-nav-row {
+html.dark .drawer-nav-row {
   color: #faf7f3;
 }
 
-:global(html.dark) .drawer-nav-row:hover {
+html.dark .drawer-nav-row:hover {
   background: #262024;
-  color: #e58e9f;
+  color: #dfba72;
 }
 
 .drawer-nav-row.active {
-  background: var(--primary-container, #f8e8ec);
-  color: var(--primary, #6b2d3f);
+  background: rgba(107, 45, 63, 0.08);
+  color: #6B2D3F;
   font-weight: 700;
-  border-color: rgba(107, 45, 63, 0.15);
+  border-color: rgba(107, 45, 63, 0.18);
 }
 
-:global(html.dark) .drawer-nav-row.active {
-  background: rgba(229, 142, 159, 0.18);
-  border-color: rgba(229, 142, 159, 0.35);
-  color: var(--primary, #e58e9f);
+html.dark .drawer-nav-row.active {
+  background: rgba(223, 186, 114, 0.12);
+  border-color: rgba(223, 186, 114, 0.25);
+  color: #dfba72;
 }
 
 .nav-row-main {
@@ -223,13 +223,13 @@ const communityItems = [
 .row-icon,
 .drawer-subnav-item .sub-icon {
   font-size: 20px;
-  color: var(--primary, #6b2d3f);
+  color: #6B2D3F;
   flex-shrink: 0;
 }
 
-:global(html.dark) .row-icon,
-:global(html.dark) .drawer-subnav-item .sub-icon {
-  color: var(--primary, #e58e9f);
+html.dark .row-icon,
+html.dark .drawer-subnav-item .sub-icon {
+  color: #dfba72;
 }
 
 .row-label {
@@ -243,7 +243,7 @@ const communityItems = [
   transition: transform 0.2s ease;
 }
 
-:global(html.dark) .row-arrow {
+html.dark .row-arrow {
   color: #a89fa4;
 }
 
@@ -276,10 +276,10 @@ const communityItems = [
   gap: 2px;
   padding: 4px 0 6px 20px;
   margin-left: 14px;
-  border-left: 2px solid var(--outline, #dcd3c5);
+  border-left: 2px solid #ebdccb;
 }
 
-:global(html.dark) .drawer-subnav-list {
+html.dark .drawer-subnav-list {
   border-left-color: #382f35;
 }
 
@@ -297,37 +297,37 @@ const communityItems = [
 }
 
 .drawer-subnav-item:hover {
-  background: var(--surface-subtle, #f7f3ed);
-  color: var(--primary, #6b2d3f);
+  background: #FAF7F3;
+  color: #6B2D3F;
 }
 
 .drawer-subnav-item.active {
-  background: var(--primary-container, #f8e8ec);
-  color: var(--primary, #6b2d3f);
+  background: rgba(107, 45, 63, 0.08);
+  color: #6B2D3F;
   font-weight: 700;
 }
 
-:global(html.dark) .drawer-subnav-item {
+html.dark .drawer-subnav-item {
   color: #faf7f3;
 }
 
-:global(html.dark) .drawer-subnav-item:hover {
+html.dark .drawer-subnav-item:hover {
   background: #262024;
-  color: #e58e9f;
+  color: #dfba72;
 }
 
-:global(html.dark) .drawer-subnav-item.active {
-  background: rgba(229, 142, 159, 0.18);
-  color: var(--primary, #e58e9f);
+html.dark .drawer-subnav-item.active {
+  background: rgba(223, 186, 114, 0.12);
+  color: #dfba72;
 }
 
 .admin-row {
   margin-top: 6px;
-  border: 1px dashed var(--accent, #c9a15a);
+  border: 1px dashed #c9a15a;
 }
 
-:global(html.dark) .admin-row {
-  border-color: #d8b46e;
+html.dark .admin-row {
+  border-color: rgba(223, 186, 114, 0.4);
 }
 
 .drawer-admin-tag {
@@ -335,13 +335,14 @@ const communityItems = [
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 4px;
-  background: var(--accent-container, #faf2e3);
-  color: var(--on-accent-container, #684f17);
+  background: rgba(201, 161, 90, 0.15);
+  color: #8f651b;
+  border: 1px solid rgba(201, 161, 90, 0.35);
 }
 
-:global(html.dark) .drawer-admin-tag {
-  background: rgba(216, 180, 110, 0.22);
-  color: #d8b46e;
-  border: 1px solid rgba(216, 180, 110, 0.4);
+html.dark .drawer-admin-tag {
+  background: rgba(223, 186, 114, 0.18);
+  color: #dfba72;
+  border: 1px solid rgba(223, 186, 114, 0.35);
 }
 </style>

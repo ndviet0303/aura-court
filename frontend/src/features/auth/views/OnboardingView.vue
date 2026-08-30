@@ -308,14 +308,14 @@ async function handleComplete() {
   width: 900px;
   max-width: 90vw;
   height: 500px;
-  background: radial-gradient(circle, rgba(255, 209, 220, 0.45) 0%, rgba(120, 85, 94, 0.08) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(201, 161, 90, 0.2) 0%, rgba(107, 45, 63, 0.1) 50%, transparent 70%);
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 html.dark .aura-glow-bg {
-  background: radial-gradient(circle, rgba(120, 85, 94, 0.4) 0%, rgba(255, 209, 220, 0.05) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(107, 45, 63, 0.45) 0%, rgba(223, 186, 114, 0.15) 50%, transparent 70%);
 }
 
 .onboarding-container {
@@ -330,11 +330,13 @@ html.dark .aura-glow-bg {
   border: 1px solid var(--border);
   border-radius: 28px;
   padding: 48px 44px;
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px -15px rgba(107, 45, 63, 0.08);
 }
 
 html.dark .onboarding-card {
-  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.5);
+  background: #1e181c;
+  border-color: #382f35;
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.6);
 }
 
 .onboarding-header {
@@ -346,19 +348,21 @@ html.dark .onboarding-card {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(14, 107, 80, 0.1);
-  color: #0e6b50;
+  background: rgba(201, 161, 90, 0.15);
+  color: #8f651b;
+  border: 1px solid rgba(201, 161, 90, 0.35);
   padding: 5px 14px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   margin-bottom: 14px;
 }
 
 html.dark .welcome-chip {
-  background: rgba(52, 211, 153, 0.15);
-  color: #34d399;
+  background: rgba(223, 186, 114, 0.18);
+  color: #dfba72;
+  border-color: rgba(223, 186, 114, 0.35);
 }
 
 .onboarding-title {
@@ -424,19 +428,24 @@ html.dark .error-banner {
 }
 
 .role-card:hover {
-  border-color: var(--pink-dark);
+  border-color: #6B2D3F;
   transform: translateY(-2px);
 }
 
+html.dark .role-card:hover {
+  border-color: #dfba72;
+}
+
 .role-card.active {
-  border-color: var(--pink-dark);
+  border-color: #6B2D3F;
   background: var(--surface);
-  box-shadow: 0 6px 20px rgba(120, 85, 94, 0.15);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.15);
 }
 
 html.dark .role-card.active {
-  border-color: #f8b4c4;
-  background: var(--soft);
+  border-color: #dfba72;
+  background: #251f23;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .role-card-top {
@@ -455,20 +464,22 @@ html.dark .role-card.active {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--pink-dark);
+  color: #6B2D3F;
 }
 
 html.dark .role-icon-box {
-  color: #f8b4c4;
+  color: #dfba72;
+  background: #201a1e;
+  border-color: #382f35;
 }
 
 .check-badge {
   font-size: 22px;
-  color: #0e6b50;
+  color: #16a34a;
 }
 
 html.dark .check-badge {
-  color: #34d399;
+  color: #4ade80;
 }
 
 .role-title {
@@ -504,11 +515,11 @@ html.dark .check-badge {
 }
 
 .form-section-title .material-symbols-outlined {
-  color: var(--pink-dark);
+  color: #6B2D3F;
 }
 
 html.dark .form-section-title .material-symbols-outlined {
-  color: #f8b4c4;
+  color: #dfba72;
 }
 
 .input-group {
@@ -554,14 +565,20 @@ html.dark .form-section-title .material-symbols-outlined {
   transition: all 0.2s ease;
 }
 
+html.dark .custom-input {
+  background: #251f23;
+  border-color: #382f35;
+  color: #ffffff;
+}
+
 .custom-input:focus {
-  border-color: var(--pink-dark);
-  box-shadow: 0 0 0 3px rgba(120, 85, 94, 0.15);
+  border-color: #6B2D3F;
+  box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
 html.dark .custom-input:focus {
-  border-color: #f8b4c4;
-  box-shadow: 0 0 0 3px rgba(248, 180, 196, 0.15);
+  border-color: #dfba72;
+  box-shadow: 0 0 0 3px rgba(223, 186, 114, 0.2);
 }
 
 .form-row-2 {
@@ -590,17 +607,23 @@ html.dark .custom-input:focus {
 }
 
 .play-level-card:hover {
-  border-color: var(--pink-dark);
+  border-color: #6B2D3F;
+}
+
+html.dark .play-level-card:hover {
+  border-color: #dfba72;
 }
 
 .play-level-card.active {
-  border-color: var(--pink-dark);
+  border-color: #6B2D3F;
   background: var(--surface);
-  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.12);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
 }
 
 html.dark .play-level-card.active {
-  border-color: #f8b4c4;
+  border-color: #dfba72;
+  background: #251f23;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .lvl-title {
@@ -621,17 +644,19 @@ html.dark .play-level-card.active {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(120, 85, 94, 0.08);
+  background: rgba(201, 161, 90, 0.1);
+  border: 1px solid rgba(201, 161, 90, 0.25);
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 12.5px;
-  color: var(--pink-dark);
+  color: #8f651b;
   line-height: 1.5;
 }
 
 html.dark .owner-tip-box {
-  background: rgba(255, 209, 220, 0.12);
-  color: #f8b4c4;
+  background: rgba(223, 186, 114, 0.12);
+  border-color: rgba(223, 186, 114, 0.25);
+  color: #dfba72;
 }
 
 .owner-tip-box .material-symbols-outlined {
@@ -644,7 +669,7 @@ html.dark .owner-tip-box {
 .complete-btn {
   margin-top: 12px;
   height: 52px;
-  background: var(--pink-dark);
+  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
   color: #ffffff;
   border: none;
   border-radius: 14px;
@@ -656,12 +681,13 @@ html.dark .owner-tip-box {
   gap: 10px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.28);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
 .complete-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(120, 85, 94, 0.38);
+  box-shadow: 0 8px 24px rgba(107, 45, 63, 0.45);
+  filter: brightness(1.08);
 }
 
 .complete-btn:disabled {

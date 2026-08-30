@@ -402,7 +402,7 @@ html.dark .error-banner {
 .switch-action-btn {
   background: transparent;
   border: none;
-  color: var(--pink-dark, #db2777);
+  color: #6B2D3F;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -412,7 +412,7 @@ html.dark .error-banner {
 }
 
 html.dark .switch-action-btn {
-  color: #f8b4c4;
+  color: #dfba72;
 }
 
 .switch-action-btn:hover {
@@ -433,25 +433,44 @@ html.dark .switch-action-btn {
 
 /* Responsive adjustments */
 @media (max-width: 900px) {
+  .auth-page-wrapper {
+    padding: 24px 16px 60px;
+    align-items: flex-start;
+  }
+
   .auth-split-card {
     grid-template-columns: 1fr;
-    max-width: 520px;
+    max-width: 480px;
     margin: 0 auto;
-    border-radius: 20px;
+    border-radius: 24px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
   }
 
   .form-panel {
-    padding: 32px 24px;
+    padding: 30px 24px;
   }
 }
 
 @media (max-width: 480px) {
   .auth-page-wrapper {
-    padding: 20px 12px 60px;
+    padding: 16px 12px 48px;
+  }
+
+  .auth-split-card {
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   }
 
   .form-panel {
-    padding: 24px 16px;
+    padding: 22px 18px;
+  }
+
+  .form-title {
+    font-size: 21px;
+  }
+
+  .form-subtitle {
+    font-size: 13px;
   }
 }
 </style>

@@ -30,7 +30,7 @@ const themeStore = useThemeStore()
   height: 38px;
   border-radius: 999px;
   background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, #e1e3e4);
+  border: 1px solid var(--outline, #ebdccb);
   color: var(--ink, #191c1d);
   cursor: pointer;
   padding: 0;
@@ -41,22 +41,22 @@ const themeStore = useThemeStore()
 }
 
 .theme-toggle-btn:hover {
-  background: var(--primary-container, #F8E8EC);
-  border-color: var(--accent, #C9A15A);
-  color: var(--primary, #6B2D3F);
+  background: #FAF7F3;
+  border-color: #6B2D3F;
+  color: #6B2D3F;
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(107, 45, 63, 0.12);
 }
 
-:global(html.dark) .theme-toggle-btn {
+html.dark .theme-toggle-btn {
   background: #1e191c;
   border-color: #382f35;
-  color: #D8B46E;
+  color: #dfba72;
 }
 
-:global(html.dark) .theme-toggle-btn:hover {
+html.dark .theme-toggle-btn:hover {
   background: #262024;
-  border-color: rgba(216, 180, 110, 0.4);
+  border-color: rgba(223, 186, 114, 0.4);
   color: #FAF7F3;
 }
 
@@ -85,11 +85,11 @@ const themeStore = useThemeStore()
 .moon-icon {
   opacity: 0;
   transform: rotate(90deg) scale(0.5);
-  color: #ffd1dc;
+  color: #dfba72;
 }
 
-:global(html.dark) .moon-icon {
-  color: #f8b4c4;
+html.dark .moon-icon {
+  color: #dfba72;
 }
 
 /* Dark Mode: Moon is visible, Sun rotated out */
@@ -103,3 +103,4 @@ const themeStore = useThemeStore()
   transform: rotate(0deg) scale(1);
 }
 </style>
+

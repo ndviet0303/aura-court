@@ -6,6 +6,7 @@ const { t } = useI18n()
 
 <template>
   <div class="brand-panel">
+    <div class="brand-glow" aria-hidden="true"></div>
     <div class="brand-content">
       <div class="brand-badge">
         <span class="material-symbols-outlined icon-glow">sports_tennis</span>
@@ -97,37 +98,57 @@ const { t } = useI18n()
 
 <style scoped>
 .brand-panel {
-  background: linear-gradient(145deg, rgba(255, 209, 220, 0.35) 0%, rgba(248, 249, 250, 0.95) 40%, var(--surface-subtle, #f9fafb) 100%);
-  border-right: 1px solid var(--border, var(--outline, #e2e8f0));
-  padding: 40px 36px;
+  background: linear-gradient(145deg, rgba(201, 161, 90, 0.12) 0%, rgba(107, 45, 63, 0.05) 50%, #FAF7F3 100%);
+  border-right: 1px solid var(--border, #ebdccb);
+  padding: 44px 38px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
+  overflow: hidden;
 }
 
 html.dark .brand-panel {
-  background: linear-gradient(145deg, rgba(120, 85, 94, 0.3) 0%, rgba(34, 36, 42, 0.95) 40%, var(--surface-subtle, #1e293b) 100%);
+  background: linear-gradient(145deg, rgba(74, 29, 43, 0.5) 0%, rgba(30, 25, 28, 0.95) 50%, #171315 100%);
+  border-color: #382f35;
+}
+
+.brand-glow {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(223, 186, 114, 0.25) 0%, rgba(107, 45, 63, 0.2) 60%, transparent 80%);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
 }
 
 .brand-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(120, 85, 94, 0.12);
-  color: var(--pink-dark, #db2777);
+  background: rgba(201, 161, 90, 0.15);
+  color: #8f651b;
+  border: 1px solid rgba(201, 161, 90, 0.35);
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   margin-bottom: 20px;
   width: fit-content;
 }
 
 html.dark .brand-badge {
-  background: rgba(255, 209, 220, 0.15);
-  color: #f8b4c4;
+  background: rgba(223, 186, 114, 0.18);
+  color: #dfba72;
+  border-color: rgba(223, 186, 114, 0.35);
 }
 
 .icon-glow {
@@ -139,73 +160,82 @@ html.dark .brand-badge {
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: var(--ink, #0f172a);
+  color: var(--ink, #191c1d);
   margin: 0 0 8px 0;
 }
 
 .brand-subtitle {
   font-size: 13.5px;
   line-height: 1.55;
-  color: var(--muted, #64748b);
-  margin: 0 0 24px 0;
+  color: var(--muted, #6e6668);
+  margin: 0 0 26px 0;
 }
 
 .perks-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
 }
 
 .perk-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
 }
 
 .perk-icon-box {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border, var(--outline, #e2e8f0));
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #ffffff;
+  border: 1px solid #ebdccb;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--pink-dark, #db2777);
+  color: #6B2D3F;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 3px 10px rgba(107, 45, 63, 0.06);
 }
 
 html.dark .perk-icon-box {
-  color: #f8b4c4;
+  background: #251e22;
+  border-color: rgba(223, 186, 114, 0.25);
+  color: #dfba72;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
 .perk-text h4 {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--ink, #191c1d);
   margin: 0 0 2px;
 }
 
 .perk-text p {
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.45;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
   margin: 0;
 }
 
 /* Community Trust & Privilege Card */
 .community-trust-card {
   position: relative;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border, var(--outline, #e2e8f0));
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+  border: 1px solid #ebdccb;
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 6px 24px rgba(107, 45, 63, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+html.dark .community-trust-card {
+  background: #221a1e;
+  border-color: #3d3137;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
 .trust-header {
@@ -223,7 +253,7 @@ html.dark .perk-icon-box {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid var(--surface, #ffffff);
+  border: 2px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,23 +261,27 @@ html.dark .perk-icon-box {
   font-size: 12px;
 }
 
+html.dark .avatar-circle {
+  border-color: #221a1e;
+}
+
 .avatar-circle:first-child {
   margin-left: 0;
 }
 
 .av-1 {
-  background: #fce7f3;
-  color: #db2777;
+  background: #fbe8ec;
+  color: #6B2D3F;
 }
 
 .av-2 {
-  background: #e0e7ff;
-  color: #4f46e5;
+  background: #fdf5e6;
+  color: #b8860b;
 }
 
 .av-3 {
-  background: #fef3c7;
-  color: #d97706;
+  background: #eef7ee;
+  color: #16a34a;
 }
 
 .av-icon {
@@ -258,85 +292,101 @@ html.dark .perk-icon-box {
   margin-left: 8px;
   font-size: 11px;
   font-weight: 800;
-  color: var(--pink-dark, #db2777);
-  background: rgba(219, 39, 119, 0.1);
-  padding: 2px 7px;
+  color: #6B2D3F;
+  background: rgba(107, 45, 63, 0.1);
+  padding: 2px 8px;
   border-radius: 999px;
 }
 
 html.dark .avatar-count {
-  color: #f8b4c4;
-  background: rgba(248, 180, 196, 0.15);
+  color: #dfba72;
+  background: rgba(223, 186, 114, 0.15);
 }
 
 .rating-badge {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11.5px;
-  color: var(--ink, #0f172a);
+  font-size: 12px;
+  color: var(--ink, #191c1d);
 }
 
 .star-icon {
   font-size: 16px;
-  color: #f59e0b;
+  color: #dfba72;
   font-variation-settings: 'FILL' 1;
 }
 
 .rating-label {
   font-size: 10.5px;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
   margin-left: 2px;
 }
 
 .trust-content h4 {
-  margin: 0 0 3px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
+  margin: 0 0 4px 0;
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--ink, #191c1d);
 }
 
 .trust-content p {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.45;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
 }
 
 .trust-tags {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  padding-top: 4px;
-  border-top: 1px dashed var(--border, var(--outline, #e2e8f0));
+  padding-top: 6px;
+  border-top: 1px dashed #ebdccb;
+}
+
+html.dark .trust-tags {
+  border-color: #382f35;
 }
 
 .trust-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--ink, #0f172a);
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.03));
+  color: var(--ink, #191c1d);
+  background: rgba(201, 161, 90, 0.08);
   padding: 3px 8px;
   border-radius: 6px;
 }
 
+html.dark .trust-tag {
+  background: rgba(223, 186, 114, 0.1);
+  color: #dfba72;
+}
+
 .tag-icon {
-  font-size: 12px;
-  color: var(--pink-dark, #db2777);
+  font-size: 13px;
+  color: #6B2D3F;
 }
 
 html.dark .tag-icon {
-  color: #f8b4c4;
+  color: #dfba72;
 }
 
 .dot-online {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  background: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+@media (max-width: 900px) {
+  .brand-panel {
+    display: none !important;
+  }
 }
 </style>
+

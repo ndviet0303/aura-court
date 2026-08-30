@@ -94,7 +94,7 @@ const userRoleBadge = computed(() => {
   text-align: right;
 }
 
-:global(html.dark) .user-name {
+html.dark .user-name {
   color: #ffffff !important;
 }
 
@@ -102,10 +102,11 @@ const userRoleBadge = computed(() => {
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  padding: 1.5px 6px;
-  border-radius: 4px;
-  background: var(--primary-container, #f8e8ec);
-  color: var(--on-primary-container, #4e1827);
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(107, 45, 63, 0.08);
+  color: #6B2D3F;
+  border: 1px solid rgba(107, 45, 63, 0.18);
   text-transform: uppercase;
   margin-top: 2px;
   white-space: nowrap;
@@ -113,11 +114,11 @@ const userRoleBadge = computed(() => {
   line-height: 1.3;
 }
 
-:global(html.dark) .user-badge {
-  background: rgba(229, 142, 159, 0.22) !important;
-  color: var(--primary, #e58e9f) !important;
-  border: 1px solid rgba(229, 142, 159, 0.45) !important;
-  box-shadow: 0 0 10px rgba(229, 142, 159, 0.25) !important;
+html.dark .user-badge {
+  background: rgba(223, 186, 114, 0.15) !important;
+  color: #dfba72 !important;
+  border: 1px solid rgba(223, 186, 114, 0.35) !important;
+  box-shadow: 0 0 10px rgba(223, 186, 114, 0.15) !important;
 }
 
 .user-avatar-btn {
@@ -125,26 +126,33 @@ const userRoleBadge = computed(() => {
   height: 38px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--primary-container, #f8e8ec);
-  color: var(--primary, #6b2d3f);
+  background: #FAF7F3;
+  color: #6B2D3F;
   display: grid;
   place-items: center;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.15);
-  border: 1.5px solid var(--outline, #dcd3c5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
+  border: 1.5px solid #ebdccb;
   flex-shrink: 0;
 }
 
-:global(html.dark) .user-avatar-btn {
-  background: #36141d;
-  color: var(--primary, #e58e9f);
-  border-color: rgba(229, 142, 159, 0.35);
-  box-shadow: 0 2px 10px rgba(229, 142, 159, 0.2);
+html.dark .user-avatar-btn {
+  background: #251e22;
+  color: #dfba72;
+  border-color: rgba(223, 186, 114, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 .user-avatar-btn:hover {
   transform: scale(1.05);
+  border-color: #6B2D3F;
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.22);
+}
+
+html.dark .user-avatar-btn:hover {
+  border-color: #dfba72;
+  box-shadow: 0 4px 14px rgba(223, 186, 114, 0.25);
 }
 
 .user-avatar-img {
@@ -172,9 +180,18 @@ const userRoleBadge = computed(() => {
   text-decoration: none;
 }
 
+html.dark .logout-icon-btn {
+  color: #a89fa4;
+}
+
 .logout-icon-btn:hover {
-  background: var(--soft, #f0eae1);
+  background: rgba(186, 26, 26, 0.1);
   color: #ba1a1a;
+}
+
+html.dark .logout-icon-btn:hover {
+  background: rgba(255, 218, 214, 0.15);
+  color: #ffb4ab;
 }
 
 .logout-icon-btn .material-symbols-outlined {

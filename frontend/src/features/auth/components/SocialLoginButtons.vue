@@ -74,13 +74,17 @@ const { t } = useI18n()
 .divider-line {
   flex: 1;
   height: 1px;
-  background: var(--border, var(--outline, #e2e8f0));
+  background: var(--border, #ebdccb);
+}
+
+html.dark .divider-line {
+  background: #382f35;
 }
 
 .divider-text {
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -99,25 +103,33 @@ const { t } = useI18n()
   justify-content: center;
   gap: 8px;
   background: var(--surface, #ffffff);
-  border: 1px solid var(--border, var(--outline, #e2e8f0));
+  border: 1px solid var(--border, #ebdccb);
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink, #0f172a);
+  color: var(--ink, #191c1d);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
+html.dark .social-auth-btn {
+  background: #251f23;
+  border-color: #382f35;
+  color: #f5f2eb;
+}
+
 .social-auth-btn:hover:not(:disabled) {
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
-  border-color: var(--pink-dark, #db2777);
+  background: var(--surface-subtle, rgba(201, 161, 90, 0.06));
+  border-color: #6B2D3F;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(107, 45, 63, 0.12);
 }
 
 html.dark .social-auth-btn:hover:not(:disabled) {
-  border-color: #f8b4c4;
+  background: #2d2429;
+  border-color: #dfba72;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .social-auth-btn:disabled {
@@ -132,10 +144,15 @@ html.dark .social-auth-btn:hover:not(:disabled) {
 .social-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--border, var(--outline, #e2e8f0));
+  border: 2px solid var(--border, #ebdccb);
   border-radius: 50%;
-  border-top-color: var(--pink-dark, #db2777);
+  border-top-color: #6B2D3F;
   animation: spin 0.7s linear infinite;
+}
+
+html.dark .social-spinner {
+  border-color: #382f35;
+  border-top-color: #dfba72;
 }
 
 @keyframes spin {

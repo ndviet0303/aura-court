@@ -110,7 +110,7 @@ withDefaults(defineProps<Props>(), {
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(229, 142, 159, 0.25) 45%,
+    rgba(223, 186, 114, 0.25) 45%,
     rgba(255, 255, 255, 0.12) 55%,
     rgba(255, 255, 255, 0) 100%
   );

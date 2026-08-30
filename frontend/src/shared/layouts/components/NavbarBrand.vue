@@ -41,16 +41,18 @@ const emit = defineEmits<{
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: var(--pink-light, #f8e8ec);
+  background: #FAF7F3;
+  border: 1px solid #ebdccb;
   display: grid;
   place-items: center;
-  transition: transform 0.2s ease;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
   flex-shrink: 0;
 }
 
 .brand:hover .brand-logo-box {
   transform: scale(1.05);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.16);
 }
 
 .brand-logo-img {
@@ -80,17 +82,23 @@ const emit = defineEmits<{
   letter-spacing: 0.02em;
 }
 
-:global(html.dark) .brand-title {
+html.dark .brand-title {
   color: #faf7f3 !important;
 }
 
-:global(html.dark) .brand-subtitle {
-  color: #a89fa4 !important;
+html.dark .brand-subtitle {
+  color: #dfba72 !important;
 }
 
-:global(html.dark) .brand-logo-box {
-  background: #36141d;
-  box-shadow: inset 0 0 0 1px rgba(229, 142, 159, 0.3);
+html.dark .brand-logo-box {
+  background: #251e22;
+  border: 1px solid rgba(223, 186, 114, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .brand:hover .brand-logo-box {
+  border-color: rgba(223, 186, 114, 0.45);
+  box-shadow: 0 4px 16px rgba(223, 186, 114, 0.2);
 }
 
 @media (max-width: 720px) {

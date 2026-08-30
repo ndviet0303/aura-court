@@ -76,13 +76,14 @@ const userRoleBadge = computed(() => {
 <style scoped>
 .drawer-user-section {
   padding: 14px 18px;
-  background: var(--surface-subtle, #f7f3ed);
-  border-bottom: 1px solid var(--outline, #dcd3c5);
+  background: var(--surface-subtle, #FAF7F3);
+  border-bottom: 1px solid var(--outline, #ebdccb);
   flex-shrink: 0;
 }
 
 :global(html.dark) .drawer-user-section {
-  background: #201b1e;
+  background: #201a1e;
+  border-bottom-color: #382f35;
 }
 
 .drawer-user-card {
@@ -102,8 +103,8 @@ const userRoleBadge = computed(() => {
   height: 44px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid var(--accent, #c9a15a);
-  box-shadow: 0 2px 8px rgba(201, 161, 90, 0.2);
+  border: 2px solid #dfba72;
+  box-shadow: 0 2px 8px rgba(223, 186, 114, 0.25);
   flex-shrink: 0;
 }
 
@@ -135,10 +136,11 @@ const userRoleBadge = computed(() => {
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  padding: 1.5px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
-  background: var(--primary-container, #f8e8ec);
-  color: var(--on-primary-container, #4e1827);
+  background: rgba(107, 45, 63, 0.08);
+  color: #6B2D3F;
+  border: 1px solid rgba(107, 45, 63, 0.18);
   text-transform: uppercase;
 }
 
@@ -155,8 +157,8 @@ const userRoleBadge = computed(() => {
   gap: 4px;
   padding: 6px 8px;
   border-radius: 8px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, #dcd3c5);
+  background: #ffffff;
+  border: 1px solid #ebdccb;
   color: var(--ink, #1c1618);
   font-size: 11.5px;
   font-weight: 600;
@@ -165,22 +167,34 @@ const userRoleBadge = computed(() => {
   transition: all 0.18s ease;
 }
 
-:global(html.dark) .drawer-shortcut-btn {
+html.dark .drawer-shortcut-btn {
   background: #262024;
   border-color: #382f35;
   color: #faf7f3;
 }
 
 .drawer-shortcut-btn:hover {
-  background: var(--primary-container, #f8e8ec);
-  color: var(--primary, #6b2d3f);
-  border-color: var(--primary, #6b2d3f);
+  background: #FAF7F3;
+  color: #6B2D3F;
+  border-color: #6B2D3F;
+}
+
+html.dark .drawer-shortcut-btn:hover {
+  background: #2e242a;
+  color: #dfba72;
+  border-color: #dfba72;
 }
 
 .drawer-shortcut-btn.logout:hover {
-  background: #ffebee;
-  color: #c62828;
-  border-color: #ef9a9a;
+  background: rgba(186, 26, 26, 0.1);
+  color: #ba1a1a;
+  border-color: rgba(186, 26, 26, 0.3);
+}
+
+html.dark .drawer-shortcut-btn.logout:hover {
+  background: rgba(255, 218, 214, 0.15);
+  color: #ffb4ab;
+  border-color: rgba(255, 218, 214, 0.3);
 }
 
 .drawer-shortcut-btn .material-symbols-outlined {
@@ -204,8 +218,9 @@ const userRoleBadge = computed(() => {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: var(--primary-container, #f8e8ec);
-  color: var(--primary, #6b2d3f);
+  background: rgba(107, 45, 63, 0.08);
+  color: #6B2D3F;
+  border: 1px solid rgba(107, 45, 63, 0.15);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -236,50 +251,50 @@ const userRoleBadge = computed(() => {
   gap: 6px;
   padding: 8px 14px;
   border-radius: 10px;
-  background: var(--primary, #6b2d3f);
+  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 3px 10px rgba(107, 45, 63, 0.25);
+  box-shadow: 0 3px 10px rgba(107, 45, 63, 0.3);
   transition: all 0.2s ease;
 }
 
 .drawer-login-cta:hover {
-  background: var(--primary-hover, #562332);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
-:global(html.dark) .drawer-name,
-:global(html.dark) .guest-title {
+html.dark .drawer-name,
+html.dark .guest-title {
   color: #faf7f3 !important;
 }
 
-:global(html.dark) .guest-desc {
+html.dark .guest-desc {
   color: #a89fa4 !important;
 }
 
-:global(html.dark) .drawer-guest-icon {
-  background: rgba(229, 142, 159, 0.2) !important;
-  color: #e58e9f !important;
-  border: 1px solid rgba(229, 142, 159, 0.35);
+html.dark .drawer-guest-icon {
+  background: rgba(223, 186, 114, 0.15) !important;
+  color: #dfba72 !important;
+  border: 1px solid rgba(223, 186, 114, 0.35);
 }
 
-:global(html.dark) .drawer-badge {
-  background: rgba(229, 142, 159, 0.2) !important;
-  color: #e58e9f !important;
-  border: 1px solid rgba(229, 142, 159, 0.4) !important;
+html.dark .drawer-badge {
+  background: rgba(223, 186, 114, 0.15) !important;
+  color: #dfba72 !important;
+  border: 1px solid rgba(223, 186, 114, 0.35) !important;
 }
 
-:global(html.dark) .drawer-login-cta {
-  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%) !important;
-  color: #1c1202 !important;
-  font-weight: 800 !important;
-  box-shadow: 0 3px 12px rgba(201, 161, 90, 0.3) !important;
+html.dark .drawer-login-cta {
+  background: linear-gradient(135deg, #6B2D3F 0%, #4A1D2B 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(223, 186, 114, 0.3) !important;
+  box-shadow: 0 3px 12px rgba(107, 45, 63, 0.45) !important;
 }
 
-:global(html.dark) .drawer-login-cta:hover {
-  background: linear-gradient(135deg, #e8c886 0%, #b88e45 100%) !important;
-  color: #1a0e02 !important;
+html.dark .drawer-login-cta:hover {
+  background: linear-gradient(135deg, #7D3549 0%, #52212F 100%) !important;
+  color: #ffffff !important;
 }
 </style>

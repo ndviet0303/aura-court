@@ -124,7 +124,7 @@ const showPassword = ref(false)
 .input-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink, #0f172a);
+  color: var(--ink, #191c1d);
 }
 
 .required {
@@ -134,13 +134,13 @@ const showPassword = ref(false)
 .forgot-link {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--pink-dark, #db2777);
+  color: #6B2D3F;
   text-decoration: none;
   transition: opacity 0.15s ease;
 }
 
 html.dark .forgot-link {
-  color: #f8b4c4;
+  color: #dfba72;
 }
 
 .forgot-link:hover {
@@ -156,7 +156,7 @@ html.dark .forgot-link {
 .input-icon {
   position: absolute;
   left: 14px;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
   font-size: 20px;
   pointer-events: none;
   transition: color 0.2s ease;
@@ -167,12 +167,18 @@ html.dark .forgot-link {
   height: 48px;
   padding: 0 16px 0 46px;
   font-size: 14px;
-  color: var(--ink, #0f172a);
+  color: var(--ink, #191c1d);
   background: var(--input-bg, var(--surface, #ffffff));
-  border: 1px solid var(--border, var(--outline, #e2e8f0));
+  border: 1px solid var(--border, #e5dfd7);
   border-radius: 12px;
   outline: none;
   transition: all 0.2s ease;
+}
+
+html.dark .custom-input {
+  background: #251f23;
+  border-color: #3d343a;
+  color: #ffffff;
 }
 
 .custom-input.with-toggle {
@@ -180,21 +186,21 @@ html.dark .forgot-link {
 }
 
 .custom-input:focus {
-  border-color: var(--pink-dark, #db2777);
-  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.15);
+  border-color: #6B2D3F;
+  box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
 html.dark .custom-input:focus {
-  border-color: #f8b4c4;
-  box-shadow: 0 0 0 3px rgba(248, 180, 196, 0.15);
+  border-color: #dfba72;
+  box-shadow: 0 0 0 3px rgba(223, 186, 114, 0.2);
 }
 
 .custom-input:focus ~ .input-icon {
-  color: var(--pink-dark, #db2777);
+  color: #6B2D3F;
 }
 
 html.dark .custom-input:focus ~ .input-icon {
-  color: #f8b4c4;
+  color: #dfba72;
 }
 
 .pwd-toggle-btn {
@@ -202,7 +208,7 @@ html.dark .custom-input:focus ~ .input-icon {
   right: 12px;
   background: transparent;
   border: none;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,7 +219,7 @@ html.dark .custom-input:focus ~ .input-icon {
 }
 
 .pwd-toggle-btn:hover {
-  color: var(--ink, #0f172a);
+  color: var(--ink, #191c1d);
 }
 
 .pwd-toggle-btn .material-symbols-outlined {
@@ -236,19 +242,23 @@ html.dark .custom-input:focus ~ .input-icon {
 .custom-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: var(--pink-dark, #db2777);
+  accent-color: #6B2D3F;
   cursor: pointer;
+}
+
+html.dark .custom-checkbox {
+  accent-color: #dfba72;
 }
 
 .checkbox-text {
   font-size: 13px;
-  color: var(--muted, #64748b);
+  color: var(--muted, #6e6668);
 }
 
 .auth-submit-btn {
   margin-top: 6px;
   height: 48px;
-  background: var(--pink-dark, #db2777);
+  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -260,13 +270,13 @@ html.dark .custom-input:focus ~ .input-icon {
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(219, 39, 119, 0.28);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
 .auth-submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(219, 39, 119, 0.38);
-  filter: brightness(1.06);
+  box-shadow: 0 8px 24px rgba(107, 45, 63, 0.45);
+  filter: brightness(1.08);
 }
 
 .auth-submit-btn:disabled {
