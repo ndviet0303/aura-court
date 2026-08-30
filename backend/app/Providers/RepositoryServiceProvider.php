@@ -17,6 +17,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRefundRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
+use App\Contracts\Repositories\DisputeRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
@@ -45,6 +47,7 @@ class RepositoryServiceProvider extends ServiceProvider
         AuditLogRepositoryInterface::class => EloquentAuditLogRepository::class,
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,
         ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
+        DisputeRepositoryInterface::class => EloquentDisputeRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
     ];
 

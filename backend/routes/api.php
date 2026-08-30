@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
@@ -148,6 +149,10 @@ Route::prefix('v1')->group(function () {
             Route::get('kyc/stats', [AdminKycController::class, 'stats']);
             Route::get('kyc/{id}', [AdminKycController::class, 'show']);
             Route::post('kyc/{id}/review', [AdminKycController::class, 'review']);
+            Route::get('disputes', [AdminDisputeController::class, 'index']);
+            Route::get('disputes/stats', [AdminDisputeController::class, 'stats']);
+            Route::get('disputes/{id}', [AdminDisputeController::class, 'show']);
+            Route::post('disputes/{id}/arbitrate', [AdminDisputeController::class, 'arbitrate']);
             Route::post('upload', [AdminController::class, 'upload']);
         });
     });
@@ -262,6 +267,10 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::get('admin/kyc/stats', [AdminKycController::class, 'stats']);
             Route::get('admin/kyc/{id}', [AdminKycController::class, 'show']);
             Route::post('admin/kyc/{id}/review', [AdminKycController::class, 'review']);
+            Route::get('admin/disputes', [AdminDisputeController::class, 'index']);
+            Route::get('admin/disputes/stats', [AdminDisputeController::class, 'stats']);
+            Route::get('admin/disputes/{id}', [AdminDisputeController::class, 'show']);
+            Route::post('admin/disputes/{id}/arbitrate', [AdminDisputeController::class, 'arbitrate']);
         });
     });
 });

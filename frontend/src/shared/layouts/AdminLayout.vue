@@ -174,6 +174,16 @@ function closeMobileSidebar() {
           </RouterLink>
 
           <RouterLink
+            to="/admin/disputes"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/disputes' || route.path.startsWith('/admin/dispute') || route.path.startsWith('/admin/arbitration') }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">gavel</span>
+            <span class="nav-label">Giải quyết Tranh chấp</span>
+          </RouterLink>
+
+          <RouterLink
             to="/admin/staff"
             class="sidebar-nav-item"
             :class="{ active: route.path === '/admin/staff' || route.path.startsWith('/admin/staff') || route.path === '/admin/permissions' }"
