@@ -19,7 +19,7 @@ export interface PayoutItem {
   completed_at?: string | null
   amount: number
   status: 'paid' | 'processing' | 'pending' | 'rejected'
-  beneficiary: {
+  beneficiary?: {
     bank_code: string
     account_number: string
     account_holder: string
@@ -44,44 +44,45 @@ export function useAdminPayouts() {
   const settlements = ref<SettlementItem[]>([])
   const payouts = ref<PayoutItem[]>([])
   const beneficiary = ref<BeneficiaryInfo>({
-    id: 1,
-    bank_code: 'VCB',
-    bank_name: 'Vietcombank (Ngoại Thương Việt Nam)',
-    account_number: '0123456789',
-    account_holder: 'CONG TY TNHH SMASH',
-    tax_id: '0316888999',
-    is_verified: true,
+    id: 0,
+    bank_code: '',
+    bank_name: '',
+    account_number: '',
+    account_holder: '',
+    tax_id: '',
+    is_verified: false,
   })
 
   const showCreateModal = ref(false)
   const showEditBeneficiaryModal = ref(false)
 
   const metrics = computed(() => {
-    const gross = settlements.value.reduce((sum, s) => sum + s.gross_amount, 27500000)
-    const fee = settlements.value.reduce((sum, s) => sum + s.platform_fee + s.gateway_fee, 1375000)
-    const net = settlements.value.reduce((sum, s) => sum + s.net_amount, 26125000)
+    const gross = settlements.value.reduce((sum, s) => sum + (s.gross_amount || 0), 0)
+    const fee = settlements.value.reduce((sum, s) => sum + (s.platform_fee || 0) + (s.gateway_fee || 0), 0)
+    const net = settlements.value.reduce((sum, s) => sum + (s.net_amount || 0), 0)
     return { gross, fee, net }
   })
 
   async function loadData() {
     loading.value = true
+    error.value = ''
     try {
       const [settleRes, payoutRes, benRes] = await Promise.all([
         api.get<{ data: SettlementItem[] }>('/finance/settlements'),
         api.get<{ data: PayoutItem[] }>('/finance/payouts'),
         api.get<BeneficiaryInfo[]>('/finance/beneficiaries'),
       ])
-      if (settleRes && settleRes.data) settlements.value = settleRes.data
-      if (payoutRes && payoutRes.data) payouts.value = payoutRes.data
-      if (benRes && benRes.length) {
+      if (settleRes?.data) settlements.value = settleRes.data
+      if (payoutRes?.data) payouts.value = payoutRes.data
+      if (Array.isArray(benRes) && benRes.length > 0 && benRes[0]) {
         beneficiary.value = {
           ...benRes[0],
-          bank_name: benRes[0]?.bank_code === 'VCB' ? 'Vietcombank' : benRes[0]?.bank_code || 'Vietcombank',
-          is_verified: true,
-        } as BeneficiaryInfo
+          bank_name: benRes[0].bank_code === 'VCB' ? 'Vietcombank' : benRes[0].bank_code,
+          is_verified: benRes[0].is_verified ?? true,
+        }
       }
-    } catch (e) {
-      // mock fallback
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải dữ liệu quyết toán và rút tiền.')
     } finally {
       loading.value = false
     }
@@ -94,29 +95,42 @@ export function useAdminPayouts() {
     }, 4000)
   }
 
-  function createPayout(amount: number) {
-    payouts.value.unshift({
-      id: Date.now(),
-      reference: `WD-${new Date().getMonth() + 1}${new Date().getFullYear().toString().slice(2)}-0${payouts.value.length + 1}`,
-      created_at: new Date().toISOString().slice(0, 10),
-      amount,
-      status: 'processing',
-      beneficiary: {
-        bank_code: beneficiary.value.bank_code,
-        account_number: beneficiary.value.account_number,
-        account_holder: beneficiary.value.account_holder,
-      },
-    })
-    showCreateModal.value = false
-    showNotice(`Đã tạo lệnh rút tiền ${amount.toLocaleString('vi-VN')} ₫ thành công!`)
+  async function createPayout(amount: number) {
+    loading.value = true
+    try {
+      const res = await api.post<PayoutItem>('/finance/payouts', {
+        amount,
+        beneficiary_id: beneficiary.value.id || undefined,
+      })
+      if (res) {
+        payouts.value.unshift(res)
+      }
+      showCreateModal.value = false
+      showNotice(`Đã tạo lệnh rút tiền ${amount.toLocaleString('vi-VN')} ₫ thành công!`)
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tạo lệnh rút tiền.')
+    } finally {
+      loading.value = false
+    }
   }
 
-  function updateBeneficiary(info: { bank_code: string; account_number: string; account_holder: string }) {
-    beneficiary.value.bank_code = info.bank_code
-    beneficiary.value.account_number = info.account_number
-    beneficiary.value.account_holder = info.account_holder
-    showEditBeneficiaryModal.value = false
-    showNotice('Cập nhật tài khoản thụ hưởng thành công!')
+  async function updateBeneficiary(info: { bank_code: string; account_number: string; account_holder: string }) {
+    loading.value = true
+    try {
+      const res = await api.post<BeneficiaryInfo>('/finance/beneficiaries', info)
+      if (res) {
+        beneficiary.value = {
+          ...beneficiary.value,
+          ...res,
+        }
+      }
+      showEditBeneficiaryModal.value = false
+      showNotice('Cập nhật tài khoản thụ hưởng thành công!')
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể cập nhật tài khoản thụ hưởng.')
+    } finally {
+      loading.value = false
+    }
   }
 
   return {

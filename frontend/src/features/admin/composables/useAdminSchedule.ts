@@ -1,7 +1,7 @@
-import { ref, computed } from 'vue'
-import { api } from '@/core/api/client'
+import { ref, onMounted } from 'vue'
+import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { Court, Venue } from '@/features/court/types/court'
+import type { Court, Venue, CourtBlock } from '@/features/court/types/court'
 
 export interface WeekdaySchedule {
   id: number
@@ -50,14 +50,8 @@ export function useAdminSchedule() {
     { id: 7, dayName: 'Chủ Nhật', isOpen: true, shifts: [{ id: 1, start: '06:00', end: '23:00' }] },
   ])
 
-  const specialDates = ref<SpecialDateItem[]>([
-    { id: 1, date: '2026-09-02', name: 'Quốc Khánh 2/9', type: 'holiday', hours: '08:00 - 22:00' },
-    { id: 2, date: '2026-10-20', name: 'Ngày Phụ Nữ VN', type: 'special_hours', hours: '06:00 - 23:00' },
-  ])
-
-  const maintenanceBlocks = ref<MaintenanceBlock[]>([
-    { id: 101, court_id: 1, court_name: 'Sân 01 - Tiêu Chuẩn', starts_at: '2026-10-12T08:00', ends_at: '2026-10-14T17:00', reason: 'Court 4 Resurfacing' },
-  ])
+  const specialDates = ref<SpecialDateItem[]>([])
+  const maintenanceBlocks = ref<MaintenanceBlock[]>([])
 
   function addShift(dayId: number) {
     const day = weeklySchedule.value.find((d) => d.id === dayId)
@@ -79,17 +73,41 @@ export function useAdminSchedule() {
 
   async function loadData() {
     loading.value = true
+    error.value = ''
     try {
-      const [courtsRes, venuesRes, logsRes] = await Promise.all([
-        api.get<Court[]>('/admin/courts'),
-        api.get<Venue[]>('/admin/venues'),
-        api.get<{ data: any[] }>('/admin/audit-logs'),
+      const [courtsRes, venuesRes, logsRes] = await Promise.allSettled([
+        adminApi.getCourts(),
+        adminApi.getVenues(),
+        adminApi.getAuditLogs<{ data: any[] }>(),
       ])
-      if (courtsRes) courts.value = courtsRes
-      if (venuesRes) venues.value = venuesRes
-      if (logsRes && logsRes.data) auditLogs.value = logsRes.data
-    } catch (e) {
-      // fallback
+      if (courtsRes.status === 'fulfilled' && courtsRes.value) courts.value = courtsRes.value
+      if (venuesRes.status === 'fulfilled' && venuesRes.value) venues.value = venuesRes.value
+      if (logsRes.status === 'fulfilled' && logsRes.value?.data) auditLogs.value = logsRes.value.data
+
+      // Load court maintenance blocks if courts exist
+      if (courts.value.length > 0) {
+        const blocksPromises = courts.value.slice(0, 5).map((c) => adminApi.getBlocks(c.id).catch(() => []))
+        const blocksResults = await Promise.all(blocksPromises)
+        const allBlocks: MaintenanceBlock[] = []
+        blocksResults.forEach((blockList: CourtBlock[], idx) => {
+          const court = courts.value[idx]
+          if (Array.isArray(blockList) && court) {
+            blockList.forEach((b) => {
+              allBlocks.push({
+                id: b.id,
+                court_id: court.id,
+                court_name: court.name,
+                starts_at: b.starts_at,
+                ends_at: b.ends_at,
+                reason: b.reason || 'Bảo trì',
+              })
+            })
+          }
+        })
+        maintenanceBlocks.value = allBlocks
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải dữ liệu lịch vận hành.')
     } finally {
       loading.value = false
     }
@@ -102,17 +120,29 @@ export function useAdminSchedule() {
     }, 4000)
   }
 
-  function addDowntime(block: { court_id: number; starts_at: string; ends_at: string; reason: string }) {
-    maintenanceBlocks.value.push({
-      id: Date.now(),
-      court_id: block.court_id,
-      court_name: courts.value.find((c) => c.id === block.court_id)?.name || 'Sân đã chọn',
-      starts_at: block.starts_at,
-      ends_at: block.ends_at,
-      reason: block.reason,
-    })
-    showDowntimeModal.value = false
-    showNotice('Đã lên lịch bảo trì sân thành công!')
+  async function addDowntime(block: { court_id: number; starts_at: string; ends_at: string; reason: string }) {
+    loading.value = true
+    try {
+      await adminApi.createBlock(block.court_id, {
+        starts_at: block.starts_at,
+        ends_at: block.ends_at,
+        reason: block.reason,
+      })
+      maintenanceBlocks.value.push({
+        id: Date.now(),
+        court_id: block.court_id,
+        court_name: courts.value.find((c) => c.id === block.court_id)?.name || 'Sân đã chọn',
+        starts_at: block.starts_at,
+        ends_at: block.ends_at,
+        reason: block.reason,
+      })
+      showDowntimeModal.value = false
+      showNotice('Đã lên lịch bảo trì sân thành công!')
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể lên lịch bảo trì.')
+    } finally {
+      loading.value = false
+    }
   }
 
   function addSpecialDate(item: { date: string; name: string; type: SpecialDateItem['type']; hours?: string }) {
@@ -123,6 +153,10 @@ export function useAdminSchedule() {
     showSpecialDateModal.value = false
     showNotice(`Đã thêm ngày đặc biệt: ${item.name}!`)
   }
+
+  onMounted(() => {
+    loadData()
+  })
 
   return {
     loading,

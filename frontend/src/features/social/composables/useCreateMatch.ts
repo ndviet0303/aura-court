@@ -23,7 +23,7 @@ export function useCreateMatch() {
   const selectedSport = ref<'badminton' | 'pickleball' | 'tennis'>('badminton')
   const selectedVenueName = ref('Aura Central')
   const selectedCourtId = ref<number>(1)
-  const matchDate = ref('2026-08-30')
+  const matchDate = ref(new Date().toISOString().slice(0, 10))
   const matchTime = ref('18:00')
   const duration = ref(2)
 
@@ -39,19 +39,15 @@ export function useCreateMatch() {
     { name: 'Aura District 7', slug: 'aura-d7' },
   ]
 
-  const friends = ref<FriendInvite[]>([
-    { id: 1, name: 'Minh Hoàng', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Hoang', skill: 'Cao cấp', isSelected: false },
-    { id: 2, name: 'Hải Đăng', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Dang', skill: 'Trung bình+', isSelected: true },
-    { id: 3, name: 'Thanh Trúc', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Truc', skill: 'Trung bình', isSelected: false },
-  ])
+  const friends = ref<FriendInvite[]>([])
 
   async function loadCourts() {
     loading.value = true
     try {
       const res = await api.get<Court[]>('/courts')
       courts.value = res || []
-    } catch (e) {
-      // fallback
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách sân.')
     } finally {
       loading.value = false
     }
@@ -62,29 +58,31 @@ export function useCreateMatch() {
     if (f) f.isSelected = !f.isSelected
   }
 
-  async function submitMatch() {
+  async function createMatch() {
     submitting.value = true
+    error.value = ''
     try {
       const payload = {
-        sport: selectedSport.value,
         court_id: selectedCourtId.value,
-        venue_name: selectedVenueName.value,
-        starts_at: `${matchDate.value}T${matchTime.value}:00Z`,
+        starts_at: `${matchDate.value} ${matchTime.value}:00`,
         duration_hours: duration.value,
+        sport: selectedSport.value,
         format: matchFormat.value,
-        skill_level: skillLevel.value,
+        min_skill: skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1,
+        max_skill: 5,
+        required_participants: maxPlayers.value,
         split_cost: splitCost.value,
         cost_per_person: costPerPerson.value,
-        max_players: maxPlayers.value,
-        invited_friend_ids: friends.value.filter((f) => f.isSelected).map((f) => f.id),
+        invited_user_ids: friends.value.filter((f) => f.isSelected).map((f) => f.id),
       }
-      const res = await apiV2.post<{ match: { id: number; title: string } }>('/social/matches', payload)
-      notice.value = 'Khởi tạo kèo giao lưu thành công! Đang chuyển hướng...'
+
+      await apiV2.post('/social/matches', payload)
+      notice.value = 'Tạo kèo giao lưu & ghép trận thành công!'
       setTimeout(() => {
         router.push({ path: '/matchmaking' })
-      }, 1000)
-    } catch (e) {
-      error.value = errorMessage(e, 'Không thể tạo kèo giao lưu.')
+      }, 1200)
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tạo trận đấu.')
     } finally {
       submitting.value = false
     }
@@ -111,6 +109,7 @@ export function useCreateMatch() {
     friends,
     loadCourts,
     toggleFriend,
-    submitMatch,
+    createMatch,
+    submitMatch: createMatch,
   }
 }

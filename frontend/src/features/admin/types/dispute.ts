@@ -44,7 +44,7 @@ export interface AiAnalysis {
 export interface DisputeCase {
   id: number
   disputeCode: string
-  organizationId?: number
+  organization_id?: number
   venueId?: number
   bookingId?: number
   courtName: string
@@ -78,12 +78,12 @@ export interface DisputeCase {
   arbitratedAt?: string
   arbitratorNotes?: string
   digitalSignatureHash?: string
-  createdAt?: string
+  created_at?: string
   updatedAt?: string
 }
 
 export interface DisputeStats {
-  pendingCount: number
+  pending_count: number
   investigatingCount: number
   awaitingReplyCount: number
   resolvedCount: number

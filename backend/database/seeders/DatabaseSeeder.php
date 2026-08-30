@@ -8,6 +8,9 @@ use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
+use App\Models\DisputeCase;
+use App\Models\FinanceException;
+use App\Models\HostKyc;
 use App\Models\MarketplaceListing;
 use App\Models\MatchParticipation;
 use App\Models\MatchPost;
@@ -17,6 +20,7 @@ use App\Models\OrganizationMember;
 use App\Models\Payment;
 use App\Models\PosProduct;
 use App\Models\PriceRule;
+use App\Models\ReconciliationRun;
 use App\Models\Refund;
 use App\Models\Review;
 use App\Models\SportZone;
@@ -1372,5 +1376,292 @@ class DatabaseSeeder extends Seeder
                 );
             }
         }
+
+        // =========================================================================
+        // 13. Host KYC Verifications
+        // =========================================================================
+        $kycRecords = [
+            [
+                'kyc_code' => 'KYC-2026-0892',
+                'business_type' => 'enterprise',
+                'business_name' => 'Smash City Arena',
+                'legal_name' => 'CÔNG TY TNHH THỂ THAO SMASH CITY',
+                'tax_code' => '0316589921',
+                'tax_status' => 'Đang hoạt động',
+                'representative_name' => 'NGUYEN VAN AN',
+                'id_card_number' => '079092008892',
+                'bank_name' => 'MBBank - Ngân hàng TMCP Quân Đội',
+                'bank_code' => 'MBBANK',
+                'bank_account_number' => '0909 888 999',
+                'bank_account_holder' => 'CONG TY TNHH THE THAO SMASH CITY',
+                'napas_match_status' => 'matched',
+                'court_scale' => 12,
+                'lighting_spec' => 'Hệ thống đèn LED chống chói 1000W',
+                'lease_contract_status' => 'Hợp đồng 5 năm (đến 31/12/2030)',
+                'facility_images' => ['/aura/court-1.jpg', '/aura/court-2.jpg'],
+                'ai_ocr_score' => 99.0,
+                'face_match_score' => 99.4,
+                'status' => 'pending',
+                'checklist_state' => [
+                    'rep_identity_matched' => true,
+                    'business_license_valid' => true,
+                    'bank_account_matched' => true,
+                    'brand_name_discrepancy_accepted' => false,
+                    'facility_inspected' => true,
+                ],
+                'submitted_at' => $now->copy()->subHours(2),
+            ],
+            [
+                'kyc_code' => 'KYC-2026-0891',
+                'business_type' => 'business_household',
+                'business_name' => 'Sân Cầu Lông Tân Bình Sport',
+                'legal_name' => 'HỘ KINH DOANH TÂN BÌNH SPORT',
+                'tax_code' => '8392104921',
+                'tax_status' => 'Đang hoạt động',
+                'representative_name' => 'TRAN THI BICH',
+                'id_card_number' => '079194002341',
+                'bank_name' => 'Techcombank - Ngân hàng TMCP Kỹ Thương',
+                'bank_code' => 'TCB',
+                'bank_account_number' => '1903 666 888',
+                'bank_account_holder' => 'TRAN THI BICH',
+                'napas_match_status' => 'matched',
+                'court_scale' => 6,
+                'lease_contract_status' => 'Chính chủ sở hữu mặt bằng',
+                'facility_images' => ['/aura/court-3.jpg'],
+                'ai_ocr_score' => 98.2,
+                'face_match_score' => 99.0,
+                'status' => 'pending',
+                'checklist_state' => [
+                    'rep_identity_matched' => true,
+                    'business_license_valid' => true,
+                    'bank_account_matched' => true,
+                    'brand_name_discrepancy_accepted' => true,
+                    'facility_inspected' => true,
+                ],
+                'submitted_at' => $now->copy()->subHours(4),
+            ],
+            [
+                'kyc_code' => 'KYC-2026-0889',
+                'business_type' => 'enterprise',
+                'business_name' => 'Elite Badminton Club Q7',
+                'legal_name' => 'CÔNG TY CP THỂ THAO ELITE VIỆT NAM',
+                'tax_code' => '0317892110',
+                'tax_status' => 'Đang hoạt động',
+                'representative_name' => 'LE HOANG PHUC',
+                'id_card_number' => '079088001122',
+                'bank_name' => 'Vietcombank - Chi nhánh Nam Sài Gòn',
+                'bank_code' => 'VCB',
+                'bank_account_number' => '0071 000 888 999',
+                'bank_account_holder' => 'CONG TY CP THE THAO ELITE VIET NAM',
+                'napas_match_status' => 'matched',
+                'court_scale' => 16,
+                'lease_contract_status' => 'Hợp đồng 10 năm',
+                'facility_images' => [],
+                'ai_ocr_score' => 94.5,
+                'face_match_score' => 96.8,
+                'status' => 'flagged',
+                'rejection_reason' => 'Cảnh báo: Trùng địa chỉ khai báo với một cơ sở đã đăng ký khác trên hệ thống.',
+                'submitted_at' => $now->copy()->subDay(),
+            ],
+        ];
+
+        foreach ($kycRecords as $kycData) {
+            HostKyc::updateOrCreate(
+                ['kyc_code' => $kycData['kyc_code']],
+                array_merge($kycData, [
+                    'organization_id' => $org->id,
+                    'user_id' => $admin->id,
+                ])
+            );
+        }
+
+        // =========================================================================
+        // 14. Dispute Cases
+        // =========================================================================
+        $disputeCases = [
+            [
+                'dispute_code' => 'DSP-8924',
+                'court_name' => 'Sân số 4 (Phú Thọ)',
+                'dispute_type' => 'double_booking',
+                'severity' => 'critical',
+                'title' => 'Xung đột Trùng Lịch Sân số 4',
+                'summary' => 'Hệ thống ghi nhận đặt qua App của Alex Lawson và nhân viên quầy chèn tay lịch của Trần Quốc Bảo lúc 19:00.',
+                'status' => 'investigating',
+                'sla_deadline' => $now->copy()->addMinutes(15),
+                'amount_disputed' => 360000,
+                'currency' => 'VND',
+                'complainant_name' => 'Alex Lawson',
+                'complainant_tier' => 'Hạng Vàng',
+                'complainant_reputation_score' => 98,
+                'complainant_phone' => '0909 *** 892',
+                'respondent_name' => 'Trần Quốc Bảo',
+                'respondent_tier' => 'Hạng Kim Cương',
+                'respondent_reputation_score' => 96,
+                'respondent_phone' => '0912 *** 341',
+                'facility_name' => 'Cụm Sân Cầu Lông Phú Thọ',
+                'facility_operator_name' => 'Lê Hoàng Long (Trưởng ca trực)',
+                'timeline_events' => [
+                    [
+                        'time' => '20 Thg 10, 18:30:15',
+                        'title' => 'Thanh toán đặt sân thành công',
+                        'description' => 'Alex Lawson thanh toán thành công đơn qua PayOS (Slot 19:00 - 21:00 Sân 4).',
+                        'type' => 'primary',
+                    ],
+                    [
+                        'time' => '20 Thg 10, 18:45:22',
+                        'title' => 'Cảnh báo: Độ trễ Webhook Facility API',
+                        'description' => 'Độ trễ đồng bộ 45 giây từ đối tác khiến trạng thái slot chưa cập nhật kịp thời trên bảng lễ tân.',
+                        'type' => 'warning',
+                    ],
+                ],
+                'chat_messages' => [
+                    [
+                        'sender' => 'Alex Lawson',
+                        'role' => 'complainant',
+                        'avatar' => 'AL',
+                        'message' => 'Tôi đã đến sân lúc 18:55 nhưng sân số 4 đang có nhóm khác đánh. Lễ tân bảo họ có lịch đặt cố định.',
+                        'time' => '19:05',
+                    ],
+                ],
+                'court_map_context' => [
+                    ['name' => 'Sân 3', 'status' => 'occupied', 'label' => 'Đang đánh'],
+                    ['name' => 'Sân 4', 'status' => 'conflict', 'label' => 'Xung Đột'],
+                    ['name' => 'Sân 7', 'status' => 'available', 'label' => 'Trống - Có thể Đổi'],
+                ],
+                'ai_analysis' => [
+                    'fault_rate_facility' => 100,
+                    'fault_rate_user' => 0,
+                    'root_cause' => 'Độ trễ Webhook đồng bộ kết hợp thao tác ghi đè thủ công tại quầy của nhân viên cơ sở.',
+                    'recommendation_summary' => 'Hoàn 100% tiền (360.000 ₫) vào Ví nội bộ cho Alex Lawson + Tặng Voucher 20% + Đổi Sân 7 cho Trần Quốc Bảo.',
+                ],
+            ],
+            [
+                'dispute_code' => 'DSP-8921',
+                'court_name' => 'Sân Tân Bình Sport - Court 2',
+                'dispute_type' => 'match_stake',
+                'severity' => 'high',
+                'title' => 'Tranh chấp Tiền cọc Kèo Giao Lưu Matchmaking',
+                'summary' => 'Đối thủ đơn nam tự ý bỏ cuộc giữa chừng ở Set 3 nhưng không chịu xác nhận hủy cọc trên ví nội bộ.',
+                'status' => 'pending',
+                'sla_deadline' => $now->copy()->addHours(2),
+                'amount_disputed' => 200000,
+                'currency' => 'VND',
+                'complainant_name' => 'Vũ Minh Tuấn',
+                'complainant_tier' => 'Hạng Bạc',
+                'complainant_reputation_score' => 92,
+                'complainant_phone' => '0938 *** 112',
+                'respondent_name' => 'Hoàng Nam',
+                'respondent_tier' => 'Hạng Đồng',
+                'respondent_reputation_score' => 84,
+                'respondent_phone' => '0977 *** 554',
+                'facility_name' => 'Sân Cầu Lông Tân Bình Sport',
+                'facility_operator_name' => 'Trần Thị Bích',
+                'timeline_events' => [],
+                'chat_messages' => [],
+                'court_map_context' => [],
+                'ai_analysis' => [
+                    'fault_rate_facility' => 0,
+                    'fault_rate_user' => 100,
+                    'root_cause' => 'Bỏ trận đấu giao lưu có đặt cọc không có lý do chính đáng.',
+                    'recommendation_summary' => 'Xử thua kỹ thuật cho Hoàng Nam, giải ngân 200.000 ₫ tiền cọc cho Vũ Minh Tuấn và trừ 15 điểm uy tín đối thủ.',
+                ],
+            ],
+        ];
+
+        foreach ($disputeCases as $dispData) {
+            DisputeCase::updateOrCreate(
+                ['dispute_code' => $dispData['dispute_code']],
+                array_merge($dispData, [
+                    'organization_id' => $org->id,
+                ])
+            );
+        }
+
+        // =========================================================================
+        // 15. Finance Exceptions & Reconciliation
+        // =========================================================================
+        $financeExceptions = [
+            [
+                'reference' => 'TXN-88291A',
+                'type' => 'limit_exceeded',
+                'severity' => 'critical',
+                'status' => 'open',
+                'amount' => 4500000,
+                'currency' => 'VND',
+                'description' => 'Vượt hạn mức nạp 24h từ tài khoản hội viên Vàng',
+                'detected_at' => $now->copy()->subHours(3),
+                'due_at' => $now->copy()->addHours(21),
+                'metadata' => [
+                    'shift' => 'Ca Sáng (06:00 - 14:00)',
+                    'user' => ['name' => 'Lê Văn B.', 'id' => 'UID-442', 'tier' => 'Hội viên Vàng'],
+                    'reason' => 'Vượt hạn mức nạp 24h',
+                ],
+            ],
+            [
+                'reference' => 'TXN-88290B',
+                'type' => 'settlement_mismatch',
+                'severity' => 'medium',
+                'status' => 'open',
+                'amount' => 12000000,
+                'currency' => 'VND',
+                'description' => 'Lệch đối soát VietQR giữa cổng thanh toán và sổ cái',
+                'detected_at' => $now->copy()->subHours(4),
+                'due_at' => $now->copy()->addHours(20),
+                'metadata' => [
+                    'shift' => 'Ca Sáng (06:00 - 14:00)',
+                    'user' => ['name' => 'Trần Thị C.', 'id' => 'UID-119', 'tier' => 'Khách vãng lai'],
+                    'reason' => 'Lệch đối soát VietQR',
+                ],
+            ],
+            [
+                'reference' => 'TXN-88289C',
+                'type' => 'late_refund',
+                'severity' => 'low',
+                'status' => 'open',
+                'amount' => 2150000,
+                'currency' => 'VND',
+                'description' => 'Hoàn tiền hủy sân quá 48h',
+                'detected_at' => $now->copy()->subHours(6),
+                'due_at' => $now->copy()->addHours(18),
+                'metadata' => [
+                    'shift' => 'Ca Sáng (06:00 - 14:00)',
+                    'user' => ['name' => 'Minh Quân', 'id' => 'UID-992', 'tier' => 'Hội viên Kim Cương'],
+                    'reason' => 'Hoàn tiền hủy sân quá 48h',
+                ],
+            ],
+        ];
+
+        foreach ($financeExceptions as $fEx) {
+            FinanceException::updateOrCreate(
+                ['reference' => $fEx['reference']],
+                array_merge($fEx, [
+                    'organization_id' => $org->id,
+                ])
+            );
+        }
+
+        ReconciliationRun::updateOrCreate(
+            ['organization_id' => $org->id, 'run_date' => $now->toDateString()],
+            [
+                'status' => 'mismatch',
+                'provider_total' => 842560000,
+                'journal_total' => 842560000,
+                'settlement_total' => 841160000,
+                'payout_total' => 318400000,
+                'mismatch_amount' => 1400000,
+                'started_at' => $now->copy()->subHours(1),
+                'completed_at' => $now,
+                'details' => [
+                    'channel' => 'VietQR Pro (MBBank)',
+                    'txnCode' => 'TXN-88291A',
+                    'riskLevel' => 'high',
+                    'statusLabel' => 'Lệch Quyết Toán',
+                    'reason' => 'Webhook Napas delay lúc 06:42:15, tài khoản trung gian chưa ghi có settlement.',
+                    'court' => 'Sân Cầu Lông Aura Q7 - Sân VIP 1',
+                    'customer' => 'Trần Minh Quang (UID-8821)',
+                ],
+            ]
+        );
     }
 }
+

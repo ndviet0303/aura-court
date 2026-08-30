@@ -1,5 +1,7 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { tournamentApi } from '../api/tournamentApi'
 import { getAvatarUrl } from '@/lib/avatar'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface MatchEvent {
   id: number
@@ -48,103 +50,70 @@ export interface MatchFixture {
 }
 
 export function useLiveScore() {
+  const loading = ref(false)
   const isUmpireMode = ref(false)
   const notice = ref('')
+  const error = ref('')
 
-  const fixtures = ref<MatchFixture[]>([
-    {
-      id: 101,
-      tournament_id: 1,
-      tournament_name: "Aura Summer Open '26",
-      court_label: 'Sân 1 (Center Court)',
-      round_label: 'Championship Finals (Chung Kết)',
-      status: 'live',
-      player1: {
-        name: 'Marcus T. (Minh Hoàng)',
-        avatar: getAvatarUrl('Marcus T.'),
-        seed: 'Seed 1',
-        club: 'Aura Pro Team',
-        sets_won: [21, 18],
-        current_score: 21,
-      },
-      player2: {
-        name: 'David K. (Elena Ryan)',
-        avatar: getAvatarUrl('David K.'),
-        seed: 'Seed 3',
-        club: 'Independent Club',
-        sets_won: [19, 21],
-        current_score: 18,
-      },
-      current_set: 3,
-      serving_player: 1,
-      version: 7,
-      sets_history: [
-        { set: 1, p1: 21, p2: 19, winner: 1 },
-        { set: 2, p1: 18, p2: 21, winner: 2 },
-        { set: 3, p1: 21, p2: 18 },
-      ],
-      stats: {
-        aces: [6, 4],
-        winners: [24, 19],
-        unforced_errors: [8, 12],
-        smash_speed_max: '398 km/h',
-        longest_rally: '34 đường cầu',
-        duration: '54 phút',
-      },
-    },
-    {
-      id: 102,
-      tournament_id: 1,
-      tournament_name: "Aura Summer Open '26",
-      court_label: 'Sân 2 (Show Court)',
-      round_label: 'Bán Kết Đơn Nữ',
-      status: 'live',
-      player1: {
-        name: 'Thu Hương (Aura)',
-        avatar: getAvatarUrl('Thu Hương'),
-        seed: 'Seed 2',
-        club: 'Aura HCM',
-        sets_won: [21],
-        current_score: 14,
-      },
-      player2: {
-        name: 'Mai Lan (Red River)',
-        avatar: getAvatarUrl('Mai Lan'),
-        seed: 'Seed 4',
-        club: 'Red River Club',
-        sets_won: [16],
-        current_score: 12,
-      },
-      current_set: 2,
-      serving_player: 2,
-      version: 4,
-      sets_history: [
-        { set: 1, p1: 21, p2: 16, winner: 1 },
-        { set: 2, p1: 14, p2: 12 },
-      ],
-      stats: {
-        aces: [3, 2],
-        winners: [16, 11],
-        unforced_errors: [5, 9],
-        smash_speed_max: '312 km/h',
-        longest_rally: '28 đường cầu',
-        duration: '38 phút',
-      },
-    },
-  ])
-
+  const fixtures = ref<MatchFixture[]>([])
   const selectedFixtureId = ref(101)
+  const playEvents = ref<MatchEvent[]>([])
 
   const activeMatch = computed(() => {
-    return fixtures.value.find((f) => f.id === selectedFixtureId.value) || fixtures.value[0]
+    return fixtures.value.find((f) => f.id === selectedFixtureId.value) || fixtures.value[0] || null
   })
 
-  const playEvents = ref<MatchEvent[]>([
-    { id: 1, player: 'Marcus T.', action: 'Smash chéo sân ghi điểm Match Point', score: '21 - 18', type: 'winner', time: '18:42' },
-    { id: 2, player: 'David K.', action: 'Giao cầu hỏng (Fault)', score: '20 - 18', type: 'error', time: '18:41' },
-    { id: 3, player: 'Marcus T.', action: 'Bỏ nhỏ tinh tế góc lưới', score: '19 - 18', type: 'winner', time: '18:40' },
-    { id: 4, player: 'David K.', action: 'Cứu cầu ngoạn mục sau smash 398km/h', score: '18 - 18', type: 'shot', time: '18:38' },
-  ])
+  async function loadLiveMatches() {
+    loading.value = true
+    error.value = ''
+    try {
+      const res = await tournamentApi.list<any[]>()
+      const list = Array.isArray(res) ? res : []
+      if (list.length > 0) {
+        fixtures.value = list.map((t: any, idx: number) => ({
+          id: t.id || idx + 100,
+          tournament_id: t.id || 1,
+          tournament_name: t.name || "Aura Open '26",
+          court_label: `Sân ${idx + 1}`,
+          round_label: t.stage || 'Vòng bảng',
+          status: 'live',
+          player1: {
+            name: t.player1?.name || 'VĐV 1',
+            avatar: getAvatarUrl(t.player1?.name || 'Player 1'),
+            seed: 'Seed 1',
+            club: 'Aura Pro',
+            sets_won: [21],
+            current_score: 0,
+          },
+          player2: {
+            name: t.player2?.name || 'VĐV 2',
+            avatar: getAvatarUrl(t.player2?.name || 'Player 2'),
+            seed: 'Seed 2',
+            club: 'Independent',
+            sets_won: [18],
+            current_score: 0,
+          },
+          current_set: 1,
+          serving_player: 1,
+          version: 1,
+          sets_history: [],
+          stats: {
+            aces: [0, 0],
+            winners: [0, 0],
+            unforced_errors: [0, 0],
+            smash_speed_max: '350 km/h',
+            longest_rally: '15 đường cầu',
+            duration: '10 phút',
+          },
+        }))
+        selectedFixtureId.value = fixtures.value[0]?.id || 101
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải điểm số trực tiếp.')
+    } finally {
+      loading.value = false
+    }
+  }
 
   function showNotice(msg: string) {
     notice.value = msg
@@ -153,7 +122,7 @@ export function useLiveScore() {
     }, 4000)
   }
 
-  function addPoint(playerIndex: 1 | 2) {
+  async function addPoint(playerIndex: 1 | 2) {
     if (!activeMatch.value) return
     const match = activeMatch.value
     if (playerIndex === 1) {
@@ -179,6 +148,16 @@ export function useLiveScore() {
         time: new Date().toTimeString().slice(0, 5),
       })
     }
+
+    try {
+      await tournamentApi.scoreFixture(match.tournament_id, match.id, {
+        p1_score: match.player1.current_score,
+        p2_score: match.player2.current_score,
+        set: match.current_set,
+      })
+    } catch {
+      // optimistic score
+    }
   }
 
   function undoPoint() {
@@ -188,9 +167,15 @@ export function useLiveScore() {
     showNotice('Đã hoàn tác điểm số gần nhất.')
   }
 
+  onMounted(() => {
+    loadLiveMatches()
+  })
+
   return {
+    loading,
     isUmpireMode,
     notice,
+    error,
     fixtures,
     selectedFixtureId,
     activeMatch,
@@ -198,5 +183,6 @@ export function useLiveScore() {
     showNotice,
     addPoint,
     undoPoint,
+    loadLiveMatches,
   }
 }

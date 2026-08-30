@@ -15,7 +15,7 @@ defineProps<{
           <span class="material-symbols-outlined text-critical">warning</span>
         </div>
       </div>
-      <div class="kpi-value text-critical">{{ stats.criticalCount }}</div>
+      <div class="kpi-value text-critical">{{ stats.critical_count }}</div>
       <div class="kpi-hint">Vi phạm hạn mức & gian lận</div>
     </div>
 
@@ -26,7 +26,7 @@ defineProps<{
           <span class="material-symbols-outlined text-warning">pending_actions</span>
         </div>
       </div>
-      <div class="kpi-value text-warning">{{ stats.pendingCount }}</div>
+      <div class="kpi-value text-warning">{{ stats.pending_count }}</div>
       <div class="kpi-hint">Lệch hoàn tiền & đối soát VietQR</div>
     </div>
 
@@ -37,7 +37,7 @@ defineProps<{
           <span class="material-symbols-outlined text-success">task_alt</span>
         </div>
       </div>
-      <div class="kpi-value text-success">{{ stats.resolvedCount }}</div>
+      <div class="kpi-value text-success">{{ stats.resolved_count }}</div>
       <div class="kpi-hint">Đã ký duyệt và chốt sổ</div>
     </div>
 
@@ -48,7 +48,7 @@ defineProps<{
           <span class="material-symbols-outlined text-primary">security</span>
         </div>
       </div>
-      <div class="kpi-value text-ink">{{ stats.totalRiskValue.toLocaleString('vi-VN') }} ₫</div>
+      <div class="kpi-value text-ink">{{ stats.total_risk_value.toLocaleString('vi-VN') }} ₫</div>
       <div class="kpi-hint">Tạm giữ chờ xác minh</div>
     </div>
   </section>

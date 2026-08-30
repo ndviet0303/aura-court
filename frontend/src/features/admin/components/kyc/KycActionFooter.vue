@@ -14,7 +14,7 @@ const emit = defineEmits<{
   (e: 'requestSupplement'): void
 }>()
 
-const sampleReasons = [
+const rejectionReasonTemplates = [
   { value: 'Ảnh CCCD mờ, mất góc hoặc không rõ số', label: 'Ảnh CCCD mờ, mất góc hoặc không rõ số' },
   { value: 'Tên thương hiệu sai lệch hoàn toàn với Giấy phép ĐKKD', label: 'Tên thương hiệu sai lệch hoàn toàn với Giấy phép ĐKKD' },
   { value: 'Tài khoản ngân hàng thụ hưởng không chính chủ', label: 'Tài khoản ngân hàng thụ hưởng không chính chủ' },
@@ -32,7 +32,7 @@ const sampleReasons = [
         @change="emit('update:selectedReason', ($event.target as HTMLSelectElement).value)"
       >
         <option value="">-- Chọn mẫu lý do từ chối / yêu cầu bổ sung --</option>
-        <option v-for="r in sampleReasons" :key="r.value" :value="r.value">
+        <option v-for="r in rejectionReasonTemplates" :key="r.value" :value="r.value">
           {{ r.label }}
         </option>
       </select>

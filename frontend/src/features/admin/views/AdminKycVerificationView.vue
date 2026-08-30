@@ -16,7 +16,7 @@ const {
   filteredQueue,
   selectedRejectReason,
   customRejectReason,
-  reviewerNotes,
+  reviewer_notes,
   checklist,
   selectKyc,
   handleApprove,
@@ -80,9 +80,9 @@ const {
         <KycDetailWorkbench
           :item="selectedKyc"
           :checklist="checklist"
-          :reviewer-notes="reviewerNotes"
+          :reviewer_notes="reviewer_notes"
           @update:checklist="checklist = $event"
-          @update:reviewer-notes="reviewerNotes = $event"
+          @update:reviewer_notes="reviewer_notes = $event"
         />
 
         <!-- Action Footer -->

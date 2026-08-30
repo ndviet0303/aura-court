@@ -78,45 +78,8 @@ const currentReceipt = ref<OrderReceipt | null>(null)
 const drafts = ref<Draft[]>([])
 const customerQuery = ref('')
 
-const activeReservations = ref<CourtReservation[]>([
-  {
-    id: 101,
-    court_name: 'Sân 4 (Thảm Yonex Đạt Chuẩn)',
-    court_number: 4,
-    customer_name: 'Minh Tuấn',
-    phone: '0909 112 233',
-    status: 'playing',
-    time_slot: '18:00 - 20:00',
-    deposit_paid: 200000,
-  },
-  {
-    id: 102,
-    court_name: 'Sân 2 (Sân Thi Đấu VIP)',
-    court_number: 2,
-    customer_name: 'Hồng Nhung',
-    phone: '0918 334 455',
-    status: 'waiting',
-    time_slot: '19:00 - 21:00',
-    deposit_paid: 250000,
-  },
-  {
-    id: 103,
-    court_name: 'Sân 1 (Sân Huấn Luyện)',
-    court_number: 1,
-    customer_name: 'Hoàng Long',
-    phone: '0988 776 655',
-    status: 'playing',
-    time_slot: '17:30 - 19:30',
-    deposit_paid: 180000,
-  },
-])
-
-const customerDatabase: CustomerProfile[] = [
-  { id: 1, name: 'Nguyễn Minh Tuấn', phone: '0909112233', tier: 'Gold', discount_rate: 0.1, wallet_balance: 650000, loyalty_points: 340 },
-  { id: 2, name: 'Trần Thị Hồng Nhung', phone: '0918334455', tier: 'VIP', discount_rate: 0.15, wallet_balance: 1450000, loyalty_points: 1200 },
-  { id: 3, name: 'Lê Hoàng Long', phone: '0988776655', tier: 'Silver', discount_rate: 0.05, wallet_balance: 180000, loyalty_points: 110 },
-  { id: 4, name: 'Phạm Quốc Bảo', phone: '0934567890', tier: 'Standard', discount_rate: 0, wallet_balance: 0, loyalty_points: 30 },
-]
+const activeReservations = ref<CourtReservation[]>([])
+const customerDatabase = ref<CustomerProfile[]>([])
 
 // Custom Item Form
 const customItemForm = ref({
@@ -314,6 +277,12 @@ onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   await loadProducts()
   await checkActiveShift()
+  const [resList, custList] = await Promise.allSettled([
+    posApi.getActiveReservations(),
+    posApi.searchCustomers(),
+  ])
+  if (resList.status === 'fulfilled') activeReservations.value = resList.value
+  if (custList.status === 'fulfilled') customerDatabase.value = custList.value
 })
 
 onUnmounted(() => {

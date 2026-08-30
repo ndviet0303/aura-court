@@ -1,14 +1,16 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { adminApi } from '../api/adminApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface StaffMember {
   id: number
   name: string
   email: string
   phone: string
-  role: 'Owner' | 'Manager' | 'Receptionist' | 'Technician' | 'Referee'
+  role: 'Owner' | 'Manager' | 'Receptionist' | 'Technician' | 'Referee' | string
   venueName: string
   venueId: number
-  status: 'active' | 'suspended' | 'invited'
+  status: 'active' | 'suspended' | 'invited' | string
   avatar?: string
   lastActive: string
   permissionsCount: number
@@ -26,6 +28,7 @@ export interface AuditLogItem {
 }
 
 export function useAdminStaff() {
+  const loading = ref(false)
   const activeView = ref<'directory' | 'roles' | 'audit'>('directory')
   const searchQuery = ref('')
   const selectedRoleFilter = ref<string>('all')
@@ -34,120 +37,80 @@ export function useAdminStaff() {
   const notice = ref('')
   const error = ref('')
 
-  const staffList = ref<StaffMember[]>([
-    {
-      id: 1,
-      name: 'Elena Jackson',
-      email: 'elena.j@auracourt.vn',
-      phone: '0901 888 999',
-      role: 'Owner',
-      venueName: 'Tất cả cơ sở',
-      venueId: 0,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      lastActive: 'Vừa xong',
-      permissionsCount: 28,
-    },
-    {
-      id: 2,
-      name: 'Marcus Reed',
-      email: 'marcus.reed@auracourt.vn',
-      phone: '0912 345 678',
-      role: 'Manager',
-      venueName: 'Downtown Arena (Quận 1)',
-      venueId: 1,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-      lastActive: '5 phút trước',
-      permissionsCount: 22,
-    },
-    {
-      id: 3,
-      name: 'Nguyễn Thị Bích Trâm',
-      email: 'tram.nguyen@auracourt.vn',
-      phone: '0933 112 233',
-      role: 'Receptionist',
-      venueName: 'Downtown Arena (Quận 1)',
-      venueId: 1,
-      status: 'active',
-      lastActive: '15 phút trước',
-      permissionsCount: 12,
-    },
-    {
-      id: 4,
-      name: 'Trần Văn Hải',
-      email: 'hai.tran@auracourt.vn',
-      phone: '0988 990 011',
-      role: 'Technician',
-      venueName: 'Westside Courts (Bình Thạnh)',
-      venueId: 2,
-      status: 'active',
-      lastActive: '2 giờ trước',
-      permissionsCount: 8,
-    },
-    {
-      id: 5,
-      name: 'Phạm Đình Trọng',
-      email: 'trong.referee@auracourt.vn',
-      phone: '0977 445 566',
-      role: 'Referee',
-      venueName: 'Tất cả cơ sở',
-      venueId: 0,
-      status: 'active',
-      lastActive: '1 ngày trước',
-      permissionsCount: 6,
-    },
-  ])
+  const staffList = ref<StaffMember[]>([])
+  const auditLogs = ref<AuditLogItem[]>([])
 
-  const auditLogs = ref<AuditLogItem[]>([
-    {
-      id: 101,
-      actorName: 'Elena Jackson',
-      actorRole: 'Owner',
-      action: 'Cập nhật bảng giá Giờ Vàng',
-      target: 'Sân 1 - Downtown Arena',
-      timestamp: '10:45 AM, Hôm nay',
-      ip: '118.69.182.45',
-      status: 'success',
-    },
-    {
-      id: 102,
-      actorName: 'Marcus Reed',
-      actorRole: 'Manager',
-      action: 'Duyệt hoàn tiền đơn #BK-9902',
-      target: 'Ví khách: Nguyễn Minh Tuấn',
-      timestamp: '09:20 AM, Hôm nay',
-      ip: '14.169.32.12',
-      status: 'success',
-    },
-    {
-      id: 103,
-      actorName: 'Nguyễn Thị Bích Trâm',
-      actorRole: 'Receptionist',
-      action: 'Khoá sân khẩn cấp do sự cố đèn LED',
-      target: 'Sân 4 - Westside Courts',
-      timestamp: '18:10 PM, Hôm qua',
-      ip: '14.169.32.12',
-      status: 'warning',
-    },
-    {
-      id: 104,
-      actorName: 'Hệ thống Auth',
-      actorRole: 'System',
-      action: 'Phát hiện đăng nhập sai mật khẩu 5 lần',
-      target: 'Tài khoản: trong.referee@auracourt.vn',
-      timestamp: '02:15 AM, Hôm qua',
-      ip: '45.119.82.1',
-      status: 'danger',
-    },
-  ])
+  function mapRoleLabel(role: string): string {
+    switch (role) {
+      case 'organization_owner':
+      case 'Owner':
+        return 'Owner'
+      case 'venue_manager':
+      case 'Manager':
+        return 'Manager'
+      case 'cashier':
+      case 'Receptionist':
+        return 'Receptionist'
+      default:
+        return role || 'Staff'
+    }
+  }
 
-  const stats = computed(() => ({
-    totalStaff: 18,
-    activeManagers: 4,
-    receptionistsOnline: 8,
-    systemRoles: 5,
-  }))
+  async function loadStaffData() {
+    loading.value = true
+    error.value = ''
+    try {
+      const [membersRes, logsRes] = await Promise.allSettled([
+        adminApi.getOrgMembers<{ members: any[] }>(),
+        adminApi.getAuditLogs<any>(),
+      ])
+
+      if (membersRes.status === 'fulfilled') {
+        const raw = membersRes.value?.members || (Array.isArray(membersRes.value) ? membersRes.value : [])
+        staffList.value = raw.map((m: any) => ({
+          id: m.id,
+          name: m.user?.name || 'Nhân viên',
+          email: m.user?.email || '',
+          phone: m.user?.phone || '—',
+          role: mapRoleLabel(m.role),
+          venueName: m.venue?.name || 'Tất cả cơ sở',
+          venueId: m.venue_id || 0,
+          status: m.status || 'active',
+          avatar: m.user?.avatar,
+          lastActive: m.updated_at ? new Date(m.updated_at).toLocaleDateString('vi-VN') : '—',
+          permissionsCount: m.role === 'organization_owner' ? 28 : m.role === 'venue_manager' ? 22 : 12,
+        }))
+      }
+
+      if (logsRes.status === 'fulfilled' && logsRes.value?.data) {
+        const list = Array.isArray(logsRes.value.data) ? logsRes.value.data : []
+        auditLogs.value = list.map((log: any) => ({
+          id: log.id,
+          actorName: log.user?.name || log.actor || 'Hệ thống',
+          actorRole: log.role || 'Staff',
+          action: log.action || log.description || '',
+          target: log.target || log.resource || '',
+          timestamp: log.created_at ? new Date(log.created_at).toLocaleString('vi-VN') : '—',
+          ip: log.ip || log.ip_address || '—',
+          status: log.status || 'success',
+        }))
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách nhân sự.')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const stats = computed(() => {
+    const list = staffList.value
+    return {
+      totalStaff: list.length,
+      activeManagers: list.filter((s) => s.role === 'Manager' || s.role === 'Owner').length,
+      receptionistsOnline: list.filter((s) => s.role === 'Receptionist').length,
+      systemRoles: 4,
+    }
+  })
 
   const filteredStaff = computed(() => {
     return staffList.value.filter((staff) => {
@@ -169,24 +132,29 @@ export function useAdminStaff() {
     }, 4000)
   }
 
-  function inviteStaff(member: { name: string; email: string; phone: string; role: StaffMember['role'] }) {
-    staffList.value.push({
-      id: Date.now(),
-      name: member.name,
-      email: member.email,
-      phone: member.phone,
-      role: member.role,
-      venueName: 'Downtown Arena (Quận 1)',
-      venueId: 1,
-      status: 'invited',
-      lastActive: 'Chưa kích hoạt',
-      permissionsCount: 10,
-    })
-    showInviteModal.value = false
-    showNotice(`Đã gửi thư mời gia nhập tới ${member.email}!`)
+  async function inviteStaff(member: { name: string; email: string; phone: string; role: StaffMember['role'] }) {
+    loading.value = true
+    try {
+      await adminApi.addOrgMember(1, {
+        email: member.email,
+        role: member.role === 'Owner' ? 'organization_owner' : member.role === 'Manager' ? 'venue_manager' : 'cashier',
+      })
+      await loadStaffData()
+      showInviteModal.value = false
+      showNotice(`Đã gửi thư mời gia nhập tới ${member.email}!`)
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể mời nhân sự mới.')
+    } finally {
+      loading.value = false
+    }
   }
 
+  onMounted(() => {
+    loadStaffData()
+  })
+
   return {
+    loading,
     activeView,
     searchQuery,
     selectedRoleFilter,
@@ -199,6 +167,7 @@ export function useAdminStaff() {
     stats,
     filteredStaff,
     showNotice,
+    loadStaffData,
     inviteStaff,
   }
 }

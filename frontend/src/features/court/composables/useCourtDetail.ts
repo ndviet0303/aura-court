@@ -1,6 +1,7 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
+import { courtApi } from '../api/courtApi'
 import type { Court } from '../types/court'
 
 export function useCourtDetail() {
@@ -9,38 +10,35 @@ export function useCourtDetail() {
 
   const selectedDuration = ref<number>(1.0)
   const isGalleryOpen = ref(false)
+  const loading = ref(false)
 
   const courtId = Number(route.params.id || 1)
+  const fetchedCourt = ref<Court | null>(null)
 
-  const court = computed<Court>(() => {
-    return (
-      bookingStore.courts.find((c) => c.id === courtId) ||
-      bookingStore.courts[0] || {
-        id: 1,
-        name: 'Sân 01 - Tiêu Chuẩn',
-        slug: 'san-01-tieu-chuan',
-        venue: {
-          id: 1,
-          name: 'Aura Center Thảo Điền',
-          slug: 'aura-center-thao-dien',
-          address: '12 Quốc Hương, Thảo Điền, Quận 2',
-          google_maps_url: null,
-          is_active: true,
-          share_url: '',
-        },
-        description: 'Sân thi đấu chuyên nghiệp với mặt thảm cao cấp',
-        price_slots: [
-          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '16:00', price: 120000 },
-          { id: 2, court_id: 1, weekday: 1, starts_at: '16:00', ends_at: '22:00', price: 180000 },
-        ],
-        reviews_count: 42,
-        reviews_avg_rating: 4.8,
+  async function loadCourt() {
+    if (bookingStore.courts.length === 0) {
+      loading.value = true
+      try {
+        await bookingStore.fetchCourts()
+      } catch {
+        // Handled by store
+      } finally {
+        loading.value = false
       }
+    }
+  }
+
+  const court = computed<Court | null>(() => {
+    return (
+      fetchedCourt.value ||
+      bookingStore.courts.find((c) => c.id === courtId) ||
+      bookingStore.courts[0] ||
+      null
     )
   })
 
   const basePrice = computed(() => {
-    if (court.value.price_slots && court.value.price_slots.length > 0) {
+    if (court.value?.price_slots && court.value.price_slots.length > 0) {
       return court.value.price_slots[0]?.price || 120000
     }
     return 120000
@@ -57,12 +55,18 @@ export function useCourtDetail() {
     { value: 3.0, label: '3.0h' },
   ]
 
+  onMounted(() => {
+    loadCourt()
+  })
+
   return {
+    loading,
     court,
     selectedDuration,
     isGalleryOpen,
     basePrice,
     estimatedTotal,
     durationOptions,
+    loadCourt,
   }
 }

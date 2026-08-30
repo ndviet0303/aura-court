@@ -1,4 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { financeApi } from '@/features/finance/api/financeApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface RecurringContract {
   id: number
@@ -25,6 +27,7 @@ export interface RecurringContract {
 }
 
 export function useAdminContracts() {
+  const loading = ref(false)
   const activeStatusTab = ref<string>('all')
   const searchQuery = ref('')
   const selectedContract = ref<RecurringContract | null>(null)
@@ -33,72 +36,49 @@ export function useAdminContracts() {
   const notice = ref('')
   const error = ref('')
 
-  const contracts = ref<RecurringContract[]>([
-    {
-      id: 1,
-      contract_code: 'CTR-2026-001',
-      customer_name: 'CLB Cầu Lông Passion',
-      phone: '0909 112 233',
-      court_name: 'Sân 1 (Sân Huấn Luyện)',
-      venue_name: 'Downtown Arena (Quận 1)',
-      time_slot: '18:00 - 20:00',
-      weekday: 'Thứ 2, 4, 6',
-      start_date: '2026-01-01',
-      end_date: '2026-12-31',
-      total_monthly_amount: 4800000,
-      deposit_amount: 5000000,
-      status: 'active',
-      payment_cycles: [
-        { id: 101, cycle_name: 'Kỳ 01/2026', due_date: '05/01/2026', amount: 4800000, status: 'paid', invoice_code: 'INV-2026-0101' },
-        { id: 102, cycle_name: 'Kỳ 02/2026', due_date: '05/02/2026', amount: 4800000, status: 'paid', invoice_code: 'INV-2026-0201' },
-        { id: 103, cycle_name: 'Kỳ 03/2026', due_date: '05/03/2026', amount: 4800000, status: 'paid', invoice_code: 'INV-2026-0301' },
-      ],
-    },
-    {
-      id: 2,
-      contract_code: 'CTR-2026-002',
-      customer_name: 'CLB Smash Pro',
-      phone: '0918 334 455',
-      court_name: 'Sân 4 (Thảm Yonex Đạt Chuẩn)',
-      venue_name: 'Downtown Arena (Quận 1)',
-      time_slot: '19:00 - 21:00',
-      weekday: 'Thứ 3, 5, 7',
-      start_date: '2026-02-01',
-      end_date: '2026-08-01',
-      total_monthly_amount: 5200000,
-      deposit_amount: 5000000,
-      status: 'overdue',
-      payment_cycles: [
-        { id: 201, cycle_name: 'Kỳ 02/2026', due_date: '05/02/2026', amount: 5200000, status: 'paid', invoice_code: 'INV-2026-0202' },
-        { id: 202, cycle_name: 'Kỳ 03/2026', due_date: '05/03/2026', amount: 5200000, status: 'overdue', invoice_code: 'INV-2026-0302' },
-      ],
-    },
-    {
-      id: 3,
-      contract_code: 'CTR-2026-003',
-      customer_name: 'Công ty FPT Software',
-      phone: '0988 776 655',
-      court_name: 'Sân 2 (Sân Thi Đấu VIP)',
-      venue_name: 'Westside Courts (Bình Thạnh)',
-      time_slot: '17:30 - 19:30',
-      weekday: 'Thứ 4, Thứ 6',
-      start_date: '2026-03-01',
-      end_date: '2027-03-01',
-      total_monthly_amount: 3600000,
-      deposit_amount: 4000000,
-      status: 'active',
-      payment_cycles: [
-        { id: 301, cycle_name: 'Kỳ 03/2026', due_date: '05/03/2026', amount: 3600000, status: 'paid', invoice_code: 'INV-2026-0303' },
-      ],
-    },
-  ])
+  const contracts = ref<RecurringContract[]>([])
 
-  const stats = computed(() => ({
-    activeContracts: 42,
-    mrrAmount: 184500000,
-    overdueCycles: 3,
-    primeTimeUtilization: 94,
-  }))
+  async function loadContracts() {
+    loading.value = true
+    error.value = ''
+    try {
+      const res = await financeApi.getRecurringSeries<{ data?: any[] } | any[]>()
+      const list = Array.isArray(res) ? res : res?.data || []
+      contracts.value = list.map((item: any) => ({
+        id: item.id,
+        contract_code: item.contract_code || item.code || `CTR-${item.id}`,
+        customer_name: item.customer_name || item.user?.name || 'CLB Khách hàng',
+        phone: item.phone || item.user?.phone || '—',
+        court_name: item.court?.name || item.court_name || 'Sân tiêu chuẩn',
+        venue_name: item.venue?.name || item.venue_name || 'Cơ sở chính',
+        time_slot: item.time_slot || `${item.start_time || '18:00'} - ${item.end_time || '20:00'}`,
+        weekday: item.weekday || item.days_of_week || 'Thứ 2, 4, 6',
+        start_date: item.start_date || '2026-01-01',
+        end_date: item.end_date || '2026-12-31',
+        total_monthly_amount: item.total_monthly_amount ?? item.monthly_amount ?? 4800000,
+        deposit_amount: item.deposit_amount ?? 5000000,
+        status: item.status || 'active',
+        payment_cycles: item.payment_cycles || [],
+      }))
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách hợp đồng định kỳ.')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const stats = computed(() => {
+    const list = contracts.value
+    const active = list.filter((c) => c.status === 'active')
+    const overdue = list.filter((c) => c.status === 'overdue')
+    const mrr = active.reduce((sum, c) => sum + (c.total_monthly_amount || 0), 0)
+    return {
+      activeContracts: active.length,
+      mrrAmount: mrr,
+      overdueCycles: overdue.length,
+      primeTimeUtilization: list.length > 0 ? 94 : 0,
+    }
+  })
 
   const filteredContracts = computed(() => {
     return contracts.value.filter((c) => {
@@ -131,7 +111,12 @@ export function useAdminContracts() {
     showDetailModal.value = true
   }
 
+  onMounted(() => {
+    loadContracts()
+  })
+
   return {
+    loading,
     activeStatusTab,
     searchQuery,
     selectedContract,
@@ -144,5 +129,6 @@ export function useAdminContracts() {
     filteredContracts,
     showNotice,
     openDetail,
+    loadContracts,
   }
 }

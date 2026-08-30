@@ -71,17 +71,17 @@ const emit = defineEmits<{
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id" :class="{ 'row-resolved': item.status === 'resolved' }">
-            <td class="code-cell font-mono">{{ item.code }}</td>
+            <td class="code-cell font-mono">{{ item.reference }}</td>
             <td>
-              <div class="time-main">{{ item.timestamp }}</div>
-              <div class="time-sub">{{ item.shift }}</div>
+              <div class="time-main">{{ item.detected_at }}</div>
+              <div class="time-sub">{{ (item.metadata?.shift || item.type) }}</div>
             </td>
             <td>
               <div class="user-cell">
-                <div class="user-avatar-initial">{{ item.user.name.charAt(0) }}</div>
+                <div class="user-avatar-initial">{{ (item.resolver?.name || 'Hệ thống').charAt(0) }}</div>
                 <div>
-                  <div class="user-name">{{ item.user.name }}</div>
-                  <div class="user-sub">{{ item.user.id }} · {{ item.user.tier }}</div>
+                  <div class="user-name">{{ (item.resolver?.name || 'Hệ thống') }}</div>
+                  <div class="user-sub">{{ (item.resolver?.id || '') }} · {{ (item.metadata?.tier || '') }}</div>
                 </div>
               </div>
             </td>
@@ -89,18 +89,18 @@ const emit = defineEmits<{
               {{ item.amount.toLocaleString('vi-VN') }} ₫
             </td>
             <td>
-              <span class="reason-pill">{{ item.reason }}</span>
+              <span class="reason-pill">{{ item.description }}</span>
             </td>
             <td>
               <span
                 class="risk-badge"
                 :class="{
-                  'risk-critical': item.riskLevel === 'critical',
-                  'risk-medium': item.riskLevel === 'medium',
-                  'risk-low': item.riskLevel === 'low',
+                  'risk-critical': item.severity === 'critical',
+                  'risk-medium': item.severity === 'medium',
+                  'risk-low': item.severity === 'low',
                 }"
               >
-                {{ item.riskLevel === 'critical' ? 'Cao' : item.riskLevel === 'medium' ? 'Trung bình' : 'Thấp' }}
+                {{ item.severity === 'critical' ? 'Cao' : item.severity === 'medium' ? 'Trung bình' : 'Thấp' }}
               </span>
             </td>
             <td class="text-right">

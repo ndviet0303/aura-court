@@ -1,11 +1,5 @@
-import { ref, computed } from 'vue'
-import type { InventoryProduct, StockMovement, InventoryAudit, Supplier } from '../types/inventory'
-import {
-  INITIAL_INVENTORY_PRODUCTS,
-  INITIAL_STOCK_MOVEMENTS,
-  INITIAL_INVENTORY_AUDITS,
-  INITIAL_SUPPLIERS,
-} from '../types/inventory'
+import { ref, computed, onMounted } from 'vue'
+import type { InventoryProduct, StockMovement, InventoryAudit } from '../types/inventory'
 import { inventoryApi } from '../api/inventoryApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -21,9 +15,9 @@ export function useAdminInventory() {
   const stockFilter = ref<'all' | 'low' | 'out'>('all')
   const movementTypeFilter = ref<'all' | 'in' | 'out' | 'adjust' | 'return'>('all')
 
-  const products = ref<InventoryProduct[]>([...INITIAL_INVENTORY_PRODUCTS])
-  const movements = ref<StockMovement[]>([...INITIAL_STOCK_MOVEMENTS])
-  const audits = ref<InventoryAudit[]>([...INITIAL_INVENTORY_AUDITS])
+  const products = ref<InventoryProduct[]>([])
+  const movements = ref<StockMovement[]>([])
+  const audits = ref<InventoryAudit[]>([])
 
   const showProductModal = ref(false)
   const editingProduct = ref<InventoryProduct | null>(null)
@@ -75,58 +69,111 @@ export function useAdminInventory() {
     }, 4000)
   }
 
+  async function loadInventoryData() {
+    loading.value = true
+    errorMsg.value = ''
+    try {
+      const [prodsRes, movsRes, auditsRes] = await Promise.allSettled([
+        inventoryApi.getProducts(),
+        inventoryApi.getMovements(),
+        inventoryApi.getAudits(),
+      ])
+
+      if (prodsRes.status === 'fulfilled' && Array.isArray(prodsRes.value)) {
+        products.value = prodsRes.value
+      }
+      if (movsRes.status === 'fulfilled' && Array.isArray(movsRes.value)) {
+        movements.value = movsRes.value
+      }
+      if (auditsRes.status === 'fulfilled' && Array.isArray(auditsRes.value)) {
+        audits.value = auditsRes.value
+      }
+    } catch (e: unknown) {
+      errorMsg.value = errorMessage(e, 'Không thể tải dữ liệu kho hàng.')
+    } finally {
+      loading.value = false
+    }
+  }
+
   function openStockAction(type: 'in' | 'out' | 'adjust', product?: InventoryProduct) {
     stockActionType.value = type
     selectedProductForAction.value = product || products.value[0] || null
     showStockActionModal.value = true
   }
 
-  function handleSaveProduct(payload: any) {
-    if (editingProduct.value) {
-      Object.assign(editingProduct.value, payload)
-      showNotice(`Đã cập nhật sản phẩm "${payload.name}"`)
-    } else {
-      products.value.unshift({
-        id: Date.now(),
-        ...payload,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      showNotice(`Đã thêm sản phẩm mới "${payload.name}"`)
+  async function handleSaveProduct(payload: any) {
+    saving.value = true
+    try {
+      if (editingProduct.value) {
+        const updated = await inventoryApi.updateProduct(editingProduct.value.id, payload)
+        const idx = products.value.findIndex((p) => p.id === editingProduct.value?.id)
+        if (idx !== -1) {
+          products.value[idx] = { ...products.value[idx], ...(updated || payload) }
+        }
+        showNotice(`Đã cập nhật sản phẩm "${payload.name}"`)
+      } else {
+        const created = await inventoryApi.createProduct(payload)
+        products.value.unshift(created || {
+          id: Date.now(),
+          ...payload,
+          is_active: true,
+        })
+        showNotice(`Đã thêm sản phẩm mới "${payload.name}"`)
+      }
+      showProductModal.value = false
+    } catch (e: unknown) {
+      errorMsg.value = errorMessage(e, 'Không thể lưu sản phẩm.')
+    } finally {
+      saving.value = false
     }
-    showProductModal.value = false
   }
 
-  function handleStockAction(quantity: number, note: string) {
+  async function handleStockAction(quantity: number, note: string) {
     if (!selectedProductForAction.value) return
     const p = selectedProductForAction.value
-    if (stockActionType.value === 'in') {
-      p.stock_quantity += quantity
-    } else if (stockActionType.value === 'out') {
-      p.stock_quantity = Math.max(0, p.stock_quantity - quantity)
-    } else {
-      p.stock_quantity = quantity
+    saving.value = true
+    try {
+      await inventoryApi.adjustStock(p.id, {
+        quantity,
+        type: stockActionType.value,
+        note,
+      })
+
+      if (stockActionType.value === 'in') {
+        p.stock_quantity += quantity
+      } else if (stockActionType.value === 'out') {
+        p.stock_quantity = Math.max(0, p.stock_quantity - quantity)
+      } else {
+        p.stock_quantity = quantity
+      }
+
+      movements.value.unshift({
+        id: Date.now(),
+        product_id: p.id,
+        product_name: p.name,
+        product_sku: p.sku,
+        type: stockActionType.value,
+        quantity,
+        unit: p.unit,
+        reference_code: `REF-${Date.now().toString().slice(-4)}`,
+        note,
+        created_at: new Date().toISOString(),
+        created_by: 'Admin',
+        balance_after: p.stock_quantity,
+      })
+
+      showStockActionModal.value = false
+      showNotice(`Đã thực hiện ${stockActionType.value === 'in' ? 'nhập kho' : stockActionType.value === 'out' ? 'xuất kho' : 'điều chỉnh'} thành công!`)
+    } catch (e: unknown) {
+      errorMsg.value = errorMessage(e, 'Không thể thực hiện thao tác kho.')
+    } finally {
+      saving.value = false
     }
-
-    movements.value.unshift({
-      id: Date.now(),
-      product_id: p.id,
-      product_name: p.name,
-      product_sku: p.sku,
-      type: stockActionType.value,
-      quantity,
-      unit: p.unit,
-      reference_code: `REF-${Date.now().toString().slice(-4)}`,
-      note,
-      created_at: new Date().toISOString(),
-      created_by: 'Admin',
-      balance_after: p.stock_quantity,
-    })
-
-    showStockActionModal.value = false
-    showNotice(`Đã thực hiện ${stockActionType.value === 'in' ? 'nhập kho' : stockActionType.value === 'out' ? 'xuất kho' : 'điều chỉnh'} thành công!`)
   }
+
+  onMounted(() => {
+    loadInventoryData()
+  })
 
   return {
     loading,
@@ -153,5 +200,6 @@ export function useAdminInventory() {
     openStockAction,
     handleSaveProduct,
     handleStockAction,
+    loadInventoryData,
   }
 }

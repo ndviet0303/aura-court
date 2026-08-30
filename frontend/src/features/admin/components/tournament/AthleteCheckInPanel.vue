@@ -9,7 +9,7 @@ const props = defineProps<{
   metrics: {
     total: number
     checkedInCount: number
-    pendingCount: number
+    pending_count: number
     noShowCount: number
     percentage: number
   }
@@ -24,15 +24,24 @@ const emit = defineEmits<{
 const showQrScannerModal = ref(false)
 const showPassModal = ref(false)
 const selectedPassAthlete = ref<Participant | null>(null)
-const sampleScanned = ref(false)
+const scanCodeInput = ref('')
+const scannedAthlete = ref<Participant | null>(null)
 
 function openPassModal(ath: Participant) {
   selectedPassAthlete.value = ath
   showPassModal.value = true
 }
 
-function handleSampleScan() {
-  sampleScanned.value = true
+function handleScanCode() {
+  const code = scanCodeInput.value.trim().toLowerCase()
+  if (!code) return
+  const found = props.athletes.find(
+    (p: Participant) => p.qrCode?.toLowerCase() === code || p.name.toLowerCase().includes(code)
+  )
+  if (found) {
+    scannedAthlete.value = found
+    emit('toggleCheckIn', found)
+  }
 }
 </script>
 
@@ -45,7 +54,7 @@ function handleSampleScan() {
       </div>
 
       <div class="checkin-actions-bar">
-        <button class="btn-scan-qr" @click="showQrScannerModal = true; sampleScanned = false">
+        <button class="btn-scan-qr" @click="showQrScannerModal = true; scannedAthlete = null">
           📷 Quét mã QR
         </button>
       </div>
@@ -80,7 +89,7 @@ function handleSampleScan() {
         </div>
         <div class="cnt-card text-yellow">
           <span class="cnt-label">Chưa Đến</span>
-          <strong class="cnt-num">{{ metrics.pendingCount }}</strong>
+          <strong class="cnt-num">{{ metrics.pending_count }}</strong>
         </div>
       </div>
     </div>
@@ -100,7 +109,7 @@ function handleSampleScan() {
           :class="{ active: filterStatus === 'pending' }"
           @click="emit('update:filterStatus', 'pending')"
         >
-          Chưa đến ({{ metrics.pendingCount }})
+          Chưa đến ({{ metrics.pending_count }})
         </button>
         <button
           class="filter-pill-item"
@@ -183,16 +192,23 @@ function handleSampleScan() {
             <div class="laser-scanline"></div>
             <div class="scanner-frame-target"></div>
           </div>
-          <p class="scan-hint">Hướng camera về phía mã QR trên thẻ vận động viên hoặc ứng dụng điện thoại.</p>
+          <p class="scan-hint">Nhập hoặc quét mã QR trên thẻ vận động viên:</p>
           
-          <button class="btn-sample-card" @click="handleSampleScan">
-            🎯 Quét mẫu ATH-001 (Sarah Jenkins)
-          </button>
+          <div class="scan-input-row">
+            <input
+              v-model="scanCodeInput"
+              type="text"
+              placeholder="Nhập mã thẻ VĐV hoặc tên..."
+              class="scan-code-field"
+              @keyup.enter="handleScanCode"
+            />
+            <button class="btn-scan-submit" @click="handleScanCode">Xác nhận</button>
+          </div>
 
-          <div v-if="sampleScanned" class="qr-scan-feedback-box">
-            <span class="alert-pill">✓ Đã nhận diện mã: ATH-001</span>
-            <strong>Sarah Jenkins (Apex Club)</strong>
-            <p>Hạng đấu: Đơn Nữ Nâng Cao · Sân khởi động: Sân 1</p>
+          <div v-if="scannedAthlete" class="qr-scan-feedback-box">
+            <span class="alert-pill">✓ Đã điểm danh thành công</span>
+            <strong>{{ scannedAthlete.name }} ({{ scannedAthlete.club || 'Tự do' }})</strong>
+            <p>Mã thẻ: {{ scannedAthlete.qrCode || scannedAthlete.id }}</p>
           </div>
         </div>
       </div>
@@ -208,10 +224,10 @@ function handleSampleScan() {
         <div class="modal-body">
           <div class="digital-badge-container">
             <div class="pass-header-brand">AURA COURT CONTROL</div>
-            <div class="pass-ath-name">{{ selectedPassAthlete?.name || 'Sarah Jenkins' }}</div>
-            <div class="pass-ath-club">{{ selectedPassAthlete?.club || 'Apex Club' }}</div>
-            <div class="pass-qr-mock">
-              <span class="qr-label">{{ selectedPassAthlete?.qrCode || 'ATH-001' }}</span>
+            <div class="pass-ath-name">{{ selectedPassAthlete?.name || '' }}</div>
+            <div class="pass-ath-club">{{ selectedPassAthlete?.club || '' }}</div>
+            <div class="pass-qr-code">
+              <span class="qr-label">{{ selectedPassAthlete?.qrCode || '' }}</span>
             </div>
             <div class="pass-status-pill">ACCREDITED ATHLETE 2026</div>
           </div>
@@ -538,15 +554,32 @@ function handleSampleScan() {
   margin-top: 10px;
 }
 
-.btn-sample-card {
-  width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
-  font-size: 12px;
-  cursor: pointer;
+.scan-input-row {
+  display: flex;
+  gap: 8px;
   margin-top: 10px;
+  width: 100%;
+}
+
+.scan-code-field {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.btn-scan-submit {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .qr-scan-feedback-box {
@@ -586,7 +619,7 @@ function handleSampleScan() {
   opacity: 0.8;
 }
 
-.pass-qr-mock {
+.pass-qr-code {
   margin: 16px 0;
   padding: 12px;
   background: #fff;

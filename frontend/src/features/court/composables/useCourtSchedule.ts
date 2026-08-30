@@ -14,24 +14,11 @@ export function useCourtSchedule() {
   const notice = ref('')
   const loading = ref(false)
 
-  const court = computed<Court>(() => {
+  const court = computed<Court | null>(() => {
     return (
       store.courts.find((c: Court) => c.id === selectedCourtId.value) ||
-      store.courts[0] || {
-        id: 1,
-        name: 'Sân 01 - Tiêu Chuẩn',
-        slug: 'san-01',
-        venue: {
-          id: 1,
-          name: 'Aura Center Quận 1',
-          slug: 'aura-center-quan-1',
-          address: '12 Nguyễn Thị Minh Khai, Q.1',
-          google_maps_url: null,
-          is_active: true,
-          share_url: '',
-        },
-        price_slots: [],
-      }
+      store.courts[0] ||
+      null
     )
   })
 
@@ -63,6 +50,20 @@ export function useCourtSchedule() {
     }
   }
 
+  async function init() {
+    loading.value = true
+    try {
+      if (store.courts.length === 0) {
+        await store.fetchCourts()
+      }
+      await fetchAvailability()
+    } catch {
+      // ignore
+    } finally {
+      loading.value = false
+    }
+  }
+
   function selectDate(isoDate: string) {
     date.value = isoDate
     fetchAvailability()
@@ -79,9 +80,13 @@ export function useCourtSchedule() {
   }
 
   function proceedToBooking() {
-    if (store.selectedSlots.length === 0) return
+    if (!court.value || store.selectedSlots.length === 0) return
     router.push(`/booking?court=${court.value.id}`)
   }
+
+  onMounted(() => {
+    init()
+  })
 
   return {
     store,

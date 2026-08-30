@@ -27,57 +27,18 @@ export function usePricingCalendarV2() {
   const showRuleModal = ref(false)
   const editingRule = ref<PriceRuleItem | null>(null)
 
-  const rules = ref<PriceRuleItem[]>([
-    {
-      id: 1,
-      name: 'Tết Nguyên Đán 2025',
-      type: 'holiday',
-      priority: 1,
-      price: 156000,
-      adjustment_type: 'percentage_add',
-      adjustment_value: 30,
-      is_active: true,
-      version: 3,
-    },
-    {
-      id: 2,
-      name: 'Giờ vàng tối',
-      type: 'peak',
-      priority: 2,
-      price: 180000,
-      adjustment_type: 'fixed',
-      adjustment_value: 180000,
-      starts_at: '17:00',
-      ends_at: '21:00',
-      weekdays: [1, 2, 3, 4, 5],
-      is_active: true,
-      version: 1,
-    },
-    {
-      id: 3,
-      name: 'Khuyến mãi giờ trưa thấp điểm',
-      type: 'surge',
-      priority: 3,
-      price: 90000,
-      adjustment_type: 'percentage_discount',
-      adjustment_value: 25,
-      starts_at: '11:00',
-      ends_at: '14:00',
-      weekdays: [1, 2, 3, 4, 5],
-      is_active: true,
-      version: 1,
-    },
-  ])
+  const rules = ref<PriceRuleItem[]>([])
 
   async function loadRules() {
     loading.value = true
+    error.value = ''
     try {
       const res = await adminApi.getPricingCalendar<{ rules: PriceRuleItem[] }>()
       if (res && res.rules) {
         rules.value = res.rules
       }
-    } catch (e) {
-      // fallback to mock rules
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách quy tắc giá.')
     } finally {
       loading.value = false
     }
@@ -90,20 +51,23 @@ export function usePricingCalendarV2() {
     }, 4000)
   }
 
-  function saveRule(payload: any) {
-    if (editingRule.value) {
-      Object.assign(editingRule.value, payload)
-      showNotice(`Đã cập nhật quy tắc "${payload.name}"`)
-    } else {
-      rules.value.push({
-        id: Date.now(),
-        ...payload,
-        is_active: true,
-        version: 1,
-      })
-      showNotice(`Đã thêm quy tắc mới "${payload.name}"`)
+  async function saveRule(payload: any) {
+    saving.value = true
+    try {
+      if (editingRule.value) {
+        await adminApi.updatePriceRule(editingRule.value.id, payload)
+        showNotice(`Đã cập nhật quy tắc "${payload.name || editingRule.value.name}"`)
+      } else {
+        await adminApi.createPriceRule(payload)
+        showNotice(`Đã thêm quy tắc mới "${payload.name}"`)
+      }
+      await loadRules()
+      showRuleModal.value = false
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể lưu quy tắc giá.')
+    } finally {
+      saving.value = false
     }
-    showRuleModal.value = false
   }
 
   return {

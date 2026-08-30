@@ -10,12 +10,12 @@ export function useAdminKyc() {
   const notice = ref<string | null>(null)
 
   const stats = ref<KycStats>({
-    pendingCount: 12,
-    aiConfidenceRate: 96.4,
-    avgProcessingTimeMinutes: 14.2,
-    flaggedCount: 2,
-    approvedCount: 148,
-    needsSupplementCount: 3,
+    pending_count: 0,
+    ai_confidence_rate: 0,
+    avg_processing_time_minutes: 0,
+    flagged_count: 0,
+    approved_count: 0,
+    needs_supplement_count: 0,
   })
 
   const kycList = ref<HostKyc[]>([])
@@ -24,13 +24,13 @@ export function useAdminKyc() {
   // Underwriter form state
   const selectedRejectReason = ref('')
   const customRejectReason = ref('')
-  const reviewerNotes = ref('')
+  const reviewer_notes = ref('')
   const checklist = ref({
-    repIdentityMatched: true,
-    businessLicenseValid: true,
-    bankAccountMatched: true,
-    brandNameDiscrepancyAccepted: false,
-    facilityInspected: true,
+    rep_identity_matched: true,
+    business_license_valid: true,
+    bank_account_matched: true,
+    brand_name_discrepancy_accepted: false,
+    facility_inspected: true,
   })
 
   async function fetchStats() {
@@ -63,6 +63,8 @@ export function useAdminKyc() {
           selectKyc(firstItem)
         }
       }
+    } catch (err: any) {
+      showNotice(err.message || 'Không thể tải danh sách KYC');
     } finally {
       loading.value = false
     }
@@ -70,16 +72,16 @@ export function useAdminKyc() {
 
   function selectKyc(kyc: HostKyc) {
     selectedKyc.value = kyc
-    reviewerNotes.value = kyc.reviewerNotes || ''
+    reviewer_notes.value = kyc.reviewer_notes || ''
     selectedRejectReason.value = ''
     customRejectReason.value = ''
-    if (kyc.checklistState) {
+    if (kyc.checklist_state) {
       checklist.value = {
-        repIdentityMatched: kyc.checklistState.repIdentityMatched ?? true,
-        businessLicenseValid: kyc.checklistState.businessLicenseValid ?? true,
-        bankAccountMatched: kyc.checklistState.bankAccountMatched ?? true,
-        brandNameDiscrepancyAccepted: kyc.checklistState.brandNameDiscrepancyAccepted ?? false,
-        facilityInspected: kyc.checklistState.facilityInspected ?? true,
+        rep_identity_matched: kyc.checklist_state.rep_identity_matched ?? true,
+        business_license_valid: kyc.checklist_state.business_license_valid ?? true,
+        bank_account_matched: kyc.checklist_state.bank_account_matched ?? true,
+        brand_name_discrepancy_accepted: kyc.checklist_state.brand_name_discrepancy_accepted ?? false,
+        facility_inspected: kyc.checklist_state.facility_inspected ?? true,
       }
     }
   }
@@ -99,13 +101,15 @@ export function useAdminKyc() {
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {
         decision: 'approve',
-        reviewerNotes: reviewerNotes.value,
-        checklistState: checklist.value,
+        reviewer_notes: reviewer_notes.value,
+        checklist_state: checklist.value,
       })
       showNotice(res.message)
       selectedKyc.value.status = 'approved'
       await fetchQueue()
       await fetchStats()
+    } catch (err: any) {
+      showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       isSubmitting.value = false
     }
@@ -118,14 +122,16 @@ export function useAdminKyc() {
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {
         decision: 'reject',
-        rejectionReason: reason,
-        reviewerNotes: reviewerNotes.value,
-        checklistState: checklist.value,
+        rejection_reason: reason,
+        reviewer_notes: reviewer_notes.value,
+        checklist_state: checklist.value,
       })
       showNotice(res.message)
       selectedKyc.value.status = 'rejected'
       await fetchQueue()
       await fetchStats()
+    } catch (err: any) {
+      showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       isSubmitting.value = false
     }
@@ -138,14 +144,16 @@ export function useAdminKyc() {
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {
         decision: 'request_supplement',
-        rejectionReason: reason,
-        reviewerNotes: reviewerNotes.value,
-        checklistState: checklist.value,
+        rejection_reason: reason,
+        reviewer_notes: reviewer_notes.value,
+        checklist_state: checklist.value,
       })
       showNotice(res.message)
       selectedKyc.value.status = 'needs_supplement'
       await fetchQueue()
       await fetchStats()
+    } catch (err: any) {
+      showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       isSubmitting.value = false
     }
@@ -160,10 +168,10 @@ export function useAdminKyc() {
       const q = searchQuery.value.toLowerCase().trim()
       list = list.filter(
         (item) =>
-          item.kycCode.toLowerCase().includes(q) ||
-          item.businessName.toLowerCase().includes(q) ||
-          item.representativeName.toLowerCase().includes(q) ||
-          item.taxCode.includes(q)
+          item.kyc_code.toLowerCase().includes(q) ||
+          item.business_name.toLowerCase().includes(q) ||
+          item.representative_name.toLowerCase().includes(q) ||
+          item.tax_code.includes(q)
       )
     }
     return list
@@ -186,7 +194,7 @@ export function useAdminKyc() {
     filteredQueue,
     selectedRejectReason,
     customRejectReason,
-    reviewerNotes,
+    reviewer_notes,
     checklist,
     selectKyc,
     fetchQueue,

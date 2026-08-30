@@ -1,4 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { socialApi } from '@/features/social/api/socialApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface SocialMatch {
   id: number
@@ -24,6 +26,7 @@ export interface SocialMatch {
 }
 
 export function useSocialTournament() {
+  const loading = ref(false)
   const activeTab = ref<'matches' | 'partners' | 'profile'>('matches')
   const searchQuery = ref('')
   const filterSkill = ref('all')
@@ -35,47 +38,37 @@ export function useSocialTournament() {
   const selectedMatchForJoin = ref<SocialMatch | null>(null)
   const showPartnerFinder = ref(false)
 
-  const matches = ref<SocialMatch[]>([
-    {
-      id: 1,
-      title: 'Kèo Đôi Nam 2-4-6 Buổi Tối Sôi Động',
-      venue_name: 'Downtown Arena (Quận 1)',
-      court_name: 'Sân 2 (VIP)',
-      city: 'Hồ Chí Minh',
-      starts_at: '19:00 - 21:00, Hôm nay',
-      joined_count: 3,
-      required_participants: 4,
-      visibility: 'public',
-      min_skill: 3,
-      max_skill: 5,
-      host_name: 'Hoàng Long',
-      description: 'Tìm 1 bạn nam trình độ 3.5+ giao lưu vui vẻ, chia đều tiền sân + nước.',
-      participants: [
-        { id: 1, name: 'Hoàng Long', skill_level: 4 },
-        { id: 2, name: 'Minh Trí', skill_level: 3.5 },
-        { id: 3, name: 'Quốc Bảo', skill_level: 4 },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Giao Lưu Đôi Nam Nữ Cuối Tuần',
-      venue_name: 'Westside Courts (Bình Thạnh)',
-      court_name: 'Sân 5',
-      city: 'Hồ Chí Minh',
-      starts_at: '08:00 - 10:00, Chủ Nhật',
-      joined_count: 2,
-      required_participants: 4,
-      visibility: 'public',
-      min_skill: 2,
-      max_skill: 4,
-      host_name: 'Thu Trang',
-      description: 'Nhóm phong trào cần thêm 2 bạn đánh vui, rèn luyện sức khoẻ cuối tuần.',
-      participants: [
-        { id: 10, name: 'Thu Trang', skill_level: 2.5 },
-        { id: 11, name: 'Văn Nam', skill_level: 3 },
-      ],
-    },
-  ])
+  const matches = ref<SocialMatch[]>([])
+
+  async function loadMatches() {
+    loading.value = true
+    error.value = ''
+    try {
+      const res = await socialApi.getMatches<{ matches?: any[]; data?: any[] }>()
+      const list = res?.matches || res?.data || (Array.isArray(res) ? res : [])
+      matches.value = list.map((m: any) => ({
+        id: m.id,
+        title: m.title || `Kèo giao lưu #${m.id}`,
+        venue_name: m.venue?.name || m.venue_name || 'Cơ sở Aura',
+        court_name: m.court?.name || m.court_name || 'Sân tiêu chuẩn',
+        city: m.venue?.city || 'Hồ Chí Minh',
+        starts_at: m.starts_at || '19:00 - 21:00',
+        joined_count: m.joined_count || m.participants?.length || 1,
+        required_participants: m.required_participants || 4,
+        visibility: m.visibility || 'public',
+        min_skill: m.min_skill,
+        max_skill: m.max_skill,
+        host_name: m.host?.name || m.host_name || 'Chủ kèo',
+        host_avatar: m.host?.avatar || m.host_avatar,
+        description: m.description || '',
+        participants: m.participants || [],
+      }))
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách kèo giao lưu.')
+    } finally {
+      loading.value = false
+    }
+  }
 
   const filteredMatches = computed(() => {
     return matches.value.filter((m) => {
@@ -97,13 +90,25 @@ export function useSocialTournament() {
     }, 4000)
   }
 
-  function joinMatch(match: SocialMatch) {
-    match.joined_count++
-    showNotice(`Đã tham gia trận giao lưu "${match.title}" thành công!`)
-    selectedMatchForJoin.value = null
+  async function joinMatch(match: SocialMatch) {
+    loading.value = true
+    try {
+      await socialApi.joinMatch(match.id)
+      match.joined_count++
+      showNotice(`Đã tham gia kèo "${match.title}" thành công!`)
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tham gia kèo đấu.')
+    } finally {
+      loading.value = false
+    }
   }
 
+  onMounted(() => {
+    loadMatches()
+  })
+
   return {
+    loading,
     activeTab,
     searchQuery,
     filterSkill,
@@ -116,5 +121,6 @@ export function useSocialTournament() {
     filteredMatches,
     showNotice,
     joinMatch,
+    loadMatches,
   }
 }

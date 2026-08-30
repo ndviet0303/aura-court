@@ -1,11 +1,9 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { TournamentItem } from '../types/tournament'
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import { useAuthStore } from '@/stores/auth'
 
 export function useTournamentsList() {
-  const auth = useAuthStore()
   const activeTab = ref<'all' | 'open' | 'ongoing' | 'completed' | 'my'>('all')
   const searchQuery = ref('')
   const selectedSport = ref('all')
@@ -19,88 +17,11 @@ export function useTournamentsList() {
   const selectedTournamentForRegister = ref<TournamentItem | null>(null)
   const selectedTournamentForBracket = ref<TournamentItem | null>(null)
 
-  const sampleTournaments = ref<TournamentItem[]>([
-    {
-      id: 1,
-      name: 'Aura Master Open Championship 2026',
-      title: 'Aura Master Open Championship 2026',
-      slug: 'aura-master-open-2026',
-      category: 'Đôi Nam - Hạng A Pro',
-      sport: 'badminton',
-      format: 'single_elimination',
-      status: 'ongoing',
-      prize_pool: '50.000.000 ₫',
-      dates: '28/08 - 02/09/2026',
-      venue: 'Aura Central Arena',
-      city: 'Hồ Chí Minh',
-      current_slots: 16,
-      max_slots: 16,
-      entry_fee: '500.000 ₫ / Cặp',
-      image_url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
-      description: 'Giải đấu quy tụ các tay vợt hàng đầu miền Nam tranh tài với hệ thống camera AI VAR công nghệ cao.',
-      version: 1,
-      current_match: {
-        round_label: 'Chung Kết Sân 1',
-        court: 'Sân Trung Tâm',
-        player1_name: 'Nguyễn Tiến Minh / Phạm Cao Cường',
-        player2_name: 'Lê Đức Phát / Nguyễn Hải Đăng',
-        p1_scores: [21, 19, 14],
-        p2_scores: [18, 21, 12],
-      },
-    },
-    {
-      id: 2,
-      name: 'Saigon Smashers Cup Mùa Thu',
-      title: 'Saigon Smashers Cup Mùa Thu',
-      slug: 'saigon-smashers-autumn',
-      category: 'Đôi Nam Nữ - Phong Trào B',
-      sport: 'badminton',
-      format: 'round_robin',
-      status: 'open',
-      prize_pool: '25.000.000 ₫',
-      dates: '15/09 - 18/09/2026',
-      venue: 'Westside Courts',
-      city: 'Hồ Chí Minh',
-      current_slots: 12,
-      max_slots: 24,
-      entry_fee: '350.000 ₫ / Cặp',
-      image_url: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=800&q=80',
-      description: 'Giải phong trào giao lưu gắn kết cộng đồng lông thủ yêu thể thao tại TP.HCM.',
-      version: 1,
-    },
-    {
-      id: 3,
-      name: 'Aura Summer Circuit - Hạng C',
-      title: 'Aura Summer Circuit - Hạng C',
-      slug: 'aura-summer-circuit-c',
-      category: 'Đơn Nam - Nghiệp Dư',
-      sport: 'badminton',
-      format: 'single_elimination',
-      status: 'completed',
-      prize_pool: '15.000.000 ₫',
-      dates: '10/08 - 12/08/2026',
-      venue: 'Aura Central Arena',
-      city: 'Hồ Chí Minh',
-      current_slots: 32,
-      max_slots: 32,
-      entry_fee: '200.000 ₫',
-      image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
-      description: 'Giải đấu kết thúc với chức vô địch thuộc về tay vợt Trần Minh Quân.',
-      version: 1,
-      winner_team: 'Trần Minh Quân',
-      runner_up: 'Lê Hoàng Long',
-    },
-  ])
-
-  const circuitLeaderboard = ref([
-    { rank: 1, name: 'CLB Smash Master', points: 2850, tournamentsWon: 4, avatar: '🏆' },
-    { rank: 2, name: 'Saigon Badminton Club', points: 2420, tournamentsWon: 3, avatar: '🥈' },
-    { rank: 3, name: 'Tân Bình Shuttlecocks', points: 1980, tournamentsWon: 2, avatar: '🥉' },
-    { rank: 4, name: 'Aura Elite Team', points: 1750, tournamentsWon: 1, avatar: '🏸' },
-  ])
+  const tournaments = ref<TournamentItem[]>([])
+  const circuitLeaderboard = ref<Array<{ rank: number; name: string; points: number; tournamentsWon: number; avatar: string }>>([])
 
   const filteredTournaments = computed(() => {
-    return sampleTournaments.value.filter((t) => {
+    return tournaments.value.filter((t) => {
       const matchTab =
         activeTab.value === 'all' ||
         (activeTab.value === 'open' && t.status === 'open') ||
@@ -122,6 +43,21 @@ export function useTournamentsList() {
     })
   })
 
+  async function loadTournaments() {
+    loading.value = true
+    error.value = ''
+    try {
+      const res = await tournamentApi.list<TournamentItem[]>()
+      if (Array.isArray(res)) {
+        tournaments.value = res
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách giải đấu.')
+    } finally {
+      loading.value = false
+    }
+  }
+
   function showNotice(msg: string) {
     notice.value = msg
     setTimeout(() => {
@@ -129,12 +65,24 @@ export function useTournamentsList() {
     }, 4500)
   }
 
-  function registerAthlete(payload: { name: string; phone: string; partnerName?: string }) {
+  async function registerAthlete(payload: { name: string; phone: string; partnerName?: string }) {
     if (!selectedTournamentForRegister.value) return
-    selectedTournamentForRegister.value.current_slots++
-    showNotice(`Đã ghi danh tham dự giải "${selectedTournamentForRegister.value.name}" thành công!`)
-    selectedTournamentForRegister.value = null
+    processing.value = true
+    try {
+      await tournamentApi.checkInParticipant(selectedTournamentForRegister.value.id, payload)
+      selectedTournamentForRegister.value.current_slots = (selectedTournamentForRegister.value.current_slots || 0) + 1
+      showNotice(`Đã ghi danh tham dự giải "${selectedTournamentForRegister.value.name}" thành công!`)
+      selectedTournamentForRegister.value = null
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể ghi danh tham gia giải đấu.')
+    } finally {
+      processing.value = false
+    }
   }
+
+  onMounted(() => {
+    loadTournaments()
+  })
 
   return {
     activeTab,
@@ -147,9 +95,10 @@ export function useTournamentsList() {
     error,
     selectedTournamentForRegister,
     selectedTournamentForBracket,
-    sampleTournaments,
+    tournaments,
     circuitLeaderboard,
     filteredTournaments,
+    loadTournaments,
     showNotice,
     registerAthlete,
   }

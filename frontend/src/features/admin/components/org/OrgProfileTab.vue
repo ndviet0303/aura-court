@@ -12,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const name = ref(props.org.name)
-const taxCode = ref(props.org.tax_code || '')
+const tax_code = ref(props.org.tax_code || '')
 const supportEmail = ref(props.org.support_email || '')
 const phone = ref(props.org.phone || '')
 const address = ref(props.org.address || '')
@@ -22,7 +22,7 @@ watch(
   () => props.org,
   (o) => {
     name.value = o.name
-    taxCode.value = o.tax_code || ''
+    tax_code.value = o.tax_code || ''
     supportEmail.value = o.support_email || ''
     phone.value = o.phone || ''
     address.value = o.address || ''
@@ -33,7 +33,7 @@ watch(
 function handleSave() {
   emit('save', {
     name: name.value.trim(),
-    tax_code: taxCode.value.trim(),
+    tax_code: tax_code.value.trim(),
     support_email: supportEmail.value.trim(),
     phone: phone.value.trim(),
     address: address.value.trim(),
@@ -55,7 +55,7 @@ function handleSave() {
 
         <div class="form-group">
           <label class="form-label">Mã số thuế (Tax ID):</label>
-          <input v-model="taxCode" type="text" class="form-input" />
+          <input v-model="tax_code" type="text" class="form-input" />
         </div>
 
         <div class="form-group">

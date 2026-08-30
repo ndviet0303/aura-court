@@ -1,7 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { apiOrigin } from '@/core/api/client'
 import { adminApi } from '../api/adminApi'
-import { bookingApi } from '@/features/booking/api/bookingApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface AdminReport {
@@ -46,62 +45,17 @@ export function useAdminDashboard() {
   const error = ref('')
 
   const report = ref<AdminReport>({
-    bookings: 142,
-    confirmed: 128,
-    revenue: 38450000,
-    pendingRefunds: 2,
-    occupancyRate: 84.5,
-    byHour: [
-      { hour: '06:00', bookings: 4 },
-      { hour: '08:00', bookings: 8 },
-      { hour: '17:00', bookings: 24 },
-      { hour: '19:00', bookings: 32 },
-      { hour: '21:00', bookings: 16 },
-    ],
-    byCourt: [
-      { court_id: 1, bookings: 45, revenue: 12500000, court: { id: 1, name: 'Sân 01 (Thảm BWF)' } },
-      { court_id: 2, bookings: 38, revenue: 10800000, court: { id: 2, name: 'Sân 02 (VIP)' } },
-      { court_id: 3, bookings: 32, revenue: 8900000, court: { id: 3, name: 'Sân 03' } },
-    ],
+    bookings: 0,
+    confirmed: 0,
+    revenue: 0,
+    pendingRefunds: 0,
+    occupancyRate: 0,
+    byHour: [],
+    byCourt: [],
   })
 
-  const bookings = ref<AdminBooking[]>([
-    {
-      id: 101,
-      code: 'BK-89021',
-      status: 'confirmed',
-      total_amount: 360000,
-      created_at: '2026-08-30 08:30',
-      user: { name: 'Nguyễn Văn A', email: 'vana@gmail.com' },
-      court: { id: 1, name: 'Sân 01' },
-      slots: [{ starts_at: '18:00', ends_at: '20:00' }],
-    },
-    {
-      id: 102,
-      code: 'BK-89022',
-      status: 'pending',
-      total_amount: 180000,
-      created_at: '2026-08-30 09:15',
-      user: { name: 'Trần Thị B', email: 'thib@gmail.com' },
-      court: { id: 2, name: 'Sân 02' },
-      slots: [{ starts_at: '19:00', ends_at: '20:00' }],
-    },
-  ])
-
-  const payments = ref<ReviewPayment[]>([
-    {
-      id: 501,
-      amount: 360000,
-      transfer_code: 'AURA BK-89021',
-      status: 'pending',
-      created_at: '2026-08-30 08:32',
-      booking: {
-        code: 'BK-89021',
-        user: { name: 'Nguyễn Văn A', email: 'vana@gmail.com' },
-        court: { name: 'Sân 01' },
-      },
-    },
-  ])
+  const bookings = ref<AdminBooking[]>([])
+  const payments = ref<ReviewPayment[]>([])
 
   const datePreset = ref<'today' | '7days' | 'thisMonth' | 'custom'>('thisMonth')
   const from = ref('')
@@ -139,7 +93,7 @@ export function useAdminDashboard() {
     return bookings.value.filter((b) => {
       const matchSearch =
         !searchFilter.value ||
-        b.code.toLowerCase().includes(searchFilter.value.toLowerCase()) ||
+        b.code?.toLowerCase().includes(searchFilter.value.toLowerCase()) ||
         (b.user?.name || '').toLowerCase().includes(searchFilter.value.toLowerCase())
 
       const matchStatus = !statusFilter.value || b.status === statusFilter.value
@@ -150,11 +104,30 @@ export function useAdminDashboard() {
 
   async function loadData() {
     loading.value = true
+    error.value = ''
     try {
-      const res = await adminApi.getReports<AdminReport>(`from=${from.value}&to=${to.value}`)
-      if (res) report.value = res
-    } catch (e) {
-      // fallback
+      const [resReport, resBookings, resPayments] = await Promise.allSettled([
+        adminApi.getReports<AdminReport>(`from=${from.value}&to=${to.value}`),
+        adminApi.getBookings<{ data: AdminBooking[] } | AdminBooking[]>(),
+        adminApi.getPayments<ReviewPayment[]>(),
+      ])
+
+      if (resReport.status === 'fulfilled' && resReport.value) {
+        report.value = resReport.value
+      }
+      if (resBookings.status === 'fulfilled') {
+        const bData = resBookings.value
+        if (Array.isArray(bData)) {
+          bookings.value = bData
+        } else if (bData && Array.isArray((bData as { data: AdminBooking[] }).data)) {
+          bookings.value = (bData as { data: AdminBooking[] }).data
+        }
+      }
+      if (resPayments.status === 'fulfilled' && Array.isArray(resPayments.value)) {
+        payments.value = resPayments.value
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải số liệu báo cáo.')
     } finally {
       loading.value = false
     }
@@ -166,6 +139,11 @@ export function useAdminDashboard() {
       if (notice.value === msg) notice.value = ''
     }, 4000)
   }
+
+  onMounted(() => {
+    applyPreset('thisMonth')
+    loadData()
+  })
 
   return {
     loading,

@@ -1,6 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const daysInWeek = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật']
-const sampleDates = [25, 26, 27, 28, 29, 30, 31]
+
+const weekDates = computed(() => {
+  const now = new Date()
+  const currentDay = now.getDay() // 0 = Sun, 1 = Mon...
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay
+  return daysInWeek.map((_, idx) => {
+    const d = new Date(now)
+    d.setDate(now.getDate() + mondayOffset + idx)
+    return d.getDate()
+  })
+})
 </script>
 
 <template>
@@ -12,7 +24,7 @@ const sampleDates = [25, 26, 27, 28, 29, 30, 31]
 
     <div class="calendar-grid">
       <div v-for="(day, idx) in daysInWeek" :key="day" class="day-col">
-        <div class="day-hdr">{{ day }} ({{ sampleDates[idx] }})</div>
+        <div class="day-hdr">{{ day }} ({{ weekDates[idx] }})</div>
         <div class="slots-list">
           <div class="slot-item off-peak">
             <span class="time">06:00 - 11:00</span>

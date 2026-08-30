@@ -17,13 +17,13 @@ export function useAdminDisputes() {
   const activeEvidenceTab = ref<'logs' | 'chat' | 'map'>('logs')
 
   const stats = ref<DisputeStats>({
-    pendingCount: 14,
-    investigatingCount: 6,
-    awaitingReplyCount: 3,
-    resolvedCount: 128,
-    criticalSlaCount: 2,
-    avgResolutionTimeMinutes: 18.5,
-    consensusRate: 98.2,
+    pending_count: 0,
+    investigatingCount: 0,
+    awaitingReplyCount: 0,
+    resolvedCount: 0,
+    criticalSlaCount: 0,
+    avgResolutionTimeMinutes: 0,
+    consensusRate: 100,
   })
 
   const disputes = ref<DisputeCase[]>([])
@@ -42,9 +42,9 @@ export function useAdminDisputes() {
         (item) =>
           item.disputeCode.toLowerCase().includes(kw) ||
           item.title.toLowerCase().includes(kw) ||
-          item.complainant.name.toLowerCase().includes(kw) ||
-          item.respondent.name.toLowerCase().includes(kw) ||
-          item.facility.name.toLowerCase().includes(kw)
+          item.complainant?.name?.toLowerCase().includes(kw) ||
+          item.respondent?.name?.toLowerCase().includes(kw) ||
+          item.facility?.name?.toLowerCase().includes(kw)
       )
     }
 
@@ -63,8 +63,8 @@ export function useAdminDisputes() {
       if (!selectedDispute.value && list.length > 0) {
         selectedDispute.value = list[0] || null
       }
-    } catch {
-      // Handled via fallback
+    } catch (e: unknown) {
+      notice.value = e instanceof Error ? e.message : 'Không thể tải danh sách tranh chấp.'
     } finally {
       loading.value = false
     }
@@ -119,7 +119,7 @@ export function useAdminDisputes() {
   }
 
   function handleRelocateCourt() {
-    notice.value = 'Đã gửi lệnh điều chuyển tự động sang Sân 7 cho cụm sân Phú Thọ.'
+    notice.value = 'Đã gửi lệnh điều chuyển tự động cho cơ sở thể thao.'
     setTimeout(() => {
       notice.value = null
     }, 4000)

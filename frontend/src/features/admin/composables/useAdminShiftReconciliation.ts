@@ -1,4 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { posApi } from '@/features/pos/api/posApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface DenominationCount {
   value: number
@@ -46,6 +48,32 @@ export interface CashShiftItem {
   review_note?: string | null
 }
 
+const defaultShift: CashShiftItem = {
+  id: 0,
+  code: 'SH-NONE',
+  cashier_id: 0,
+  cashier_name: 'Chưa mở ca',
+  venue_name: 'Cơ sở chính',
+  shift_name: 'Chưa có ca làm việc',
+  opened_at: new Date().toISOString(),
+  closed_at: null,
+  status: 'closed',
+  opening_cash: 0,
+  cash_sales: 0,
+  qr_sales: 0,
+  wallet_sales: 0,
+  total_sales: 0,
+  expected_cash: 0,
+  declared_cash: 0,
+  variance: 0,
+  cash_drops_total: 0,
+  cash_drops: [],
+  orders_count: 0,
+  court_orders_count: 0,
+  pos_orders_count: 0,
+  reconciliation_status: 'matched',
+}
+
 export function useAdminShiftReconciliation() {
   const loading = ref(false)
   const saving = ref(false)
@@ -55,109 +83,17 @@ export function useAdminShiftReconciliation() {
   const searchQuery = ref('')
   const statusFilter = ref<'all' | 'open' | 'matched' | 'exception' | 'approved'>('all')
 
-  const activeShift = ref<CashShiftItem>({
-    id: 89,
-    code: 'SH-2026-089',
-    cashier_id: 1,
-    cashier_name: 'Nguyễn Văn A',
-    venue_name: 'Aura Central Arena - Quầy Thu Ngân 01',
-    shift_name: 'Ca Sáng (06:00 - 14:00)',
-    opened_at: '2026-08-30 06:00:00',
-    closed_at: null,
-    status: 'open',
-    opening_cash: 1500000,
-    cash_sales: 4250000,
-    qr_sales: 12800000,
-    wallet_sales: 3500000,
-    total_sales: 20550000,
-    expected_cash: 5550000,
-    declared_cash: 5500000,
-    variance: -50000,
-    cash_drops_total: 200000,
-    cash_drops: [
-      {
-        id: 'CD-01',
-        time: '08:30',
-        amount: 200000,
-        reason: 'Mua đá lạnh & túi rác quầy F&B',
-        created_by: 'Nguyễn Văn A',
-        recipient: 'Tạp hóa Minh Tâm',
-      },
-    ],
-    orders_count: 42,
-    court_orders_count: 28,
-    pos_orders_count: 14,
-    note: 'Két có đủ tiền mệnh giá nhỏ 10k, 20k, 50k phục vụ trả tiền lẻ cho khách đầu ngày.',
-    variance_reason: 'Khách thanh toán đơn POS F&B thiếu 50k tiền mặt, hẹn trả bù ca chiều khi vào sân thi đấu.',
-    reconciliation_status: 'exception_short',
-  })
-
-  const shiftHistory = ref<CashShiftItem[]>([
-    {
-      id: 88,
-      code: 'SH-2026-088',
-      cashier_id: 2,
-      cashier_name: 'Trần Thị B',
-      venue_name: 'Aura Central Arena - Quầy 02',
-      shift_name: 'Ca Tối (14:00 - 22:00)',
-      opened_at: '2026-08-29 14:00:00',
-      closed_at: '2026-08-29 22:15:00',
-      status: 'closed',
-      opening_cash: 2000000,
-      cash_sales: 8500000,
-      qr_sales: 24600000,
-      wallet_sales: 6200000,
-      total_sales: 39300000,
-      expected_cash: 10500000,
-      declared_cash: 10500000,
-      variance: 0,
-      cash_drops_total: 0,
-      cash_drops: [],
-      orders_count: 68,
-      court_orders_count: 45,
-      pos_orders_count: 23,
-      reconciliation_status: 'matched',
-      reviewed_by: 'Admin Elena',
-      reviewed_at: '2026-08-29 22:30:00',
-    },
-    {
-      id: 87,
-      code: 'SH-2026-087',
-      cashier_id: 3,
-      cashier_name: 'Lê Văn C',
-      venue_name: 'Westside Courts',
-      shift_name: 'Ca Sáng (06:00 - 14:00)',
-      opened_at: '2026-08-29 06:00:00',
-      closed_at: '2026-08-29 14:05:00',
-      status: 'closed',
-      opening_cash: 1500000,
-      cash_sales: 3800000,
-      qr_sales: 9400000,
-      wallet_sales: 2100000,
-      total_sales: 15300000,
-      expected_cash: 5300000,
-      declared_cash: 5320000,
-      variance: 20000,
-      cash_drops_total: 0,
-      cash_drops: [],
-      orders_count: 32,
-      court_orders_count: 20,
-      pos_orders_count: 12,
-      variance_reason: 'Khách tip thêm 20k tiền thối.',
-      reconciliation_status: 'approved',
-      reviewed_by: 'Admin Elena',
-      reviewed_at: '2026-08-29 15:00:00',
-    },
-  ])
+  const activeShift = ref<CashShiftItem>({ ...defaultShift })
+  const shiftHistory = ref<CashShiftItem[]>([])
 
   const denominations = ref<DenominationCount[]>([
-    { value: 500000, count: 6 },
-    { value: 200000, count: 8 },
-    { value: 100000, count: 7 },
-    { value: 50000, count: 3 },
-    { value: 20000, count: 4 },
-    { value: 10000, count: 6 },
-    { value: 5000, count: 2 },
+    { value: 500000, count: 0 },
+    { value: 200000, count: 0 },
+    { value: 100000, count: 0 },
+    { value: 50000, count: 0 },
+    { value: 20000, count: 0 },
+    { value: 10000, count: 0 },
+    { value: 5000, count: 0 },
     { value: 2000, count: 0 },
     { value: 1000, count: 0 },
   ])
@@ -165,6 +101,60 @@ export function useAdminShiftReconciliation() {
   const totalDenominationCash = computed(() => {
     return denominations.value.reduce((sum, item) => sum + item.value * item.count, 0)
   })
+
+  function mapPosShift(raw: any): CashShiftItem {
+    return {
+      id: raw.id,
+      code: raw.code || `SH-${raw.id}`,
+      cashier_id: raw.user_id || raw.cashier_id || 1,
+      cashier_name: raw.user?.name || raw.cashier_name || 'Thu ngân',
+      venue_name: raw.venue?.name || 'Aura Central Arena',
+      shift_name: raw.name || 'Ca làm việc',
+      opened_at: raw.opened_at || raw.created_at || new Date().toISOString(),
+      closed_at: raw.closed_at || null,
+      status: raw.status || (raw.closed_at ? 'closed' : 'open'),
+      opening_cash: Number(raw.opening_cash || raw.initial_cash || 0),
+      cash_sales: Number(raw.cash_sales || 0),
+      qr_sales: Number(raw.qr_sales || 0),
+      wallet_sales: Number(raw.wallet_sales || 0),
+      total_sales: Number(raw.total_sales || 0),
+      expected_cash: Number(raw.expected_cash || 0),
+      declared_cash: Number(raw.declared_cash || 0),
+      variance: Number(raw.variance || 0),
+      cash_drops_total: Number(raw.cash_drops_total || 0),
+      cash_drops: raw.cash_drops || [],
+      orders_count: raw.orders_count || 0,
+      court_orders_count: raw.court_orders_count || 0,
+      pos_orders_count: raw.pos_orders_count || 0,
+      note: raw.note,
+      variance_reason: raw.variance_reason,
+      reconciliation_status: raw.reconciliation_status || (raw.variance === 0 ? 'matched' : 'exception_short'),
+      reviewed_by: raw.reviewed_by,
+      reviewed_at: raw.reviewed_at,
+    }
+  }
+
+  async function loadShifts() {
+    loading.value = true
+    error.value = ''
+    try {
+      const [activeRes, historyRes] = await Promise.allSettled([
+        posApi.getActiveShift(),
+        posApi.getShifts(),
+      ])
+
+      if (activeRes.status === 'fulfilled' && activeRes.value) {
+        activeShift.value = mapPosShift(activeRes.value)
+      }
+      if (historyRes.status === 'fulfilled' && Array.isArray(historyRes.value)) {
+        shiftHistory.value = historyRes.value.map(mapPosShift)
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải dữ liệu ca làm việc.')
+    } finally {
+      loading.value = false
+    }
+  }
 
   const filteredHistory = computed(() => {
     return shiftHistory.value.filter((shift) => {
@@ -209,6 +199,10 @@ export function useAdminShiftReconciliation() {
     showNotice(`Đã ghi nhận rút tiền két ${payload.amount.toLocaleString('vi-VN')} ₫`)
   }
 
+  onMounted(() => {
+    loadShifts()
+  })
+
   return {
     loading,
     saving,
@@ -223,5 +217,6 @@ export function useAdminShiftReconciliation() {
     filteredHistory,
     showNotice,
     addCashDrop,
+    loadShifts,
   }
 }

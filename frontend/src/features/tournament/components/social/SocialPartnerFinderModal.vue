@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { apiV2 } from '@/core/api/client'
 
 defineProps<{
   show: boolean
@@ -9,11 +10,34 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const partnerList = ref([
-  { id: 1, name: 'Lê Minh Quân', level: 'Level 4.0 Pro', badge: 'Chuyên Đôi Nam', city: 'Quận 1, TP.HCM' },
-  { id: 2, name: 'Nguyễn Bích Ngọc', level: 'Level 3.5 Khá', badge: 'Chuyên Đôi Nam Nữ', city: 'Bình Thạnh, TP.HCM' },
-  { id: 3, name: 'Trần Văn Đức', level: 'Level 4.5 Master', badge: 'Cựu VĐV Trẻ', city: 'Thủ Đức, TP.HCM' },
-])
+export interface PartnerRequest {
+  id: number
+  name: string
+  level: string
+  badge: string
+  city: string
+}
+
+const partnerList = ref<PartnerRequest[]>([])
+const loading = ref(false)
+
+async function loadPartners() {
+  loading.value = true
+  try {
+    const res = await apiV2.get<{ data: PartnerRequest[] }>('/social/partners')
+    if (res?.data) {
+      partnerList.value = res.data
+    }
+  } catch {
+    partnerList.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadPartners()
+})
 </script>
 
 <template>
@@ -27,7 +51,7 @@ const partnerList = ref([
       <div class="modal-body">
         <p class="sub">Danh sách các tay vợt đang tìm partner cùng hạng đấu tại khu vực của bạn:</p>
 
-        <div class="partners-list">
+        <div v-if="partnerList.length > 0" class="partners-list">
           <div v-for="p in partnerList" :key="p.id" class="partner-row">
             <div class="p-info">
               <strong>{{ p.name }}</strong>
@@ -39,6 +63,10 @@ const partnerList = ref([
               💬 Nhắn Tin
             </button>
           </div>
+        </div>
+
+        <div v-else class="empty-partners">
+          <span>Chưa có vận động viên nào đăng tin tìm bạn ghép cặp.</span>
         </div>
       </div>
 
@@ -56,6 +84,13 @@ const partnerList = ref([
   color: var(--muted);
 }
 
+.empty-partners {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .partners-list {
   display: flex;
   flex-direction: column;
@@ -67,21 +102,20 @@ const partnerList = ref([
   justify-content: space-between;
   align-items: center;
   padding: 12px 14px;
+  background: var(--surface-subtle);
   border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .p-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 13px;
 }
 
 .p-meta {
-  font-size: 11px;
-  color: var(--pink-dark, #db2777);
+  font-size: 12px;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -91,21 +125,18 @@ const partnerList = ref([
 }
 
 .btn-connect {
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 700;
   font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
 }
 
-.btn-cancel {
-  padding: 8px 18px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
+.btn-connect:hover {
+  background: var(--primary);
+  color: #fff;
 }
 </style>

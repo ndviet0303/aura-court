@@ -58,11 +58,11 @@ function handleSubmit() {
       <div class="target-summary-box">
         <div class="summary-row">
           <span class="summary-label">Mã giao dịch:</span>
-          <span class="font-mono font-bold">{{ item.code }}</span>
+          <span class="font-mono font-bold">{{ item.reference }}</span>
         </div>
         <div class="summary-row">
           <span class="summary-label">Chủ thể:</span>
-          <span>{{ item.user.name }} ({{ item.user.id }})</span>
+          <span>{{ (item.resolver?.name || 'Hệ thống') }} ({{ (item.resolver?.id || '') }})</span>
         </div>
         <div class="summary-row">
           <span class="summary-label">Số tiền yêu cầu:</span>
@@ -70,7 +70,7 @@ function handleSubmit() {
         </div>
         <div class="summary-row">
           <span class="summary-label">Lý do cảnh báo:</span>
-          <span class="reason-pill">{{ item.reason }}</span>
+          <span class="reason-pill">{{ item.description }}</span>
         </div>
       </div>
 
@@ -99,8 +99,8 @@ function handleSubmit() {
       <!-- E-Signature box -->
       <div class="form-group">
         <label class="form-label">Chữ ký số điện tử & Xác thực quyền</label>
-        <div class="signature-canvas-mock">
-          <span class="sign-text">✍️ Đã xác thực Super Admin: Nguyễn Văn An</span>
+        <div class="signature-canvas-box">
+          <span class="sign-text">✍️ Đã xác thực Chữ ký số Quản trị viên</span>
         </div>
       </div>
 
@@ -242,11 +242,11 @@ function handleSubmit() {
   text-align: right;
 }
 
-.signature-canvas-mock {
-  border: 1px dashed #e1e3e4;
-  background: #f8f9fa;
+.signature-canvas-box {
+  border: 1px dashed var(--border);
   border-radius: 8px;
-  padding: 18px;
+  background: var(--surface-subtle);
+  padding: 16px;
   text-align: center;
   font-size: 13px;
   color: #78555e;

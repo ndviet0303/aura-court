@@ -12,7 +12,7 @@ defineProps<{
     <div class="kpi-card">
       <div class="kpi-label">Hồ sơ Chờ thẩm định</div>
       <div class="kpi-value-row">
-        <span class="kpi-number">{{ stats.pendingCount }}</span>
+        <span class="kpi-number">{{ stats.pending_count }}</span>
         <span class="kpi-badge warning">3 ưu tiên</span>
       </div>
       <div class="kpi-desc">Cần xử lý trước giờ mở sàn giao dịch</div>
@@ -22,7 +22,7 @@ defineProps<{
     <div class="kpi-card">
       <div class="kpi-label">Độ tin cậy AI OCR & NAPAS</div>
       <div class="kpi-value-row">
-        <span class="kpi-number">{{ stats.aiConfidenceRate }}%</span>
+        <span class="kpi-number">{{ stats.ai_confidence_rate }}%</span>
         <span class="kpi-badge success">Tự động</span>
       </div>
       <div class="kpi-desc">Tỷ lệ so khớp CCCD & tài khoản ngân hàng</div>
@@ -32,7 +32,7 @@ defineProps<{
     <div class="kpi-card">
       <div class="kpi-label">Thời gian xử lý trung bình</div>
       <div class="kpi-value-row">
-        <span class="kpi-number">{{ stats.avgProcessingTimeMinutes }}</span>
+        <span class="kpi-number">{{ stats.avg_processing_time_minutes }}</span>
         <span class="kpi-unit">phút / hồ sơ</span>
       </div>
       <div class="kpi-desc">Tối ưu hơn 40% so với quy trình thủ công</div>
@@ -42,7 +42,7 @@ defineProps<{
     <div class="kpi-card alert-card">
       <div class="kpi-label alert-text">Cảnh báo sai lệch / Rủi ro</div>
       <div class="kpi-value-row">
-        <span class="kpi-number alert-text">{{ stats.flaggedCount }}</span>
+        <span class="kpi-number alert-text">{{ stats.flagged_count }}</span>
         <span class="kpi-badge danger">Cần can thiệp</span>
       </div>
       <div class="kpi-desc alert-desc">Trùng địa chỉ hoặc tên GPKD khác biệt</div>

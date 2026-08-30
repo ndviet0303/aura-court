@@ -30,20 +30,54 @@ vi.mock('@/core/api/client', () => ({
 }))
 
 describe('AdminStaffView', () => {
+  const sampleMembers = [
+    {
+      id: 1,
+      user_id: 101,
+      role: 'organization_owner',
+      status: 'active',
+      user: { id: 101, name: 'Elena Jackson', email: 'elena.j@auracourt.vn', phone: '0901 888 999' },
+      venue: { id: 0, name: 'Tất cả cơ sở' },
+    },
+    {
+      id: 2,
+      user_id: 102,
+      role: 'venue_manager',
+      status: 'active',
+      user: { id: 102, name: 'Marcus Reed', email: 'marcus.reed@auracourt.vn', phone: '0912 345 678' },
+      venue: { id: 1, name: 'Downtown Arena (Quận 1)' },
+    },
+  ]
+
+  const sampleLogs = [
+    {
+      id: 101,
+      user: { name: 'Elena Jackson' },
+      role: 'Owner',
+      action: 'Cập nhật bảng giá Giờ Vàng',
+      target: 'Sân 1 - Downtown Arena',
+      created_at: '2026-08-30T10:45:00Z',
+      ip: '118.69.182.45',
+      status: 'success',
+    },
+  ]
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
     vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url.includes('/members')) {
+        return { members: sampleMembers }
+      }
+      if (url.includes('/admin/audit-logs')) {
+        return { data: sampleLogs }
+      }
       if (url === '/admin/venues') {
-        return {
-          data: {
-            venues: [
-              { id: 1, name: 'Downtown Arena (Quận 1)', address: '12 Nguyễn Thị Minh Khai, Q.1' },
-              { id: 2, name: 'Westside Courts (Bình Thạnh)', address: '48 Ung Văn Khiêm, Bình Thạnh' },
-            ],
-          },
-        }
+        return [
+          { id: 1, name: 'Downtown Arena (Quận 1)', address: '12 Nguyễn Thị Minh Khai, Q.1' },
+          { id: 2, name: 'Westside Courts (Bình Thạnh)', address: '48 Ung Văn Khiêm, Bình Thạnh' },
+        ]
       }
       return { data: {} }
     })

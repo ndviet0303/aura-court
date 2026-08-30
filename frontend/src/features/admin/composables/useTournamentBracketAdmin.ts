@@ -1,8 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Participant, FixtureMatch, TournamentAdminData } from '../types/tournamentAdmin'
+import { tournamentApi } from '@/features/tournament/api/tournamentApi'
 import { getAvatarUrl } from '@/lib/avatar'
+import { errorMessage } from '@/core/utils/errorMessage'
 
 export function useTournamentBracketAdmin() {
+  const loading = ref(false)
   const tournament = ref<TournamentAdminData>({
     id: 1,
     name: 'Aura Summer Open 2026',
@@ -50,103 +53,21 @@ export function useTournamentBracketAdmin() {
   }
 
   // Participants Pool
-  const participants = ref<Participant[]>([
-    {
-      id: 1,
-      seed: 2,
-      name: 'Sarah Jenkins',
-      club: 'Apex Club',
-      level: 'Lvl 4',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJsiguMlxpH29yatca1UobOCVIf_jqlNd-KEux5AFneF-dJhGzpeO2YvTu1zAZzRmVmYjE0qMOk13bxRZ62pAjNLyiH4Bpt9UiIRAqNF2-a9PiROabximiKmNHWIJCL26hvjN0teoyI7cSsOvurJPA_d2zdc--qwO2LUwZl3B8rqGlKZccm6utDCLsD4fMoNSpWruuSdmZR2mGWjEs9cU-xcGUDefJmr0Ac8KRatJ4c__kOTuwnkzn',
-      checkedIn: true,
-      status: 'checked_in',
-      checkInTime: '08:14 AM',
-      paid: true,
-      racketChecked: true,
-      warmupCourt: 'Sân 1',
-      qrCode: 'ATH-001',
-      phone: '0901 234 567',
-      category: 'Đơn Nữ Nâng Cao',
-    },
-    {
-      id: 2,
-      name: 'Marcus Chen',
-      club: 'Independent',
-      level: 'Lvl 5',
-      initials: 'MC',
-      checkedIn: false,
-      status: 'pending',
-      estimatedArrival: 'Est. 09:00 AM',
-      paid: true,
-      racketChecked: false,
-      qrCode: 'ATH-002',
-      phone: '0902 345 678',
-      category: 'Đơn Nam Master',
-    },
-    {
-      id: 3,
-      name: 'David Rossi',
-      club: 'Velocity BC',
-      level: 'Lvl 3',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCMl0Mcaf--VMhvZnDiJsrRPfbPXP7RrOASs2LTNoHN382mwuPFUQm22uwkIg08iVKCB0bcRNxQyar61RWnVrEKTWNSrtaF8ycKTImSPgM40HW8LTZpkdyHt8rou4LkgwpOItOjvMMsnfe8prsgRbqBP8JVnsUOTMzVtdTqfsU7nWv6Rsqnxd1i2Y_8tvjkb0lrkxhk2M2KPfMI3J2H8UjyK7oPA4i3Dv65NSNPkCo9wQ5-QprN0tuf',
-      checkedIn: false,
-      status: 'pending',
-      estimatedArrival: 'Est. 09:30 AM',
-      paid: true,
-      racketChecked: false,
-      qrCode: 'ATH-003',
-      phone: '0903 456 789',
-      category: 'Đơn Nam Phong Trào',
-    },
-    {
-      id: 4,
-      seed: 1,
-      name: 'Chen Long',
-      club: 'Aura Elite',
-      level: 'Lvl 5',
-      avatar: getAvatarUrl('Chen Long'),
-      checkedIn: true,
-      status: 'checked_in',
-      checkInTime: '08:00 AM',
-      paid: true,
-      racketChecked: true,
-      warmupCourt: 'Sân VIP 1',
-      qrCode: 'ATH-004',
-      phone: '0904 567 890',
-      category: 'Đơn Nam Chuyên Nghiệp',
-    },
-    {
-      id: 5,
-      seed: 2,
-      name: 'Viktor Axelsen',
-      club: 'Viking Smash',
-      level: 'Lvl 5',
-      avatar: getAvatarUrl('Viktor Axelsen'),
-      checkedIn: true,
-      status: 'checked_in',
-      checkInTime: '08:15 AM',
-      paid: true,
-      racketChecked: true,
-      warmupCourt: 'Sân VIP 2',
-      qrCode: 'ATH-005',
-      phone: '0905 678 901',
-      category: 'Đơn Nam Chuyên Nghiệp',
-    },
-  ])
+  const participants = ref<Participant[]>([])
 
   // Athlete Check-in Filtering & Metrics
   const checkInFilterStatus = ref<'all' | 'pending' | 'checked_in' | 'no_show'>('all')
   const checkInSearchQuery = ref('')
 
   const checkInMetrics = computed(() => {
-    const total = 142
-    const checkedInCount = participants.value.filter((p) => p.checkedIn || p.status === 'checked_in').length + 56
-    const pendingCount = total - checkedInCount
-    const percentage = Math.round((checkedInCount / total) * 100)
+    const total = participants.value.length || 32
+    const checkedInCount = participants.value.filter((p) => p.checkedIn || p.status === 'checked_in').length
+    const pending_count = total - checkedInCount
+    const percentage = total > 0 ? Math.round((checkedInCount / total) * 100) : 0
     return {
       total,
       checkedInCount,
-      pendingCount,
+      pending_count,
       noShowCount: 0,
       percentage,
     }
@@ -171,96 +92,27 @@ export function useTournamentBracketAdmin() {
     })
   })
 
-  function toggleAthleteCheckIn(ath: Participant) {
-    ath.checkedIn = !ath.checkedIn
-    ath.status = ath.checkedIn ? 'checked_in' : 'pending'
-    if (ath.checkedIn) {
+  async function toggleAthleteCheckIn(ath: Participant) {
+    const nextState = !ath.checkedIn
+    ath.checkedIn = nextState
+    ath.status = nextState ? 'checked_in' : 'pending'
+    if (nextState) {
       ath.checkInTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
       showNotice(`Đã điểm danh VĐV: ${ath.name}`)
     } else {
       ath.checkInTime = undefined
       showNotice(`Đã huỷ điểm danh: ${ath.name}`)
     }
+
+    try {
+      await tournamentApi.checkInParticipant(ath.id, { checked_in: nextState })
+    } catch {
+      // optimistic check-in
+    }
   }
 
   // Matches Pool
-  const matches = ref<FixtureMatch[]>([
-    {
-      id: 101,
-      roundNumber: 1,
-      roundName: 'Round of 16',
-      position: 1,
-      matchNumber: 1,
-      courtName: 'Sân 1',
-      courtId: 1,
-      scheduledTime: '09:00',
-      status: 'completed',
-      player1: { id: 4, seed: 1, name: 'Chen Long', avatar: getAvatarUrl('Chen Long'), sets: [21, 21], isWinner: true },
-      player2: { id: 7, name: 'H. S. Prannoy', avatar: getAvatarUrl('H. S. Prannoy'), sets: [14, 18], isWinner: false },
-      winnerId: 4,
-      nextMatchId: 201,
-      nextMatchSlot: 1,
-    },
-    {
-      id: 102,
-      roundNumber: 1,
-      roundName: 'Round of 16',
-      position: 2,
-      matchNumber: 2,
-      courtName: 'Sân 2',
-      courtId: 2,
-      scheduledTime: '09:45',
-      status: 'completed',
-      player1: { id: 8, name: 'L. Sen', avatar: getAvatarUrl('L. Sen'), sets: [19, 21, 21], isWinner: true },
-      player2: { id: 9, name: 'Chou Tien-Chen', avatar: getAvatarUrl('Chou Tien-Chen'), sets: [21, 17, 16], isWinner: false },
-      winnerId: 8,
-      nextMatchId: 201,
-      nextMatchSlot: 2,
-    },
-    {
-      id: 201,
-      roundNumber: 2,
-      roundName: 'Quarter Finals',
-      position: 1,
-      matchNumber: 5,
-      courtName: 'Sân Trung Tâm A',
-      courtId: 1,
-      scheduledTime: '14:00',
-      status: 'live',
-      player1: { id: 4, seed: 1, name: 'Chen Long', avatar: getAvatarUrl('Chen Long'), sets: [21, 14], currentScore: 18, isServing: true },
-      player2: { id: 8, name: 'L. Sen', avatar: getAvatarUrl('L. Sen'), sets: [17, 21], currentScore: 17, isServing: false },
-      nextMatchId: 301,
-      nextMatchSlot: 1,
-    },
-    {
-      id: 301,
-      roundNumber: 3,
-      roundName: 'Semi Finals',
-      position: 1,
-      matchNumber: 7,
-      courtName: 'Sân Trung Tâm A',
-      courtId: 1,
-      scheduledTime: '16:30',
-      status: 'pending',
-      player1: { name: 'Thắng Tứ Kết 1', sets: [] },
-      player2: { name: 'Thắng Tứ Kết 2', sets: [] },
-      nextMatchId: 401,
-      nextMatchSlot: 1,
-    },
-    {
-      id: 401,
-      roundNumber: 4,
-      roundName: 'Finals',
-      position: 1,
-      matchNumber: 8,
-      courtName: 'Sân Chung Kết VIP',
-      courtId: 1,
-      scheduledTime: '18:00',
-      status: 'pending',
-      player1: { name: 'Thắng Bán Kết 1', sets: [] },
-      player2: { name: 'Thắng Bán Kết 2', sets: [] },
-    },
-  ])
+  const matches = ref<FixtureMatch[]>([])
 
   // Live Referee Console Match
   const liveMatch = ref({
@@ -313,7 +165,62 @@ export function useTournamentBracketAdmin() {
     }, 600)
   }
 
+  async function loadTournamentData() {
+    loading.value = true
+    error.value = ''
+    try {
+      const res = await tournamentApi.getById<any>(tournament.value.id)
+      if (res) {
+        if (res.name) tournament.value.name = res.name
+        if (res.participants) {
+          participants.value = res.participants.map((p: any) => ({
+            id: p.id,
+            seed: p.seed,
+            name: p.user?.name || p.name || 'VĐV',
+            club: p.club || 'Aura Club',
+            level: p.level || 'Lvl 4',
+            avatar: p.user?.avatar || getAvatarUrl(p.name || 'VĐV'),
+            checkedIn: p.checked_in ?? false,
+            status: p.checked_in ? 'checked_in' : 'pending',
+            paid: p.paid ?? true,
+            racketChecked: p.racket_checked ?? true,
+            warmupCourt: p.warmup_court || 'Sân 1',
+            qrCode: p.qr_code || `ATH-${p.id}`,
+            phone: p.user?.phone || p.phone || '—',
+            category: p.category || "Đơn Nam",
+          }))
+        }
+        if (res.fixtures) {
+          matches.value = res.fixtures.map((f: any) => ({
+            id: f.id,
+            roundNumber: f.round || 1,
+            roundName: f.round_name || 'Vòng 1',
+            position: f.position || 1,
+            matchNumber: f.match_number || 1,
+            courtName: f.court?.name || `Sân ${f.court_id || 1}`,
+            courtId: f.court_id || 1,
+            scheduledTime: f.scheduled_time || '09:00',
+            status: f.status || 'pending',
+            player1: f.player1 ? { id: f.player1.id, name: f.player1.name, avatar: getAvatarUrl(f.player1.name), sets: f.player1_sets || [] } : undefined,
+            player2: f.player2 ? { id: f.player2.id, name: f.player2.name, avatar: getAvatarUrl(f.player2.name), sets: f.player2_sets || [] } : undefined,
+            winnerId: f.winner_id,
+            nextMatchId: f.next_match_id,
+          }))
+        }
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải dữ liệu giải đấu.')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => {
+    loadTournamentData()
+  })
+
   return {
+    loading,
     tournament,
     currentWizardStep,
     activeSubNav,
@@ -340,5 +247,6 @@ export function useTournamentBracketAdmin() {
     simulateConflict,
     resolveConflict,
     regenerateBracketTree,
+    loadTournamentData,
   }
 }

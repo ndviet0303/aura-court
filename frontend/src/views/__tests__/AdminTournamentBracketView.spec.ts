@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminTournamentBracketView from '../AdminTournamentBracketView.vue'
 import { i18n } from '@/i18n'
+import { apiV2 } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/tournaments', query: {} }),
@@ -25,9 +26,104 @@ vi.mock('@/core/api/client', () => ({
 }))
 
 describe('AdminTournamentBracketView', () => {
+  const mockTournamentPayload = {
+    id: 1,
+    name: 'Aura Summer Open 2026',
+    status: 'open',
+    participants: [
+      {
+        id: 1,
+        seed: 2,
+        name: 'Sarah Jenkins',
+        club: 'Apex Club',
+        level: 'Lvl 4',
+        checked_in: true,
+        category: 'Đơn Nữ Nâng Cao',
+        phone: '0901 234 567',
+        qr_code: 'ATH-001',
+      },
+      {
+        id: 2,
+        name: 'Marcus Chen',
+        club: 'Independent',
+        level: 'Lvl 5',
+        checked_in: false,
+        category: 'Đơn Nam Master',
+        phone: '0902 345 678',
+        qr_code: 'ATH-002',
+      },
+      {
+        id: 3,
+        name: 'David Rossi',
+        club: 'Velocity BC',
+        level: 'Lvl 3',
+        checked_in: false,
+        category: 'Đơn Nam Phong Trào',
+        phone: '0903 456 789',
+        qr_code: 'ATH-003',
+      },
+      {
+        id: 4,
+        seed: 1,
+        name: 'Chen Long',
+        club: 'Aura Elite',
+        level: 'Lvl 5',
+        checked_in: true,
+        category: 'Đơn Nam Chuyên Nghiệp',
+        phone: '0904 567 890',
+        qr_code: 'ATH-004',
+      },
+      {
+        id: 5,
+        seed: 2,
+        name: 'Viktor Axelsen',
+        club: 'Viking Smash',
+        level: 'Lvl 5',
+        checked_in: true,
+        category: 'Đơn Nam Chuyên Nghiệp',
+        phone: '0905 678 901',
+        qr_code: 'ATH-005',
+      },
+    ],
+    fixtures: [
+      {
+        id: 101,
+        round: 1,
+        round_name: 'Round of 16',
+        position: 1,
+        match_number: 1,
+        court_id: 1,
+        scheduled_time: '09:00',
+        status: 'completed',
+        player1: { id: 4, name: 'Chen Long' },
+        player2: { id: 7, name: 'H. S. Prannoy' },
+        player1_sets: [21, 21],
+        player2_sets: [14, 18],
+        winner_id: 4,
+      },
+      {
+        id: 102,
+        round: 1,
+        round_name: 'Round of 16',
+        position: 2,
+        match_number: 2,
+        court_id: 2,
+        scheduled_time: '09:45',
+        status: 'completed',
+        player1: { id: 8, name: 'L. Sen' },
+        player2: { id: 9, name: 'Chou Tien-Chen' },
+        player1_sets: [19, 21, 21],
+        player2_sets: [21, 17, 16],
+        winner_id: 8,
+      },
+    ],
+  }
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    vi.mocked(apiV2.get).mockResolvedValue(mockTournamentPayload)
+    vi.mocked(apiV2.post).mockResolvedValue({ status: 'ok' })
   })
 
   it('renders title, setup wizard steps, and interactive bracket tree correctly', async () => {

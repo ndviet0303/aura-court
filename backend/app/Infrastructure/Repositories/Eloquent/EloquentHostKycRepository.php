@@ -5,17 +5,11 @@ namespace App\Infrastructure\Repositories\Eloquent;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Models\HostKyc;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Pagination\LengthAwarePaginator as ConcretePaginator;
-use Illuminate\Support\Facades\Schema;
 
 class EloquentHostKycRepository implements HostKycRepositoryInterface
 {
     public function findById(int $id): ?HostKyc
     {
-        if (!Schema::hasTable('host_kycs')) {
-            return null;
-        }
-
         return HostKyc::query()
             ->with(['organization', 'venue', 'user', 'reviewer'])
             ->find($id);
@@ -23,10 +17,6 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
 
     public function findByCode(string $code): ?HostKyc
     {
-        if (!Schema::hasTable('host_kycs')) {
-            return null;
-        }
-
         return HostKyc::query()
             ->with(['organization', 'venue', 'user', 'reviewer'])
             ->where('kyc_code', $code)
@@ -38,10 +28,6 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
         ?string $search = null,
         int $perPage = 30
     ): LengthAwarePaginator {
-        if (!Schema::hasTable('host_kycs')) {
-            return new ConcretePaginator([], 0, $perPage);
-        }
-
         $query = HostKyc::query()->with(['organization', 'venue', 'user', 'reviewer']);
 
         if ($status && $status !== 'all') {
@@ -67,22 +53,11 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
 
     public function getStats(): array
     {
-        if (!Schema::hasTable('host_kycs')) {
-            return [
-                'pending_count' => 12,
-                'ai_confidence_rate' => 96.4,
-                'avg_processing_time_minutes' => 14.2,
-                'flagged_count' => 2,
-                'approved_count' => 148,
-                'needs_supplement_count' => 3,
-            ];
-        }
-
         $pending = HostKyc::query()->where('status', 'pending')->count();
         $flagged = HostKyc::query()->where('status', 'flagged')->count();
         $approved = HostKyc::query()->where('status', 'approved')->count();
         $needsSupplement = HostKyc::query()->where('status', 'needs_supplement')->count();
-        $avgConfidence = HostKyc::query()->avg('ai_ocr_score') ?: 96.4;
+        $avgConfidence = HostKyc::query()->avg('ai_ocr_score') ?: 0.0;
 
         return [
             'pending_count' => $pending,

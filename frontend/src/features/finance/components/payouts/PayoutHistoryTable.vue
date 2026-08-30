@@ -31,8 +31,8 @@ function formatMoney(amount: number): string {
           <strong class="font-mono text-pink">{{ p.reference }}</strong>
           <span>{{ p.created_at }}</span>
           <div class="bank-col">
-            <span>{{ p.beneficiary.bank_code }} - {{ p.beneficiary.account_number }}</span>
-            <span class="holder-sub">{{ p.beneficiary.account_holder }}</span>
+            <span>{{ p.beneficiary?.bank_code || '---' }} - {{ p.beneficiary?.account_number || '' }}</span>
+            <span class="holder-sub">{{ p.beneficiary?.account_holder || '' }}</span>
           </div>
           <strong class="amount-val">{{ formatMoney(p.amount) }}</strong>
           <span

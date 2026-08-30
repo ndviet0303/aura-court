@@ -1,5 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { reconciliationApi } from '../api/reconciliationApi'
+import { errorMessage } from '@/core/utils/errorMessage'
 import type {
   ReconciliationStats,
   ReconciliationRun,
@@ -23,143 +24,21 @@ export function useFinancialReconciliation() {
   const selectedRun = ref<ReconciliationRun | null>(null)
   const runDetail = ref<ReconciliationDetail | null>(null)
 
-  // Default Stats
+  // Real Stats from API
   const stats = ref<ReconciliationStats>({
-    provider_total: 842560000,
-    journal_total: 842560000,
-    settlement_total: 841160000,
-    payout_total: 318400000,
-    mismatch_total: 1400000,
-    open_alerts_count: 3,
-    match_rate: 99.82,
+    provider_total: 0,
+    journal_total: 0,
+    settlement_total: 0,
+    payout_total: 0,
+    mismatch_total: 0,
+    open_alerts_count: 0,
+    match_rate: 100,
     last_reconciled_at: new Date().toISOString(),
     sync_status: 'synced',
-    health_trend: [
-      { date: '24/08', status: 'matched', provider_total: 720000000, journal_total: 720000000, settlement_total: 720000000, mismatch_amount: 0 },
-      { date: '25/08', status: 'matched', provider_total: 685000000, journal_total: 685000000, settlement_total: 685000000, mismatch_amount: 0 },
-      { date: '26/08', status: 'matched', provider_total: 790000000, journal_total: 790000000, settlement_total: 790000000, mismatch_amount: 0 },
-      { date: '27/08', status: 'matched', provider_total: 810000000, journal_total: 810000000, settlement_total: 810000000, mismatch_amount: 0 },
-      { date: '28/08', status: 'matched', provider_total: 740000000, journal_total: 740000000, settlement_total: 740000000, mismatch_amount: 0 },
-      { date: '29/08', status: 'matched', provider_total: 920000000, journal_total: 920000000, settlement_total: 920000000, mismatch_amount: 0 },
-      { date: '30/08', status: 'mismatch', provider_total: 842560000, journal_total: 842560000, settlement_total: 841160000, mismatch_amount: 1400000 },
-    ],
+    health_trend: [],
   })
 
-  // Sample data fallback for rich presentation
-  const mockRuns: ReconciliationRun[] = [
-    {
-      id: 101,
-      run_date: '2026-08-30',
-      status: 'mismatch',
-      provider_total: 1400000,
-      journal_total: 1400000,
-      settlement_total: 0,
-      payout_total: 0,
-      mismatch_amount: 1400000,
-      channel: 'VietQR Pro (MBBank)',
-      txnCode: 'TXN-88291A',
-      riskLevel: 'high',
-      statusLabel: 'Lệch Quyết Toán',
-      details: {
-        reason: 'Webhook Napas delay lúc 06:42:15, tài khoản trung gian chưa ghi có settlement.',
-        court: 'Sân Cầu Lông Aura Q7 - Sân VIP 1',
-        customer: 'Trần Minh Quang (UID-8821)',
-      },
-    },
-    {
-      id: 102,
-      run_date: '2026-08-30',
-      status: 'matched',
-      provider_total: 350000,
-      journal_total: 350000,
-      settlement_total: 350000,
-      payout_total: 0,
-      mismatch_amount: 0,
-      channel: 'MoMo Business',
-      txnCode: 'TXN-88290B',
-      riskLevel: 'low',
-      statusLabel: 'Đã khớp 100%',
-      details: {
-        court: 'Aura Sport Hub Bình Thạnh - Sân 03',
-        customer: 'Lê Hoàng Nam (UID-5542)',
-      },
-    },
-    {
-      id: 103,
-      run_date: '2026-08-30',
-      status: 'matched',
-      provider_total: 720000,
-      journal_total: 720000,
-      settlement_total: 720000,
-      payout_total: 0,
-      mismatch_amount: 0,
-      channel: 'VNPay QR',
-      txnCode: 'TXN-88289C',
-      riskLevel: 'low',
-      statusLabel: 'Đã khớp 100%',
-      details: {
-        court: 'Aura Court Tân Bình - Sân 01',
-        customer: 'Nguyễn Thị Thu (UID-3312)',
-      },
-    },
-    {
-      id: 104,
-      run_date: '2026-08-30',
-      status: 'mismatch',
-      provider_total: 450000,
-      journal_total: 450000,
-      settlement_total: 440000,
-      payout_total: 0,
-      mismatch_amount: 10000,
-      channel: 'ZaloPay Gateway',
-      txnCode: 'TXN-88288D',
-      riskLevel: 'medium',
-      statusLabel: 'Lệch Phí Cổng (10k)',
-      details: {
-        reason: 'Phí chiết khấu đối tác làm tròn khác biệt 10,000 ₫.',
-        court: 'Aura Badminton Center Q2 - Sân 05',
-        customer: 'Phạm Đăng Khoa (UID-7789)',
-      },
-    },
-    {
-      id: 105,
-      run_date: '2026-08-30',
-      status: 'matched',
-      provider_total: 2500000,
-      journal_total: 2500000,
-      settlement_total: 2500000,
-      payout_total: 2100000,
-      mismatch_amount: 0,
-      channel: 'VietQR Pro (MBBank)',
-      txnCode: 'TXN-88287E',
-      riskLevel: 'low',
-      statusLabel: 'Đã khớp 100%',
-      details: {
-        court: 'Aura Complex Thủ Đức - Cụm 8 Sân',
-        customer: 'CLB Cầu Lông Sài Gòn Master',
-      },
-    },
-    {
-      id: 106,
-      run_date: '2026-08-29',
-      status: 'matched',
-      provider_total: 5800000,
-      journal_total: 5800000,
-      settlement_total: 5800000,
-      payout_total: 4900000,
-      mismatch_amount: 0,
-      channel: 'Stripe International',
-      txnCode: 'TXN-88280F',
-      riskLevel: 'low',
-      statusLabel: 'Đã khớp 100%',
-      details: {
-        court: 'Aura Arena Q7',
-        customer: 'David Miller (UID-9912)',
-      },
-    },
-  ]
-
-  const runs = ref<ReconciliationRun[]>(mockRuns)
+  const runs = ref<ReconciliationRun[]>([])
 
   // Filtered runs
   const filteredRuns = computed(() => {
@@ -202,25 +81,23 @@ export function useFinancialReconciliation() {
     })
   })
 
-  // Load data from API
+  // Load data from real API
   async function loadData() {
     loading.value = true
     error.value = null
     try {
-      const statsRes = await reconciliationApi.getStats()
+      const [statsRes, runsRes] = await Promise.all([
+        reconciliationApi.getStats(),
+        reconciliationApi.getRuns(),
+      ])
       if (statsRes) {
         stats.value = statsRes
       }
-      const runsRes = await reconciliationApi.getRuns()
-      if (runsRes?.data && runsRes.data.length > 0) {
-        runs.value = runsRes.data.map((r, index) => ({
-          ...mockRuns[index % mockRuns.length],
-          ...r,
-        }))
+      if (runsRes?.data) {
+        runs.value = runsRes.data
       }
-    } catch (e: any) {
-      // Use fallback mock data seamlessly
-      console.warn('Reconciliation API fallback to local state:', e?.message || e)
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải dữ liệu đối soát tài chính.')
     } finally {
       loading.value = false
     }
@@ -239,28 +116,8 @@ export function useFinancialReconciliation() {
       if (res) {
         runDetail.value = res
       }
-    } catch {
-      // Generate synthetic detail for UI
-      runDetail.value = {
-        run: target,
-        provider_events: [
-          { id: 1, ref: 'FT260830001', amount: target.provider_total, gateway: target.channel, time: '06:42:15', status: 'SUCCESS' }
-        ],
-        journals: [
-          { id: 1, event_type: 'reservation.payment', total_credit: target.journal_total, posted_at: '06:42:15', status: 'POSTED' }
-        ],
-        ai_diagnosis: {
-          has_issue: target.status === 'mismatch',
-          severity: target.riskLevel || 'high',
-          root_cause: target.details?.reason || 'Lệch số liệu quyết toán giữa ngân hàng và hệ thống.',
-          recommended_action: target.status === 'mismatch'
-            ? 'Khớp bù trừ tự động bằng cách ghi nhận bản ghi đối soát ngoại lệ hoặc gửi yêu cầu xác thực ngân hàng.'
-            : 'Mọi dòng tiền đã được đối soát toàn vẹn.',
-          confidence_score: 99.4,
-          analyzed_at: new Date().toISOString(),
-        },
-        details: target.details || {},
-      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải chi tiết phiên đối soát.')
     } finally {
       detailLoading.value = false
     }
@@ -279,11 +136,10 @@ export function useFinancialReconciliation() {
     error.value = null
     try {
       await reconciliationApi.triggerRun({ force: true })
-      notice.value = '⚡ Đã kích hoạt đồng bộ và đối soát toàn diện với Cổng thanh toán & Napas247!'
+      notice.value = '⚡ Đã kích hoạt đồng bộ và đối soát toàn diện với Cổng thanh toán!'
       await loadData()
-    } catch {
-      notice.value = '⚡ Đã hoàn tất phiên đối soát tức thì. Sổ cái & Cổng thanh toán được cập nhật!'
-      stats.value.last_reconciled_at = new Date().toISOString()
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Kích hoạt phiên đối soát thất bại.')
     } finally {
       syncing.value = false
       setTimeout(() => {
@@ -297,33 +153,13 @@ export function useFinancialReconciliation() {
     loading.value = true
     try {
       await reconciliationApi.autoResolve({ run_id: runId, scope: 'safe_only' })
-      notice.value = '✨ AI đã tự động bù trừ các mục chênh lệch an toàn (phí đối tác & webhook delay)!'
-      
-      // Update local state
-      if (runId) {
-        const target = runs.value.find((r) => r.id === runId)
-        if (target) {
-          target.status = 'matched'
-          target.mismatch_amount = 0
-          target.statusLabel = 'Đã bù trừ AI'
-          target.riskLevel = 'low'
-        }
-      } else {
-        runs.value.forEach((r) => {
-          if (r.mismatch_amount <= 50000) {
-            r.status = 'matched'
-            r.mismatch_amount = 0
-            r.statusLabel = 'Đã bù trừ AI'
-            r.riskLevel = 'low'
-          }
-        })
-      }
-      stats.value.open_alerts_count = Math.max(0, stats.value.open_alerts_count - 1)
+      notice.value = '✨ AI đã tự động bù trừ các mục chênh lệch an toàn!'
+      await loadData()
       if (isDrawerOpen.value) {
         closeDrawer()
       }
-    } catch {
-      notice.value = '✨ Đã ghi nhận giải quyết ngoại lệ đối soát thành công!'
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tự động giải quyết ngoại lệ.')
     } finally {
       loading.value = false
       setTimeout(() => {

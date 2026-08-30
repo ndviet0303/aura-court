@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -51,28 +51,11 @@ export function useOrganizationOwner() {
 
   const currentOrg = ref<Organization>({
     id: 1,
-    name: 'Aura Badminton Club',
-    slug: 'aura-badminton-club',
-    tax_code: '0318294021',
-    support_email: 'support@auraclub.vn',
-    phone: '+84 908 123 456',
-    address: 'Tầng 5, Tòa nhà Aura Center, Số 12 Nguyễn Thị Minh Khai, P. Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-    brand_color: '#78555e',
-    logo_url: '/aura/badge-logo.png',
+    name: '',
+    slug: '',
     status: 'active',
-    auto_approve_booking: true,
-    resale_fee_percent: 5,
-    cancellation_grace_hours: 12,
-    venues: [
-      { id: 1, name: 'Aura Center (Quận 1)', address: '12 Nguyễn Thị Minh Khai, Q.1', is_active: true, courts_count: 8 },
-      { id: 2, name: 'Riverside Club (Bình Thạnh)', address: '48 Ung Văn Khiêm, Bình Thạnh', is_active: true, courts_count: 12 },
-      { id: 3, name: 'District 1 Hub (Bến Nghé)', address: '88 Lê Thánh Tôn, Q.1', is_active: true, courts_count: 6 },
-    ],
-    members: [
-      { id: 1, user_id: 101, role: 'organization_owner', status: 'active', user: { id: 101, name: 'Alex Sterling', email: 'alex@auraclub.vn', phone: '0908123456' } },
-      { id: 2, user_id: 102, role: 'venue_manager', status: 'active', user: { id: 102, name: 'Trần Minh Hoàng', email: 'hoang.tran@auraclub.vn', phone: '0912345678' } },
-      { id: 3, user_id: 103, role: 'cashier', status: 'active', user: { id: 103, name: 'Lê Thảo My', email: 'my.le@auraclub.vn', phone: '0933889900' } },
-    ],
+    venues: [],
+    members: [],
   })
 
   const brandColorOptions = [
@@ -90,26 +73,90 @@ export function useOrganizationOwner() {
     }, 4000)
   }
 
-  function saveProfile(payload: Partial<Organization>) {
-    Object.assign(currentOrg.value, payload)
-    showNotice('Đã cập nhật thông tin doanh nghiệp thành công!')
+  async function loadOrgData() {
+    loading.value = true
+    error.value = ''
+    try {
+      const orgRes = await adminApi.getOrganizations<{ organizations?: Organization[]; organization?: Organization }>()
+      const list = orgRes?.organizations || (orgRes?.organization ? [orgRes.organization] : [])
+      if (list.length > 0 && list[0]) {
+        currentOrg.value = {
+          ...currentOrg.value,
+          ...list[0],
+        }
+      }
+
+      // Load members & venues
+      if (currentOrg.value.id) {
+        const [membersRes, venuesRes] = await Promise.allSettled([
+          adminApi.getOrgMembers<{ members: OrgMember[] }>(currentOrg.value.id),
+          adminApi.getVenues(),
+        ])
+
+        if (membersRes.status === 'fulfilled' && membersRes.value?.members) {
+          currentOrg.value.members = membersRes.value.members
+        }
+        if (venuesRes.status === 'fulfilled' && Array.isArray(venuesRes.value)) {
+          currentOrg.value.venues = venuesRes.value.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            address: v.address,
+            is_active: v.is_active ?? true,
+            courts_count: v.courts?.length ?? 0,
+          }))
+        }
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải thông tin tổ chức.')
+    } finally {
+      loading.value = false
+    }
   }
 
-  function savePolicies(payload: Partial<Organization>) {
-    Object.assign(currentOrg.value, payload)
-    showNotice('Đã lưu cấu hình chính sách vận hành!')
+  async function saveProfile(payload: Partial<Organization>) {
+    saving.value = true
+    try {
+      await adminApi.updateOrganization(currentOrg.value.id, payload)
+      Object.assign(currentOrg.value, payload)
+      showNotice('Đã cập nhật thông tin doanh nghiệp thành công!')
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể cập nhật thông tin doanh nghiệp.')
+    } finally {
+      saving.value = false
+    }
   }
 
-  function inviteMember(email: string, role: any) {
-    currentOrg.value.members?.push({
-      id: Date.now(),
-      user_id: Date.now(),
-      role,
-      status: 'pending',
-      user: { id: Date.now(), name: email.split('@')[0] || 'Thành viên mới', email },
-    })
-    showNotice(`Đã gửi lời mời thành viên tới ${email}!`)
+  async function savePolicies(payload: Partial<Organization>) {
+    saving.value = true
+    try {
+      await adminApi.updateOrganization(currentOrg.value.id, { settings: payload })
+      Object.assign(currentOrg.value, payload)
+      showNotice('Đã lưu cấu hình chính sách vận hành!')
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể lưu chính sách.')
+    } finally {
+      saving.value = false
+    }
   }
+
+  async function inviteMember(email: string, role: any) {
+    saving.value = true
+    try {
+      const res = await adminApi.addOrgMember<{ member: OrgMember }>(currentOrg.value.id, { email, role })
+      if (res?.member) {
+        currentOrg.value.members = [...(currentOrg.value.members || []), res.member]
+      }
+      showNotice(`Đã gửi lời mời thành viên tới ${email}!`)
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể thêm thành viên.')
+    } finally {
+      saving.value = false
+    }
+  }
+
+  onMounted(() => {
+    loadOrgData()
+  })
 
   return {
     loading,
@@ -120,6 +167,7 @@ export function useOrganizationOwner() {
     currentOrg,
     brandColorOptions,
     showNotice,
+    loadOrgData,
     saveProfile,
     savePolicies,
     inviteMember,

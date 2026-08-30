@@ -23,10 +23,10 @@ const tabs: { key: KycStatus | 'all'; label: string; countSuffix?: string }[] = 
 function getProgressPercent(item: HostKyc): number {
   if (item.status === 'approved') return 100
   let count = 0
-  if (item.idCardFrontUrl) count += 25
-  if (item.businessLicenseUrl) count += 25
-  if (item.napasMatchStatus === 'matched') count += 25
-  if (item.facilityImages?.length || item.courtScale > 0) count += 25
+  if (item.id_card_front_url) count += 25
+  if (item.business_license_url) count += 25
+  if (item.napas_match_status === 'matched') count += 25
+  if (item.facility_images?.length || item.court_scale > 0) count += 25
   return count
 }
 </script>
@@ -73,8 +73,8 @@ function getProgressPercent(item: HostKyc): number {
         <!-- Top row: Code & Status Badge -->
         <div class="card-header-row">
           <div class="card-meta">
-            <span class="kyc-code">{{ item.kycCode }}</span>
-            <span class="business-type-badge">{{ item.businessType === 'enterprise' ? 'Doanh nghiệp' : item.businessType === 'business_household' ? 'Hộ kinh doanh' : 'Cá nhân' }}</span>
+            <span class="kyc-code">{{ item.kyc_code }}</span>
+            <span class="business-type-badge">{{ item.business_type === 'enterprise' ? 'Doanh nghiệp' : item.business_type === 'business_household' ? 'Hộ kinh doanh' : 'Cá nhân' }}</span>
           </div>
           <span
             class="status-pill"
@@ -91,7 +91,7 @@ function getProgressPercent(item: HostKyc): number {
         </div>
 
         <!-- Business Name -->
-        <div class="card-name">{{ item.businessName }}</div>
+        <div class="card-name">{{ item.business_name }}</div>
 
         <!-- Mini document verification badges -->
         <div class="doc-badges-row">

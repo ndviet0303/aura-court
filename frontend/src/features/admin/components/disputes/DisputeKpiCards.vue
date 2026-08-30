@@ -16,7 +16,7 @@ defineProps<{
       <div class="kpi-content">
         <span class="kpi-label">Chờ Thụ Lý & Phán Quyết</span>
         <div class="kpi-value-row">
-          <span class="kpi-value text-pending">{{ stats.pendingCount }}</span>
+          <span class="kpi-value text-pending">{{ stats.pending_count }}</span>
           <span class="kpi-sub">vụ việc</span>
         </div>
       </div>

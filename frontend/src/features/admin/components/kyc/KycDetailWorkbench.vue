@@ -4,18 +4,18 @@ import type { HostKyc } from '../../types/kyc'
 const props = defineProps<{
   item: HostKyc
   checklist: {
-    repIdentityMatched: boolean
-    businessLicenseValid: boolean
-    bankAccountMatched: boolean
-    brandNameDiscrepancyAccepted: boolean
-    facilityInspected: boolean
+    rep_identity_matched: boolean
+    business_license_valid: boolean
+    bank_account_matched: boolean
+    brand_name_discrepancy_accepted: boolean
+    facility_inspected: boolean
   }
-  reviewerNotes: string
+  reviewer_notes: string
 }>()
 
 const emit = defineEmits<{
   (e: 'update:checklist', val: typeof props.checklist): void
-  (e: 'update:reviewerNotes', val: string): void
+  (e: 'update:reviewer_notes', val: string): void
 }>()
 
 function toggleChecklist(key: keyof typeof props.checklist) {
@@ -35,13 +35,13 @@ function toggleChecklist(key: keyof typeof props.checklist) {
           <span class="material-symbols-outlined icon-28">domain</span>
         </div>
         <div>
-          <h2 class="host-title">{{ item.businessName }}</h2>
+          <h2 class="host-title">{{ item.business_name }}</h2>
           <div class="host-sub-row">
-            <span class="sub-item">MST: <strong>{{ item.taxCode }}</strong></span>
+            <span class="sub-item">MST: <strong>{{ item.tax_code }}</strong></span>
             <span class="dot-separator"></span>
-            <span class="sub-item">Đại diện: <strong>{{ item.representativeName }}</strong></span>
+            <span class="sub-item">Đại diện: <strong>{{ item.representative_name }}</strong></span>
             <span class="dot-separator"></span>
-            <span class="sub-item">Loại hình: <strong>{{ item.businessType === 'enterprise' ? 'Doanh nghiệp TNHH' : item.businessType === 'business_household' ? 'Hộ kinh doanh' : 'Cá nhân' }}</strong></span>
+            <span class="sub-item">Loại hình: <strong>{{ item.business_type === 'enterprise' ? 'Doanh nghiệp TNHH' : item.business_type === 'business_household' ? 'Hộ kinh doanh' : 'Cá nhân' }}</strong></span>
           </div>
         </div>
       </div>
@@ -75,7 +75,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
           <div class="doc-viewer-box">
             <div
               class="doc-img"
-              :style="{ backgroundImage: `url(${item.idCardFrontUrl})` }"
+              :style="{ backgroundImage: `url(${item.id_card_front_url})` }"
             ></div>
             <div class="doc-watermark">AURA KYC VERIFIED</div>
             <button type="button" class="btn-inspect">
@@ -88,27 +88,27 @@ function toggleChecklist(key: keyof typeof props.checklist) {
             <div class="data-row">
               <span class="data-label">Họ và tên</span>
               <div class="data-val-group">
-                <span class="data-value">{{ item.representativeName }}</span>
+                <span class="data-value">{{ item.representative_name }}</span>
                 <span class="match-badge">100% Khớp</span>
               </div>
             </div>
             <div class="data-row">
               <span class="data-label">Số CCCD</span>
               <div class="data-val-group">
-                <span class="data-value font-mono">{{ item.idCardNumber }}</span>
+                <span class="data-value font-mono">{{ item.id_card_number }}</span>
                 <span class="match-badge">Khớp CSDL Dân cư</span>
               </div>
             </div>
             <div class="data-row">
               <span class="data-label">Sinh trắc khuôn mặt (Face-Match)</span>
               <div class="data-val-group">
-                <span class="data-value">{{ item.faceMatchScore }}%</span>
+                <span class="data-value">{{ item.face_match_score }}%</span>
                 <span class="match-badge success">Khớp selfie</span>
               </div>
             </div>
             <div class="ai-banner success">
               <span class="material-symbols-outlined icon-20">verified_user</span>
-              <p>Điểm tin cậy AI OCR: <strong>{{ item.aiOcrScore }}%</strong>. Dữ liệu trùng khớp hoàn toàn với Cổng Dịch vụ công Quốc gia.</p>
+              <p>Điểm tin cậy AI OCR: <strong>{{ item.ai_ocr_score }}%</strong>. Dữ liệu trùng khớp hoàn toàn với Cổng Dịch vụ công Quốc gia.</p>
             </div>
           </div>
         </div>
@@ -131,7 +131,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
           <div class="doc-viewer-box">
             <div
               class="doc-img"
-              :style="{ backgroundImage: `url(${item.businessLicenseUrl})` }"
+              :style="{ backgroundImage: `url(${item.business_license_url})` }"
             ></div>
             <div class="doc-watermark">AURA KYC VERIFIED</div>
             <button type="button" class="btn-inspect">
@@ -143,20 +143,20 @@ function toggleChecklist(key: keyof typeof props.checklist) {
           <div class="extracted-data-card">
             <div class="data-row-block">
               <span class="data-label">Tên pháp lý trên GPKD</span>
-              <span class="data-value highlight">{{ item.legalName }}</span>
+              <span class="data-value highlight">{{ item.legal_name }}</span>
             </div>
             <div class="data-row-block">
               <span class="data-label">Tên hiển thị thương hiệu</span>
               <div class="brand-diff-row">
-                <span class="data-value line-through-text">{{ item.businessName }}</span>
+                <span class="data-value line-through-text">{{ item.business_name }}</span>
                 <span class="material-symbols-outlined icon-18 warning-icon">error</span>
               </div>
             </div>
             <div class="data-row">
               <span class="data-label">Mã số thuế (Tổng cục Thuế)</span>
               <div class="data-val-group">
-                <span class="data-value font-mono">{{ item.taxCode }}</span>
-                <span class="match-badge success">{{ item.taxStatus }}</span>
+                <span class="data-value font-mono">{{ item.tax_code }}</span>
+                <span class="match-badge success">{{ item.tax_status }}</span>
               </div>
             </div>
             <div class="ai-banner warning">
@@ -182,11 +182,11 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div class="bank-card-container">
           <div class="bank-logo-box">MB</div>
           <div class="bank-details">
-            <div class="bank-name-text">{{ item.bankName }}</div>
-            <div class="bank-acc-number font-mono">{{ item.bankAccountNumber }}</div>
+            <div class="bank-name-text">{{ item.bank_name }}</div>
+            <div class="bank-acc-number font-mono">{{ item.bank_account_number }}</div>
             <div class="bank-holder-row">
               <span class="label-text">Chủ tài khoản:</span>
-              <span class="holder-name">{{ item.bankAccountHolder }}</span>
+              <span class="holder-name">{{ item.bank_account_holder }}</span>
               <span class="match-badge success">Match 100%</span>
             </div>
           </div>
@@ -206,28 +206,28 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         </div>
 
         <div class="facility-grid">
-          <div class="facility-photos-grid">
+          <div v-if="item.facility_images && item.facility_images.length > 0" class="facility-photos-grid">
             <div
-              v-for="(img, idx) in item.facilityImages.slice(0, 3)"
+              v-for="(img, idx) in item.facility_images.slice(0, 3)"
               :key="idx"
               class="facility-photo"
               :style="{ backgroundImage: `url(${img})` }"
             ></div>
-            <div class="facility-photo more-photo">+2 ảnh khác</div>
+            <div v-if="item.facility_images.length > 3" class="facility-photo more-photo">+{{ item.facility_images.length - 3 }} ảnh khác</div>
           </div>
 
           <div class="facility-specs-card">
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">sports_tennis</span>
-              <span class="spec-text"><strong>{{ item.courtScale }} sân</strong> tiêu chuẩn thi đấu BWF</span>
+              <span class="spec-text"><strong>{{ item.court_scale }} sân</strong> tiêu chuẩn thi đấu BWF</span>
             </div>
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">lightbulb</span>
-              <span class="spec-text">{{ item.lightingSpec || 'Hệ thống đèn LED chống chói 1000W' }}</span>
+              <span class="spec-text">{{ item.lighting_spec || 'Hệ thống đèn LED chống chói 1000W' }}</span>
             </div>
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">real_estate_agent</span>
-              <span class="spec-text">{{ item.leaseContractStatus }}</span>
+              <span class="spec-text">{{ item.lease_contract_status }}</span>
             </div>
           </div>
         </div>
@@ -240,32 +240,32 @@ function toggleChecklist(key: keyof typeof props.checklist) {
           <label class="check-item">
             <input
               type="checkbox"
-              :checked="checklist.repIdentityMatched"
-              @change="toggleChecklist('repIdentityMatched')"
+              :checked="checklist.rep_identity_matched"
+              @change="toggleChecklist('rep_identity_matched')"
             />
             <span>Khớp CCCD & sinh trắc người đại diện</span>
           </label>
           <label class="check-item">
             <input
               type="checkbox"
-              :checked="checklist.businessLicenseValid"
-              @change="toggleChecklist('businessLicenseValid')"
+              :checked="checklist.business_license_valid"
+              @change="toggleChecklist('business_license_valid')"
             />
             <span>Mã số thuế & GPKD đang hoạt động</span>
           </label>
           <label class="check-item">
             <input
               type="checkbox"
-              :checked="checklist.bankAccountMatched"
-              @change="toggleChecklist('bankAccountMatched')"
+              :checked="checklist.bank_account_matched"
+              @change="toggleChecklist('bank_account_matched')"
             />
             <span>Tài khoản ngân hàng chính chủ NAPAS</span>
           </label>
           <label class="check-item">
             <input
               type="checkbox"
-              :checked="checklist.brandNameDiscrepancyAccepted"
-              @change="toggleChecklist('brandNameDiscrepancyAccepted')"
+              :checked="checklist.brand_name_discrepancy_accepted"
+              @change="toggleChecklist('brand_name_discrepancy_accepted')"
             />
             <span>Chấp nhận sai lệch tên thương hiệu</span>
           </label>
@@ -274,11 +274,11 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div class="notes-box">
           <label class="notes-label">Ghi chú biên bản thẩm định nội bộ:</label>
           <textarea
-            :value="reviewerNotes"
+            :value="reviewer_notes"
             placeholder="Nhập ý kiến thẩm định, căn cứ xét duyệt hoặc lý do yêu cầu bổ sung..."
             rows="3"
             class="notes-textarea"
-            @input="emit('update:reviewerNotes', ($event.target as HTMLTextAreaElement).value)"
+            @input="emit('update:reviewer_notes', ($event.target as HTMLTextAreaElement).value)"
           ></textarea>
         </div>
       </section>
