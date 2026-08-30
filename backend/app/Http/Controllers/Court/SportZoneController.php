@@ -26,10 +26,12 @@ class SportZoneController extends Controller
     {
         $data = $request->validate([
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
-            'name' => 'required|string|max:120',
+            'name' => 'required|array',
+            'name.*' => 'string|max:120',
             'sport_type' => 'required|string|in:badminton,football_5v5,football_7v7,tennis,pickleball,basketball,volleyball,table_tennis',
             'slot_duration' => 'required|integer|in:30,45,60,90,120',
-            'description' => 'nullable|string',
+            'description' => 'nullable|array',
+            'description.*' => 'string',
             'is_active' => 'boolean',
         ]);
 
@@ -46,10 +48,12 @@ class SportZoneController extends Controller
     public function update(Request $request, SportZone $sportZone)
     {
         $data = $request->validate([
-            'name' => 'sometimes|string|max:120',
+            'name' => 'sometimes|array',
+            'name.*' => 'string|max:120',
             'sport_type' => 'sometimes|string|in:badminton,football_5v5,football_7v7,tennis,pickleball,basketball,volleyball,table_tennis',
             'slot_duration' => 'sometimes|integer|in:30,45,60,90,120',
-            'description' => 'nullable|string',
+            'description' => 'nullable|array',
+            'description.*' => 'string',
             'is_active' => 'boolean',
         ]);
 

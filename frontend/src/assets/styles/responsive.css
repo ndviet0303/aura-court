@@ -112,6 +112,30 @@
   .not-found-art strong {
     font-size: 72px;
   }
+
+  .floating-booking {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    width: calc(100% - 32px) !important;
+    justify-content: space-between !important;
+    padding: 8px 10px 8px 14px !important;
+    font-size: 13px !important;
+    gap: 10px !important;
+  }
+
+  .floating-booking .dock-summary {
+    gap: 8px !important;
+  }
+
+  .floating-booking .dock-total-val {
+    font-size: 14.5px !important;
+  }
+
+  .floating-booking .btn-floating-proceed {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
 }
 
 /* ==========================================================================

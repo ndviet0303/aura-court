@@ -124,7 +124,11 @@ export default {
     },
     floating: {
       summary: '{count} slots · {total}',
-      proceed: 'Proceed',
+      slotsCount: '{count} slots',
+      totalLabel: 'Total:',
+      proceed: 'Pay Now',
+      processing: 'Processing...',
+      clear: 'Clear',
     },
   },
   courts: {

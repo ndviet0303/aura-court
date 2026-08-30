@@ -6,10 +6,15 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['organization_id', 'name', 'slug', 'address', 'google_maps_url', 'is_active'])]
 class Venue extends Model
 {
+    use HasTranslations;
+
+    public array $translatable = ['name'];
+
     protected $appends = ['share_url'];
 
     protected function casts(): array
@@ -35,6 +40,23 @@ class Venue extends Model
     public function getShareUrlAttribute(): string
     {
         return rtrim((string) config('app.frontend_url'), '/').'/venues/'.$this->slug.'/directions';
+    }
+
+    public function toArray()
+    {
+        $attributes = parent::toArray();
+
+        if (request() && request()->is('api/*/admin/*')) {
+            return $attributes;
+        }
+
+        foreach ($this->getTranslatableAttributes() as $field) {
+            if (array_key_exists($field, $attributes)) {
+                $attributes[$field] = $this->getTranslation($field, app()->getLocale());
+            }
+        }
+
+        return $attributes;
     }
 }
 

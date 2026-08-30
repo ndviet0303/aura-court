@@ -84,7 +84,7 @@ function formatMoney(amount: number): string {
 }
 
 .box-legend.available { background: var(--surface-secondary, rgba(0, 0, 0, 0.05)); border: 1px solid var(--outline); }
-.box-legend.selected { background: var(--pink-dark, #db2777); }
+.box-legend.selected { background: var(--accent, #C9A15A); }
 .box-legend.occupied { background: #fee2e2; }
 
 .slots-grid {
@@ -104,19 +104,39 @@ function formatMoney(amount: number): string {
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .slot-cell-btn.is-available:hover {
-  border-color: var(--pink-dark, #db2777);
+  border-color: var(--accent, #C9A15A);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201, 161, 90, 0.15);
 }
 
 .slot-cell-btn.is-selected {
-  background: var(--pink-dark, #db2777);
-  border-color: var(--pink-dark, #db2777);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(219, 39, 119, 0.3);
+  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%) !important;
+  border-color: #b88e45 !important;
+  color: #1c1202 !important;
+  font-weight: 800;
+  box-shadow: 0 4px 16px rgba(201, 161, 90, 0.4) !important;
+  transform: translateY(-2px);
+}
+
+.slot-cell-btn.is-selected .s-price {
+  color: #3b2507 !important;
+  font-weight: 700;
+}
+
+:global(html.dark) .slot-cell-btn.is-selected {
+  background: linear-gradient(135deg, #e5c382 0%, #d8b46e 100%) !important;
+  border-color: #fae0a2 !important;
+  color: #1c1202 !important;
+  box-shadow: 0 4px 20px rgba(216, 180, 110, 0.5) !important;
+}
+
+:global(html.dark) .slot-cell-btn.is-selected .s-price {
+  color: #241402 !important;
+  font-weight: 700;
 }
 
 .slot-cell-btn.is-occupied {

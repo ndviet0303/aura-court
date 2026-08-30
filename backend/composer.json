@@ -14,7 +14,8 @@
         "laravel/reverb": "^1.11",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.30",
-        "laravel/tinker": "^3.0"
+        "laravel/tinker": "^3.0",
+        "spatie/laravel-translatable": "^6.14"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

@@ -6,10 +6,15 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['venue_id', 'name', 'sport_type', 'slot_duration', 'description', 'is_active'])]
 class SportZone extends Model
 {
+    use HasTranslations;
+
+    public array $translatable = ['name', 'description'];
+
     protected function casts(): array
     {
         return [
@@ -31,5 +36,22 @@ class SportZone extends Model
     public function priceRules(): HasMany
     {
         return $this->hasMany(PriceRule::class);
+    }
+
+    public function toArray()
+    {
+        $attributes = parent::toArray();
+
+        if (request() && request()->is('api/*/admin/*')) {
+            return $attributes;
+        }
+
+        foreach ($this->getTranslatableAttributes() as $field) {
+            if (array_key_exists($field, $attributes)) {
+                $attributes[$field] = $this->getTranslation($field, app()->getLocale());
+            }
+        }
+
+        return $attributes;
     }
 }

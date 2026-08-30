@@ -286,13 +286,58 @@ onMounted(async () => {
     </div>
   </section>
 
-  <div v-if="store.selectedSlots.length" class="floating-booking">
-    <span>{{ t('home.floating.summary', { count: store.selectedSlots.length, total: formatCurrency(total) }) }}</span>
-    <button class="btn btn-floating-proceed" :disabled="loading" @click="submit">
-      <span>{{ t('home.floating.proceed') }}</span>
-      <span class="material-symbols-outlined icon-18">arrow_forward</span>
-    </button>
-  </div>
-  <p v-if="error" class="error container">{{ error }}</p>
+  <Teleport to="body">
+    <Transition name="slide-up">
+      <div
+        v-if="store.selectedSlots.length"
+        class="floating-booking"
+        role="region"
+        :aria-label="t('home.floating.summary', { count: store.selectedSlots.length, total: formatCurrency(total) })"
+      >
+        <!-- Floating Inline Error Notification if booking creation fails -->
+        <div v-if="error" class="floating-dock-error" role="alert">
+          <span class="material-symbols-outlined icon-18">error</span>
+          <span>{{ error }}</span>
+          <button type="button" class="btn-dock-close-err" aria-label="Đóng thông báo" @click="error = ''">×</button>
+        </div>
+
+        <!-- Dock Summary Left -->
+        <div class="dock-summary">
+          <div class="dock-badge">
+            <span class="material-symbols-outlined icon-18">schedule</span>
+            <span>{{ t('home.floating.slotsCount', { count: store.selectedSlots.length }) }}</span>
+          </div>
+          <div class="dock-total-box">
+            <span class="dock-total-lbl">{{ t('home.floating.totalLabel') }}</span>
+            <strong class="dock-total-val">{{ formatCurrency(total) }}</strong>
+          </div>
+        </div>
+
+        <!-- Dock Actions Right -->
+        <div class="dock-actions">
+          <button
+            type="button"
+            class="dock-btn-clear"
+            :title="t('home.floating.clear')"
+            :aria-label="t('home.floating.clear')"
+            @click="store.selectedSlots = []"
+          >
+            <span class="material-symbols-outlined icon-18">close</span>
+          </button>
+          <button
+            class="btn btn-floating-proceed"
+            :disabled="loading"
+            @click="submit"
+          >
+            <span v-if="loading" class="material-symbols-outlined spin-icon icon-18">progress_activity</span>
+            <span v-else class="material-symbols-outlined icon-18">payments</span>
+            <span>{{ loading ? t('home.floating.processing') : t('home.floating.proceed') }}</span>
+            <span v-if="!loading" class="material-symbols-outlined icon-18">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+  <p v-if="error && !store.selectedSlots.length" class="error container">{{ error }}</p>
 </template>
 

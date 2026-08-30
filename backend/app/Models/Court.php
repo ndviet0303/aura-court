@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Illuminate\Support\Str;
+use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'is_active'])]
 class Court extends Model
 {
+    use HasTranslations;
+
+    public array $translatable = ['name', 'description'];
+
     protected static function booted(): void
     {
         // Keep model-level seeders and existing integrations compatible while
@@ -78,5 +83,22 @@ class Court extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function toArray()
+    {
+        $attributes = parent::toArray();
+
+        if (request() && request()->is('api/*/admin/*')) {
+            return $attributes;
+        }
+
+        foreach ($this->getTranslatableAttributes() as $field) {
+            if (array_key_exists($field, $attributes)) {
+                $attributes[$field] = $this->getTranslation($field, app()->getLocale());
+            }
+        }
+
+        return $attributes;
     }
 }

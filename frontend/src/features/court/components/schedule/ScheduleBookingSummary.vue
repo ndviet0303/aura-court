@@ -140,4 +140,10 @@ function formatMoney(amount: number): string {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+:global(html.dark) .btn-checkout {
+  background: var(--primary, #E58E9F);
+  color: #1c0a10;
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.35);
+}
 </style>

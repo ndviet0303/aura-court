@@ -23,7 +23,7 @@
 }
 
 /* In Dark Mode, primary button background is luminous Rose-Velvet, so text must be dark espresso for AAA contrast */
-html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(.btn-pink):not(.accent):not(.btn-accent):not(.gold):not(.btn-gold) {
+html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(.btn-pink):not(.accent):not(.btn-accent):not(.gold):not(.btn-gold):not(.btn-floating-proceed) {
   background: var(--primary, #E58E9F);
   color: var(--on-primary, #1c0a10);
   font-weight: 800;

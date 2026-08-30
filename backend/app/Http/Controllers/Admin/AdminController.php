@@ -94,7 +94,8 @@ class AdminController extends Controller
     private function validatedVenue(Request $request): array
     {
         $data = $request->validate([
-            'name' => 'required|string|max:120',
+            'name' => 'required|array',
+            'name.*' => 'string|max:120',
             'address' => 'required|string|max:255',
             'google_maps_url' => 'required|url|max:2048',
             'is_active' => 'boolean',

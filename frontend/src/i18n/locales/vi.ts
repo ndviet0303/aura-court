@@ -124,7 +124,11 @@ export default {
     },
     floating: {
       summary: '{count} khung giờ · {total}',
-      proceed: 'Tiếp tục',
+      slotsCount: '{count} khung giờ',
+      totalLabel: 'Tổng cộng:',
+      proceed: 'Thanh toán ngay',
+      processing: 'Đang tạo đơn...',
+      clear: 'Bỏ chọn',
     },
   },
   courts: {

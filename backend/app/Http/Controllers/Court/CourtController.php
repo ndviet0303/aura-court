@@ -43,10 +43,12 @@ class CourtController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:120',
+            'name' => 'required|array',
+            'name.*' => 'string|max:120',
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
             'sport_zone_id' => ['nullable', 'integer', Rule::exists('sport_zones', 'id')->where('is_active', true)],
-            'description' => 'nullable|string',
+            'description' => 'nullable|array',
+            'description.*' => 'string',
             'image_url' => 'nullable|url',
             'is_active' => 'boolean',
         ]);
@@ -57,10 +59,12 @@ class CourtController extends Controller
     public function update(Request $request, Court $court)
     {
         $data = $request->validate([
-            'name' => 'sometimes|string|max:120',
+            'name' => 'sometimes|array',
+            'name.*' => 'string|max:120',
             'venue_id' => ['sometimes', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
             'sport_zone_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sport_zones', 'id')->where('is_active', true)],
-            'description' => 'nullable|string',
+            'description' => 'nullable|array',
+            'description.*' => 'string',
             'image_url' => 'nullable|url',
             'is_active' => 'boolean',
         ]);

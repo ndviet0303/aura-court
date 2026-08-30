@@ -192,18 +192,53 @@
 .slot {
   border: 1px solid var(--outline);
   background: var(--soft);
-  border-radius: 10px;
-  padding: 12px 7px;
+  border-radius: 12px;
+  padding: 12px 8px;
   cursor: pointer;
   color: var(--ink);
   text-align: center;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.slot:hover:not(:disabled):not(.selected) {
+  border-color: var(--accent, #C9A15A);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201, 161, 90, 0.15);
 }
 
 .slot.selected {
-  background: var(--pink);
-  border-color: var(--pink-dark);
-  color: #ffffff;
+  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%) !important;
+  border: 1px solid #b88e45 !important;
+  color: #1c1202 !important;
+  font-weight: 800;
+  box-shadow: 0 4px 16px rgba(201, 161, 90, 0.4) !important;
+  transform: translateY(-2px);
+}
+
+.slot.selected small {
+  color: #3b2507 !important;
+  font-weight: 700 !important;
+  opacity: 0.95;
+}
+
+html.dark .slot.selected {
+  background: linear-gradient(135deg, #e5c382 0%, #d8b46e 100%) !important;
+  border: 1px solid #fae0a2 !important;
+  color: #1c1202 !important;
+  box-shadow: 0 4px 20px rgba(216, 180, 110, 0.5) !important;
+}
+
+html.dark .slot.selected small {
+  color: #241402 !important;
+  font-weight: 700 !important;
+  opacity: 0.95;
 }
 
 .slot.unavailable {
@@ -225,8 +260,10 @@
 
 .slot-preview small {
   display: block;
-  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--muted);
+  transition: color 0.2s ease;
 }
 
 /* Generic Layout Row */
@@ -271,74 +308,253 @@
   color: var(--ink);
 }
 
-/* Floating Booking Bar */
+/* Floating Booking Dock / Payment Bar */
 .floating-booking {
-  position: fixed;
-  z-index: 100;
+  position: fixed !important;
+  z-index: 9999 !important;
   right: 28px;
   bottom: 28px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(201, 161, 90, 0.35);
+  box-shadow: 0 16px 40px rgba(107, 45, 63, 0.14), 0 4px 14px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   border-radius: 9999px;
-  padding: 8px 10px 8px 22px;
-  display: flex;
+  padding: 8px 10px 8px 18px;
+  display: inline-flex;
   align-items: center;
-  gap: 20px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  animation: slideUpFloating 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #1c1618;
+  font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideUpFloating {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
+.floating-booking .dock-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.floating-booking .dock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid rgba(107, 45, 63, 0.15);
+}
+
+.floating-booking .dock-badge .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.floating-booking .dock-total-box {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.floating-booking .dock-total-lbl {
+  font-size: 12.5px;
+  color: var(--muted, #6e6668);
+  font-weight: 500;
+}
+
+.floating-booking .dock-total-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary, #6B2D3F);
+  font-family: monospace, ui-monospace, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.floating-booking .dock-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.floating-booking .dock-btn-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--outline, #dcd3c5);
+  background: var(--surface-subtle, #f7f3ed);
+  color: var(--muted, #6e6668);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.floating-booking .dock-btn-clear:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+  transform: scale(1.08);
 }
 
 .floating-booking .btn-floating-proceed {
-  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%);
+  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%) !important;
   color: #2a1704 !important;
-  font-weight: 800;
+  font-weight: 800 !important;
   font-size: 14px;
-  padding: 10px 24px;
+  padding: 10px 22px;
   border-radius: 9999px;
-  box-shadow: 0 4px 14px rgba(201, 161, 90, 0.35);
-  border: none;
+  box-shadow: 0 4px 14px rgba(201, 161, 90, 0.35) !important;
+  border: none !important;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
+  gap: 7px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.floating-booking .btn-floating-proceed:hover {
-  background: linear-gradient(135deg, #e8c886 0%, #b88e45 100%);
+.floating-booking .btn-floating-proceed:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e8c886 0%, #b88e45 100%) !important;
   color: #1a0e02 !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(201, 161, 90, 0.5);
+  box-shadow: 0 6px 20px rgba(201, 161, 90, 0.5) !important;
 }
 
-html.dark .floating-booking .btn-floating-proceed {
-  background: linear-gradient(135deg, #e5c382 0%, #d8b46e 100%);
+.floating-booking .btn-floating-proceed:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.floating-booking .btn-floating-proceed:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.floating-booking .btn-floating-proceed .spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+/* Dark Mode Overrides (Multiple explicit selectors to guarantee theme matching) */
+html.dark .floating-booking,
+html[data-theme='dark'] .floating-booking,
+body.dark .floating-booking,
+:root.dark .floating-booking {
+  background: rgba(26, 20, 24, 0.95) !important;
+  border: 1px solid rgba(216, 180, 110, 0.45) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(216, 180, 110, 0.22), 0 0 0 1px rgba(216, 180, 110, 0.15) inset !important;
+  color: #FAF7F3 !important;
+}
+
+html.dark .floating-booking .dock-badge,
+html[data-theme='dark'] .floating-booking .dock-badge,
+:root.dark .floating-booking .dock-badge {
+  background: rgba(68, 26, 38, 0.85) !important;
+  color: #E58E9F !important;
+  border-color: rgba(229, 142, 159, 0.3) !important;
+}
+
+html.dark .floating-booking .dock-total-lbl,
+html[data-theme='dark'] .floating-booking .dock-total-lbl,
+:root.dark .floating-booking .dock-total-lbl {
+  color: #a89fa4 !important;
+}
+
+html.dark .floating-booking .dock-total-val,
+html[data-theme='dark'] .floating-booking .dock-total-val,
+:root.dark .floating-booking .dock-total-val {
+  color: #D8B46E !important;
+  text-shadow: 0 0 12px rgba(216, 180, 110, 0.35);
+}
+
+html.dark .floating-booking .dock-btn-clear,
+html[data-theme='dark'] .floating-booking .dock-btn-clear,
+:root.dark .floating-booking .dock-btn-clear {
+  background: #262024 !important;
+  border-color: #4d4049 !important;
+  color: #a89fa4 !important;
+}
+
+html.dark .floating-booking .dock-btn-clear:hover,
+html[data-theme='dark'] .floating-booking .dock-btn-clear:hover,
+:root.dark .floating-booking .dock-btn-clear:hover {
+  background: rgba(198, 40, 40, 0.3) !important;
+  border-color: #f87171 !important;
+  color: #fca5a5 !important;
+}
+
+html.dark .floating-booking .btn-floating-proceed,
+html[data-theme='dark'] .floating-booking .btn-floating-proceed,
+:root.dark .floating-booking .btn-floating-proceed {
+  background: linear-gradient(135deg, #e5c382 0%, #d8b46e 100%) !important;
   color: #1c1202 !important;
-  font-weight: 800;
-  box-shadow: 0 4px 16px rgba(216, 180, 110, 0.35);
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(216, 180, 110, 0.45) !important;
+  border: none !important;
 }
 
-html.dark .floating-booking .btn-floating-proceed:hover {
-  background: linear-gradient(135deg, #fae0a2 0%, #c9a15a 100%);
+html.dark .floating-booking .btn-floating-proceed:hover:not(:disabled),
+html[data-theme='dark'] .floating-booking .btn-floating-proceed:hover:not(:disabled),
+:root.dark .floating-booking .btn-floating-proceed:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fae0a2 0%, #c9a15a 100%) !important;
   color: #000000 !important;
-  box-shadow: 0 6px 22px rgba(216, 180, 110, 0.5);
+  box-shadow: 0 6px 24px rgba(216, 180, 110, 0.65) !important;
+}
+
+/* Floating Dock Toast Error Alert */
+.floating-dock-error {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  background: #fef2f2;
+  border: 1px solid #f87171;
+  color: #991b1b;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+html.dark .floating-dock-error,
+html[data-theme='dark'] .floating-dock-error,
+:root.dark .floating-dock-error {
+  background: rgba(69, 29, 29, 0.95) !important;
+  border-color: #f87171 !important;
+  color: #fecaca !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+.floating-dock-error .btn-dock-close-err {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 0 0 6px;
+  line-height: 1;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
 }
 
 /* Court Detail View */
