@@ -1,13 +1,13 @@
 /* ==========================================================================
-   Buttons & Interactive Actions
+   Buttons & Interactive Actions (Luxury Premium Club Theme)
    ========================================================================== */
 
 .btn {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 10px 22px;
-  background: var(--pink-dark);
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
@@ -22,26 +22,70 @@
   box-sizing: border-box;
 }
 
-/* In Dark Mode, --pink-dark is pastel pink, so primary button text must be dark for contrast */
-html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(.btn-pink) {
-  color: #1e1317;
+/* In Dark Mode, primary button background is luminous Rose-Velvet, so text must be dark espresso for AAA contrast */
+html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(.btn-pink):not(.accent):not(.btn-accent):not(.gold):not(.btn-gold) {
+  background: var(--primary, #E58E9F);
+  color: var(--on-primary, #1c0a10);
   font-weight: 800;
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.35);
 }
 
 .btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(120, 85, 94, 0.22);
-  filter: brightness(1.04);
+  box-shadow: 0 6px 18px rgba(107, 45, 63, 0.28);
+  filter: brightness(1.06);
 }
 
 .btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(120, 85, 94, 0.15);
+  box-shadow: 0 2px 6px rgba(107, 45, 63, 0.18);
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--pink-dark);
+  outline: 2px solid var(--primary, #6B2D3F);
   outline-offset: 2px;
+}
+
+/* Accent / Gold / VIP Variant (High Contrast AAA) */
+.btn.accent,
+.btn.gold,
+.btn-accent,
+.btn-gold {
+  background: var(--accent, #C9A15A);
+  color: var(--on-accent, #2A1704);
+  font-weight: 750;
+  border: 1px solid rgba(201, 161, 90, 0.4);
+  box-shadow: var(--shadow-gold, 0 4px 16px rgba(201, 161, 90, 0.28));
+}
+
+.btn.accent:hover,
+.btn.gold:hover,
+.btn-accent:hover,
+.btn-gold:hover {
+  background: var(--accent-hover, #b88e45);
+  color: var(--on-accent, #2A1704);
+  box-shadow: 0 6px 22px rgba(201, 161, 90, 0.42);
+  transform: translateY(-1px);
+}
+
+html.dark .btn.accent,
+html.dark .btn.gold,
+html.dark .btn-accent,
+html.dark .btn-gold {
+  background: var(--accent, #D8B46E);
+  color: var(--on-accent, #1c1202);
+  font-weight: 800;
+  box-shadow: 0 4px 18px rgba(216, 180, 110, 0.35);
+}
+
+html.dark .btn.accent:hover,
+html.dark .btn.gold:hover,
+html.dark .btn-accent:hover,
+html.dark .btn-gold:hover {
+  background: var(--accent-hover, #e5c382);
+  color: #000000;
+  box-shadow: 0 6px 24px rgba(216, 180, 110, 0.5);
+  transform: translateY(-1px);
 }
 
 /* Secondary / Outline Variant */
@@ -58,35 +102,35 @@ html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-s
 .btn.outline:hover,
 .btn-secondary:hover {
   background: var(--soft);
-  border-color: var(--pink-dark);
-  color: var(--pink-dark);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(107, 45, 63, 0.08);
 }
 
-/* Pink / Tint Variant */
+/* Tint / Container Variant */
 .btn.pink,
 .btn-pink {
-  background: var(--pink-light);
-  color: var(--pink-dark);
-  border: 1px solid var(--pink);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
+  border: 1px solid rgba(107, 45, 63, 0.2);
 }
 
 .btn.pink:hover,
 .btn-pink:hover {
-  background: var(--pink);
-  color: var(--ink);
+  background: #f2d6de;
+  color: var(--primary, #6B2D3F);
 }
 
 html.dark .btn.pink,
 html.dark .btn-pink {
-  background: rgba(248, 180, 196, 0.18);
-  color: #f8b4c4;
-  border: 1px solid rgba(248, 180, 196, 0.4);
+  background: var(--primary-container, #441a26);
+  color: var(--primary, #E58E9F);
+  border: 1px solid rgba(229, 142, 159, 0.35);
 }
 
 html.dark .btn.pink:hover,
 html.dark .btn-pink:hover {
-  background: rgba(248, 180, 196, 0.3);
+  background: rgba(229, 142, 159, 0.25);
   color: #ffffff;
 }
 
@@ -95,7 +139,7 @@ html.dark .btn-pink:hover {
 .btn-danger {
   color: var(--error-text, #c62828);
   background: transparent;
-  border: 1px solid var(--error-bg, #ffdad6);
+  border: 1px solid var(--error-bg, #ffebee);
   box-shadow: none;
 }
 
@@ -118,7 +162,7 @@ html.dark .btn-pink:hover {
 .btn.ghost:hover,
 .btn-ghost:hover {
   background: var(--surface-subtle);
-  color: var(--pink-dark);
+  color: var(--primary);
 }
 
 /* Size Variants */
@@ -148,7 +192,7 @@ html.dark .btn-pink:hover {
   border: 0;
   background: none;
   cursor: pointer;
-  color: var(--pink-dark);
+  color: var(--primary, #6B2D3F);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -161,22 +205,23 @@ html.dark .btn-pink:hover {
 
 .search-action {
   border: 0;
-  background: linear-gradient(135deg, #ffd1dc 0%, #ffb6c5 100%);
-  color: #78555e;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   border-radius: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(255, 182, 197, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.28);
+  font-weight: 700;
 }
 
 .search-action:hover {
-  background: linear-gradient(135deg, #ffb6c5 0%, #ffa4b6 100%);
-  color: #5d4249;
+  background: var(--primary-hover, #562332);
+  color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(255, 182, 197, 0.55);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.4);
 }
 
 .search-action:active {
@@ -190,14 +235,13 @@ html.dark .btn-pink:hover {
 }
 
 html.dark .search-action {
-  background: linear-gradient(135deg, #ffb6c5 0%, #f8b4c4 100%);
-  color: #121212;
-  box-shadow: 0 4px 16px rgba(255, 182, 197, 0.35);
+  background: var(--primary, #E58E9F);
+  color: var(--on-primary, #1c0a10);
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.35);
 }
 
 html.dark .search-action:hover {
-  background: linear-gradient(135deg, #ffa4b6 0%, #f497aa 100%);
-  color: #000000;
-  box-shadow: 0 6px 22px rgba(255, 182, 197, 0.5);
+  background: var(--primary-hover, #f0a3b2);
+  color: #1c0a10;
+  box-shadow: 0 6px 22px rgba(229, 142, 159, 0.5);
 }
-

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { getAvatarUrl } from '@/lib/avatar'
 import LanguageSwitcher from '@/shared/components/LanguageSwitcher.vue'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
+import NavbarSkeleton from './NavbarSkeleton.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -33,11 +34,13 @@ const userRoleBadge = computed(() => {
 })
 
 const isBookingActive = computed(() => {
-  return route.path.startsWith('/booking') || route.path.startsWith('/payment') || route.path.startsWith('/wallet')
+  const path = route?.path || ''
+  return path.startsWith('/booking') || path.startsWith('/payment') || path.startsWith('/wallet')
 })
 
 const isCommunityActive = computed(() => {
-  return route.path.startsWith('/resale') || route.path.startsWith('/marketplace') || route.path.startsWith('/matchmaking') || route.path.startsWith('/social-tournaments') || route.path.startsWith('/tournaments')
+  const path = route?.path || ''
+  return path.startsWith('/resale') || path.startsWith('/marketplace') || path.startsWith('/matchmaking') || path.startsWith('/social-tournaments') || path.startsWith('/tournaments')
 })
 
 function toggleMenu(menu: 'booking' | 'community') {
@@ -68,7 +71,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header ref="topbar" class="topbar">
+  <NavbarSkeleton v-if="!auth.loaded && auth.loading" />
+  <header v-else ref="topbar" class="topbar">
     <div class="topbar-inner">
       <!-- Brand Left -->
       <RouterLink to="/" class="brand" title="Aura Court">
@@ -80,14 +84,14 @@ onBeforeUnmount(() => {
 
       <!-- Center Floating Pill Nav -->
       <nav class="nav-pill-container" aria-label="Main navigation">
-        <RouterLink to="/" class="nav-pill-link" :class="{ active: route.path === '/' }">
+        <RouterLink to="/" class="nav-pill-link" :class="{ active: (route?.path || '') === '/' }">
           {{ $t('nav.home') }}
         </RouterLink>
         <div class="nav-dropdown" :class="{ open: openMenu === 'booking' }">
           <button
             type="button"
             class="nav-pill-link nav-dropdown-trigger"
-            :class="{ active: route.path.startsWith('/courts') || isBookingActive }"
+            :class="{ active: (route?.path || '').startsWith('/courts') || isBookingActive }"
             aria-haspopup="menu"
             :aria-expanded="openMenu === 'booking'"
             @click.stop="toggleMenu('booking')"
@@ -149,14 +153,14 @@ onBeforeUnmount(() => {
             </RouterLink>
           </div>
         </div>
-        <RouterLink to="/about" class="nav-pill-link" :class="{ active: route.path === '/about' }">
+        <RouterLink to="/about" class="nav-pill-link" :class="{ active: (route?.path || '') === '/about' }">
           {{ $t('nav.promotions') }}
         </RouterLink>
         <RouterLink
           v-if="auth.user?.role === 'admin'"
           to="/admin"
           class="nav-pill-link"
-          :class="{ active: route.path.startsWith('/admin') }"
+          :class="{ active: (route?.path || '').startsWith('/admin') }"
         >
           {{ $t('nav.admin') }}
         </RouterLink>
@@ -350,26 +354,26 @@ onBeforeUnmount(() => {
 }
 
 .nav-dropdown-item .material-symbols-outlined {
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #6B2D3F);
   font-size: 19px;
 }
 
 .nav-dropdown-item:hover,
 .nav-dropdown-item.router-link-active {
-  background: var(--surface-subtle, #f5f6f8);
-  color: var(--pink-dark, #78555e);
+  background: var(--surface-subtle, #f7f3ed);
+  color: var(--primary, #6B2D3F);
 }
 
 .nav-pill-link:hover {
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #6B2D3F);
 }
 
 .nav-pill-link.active,
 .nav-pill-link.router-link-exact-active {
-  background: var(--nav-active-bg, #78555e);
+  background: var(--nav-active-bg, #6B2D3F);
   color: var(--nav-active-text, #ffffff);
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.22);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.22);
 }
 
 /* Right Section */
@@ -399,7 +403,7 @@ onBeforeUnmount(() => {
 .user-name {
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--ink, #191c1d);
+  color: var(--ink, #1c1618);
   transition: color 0.3s ease;
   width: 100%;
   white-space: nowrap;
@@ -418,8 +422,8 @@ onBeforeUnmount(() => {
   letter-spacing: 0.06em;
   padding: 1.5px 6px;
   border-radius: 4px;
-  background: var(--primary-container, #ffd1dc);
-  color: var(--primary, #78555e);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   text-transform: uppercase;
   margin-top: 2px;
   white-space: nowrap;
@@ -428,10 +432,10 @@ onBeforeUnmount(() => {
 }
 
 :global(html.dark) .user-badge {
-  background: rgba(248, 180, 196, 0.22) !important;
-  color: #f8b4c4 !important;
-  border: 1px solid rgba(248, 180, 196, 0.45) !important;
-  box-shadow: 0 0 10px rgba(248, 180, 196, 0.25) !important;
+  background: rgba(229, 142, 159, 0.22) !important;
+  color: var(--primary, #E58E9F) !important;
+  border: 1px solid rgba(229, 142, 159, 0.45) !important;
+  box-shadow: 0 0 10px rgba(229, 142, 159, 0.25) !important;
 }
 
 .user-avatar-btn {
@@ -439,22 +443,22 @@ onBeforeUnmount(() => {
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--pink-light, #ffd9e2);
-  color: var(--pink-dark, #5e3e47);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
   display: grid;
   place-items: center;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.15);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.15);
   border: 1.5px solid var(--outline);
   flex-shrink: 0;
 }
 
 :global(html.dark) .user-avatar-btn {
-  background: #53333e;
-  color: #f8b4c4;
-  border-color: rgba(248, 180, 196, 0.35);
-  box-shadow: 0 2px 10px rgba(248, 180, 196, 0.2);
+  background: #36141d;
+  color: var(--primary, #E58E9F);
+  border-color: rgba(229, 142, 159, 0.35);
+  box-shadow: 0 2px 10px rgba(229, 142, 159, 0.2);
 }
 
 .user-avatar-btn:hover {
@@ -494,6 +498,88 @@ onBeforeUnmount(() => {
   font-size: 18px;
 }
 
+/* User profile loading skeleton */
+.user-profile-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.user-meta-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.user-skel-bar {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--soft, #eff1f4);
+  border-radius: 4px;
+}
+
+.user-skel-bar::after,
+.user-skel-avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(201, 161, 90, 0.22) 45%,
+    rgba(255, 255, 255, 0.7) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: user-skel-shimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+:global(html.dark) .user-skel-bar,
+:global(html.dark) .user-skel-avatar {
+  background-color: var(--soft, #262024);
+}
+
+:global(html.dark) .user-skel-bar::after,
+:global(html.dark) .user-skel-avatar::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(229, 142, 159, 0.25) 45%,
+    rgba(255, 255, 255, 0.12) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.user-skel-bar.name {
+  width: 76px;
+  height: 13px;
+}
+
+.user-skel-bar.badge {
+  width: 48px;
+  height: 11px;
+}
+
+.user-skel-avatar {
+  position: relative;
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--soft, #eff1f4);
+  flex-shrink: 0;
+}
+
+@keyframes user-skel-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @media (max-width: 1150px) {
   .user-meta {
     max-width: 110px;
@@ -501,7 +587,8 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 960px) {
-  .user-meta {
+  .user-meta,
+  .user-meta-skeleton {
     display: none;
   }
   .nav-pill-link {

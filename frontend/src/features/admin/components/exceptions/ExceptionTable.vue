@@ -157,9 +157,9 @@ const emit = defineEmits<{
 }
 
 .tab-btn.active {
-  background: #ffd1dc;
-  color: #78555e;
-  border-color: #e7bbc6;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
+  border-color: var(--border, #e8e1d7);
 }
 
 .exceptions-table-wrapper {
@@ -270,8 +270,8 @@ const emit = defineEmits<{
 }
 
 .btn-override {
-  background: #ffd1dc;
-  color: #78555e;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   border: none;
   padding: 6px 14px;
   border-radius: 8px;

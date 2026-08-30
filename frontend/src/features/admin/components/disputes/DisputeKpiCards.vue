@@ -105,8 +105,8 @@ defineProps<{
 }
 
 .icon-pending {
-  background: #ffd1dc;
-  color: #78555e;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
 }
 
 .icon-investigating {

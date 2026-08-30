@@ -230,8 +230,8 @@ onBeforeUnmount(() => {
 .lang-trigger:hover,
 .lang-trigger.open {
   background: var(--surface, #ffffff);
-  border-color: var(--pink-dark, #78555e);
-  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.12);
+  border-color: var(--primary, #6B2D3F);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
 }
 
 .flag-icon-wrap {
@@ -256,19 +256,19 @@ onBeforeUnmount(() => {
 .lang-text {
   font-size: 13px;
   letter-spacing: 0.02em;
-  color: var(--ink, #2b1f22);
+  color: var(--ink, #1c1618);
   font-weight: 700;
 }
 
 .lang-arrow {
   font-size: 18px;
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #6B2D3F);
   transition: transform 0.18s ease;
   line-height: 1;
 }
 
 :global(html.dark) .lang-arrow {
-  color: #ffffff !important;
+  color: var(--primary, #E58E9F);
 }
 
 .lang-trigger.open .lang-arrow {
@@ -336,24 +336,24 @@ onBeforeUnmount(() => {
 }
 
 .lang-option:hover {
-  background: var(--soft, #fbf5f7);
-  color: var(--pink-dark, #78555e);
+  background: var(--soft, #f0eae1);
+  color: var(--primary, #6B2D3F);
 }
 
 :global(html.dark) .lang-option:hover {
-  background: #2b2e36;
+  background: #262024;
   color: #ffffff;
 }
 
 .lang-option.selected {
-  background: var(--pink-light, #ffd9e2);
-  color: var(--pink-dark, #5e3e47);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   font-weight: 700;
 }
 
 :global(html.dark) .lang-option.selected {
-  background: #53333e;
-  color: #f8b4c4;
+  background: #441a26;
+  color: var(--primary, #E58E9F);
 }
 
 .option-flag-wrap {
@@ -374,11 +374,11 @@ onBeforeUnmount(() => {
 
 .check-icon {
   font-size: 17px;
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #6B2D3F);
 }
 
 :global(html.dark) .check-icon {
-  color: #f8b4c4;
+  color: var(--primary, #E58E9F);
 }
 
 /* Transitions */

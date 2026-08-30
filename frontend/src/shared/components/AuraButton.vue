@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'glass'
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'glass' | 'accent' | 'gold'
   size?: 'sm' | 'md' | 'lg' | 'pill'
   type?: 'button' | 'submit' | 'reset'
   to?: string | object
@@ -184,73 +184,108 @@ const buttonClasses = computed(() => [
 }
 
 /* ================= VARIANTS ================= */
-/* 1. Primary Variant (High Contrast & Vibrant Glow) */
+/* 1. Primary Variant (Deep Burgundy Velvet) */
 .aura-btn--primary {
-  background-color: var(--primary, #78555e);
+  background-color: var(--primary, #6B2D3F);
   color: var(--on-primary, #ffffff);
-  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
 }
 
 .aura-btn--primary:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(120, 85, 94, 0.35);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
 :global(html.dark) .aura-btn--primary {
-  background-color: #f8b4c4;
-  color: #201317;
+  background-color: var(--primary, #E58E9F);
+  color: var(--on-primary, #1c0a10);
   font-weight: 800;
-  box-shadow: 0 4px 18px rgba(248, 180, 196, 0.38);
+  box-shadow: 0 4px 18px rgba(229, 142, 159, 0.35);
 }
 
 :global(html.dark) .aura-btn--primary:hover:not(:disabled) {
-  background-color: #ffd5df;
-  color: #201317;
-  box-shadow: 0 6px 24px rgba(248, 180, 196, 0.5);
+  background-color: #f0a3b2;
+  color: #1c0a10;
+  box-shadow: 0 6px 24px rgba(229, 142, 159, 0.5);
+  transform: translateY(-1px);
+}
+
+/* 1b. Accent / Gold Variant (VIP Action & High Contrast) */
+.aura-btn--accent,
+.aura-btn--gold {
+  background-color: var(--accent, #C9A15A);
+  color: var(--on-accent, #2A1704);
+  font-weight: 750;
+  border: 1px solid rgba(201, 161, 90, 0.4);
+  box-shadow: var(--shadow-gold, 0 4px 16px rgba(201, 161, 90, 0.28));
+}
+
+.aura-btn--accent:hover:not(:disabled),
+.aura-btn--gold:hover:not(:disabled) {
+  background-color: var(--accent-hover, #b88e45);
+  color: var(--on-accent, #2A1704);
+  box-shadow: 0 6px 22px rgba(201, 161, 90, 0.42);
+  transform: translateY(-1px);
+}
+
+:global(html.dark) .aura-btn--accent,
+:global(html.dark) .aura-btn--gold {
+  background-color: var(--accent, #D8B46E);
+  color: var(--on-accent, #1c1202);
+  font-weight: 800;
+  box-shadow: 0 4px 18px rgba(216, 180, 110, 0.35);
+}
+
+:global(html.dark) .aura-btn--accent:hover:not(:disabled),
+:global(html.dark) .aura-btn--gold:hover:not(:disabled) {
+  background-color: var(--accent-hover, #e5c382);
+  color: #000000;
+  box-shadow: 0 6px 24px rgba(216, 180, 110, 0.5);
   transform: translateY(-1px);
 }
 
 /* 2. Secondary Variant */
 .aura-btn--secondary {
-  background-color: var(--surface-container, #edeeef);
-  color: var(--on-surface, #191c1d);
-  border-color: var(--border, #e0e4ea);
+  background-color: var(--surface-container, #f3ece3);
+  color: var(--on-surface, #1c1618);
+  border-color: var(--border, #e8e1d7);
 }
 
 .aura-btn--secondary:hover:not(:disabled) {
-  background-color: var(--surface-container-high, #e7e8e9);
-  color: var(--on-surface, #191c1d);
+  background-color: var(--surface-container-high, #eae2d7);
+  color: var(--on-surface, #1c1618);
 }
 
 :global(html.dark) .aura-btn--secondary {
-  background-color: var(--surface-container, #2b2e36);
-  border-color: var(--border, #353942);
-  color: var(--on-surface, #f3f4f6);
+  background-color: var(--surface-container, #262024);
+  border-color: var(--border, #382f35);
+  color: var(--on-surface, #FAF7F3);
 }
 
 :global(html.dark) .aura-btn--secondary:hover:not(:disabled) {
-  background-color: var(--surface-container-high, #353943);
+  background-color: var(--surface-container-high, #322b30);
 }
 
 /* 3. Outline Variant */
 .aura-btn--outline {
   background-color: transparent;
-  color: var(--primary, #78555e);
-  border-color: var(--primary, #78555e);
+  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6B2D3F);
 }
 
 .aura-btn--outline:hover:not(:disabled) {
-  background-color: var(--primary-container, #ffd1dc);
+  background-color: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
 }
 
 :global(html.dark) .aura-btn--outline {
-  color: #f8b4c4;
-  border-color: #f8b4c4;
+  color: var(--primary, #E58E9F);
+  border-color: var(--primary, #E58E9F);
 }
 
 :global(html.dark) .aura-btn--outline:hover:not(:disabled) {
-  background-color: rgba(248, 180, 196, 0.15);
+  background-color: rgba(229, 142, 159, 0.15);
 }
 
 /* 4. Ghost Variant */

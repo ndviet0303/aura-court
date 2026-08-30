@@ -61,14 +61,14 @@ const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
   right: 0;
   height: 3px;
   z-index: 100;
-  background: rgba(255, 209, 220, 0.4);
+  background: rgba(201, 161, 90, 0.2);
   overflow: hidden;
 }
 
 .progress-glow {
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, #ffd1dc 0%, #78555e 50%, #ffd9e2 100%);
+  background: linear-gradient(90deg, #F8E8EC 0%, #6B2D3F 40%, #C9A15A 70%, #FAF2E3 100%);
   animation: route-progress-sweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   transform-origin: left center;
 }

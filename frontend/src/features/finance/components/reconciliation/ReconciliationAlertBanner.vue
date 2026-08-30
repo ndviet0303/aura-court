@@ -108,7 +108,7 @@ const emit = defineEmits<{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #78555e;
+  background: var(--primary, #6B2D3F);
   color: #ffffff;
   border: none;
   padding: 8px 16px;

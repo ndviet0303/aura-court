@@ -135,18 +135,18 @@ const containerClass = computed(() => {
 }
 
 .ring-outer {
-  border-color: rgba(255, 209, 220, 0.45);
-  border-top-color: #78555e;
-  border-right-color: #ffd1dc;
+  border-color: rgba(201, 161, 90, 0.25);
+  border-top-color: var(--primary, #6B2D3F);
+  border-right-color: var(--accent, #C9A15A);
   animation: aura-spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
-  box-shadow: 0 0 16px rgba(120, 85, 94, 0.12);
+  box-shadow: 0 0 16px rgba(107, 45, 63, 0.15);
 }
 
 .ring-inner {
   inset: 5px;
   border-color: transparent;
-  border-bottom-color: #e7bbc6;
-  border-left-color: #5e3e47;
+  border-bottom-color: var(--accent, #C9A15A);
+  border-left-color: var(--primary, #6B2D3F);
   animation: aura-spin-reverse 1.4s linear infinite;
   opacity: 0.85;
 }
@@ -163,7 +163,7 @@ const containerClass = computed(() => {
   background: #ffffff;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 8px rgba(120, 85, 94, 0.15);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.15);
   animation: aura-pulse 2s ease-in-out infinite;
 }
 

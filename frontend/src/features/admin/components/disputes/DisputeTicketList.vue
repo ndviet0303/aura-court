@@ -190,9 +190,9 @@ function getStatusBadge(item: DisputeCase) {
 }
 
 .tab-btn.active {
-  background: #ffd1dc;
-  color: #78555e;
-  border-color: #ffd1dc;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
+  border-color: var(--border, #e8e1d7);
 }
 
 .items-scroll {

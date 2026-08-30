@@ -16,7 +16,7 @@ const tax_code = ref(props.org.tax_code || '')
 const supportEmail = ref(props.org.support_email || '')
 const phone = ref(props.org.phone || '')
 const address = ref(props.org.address || '')
-const brandColor = ref(props.org.brand_color || '#78555e')
+const brandColor = ref(props.org.brand_color || '#6B2D3F')
 
 watch(
   () => props.org,
@@ -26,7 +26,7 @@ watch(
     supportEmail.value = o.support_email || ''
     phone.value = o.phone || ''
     address.value = o.address || ''
-    brandColor.value = o.brand_color || '#78555e'
+    brandColor.value = o.brand_color || '#6B2D3F'
   }
 )
 

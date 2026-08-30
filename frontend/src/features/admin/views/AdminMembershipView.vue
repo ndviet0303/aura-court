@@ -183,29 +183,30 @@ const {
   padding: 12px 22px;
   border-radius: 12px;
   border: none;
-  background: var(--primary, #78555e);
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
   transition: all 0.2s ease;
 }
 
 .btn-create-plan:hover {
-  background: #63434c;
+  background: var(--primary-hover, #562332);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(120, 85, 94, 0.35);
+  box-shadow: 0 6px 18px rgba(107, 45, 63, 0.35);
 }
 
 :global(html.dark) .btn-create-plan {
-  background: #f8b4c4;
-  color: #201317;
-  box-shadow: 0 4px 14px rgba(248, 180, 196, 0.3);
+  background: var(--primary, #E58E9F);
+  color: var(--on-primary, #1c0a10);
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(229, 142, 159, 0.3);
 }
 
 :global(html.dark) .btn-create-plan:hover {
-  background: #ffd1dc;
+  background: #f0a3b2;
 }
 
 .membership-content-grid {

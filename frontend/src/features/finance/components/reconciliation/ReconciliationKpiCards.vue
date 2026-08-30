@@ -123,8 +123,8 @@ function formatCurrency(amount: number): string {
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(120, 85, 94, 0.08);
-  border-color: #ffd1dc;
+  box-shadow: 0 8px 20px rgba(107, 45, 63, 0.08);
+  border-color: var(--accent, #C9A15A);
 }
 
 .warning-card {
@@ -149,7 +149,7 @@ function formatCurrency(amount: number): string {
 }
 
 .primary-glow {
-  background: #ffd1dc;
+  background: var(--primary-container, #F8E8EC);
 }
 
 .error-glow {
@@ -170,7 +170,7 @@ function formatCurrency(amount: number): string {
 
 .icon-type {
   font-size: 20px;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
 }
 
 .card-label {

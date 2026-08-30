@@ -22,7 +22,7 @@
   height: 540px;
   right: -160px;
   top: -120px;
-  border: 38px solid rgba(255, 209, 220, 0.3);
+  border: 38px solid rgba(201, 161, 90, 0.15);
   border-radius: 50%;
   z-index: -1;
 }
@@ -298,6 +298,7 @@
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -305,13 +306,13 @@
 }
 
 .floating-booking .btn-floating-proceed {
-  background: linear-gradient(135deg, #ffd1dc 0%, #ffb6c5 100%);
-  color: #5c353f !important;
+  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%);
+  color: #2a1704 !important;
   font-weight: 800;
   font-size: 14px;
   padding: 10px 24px;
   border-radius: 9999px;
-  box-shadow: 0 4px 14px rgba(255, 182, 197, 0.4);
+  box-shadow: 0 4px 14px rgba(201, 161, 90, 0.35);
   border: none;
   display: inline-flex;
   align-items: center;
@@ -321,23 +322,23 @@
 }
 
 .floating-booking .btn-floating-proceed:hover {
-  background: linear-gradient(135deg, #ffb6c5 0%, #ffa4b6 100%);
-  color: #3b1d25 !important;
+  background: linear-gradient(135deg, #e8c886 0%, #b88e45 100%);
+  color: #1a0e02 !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 182, 197, 0.6);
+  box-shadow: 0 6px 20px rgba(201, 161, 90, 0.5);
 }
 
 html.dark .floating-booking .btn-floating-proceed {
-  background: linear-gradient(135deg, #ffd1dc 0%, #ffb6c5 100%);
-  color: #1a0f13 !important;
+  background: linear-gradient(135deg, #e5c382 0%, #d8b46e 100%);
+  color: #1c1202 !important;
   font-weight: 800;
-  box-shadow: 0 4px 16px rgba(255, 182, 197, 0.4);
+  box-shadow: 0 4px 16px rgba(216, 180, 110, 0.35);
 }
 
 html.dark .floating-booking .btn-floating-proceed:hover {
-  background: linear-gradient(135deg, #ffc0cd 0%, #ffa4b6 100%);
+  background: linear-gradient(135deg, #fae0a2 0%, #c9a15a 100%);
   color: #000000 !important;
-  box-shadow: 0 6px 22px rgba(255, 182, 197, 0.6);
+  box-shadow: 0 6px 22px rgba(216, 180, 110, 0.5);
 }
 
 /* Court Detail View */
@@ -474,7 +475,7 @@ html.dark .floating-booking .btn-floating-proceed:hover {
   text-transform: uppercase;
 }
 
-.not-found > *:not(.not-found-art) {
+.not-found>*:not(.not-found-art) {
   position: relative;
   z-index: 1;
   max-width: 500px;
@@ -513,10 +514,10 @@ html.dark .floating-booking .btn-floating-proceed:hover {
 .demo-request-note {
   margin-top: 18px;
   padding: 12px 14px;
-  border: 1px solid #e9c6ce;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff8fa;
-  color: #6f3040;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -553,7 +554,12 @@ html.dark .floating-booking .btn-floating-proceed:hover {
 }
 
 .admin-nav-item.active {
-  background: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
   font-weight: 600;
+}
+
+html.dark .admin-nav-item.active {
+  background: var(--primary-container, #441a26);
+  color: var(--primary, #E58E9F);
 }

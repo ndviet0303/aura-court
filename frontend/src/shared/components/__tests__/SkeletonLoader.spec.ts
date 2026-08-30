@@ -45,4 +45,16 @@ describe('SkeletonLoader', () => {
     expect(wrapper.find('.skeleton-court-detail').exists()).toBe(true)
     expect(wrapper.find('.skeleton-hero-title').exists()).toBe(true)
   })
+
+  it('renders navbar skeleton', () => {
+    const wrapper = mount(SkeletonLoader, {
+      props: {
+        type: 'navbar',
+      },
+    })
+    expect(wrapper.find('.navbar-skeleton').exists()).toBe(true)
+    expect(wrapper.find('.skeleton-brand').exists()).toBe(true)
+    expect(wrapper.find('.skeleton-nav-pills').exists()).toBe(true)
+    expect(wrapper.find('.skeleton-nav-right').exists()).toBe(true)
+  })
 })

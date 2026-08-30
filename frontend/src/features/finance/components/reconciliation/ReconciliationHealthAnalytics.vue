@@ -159,7 +159,7 @@ const liveLogs = [
 
 .header-icon {
   font-size: 20px;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
 }
 
 .card-title {
@@ -172,8 +172,8 @@ const liveLogs = [
 .rate-badge {
   font-size: 12px;
   font-weight: 700;
-  background: #ffd1dc;
-  color: #7a5761;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   padding: 3px 10px;
   border-radius: 999px;
 }
@@ -244,7 +244,7 @@ const liveLogs = [
 }
 
 .bar-ok {
-  background: #78555e;
+  background: var(--primary, #6B2D3F);
 }
 
 .bar-warn {
@@ -278,7 +278,7 @@ const liveLogs = [
 }
 
 .dot-ok {
-  background: #78555e;
+  background: var(--primary, #6B2D3F);
 }
 
 .dot-warn {
@@ -317,8 +317,8 @@ const liveLogs = [
 }
 
 .icon-auto_resolve {
-  background: #ffd1dc;
-  color: #7a5761;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
 }
 
 .icon-mismatch {

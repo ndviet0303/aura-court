@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import NavbarSkeleton from '../layouts/NavbarSkeleton.vue'
+
 interface Props {
-  type?: 'text' | 'title' | 'avatar' | 'card' | 'court-card' | 'court-detail' | 'slot' | 'rect'
+  type?: 'text' | 'title' | 'avatar' | 'card' | 'court-card' | 'court-detail' | 'slot' | 'rect' | 'navbar'
   width?: string
   height?: string
   rounded?: string
@@ -71,6 +73,9 @@ withDefaults(defineProps<Props>(), {
         <div class="skeleton-item skeleton-text"></div>
         <div class="skeleton-item skeleton-text short"></div>
       </div>
+
+      <!-- Navbar Skeleton -->
+      <NavbarSkeleton v-else-if="type === 'navbar'" :fixed="false" />
 
       <!-- Basic Types -->
       <div

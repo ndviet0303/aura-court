@@ -59,10 +59,10 @@ export function useOrganizationOwner() {
   })
 
   const brandColorOptions = [
-    { label: 'Aura Mauve (Mặc định)', value: '#78555e' },
-    { label: 'Deep Wine', value: '#5e3e47' },
+    { label: 'Burgundy Luxury (Mặc định)', value: '#6B2D3F' },
+    { label: 'Gold Champagne', value: '#C9A15A' },
+    { label: 'Aura Mauve', value: '#78555e' },
     { label: 'Sage Olive', value: '#8ba89f' },
-    { label: 'Dusty Lavender', value: '#9e97ab' },
     { label: 'Emerald Pro', value: '#386a55' },
   ]
 

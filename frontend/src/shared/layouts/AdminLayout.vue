@@ -463,9 +463,10 @@ function closeMobileSidebar() {
 }
 
 .sidebar-nav-item.active {
-  background: var(--primary, #78555e);
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   font-weight: 700;
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
 }
 
 :global(html.dark) .sidebar-nav-item {
@@ -478,10 +479,10 @@ function closeMobileSidebar() {
 }
 
 :global(html.dark) .sidebar-nav-item.active {
-  background: #f8b4c4;
-  color: #201317;
+  background: var(--primary, #E58E9F);
+  color: var(--on-primary, #1c0a10);
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(248, 180, 196, 0.3);
+  box-shadow: 0 4px 14px rgba(229, 142, 159, 0.35);
 }
 
 .nav-icon {
@@ -548,8 +549,8 @@ function closeMobileSidebar() {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--primary, #78555e);
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   font-size: 13px;
   font-weight: 700;
   display: flex;
@@ -559,8 +560,8 @@ function closeMobileSidebar() {
 }
 
 :global(html.dark) .user-avatar-circle {
-  background: #53333e;
-  color: #f8b4c4;
+  background: #36141d;
+  color: var(--primary, #E58E9F);
 }
 
 .user-info-text {

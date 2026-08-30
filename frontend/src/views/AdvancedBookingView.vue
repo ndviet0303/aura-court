@@ -72,8 +72,8 @@ onMounted(load)
   <main class="page-shell">
     <section class="row"><div><div class="eyebrow">API v2 · Advanced booking</div><h1 class="page-title">Lịch định kỳ & marketplace</h1><p class="muted">Lịch dài hạn, chia tiền và chuyển suất đặt sân có kiểm soát.</p></div>
       <div style="margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap;">
-        <RouterLink to="/resale" class="btn" style="background: #78555e; color: #ffffff; font-weight: 700;">🏪 Mở Chợ Nhượng Sân</RouterLink>
-        <RouterLink to="/recurring-booking" class="btn" style="background: var(--pink); color: #191c1d; font-weight: 700;">✨ Mở Đặt sân Định kỳ</RouterLink>
+        <RouterLink to="/resale" class="btn btn-primary">🏪 Mở Chợ Nhượng Sân</RouterLink>
+        <RouterLink to="/recurring-booking" class="btn btn-accent">✨ Mở Đặt sân Định kỳ</RouterLink>
       </div>
     </section>
     <p v-if="error" class="error">{{ error }}</p><p v-if="notice" class="notice">{{ notice }}</p>

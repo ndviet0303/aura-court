@@ -22,15 +22,21 @@ onMounted(() => {
 
 <template>
   <Teleport to="body">
-    <Transition name="modal-fade">
-      <div v-if="isOpen" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="modal-backdrop" @click="dismiss"></div>
-        <div class="modal-container">
-          <div class="modal-card">
+    <Transition name="demo-modal-fade">
+      <div
+        v-if="isOpen"
+        class="demo-modal-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="demo-modal-title"
+      >
+        <div class="demo-modal-backdrop" @click="dismiss"></div>
+        <div class="demo-modal-container">
+          <div class="demo-modal-card">
             <!-- Close Button -->
             <button
               type="button"
-              class="modal-close-btn"
+              class="demo-modal-close-btn"
               :aria-label="$t('common.close')"
               :title="$t('common.close')"
               @click="dismiss"
@@ -39,32 +45,32 @@ onMounted(() => {
             </button>
 
             <!-- Warning Icon -->
-            <div class="modal-icon-badge">
-              <span class="material-symbols-outlined modal-icon">warning</span>
+            <div class="demo-modal-icon-badge">
+              <span class="material-symbols-outlined demo-modal-icon">warning</span>
             </div>
 
             <!-- Tag -->
-            <div class="modal-tag">
+            <div class="demo-modal-tag">
               {{ $t('common.demoModal.warningTag') }}
             </div>
 
             <!-- Title -->
-            <h2 id="modal-title" class="modal-title">
+            <h2 id="demo-modal-title" class="demo-modal-title">
               {{ $t('common.demoModal.title') }}
             </h2>
 
             <!-- Content -->
-            <div class="modal-body">
-              <p class="modal-text">
+            <div class="demo-modal-body">
+              <p class="demo-modal-text">
                 {{ $t('common.demoModal.content1') }}
               </p>
-              <p class="modal-text highlight">
+              <p class="demo-modal-text highlight">
                 {{ $t('common.demoModal.content2') }}
               </p>
             </div>
 
             <!-- Action Button -->
-            <div class="modal-actions">
+            <div class="demo-modal-actions">
               <button type="button" class="btn-understand" @click="dismiss">
                 <span>{{ $t('common.demoModal.understandBtn') }}</span>
                 <span class="material-symbols-outlined">arrow_forward</span>
@@ -78,45 +84,47 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.modal-overlay {
+.demo-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
 
-.modal-backdrop {
+.demo-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(25, 28, 29, 0.45);
+  z-index: 1;
+  background: rgba(15, 20, 25, 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
-.modal-container {
+.demo-modal-container {
   position: relative;
   z-index: 10;
   width: 100%;
   max-width: 480px;
 }
 
-.modal-card {
+.demo-modal-card {
   position: relative;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, rgba(225, 227, 228, 0.8));
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border, rgba(225, 227, 228, 0.8));
   border-radius: 24px;
   padding: 36px 32px 30px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(120, 85, 94, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(120, 85, 94, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  color: var(--ink, #191c1d);
 }
 
-.modal-close-btn {
+.demo-modal-close-btn {
   position: absolute;
   top: 18px;
   right: 18px;
@@ -132,16 +140,16 @@ onMounted(() => {
   transition: all 0.2s ease;
 }
 
-.modal-close-btn:hover {
+.demo-modal-close-btn:hover {
   background: var(--pink-light, #ffd1dc);
   color: var(--pink-dark, #5e3e47);
 }
 
-.modal-close-btn .material-symbols-outlined {
+.demo-modal-close-btn .material-symbols-outlined {
   font-size: 18px;
 }
 
-.modal-icon-badge {
+.demo-modal-icon-badge {
   width: 64px;
   height: 64px;
   border-radius: 20px;
@@ -153,11 +161,11 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-.modal-icon {
+.demo-modal-icon {
   font-size: 32px;
 }
 
-.modal-tag {
+.demo-modal-tag {
   display: inline-block;
   font-size: 11px;
   font-weight: 800;
@@ -170,7 +178,7 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
-.modal-title {
+.demo-modal-title {
   font-size: 22px;
   font-weight: 800;
   color: var(--ink, #191c1d);
@@ -179,21 +187,21 @@ onMounted(() => {
   line-height: 1.3;
 }
 
-.modal-body {
+.demo-modal-body {
   margin-bottom: 26px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.modal-text {
+.demo-modal-text {
   font-size: 14px;
   line-height: 1.6;
   color: var(--muted, #5d5f5f);
   margin: 0;
 }
 
-.modal-text.highlight {
+.demo-modal-text.highlight {
   font-size: 13px;
   background: var(--soft, #fdf6f7);
   padding: 10px 14px;
@@ -203,7 +211,7 @@ onMounted(() => {
   color: var(--ink, #493339);
 }
 
-.modal-actions {
+.demo-modal-actions {
   width: 100%;
 }
 
@@ -212,8 +220,8 @@ onMounted(() => {
   border: 0;
   border-radius: 9999px;
   padding: 14px 24px;
-  background: #78555e;
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -222,13 +230,13 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   transition: all 0.22s ease;
-  box-shadow: 0 6px 18px rgba(120, 85, 94, 0.28);
+  box-shadow: 0 6px 18px rgba(107, 45, 63, 0.28);
 }
 
 .btn-understand:hover {
-  background: #5e3e47;
+  background: var(--primary-hover, #562332);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(120, 85, 94, 0.36);
+  box-shadow: 0 8px 24px rgba(107, 45, 63, 0.36);
 }
 
 .btn-understand .material-symbols-outlined {
@@ -241,23 +249,23 @@ onMounted(() => {
 }
 
 /* Modal Transition */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
+.demo-modal-fade-enter-active,
+.demo-modal-fade-leave-active {
   transition: opacity 0.22s ease;
 }
 
-.modal-fade-enter-active .modal-card,
-.modal-fade-leave-active .modal-card {
+.demo-modal-fade-enter-active .demo-modal-card,
+.demo-modal-fade-leave-active .demo-modal-card {
   transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s ease;
 }
 
-.modal-fade-enter-from,
-.modal-fade-leave-to {
+.demo-modal-fade-enter-from,
+.demo-modal-fade-leave-to {
   opacity: 0;
 }
 
-.modal-fade-enter-from .modal-card,
-.modal-fade-leave-to .modal-card {
+.demo-modal-fade-enter-from .demo-modal-card,
+.demo-modal-fade-leave-to .demo-modal-card {
   opacity: 0;
   transform: scale(0.92) translateY(12px);
 }

@@ -178,8 +178,8 @@ const {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #78555e;
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   border: none;
   padding: 8px 18px;
   border-radius: 999px;
@@ -190,7 +190,7 @@ const {
 }
 
 .btn-top-sync:hover:not(:disabled) {
-  background: #5e3e47;
+  background: var(--primary-hover, #562332);
 }
 
 .spin-anim {

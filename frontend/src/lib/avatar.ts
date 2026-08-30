@@ -12,7 +12,7 @@ export function getAvatarUrl(name?: string | null, customUrl?: string | null): s
     return customUrl
   }
   const cleanName = name?.trim() || 'Aura'
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=ffd1dc&color=78555e&bold=true&rounded=true`
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=F8E8EC&color=6B2D3F&bold=true&rounded=true`
 }
 
 export function getUserInitials(name?: string | null): string {

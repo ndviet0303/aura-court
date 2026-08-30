@@ -41,22 +41,23 @@ const themeStore = useThemeStore()
 }
 
 .theme-toggle-btn:hover {
-  background: var(--pink-light, #ffd9e2);
-  border-color: var(--pink, #ffd1dc);
-  color: var(--pink-dark, #78555e);
+  background: var(--primary-container, #F8E8EC);
+  border-color: var(--accent, #C9A15A);
+  color: var(--primary, #6B2D3F);
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(120, 85, 94, 0.12);
+  box-shadow: 0 3px 10px rgba(107, 45, 63, 0.12);
 }
 
 :global(html.dark) .theme-toggle-btn {
-  background: #22242a;
-  border-color: #353942;
-  color: #f8b4c4;
+  background: #1e191c;
+  border-color: #382f35;
+  color: #D8B46E;
 }
 
 :global(html.dark) .theme-toggle-btn:hover {
-  background: #2b2e36;
-  border-color: rgba(248, 180, 196, 0.4);
+  background: #262024;
+  border-color: rgba(216, 180, 110, 0.4);
+  color: #FAF7F3;
 }
 
 .icon-container {

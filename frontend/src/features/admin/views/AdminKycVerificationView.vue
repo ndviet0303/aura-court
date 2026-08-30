@@ -151,8 +151,8 @@ const {
 .badge-live {
   font-size: 11px;
   font-weight: 700;
-  background: #ffd1dc;
-  color: #78555e;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   padding: 3px 10px;
   border-radius: 999px;
   letter-spacing: 0.04em;

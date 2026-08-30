@@ -95,19 +95,19 @@ const emit = defineEmits<{
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #ffd1dc;
-  border: 1px solid #ffd1dc;
+  background: var(--primary-container, #F8E8EC);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 12px;
   padding: 12px 18px;
   font-size: 13px;
   font-weight: 700;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-relocate:hover:not(:disabled) {
-  background: #ffb8c8;
+  background: var(--soft, #f0eae1);
 }
 
 .btn-arbitrate {

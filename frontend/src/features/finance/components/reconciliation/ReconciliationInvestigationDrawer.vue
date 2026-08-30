@@ -383,7 +383,7 @@ function handleResolve() {
 
 .col-icon {
   font-size: 18px;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
 }
 
 .col-title {
@@ -433,8 +433,8 @@ function handleResolve() {
 }
 
 .ai-diagnosis-card {
-  background: #fcf8f9;
-  border: 1px solid #ffd1dc;
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 18px;
   display: flex;
@@ -456,20 +456,20 @@ function handleResolve() {
 
 .ai-icon {
   font-size: 20px;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
 }
 
 .ai-title {
   font-size: 13px;
   font-weight: 700;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
 }
 
 .confidence-badge {
   font-size: 11px;
   font-weight: 700;
-  background: #ffd1dc;
-  color: #7a5761;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   padding: 2px 8px;
   border-radius: 999px;
 }
@@ -485,13 +485,13 @@ function handleResolve() {
   background: #ffffff;
   border-radius: 8px;
   padding: 10px 12px;
-  border: 1px dashed #ffd1dc;
+  border: 1px dashed var(--border, #e8e1d7);
   font-size: 12px;
 }
 
 .rec-title {
   font-weight: 700;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
   display: block;
 }
 
@@ -523,7 +523,7 @@ function handleResolve() {
 }
 
 .notes-textarea:focus {
-  border-color: #78555e;
+  border-color: var(--primary, #6B2D3F);
 }
 
 .drawer-footer {
@@ -549,8 +549,8 @@ function handleResolve() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #78555e;
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   border: none;
   padding: 9px 20px;
   border-radius: 999px;
@@ -561,7 +561,7 @@ function handleResolve() {
 }
 
 .btn-primary-resolve:hover:not(:disabled) {
-  background: #5e3e47;
+  background: var(--primary-hover, #562332);
 }
 
 .btn-primary-resolve:disabled {

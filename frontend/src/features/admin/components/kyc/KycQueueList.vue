@@ -159,8 +159,8 @@ function getProgressPercent(item: HostKyc): number {
 }
 
 .tab-btn.active {
-  color: #78555e;
-  background: #ffd1dc;
+  color: var(--on-primary-container, #4e1827);
+  background: var(--primary-container, #F8E8EC);
 }
 
 .queue-card-list {
@@ -216,9 +216,9 @@ function getProgressPercent(item: HostKyc): number {
 }
 
 .kyc-card.is-active {
-  border-color: #78555e;
-  background: #fffbfa;
-  box-shadow: 0 0 0 2px #ffd1dc, 0 4px 12px rgba(120, 85, 94, 0.08);
+  border-color: var(--primary, #6B2D3F);
+  background: var(--surface-subtle, #f7f3ed);
+  box-shadow: 0 0 0 2px var(--accent, #C9A15A), 0 4px 12px rgba(107, 45, 63, 0.08);
 }
 
 .kyc-card.is-flagged {

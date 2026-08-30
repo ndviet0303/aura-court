@@ -255,7 +255,7 @@ import { RouterLink } from 'vue-router'
 }
 
 :global(html.dark) .col-links a:hover {
-  color: #f8b4c4;
+  color: #E58E9F;
 }
 
 /* Contact Info */
@@ -270,12 +270,12 @@ import { RouterLink } from 'vue-router'
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--muted, #5d5f5f);
+  color: var(--muted, #6e6668);
   text-decoration: none;
 }
 
 :global(html.dark) .contact-item {
-  color: #9ca3af;
+  color: #a89fa4;
 }
 
 .contact-link {
@@ -283,20 +283,20 @@ import { RouterLink } from 'vue-router'
 }
 
 .contact-link:hover {
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #6B2D3F);
 }
 
 :global(html.dark) .contact-link:hover {
-  color: #f8b4c4;
+  color: #E58E9F;
 }
 
 .contact-icon {
   font-size: 18px;
-  color: var(--pink-dark, #78555e);
+  color: var(--primary, #6B2D3F);
 }
 
 :global(html.dark) .contact-icon {
-  color: #f8b4c4;
+  color: #E58E9F;
 }
 
 /* Social Buttons */
@@ -311,8 +311,8 @@ import { RouterLink } from 'vue-router'
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--soft, #f4f5f6);
-  color: var(--muted, #5d5f5f);
+  background: var(--soft, #f0eae1);
+  color: var(--muted, #6e6668);
   display: grid;
   place-items: center;
   text-decoration: none;
@@ -320,21 +320,21 @@ import { RouterLink } from 'vue-router'
 }
 
 .social-btn:hover {
-  background: var(--pink-light, #ffd9e2);
-  color: var(--pink-dark, #5e3e47);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
   transform: translateY(-2px);
 }
 
 :global(html.dark) .social-btn {
-  background: #2b2e36;
-  color: #cbd5e1;
-  border: 1px solid #353942;
+  background: #262024;
+  color: #FAF7F3;
+  border: 1px solid #382f35;
 }
 
 :global(html.dark) .social-btn:hover {
-  background: #53333e;
-  color: #f8b4c4;
-  border-color: rgba(248, 180, 196, 0.4);
+  background: #441a26;
+  color: #E58E9F;
+  border-color: rgba(229, 142, 159, 0.4);
 }
 
 .social-btn .material-symbols-outlined {
@@ -344,19 +344,19 @@ import { RouterLink } from 'vue-router'
 /* Bottom Bar */
 .footer-bottom {
   padding-top: 24px;
-  border-top: 1px solid var(--outline, #edf0f1);
+  border-top: 1px solid var(--border, #e8e1d7);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
   font-size: 12.5px;
-  color: var(--muted, #817476);
+  color: var(--muted, #6e6668);
 }
 
 :global(html.dark) .footer-bottom {
-  border-color: #353942;
-  color: #9ca3af;
+  border-color: #382f35;
+  color: #a89fa4;
 }
 
 .copyright {
@@ -370,8 +370,8 @@ import { RouterLink } from 'vue-router'
 }
 
 .demo-chip {
-  background: var(--pink-light, #fce4ec);
-  color: var(--pink-dark, #78555e);
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11.5px;

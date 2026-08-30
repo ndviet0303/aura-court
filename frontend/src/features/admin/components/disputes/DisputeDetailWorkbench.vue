@@ -312,8 +312,8 @@ const emit = defineEmits<{
 }
 
 .avatar-complainant {
-  background: #ffd1dc;
-  color: #78555e;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
 }
 
 .avatar-respondent {
@@ -405,8 +405,8 @@ const emit = defineEmits<{
 }
 
 .evidence-tab-btn.active {
-  background: #ffd1dc;
-  color: #78555e;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
 }
 
 .tab-ico {
@@ -442,7 +442,7 @@ const emit = defineEmits<{
   flex-shrink: 0;
 }
 
-.dot-primary { background: #78555e; }
+.dot-primary { background: var(--primary, #6B2D3F); }
 .dot-warning { background: #f59e0b; }
 .dot-error { background: #ba1a1a; }
 .dot-success { background: #16a34a; }
@@ -525,8 +525,9 @@ const emit = defineEmits<{
 }
 
 .msg-self .msg-bubble {
-  background: #ffd1dc;
-  border-color: #ffd1dc;
+  background: var(--primary-container, #F8E8EC);
+  border-color: var(--border, #e8e1d7);
+  color: var(--on-primary-container, #4e1827);
 }
 
 .msg-system .msg-bubble {

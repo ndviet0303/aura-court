@@ -354,12 +354,12 @@ function handleSubmit() {
 }
 
 .radio-card.selected {
-  background: #ffd1dc;
-  border-color: #ffd1dc;
+  background: var(--primary-container, #F8E8EC);
+  border-color: var(--border, #e8e1d7);
 }
 
 .radio-input {
-  accent-color: #78555e;
+  accent-color: var(--primary, #6B2D3F);
 }
 
 .radio-text {

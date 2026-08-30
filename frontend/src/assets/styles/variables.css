@@ -1,26 +1,44 @@
 /* ==========================================================================
-   Design Tokens & CSS Variables (Light / Dark Themes)
+   Design Tokens & CSS Variables (Light / Dark Themes - Luxury Premium Club)
    ========================================================================== */
 
 :root {
-  --bg: #eff1f4;
-  --background: #eff1f4;
+  /* Background & Surfaces (Warm Ivory / Linen) */
+  --bg: #FAF7F3;
+  --background: #FAF7F3;
   --surface: #ffffff;
-  --soft: #e5e8ec;
-  --surface-subtle: #f5f6f8;
-  --ink: #191c1d;
-  --foreground: #191c1d;
-  --muted: #5d5f5f;
-  --pink: #ffd1dc;
-  --pink-dark: #78555e;
-  --pink-light: #ffd9e2;
-  --outline: #d8dce2;
-  --mint: #d9f0e4;
-  --coral: #ffdad6;
-  --topbar-bg: rgba(255, 255, 255, 0.94);
-  --border: #e0e4ea;
+  --soft: #f0eae1;
+  --surface-subtle: #f7f3ed;
+  --ink: #1c1618;
+  --foreground: #1c1618;
+  --muted: #6e6668;
+  --outline: #dcd3c5;
+  --border: #e8e1d7;
   --card-bg: #ffffff;
   --input-bg: transparent;
+
+  /* Primary Brand (Deep Velvet Burgundy) */
+  --primary: #6B2D3F;
+  --primary-hover: #562332;
+  --primary-container: #F8E8EC;
+  --on-primary: #ffffff;
+  --on-primary-container: #4e1827;
+
+  /* Accent Gold (Antique Champagne Gold) */
+  --accent: #C9A15A;
+  --accent-hover: #b88e45;
+  --accent-container: #FAF2E3;
+  --on-accent: #2A1704;
+  --on-accent-container: #684F17;
+
+  /* Legacy Aliases for seamless backward compatibility */
+  --pink: #C9A15A;
+  --pink-dark: #6B2D3F;
+  --pink-light: #F8E8EC;
+
+  --mint: #d9f0e4;
+  --coral: #ffdad6;
+  --topbar-bg: rgba(250, 247, 243, 0.94);
 
   /* Semantic status tokens */
   --success-bg: #e8f5e9;
@@ -31,46 +49,64 @@
   --error-text: #c62828;
   --purple-bg: #f3e5f5;
   --purple-text: #7b1fa2;
-  --live-bg: rgba(255, 209, 220, 0.35);
-  --live-text: #78555e;
-  --live-border: #78555e;
-  --nav-active-bg: #78555e;
+  --live-bg: rgba(201, 161, 90, 0.2);
+  --live-text: #6B2D3F;
+  --live-border: #C9A15A;
+  --nav-active-bg: #6B2D3F;
   --nav-active-text: #ffffff;
 
   /* Semantic aliases used by feature pages */
-  --primary: #78555e;
-  --primary-container: #ffd1dc;
-  --on-primary: #ffffff;
-  --on-primary-container: #5e3e47;
-  --on-surface: #191c1d;
-  --on-surface-variant: #4f4446;
-  --surface-bright: #f8f9fa;
-  --surface-container: #edeeef;
-  --surface-container-high: #e7e8e9;
-  --surface-container-low: #f5f6f8;
+  --on-surface: #1c1618;
+  --on-surface-variant: #5c5255;
+  --surface-bright: #faf7f3;
+  --surface-container: #f3ece3;
+  --surface-container-high: #eae2d7;
+  --surface-container-low: #f8f4ee;
   --surface-container-lowest: #ffffff;
-  --outline-variant: #d3c3c5;
+  --outline-variant: #dcd3c5;
+
+  /* Warm ambient shadows */
+  --shadow-sm: 0 2px 8px rgba(107, 45, 63, 0.06);
+  --shadow-md: 0 8px 24px rgba(107, 45, 63, 0.09);
+  --shadow-gold: 0 4px 16px rgba(201, 161, 90, 0.28);
 }
 
 html.dark {
-  --bg: #18191d;
-  --background: #18191d;
-  --surface: #22242a;
-  --soft: #2b2e36;
-  --surface-subtle: #262930;
-  --ink: #f3f4f6;
-  --foreground: #f3f4f6;
-  --muted: #9ca3af;
-  --pink: #f8b4c4;
-  --pink-dark: #f8b4c4;
-  --pink-light: #53333e;
-  --outline: #383c46;
+  /* Background & Surfaces (Espresso Velvet) */
+  --bg: #141113;
+  --background: #141113;
+  --surface: #1e191c;
+  --soft: #30292e;
+  --surface-subtle: #262024;
+  --ink: #FAF7F3;
+  --foreground: #FAF7F3;
+  --muted: #a89fa4;
+  --outline: #4d4049;
   --mint: #1c382b;
   --coral: #451d1d;
-  --topbar-bg: rgba(24, 25, 29, 0.94);
-  --border: #353942;
-  --card-bg: #22242a;
-  --input-bg: #2b2e36;
+  --topbar-bg: rgba(20, 17, 19, 0.94);
+  --border: #382f35;
+  --card-bg: #1e191c;
+  --input-bg: #262024;
+
+  /* Primary Brand (Luminous Rose-Velvet) */
+  --primary: #E58E9F;
+  --primary-hover: #f0a3b2;
+  --primary-container: #441a26;
+  --on-primary: #1c0a10;
+  --on-primary-container: #ffd5df;
+
+  /* Accent Gold (Radiant Gold) */
+  --accent: #D8B46E;
+  --accent-hover: #e5c382;
+  --accent-container: #3b2e15;
+  --on-accent: #1c1202;
+  --on-accent-container: #fae6be;
+
+  /* Legacy Aliases in Dark Mode */
+  --pink: #D8B46E;
+  --pink-dark: #E58E9F;
+  --pink-light: #441a26;
 
   /* Semantic status tokens in Dark Mode */
   --success-bg: rgba(46, 125, 50, 0.25);
@@ -81,25 +117,26 @@ html.dark {
   --error-text: #f87171;
   --purple-bg: rgba(123, 31, 162, 0.25);
   --purple-text: #c084fc;
-  --live-bg: rgba(248, 180, 196, 0.15);
-  --live-text: #f8b4c4;
-  --live-border: #f8b4c4;
-  --nav-active-bg: #f8b4c4;
-  --nav-active-text: #201317;
+  --live-bg: rgba(216, 180, 110, 0.18);
+  --live-text: #D8B46E;
+  --live-border: #D8B46E;
+  --nav-active-bg: #E58E9F;
+  --nav-active-text: #1c0a10;
 
   /* Semantic aliases used by feature pages */
-  --primary: #f8b4c4;
-  --primary-container: #53333e;
-  --on-primary: #201317;
-  --on-primary-container: #ffd5df;
-  --on-surface: #f3f4f6;
-  --on-surface-variant: #c0c4cc;
-  --surface-bright: #292c33;
-  --surface-container: #2b2e36;
-  --surface-container-high: #353943;
-  --surface-container-low: #1e2025;
-  --surface-container-lowest: #22242a;
-  --outline-variant: #4a4e59;
+  --on-surface: #FAF7F3;
+  --on-surface-variant: #c4b9be;
+  --surface-bright: #2b2428;
+  --surface-container: #262024;
+  --surface-container-high: #322b30;
+  --surface-container-low: #191417;
+  --surface-container-lowest: #141113;
+  --outline-variant: #4d4049;
+
+  /* Dark mode warm glow shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 4px 18px rgba(216, 180, 110, 0.25);
 }
 
 /* Global High-Contrast Buttons */
@@ -120,31 +157,31 @@ html.dark {
 
 .btn-primary,
 button.btn-primary {
-  background-color: var(--primary, #78555e) !important;
+  background-color: var(--primary, #6B2D3F) !important;
   color: var(--on-primary, #ffffff) !important;
-  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
 }
 
 .btn-primary:hover,
 button.btn-primary:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(120, 85, 94, 0.35);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
 html.dark .btn-primary,
 html.dark button.btn-primary {
-  background-color: #f8b4c4 !important;
-  color: #201317 !important;
+  background-color: var(--primary, #E58E9F) !important;
+  color: var(--on-primary, #1c0a10) !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 18px rgba(248, 180, 196, 0.38) !important;
+  box-shadow: 0 4px 18px rgba(229, 142, 159, 0.35) !important;
 }
 
 html.dark .btn-primary:hover,
 html.dark button.btn-primary:hover {
-  background-color: #ffd5df !important;
-  color: #201317 !important;
-  box-shadow: 0 6px 24px rgba(248, 180, 196, 0.5) !important;
+  background-color: #f0a3b2 !important;
+  color: #1c0a10 !important;
+  box-shadow: 0 6px 24px rgba(229, 142, 159, 0.5) !important;
   transform: translateY(-1px);
 }
 

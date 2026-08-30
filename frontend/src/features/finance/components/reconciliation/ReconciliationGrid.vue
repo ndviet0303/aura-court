@@ -193,7 +193,7 @@ function formatCurrency(amount: number): string {
 .grid-title {
   font-size: 16px;
   font-weight: 700;
-  color: #78555e;
+  color: var(--primary, #6B2D3F);
   margin: 0;
 }
 
@@ -403,9 +403,9 @@ function formatCurrency(amount: number): string {
 }
 
 .btn-investigate:hover {
-  background: #ffd1dc;
-  border-color: #ffd1dc;
-  color: #7a5761;
+  background: var(--primary-container, #F8E8EC);
+  border-color: var(--border, #e8e1d7);
+  color: var(--primary, #6B2D3F);
 }
 
 .btn-auto-fix-sm {
@@ -414,8 +414,8 @@ function formatCurrency(amount: number): string {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #78555e;
-  color: #ffffff;
+  background: var(--primary, #6B2D3F);
+  color: var(--on-primary, #ffffff);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -424,7 +424,7 @@ function formatCurrency(amount: number): string {
 }
 
 .btn-auto-fix-sm:hover {
-  background: #5e3e47;
+  background: var(--primary-hover, #562332);
 }
 
 .spin-icon {

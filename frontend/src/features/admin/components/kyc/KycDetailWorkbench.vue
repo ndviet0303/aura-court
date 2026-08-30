@@ -318,8 +318,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: #ffd1dc;
-  color: #78555e;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--primary, #6B2D3F);
   display: flex;
   align-items: center;
   justify-content: center;

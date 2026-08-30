@@ -192,10 +192,10 @@ const emit = defineEmits<{
 }
 
 .tab-btn.active {
-  background: #ffd1dc;
-  color: #7a5761;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(120, 85, 94, 0.1);
+  box-shadow: 0 1px 3px rgba(107, 45, 63, 0.1);
 }
 
 .pulse-indicator {
@@ -215,8 +215,8 @@ const emit = defineEmits<{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ffd1dc;
-  color: #7a5761;
+  background: var(--primary-container, #F8E8EC);
+  color: var(--on-primary-container, #4e1827);
   border: none;
   padding: 8px 16px;
   border-radius: 999px;
