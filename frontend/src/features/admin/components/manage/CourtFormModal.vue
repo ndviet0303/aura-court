@@ -114,7 +114,7 @@ async function handleFileUpload(event: Event) {
       <div class="modal-body">
         <div class="modal-form-grid">
           <div class="form-group">
-            <label class="form-label">Tên sân cầu lông <span class="required">*</span>:</label>
+            <label class="form-label">Tên sân thể thao <span class="required">*</span>:</label>
             <input
               v-model="courtForm.name"
               type="text"

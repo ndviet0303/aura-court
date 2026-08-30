@@ -2,7 +2,7 @@
 import { RouterLink } from 'vue-router'
 
 const shortcuts = [
-  { name: 'Lịch Đã Đặt', path: '/booking', icon: '🏸' },
+  { name: 'Lịch Đã Đặt', path: '/booking', icon: '📅' },
   { name: 'Ví Thành Viên', path: '/wallet', icon: '💳' },
   { name: 'Kèo Ghép Đấu', path: '/matchmaking', icon: '👥' },
   { name: 'Chợ Pass Sân', path: '/marketplace', icon: '🛒' },

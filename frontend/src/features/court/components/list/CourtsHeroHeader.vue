@@ -7,9 +7,9 @@ defineProps<{
 <template>
   <div class="courts-hero-header">
     <div class="hero-titles">
-      <span class="badge font-mono">🏸 AURA BADMINTON VENUES</span>
+      <span class="badge font-mono">AURA COURT VENUES</span>
       <h1 class="page-title">Khám Phá Cụm Sân & Sân Đấu Chuyên Nghiệp</h1>
-      <p class="page-sub">Hơn {{ totalCount }} sân thi đấu chuẩn BWF với thảm Taraflex, đèn chống chói và điều hòa nhiệt độ.</p>
+      <p class="page-sub">Hơn {{ totalCount }} sân thi đấu thể thao tiêu chuẩn quốc tế: Cầu lông, Pickleball, Tennis và bóng rổ.</p>
     </div>
   </div>
 </template>

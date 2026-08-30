@@ -81,7 +81,7 @@ const emit = defineEmits<{
           class="btn-bracket"
           @click="emit('viewBracket', tournament)"
         >
-          🏸 Sơ Đồ Nhánh
+          🏆 Sơ Đồ Nhánh
         </button>
 
         <RouterLink

@@ -35,7 +35,7 @@ onMounted(() => {
     <!-- Header Hero -->
     <header class="recurring-header">
       <div class="header-titles">
-        <h1 class="page-title">🏸 Đặt Sân Cố Định & Quản Lý Lịch Định Kỳ</h1>
+        <h1 class="page-title">Đặt Sân Cố Định & Quản Lý Lịch Định Kỳ</h1>
         <p class="page-sub">Đăng ký lịch chơi cố định hàng tuần cho cá nhân, câu lạc bộ hoặc doanh nghiệp.</p>
       </div>
     </header>

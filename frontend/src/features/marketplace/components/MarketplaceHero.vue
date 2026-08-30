@@ -12,7 +12,7 @@ const emit = defineEmits<{
   <div class="marketplace-hero-card">
     <div class="hero-titles">
       <span class="badge font-mono">⚡ P2P ESCROW MARKETPLACE</span>
-      <h1 class="page-title">🏸 Chợ Chuyển Nhượng & Pass Sân Cầu Lông</h1>
+      <h1 class="page-title">Chợ Chuyển Nhượng & Pass Sân Thể Thao</h1>
       <p class="page-sub">Mua lại slot sân giờ đẹp giá hời hoặc pass lại lịch đặt khi có việc bận. Tiền được giữ an toàn qua Escrow.</p>
     </div>
 

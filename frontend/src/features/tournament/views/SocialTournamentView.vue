@@ -22,8 +22,8 @@ const {
     <!-- Header Hero -->
     <header class="social-header">
       <div class="header-titles">
-        <h1 class="page-title">🏸 Ghép Kèo Giao Lưu & Tìm Bạn Thi Đấu</h1>
-        <p class="page-sub">Tìm kiếm bạn đánh cầu lông cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.</p>
+        <h1 class="page-title">Ghép Kèo Giao Lưu & Tìm Bạn Thi Đấu</h1>
+        <p class="page-sub">Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.</p>
       </div>
 
       <div class="header-actions">
@@ -49,7 +49,6 @@ const {
 
     <!-- Matches Grid -->
     <div v-if="filteredMatches.length === 0" class="empty-matches-box">
-      <span>🏸</span>
       <h3>Không tìm thấy kèo giao lưu phù hợp</h3>
       <p>Thử tìm kiếm với từ khóa khác hoặc tạo kèo mới cho riêng bạn.</p>
     </div>

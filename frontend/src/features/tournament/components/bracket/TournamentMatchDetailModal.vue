@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <div v-if="show && match" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">🏸 Chi Tiết Trận Đấu: {{ match.label }}</h3>
+        <h3 class="modal-title">⚔️ Chi Tiết Trận Đấu: {{ match.label }}</h3>
         <button class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 

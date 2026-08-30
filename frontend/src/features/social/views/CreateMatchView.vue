@@ -42,7 +42,7 @@ onMounted(() => {
     <header class="match-hero">
       <div class="hero-titles">
         <span class="pill-badge font-mono">INITIATE PLAY</span>
-        <h1 class="page-title">🏸 Khởi Tạo Kèo Mới & Ghép Trận</h1>
+        <h1 class="page-title">Khởi Tạo Kèo Mới & Ghép Trận</h1>
         <p class="page-sub">Tìm kiếm đồng đội, mở kèo giao lưu câu lạc bộ và chia sẻ chi phí sân tự động.</p>
       </div>
     </header>

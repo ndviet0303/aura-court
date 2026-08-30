@@ -57,7 +57,7 @@ function formatMoney(amount: number): string {
       :to="`/booking?court=${court.id}&duration=${selectedDuration}`"
       class="btn-book-now"
     >
-      🏸 Chọn Giờ & Đặt Sân Ngay
+      Chọn Giờ & Đặt Sân Ngay
     </RouterLink>
   </div>
 </template>

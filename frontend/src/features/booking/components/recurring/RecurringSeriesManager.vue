@@ -49,7 +49,7 @@ function formatMoney(amount: number): string {
           <span class="occ-title">Các buổi sắp diễn ra:</span>
           <div class="occ-list">
             <span v-for="occ in s.occurrences" :key="occ.id" class="occ-chip">
-              🏸 Buổi {{ occ.sequence }}: {{ occ.starts_at.slice(0, 10) }} ({{ occ.starts_at.slice(11, 16) }})
+              📅 Buổi {{ occ.sequence }}: {{ occ.starts_at.slice(0, 10) }} ({{ occ.starts_at.slice(11, 16) }})
             </span>
           </div>
         </div>

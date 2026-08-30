@@ -296,7 +296,7 @@ onUnmounted(() => {
     <header class="pos-topbar">
       <div class="topbar-left">
         <RouterLink to="/" class="pos-brand">
-          <span class="brand-badge">🏸 AURA POS</span>
+          <span class="brand-badge">AURA POS</span>
         </RouterLink>
         <span class="pos-mode-tag">Hệ Thống Bán Hàng & Thu Ngân</span>
       </div>

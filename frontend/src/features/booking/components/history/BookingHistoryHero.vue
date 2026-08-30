@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <div class="booking-hero-card">
     <div class="hero-titles">
-      <span class="badge font-mono">🏸 MY AURA RESERVATIONS</span>
+      <span class="badge font-mono">MY AURA RESERVATIONS</span>
       <h1 class="page-title">Quản Lý Lịch Đặt Sân Của Tôi</h1>
       <p class="page-sub">Theo dõi lịch thi đấu sắp tới, check-in mã QR tại sân và xem lại lịch sử giao dịch.</p>
     </div>

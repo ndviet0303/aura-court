@@ -61,9 +61,9 @@ const emit = defineEmits<{
 
     <!-- Courts Cards Grid -->
     <div v-if="courts.length === 0" class="empty-courts-state">
-      <div class="empty-ico">🏸</div>
+      <div class="empty-ico">🏟️</div>
       <h3>Không tìm thấy sân nào</h3>
-      <p>Thử thay đổi bộ lọc hoặc thêm sân cầu lông mới.</p>
+      <p>Thử thay đổi bộ lọc hoặc thêm sân thể thao mới.</p>
     </div>
 
     <div v-else class="courts-admin-grid">
@@ -81,7 +81,7 @@ const emit = defineEmits<{
             loading="lazy"
           />
           <div v-else class="no-img-box">
-            <span>🏸</span>
+            <span>🏟️</span>
           </div>
 
           <span

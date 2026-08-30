@@ -360,7 +360,7 @@ onMounted(() => {
         :class="{ active: activeTab === 'courts' }"
         @click="activeTab = 'courts'"
       >
-        🏸 Danh Sách Sân ({{ totalCourtsCount }})
+        🏟️ Danh Sách Sân ({{ totalCourtsCount }})
       </button>
 
       <button

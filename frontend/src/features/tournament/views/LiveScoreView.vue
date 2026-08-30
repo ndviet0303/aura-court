@@ -24,8 +24,8 @@ const {
     <!-- Header Section -->
     <header class="live-header">
       <div class="header-titles">
-        <h1 class="page-title">🏸 Live Score & Tỉ Số Trực Tiếp</h1>
-        <p class="page-sub">Cập nhật điểm số từng pha cầu, tốc độ đập cầu (smash radar) và phân tích thống kê giải đấu theo thời gian thực.</p>
+        <h1 class="page-title">Live Score & Tỉ Số Trực Tiếp</h1>
+        <p class="page-sub">Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.</p>
       </div>
 
       <div class="header-actions">

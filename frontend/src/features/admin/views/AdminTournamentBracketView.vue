@@ -102,7 +102,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
         :class="{ active: activeSubNav === 'live-referee-console' }"
         @click="activeSubNav = 'live-referee-console'"
       >
-        🏸 Bàn Trọng Tài Live
+        ⚖️ Bàn Trọng Tài Live
       </button>
 
       <button

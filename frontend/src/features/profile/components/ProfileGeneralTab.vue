@@ -40,7 +40,7 @@ const emit = defineEmits<{
         </div>
 
         <div class="form-group full-width">
-          <label class="form-label">Trình độ đánh cầu lông:</label>
+          <label class="form-label">Trình độ thể thao:</label>
           <select
             :value="playLevel"
             class="form-input"

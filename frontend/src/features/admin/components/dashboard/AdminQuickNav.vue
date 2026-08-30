@@ -2,7 +2,7 @@
 import { RouterLink } from 'vue-router'
 
 const navItems = [
-  { name: 'Quản Lý Sân & Bảng Giá', path: '/admin/manage', icon: '🏸' },
+  { name: 'Quản Lý Sân & Bảng Giá', path: '/admin/manage', icon: '🏟️' },
   { name: 'Phân Quyền Nhân Sự', path: '/admin/staff', icon: '👥' },
   { name: 'Đối Soát Ca & Tiền Mặt', path: '/admin/shift-reconciliation', icon: '💵' },
   { name: 'Hợp Đồng Định Kỳ', path: '/admin/contracts', icon: '📑' },

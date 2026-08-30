@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <div v-if="show && tournament" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">🏸 Sơ Đồ Cây Nhánh Đấu: {{ tournament.name }}</h3>
+        <h3 class="modal-title">🏆 Sơ Đồ Cây Nhánh Đấu: {{ tournament.name }}</h3>
         <button class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 

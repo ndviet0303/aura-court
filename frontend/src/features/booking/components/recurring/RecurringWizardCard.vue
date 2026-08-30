@@ -36,7 +36,7 @@ const emit = defineEmits<{
     <form class="wizard-form" @submit.prevent="emit('submit')">
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">Chọn sân cầu lông:</label>
+          <label class="form-label">Chọn sân thể thao:</label>
           <select
             :value="selectedCourtId"
             class="form-input"

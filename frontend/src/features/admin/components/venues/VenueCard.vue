@@ -37,7 +37,7 @@ const emit = defineEmits<{
     </div>
 
     <div class="venue-stats-bar">
-      <span>🏸 Quy mô: <strong>{{ venue.courts_count || 0 }} sân</strong></span>
+      <span>🏟️ Quy mô: <strong>{{ venue.courts_count || 0 }} sân</strong></span>
       <span>🔗 Slug: <code class="font-mono">{{ venue.slug }}</code></span>
     </div>
 
