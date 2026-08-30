@@ -52,7 +52,13 @@ class Venue extends Model
 
         foreach ($this->getTranslatableAttributes() as $field) {
             if (array_key_exists($field, $attributes)) {
-                $attributes[$field] = $this->getTranslation($field, app()->getLocale());
+                $translations = $this->getTranslations($field);
+                $locale = app()->getLocale();
+                $attributes[$field] = $translations[$locale]
+                    ?? ($translations[config('app.fallback_locale')]
+                    ?? ($translations['vi']
+                    ?? ($translations['en']
+                    ?? (is_array($translations) && count($translations) > 0 ? reset($translations) : ''))));
             }
         }
 

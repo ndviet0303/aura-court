@@ -48,7 +48,7 @@ const selectedOption = computed(() => {
 })
 
 const displayLabel = computed(() => {
-  return selectedOption.value?.label ?? (props.placeholder || '')
+  return selectedOption.value?.label || (props.placeholder || '')
 })
 
 function toggle() {
@@ -138,11 +138,15 @@ onBeforeUnmount(() => {
 .custom-dropdown {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   user-select: none;
 }
 
 .custom-dropdown-trigger {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -157,6 +161,7 @@ onBeforeUnmount(() => {
   text-align: left;
   transition: color 0.2s ease;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .custom-dropdown.bordered .custom-dropdown-trigger {
@@ -177,7 +182,8 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .trigger-icon {
@@ -192,6 +198,8 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   font-size: 14px;
   line-height: 1.4;
+  min-width: 0;
+  display: block;
 }
 
 .trigger-label.is-placeholder {

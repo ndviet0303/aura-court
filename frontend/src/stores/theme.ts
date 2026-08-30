@@ -21,12 +21,13 @@ export const useThemeStore = defineStore('theme', () => {
     if (newTheme === 'dark') {
       root.classList.add('dark')
       root.setAttribute('data-theme', 'dark')
-      root.style.colorScheme = 'dark'
     } else {
       root.classList.remove('dark')
       root.setAttribute('data-theme', 'light')
-      root.style.colorScheme = 'light'
     }
+    // Clear any leftover inline color-scheme on <html> — it breaks position:fixed
+    // for Teleported elements in Chromium/Edge. color-scheme is now set via CSS on #app.
+    root.style.removeProperty('color-scheme')
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, newTheme)
     }

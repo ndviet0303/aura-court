@@ -197,14 +197,14 @@ const buttonClasses = computed(() => [
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
-:global(html.dark) .aura-btn--primary {
+:global(html.dark .aura-btn--primary) {
   background-color: var(--primary, #E58E9F);
   color: var(--on-primary, #1c0a10);
   font-weight: 800;
   box-shadow: 0 4px 18px rgba(229, 142, 159, 0.35);
 }
 
-:global(html.dark) .aura-btn--primary:hover:not(:disabled) {
+:global(html.dark .aura-btn--primary:hover:not(:disabled)) {
   background-color: #f0a3b2;
   color: #1c0a10;
   box-shadow: 0 6px 24px rgba(229, 142, 159, 0.5);
@@ -229,16 +229,16 @@ const buttonClasses = computed(() => [
   transform: translateY(-1px);
 }
 
-:global(html.dark) .aura-btn--accent,
-:global(html.dark) .aura-btn--gold {
+:global(html.dark .aura-btn--accent),
+:global(html.dark .aura-btn--gold) {
   background-color: var(--accent, #D8B46E);
   color: var(--on-accent, #1c1202);
   font-weight: 800;
   box-shadow: 0 4px 18px rgba(216, 180, 110, 0.35);
 }
 
-:global(html.dark) .aura-btn--accent:hover:not(:disabled),
-:global(html.dark) .aura-btn--gold:hover:not(:disabled) {
+:global(html.dark .aura-btn--accent:hover:not(:disabled)),
+:global(html.dark .aura-btn--gold:hover:not(:disabled)) {
   background-color: var(--accent-hover, #e5c382);
   color: #000000;
   box-shadow: 0 6px 24px rgba(216, 180, 110, 0.5);
@@ -257,13 +257,13 @@ const buttonClasses = computed(() => [
   color: var(--on-surface, #1c1618);
 }
 
-:global(html.dark) .aura-btn--secondary {
+:global(html.dark .aura-btn--secondary) {
   background-color: var(--surface-container, #262024);
   border-color: var(--border, #382f35);
   color: var(--on-surface, #FAF7F3);
 }
 
-:global(html.dark) .aura-btn--secondary:hover:not(:disabled) {
+:global(html.dark .aura-btn--secondary:hover:not(:disabled)) {
   background-color: var(--surface-container-high, #322b30);
 }
 
@@ -279,12 +279,12 @@ const buttonClasses = computed(() => [
   color: var(--primary, #6B2D3F);
 }
 
-:global(html.dark) .aura-btn--outline {
+:global(html.dark .aura-btn--outline) {
   color: var(--primary, #E58E9F);
   border-color: var(--primary, #E58E9F);
 }
 
-:global(html.dark) .aura-btn--outline:hover:not(:disabled) {
+:global(html.dark .aura-btn--outline:hover:not(:disabled)) {
   background-color: rgba(229, 142, 159, 0.15);
 }
 
@@ -300,11 +300,11 @@ const buttonClasses = computed(() => [
   color: var(--on-surface, #191c1d);
 }
 
-:global(html.dark) .aura-btn--ghost {
+:global(html.dark .aura-btn--ghost) {
   color: var(--on-surface-variant, #c0c4cc);
 }
 
-:global(html.dark) .aura-btn--ghost:hover:not(:disabled) {
+:global(html.dark .aura-btn--ghost:hover:not(:disabled)) {
   background-color: var(--surface-container, #2b2e36);
   color: #ffffff;
 }
@@ -320,7 +320,7 @@ const buttonClasses = computed(() => [
   background-color: #93000a;
 }
 
-:global(html.dark) .aura-btn--danger {
+:global(html.dark .aura-btn--danger) {
   background-color: #ffb4ab;
   color: #690005;
   font-weight: 800;
@@ -338,7 +338,7 @@ const buttonClasses = computed(() => [
   background-color: #1b5e20;
 }
 
-:global(html.dark) .aura-btn--success {
+:global(html.dark .aura-btn--success) {
   background-color: #81c784;
   color: #003300;
   font-weight: 800;

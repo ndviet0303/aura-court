@@ -84,4 +84,26 @@ describe('Navbar', () => {
     expect(wrapper.find('.user-name').text()).toBe('Nguyen Van A')
     expect(wrapper.find('.user-badge').text()).toBe('PRO MEMBER')
   })
+
+  it('toggles mobile drawer when mobile menu button is clicked', async () => {
+    const auth = useAuthStore()
+    auth.loading = false
+    auth.loaded = true
+    auth.user = null
+
+    const wrapper = createWrapper()
+    const menuBtn = wrapper.find('.mobile-menu-btn')
+    expect(menuBtn.exists()).toBe(true)
+
+    // Open drawer
+    await menuBtn.trigger('click')
+    expect(document.querySelector('.mobile-drawer-panel')).not.toBeNull()
+    expect(document.querySelector('.mobile-drawer-backdrop')).not.toBeNull()
+
+    // Close drawer via backdrop click
+    const backdrop = document.querySelector('.mobile-drawer-backdrop') as HTMLElement
+    backdrop.click()
+    await wrapper.vm.$nextTick()
+    expect(document.querySelector('.mobile-drawer-panel')).toBeNull()
+  })
 })

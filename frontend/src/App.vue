@@ -33,6 +33,8 @@ const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
 <style scoped>
 .app-shell {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
 }

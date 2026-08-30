@@ -93,18 +93,36 @@ html.dark .btn-gold:hover {
 .btn.outline,
 .btn-secondary {
   color: var(--ink);
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
-  box-shadow: none;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #dcd3c5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .btn.secondary:hover,
 .btn.outline:hover,
 .btn-secondary:hover {
-  background: var(--soft);
-  border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: 0 4px 12px rgba(107, 45, 63, 0.08);
+  background: var(--surface-subtle, #f7f3ed);
+  border-color: var(--primary, #6B2D3F);
+  color: var(--primary, #6B2D3F);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.1);
+  transform: translateY(-1px);
+}
+
+html.dark .btn.secondary,
+html.dark .btn.outline,
+html.dark .btn-secondary {
+  background: #262024;
+  border-color: #4d4049;
+  color: #FAF7F3;
+}
+
+html.dark .btn.secondary:hover,
+html.dark .btn.outline:hover,
+html.dark .btn-secondary:hover {
+  background: #322b30;
+  border-color: var(--primary, #E58E9F);
+  color: var(--primary, #E58E9F);
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.2);
 }
 
 /* Tint / Container Variant */

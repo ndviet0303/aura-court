@@ -41,6 +41,7 @@ withDefaults(defineProps<Props>(), {
           </div>
           <div class="skel-item skel-user-avatar"></div>
         </div>
+        <div class="skel-item skel-mobile-menu-btn"></div>
       </div>
     </div>
   </header>
@@ -218,6 +219,14 @@ withDefaults(defineProps<Props>(), {
   border-radius: 50%;
 }
 
+.skel-mobile-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
 @keyframes shimmer-nav {
   0% {
     transform: translateX(-100%);
@@ -227,24 +236,18 @@ withDefaults(defineProps<Props>(), {
   }
 }
 
-@media (max-width: 960px) {
-  .skeleton-user-meta {
-    display: none;
+@media (max-width: 1080px) {
+  .skeleton-user-meta,
+  .skel-circle-btn,
+  .skel-lang-btn,
+  .skeleton-nav-pills {
+    display: none !important;
   }
-  .skel-pill {
-    height: 27px;
+  .skel-mobile-menu-btn {
+    display: block !important;
   }
-  .skel-pill-1 {
-    width: 60px;
-  }
-  .skel-pill-2 {
-    width: 70px;
-  }
-  .skel-pill-3 {
-    width: 78px;
-  }
-  .skel-pill-4 {
-    width: 55px;
+  .skeleton-nav-right {
+    gap: 8px;
   }
 }
 
@@ -256,29 +259,16 @@ withDefaults(defineProps<Props>(), {
     padding: 0 16px;
   }
   .skel-brand-title {
-    display: none;
+    width: 85px;
+    height: 18px;
   }
-  .skeleton-nav-pills {
-    padding: 3px 4px;
-    gap: 3px;
+  .skel-user-avatar {
+    width: 36px;
+    height: 36px;
   }
-  .skel-pill {
-    height: 24px;
-  }
-  .skel-pill-1 {
-    width: 50px;
-  }
-  .skel-pill-2 {
-    width: 58px;
-  }
-  .skel-pill-3 {
-    width: 64px;
-  }
-  .skel-pill-4 {
-    width: 46px;
-  }
-  .skel-lang-btn {
-    display: none;
+  .skel-mobile-menu-btn {
+    width: 38px;
+    height: 38px;
   }
 }
 </style>

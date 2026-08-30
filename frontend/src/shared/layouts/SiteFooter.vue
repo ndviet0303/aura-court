@@ -31,7 +31,7 @@ import { RouterLink } from 'vue-router'
             <li><RouterLink to="/">{{ $t('nav.home') }}</RouterLink></li>
             <li><RouterLink to="/courts">{{ $t('nav.courts') }}</RouterLink></li>
             <li><RouterLink to="/booking">{{ $t('nav.booking') }}</RouterLink></li>
-            <li><RouterLink to="/about">{{ $t('nav.promotions') }}</RouterLink></li>
+            <li><RouterLink to="/about">{{ $t('nav.about') }}</RouterLink></li>
           </ul>
         </div>
 
