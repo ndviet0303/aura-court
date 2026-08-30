@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Court\CourtController;
 use App\Http\Controllers\Court\ReviewController;
 use App\Http\Controllers\Court\SportZoneController;
 use App\Http\Controllers\Finance\FinanceController;
+use App\Http\Controllers\Finance\FinanceExceptionController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Organization\OrganizationController;
 use App\Http\Controllers\POS\PosController;
@@ -141,6 +143,10 @@ Route::prefix('v1')->group(function () {
             Route::get('membership-plans', [PromotionController::class, 'plans']);
             Route::post('membership-plans', [PromotionController::class, 'storePlan']);
             Route::post('memberships', [PromotionController::class, 'assignMembership']);
+            Route::get('kyc', [AdminKycController::class, 'index']);
+            Route::get('kyc/stats', [AdminKycController::class, 'stats']);
+            Route::get('kyc/{id}', [AdminKycController::class, 'show']);
+            Route::post('kyc/{id}/review', [AdminKycController::class, 'review']);
             Route::post('upload', [AdminController::class, 'upload']);
         });
     });
@@ -242,8 +248,14 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('finance/payouts/{payout}/approve', [FinanceController::class, 'approvePayout']);
             Route::post('finance/payouts/{payout}/submit', [FinanceController::class, 'submitPayout']);
             Route::post('finance/payouts/{payout}/status', [FinanceController::class, 'payoutStatus']);
-            Route::get('finance/exceptions', [FinanceController::class, 'exceptions']);
-            Route::post('finance/exceptions/{exception}/resolve', [FinanceController::class, 'resolveException']);
+            Route::get('finance/exceptions/stats', [FinanceExceptionController::class, 'stats']);
+            Route::get('finance/exceptions', [FinanceExceptionController::class, 'index']);
+            Route::post('finance/exceptions/{id}/resolve', [FinanceExceptionController::class, 'resolve']);
+            Route::get('finance/audit-logs', [FinanceExceptionController::class, 'auditLogs']);
+            Route::get('admin/kyc', [AdminKycController::class, 'index']);
+            Route::get('admin/kyc/stats', [AdminKycController::class, 'stats']);
+            Route::get('admin/kyc/{id}', [AdminKycController::class, 'show']);
+            Route::post('admin/kyc/{id}/review', [AdminKycController::class, 'review']);
         });
     });
 });

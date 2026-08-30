@@ -144,6 +144,26 @@ function closeMobileSidebar() {
           </RouterLink>
 
           <RouterLink
+            to="/admin/financial-exceptions"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/financial-exceptions' || route.path.startsWith('/admin/exceptions') || route.path.startsWith('/admin/audit') }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">shield</span>
+            <span class="nav-label">Ngoại lệ & Kiểm toán</span>
+          </RouterLink>
+
+          <RouterLink
+            to="/admin/kyc"
+            class="sidebar-nav-item"
+            :class="{ active: route.path === '/admin/kyc' || route.path.startsWith('/admin/kyc') }"
+            @click="closeMobileSidebar"
+          >
+            <span class="material-symbols-outlined nav-icon">verified_user</span>
+            <span class="nav-label">Xác minh KYC & Chủ sân</span>
+          </RouterLink>
+
+          <RouterLink
             to="/admin/staff"
             class="sidebar-nav-item"
             :class="{ active: route.path === '/admin/staff' || route.path.startsWith('/admin/staff') || route.path === '/admin/permissions' }"

@@ -1,0 +1,261 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"on-secondary-fixed":"#1a1c1c","surface-container-highest":"#e1e3e4","surface-dim":"#d9dadb","surface":"#f8f9fa","tertiary-container":"#dfdcdc","on-tertiary-fixed-variant":"#474747","surface-container-high":"#e7e8e9","on-surface-variant":"#4f4446","surface-variant":"#e1e3e4","inverse-surface":"#2e3132","secondary":"#5d5f5f","on-surface":"#191c1d","on-tertiary-container":"#616160","secondary-container":"#dfe0e0","on-error-container":"#93000a","outline":"#817476","background":"#f8f9fa","inverse-on-surface":"#f0f1f2","on-secondary-fixed-variant":"#454747","error":"#ba1a1a","inverse-primary":"#e7bbc6","primary":"#78555e","on-primary-container":"#7a5761","tertiary":"#5f5e5e","on-background":"#191c1d","primary-fixed-dim":"#e7bbc6","outline-variant":"#d3c3c5","primary-fixed":"#ffd9e2","on-primary":"#ffffff","secondary-fixed":"#e2e2e2","surface-container-low":"#f3f4f5","surface-bright":"#f8f9fa","on-primary-fixed":"#2d141c","error-container":"#ffdad6","on-error":"#ffffff","surface-container-lowest":"#ffffff","on-secondary-container":"#616363","on-tertiary-fixed":"#1b1c1c","on-primary-fixed-variant":"#5e3e47","secondary-fixed-dim":"#c6c6c7","surface-tint":"#78555e","on-tertiary":"#ffffff","surface-container":"#edeeef","tertiary-fixed":"#e4e2e1","on-secondary":"#ffffff","primary-container":"#ffd1dc","tertiary-fixed-dim":"#c8c6c6"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"lg":"48px","base":"4px","xs":"8px","margin-mobile":"16px","margin-desktop":"64px","xl":"80px","md":"24px","sm":"16px","gutter":"24px"},"fontFamily":{"body-md":["Inter"],"headline-lg-mobile":["Inter"],"headline-lg":["Inter"],"label-sm":["Inter"],"headline-md":["Inter"],"headline-xl":["Inter"],"body-lg":["Inter"]},"fontSize":{"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-sm":["14px",{"lineHeight":"20px","letterSpacing":"0.05em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","fontWeight":"600"}],"headline-xl":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/></head><body class="bg-surface font-body-md text-on-surface"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col shadow-[1px_0_0_rgba(0,0,0,0.05)]"><div class="px-8 h-20 flex items-center mb-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[20px]">shield_person</span></div><span class="text-headline-md font-headline-md tracking-tight text-on-surface">Aura Court Control</span></div></div><nav class="flex-1 px-4 space-y-1" data-active-classes="bg-primary-container text-primary font-semibold"><a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="dashboard-overview" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">dashboard</span><span class="font-label-sm">Tổng quan Dashboard</span></a><a aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-[#ffd1dc] text-[#78555e] font-semibold" data-path="kyc-verification" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">verified_user</span><span class="font-label-sm">Xác minh KYC &amp; Chủ sân</span></a><a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="financial-exceptions" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">account_balance_wallet</span><span class="font-label-sm">Đối soát Tài chính &amp; Cảnh báo</span></a><a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="dispute-resolution" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">gavel</span><span class="font-label-sm">Ngoại lệ Tài chính &amp; Kiểm toán</span></a><a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="audit-trail" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">history_edu</span><span class="font-label-sm">Giải quyết Khiếu nại &amp; Tranh chấp</span></a><a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="shift-management" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">event_note</span><span class="font-label-sm">Quản lý Ca trực &amp; POS</span></a><a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="settings" href="#"><span class="material-symbols-outlined mr-3 text-[22px]">settings</span><span class="font-label-sm">Cấu hình Tổ chức &amp; Phân quyền</span></a></nav><div class="p-6 mt-auto bg-surface-container-lowest border-t border-outline-variant/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[20px]">person</span></div><div><p class="text-label-sm text-on-surface font-semibold leading-tight">Lê Thị Kim Oanh</p><p class="text-[11px] text-on-surface-variant mt-0.5">Trưởng ban Pháp chế &amp; Thẩm định KYC</p><span class="inline-block mt-1 px-2 py-0.5 bg-primary-container text-primary text-[10px] rounded-full font-medium">Cấp duyệt Level 3</span></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl z-40 flex items-center justify-between px-md lg:px-margin-desktop shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="flex items-center gap-4"><div class="flex flex-col"><span class="text-[12px] text-on-surface-variant font-medium">Quản trị nền tảng / Hồ sơ pháp lý chủ sân</span><h1 class="text-headline-md font-headline-md tracking-tight text-on-surface">Phê duyệt KYC &amp; Thẩm định Chủ sân</h1></div></div><div class="flex items-center gap-4"><div class="flex items-center bg-surface-container-low px-4 py-2 rounded-full w-80"><span class="material-symbols-outlined text-on-surface-variant text-[20px] mr-2">search</span><input class="bg-transparent border-none outline-none text-body-md w-full placeholder:text-on-tertiary-fixed-variant" placeholder="Tìm kiếm hồ sơ..." type="text"/></div><button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"><span class="material-symbols-outlined">filter_list</span></button><button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"><span class="material-symbols-outlined">smart_toy</span></button><button class="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface rounded-full font-label-sm hover:bg-surface-container-highest transition-colors"><span class="material-symbols-outlined text-[18px]">download</span>Xuất báo cáo</button></div></header><main class="relative pt-20 bg-surface min-h-screen"><div class="flex flex-col w-full min-h-[calc(100vh-80px)]"><div class="p-sm lg:p-md"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20"><div class="text-on-surface-variant text-sm font-medium mb-1">Hồ sơ Chờ thẩm định</div><div class="text-3xl font-bold text-on-surface">12</div></div><div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20"><div class="text-on-surface-variant text-sm font-medium mb-1">Độ tin cậy AI OCR &amp; NAPAS</div><div class="text-3xl font-bold text-on-surface">96.4%</div></div><div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20"><div class="text-on-surface-variant text-sm font-medium mb-1">Thời gian xử lý trung bình</div><div class="text-3xl font-bold text-on-surface">14.2 <span class="text-lg font-normal">phút</span></div></div><div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-error/20 bg-error-container/10"><div class="text-error text-sm font-medium mb-1">Cảnh báo sai lệch / Rủi ro cao</div><div class="text-3xl font-bold text-error">2</div></div></div></div>
+<div class="flex flex-1 flex-col lg:flex-row px-sm lg:px-md pb-md gap-gutter">
+<!-- Left Side: KYC Requests List -->
+<div class="w-full lg:w-[35%] flex flex-col gap-sm">
+<div class="flex gap-2 border-b border-outline-variant/30 pb-2"><button class="px-3 py-1.5 text-sm font-medium text-primary border-b-2 border-primary">Chờ duyệt (12)</button><button class="px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface">Cần bổ sung (3)</button><button class="px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface">Nghi vấn (2)</button><button class="px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface">Đã duyệt (148)</button></div>
+<div class="flex flex-col gap-3 overflow-y-auto pr-xs" style="max-height: calc(100vh - 280px);">
+<!-- Active Request Card -->
+<button class="w-full text-left bg-surface-container-lowest border border-primary/30 p-4 rounded-2xl shadow-sm group relative overflow-hidden flex flex-col gap-3">
+<div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+<div class="flex justify-between items-start w-full relative z-10">
+<div class="flex flex-col">
+<span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">KYC-2026-0892</span>
+<span class="font-headline-md text-lg text-on-surface font-semibold">CLB Cầu lông Smash City Arena</span>
+</div>
+<span class="bg-[#fef3c7] text-[#d97706] px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+<div class="w-1.5 h-1.5 rounded-full bg-[#d97706] animate-pulse"></div>
+Chờ duyệt cấp 2
+</span>
+</div>
+<div class="flex gap-1.5 w-full relative z-10">
+<span class="flex-1 bg-[#d1fae5] text-[#059669] py-1 px-1.5 rounded text-[10px] font-medium flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[12px]">check</span> CCCD</span>
+<span class="flex-1 bg-[#fef3c7] text-[#d97706] py-1 px-1.5 rounded text-[10px] font-medium flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[12px]">warning</span> GPKD</span>
+<span class="flex-1 bg-[#d1fae5] text-[#059669] py-1 px-1.5 rounded text-[10px] font-medium flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[12px]">check</span> NAPAS</span>
+<span class="flex-1 bg-[#d1fae5] text-[#059669] py-1 px-1.5 rounded text-[10px] font-medium flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[12px]">check</span> Mặt bằng</span>
+</div>
+<div class="w-full bg-surface-variant h-1.5 rounded-full overflow-hidden mt-1 relative z-10 flex items-center">
+<div class="bg-primary w-[75%] h-full rounded-full"></div>
+<span class="absolute right-0 top-[-16px] text-[10px] text-primary font-bold">75%</span>
+</div>
+</button>
+<!-- Inactive Request Card 1 -->
+<button class="w-full text-left bg-surface-container-lowest border border-outline-variant/20 hover:border-outline-variant/50 p-4 rounded-2xl transition-all flex flex-col gap-3 group">
+<div class="flex justify-between items-start w-full">
+<div class="flex flex-col">
+<span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">KYC-2026-0891</span>
+<span class="font-body-lg text-base text-on-surface font-semibold group-hover:text-primary transition-colors">Sân Cầu Lông Tân Bình Sport</span>
+</div>
+<span class="bg-surface-container px-2 py-1 rounded-md text-[11px] font-semibold text-on-surface-variant">
+Mới
+</span>
+</div>
+</button>
+<!-- Inactive Request Card 2 -->
+<button class="w-full text-left bg-error-container/10 border border-error/20 hover:border-error/40 p-4 rounded-2xl transition-all flex flex-col gap-3 group">
+<div class="flex justify-between items-start w-full">
+<div class="flex flex-col">
+<span class="font-label-sm text-[11px] text-error uppercase tracking-wider mb-1">KYC-2026-0889</span>
+<span class="font-body-lg text-base text-on-surface font-semibold group-hover:text-primary transition-colors">Elite Badminton Club Q7</span>
+<span class="text-[11px] text-error mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">error</span> Cảnh báo trùng địa chỉ</span>
+</div>
+</div>
+</button>
+<!-- Inactive Request Card 3 -->
+<button class="w-full text-left bg-surface-container-lowest border border-outline-variant/20 hover:border-outline-variant/50 p-4 rounded-2xl transition-all flex flex-col gap-3 group">
+<div class="flex justify-between items-start w-full">
+<div class="flex flex-col">
+<span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">KYC-2026-0885</span>
+<span class="font-body-lg text-base text-on-surface font-semibold group-hover:text-primary transition-colors">VStar Arena Bình Thạnh</span>
+</div>
+</div>
+</button>
+</div>
+</div>
+<!-- Right Side: Detailed Verification Panel -->
+<div class="w-full lg:w-[65%] bg-surface-container-lowest rounded-[24px] shadow-sm flex flex-col overflow-hidden relative border border-outline-variant/20">
+<!-- Panel Header -->
+<div class="px-md py-4 bg-surface-container-lowest border-b border-outline-variant/20 flex justify-between items-center z-10">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+<span class="material-symbols-outlined text-[28px]">domain</span>
+</div>
+<div>
+<h3 class="font-headline-md text-xl text-on-surface font-bold">Smash City Arena</h3>
+<div class="flex items-center gap-3 mt-1">
+<p class="font-body-md text-sm text-on-surface-variant">MST: <span class="font-medium text-on-surface">0316589921</span></p>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<p class="font-body-md text-sm text-on-surface-variant">Đại diện: <span class="font-medium text-on-surface">Nguyễn Văn An</span></p>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-on-surface text-sm font-medium flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">history</span> Lịch sử</button>
+<button class="px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-on-surface text-sm font-medium flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">call</span> Hotline</button>
+</div>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-md flex flex-col gap-8 z-10 pb-32">
+<!-- Document Type: Identity -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/30">
+<h4 class="font-headline-md text-lg text-on-surface flex items-center gap-2 font-semibold">
+<span class="material-symbols-outlined text-primary">badge</span> 1. Xác minh Định danh (CCCD)
+</h4>
+<span class="text-sm font-medium text-[#059669] bg-[#d1fae5] px-3 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Hợp lệ
+</span>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-md">
+<!-- Document Viewer -->
+<div class="bg-surface-container-low rounded-2xl p-2 flex flex-col items-center justify-center relative overflow-hidden group min-h-[240px] border border-outline-variant/20">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Close up high-resolution macro shot of a stylized, generic national ID card lying flat on a pristine white marble surface. Soft, diffused top lighting highlights the subtle holographic security foil and the crisp micro-printing. The aesthetic is extremely clean, modern, and clinical, emphasizing trust and verification without showing real personal details. Pastel pink accents are subtly reflected in the glossy surface." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB6LCY5Wab4g75XB6-O8MsyL-yKcopxbisnzHoymCBF1lN3koA0n17JtNkGCgCVaw-RjqbWhEizCLVdyY9D5bc78qa36czOOIhA5G_ZscDaOVFZVzH2jvSAfnU9z9DEAyGpo0lrQsRMZpd-OQWPEkyHf2vsRrgU9T3K4vfAJH0rzYXPFCQyFNg_TFQLimkjYl7YeFEmzCYArK9sX0PwaqMJD3BeMFu1_bvXpm-xjmiCxA29Q69A7nuX')"></div>
+<div class="absolute inset-0 bg-surface/10 backdrop-blur-[2px] group-hover:backdrop-blur-0 transition-all duration-500"></div>
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIyNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIiB0cmFuc2Zvcm09InJvdGF0ZSgtNDUgMTAwIDEwMCkiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkFVUkEgQ09VUlQ8L3RleHQ+PC9zdmc+')] opacity-50 pointer-events-none"></div>
+<button class="relative z-10 bg-surface/90 text-on-surface px-4 py-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-300 flex items-center gap-2 font-medium text-sm">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span> Xem chi tiết
+</button>
+</div>
+<!-- Extracted Data -->
+<div class="flex flex-col gap-3 bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-2xl">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">Họ và tên</span>
+<div class="flex items-center gap-2">
+<span class="text-base text-on-surface font-medium">NGUYEN VAN AN</span>
+<span class="bg-[#d1fae5] text-[#059669] text-[10px] px-2 py-0.5 rounded-full font-bold">100%</span>
+</div>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">Số CCCD</span>
+<div class="flex items-center gap-2">
+<span class="text-base text-on-surface font-medium font-mono">07909200xxxx</span>
+<span class="bg-[#d1fae5] text-[#059669] text-[10px] px-2 py-0.5 rounded-full font-bold">Khớp CSDL</span>
+</div>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-sm text-on-surface-variant">Xác thực khuôn mặt</span>
+<div class="flex items-center gap-2">
+<span class="text-base text-on-surface font-medium">Face-Match</span>
+<span class="bg-[#d1fae5] text-[#059669] text-[10px] px-2 py-0.5 rounded-full font-bold">99.4%</span>
+</div>
+</div>
+<div class="mt-4 bg-[#f0fdf4] p-3 rounded-xl flex items-start gap-3 border border-[#bbf7d0]">
+<span class="material-symbols-outlined text-[#059669] text-[20px]">verified_user</span>
+<p class="text-sm text-[#065f46]">Điểm tin cậy OCR &amp; Liveness: <strong class="text-[#059669]">99%</strong>. Dữ liệu hoàn toàn khớp với Cổng DVC Quốc gia.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Document Type: Business License -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/30">
+<h4 class="font-headline-md text-lg text-on-surface flex items-center gap-2 font-semibold">
+<span class="material-symbols-outlined text-[#d97706]">description</span> 2. Giấy Phép Kinh Doanh (GPKD)
+</h4>
+<span class="text-sm font-medium text-[#d97706] bg-[#fef3c7] px-3 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">warning</span> Cảnh báo chênh lệch
+</span>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-md">
+<div class="bg-surface-container-low rounded-2xl p-2 flex flex-col items-center justify-center relative overflow-hidden group min-h-[240px] border border-outline-variant/20">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="A brightly lit, top-down photograph of a formal business registration document resting on a soft grey desk. The document features official stamps and complex typographic layouts, characteristic of governmental certificates. A subtle depth of field keeps the center sharp while the edges blur slightly. The lighting is crisp and natural, projecting a clean, trustworthy, and highly organized business environment, complementing the soft minimalist UI design." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBcE3wM0Co_65aly8cLxgqstU8PZm7p_FG-Ze5ESczMpXKtmrzhgbsLNYOoym3dREvE5zbmojpsJMm905pDLzBLCb-TuQlkosZvQ-hV5mWQ6byVxjxgHIzLOhKRoiMpxEpbeZWuyq6XTWBTS-9QBhlgqb6VttdY0SfQTEIg0k4cX4ErvJf01fdWkzqpJML7yRB18xU6kpnBV9FdFFWI-P0u8GxWICjp77-CGi1t2nnUQb2rFovMNa7n')"></div>
+<button class="relative z-10 bg-surface/90 text-on-surface px-4 py-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-300 flex items-center gap-2 font-medium text-sm">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span> Xem bản scan
+</button>
+</div>
+<div class="flex flex-col gap-3 bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-2xl">
+<div class="flex flex-col gap-1 py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">Tên pháp lý trên GPKD</span>
+<span class="text-base text-on-surface font-semibold">CÔNG TY TNHH THỂ THAO SMASH CITY</span>
+</div>
+<div class="flex flex-col gap-1 py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">Tên hiển thị đăng ký (Thương hiệu)</span>
+<div class="flex items-center gap-2">
+<span class="text-base text-on-surface font-medium line-through text-on-surface-variant">Smash City Arena</span>
+<span class="material-symbols-outlined text-[18px] text-[#d97706]">error</span>
+</div>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-sm text-on-surface-variant">Trạng thái Mã số thuế</span>
+<span class="bg-[#d1fae5] text-[#059669] text-xs px-2 py-1 rounded-md font-medium">Đang hoạt động</span>
+</div>
+<div class="mt-2 bg-[#fffbeb] p-3 rounded-xl flex items-start gap-3 border border-[#fde68a]">
+<span class="material-symbols-outlined text-[#d97706] text-[20px]">lightbulb</span>
+<p class="text-sm text-[#b45309]">Cảnh báo chênh lệch tên hiển thị và tên pháp lý, tuy nhiên mã ngành nghề (9311) hoàn toàn hợp lệ. Cần chuyên viên xác nhận.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Document Type: NAPAS -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/30">
+<h4 class="font-headline-md text-lg text-on-surface flex items-center gap-2 font-semibold">
+<span class="material-symbols-outlined text-[#059669]">account_balance</span> 3. Xác thực Tài khoản Ngân hàng (NAPAS)
+</h4>
+<span class="text-sm font-medium text-[#059669] bg-[#d1fae5] px-3 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Đã liên kết
+</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-2xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-white rounded-lg border border-outline-variant/20 flex items-center justify-center font-bold text-blue-800">MB</div>
+<div>
+<div class="text-base font-semibold text-on-surface">MBBank - Ngân hàng TMCP Quân Đội</div>
+<div class="text-lg font-mono text-on-surface mt-1">0909 888 999</div>
+<div class="text-sm text-on-surface-variant mt-1">Chủ tài khoản: <span class="font-semibold text-on-surface">CONG TY TNHH THE THAO SMASH CITY</span> <span class="inline-block ml-2 bg-[#d1fae5] text-[#059669] text-[10px] px-2 py-0.5 rounded-full font-bold">Match 100%</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Document Type: Facility -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/30">
+<h4 class="font-headline-md text-lg text-on-surface flex items-center gap-2 font-semibold">
+<span class="material-symbols-outlined text-[#0ea5e9]">stadium</span> 4. Thẩm định Cơ sở vật chất
+</h4>
+<span class="text-sm font-medium text-[#059669] bg-[#d1fae5] px-3 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Đạt chuẩn
+</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-2 gap-2">
+<div class="aspect-square bg-surface-container rounded-xl overflow-hidden"><img alt="Sân 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC200mOe1qui5O8M2nBK6gCXJNjfyxRW00Z7e68m6J0rNUqBJ4dn0j-8NEhHgnXlnp49WlO2OVp1xwRmi_3hRercULcx4K3Poj9TK3rRG3oHioElmhw9aUSOjt7NMBJfILKc5R3_EBQaboTYEp32dt2h_XYL10Z0jhK7RvygsnkcrVwjjV7sSVUJSvdhxQs90q_4v_nAScdRxO0R_NAVYCksV1sfl6wqGgRQNfAHHp1k6VYOM_9HB0iaQHRoxk58thHPQuPp-vvcP8"/></div>
+<div class="aspect-square bg-surface-container rounded-xl overflow-hidden"><img alt="Sân 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGQI6_P7AtDayPPFciTvl6xFEXsvrOkYUm7ZSDuSQdKnojzaIzkPAoGVJOwozx5VHnq2ieYTSWVnBcXPoXgorw8An8GMsDATKm8r1rOqIKvM2rh-pj06Erp0ECpig_eJ-pDgazz6GXeqX2jLGAgyWCfkquLkzNmzfrHUBDYzOfzbD8PC2sS5dCTJL9z5GKyx_TCZTOr8wsFTzer90W9lK3BqH6oYM27yvdVmZxMd9lUyT3ZMQCTprYuMg0tVNtYx9HVVVwuDP66Gs"/></div>
+<div class="aspect-square bg-surface-container rounded-xl overflow-hidden"><img alt="Sân 3" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDQcfJq3Am6GuRKjgofIsQZLx04D3GDUxXQWmT6AI6C14BbwCMhY47aB38FfUCLMVIFO0GPJRcQ99qLuQH-xBoVd1xoPFK2cydrMnBr-ckFQeKA2BkBzM51rF1OL65-AUAuceP_RTILASw_SjVzeRnYffadkBjzyCmSC2eOvmc9I3YpJp3TDcty4oTeKL7WdaL-xoElcP8zcApNvB63hMg4xB7ivn7MkLWHFHwPA3gMIj0XDBVYwwXcZNz29p-V9CuhYwRQFLbWYA"/></div>
+<div class="aspect-square bg-surface-container rounded-xl overflow-hidden flex items-center justify-center bg-surface-container-high text-on-surface-variant font-medium text-sm">+2 ảnh khác</div>
+</div>
+<div class="flex flex-col gap-3 bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-2xl justify-center">
+<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">sports_tennis</span> <span class="text-base text-on-surface font-medium">12 sân tiêu chuẩn BWF</span></div>
+<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">lightbulb</span> <span class="text-base text-on-surface font-medium">Hệ thống đèn chống chói LED 1000W</span></div>
+<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">real_estate_agent</span> <span class="text-base text-on-surface font-medium">Hợp đồng thuê mặt bằng: 5 năm</span></div>
+</div>
+</div>
+</div>
+<!-- Checklist & Notes -->
+<div class="flex flex-col gap-4 bg-surface-container-lowest border border-outline-variant/20 p-5 rounded-2xl">
+<h4 class="font-headline-md text-base text-on-surface font-semibold mb-2">Checklist Thẩm định nội bộ</h4>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<label class="flex items-center gap-3 cursor-pointer"><input checked="" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/><span class="text-sm text-on-surface">Khớp thông tin người đại diện</span></label>
+<label class="flex items-center gap-3 cursor-pointer"><input checked="" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/><span class="text-sm text-on-surface">Ngành nghề kinh doanh hợp lệ</span></label>
+<label class="flex items-center gap-3 cursor-pointer"><input checked="" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/><span class="text-sm text-on-surface">Tài khoản ngân hàng chính chủ</span></label>
+<label class="flex items-center gap-3 cursor-pointer"><input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/><span class="text-sm text-on-surface">Chấp nhận sai số tên thương hiệu</span></label>
+</div>
+<textarea class="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-3 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none" placeholder="Nhập ghi chú thẩm định nội bộ..." rows="3"></textarea>
+</div>
+</div>
+<!-- Action Footer FIXED -->
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-surface-container-lowest border-t border-outline-variant/20 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-20 flex items-center justify-between gap-4 backdrop-blur-md bg-white/90">
+<div class="w-1/3">
+<select class="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-2.5 text-sm text-on-surface outline-none focus:border-primary">
+<option value="">Chọn lý do từ chối / yêu cầu bổ sung...</option>
+<option value="1">Ảnh CCCD mờ, không rõ nét</option>
+<option value="2">Tên hiển thị sai lệch hoàn toàn với GPKD</option>
+<option value="3">Thiếu hợp đồng thuê mặt bằng</option>
+</select>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface font-medium text-sm hover:bg-surface-container transition-colors">
+Yêu cầu bổ sung
+</button>
+<button class="px-5 py-2.5 rounded-xl border border-error text-error font-medium text-sm hover:bg-error-container/20 transition-colors">
+Từ chối hồ sơ
+</button>
+<button class="px-6 py-2.5 rounded-xl bg-[#78555e] text-white font-medium text-sm hover:bg-[#5e3e47] hover:shadow-lg hover:shadow-[#78555e]/30 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">verified</span> Phê duyệt &amp; Kích hoạt Chủ sân
+</button>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

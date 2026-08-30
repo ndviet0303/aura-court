@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Trung tâm Giải quyết Tranh chấp - Aura Court Control</title>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-fixed": "#1a1c1c",
+            "surface-container-highest": "#e1e3e4",
+            "surface-dim": "#d9dadb",
+            "surface": "#f8f9fa",
+            "tertiary-container": "#dfdcdc",
+            "on-tertiary-fixed-variant": "#474747",
+            "surface-container-high": "#e7e8e9",
+            "on-surface-variant": "#4f4446",
+            "surface-variant": "#e1e3e4",
+            "inverse-surface": "#2e3132",
+            "secondary": "#5d5f5f",
+            "on-surface": "#191c1d",
+            "on-tertiary-container": "#616160",
+            "secondary-container": "#dfe0e0",
+            "on-error-container": "#93000a",
+            "outline": "#817476",
+            "background": "#f8f9fa",
+            "inverse-on-surface": "#f0f1f2",
+            "on-secondary-fixed-variant": "#454747",
+            "error": "#ba1a1a",
+            "inverse-primary": "#e7bbc6",
+            "primary": "#78555e",
+            "on-primary-container": "#7a5761",
+            "tertiary": "#5f5e5e",
+            "on-background": "#191c1d",
+            "primary-fixed-dim": "#e7bbc6",
+            "outline-variant": "#d3c3c5",
+            "primary-fixed": "#ffd9e2",
+            "on-primary": "#ffffff",
+            "secondary-fixed": "#e2e2e2",
+            "surface-container-low": "#f3f4f5",
+            "surface-bright": "#f8f9fa",
+            "on-primary-fixed": "#2d141c",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-container": "#616363",
+            "on-tertiary-fixed": "#1b1c1c",
+            "on-primary-fixed-variant": "#5e3e47",
+            "secondary-fixed-dim": "#c6c6c7",
+            "surface-tint": "#78555e",
+            "on-tertiary": "#ffffff",
+            "surface-container": "#edeeef",
+            "tertiary-fixed": "#e4e2e1",
+            "on-secondary": "#ffffff",
+            "primary-container": "#ffd1dc",
+            "tertiary-fixed-dim": "#c8c6c6"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "lg": "48px",
+            "base": "4px",
+            "xs": "8px",
+            "margin-mobile": "16px",
+            "margin-desktop": "64px",
+            "xl": "80px",
+            "md": "24px",
+            "sm": "16px",
+            "gutter": "24px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "headline-lg": ["Inter"],
+            "label-sm": ["Inter"],
+            "headline-md": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-lg": ["Inter"]
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-surface font-body-md text-on-surface">
+  <aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col shadow-[1px_0_0_rgba(0,0,0,0.05)]">
+    <div class="px-8 h-20 flex items-center mb-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary text-[20px]">shield_person</span>
+        </div>
+        <span class="text-headline-md font-headline-md tracking-tight text-on-surface">Aura Control</span>
+      </div>
+    </div>
+    <nav class="flex-1 px-4 space-y-1" data-active-classes="bg-primary-container text-on-primary-container font-semibold">
+      <a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="dashboard-overview" href="#">
+        <span class="material-symbols-outlined mr-3 text-[22px]">dashboard</span>
+        <span class="font-label-sm">Tổng quan Dashboard</span>
+      </a>
+      <a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="kyc-verification" href="#">
+        <span class="material-symbols-outlined mr-3 text-[22px]">verified_user</span>
+        <span class="font-label-sm">Xác thực KYC & Chủ Sân</span>
+      </a>
+      <a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="financial-exceptions" href="#">
+        <span class="material-symbols-outlined mr-3 text-[22px]">account_balance_wallet</span>
+        <span class="font-label-sm">Ngoại lệ Tài chính & Kiểm toán</span>
+      </a>
+      <a aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container font-semibold" data-path="dispute-resolution" href="#">
+        <span class="material-symbols-outlined mr-3 text-[22px]">gavel</span>
+        <span class="font-label-sm">Trung tâm Giải quyết Tranh chấp</span>
+      </a>
+      <a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="pos" href="#">
+        <span class="material-symbols-outlined mr-3 text-[22px]">point_of_sale</span>
+        <span class="font-label-sm">Quản lý Ca trực & POS</span>
+      </a>
+      <a class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="settings" href="#">
+        <span class="material-symbols-outlined mr-3 text-[22px]">settings</span>
+        <span class="font-label-sm">Cài đặt & Phân quyền</span>
+      </a>
+    </nav>
+    <div class="p-6 mt-auto bg-surface-container-lowest border-t border-outline-variant/10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary text-[20px]">person</span>
+        </div>
+        <div>
+          <p class="text-label-sm text-on-surface font-semibold">Nguyễn Văn An</p>
+          <p class="text-[12px] text-on-surface-variant line-clamp-1">Trưởng ban Kiểm soát & Phán quyết</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="pl-72">
+    <header class="fixed top-0 left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl z-40 flex items-center justify-between px-md lg:px-margin-desktop shadow-[0_1px_8px_rgba(0,0,0,0.02)]">
+      <div class="flex items-center bg-surface-container-low px-4 py-2 rounded-full w-[440px]">
+        <span class="material-symbols-outlined text-on-surface-variant text-[20px] mr-2">search</span>
+        <input class="bg-transparent border-none outline-none text-body-md w-full placeholder:text-on-surface-variant/60" placeholder="Tìm kiếm theo #DSP, #BK, #UID, tên sân..." type="text"/>
+      </div>
+      <div class="flex gap-2 mr-auto ml-6">
+        <button class="px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container text-label-sm font-label-sm transition-colors">Tất cả</button>
+        <button class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-sm font-semibold transition-colors">Chờ xử lý (14)</button>
+        <button class="px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container text-label-sm font-label-sm transition-colors">Đang điều tra (6)</button>
+        <button class="px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container text-label-sm font-label-sm transition-colors">Chờ phản hồi (3)</button>
+        <button class="px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container text-label-sm font-label-sm transition-colors">Đã giải quyết (128)</button>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="px-4 py-2 bg-error text-on-error rounded-full font-label-sm hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-[18px]">add_circle</span>
+          Tạo Vụ Việc Khẩn Cấp
+        </button>
+        <button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full font-label-sm hover:opacity-90 transition-opacity shadow-sm">
+          <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+          Xuất Hồ Sơ Vụ Việc (PDF)
+        </button>
+      </div>
+    </header>
+
+    <main class="relative pt-20 bg-surface min-h-screen">
+      <div class="flex flex-col w-full h-[calc(100vh-80px)]">
+        <div class="flex flex-1 overflow-hidden">
+          <!-- Sidebar: Inbox List -->
+          <div class="w-[400px] flex flex-col bg-surface-container-lowest border-r border-outline-variant/20 h-full flex-shrink-0">
+            <div class="p-6 pb-4 border-b border-outline-variant/10">
+              <h1 class="text-headline-lg font-headline-lg text-on-surface mb-2">Vụ Việc Tranh Chấp</h1>
+            </div>
+            <div class="flex-1 overflow-y-auto" style="scrollbar-width: none;">
+              <!-- Ticket 1 (Active) -->
+              <button class="w-full text-left p-6 border-b border-outline-variant/10 bg-primary-container/20 relative cursor-pointer hover:bg-primary-container/30 transition-colors">
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-label-sm font-label-sm text-primary uppercase tracking-wider font-bold">#DSP-8924</span>
+                  <span class="text-[12px] text-on-surface-variant">10 phút trước</span>
+                </div>
+                <h3 class="text-body-lg font-body-lg text-on-surface font-semibold mb-1 truncate">Xung đột Trùng Lịch Sân số 4</h3>
+                <p class="text-body-md font-body-md text-on-surface-variant line-clamp-1 mb-2">Alex Lawson vs Trần Quốc Bảo (Sân Phú Thọ)</p>
+                <div class="flex items-center gap-4 mt-2">
+                  <div class="flex items-center gap-1.5 px-2.5 py-1 bg-error/10 rounded-md">
+                    <span class="material-symbols-outlined text-[14px] text-error">warning</span>
+                    <span class="text-[10px] text-error font-bold uppercase tracking-widest">Khẩn Cấp - SLA 15P</span>
+                  </div>
+                </div>
+              </button>
+              <!-- Ticket 2 -->
+              <button class="w-full text-left p-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">#DSP-8921</span>
+                  <span class="text-[12px] text-on-surface-variant">2 giờ trước</span>
+                </div>
+                <h3 class="text-body-lg font-body-lg text-on-surface font-semibold mb-1 truncate">Tranh chấp Tiền cọc Kèo Giao Lưu</h3>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-[#fff8e1] rounded-md w-fit mt-3">
+                  <span class="material-symbols-outlined text-[14px] text-[#f57f17]">error</span>
+                  <span class="text-[10px] text-[#f57f17] font-bold uppercase tracking-widest">Ưu Tiên Cao</span>
+                </div>
+              </button>
+              <!-- Ticket 3 -->
+              <button class="w-full text-left p-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">#DSP-8918</span>
+                  <span class="text-[12px] text-on-surface-variant">3 giờ trước</span>
+                </div>
+                <h3 class="text-body-lg font-body-lg text-on-surface font-semibold mb-1 truncate">Thị trường Nhượng suất - Hủy QR sau khi nhận tiền</h3>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-error/10 rounded-md w-fit mt-3">
+                  <span class="material-symbols-outlined text-[14px] text-error">gavel</span>
+                  <span class="text-[10px] text-error font-bold uppercase tracking-widest">Nghi Vấn Gian Lận</span>
+                </div>
+              </button>
+              <!-- Ticket 4 -->
+              <button class="w-full text-left p-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">#DSP-8915</span>
+                  <span class="text-[12px] text-on-surface-variant">Hôm qua</span>
+                </div>
+                <h3 class="text-body-lg font-body-lg text-on-surface font-semibold mb-1 truncate">Tranh chấp Phí bồi thường Vợt Yonex Astrox 100ZZ</h3>
+              </button>
+              <!-- Ticket 5 -->
+              <button class="w-full text-left p-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">#DSP-8902</span>
+                  <span class="text-[12px] text-on-surface-variant">2 ngày trước</span>
+                </div>
+                <h3 class="text-body-lg font-body-lg text-on-surface font-semibold mb-1 truncate">Trọng tài nhập sai tỷ số</h3>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-[#e8f5e9] rounded-md w-fit mt-3">
+                  <span class="material-symbols-outlined text-[14px] text-[#2e7d32]">check_circle</span>
+                  <span class="text-[10px] text-[#2e7d32] font-bold uppercase tracking-widest">Đã Phán Quyết</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Content: Ticket Details -->
+          <div class="flex-1 flex flex-col h-full bg-surface relative">
+            <!-- Header -->
+            <div class="p-8 border-b border-outline-variant/10 bg-surface-container-lowest shadow-sm z-10">
+              <div class="flex justify-between items-start mb-6">
+                <div>
+                  <div class="flex items-center gap-3 mb-2">
+                    <span class="px-3 py-1 bg-error-container text-on-error-container rounded-md text-[12px] font-bold uppercase tracking-widest">ĐANG ĐIỀU TRA KHẨN CẤP</span>
+                    <span class="text-on-surface-variant font-label-sm text-label-sm">Hồ sơ #DSP-8924 • Tham chiếu #BK-99482</span>
+                  </div>
+                  <h2 class="text-headline-lg font-headline-lg text-on-surface">Xung đột Trùng Lịch Sân số 4</h2>
+                </div>
+                <div class="flex gap-3">
+                  <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+                    <span class="material-symbols-outlined">print</span>
+                  </button>
+                  <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </button>
+                </div>
+              </div>
+              <div class="flex gap-6">
+                <!-- Tri-party cards -->
+                <div class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 shadow-sm flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined">person</span>
+                  </div>
+                  <div>
+                    <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Nguyên Đơn</p>
+                    <p class="text-body-md font-body-md text-on-surface font-semibold">Alex Lawson</p>
+                    <p class="text-[12px] text-[#f57f17] font-medium">Hạng Vàng • Uy tín: 98/100</p>
+                  </div>
+                </div>
+                <div class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 shadow-sm flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined">sports_kabaddi</span>
+                  </div>
+                  <div>
+                    <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Bị Đơn</p>
+                    <p class="text-body-md font-body-md text-on-surface font-semibold">Trần Quốc Bảo</p>
+                    <p class="text-[12px] text-[#0288d1] font-medium">Hạng Kim Cương • Uy tín: 96/100</p>
+                  </div>
+                </div>
+                <div class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 shadow-sm flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined">stadium</span>
+                  </div>
+                  <div>
+                    <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Cơ Sở Thể Thao</p>
+                    <p class="text-body-md font-body-md text-on-surface font-semibold">Phú Thọ - Sân 4</p>
+                    <p class="text-[12px] text-on-surface-variant">Xác thực API đang hoạt động</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-8" style="scrollbar-width: none;">
+              <div class="max-w-4xl mx-auto space-y-8">
+                <!-- Tabs -->
+                <div class="flex gap-2 border-b border-outline-variant/20 mb-6">
+                  <button class="px-6 py-3 text-label-sm font-label-sm text-primary border-b-2 border-primary font-semibold" id="tab-logs">Nhật ký Hệ thống</button>
+                  <button class="px-6 py-3 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-colors" id="tab-chat">Đoạn Chat Đối Chất</button>
+                  <button class="px-6 py-3 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-colors" id="tab-map">Sơ Đồ Sân</button>
+                </div>
+                <!-- Tab Content: Logs -->
+                <div class="space-y-6" id="content-logs">
+                  <div class="bg-surface-container-lowest rounded-xl shadow-sm p-6">
+                    <h4 class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Chuỗi Sự Kiện Bằng Chứng</h4>
+                    <div class="space-y-4">
+                      <div class="flex items-start gap-4">
+                        <div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
+                        <div>
+                          <p class="text-body-md font-body-md text-on-surface">Hệ thống ghi nhận đặt sân qua App: Alex Lawson - Sân 4 (19:00 - 20:00)</p>
+                          <p class="text-[12px] text-on-surface-variant font-mono">20 Thg 10, 14:22:05 UTC</p>
+                        </div>
+                      </div>
+                      <div class="w-0.5 h-6 bg-outline-variant/30 ml-[3px] -my-2"></div>
+                      <div class="flex items-start gap-4">
+                        <div class="w-2 h-2 rounded-full bg-[#f57f17] mt-2"></div>
+                        <div>
+                          <p class="text-body-md font-body-md text-on-surface">Cảnh báo: Độ trễ Webhook Facility API (Chậm 45 giây)</p>
+                          <p class="text-[12px] text-on-surface-variant font-mono">20 Thg 10, 14:22:50 UTC</p>
+                        </div>
+                      </div>
+                      <div class="w-0.5 h-6 bg-outline-variant/30 ml-[3px] -my-2"></div>
+                      <div class="flex items-start gap-4">
+                        <div class="w-2 h-2 rounded-full bg-error mt-2"></div>
+                        <div>
+                          <p class="text-body-md font-body-md text-on-surface">Lỗi Đồng Bộ: Nhân viên cơ sở (Quyền Quản Trị) chèn tay lịch của Trần Quốc Bảo vào Sân 4.</p>
+                          <p class="text-[12px] text-on-surface-variant font-mono">24 Thg 10, 18:55:12 UTC</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Tab Content: Chat -->
+                <div class="hidden space-y-6" id="content-chat">
+                  <div class="bg-surface-container-lowest rounded-xl shadow-sm p-6 flex flex-col h-[360px]">
+                    <h4 class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Lịch Sử Trao Đổi 3 Bên</h4>
+                    <div class="flex-1 overflow-y-auto space-y-4 pr-2">
+                      <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-surface-container-high flex-shrink-0 flex items-center justify-center text-[10px] font-bold">AL</div>
+                        <div class="bg-surface-container-low p-3 rounded-2xl rounded-tl-none">
+                          <p class="text-body-md font-body-md text-on-surface">Tôi đã đến sân lúc 18:55 nhưng sân số 4 đang có nhóm khác đánh. Lễ tân bảo họ có lịch đặt cố định.</p>
+                          <p class="text-[10px] text-on-surface-variant mt-1 text-right">19:05</p>
+                        </div>
+                      </div>
+                      <div class="flex gap-3 flex-row-reverse">
+                        <div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-[10px] text-on-primary font-bold">PT</div>
+                        <div class="bg-primary-container p-3 rounded-2xl rounded-tr-none">
+                          <p class="text-body-md font-body-md text-on-primary-container">Chào anh Alex, bên em vừa kiểm tra lại hệ thống POS bị trễ webhook nên lễ tân tưởng slot còn trống.</p>
+                          <p class="text-[10px] text-on-primary-container/70 mt-1 text-left">19:08</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Tab Content: Map -->
+                <div class="hidden space-y-6" id="content-map">
+                  <div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden p-6">
+                    <h4 class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Sơ đồ Phú Thọ - Trạng thái lúc 19:00</h4>
+                    <div class="p-8 bg-surface-container-low rounded-lg flex justify-center items-center gap-6">
+                      <div class="w-32 h-48 border border-outline-variant/30 rounded-lg bg-surface flex items-center justify-center flex-col opacity-50">
+                        <span class="font-bold text-body-md">Sân 3</span>
+                        <span class="text-[12px] text-on-surface-variant">Đang đánh</span>
+                      </div>
+                      <div class="w-32 h-48 border-2 border-error rounded-lg bg-error-container/20 flex flex-col items-center justify-center relative shadow-[0_0_15px_rgba(186,26,26,0.3)] animate-pulse">
+                        <span class="text-headline-md font-headline-md text-error font-bold mb-2">Sân 4</span>
+                        <span class="material-symbols-outlined text-error text-[24px]">warning</span>
+                        <span class="text-[12px] text-error font-bold mt-2 uppercase">Xung Đột</span>
+                      </div>
+                      <div class="w-32 h-48 border-2 border-[#2e7d32] rounded-lg bg-[#e8f5e9] flex flex-col items-center justify-center">
+                        <span class="text-headline-md font-headline-md text-[#2e7d32] font-bold mb-2">Sân 7</span>
+                        <span class="text-[12px] text-[#2e7d32] font-bold mt-2 uppercase text-center px-2">Trống - Có thể Đổi</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- AI Assistant Card -->
+                <div class="bg-[#f3e5f5] rounded-xl shadow-sm p-6 border border-[#ce93d8]">
+                  <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-[#8e24aa]">smart_toy</span>
+                    <h4 class="text-label-sm font-label-sm text-[#8e24aa] uppercase tracking-wider font-bold">Trợ lý AI Đề xuất Phán Quyết</h4>
+                  </div>
+                  <div class="bg-white p-4 rounded-lg space-y-2">
+                    <p class="text-body-md text-on-surface font-semibold">Tỷ lệ lỗi: Cơ sở Thể thao (Phú Thọ) 100%.</p>
+                    <ul class="list-disc pl-5 text-body-md text-on-surface-variant space-y-1">
+                      <li>Hoàn 100% tiền (360.000 ₫) vào Ví Nội bộ cho Alex Lawson.</li>
+                      <li>Đề xuất Voucher giảm 20% hoặc 500 Điểm Danh vọng cho Alex để bù đắp trải nghiệm.</li>
+                      <li>Yêu cầu Cơ sở chuyển Trần Quốc Bảo sang Sân 7 (Đang trống) nếu các bên đồng ý.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resolution Toolbar (Fixed Bottom) -->
+            <div class="p-6 bg-surface-container-lowest border-t border-outline-variant/10 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-20">
+              <div class="max-w-4xl mx-auto flex gap-4">
+                <button class="flex-1 bg-surface-container text-on-surface py-4 px-6 rounded-xl font-label-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2 border border-outline-variant/20">
+                  <span class="material-symbols-outlined text-[20px] text-on-surface-variant">close</span>
+                  Bác Bỏ Khiếu Nại
+                </button>
+                <button class="flex-1 bg-primary text-on-primary py-4 px-6 rounded-xl font-label-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md" id="btn-resolve" onclick="toggleDrawer()">
+                  <span class="material-symbols-outlined text-[20px]">gavel</span>
+                  Lập Biên Bản Phán Quyết & Đền Bù
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide-over Drawer (Hidden by default) -->
+        <div class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity" id="drawer-overlay" onclick="toggleDrawer()"></div>
+        <div class="fixed top-0 right-0 h-full w-[500px] bg-surface-container-lowest shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col" id="resolution-drawer">
+          <div class="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface">
+            <h2 class="text-headline-md font-headline-md text-on-surface">Lập Biên Bản Phán Quyết & Bồi Thường</h2>
+            <button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" onclick="toggleDrawer()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div class="space-y-2">
+              <label class="text-label-sm font-label-sm text-on-surface-variant">Hành động chính</label>
+              <select class="w-full p-3 rounded-lg border border-outline-variant/30 bg-surface text-body-md outline-none focus:border-primary">
+                <option>Hoàn tiền 100% vào Ví Nội Bộ (Alex Lawson - 360.000 ₫)</option>
+                <option>Hoàn tiền 50% vào Ví Nội Bộ</option>
+                <option>Hoàn tiền về tài khoản ngân hàng nguồn qua PayOS</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="text-label-sm font-label-sm text-on-surface-variant">Bồi thường Thiện chí (Tùy chọn)</label>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input class="w-4 h-4 text-primary" name="goodwill" type="radio" checked/>
+                  <span class="text-body-md text-on-surface">Tặng Voucher 20%</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input class="w-4 h-4 text-primary" name="goodwill" type="radio"/>
+                  <span class="text-body-md text-on-surface">Tặng 500 Điểm Thưởng</span>
+                </label>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-label-sm font-label-sm text-on-surface-variant">Ghi chú phạt đối với Cơ sở Thể thao</label>
+              <textarea class="w-full p-3 rounded-lg border border-outline-variant/30 bg-surface text-body-md outline-none focus:border-primary min-h-[100px]" placeholder="Ghi rõ lý do phạt (Ví dụ: Lỗi đồng bộ API, nhân viên thao tác sai)..."></textarea>
+            </div>
+          </div>
+          <div class="p-6 border-t border-outline-variant/10 bg-surface">
+            <button class="w-full bg-primary text-on-primary py-3 rounded-xl font-label-sm hover:opacity-90 transition-opacity shadow-md" onclick="toggleDrawer()">Xác nhận Phán Quyết Ký Số</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Tab Switching Logic
+    const tabs = ['logs', 'chat', 'map'];
+    tabs.forEach(tab => {
+      const btn = document.getElementById(`tab-${tab}`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          tabs.forEach(t => {
+            const tBtn = document.getElementById(`tab-${t}`);
+            const tContent = document.getElementById(`content-${t}`);
+            if (tBtn) {
+              tBtn.classList.remove('text-primary', 'border-b-2', 'border-primary', 'font-semibold');
+              tBtn.classList.add('text-on-surface-variant');
+            }
+            if (tContent) {
+              tContent.classList.add('hidden');
+            }
+          });
+          btn.classList.add('text-primary', 'border-b-2', 'border-primary', 'font-semibold');
+          btn.classList.remove('text-on-surface-variant');
+          const activeContent = document.getElementById(`content-${tab}`);
+          if (activeContent) {
+            activeContent.classList.remove('hidden');
+          }
+        });
+      }
+    });
+
+    // Drawer Toggle Logic
+    function toggleDrawer() {
+      const drawer = document.getElementById('resolution-drawer');
+      const overlay = document.getElementById('drawer-overlay');
+      if (drawer && overlay) {
+        if (drawer.classList.contains('translate-x-full')) {
+          drawer.classList.remove('translate-x-full');
+          overlay.classList.remove('hidden');
+        } else {
+          drawer.classList.add('translate-x-full');
+          overlay.classList.add('hidden');
+        }
+      }
+    }
+  </script>
+</body>
+</html>
