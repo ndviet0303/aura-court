@@ -11,7 +11,7 @@ export default {
       content2: 'All court data, schedules, and payment flows are simulated for testing. Please do not send real money or enter sensitive credentials.',
       understandBtn: 'I Understand & Continue',
     },
-    demoFooter: '© 2026 Aura Court · Demonstration Demo.',
+    demoFooter: 'Demo Environment',
     privacyAndSupport: 'Policy · Support',
     footer: {
       tagline: 'Elevating your athletic performance with international standard badminton courts and seamless booking technology.',

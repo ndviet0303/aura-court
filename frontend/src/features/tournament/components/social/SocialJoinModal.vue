@@ -72,9 +72,15 @@ const emit = defineEmits<{
   padding: 8px 20px;
   border-radius: 8px;
   border: 0;
-  background: var(--pink-dark, #db2777);
+  background: var(--primary, #6B2D3F);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
 }
 </style>

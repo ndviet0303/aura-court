@@ -53,6 +53,7 @@ onUnmounted(() => {
 
 <template>
   <div class="legal-page-wrapper">
+    <!-- Ambient light glow -->
     <div class="aura-glow-bg" aria-hidden="true"></div>
 
     <div class="container legal-container">
@@ -60,12 +61,12 @@ onUnmounted(() => {
       <!-- Top Hero Header -->
       <div class="legal-header">
         <div class="legal-badge">
-          <span class="material-symbols-outlined">security</span>
-          <span>BẢO MẬT & QUYỀN RIÊNG TƯ AURA COURT</span>
+          <span class="material-symbols-outlined icon-18">shield</span>
+          <span>BẢO MẬT &amp; QUYỀN RIÊNG TƯ AURA COURT</span>
         </div>
         <h1 class="legal-title">Chính sách bảo mật</h1>
         <p class="legal-subtitle">
-          Aura Court cam kết tôn trọng, bảo vệ thông tin cá nhân và dữ liệu thanh toán của bạn theo tiêu chuẩn an toàn cao nhất.
+          Aura Court cam kết tôn trọng, bảo vệ an toàn tuyệt đối thông tin cá nhân và dữ liệu thanh toán của bạn theo tiêu chuẩn an toàn bảo mật cao nhất.
         </p>
 
         <!-- Navigation switcher -->
@@ -83,11 +84,15 @@ onUnmounted(() => {
         <div class="legal-meta-row">
           <div class="meta-item">
             <span class="material-symbols-outlined">update</span>
-            <span>Cập nhật lần cuối: <strong>Tháng 08/2026</strong></span>
+            <span>Cập nhật: <strong>Tháng 08/2026</strong></span>
           </div>
           <div class="meta-item">
             <span class="material-symbols-outlined">lock_clock</span>
-            <span>Tiêu chuẩn mã hóa: <strong>SSL / TLS 256-bit</strong></span>
+            <span>Mã hóa: <strong>SSL / TLS 256-bit &amp; PCI-DSS</strong></span>
+          </div>
+          <div class="meta-item">
+            <span class="material-symbols-outlined">verified_user</span>
+            <span>Tuân thủ: <strong>Nghị định 13/2023/NĐ-CP</strong></span>
           </div>
         </div>
       </div>
@@ -121,7 +126,7 @@ onUnmounted(() => {
                 <span class="material-symbols-outlined">verified_user</span>
               </div>
               <h4>Cam kết bảo mật 100%</h4>
-              <p>Không bao giờ mua bán hoặc trao đổi thông tin khách hàng.</p>
+              <p>Không bao giờ thương mại hóa hoặc chia sẻ dữ liệu hội viên cho bên thứ ba trái quy định.</p>
               <a href="mailto:ndviet.dev@gmail.com" class="support-btn">
                 <span class="material-symbols-outlined">mail</span>
                 <span>Gửi phản hồi DPO</span>
@@ -143,23 +148,23 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Khi bạn tương tác với hệ thống Aura Court, chúng tôi thu thập các thông tin cần thiết nhằm cung cấp dịch vụ đặt sân tốt nhất:
+                Khi bạn đăng ký tài khoản Aura ID và tương tác với hệ thống Aura Court, chúng tôi thu thập các thông tin tối thiểu cần thiết để phục vụ công tác điều phối sân và giao dịch:
               </p>
               <div class="data-types-grid">
                 <div class="data-card">
                   <span class="material-symbols-outlined d-icon">person</span>
-                  <h5>Thông tin tài khoản</h5>
-                  <p>Họ tên, địa chỉ email, số điện thoại đăng ký và mật khẩu đã được mã hóa (Bcrypt Hash).</p>
+                  <h5>Thông tin tài khoản Aura ID</h5>
+                  <p>Họ tên, địa chỉ email, số điện thoại đăng ký và mật khẩu được mã hóa một chiều chuẩn Bcrypt cao cấp.</p>
                 </div>
                 <div class="data-card">
                   <span class="material-symbols-outlined d-icon">receipt_long</span>
-                  <h5>Thông tin đặt sân</h5>
-                  <p>Lịch sử các khung giờ đã đặt, tên sân, ngày thi đấu, trạng thái thanh toán và mã hóa đơn.</p>
+                  <h5>Thông tin lịch thi đấu</h5>
+                  <p>Lịch sử các khung giờ đã đặt, tên sân (Tiêu chuẩn/VIP), ngày giờ thi đấu, trạng thái thanh toán và mã QR check-in.</p>
                 </div>
                 <div class="data-card">
                   <span class="material-symbols-outlined d-icon">devices</span>
-                  <h5>Thông tin kỹ thuật</h5>
-                  <p>Địa chỉ IP, loại trình duyệt, hệ điều hành và thiết bị truy cập để tối ưu trải nghiệm hiển thị.</p>
+                  <h5>Thông tin kỹ thuật &amp; Thiết bị</h5>
+                  <p>Địa chỉ IP, loại trình duyệt, nhật ký truy cập nhằm bảo vệ an ninh phòng chống gian lận và tối ưu giao diện.</p>
                 </div>
               </div>
             </div>
@@ -174,12 +179,12 @@ onUnmounted(() => {
               <h2>2. Mục đích sử dụng dữ liệu</h2>
             </div>
             <div class="section-text">
-              <p>Dữ liệu của quý khách chỉ được sử dụng cho các mục đích chính đáng sau:</p>
+              <p>Dữ liệu của hội viên chỉ được sử dụng cho các mục đích dịch vụ chính đáng:</p>
               <ul>
-                <li><strong>Xử lý đơn đặt sân:</strong> Khóa khung giờ, tạo mã QR nhận sân và kích hoạt quyền vào sân thi đấu.</li>
-                <li><strong>Xác nhận giao dịch:</strong> Đối soát chuyển khoản ngân hàng tự động qua SePay/VietQR.</li>
-                <li><strong>Thông báo kịp thời:</strong> Gửi thông báo nhắc lịch thi đấu, cảnh báo bảo trì khẩn cấp hoặc xác nhận hoàn tiền.</li>
-                <li><strong>Nâng cao trải nghiệm:</strong> Phân tích giờ cao điểm để điều chỉnh biểu giá hợp lý và nâng cấp cơ sở vật chất.</li>
+                <li><strong>Điều phối &amp; Khóa sân tức thì:</strong> Tự động khóa khung giờ, tạo mã QR nhận sân và quản lý luồng check-in tại quầy lễ tân.</li>
+                <li><strong>Xác nhận giao dịch thanh toán:</strong> Tự động đối soát chuyển khoản ngân hàng qua cổng bảo mật SePay / VietQR trong vài giây.</li>
+                <li><strong>Thông báo thông minh:</strong> Gửi thông báo nhắc lịch thi đấu, xác nhận hoàn tiền ví Aura Wallet hoặc cảnh báo thay đổi lịch thi đấu giải.</li>
+                <li><strong>Nâng cao chất lượng dịch vụ:</strong> Thống kê tần suất sử dụng để điều chỉnh ánh sáng, bảo dưỡng mặt thảm BWF và nâng cấp tiện ích.</li>
               </ul>
             </div>
           </section>
@@ -190,32 +195,32 @@ onUnmounted(() => {
               <div class="section-icon-box">
                 <span class="material-symbols-outlined">lock</span>
               </div>
-              <h2>3. Bảo mật thanh toán & Dữ liệu tài chính</h2>
+              <h2>3. Bảo mật thanh toán &amp; Dữ liệu tài chính</h2>
             </div>
             <div class="section-text">
               <p>
-                Aura Court áp dụng các tiêu chuẩn bảo mật tài chính nghiêm ngặt nhằm đảm bảo an toàn tuyệt đối:
+                Aura Court áp dụng các tiêu chuẩn bảo mật tài chính ngân hàng nghiêm ngặt nhất nhằm bảo vệ an toàn 100% cho mọi giao dịch:
               </p>
               <div class="security-pillars">
                 <div class="pillar-item">
                   <div class="pillar-check"><span class="material-symbols-outlined">check_circle</span></div>
                   <div>
-                    <strong>Không lưu thông tin nhạy cảm:</strong>
-                    <p>Aura Court <em>không bao giờ</em> lưu trữ mật khẩu ngân hàng, mã OTP hoặc số thẻ CVV của khách hàng.</p>
+                    <strong>Không lưu trữ thông tin thẻ nhạy cảm:</strong>
+                    <p>Aura Court <em>không bao giờ</em> lưu trữ mật khẩu ngân hàng, mã OTP hoặc số thẻ CVV/CVC của khách hàng trên máy chủ.</p>
                   </div>
                 </div>
                 <div class="pillar-item">
                   <div class="pillar-check"><span class="material-symbols-outlined">check_circle</span></div>
                   <div>
-                    <strong>Đối soát tự động độc lập:</strong>
-                    <p>Giao dịch quét mã QR VietQR được xử lý qua hệ thống đối soát trung gian bảo mật SePay có chứng nhận an toàn tài chính.</p>
+                    <strong>Đối soát tự động độc lập qua SePay / VietQR:</strong>
+                    <p>Giao dịch quét mã QR VietQR được xử lý qua hệ thống đối soát trung gian bảo mật SePay đạt chuẩn an toàn tài chính quốc tế.</p>
                   </div>
                 </div>
                 <div class="pillar-item">
                   <div class="pillar-check"><span class="material-symbols-outlined">check_circle</span></div>
                   <div>
-                    <strong>Mã hóa toàn diện:</strong>
-                    <p>Toàn bộ đường truyền dữ liệu giữa trình duyệt của bạn và máy chủ Aura Court được bảo vệ bởi chứng chỉ mã hóa TLS 1.3 cao cấp nhất.</p>
+                    <strong>Mã hóa đường truyền TLS 1.3:</strong>
+                    <p>Toàn bộ dữ liệu truyền tải giữa thiết bị của bạn và hệ thống máy chủ Aura Court được mã hóa đầu cuối với chứng chỉ SSL/TLS 256-bit cấp cao.</p>
                   </div>
                 </div>
               </div>
@@ -232,11 +237,11 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Chúng tôi tuyệt đối <strong>không bán, cho thuê hoặc thương mại hóa dữ liệu cá nhân</strong> của bạn cho bất kỳ bên thứ ba nào. Dữ liệu chỉ được chia sẻ trong các trường hợp sau:
+                Chúng tôi tuyệt đối <strong>không bán, cho thuê hoặc thương mại hóa dữ liệu cá nhân</strong> của bạn cho bất kỳ đối tác quảng cáo nào. Dữ liệu chỉ được chia sẻ trong phạm vi cần thiết:
               </p>
               <ul>
-                <li><strong>Cổng thanh toán ngân hàng:</strong> Chia sẻ mã đơn hàng và số tiền để ngân hàng xác nhận trạng thái chuyển khoản.</li>
-                <li><strong>Tuân thủ pháp luật:</strong> Cung cấp thông tin khi có yêu cầu bằng văn bản chính thức từ cơ quan quản lý nhà nước có thẩm quyền theo quy định pháp luật Việt Nam.</li>
+                <li><strong>Cổng thanh toán &amp; Ngân hàng liên kết:</strong> Cung cấp mã đơn hàng và số tiền giao dịch để đối soát thành công đơn đặt sân.</li>
+                <li><strong>Yêu cầu pháp lý bắt buộc:</strong> Chỉ cung cấp khi có văn bản yêu cầu chính thức từ cơ quan quản lý nhà nước có thẩm quyền theo quy định của pháp luật Việt Nam.</li>
               </ul>
             </div>
           </section>
@@ -250,27 +255,27 @@ onUnmounted(() => {
               <h2>5. Quyền của người dùng với dữ liệu cá nhân</h2>
             </div>
             <div class="section-text">
-              <p>Bạn luôn có toàn quyền kiểm soát thông tin cá nhân của mình tại Aura Court:</p>
+              <p>Hội viên có toàn quyền kiểm soát thông tin cá nhân của mình tại Aura Court bất kỳ lúc nào:</p>
               <div class="rights-list">
                 <div class="right-item">
                   <span class="material-symbols-outlined">visibility</span>
                   <div>
-                    <strong>Quyền xem & truy cập:</strong>
-                    <p>Xem toàn bộ thông tin tài khoản và lịch sử đặt sân trong trang Hồ sơ cá nhân.</p>
+                    <strong>Quyền truy cập &amp; Xem lại:</strong>
+                    <p>Dễ dàng xem toàn bộ thông tin tài khoản, danh sách giao dịch và lịch sử đặt sân trong trang Hồ sơ cá nhân.</p>
                   </div>
                 </div>
                 <div class="right-item">
                   <span class="material-symbols-outlined">edit</span>
                   <div>
-                    <strong>Quyền chỉnh sửa:</strong>
-                    <p>Cập nhật tên hiển thị, mật khẩu và cài đặt ngôn ngữ bất kỳ lúc nào.</p>
+                    <strong>Quyền chỉnh sửa &amp; Cập nhật:</strong>
+                    <p>Cập nhật số điện thoại, đổi mật khẩu và tùy chọn nhận thông báo trong mục cài đặt tài khoản.</p>
                   </div>
                 </div>
                 <div class="right-item">
                   <span class="material-symbols-outlined">delete_forever</span>
                   <div>
                     <strong>Quyền yêu cầu xóa dữ liệu:</strong>
-                    <p>Gửi yêu cầu xóa tài khoản vĩnh viễn và ẩn thông tin giao dịch khỏi hệ thống.</p>
+                    <p>Gửi yêu cầu đóng tài khoản Aura ID vĩnh viễn và ẩn toàn bộ dữ liệu lịch sử khỏi hệ thống công khai.</p>
                   </div>
                 </div>
               </div>
@@ -283,16 +288,16 @@ onUnmounted(() => {
               <div class="section-icon-box">
                 <span class="material-symbols-outlined">cookie</span>
               </div>
-              <h2>6. Cookie & Bộ nhớ trình duyệt (Local Storage)</h2>
+              <h2>6. Cookie &amp; Bộ nhớ trình duyệt (Local Storage)</h2>
             </div>
             <div class="section-text">
               <p>
-                Aura Court sử dụng Cookie kỹ thuật và Local Storage nhằm duy trì phiên làm việc mượt mà:
+                Aura Court sử dụng Cookie kỹ thuật và Local Storage nhằm mang lại trải nghiệm duyệt web mượt mà:
               </p>
               <ul>
-                <li><strong>Phiên đăng nhập (Session Cookie):</strong> Giữ trạng thái đăng nhập bảo mật giữa các lần mở trang.</li>
-                <li><strong>Cài đặt giao diện:</strong> Ghi nhớ tùy chọn Chế độ sáng / tối (Theme) và ngôn ngữ hiển thị (Tiếng Việt / English).</li>
-                <li><strong>Bảo mật chống tấn công (CSRF Token):</strong> Bảo vệ form thanh toán và form đăng ký khỏi các cuộc tấn công giả mạo yêu cầu.</li>
+                <li><strong>Phiên đăng nhập an toàn (Session Cookie):</strong> Lưu giữ token xác thực an toàn giữa các lượt truy cập mà không yêu cầu đăng nhập lại liên tục.</li>
+                <li><strong>Tùy chỉnh giao diện:</strong> Ghi nhớ chế độ hiển thị Sáng / Tối (Light / Dark Mode) và ngôn ngữ ưa thích (Tiếng Việt / English).</li>
+                <li><strong>Phòng chống tấn công (CSRF Token):</strong> Bảo vệ form đặt sân và quy trình thanh toán khỏi các tấn công giả mạo yêu cầu chéo trang.</li>
               </ul>
             </div>
           </section>
@@ -307,7 +312,7 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Thông tin tài khoản được lưu trữ trong suốt thời gian bạn duy trì tài khoản tại Aura Court. Lịch sử đơn đặt sân và hóa đơn thanh toán được lưu trữ tối thiểu 12 tháng theo quy định kế toán đối soát trước khi được lưu trữ nén bảo mật.
+                Thông tin hồ sơ hội viên được lưu trữ trong suốt thời gian bạn duy trì tài khoản tại Aura Court. Nhật ký giao dịch và chứng từ thanh toán được lưu trữ bảo mật tối thiểu 12 tháng phục vụ công tác đối soát kế toán trước khi được lưu trữ nén bảo mật.
               </p>
             </div>
           </section>
@@ -322,20 +327,20 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Nếu có bất kỳ câu hỏi nào về chính sách bảo mật hoặc muốn thực hiện quyền xóa dữ liệu cá nhân, vui lòng liên hệ với phụ trách bảo mật của chúng tôi:
+                Nếu có bất kỳ thắc mắc nào liên quan đến chính sách quyền riêng tư hoặc muốn thực hiện quyền yêu cầu bảo mật thông tin, xin vui lòng liên hệ:
               </p>
               <div class="contact-card-box">
                 <div class="c-item">
                   <span class="material-symbols-outlined">mail</span>
                   <div>
-                    <strong>Email Bộ phận Bảo mật (DPO):</strong>
+                    <strong>Email Phụ trách Bảo mật (DPO):</strong>
                     <a href="mailto:ndviet.dev@gmail.com">ndviet.dev@gmail.com</a>
                   </div>
                 </div>
                 <div class="c-item">
                   <span class="material-symbols-outlined">phone_in_talk</span>
                   <div>
-                    <strong>Đường dây nóng hỗ trợ:</strong>
+                    <strong>Hotline hỗ trợ hội viên:</strong>
                     <a href="tel:0963792413">0963 792 413</a>
                   </div>
                 </div>
@@ -359,20 +364,20 @@ onUnmounted(() => {
 
 .aura-glow-bg {
   position: absolute;
-  top: 60px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 900px;
+  width: 1000px;
   max-width: 90vw;
-  height: 450px;
-  background: radial-gradient(circle, rgba(255, 209, 220, 0.4) 0%, rgba(120, 85, 94, 0.06) 50%, transparent 70%);
+  height: 500px;
+  background: radial-gradient(circle at center, rgba(201, 161, 90, 0.12) 0%, rgba(107, 45, 63, 0.08) 45%, transparent 70%);
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
-html.dark .aura-glow-bg {
-  background: radial-gradient(circle, rgba(120, 85, 94, 0.35) 0%, rgba(255, 209, 220, 0.04) 50%, transparent 70%);
+:global(html.dark .aura-glow-bg) {
+  background: radial-gradient(circle at center, rgba(216, 180, 110, 0.15) 0%, rgba(68, 26, 38, 0.25) 50%, transparent 75%);
 }
 
 .legal-container {
@@ -394,44 +399,64 @@ html.dark .aura-glow-bg {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(120, 85, 94, 0.12);
-  color: var(--pink-dark);
+  background: rgba(201, 161, 90, 0.12);
+  color: var(--on-accent-container, #684F17);
   padding: 6px 16px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(201, 161, 90, 0.35);
   margin-bottom: 16px;
 }
 
-html.dark .legal-badge {
-  background: rgba(255, 209, 220, 0.15);
-  color: #f8b4c4;
+:global(html.dark .legal-badge) {
+  background: rgba(223, 186, 114, 0.15);
+  color: #dfba72;
+  border-color: rgba(223, 186, 114, 0.35);
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 .legal-title {
   font-size: clamp(32px, 3.8vw, 46px);
-  font-weight: 800;
+  font-weight: 850;
   letter-spacing: -0.03em;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   margin: 0 0 14px;
+}
+
+:global(html.dark .legal-title) {
+  color: #FAF7F3;
 }
 
 .legal-subtitle {
   font-size: 16px;
   line-height: 1.6;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   margin: 0 0 24px;
+}
+
+:global(html.dark .legal-subtitle) {
+  color: #a89fa4;
 }
 
 /* Switcher Tabs */
 .doc-switcher {
   display: inline-flex;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   padding: 4px;
   border-radius: 14px;
   margin-bottom: 24px;
+}
+
+:global(html.dark .doc-switcher) {
+  background: #262024;
+  border-color: #382f35;
 }
 
 .doc-tab {
@@ -441,25 +466,34 @@ html.dark .legal-badge {
   padding: 8px 18px;
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   text-decoration: none;
   border-radius: 10px;
   transition: all 0.2s ease;
 }
 
-.doc-tab.active {
-  background: var(--surface);
-  color: var(--pink-dark);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+:global(html.dark .doc-tab) {
+  color: #a89fa4;
 }
 
-html.dark .doc-tab.active {
-  background: var(--soft);
-  color: #f8b4c4;
+.doc-tab.active {
+  background: var(--surface, #ffffff);
+  color: var(--primary, #6B2D3F);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
+}
+
+:global(html.dark .doc-tab.active) {
+  background: #30292e;
+  color: #dfba72;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .doc-tab:hover:not(.active) {
-  color: var(--ink);
+  color: var(--ink, #1c1618);
+}
+
+:global(html.dark .doc-tab:hover:not(.active)) {
+  color: #FAF7F3;
 }
 
 .legal-meta-row {
@@ -469,7 +503,11 @@ html.dark .doc-tab.active {
   gap: 24px;
   flex-wrap: wrap;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
+}
+
+:global(html.dark .legal-meta-row) {
+  color: #a89fa4;
 }
 
 .meta-item {
@@ -480,11 +518,11 @@ html.dark .doc-tab.active {
 
 .meta-item .material-symbols-outlined {
   font-size: 18px;
-  color: var(--pink-dark);
+  color: var(--accent, #C9A15A);
 }
 
-html.dark .meta-item .material-symbols-outlined {
-  color: #f8b4c4;
+:global(html.dark .meta-item .material-symbols-outlined) {
+  color: #dfba72;
 }
 
 /* Legal Grid Layout */
@@ -502,30 +540,45 @@ html.dark .meta-item .material-symbols-outlined {
 }
 
 .sidebar-sticky-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 20px;
   padding: 24px 20px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm, 0 4px 16px rgba(107, 45, 63, 0.06));
+}
+
+:global(html.dark .sidebar-sticky-card) {
+  background: var(--surface, #1e191c);
+  border-color: var(--border, #382f35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 750;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   margin: 0 0 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border, #e8e1d7);
+}
+
+:global(html.dark .sidebar-title) {
+  color: #FAF7F3;
+  border-color: #382f35;
 }
 
 .sidebar-title .material-symbols-outlined {
   font-size: 18px;
-  color: var(--pink-dark);
+  color: var(--primary, #6B2D3F);
+}
+
+:global(html.dark .sidebar-title .material-symbols-outlined) {
+  color: #dfba72;
 }
 
 .sidebar-nav {
@@ -543,7 +596,7 @@ html.dark .meta-item .material-symbols-outlined {
   padding: 10px 12px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   background: transparent;
   border: none;
   border-radius: 10px;
@@ -552,20 +605,29 @@ html.dark .meta-item .material-symbols-outlined {
   transition: all 0.18s ease;
 }
 
+:global(html.dark .nav-link-btn) {
+  color: #a89fa4;
+}
+
 .nav-link-btn:hover {
-  background: var(--surface-subtle);
-  color: var(--ink);
+  background: var(--surface-subtle, #f7f3ed);
+  color: var(--ink, #1c1618);
+}
+
+:global(html.dark .nav-link-btn:hover) {
+  background: #262024;
+  color: #FAF7F3;
 }
 
 .nav-link-btn.active {
-  background: var(--pink-light);
-  color: var(--pink-dark);
+  background: var(--accent-container, #FAF2E3);
+  color: var(--on-accent-container, #684F17);
   font-weight: 700;
 }
 
-html.dark .nav-link-btn.active {
-  background: rgba(120, 85, 94, 0.4);
-  color: #f8b4c4;
+:global(html.dark .nav-link-btn.active) {
+  background: rgba(223, 186, 114, 0.18);
+  color: #dfba72;
 }
 
 .nav-icon {
@@ -582,41 +644,57 @@ html.dark .nav-link-btn.active {
 
 /* Sidebar Support Box */
 .sidebar-support-box {
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 18px 16px;
   text-align: center;
+}
+
+:global(html.dark .sidebar-support-box) {
+  background: #262024;
+  border-color: #382f35;
 }
 
 .support-icon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--surface);
-  color: var(--pink-dark);
+  background: var(--surface, #ffffff);
+  color: var(--accent, #C9A15A);
+  border: 1px solid var(--border, #e8e1d7);
   display: grid;
   place-items: center;
   margin: 0 auto 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
 }
 
-html.dark .support-icon {
-  color: #f8b4c4;
+:global(html.dark .support-icon) {
+  background: #30292e;
+  border-color: #382f35;
+  color: #dfba72;
 }
 
 .sidebar-support-box h4 {
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   margin: 0 0 4px;
+}
+
+:global(html.dark .sidebar-support-box h4) {
+  color: #FAF7F3;
 }
 
 .sidebar-support-box p {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   margin: 0 0 12px;
   line-height: 1.4;
+}
+
+:global(html.dark .sidebar-support-box p) {
+  color: #a89fa4;
 }
 
 .support-btn {
@@ -626,11 +704,11 @@ html.dark .support-icon {
   gap: 6px;
   width: 100%;
   padding: 8px 14px;
-  background: var(--pink-dark);
-  color: #ffffff;
+  background: var(--accent, #C9A15A);
+  color: #1c1618;
   border-radius: 10px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
   text-decoration: none;
   transition: all 0.2s ease;
 }
@@ -638,6 +716,11 @@ html.dark .support-icon {
 .support-btn:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+:global(html.dark .support-btn) {
+  background: #dfba72;
+  color: #1c1618;
 }
 
 /* Content Body */
@@ -648,12 +731,18 @@ html.dark .support-icon {
 }
 
 .content-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 24px;
-  padding: 36px 36px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+  padding: 36px;
+  box-shadow: var(--shadow-sm, 0 4px 16px rgba(107, 45, 63, 0.06));
   scroll-margin-top: 100px;
+}
+
+:global(html.dark .content-card) {
+  background: var(--surface, #1e191c);
+  border-color: var(--border, #382f35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .section-head {
@@ -662,23 +751,29 @@ html.dark .support-icon {
   gap: 14px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border, #e8e1d7);
+}
+
+:global(html.dark .section-head) {
+  border-color: #382f35;
 }
 
 .section-icon-box {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--pink-light);
-  color: var(--pink-dark);
+  background: rgba(201, 161, 90, 0.12);
+  color: var(--on-accent-container, #684F17);
+  border: 1px solid rgba(201, 161, 90, 0.3);
   display: grid;
   place-items: center;
   flex-shrink: 0;
 }
 
-html.dark .section-icon-box {
-  background: rgba(120, 85, 94, 0.35);
-  color: #f8b4c4;
+:global(html.dark .section-icon-box) {
+  background: rgba(223, 186, 114, 0.15);
+  color: #dfba72;
+  border-color: rgba(223, 186, 114, 0.35);
 }
 
 .section-icon-box .material-symbols-outlined {
@@ -688,20 +783,32 @@ html.dark .section-icon-box {
 .section-head h2 {
   font-size: 20px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   margin: 0;
   letter-spacing: -0.02em;
+}
+
+:global(html.dark .section-head h2) {
+  color: #FAF7F3;
 }
 
 .section-text {
   font-size: 14.5px;
   line-height: 1.7;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
+}
+
+:global(html.dark .section-text) {
+  color: #e5dee3;
 }
 
 .section-text p {
   margin: 0 0 16px;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
+}
+
+:global(html.dark .section-text p) {
+  color: #e5dee3;
 }
 
 .section-text ul {
@@ -713,7 +820,11 @@ html.dark .section-icon-box {
 }
 
 .section-text li {
-  color: var(--ink);
+  color: var(--ink, #1c1618);
+}
+
+:global(html.dark .section-text li) {
+  color: #e5dee3;
 }
 
 /* Data types grid */
@@ -725,34 +836,58 @@ html.dark .section-icon-box {
 }
 
 .data-card {
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 18px 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.data-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 161, 90, 0.4);
+}
+
+:global(html.dark .data-card) {
+  background: #262024;
+  border-color: #382f35;
+}
+
+:global(html.dark .data-card:hover) {
+  border-color: rgba(223, 186, 114, 0.4);
 }
 
 .d-icon {
   font-size: 26px;
-  color: var(--pink-dark);
+  color: var(--accent, #C9A15A);
   margin-bottom: 8px;
+  display: block;
 }
 
-html.dark .d-icon {
-  color: #f8b4c4;
+:global(html.dark .d-icon) {
+  color: #dfba72;
 }
 
 .data-card h5 {
   font-size: 14px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   margin: 0 0 6px;
+}
+
+:global(html.dark .data-card h5) {
+  color: #FAF7F3;
 }
 
 .data-card p {
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   line-height: 1.5;
   margin: 0;
+}
+
+:global(html.dark .data-card p) {
+  color: #a89fa4;
 }
 
 /* Security Pillars */
@@ -767,9 +902,15 @@ html.dark .d-icon {
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: var(--surface-subtle);
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 16px 18px;
+}
+
+:global(html.dark .pillar-item) {
+  background: #262024;
+  border-color: #382f35;
 }
 
 .pillar-check .material-symbols-outlined {
@@ -778,64 +919,86 @@ html.dark .d-icon {
   margin-top: 2px;
 }
 
-html.dark .pillar-check .material-symbols-outlined {
+:global(html.dark .pillar-check .material-symbols-outlined) {
   color: #34d399;
 }
 
 .pillar-item strong {
   font-size: 14px;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   display: block;
   margin-bottom: 2px;
 }
 
+:global(html.dark .pillar-item strong) {
+  color: #FAF7F3;
+}
+
 .pillar-item p {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   margin: 0;
   line-height: 1.5;
+}
+
+:global(html.dark .pillar-item p) {
+  color: #a89fa4;
 }
 
 /* Rights List */
 .rights-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 14px;
+  margin-top: 18px;
 }
 
 .right-item {
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: var(--surface-subtle);
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
-  padding: 14px 18px;
+  padding: 16px 18px;
+}
+
+:global(html.dark .right-item) {
+  background: #262024;
+  border-color: #382f35;
 }
 
 .right-item .material-symbols-outlined {
   font-size: 22px;
-  color: var(--pink-dark);
+  color: var(--accent, #C9A15A);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
-html.dark .right-item .material-symbols-outlined {
-  color: #f8b4c4;
+:global(html.dark .right-item .material-symbols-outlined) {
+  color: #dfba72;
 }
 
 .right-item strong {
   font-size: 14px;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   display: block;
   margin-bottom: 2px;
 }
 
+:global(html.dark .right-item strong) {
+  color: #FAF7F3;
+}
+
 .right-item p {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+:global(html.dark .right-item p) {
+  color: #a89fa4;
 }
 
 /* Contact Cards */
@@ -850,40 +1013,50 @@ html.dark .right-item .material-symbols-outlined {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 16px 18px;
 }
 
+:global(html.dark .c-item) {
+  background: #262024;
+  border-color: #382f35;
+}
+
 .c-item .material-symbols-outlined {
   font-size: 22px;
-  color: var(--pink-dark);
+  color: var(--accent, #C9A15A);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
-html.dark .c-item .material-symbols-outlined {
-  color: #f8b4c4;
+:global(html.dark .c-item .material-symbols-outlined) {
+  color: #dfba72;
 }
 
 .c-item strong {
   display: block;
   font-size: 13px;
-  color: var(--ink);
+  color: var(--ink, #1c1618);
   margin-bottom: 2px;
+}
+
+:global(html.dark .c-item strong) {
+  color: #FAF7F3;
 }
 
 .c-item a,
 .c-item span {
   font-size: 13.5px;
-  color: var(--pink-dark);
+  color: var(--accent, #C9A15A);
   text-decoration: none;
+  font-weight: 600;
 }
 
-html.dark .c-item a,
-html.dark .c-item span {
-  color: #f8b4c4;
+:global(html.dark .c-item a),
+:global(html.dark .c-item span) {
+  color: #dfba72;
 }
 
 .c-item a:hover {

@@ -11,7 +11,7 @@ export default {
       content2: 'Mọi thông tin sân đấu, giá cả và giao dịch thanh toán đều là dữ liệu mẫu mô phỏng. Vui lòng không chuyển tiền thật hoặc nhập thông tin nhạy cảm.',
       understandBtn: 'Tôi đã hiểu và tiếp tục',
     },
-    demoFooter: '© 2026 Aura Court · Bản demo trình diễn.',
+    demoFooter: 'Bản thử nghiệm (Demo)',
     privacyAndSupport: 'Chính sách · Hỗ trợ',
     footer: {
       tagline: 'Nâng tầm trải nghiệm thể thao chuyên nghiệp với hệ thống sân đấu chuẩn quốc tế và công nghệ đặt sân tức thì.',
