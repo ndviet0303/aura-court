@@ -1,7 +1,10 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
+import { authApi } from '@/features/auth/api/authApi'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+import type { V2PriceQuote } from '@/features/booking/types/v2Reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
 
@@ -13,7 +16,17 @@ export function useCourtSchedule() {
   const store = useBookingStore()
   const auth = useAuthStore()
 
-  const date = ref(new Date().toISOString().slice(0, 10))
+  // Local Date helper
+  const getLocalDateString = (offsetDays = 0): string => {
+    const d = new Date()
+    d.setDate(d.getDate() + offsetDays)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const date = ref(getLocalDateString(0))
   const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
   const selectedCourtId = ref<number | null>(null)
   const selectedVenueId = ref<number | null>(null)
@@ -22,6 +35,8 @@ export function useCourtSchedule() {
   const notice = ref('')
   const loading = ref(false)
   const checkoutLoading = ref(false)
+  const quoteLoading = ref(false)
+  const activeQuote = ref<V2PriceQuote | null>(null)
 
   const court = computed<Court | null>(() => {
     const key = slugOrId.value
@@ -224,7 +239,7 @@ export function useCourtSchedule() {
     checkoutLoading.value = true
     error.value = ''
     try {
-      const result = await store.createBooking()
+      const result = await store.createBooking(undefined, activeQuote.value?.quote_token)
       if (result?.booking?.code) {
         router.push(`/payment/${result.booking.code}`)
       } else {
@@ -234,6 +249,21 @@ export function useCourtSchedule() {
       error.value = errorMessage(cause, 'Không thể khởi tạo đơn đặt sân. Vui lòng thử lại.')
     } finally {
       checkoutLoading.value = false
+    }
+  }
+
+  const resendingEmail = ref(false)
+
+  async function resendVerificationEmail() {
+    resendingEmail.value = true
+    try {
+      const res = await authApi.resendVerification()
+      notice.value = res?.message || 'Đã gửi email xác thực thành công! Vui lòng kiểm tra hộp thư của bạn.'
+      error.value = ''
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Không thể gửi email xác thực. Vui lòng thử lại sau.')
+    } finally {
+      resendingEmail.value = false
     }
   }
 
@@ -258,10 +288,13 @@ export function useCourtSchedule() {
     carouselDays,
     totalPrice,
     totalHours,
+    activeQuote,
+    quoteLoading,
     error,
     notice,
     loading,
     checkoutLoading,
+    resendingEmail,
     selectDate,
     goToToday,
     goToPrevDay,
@@ -273,6 +306,7 @@ export function useCourtSchedule() {
     clearSelectedSlots,
     quickSelectAvailableHours,
     proceedToBooking,
+    resendVerificationEmail,
     fetchAvailability,
   }
 }

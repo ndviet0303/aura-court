@@ -10,7 +10,11 @@ const navRef = ref<HTMLElement | null>(null)
 
 const isBookingActive = computed(() => {
   const path = route?.path || ''
-  return path.startsWith('/booking') || path.startsWith('/payment') || path.startsWith('/wallet')
+  return (
+    path.startsWith('/booking') ||
+    path.startsWith('/payment') ||
+    path.startsWith('/wallet')
+  )
 })
 
 const isCommunityActive = computed(() => {

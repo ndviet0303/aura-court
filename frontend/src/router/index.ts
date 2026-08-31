@@ -49,7 +49,7 @@ const router = createRouter({
     { path: '/courts/:slug/directions', name: 'court-directions', component: VenueDirectionsView, meta: { titleKey: 'directions.title', description: 'Xem địa chỉ và mở Google Maps để đến sân Aura Court.' } },
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true, titleKey: 'seo.bookingTitle', indexable: false } },
     { path: '/wallet', name: 'wallet', component: () => import('@/features/wallet/views/WalletView.vue'), meta: { auth: true, title: 'Ví Của Tôi & Nạp Tiền Cụm Sân | Aura Court Control', indexable: false } },
-    { path: '/reservations-v2', name: 'reservations-v2', component: () => import('../views/V2ReservationView.vue'), meta: { auth: true, title: 'Báo giá & lịch đặt v2 | Aura Court', indexable: false } },
+    { path: '/reservations-v2', redirect: '/booking' },
     { path: '/advanced-booking', name: 'advanced-booking', component: () => import('../views/AdvancedBookingView.vue'), meta: { auth: true, title: 'Lịch định kỳ & marketplace | Aura Court', indexable: false } },
     { path: '/resale', name: 'resale-marketplace', component: () => import('@/features/marketplace/views/ResaleMarketplaceView.vue'), meta: { auth: true, title: 'Chợ Nhượng Sân | Aura Court', indexable: false } },
     { path: '/marketplace', redirect: '/resale' },

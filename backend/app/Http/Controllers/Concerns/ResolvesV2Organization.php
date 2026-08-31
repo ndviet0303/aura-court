@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\Court;
 use App\Models\Organization;
+use App\Models\OrganizationMember;
+use App\Models\PriceQuote;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Http\Request;
 
@@ -15,12 +18,62 @@ trait ResolvesV2Organization
 
         $context = app(TenantContext::class);
         $organization = $context->getOrganization();
+
         if (! $organization) {
-            $organization = $user->organizations()->where('organizations.status', 'active')->first();
+            // 1. Check explicit header or request parameter
+            $explicitOrgId = $request->header('X-Organization-Id')
+                ?? $request->header('X-Organization-ID')
+                ?? $request->input('organization_id');
+
+            if ($explicitOrgId) {
+                $organization = Organization::where('id', $explicitOrgId)->where('status', 'active')->first();
+            }
+
+            // 2. Resolve from court_id if present
+            if (! $organization && $request->filled('court_id')) {
+                $court = Court::with('venue.organization')->find($request->input('court_id'));
+                if ($court?->venue?->organization && $court->venue->organization->status === 'active') {
+                    $organization = $court->venue->organization;
+                }
+            }
+
+            // 3. Resolve from quote_token / quote_id if present
+            if (! $organization && ($request->filled('quote_token') || $request->filled('quote_id'))) {
+                $quote = PriceQuote::with('organization')
+                    ->where(function ($q) use ($request) {
+                        if ($request->filled('quote_token')) {
+                            $q->where('quote_token', $request->input('quote_token'));
+                        }
+                        if ($request->filled('quote_id')) {
+                            $q->orWhere('id', $request->input('quote_id'));
+                        }
+                    })
+                    ->first();
+                if ($quote?->organization && $quote->organization->status === 'active') {
+                    $organization = $quote->organization;
+                }
+            }
+
+            // 4. Resolve from active user organizations with venues, then fallback
             if (! $organization) {
-                $organization = Organization::where('status', 'active')->first();
-                if ($organization && ! $organization->hasMember($user->id)) {
-                    \App\Models\OrganizationMember::firstOrCreate([
+                $organization = $user->organizations()
+                    ->where('organizations.status', 'active')
+                    ->whereHas('venues')
+                    ->first();
+
+                if (! $organization) {
+                    $organization = $user->organizations()->where('organizations.status', 'active')->first();
+                }
+
+                if (! $organization) {
+                    $organization = Organization::where('status', 'active')->whereHas('venues')->first()
+                        ?: Organization::where('status', 'active')->first();
+                }
+            }
+
+            if ($organization) {
+                if (! $user->isPlatformAdmin() && ! $organization->hasMember($user->id)) {
+                    OrganizationMember::firstOrCreate([
                         'organization_id' => $organization->id,
                         'user_id' => $user->id,
                     ], [
@@ -28,8 +81,6 @@ trait ResolvesV2Organization
                         'status' => 'active',
                     ]);
                 }
-            }
-            if ($organization) {
                 $context->setOrganization($organization);
             }
         }

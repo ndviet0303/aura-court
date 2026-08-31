@@ -26,9 +26,12 @@ class PriceQuoteService
         $court = Court::query()
             ->whereKey($courtId)
             ->where('is_active', true)
-            ->whereHas('venue', fn ($query) => $query->where('organization_id', $organizationId)->where('is_active', true))
             ->with(['venue', 'sportZone'])
             ->firstOrFail();
+
+        if ($court->venue?->organization_id) {
+            $organizationId = (int) $court->venue->organization_id;
+        }
 
         $duration = (int) ($court->sportZone?->slot_duration ?: 60);
         $resolvedSlots = $this->resolveSlots($slots, $duration);

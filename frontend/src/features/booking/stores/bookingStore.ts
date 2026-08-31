@@ -86,11 +86,12 @@ export const useBookingStore = defineStore('booking', () => {
     sessionStorage.removeItem(paymentStorageKey)
   }
 
-  async function createBooking(couponCode?: string) {
+  async function createBooking(couponCode?: string, quoteToken?: string) {
     const result = await bookingApi.create({
       court_id: selectedCourt.value,
       slots: selectedSlots.value.map((slot) => slot.startsAt),
       coupon_code: couponCode || undefined,
+      quote_token: quoteToken || undefined,
     })
     current.value = result.booking
     payment.value = result.payment

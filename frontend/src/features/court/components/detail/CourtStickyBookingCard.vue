@@ -54,7 +54,7 @@ function formatMoney(amount: number): string {
 
     <!-- Book CTA -->
     <RouterLink
-      :to="`/booking?court=${court.id}&duration=${selectedDuration}`"
+      :to="`/courts/${court.slug || court.id}/schedule`"
       class="btn-book-now"
     >
       Chọn Giờ & Đặt Sân Ngay

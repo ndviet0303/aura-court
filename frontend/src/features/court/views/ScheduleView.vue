@@ -24,6 +24,7 @@ const {
   notice,
   loading,
   checkoutLoading,
+  resendingEmail,
   selectDate,
   goToToday,
   goToPrevDay,
@@ -35,6 +36,7 @@ const {
   clearSelectedSlots,
   quickSelectAvailableHours,
   proceedToBooking,
+  resendVerificationEmail,
   fetchAvailability,
 } = useCourtSchedule()
 
@@ -131,8 +133,13 @@ onMounted(async () => {
           :selected-slots="store.selectedSlots"
           :total-price="totalPrice"
           :loading="checkoutLoading"
+          :error="error"
+          :notice="notice"
+          :resending-email="resendingEmail"
           @checkout="proceedToBooking"
           @remove-slot="removeSlot"
+          @resend-verification="resendVerificationEmail"
+          @clear-error="error = ''"
         />
       </div>
     </div>

@@ -431,8 +431,9 @@ class DatabaseSeeder extends Seeder
         foreach ($sportZonesData as $sz) {
             $venue = $venues[$sz['venue_slug']];
             $zone = SportZone::updateOrCreate(
-                ['venue_id' => $venue->id, 'name' => $sz['name']],
+                ['venue_id' => $venue->id, 'sport_type' => $sz['sport_type']],
                 [
+                    'name' => $sz['name'],
                     'sport_type' => $sz['sport_type'],
                     'slot_duration' => $sz['slot_duration'],
                     'description' => $sz['description'],

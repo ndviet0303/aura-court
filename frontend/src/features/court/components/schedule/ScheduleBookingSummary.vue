@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot } from '../../types/court'
 
 const props = defineProps<{
@@ -9,16 +10,23 @@ const props = defineProps<{
   selectedSlots: AvailabilitySlot[]
   totalPrice: number
   loading?: boolean
+  error?: string
+  notice?: string
+  resendingEmail?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'checkout'): void
   (e: 'removeSlot', slot: AvailabilitySlot): void
+  (e: 'resendVerification'): void
+  (e: 'clearError'): void
 }>()
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
 }
+
+const isUnverified = computed(() => isUnverifiedEmailError(props.error))
 
 const formattedDate = computed(() => {
   try {
@@ -122,6 +130,41 @@ const durationHours = computed(() => {
       <div class="perk-item">
         <span class="material-symbols-outlined perk-icon">verified_user</span>
         <span>Hỗ trợ đổi lịch linh hoạt trước giờ chơi 2h</span>
+      </div>
+    </div>
+
+    <!-- Feedback Notice Alert -->
+    <div v-if="notice" class="summary-notice-box" role="status">
+      <span class="material-symbols-outlined notice-icon">check_circle</span>
+      <p class="notice-msg">{{ notice }}</p>
+    </div>
+
+    <!-- Error Feedback Alert -->
+    <div v-if="error" class="summary-error-box" role="alert">
+      <div class="error-header">
+        <div class="error-header-left">
+          <span class="material-symbols-outlined error-icon">error</span>
+          <strong class="error-title">Không thể tạo đơn đặt</strong>
+        </div>
+        <button type="button" class="btn-dismiss-error" @click="emit('clearError')" aria-label="Đóng">
+          <span class="material-symbols-outlined icon-14">close</span>
+        </button>
+      </div>
+      <p class="error-msg">{{ error }}</p>
+      <div v-if="isUnverified" class="unverified-action-row">
+        <button
+          type="button"
+          class="btn-resend-verify"
+          :disabled="resendingEmail"
+          @click="emit('resendVerification')"
+        >
+          <span class="material-symbols-outlined icon-14">mail</span>
+          <span>{{ resendingEmail ? 'Đang gửi email...' : 'Gửi lại email xác thực' }}</span>
+        </button>
+        <RouterLink to="/profile" class="btn-goto-profile">
+          <span class="material-symbols-outlined icon-14">person</span>
+          <span>Đến trang cá nhân</span>
+        </RouterLink>
       </div>
     </div>
 
@@ -526,5 +569,157 @@ const durationHours = computed(() => {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Feedback Notice & Error Boxes */
+.summary-notice-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  color: #15803d;
+}
+
+:global(html.dark) .summary-notice-box {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+
+.notice-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.notice-msg {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.summary-error-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+  animation: shakeIn 0.3s ease-out;
+}
+
+:global(html.dark) .summary-error-box {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+@keyframes shakeIn {
+  0% { transform: translateY(-4px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.error-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.error-icon {
+  font-size: 18px;
+  color: #ef4444;
+}
+
+.error-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.btn-dismiss-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: opacity 0.15s;
+}
+
+.btn-dismiss-error:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.error-msg {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: inherit;
+  opacity: 0.95;
+}
+
+.unverified-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-resend-verify,
+.btn-goto-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-resend-verify {
+  border: 1px solid #ef4444;
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-resend-verify:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.btn-resend-verify:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-goto-profile {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: inherit;
+}
+
+.btn-goto-profile:hover {
+  background: rgba(239, 68, 68, 0.18);
 }
 </style>

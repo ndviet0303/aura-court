@@ -31,6 +31,8 @@ class ReservationService
                 $quote = PriceQuote::query()->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
 
+            $organizationId = $quote->organization_id;
+
             if ($quote->status !== 'open') {
                 abort(409, 'Price quote has already been accepted.');
             }

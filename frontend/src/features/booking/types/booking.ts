@@ -70,6 +70,7 @@ export type CreateBookingPayload = {
   court_id: number | null
   slots: string[]
   coupon_code?: string
+  quote_token?: string
 }
 
 export type CardDetails = {

@@ -63,17 +63,23 @@ export const bookingApi = {
     apiV2.get<T>('/recurring-series'),
 
   // V2 Reservations & Quotes
-  getReservations: <T = unknown>() =>
+  getReservations: <T = { data: import('../types/v2Reservation').V2Reservation[] }>() =>
     apiV2.get<T>('/reservations'),
 
-  getPriceQuote: <T = unknown>(payload: { court_id: number; slots: string[] }) =>
+  getReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(code: string) =>
+    apiV2.get<T>(`/reservations/${code}`),
+
+  getPriceQuote: <T = { quote: import('../types/v2Reservation').V2PriceQuote }>(payload: { court_id: number; slots: string[] }) =>
     apiV2.post<T>('/price-quotes', payload),
 
-  holdReservation: <T = unknown>(payload: { quote_token: string }) =>
+  holdReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(payload: import('../types/v2Reservation').V2HoldReservationPayload) =>
     apiV2.post<T>('/reservations', payload),
 
-  confirmReservation: <T = unknown>(code: string) =>
+  confirmReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(code: string) =>
     apiV2.post<T>(`/reservations/${code}/confirm`),
+
+  cancelReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(code: string) =>
+    apiV2.post<T>(`/reservations/${code}/cancel`),
 
   joinWaitlist: (payload: { court_id?: number; starts_at: string }) =>
     api.post('/waitlist', payload),
