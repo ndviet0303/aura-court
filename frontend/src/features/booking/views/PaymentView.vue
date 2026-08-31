@@ -49,11 +49,12 @@ onUnmounted(() => {
   <div class="payment-view-page">
     <!-- Empty State if No Payment Session -->
     <div v-if="!payment" class="empty-payment-panel">
-      <div class="empty-icon">🏸</div>
+      <span class="material-symbols-outlined empty-icon">payments</span>
       <h2>Chưa Có Phiên Thanh Toán Nào</h2>
       <p>Vui lòng chọn sân và khung giờ để tiến hành đặt sân.</p>
-      <RouterLink to="/booking" class="btn-choose-court">
-        ← Quay Lại Chọn Sân
+      <RouterLink to="/courts" class="btn-choose-court">
+        <span class="material-symbols-outlined">arrow_back</span>
+        <span>Quay Lại Chọn Sân</span>
       </RouterLink>
     </div>
 
@@ -62,7 +63,7 @@ onUnmounted(() => {
       <!-- Stepper Header -->
       <div class="checkout-stepper">
         <div class="stepper-step completed">
-          <span class="step-circle">✓</span>
+          <span class="step-circle"><span class="material-symbols-outlined step-check-icon">check</span></span>
           <span class="step-text">Chọn Sân & Giờ</span>
         </div>
         <div class="stepper-line"></div>
@@ -82,7 +83,10 @@ onUnmounted(() => {
         <div class="checkout-left-col">
           <!-- Player Details Panel -->
           <div class="player-details-panel">
-            <h3 class="panel-title">👤 Thông Tin Khách Hàng</h3>
+            <h3 class="panel-title">
+              <span class="material-symbols-outlined panel-icon">person</span>
+              <span>Thông Tin Khách Hàng</span>
+            </h3>
             <div class="player-info-grid">
               <div class="info-item">
                 <span class="info-label">Họ và tên:</span>
@@ -141,7 +145,7 @@ onUnmounted(() => {
     <div v-if="showSuccessModal" class="modal-backdrop">
       <div class="modal-card modal-sm text-center">
         <div class="modal-body success-body">
-          <div class="success-icon">🎉</div>
+          <span class="material-symbols-outlined success-icon">verified</span>
           <h3>Thanh Toán Thành Công!</h3>
           <p>Mã đặt sân <strong>{{ payment?.code }}</strong> đã được xác nhận vào hệ thống.</p>
           <button class="btn-done" @click="store.clearPayment(); router.push('/booking')">

@@ -3,20 +3,36 @@ import { bookingApi } from '../api/bookingApi'
 import type { Booking } from '../types/booking'
 import { errorMessage } from '@/core/utils/errorMessage'
 
+export type BookingTab = 'all' | 'upcoming' | 'completed' | 'cancelled'
+
 export function useUserBookings() {
   const bookings = ref<Booking[]>([])
-  const activeTab = ref<'all' | 'upcoming' | 'completed' | 'cancelled'>('all')
+  const activeTab = ref<BookingTab>('all')
+  const searchQuery = ref('')
   const error = ref('')
   const notice = ref('')
   const loading = ref(true)
 
+  // Review modal state
   const showReviewModal = ref(false)
   const reviewingBooking = ref<Booking | null>(null)
   const reviewRating = ref(5)
   const reviewBody = ref('')
+  const submittingReview = ref(false)
+
+  // QR Check-in modal state
+  const showQrModal = ref(false)
+  const qrBooking = ref<Booking | null>(null)
+
+  // Cancel modal state
+  const showCancelModal = ref(false)
+  const cancellingBooking = ref<Booking | null>(null)
+  const cancelReason = ref('')
+  const cancelling = ref(false)
 
   async function load() {
     loading.value = true
+    error.value = ''
     try {
       const result = await bookingApi.list()
       bookings.value = result.data || []
@@ -28,37 +44,53 @@ export function useUserBookings() {
   }
 
   function isCompleted(b: Booking): boolean {
-    return (
-      b.status === 'confirmed' &&
-      b.slots.length > 0 &&
-      b.slots.every((slot) => new Date(slot.ends_at).getTime() < Date.now())
-    )
+    if (b.status === 'completed') return true
+    if (b.status === 'confirmed' && b.slots && b.slots.length > 0) {
+      return b.slots.every((slot) => new Date(slot.ends_at).getTime() < Date.now())
+    }
+    return false
   }
 
   function isUpcoming(b: Booking): boolean {
-    if (['pending_payment'].includes(b.status)) return true
+    if (b.status === 'pending_payment') return true
     if (b.status === 'confirmed') {
       return !isCompleted(b)
     }
     return false
   }
 
+  function isCancelled(b: Booking): boolean {
+    return ['cancelled', 'expired', 'refunded'].includes(b.status)
+  }
+
   const filteredBookings = computed(() => {
+    let list = bookings.value
+
     if (activeTab.value === 'upcoming') {
-      return bookings.value.filter(isUpcoming)
+      list = list.filter(isUpcoming)
+    } else if (activeTab.value === 'completed') {
+      list = list.filter(isCompleted)
+    } else if (activeTab.value === 'cancelled') {
+      list = list.filter(isCancelled)
     }
-    if (activeTab.value === 'completed') {
-      return bookings.value.filter(isCompleted)
+
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.trim().toLowerCase()
+      list = list.filter((b) => {
+        const code = (b.code || '').toLowerCase()
+        const courtName = (b.court?.name || '').toLowerCase()
+        const venueName = (b.court?.venue?.name || '').toLowerCase()
+        return code.includes(q) || courtName.includes(q) || venueName.includes(q)
+      })
     }
-    if (activeTab.value === 'cancelled') {
-      return bookings.value.filter((b) => b.status === 'cancelled')
-    }
-    return bookings.value
+
+    return list
   })
 
   const upcomingCount = computed(() => bookings.value.filter(isUpcoming).length)
   const completedCount = computed(() => bookings.value.filter(isCompleted).length)
-  const cancelledCount = computed(() => bookings.value.filter((b) => b.status === 'cancelled').length)
+  const cancelledCount = computed(() => bookings.value.filter(isCancelled).length)
+  const totalCount = computed(() => bookings.value.length)
 
   function showNotice(msg: string) {
     notice.value = msg
@@ -67,36 +99,85 @@ export function useUserBookings() {
     }, 4000)
   }
 
-  async function cancelBooking(booking: Booking) {
-    if (!confirm('Bạn có chắc chắn muốn huỷ lịch đặt sân này?')) return
+  // QR Modal Handlers
+  function openQr(b: Booking) {
+    qrBooking.value = b
+    showQrModal.value = true
+  }
+
+  function closeQr() {
+    showQrModal.value = false
+    qrBooking.value = null
+  }
+
+  // Cancel Modal Handlers
+  function openCancel(b: Booking) {
+    cancellingBooking.value = b
+    cancelReason.value = ''
+    showCancelModal.value = true
+  }
+
+  function closeCancel() {
+    showCancelModal.value = false
+    cancellingBooking.value = null
+    cancelReason.value = ''
+  }
+
+  async function confirmCancel() {
+    if (!cancellingBooking.value) return
+    cancelling.value = true
     try {
-      await bookingApi.cancel(booking.code, 'User cancelled')
+      await bookingApi.cancel(cancellingBooking.value.code, cancelReason.value || 'Người dùng yêu cầu huỷ đơn')
       showNotice('Huỷ lịch đặt sân thành công!')
+      closeCancel()
       await load()
     } catch (cause: unknown) {
       error.value = errorMessage(cause, 'Không thể huỷ đơn đặt sân.')
+    } finally {
+      cancelling.value = false
     }
   }
 
+  // Review Modal Handlers
   function openReview(b: Booking) {
     reviewingBooking.value = b
-    reviewRating.value = 5
-    reviewBody.value = ''
+    reviewRating.value = b.review?.rating || 5
+    reviewBody.value = b.review?.body || ''
     showReviewModal.value = true
   }
 
-  function submitReview() {
+  function closeReview() {
     showReviewModal.value = false
-    showNotice('Cảm ơn bạn đã gửi đánh giá chất lượng sân đấu!')
+    reviewingBooking.value = null
+  }
+
+  async function submitReview() {
+    if (!reviewingBooking.value) return
+    submittingReview.value = true
+    try {
+      await bookingApi.submitReview(reviewingBooking.value.code, {
+        rating: reviewRating.value,
+        body: reviewBody.value.trim() || undefined,
+      })
+      showNotice('Cảm ơn bạn đã gửi đánh giá trải nghiệm sân đấu!')
+      closeReview()
+      await load()
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, 'Không thể gửi đánh giá lúc này.')
+    } finally {
+      submittingReview.value = false
+    }
   }
 
   return {
     bookings,
     activeTab,
+    searchQuery,
     error,
     notice,
     loading,
     filteredBookings,
+    totalCount,
     upcomingCount,
     completedCount,
     cancelledCount,
@@ -104,10 +185,22 @@ export function useUserBookings() {
     reviewingBooking,
     reviewRating,
     reviewBody,
+    submittingReview,
+    showQrModal,
+    qrBooking,
+    showCancelModal,
+    cancellingBooking,
+    cancelReason,
+    cancelling,
     load,
     showNotice,
-    cancelBooking,
+    openQr,
+    closeQr,
+    openCancel,
+    closeCancel,
+    confirmCancel,
     openReview,
+    closeReview,
     submitReview,
   }
 }

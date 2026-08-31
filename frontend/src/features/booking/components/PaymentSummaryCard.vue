@@ -26,9 +26,14 @@ function formatMoney(amount: number): string {
 <template>
   <div class="summary-card-dark">
     <div class="summary-header">
-      <h3 class="summary-title">📋 Thông Tin Đơn Đặt Sân</h3>
+      <h3 class="summary-title">
+        <span class="material-symbols-outlined summary-icon">receipt_long</span>
+        <span>Thông Tin Đơn Đặt Sân</span>
+      </h3>
       <div class="countdown-tag">
-        ⏱️ Hết hạn trong: <strong>{{ countdownFormatted }}</strong>
+        <span class="material-symbols-outlined timer-icon">timer</span>
+        <span>Hết hạn trong:</span>
+        <strong class="font-mono">{{ countdownFormatted }}</strong>
       </div>
     </div>
 

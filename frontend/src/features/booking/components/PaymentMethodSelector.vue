@@ -30,7 +30,10 @@ function formatMoney(amount: number): string {
 <template>
   <div class="payment-methods-panel">
     <div class="panel-header">
-      <h3 class="panel-title">💳 Phương Thức Thanh Toán</h3>
+      <h3 class="panel-title">
+        <span class="material-symbols-outlined panel-icon">credit_card</span>
+        <span>Phương Thức Thanh Toán</span>
+      </h3>
       <span v-if="copyNotice" class="copy-feedback-badge">{{ copyNotice }}</span>
     </div>
 
@@ -41,7 +44,7 @@ function formatMoney(amount: number): string {
         :class="{ active: selectedMethod === 'qr' }"
         @click="emit('update:selectedMethod', 'qr')"
       >
-        <span class="tab-icon">📱</span>
+        <span class="material-symbols-outlined tab-icon">qr_code_scanner</span>
         <div class="tab-label-wrap">
           <strong>Chuyển Khoản QR</strong>
           <span>VietQR · SePay Auto</span>
@@ -53,7 +56,7 @@ function formatMoney(amount: number): string {
         :class="{ active: selectedMethod === 'card' }"
         @click="emit('update:selectedMethod', 'card')"
       >
-        <span class="tab-icon">💳</span>
+        <span class="material-symbols-outlined tab-icon">credit_card</span>
         <div class="tab-label-wrap">
           <strong>Thẻ Quốc Tế</strong>
           <span>Visa · MasterCard · Stripe</span>
@@ -85,7 +88,9 @@ function formatMoney(amount: number): string {
           <span class="row-label">Số tài khoản:</span>
           <div class="copyable-val">
             <strong class="row-val">{{ payment.accountNumber }}</strong>
-            <button class="btn-copy" @click="emit('copy', payment.accountNumber, 'Số tài khoản')">📋</button>
+            <button class="btn-copy" title="Sao chép" @click="emit('copy', payment.accountNumber, 'Số tài khoản')">
+              <span class="material-symbols-outlined copy-icon">content_copy</span>
+            </button>
           </div>
         </div>
 
@@ -93,7 +98,9 @@ function formatMoney(amount: number): string {
           <span class="row-label">Số tiền:</span>
           <div class="copyable-val">
             <strong class="row-val text-pink">{{ formatMoney(payment.amount) }}</strong>
-            <button class="btn-copy" @click="emit('copy', String(payment.amount), 'Số tiền')">📋</button>
+            <button class="btn-copy" title="Sao chép" @click="emit('copy', String(payment.amount), 'Số tiền')">
+              <span class="material-symbols-outlined copy-icon">content_copy</span>
+            </button>
           </div>
         </div>
 
@@ -101,7 +108,9 @@ function formatMoney(amount: number): string {
           <span class="row-label">Nội dung chuyển khoản:</span>
           <div class="copyable-val">
             <strong class="row-val font-mono">{{ payment.code }}</strong>
-            <button class="btn-copy" @click="emit('copy', payment.code, 'Nội dung chuyển khoản')">📋</button>
+            <button class="btn-copy" title="Sao chép" @click="emit('copy', payment.code, 'Nội dung chuyển khoản')">
+              <span class="material-symbols-outlined copy-icon">content_copy</span>
+            </button>
           </div>
         </div>
       </div>
@@ -110,7 +119,8 @@ function formatMoney(amount: number): string {
     <!-- Tab 2: Stripe Card -->
     <div v-else class="card-method-box">
       <div class="stripe-badge-banner">
-        🔒 Thanh toán bảo mật qua cổng quốc tế <strong>Stripe</strong> (256-bit SSL)
+        <span class="material-symbols-outlined lock-icon">lock</span>
+        <span>Thanh toán bảo mật qua cổng quốc tế <strong>Stripe</strong> (256-bit SSL)</span>
       </div>
 
       <div class="form-group">
