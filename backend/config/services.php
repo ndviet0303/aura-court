@@ -34,6 +34,7 @@ return [
         'bank' => env('SEPAY_BANK', 'VCB'),
         'account' => env('SEPAY_ACCOUNT'),
         'account_name' => env('SEPAY_ACCOUNT_NAME', 'AURA COURT'),
+        'prefix' => env('SEPAY_PREFIX', 'ORD'),
         'api_key' => env('SEPAY_API_KEY'),
         'hmac_secret' => env('SEPAY_HMAC_SECRET'),
     ],

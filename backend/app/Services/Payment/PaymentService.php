@@ -19,14 +19,17 @@ class PaymentService
 
     public function qrPayload(Booking $booking): array
     {
-        $account = config('services.sepay.account') ?: '0987654321';
-        $bank = config('services.sepay.bank') ?: 'VCB';
+        $account = config('services.sepay.account') ?: '83403032005';
+        $bank = config('services.sepay.bank') ?: 'TPBank';
         $accountName = config('services.sepay.account_name') ?: 'AURA COURT';
-        $query = http_build_query(['acc' => $account, 'bank' => $bank, 'amount' => $booking->total_amount, 'des' => $booking->code]);
+        $prefix = (string) (config('services.sepay.prefix') ?: 'AUR');
+        $memo = trim($prefix . ' ' . $booking->code);
+        $query = http_build_query(['acc' => $account, 'bank' => $bank, 'amount' => $booking->total_amount, 'des' => $memo]);
 
         return [
             'provider' => 'sepay',
-            'code' => $booking->code,
+            'code' => $memo,
+            'bookingCode' => $booking->code,
             'amount' => $booking->total_amount,
             'bank' => $bank,
             'accountNumber' => $account,

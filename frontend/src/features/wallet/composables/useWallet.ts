@@ -190,7 +190,7 @@ export function useWallet() {
     const accountNo = '83403032005'
     const accountName = 'AURA COURT'
     const userIdentifier = auth.user?.phone || auth.user?.id || 'MEMBER'
-    const memo = `AURA NAP ${userIdentifier} ${depositAmount.value}`
+    const memo = `ORD NAP ${userIdentifier}`
     const qrUrl = `https://img.vietqr.io/image/${bank}-${accountNo}-compact2.png?amount=${depositAmount.value}&addInfo=${encodeURIComponent(
       memo
     )}&accountName=${encodeURIComponent(accountName)}`

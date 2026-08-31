@@ -26,8 +26,35 @@ class ProcessQrPayment
             if (Payment::where('external_transaction_id', $externalId)->exists()) {
                 return;
             }
-            $code = trim((string) ($data['code'] ?? $data['content'] ?? ''));
-            $booking = Booking::where('code', $code)->lockForUpdate()->first();
+            $rawContent = trim((string) ($data['code'] ?? $data['content'] ?? ''));
+            $prefix = (string) config('services.sepay.prefix', 'AUR');
+
+            // 1. Direct match
+            $booking = Booking::where('code', $rawContent)->lockForUpdate()->first();
+
+            // 2. Strip prefix if present (e.g. "AUR BK123" -> "BK123" or "AUR123" -> "123")
+            if (!$booking && $prefix !== '') {
+                $stripped = trim(preg_replace('/^' . preg_quote($prefix, '/') . '\s*/i', '', $rawContent));
+                if ($stripped !== '') {
+                    $booking = Booking::where('code', $stripped)->lockForUpdate()->first();
+                }
+            }
+
+            // 3. Fallback: search for active booking code contained within content
+            if (!$booking && strlen($rawContent) >= 3) {
+                $candidateCodes = Booking::where('status', 'pending_payment')
+                    ->where('payment_expires_at', '>', now())
+                    ->pluck('code');
+
+                foreach ($candidateCodes as $cCode) {
+                    if (stripos($rawContent, $cCode) !== false) {
+                        $booking = Booking::where('code', $cCode)->lockForUpdate()->first();
+                        break;
+                    }
+                }
+            }
+
+            $code = $booking ? $booking->code : $rawContent;
             $amount = (int) ($data['transferAmount'] ?? $data['amount'] ?? 0);
             $valid = $booking && ($data['transferType'] ?? 'in') === 'in' && $amount >= $booking->total_amount
                 && $booking->status === 'pending_payment' && $booking->payment_expires_at?->isFuture();
