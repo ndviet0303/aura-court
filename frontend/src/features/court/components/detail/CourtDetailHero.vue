@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import type { Court } from '../../types/court'
 
 defineProps<{
@@ -31,17 +32,31 @@ const emit = defineEmits<{
         <h1 class="court-title">
           {{ court.name }} · <span class="venue-name">{{ court.venue?.name }}</span>
         </h1>
-        <div class="rating-display">
+        <a href="#reviews-section" class="rating-display rating-display-link" title="Xem tất cả đánh giá của người chơi">
           <span class="material-symbols-outlined icon-star">star</span>
           <strong>{{ Number(court.reviews_avg_rating || 4.8).toFixed(1) }}</strong>
           <span class="reviews-count">({{ court.reviews_count || 42 }} đánh giá)</span>
-        </div>
+          <span class="material-symbols-outlined icon-12">expand_more</span>
+        </a>
       </div>
 
-      <p class="court-addr">
-        <span class="material-symbols-outlined icon-16">location_on</span>
-        {{ court.venue?.address }}
-      </p>
+      <div class="addr-directions-row">
+        <div class="addr-left">
+          <span class="material-symbols-outlined icon-16">location_on</span>
+          <span>{{ court.venue?.address || 'Hà Nội' }}</span>
+        </div>
+        <RouterLink
+          v-if="court.venue"
+          :to="`/courts/${court.slug || court.id}/directions`"
+          class="btn-directions-pill"
+          title="Xem bản đồ & chỉ đường chi tiết đến sân"
+        >
+          <span class="material-symbols-outlined icon-14">directions</span>
+          <span>Xem bản đồ & Chỉ đường</span>
+          <span class="material-symbols-outlined icon-12">arrow_forward</span>
+        </RouterLink>
+      </div>
+
       <p class="court-desc">{{ court.description || 'Sân thi đấu chuyên nghiệp với mặt thảm cao cấp chống trơn trượt.' }}</p>
     </div>
   </div>
@@ -125,15 +140,34 @@ const emit = defineEmits<{
   color: var(--primary);
 }
 
-.rating-display {
-  display: flex;
+.rating-display,
+.rating-display-link {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
+  text-decoration: none;
+  color: var(--ink);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--outline);
+  transition: all 0.15s ease;
+}
+
+.rating-display-link:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+:global(html.dark) .rating-display-link {
+  background: #231c20;
+  border-color: #382d33;
 }
 
 .icon-star {
   font-size: 18px;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   color: var(--accent);
 }
 
@@ -142,13 +176,63 @@ const emit = defineEmits<{
   color: var(--muted);
 }
 
-.court-addr {
+.addr-directions-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin: 0;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--outline);
+}
+
+:global(html.dark) .addr-directions-row {
+  background: #231c20;
+  border-color: #382d33;
+}
+
+.addr-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: var(--muted);
+}
+
+.btn-directions-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.2);
+}
+
+.btn-directions-pill:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 45, 63, 0.3);
+}
+
+:global(html.dark) .btn-directions-pill {
+  background: #e58e9f;
+  color: #1c0a10;
+}
+
+.icon-12 {
+  font-size: 12px;
+}
+
+.icon-14 {
+  font-size: 14px;
 }
 
 .icon-16 {

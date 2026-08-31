@@ -1,76 +1,97 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { courtApi } from '../api/courtApi'
-import { errorMessage } from '@/core/utils/errorMessage'
-import type { Venue } from '../types/court'
+import { useVenueDirections } from '../composables/useVenueDirections'
+import VenueDirectionsHero from '../components/directions/VenueDirectionsHero.vue'
+import VenueMapActionCard from '../components/directions/VenueMapActionCard.vue'
+import VenueTransportGuide from '../components/directions/VenueTransportGuide.vue'
+import VenueCourtsGrid from '../components/directions/VenueCourtsGrid.vue'
 
-const { t } = useI18n()
-const route = useRoute()
-const venue = ref<Venue | null>(null)
-const error = ref('')
-const copied = ref(false)
-
-onMounted(async () => {
-  try {
-    venue.value = await courtApi.getVenueBySlug(encodeURIComponent(String(route.params.slug)))
-  } catch (cause: unknown) {
-    error.value = errorMessage(cause, t('common.error'))
-  }
-})
-
-async function copyAddress(): Promise<void> {
-  if (!venue.value?.address) return
-  await navigator.clipboard.writeText(venue.value.address)
-  copied.value = true
-  window.setTimeout(() => { copied.value = false }, 1800)
-}
-
-function openMaps(): void {
-  const v = venue.value
-  const mapsUrl = v?.google_maps_url
-  if (mapsUrl && (mapsUrl.startsWith('http://') || mapsUrl.startsWith('https://'))) {
-    window.open(mapsUrl, '_blank', 'noopener,noreferrer')
-    return
-  }
-  const venueName = v?.name || 'Aura Court'
-  const venueAddress = v?.address || '22 Đường Quốc Hương, Phường Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh'
-  const query = encodeURIComponent(`${venueName} ${venueAddress}`)
-  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer')
-}
+const {
+  venue,
+  matchedCourt,
+  courtsAtVenue,
+  loading,
+  copied,
+  copyAddress,
+  openGoogleMaps,
+  shareLocation,
+} = useVenueDirections()
 </script>
 
 <template>
-  <section v-if="error" class="page-shell not-found">
-    <div class="not-found-art">
-      <strong>404</strong>
-      <span>{{ t('notFound.badge') }}</span>
+  <div class="venue-directions-page">
+    <div v-if="loading" class="directions-loading-state">
+      <span class="material-symbols-outlined spinner-icon">progress_activity</span>
+      <p>Đang tải thông tin địa điểm & bản đồ...</p>
     </div>
-    <div class="eyebrow">Aura Court</div>
-    <h1 class="page-title">{{ t('notFound.title') }}</h1>
-    <p class="muted">{{ t('notFound.subtitle') }}</p>
-    <RouterLink to="/courts" class="btn">{{ t('courts.title') }}</RouterLink>
-  </section>
-  <section v-else-if="venue" class="page-shell venue-directions">
-    <div class="eyebrow">{{ t('directions.eyebrow') }}</div>
-    <h1 class="page-title">{{ venue.name }}</h1>
-    <p class="muted">{{ t('directions.venueInfo') }}</p>
-    <div class="panel venue-directions-card">
-      <span class="feature-icon">location_on</span>
-      <h2>{{ t('directions.address') }}</h2>
-      <p class="venue-address">{{ venue.address || t('common.loading') }}</p>
-      <div class="actions">
-        <button type="button" class="btn" @click="openMaps">
-          {{ t('directions.openGoogleMaps') }} <span class="material-symbols-outlined">open_in_new</span>
-        </button>
-        <button type="button" class="btn secondary" :disabled="!venue.address" @click="copyAddress">
-          {{ copied ? t('payment.copySuccess') : t('directions.copyAddress') }}
-        </button>
-      </div>
+
+    <div v-else-if="venue" class="directions-content-layout">
+      <!-- Top Hero Banner -->
+      <VenueDirectionsHero
+        :venue="venue"
+        :matched-court="matchedCourt"
+      />
+
+      <!-- Main Map & Actions -->
+      <VenueMapActionCard
+        :venue="venue"
+        :copied="copied"
+        @open-maps="openGoogleMaps"
+        @copy-address="copyAddress"
+        @share="shareLocation"
+      />
+
+      <!-- Transport, Parking & Hotline -->
+      <VenueTransportGuide
+        :venue="venue"
+      />
+
+      <!-- Courts Available at this Location -->
+      <VenueCourtsGrid
+        v-if="courtsAtVenue.length > 0"
+        :courts="courtsAtVenue"
+      />
     </div>
-  </section>
-  <section v-else class="page-shell">
-    <p class="muted">{{ t('common.loading') }}</p>
-  </section>
+  </div>
 </template>
+
+<style scoped>
+.venue-directions-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  color: var(--ink);
+}
+
+.directions-content-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.directions-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 20px;
+  color: var(--muted);
+  gap: 12px;
+}
+
+.spinner-icon {
+  font-size: 32px;
+  color: var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

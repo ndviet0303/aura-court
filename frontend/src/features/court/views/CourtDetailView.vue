@@ -4,11 +4,14 @@ import { useCourtDetail } from '../composables/useCourtDetail'
 import CourtDetailHero from '../components/detail/CourtDetailHero.vue'
 import CourtSpecsGrid from '../components/detail/CourtSpecsGrid.vue'
 import CourtAmenitiesGrid from '../components/detail/CourtAmenitiesGrid.vue'
+import CourtReviewsSection from '../components/detail/CourtReviewsSection.vue'
 import CourtStickyBookingCard from '../components/detail/CourtStickyBookingCard.vue'
 import CourtGalleryModal from '../components/detail/CourtGalleryModal.vue'
 
 const {
   court,
+  reviews,
+  reviewsLoading,
   selectedDuration,
   isGalleryOpen,
   basePrice,
@@ -33,6 +36,13 @@ const {
 
         <!-- Amenities -->
         <CourtAmenitiesGrid />
+
+        <!-- Player Reviews & Ratings Section -->
+        <CourtReviewsSection
+          :court="court"
+          :reviews="reviews"
+          :loading="reviewsLoading"
+        />
       </div>
 
       <!-- Right Column (Sticky Booking Widget) -->

@@ -1,8 +1,8 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { courtApi } from '../api/courtApi'
-import type { Court } from '../types/court'
+import type { Court, CourtReview } from '../types/court'
 
 export function useCourtDetail() {
   const route = useRoute()
@@ -11,6 +11,8 @@ export function useCourtDetail() {
   const selectedDuration = ref<number>(1.0)
   const isGalleryOpen = ref(false)
   const loading = ref(false)
+  const reviewsLoading = ref(false)
+  const reviews = ref<CourtReview[]>([])
 
   const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
   const fetchedCourt = ref<Court | null>(null)
@@ -39,6 +41,30 @@ export function useCourtDetail() {
     )
   })
 
+  async function loadReviews() {
+    if (!court.value?.id) return
+    reviewsLoading.value = true
+    try {
+      const res = await courtApi.getReviews(court.value.id)
+      const data = (res as any)?.data?.data || (res as any)?.data || []
+      reviews.value = Array.isArray(data) ? data : []
+    } catch {
+      reviews.value = []
+    } finally {
+      reviewsLoading.value = false
+    }
+  }
+
+  watch(
+    () => court.value?.id,
+    (id) => {
+      if (id) {
+        loadReviews()
+      }
+    },
+    { immediate: true }
+  )
+
   const basePrice = computed(() => {
     if (court.value?.price_slots && court.value.price_slots.length > 0) {
       return court.value.price_slots[0]?.price || 120000
@@ -64,11 +90,14 @@ export function useCourtDetail() {
   return {
     loading,
     court,
+    reviews,
+    reviewsLoading,
     selectedDuration,
     isGalleryOpen,
     basePrice,
     estimatedTotal,
     durationOptions,
     loadCourt,
+    loadReviews,
   }
 }

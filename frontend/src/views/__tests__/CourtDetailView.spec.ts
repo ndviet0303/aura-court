@@ -61,6 +61,7 @@ describe('CourtDetailView', () => {
     expect(wrapper.find('.specs-grid').exists()).toBe(true)
     expect(wrapper.findAll('.spec-card').length).toBe(4)
     expect(wrapper.findAll('.amenity-card').length).toBe(6)
+    expect(wrapper.find('.court-reviews-section').exists()).toBe(true)
     expect(wrapper.find('.sticky-booking-card').exists()).toBe(true)
     expect(wrapper.find('.price-num').text()).toContain('120.000')
   })

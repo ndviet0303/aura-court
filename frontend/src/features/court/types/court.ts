@@ -75,3 +75,16 @@ export type Court = {
   reviews_count?: number
   reviews_avg_rating?: number | null
 }
+
+export type CourtReview = {
+  id: number
+  court_id: number
+  user_id: number
+  rating: number
+  body?: string | null
+  created_at?: string
+  user?: {
+    id: number
+    name: string
+  }
+}

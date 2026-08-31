@@ -27,7 +27,7 @@ export const courtApi = {
     api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`),
 
   getReviews: (courtId: number) =>
-    api.get<any[]>(`/courts/${courtId}/reviews`),
+    api.get<any>(`/courts/${courtId}/reviews`),
 
   getSportZones: () => api.get<SportZone[]>('/sport-zones'),
 

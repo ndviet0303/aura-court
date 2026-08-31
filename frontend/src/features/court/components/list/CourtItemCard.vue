@@ -33,10 +33,16 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined icon-venue">location_on</span>
           <span>{{ court.venue?.name || 'Aura Club' }}</span>
         </div>
-        <div v-if="court.venue?.address" class="c-addr">
+        <RouterLink
+          v-if="court.venue?.address"
+          :to="`/courts/${court.slug || court.id}/directions`"
+          class="c-addr-link"
+          title="Xem chỉ đường đến sân"
+        >
           <span class="material-symbols-outlined icon-addr">near_me</span>
-          <span>{{ court.venue?.address }}</span>
-        </div>
+          <span>{{ court.venue.address }}</span>
+          <span class="material-symbols-outlined icon-12">open_in_new</span>
+        </RouterLink>
       </div>
 
       <div class="card-bottom">
@@ -48,6 +54,14 @@ function formatMoney(amount: number): string {
         </div>
 
         <div class="card-actions">
+          <RouterLink
+            :to="`/courts/${court.slug || court.id}/directions`"
+            class="btn-directions"
+            title="Xem chỉ đường & bản đồ"
+          >
+            <span class="material-symbols-outlined btn-icon">directions</span>
+            <span>Chỉ Đường</span>
+          </RouterLink>
           <RouterLink :to="`/courts/${court.slug || court.id}`" class="btn-detail">
             <span class="material-symbols-outlined btn-icon">info</span>
             <span>Chi Tiết</span>
@@ -149,20 +163,33 @@ function formatMoney(amount: number): string {
   color: var(--primary);
 }
 
-.c-addr {
-  display: flex;
-  align-items: flex-start;
+.c-addr,
+.c-addr-link {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--muted);
   line-height: 1.4;
+  text-decoration: none;
+  width: fit-content;
+  transition: all 0.15s ease;
+}
+
+.c-addr-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.icon-12 {
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 .icon-addr {
   font-size: 14px;
   color: var(--muted);
   flex-shrink: 0;
-  margin-top: 1px;
 }
 
 .card-bottom {
@@ -209,24 +236,33 @@ function formatMoney(amount: number): string {
   gap: 8px;
 }
 
+.btn-directions,
 .btn-detail {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 14px;
+  padding: 8px 11px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.15s ease;
 }
 
+.btn-directions:hover,
 .btn-detail:hover {
   background: var(--soft);
   border-color: var(--accent);
+  color: var(--primary);
+}
+
+:global(html.dark) .btn-directions:hover,
+:global(html.dark) .btn-detail:hover {
+  background: #281d23;
+  color: #e58e9f;
 }
 
 .btn-book {

@@ -46,7 +46,7 @@ const router = createRouter({
     { path: '/courts', name: 'courts', component: CourtsView, meta: { titleKey: 'seo.courtsTitle', descriptionKey: 'seo.courtsDesc' } },
     { path: '/courts/:slug', name: 'court-detail', component: CourtDetailView, meta: { titleKey: 'seo.courtDetailTitle', indexable: false } },
     { path: '/courts/:slug/schedule', name: 'schedule', component: ScheduleView, meta: { titleKey: 'seo.scheduleTitle', indexable: false } },
-    { path: '/venues/:slug/directions', name: 'venue-directions', component: VenueDirectionsView, meta: { titleKey: 'directions.title', description: 'Xem địa chỉ và mở Google Maps để đến Aura Court.' } },
+    { path: '/courts/:slug/directions', name: 'court-directions', component: VenueDirectionsView, meta: { titleKey: 'directions.title', description: 'Xem địa chỉ và mở Google Maps để đến sân Aura Court.' } },
     { path: '/booking', name: 'booking', component: BookingView, meta: { auth: true, titleKey: 'seo.bookingTitle', indexable: false } },
     { path: '/wallet', name: 'wallet', component: () => import('@/features/wallet/views/WalletView.vue'), meta: { auth: true, title: 'Ví Của Tôi & Nạp Tiền Cụm Sân | Aura Court Control', indexable: false } },
     { path: '/reservations-v2', name: 'reservations-v2', component: () => import('../views/V2ReservationView.vue'), meta: { auth: true, title: 'Báo giá & lịch đặt v2 | Aura Court', indexable: false } },
