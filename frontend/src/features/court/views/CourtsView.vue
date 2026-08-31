@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useCourtsList } from '../composables/useCourtsList'
+import { SkeletonLoader } from '@/shared/components'
 
 import CourtsHeroHeader from '../components/list/CourtsHeroHeader.vue'
 import CourtsFilterBar from '../components/list/CourtsFilterBar.vue'
@@ -26,6 +27,7 @@ onMounted(async () => {
     <!-- Hero Header -->
     <CourtsHeroHeader
       :total-count="store.courts.length"
+      :loading="store.courtsLoading && store.courts.length === 0"
     />
 
     <!-- Filter & Search Bar -->
@@ -37,14 +39,28 @@ onMounted(async () => {
       @update:venue="selectedVenue = $event"
     />
 
-    <!-- Courts Grid -->
-    <div v-if="filteredCourts.length === 0" class="empty-state-card">
-      <span>🏸</span>
+    <!-- Skeleton Loading State -->
+    <div
+      v-if="store.courtsLoading && store.courts.length === 0"
+      class="courts-grid"
+      data-testid="courts-skeleton"
+    >
+      <SkeletonLoader type="court-card" :count="6" />
+    </div>
+
+    <!-- Empty State -->
+    <div
+      v-else-if="filteredCourts.length === 0"
+      class="empty-state-card"
+      data-testid="courts-empty-state"
+    >
+      <span class="material-symbols-outlined empty-icon">search_off</span>
       <h3>Không tìm thấy sân đấu phù hợp</h3>
       <p>Thử tìm kiếm với từ khóa khác hoặc bỏ chọn bộ lọc khu vực.</p>
     </div>
 
-    <div v-else class="courts-grid">
+    <!-- Courts Grid -->
+    <div v-else class="courts-grid" data-testid="courts-grid">
       <CourtItemCard
         v-for="(c, idx) in filteredCourts"
         :key="c.id"
@@ -83,8 +99,9 @@ onMounted(async () => {
   border: 1px solid var(--outline);
 }
 
-.empty-state-card span {
+.empty-icon {
   font-size: 48px;
   margin-bottom: 12px;
+  color: var(--muted);
 }
 </style>

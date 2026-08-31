@@ -20,30 +20,41 @@ function formatMoney(amount: number): string {
         :alt="court.name"
         class="court-img"
       />
-      <span class="sport-tag font-mono">🏸 BWF Tarafex</span>
+      <span class="sport-tag font-mono">
+        <span class="material-symbols-outlined tag-icon">sports_tennis</span>
+        <span>BWF Taraflex</span>
+      </span>
     </div>
 
     <div class="card-body">
       <div class="court-title-meta">
         <h3 class="c-name">{{ court.name }}</h3>
-        <span class="c-venue">📍 {{ court.venue?.name || 'Aura Club' }}</span>
-        <span class="c-addr">{{ court.venue?.address }}</span>
+        <div class="c-venue">
+          <span class="material-symbols-outlined icon-venue">location_on</span>
+          <span>{{ court.venue?.name || 'Aura Club' }}</span>
+        </div>
+        <div v-if="court.venue?.address" class="c-addr">
+          <span class="material-symbols-outlined icon-addr">near_me</span>
+          <span>{{ court.venue?.address }}</span>
+        </div>
       </div>
 
       <div class="card-bottom">
         <div class="pricing-box">
-          <span class="p-lbl">Giá từ:</span>
+          <span class="p-lbl">Giá từ</span>
           <strong class="p-val text-pink font-mono">
-            {{ formatMoney(court.price_slots?.[0]?.price || 120000) }} /h
+            {{ formatMoney(court.price_slots?.[0]?.price || 120000) }} <small class="p-unit">/h</small>
           </strong>
         </div>
 
         <div class="card-actions">
-          <RouterLink :to="`/courts/${court.id}`" class="btn-detail">
-            Chi Tiết
+          <RouterLink :to="`/courts/${court.slug || court.id}`" class="btn-detail">
+            <span class="material-symbols-outlined btn-icon">info</span>
+            <span>Chi Tiết</span>
           </RouterLink>
-          <RouterLink :to="`/schedule/${court.id}`" class="btn-book">
-            Đặt Sân
+          <RouterLink :to="`/courts/${court.slug || court.id}/schedule`" class="btn-book">
+            <span class="material-symbols-outlined btn-icon">event_available</span>
+            <span>Đặt Sân</span>
           </RouterLink>
         </div>
       </div>
@@ -60,12 +71,13 @@ function formatMoney(amount: number): string {
   background: var(--surface);
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .court-card-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  border-color: var(--accent);
+  box-shadow: 0 12px 28px rgba(107, 45, 63, 0.08);
 }
 
 .card-img-wrap {
@@ -84,13 +96,22 @@ function formatMoney(amount: number): string {
   position: absolute;
   top: 12px;
   left: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(20, 17, 19, 0.82);
+  border: 1px solid rgba(201, 161, 90, 0.35);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+}
+
+.tag-icon {
+  font-size: 14px;
+  color: var(--accent);
 }
 
 .card-body {
@@ -104,24 +125,44 @@ function formatMoney(amount: number): string {
 .court-title-meta {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .c-name {
   margin: 0;
   font-size: 16px;
   font-weight: 800;
+  color: var(--ink);
 }
 
 .c-venue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--pink-dark, #db2777);
+  color: var(--primary);
+}
+
+.icon-venue {
+  font-size: 16px;
+  color: var(--primary);
 }
 
 .c-addr {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
   font-size: 11px;
   color: var(--muted);
+  line-height: 1.4;
+}
+
+.icon-addr {
+  font-size: 14px;
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .card-bottom {
@@ -136,11 +177,32 @@ function formatMoney(amount: number): string {
 .pricing-box {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-.p-lbl { font-size: 10px; color: var(--muted); }
-.p-val { font-size: 14px; }
-.text-pink { color: var(--pink-dark, #db2777); }
+.p-lbl {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.p-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.p-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.text-pink {
+  color: var(--primary);
+}
 
 .card-actions {
   display: flex;
@@ -148,24 +210,56 @@ function formatMoney(amount: number): string {
 }
 
 .btn-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
   color: var(--ink);
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-detail:hover {
+  background: var(--soft);
+  border-color: var(--accent);
 }
 
 .btn-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.2);
+}
+
+.btn-book:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 45, 63, 0.3);
+}
+
+:global(html.dark) .btn-book {
+  box-shadow: 0 2px 8px rgba(229, 142, 159, 0.25);
+}
+
+:global(html.dark) .btn-book:hover {
+  box-shadow: 0 4px 14px rgba(229, 142, 159, 0.35);
+}
+
+.btn-icon {
+  font-size: 15px;
 }
 </style>

@@ -54,25 +54,33 @@ const emit = defineEmits<{
   transition: all 0.15s;
 }
 
-.date-card-btn:hover {
-  border-color: var(--pink-dark, #db2777);
+.date-card-btn:hover:not(.active) {
+  border-color: var(--accent);
+  background: var(--soft);
   transform: translateY(-2px);
 }
 
 .date-card-btn.active {
-  background: var(--pink-dark, #db2777);
-  border-color: var(--pink-dark, #db2777);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.3);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 4px 16px rgba(107, 45, 63, 0.25);
+  transform: translateY(-2px);
+}
+
+:global(html.dark) .date-card-btn.active {
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.3);
 }
 
 .day-name {
   font-size: 11px;
   text-transform: uppercase;
-  opacity: 0.8;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 .day-num {
   font-size: 18px;
+  font-weight: 800;
 }
 </style>

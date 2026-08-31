@@ -43,7 +43,17 @@ withDefaults(defineProps<Props>(), {
         </div>
         <div class="skeleton-court-body">
           <div class="skeleton-item skeleton-title"></div>
-          <div class="skeleton-item skeleton-text"></div>
+          <div class="skeleton-court-meta">
+            <div class="skeleton-item skeleton-text"></div>
+            <div class="skeleton-item skeleton-text short"></div>
+          </div>
+          <div class="skeleton-court-footer">
+            <div class="skeleton-item skeleton-price"></div>
+            <div class="skeleton-court-actions">
+              <div class="skeleton-item skeleton-btn-action"></div>
+              <div class="skeleton-item skeleton-btn-action primary"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -200,69 +210,107 @@ withDefaults(defineProps<Props>(), {
 
 /* Court Card Skeleton (Thẻ sân) */
 .skeleton-court-card {
-  background: var(--card-bg, #ffffff);
-  border: 1px solid var(--border, #e0e4ea);
-  border-radius: 26px;
-  padding: 10px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e0e4ea);
+  border-radius: 20px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
   animation: card-appear 0.4s ease forwards;
   animation-delay: calc((var(--card-index, 1) - 1) * 0.07s);
 }
 
 :global(html.dark) .skeleton-court-card {
-  background: var(--card-bg, #22242a);
-  border-color: var(--border, #353942);
+  background: var(--surface, #1e1a1c);
+  border-color: var(--outline, #3e3539);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .skeleton-img {
-  height: 240px;
+  height: 200px;
   width: 100%;
-  border-radius: 20px;
+  border-radius: 0;
   position: relative;
-}
-
-.skeleton-court-body {
-  padding: 12px 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .skeleton-tag {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  height: 26px;
-  width: 90px;
-  border-radius: 999px;
+  top: 12px;
+  left: 12px;
+  height: 24px;
+  width: 96px;
+  border-radius: 6px;
   border: 1px solid var(--outline, #d8dce2);
-  background: var(--surface, #ffffff);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
   z-index: 2;
 }
 
 :global(html.dark) .skeleton-tag {
-  background: var(--surface, #22242a);
-  border-color: var(--outline, #383c46);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.skeleton-court-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
 }
 
 .skeleton-title {
-  height: 22px;
+  height: 20px;
   width: 65%;
   border-radius: 6px;
 }
 
+.skeleton-court-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .skeleton-text {
   height: 14px;
-  width: 85%;
+  width: 50%;
   border-radius: 4px;
 }
 
 .skeleton-text.short {
-  width: 45%;
+  width: 75%;
+  height: 12px;
+}
+
+.skeleton-court-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--outline, #e0e4ea);
+}
+
+.skeleton-price {
+  height: 20px;
+  width: 80px;
+  border-radius: 4px;
+}
+
+.skeleton-court-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.skeleton-btn-action {
+  height: 32px;
+  width: 68px;
+  border-radius: 8px;
+}
+
+.skeleton-btn-action.primary {
+  width: 76px;
 }
 
 /* Court Detail Hero Skeleton */
@@ -376,6 +424,16 @@ withDefaults(defineProps<Props>(), {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-item::after {
+    animation: none;
+  }
+  .skeleton-slot,
+  .skeleton-court-card {
+    animation: none;
   }
 }
 </style>

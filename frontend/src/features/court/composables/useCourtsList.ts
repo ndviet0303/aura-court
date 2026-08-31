@@ -12,10 +12,10 @@ export function useCourtsList() {
   const sortBy = ref('popular')
 
   const sportOptions = [
-    { value: 'all', label: 'Tất cả môn thể thao' },
-    { value: 'badminton', label: '🏸 Cầu lông' },
-    { value: 'tennis', label: '🎾 Tennis' },
-    { value: 'pickleball', label: '🏓 Pickleball' },
+    { value: 'all', label: 'Tất cả môn thể thao', icon: 'sports' },
+    { value: 'badminton', label: 'Cầu lông', icon: 'sports_tennis' },
+    { value: 'tennis', label: 'Tennis', icon: 'sports_tennis' },
+    { value: 'pickleball', label: 'Pickleball', icon: 'sports_tennis' },
   ]
 
   const venueOptions = computed(() => {

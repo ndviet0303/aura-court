@@ -12,7 +12,7 @@ export function useCourtDetail() {
   const isGalleryOpen = ref(false)
   const loading = ref(false)
 
-  const courtId = Number(route.params.id || 1)
+  const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
   const fetchedCourt = ref<Court | null>(null)
 
   async function loadCourt() {
@@ -29,9 +29,11 @@ export function useCourtDetail() {
   }
 
   const court = computed<Court | null>(() => {
+    const key = slugOrId.value
+    if (!key) return bookingStore.courts[0] || null
     return (
       fetchedCourt.value ||
-      bookingStore.courts.find((c) => c.id === courtId) ||
+      bookingStore.courts.find((c) => c.slug === key || String(c.id) === key) ||
       bookingStore.courts[0] ||
       null
     )

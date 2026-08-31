@@ -20,10 +20,19 @@ function formatMoney(amount: number): string {
 <template>
   <div class="schedule-summary-card">
     <div class="summary-hdr">
-      <h3 class="title">📋 Tóm Tắt Đặt Sân</h3>
+      <h3 class="title">
+        <span class="material-symbols-outlined title-icon">receipt_long</span>
+        <span>Tóm Tắt Đặt Sân</span>
+      </h3>
       <span class="court-sub">{{ court.name }}</span>
-      <span class="venue-sub">📍 {{ court.venue?.name }}</span>
-      <span class="date-sub font-mono">📅 Ngày chơi: {{ date }}</span>
+      <span class="venue-sub">
+        <span class="material-symbols-outlined icon-14">location_on</span>
+        <span>{{ court.venue?.name }}</span>
+      </span>
+      <span class="date-sub font-mono">
+        <span class="material-symbols-outlined icon-14">event</span>
+        <span>Ngày chơi: {{ date }}</span>
+      </span>
     </div>
 
     <!-- Slots selected list -->
@@ -33,7 +42,10 @@ function formatMoney(amount: number): string {
       </div>
       <div v-else class="slots-chips">
         <div v-for="s in selectedSlots" :key="s.startsAt" class="slot-chip-item">
-          <span class="font-mono">⏰ {{ s.startsAt.slice(11, 16) }} - {{ s.endsAt.slice(11, 16) }}</span>
+          <span class="font-mono slot-time-badge">
+            <span class="material-symbols-outlined icon-14">schedule</span>
+            <span>{{ s.startsAt.slice(11, 16) }} - {{ s.endsAt.slice(11, 16) }}</span>
+          </span>
           <strong class="font-mono">{{ formatMoney(s.price) }}</strong>
         </div>
       </div>
@@ -50,7 +62,8 @@ function formatMoney(amount: number): string {
         :disabled="selectedSlots.length === 0"
         @click="emit('checkout')"
       >
-        ⚡ Xác Nhận Giữ Chỗ & Thanh Toán
+        <span class="material-symbols-outlined btn-icon">bolt</span>
+        <span>Xác Nhận Giữ Chỗ & Thanh Toán</span>
       </button>
     </div>
   </div>
@@ -71,12 +84,42 @@ function formatMoney(amount: number): string {
 .summary-hdr {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
-.title { margin: 0; font-size: 16px; font-weight: 700; }
-.court-sub { font-size: 14px; font-weight: 600; color: var(--pink-dark, #db2777); }
-.venue-sub, .date-sub { font-size: 12px; color: var(--muted); }
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.title-icon {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.court-sub {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.venue-sub,
+.date-sub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.icon-14 {
+  font-size: 14px;
+  color: var(--muted);
+}
 
 .selected-slots-list {
   padding: 12px;
@@ -102,7 +145,14 @@ function formatMoney(amount: number): string {
 .slot-chip-item {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 12px;
+}
+
+.slot-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .summary-footer {
@@ -120,19 +170,34 @@ function formatMoney(amount: number): string {
   font-size: 13px;
 }
 
-.total-num { font-size: 18px; }
-.text-pink { color: var(--pink-dark, #db2777); }
+.total-num { font-size: 18px; font-weight: 800; }
+.text-pink { color: var(--primary); }
 
 .btn-checkout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 14px;
   border-radius: 12px;
   border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
   font-weight: 800;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.25);
+  box-shadow: 0 4px 16px rgba(107, 45, 63, 0.22);
+  transition: all 0.15s ease;
+}
+
+.btn-icon {
+  font-size: 18px;
+}
+
+.btn-checkout:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.32);
 }
 
 .btn-checkout:disabled {
@@ -142,8 +207,10 @@ function formatMoney(amount: number): string {
 }
 
 :global(html.dark) .btn-checkout {
-  background: var(--primary, #E58E9F);
-  color: #1c0a10;
-  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.35);
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.25);
+}
+
+:global(html.dark) .btn-checkout:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(229, 142, 159, 0.35);
 }
 </style>

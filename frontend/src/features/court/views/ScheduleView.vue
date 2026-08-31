@@ -35,7 +35,10 @@ onMounted(async () => {
 <template>
   <div class="schedule-view-page">
     <header class="schedule-hdr">
-      <h1 class="page-title">📅 Lịch Đặt Sân Theo Ngày (Live Court Schedule)</h1>
+      <h1 class="page-title">
+        <span class="material-symbols-outlined hdr-icon">calendar_month</span>
+        <span>Lịch Đặt Sân Theo Ngày (Live Court Schedule)</span>
+      </h1>
       <p class="page-sub">Xem tình trạng khung giờ trống theo thời gian thực và chọn lịch thi đấu phù hợp.</p>
     </header>
 
@@ -99,9 +102,17 @@ onMounted(async () => {
 }
 
 .page-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font-size: 22px;
   font-weight: 800;
+}
+
+.hdr-icon {
+  font-size: 24px;
+  color: var(--primary);
 }
 
 .page-sub {
@@ -111,19 +122,21 @@ onMounted(async () => {
 }
 
 .alert-pill {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #10b981;
-  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--success-bg, #e8f5e9);
+  color: var(--success-text, #2e7d32);
+  border: 1px solid rgba(46, 125, 50, 0.25);
   font-size: 13px;
   font-weight: 600;
 }
 
 .alert-pill-error {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #ef4444;
-  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--error-bg, #ffebee);
+  color: var(--error-text, #c62828);
+  border: 1px solid rgba(198, 40, 40, 0.25);
   font-size: 13px;
   font-weight: 600;
 }

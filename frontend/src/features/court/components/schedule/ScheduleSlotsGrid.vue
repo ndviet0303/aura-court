@@ -28,7 +28,7 @@ function formatMoney(amount: number): string {
     </div>
 
     <div v-if="slots.length === 0" class="empty-slots">
-      <span>🏸</span>
+      <span class="material-symbols-outlined empty-icon">event_busy</span>
       <p>Chưa có dữ liệu khung giờ cho ngày đã chọn.</p>
     </div>
 

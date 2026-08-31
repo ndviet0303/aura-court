@@ -3,7 +3,7 @@ import type { Court } from '../../types/court'
 
 defineProps<{
   courts: Court[]
-  selectedCourtId: number
+  selectedCourtId?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -62,20 +62,41 @@ const emit = defineEmits<{
   color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.court-pill-btn:hover:not(.active) {
+  border-color: var(--accent);
+  background: var(--soft);
 }
 
 .court-pill-btn.active {
-  border-color: var(--pink-dark, #db2777);
-  background: rgba(236, 72, 153, 0.05);
+  border-color: var(--primary);
+  background: var(--primary-container);
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
+}
+
+:global(html.dark) .court-pill-btn.active {
+  box-shadow: 0 2px 8px rgba(229, 142, 159, 0.15);
 }
 
 .c-name {
   font-size: 13px;
   font-weight: 700;
+  color: var(--ink);
+}
+
+.court-pill-btn.active .c-name {
+  color: var(--primary);
 }
 
 .c-venue {
   font-size: 11px;
   color: var(--muted);
+}
+
+.court-pill-btn.active .c-venue {
+  color: var(--primary);
+  opacity: 0.85;
 }
 </style>

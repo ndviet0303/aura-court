@@ -7,7 +7,7 @@ import { useBookingStore } from '@/stores/booking'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
-    params: { id: '1' },
+    params: { slug: 'san-01-tieu-chuan', id: '1' },
     query: {},
   }),
   RouterLink: {

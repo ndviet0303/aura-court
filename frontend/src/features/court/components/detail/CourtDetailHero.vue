@@ -20,7 +20,8 @@ const emit = defineEmits<{
           class="hero-img"
         />
         <div class="gallery-overlay">
-          <span>📷 Xem tất cả ảnh sân</span>
+          <span class="material-symbols-outlined icon-18">photo_library</span>
+          <span>Xem tất cả ảnh sân</span>
         </div>
       </div>
     </div>
@@ -31,12 +32,16 @@ const emit = defineEmits<{
           {{ court.name }} · <span class="venue-name">{{ court.venue?.name }}</span>
         </h1>
         <div class="rating-display">
-          ⭐ <strong>{{ court.reviews_avg_rating || 4.8 }}</strong>
+          <span class="material-symbols-outlined icon-star">star</span>
+          <strong>{{ Number(court.reviews_avg_rating || 4.8).toFixed(1) }}</strong>
           <span class="reviews-count">({{ court.reviews_count || 42 }} đánh giá)</span>
         </div>
       </div>
 
-      <p class="court-addr">📍 {{ court.venue?.address }}</p>
+      <p class="court-addr">
+        <span class="material-symbols-outlined icon-16">location_on</span>
+        {{ court.venue?.address }}
+      </p>
       <p class="court-desc">{{ court.description || 'Sân thi đấu chuyên nghiệp với mặt thảm cao cấp chống trơn trượt.' }}</p>
     </div>
   </div>
@@ -83,6 +88,9 @@ const emit = defineEmits<{
   position: absolute;
   bottom: 16px;
   right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 20px;
   background: rgba(0, 0, 0, 0.7);
@@ -114,7 +122,7 @@ const emit = defineEmits<{
 }
 
 .venue-name {
-  color: var(--pink-dark, #db2777);
+  color: var(--primary);
 }
 
 .rating-display {
@@ -124,15 +132,31 @@ const emit = defineEmits<{
   font-size: 14px;
 }
 
+.icon-star {
+  font-size: 18px;
+  color: var(--accent);
+}
+
 .reviews-count {
   font-size: 12px;
   color: var(--muted);
 }
 
 .court-addr {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin: 0;
   font-size: 13px;
   color: var(--muted);
+}
+
+.icon-16 {
+  font-size: 16px;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 .court-desc {

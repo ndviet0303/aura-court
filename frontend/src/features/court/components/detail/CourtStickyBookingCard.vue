@@ -101,7 +101,9 @@ function formatMoney(amount: number): string {
   color: var(--muted);
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
+.text-pink {
+  color: var(--primary);
+}
 
 .duration-picker-box {
   display: flex;
@@ -112,6 +114,7 @@ function formatMoney(amount: number): string {
 .d-lbl {
   font-size: 12px;
   font-weight: 600;
+  color: var(--muted);
 }
 
 .durations-grid {
@@ -122,20 +125,25 @@ function formatMoney(amount: number): string {
 
 .duration-btn {
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  background: var(--surface);
   color: var(--ink);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
+}
+
+.duration-btn:hover:not(.active) {
+  border-color: var(--accent);
+  background: var(--soft);
 }
 
 .duration-btn.active {
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  border-color: var(--pink-dark, #db2777);
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
 }
 
 .estimate-box {
@@ -143,28 +151,50 @@ function formatMoney(amount: number): string {
   justify-content: space-between;
   align-items: center;
   padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(236, 72, 153, 0.04);
-  border: 1px solid rgba(236, 72, 153, 0.15);
+  border-radius: 12px;
+  background: var(--primary-container);
+  border: 1px solid rgba(107, 45, 63, 0.15);
   font-size: 13px;
+  color: var(--ink);
+}
+
+:global(html.dark) .estimate-box {
+  border-color: rgba(229, 142, 159, 0.25);
 }
 
 .estimate-amount {
   font-size: 16px;
+  font-weight: 800;
+  color: var(--primary);
 }
 
 .btn-book-now {
   padding: 14px;
   border-radius: 12px;
   border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
   font-weight: 800;
   font-size: 14px;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.25);
+  box-shadow: 0 4px 16px rgba(107, 45, 63, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-book-now:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(107, 45, 63, 0.28);
+}
+
+:global(html.dark) .btn-book-now {
+  box-shadow: 0 4px 16px rgba(229, 142, 159, 0.25);
+}
+
+:global(html.dark) .btn-book-now:hover {
+  box-shadow: 0 6px 20px rgba(229, 142, 159, 0.35);
 }
 
 @media (max-width: 640px) {

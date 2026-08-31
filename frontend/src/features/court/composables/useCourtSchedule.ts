@@ -9,17 +9,23 @@ export function useCourtSchedule() {
   const store = useBookingStore()
 
   const date = ref(new Date().toISOString().slice(0, 10))
-  const selectedCourtId = ref<number>(Number(route.params.id) || 1)
+  const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
+  const selectedCourtId = ref<number | null>(null)
   const error = ref('')
   const notice = ref('')
   const loading = ref(false)
 
   const court = computed<Court | null>(() => {
-    return (
-      store.courts.find((c: Court) => c.id === selectedCourtId.value) ||
-      store.courts[0] ||
-      null
-    )
+    const key = slugOrId.value
+    if (selectedCourtId.value) {
+      const foundById = store.courts.find((c: Court) => c.id === selectedCourtId.value)
+      if (foundById) return foundById
+    }
+    if (key) {
+      const foundByKey = store.courts.find((c: Court) => c.slug === key || String(c.id) === key)
+      if (foundByKey) return foundByKey
+    }
+    return store.courts[0] || null
   })
 
   const carouselDays = computed(() => {
@@ -55,6 +61,13 @@ export function useCourtSchedule() {
     try {
       if (store.courts.length === 0) {
         await store.loadCourts()
+      }
+      const key = slugOrId.value
+      if (key) {
+        const found = store.courts.find((c: Court) => c.slug === key || String(c.id) === key)
+        if (found) {
+          selectedCourtId.value = found.id
+        }
       }
       await fetchAvailability()
     } catch {
