@@ -22,6 +22,10 @@ const {
   depositAmount,
   depositMethod,
   depositTargetWalletId,
+  cardNumber,
+  cardExpiry,
+  cardCvc,
+  cardName,
   quickAmounts,
   wallets,
   transactions,
@@ -166,12 +170,20 @@ function scrollToHistory() {
       :method="depositMethod"
       :quick-amounts="quickAmounts"
       :step="depositStep"
+      :card-number="cardNumber"
+      :card-expiry="cardExpiry"
+      :card-cvc="cardCvc"
+      :card-name="cardName"
       :transfer-info="transferInfo"
       :processing="processing"
       @close="isDepositModalOpen = false"
       @update:target-wallet-id="depositTargetWalletId = $event"
       @update:amount="depositAmount = $event"
       @update:method="depositMethod = $event"
+      @update:card-number="cardNumber = $event"
+      @update:card-expiry="cardExpiry = $event"
+      @update:card-cvc="cardCvc = $event"
+      @update:card-name="cardName = $event"
       @proceed="proceedToPaymentStep"
       @confirm="confirmDeposit"
       @back="depositStep = 'select'"

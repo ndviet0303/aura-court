@@ -1,7 +1,14 @@
 export type MemberTier = 'standard' | 'silver' | 'gold' | 'diamond'
 export type CardAccentTheme = 'burgundy' | 'gold' | 'navy' | 'emerald'
 export type TransactionType = 'booking' | 'topup' | 'pos' | 'refund'
-export type PaymentMethodType = 'vietqr' | 'vnpay' | 'momo' | 'card'
+export type PaymentMethodType = 'sepay' | 'stripe'
+
+export type CardDetails = {
+  cardNumber: string
+  cardExpiry: string
+  cardCvc: string
+  cardName: string
+}
 
 export interface VenueWallet {
   id: string

@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
-import type { VenueWallet, Transaction, TransactionType, PaymentMethodType } from '../types/wallet'
-export type { VenueWallet, Transaction, TransactionType, PaymentMethodType }
+import type { VenueWallet, Transaction, TransactionType, PaymentMethodType, CardDetails } from '../types/wallet'
+export type { VenueWallet, Transaction, TransactionType, PaymentMethodType, CardDetails }
 import { walletApi } from '../api/walletApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/features/auth/stores/authStore'
@@ -60,16 +60,16 @@ const INITIAL_TRANSACTIONS: Transaction[] = [
   {
     id: 'txn-101',
     type: 'topup',
-    title: 'Nạp tiền tự động VietQR Napas247',
+    title: 'Nạp tiền tự động VietQR SePay',
     venue_name: 'Ví Hệ Thống Aura',
-    description: 'Chuyển khoản liên ngân hàng tự động · Giao dịch tức thì',
+    description: 'Chuyển khoản liên ngân hàng tự động · Giao dịch tức thì qua SePay',
     date: '31/08/2026',
     time: '20:15',
     amount: 500000,
     balance_after: 1500000,
     status: 'success',
-    reference: 'VQR-20260831-9812',
-    method_label: 'VietQR Napas247',
+    reference: 'SEPAY-20260831-9812',
+    method_label: 'VietQR SePay Auto',
   },
   {
     id: 'txn-102',
@@ -116,16 +116,16 @@ const INITIAL_TRANSACTIONS: Transaction[] = [
   {
     id: 'txn-105',
     type: 'topup',
-    title: 'Nạp tiền ví qua Cổng MoMo QR',
+    title: 'Nạp tiền ví qua Cổng Quốc Tế Stripe',
     venue_name: 'Ví Hệ Thống Aura',
-    description: 'Nạp tiền tài khoản hội viên qua ứng dụng Ví MoMo',
+    description: 'Thanh toán thẻ Visa/MasterCard bảo mật qua cổng Stripe',
     date: '25/08/2026',
     time: '14:22',
     amount: 1000000,
     balance_after: 1135000,
     status: 'success',
-    reference: 'MOMO-20260825-8831',
-    method_label: 'Ví MoMo',
+    reference: 'STRIPE-20260825-8831',
+    method_label: 'Stripe Checkout',
   },
 ]
 
@@ -142,13 +142,19 @@ export function useWallet() {
   const searchQuery = ref('')
 
   const isDepositModalOpen = ref(false)
-  const depositStep = ref<'select' | 'vietqr_pay'>('select')
+  const depositStep = ref<'select' | 'sepay_pay' | 'stripe_pay'>('select')
   const isQrModalOpen = ref(false)
   const selectedWalletForAction = ref<VenueWallet | null>(null)
 
   const depositAmount = ref<number>(500000)
-  const depositMethod = ref<PaymentMethodType>('vietqr')
+  const depositMethod = ref<PaymentMethodType>('sepay')
   const depositTargetWalletId = ref<string>('wallet-main')
+
+  // Stripe Card Details State
+  const cardNumber = ref('')
+  const cardExpiry = ref('')
+  const cardCvc = ref('')
+  const cardName = ref('')
 
   const quickAmounts = [100000, 200000, 500000, 1000000, 2000000, 5000000]
 
@@ -178,7 +184,7 @@ export function useWallet() {
     })
   })
 
-  // VietQR Transfer Info
+  // SePay VietQR Transfer Info
   const transferInfo = computed(() => {
     const bank = 'TPBank'
     const accountNo = '83403032005'
@@ -266,10 +272,10 @@ export function useWallet() {
   }
 
   async function proceedToPaymentStep() {
-    if (depositMethod.value === 'vietqr') {
-      depositStep.value = 'vietqr_pay'
-    } else {
-      await confirmDeposit()
+    if (depositMethod.value === 'sepay') {
+      depositStep.value = 'sepay_pay'
+    } else if (depositMethod.value === 'stripe') {
+      depositStep.value = 'stripe_pay'
     }
   }
 
@@ -282,6 +288,7 @@ export function useWallet() {
           amount: depositAmount.value,
           method: depositMethod.value,
           wallet_id: depositTargetWalletId.value,
+          note: depositMethod.value === 'stripe' ? `Stripe Card: ${cardNumber.value.slice(-4) || '4242'}` : undefined,
         })
       } catch {
         // Local simulation fallback
@@ -297,26 +304,32 @@ export function useWallet() {
         wallets.value[0].points += Math.floor(depositAmount.value / 10000)
       }
 
+      const isSepay = depositMethod.value === 'sepay'
+      const methodLabel = isSepay ? 'VietQR SePay Auto' : 'Thẻ Quốc Tế Stripe'
+      const prefixRef = isSepay ? 'SEPAY' : 'STRIPE'
+
       // Add transaction record
       const newTxn: Transaction = {
         id: `txn-${Date.now()}`,
         type: 'topup',
-        title: `Nạp tiền ví qua ${depositMethod.value === 'vietqr' ? 'VietQR Napas247' : depositMethod.value.toUpperCase()}`,
+        title: `Nạp tiền ví qua ${methodLabel}`,
         venue_name: target?.venue_name || 'Ví Hệ Thống Aura',
-        description: 'Giao dịch nạp tiền tự động hoàn tất · Tiền khả dụng ngay',
+        description: isSepay
+          ? 'Chuyển khoản VietQR SePay tự động · Tiền khả dụng tức thì'
+          : `Thanh toán thẻ Visa/Mastercard (${cardNumber.value.slice(-4) || '4242'}) bảo mật bởi Stripe`,
         date: new Date().toLocaleDateString('vi-VN'),
         time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         amount: depositAmount.value,
         balance_after: totalBalance.value,
         status: 'success',
-        reference: `TOPUP-${Date.now().toString().slice(-6)}`,
-        method_label: depositMethod.value === 'vietqr' ? 'VietQR Napas247' : depositMethod.value.toUpperCase(),
+        reference: `${prefixRef}-${Date.now().toString().slice(-6)}`,
+        method_label: methodLabel,
       }
 
       transactions.value.unshift(newTxn)
       isDepositModalOpen.value = false
       depositStep.value = 'select'
-      showNotice(`Nạp thành công ${depositAmount.value.toLocaleString('vi-VN')} ₫ vào ví!`)
+      showNotice(`Nạp thành công ${depositAmount.value.toLocaleString('vi-VN')} ₫ vào ví qua ${methodLabel}!`)
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể thực hiện nạp tiền vào ví.')
     } finally {
@@ -354,6 +367,10 @@ export function useWallet() {
     depositAmount,
     depositMethod,
     depositTargetWalletId,
+    cardNumber,
+    cardExpiry,
+    cardCvc,
+    cardName,
     quickAmounts,
     wallets,
     transactions,

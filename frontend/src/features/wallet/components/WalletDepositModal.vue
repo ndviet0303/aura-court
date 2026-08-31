@@ -9,7 +9,11 @@ const props = defineProps<{
   amount: number
   method: PaymentMethodType
   quickAmounts: number[]
-  step: 'select' | 'vietqr_pay'
+  step: 'select' | 'sepay_pay' | 'stripe_pay'
+  cardNumber: string
+  cardExpiry: string
+  cardCvc: string
+  cardName: string
   transferInfo: {
     bank: string
     accountNo: string
@@ -26,6 +30,10 @@ const emit = defineEmits<{
   (e: 'update:targetWalletId', id: string): void
   (e: 'update:amount', amount: number): void
   (e: 'update:method', method: PaymentMethodType): void
+  (e: 'update:cardNumber', val: string): void
+  (e: 'update:cardExpiry', val: string): void
+  (e: 'update:cardCvc', val: string): void
+  (e: 'update:cardName', val: string): void
   (e: 'proceed'): void
   (e: 'confirm'): void
   (e: 'back'): void
@@ -52,13 +60,17 @@ function formatMoney(amount: number): string {
 
 <template>
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-card" :class="step === 'vietqr_pay' ? 'modal-md' : 'modal-md'">
+    <div class="modal-card modal-md">
       <!-- Modal Header -->
       <div class="modal-header">
         <div class="modal-title-box">
-          <span class="material-symbols-outlined header-icon">account_balance_wallet</span>
+          <span class="material-symbols-outlined header-icon">
+            {{ step === 'stripe_pay' ? 'credit_card' : 'account_balance_wallet' }}
+          </span>
           <h3 class="modal-title">
-            {{ step === 'vietqr_pay' ? 'Chuyển Khoản Nạp Tiền VietQR 24/7' : 'Nạp Tiền Vào Ví Hội Viên' }}
+            <template v-if="step === 'sepay_pay'">Chuyển Khoản Nạp Tiền VietQR SePay 24/7</template>
+            <template v-else-if="step === 'stripe_pay'">Thanh Toán Thẻ Quốc Tế Qua Stripe</template>
+            <template v-else>Nạp Tiền Vào Ví Hội Viên</template>
           </h3>
         </div>
         <button class="modal-close-btn" @click="emit('close')" aria-label="Đóng">
@@ -134,61 +146,47 @@ function formatMoney(amount: number): string {
             <span>Phương thức thanh toán:</span>
           </label>
           <div class="methods-list">
-            <!-- VietQR -->
-            <label class="method-option-card" :class="{ selected: method === 'vietqr' }">
+            <!-- 1. SePay VietQR -->
+            <label class="method-option-card" :class="{ selected: method === 'sepay' }">
               <input
                 type="radio"
                 name="wallet-pay-method"
-                value="vietqr"
-                :checked="method === 'vietqr'"
+                value="sepay"
+                :checked="method === 'sepay'"
                 class="method-radio"
-                @change="emit('update:method', 'vietqr')"
+                @change="emit('update:method', 'sepay')"
               />
               <div class="method-meta">
                 <div class="method-title-row">
                   <span class="material-symbols-outlined method-icon text-accent">qr_code_scanner</span>
-                  <strong>Chuyển khoản VietQR Napas247 (Khuyên dùng)</strong>
+                  <strong>Chuyển khoản VietQR SePay (Khuyên dùng)</strong>
                   <span class="instant-pill">Tức thì 3s</span>
                 </div>
-                <p class="method-desc">Mở ứng dụng ngân hàng quét mã QR, hệ thống tự động cộng số dư 24/7 không cần chờ duyệt.</p>
+                <p class="method-desc">
+                  Quét mã VietQR chuyển khoản liên ngân hàng 24/7 qua cổng SePay tự động cộng số dư tức thì sau 3 giây.
+                </p>
               </div>
             </label>
 
-            <!-- VNPay -->
-            <label class="method-option-card" :class="{ selected: method === 'vnpay' }">
+            <!-- 2. Stripe Card -->
+            <label class="method-option-card" :class="{ selected: method === 'stripe' }">
               <input
                 type="radio"
                 name="wallet-pay-method"
-                value="vnpay"
-                :checked="method === 'vnpay'"
+                value="stripe"
+                :checked="method === 'stripe'"
                 class="method-radio"
-                @change="emit('update:method', 'vnpay')"
+                @change="emit('update:method', 'stripe')"
               />
               <div class="method-meta">
                 <div class="method-title-row">
-                  <span class="material-symbols-outlined method-icon">payments</span>
-                  <strong>Cổng VNPAY (Thẻ ATM & QR Ngân hàng)</strong>
+                  <span class="material-symbols-outlined method-icon">credit_card</span>
+                  <strong>Cổng thanh toán quốc tế Stripe</strong>
+                  <span class="stripe-pill">Bảo mật SSL</span>
                 </div>
-                <p class="method-desc">Thanh toán qua cổng quốc gia VNPAY hỗ trợ hơn 40 ngân hàng nội địa.</p>
-              </div>
-            </label>
-
-            <!-- MoMo -->
-            <label class="method-option-card" :class="{ selected: method === 'momo' }">
-              <input
-                type="radio"
-                name="wallet-pay-method"
-                value="momo"
-                :checked="method === 'momo'"
-                class="method-radio"
-                @change="emit('update:method', 'momo')"
-              />
-              <div class="method-meta">
-                <div class="method-title-row">
-                  <span class="material-symbols-outlined method-icon">account_balance_wallet</span>
-                  <strong>Ví Điện Tử MoMo</strong>
-                </div>
-                <p class="method-desc">Thanh toán qua ứng dụng ví MoMo với mã QR động.</p>
+                <p class="method-desc">
+                  Hỗ trợ thẻ tín dụng / ghi nợ quốc tế Visa, MasterCard, JCB, Apple Pay với chuẩn mã hóa PCI-DSS Level 1.
+                </p>
               </div>
             </label>
           </div>
@@ -216,17 +214,17 @@ function formatMoney(amount: number): string {
         </div>
       </div>
 
-      <!-- Step 2: VietQR Direct Payment -->
-      <div v-else-if="step === 'vietqr_pay'" class="modal-body vietqr-body">
+      <!-- Step 2A: SePay VietQR Direct Payment -->
+      <div v-else-if="step === 'sepay_pay'" class="modal-body vietqr-body">
         <div class="vqr-instructions">
           <p class="vqr-lead">
-            Quét mã QR bằng ứng dụng ngân hàng bất kỳ để hoàn tất nạp tiền tự động:
+            Quét mã QR SePay bằng ứng dụng ngân hàng bất kỳ để hoàn tất nạp tiền tự động:
           </p>
         </div>
 
         <div class="vqr-card-container">
           <div class="vqr-qr-frame">
-            <img :src="transferInfo.qrUrl" alt="VietQR Payment Code" class="vqr-image" />
+            <img :src="transferInfo.qrUrl" alt="VietQR SePay Payment Code" class="vqr-image" />
           </div>
 
           <div class="vqr-details-table">
@@ -279,14 +277,91 @@ function formatMoney(amount: number): string {
 
         <div class="vqr-listening-pill">
           <span class="pulse-dot"></span>
-          <span>Hệ thống đang tự động lắng nghe giao dịch qua Napas247...</span>
+          <span>Hệ thống SePay đang tự động lắng nghe giao dịch chuyển khoản...</span>
+        </div>
+      </div>
+
+      <!-- Step 2B: Stripe Card Payment Form -->
+      <div v-else-if="step === 'stripe_pay'" class="modal-body stripe-body">
+        <div class="stripe-badge-banner">
+          <span class="material-symbols-outlined lock-icon">lock</span>
+          <span>Thanh toán bảo mật trực tiếp qua cổng <strong>Stripe</strong> (Mã hóa SSL 256-bit)</span>
+        </div>
+
+        <div class="stripe-form">
+          <div class="form-group">
+            <label class="form-label">
+              <span class="material-symbols-outlined label-icon">credit_card</span>
+              <span>Số thẻ tín dụng / ghi nợ:</span>
+            </label>
+            <input
+              type="text"
+              :value="cardNumber"
+              class="form-input-luxury font-mono"
+              placeholder="4242 •••• •••• 4242"
+              maxlength="19"
+              @input="emit('update:cardNumber', ($event.target as HTMLInputElement).value)"
+            />
+          </div>
+
+          <div class="stripe-row-2col">
+            <div class="form-group">
+              <label class="form-label">
+                <span class="material-symbols-outlined label-icon">calendar_month</span>
+                <span>Hạn thẻ (MM/YY):</span>
+              </label>
+              <input
+                type="text"
+                :value="cardExpiry"
+                class="form-input-luxury font-mono"
+                placeholder="12/28"
+                maxlength="5"
+                @input="emit('update:cardExpiry', ($event.target as HTMLInputElement).value)"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <span class="material-symbols-outlined label-icon">pin</span>
+                <span>Mã CVC/CVV:</span>
+              </label>
+              <input
+                type="password"
+                :value="cardCvc"
+                class="form-input-luxury font-mono"
+                placeholder="•••"
+                maxlength="4"
+                @input="emit('update:cardCvc', ($event.target as HTMLInputElement).value)"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <span class="material-symbols-outlined label-icon">person</span>
+              <span>Tên in trên thẻ:</span>
+            </label>
+            <input
+              type="text"
+              :value="cardName"
+              class="form-input-luxury"
+              placeholder="NGUYEN VAN A"
+              @input="emit('update:cardName', ($event.target as HTMLInputElement).value)"
+            />
+          </div>
+        </div>
+
+        <div class="stripe-summary-pill">
+          <span>Số tiền nạp qua thẻ: </span>
+          <strong class="font-mono text-primary">{{ formatMoney(amount) }}</strong>
+          <span>(Miễn phí giao dịch)</span>
         </div>
       </div>
 
       <!-- Modal Footer -->
       <div class="modal-footer">
         <button
-          v-if="step === 'vietqr_pay'"
+          v-if="step !== 'select'"
           type="button"
           class="btn btn-outline"
           @click="emit('back')"
@@ -315,7 +390,7 @@ function formatMoney(amount: number): string {
         </button>
 
         <button
-          v-else-if="step === 'vietqr_pay'"
+          v-else-if="step === 'sepay_pay'"
           type="button"
           class="btn btn-primary"
           :disabled="processing"
@@ -324,6 +399,18 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined">check_circle</span>
           <span v-if="processing">Đang xác thực...</span>
           <span v-else>Xác Nhận Đã Chuyển Tiền</span>
+        </button>
+
+        <button
+          v-else-if="step === 'stripe_pay'"
+          type="button"
+          class="btn btn-primary"
+          :disabled="processing"
+          @click="emit('confirm')"
+        >
+          <span class="material-symbols-outlined">lock</span>
+          <span v-if="processing">Đang xử lý thẻ...</span>
+          <span v-else>Nạp Ngay {{ formatMoney(amount) }} Qua Stripe</span>
         </button>
       </div>
     </div>
@@ -346,7 +433,7 @@ function formatMoney(amount: number): string {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .form-label {
@@ -514,6 +601,15 @@ function formatMoney(amount: number): string {
   padding: 2px 6px;
   border-radius: 4px;
   background: #10b981;
+  color: #ffffff;
+}
+
+.stripe-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #635bff;
   color: #ffffff;
 }
 
@@ -723,5 +819,62 @@ function formatMoney(amount: number): string {
   100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
+}
+
+/* Stripe Form Step */
+.stripe-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stripe-badge-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(99, 91, 255, 0.08);
+  border: 1px solid rgba(99, 91, 255, 0.2);
+  color: #635bff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+:global(html.dark) .stripe-badge-banner {
+  background: rgba(99, 91, 255, 0.15);
+  color: #9b95ff;
+}
+
+.lock-icon {
+  font-size: 16px;
+}
+
+.stripe-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stripe-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stripe-summary-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--surface-subtle, #f7f3ed);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:global(html.dark) .stripe-summary-pill {
+  background: var(--surface-subtle, #262024);
 }
 </style>
