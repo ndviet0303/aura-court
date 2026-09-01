@@ -25,9 +25,15 @@ class Tournament extends Model
 
     public function resolveRouteBinding($value, $field = null): ?Model
     {
-        return $this->where('uuid', $value)
-            ->orWhere('id', is_numeric($value) ? (int) $value : 0)
-            ->first();
+        if (Str::isUuid((string) $value)) {
+            return $this->where('uuid', (string) $value)->first();
+        }
+
+        if (is_numeric($value)) {
+            return $this->where('id', (int) $value)->first();
+        }
+
+        return $this->where('uuid', $value)->first();
     }
 
     public function getRouteKeyName(): string

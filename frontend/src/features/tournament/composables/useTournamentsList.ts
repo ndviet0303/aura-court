@@ -1,9 +1,12 @@
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { TournamentItem, CircuitLeaderboardItem, TournamentRegistrationPayload } from '../types/tournament'
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export function useTournamentsList() {
+  const router = useRouter()
+
   const activeTab = ref<'all' | 'open' | 'ongoing' | 'completed' | 'my'>('all')
   const searchQuery = ref('')
   const selectedSport = ref('all')
@@ -105,7 +108,6 @@ export function useTournamentsList() {
 
     processing.value = true
     try {
-      await tournamentApi.checkInParticipant(targetTournament.id, payload)
       targetTournament.current_slots = Math.min(
         targetTournament.max_slots,
         (targetTournament.current_slots || 0) + 1
@@ -113,8 +115,21 @@ export function useTournamentsList() {
       if (!registeredTournamentIds.value.includes(targetTournament.id)) {
         registeredTournamentIds.value.push(targetTournament.id)
       }
-      showNotice(`Đã đăng ký tham gia giải đấu "${targetTournament.name}" thành công!`)
+
+      const tourneyUuid = targetTournament.uuid || targetTournament.id
       selectedTournamentForRegister.value = null
+
+      router.push({
+        name: 'payment',
+        params: { code: `ORD${targetTournament.id}` },
+        query: {
+          tournament_uuid: tourneyUuid,
+          name: payload.name,
+          phone: payload.phone,
+          partner: payload.partnerName,
+          type: 'tournament',
+        },
+      })
     } catch (e: unknown) {
       showNotice(errorMessage(e, `Đã ghi danh tham dự giải "${targetTournament.name}".`))
       selectedTournamentForRegister.value = null

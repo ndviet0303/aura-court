@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
+import { AuraButton, SkeletonLoader } from '@/shared/components'
 import { usePaymentProcessing } from '../composables/usePaymentProcessing'
 
 import PaymentMethodSelector from '../components/PaymentMethodSelector.vue'
@@ -11,6 +12,9 @@ const router = useRouter()
 const store = useBookingStore()
 
 const {
+  loading,
+  isTournament,
+  tournament,
   payment,
   booking,
   court,
@@ -43,19 +47,47 @@ onMounted(() => {
 onUnmounted(() => {
   stopTimers()
 })
+
+function handleDoneTournament() {
+  const targetId = tournament.value?.uuid || tournament.value?.id
+  store.clearPayment()
+  if (targetId) {
+    router.push(`/tournaments/${targetId}/bracket`)
+  } else {
+    router.push('/tournaments')
+  }
+}
 </script>
 
 <template>
   <div class="payment-view-page">
+    <!-- Loading State -->
+    <div v-if="loading" class="payment-loading-wrap">
+      <SkeletonLoader type="rect" width="100%" height="40px" rounded="12px" class="mb-4" />
+      <div class="checkout-main-grid">
+        <div class="checkout-left-col">
+          <SkeletonLoader type="rect" width="100%" height="160px" rounded="16px" />
+          <SkeletonLoader type="rect" width="100%" height="320px" rounded="16px" />
+        </div>
+        <div class="checkout-right-col">
+          <SkeletonLoader type="rect" width="100%" height="380px" rounded="16px" />
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State if No Payment Session -->
-    <div v-if="!payment" class="empty-payment-panel">
+    <div v-else-if="!payment" class="empty-payment-panel">
       <span class="material-symbols-outlined empty-icon">payments</span>
       <h2>Chưa Có Phiên Thanh Toán Nào</h2>
-      <p>Vui lòng chọn sân và khung giờ để tiến hành đặt sân.</p>
-      <RouterLink to="/courts" class="btn-choose-court">
-        <span class="material-symbols-outlined">arrow_back</span>
-        <span>Quay Lại Chọn Sân</span>
-      </RouterLink>
+      <p>Vui lòng chọn sân hoặc giải đấu để tiến hành thanh toán.</p>
+      <div class="empty-actions">
+        <AuraButton to="/courts" variant="primary" size="md" icon="sports_tennis">
+          Chọn Sân Đặt Lịch
+        </AuraButton>
+        <AuraButton to="/tournaments" variant="outline" size="md" icon="emoji_events">
+          Xem Danh Sách Giải Đấu
+        </AuraButton>
+      </div>
     </div>
 
     <!-- Active Payment Session -->
@@ -64,41 +96,47 @@ onUnmounted(() => {
       <div class="checkout-stepper">
         <div class="stepper-step completed">
           <span class="step-circle"><span class="material-symbols-outlined step-check-icon">check</span></span>
-          <span class="step-text">Chọn Sân & Giờ</span>
+          <span class="step-text">{{ isTournament ? 'Ghi Danh VĐV' : 'Chọn Sân & Giờ' }}</span>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step active">
           <span class="step-circle">2</span>
-          <span class="step-text">Thanh Toán</span>
+          <span class="step-text">{{ isTournament ? 'Lệ Phí Giải' : 'Thanh Toán' }}</span>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step">
           <span class="step-circle">3</span>
-          <span class="step-text">Xác Nhận Đặt Sân</span>
+          <span class="step-text">{{ isTournament ? 'Xác Nhận Thi Đấu' : 'Xác Nhận Đặt Sân' }}</span>
         </div>
       </div>
 
       <!-- Main Columns: Left (Player Info & Methods), Right (Summary) -->
       <div class="checkout-main-grid">
         <div class="checkout-left-col">
-          <!-- Player Details Panel -->
+          <!-- Player / Athlete Details Panel -->
           <div class="player-details-panel">
             <h3 class="panel-title">
-              <span class="material-symbols-outlined panel-icon">person</span>
-              <span>Thông Tin Khách Hàng</span>
+              <span class="material-symbols-outlined panel-icon">
+                {{ isTournament ? 'sports_handball' : 'person' }}
+              </span>
+              <span>{{ isTournament ? 'Thông Tin Vận Động Viên Đăng Ký' : 'Thông Tin Khách Hàng' }}</span>
             </h3>
             <div class="player-info-grid">
               <div class="info-item">
-                <span class="info-label">Họ và tên:</span>
+                <span class="info-label">{{ isTournament ? 'Họ và tên VĐV:' : 'Họ và tên:' }}</span>
                 <strong class="info-val">{{ playerDetails.name }}</strong>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Email:</span>
-                <strong class="info-val">{{ playerDetails.email }}</strong>
               </div>
               <div class="info-item">
                 <span class="info-label">Số điện thoại:</span>
                 <strong class="info-val">{{ playerDetails.phone }}</strong>
+              </div>
+              <div v-if="isTournament && playerDetails.partnerName" class="info-item">
+                <span class="info-label">Đồng đội (Partner):</span>
+                <strong class="info-val">{{ playerDetails.partnerName }}</strong>
+              </div>
+              <div v-else class="info-item">
+                <span class="info-label">Email liên hệ:</span>
+                <strong class="info-val">{{ playerDetails.email }}</strong>
               </div>
             </div>
           </div>
@@ -145,12 +183,29 @@ onUnmounted(() => {
     <div v-if="showSuccessModal" class="modal-backdrop">
       <div class="modal-card modal-sm text-center">
         <div class="modal-body success-body">
-          <span class="material-symbols-outlined success-icon">verified</span>
-          <h3>Thanh Toán Thành Công!</h3>
-          <p>Mã đặt sân <strong>{{ payment?.code }}</strong> đã được xác nhận vào hệ thống.</p>
-          <button class="btn-done" @click="store.clearPayment(); router.push('/booking')">
-            Xem Lịch Của Tôi
-          </button>
+          <span class="material-symbols-outlined success-icon">
+            {{ isTournament ? 'emoji_events' : 'verified' }}
+          </span>
+          <h3>{{ isTournament ? 'Ghi Danh Giải Đấu Thành Công!' : 'Thanh Toán Thành Công!' }}</h3>
+          <p>
+            Mã giao dịch <strong>{{ payment?.code }}</strong> đã được hệ thống xác nhận chính thức.
+          </p>
+
+          <div class="success-actions">
+            <template v-if="isTournament">
+              <AuraButton variant="primary" size="md" icon="account_tree" @click="handleDoneTournament">
+                Xem Sơ Đồ Thi Đấu
+              </AuraButton>
+              <AuraButton to="/tournaments" variant="ghost" size="sm" @click="store.clearPayment()">
+                Danh Sách Giải Đấu
+              </AuraButton>
+            </template>
+            <template v-else>
+              <AuraButton variant="primary" size="md" icon="calendar_month" @click="store.clearPayment(); router.push('/booking')">
+                Xem Lịch Của Tôi
+              </AuraButton>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -163,6 +218,16 @@ onUnmounted(() => {
   margin: 0 auto;
   padding: 24px 20px 60px;
   color: var(--ink);
+}
+
+.payment-loading-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
 }
 
 .empty-payment-panel {
@@ -179,6 +244,7 @@ onUnmounted(() => {
 
 .empty-icon {
   font-size: 56px;
+  color: var(--pink-dark, #db2777);
   margin-bottom: 16px;
 }
 
@@ -193,15 +259,11 @@ onUnmounted(() => {
   margin-bottom: 24px;
 }
 
-.btn-choose-court {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 24px;
-  border-radius: 12px;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-weight: 700;
-  text-decoration: none;
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .checkout-stepper {
@@ -250,6 +312,10 @@ onUnmounted(() => {
   color: #fff;
 }
 
+.step-check-icon {
+  font-size: 16px;
+}
+
 .step-text {
   font-size: 13px;
 }
@@ -286,13 +352,21 @@ onUnmounted(() => {
 
 .panel-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-icon {
+  font-size: 20px;
+  color: var(--pink-dark, #db2777);
 }
 
 .player-info-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
 }
 
@@ -311,27 +385,47 @@ onUnmounted(() => {
   font-size: 13px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  padding: 20px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px solid var(--outline);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+
 .success-body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30px 20px;
+  text-align: center;
+  padding: 32px 24px;
 }
 
 .success-icon {
-  font-size: 48px;
+  font-size: 56px;
+  color: #10b981;
   margin-bottom: 12px;
 }
 
-.btn-done {
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
   margin-top: 20px;
-  padding: 12px 24px;
-  border-radius: 10px;
-  border: 0;
-  background: #10b981;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
 }
 
 @media (max-width: 900px) {

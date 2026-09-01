@@ -27,12 +27,21 @@ class ProcessQrPayment
                 return;
             }
             $rawContent = trim((string) ($data['code'] ?? $data['content'] ?? ''));
-            $prefix = (string) config('services.sepay.prefix', 'AUR');
+            $prefix = (string) config('services.sepay.prefix', 'ORD');
 
-            // 1. Direct match
-            $booking = Booking::where('code', $rawContent)->lockForUpdate()->first();
+            $booking = null;
 
-            // 2. Strip prefix if present (e.g. "AUR BK123" -> "BK123" or "AUR123" -> "123")
+            // 1. Extract numeric booking ID from "ORD 12345" or "ORD12345"
+            if (preg_match('/^(?:' . preg_quote($prefix, '/') . '|ORD|AUR)\s*(\d{1,30})$/i', $rawContent, $m)) {
+                $booking = Booking::where('id', (int) $m[1])->lockForUpdate()->first();
+            }
+
+            // 2. Direct match with booking->code
+            if (!$booking) {
+                $booking = Booking::where('code', $rawContent)->lockForUpdate()->first();
+            }
+
+            // 3. Strip prefix if present (e.g. "ORD BK123" -> "BK123")
             if (!$booking && $prefix !== '') {
                 $stripped = trim(preg_replace('/^' . preg_quote($prefix, '/') . '\s*/i', '', $rawContent));
                 if ($stripped !== '') {

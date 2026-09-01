@@ -22,8 +22,8 @@ class PaymentService
         $account = config('services.sepay.account') ?: '83403032005';
         $bank = config('services.sepay.bank') ?: 'TPBank';
         $accountName = config('services.sepay.account_name') ?: 'AURA COURT';
-        $prefix = (string) (config('services.sepay.prefix') ?: 'AUR');
-        $memo = trim($prefix . ' ' . $booking->code);
+        $prefix = (string) (config('services.sepay.prefix') ?: 'ORD');
+        $memo = trim($prefix . $booking->id);
         $query = http_build_query(['acc' => $account, 'bank' => $bank, 'amount' => $booking->total_amount, 'des' => $memo]);
 
         return [

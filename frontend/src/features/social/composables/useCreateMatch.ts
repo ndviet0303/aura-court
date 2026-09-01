@@ -87,10 +87,10 @@ export function useCreateMatch() {
       label: 'Sân tự do / Chưa cố định sân cụ thể',
       icon: 'sports_tennis',
     }
-    const list: DropdownOption[] = courts.value.map((c) => ({
+    const list: DropdownOption[] = courts.value.map((c: any) => ({
       value: c.id,
       label: `${c.name} ${c.venue ? `(${c.venue.name})` : ''}`,
-      sublabel: `${c.sport_type || 'Thể thao'} · ${c.price_per_hour ? new Intl.NumberFormat('vi-VN').format(c.price_per_hour) + '₫/h' : 'Tiêu chuẩn'}`,
+      sublabel: `${c.sport_type || c.sport?.name || 'Thể thao'} · ${c.price_per_hour ? new Intl.NumberFormat('vi-VN').format(c.price_per_hour) + '₫/h' : 'Tiêu chuẩn'}`,
       icon: 'stadium',
     }))
     return [defaultOpt, ...list]
@@ -189,7 +189,7 @@ export function useCreateMatch() {
       split_bill_mode: splitCost.value ? 'auto_split' : 'host_pays',
       host_id: hostUser?.id || 1,
       host_name: hostUser?.name || 'Tôi (Chủ phòng)',
-      host_avatar: hostUser?.avatar,
+      host_avatar: (hostUser as any)?.avatar_url || (hostUser as any)?.avatar,
       host_reputation: 99,
       host_level: 'Level 3.5',
       description: matchDescription.value.trim() || 'Mở kèo giao lưu thân thiện, vui vẻ và rèn luyện thể lực.',
@@ -198,7 +198,7 @@ export function useCreateMatch() {
         {
           id: hostUser?.id || 1,
           name: hostUser?.name || 'Tôi (Chủ phòng)',
-          avatar: hostUser?.avatar,
+          avatar: (hostUser as any)?.avatar_url || (hostUser as any)?.avatar,
           skill_level: 3,
           is_host: true,
           role: 'Host',
@@ -222,7 +222,7 @@ export function useCreateMatch() {
     try {
       const res = await api.get<Court[]>('/courts')
       courts.value = res || []
-      if (courts.value.length > 0 && !selectedCourtId.value) {
+      if (courts.value.length > 0 && !selectedCourtId.value && courts.value[0]) {
         selectedCourtId.value = courts.value[0].id
         if (courts.value[0].venue?.name) {
           selectedVenueName.value = courts.value[0].venue.name

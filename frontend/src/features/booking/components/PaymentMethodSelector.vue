@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { PaymentInfo } from '../types/booking'
 
 const props = defineProps<{
@@ -22,8 +23,18 @@ const emit = defineEmits<{
   (e: 'copy', text: string, label: string): void
 }>()
 
+const copiedKey = ref<string | null>(null)
+
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+}
+
+function handleCopy(key: string, text: string, label: string) {
+  copiedKey.value = key
+  emit('copy', text, label)
+  setTimeout(() => {
+    if (copiedKey.value === key) copiedKey.value = null
+  }, 2000)
 }
 </script>
 
@@ -40,6 +51,7 @@ function formatMoney(amount: number): string {
     <!-- Method Tabs -->
     <div class="method-tabs-bar">
       <button
+        type="button"
         class="method-tab-btn"
         :class="{ active: selectedMethod === 'qr' }"
         @click="emit('update:selectedMethod', 'qr')"
@@ -52,6 +64,7 @@ function formatMoney(amount: number): string {
       </button>
 
       <button
+        type="button"
         class="method-tab-btn"
         :class="{ active: selectedMethod === 'card' }"
         @click="emit('update:selectedMethod', 'card')"
@@ -87,9 +100,18 @@ function formatMoney(amount: number): string {
         <div class="bank-row">
           <span class="row-label">Số tài khoản:</span>
           <div class="copyable-val">
-            <strong class="row-val">{{ payment.accountNumber }}</strong>
-            <button class="btn-copy" title="Sao chép" @click="emit('copy', payment.accountNumber, 'Số tài khoản')">
-              <span class="material-symbols-outlined copy-icon">content_copy</span>
+            <strong class="row-val font-mono">{{ payment.accountNumber }}</strong>
+            <button
+              type="button"
+              class="btn-copy"
+              :class="{ copied: copiedKey === 'accountNumber' }"
+              :title="copiedKey === 'accountNumber' ? 'Đã sao chép!' : 'Sao chép số tài khoản'"
+              @click="handleCopy('accountNumber', payment.accountNumber, 'Số tài khoản')"
+            >
+              <span class="material-symbols-outlined copy-icon">
+                {{ copiedKey === 'accountNumber' ? 'check' : 'content_copy' }}
+              </span>
+              <span class="btn-copy-text">{{ copiedKey === 'accountNumber' ? 'Đã chép' : 'Sao chép' }}</span>
             </button>
           </div>
         </div>
@@ -97,19 +119,37 @@ function formatMoney(amount: number): string {
         <div class="bank-row">
           <span class="row-label">Số tiền:</span>
           <div class="copyable-val">
-            <strong class="row-val text-pink">{{ formatMoney(payment.amount) }}</strong>
-            <button class="btn-copy" title="Sao chép" @click="emit('copy', String(payment.amount), 'Số tiền')">
-              <span class="material-symbols-outlined copy-icon">content_copy</span>
+            <strong class="row-val text-pink font-mono">{{ formatMoney(payment.amount) }}</strong>
+            <button
+              type="button"
+              class="btn-copy"
+              :class="{ copied: copiedKey === 'amount' }"
+              :title="copiedKey === 'amount' ? 'Đã sao chép!' : 'Sao chép số tiền'"
+              @click="handleCopy('amount', String(payment.amount), 'Số tiền')"
+            >
+              <span class="material-symbols-outlined copy-icon">
+                {{ copiedKey === 'amount' ? 'check' : 'content_copy' }}
+              </span>
+              <span class="btn-copy-text">{{ copiedKey === 'amount' ? 'Đã chép' : 'Sao chép' }}</span>
             </button>
           </div>
         </div>
 
-        <div class="bank-row">
+        <div class="bank-row highlight-code-row">
           <span class="row-label">Nội dung chuyển khoản:</span>
           <div class="copyable-val">
-            <strong class="row-val font-mono">{{ payment.code }}</strong>
-            <button class="btn-copy" title="Sao chép" @click="emit('copy', payment.code, 'Nội dung chuyển khoản')">
-              <span class="material-symbols-outlined copy-icon">content_copy</span>
+            <strong class="row-val font-mono memo-code">{{ payment.code }}</strong>
+            <button
+              type="button"
+              class="btn-copy btn-copy-primary"
+              :class="{ copied: copiedKey === 'code' }"
+              :title="copiedKey === 'code' ? 'Đã sao chép!' : 'Sao chép nội dung'"
+              @click="handleCopy('code', payment.code, 'Nội dung chuyển khoản')"
+            >
+              <span class="material-symbols-outlined copy-icon">
+                {{ copiedKey === 'code' ? 'check' : 'content_copy' }}
+              </span>
+              <span class="btn-copy-text">{{ copiedKey === 'code' ? 'Đã chép' : 'Sao chép' }}</span>
             </button>
           </div>
         </div>
@@ -171,6 +211,7 @@ function formatMoney(amount: number): string {
       </div>
 
       <button
+        type="button"
         class="btn-stripe-pay"
         :disabled="isCardProcessing"
         @click="emit('payStripe')"
@@ -201,8 +242,16 @@ function formatMoney(amount: number): string {
 
 .panel-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-icon {
+  font-size: 20px;
+  color: var(--pink-dark, #db2777);
 }
 
 .copy-feedback-badge {
@@ -231,7 +280,7 @@ function formatMoney(amount: number): string {
   color: var(--ink);
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .method-tab-btn:hover {
@@ -240,11 +289,12 @@ function formatMoney(amount: number): string {
 
 .method-tab-btn.active {
   border-color: var(--pink-dark, #db2777);
-  background: rgba(236, 72, 153, 0.05);
+  background: rgba(236, 72, 153, 0.08);
 }
 
 .tab-icon {
   font-size: 24px;
+  color: var(--pink-dark, #db2777);
 }
 
 .tab-label-wrap {
@@ -281,6 +331,7 @@ function formatMoney(amount: number): string {
   height: 220px;
   border-radius: 12px;
   border: 1px solid var(--outline);
+  background: #fff;
 }
 
 .qr-scan-guide {
@@ -300,32 +351,80 @@ function formatMoney(amount: number): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-container, rgba(0, 0, 0, 0.03));
   border: 1px solid var(--outline);
 }
 
+.highlight-code-row {
+  border-color: rgba(236, 72, 153, 0.4);
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.06) 0%, var(--surface-container, rgba(0, 0, 0, 0.02)) 100%);
+}
+
 .row-label {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--muted);
+  font-weight: 500;
 }
 
 .copyable-val {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .row-val {
-  font-size: 13px;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.memo-code {
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .btn-copy {
-  border: 0;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 650;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-copy:hover {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+  transform: translateY(-1px);
+}
+
+.btn-copy-primary {
+  border-color: rgba(236, 72, 153, 0.5);
+  background: rgba(236, 72, 153, 0.1);
+  color: var(--pink-dark, #db2777);
+}
+
+.btn-copy.copied {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.copy-icon {
+  font-size: 16px;
+}
+
+.btn-copy-text {
+  font-size: 11.5px;
 }
 
 .text-pink {
@@ -339,11 +438,47 @@ function formatMoney(amount: number): string {
 }
 
 .stripe-badge-banner {
-  padding: 10px;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
   background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   color: #3b82f6;
   font-size: 12px;
+}
+
+.lock-icon {
+  font-size: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--pink-dark, #db2777);
 }
 
 .card-multi-row {
@@ -361,5 +496,12 @@ function formatMoney(amount: number): string {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  margin-top: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-stripe-pay:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

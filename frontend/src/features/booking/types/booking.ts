@@ -56,6 +56,15 @@ export type PaymentInfo = {
   accountNumber: string
   qrUrl: string
   expiresAt: string
+  type?: 'booking' | 'tournament' | string
+  title?: string
+  tournament?: any
+  athleteDetails?: {
+    name?: string
+    phone?: string
+    partnerName?: string
+    notes?: string
+  }
 }
 
 export type Refund = {

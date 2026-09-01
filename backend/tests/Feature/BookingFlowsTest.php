@@ -145,7 +145,7 @@ class BookingFlowsTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
         $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
 
-        $this->actingAs($user)->getJson("/api/v1/bookings/{$booking->code}/payment")->assertOk()->assertJsonPath('payment.code', $booking->code)->assertJsonPath('payment.amount', 120000);
+        $this->actingAs($user)->getJson("/api/v1/bookings/{$booking->code}/payment")->assertOk()->assertJsonPath('payment.code', "ORD{$booking->id}")->assertJsonPath('payment.amount', 120000);
     }
 
     public function test_customer_can_cancel_one_slot_and_keep_the_remaining_slot(): void
