@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -204,6 +205,12 @@ Route::prefix('v1')->group(function () {
             Route::get('disputes/stats', [AdminDisputeController::class, 'stats']);
             Route::get('disputes/{id}', [AdminDisputeController::class, 'show']);
             Route::post('disputes/{id}/arbitrate', [AdminDisputeController::class, 'arbitrate']);
+            Route::get('contracts', [AdminContractController::class, 'index']);
+            Route::post('contracts', [AdminContractController::class, 'store']);
+            Route::get('contracts/{id}', [AdminContractController::class, 'show']);
+            Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);
+            Route::post('contracts/{id}/invoices/{invoiceId}/pay', [AdminContractController::class, 'payInvoice']);
+            Route::get('contracts.csv', [AdminContractController::class, 'exportCsv']);
             Route::post('upload', [AdminController::class, 'upload']);
         });
     });

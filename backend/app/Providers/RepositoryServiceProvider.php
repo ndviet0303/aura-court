@@ -27,6 +27,8 @@ use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
+use App\Contracts\Repositories\RecurringContractRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Storage\FileStorageService;
 use Illuminate\Support\ServiceProvider;
 
@@ -48,6 +50,7 @@ class RepositoryServiceProvider extends ServiceProvider
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,
         ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
         DisputeRepositoryInterface::class => EloquentDisputeRepository::class,
+        RecurringContractRepositoryInterface::class => EloquentRecurringContractRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
     ];
 

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             HostKycSeeder::class,
             DisputeFinanceSeeder::class,
             MarketplaceSeeder::class,
+            RecurringSeriesSeeder::class,
         ]);
     }
 }

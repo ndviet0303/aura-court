@@ -3,51 +3,40 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import { useAdminContracts } from '../composables/useAdminContracts'
 
+import ContractsKpiBar from '../components/contracts/ContractsKpiBar.vue'
 import ContractsTable from '../components/contracts/ContractsTable.vue'
 import ContractDetailModal from '../components/contracts/ContractDetailModal.vue'
 import ContractCreateModal from '../components/contracts/ContractCreateModal.vue'
+import ContractInvoicePayModal from '../components/contracts/ContractInvoicePayModal.vue'
 
 const { t } = useI18n()
 
 const {
+  loading,
+  saving,
+  actionLoading,
   activeStatusTab,
   searchQuery,
+  selectedVenueId,
   selectedContract,
+  selectedInvoiceForPay,
   showDetailModal,
   showCreateModal,
+  showPayModal,
   notice,
   error,
-  contracts,
+  venues,
+  courts,
   stats,
   filteredContracts,
-  showNotice,
+  loadData,
+  createContract,
+  cancelContract,
+  payInvoice,
+  exportExcel,
   openDetail,
+  openPayModal,
 } = useAdminContracts()
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
-
-function handleCreateContract(payload: any) {
-  contracts.value.unshift({
-    id: Date.now(),
-    contract_code: `CTR-2026-00${contracts.value.length + 1}`,
-    customer_name: payload.customer_name,
-    phone: payload.phone,
-    court_name: payload.court_name,
-    venue_name: 'Downtown Arena (Quận 1)',
-    time_slot: payload.time_slot,
-    weekday: payload.weekday,
-    start_date: '2026-04-01',
-    end_date: '2027-04-01',
-    total_monthly_amount: payload.total_monthly_amount,
-    deposit_amount: 5000000,
-    status: 'active',
-    payment_cycles: [],
-  })
-  showCreateModal.value = false
-  showNotice(t('admin.contracts.createSuccess', { customer: payload.customer_name }))
-}
 </script>
 
 <template>
@@ -63,7 +52,11 @@ function handleCreateContract(payload: any) {
       </div>
 
       <div class="header-actions">
-        <AuraButton variant="outline" @click="showNotice(t('admin.contracts.exportNotice'))">
+        <AuraButton variant="secondary" :disabled="loading" @click="loadData">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span>{{ t('admin.contracts.refreshBtn') }}</span>
+        </AuraButton>
+        <AuraButton variant="outline" @click="exportExcel">
           <span class="material-symbols-outlined icon-18">download</span>
           <span>{{ t('admin.contracts.exportExcel') }}</span>
         </AuraButton>
@@ -74,71 +67,61 @@ function handleCreateContract(payload: any) {
       </div>
     </header>
 
-    <!-- 4 KPI Stat Cards -->
-    <div class="contracts-kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon">contract</span>
-          <span class="kpi-label">{{ t('admin.contracts.activeContracts') }}</span>
-        </div>
-        <strong class="kpi-value">{{ t('admin.contracts.activeContractsCount', { count: stats.activeContracts }) }}</strong>
-        <span class="kpi-trend text-green">{{ t('admin.contracts.activeTrend') }}</span>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-pink">payments</span>
-          <span class="kpi-label">{{ t('admin.contracts.mrrLabel') }}</span>
-        </div>
-        <strong class="kpi-value text-pink">{{ formatMoney(stats.mrrAmount) }}</strong>
-        <span class="kpi-trend">{{ t('admin.contracts.mrrContribution') }}</span>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-yellow">warning</span>
-          <span class="kpi-label">{{ t('admin.contracts.overdueCycles') }}</span>
-        </div>
-        <strong class="kpi-value text-yellow">{{ t('admin.contracts.overdueCount', { count: stats.overdueCycles }) }}</strong>
-        <span class="kpi-trend text-red">{{ t('admin.contracts.overdueWarning') }}</span>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-green">bolt</span>
-          <span class="kpi-label">{{ t('admin.contracts.primeTimeUtilization') }}</span>
-        </div>
-        <strong class="kpi-value text-green">{{ stats.primeTimeUtilization }}%</strong>
-        <span class="kpi-trend">{{ t('admin.contracts.primeTimeHours') }}</span>
-      </div>
+    <!-- Feedback Alerts -->
+    <div v-if="notice" class="alert-pill">
+      <span class="material-symbols-outlined icon-16">check_circle</span>
+      <span>{{ notice }}</span>
+    </div>
+    <div v-if="error" class="alert-pill-error">
+      <span class="material-symbols-outlined icon-16">error</span>
+      <span>{{ error }}</span>
     </div>
 
-    <!-- Alert Notices -->
-    <div v-if="notice" class="alert-pill toast-floating-banner">{{ notice }}</div>
-    <div v-if="error" class="alert-pill-error">{{ error }}</div>
+    <!-- 4 KPI Stat Cards with Skeleton Loading -->
+    <ContractsKpiBar :stats="stats" :loading="loading" />
 
-    <!-- Main Table -->
+    <!-- Contracts Table with Tabs, Search, Venue Filter & Skeletons -->
     <ContractsTable
       :contracts="filteredContracts"
+      :venues="venues"
       :active-status-tab="activeStatusTab"
       :search-query="searchQuery"
+      :selected-venue-id="selectedVenueId"
+      :loading="loading"
       @update:active-status-tab="activeStatusTab = $event"
       @update:search-query="searchQuery = $event"
+      @update:selected-venue-id="selectedVenueId = $event"
       @view-detail="openDetail"
       @open-create="showCreateModal = true"
     />
 
-    <!-- Modals -->
+    <!-- Contract Detail Modal -->
     <ContractDetailModal
       :show="showDetailModal"
       :contract="selectedContract"
+      :action-loading="actionLoading"
       @close="showDetailModal = false"
+      @pay-invoice="(inv) => selectedContract && openPayModal(selectedContract, inv)"
+      @cancel-contract="(id) => cancelContract(id)"
     />
 
+    <!-- Create Contract Modal -->
     <ContractCreateModal
       :show="showCreateModal"
+      :venues="venues"
+      :courts="courts"
+      :saving="saving"
       @close="showCreateModal = false"
-      @create="handleCreateContract"
+      @create="createContract"
+    />
+
+    <!-- Pay Invoice Confirmation Modal -->
+    <ContractInvoicePayModal
+      :show="showPayModal"
+      :target="selectedInvoiceForPay"
+      :loading="actionLoading"
+      @close="showPayModal = false"
+      @confirm="({ seriesId, invoiceId, reference }) => payInvoice(seriesId, invoiceId, reference)"
     />
   </div>
 </template>
@@ -159,7 +142,7 @@ function handleCreateContract(payload: any) {
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .header-title-row {
@@ -169,7 +152,7 @@ function handleCreateContract(payload: any) {
 }
 
 .header-icon {
-  font-size: 26px;
+  font-size: 28px;
   color: var(--pink-dark, #db2777);
 }
 
@@ -189,79 +172,49 @@ function handleCreateContract(payload: any) {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.contracts-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+.btn-primary-pink {
+  background: var(--pink-dark, #db2777) !important;
+  color: #fff !important;
 }
-
-.kpi-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px;
-  border-radius: 14px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-}
-
-.kpi-top-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kpi-icon {
-  font-size: 20px;
-  color: var(--muted);
-}
-
-.kpi-label {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.kpi-value {
-  font-size: 18px;
-}
-
-.kpi-trend {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
 
 .alert-pill {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #10b981;
-  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
   font-size: 13px;
   font-weight: 600;
 }
 
 .alert-pill-error {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #ef4444;
-  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
   font-size: 13px;
   font-weight: 600;
 }
 
-.icon-18 {
-  font-size: 18px;
+.icon-16 { font-size: 16px; }
+.icon-18 { font-size: 18px; }
+
+.spin-icon {
+  animation: spin 1s linear infinite;
 }
 
-@media (max-width: 900px) {
-  .contracts-kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>
