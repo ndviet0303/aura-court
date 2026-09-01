@@ -252,4 +252,29 @@ const { t } = useI18n()
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
+
+:global(html.dark) .kpi-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .kpi-card:hover {
+  border-color: var(--pink-dark, #E58E9F);
+}
+
+:global(html.dark) .kpi-label {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .kpi-number {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .kpi-unit {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .kpi-badge-sub {
+  color: var(--on-surface-variant, #c4b9be);
+}
 </style>

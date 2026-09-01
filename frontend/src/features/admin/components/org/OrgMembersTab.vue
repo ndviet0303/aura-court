@@ -706,6 +706,90 @@ function getRoleLabel(role: string) {
   margin-top: 8px;
 }
 
+:global(html.dark) .org-members-tab-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .invite-box {
+  background: var(--surface-subtle, #262024);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .email-input,
+:global(html.dark) .members-search-input {
+  background: var(--surface-subtle, #262024);
+  color: var(--ink, #FAF7F3);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .members-table-container {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .members-table th {
+  background: var(--surface-subtle, #262024);
+  color: var(--muted, #a89fa4);
+  border-bottom-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .members-table td {
+  border-bottom-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .member-row:hover td {
+  background: var(--soft, #30292e);
+}
+
+:global(html.dark) .user-name,
+:global(html.dark) .email-text {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .user-id,
+:global(html.dark) .phone-text {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .modal-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .modal-title {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .modal-sub {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .role-organization_owner {
+  background: rgba(229, 142, 159, 0.2);
+  color: #f8b4c4;
+}
+
+:global(html.dark) .role-venue_manager {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+:global(html.dark) .role-cashier {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+}
+
+:global(html.dark) .role-staff {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+:global(html.dark) .role-customer {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
 .icon-16 { font-size: 16px; }
 .icon-18 { font-size: 18px; }
 </style>

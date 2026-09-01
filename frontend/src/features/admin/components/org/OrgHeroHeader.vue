@@ -327,6 +327,49 @@ const orgDropdownOptions = computed<DropdownOption[]>(() => {
   font-weight: 700;
 }
 
+:global(html.dark) .org-hero-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .org-avatar-brand {
+  background: var(--surface-subtle, #262024);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .org-name {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .slug-tag {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .meta-chip {
+  color: var(--ink, #FAF7F3);
+  background: var(--surface-subtle, #262024);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .switcher-label {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .tab-btn {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .tab-btn:hover {
+  background: var(--soft, #30292e);
+  color: #ffffff;
+}
+
+:global(html.dark) .tab-btn.active {
+  background: rgba(229, 142, 159, 0.18);
+  color: var(--pink-dark, #E58E9F);
+  border-color: rgba(229, 142, 159, 0.35);
+}
+
 .icon-14 {
   font-size: 14px;
 }

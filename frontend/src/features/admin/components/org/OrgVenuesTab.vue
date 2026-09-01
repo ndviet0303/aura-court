@@ -408,4 +408,44 @@ function goToVenuesManagement() {
 .icon-14 { font-size: 14px; }
 .icon-16 { font-size: 16px; }
 .icon-18 { font-size: 18px; }
+
+:global(html.dark) .org-venues-tab-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .venues-search-input {
+  background: var(--surface-subtle, #262024);
+  color: var(--ink, #FAF7F3);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .venue-item-row {
+  background: var(--surface-subtle, #262024);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .venue-item-row:hover {
+  background: var(--soft, #30292e);
+  border-color: var(--pink-dark, #E58E9F);
+}
+
+:global(html.dark) .v-name {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .v-addr {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .courts-count-pill {
+  background: var(--surface, #1e191c);
+  color: var(--ink, #FAF7F3);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .v-badge {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
 </style>

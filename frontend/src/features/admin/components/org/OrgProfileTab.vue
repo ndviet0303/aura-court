@@ -379,28 +379,55 @@ function handleSave() {
   border-radius: 10px;
   border: 1.5px solid var(--outline);
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  color: var(--ink, #191c1d);
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 600;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .color-chip-card:hover {
   border-color: var(--pink-dark, #db2777);
+  background: var(--soft, #f8f9fa);
+  color: var(--ink, #191c1d);
 }
 
 .color-chip-card.active {
   border-color: var(--pink-dark, #db2777);
-  background: rgba(219, 39, 119, 0.08);
+  background: rgba(219, 39, 119, 0.1);
   color: var(--pink-dark, #db2777);
+  font-weight: 700;
+}
+
+:global(html.dark) .color-chip-card {
+  background: var(--surface-subtle, #262024);
+  color: var(--ink, #FAF7F3);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .color-chip-card:hover {
+  background: var(--soft, #30292e);
+  color: #ffffff;
+  border-color: var(--pink-dark, #E58E9F);
+}
+
+:global(html.dark) .color-chip-card.active {
+  background: rgba(229, 142, 159, 0.18);
+  color: var(--pink-dark, #E58E9F);
+  border-color: var(--pink-dark, #E58E9F);
 }
 
 .color-circle {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
+}
+
+:global(html.dark) .color-circle {
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .custom-color-wrap {
@@ -424,6 +451,11 @@ function handleSave() {
   box-sizing: border-box;
 }
 
+:global(html.dark) .color-picker-btn-wrap {
+  background: var(--surface-subtle, #262024);
+  border-color: var(--outline, #4d4049);
+}
+
 .color-picker-input {
   position: absolute;
   top: -10px;
@@ -443,8 +475,23 @@ function handleSave() {
   box-sizing: border-box;
 }
 
+:global(html.dark) .picker-swatch {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 .custom-hex-input {
   width: 130px;
+}
+
+:global(html.dark) .form-input {
+  background: var(--surface-subtle, #262024);
+  color: var(--ink, #FAF7F3);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .form-input:focus {
+  border-color: var(--pink-dark, #E58E9F);
+  box-shadow: 0 0 0 3px rgba(229, 142, 159, 0.2);
 }
 
 .form-actions {
@@ -452,6 +499,23 @@ function handleSave() {
   justify-content: flex-end;
   border-top: 1px solid var(--outline);
   padding-top: 18px;
+}
+
+:global(html.dark) .org-profile-tab-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .tab-title {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .tab-sub {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .form-label {
+  color: var(--ink, #FAF7F3);
 }
 
 .icon-18 {

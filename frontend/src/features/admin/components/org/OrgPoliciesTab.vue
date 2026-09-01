@@ -362,4 +362,37 @@ input:checked + .slider:before {
     transform: rotate(360deg);
   }
 }
+
+:global(html.dark) .org-policies-tab-card {
+  background: var(--surface, #1e191c);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .policy-card-item {
+  background: var(--surface-subtle, #262024);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .policy-card-item:hover {
+  background: var(--soft, #30292e);
+  border-color: var(--pink-dark, #E58E9F);
+}
+
+:global(html.dark) .p-title {
+  color: var(--ink, #FAF7F3);
+}
+
+:global(html.dark) .p-desc {
+  color: var(--muted, #a89fa4);
+}
+
+:global(html.dark) .num-input {
+  background: var(--surface, #1e191c);
+  color: var(--ink, #FAF7F3);
+  border-color: var(--outline, #4d4049);
+}
+
+:global(html.dark) .unit-tag {
+  color: var(--muted, #a89fa4);
+}
 </style>
