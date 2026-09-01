@@ -23,6 +23,69 @@ class Organization extends Model
         'settings' => 'array',
     ];
 
+    protected $appends = [
+        'support_email',
+        'phone',
+        'address',
+        'brand_color',
+        'logo_url',
+        'auto_approve_booking',
+        'resale_fee_percent',
+        'cancellation_grace_hours',
+        'currency',
+        'timezone',
+    ];
+
+    public function getSupportEmailAttribute(): ?string
+    {
+        return $this->settings['support_email'] ?? null;
+    }
+
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->settings['phone'] ?? null;
+    }
+
+    public function getAddressAttribute(): ?string
+    {
+        return $this->settings['address'] ?? null;
+    }
+
+    public function getBrandColorAttribute(): ?string
+    {
+        return $this->settings['brand_color'] ?? '#6B2D3F';
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->settings['logo_url'] ?? null;
+    }
+
+    public function getAutoApproveBookingAttribute(): bool
+    {
+        return (bool) ($this->settings['auto_approve_booking'] ?? true);
+    }
+
+    public function getResaleFeePercentAttribute(): float
+    {
+        return (float) ($this->settings['resale_fee_percent'] ?? 5);
+    }
+
+    public function getCancellationGraceHoursAttribute(): int
+    {
+        return (int) ($this->settings['cancellation_grace_hours'] ?? 12);
+    }
+
+    public function getCurrencyAttribute(): string
+    {
+        return (string) ($this->settings['currency'] ?? 'VND');
+    }
+
+    public function getTimezoneAttribute(): string
+    {
+        return (string) ($this->settings['timezone'] ?? 'Asia/Ho_Chi_Minh');
+    }
+
     public function venues(): HasMany
     {
         return $this->hasMany(Venue::class);

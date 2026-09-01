@@ -49,11 +49,54 @@ class OrganizationController extends Controller
             'name' => 'sometimes|string|max:160',
             'tax_code' => 'nullable|string|max:50',
             'settings' => 'nullable|array',
+            'support_email' => 'nullable|string|max:160',
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+            'brand_color' => 'nullable|string|max:50',
+            'logo_url' => 'nullable|string|max:255',
+            'auto_approve_booking' => 'nullable|boolean',
+            'resale_fee_percent' => 'nullable|numeric|min:0|max:100',
+            'cancellation_grace_hours' => 'nullable|numeric|min:0|max:168',
+            'currency' => 'nullable|string|max:10',
+            'timezone' => 'nullable|string|max:50',
         ]);
 
-        $organization->update($data);
+        $settings = $organization->settings ?? [];
+        if (isset($data['settings']) && is_array($data['settings'])) {
+            $settings = array_merge($settings, $data['settings']);
+        }
 
-        return response()->json(['organization' => $organization->fresh()]);
+        $settingKeys = [
+            'support_email',
+            'phone',
+            'address',
+            'brand_color',
+            'logo_url',
+            'auto_approve_booking',
+            'resale_fee_percent',
+            'cancellation_grace_hours',
+            'currency',
+            'timezone',
+        ];
+
+        foreach ($settingKeys as $key) {
+            if (array_key_exists($key, $data)) {
+                $settings[$key] = $data[$key];
+            }
+        }
+
+        $updateData = [];
+        if (isset($data['name'])) {
+            $updateData['name'] = $data['name'];
+        }
+        if (array_key_exists('tax_code', $data)) {
+            $updateData['tax_code'] = $data['tax_code'];
+        }
+        $updateData['settings'] = $settings;
+
+        $organization->update($updateData);
+
+        return response()->json(['organization' => $organization->fresh(['venues.courts', 'members.user'])]);
     }
 
     public function members(Request $request, Organization $organization): JsonResponse
@@ -81,11 +124,21 @@ class OrganizationController extends Controller
         );
 
         $data = $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
             'role' => 'required|string|in:' . implode(',', OrganizationMember::VALID_ROLES),
         ]);
 
-        $targetUser = User::where('email', $data['email'])->firstOrFail();
+        $targetUser = User::where('email', $data['email'])->first();
+        if (!$targetUser) {
+            $namePart = explode('@', $data['email'])[0];
+            $targetUser = User::create([
+                'name' => ucfirst($namePart),
+                'email' => $data['email'],
+                'password' => bcrypt(\Illuminate\Support\Str::random(24)),
+                'role' => $data['role'] === OrganizationMember::ROLE_ORGANIZATION_OWNER ? 'admin' : 'staff',
+                'password_set' => false,
+            ]);
+        }
 
         $member = OrganizationMember::updateOrCreate(
             ['organization_id' => $organization->id, 'user_id' => $targetUser->id],

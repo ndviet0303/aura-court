@@ -67,6 +67,8 @@ export const adminApi = {
   // Organizations
   getOrganizations: <T = unknown>() =>
     api.get<T>('/organizations'),
+  getOrganization: <T = unknown>(orgId: number | string) =>
+    api.get<T>(`/organizations/${orgId}`),
   updateOrganization: <T = unknown>(orgId: number | string, payload: any) =>
     api.patch<T>(`/organizations/${orgId}`, payload),
 
