@@ -17,7 +17,15 @@ const emit = defineEmits<{
 const copiedField = ref<string | null>(null)
 
 function formatOrderMemo(invoiceId: number | string): string {
-  const num = parseInt(String(invoiceId).replace(/\D+/g, ''), 10) || 1
+  const cleaned = String(invoiceId).replace(/\D+/g, '')
+  let num = 1
+  if (cleaned.length >= 3) {
+    num = parseInt(cleaned.slice(-8), 10) || 1
+  } else if (cleaned.length > 0) {
+    num = parseInt(cleaned, 10) || 1
+  } else {
+    num = (parseInt(String(invoiceId).replace(/[^0-9a-fA-F]/g, '').slice(-4), 16) % 900000) + 1000
+  }
   const numStr = String(num)
   const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr.slice(0, 11)
   return `ORD${padded}`
@@ -25,7 +33,7 @@ function formatOrderMemo(invoiceId: number | string): string {
 
 const transferMemo = computed(() => {
   if (!props.invoice) return 'ORD001'
-  return formatOrderMemo(props.invoice.id)
+  return formatOrderMemo(props.invoice.uuid || props.invoice.id)
 })
 
 function formatMoney(amount: number): string {

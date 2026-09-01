@@ -68,6 +68,7 @@ export default {
     community: 'Community',
     courts: 'Court List',
     booking: 'My Bookings',
+    recurringBooking: 'Recurring Booking',
     wallet: 'My Wallet',
     resale: 'Resale Market',
     tournaments: 'Tournaments',

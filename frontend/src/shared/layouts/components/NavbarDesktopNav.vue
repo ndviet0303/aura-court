@@ -12,6 +12,7 @@ const isBookingActive = computed(() => {
   const path = route?.path || ''
   return (
     path.startsWith('/booking') ||
+    path.startsWith('/recurring-booking') ||
     path.startsWith('/payment') ||
     path.startsWith('/wallet')
   )
@@ -89,6 +90,16 @@ onBeforeUnmount(() => {
           <RouterLink to="/booking" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
             <span class="material-symbols-outlined">calendar_month</span>
             <span>{{ $t('nav.booking') }}</span>
+          </RouterLink>
+          <RouterLink
+            to="/recurring-booking"
+            class="nav-dropdown-item"
+            :class="{ 'router-link-active': (route?.path || '').startsWith('/recurring-booking') }"
+            role="menuitem"
+            @click="closeMenu"
+          >
+            <span class="material-symbols-outlined">event_repeat</span>
+            <span>{{ $t('nav.recurringBooking') }}</span>
           </RouterLink>
           <RouterLink to="/wallet" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
             <span class="material-symbols-outlined">account_balance_wallet</span>

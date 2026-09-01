@@ -50,8 +50,21 @@ class AdvancedBookingController extends Controller
         return $this->idempotency->run($request, fn () => response()->json(['series' => $this->recurring->createAndConfirm($request->user(), $organization->id, $data)], 201));
     }
 
-    public function invoice(Request $request, MonthlyInvoice $invoice)
+    public function invoice(Request $request, string $invoiceKey)
     {
+        $invoice = MonthlyInvoice::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where(function ($q) use ($invoiceKey) {
+                if (\Illuminate\Support\Str::isUuid($invoiceKey)) {
+                    $q->where('uuid', $invoiceKey);
+                } elseif (is_numeric($invoiceKey)) {
+                    $q->where('id', (int) $invoiceKey);
+                } else {
+                    $q->where('uuid', $invoiceKey);
+                }
+            })
+            ->firstOrFail();
+
         abort_unless($invoice->series()->withoutGlobalScope('tenant_isolation')->where('user_id', $request->user()->id)->exists() || $request->user()->isPlatformAdmin(), 404);
         
         $invoice->load(['series.court.venue', 'series.user']);
@@ -73,8 +86,21 @@ class AdvancedBookingController extends Controller
         ]);
     }
 
-    public function payInvoice(Request $request, MonthlyInvoice $invoice)
+    public function payInvoice(Request $request, string $invoiceKey)
     {
+        $invoice = MonthlyInvoice::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where(function ($q) use ($invoiceKey) {
+                if (\Illuminate\Support\Str::isUuid($invoiceKey)) {
+                    $q->where('uuid', $invoiceKey);
+                } elseif (is_numeric($invoiceKey)) {
+                    $q->where('id', (int) $invoiceKey);
+                } else {
+                    $q->where('uuid', $invoiceKey);
+                }
+            })
+            ->firstOrFail();
+
         abort_unless($invoice->series()->withoutGlobalScope('tenant_isolation')->where('user_id', $request->user()->id)->exists() || $request->user()->isPlatformAdmin(), 404);
         $data = $request->validate(['payment_reference' => 'required|string|max:160']);
         return $this->idempotency->run($request, fn () => response()->json(['invoice' => $this->recurring->payInvoice($invoice, $data['payment_reference'])]));

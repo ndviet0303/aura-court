@@ -68,7 +68,8 @@ export interface SplitShare {
 }
 
 export interface MonthlyInvoiceData {
-  id: number
+  id: number | string
+  uuid?: string
   organization_id: number
   recurring_series_id: number
   period_start: string

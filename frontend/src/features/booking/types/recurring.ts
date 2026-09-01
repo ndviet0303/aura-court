@@ -6,7 +6,8 @@ export type InvoiceStatus = 'pending' | 'paid' | 'overdue'
 export type OccurrenceStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'released'
 
 export interface RecurringInvoice {
-  id: number
+  id: number | string
+  uuid?: string
   recurring_series_id: number
   organization_id?: number
   period_start: string

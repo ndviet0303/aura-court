@@ -19,6 +19,7 @@ const isBookingActive = computed(() => {
   const path = route?.path || ''
   return (
     path.startsWith('/booking') ||
+    path.startsWith('/recurring-booking') ||
     path.startsWith('/payment') ||
     path.startsWith('/wallet')
   )
@@ -38,6 +39,7 @@ const isCommunityActive = computed(() => {
 const bookingItems = [
   { to: '/courts', icon: 'stadium', key: 'nav.courts' },
   { to: '/booking', icon: 'calendar_month', key: 'nav.booking' },
+  { to: '/recurring-booking', icon: 'event_repeat', key: 'nav.recurringBooking' },
   { to: '/wallet', icon: 'account_balance_wallet', key: 'nav.wallet' },
 ]
 
@@ -84,7 +86,7 @@ const communityItems = [
               :key="item.to"
               :to="item.to"
               class="drawer-subnav-item"
-              :class="{ active: route.path === item.to }"
+              :class="{ active: route.path === item.to || (item.to === '/recurring-booking' && route.path.startsWith('/recurring-booking')) }"
               @click="emit('navigate')"
             >
               <span class="material-symbols-outlined sub-icon">{{ item.icon }}</span>

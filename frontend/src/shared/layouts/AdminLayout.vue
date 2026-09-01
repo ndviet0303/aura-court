@@ -86,7 +86,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/schedule"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/schedule' || route.path === '/admin/operating-hours' }"
+            :class="{ active: route.path === '/admin/schedule' }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">schedule</span>
@@ -136,7 +136,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/payouts"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/payouts' || route.path.startsWith('/admin/payouts') || route.path === '/admin/payouts-settlement' }"
+            :class="{ active: route.path.startsWith('/admin/payouts') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">account_balance_wallet</span>
@@ -146,7 +146,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/reconciliation"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/reconciliation' || route.path.startsWith('/admin/reconciliation') || route.path.startsWith('/admin/financial-reconciliation') }"
+            :class="{ active: route.path.startsWith('/admin/reconciliation') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">analytics</span>
@@ -156,7 +156,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/financial-exceptions"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/financial-exceptions' || route.path.startsWith('/admin/exceptions') || route.path.startsWith('/admin/audit') }"
+            :class="{ active: route.path.startsWith('/admin/financial-exceptions') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">shield</span>
@@ -166,7 +166,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/kyc"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/kyc' || route.path.startsWith('/admin/kyc') }"
+            :class="{ active: route.path.startsWith('/admin/kyc') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">verified_user</span>
@@ -176,7 +176,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/disputes"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/disputes' || route.path.startsWith('/admin/dispute') || route.path.startsWith('/admin/arbitration') }"
+            :class="{ active: route.path.startsWith('/admin/disputes') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">gavel</span>
@@ -186,7 +186,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/staff"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/staff' || route.path.startsWith('/admin/staff') || route.path === '/admin/permissions' }"
+            :class="{ active: route.path.startsWith('/admin/staff') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">badge</span>
@@ -196,7 +196,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/tournaments"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/tournaments' || route.path.startsWith('/admin/tournaments') || route.path === '/admin/bracket' }"
+            :class="{ active: route.path.startsWith('/admin/tournaments') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">account_tree</span>
@@ -209,7 +209,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/pos"
             class="sidebar-nav-item"
-            :class="{ active: route.path === '/admin/pos' || route.path === '/pos' || route.path.startsWith('/admin/pos') }"
+            :class="{ active: route.path.startsWith('/admin/pos') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">point_of_sale</span>
@@ -219,7 +219,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/shifts"
             class="sidebar-nav-item"
-            :class="{ active: route.path.startsWith('/admin/shift') || route.path.startsWith('/admin/cash-reconciliation') }"
+            :class="{ active: route.path.startsWith('/admin/shifts') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">receipt_long</span>
@@ -229,7 +229,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/inventory"
             class="sidebar-nav-item"
-            :class="{ active: route.path.startsWith('/admin/inventory') || route.path === '/admin/warehouse' || route.path === '/admin/stock' }"
+            :class="{ active: route.path.startsWith('/admin/inventory') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">inventory_2</span>
@@ -239,7 +239,7 @@ function closeMobileSidebar() {
           <RouterLink
             to="/admin/membership"
             class="sidebar-nav-item"
-            :class="{ active: route.path.startsWith('/admin/membership') || route.path.startsWith('/admin/loyalty') }"
+            :class="{ active: route.path.startsWith('/admin/membership') }"
             @click="closeMobileSidebar"
           >
             <span class="material-symbols-outlined nav-icon">card_membership</span>

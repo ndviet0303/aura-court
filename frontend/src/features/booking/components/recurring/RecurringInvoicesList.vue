@@ -26,8 +26,9 @@ function formatDate(d: string): string {
   return d.slice(0, 10)
 }
 
-function openInvoiceDetail(invoiceId: number) {
-  router.push(`/recurring-booking/cycles/${invoiceId}`)
+function openInvoiceDetail(inv: RecurringInvoice) {
+  const key = inv.uuid || inv.id
+  router.push(`/recurring-booking/cycles/${key}`)
 }
 </script>
 
@@ -161,7 +162,7 @@ function openInvoiceDetail(invoiceId: number) {
             variant="primary"
             size="sm"
             icon="payments"
-            @click="openInvoiceDetail(inv.id)"
+            @click="openInvoiceDetail(inv)"
           >
             <span>{{ inv.status === 'paid' ? 'Xem Chi Tiết Lịch Buổi' : 'Thanh Toán Ngay (VietQR)' }}</span>
           </AuraButton>

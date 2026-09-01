@@ -36,8 +36,9 @@ function formatFrequency(freq: string): string {
   }
 }
 
-function openInvoiceDetail(invoiceId: number) {
-  router.push(`/recurring-booking/cycles/${invoiceId}`)
+function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number | string) {
+  const key = typeof inv === 'object' ? (inv.uuid || inv.id) : inv
+  router.push(`/recurring-booking/cycles/${key}`)
 }
 </script>
 
@@ -195,7 +196,7 @@ function openInvoiceDetail(invoiceId: number) {
                   variant="secondary"
                   size="sm"
                   icon="visibility"
-                  @click="openInvoiceDetail(inv.id)"
+                  @click="openInvoiceDetail(inv)"
                 >
                   <span>Chi tiết & Thanh toán</span>
                 </AuraButton>

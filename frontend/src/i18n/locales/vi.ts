@@ -68,6 +68,7 @@ export default {
     community: 'Cộng đồng',
     courts: 'Danh sách sân',
     booking: 'Lịch đặt sân',
+    recurringBooking: 'Đặt sân định kỳ',
     wallet: 'Ví của tôi',
     resale: 'Chợ nhượng sân',
     tournaments: 'Giải đấu',

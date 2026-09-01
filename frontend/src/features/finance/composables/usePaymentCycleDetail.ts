@@ -36,7 +36,15 @@ export function usePaymentCycleDetail(invoiceId: number | string) {
   }
 
   function formatOrderMemo(id: number | string): string {
-    const num = parseInt(String(id).replace(/\D+/g, ''), 10) || 1
+    const cleaned = String(id).replace(/\D+/g, '')
+    let num = 1
+    if (cleaned.length >= 3) {
+      num = parseInt(cleaned.slice(-8), 10) || 1
+    } else if (cleaned.length > 0) {
+      num = parseInt(cleaned, 10) || 1
+    } else {
+      num = (parseInt(String(id).replace(/[^0-9a-fA-F]/g, '').slice(-4), 16) % 900000) + 1000
+    }
     const numStr = String(num)
     const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr.slice(0, 11)
     return `ORD${padded}`
@@ -47,8 +55,9 @@ export function usePaymentCycleDetail(invoiceId: number | string) {
     paying.value = true
     error.value = ''
     try {
-      const memo = formatOrderMemo(invoice.value.id)
-      await apiV2.post(`/monthly-invoices/${invoice.value.id}/pay`, {
+      const key = invoice.value.uuid || invoice.value.id
+      const memo = formatOrderMemo(key)
+      await apiV2.post(`/monthly-invoices/${key}/pay`, {
         payment_reference: `vietqr-${invoice.value.id}-${memo}-${Date.now()}`,
       })
       invoice.value.status = 'paid'
