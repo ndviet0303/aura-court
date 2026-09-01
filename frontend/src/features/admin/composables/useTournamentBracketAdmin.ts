@@ -1,29 +1,38 @@
 import { ref, computed, onMounted } from 'vue'
 import type { Participant, FixtureMatch, TournamentAdminData } from '../types/tournamentAdmin'
+import type { TournamentItem } from '@/features/tournament/types/tournament'
 import { tournamentApi } from '@/features/tournament/api/tournamentApi'
 import { getAvatarUrl } from '@/lib/avatar'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export function useTournamentBracketAdmin() {
   const loading = ref(false)
+  const loadingDetails = ref(false)
+  const isGenerating = ref(false)
+  const saving = ref(false)
+
+  // Tournaments list & selection
+  const tournamentsList = ref<TournamentItem[]>([])
+  const selectedTournamentId = ref<number | null>(null)
+
   const tournament = ref<TournamentAdminData>({
     id: 1,
-    name: 'Aura Summer Open 2026',
-    category: "Cầu Lông Đơn Nam (Men's Singles)",
+    name: 'Aura Tournament',
+    category: 'Open Championship',
     sport: 'badminton',
     format: 'single_elimination',
     status: 'open',
-    prizePool: '100.000.000 ₫',
-    prizePoolUsd: '$10,000',
+    prizePool: '20.000.000 ₫',
+    prizePoolUsd: '$800',
     startDate: '2026-08-15',
     endDate: '2026-08-18',
-    datesFormatted: '15 - 18 Tháng 8, 2026',
-    venue: 'Aura Center Court A',
-    city: 'Quận 1, TP. Hồ Chí Minh',
+    datesFormatted: '15 - 18/08/2026',
+    venue: 'Aura Court 1',
+    city: 'TP. Hồ Chí Minh',
     courtsAvailable: 4,
-    maxSlots: 32,
-    entryFee: '500.000 ₫ / VĐV',
-    description: 'Giải đấu mùa hè danh giá nhất hệ thống Aura Court.',
+    maxSlots: 16,
+    entryFee: '300.000 ₫ / VĐV',
+    description: 'Hệ thống giải đấu thể thao phong trào Aura Circuit.',
     version: 1,
     seedingRule: 'standard',
   })
@@ -31,12 +40,10 @@ export function useTournamentBracketAdmin() {
   const currentWizardStep = ref<number>(3)
   const activeSubNav = ref<'bracket-management' | 'athlete-check-in' | 'live-referee-console' | 'tournament-overview'>('bracket-management')
   const selectedRoundFilter = ref<'all' | 'r16' | 'qf' | 'sf' | 'final'>('all')
-  const zoomLevel = ref<number>(1)
 
   // Feedback State
   const notice = ref('')
   const error = ref('')
-  const isGenerating = ref(false)
 
   function showNotice(msg: string) {
     notice.value = msg
@@ -60,7 +67,7 @@ export function useTournamentBracketAdmin() {
   const checkInSearchQuery = ref('')
 
   const checkInMetrics = computed(() => {
-    const total = participants.value.length || 32
+    const total = participants.value.length
     const checkedInCount = participants.value.filter((p) => p.checkedIn || p.status === 'checked_in').length
     const pending_count = total - checkedInCount
     const percentage = total > 0 ? Math.round((checkedInCount / total) * 100) : 0
@@ -98,7 +105,7 @@ export function useTournamentBracketAdmin() {
     ath.status = nextState ? 'checked_in' : 'pending'
     if (nextState) {
       ath.checkInTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-      showNotice(`Đã điểm danh VĐV: ${ath.name}`)
+      showNotice(`Đã điểm danh: ${ath.name}`)
     } else {
       ath.checkInTime = undefined
       showNotice(`Đã huỷ điểm danh: ${ath.name}`)
@@ -106,8 +113,8 @@ export function useTournamentBracketAdmin() {
 
     try {
       await tournamentApi.checkInParticipant(ath.id, { checked_in: nextState })
-    } catch {
-      // optimistic check-in
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể cập nhật trạng thái điểm danh.'))
     }
   }
 
@@ -116,16 +123,46 @@ export function useTournamentBracketAdmin() {
 
   // Live Referee Console Match
   const liveMatch = ref({
-    matchCode: 'QF-M01',
-    courtName: 'Court 1 - Show Court',
-    playerA: { name: 'Sarah Jenkins', club: 'Apex Club', seed: 2, score: 21, sets: [21, 19], isServing: true },
-    playerB: { name: 'Marcus Chen', club: 'Independent', score: 18, sets: [18, 21], isServing: false },
-    currentSet: 3,
+    fixtureId: 1,
+    matchCode: 'M-01',
+    courtName: 'Sân 1 - Sân Chính',
+    playerA: { id: 1, name: 'Vận động viên 1', club: 'Aura Club', seed: 1, score: 0, sets: [21, 19], isServing: true },
+    playerB: { id: 2, name: 'Vận động viên 2', club: 'Tự do', seed: 2, score: 0, sets: [18, 21], isServing: false },
+    currentSet: 1,
     hasConflict: false,
-    conflictDesc: 'Score Synchronization Conflict: Remote desk submitted 19-18 vs Local 21-18.',
+    conflictDesc: 'Xung đột đồng bộ tỷ số từ trọng tài phụ: 19-18 so với máy chủ 21-18.',
     isSwappedSides: false,
     penalties: [] as Array<{ player: string; type: string; reason: string; time: string }>,
   })
+
+  function syncLiveMatchFromFixtures() {
+    if (matches.value.length > 0) {
+      const active = matches.value.find((m) => m.status === 'live') || matches.value[0]
+      if (active) {
+        liveMatch.value.fixtureId = active.id
+        liveMatch.value.matchCode = `R${active.roundNumber}-M0${active.matchNumber}`
+        liveMatch.value.courtName = active.courtName || 'Sân 1'
+        liveMatch.value.playerA = {
+          id: active.player1?.id || 1,
+          name: active.player1?.name || 'VĐV 1',
+          club: active.player1?.club || 'Aura Club',
+          seed: active.player1?.seed || 1,
+          score: active.player1?.sets?.[0] || 0,
+          sets: active.player1?.sets || [21, 19],
+          isServing: true,
+        }
+        liveMatch.value.playerB = {
+          id: active.player2?.id || 2,
+          name: active.player2?.name || 'VĐV 2',
+          club: active.player2?.club || 'Tự do',
+          seed: active.player2?.seed || 2,
+          score: active.player2?.sets?.[0] || 0,
+          sets: active.player2?.sets || [18, 21],
+          isServing: false,
+        }
+      }
+    }
+  }
 
   function incrementScoreA() {
     liveMatch.value.playerA.score++
@@ -145,7 +182,7 @@ export function useTournamentBracketAdmin() {
 
   function switchEnds() {
     liveMatch.value.isSwappedSides = !liveMatch.value.isSwappedSides
-    showNotice('Đã đổi sân cho 2 vận động viên!')
+    showNotice('Đã đổi sân cho hai bên!')
   }
 
   function simulateConflict() {
@@ -157,78 +194,219 @@ export function useTournamentBracketAdmin() {
     showNotice('Đã đồng bộ kết quả tỷ số từ máy chủ.')
   }
 
-  function regenerateBracketTree() {
-    isGenerating.value = true
-    setTimeout(() => {
-      isGenerating.value = false
-      showNotice('Đã tái tạo bảng phân nhánh theo hạt giống!')
-    }, 600)
+  async function saveRefereeScore() {
+    saving.value = true
+    try {
+      const winnerId =
+        liveMatch.value.playerA.score >= liveMatch.value.playerB.score
+          ? liveMatch.value.playerA.id
+          : liveMatch.value.playerB.id
+
+      await tournamentApi.scoreFixture(tournament.value.id, liveMatch.value.fixtureId, {
+        expected_version: tournament.value.version,
+        winner_id: winnerId,
+        score: {
+          p1: liveMatch.value.playerA.score,
+          p2: liveMatch.value.playerB.score,
+        },
+      })
+      showNotice(`Đã lưu kết quả trận đấu (${liveMatch.value.playerA.score} - ${liveMatch.value.playerB.score})!`)
+      await loadTournamentData(tournament.value.id)
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể cập nhật tỷ số trận đấu.'))
+    } finally {
+      saving.value = false
+    }
   }
 
-  async function loadTournamentData() {
-    loading.value = true
+  async function regenerateBracketTree() {
+    isGenerating.value = true
+    try {
+      await tournamentApi.regenerateBracket(tournament.value.id)
+      await loadTournamentData(tournament.value.id)
+      showNotice('Đã tái tạo bảng phân nhánh theo hạt giống thành công!')
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể tái tạo bảng phân nhánh.'))
+    } finally {
+      isGenerating.value = false
+    }
+  }
+
+  async function saveMatchScore(updated: FixtureMatch, scoreP1?: number, scoreP2?: number) {
+    saving.value = true
+    try {
+      const p1Score = scoreP1 ?? (updated.player1.sets[0] ?? 21)
+      const p2Score = scoreP2 ?? (updated.player2.sets[0] ?? 18)
+      const winnerId = updated.winnerId || (p1Score >= p2Score ? updated.player1.id : updated.player2.id)
+
+      if (winnerId) {
+        await tournamentApi.scoreFixture(tournament.value.id, updated.id, {
+          expected_version: tournament.value.version,
+          winner_id: winnerId,
+          score: {
+            p1: p1Score,
+            p2: p2Score,
+          },
+        })
+      }
+      showNotice(`Đã cập nhật kết quả trận đấu #${updated.matchNumber}!`)
+      await loadTournamentData(tournament.value.id)
+      return true
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể lưu kết quả trận đấu.'))
+      return false
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function createTournament(payload: any) {
+    saving.value = true
+    try {
+      const res = await tournamentApi.create<any>(payload)
+      const newTournament = res?.tournament || res
+      showNotice(`Đã tạo giải đấu "${newTournament.name || payload.name}" thành công!`)
+      await loadTournaments()
+      if (newTournament?.id) {
+        await selectTournament(newTournament.id)
+      }
+      return true
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể tạo giải đấu mới.'))
+      return false
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function selectTournament(id: number | string) {
+    selectedTournamentId.value = Number(id)
+    await loadTournamentData(Number(id))
+  }
+
+  async function loadTournamentData(id: number) {
+    loadingDetails.value = true
     error.value = ''
     try {
-      const res = await tournamentApi.getById<any>(tournament.value.id)
+      const res = await tournamentApi.getById<any>(id)
       if (res) {
-        if (res.name) tournament.value.name = res.name
-        if (res.participants) {
-          participants.value = res.participants.map((p: any) => ({
-            id: p.id,
-            seed: p.seed,
-            name: p.user?.name || p.name || 'VĐV',
-            club: p.club || 'Aura Club',
-            level: p.level || 'Lvl 4',
-            avatar: p.user?.avatar || getAvatarUrl(p.name || 'VĐV'),
-            checkedIn: p.checked_in ?? false,
-            status: p.checked_in ? 'checked_in' : 'pending',
-            paid: p.paid ?? true,
-            racketChecked: p.racket_checked ?? true,
-            warmupCourt: p.warmup_court || 'Sân 1',
-            qrCode: p.qr_code || `ATH-${p.id}`,
-            phone: p.user?.phone || p.phone || '—',
-            category: p.category || "Đơn Nam",
-          }))
+        tournament.value = {
+          id: res.id,
+          name: res.name || 'Aura Tournament',
+          category: res.category || 'Open Championship',
+          sport: res.sport || 'badminton',
+          format: res.format || 'single_elimination',
+          status: res.status || 'open',
+          prizePool: res.prize_pool || '20.000.000 ₫',
+          prizePoolUsd: res.prize_pool_usd || '$800',
+          startDate: res.start_date || '2026-08-15',
+          endDate: res.end_date || '2026-08-18',
+          datesFormatted: res.dates || '15 - 18/08/2026',
+          venue: res.venue || 'Aura Sport Complex',
+          city: res.city || 'TP. Hồ Chí Minh',
+          courtsAvailable: res.courts_available || 4,
+          maxSlots: res.max_slots || 16,
+          entryFee: res.entry_fee || '300.000 ₫ / VĐV',
+          description: res.description || '',
+          version: res.version || 1,
+          seedingRule: 'standard',
         }
-        if (res.fixtures) {
-          matches.value = res.fixtures.map((f: any) => ({
+
+        participants.value = (res.participants || []).map((p: any) => ({
+          id: p.id,
+          seed: p.seed,
+          name: p.user?.name || p.name || `VĐV #${p.id}`,
+          club: p.club || 'Aura Club',
+          level: p.level || 'Hạng B',
+          avatar: p.avatar || getAvatarUrl(p.name || 'VĐV'),
+          checkedIn: p.checked_in ?? false,
+          status: p.checked_in ? 'checked_in' : 'pending',
+          paid: p.paid ?? true,
+          racketChecked: p.racket_checked ?? true,
+          warmupCourt: p.warmup_court || 'Sân 1',
+          qrCode: p.qr_code || `ATH-${p.id}`,
+          phone: p.user?.phone || p.phone || '0901234567',
+          category: p.category || (res.sport === 'pickleball' ? 'Đôi Open' : 'Đơn Nam'),
+        }))
+
+        matches.value = (res.fixtures || [])
+          .map((f: any) => ({
             id: f.id,
             roundNumber: f.round || 1,
-            roundName: f.round_name || 'Vòng 1',
+            roundName: f.round === 1 ? 'Vòng 1' : f.round === 2 ? 'Tứ Kết' : f.round === 3 ? 'Bán Kết' : 'Chung Kết',
             position: f.position || 1,
-            matchNumber: f.match_number || 1,
-            courtName: f.court?.name || `Sân ${f.court_id || 1}`,
+            matchNumber: f.position || 1,
+            courtName: f.court_name || `Sân ${f.court_id || f.position || 1}`,
             courtId: f.court_id || 1,
             scheduledTime: f.scheduled_time || '09:00',
             status: f.status || 'pending',
-            player1: f.player1 ? { id: f.player1.id, name: f.player1.name, avatar: getAvatarUrl(f.player1.name), sets: f.player1_sets || [] } : undefined,
-            player2: f.player2 ? { id: f.player2.id, name: f.player2.name, avatar: getAvatarUrl(f.player2.name), sets: f.player2_sets || [] } : undefined,
+            player1: f.player1
+              ? {
+                  id: f.player1.id,
+                  name: f.player1.name,
+                  avatar: f.player1.avatar || getAvatarUrl(f.player1.name),
+                  seed: f.player1.seed,
+                  sets: f.player1.sets || [],
+                  isWinner: f.player1.isWinner,
+                }
+              : { name: 'Chờ xác định', sets: [] },
+            player2: f.player2
+              ? {
+                  id: f.player2.id,
+                  name: f.player2.name,
+                  avatar: f.player2.avatar || getAvatarUrl(f.player2.name),
+                  seed: f.player2.seed,
+                  sets: f.player2.sets || [],
+                  isWinner: f.player2.isWinner,
+                }
+              : { name: 'Chờ xác định', sets: [] },
             winnerId: f.winner_id,
-            nextMatchId: f.next_match_id,
           }))
-        }
+          .sort((a: FixtureMatch, b: FixtureMatch) => (a.roundNumber || 1) - (b.roundNumber || 1) || (a.position || 1) - (b.position || 1))
+        syncLiveMatchFromFixtures()
       }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải dữ liệu giải đấu.')
+    } finally {
+      loadingDetails.value = false
+    }
+  }
+
+  async function loadTournaments() {
+    loading.value = true
+    error.value = ''
+    try {
+      const list = await tournamentApi.list<TournamentItem[]>()
+      tournamentsList.value = list
+      if (list.length > 0 && list[0]) {
+        const targetId = selectedTournamentId.value || list[0].id
+        selectedTournamentId.value = targetId
+        await loadTournamentData(targetId)
+      }
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể tải danh sách giải đấu.')
     } finally {
       loading.value = false
     }
   }
 
   onMounted(() => {
-    loadTournamentData()
+    loadTournaments()
   })
 
   return {
     loading,
+    loadingDetails,
+    isGenerating,
+    saving,
+    tournamentsList,
+    selectedTournamentId,
     tournament,
     currentWizardStep,
     activeSubNav,
     selectedRoundFilter,
-    zoomLevel,
     notice,
     error,
-    isGenerating,
     participants,
     checkInFilterStatus,
     checkInSearchQuery,
@@ -246,7 +424,12 @@ export function useTournamentBracketAdmin() {
     switchEnds,
     simulateConflict,
     resolveConflict,
+    saveRefereeScore,
+    saveMatchScore,
+    createTournament,
     regenerateBracketTree,
+    selectTournament,
+    loadTournaments,
     loadTournamentData,
   }
 }

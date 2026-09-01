@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FixtureMatch } from '../../types/tournamentAdmin'
+import { AuraButton, SkeletonLoader } from '@/shared/components'
 
-defineProps<{
+const props = defineProps<{
   matches: FixtureMatch[]
   selectedRound: 'all' | 'r16' | 'qf' | 'sf' | 'final'
   isGenerating?: boolean
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -15,6 +18,45 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const totalRounds = computed(() => {
+  if (!props.matches || props.matches.length === 0) return 0
+  return Math.max(...props.matches.map((m) => m.roundNumber || 1))
+})
+
+const distinctRounds = computed(() => {
+  if (totalRounds.value === 0) return []
+  return Array.from({ length: totalRounds.value }, (_, i) => i + 1)
+})
+
+function getRoundTitle(r: number): string {
+  const max = totalRounds.value
+  if (r === max) return t('admin.tournaments.roundFinalHeader') || 'CHUNG KẾT'
+  if (r === max - 1) return t('admin.tournaments.roundSFHeader') || 'BÁN KẾT (SF)'
+  if (r === max - 2) return t('admin.tournaments.roundQFHeader') || 'TỨ KẾT (QF)'
+  return t('admin.tournaments.roundR16Header') || `VÒNG ${r}`
+}
+
+function getRoundMeta(r: number): string {
+  const count = props.matches.filter((m) => m.roundNumber === r).length
+  return t('admin.tournaments.roundMatchesCount', { count }) || `${count} Trận đấu`
+}
+
+function getMatchesForRound(r: number): FixtureMatch[] {
+  return props.matches
+    .filter((m) => m.roundNumber === r)
+    .sort((a, b) => (a.position || 1) - (b.position || 1))
+}
+
+function shouldShowRound(r: number): boolean {
+  if (props.selectedRound === 'all') return true
+  const max = totalRounds.value
+  if (props.selectedRound === 'final' && r === max) return true
+  if (props.selectedRound === 'sf' && r === max - 1) return true
+  if (props.selectedRound === 'qf' && r === max - 2) return true
+  if (props.selectedRound === 'r16' && r === 1) return true
+  return false
+}
 </script>
 
 <template>
@@ -31,6 +73,7 @@ const { t } = useI18n()
           {{ t('admin.tournaments.allRounds') }}
         </button>
         <button
+          v-if="totalRounds >= 4"
           type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'r16' }"
@@ -39,6 +82,7 @@ const { t } = useI18n()
           {{ t('admin.tournaments.roundR16') }}
         </button>
         <button
+          v-if="totalRounds >= 3"
           type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'qf' }"
@@ -47,6 +91,7 @@ const { t } = useI18n()
           {{ t('admin.tournaments.roundQF') }}
         </button>
         <button
+          v-if="totalRounds >= 2"
           type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'sf' }"
@@ -55,6 +100,7 @@ const { t } = useI18n()
           {{ t('admin.tournaments.roundSF') }}
         </button>
         <button
+          v-if="totalRounds >= 1"
           type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'final' }"
@@ -64,90 +110,54 @@ const { t } = useI18n()
         </button>
       </div>
 
-      <button
-        type="button"
-        class="btn-regenerate-bracket"
-        :disabled="isGenerating"
+      <AuraButton
+        variant="secondary"
+        :disabled="isGenerating || loading"
         @click="emit('regenerate')"
       >
-        <span v-if="isGenerating" class="flex-align">
-          <span class="material-symbols-outlined icon-16 spin">sync</span>
-          <span>{{ t('admin.tournaments.generatingBracket') }}</span>
-        </span>
-        <span v-else class="flex-align">
-          <span class="material-symbols-outlined icon-16">alt_route</span>
-          <span>{{ t('admin.tournaments.regenerateBracketBtn') }}</span>
-        </span>
-      </button>
+        <span v-if="isGenerating" class="material-symbols-outlined icon-16 spin">sync</span>
+        <span v-else class="material-symbols-outlined icon-16">alt_route</span>
+        <span>{{ isGenerating ? t('admin.tournaments.generatingBracket') : t('admin.tournaments.regenerateBracketBtn') }}</span>
+      </AuraButton>
+    </div>
+
+    <!-- Skeleton Loading State -->
+    <div v-if="loading || isGenerating" class="bracket-skeleton-grid">
+      <div v-for="col in 3" :key="col" class="bracket-skeleton-col">
+        <SkeletonLoader type="title" width="120px" height="18px" />
+        <div v-for="m in Math.max(1, 4 - col)" :key="m" class="skeleton-match-card">
+          <SkeletonLoader type="rect" width="100%" height="80px" rounded="12px" />
+        </div>
+      </div>
     </div>
 
     <!-- Bracket Tree Visual View -->
-    <div class="bracket-tree-scroll">
+    <div v-else-if="matches.length > 0" class="bracket-tree-scroll">
       <div class="bracket-rounds-columns">
-        <!-- R16 Round -->
         <div
-          v-if="selectedRound === 'all' || selectedRound === 'r16'"
+          v-for="r in distinctRounds"
+          :key="r"
+          v-show="shouldShowRound(r)"
           class="bracket-round-column"
         >
           <div class="round-header">
-            <h4>{{ t('admin.tournaments.roundR16Header') }}</h4>
-            <span class="round-meta">{{ t('admin.tournaments.roundR16Meta') }}</span>
-          </div>
-
-          <div class="round-matches-list">
-            <div
-              v-for="match in matches.filter(m => m.roundNumber === 1)"
-              :key="match.id"
-              class="match-node-card"
-              :class="{ 'is-live': match.status === 'live', 'is-completed': match.status === 'completed' }"
-              @click="emit('selectMatch', match)"
-            >
-              <div class="match-meta-header">
-                <span class="match-court-name">{{ match.courtName }}</span>
-                <span class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
-              </div>
-
-              <div class="match-players-box">
-                <div class="player-slot" :class="{ winner: match.player1.isWinner }">
-                  <div class="player-info">
-                    <span v-if="match.player1.seed" class="seed-badge">[{{ match.player1.seed }}]</span>
-                    <span class="player-name">{{ match.player1.name }}</span>
-                  </div>
-                  <div class="player-scores font-mono">
-                    <span v-for="(s, idx) in match.player1.sets" :key="idx" class="set-score">{{ s }}</span>
-                  </div>
-                </div>
-
-                <div class="player-slot" :class="{ winner: match.player2.isWinner }">
-                  <div class="player-info">
-                    <span v-if="match.player2.seed" class="seed-badge">[{{ match.player2.seed }}]</span>
-                    <span class="player-name">{{ match.player2.name }}</span>
-                  </div>
-                  <div class="player-scores font-mono">
-                    <span v-for="(s, idx) in match.player2.sets" :key="idx" class="set-score">{{ s }}</span>
-                  </div>
-                </div>
-              </div>
+            <div class="flex-align">
+              <span v-if="r === totalRounds" class="material-symbols-outlined icon-18 trophy-gold">emoji_events</span>
+              <h4>{{ getRoundTitle(r) }}</h4>
             </div>
-          </div>
-        </div>
-
-        <!-- Quarter Finals -->
-        <div
-          v-if="selectedRound === 'all' || selectedRound === 'qf'"
-          class="bracket-round-column"
-        >
-          <div class="round-header">
-            <h4>{{ t('admin.tournaments.roundQFHeader') }}</h4>
-            <span class="round-meta">{{ t('admin.tournaments.roundQFMeta') }}</span>
+            <span class="round-meta">{{ getRoundMeta(r) }}</span>
           </div>
 
           <div class="round-matches-list">
             <div
-              v-for="match in matches.filter(m => m.roundNumber === 2)"
+              v-for="match in getMatchesForRound(r)"
               :key="match.id"
               class="match-node-card"
-              :class="{ 'is-live': match.status === 'live', 'is-completed': match.status === 'completed' }"
+              :class="{
+                'is-live': match.status === 'live',
+                'is-completed': match.status === 'completed',
+                'finals-card': r === totalRounds
+              }"
               @click="emit('selectMatch', match)"
             >
               <div class="match-meta-header">
@@ -157,103 +167,45 @@ const { t } = useI18n()
               </div>
 
               <div class="match-players-box">
-                <div class="player-slot" :class="{ winner: match.player1.isWinner }">
+                <div class="player-slot" :class="{ winner: match.player1?.isWinner }">
                   <div class="player-info">
-                    <span v-if="match.player1.seed" class="seed-badge">[{{ match.player1.seed }}]</span>
-                    <span class="player-name">{{ match.player1.name }}</span>
+                    <span v-if="match.player1?.seed" class="seed-badge">[{{ match.player1.seed }}]</span>
+                    <span class="player-name" :class="{ placeholder: !match.player1?.name || match.player1?.name === 'Chờ xác định' }">
+                      {{ match.player1?.name || '—' }}
+                    </span>
                   </div>
-                  <div class="player-scores font-mono">
+                  <div v-if="match.player1?.sets && match.player1.sets.length > 0" class="player-scores font-mono">
                     <span v-for="(s, idx) in match.player1.sets" :key="idx" class="set-score">{{ s }}</span>
-                    <span v-if="match.player1.currentScore !== undefined" class="current-score">{{ match.player1.currentScore }}</span>
                   </div>
                 </div>
 
-                <div class="player-slot" :class="{ winner: match.player2.isWinner }">
+                <div class="player-slot" :class="{ winner: match.player2?.isWinner }">
                   <div class="player-info">
-                    <span v-if="match.player2.seed" class="seed-badge">[{{ match.player2.seed }}]</span>
-                    <span class="player-name">{{ match.player2.name }}</span>
+                    <span v-if="match.player2?.seed" class="seed-badge">[{{ match.player2.seed }}]</span>
+                    <span class="player-name" :class="{ placeholder: !match.player2?.name || match.player2?.name === 'Chờ xác định' }">
+                      {{ match.player2?.name || '—' }}
+                    </span>
                   </div>
-                  <div class="player-scores font-mono">
+                  <div v-if="match.player2?.sets && match.player2.sets.length > 0" class="player-scores font-mono">
                     <span v-for="(s, idx) in match.player2.sets" :key="idx" class="set-score">{{ s }}</span>
-                    <span v-if="match.player2.currentScore !== undefined" class="current-score">{{ match.player2.currentScore }}</span>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Semi Finals -->
-        <div
-          v-if="selectedRound === 'all' || selectedRound === 'sf'"
-          class="bracket-round-column"
-        >
-          <div class="round-header">
-            <h4>{{ t('admin.tournaments.roundSFHeader') }}</h4>
-            <span class="round-meta">{{ t('admin.tournaments.roundSFMeta') }}</span>
-          </div>
-
-          <div class="round-matches-list">
-            <div
-              v-for="match in matches.filter(m => m.roundNumber === 3)"
-              :key="match.id"
-              class="match-node-card"
-              @click="emit('selectMatch', match)"
-            >
-              <div class="match-meta-header">
-                <span class="match-court-name">{{ match.courtName }}</span>
-                <span class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
-              </div>
-
-              <div class="match-players-box">
-                <div class="player-slot">
-                  <span class="player-name placeholder">{{ match.player1.name }}</span>
-                </div>
-                <div class="player-slot">
-                  <span class="player-name placeholder">{{ match.player2.name }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Finals -->
-        <div
-          v-if="selectedRound === 'all' || selectedRound === 'final'"
-          class="bracket-round-column"
-        >
-          <div class="round-header">
-            <div class="flex-align">
-              <span class="material-symbols-outlined icon-18 trophy-gold">emoji_events</span>
-              <h4>{{ t('admin.tournaments.roundFinalHeader') }}</h4>
-            </div>
-            <span class="round-meta">{{ t('admin.tournaments.roundFinalMeta') }}</span>
-          </div>
-
-          <div class="round-matches-list">
-            <div
-              v-for="match in matches.filter(m => m.roundNumber === 4)"
-              :key="match.id"
-              class="match-node-card finals-card"
-              @click="emit('selectMatch', match)"
-            >
-              <div class="match-meta-header">
-                <span class="match-court-name">{{ match.courtName }}</span>
-                <span class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
-              </div>
-
-              <div class="match-players-box">
-                <div class="player-slot">
-                  <span class="player-name placeholder">{{ match.player1.name }}</span>
-                </div>
-                <div class="player-slot">
-                  <span class="player-name placeholder">{{ match.player2.name }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="bracket-empty-state">
+      <span class="material-symbols-outlined empty-icon">account_tree</span>
+      <h4>{{ t('admin.tournaments.noMatchesFoundTitle') }}</h4>
+      <p>{{ t('admin.tournaments.noMatchesFoundDesc') }}</p>
+      <AuraButton variant="primary" @click="emit('regenerate')">
+        <span class="material-symbols-outlined icon-16">alt_route</span>
+        <span>{{ t('admin.tournaments.generateBracketBtn') }}</span>
+      </AuraButton>
     </div>
   </div>
 </template>
@@ -262,9 +214,9 @@ const { t } = useI18n()
 .bracket-tree-container {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--surface, #ffffff);
   border-radius: 16px;
-  border: 1px solid var(--outline);
+  border: 1px solid var(--outline, #e2e8f0);
   overflow: hidden;
 }
 
@@ -273,8 +225,8 @@ const { t } = useI18n()
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--outline);
-  background: var(--surface);
+  border-bottom: 1px solid var(--outline, #e2e8f0);
+  background: var(--surface, #ffffff);
   flex-wrap: wrap;
   gap: 10px;
 }
@@ -288,13 +240,18 @@ const { t } = useI18n()
 .round-filter-btn {
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
+  border: 1px solid var(--outline, #e2e8f0);
+  background: var(--surface, #ffffff);
+  color: var(--ink, #0f172a);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+}
+
+.round-filter-btn:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
 }
 
 .round-filter-btn.active {
@@ -303,91 +260,107 @@ const { t } = useI18n()
   border-color: var(--pink-dark, #db2777);
 }
 
-.btn-regenerate-bracket {
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+.bracket-skeleton-grid {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  overflow-x: auto;
 }
 
-.flex-align {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.bracket-skeleton-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 240px;
+}
+
+.skeleton-match-card {
+  height: 80px;
 }
 
 .bracket-tree-scroll {
-  padding: 20px;
+  padding: 24px;
   overflow-x: auto;
+  min-height: 420px;
 }
 
 .bracket-rounds-columns {
   display: flex;
-  gap: 24px;
-  min-width: 800px;
+  gap: 32px;
+  min-width: fit-content;
 }
 
 .bracket-round-column {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 260px;
+  max-width: 280px;
 }
 
 .round-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding-bottom: 8px;
-  border-bottom: 2px solid var(--outline);
+  border-bottom: 2px solid var(--outline, #e2e8f0);
 }
 
 .round-header h4 {
-  margin: 0 0 2px;
+  margin: 0;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  letter-spacing: 0.04em;
 }
 
 .round-meta {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--muted, #64748b);
 }
 
 .round-matches-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  justify-content: space-around;
+  flex: 1;
+  gap: 20px;
 }
 
 .match-node-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  padding: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  gap: 8px;
 }
 
 .match-node-card:hover {
   border-color: var(--pink-dark, #db2777);
+  box-shadow: 0 4px 14px rgba(219, 39, 119, 0.12);
   transform: translateY(-2px);
 }
 
 .match-node-card.is-live {
   border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+.match-node-card.finals-card {
+  border: 2px solid #f59e0b;
 }
 
 .match-meta-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 6px;
+  color: var(--muted, #64748b);
 }
 
 .live-pill {
@@ -395,9 +368,8 @@ const { t } = useI18n()
   color: #fff;
   padding: 1px 6px;
   border-radius: 4px;
-  font-weight: 800;
   font-size: 9px;
-  animation: pulse 1.5s infinite;
+  font-weight: 800;
 }
 
 .match-players-box {
@@ -408,8 +380,8 @@ const { t } = useI18n()
 
 .player-slot {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 6px 8px;
   border-radius: 6px;
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
@@ -417,14 +389,34 @@ const { t } = useI18n()
 }
 
 .player-slot.winner {
+  background: rgba(16, 185, 129, 0.1);
   font-weight: 700;
-  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .seed-badge {
+  font-size: 10px;
   color: var(--pink-dark, #db2777);
   font-weight: 700;
-  margin-right: 4px;
+}
+
+.player-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.player-name.placeholder {
+  color: var(--muted, #64748b);
+  font-style: italic;
 }
 
 .player-scores {
@@ -433,40 +425,53 @@ const { t } = useI18n()
 }
 
 .set-score {
-  font-weight: 600;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e2e8f0);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
 }
 
-.current-score {
-  color: #ef4444;
-  font-weight: 800;
+.bracket-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+  text-align: center;
 }
 
-.player-name.placeholder {
-  color: var(--muted);
-  font-style: italic;
-}
-
-.finals-card {
-  border: 2px solid #f59e0b;
+.empty-icon {
+  font-size: 48px;
+  color: var(--muted, #64748b);
 }
 
 .trophy-gold {
   color: #f59e0b;
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.flex-align {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-16 {
+  font-size: 16px;
+}
+
+.icon-18 {
+  font-size: 18px;
+}
 
 .spin {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

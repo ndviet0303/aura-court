@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 
 defineProps<{
   liveMatch: {
+    fixtureId?: number
     matchCode: string
     courtName: string
     playerA: { name: string; club: string; seed?: number; score: number; sets: number[]; isServing?: boolean }
@@ -14,6 +16,7 @@ defineProps<{
     isSwappedSides: boolean
     penalties: Array<{ player: string; type: string; reason: string; time: string }>
   }
+  saving?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +27,7 @@ const emit = defineEmits<{
   (e: 'switchEnds'): void
   (e: 'simulateConflict'): void
   (e: 'resolveConflict'): void
+  (e: 'saveScore'): void
 }>()
 
 const { t } = useI18n()
@@ -41,14 +45,19 @@ const showPenaltyModal = ref(false)
       </div>
 
       <div class="referee-top-actions">
-        <button type="button" class="btn-test-conflict" @click="emit('simulateConflict')">
+        <AuraButton variant="secondary" size="sm" @click="emit('simulateConflict')">
           <span class="material-symbols-outlined icon-14">flash_on</span>
           <span>{{ t('admin.tournaments.testConflictBtn') }}</span>
-        </button>
-        <button type="button" class="btn-switch-ends" @click="emit('switchEnds')">
+        </AuraButton>
+        <AuraButton variant="secondary" size="sm" @click="emit('switchEnds')">
           <span class="material-symbols-outlined icon-14">swap_horiz</span>
           <span>{{ t('admin.tournaments.switchEndsBtn') }}</span>
-        </button>
+        </AuraButton>
+        <AuraButton variant="primary" size="sm" :disabled="saving" @click="emit('saveScore')">
+          <span v-if="saving" class="material-symbols-outlined icon-14 spin">sync</span>
+          <span v-else class="material-symbols-outlined icon-14">check_circle</span>
+          <span>{{ saving ? t('common.saving') : t('admin.tournaments.saveAndFinishMatchBtn') }}</span>
+        </AuraButton>
       </div>
     </div>
 
@@ -61,9 +70,9 @@ const showPenaltyModal = ref(false)
           <p>{{ liveMatch.conflictDesc }}</p>
         </div>
       </div>
-      <button type="button" class="btn-accept-remote" @click="emit('resolveConflict')">
+      <AuraButton variant="primary" size="sm" @click="emit('resolveConflict')">
         {{ t('admin.tournaments.acceptRemoteScoreBtn') }}
-      </button>
+      </AuraButton>
     </div>
 
     <!-- Scoring Arena -->
@@ -141,18 +150,10 @@ const showPenaltyModal = ref(false)
 
     <!-- Quick Referee Control Bar -->
     <div class="referee-bottom-toolbar">
-      <button type="button" class="btn-referee-action-sec" @click="showPenaltyModal = true">
-        <span class="material-symbols-outlined icon-16">style</span>
+      <AuraButton variant="secondary" size="sm" @click="showPenaltyModal = true">
+        <span class="material-symbols-outlined icon-16">gavel</span>
         <span>{{ t('admin.tournaments.penaltiesAndCardsBtn') }}</span>
-      </button>
-      <button type="button" class="btn-referee-action-sec">
-        <span class="material-symbols-outlined icon-16">timer</span>
-        <span>{{ t('admin.tournaments.timeoutBtn') }}</span>
-      </button>
-      <button type="button" class="btn-referee-action-sec">
-        <span class="material-symbols-outlined icon-16">sports_score</span>
-        <span>{{ t('admin.tournaments.endSetBtn') }}</span>
-      </button>
+      </AuraButton>
     </div>
 
     <!-- Penalties Modal -->

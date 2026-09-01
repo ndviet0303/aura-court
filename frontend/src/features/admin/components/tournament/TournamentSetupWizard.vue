@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { TournamentAdminData } from '../../types/tournamentAdmin'
 
 defineProps<{
@@ -9,6 +10,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:currentStep', step: number): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -21,7 +24,7 @@ const emit = defineEmits<{
         @click="emit('update:currentStep', 1)"
       >
         <span class="step-num">1</span>
-        <span class="step-label">Thông Tin Giải Đấu</span>
+        <span class="step-label">{{ t('admin.tournaments.wizardStep1') }}</span>
       </div>
 
       <div class="step-connector"></div>
@@ -32,7 +35,7 @@ const emit = defineEmits<{
         @click="emit('update:currentStep', 2)"
       >
         <span class="step-num">2</span>
-        <span class="step-label">Thể Thức & Hạt Giống</span>
+        <span class="step-label">{{ t('admin.tournaments.wizardStep2') }}</span>
       </div>
 
       <div class="step-connector"></div>
@@ -43,7 +46,7 @@ const emit = defineEmits<{
         @click="emit('update:currentStep', 3)"
       >
         <span class="step-num">3</span>
-        <span class="step-label">Bảng Nhánh & Lịch Thi Đấu</span>
+        <span class="step-label">{{ t('admin.tournaments.wizardStep3') }}</span>
       </div>
     </div>
   </div>

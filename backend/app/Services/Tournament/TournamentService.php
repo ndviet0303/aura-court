@@ -15,29 +15,65 @@ class TournamentService
 {
     public function __construct(private readonly OutboxService $outbox) {}
 
-    public function createAndGenerate(User $creator, int $organizationId, string $name, string $format, array $seedUserIds, array $settings = []): Tournament
+    public function createAndGenerate(User $creator, int $organizationId, string $name, string $format, array $seedUserIds = [], array $settings = []): Tournament
     {
         abort_unless(in_array($format, ['single_elimination', 'round_robin'], true), 422, 'Only single-elimination and round-robin tournaments are supported.');
-        abort_if(count($seedUserIds) < 2, 422, 'At least two participants are required.');
+        
         return DB::transaction(function () use ($creator, $organizationId, $name, $format, $seedUserIds, $settings): Tournament {
-            $tournament = Tournament::create(['organization_id' => $organizationId, 'created_by' => $creator->id, 'name' => $name, 'format' => $format, 'status' => 'ready', 'settings' => $settings]);
-            foreach (array_values($seedUserIds) as $seed => $userId) {
-                TournamentParticipant::create(['organization_id' => $organizationId, 'tournament_id' => $tournament->id, 'user_id' => $userId, 'seed' => $seed + 1, 'status' => 'registered']);
-                TournamentStanding::create(['organization_id' => $organizationId, 'tournament_id' => $tournament->id, 'participant_id' => $tournament->participants()->latest('id')->value('id')]);
+            $hasParticipants = count($seedUserIds) >= 2;
+            $status = $hasParticipants ? 'ready' : 'open';
+
+            $tournament = Tournament::create([
+                'organization_id' => $organizationId,
+                'created_by' => $creator->id,
+                'name' => $name,
+                'format' => $format,
+                'status' => $status,
+                'settings' => $settings,
+            ]);
+
+            if ($hasParticipants) {
+                foreach (array_values($seedUserIds) as $seed => $userId) {
+                    $p = TournamentParticipant::create([
+                        'organization_id' => $organizationId,
+                        'tournament_id' => $tournament->id,
+                        'user_id' => $userId,
+                        'seed' => $seed + 1,
+                        'status' => 'registered',
+                    ]);
+                    TournamentStanding::create([
+                        'organization_id' => $organizationId,
+                        'tournament_id' => $tournament->id,
+                        'participant_id' => $p->id,
+                    ]);
+                }
+                $tournament = $tournament->fresh('participants');
+                if ($format === 'single_elimination') {
+                    $this->generateSingleElimination($tournament);
+                } else {
+                    $this->generateRoundRobin($tournament);
+                }
+                $this->emit($tournament, $creator, 'tournament.generated', ['format' => $format, 'participant_count' => count($seedUserIds)]);
             }
-            $tournament = $tournament->fresh('participants');
-            if ($format === 'single_elimination') $this->generateSingleElimination($tournament);
-            else $this->generateRoundRobin($tournament);
-            $this->emit($tournament, $creator, 'tournament.generated', ['format' => $format, 'participant_count' => count($seedUserIds)]);
+
             return $tournament->fresh(['participants.user', 'fixtures', 'standings']);
         });
     }
 
-    public function checkIn(TournamentParticipant $participant, User $user): TournamentParticipant
+    public function checkIn(TournamentParticipant $participant, User $user, ?bool $checkedIn = null): TournamentParticipant
     {
-        abort_unless($participant->user_id === $user->id, 403);
-        abort_unless($participant->status === 'registered', 409);
-        $participant->update(['status' => 'checked_in', 'checked_in_at' => now()]);
+        $canCheckIn = $participant->user_id === $user->id
+            || (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin())
+            || (method_exists($user, 'hasRoleInOrganization') && $user->hasRoleInOrganization($participant->organization_id, ['organization_owner', 'venue_manager', 'staff', 'cashier']))
+            || in_array($user->role, ['admin', 'organization_owner', 'venue_manager', 'staff'], true);
+
+        abort_unless($canCheckIn, 403);
+        $shouldCheckIn = $checkedIn ?? ($participant->status !== 'checked_in');
+        if ($shouldCheckIn) {
+            $participant->update(['status' => 'checked_in', 'checked_in_at' => now()]);
+        } else {
+            $participant->update(['status' => 'registered', 'checked_in_at' => null]);
+        }
         return $participant->fresh();
     }
 
@@ -47,13 +83,49 @@ class TournamentService
             $tournament = Tournament::query()->whereKey($tournament->id)->lockForUpdate()->firstOrFail();
             abort_unless($tournament->version === $expectedVersion, 409, json_encode(['message' => 'Tournament version conflict.', 'currentVersion' => $tournament->version, 'tournament' => $tournament->load('fixtures')]));
             $fixture = TournamentFixture::query()->whereKey($fixture->id)->lockForUpdate()->firstOrFail();
-            abort_unless($fixture->tournament_id === $tournament->id && $fixture->status === 'pending', 409, 'Fixture is not awaiting a score.');
+            abort_unless($fixture->tournament_id === $tournament->id && in_array($fixture->status, ['pending', 'scheduled', 'live', 'completed'], true), 409, 'Fixture is not awaiting a score.');
             abort_unless(in_array($winnerId, array_filter([$fixture->participant_one_id, $fixture->participant_two_id]), true), 422, 'Winner must be a fixture participant.');
             $fixture->update(['score' => $score, 'winner_id' => $winnerId, 'status' => 'completed', 'version' => $fixture->version + 1]);
             $tournament->increment('version');
+
+            if ($tournament->format === 'single_elimination') {
+                $nextRound = $fixture->round + 1;
+                $nextPosition = (int) ceil($fixture->position / 2);
+                $nextSlotIsOne = ($fixture->position % 2) === 1;
+                $nextFixture = TournamentFixture::where('tournament_id', $tournament->id)
+                    ->where('round', $nextRound)
+                    ->where('position', $nextPosition)
+                    ->first();
+                if ($nextFixture) {
+                    if ($nextSlotIsOne) {
+                        $nextFixture->update(['participant_one_id' => $winnerId]);
+                    } else {
+                        $nextFixture->update(['participant_two_id' => $winnerId]);
+                    }
+                }
+            }
+
             $this->updateStandings($tournament, $fixture, $score, $winnerId);
             $this->emit($tournament->fresh(), $official, 'tournament.score_updated', ['fixture_id' => $fixture->id, 'score' => $score, 'winner_id' => $winnerId]);
             return $fixture->fresh(['participantOne.user', 'participantTwo.user', 'winner.user']);
+        });
+    }
+
+    public function regenerateBracket(Tournament $tournament, User $actor): Tournament
+    {
+        abort_if($tournament->participants()->count() < 2, 422, 'Cần tối thiểu 2 vận động viên đăng ký để tạo sơ đồ phân nhánh.');
+
+        return DB::transaction(function () use ($tournament, $actor): Tournament {
+            TournamentFixture::where('tournament_id', $tournament->id)->delete();
+            $tournament = $tournament->fresh('participants');
+            if ($tournament->format === 'single_elimination') {
+                $this->generateSingleElimination($tournament);
+            } else {
+                $this->generateRoundRobin($tournament);
+            }
+            $tournament->increment('version');
+            $this->emit($tournament->fresh(), $actor, 'tournament.bracket_regenerated', []);
+            return $tournament->fresh(['participants.user', 'fixtures', 'standings.participant.user']);
         });
     }
 

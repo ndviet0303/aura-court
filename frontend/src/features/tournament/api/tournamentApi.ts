@@ -56,36 +56,82 @@ function mapRawTournament(t: any): TournamentItem {
     version: t.version || 1,
     current_match: t.current_match,
     winner_team: t.winner_team,
-    fixtures: t.fixtures || [],
+    fixtures: (t.fixtures || []).map((f: any) => {
+      const p1 = f.participant_one || (f.participant_one_id ? t.participants?.find((p: any) => p.id === f.participant_one_id) : null) || f.player1
+      const p2 = f.participant_two || (f.participant_two_id ? t.participants?.find((p: any) => p.id === f.participant_two_id) : null) || f.player2
+      const p1Name = p1?.user?.name || p1?.name || (f.participant_one_id ? `VĐV #${f.participant_one_id}` : 'TBD')
+      const p2Name = p2?.user?.name || p2?.name || (f.participant_two_id ? `VĐV #${f.participant_two_id}` : 'TBD')
+      
+      const p1Sets = Array.isArray(f.score?.sets) ? f.score.sets.map((s: any) => s.p1) : (Array.isArray(f.player1_sets) ? f.player1_sets : (f.score?.p1 !== undefined ? [f.score.p1] : (f.player1_score !== undefined ? [f.player1_score] : [])))
+      const p2Sets = Array.isArray(f.score?.sets) ? f.score.sets.map((s: any) => s.p2) : (Array.isArray(f.player2_sets) ? f.player2_sets : (f.score?.p2 !== undefined ? [f.score.p2] : (f.player2_score !== undefined ? [f.player2_score] : [])))
+
+      return {
+        id: f.id,
+        round: f.round || 1,
+        position: f.position || 1,
+        status: f.status || 'pending',
+        court_name: f.court_name,
+        court_id: f.court_id,
+        scheduled_time: f.scheduled_time,
+        participant_one_id: f.participant_one_id || p1?.id,
+        participant_two_id: f.participant_two_id || p2?.id,
+        participant_one_name: p1Name,
+        participant_two_name: p2Name,
+        winner_id: f.winner_id,
+        score: f.score,
+        player1: {
+          id: f.participant_one_id || p1?.id,
+          name: p1Name,
+          seed: p1?.seed,
+          avatar: p1?.user?.avatar_url || p1?.avatar,
+          sets: p1Sets,
+          isWinner: !!f.winner_id && f.winner_id === (f.participant_one_id || p1?.id),
+        },
+        player2: {
+          id: f.participant_two_id || p2?.id,
+          name: p2Name,
+          seed: p2?.seed,
+          avatar: p2?.user?.avatar_url || p2?.avatar,
+          sets: p2Sets,
+          isWinner: !!f.winner_id && f.winner_id === (f.participant_two_id || p2?.id),
+        },
+      }
+    }),
     participants: (t.participants || []).map((p: any) => ({
       id: p.id,
       user_id: p.user_id,
       name: p.user?.name || p.name || `VĐV #${p.id}`,
       seed: p.seed,
-      status: p.status,
-      checked_in: !!p.checked_in_at || p.status === 'checked_in',
+      club: p.club || 'Independent',
+      level: p.level || 'Hạng B',
+      phone: p.user?.phone || p.phone || '0901234567',
+      category: p.category || (sport === 'pickleball' ? 'Pickleball Đôi Open' : 'Đơn Nam Nâng Cao'),
+      qr_code: p.qr_code || `ATH-${p.id}`,
+      status: p.status || (p.checked_in ? 'checked_in' : 'pending'),
+      checked_in: !!p.checked_in_at || p.status === 'checked_in' || !!p.checked_in,
       avatar: p.user?.avatar_url || p.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80`,
     })),
     standings: t.standings || [],
   }
 }
 
-
 export const tournamentApi = {
-  async list<T = TournamentItem[]>(): Promise<T> {
-    const res = await apiV2.get<any>('/tournaments')
+  async list<T = TournamentItem[]>(params?: { sport?: string; status?: string; search?: string }): Promise<T> {
+    const res = await apiV2.get<any>('/tournaments', { params })
     const rawList = Array.isArray(res) ? res : res?.data || []
     return rawList.map(mapRawTournament) as unknown as T
   },
 
   async getById<T = TournamentItem>(id: number | string): Promise<T> {
     const res = await apiV2.get<any>(`/tournaments/${id}`)
-    const raw = res?.tournament || res
+    const raw = res?.tournament || res?.data || res
     return mapRawTournament(raw) as unknown as T
   },
 
-
   create: <T = TournamentItem>(payload: any) => apiV2.post<T>('/tournaments', payload),
+
+  regenerateBracket: <T = TournamentItem>(tournamentId: number | string) =>
+    apiV2.post<T>(`/tournaments/${tournamentId}/regenerate`),
 
   checkInParticipant: (participantId: number | string, payload?: TournamentRegistrationPayload) =>
     apiV2.post(`/tournament-participants/${participantId}/check-in`, payload),

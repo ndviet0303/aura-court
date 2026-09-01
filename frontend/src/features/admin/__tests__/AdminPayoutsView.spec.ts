@@ -192,14 +192,14 @@ describe('AdminPayoutsView', () => {
     // Switch to settlements tab
     const tabBtns = wrapper.findAll('.view-nav-btn')
     expect(tabBtns.length).toBe(3)
-    await tabBtns[1].trigger('click')
+    await tabBtns[1]?.trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Kỳ Đối Soát Doanh Thu')
     expect(wrapper.text()).toContain('2026')
 
     // Switch to flow tab
-    await tabBtns[2].trigger('click')
+    await tabBtns[2]?.trigger('click')
     await flushPromises()
 
     expect(wrapper.findAll('.step-node').length).toBe(5)

@@ -58,30 +58,97 @@ class TournamentController extends Controller
 
     public function show(Request $request, Tournament $tournament)
     {
-        return response()->json(['tournament' => $tournament->load(['participants.user', 'fixtures', 'standings.participant.user'])]);
+        return response()->json([
+            'tournament' => $tournament->load([
+                'participants.user',
+                'fixtures' => fn ($q) => $q->orderBy('round')->orderBy('position'),
+                'fixtures.participantOne.user',
+                'fixtures.participantTwo.user',
+                'fixtures.winner.user',
+                'standings.participant.user'
+            ])
+        ]);
     }
-
 
     public function create(Request $request)
     {
         $organization = $this->organization($request);
-        $data = $request->validate(['name' => 'required|string|max:180', 'format' => 'required|in:single_elimination,round_robin', 'participant_ids' => 'required|array|min:2|max:128', 'participant_ids.*' => 'integer']);
-        return $this->idempotency->run($request, fn () => response()->json(['tournament' => $this->tournaments->createAndGenerate($request->user(), $organization->id, $data['name'], $data['format'], $data['participant_ids'])], 201));
+        $data = $request->validate([
+            'name' => 'required|string|max:180',
+            'format' => 'required|in:single_elimination,round_robin',
+            'participant_ids' => 'nullable|array|min:2|max:128',
+            'participant_ids.*' => 'integer',
+            'sport' => 'nullable|string',
+            'venue' => 'nullable|string',
+            'city' => 'nullable|string',
+            'prize_pool' => 'nullable|string',
+            'entry_fee' => 'nullable|string',
+            'max_participants' => 'nullable|integer',
+            'start_date' => 'nullable|string',
+            'end_date' => 'nullable|string',
+            'category' => 'nullable|string',
+            'description' => 'nullable|string',
+        ]);
+
+        $participantIds = $data['participant_ids'] ?? [];
+
+        $settings = [
+            'sport' => $data['sport'] ?? 'badminton',
+            'venue' => $data['venue'] ?? 'Aura Central Court',
+            'city' => $data['city'] ?? 'Hồ Chí Minh',
+            'prize_pool' => $data['prize_pool'] ?? '20.000.000 ₫',
+            'entry_fee' => $data['entry_fee'] ?? '300.000 ₫ / VĐV',
+            'max_participants' => (int) ($data['max_participants'] ?? 16),
+            'start_date' => $data['start_date'] ?? now()->addDays(7)->toDateString(),
+            'end_date' => $data['end_date'] ?? now()->addDays(10)->toDateString(),
+            'category' => $data['category'] ?? 'Open',
+            'description' => $data['description'] ?? '',
+        ];
+
+        return $this->idempotency->run($request, fn () => response()->json([
+            'tournament' => $this->tournaments->createAndGenerate(
+                $request->user(),
+                $organization->id,
+                $data['name'],
+                $data['format'],
+                $participantIds,
+                $settings
+            )
+        ], 201));
     }
 
     public function checkIn(Request $request, TournamentParticipant $participant)
     {
         $organization = $this->organization($request);
         abort_unless($participant->organization_id === $organization->id, 404);
-        return $this->idempotency->run($request, fn () => response()->json(['participant' => $this->tournaments->checkIn($participant, $request->user())]));
+        $checkedIn = $request->has('checked_in') ? (bool) $request->input('checked_in') : null;
+        return $this->idempotency->run($request, fn () => response()->json([
+            'participant' => $this->tournaments->checkIn($participant, $request->user(), $checkedIn)
+        ]));
     }
 
     public function score(Request $request, Tournament $tournament, TournamentFixture $fixture)
     {
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id && $fixture->tournament_id === $tournament->id, 404);
-        $data = $request->validate(['expected_version' => 'required|integer|min:0', 'winner_id' => 'required|integer', 'score' => 'required|array']);
-        return $this->idempotency->run($request, fn () => response()->json(['fixture' => $this->tournaments->submitScore($tournament, $fixture, $request->user(), $data['expected_version'], $data['score'], $data['winner_id'])]));
+        $data = $request->validate([
+            'expected_version' => 'nullable|integer|min:0',
+            'winner_id' => 'required|integer',
+            'score' => 'required|array'
+        ]);
+        $expectedVersion = $data['expected_version'] ?? $tournament->version;
+        return $this->idempotency->run($request, fn () => response()->json([
+            'fixture' => $this->tournaments->submitScore($tournament, $fixture, $request->user(), $expectedVersion, $data['score'], $data['winner_id'])
+        ]));
+    }
+
+    public function regenerateBracket(Request $request, Tournament $tournament)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+        return $this->idempotency->run($request, fn () => response()->json([
+            'tournament' => $this->tournaments->regenerateBracket($tournament, $request->user())
+        ]));
     }
 
     public function events(Request $request, Tournament $tournament)
@@ -89,6 +156,36 @@ class TournamentController extends Controller
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
         return response()->json(['events' => $this->tournaments->events($tournament, (int) $request->integer('after_version')), 'current_version' => $tournament->version]);
+    }
+
+    public function addParticipant(Request $request, Tournament $tournament)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+        $data = $request->validate([
+            'user_id' => 'nullable|integer|exists:users,id',
+            'seed' => 'nullable|integer|min:1|max:128',
+        ]);
+
+        $userId = $data['user_id'] ?? $request->user()->id;
+        $participant = \App\Models\TournamentParticipant::create([
+            'organization_id' => $organization->id,
+            'tournament_id' => $tournament->id,
+            'user_id' => $userId,
+            'seed' => $data['seed'] ?? ($tournament->participants()->count() + 1),
+            'status' => 'registered',
+        ]);
+
+        \App\Models\TournamentStanding::firstOrCreate([
+            'organization_id' => $organization->id,
+            'tournament_id' => $tournament->id,
+            'participant_id' => $participant->id,
+        ]);
+
+        return response()->json([
+            'participant' => $participant->load('user'),
+            'tournament' => $tournament->fresh(['participants.user', 'fixtures.participantOne.user', 'fixtures.participantTwo.user', 'fixtures.winner.user', 'standings.participant.user']),
+        ], 201);
     }
 
     public function poll(Request $request, Tournament $tournament)

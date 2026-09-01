@@ -271,6 +271,8 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('social/reputation/activities/{activity}/dispute', [SocialController::class, 'fileDispute']);
             Route::post('social/reputation/disputes/{dispute}/resolve', [SocialController::class, 'resolveDispute'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
             Route::post('tournaments', [TournamentController::class, 'create'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
+            Route::post('tournaments/{tournament}/regenerate', [TournamentController::class, 'regenerateBracket'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
+            Route::post('tournaments/{tournament}/participants', [TournamentController::class, 'addParticipant'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
             Route::post('tournament-participants/{participant}/check-in', [TournamentController::class, 'checkIn']);
             Route::post('tournaments/{tournament}/fixtures/{fixture}/score', [TournamentController::class, 'score'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
         });

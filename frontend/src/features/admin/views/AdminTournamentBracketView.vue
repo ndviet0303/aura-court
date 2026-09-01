@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FixtureMatch } from '../types/tournamentAdmin'
 import { useTournamentBracketAdmin } from '../composables/useTournamentBracketAdmin'
+import { AuraButton, SelectDropdown, SkeletonLoader, type DropdownOption } from '@/shared/components'
 
 import TournamentSetupWizard from '../components/tournament/TournamentSetupWizard.vue'
 import TournamentBracketTree from '../components/tournament/TournamentBracketTree.vue'
@@ -10,10 +11,16 @@ import AthleteCheckInPanel from '../components/tournament/AthleteCheckInPanel.vu
 import RefereeConsolePanel from '../components/tournament/RefereeConsolePanel.vue'
 import TournamentOverviewPanel from '../components/tournament/TournamentOverviewPanel.vue'
 import ScoreUpdateModal from '../components/tournament/ScoreUpdateModal.vue'
+import TournamentCreateModal from '../components/tournament/TournamentCreateModal.vue'
 
 const { t } = useI18n()
 
 const {
+  loading,
+  loadingDetails,
+  saving,
+  tournamentsList,
+  selectedTournamentId,
   tournament,
   currentWizardStep,
   activeSubNav,
@@ -26,6 +33,7 @@ const {
   checkInMetrics,
   filteredAthletes,
   matches,
+  participants,
   liveMatch,
   showNotice,
   showError,
@@ -37,25 +45,44 @@ const {
   switchEnds,
   simulateConflict,
   resolveConflict,
+  saveRefereeScore,
+  saveMatchScore,
+  createTournament,
   regenerateBracketTree,
+  selectTournament,
+  loadTournaments,
 } = useTournamentBracketAdmin()
 
 // Modal State
 const selectedMatch = ref<FixtureMatch | null>(null)
 const showScoreModal = ref(false)
+const showCreateModal = ref(false)
+
+const tournamentOptions = computed<DropdownOption[]>(() => {
+  return tournamentsList.value.map((item) => ({
+    value: item.id,
+    label: item.name,
+    sublabel: `${item.sport} · ${item.venue || 'Aura Court'}`,
+  }))
+})
 
 function handleSelectMatch(match: FixtureMatch) {
   selectedMatch.value = match
   showScoreModal.value = true
 }
 
-function handleSaveMatchScore(updated: FixtureMatch) {
-  const idx = matches.value.findIndex((m) => m.id === updated.id)
-  if (idx >= 0) {
-    matches.value[idx] = updated
+async function handleSaveMatchScore(updated: FixtureMatch, p1Score?: number, p2Score?: number) {
+  const ok = await saveMatchScore(updated, p1Score, p2Score)
+  if (ok) {
+    showScoreModal.value = false
   }
-  showScoreModal.value = false
-  showNotice(t('admin.tournaments.saveScoreSuccess', { number: updated.matchNumber }))
+}
+
+async function handleCreateTournament(payload: any) {
+  const ok = await createTournament(payload)
+  if (ok) {
+    showCreateModal.value = false
+  }
 }
 </script>
 
@@ -68,19 +95,56 @@ function handleSaveMatchScore(updated: FixtureMatch) {
           <span class="material-symbols-outlined header-icon">account_tree</span>
           <h1 class="page-headline">{{ t('admin.tournaments.title') }}</h1>
         </div>
-        <div class="tournament-subhead">
+
+        <div v-if="loading" class="header-skeleton-subhead">
+          <SkeletonLoader type="text" width="220px" height="14px" />
+        </div>
+        <div v-else class="tournament-subhead">
           <strong class="t-name">{{ tournament.name }}</strong>
           <span class="t-badge">{{ tournament.category }}</span>
           <span class="t-venue">
             <span class="material-symbols-outlined icon-14">location_on</span>
             <span>{{ tournament.venue }} ({{ tournament.city }})</span>
           </span>
+          <span class="t-dates font-mono">
+            <span class="material-symbols-outlined icon-14">calendar_today</span>
+            <span>{{ tournament.datesFormatted }}</span>
+          </span>
         </div>
       </div>
 
       <div class="header-right-col">
-        <div v-if="notice" class="alert-pill">{{ notice }}</div>
-        <div v-if="error" class="alert-pill-error">{{ error }}</div>
+        <div class="header-controls">
+          <!-- Tournament Switcher Dropdown -->
+          <div v-if="tournamentsList.length > 0" class="tournament-selector-wrap">
+            <SelectDropdown
+              :model-value="selectedTournamentId || tournament.id"
+              :options="tournamentOptions"
+              variant="bordered"
+              @update:model-value="selectTournament($event)"
+            />
+          </div>
+
+          <!-- Action Buttons -->
+          <AuraButton variant="secondary" :disabled="loading" @click="loadTournaments">
+            <span class="material-symbols-outlined icon-18" :class="{ spin: loading }">refresh</span>
+            <span>{{ t('admin.tournaments.refreshBtn') }}</span>
+          </AuraButton>
+
+          <AuraButton variant="primary" @click="showCreateModal = true">
+            <span class="material-symbols-outlined icon-18">add</span>
+            <span>{{ t('admin.tournaments.createTournamentBtn') }}</span>
+          </AuraButton>
+        </div>
+
+        <div v-if="notice" class="alert-pill alert-success">
+          <span class="material-symbols-outlined icon-14">check_circle</span>
+          <span>{{ notice }}</span>
+        </div>
+        <div v-if="error" class="alert-pill alert-error">
+          <span class="material-symbols-outlined icon-14">error</span>
+          <span>{{ error }}</span>
+        </div>
       </div>
     </header>
 
@@ -104,6 +168,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
       >
         <span class="material-symbols-outlined icon-18">checklist</span>
         <span>{{ t('admin.tournaments.tabCheckIn') }}</span>
+        <span v-if="participants.length > 0" class="tab-badge font-mono">{{ checkInMetrics.checkedInCount }}/{{ checkInMetrics.total }}</span>
       </button>
 
       <button
@@ -112,7 +177,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
         :class="{ active: activeSubNav === 'live-referee-console' }"
         @click="activeSubNav = 'live-referee-console'"
       >
-        <span class="material-symbols-outlined icon-18">sports</span>
+        <span class="material-symbols-outlined icon-18">scoreboard</span>
         <span>{{ t('admin.tournaments.tabReferee') }}</span>
       </button>
 
@@ -139,6 +204,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
         :matches="matches"
         :selected-round="selectedRoundFilter"
         :is-generating="isGenerating"
+        :loading="loadingDetails"
         @update:selected-round="selectedRoundFilter = $event"
         @select-match="handleSelectMatch"
         @regenerate="regenerateBracketTree"
@@ -152,6 +218,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
         :filter-status="checkInFilterStatus"
         :search-query="checkInSearchQuery"
         :metrics="checkInMetrics"
+        :loading="loadingDetails"
         @update:filter-status="checkInFilterStatus = $event"
         @update:search-query="checkInSearchQuery = $event"
         @toggle-check-in="toggleAthleteCheckIn"
@@ -162,6 +229,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
     <section v-else-if="activeSubNav === 'live-referee-console'" class="tab-content-section">
       <RefereeConsolePanel
         :live-match="liveMatch"
+        :saving="saving"
         @increment-a="incrementScoreA"
         @decrement-a="decrementScoreA"
         @increment-b="incrementScoreB"
@@ -169,20 +237,35 @@ function handleSaveMatchScore(updated: FixtureMatch) {
         @switch-ends="switchEnds"
         @simulate-conflict="simulateConflict"
         @resolve-conflict="resolveConflict"
+        @save-score="saveRefereeScore"
       />
     </section>
 
     <!-- Tab 4: Overview -->
     <section v-else-if="activeSubNav === 'tournament-overview'" class="tab-content-section">
-      <TournamentOverviewPanel :tournament="tournament" />
+      <TournamentOverviewPanel
+        :tournament="tournament"
+        :participants="participants"
+        :matches="matches"
+        :loading="loadingDetails"
+      />
     </section>
 
     <!-- Match Details / Score Modal -->
     <ScoreUpdateModal
       :show="showScoreModal"
       :match="selectedMatch"
+      :saving="saving"
       @close="showScoreModal = false"
       @save="handleSaveMatchScore"
+    />
+
+    <!-- Create Tournament Modal -->
+    <TournamentCreateModal
+      :show="showCreateModal"
+      :saving="saving"
+      @close="showCreateModal = false"
+      @create="handleCreateTournament"
     />
   </div>
 </template>
@@ -195,7 +278,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-  color: var(--ink);
+  color: var(--ink, #0f172a);
 }
 
 .page-top-header {
@@ -203,9 +286,15 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--outline);
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--outline, #e2e8f0);
+}
+
+.header-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .header-title-row {
@@ -223,6 +312,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   margin: 0;
   font-size: 22px;
   font-weight: 800;
+  color: var(--ink, #0f172a);
 }
 
 .tournament-subhead {
@@ -230,13 +320,12 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted, #64748b);
   flex-wrap: wrap;
-  margin-top: 6px;
 }
 
 .t-name {
-  color: var(--ink);
+  color: var(--ink, #0f172a);
   font-size: 14px;
 }
 
@@ -248,7 +337,7 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   font-weight: 700;
 }
 
-.t-venue {
+.t-venue, .t-dates {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -258,10 +347,48 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   font-size: 14px;
 }
 
+.header-right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tournament-selector-wrap {
+  min-width: 240px;
+}
+
+.alert-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alert-success {
+  background: #10b981;
+  color: #fff;
+}
+
+.alert-error {
+  background: #ef4444;
+  color: #fff;
+}
+
 .admin-sub-navigation-bar {
   display: flex;
   gap: 8px;
-  border-bottom: 1px solid var(--outline);
+  border-bottom: 1px solid var(--outline, #e2e8f0);
   padding-bottom: 8px;
   overflow-x: auto;
 }
@@ -272,9 +399,9 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   gap: 8px;
   padding: 10px 18px;
   border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
+  border: 1px solid var(--outline, #e2e8f0);
+  background: var(--surface, #ffffff);
+  color: var(--ink, #0f172a);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -293,22 +420,16 @@ function handleSaveMatchScore(updated: FixtureMatch) {
   border-color: var(--pink-dark, #db2777);
 }
 
-.alert-pill {
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: #10b981;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
+.tab-badge {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
 }
 
-.alert-pill-error {
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: #ef4444;
+.sub-tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .tab-content-section {
@@ -319,5 +440,15 @@ function handleSaveMatchScore(updated: FixtureMatch) {
 
 .icon-18 {
   font-size: 18px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
