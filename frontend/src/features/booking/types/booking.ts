@@ -18,6 +18,11 @@ export type Coupon = {
   discount_value: number
   max_discount?: number | null
   min_spend?: number | null
+  usage_count?: number | null
+  usage_limit?: number | null
+  is_active?: boolean
+  starts_at?: string | null
+  ends_at?: string | null
 }
 
 export type BookingSlot = {

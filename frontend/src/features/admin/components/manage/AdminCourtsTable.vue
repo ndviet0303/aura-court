@@ -12,6 +12,7 @@ defineProps<{
   searchQuery: string
   venueFilterOptions: Array<{ value: any; label: string; sublabel?: string; icon?: string }>
   statusFilterOptions: Array<{ value: any; label: string; icon?: string }>
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -63,13 +64,41 @@ const { t } = useI18n()
       </div>
     </div>
 
-    <!-- Courts Cards Grid -->
-    <div v-if="courts.length === 0" class="empty-courts-state">
+    <!-- Skeleton Loading Grid -->
+    <div v-if="loading" class="courts-admin-grid">
+      <div v-for="i in 6" :key="i" class="court-admin-card skeleton-card">
+        <div class="court-card-img skeleton-item skeleton-img">
+          <div class="skeleton-tag skeleton-item"></div>
+        </div>
+        <div class="court-card-body">
+          <div class="court-title-row">
+            <div class="skeleton-item skeleton-title"></div>
+            <div class="skeleton-item skeleton-venue"></div>
+          </div>
+          <div class="skeleton-item skeleton-desc"></div>
+          <div class="skeleton-item skeleton-desc short"></div>
+          <div class="court-stats-row">
+            <div class="skeleton-item skeleton-stat"></div>
+            <div class="skeleton-item skeleton-stat"></div>
+          </div>
+          <div class="court-actions-footer">
+            <div class="skeleton-item skeleton-btn"></div>
+            <div class="skeleton-item skeleton-btn"></div>
+            <div class="skeleton-item skeleton-btn"></div>
+            <div class="skeleton-item skeleton-btn-toggle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="courts.length === 0" class="empty-courts-state">
       <span class="material-symbols-outlined empty-ico">sports_tennis</span>
       <h3>{{ t('admin.manage.noCourtsFound') }}</h3>
       <p>{{ t('admin.manage.noCourtsSub') }}</p>
     </div>
 
+    <!-- Real Courts Cards Grid -->
     <div v-else class="courts-admin-grid">
       <div
         v-for="court in courts"
@@ -416,5 +445,101 @@ const { t } = useI18n()
 
 .icon-18 {
   font-size: 18px;
+}
+
+/* Skeleton Shimmer Styling */
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-item {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--soft, #eff1f4);
+  border-radius: 6px;
+}
+
+.skeleton-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 209, 220, 0.45) 45%,
+    rgba(255, 255, 255, 0.8) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer-wave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+:global(html.dark) .skeleton-item {
+  background-color: var(--soft, #2b2e36);
+}
+
+:global(html.dark) .skeleton-item::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(120, 85, 94, 0.35) 45%,
+    rgba(255, 255, 255, 0.1) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.skeleton-img {
+  border-radius: 0;
+}
+
+.skeleton-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 70px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.skeleton-title {
+  width: 55%;
+  height: 16px;
+}
+
+.skeleton-venue {
+  width: 35%;
+  height: 14px;
+}
+
+.skeleton-desc {
+  width: 90%;
+  height: 12px;
+}
+
+.skeleton-desc.short {
+  width: 65%;
+}
+
+.skeleton-stat {
+  width: 80px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.skeleton-btn {
+  flex: 1;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.skeleton-btn-toggle {
+  flex: 0 0 34px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+@keyframes shimmer-wave {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 </style>

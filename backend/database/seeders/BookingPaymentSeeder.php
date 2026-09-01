@@ -28,31 +28,42 @@ class BookingPaymentSeeder extends Seeder
         }
 
         $createdBookings = [];
+        $operatingHours = [6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
-        foreach (range(1, 64) as $number) {
+        foreach (range(1, 72) as $number) {
             $court = $courts[($number - 1) % $courts->count()];
             $customer = $customers[($number - 1) % $customers->count()];
-            $dayOffset = 1 + intdiv($number - 1, $courts->count());
-            $hour = 6 + ((($number - 1) % 8) * 2);
-            $slotCount = ($number % 3 === 0) ? 2 : 1;
+            
+            // Distribute across today (1..20), past 7 days (21..42), future days (43..58), past weeks (59..72)
+            if ($number <= 20) {
+                $dayOffset = 0; // Today
+                $hour = $operatingHours[($number - 1) % count($operatingHours)];
+            } elseif ($number <= 42) {
+                $dayOffset = -(1 + (($number - 21) % 6)); // Past 1 to 6 days
+                $hour = $operatingHours[($number * 3) % count($operatingHours)];
+            } elseif ($number <= 58) {
+                $dayOffset = 1 + (($number - 43) % 12); // Future days in this month
+                $hour = $operatingHours[($number * 2) % count($operatingHours)];
+            } else {
+                $dayOffset = -(7 + (($number - 59) % 15)); // Past 1-3 weeks
+                $hour = $operatingHours[($number * 5) % count($operatingHours)];
+            }
+
+            $slotCount = ($number % 4 === 0) ? 2 : 1;
 
             $starts = collect(range(0, $slotCount - 1))->map(
-                fn (int $offset) => $now->copy()->startOfDay()->addDays($dayOffset)->setTime($hour + $offset, 0)
+                fn (int $offset) => $now->copy()->startOfDay()->addDays($dayOffset)->setTime(min($hour + $offset, 21), 0)
             );
 
-            $status = match ($number % 10) {
+            $status = match ($number % 12) {
                 2 => 'cancelled',
                 3 => 'expired',
                 4 => 'refund_pending',
                 5 => 'refunded',
                 7 => 'no_show',
-                default => $number % 10 === 1 ? 'pending_payment' : 'confirmed',
+                1 => 'pending_payment',
+                default => 'confirmed',
             };
-
-            $isHistorical = in_array($status, ['cancelled', 'expired', 'refund_pending', 'refunded', 'no_show'], true) || ($number <= 20);
-            if ($isHistorical) {
-                $starts = $starts->map(fn (Carbon $start) => $start->subDays(15 + ($number % 20)));
-            }
 
             $prices = $starts->map(function (Carbon $start) use ($court, $courts): int {
                 $courtIndex = $courts->search(fn (Court $item): bool => $item->id === $court->id);
@@ -72,6 +83,7 @@ class BookingPaymentSeeder extends Seeder
 
             $total = $prices->sum();
             $code = sprintf('DEMO-BK-%03d', $number);
+            $createdAt = $starts->first()->copy()->subHours(rand(2, 24));
 
             $booking = Booking::updateOrCreate(
                 ['code' => $code],
@@ -83,6 +95,8 @@ class BookingPaymentSeeder extends Seeder
                     'payment_expires_at' => $status === 'pending_payment' ? $now->copy()->addMinutes(15) : ($status === 'expired' ? $now->copy()->subDay() : null),
                     'cancelled_at' => ($status === 'cancelled') ? $now->copy()->subDays(2) : null,
                     'cancellation_reason' => ($status === 'cancelled') ? 'Khách bận lịch đột xuất' : null,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]
             );
 
@@ -97,10 +111,10 @@ class BookingPaymentSeeder extends Seeder
                 };
 
                 BookingSlot::updateOrCreate(
-                    ['booking_id' => $booking->id, 'starts_at' => $start->copy()->utc()->format('Y-m-d H:i:s')],
+                    ['booking_id' => $booking->id, 'starts_at' => $start->format('Y-m-d H:i:s')],
                     [
                         'court_id' => $court->id,
-                        'ends_at' => $start->copy()->addHour()->utc()->format('Y-m-d H:i:s'),
+                        'ends_at' => $start->copy()->addHour()->format('Y-m-d H:i:s'),
                         'unit_price' => $prices[$slotIndex],
                         'status' => $slotStatus,
                     ]
@@ -122,7 +136,9 @@ class BookingPaymentSeeder extends Seeder
                     'transfer_code' => $code,
                     'status' => $paymentStatus,
                     'payload' => ['demo' => true, 'source' => 'BookingPaymentSeeder'],
-                    'received_at' => $paymentStatus === 'manual_review' ? null : $now->copy()->subDays(1),
+                    'received_at' => $paymentStatus === 'manual_review' ? null : $createdAt->copy()->addMinutes(10),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]
             );
 
@@ -134,7 +150,9 @@ class BookingPaymentSeeder extends Seeder
                         'status' => $status === 'refunded' ? 'processed' : 'pending',
                         'note' => 'Hoàn tiền vé đặt sân theo chính sách',
                         'processed_by' => ($status === 'refunded' && $admin) ? $admin->id : null,
-                        'processed_at' => $status === 'refunded' ? $now->copy()->subDays(1) : null,
+                        'processed_at' => $status === 'refunded' ? $createdAt->copy()->addHours(2) : null,
+                        'created_at' => $createdAt,
+                        'updated_at' => $createdAt,
                     ]
                 );
             }

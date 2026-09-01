@@ -6,28 +6,37 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Court;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
 {
     public function index(Request $request)
     {
-        return Court::where('is_active', true)
-            ->whereHas('venue', fn ($query) => $query->where('is_active', true))
-            ->when($request->query('sport_type'), function ($q, $sportType) {
-                $q->whereHas('sportZone', fn ($zone) => $zone->where('sport_type', $sportType)->where('is_active', true));
-            })
-            ->when($request->query('venue_id'), function ($q, $venueId) {
-                $q->where('venue_id', $venueId);
-            })
-            ->when($request->query('sport_zone_id'), function ($q, $zoneId) {
-                $q->where('sport_zone_id', $zoneId);
-            })
-            ->with(['priceSlots', 'venue', 'sportZone'])
-            ->withCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
-            ->withAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating')
-            ->orderBy('id')
-            ->get();
+        $version = Cache::get('courts_version', 1);
+        $cacheKey = "courts:v{$version}:" . md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
+
+        $courts = Cache::remember($cacheKey, 300, function () use ($request) {
+            return Court::where('is_active', true)
+                ->whereHas('venue', fn ($query) => $query->where('is_active', true))
+                ->when($request->query('sport_type'), function ($q, $sportType) {
+                    $q->whereHas('sportZone', fn ($zone) => $zone->where('sport_type', $sportType)->where('is_active', true));
+                })
+                ->when($request->query('venue_id'), function ($q, $venueId) {
+                    $q->where('venue_id', $venueId);
+                })
+                ->when($request->query('sport_zone_id'), function ($q, $zoneId) {
+                    $q->where('sport_zone_id', $zoneId);
+                })
+                ->with(['priceSlots', 'venue', 'sportZone'])
+                ->withCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
+                ->withAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating')
+                ->orderBy('id')
+                ->get()
+                ->toArray();
+        });
+
+        return response()->json($courts);
     }
 
     public function adminIndex(Request $request)
@@ -60,7 +69,10 @@ class CourtController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        return response()->json(Court::create($data)->load(['venue', 'sportZone']), 201);
+        $court = Court::create($data)->load(['venue', 'sportZone']);
+        Cache::increment('courts_version');
+
+        return response()->json($court, 201);
     }
 
     public function update(Request $request, Court $court)
@@ -85,6 +97,8 @@ class CourtController extends Controller
         $court->update($data);
         abort_if($court->is_active && ! $court->venue()->where('is_active', true)->exists(), 422, 'Không thể mở sân tại địa điểm đang ngừng hoạt động.');
 
+        Cache::increment('courts_version');
+
         return $court->fresh(['venue', 'sportZone']);
     }
 
@@ -92,6 +106,7 @@ class CourtController extends Controller
     public function destroy(Court $court)
     {
         $court->update(['is_active' => false]);
+        Cache::increment('courts_version');
 
         return ['message' => 'Đã ngừng mở sân.'];
     }

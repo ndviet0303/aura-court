@@ -71,10 +71,16 @@ export function useAdminDashboard() {
     return `${apiOrigin}/api/v1/admin/reports.csv?${query}`
   })
 
+  function formatDate(d: Date): string {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   function applyPreset(preset: 'today' | '7days' | 'thisMonth' | 'custom') {
     datePreset.value = preset
     const now = new Date()
-    const formatDate = (d: Date): string => d.toISOString().split('T')[0] || ''
     if (preset === 'today') {
       from.value = formatDate(now)
       to.value = formatDate(now)
@@ -85,7 +91,11 @@ export function useAdminDashboard() {
       to.value = formatDate(now)
     } else if (preset === 'thisMonth') {
       from.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-      to.value = formatDate(now)
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      to.value = formatDate(endOfMonth)
+    }
+    if (preset !== 'custom') {
+      loadData()
     }
   }
 

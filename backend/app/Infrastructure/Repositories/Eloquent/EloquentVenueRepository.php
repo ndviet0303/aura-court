@@ -5,6 +5,7 @@ namespace App\Infrastructure\Repositories\Eloquent;
 use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Models\Venue;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class EloquentVenueRepository implements VenueRepositoryInterface
 {
@@ -34,12 +35,16 @@ class EloquentVenueRepository implements VenueRepositoryInterface
 
     public function create(array $attributes): Venue
     {
-        return Venue::create($attributes);
+        $venue = Venue::create($attributes);
+        Cache::increment('venues_version');
+        return $venue;
     }
 
     public function update(Venue $venue, array $attributes): bool
     {
-        return $venue->update($attributes);
+        $updated = $venue->update($attributes);
+        Cache::increment('venues_version');
+        return $updated;
     }
 
     public function existsBySlug(string $slug): bool

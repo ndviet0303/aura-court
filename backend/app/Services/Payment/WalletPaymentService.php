@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
 use App\Services\Finance\FinancialPostingService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 class WalletPaymentService
@@ -17,10 +18,12 @@ class WalletPaymentService
     public function getOrCreateWallet(int $userId, ?int $organizationId = null): WalletAccount
     {
         if (! $organizationId) {
-            $organization = Organization::where('status', 'active')->whereHas('venues')->first()
-                ?: Organization::where('status', 'active')->first()
-                ?: Organization::first();
-            $organizationId = $organization?->id;
+            $organizationId = Cache::remember('default_org_id', 3600, function () {
+                $organization = Organization::where('status', 'active')->whereHas('venues')->first()
+                    ?: Organization::where('status', 'active')->first()
+                    ?: Organization::first();
+                return $organization?->id;
+            });
         }
 
         abort_unless($organizationId, 500, 'Không tìm thấy tổ chức hoạt động.');

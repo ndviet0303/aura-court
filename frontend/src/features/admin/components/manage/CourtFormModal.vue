@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import type { CourtForm } from '../../composables/useAdminManageCourts'
@@ -13,7 +13,6 @@ const props = defineProps<{
   courtForm: CourtForm
   venues: Venue[]
   sportZones: SportZone[]
-  isDemoAdmin?: boolean
   saving?: boolean
 }>()
 
@@ -28,37 +27,37 @@ const uploadingImage = ref(false)
 const uploadError = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const courtImagePresets = [
+const courtImagePresets = computed(() => [
   {
-    name: 'Yonex BWF',
-    sub: 'Thảm chuẩn 5 lớp',
+    name: t('admin.manage.presetYonex'),
+    sub: t('admin.manage.presetYonexSub'),
     url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
   },
   {
-    name: 'Thảm Xanh',
-    sub: 'Sân đôi phong trào',
+    name: t('admin.manage.presetBlue'),
+    sub: t('admin.manage.presetBlueSub'),
     url: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=800&q=80',
   },
   {
-    name: 'Indoor VIP',
-    sub: 'Nhà thi đấu kín',
+    name: t('admin.manage.presetIndoor'),
+    sub: t('admin.manage.presetIndoorSub'),
     url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
   },
   {
-    name: 'Đèn LED Pro',
-    sub: 'Chiếu sáng 500 Lux',
+    name: t('admin.manage.presetLed'),
+    sub: t('admin.manage.presetLedSub'),
     url: 'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?auto=format&fit=crop&w=800&q=80',
   },
-]
+])
 
-const courtDescriptionTags = [
-  { label: 'Thảm BWF 5 lớp tiêu chuẩn' },
-  { label: 'Đèn LED chống chói 500 Lux' },
-  { label: 'Điều hòa không khí trung tâm' },
-  { label: 'Ghế nghỉ trọng tài & VĐV' },
-  { label: 'Bảng điểm điện tử LED' },
-  { label: 'Thảm giảm chấn bảo vệ khớp gối' },
-]
+const courtDescriptionTags = computed(() => [
+  { label: t('admin.manage.tagBwfMat') },
+  { label: t('admin.manage.tagLedLight') },
+  { label: t('admin.manage.tagCentralAc') },
+  { label: t('admin.manage.tagSeating') },
+  { label: t('admin.manage.tagLedScoreboard') },
+  { label: t('admin.manage.tagShockAbsorption') },
+])
 
 function toggleDescriptionTag(tagLabel: string) {
   if (!props.courtForm.description) {
@@ -83,21 +82,13 @@ async function handleFileUpload(event: Event) {
   uploadError.value = ''
   uploadingImage.value = true
 
-  if (props.isDemoAdmin) {
-    setTimeout(() => {
-      props.courtForm.image_url = URL.createObjectURL(file)
-      uploadingImage.value = false
-    }, 600)
-    return
-  }
-
   try {
     const formData = new FormData()
     formData.append('image', file)
     const res = await adminApi.uploadImage(formData)
     props.courtForm.image_url = res.url
   } catch (err: unknown) {
-    uploadError.value = errorMessage(err, 'Không thể tải ảnh lên Cloudflare R2.')
+    uploadError.value = errorMessage(err, t('admin.manage.uploadImageError'))
   } finally {
     uploadingImage.value = false
     if (fileInput.value) fileInput.value.value = ''
@@ -119,6 +110,8 @@ async function handleFileUpload(event: Event) {
       </div>
 
       <div class="modal-body">
+        <div v-if="uploadError" class="alert-banner-error">{{ uploadError }}</div>
+
         <div class="modal-form-grid">
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label>
@@ -181,7 +174,6 @@ async function handleFileUpload(event: Event) {
             </div>
           </div>
 
-          <!-- Image URL & Preset Selection -->
           <div class="form-group full-width">
             <label class="form-label">{{ t('admin.manage.courtImageLabel') }}</label>
             <div class="img-input-row">
@@ -376,6 +368,15 @@ async function handleFileUpload(event: Event) {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.alert-banner-error {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-size: 13px;
+  margin-bottom: 12px;
 }
 
 .icon-16 {

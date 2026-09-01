@@ -24,8 +24,10 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Venue;
 use App\Services\Infrastructure\AuditLogger;
+use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -49,13 +51,20 @@ class AdminController extends Controller
 
     public function venues(Request $request)
     {
-        return $this->venues->getActiveVenuesWithCourts($request->query('sport_type'));
+        $version = Cache::get('venues_version', 1);
+        $cacheKey = "venues:v{$version}:" . ($request->query('sport_type') ?? 'all');
+        $venues = Cache::remember($cacheKey, 300, function () use ($request) {
+            return $this->venues->getActiveVenuesWithCourts($request->query('sport_type'))->toArray();
+        });
+
+        return response()->json($venues);
     }
 
     public function storeVenue(Request $request)
     {
         $data = $this->validatedVenue($request);
         $venue = $this->createVenueAction->execute($data);
+        Cache::increment('venues_version');
         $this->audits->record($request, 'venue.created', $venue);
 
         return response()->json($venue, 201);
@@ -70,6 +79,7 @@ class AdminController extends Controller
         if ($request->has('is_active')) {
             $this->updateVenueAction->execute($venue, $request->validate(['is_active' => 'boolean']));
         }
+        Cache::increment('venues_version');
         $this->audits->record($request, 'venue.updated', $venue, ['fields' => array_keys($request->all())]);
 
         return $venue->fresh('sportZones');
@@ -78,6 +88,7 @@ class AdminController extends Controller
     public function destroyVenue(Venue $venue)
     {
         $this->updateVenueAction->execute($venue, ['is_active' => false]);
+        Cache::increment('venues_version');
         $this->audits->record(request(), 'venue.deactivated', $venue);
 
         return ['message' => 'Đã ngừng hoạt động địa điểm.'];
@@ -284,26 +295,66 @@ class AdminController extends Controller
 
     public function report(Request $request)
     {
-        $from = $request->date('from')?->startOfDay() ?? now()->startOfMonth();
-        $to = $request->date('to')?->endOfDay() ?? now()->endOfDay();
+        $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
+        $from = $request->filled('from')
+            ? Carbon::parse($request->input('from'), $timezone)->startOfDay()
+            : now($timezone)->startOfMonth();
+        $to = $request->filled('to')
+            ? Carbon::parse($request->input('to'), $timezone)->endOfDay()
+            : now($timezone)->endOfMonth();
+
         $base = Booking::whereBetween('created_at', [$from, $to]);
-        $confirmedSlots = BookingSlot::query()->where('status', 'confirmed')->whereBetween('starts_at', [$from, $to])->get();
+        $confirmedSlots = BookingSlot::query()
+            ->where('status', 'confirmed')
+            ->whereBetween('starts_at', [$from, $to])
+            ->get();
+
         $capacity = 0;
         foreach (CarbonPeriod::create($from->copy()->startOfDay(), '1 day', $to->copy()->startOfDay()) as $day) {
-            $capacity += CourtPriceSlot::query()->where('is_active', true)->where('weekday', $day->dayOfWeekIso)->count();
+            $capacity += CourtPriceSlot::query()
+                ->where('is_active', true)
+                ->where('weekday', $day->dayOfWeekIso)
+                ->count();
         }
-        $byHour = $confirmedSlots->groupBy(fn (BookingSlot $slot) => $slot->starts_at->setTimezone(config('app.timezone'))->format('H:00'))->map(fn ($items, $hour) => ['hour' => $hour, 'bookings' => $items->count()])->values();
+
+        $byHour = $confirmedSlots
+            ->groupBy(fn (BookingSlot $slot) => $slot->starts_at->setTimezone($timezone)->format('H:00'))
+            ->map(fn ($items, $hour) => ['hour' => $hour, 'bookings' => $items->count()])
+            ->values();
+
+        $byCourt = Booking::query()
+            ->where('status', 'confirmed')
+            ->whereBetween('created_at', [$from, $to])
+            ->select('court_id', DB::raw('count(*) as bookings'), DB::raw('sum(total_amount) as revenue'))
+            ->groupBy('court_id')
+            ->with('court:id,name')
+            ->get();
+
+        if ($byCourt->isEmpty() && $confirmedSlots->isNotEmpty()) {
+            $byCourt = $confirmedSlots
+                ->groupBy('court_id')
+                ->map(function ($slots, $courtId) {
+                    $court = Court::find($courtId);
+                    return [
+                        'court_id' => (int) $courtId,
+                        'bookings' => $slots->count(),
+                        'revenue' => (int) $slots->sum('unit_price'),
+                        'court' => $court ? ['id' => $court->id, 'name' => $court->name] : null,
+                    ];
+                })
+                ->values();
+        }
 
         return [
-            'from' => $from,
-            'to' => $to,
+            'from' => $from->toIso8601String(),
+            'to' => $to->toIso8601String(),
             'bookings' => (clone $base)->count(),
             'confirmed' => (clone $base)->where('status', 'confirmed')->count(),
-            'revenue' => (clone $base)->where('status', 'confirmed')->sum('total_amount'),
-            'pendingRefunds' => Refund::where('status', 'pending')->whereBetween('created_at', [$from, $to])->sum('amount'),
+            'revenue' => (int) (clone $base)->where('status', 'confirmed')->sum('total_amount'),
+            'pendingRefunds' => (int) Refund::where('status', 'pending')->whereBetween('created_at', [$from, $to])->sum('amount'),
             'occupancyRate' => $capacity > 0 ? round($confirmedSlots->count() / $capacity * 100, 1) : 0,
             'byHour' => $byHour,
-            'byCourt' => (clone $base)->where('status', 'confirmed')->select('court_id', DB::raw('count(*) as bookings'), DB::raw('sum(total_amount) as revenue'))->groupBy('court_id')->with('court:id,name')->get(),
+            'byCourt' => $byCourt,
         ];
     }
 

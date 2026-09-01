@@ -1,10 +1,11 @@
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { resolveLocalizedText } from '@/i18n'
 import type { Court, Venue, SportZone } from '@/features/court/types/court'
-import type { Refund } from '@/features/booking/types/booking'
-import { useAuthStore } from '@/stores/auth'
+import type { Refund, Coupon } from '@/features/booking/types/booking'
+export type { Coupon }
 
 export type CourtForm = {
   name: string
@@ -15,19 +16,8 @@ export type CourtForm = {
   is_active: boolean
 }
 
-export type Coupon = {
-  id: number
-  code: string
-  discount_type: 'fixed' | 'percent'
-  discount_value: number
-  usage_count: number
-  usage_limit?: number | null
-  is_active: boolean
-}
-
 export function useAdminManageCourts() {
-  const auth = useAuthStore()
-  const isDemoAdmin = computed(() => auth.user?.role === 'admin' && auth.user.email?.endsWith('@demo.auracourt.vn'))
+  const { t } = useI18n()
 
   const courts = ref<Court[]>([])
   const venues = ref<Venue[]>([])
@@ -43,13 +33,35 @@ export function useAdminManageCourts() {
   const searchQuery = ref('')
   const selectedVenueFilter = ref<number | 'all'>('all')
   const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
+  const activeTab = ref<'courts' | 'refunds'>('courts')
+
+  // Modals & Sub-states
+  const showCourtModal = ref(false)
+  const editingCourtId = ref<number | null>(null)
+  const courtForm = ref<CourtForm>({
+    name: '',
+    venue_id: 0,
+    sport_zone_id: null,
+    description: '',
+    image_url: '',
+    is_active: true,
+  })
+
+  const showBlockModal = ref(false)
+  const selectedCourtForBlock = ref<Court | null>(null)
+  const blockSaving = ref(false)
+
+  const showCouponModal = ref(false)
+  const couponSaving = ref(false)
 
   const activeVenues = computed(() => venues.value.filter((venue) => venue.is_active))
 
   const filteredCourts = computed(() => {
     return courts.value.filter((c) => {
       const matchVenue = selectedVenueFilter.value === 'all' || c.venue?.id === selectedVenueFilter.value
-      const matchStatus = statusFilter.value === 'all' || (statusFilter.value === 'active' ? c.is_active !== false : c.is_active === false)
+      const matchStatus =
+        statusFilter.value === 'all' ||
+        (statusFilter.value === 'active' ? c.is_active !== false : c.is_active === false)
       const matchSearch =
         !searchQuery.value.trim() ||
         resolveLocalizedText(c.name).toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -63,24 +75,45 @@ export function useAdminManageCourts() {
   const totalBlocksCount = computed(() => courts.value.reduce((sum, c) => sum + (c.blocks?.length || 0), 0))
   const pendingRefundsCount = computed(() => refunds.value.length)
 
+  const venueFilterOptions = computed(() => [
+    { value: 'all', label: t('admin.manage.allVenuesFilter', { count: venues.value.length }), icon: 'domain' },
+    ...venues.value.map((v) => ({
+      value: v.id,
+      label: resolveLocalizedText(v.name),
+      sublabel: v.address || undefined,
+      icon: 'location_on',
+    })),
+  ])
+
+  const statusFilterOptions = computed(() => [
+    { value: 'all', label: t('admin.manage.allStatusFilter'), icon: 'filter_list' },
+    { value: 'active', label: t('admin.manage.statusOpen'), icon: 'check_circle' },
+    { value: 'inactive', label: t('admin.manage.statusClosed'), icon: 'pause_circle' },
+  ])
+
+  function clearAlerts() {
+    error.value = ''
+    notice.value = ''
+  }
+
   async function load() {
     loading.value = true
-    error.value = ''
+    clearAlerts()
     try {
       const [loadedCourts, loadedVenues, loadedZones, loadedRefunds, loadedCoupons] = await Promise.all([
         adminApi.getCourts(),
         adminApi.getVenues(),
         adminApi.getSportZones(),
-        adminApi.getRefunds<{ data: Refund[] }>(),
-        adminApi.getCoupons<{ data: Coupon[] }>(),
+        adminApi.getRefunds<{ data: Refund[] } | Refund[]>(),
+        adminApi.getCoupons<{ data: Coupon[] } | Coupon[]>(),
       ])
-      courts.value = loadedCourts
-      venues.value = loadedVenues
+      courts.value = loadedCourts || []
+      venues.value = loadedVenues || []
       sportZones.value = loadedZones || []
-      refunds.value = loadedRefunds.data || []
-      coupons.value = loadedCoupons.data || []
+      refunds.value = Array.isArray(loadedRefunds) ? loadedRefunds : (loadedRefunds as { data: Refund[] })?.data || []
+      coupons.value = Array.isArray(loadedCoupons) ? loadedCoupons : (loadedCoupons as { data: Coupon[] })?.data || []
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không tải được dữ liệu quản trị.')
+      error.value = errorMessage(cause, t('admin.manage.loadDataError'))
     } finally {
       loading.value = false
     }
@@ -88,22 +121,151 @@ export function useAdminManageCourts() {
 
   async function toggleCourtStatus(court: Court) {
     const nextStatus = court.is_active === false
-    if (isDemoAdmin.value) {
-      court.is_active = nextStatus
-      notice.value = nextStatus ? 'Đã mô phỏng mở lại sân.' : 'Đã mô phỏng ngừng mở sân.'
-      return
-    }
+    clearAlerts()
     try {
       if (nextStatus) {
         await adminApi.updateCourt(court.id, { is_active: true })
-        notice.value = `Đã mở lại ${court.name}.`
+        notice.value = t('admin.manage.statusOpenedNotice', { name: resolveLocalizedText(court.name) })
       } else {
         await adminApi.deleteCourt(court.id)
-        notice.value = `Đã ngừng mở ${court.name}.`
+        notice.value = t('admin.manage.statusClosedNotice', { name: resolveLocalizedText(court.name) })
       }
       await load()
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể thay đổi trạng thái sân.')
+      error.value = errorMessage(cause, t('admin.manage.statusChangeError'))
+    }
+  }
+
+  function openCreateCourtModal() {
+    editingCourtId.value = null
+    courtForm.value = {
+      name: '',
+      venue_id: activeVenues.value[0]?.id || (venues.value[0]?.id ?? 0),
+      sport_zone_id: null,
+      description: '',
+      image_url: '',
+      is_active: true,
+    }
+    showCourtModal.value = true
+  }
+
+  function openEditCourtModal(court: Court) {
+    editingCourtId.value = court.id
+    courtForm.value = {
+      name: resolveLocalizedText(court.name),
+      venue_id: court.venue?.id || activeVenues.value[0]?.id || 0,
+      sport_zone_id: court.sport_zone_id || null,
+      description: resolveLocalizedText(court.description) || '',
+      image_url: court.image_url || '',
+      is_active: court.is_active !== false,
+    }
+    showCourtModal.value = true
+  }
+
+  async function saveCourt() {
+    saving.value = true
+    clearAlerts()
+    try {
+      const payload = {
+        ...courtForm.value,
+        sport_zone_id: courtForm.value.sport_zone_id || null,
+        image_url: courtForm.value.image_url || null,
+      }
+
+      if (editingCourtId.value) {
+        await adminApi.updateCourt(editingCourtId.value, payload)
+        notice.value = t('admin.manage.updateCourtSuccess')
+      } else {
+        await adminApi.createCourt(payload)
+        notice.value = t('admin.manage.createCourtSuccess')
+      }
+      showCourtModal.value = false
+      await load()
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.manage.saveCourtError'))
+    } finally {
+      saving.value = false
+    }
+  }
+
+  function openBlockModal(court: Court) {
+    selectedCourtForBlock.value = court
+    showBlockModal.value = true
+  }
+
+  async function addBlock(payload: { starts_at: string; ends_at: string; reason: string }) {
+    if (!selectedCourtForBlock.value) return
+    blockSaving.value = true
+    clearAlerts()
+    try {
+      await adminApi.createBlock(selectedCourtForBlock.value.id, payload)
+      notice.value = t('admin.manage.createBlockSuccess')
+      showBlockModal.value = false
+      await load()
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.manage.createBlockError'))
+    } finally {
+      blockSaving.value = false
+    }
+  }
+
+  async function deleteBlock(blockId: number) {
+    if (!selectedCourtForBlock.value) return
+    clearAlerts()
+    try {
+      await adminApi.deleteBlock(selectedCourtForBlock.value.id, blockId)
+      notice.value = t('admin.manage.deleteBlockSuccess')
+      await load()
+      // Refresh local selectedCourt blocks list
+      const refreshed = courts.value.find((c) => c.id === selectedCourtForBlock.value?.id)
+      if (refreshed) selectedCourtForBlock.value = refreshed
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.manage.deleteBlockError'))
+    }
+  }
+
+  function openCouponModal() {
+    showCouponModal.value = true
+  }
+
+  async function createCoupon(payload: {
+    code: string
+    discount_type: 'fixed' | 'percent'
+    discount_value: number
+    usage_limit: number
+  }) {
+    couponSaving.value = true
+    clearAlerts()
+    try {
+      await adminApi.createCoupon(payload)
+      notice.value = t('admin.manage.createCouponSuccess')
+      await load()
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.manage.createCouponError'))
+    } finally {
+      couponSaving.value = false
+    }
+  }
+
+  async function approveRefund(refundId: number) {
+    clearAlerts()
+    try {
+      await adminApi.processRefund(refundId, { status: 'approved' })
+      notice.value = t('admin.manage.approveRefundSuccess')
+      await load()
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.manage.approveRefundError'))
+    }
+  }
+
+  async function rejectRefund(refundId: number) {
+    clearAlerts()
+    try {
+      await adminApi.processRefund(refundId, { status: 'rejected' })
+      notice.value = t('admin.manage.rejectRefundSuccess')
+      await load()
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.manage.rejectRefundError'))
     }
   }
 
@@ -120,14 +282,34 @@ export function useAdminManageCourts() {
     searchQuery,
     selectedVenueFilter,
     statusFilter,
+    activeTab,
+    showCourtModal,
+    editingCourtId,
+    courtForm,
+    showBlockModal,
+    selectedCourtForBlock,
+    blockSaving,
+    showCouponModal,
+    couponSaving,
     activeVenues,
     filteredCourts,
     totalCourtsCount,
     activeCourtsCount,
     totalBlocksCount,
     pendingRefundsCount,
-    isDemoAdmin,
+    venueFilterOptions,
+    statusFilterOptions,
     load,
     toggleCourtStatus,
+    openCreateCourtModal,
+    openEditCourtModal,
+    saveCourt,
+    openBlockModal,
+    addBlock,
+    deleteBlock,
+    openCouponModal,
+    createCoupon,
+    approveRefund,
+    rejectRefund,
   }
 }

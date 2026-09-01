@@ -29,11 +29,32 @@ const { t } = useI18n()
       <span class="refund-count-badge font-mono">{{ t('admin.manage.refundsCount', { count: refunds.length }) }}</span>
     </div>
 
-    <div v-if="refunds.length === 0" class="empty-refunds-box">
+    <!-- Skeleton Loading State -->
+    <div v-if="loading" class="refunds-list">
+      <div v-for="i in 4" :key="i" class="refund-card skeleton-card">
+        <div class="ref-info-col">
+          <div class="ref-title-row">
+            <div class="skeleton-item skeleton-code"></div>
+            <div class="skeleton-item skeleton-amt"></div>
+          </div>
+          <div class="skeleton-item skeleton-text"></div>
+          <div class="skeleton-item skeleton-text short"></div>
+        </div>
+
+        <div class="ref-actions-col">
+          <div class="skeleton-item skeleton-action-btn"></div>
+          <div class="skeleton-item skeleton-action-btn"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="refunds.length === 0" class="empty-refunds-box">
       <span class="material-symbols-outlined empty-icon">check_circle</span>
       <p>{{ t('admin.manage.noPendingRefunds') }}</p>
     </div>
 
+    <!-- Real Refunds List -->
     <div v-else class="refunds-list">
       <div v-for="ref in refunds" :key="ref.id" class="refund-card">
         <div class="ref-info-col">
@@ -212,5 +233,77 @@ const { t } = useI18n()
 
 .icon-16 {
   font-size: 16px;
+}
+
+/* Shimmer Skeleton */
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-item {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--soft, #eff1f4);
+  border-radius: 6px;
+}
+
+.skeleton-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 209, 220, 0.45) 45%,
+    rgba(255, 255, 255, 0.8) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer-wave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+:global(html.dark) .skeleton-item {
+  background-color: var(--soft, #2b2e36);
+}
+
+:global(html.dark) .skeleton-item::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(120, 85, 94, 0.35) 45%,
+    rgba(255, 255, 255, 0.1) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.skeleton-code {
+  width: 90px;
+  height: 16px;
+}
+
+.skeleton-amt {
+  width: 80px;
+  height: 16px;
+}
+
+.skeleton-text {
+  width: 220px;
+  height: 12px;
+  margin-top: 2px;
+}
+
+.skeleton-text.short {
+  width: 160px;
+}
+
+.skeleton-action-btn {
+  width: 90px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+@keyframes shimmer-wave {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 </style>

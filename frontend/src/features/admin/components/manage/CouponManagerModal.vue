@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
-import type { Coupon } from '../../composables/useAdminManageCourts'
+import type { Coupon } from '@/features/booking/types/booking'
 
 defineProps<{
   show: boolean

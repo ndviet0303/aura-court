@@ -79,7 +79,7 @@ const { t } = useI18n()
         <!-- Bulk Price Setup Section -->
         <div class="bulk-pricing-section">
           <h4 class="section-title">
-            <span class="material-symbols-outlined icon-16">flash_on</span>
+            <span class="material-symbols-outlined icon-16">tune</span>
             <span>{{ t('admin.manage.bulkPricingSectionTitle') }}</span>
           </h4>
           <div class="bulk-inputs-grid">

@@ -75,12 +75,13 @@ onMounted(() => {
     />
 
     <!-- Executive KPI Cards Grid -->
-    <AdminKpiCards :report="report" />
+    <AdminKpiCards :report="report" :loading="loading" />
 
     <!-- Analytics Charts (Hourly vs Court) -->
     <AdminAnalyticsCharts
       :report="report"
       :chart-tab="chartTab"
+      :loading="loading"
       @update:chart-tab="chartTab = $event"
     />
 
@@ -90,12 +91,14 @@ onMounted(() => {
         :bookings="filteredBookings"
         :search="searchFilter"
         :status="statusFilter"
+        :loading="loading"
         @update:search="searchFilter = $event"
         @update:status="statusFilter = $event"
       />
 
       <AdminPendingPaymentsCard
         :payments="payments"
+        :loading="loading"
         @verify="handleVerifyPayment"
       />
     </div>
