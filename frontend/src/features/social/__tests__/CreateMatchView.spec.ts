@@ -39,6 +39,7 @@ describe('CreateMatchView', () => {
           {
             id: 1,
             name: 'Sân VIP 1',
+            sport_type: 'badminton',
             venue: { id: 1, name: 'Aura Central', slug: 'aura-central', address: '123 Le Loi', google_maps_url: null, is_active: true, share_url: '' },
           },
         ]
@@ -51,7 +52,7 @@ describe('CreateMatchView', () => {
     })
   })
 
-  it('renders correctly with default hero header and match form', async () => {
+  it('renders correctly with default hero header, steps, and live preview', async () => {
     const wrapper = mount(CreateMatchView, {
       global: {
         plugins: [i18n],
@@ -60,10 +61,11 @@ describe('CreateMatchView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Khởi Tạo Kèo Mới')
-    expect(wrapper.text()).toContain('INITIATE PLAY')
+    expect(wrapper.text()).toContain('MỞ KÈO GIAO LƯU')
     expect(wrapper.text()).toContain('Địa Điểm & Thời Gian')
-    expect(wrapper.text()).toContain('Thông Số Trận Đấu')
-    expect(wrapper.text()).toContain('Mạng Lưới Bạn Bè (Invite Network)')
+    expect(wrapper.text()).toContain('Thông Số & Quy Định Trận Đấu')
+    expect(wrapper.text()).toContain('Mời Trực Tiếp Bạn Chơi')
+    expect(wrapper.text()).toContain('Xem Trước Thẻ Kèo')
   })
 
   it('allows changing sport category and quick venue selection', async () => {
@@ -74,16 +76,16 @@ describe('CreateMatchView', () => {
     })
     await flushPromises()
 
-    const pickleballBtn = wrapper.findAll('.sport-select-card').find((b) => b.text().includes('Pickleball'))
+    const pickleballBtn = wrapper.findAll('.sport-card').find((b) => b.text().includes('Pickleball'))
     expect(pickleballBtn).toBeDefined()
     await pickleballBtn?.trigger('click')
 
     expect(pickleballBtn?.classes()).toContain('active')
 
-    const quickChip = wrapper.find('.quick-venue-pill')
-    if (quickChip.exists()) {
-      await quickChip.trigger('click')
-      expect(quickChip.classes()).toContain('active')
+    const quickPill = wrapper.find('.quick-pill')
+    if (quickPill.exists()) {
+      await quickPill.trigger('click')
+      expect(quickPill.classes()).toContain('active')
     }
   })
 
@@ -96,7 +98,7 @@ describe('CreateMatchView', () => {
     })
     await flushPromises()
 
-    const form = wrapper.find('form.create-match-form')
+    const form = wrapper.find('form.create-layout')
     await form.trigger('submit')
     await flushPromises()
 

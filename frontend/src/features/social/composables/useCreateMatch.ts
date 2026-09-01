@@ -1,58 +1,233 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/core/api/client'
 import { socialApi } from '../api/socialApi'
+import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court } from '@/features/court/types/court'
+import type { SocialMatch, SocialSportType } from '../types/social'
+import type { DropdownOption } from '@/shared/components'
 
 export interface FriendInvite {
   id: number
   name: string
   avatar: string
   skill: string
+  skillLevel: number
+  reputation: number
+  city: string
   isSelected: boolean
 }
 
 export function useCreateMatch() {
   const router = useRouter()
+  const auth = useAuthStore()
+
   const loading = ref(false)
   const submitting = ref(false)
   const notice = ref('')
   const error = ref('')
 
-  const courts = ref<Court[]>([])
+  // Form Fields
   const matchTitle = ref('')
-  const selectedSport = ref<'badminton' | 'pickleball' | 'tennis'>('badminton')
+  const selectedSport = ref<SocialSportType>('badminton')
   const selectedVenueName = ref('Aura Court Cầu Giấy')
-  const selectedCourtId = ref<number>(1)
-  const matchDate = ref(new Date().toISOString().slice(0, 10))
+  const selectedCourtId = ref<number | null>(null)
+  
+  // Date & Time (Default to today/tomorrow next round hour)
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const matchDate = ref(todayStr)
   const matchTime = ref('19:00')
   const duration = ref(2)
 
-  const matchFormat = ref<'doubles' | 'singles'>('doubles')
+  // Match Parameters
+  const matchFormat = ref<'doubles' | 'singles' | 'team'>('doubles')
   const skillLevel = ref<'all' | 'intermediate' | 'advanced'>('intermediate')
   const splitCost = ref(true)
-  const costPerPerson = ref(60000)
+  const costPerPerson = ref(50000)
   const maxPlayers = ref(4)
+  const visibility = ref<'public' | 'invite_only'>('public')
+  const matchDescription = ref('')
+
+  // Venues & Courts
+  const courts = ref<Court[]>([])
 
   const quickVenues = [
-    { name: 'Aura Court Cầu Giấy', slug: 'aura-court' },
-    { name: 'Aura Arena Quần Ngựa', slug: 'aura-arena-quan-ngua' },
-    { name: 'Aura Sports Complex Tây Hồ', slug: 'aura-complex-tay-ho' },
-    { name: 'Aura Sports Center Sài Gòn', slug: 'aura-central-saigon' },
+    { name: 'Aura Court Cầu Giấy', slug: 'aura-court', city: 'Hà Nội' },
+    { name: 'Aura Arena Quần Ngựa', slug: 'aura-arena-quan-ngua', city: 'Hà Nội' },
+    { name: 'Aura Sports Complex Tây Hồ', slug: 'aura-complex-tay-ho', city: 'Hà Nội' },
+    { name: 'Aura Sports Center Sài Gòn', slug: 'aura-central-saigon', city: 'TP. Hồ Chí Minh' },
   ]
 
+  // Friends & Invite Network
+  const friendSearchQuery = ref('')
   const friends = ref<FriendInvite[]>([
-    { id: 1, name: 'Hoàng Minh Tuấn', avatar: '', skill: 'Level 4', isSelected: false },
-    { id: 2, name: 'Trần Đăng Khoa', avatar: '', skill: 'Level 3', isSelected: false },
-    { id: 3, name: 'Nguyễn Bích Ngọc', avatar: '', skill: 'Level 2', isSelected: false },
+    { id: 1, name: 'Hoàng Minh Tuấn', avatar: '', skill: 'Level 4.0', skillLevel: 4, reputation: 98, city: 'Hà Nội', isSelected: false },
+    { id: 2, name: 'Trần Đăng Khoa', avatar: '', skill: 'Level 3.5', skillLevel: 3, reputation: 95, city: 'Hà Nội', isSelected: false },
+    { id: 3, name: 'Nguyễn Bích Ngọc', avatar: '', skill: 'Level 2.5', skillLevel: 2, reputation: 92, city: 'Hà Nội', isSelected: false },
+    { id: 4, name: 'Lê Quốc Bảo', avatar: '', skill: 'Level 4.5', skillLevel: 5, reputation: 99, city: 'TP. Hồ Chí Minh', isSelected: false },
+    { id: 5, name: 'Phạm Thuỳ Linh', avatar: '', skill: 'Level 3.0', skillLevel: 3, reputation: 94, city: 'Hà Nội', isSelected: false },
   ])
+
+  const filteredFriends = computed(() => {
+    if (!friendSearchQuery.value.trim()) return friends.value
+    const q = friendSearchQuery.value.toLowerCase()
+    return friends.value.filter(
+      (f) => f.name.toLowerCase().includes(q) || f.skill.toLowerCase().includes(q)
+    )
+  })
+
+  const selectedFriends = computed(() => friends.value.filter((f) => f.isSelected))
+  const selectedFriendsCount = computed(() => selectedFriends.value.length)
+
+  // Court Options for SelectDropdown
+  const courtOptions = computed<DropdownOption[]>(() => {
+    const defaultOpt: DropdownOption = {
+      value: 0,
+      label: 'Sân tự do / Chưa cố định sân cụ thể',
+      icon: 'sports_tennis',
+    }
+    const list: DropdownOption[] = courts.value.map((c) => ({
+      value: c.id,
+      label: `${c.name} ${c.venue ? `(${c.venue.name})` : ''}`,
+      sublabel: `${c.sport_type || 'Thể thao'} · ${c.price_per_hour ? new Intl.NumberFormat('vi-VN').format(c.price_per_hour) + '₫/h' : 'Tiêu chuẩn'}`,
+      icon: 'stadium',
+    }))
+    return [defaultOpt, ...list]
+  })
+
+  // Sport name display helper
+  const sportNameVi = computed(() => {
+    switch (selectedSport.value) {
+      case 'pickleball':
+        return 'Pickleball'
+      case 'tennis':
+        return 'Tennis'
+      case 'football':
+        return 'Bóng đá Futsal'
+      case 'basketball':
+        return 'Bóng rổ'
+      case 'volleyball':
+        return 'Bóng chuyền'
+      case 'table_tennis':
+        return 'Bóng bàn'
+      case 'badminton':
+      default:
+        return 'Cầu lông'
+    }
+  })
+
+  const sportIconName = computed(() => {
+    switch (selectedSport.value) {
+      case 'football':
+        return 'sports_soccer'
+      case 'basketball':
+        return 'sports_basketball'
+      case 'volleyball':
+        return 'sports_volleyball'
+      default:
+        return 'sports_tennis'
+    }
+  })
+
+  const formatNameVi = computed(() => {
+    switch (matchFormat.value) {
+      case 'singles':
+        return 'Đánh đơn'
+      case 'team':
+        return 'Đấu đội'
+      case 'doubles':
+      default:
+        return 'Đánh đôi'
+    }
+  })
+
+  const generatedAutoTitle = computed(() => {
+    return `Tìm bạn ghép kèo ${sportNameVi.value} (${formatNameVi.value}) @ ${selectedVenueName.value}`
+  })
+
+  const displayTitle = computed(() => {
+    return matchTitle.value.trim() || generatedAutoTitle.value
+  })
+
+  // Real-time Live Preview Match
+  const previewMatch = computed<SocialMatch>(() => {
+    const selectedCourtObj = courts.value.find((c) => c.id === selectedCourtId.value)
+    const hostUser = auth.user
+
+    const minSk = skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1
+    const maxSk = 5
+
+    // Format start time string
+    let formattedStart = `${matchTime.value} · ${matchDate.value}`
+    try {
+      const [y, m, d] = matchDate.value.split('-')
+      if (y && m && d) {
+        formattedStart = `${matchTime.value} · ${d}/${m}/${y}`
+      }
+    } catch {
+      // fallback
+    }
+
+    return {
+      id: 9999,
+      title: displayTitle.value,
+      sport_type: selectedSport.value,
+      sport_name: sportNameVi.value,
+      sport_icon: sportIconName.value,
+      venue_name: selectedVenueName.value,
+      court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+      city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
+      starts_at: formattedStart,
+      joined_count: 1 + selectedFriendsCount.value,
+      required_participants: maxPlayers.value,
+      visibility: visibility.value,
+      min_skill: minSk,
+      max_skill: maxSk,
+      game_format: formatNameVi.value,
+      cost_per_person: costPerPerson.value,
+      split_bill_mode: splitCost.value ? 'auto_split' : 'host_pays',
+      host_id: hostUser?.id || 1,
+      host_name: hostUser?.name || 'Tôi (Chủ phòng)',
+      host_avatar: hostUser?.avatar,
+      host_reputation: 99,
+      host_level: 'Level 3.5',
+      description: matchDescription.value.trim() || 'Mở kèo giao lưu thân thiện, vui vẻ và rèn luyện thể lực.',
+      status: 'open',
+      participants: [
+        {
+          id: hostUser?.id || 1,
+          name: hostUser?.name || 'Tôi (Chủ phòng)',
+          avatar: hostUser?.avatar,
+          skill_level: 3,
+          is_host: true,
+          role: 'Host',
+        },
+        ...selectedFriends.value.map((f) => ({
+          id: f.id,
+          name: f.name,
+          avatar: f.avatar,
+          skill_level: f.skillLevel,
+          is_host: false,
+          role: 'Member',
+        })),
+      ],
+      is_joined: true,
+      is_host: true,
+    }
+  })
 
   async function loadCourts() {
     loading.value = true
     try {
       const res = await api.get<Court[]>('/courts')
       courts.value = res || []
+      if (courts.value.length > 0 && !selectedCourtId.value) {
+        selectedCourtId.value = courts.value[0].id
+        if (courts.value[0].venue?.name) {
+          selectedVenueName.value = courts.value[0].venue.name
+        }
+      }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách sân.')
     } finally {
@@ -65,54 +240,83 @@ export function useCreateMatch() {
     if (f) f.isSelected = !f.isSelected
   }
 
-  async function createMatch() {
+  function selectQuickVenue(venueName: string) {
+    selectedVenueName.value = venueName
+    const matchingCourt = courts.value.find(
+      (c) => c.venue?.name?.toLowerCase().includes(venueName.toLowerCase())
+    )
+    if (matchingCourt) {
+      selectedCourtId.value = matchingCourt.id
+    }
+  }
+
+  async function submitMatch() {
     submitting.value = true
     error.value = ''
+    notice.value = ''
+
     try {
-      const startDate = new Date(`${matchDate.value}T${matchTime.value}:00`)
-      // Ensure start date is valid and in the future (if past today, bump to next hour)
-      if (startDate.getTime() <= Date.now()) {
-        startDate.setTime(Date.now() + 3600 * 1000)
+      if (!matchDate.value || !matchTime.value) {
+        error.value = 'Vui lòng chọn ngày và giờ bắt đầu trận đấu.'
+        submitting.value = false
+        return
       }
+
+      const startDate = new Date(`${matchDate.value}T${matchTime.value}:00`)
       const endDate = new Date(startDate.getTime() + duration.value * 3600 * 1000)
 
-      const sportNameVi =
-        selectedSport.value === 'badminton'
-          ? 'Cầu lông'
-          : selectedSport.value === 'pickleball'
-            ? 'Pickleball'
-            : 'Tennis'
-
-      const generatedTitle =
-        matchTitle.value.trim() ||
-        `Tìm bạn ghép kèo ${sportNameVi} (${matchFormat.value === 'doubles' ? 'Đánh đôi' : 'Đánh đơn'}) @ ${selectedVenueName.value}`
+      const selectedCourtObj = courts.value.find((c) => c.id === selectedCourtId.value)
 
       const payload = {
-        title: generatedTitle,
-        visibility: 'public' as const,
+        title: displayTitle.value,
+        visibility: visibility.value,
         starts_at: startDate.toISOString(),
         ends_at: endDate.toISOString(),
         city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
         min_skill: skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1,
         max_skill: 5,
-        required_participants: maxPlayers.value,
+        required_participants: Math.max(2, maxPlayers.value),
         availability: {
           sport: selectedSport.value,
+          sport_name: sportNameVi.value,
           format: matchFormat.value,
           split_cost: splitCost.value,
           cost_per_person: costPerPerson.value,
-          court_id: selectedCourtId.value,
+          court_id: selectedCourtId.value || undefined,
+          court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
           venue_name: selectedVenueName.value,
+          description: matchDescription.value.trim(),
+        },
+        metadata: {
+          sport: selectedSport.value,
+          sport_name: sportNameVi.value,
+          format: matchFormat.value,
+          court_id: selectedCourtId.value || undefined,
+          court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+          venue_name: selectedVenueName.value,
+          cost_per_person: costPerPerson.value,
+          split_cost: splitCost.value,
         },
       }
 
-      await socialApi.createMatch(payload)
-      notice.value = 'Tạo kèo giao lưu & ghép trận thành công!'
+      const res = await socialApi.createMatch(payload)
+      const createdMatchId = (res as any)?.match?.id || (res as any)?.id
+
+      // Invite selected friends if match id exists
+      if (createdMatchId && selectedFriends.value.length > 0) {
+        await Promise.allSettled(
+          selectedFriends.value.map((f) =>
+            socialApi.invitePartner(createdMatchId, { invitee_id: f.id })
+          )
+        )
+      }
+
+      notice.value = 'Mở kèo giao lưu & tìm kiếm bạn chơi thành công!'
       setTimeout(() => {
         router.push({ path: '/matchmaking' })
       }, 1000)
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể tạo trận đấu.')
+      error.value = errorMessage(e, 'Không thể khởi tạo trận đấu. Vui lòng kiểm tra lại thông tin.')
     } finally {
       submitting.value = false
     }
@@ -123,7 +327,6 @@ export function useCreateMatch() {
     submitting,
     notice,
     error,
-    courts,
     matchTitle,
     selectedSport,
     selectedVenueName,
@@ -136,11 +339,24 @@ export function useCreateMatch() {
     splitCost,
     costPerPerson,
     maxPlayers,
+    visibility,
+    matchDescription,
+    courts,
+    courtOptions,
     quickVenues,
     friends,
+    friendSearchQuery,
+    filteredFriends,
+    selectedFriends,
+    selectedFriendsCount,
+    sportNameVi,
+    sportIconName,
+    formatNameVi,
+    generatedAutoTitle,
+    previewMatch,
     loadCourts,
     toggleFriend,
-    createMatch,
-    submitMatch: createMatch,
+    selectQuickVenue,
+    submitMatch,
   }
 }

@@ -101,15 +101,21 @@ export function useMatchmaking() {
           : false
         const isHost = currentUserId ? m.creator_id === currentUserId : false
 
+        const venue = m.venue?.name || m.venue_name || m.availability?.venue_name || m.metadata?.venue_name || 'Aura Sport Hub'
+        const court = m.court?.name || m.court_name || m.availability?.court_name || m.metadata?.court_name || 'Sân tiêu chuẩn'
+        const format = m.game_format || m.availability?.format || m.metadata?.format || (detected.sport === 'football' ? '5v5' : detected.sport === 'basketball' ? '3x3' : 'Đánh đôi')
+        const cost = m.cost_per_person ?? m.availability?.cost_per_person ?? m.metadata?.cost_per_person ?? (detected.sport === 'football' ? 80000 : 50000)
+        const split = m.split_bill_mode || (m.availability?.split_cost ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu')
+
         return {
           id: m.id,
           title: m.title || `Kèo ${detected.name} #${m.id}`,
           sport_type: detected.sport,
           sport_name: detected.name,
           sport_icon: detected.icon,
-          venue_name: m.venue?.name || m.venue_name || 'Aura Sport Hub',
-          court_name: m.court?.name || m.court_name || 'Sân tiêu chuẩn',
-          city: m.city || m.venue?.city || 'Hà Nội',
+          venue_name: venue,
+          court_name: court,
+          city: m.city || m.venue?.city || (venue.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội'),
           starts_at: formatMatchTime(m.starts_at, m.ends_at),
           ends_at: m.ends_at,
           joined_count: m.joined_count || (m.participants?.length ? m.participants.length : 1),
@@ -117,15 +123,15 @@ export function useMatchmaking() {
           visibility: m.visibility || 'public',
           min_skill: m.min_skill ?? 2,
           max_skill: m.max_skill ?? 4,
-          game_format: m.game_format || (detected.sport === 'football' ? '5v5' : detected.sport === 'basketball' ? '3x3' : 'Đánh đôi'),
-          split_bill_mode: m.split_bill_mode || 'Chia đều tiền sân',
-          cost_per_person: m.cost_per_person || (detected.sport === 'football' ? 80000 : 50000),
+          game_format: format,
+          split_bill_mode: split,
+          cost_per_person: cost,
           host_id: m.creator_id || m.host?.id,
           host_name: m.creator?.name || m.host_name || m.metadata?.host || 'Chủ kèo Aura',
           host_avatar: m.creator?.avatar_url || m.host_avatar,
           host_reputation: m.host_reputation || 98,
           host_level: m.host_level || 'Hạng Bán Chuyên',
-          description: m.description || `Tìm bạn chơi giao lưu nâng cao kỹ năng, tôn trọng văn hóa thi đấu fair-play tại ${m.venue?.name || 'Aura Court'}.`,
+          description: m.description || m.availability?.description || `Tìm bạn chơi giao lưu nâng cao kỹ năng, tôn trọng văn hóa thi đấu fair-play tại ${venue}.`,
           status: (m.joined_count >= (m.required_participants || 4)) ? 'full' : 'open',
           participants: Array.isArray(m.participants) && m.participants.length > 0
             ? m.participants.map((p: any) => ({

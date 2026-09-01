@@ -43,19 +43,11 @@ class SocialController extends Controller
             $organization = null;
         }
 
-        $orgId = $organization?->id;
-        if (! $orgId) {
-            $explicitOrgId = $request->header('X-Organization-Id')
-                ?? $request->header('X-Organization-ID')
-                ?? $request->input('organization_id');
-            if ($explicitOrgId) {
-                $orgId = (int) $explicitOrgId;
-            } else {
-                $orgId = \App\Models\Organization::where('status', 'active')->whereHas('venues')->value('id')
-                    ?? \App\Models\Organization::where('status', 'active')->value('id')
-                    ?? 1;
-            }
-        }
+        $explicitOrgId = $request->header('X-Organization-Id')
+            ?? $request->header('X-Organization-ID')
+            ?? $request->input('organization_id');
+
+        $orgId = $explicitOrgId ? (int) $explicitOrgId : $organization?->id;
 
         return response()->json(['matches' => $this->matches->discover($orgId, $request->all())]);
     }
@@ -69,7 +61,20 @@ class SocialController extends Controller
     public function create(Request $request)
     {
         $organization = $this->organization($request);
-        $data = $request->validate(['title' => 'required|string|max:180', 'visibility' => 'required|in:public,invite_only', 'starts_at' => 'required|date|after:now', 'ends_at' => 'required|date|after:starts_at', 'city' => 'nullable|string|max:120', 'latitude' => 'nullable|numeric', 'longitude' => 'nullable|numeric', 'min_skill' => 'nullable|integer|min:1|max:5', 'max_skill' => 'nullable|integer|min:1|max:5', 'required_participants' => 'required|integer|min:2|max:100', 'availability' => 'nullable|array']);
+        $data = $request->validate([
+            'title' => 'required|string|max:180',
+            'visibility' => 'required|in:public,invite_only',
+            'starts_at' => 'required|date',
+            'ends_at' => 'required|date',
+            'city' => 'nullable|string|max:120',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'min_skill' => 'nullable|integer|min:1|max:5',
+            'max_skill' => 'nullable|integer|min:1|max:5',
+            'required_participants' => 'required|integer|min:2|max:100',
+            'availability' => 'nullable|array',
+            'metadata' => 'nullable|array',
+        ]);
         return $this->idempotency->run($request, fn () => response()->json(['match' => $this->matches->createPost($request->user(), $organization->id, $data)], 201));
     }
 

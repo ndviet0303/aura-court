@@ -52,9 +52,26 @@ class MatchService
         return $post->fresh('participations');
     }
 
-    public function discover(int $organizationId, array $filters = [])
+    public function discover(?int $organizationId = null, array $filters = [])
     {
-        $posts = MatchPost::query()->where('organization_id', $organizationId)->where('status', 'open')->where('visibility', 'public')->where('starts_at', '>', now())->with('creator')->latest('starts_at')->get();
+        $query = MatchPost::query()
+            ->where('status', 'open')
+            ->where('visibility', 'public')
+            ->with('creator')
+            ->latest('id');
+
+        if ($organizationId) {
+            $query->where('organization_id', $organizationId);
+        }
+
+        // Allow open matches that haven't ended yet, or active matches from today onwards
+        $query->where(function ($q) {
+            $q->where('ends_at', '>=', now())
+              ->orWhere('starts_at', '>=', now()->subHours(12))
+              ->orWhereDate('starts_at', '>=', now()->toDateString());
+        });
+
+        $posts = $query->get();
         $requestedMin = isset($filters['min_skill']) ? (int) $filters['min_skill'] : null;
         $requestedMax = isset($filters['max_skill']) ? (int) $filters['max_skill'] : null;
         $availability = $filters['availability'] ?? null;

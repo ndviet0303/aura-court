@@ -7,12 +7,13 @@ import SportCategorySelector from '../components/match/SportCategorySelector.vue
 import MatchLocationTimeForm from '../components/match/MatchLocationTimeForm.vue'
 import MatchSettingsForm from '../components/match/MatchSettingsForm.vue'
 import MatchInviteNetworkCard from '../components/match/MatchInviteNetworkCard.vue'
+import MatchLivePreviewCard from '../components/match/MatchLivePreviewCard.vue'
 
 const {
+  loading,
   submitting,
   notice,
   error,
-  courts,
   matchTitle,
   selectedSport,
   selectedVenueName,
@@ -25,10 +26,18 @@ const {
   splitCost,
   costPerPerson,
   maxPlayers,
+  visibility,
+  matchDescription,
+  courts,
+  courtOptions,
   quickVenues,
-  friends,
+  friendSearchQuery,
+  filteredFriends,
+  selectedFriendsCount,
+  previewMatch,
   loadCourts,
   toggleFriend,
+  selectQuickVenue,
   submitMatch,
 } = useCreateMatch()
 
@@ -38,21 +47,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="create-match-view-page">
+  <main class="create-match-page-view">
     <!-- Top Navigation -->
-    <div class="top-nav">
+    <div class="top-nav-bar">
       <AuraButton to="/matchmaking" variant="ghost" size="sm" icon="arrow_back">
         Quay lại Ghép Kèo
       </AuraButton>
     </div>
 
     <!-- Header Hero -->
-    <header class="match-hero">
-      <div class="hero-titles">
-        <span class="pill-badge font-mono">INITIATE PLAY</span>
-        <h1 class="page-title">Khởi Tạo Kèo Mới & Ghép Trận</h1>
-        <p class="page-sub">Tìm kiếm đồng đội, mở kèo giao lưu câu lạc bộ và chia sẻ chi phí sân tự động.</p>
-      </div>
+    <header class="create-hero">
+      <span class="hero-badge font-mono">MỞ KÈO GIAO LƯU</span>
+      <h1 class="page-title">Khởi Tạo Kèo Mới & Ghép Trận</h1>
+      <p class="page-subtitle">
+        Tìm kiếm đối thủ, kết nối đồng đội và tự động chia sẻ chi phí sân thể thao Aura Court.
+      </p>
     </header>
 
     <!-- Feedback Alerts -->
@@ -70,118 +79,131 @@ onMounted(() => {
       </div>
     </transition>
 
-    <form class="create-match-form" @submit.prevent="submitMatch">
-      <!-- Optional Custom Title -->
-      <div class="title-input-card">
-        <label for="match-title-input" class="input-label">Tiêu đề kèo giao lưu (tùy chọn)</label>
-        <input
-          id="match-title-input"
-          v-model="matchTitle"
-          type="text"
-          class="text-input"
-          placeholder="Ví dụ: Tìm 2 bạn đánh đôi nam/nữ cầu lông trình độ khá..."
+    <!-- 2-Column Responsive Layout -->
+    <form class="create-layout" @submit.prevent="submitMatch">
+      <!-- Left Column: Form Steps -->
+      <div class="form-steps-col">
+        <!-- Optional Custom Title Input Card -->
+        <div class="custom-title-card">
+          <label for="match-title-custom" class="title-label">
+            <span class="material-symbols-outlined label-icon">edit</span>
+            Tiêu đề kèo giao lưu (tự động gợi ý nếu để trống)
+          </label>
+          <input
+            id="match-title-custom"
+            v-model="matchTitle"
+            type="text"
+            class="title-text-input"
+            placeholder="Ví dụ: Tìm 2 bạn đánh đôi nam/nữ cầu lông trình độ khá thứ 7..."
+          />
+        </div>
+
+        <!-- Sport Selector -->
+        <SportCategorySelector
+          :selected-sport="selectedSport"
+          @update:selected-sport="selectedSport = $event"
+        />
+
+        <!-- Location & Time Form -->
+        <MatchLocationTimeForm
+          :courts="courts"
+          :court-options="courtOptions"
+          :selected-venue-name="selectedVenueName"
+          :selected-court-id="selectedCourtId"
+          :match-date="matchDate"
+          :match-time="matchTime"
+          :duration="duration"
+          :quick-venues="quickVenues"
+          @update:selected-venue-name="selectedVenueName = $event"
+          @update:selected-court-id="selectedCourtId = $event"
+          @update:match-date="matchDate = $event"
+          @update:match-time="matchTime = $event"
+          @update:duration="duration = $event"
+          @select-quick-venue="selectQuickVenue"
+        />
+
+        <!-- Match Settings Form -->
+        <MatchSettingsForm
+          :format="matchFormat"
+          :skill-level="skillLevel"
+          :split-cost="splitCost"
+          :cost-per-person="costPerPerson"
+          :max-players="maxPlayers"
+          :visibility="visibility"
+          :match-description="matchDescription"
+          @update:format="matchFormat = $event"
+          @update:skill-level="skillLevel = $event"
+          @update:split-cost="splitCost = $event"
+          @update:cost-per-person="costPerPerson = $event"
+          @update:max-players="maxPlayers = $event"
+          @update:visibility="visibility = $event"
+          @update:match-description="matchDescription = $event"
+        />
+
+        <!-- Invite Network Card -->
+        <MatchInviteNetworkCard
+          :friends="filteredFriends"
+          :search-query="friendSearchQuery"
+          :selected-count="selectedFriendsCount"
+          @toggle="toggleFriend"
+          @update:search-query="friendSearchQuery = $event"
         />
       </div>
 
-      <!-- Sport Selector -->
-      <SportCategorySelector
-        :selected-sport="selectedSport"
-        @update:selected-sport="selectedSport = $event"
-      />
-
-      <!-- Location & Time -->
-      <MatchLocationTimeForm
-        :courts="courts"
-        :selected-venue-name="selectedVenueName"
-        :selected-court-id="selectedCourtId"
-        :match-date="matchDate"
-        :match-time="matchTime"
-        :duration="duration"
-        :quick-venues="quickVenues"
-        @update:selected-venue-name="selectedVenueName = $event"
-        @update:selected-court-id="selectedCourtId = $event"
-        @update:match-date="matchDate = $event"
-        @update:match-time="matchTime = $event"
-        @update:duration="duration = $event"
-      />
-
-      <!-- Match Parameters -->
-      <MatchSettingsForm
-        :format="matchFormat"
-        :skill-level="skillLevel"
-        :split-cost="splitCost"
-        :cost-per-person="costPerPerson"
-        :max-players="maxPlayers"
-        @update:format="matchFormat = $event"
-        @update:skill-level="skillLevel = $event"
-        @update:split-cost="splitCost = $event"
-        @update:cost-per-person="costPerPerson = $event"
-        @update:max-players="maxPlayers = $event"
-      />
-
-      <!-- Friend Network Invites -->
-      <MatchInviteNetworkCard
-        :friends="friends"
-        @toggle="toggleFriend"
-      />
-
-      <!-- Submit CTA -->
-      <div class="form-submit-row">
-        <AuraButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          icon="group_add"
-          block
-          :loading="submitting"
-        >
-          {{ submitting ? 'Đang khởi tạo trận đấu...' : 'Mở Kèo & Xuất Bản Lên Cộng Đồng' }}
-        </AuraButton>
+      <!-- Right Column: Real-time Live Preview & Submit Sticky Card -->
+      <div class="preview-col">
+        <MatchLivePreviewCard
+          :preview-match="previewMatch"
+          :submitting="submitting"
+          :selected-friends-count="selectedFriendsCount"
+          @submit="submitMatch"
+        />
       </div>
     </form>
-  </div>
+  </main>
 </template>
 
 <style scoped>
-.create-match-view-page {
+.create-match-page-view {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  padding: 24px 20px 64px;
   color: var(--ink);
 }
 
-.top-nav {
+.top-nav-bar {
   display: flex;
 }
 
-.match-hero {
+.create-hero {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.pill-badge {
+.hero-badge {
   font-size: 11px;
   font-weight: 800;
   color: var(--pink-dark, #db2777);
   background: rgba(236, 72, 153, 0.1);
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: 6px;
   width: fit-content;
 }
 
 .page-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
-.page-sub {
+.page-subtitle {
   margin: 0;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--muted);
 }
 
@@ -189,8 +211,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  border-radius: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
   background: rgba(16, 185, 129, 0.12);
   color: #10b981;
   border: 1px solid rgba(16, 185, 129, 0.3);
@@ -202,8 +224,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  border-radius: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -216,48 +238,70 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.create-match-form {
+.create-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+.form-steps-col {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.title-input-card {
+.custom-title-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 18px;
+  padding: 20px 22px;
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 16px;
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
 }
 
-.input-label {
+.title-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
 
-.text-input {
+.label-icon {
+  font-size: 16px;
+  color: var(--pink-dark, #db2777);
+}
+
+.title-text-input {
   width: 100%;
   padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid var(--outline);
-  background: var(--surface-container, rgba(0, 0, 0, 0.02));
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.015));
   color: var(--ink);
   font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.text-input:focus {
+.title-text-input:focus {
   border-color: var(--pink-dark, #db2777);
   box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.12);
 }
 
-.form-submit-row {
-  display: flex;
-  justify-content: center;
-  padding-top: 10px;
+.preview-col {
+  position: relative;
+}
+
+@media (max-width: 980px) {
+  .create-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
