@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import Navbar from '../Navbar.vue'
+import Navbar from '../header/Navbar.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const mockPush = vi.fn<() => void>()

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { AuraButton, DatePicker, SelectDropdown, TimePicker } from '@/shared/components'
-import type { DropdownOption } from '@/shared/components/SelectDropdown.vue'
+import { AuraButton, DatePicker, SelectDropdown, TimePicker, type DropdownOption } from '@/shared/components'
+
+
 import type { Court } from '@/features/court/types/court'
 import type { RecurringFrequency, WeekdayOption } from '../../types/recurring'
 

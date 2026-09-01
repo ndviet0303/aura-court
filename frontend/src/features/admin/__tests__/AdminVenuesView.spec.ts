@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import AdminVenuesView from '../AdminVenuesView.vue'
+import AdminVenuesView from '../views/AdminVenuesView.vue'
 import { i18n } from '@/i18n'
 import { api } from '@/core/api/client'
 

@@ -9,9 +9,16 @@ defineProps<{
 <template>
   <div class="live-stats-card">
     <div class="card-header">
-      <h3 class="title">📊 Thống Kê Trận Đấu Trực Tiếp (Live Analytics)</h3>
-      <span class="duration font-mono">⏱️ Thời lượng: {{ match.stats.duration }}</span>
+      <div class="hdr-title-wrap">
+        <span class="material-symbols-outlined hdr-ico">analytics</span>
+        <h3 class="title">Thống Kê Trận Đấu Trực Tiếp (Live Analytics)</h3>
+      </div>
+      <span class="duration font-mono">
+        <span class="material-symbols-outlined duration-ico">timer</span>
+        Thời lượng: {{ match.stats.duration }}
+      </span>
     </div>
+
 
     <div class="stats-comparison-list">
       <!-- Aces -->
@@ -65,18 +72,39 @@ defineProps<{
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hdr-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdr-ico {
+  font-size: 18px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--muted);
 }
+
+.duration-ico {
+  font-size: 14px;
+}
+
 
 .stats-comparison-list {
   display: flex;

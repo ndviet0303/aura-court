@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { DatePicker, SelectDropdown } from '@/shared/components'
-import type { DropdownOption } from '@/shared/components/SelectDropdown.vue'
+import { DatePicker, SelectDropdown, type DropdownOption } from '@/shared/components'
+
 import type { Court } from '@/features/court/types/court'
 import type { V2PriceQuote } from '../../types/v2Reservation'
 

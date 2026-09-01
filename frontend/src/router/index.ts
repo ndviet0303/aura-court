@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import HomeView from '@/features/home/views/HomeView.vue'
 import LoginView from '@/features/auth/views/LoginView.vue'
 import BookingView from '@/features/booking/views/BookingView.vue'
 import AdminView from '@/features/admin/views/AdminView.vue'
@@ -11,8 +11,8 @@ import AdminManageView from '@/features/admin/views/AdminManageView.vue'
 import ForgotPasswordView from '@/features/auth/views/ForgotPasswordView.vue'
 import ResetPasswordView from '@/features/auth/views/ResetPasswordView.vue'
 import ProfileView from '@/features/profile/views/ProfileView.vue'
-import NotFoundView from '../views/NotFoundView.vue'
-import NotificationsView from '../views/NotificationsView.vue'
+import NotFoundView from '@/shared/views/NotFoundView.vue'
+import NotificationsView from '@/features/notification/views/NotificationsView.vue'
 import VenueDirectionsView from '@/features/court/views/VenueDirectionsView.vue'
 import AdminVenuesView from '@/features/admin/views/AdminVenuesView.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -31,7 +31,7 @@ const router = createRouter({
     {
       path: '/about',
       name: 'about',
-      component: () => import('../views/AboutView.vue'),
+      component: () => import('@/features/home/views/AboutView.vue'),
       meta: { title: 'Về Aura Court | Không gian thể thao chuyên nghiệp', description: 'Khám phá tiêu chuẩn sân, trải nghiệm đặt sân và tinh thần thể thao của Aura Court.' },
     },
     { path: '/login', name: 'login', component: LoginView, meta: { titleKey: 'seo.loginTitle', indexable: false } },
@@ -39,8 +39,8 @@ const router = createRouter({
     { path: '/onboarding', name: 'onboarding', component: () => import('@/features/auth/views/OnboardingView.vue'), meta: { auth: true, title: 'Thiết lập tài khoản | Aura Court', indexable: false } },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { titleKey: 'seo.forgotPasswordTitle', indexable: false } },
     { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { titleKey: 'seo.resetPasswordTitle', indexable: false } },
-    { path: '/terms', name: 'terms', component: () => import('../views/TermsView.vue'), meta: { titleKey: 'seo.termsTitle', descriptionKey: 'seo.termsDesc' } },
-    { path: '/privacy', name: 'privacy', component: () => import('../views/PrivacyView.vue'), meta: { titleKey: 'seo.privacyTitle', descriptionKey: 'seo.privacyDesc' } },
+    { path: '/terms', name: 'terms', component: () => import('@/features/legal/views/TermsView.vue'), meta: { titleKey: 'seo.termsTitle', descriptionKey: 'seo.termsDesc' } },
+    { path: '/privacy', name: 'privacy', component: () => import('@/features/legal/views/PrivacyView.vue'), meta: { titleKey: 'seo.privacyTitle', descriptionKey: 'seo.privacyDesc' } },
     { path: '/courts', name: 'courts', component: CourtsView, meta: { titleKey: 'seo.courtsTitle', descriptionKey: 'seo.courtsDesc' } },
     { path: '/courts/:slug', name: 'court-detail', component: CourtDetailView, meta: { titleKey: 'seo.courtDetailTitle', indexable: false } },
     { path: '/courts/:slug/schedule', name: 'schedule', component: ScheduleView, meta: { titleKey: 'seo.scheduleTitle', indexable: false } },
@@ -53,13 +53,14 @@ const router = createRouter({
     { path: '/tournaments', name: 'tournaments', component: () => import('@/features/tournament/views/TournamentsView.vue'), meta: { auth: true, title: 'Danh Sách Giải Đấu | Aura Court Control', indexable: false } },
     { path: '/tournaments/bracket', name: 'tournament-bracket', component: () => import('@/features/tournament/views/TournamentBracketView.vue'), meta: { auth: true, title: 'Sơ Đồ Thi Đấu & Nhánh Đấu | Aura Court Control', indexable: false } },
     { path: '/tournaments/live', name: 'tournament-live', component: () => import('@/features/tournament/views/LiveScoreView.vue'), meta: { auth: true, title: 'Tỷ Số Trực Tiếp | Aura Court Control', indexable: false } },
-    { path: '/matchmaking', name: 'matchmaking', component: () => import('@/features/tournament/views/SocialTournamentView.vue'), meta: { auth: true, title: 'Tìm Kèo Giao Lưu | Aura Court', indexable: false } },
+    { path: '/matchmaking', alias: '/tournaments/social', name: 'matchmaking', component: () => import('@/features/tournament/views/SocialTournamentView.vue'), meta: { auth: true, title: 'Tìm Kèo Giao Lưu | Aura Court', indexable: false } },
     { path: '/matchmaking/create', name: 'create-match', component: () => import('@/features/social/views/CreateMatchView.vue'), meta: { auth: true, titleKey: 'seo.createMatchTitle', indexable: false } },
+
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, titleKey: 'seo.paymentTitle', indexable: false } },
     { path: '/split-bill/:code?', name: 'split-bill', component: () => import('@/features/finance/views/GroupSplitBillView.vue'), meta: { auth: true, title: 'Chia tiền & Quyết toán nhóm | Aura Court', indexable: false } },
     {
       path: '/admin',
-      component: () => import('@/shared/layouts/AdminLayout.vue'),
+      component: () => import('@/shared/layouts/admin/AdminLayout.vue'),
       meta: { auth: true, admin: true },
       children: [
         { path: '', name: 'admin', component: AdminView, meta: { titleKey: 'seo.adminTitle', indexable: false } },
@@ -97,11 +98,7 @@ router.beforeEach(async (to) => {
 })
 
 router.afterEach((to) => {
-  endRouteNav()
   applySeo(to)
-})
-
-router.onError(() => {
   endRouteNav()
 })
 

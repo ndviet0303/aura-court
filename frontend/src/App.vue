@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import Navbar from '@/shared/layouts/Navbar.vue'
-import SiteFooter from '@/shared/layouts/SiteFooter.vue'
-import DemoWarningModal from '@/shared/components/DemoWarningModal.vue'
+import { Navbar, SiteFooter } from '@/shared/layouts'
+import { DemoWarningModal } from '@/shared/components'
 import { isRouteNavigating } from '@/stores/navigation'
+
 
 const route = useRoute()
 const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))

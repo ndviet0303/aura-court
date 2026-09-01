@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import ThemeToggle from '../ThemeToggle.vue'
+import ThemeToggle from '../controls/ThemeToggle.vue'
 import { useThemeStore } from '@/stores/theme'
 
 describe('ThemeToggle', () => {

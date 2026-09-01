@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import DemoWarningModal from '../DemoWarningModal.vue'
+import DemoWarningModal from '../feedback/DemoWarningModal.vue'
 
 describe('DemoWarningModal', () => {
   let container: HTMLDivElement

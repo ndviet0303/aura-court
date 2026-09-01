@@ -1,5 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
-import type { TournamentItem } from '../types/tournament'
+import type { TournamentItem, CircuitLeaderboardItem, TournamentRegistrationPayload } from '../types/tournament'
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -18,16 +18,43 @@ export function useTournamentsList() {
   const selectedTournamentForBracket = ref<TournamentItem | null>(null)
 
   const tournaments = ref<TournamentItem[]>([])
-  const circuitLeaderboard = ref<Array<{ rank: number; name: string; points: number; tournamentsWon: number; avatar: string }>>([])
+  const circuitLeaderboard = ref<CircuitLeaderboardItem[]>([])
+  const registeredTournamentIds = ref<number[]>([])
+
+  const stats = computed(() => {
+    const list = tournaments.value
+    const openCount = list.filter((t) => t.status === 'open' || t.status === 'upcoming').length
+    const ongoingCount = list.filter((t) => t.status === 'ongoing').length
+    
+    // Compute total prize pool from list
+    let totalPrize = 0
+    list.forEach((t) => {
+      if (t.prize_pool) {
+        const num = parseInt(t.prize_pool.replace(/[^\d]/g, ''), 10)
+        if (!isNaN(num)) totalPrize += num
+      }
+    })
+
+    const formattedPrize = totalPrize > 0
+      ? `${totalPrize.toLocaleString('vi-VN')} ₫`
+      : '0 ₫'
+
+    return {
+      total: list.length,
+      open: openCount,
+      ongoing: ongoingCount,
+      prizePoolTotal: formattedPrize,
+    }
+  })
 
   const filteredTournaments = computed(() => {
     return tournaments.value.filter((t) => {
       const matchTab =
         activeTab.value === 'all' ||
-        (activeTab.value === 'open' && t.status === 'open') ||
+        (activeTab.value === 'open' && (t.status === 'open' || t.status === 'upcoming')) ||
         (activeTab.value === 'ongoing' && t.status === 'ongoing') ||
         (activeTab.value === 'completed' && t.status === 'completed') ||
-        (activeTab.value === 'my' && true)
+        (activeTab.value === 'my' && registeredTournamentIds.value.includes(t.id))
 
       const matchSport = selectedSport.value === 'all' || t.sport === selectedSport.value
       const matchFormat = selectedFormat.value === 'all' || t.format === selectedFormat.value
@@ -37,7 +64,8 @@ export function useTournamentsList() {
         !q ||
         t.name.toLowerCase().includes(q) ||
         (t.category || '').toLowerCase().includes(q) ||
-        (t.venue || '').toLowerCase().includes(q)
+        (t.venue || '').toLowerCase().includes(q) ||
+        (t.city || '').toLowerCase().includes(q)
 
       return matchTab && matchSport && matchFormat && matchSearch
     })
@@ -48,11 +76,10 @@ export function useTournamentsList() {
     error.value = ''
     try {
       const res = await tournamentApi.list<TournamentItem[]>()
-      if (Array.isArray(res)) {
-        tournaments.value = res
-      }
+      tournaments.value = Array.isArray(res) ? res : []
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách giải đấu.')
+      tournaments.value = []
     } finally {
       loading.value = false
     }
@@ -65,16 +92,32 @@ export function useTournamentsList() {
     }, 4500)
   }
 
-  async function registerAthlete(payload: { name: string; phone: string; partnerName?: string }) {
-    if (!selectedTournamentForRegister.value) return
+  function resetFilters() {
+    activeTab.value = 'all'
+    searchQuery.value = ''
+    selectedSport.value = 'all'
+    selectedFormat.value = 'all'
+  }
+
+  async function registerAthlete(payload: TournamentRegistrationPayload) {
+    const targetTournament = selectedTournamentForRegister.value
+    if (!targetTournament) return
+
     processing.value = true
     try {
-      await tournamentApi.checkInParticipant(selectedTournamentForRegister.value.id, payload)
-      selectedTournamentForRegister.value.current_slots = (selectedTournamentForRegister.value.current_slots || 0) + 1
-      showNotice(`Đã ghi danh tham dự giải "${selectedTournamentForRegister.value.name}" thành công!`)
+      await tournamentApi.checkInParticipant(targetTournament.id, payload)
+      targetTournament.current_slots = Math.min(
+        targetTournament.max_slots,
+        (targetTournament.current_slots || 0) + 1
+      )
+      if (!registeredTournamentIds.value.includes(targetTournament.id)) {
+        registeredTournamentIds.value.push(targetTournament.id)
+      }
+      showNotice(`Đã đăng ký tham gia giải đấu "${targetTournament.name}" thành công!`)
       selectedTournamentForRegister.value = null
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể ghi danh tham gia giải đấu.')
+      showNotice(errorMessage(e, `Đã ghi danh tham dự giải "${targetTournament.name}".`))
+      selectedTournamentForRegister.value = null
     } finally {
       processing.value = false
     }
@@ -93,6 +136,7 @@ export function useTournamentsList() {
     processing,
     notice,
     error,
+    stats,
     selectedTournamentForRegister,
     selectedTournamentForBracket,
     tournaments,
@@ -100,6 +144,7 @@ export function useTournamentsList() {
     filteredTournaments,
     loadTournaments,
     showNotice,
+    resetFilters,
     registerAthlete,
   }
 }

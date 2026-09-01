@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useSocialTournament } from '../composables/useSocialTournament'
+import { AuraButton, SkeletonLoader } from '@/shared/components'
 
 import SocialMatchCard from '../components/social/SocialMatchCard.vue'
 import SocialJoinModal from '../components/social/SocialJoinModal.vue'
 import SocialPartnerFinderModal from '../components/social/SocialPartnerFinderModal.vue'
 
 const {
+  loading,
   activeTab,
   searchQuery,
   notice,
@@ -18,39 +20,86 @@ const {
 </script>
 
 <template>
-  <div class="social-tournament-view">
+  <main class="social-tournament-view">
     <!-- Header Hero -->
     <header class="social-header">
       <div class="header-titles">
+        <div class="top-nav">
+          <AuraButton to="/tournaments" variant="ghost" size="sm" icon="arrow_back">
+            Quay lại Giải Đấu
+          </AuraButton>
+        </div>
         <h1 class="page-title">Ghép Kèo Giao Lưu & Tìm Bạn Thi Đấu</h1>
         <p class="page-sub">Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.</p>
       </div>
 
       <div class="header-actions">
-        <button class="btn-partner-finder" @click="showPartnerFinder = true">
-          🤝 Tìm Bạn Ghép Đôi
-        </button>
+        <AuraButton
+          variant="primary"
+          size="md"
+          icon="group_add"
+          @click="showPartnerFinder = true"
+        >
+          Tìm Bạn Ghép Đôi
+        </AuraButton>
       </div>
     </header>
 
     <!-- Feedback Alerts -->
-    <div v-if="notice" class="alert-pill">{{ notice }}</div>
-    <div v-if="error" class="alert-pill-error">{{ error }}</div>
+    <transition name="fade">
+      <div v-if="notice" class="alert-pill-success">
+        <span class="material-symbols-outlined alert-ico">check_circle</span>
+        <span>{{ notice }}</span>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="error" class="alert-pill-error">
+        <span class="material-symbols-outlined alert-ico">error</span>
+        <span>{{ error }}</span>
+      </div>
+    </transition>
 
     <!-- Search Toolbar -->
     <div class="social-toolbar">
-      <input
-        v-model="searchQuery"
-        type="text"
-        class="search-input"
-        placeholder="Tìm kèo theo tên phòng, cơ sở, người tạo..."
-      />
+      <div class="search-input-wrap">
+        <span class="material-symbols-outlined search-ico">search</span>
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="Tìm kèo theo tên phòng, cơ sở, người tạo..."
+        />
+      </div>
+    </div>
+
+    <!-- Skeleton Loading Grid -->
+    <div v-if="loading" class="matches-grid">
+      <div v-for="i in 6" :key="i" class="social-skeleton-card">
+        <div class="sk-top-row">
+          <SkeletonLoader type="rect" width="38px" height="38px" rounded="10px" />
+          <div class="sk-title-col">
+            <SkeletonLoader type="rect" width="80%" height="16px" rounded="4px" />
+            <SkeletonLoader type="rect" width="50%" height="12px" rounded="4px" />
+          </div>
+          <SkeletonLoader type="rect" width="70px" height="22px" rounded="999px" />
+        </div>
+        <div class="sk-meta-lines">
+          <SkeletonLoader type="rect" width="75%" height="13px" rounded="4px" />
+          <SkeletonLoader type="rect" width="55%" height="13px" rounded="4px" />
+          <SkeletonLoader type="rect" width="65%" height="13px" rounded="4px" />
+        </div>
+        <SkeletonLoader type="rect" width="100%" height="40px" rounded="10px" />
+      </div>
     </div>
 
     <!-- Matches Grid -->
-    <div v-if="filteredMatches.length === 0" class="empty-matches-box">
-      <h3>Không tìm thấy kèo giao lưu phù hợp</h3>
-      <p>Thử tìm kiếm với từ khóa khác hoặc tạo kèo mới cho riêng bạn.</p>
+    <div v-else-if="filteredMatches.length === 0" class="empty-matches-box">
+      <div class="empty-icon-circle">
+        <span class="material-symbols-outlined">group</span>
+      </div>
+      <h3 class="empty-title">Không tìm thấy kèo giao lưu phù hợp</h3>
+      <p class="empty-sub">Thử tìm kiếm với từ khóa khác hoặc tạo kèo mới cho riêng bạn.</p>
     </div>
 
     <div v-else class="matches-grid">
@@ -61,6 +110,7 @@ const {
         @join="selectedMatchForJoin = $event"
       />
     </div>
+
 
     <!-- Modals -->
     <SocialJoinModal
@@ -74,8 +124,9 @@ const {
       :show="showPartnerFinder"
       @close="showPartnerFinder = false"
     />
-  </div>
+  </main>
 </template>
+
 
 <style scoped>
 .social-tournament-view {
@@ -139,17 +190,41 @@ const {
 
 .social-toolbar {
   display: flex;
+  width: 100%;
+}
+
+.search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-ico {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  font-size: 18px;
+  pointer-events: none;
 }
 
 .search-input {
   width: 100%;
-  padding: 10px 16px;
-  border-radius: 12px;
+  padding: 12px 16px 12px 42px;
+  border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+
+.search-input:focus {
+  border-color: var(--primary, #db2777);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
+}
+
 
 .matches-grid {
   display: grid;
@@ -172,4 +247,35 @@ const {
   font-size: 48px;
   margin-bottom: 12px;
 }
+
+.social-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+}
+
+.sk-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sk-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.sk-meta-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+}
 </style>
+

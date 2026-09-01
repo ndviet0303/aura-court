@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import AuraLoading from '../AuraLoading.vue'
+import AuraLoading from '../feedback/AuraLoading.vue'
 
 describe('AuraLoading', () => {
   it('renders with default props', () => {

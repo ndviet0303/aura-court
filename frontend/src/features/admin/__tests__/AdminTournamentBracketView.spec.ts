@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import AdminTournamentBracketView from '../AdminTournamentBracketView.vue'
+import AdminTournamentBracketView from '../views/AdminTournamentBracketView.vue'
 import { i18n } from '@/i18n'
 import { apiV2 } from '@/core/api/client'
 
@@ -232,6 +232,11 @@ describe('AdminTournamentBracketView', () => {
     const filterPills = wrapper.findAll('.filter-pill-item')
     expect(filterPills.length).toBe(4)
 
+    // Check in first athlete
+    await wrapper.find('.btn-round-checkin')?.trigger('click')
+    await flushPromises()
+
+
     // Click Checked In
     await filterPills[2]?.trigger('click')
     await flushPromises()
@@ -260,8 +265,9 @@ describe('AdminTournamentBracketView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Sarah Jenkins')
-    expect(wrapper.text()).toContain('Apex Club')
+    expect(wrapper.text()).toContain('Aura Club')
   })
+
 
   it('toggles athlete check-in status and updates circular gauge', async () => {
     const wrapper = mount(AdminTournamentBracketView, {

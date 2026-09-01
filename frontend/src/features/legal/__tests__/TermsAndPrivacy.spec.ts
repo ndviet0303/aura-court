@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import TermsView from '../TermsView.vue'
-import PrivacyView from '../PrivacyView.vue'
+import TermsView from '../views/TermsView.vue'
+import PrivacyView from '../views/PrivacyView.vue'
 import { i18n } from '@/i18n'
 
 describe('Legal Pages', () => {

@@ -13,7 +13,17 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="bracket-tree-wrapper">
+  <div v-if="quarters.length === 0 && semis.length === 0 && !finalMatch" class="empty-bracket-card">
+    <div class="empty-ico-box">
+      <span class="material-symbols-outlined">account_tree</span>
+    </div>
+    <h4 class="empty-title">Chưa Có Sơ Đồ Nhánh Đấu</h4>
+    <p class="empty-sub">
+      Ban tổ chức đang sắp xếp hạt giống hoặc giải đấu đang trong giai đoạn mở đăng ký VĐV.
+    </p>
+  </div>
+
+  <div v-else class="bracket-tree-wrapper">
     <!-- Quarter Finals Column -->
     <div class="bracket-column">
       <h3 class="col-header">TỨ KẾT (Quarter-Finals)</h3>
@@ -84,7 +94,10 @@ const emit = defineEmits<{
 
     <!-- Final Match Column -->
     <div class="bracket-column">
-      <h3 class="col-header highlight">CHUNG KẾT (Finals) 🏆</h3>
+      <h3 class="col-header highlight">
+        <span class="material-symbols-outlined col-header-ico">emoji_events</span>
+        <span>CHUNG KẾT (Finals)</span>
+      </h3>
       <div class="matches-stack">
         <div
           v-if="finalMatch"
@@ -92,7 +105,10 @@ const emit = defineEmits<{
           @click="emit('selectMatch', finalMatch)"
         >
           <div class="node-meta">
-            <span class="live-tag">🔴 LIVE · {{ finalMatch.time }}</span>
+            <span class="live-tag">
+              <span class="live-pulse-dot"></span>
+              LIVE · {{ finalMatch.time }}
+            </span>
             <span class="court-txt">{{ finalMatch.court }}</span>
           </div>
 
@@ -116,6 +132,8 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
+
+
 
 <style scoped>
 .bracket-tree-wrapper {
@@ -143,6 +161,15 @@ const emit = defineEmits<{
   background: var(--surface);
   border-radius: 8px;
   border: 1px solid var(--outline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.col-header-ico {
+  font-size: 18px;
+  color: var(--accent, #c9a15a);
 }
 
 .col-header.highlight {
@@ -192,9 +219,27 @@ const emit = defineEmits<{
 }
 
 .live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: #ef4444;
   font-weight: 800;
 }
+
+.live-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse-dot 1.4s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.9); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+  100% { transform: scale(0.9); opacity: 1; }
+}
+
 
 .player-slot {
   display: flex;
@@ -230,4 +275,47 @@ const emit = defineEmits<{
   font-size: 13px;
   color: var(--pink-dark, #db2777);
 }
+
+.empty-bracket-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px dashed var(--outline);
+}
+
+.empty-ico-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-container, rgba(0, 0, 0, 0.04));
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.empty-ico-box span {
+  font-size: 28px;
+}
+
+.empty-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.empty-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 420px;
+}
 </style>
+

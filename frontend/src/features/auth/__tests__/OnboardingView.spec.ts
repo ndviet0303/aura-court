@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import OnboardingView from '../OnboardingView.vue'
+import OnboardingView from '../views/OnboardingView.vue'
 import { i18n } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 

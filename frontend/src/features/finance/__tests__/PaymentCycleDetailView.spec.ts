@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import PaymentCycleDetailView from '../PaymentCycleDetailView.vue'
+import PaymentCycleDetailView from '../views/PaymentCycleDetailView.vue'
 import { i18n } from '@/i18n'
 import { apiV2 } from '@/core/api/client'
 

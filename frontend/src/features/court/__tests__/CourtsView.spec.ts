@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import CourtsView from '../CourtsView.vue'
+import CourtsView from '../views/CourtsView.vue'
 import { useBookingStore } from '@/stores/booking'
 import { api } from '@/core/api/client'
 

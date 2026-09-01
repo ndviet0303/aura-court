@@ -10,11 +10,17 @@ defineProps<{
   <div class="live-scoreboard-card">
     <div class="scoreboard-header">
       <div class="tourney-tag">
-        <span class="live-badge">🔴 ĐANG DIỄN RA TRỰC TIẾP</span>
+        <span class="live-badge">
+          <span class="live-dot"></span>
+          ĐANG DIỄN RA TRỰC TIẾP
+        </span>
         <strong class="tourney-name">{{ match.tournament_name }}</strong> · 
         <span class="round-name">{{ match.round_label }}</span>
       </div>
-      <div class="court-badge font-mono">📍 {{ match.court_label }}</div>
+      <div class="court-badge font-mono">
+        <span class="material-symbols-outlined mini-ico">location_on</span>
+        {{ match.court_label }}
+      </div>
     </div>
 
     <div class="scoreboard-main-grid">
@@ -22,7 +28,9 @@ defineProps<{
       <div class="player-column" :class="{ 'is-serving': match.serving_player === 1 }">
         <div class="avatar-wrap">
           <img :src="match.player1.avatar" :alt="match.player1.name" class="p-avatar" />
-          <span v-if="match.serving_player === 1" class="shuttle-badge" title="Đang cầm giao cầu">🏸</span>
+          <span v-if="match.serving_player === 1" class="shuttle-badge" title="Đang cầm giao cầu">
+            <span class="material-symbols-outlined shuttle-ico">sports_tennis</span>
+          </span>
         </div>
         <div class="p-info">
           <span class="p-seed">{{ match.player1.seed }} · {{ match.player1.club }}</span>
@@ -56,12 +64,15 @@ defineProps<{
         </div>
         <div class="avatar-wrap">
           <img :src="match.player2.avatar" :alt="match.player2.name" class="p-avatar" />
-          <span v-if="match.serving_player === 2" class="shuttle-badge" title="Đang cầm giao cầu">🏸</span>
+          <span v-if="match.serving_player === 2" class="shuttle-badge" title="Đang cầm giao cầu">
+            <span class="material-symbols-outlined shuttle-ico">sports_tennis</span>
+          </span>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .live-scoreboard-card {
@@ -93,6 +104,9 @@ defineProps<{
 }
 
 .live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-weight: 800;
   color: #ef4444;
@@ -101,9 +115,31 @@ defineProps<{
   border-radius: 6px;
 }
 
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse-live 1.4s infinite;
+}
+
+@keyframes pulse-live {
+  0% { transform: scale(0.9); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(0.9); opacity: 1; }
+}
+
 .court-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.mini-ico {
+  font-size: 15px;
+  color: var(--pink-dark, #db2777);
 }
 
 .scoreboard-main-grid {
@@ -119,7 +155,7 @@ defineProps<{
   gap: 16px;
   padding: 16px;
   border-radius: 16px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  background: var(--surface-container, rgba(0, 0, 0, 0.02));
   border: 1px solid var(--outline);
 }
 
@@ -144,13 +180,23 @@ defineProps<{
 
 .shuttle-badge {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  font-size: 14px;
-  background: var(--surface);
+  bottom: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  background: var(--primary, #db2777);
+  color: #fff;
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
+
+.shuttle-ico {
+  font-size: 13px;
+}
+
 
 .p-info {
   display: flex;

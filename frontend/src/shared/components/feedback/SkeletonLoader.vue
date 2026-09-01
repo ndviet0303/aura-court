@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import NavbarSkeleton from '../layouts/NavbarSkeleton.vue'
+import NavbarSkeleton from '@/shared/layouts/header/NavbarSkeleton.vue'
+
 
 interface Props {
   type?: 'text' | 'title' | 'avatar' | 'card' | 'court-card' | 'court-detail' | 'slot' | 'rect' | 'navbar'

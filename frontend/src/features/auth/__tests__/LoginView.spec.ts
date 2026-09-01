@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import LoginView from '../LoginView.vue'
+import LoginView from '../views/LoginView.vue'
 import { i18n } from '@/i18n'
 
 const mockPush = vi.fn<() => void>()

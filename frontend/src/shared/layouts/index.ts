@@ -1,5 +1,4 @@
-export { default as Navbar } from './Navbar.vue'
-export { default as NavbarSkeleton } from './NavbarSkeleton.vue'
-export { default as SiteFooter } from './SiteFooter.vue'
-export { default as AdminLayout } from './AdminLayout.vue'
-
+export { default as Navbar } from './header/Navbar.vue'
+export { default as NavbarSkeleton } from './header/NavbarSkeleton.vue'
+export { default as SiteFooter } from './footer/SiteFooter.vue'
+export { default as AdminLayout } from './admin/AdminLayout.vue'

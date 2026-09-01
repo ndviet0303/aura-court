@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import ErrorModal from '../ErrorModal.vue'
+import ErrorModal from '../feedback/ErrorModal.vue'
 
 describe('ErrorModal', () => {
   let container: HTMLDivElement

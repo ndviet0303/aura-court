@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import AuraButton from '../AuraButton.vue'
+import AuraButton from '../buttons/AuraButton.vue'
 
 describe('AuraButton.vue', () => {
   it('renders default button with text slot', () => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AuraButton } from '@/shared/components'
 import type { MatchFixture } from '../../composables/useLiveScore'
 
 defineProps<{
@@ -14,21 +15,35 @@ const emit = defineEmits<{
 <template>
   <div class="umpire-control-panel">
     <div class="panel-header">
-      <h3 class="title">🎛️ Bảng Điều Khiển Trọng Tài (Umpire Console)</h3>
-      <button class="btn-undo" @click="emit('undoPoint')">
-        ↩️ Hoàn Tác Điểm
-      </button>
+      <div class="hdr-title-wrap">
+        <div class="hdr-ico-box">
+          <span class="material-symbols-outlined">tune</span>
+        </div>
+        <div>
+          <h3 class="title">Bảng Điều Khiển Trọng Tài (Umpire Console)</h3>
+          <span class="sub">Chấm điểm trực tiếp trên sân cho từng pha cầu của VĐV</span>
+        </div>
+      </div>
+
+      <AuraButton
+        variant="secondary"
+        size="sm"
+        icon="undo"
+        @click="emit('undoPoint')"
+      >
+        Hoàn Tác Điểm
+      </AuraButton>
     </div>
 
     <div class="control-actions-grid">
-      <button class="btn-point-p1" @click="emit('addPoint', 1)">
-        <span>+1 Điểm cho</span>
-        <strong>{{ match.player1.name }}</strong>
+      <button type="button" class="btn-point-p1" @click="emit('addPoint', 1)">
+        <span class="btn-lbl">+1 Điểm Cho</span>
+        <strong class="btn-name">{{ match.player1.name }}</strong>
       </button>
 
-      <button class="btn-point-p2" @click="emit('addPoint', 2)">
-        <span>+1 Điểm cho</span>
-        <strong>{{ match.player2.name }}</strong>
+      <button type="button" class="btn-point-p2" @click="emit('addPoint', 2)">
+        <span class="btn-lbl">+1 Điểm Cho</span>
+        <strong class="btn-name">{{ match.player2.name }}</strong>
       </button>
     </div>
   </div>
@@ -38,32 +53,49 @@ const emit = defineEmits<{
 .umpire-control-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 16px;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 20px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hdr-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hdr-ico-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(236, 72, 153, 0.12);
+  color: var(--pink-dark, #db2777);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .title {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--ink);
 }
 
-.btn-undo {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  font-size: 12px;
-  cursor: pointer;
+.sub {
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 .control-actions-grid {
@@ -76,26 +108,38 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 20px;
-  border-radius: 14px;
+  padding: 22px 16px;
+  border-radius: 16px;
   border: 0;
-  background: var(--pink-dark, #db2777);
+  background: linear-gradient(135deg, var(--primary, #6b2d3f) 0%, var(--pink-dark, #db2777) 100%);
   color: #fff;
   cursor: pointer;
-  transition: transform 0.1s;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-point-p1:hover, .btn-point-p2:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35);
 }
 
 .btn-point-p1:active, .btn-point-p2:active {
   transform: scale(0.98);
 }
 
-.btn-point-p1 span, .btn-point-p2 span {
-  font-size: 12px;
+.btn-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   opacity: 0.9;
 }
 
-.btn-point-p1 strong, .btn-point-p2 strong {
+.btn-name {
   font-size: 16px;
+  font-weight: 850;
 }
 </style>
+

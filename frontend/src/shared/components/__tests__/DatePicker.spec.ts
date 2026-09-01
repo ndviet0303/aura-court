@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import DatePicker from '../DatePicker.vue'
+import DatePicker from '../forms/DatePicker.vue'
 import { i18n } from '@/i18n'
 
 describe('DatePicker', () => {

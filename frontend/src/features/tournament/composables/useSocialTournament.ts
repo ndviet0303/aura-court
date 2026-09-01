@@ -46,23 +46,39 @@ export function useSocialTournament() {
     try {
       const res = await socialApi.getMatches<{ matches?: any[]; data?: any[] }>()
       const list = res?.matches || res?.data || (Array.isArray(res) ? res : [])
-      matches.value = list.map((m: any) => ({
-        id: m.id,
-        title: m.title || `Kèo giao lưu #${m.id}`,
-        venue_name: m.venue?.name || m.venue_name || 'Cơ sở Aura',
-        court_name: m.court?.name || m.court_name || 'Sân tiêu chuẩn',
-        city: m.venue?.city || 'Hồ Chí Minh',
-        starts_at: m.starts_at || '19:00 - 21:00',
-        joined_count: m.joined_count || m.participants?.length || 1,
-        required_participants: m.required_participants || 4,
-        visibility: m.visibility || 'public',
-        min_skill: m.min_skill,
-        max_skill: m.max_skill,
-        host_name: m.host?.name || m.host_name || 'Chủ kèo',
-        host_avatar: m.host?.avatar || m.host_avatar,
-        description: m.description || '',
-        participants: m.participants || [],
-      }))
+      matches.value = list.map((m: any) => {
+        let formattedTime = m.starts_at || '19:00 - 21:00'
+        if (m.starts_at && m.starts_at.includes('T')) {
+          try {
+            const d = new Date(m.starts_at)
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            formattedTime = `${hours}:${minutes} · ${day}/${month}/${d.getFullYear()}`
+          } catch {
+            formattedTime = m.starts_at
+          }
+        }
+        return {
+          id: m.id,
+          title: m.title || `Kèo giao lưu #${m.id}`,
+          venue_name: m.venue?.name || m.venue_name || 'Cơ sở Aura',
+          court_name: m.court?.name || m.court_name || 'Sân tiêu chuẩn',
+          city: m.venue?.city || 'Hồ Chí Minh',
+          starts_at: formattedTime,
+          joined_count: m.joined_count || m.participants?.length || 1,
+          required_participants: m.required_participants || 4,
+          visibility: m.visibility || 'public',
+          min_skill: m.min_skill,
+          max_skill: m.max_skill,
+          host_name: m.host?.name || m.host_name || 'Chủ kèo',
+          host_avatar: m.host?.avatar || m.host_avatar,
+          description: m.description || '',
+          participants: m.participants || [],
+        }
+      })
+
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách kèo giao lưu.')
     } finally {

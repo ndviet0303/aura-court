@@ -2,9 +2,9 @@
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import LanguageSwitcher from '@/shared/components/LanguageSwitcher.vue'
-import ThemeToggle from '@/shared/components/ThemeToggle.vue'
+import { LanguageSwitcher, ThemeToggle } from '@/shared/components'
 import NavbarSkeleton from './NavbarSkeleton.vue'
+
 import NavbarBrand from './components/NavbarBrand.vue'
 import NavbarDesktopNav from './components/NavbarDesktopNav.vue'
 import NavbarUserProfile from './components/NavbarUserProfile.vue'

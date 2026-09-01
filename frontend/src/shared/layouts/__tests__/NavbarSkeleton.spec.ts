@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import NavbarSkeleton from '../NavbarSkeleton.vue'
+import NavbarSkeleton from '../header/NavbarSkeleton.vue'
 
 describe('NavbarSkeleton', () => {
   it('renders with default fixed layout', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import PaymentView from '../PaymentView.vue'
+import PaymentView from '../views/PaymentView.vue'
 import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
 

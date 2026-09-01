@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import SelectDropdown from '../SelectDropdown.vue'
+import SelectDropdown from '../forms/SelectDropdown.vue'
 
 describe('SelectDropdown', () => {
   const sampleOptions = [

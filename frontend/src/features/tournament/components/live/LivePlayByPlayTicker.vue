@@ -9,9 +9,13 @@ defineProps<{
 <template>
   <div class="live-play-ticker-card">
     <div class="card-header">
-      <h3 class="title">⚡ Diễn Biến Từng Pha Cầu (Play-by-play)</h3>
+      <div class="hdr-title-wrap">
+        <span class="material-symbols-outlined hdr-ico">bolt</span>
+        <h3 class="title">Diễn Biến Từng Pha Cầu (Play-by-play)</h3>
+      </div>
       <span class="sub">Cập nhật thời gian thực</span>
     </div>
+
 
     <div class="events-timeline">
       <div
@@ -46,18 +50,32 @@ defineProps<{
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hdr-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdr-ico {
+  font-size: 18px;
+  color: var(--accent, #c9a15a);
 }
 
 .title {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .sub {
   font-size: 12px;
   color: var(--muted);
 }
+
 
 .events-timeline {
   display: flex;

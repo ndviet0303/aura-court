@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import SkeletonLoader from '../SkeletonLoader.vue'
+import SkeletonLoader from '../feedback/SkeletonLoader.vue'
 
 describe('SkeletonLoader', () => {
   it('renders basic text skeleton', () => {

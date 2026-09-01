@@ -23,6 +23,22 @@ export interface Participant {
   team_name?: string
   skill_level?: number
   seed?: number
+  club?: string
+  checked_in?: boolean
+  paid?: boolean
+  phone?: string
+  category?: string
+  [key: string]: any
+}
+
+export interface CircuitLeaderboardItem {
+  rank: number
+  name: string
+  points: number
+  tournamentsWon: number
+  avatar: string
+  city?: string
+  tier?: string
 }
 
 export interface TournamentItem {
@@ -31,7 +47,7 @@ export interface TournamentItem {
   title?: string
   slug?: string
   category?: string
-  sport?: string
+  sport?: 'badminton' | 'pickleball' | 'tennis' | 'football_5v5' | string
   format: 'single_elimination' | 'round_robin' | 'double_elimination' | string
   status: 'open' | 'ongoing' | 'completed' | 'upcoming' | string
   prize_pool: string
@@ -61,4 +77,18 @@ export interface TournamentItem {
   winner_team?: string
   runner_up?: string
   fixtures?: Fixture[]
+  participants?: Participant[]
+  [key: string]: any
 }
+
+export interface TournamentRegistrationPayload {
+  name?: string
+  phone?: string
+  partnerName?: string
+  skillLevel?: number
+  notes?: string
+  checked_in?: boolean
+  [key: string]: any
+}
+
+
