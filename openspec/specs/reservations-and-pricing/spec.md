@@ -8,15 +8,19 @@ the existing v1 booking contract throughout a controlled migration period.
 ## Requirements
 
 ### Requirement: Versioned reservation API compatibility
-The platform SHALL expose new reservation functionality under `/api/v2` and SHALL continue serving the existing `/api/v1` booking interface during the declared migration period. A legacy booking MUST remain retrievable through its legacy interface even after its inventory and ownership are represented in the v2 domain.
+The platform SHALL expose new reservation functionality under `/api/v2` and SHALL continue serving the existing `/api/v1` booking interface during the declared migration period. A legacy booking MUST remain retrievable through its legacy interface even after its inventory and ownership are represented in the v2 domain. Booking creation in both API versions SHALL confirm the reservation immediately upon successful wallet balance deduction instead of entering a `pending_payment` state.
 
 #### Scenario: Legacy client retrieves a historical booking
 - **WHEN** a client calls the supported `/api/v1` booking endpoint for a migrated booking
 - **THEN** the platform SHALL return the documented v1-compatible representation
 
 #### Scenario: New client creates a reservation
-- **WHEN** an authorized client submits a valid reservation command to `/api/v2`
-- **THEN** the platform SHALL create and return a v2 reservation representation
+- **WHEN** an authorized client submits a valid reservation command to `/api/v2` with sufficient wallet balance
+- **THEN** the platform SHALL deduct the wallet balance, create a `confirmed` reservation, and return the v2 reservation representation without entering a pending payment state
+
+#### Scenario: New client creates a reservation with insufficient balance
+- **WHEN** an authorized client submits a valid reservation command to `/api/v2` with insufficient wallet balance
+- **THEN** the platform SHALL reject the reservation with a validation error indicating the shortfall amount, without creating any reservation or slot records
 
 ### Requirement: Immutable price quotes
 The platform SHALL calculate a price quote from active tenant and venue rules using this precedence: holiday or date exception, peak rule, weekly time rule, then base price. The accepted quote MUST snapshot the applied prices and rule version so later rule changes cannot change the checkout amount.
@@ -30,7 +34,7 @@ The platform SHALL calculate a price quote from active tenant and venue rules us
 - **THEN** the reservation's recorded amount SHALL remain unchanged
 
 ### Requirement: Active inventory exclusivity
-The platform SHALL permit no more than one active reservation entitlement for a court-time. It MUST return a valid conflict rather than create overlapping active inventory when simultaneous requests compete for the same court-time.
+The platform SHALL permit no more than one active reservation entitlement for a court-time. It MUST return a valid conflict rather than create overlapping active inventory when simultaneous requests compete for the same court-time. Since reservations are confirmed atomically with wallet deduction, slots transition directly to `confirmed` without passing through a `held` intermediate state for new bookings.
 
 #### Scenario: Concurrent reservation attempts
 - **WHEN** 100 requests simultaneously reserve the same available court-time
@@ -53,4 +57,3 @@ The platform SHALL trigger a court status change hook upon successful creation o
 #### Scenario: Successful reservation triggers hook
 - **WHEN** an authorized client successfully creates a v2 reservation
 - **THEN** the platform SHALL dispatch a status update hook for the reserved court-time
-

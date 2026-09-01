@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { MembershipPlan, BillingCycle } from '../../types/membership'
 
 const props = defineProps<{
@@ -11,6 +13,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', payload: Partial<MembershipPlan>, createNewVersion: boolean): void
 }>()
+
+const { t } = useI18n()
 
 const formName = ref('')
 const formCode = ref('')
@@ -108,8 +112,8 @@ function onSubmit() {
             {{ plan ? 'edit_note' : 'add_circle' }}
           </span>
           <div>
-            <h3 class="modal-title">{{ plan ? `Chỉnh sửa ${plan.name}` : 'Tạo Gói Hội Viên Mới' }}</h3>
-            <p class="modal-subtitle">Thiết lập quyền lợi, biểu giá và quy tắc tích điểm cho gói thành viên.</p>
+            <h3 class="modal-title">{{ plan ? t('admin.membership.editPlanTitle', { name: resolveLocalizedText(plan.name) }) : t('admin.membership.createPlanTitle') }}</h3>
+            <p class="modal-subtitle">{{ t('admin.membership.planModalSub') }}</p>
           </div>
         </div>
         <button type="button" class="btn-close" @click="emit('close')">
@@ -122,101 +126,101 @@ function onSubmit() {
         <div class="form-grid">
           <!-- Row 1: Name & Code -->
           <div class="form-group">
-            <label class="form-label">Tên gói hội viên *</label>
+            <label class="form-label">{{ t('admin.membership.planNameLabel') }}</label>
             <input
               v-model="formName"
               type="text"
               class="form-input"
-              placeholder="VD: Gold Elite, Platinum Club"
+              :placeholder="t('admin.membership.planNamePlaceholder')"
               required
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Mã gói (Code) *</label>
+            <label class="form-label">{{ t('admin.membership.planCodeLabel') }}</label>
             <input
               v-model="formCode"
               type="text"
               class="form-input font-mono"
-              placeholder="VD: GOLD, PLATINUM"
+              :placeholder="t('admin.membership.planCodePlaceholder')"
             />
           </div>
 
           <!-- Row 2: Price & Cycle -->
           <div class="form-group">
-            <label class="form-label">Giá niêm yết (VNĐ) *</label>
+            <label class="form-label">{{ t('admin.membership.priceLabel') }}</label>
             <input
               v-model.number="formPrice"
               type="number"
               step="10000"
-              class="form-input"
+              class="form-input font-mono"
               required
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Chu kỳ gia hạn</label>
+            <label class="form-label">{{ t('admin.membership.renewalCycleLabel') }}</label>
             <select v-model="formCycle" class="form-select">
-              <option value="monthly">Theo tháng (Monthly)</option>
-              <option value="quarterly">Theo quý (Quarterly)</option>
-              <option value="yearly">Theo năm (Yearly)</option>
+              <option value="monthly">{{ t('admin.membership.cycleMonthly') }}</option>
+              <option value="quarterly">{{ t('admin.membership.cycleQuarterly') }}</option>
+              <option value="yearly">{{ t('admin.membership.cycleYearly') }}</option>
             </select>
           </div>
 
           <!-- Description -->
           <div class="form-group full-width">
-            <label class="form-label">Mô tả ngắn</label>
+            <label class="form-label">{{ t('admin.membership.shortDescLabel') }}</label>
             <input
               v-model="formDesc"
               type="text"
               class="form-input"
-              placeholder="Mô tả đối tượng người chơi hoặc quyền lợi tổng quan..."
+              :placeholder="t('admin.membership.shortDescPlaceholder')"
             />
           </div>
 
           <!-- Row 3: Metrics -->
           <div class="form-group">
-            <label class="form-label">Giảm giá đặt sân (%)</label>
+            <label class="form-label">{{ t('admin.membership.courtDiscountLabel') }}</label>
             <input
               v-model.number="formCourtDiscount"
               type="number"
               min="0"
               max="100"
-              class="form-input"
+              class="form-input font-mono"
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Hệ số tích điểm</label>
+            <label class="form-label">{{ t('admin.membership.pointMultiplierLabel') }}</label>
             <input
               v-model.number="formPointMultiplier"
               type="number"
               step="0.1"
               min="1"
               max="10"
-              class="form-input"
+              class="form-input font-mono"
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Đặt sân trước (ngày)</label>
+            <label class="form-label">{{ t('admin.membership.advanceDaysLabel') }}</label>
             <input
               v-model.number="formAdvanceDays"
               type="number"
               min="1"
               max="90"
-              class="form-input"
+              class="form-input font-mono"
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Tặng giờ cuối tuần/tháng</label>
+            <label class="form-label">{{ t('admin.membership.freeHoursLabel') }}</label>
             <input
               v-model.number="formFreeHours"
               type="number"
               min="0"
               max="50"
-              class="form-input"
+              class="form-input font-mono"
             />
           </div>
         </div>
@@ -225,18 +229,18 @@ function onSubmit() {
         <div class="checkbox-row">
           <label class="checkbox-label">
             <input v-model="formWaiveCancelFee" type="checkbox" />
-            <span>Miễn phí hủy sân trước 24h</span>
+            <span>{{ t('admin.membership.waiveCancelFee') }}</span>
           </label>
 
           <label class="checkbox-label">
             <input v-model="formIsPopular" type="checkbox" />
-            <span>Đánh dấu gói VIP nổi bật (Best Value)</span>
+            <span>{{ t('admin.membership.markVipPopular') }}</span>
           </label>
         </div>
 
         <!-- Perks Builder -->
         <div class="perks-builder">
-          <label class="form-label">Danh sách đặc quyền hiển thị (Perks)</label>
+          <label class="form-label">{{ t('admin.membership.perksLabel') }}</label>
           <div class="perks-list">
             <div v-for="(p, idx) in formPerks" :key="idx" class="perk-tag">
               <span class="material-symbols-outlined icon-16 text-primary">check_circle</span>
@@ -252,10 +256,10 @@ function onSubmit() {
               v-model="newPerkInput"
               type="text"
               class="form-input flex-1"
-              placeholder="Thêm đặc quyền mới..."
+              :placeholder="t('admin.membership.newPerkPlaceholder')"
               @keydown.enter.prevent="addPerk"
             />
-            <button type="button" class="btn-add-perk" @click="addPerk">Thêm</button>
+            <button type="button" class="btn-add-perk" @click="addPerk">{{ t('admin.membership.addPerkBtn') }}</button>
           </div>
         </div>
 
@@ -264,19 +268,19 @@ function onSubmit() {
           <label class="checkbox-label">
             <input v-model="createNewVersion" type="checkbox" />
             <span class="font-bold text-primary">
-              Tạo phiên bản mới (VD: {{ plan.version }} ➔ v{{ (parseFloat(plan.version.replace('v','')) + 0.1).toFixed(1) }})
+              {{ t('admin.membership.createNewVersionLabel', { current: plan.version, next: 'v' + (parseFloat(plan.version.replace('v','')) + 0.1).toFixed(1) }) }}
             </span>
           </label>
           <p class="versioning-desc">
-            Bảo lưu chính sách gói cũ cho {{ plan.activeSubscribers }} hội viên đang hoạt động, chỉ áp dụng chính sách mới cho hội viên đăng ký từ hôm nay.
+            {{ t('admin.membership.versioningDesc', { count: plan.activeSubscribers }) }}
           </p>
         </div>
 
         <!-- Modal Footer -->
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" @click="emit('close')">Hủy</button>
+          <button type="button" class="btn-secondary" @click="emit('close')">{{ t('common.cancel') }}</button>
           <button type="submit" class="btn-primary">
-            {{ plan ? 'Lưu Cập Nhật' : 'Tạo Gói Mới' }}
+            {{ plan ? t('admin.membership.saveUpdateBtn') : t('admin.membership.createPlanSubmitBtn') }}
           </button>
         </div>
       </form>
@@ -538,5 +542,13 @@ function onSubmit() {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
+}
+
+.icon-14 {
+  font-size: 14px;
 }
 </style>

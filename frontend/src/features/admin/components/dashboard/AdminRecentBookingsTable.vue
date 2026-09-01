@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatSlotRange, formatCurrency } from '@/i18n'
 import type { AdminBooking } from '../../composables/useAdminDashboard'
 
 defineProps<{
@@ -12,8 +14,28 @@ const emit = defineEmits<{
   (e: 'update:status', val: string): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+const { t } = useI18n()
+
+function getStatusLabel(status?: string): string {
+  switch (status) {
+    case 'confirmed':
+      return t('admin.dashboard.statusConfirmed')
+    case 'pending':
+    case 'pending_payment':
+      return t('admin.dashboard.statusPending')
+    case 'cancelled':
+      return t('admin.dashboard.statusCancelled')
+    case 'expired':
+      return t('admin.dashboard.statusExpired')
+    case 'no_show':
+      return t('admin.dashboard.statusNoShow')
+    case 'refund_pending':
+      return t('admin.dashboard.statusRefundPending')
+    case 'refunded':
+      return t('admin.dashboard.statusRefunded')
+    default:
+      return status || t('admin.dashboard.statusPending')
+  }
 }
 </script>
 
@@ -21,8 +43,11 @@ function formatMoney(amount: number): string {
   <div class="recent-bookings-card">
     <div class="card-header">
       <div class="header-titles">
-        <h3 class="title">📋 Đơn Đặt Sân Mới Nhất</h3>
-        <p class="sub">Theo dõi các đơn đặt sân trực tuyến, giờ chơi và trạng thái thanh toán.</p>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">receipt_long</span>
+          <h3 class="title">{{ t('admin.dashboard.recentBookings') }}</h3>
+        </div>
+        <p class="sub">{{ t('admin.dashboard.recentBookingsSub') }}</p>
       </div>
 
       <div class="filters-row">
@@ -30,7 +55,7 @@ function formatMoney(amount: number): string {
           :value="search"
           type="text"
           class="search-input"
-          placeholder="Tìm mã đơn, tên khách..."
+          :placeholder="t('admin.dashboard.searchBookingPlaceholder')"
           @input="emit('update:search', ($event.target as HTMLInputElement).value)"
         />
 
@@ -39,42 +64,47 @@ function formatMoney(amount: number): string {
           class="status-select"
           @change="emit('update:status', ($event.target as HTMLSelectElement).value)"
         >
-          <option value="">Tất cả trạng thái</option>
-          <option value="confirmed">Đã xác nhận</option>
-          <option value="pending">Chờ thanh toán</option>
-          <option value="cancelled">Đã huỷ</option>
+          <option value="">{{ t('admin.dashboard.allStatuses') }}</option>
+          <option value="confirmed">{{ t('admin.dashboard.statusConfirmed') }}</option>
+          <option value="pending_payment">{{ t('admin.dashboard.statusPending') }}</option>
+          <option value="cancelled">{{ t('admin.dashboard.statusCancelled') }}</option>
+          <option value="expired">{{ t('admin.dashboard.statusExpired') }}</option>
+          <option value="no_show">{{ t('admin.dashboard.statusNoShow') }}</option>
+          <option value="refund_pending">{{ t('admin.dashboard.statusRefundPending') }}</option>
         </select>
       </div>
     </div>
 
     <div class="table-responsive">
       <div class="bookings-table">
-      <div class="table-hdr">
-        <span>Mã Đơn</span>
-        <span>Khách Hàng</span>
-        <span>Sân & Giờ Chơi</span>
-        <span>Tổng Tiền</span>
-        <span>Trạng Thái</span>
-      </div>
+        <div class="table-hdr">
+          <span>{{ t('admin.dashboard.bookingCode') }}</span>
+          <span>{{ t('admin.dashboard.customer') }}</span>
+          <span>{{ t('admin.dashboard.courtAndSlot') }}</span>
+          <span>{{ t('admin.dashboard.totalAmount') }}</span>
+          <span>{{ t('admin.dashboard.status') }}</span>
+        </div>
 
-      <div class="table-body">
-        <div v-for="b in bookings" :key="b.id" class="booking-row">
-          <strong class="font-mono text-pink">{{ b.code }}</strong>
-          <div class="user-col">
-            <strong>{{ b.user?.name || 'Khách vãng lai' }}</strong>
-            <span class="email-sub">{{ b.user?.email }}</span>
+        <div class="table-body">
+          <div v-for="b in bookings" :key="b.id" class="booking-row">
+            <strong class="font-mono text-pink">{{ b.code }}</strong>
+            <div class="user-col">
+              <strong>{{ b.user?.name || t('admin.dashboard.walkInCustomer') }}</strong>
+              <span class="email-sub">{{ b.user?.email }}</span>
+            </div>
+            <div class="court-col">
+              <strong>{{ resolveLocalizedText(b.court?.name) }}</strong>
+              <span class="slot-sub font-mono">
+                {{ formatSlotRange(b.slots?.[0]?.starts_at, b.slots?.[0]?.ends_at) }}
+              </span>
+            </div>
+            <strong class="font-mono">{{ formatCurrency(b.total_amount) }}</strong>
+            <span class="status-pill" :class="`status-${b.status}`">
+              ● {{ getStatusLabel(b.status) }}
+            </span>
           </div>
-          <div class="court-col">
-            <strong>{{ b.court?.name }}</strong>
-            <span class="slot-sub font-mono">{{ b.slots?.[0]?.starts_at }} ➔ {{ b.slots?.[0]?.ends_at }}</span>
-          </div>
-          <strong class="font-mono">{{ formatMoney(b.total_amount) }}</strong>
-          <span class="status-pill" :class="`status-${b.status}`">
-            ● {{ b.status === 'confirmed' ? 'Đã thanh toán' : 'Chờ xử lý' }}
-          </span>
         </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
@@ -96,6 +126,17 @@ function formatMoney(amount: number): string {
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
@@ -174,8 +215,12 @@ function formatMoney(amount: number): string {
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 6px;
+  white-space: nowrap;
 }
 
-.status-confirmed { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.status-confirmed, .status-paid { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.status-pending, .status-pending_payment { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.status-cancelled, .status-expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.status-no_show { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+.status-refund_pending, .status-refunded { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
 </style>

@@ -35,6 +35,13 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
         $users = User::factory()->count(100)->create();
         $isoSlot = $targetDate->toIso8601String();
 
+        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $venue = Venue::firstOrFail();
+        foreach ($users as $user) {
+            $w = $walletService->getOrCreateWallet($user->id, $venue->organization_id);
+            $walletService->credit($w, 1000000, 'test_fund', 1, 'Fund');
+        }
+
         $successCount = 0;
         $conflictCount = 0;
         $bookingService = app(BookingService::class);

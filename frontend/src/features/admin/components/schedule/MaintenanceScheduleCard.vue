@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatSlotRange } from '@/i18n'
 import type { MaintenanceBlock } from '../../composables/useAdminSchedule'
 
 defineProps<{
@@ -8,29 +10,47 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'scheduleDowntime'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="maintenance-card">
     <div class="card-header">
       <div>
-        <h3 class="title">🔒 Lịch Bảo Trì & Tạm Khoá Sân (Maintenance Downtime)</h3>
-        <p class="sub">Khoá tạm thời một hoặc nhiều sân phục vụ thay thảm, sửa đèn, vệ sinh định kỳ.</p>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">build</span>
+          <h3 class="title">{{ t('admin.schedule.maintenanceTitle') }}</h3>
+        </div>
+        <p class="sub">{{ t('admin.schedule.maintenanceSub') }}</p>
       </div>
 
-      <button class="btn-schedule-downtime-cta" @click="emit('scheduleDowntime')">
-        🔒 Lên lịch bảo trì
+      <button type="button" class="btn-schedule-downtime-cta" @click="emit('scheduleDowntime')">
+        <span class="material-symbols-outlined icon-16">add_moderator</span>
+        <span>{{ t('admin.schedule.scheduleDowntimeBtn') }}</span>
       </button>
     </div>
 
-    <div class="blocks-list">
+    <div v-if="blocks.length === 0" class="empty-blocks">
+      {{ t('admin.schedule.noMaintenance') }}
+    </div>
+
+    <div v-else class="blocks-list">
       <div v-for="b in blocks" :key="b.id" class="block-row">
         <div class="block-info">
           <strong>{{ b.reason }}</strong>
-          <span class="block-court">📍 {{ b.court_name }}</span>
-          <span class="block-time font-mono">⏰ {{ b.starts_at }} ➔ {{ b.ends_at }}</span>
+          <span class="block-court">
+            <span class="material-symbols-outlined icon-14">location_on</span>
+            <span>{{ resolveLocalizedText(b.court_name) }}</span>
+          </span>
+          <span class="block-time font-mono">
+            <span class="material-symbols-outlined icon-14">schedule</span>
+            <span>{{ formatSlotRange(b.starts_at, b.ends_at) }}</span>
+          </span>
         </div>
-        <span class="block-status-badge">Đang khoá</span>
+        <span class="block-status-badge">
+          {{ t('admin.schedule.statusLocked') }}
+        </span>
       </div>
     </div>
   </div>
@@ -52,6 +72,18 @@ const emit = defineEmits<{
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
@@ -67,6 +99,9 @@ const emit = defineEmits<{
 }
 
 .btn-schedule-downtime-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
   border: 0;
@@ -76,6 +111,13 @@ const emit = defineEmits<{
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.empty-blocks {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .blocks-list {
@@ -102,6 +144,9 @@ const emit = defineEmits<{
 }
 
 .block-court, .block-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
   color: var(--muted);
 }
@@ -113,5 +158,13 @@ const emit = defineEmits<{
   background: rgba(239, 68, 68, 0.1);
   padding: 2px 8px;
   border-radius: 4px;
+}
+
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

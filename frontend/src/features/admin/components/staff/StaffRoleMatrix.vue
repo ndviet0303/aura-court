@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 const permissionsMatrix = [
   { module: 'Quản lý Hệ thống Sân', action: 'Tạo, sửa, đổi trạng thái sân', owner: true, manager: true, receptionist: false, tech: false, referee: false },
   { module: 'Quản lý Bảng Giá', action: 'Cài đặt giá giờ vàng & giá linh hoạt', owner: true, manager: true, receptionist: false, tech: false, referee: false },
@@ -9,18 +11,23 @@ const permissionsMatrix = [
   { module: 'Báo Cáo Doanh Thu', action: 'Xem P&L, đối soát tiền mặt ca làm', owner: true, manager: true, receptionist: false, tech: false, referee: false },
   { module: 'Phân Quyền Nhân Sự', action: 'Mời nhân viên, phân quyền truy cập', owner: true, manager: false, receptionist: false, tech: false, referee: false },
 ]
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="role-matrix-container">
     <div class="matrix-header">
-      <h3 class="matrix-heading">Ma trận Đối soát Quyền hạn (Role Permission Matrix)</h3>
-      <p class="matrix-sub">Chi tiết phân quyền truy cập các tính năng cốt lõi theo từng chức danh nhân sự.</p>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">security</span>
+        <h3 class="matrix-heading">{{ t('admin.staff.roleMatrixHeading') }}</h3>
+      </div>
+      <p class="matrix-sub">{{ t('admin.staff.roleMatrixSub') }}</p>
     </div>
 
     <div class="matrix-table-wrap">
       <div class="matrix-header-row">
-        <span>Module & Hành Động</span>
+        <span>{{ t('admin.staff.hdrModuleAndAction') }}</span>
         <span class="role-col-hdr">Owner</span>
         <span class="role-col-hdr">Manager</span>
         <span class="role-col-hdr">Receptionist</span>
@@ -39,11 +46,26 @@ const permissionsMatrix = [
             <span>{{ row.action }}</span>
           </div>
 
-          <div class="check-col"><span v-if="row.owner" class="perm-yes">✓</span><span v-else class="perm-no">-</span></div>
-          <div class="check-col"><span v-if="row.manager" class="perm-yes">✓</span><span v-else class="perm-no">-</span></div>
-          <div class="check-col"><span v-if="row.receptionist" class="perm-yes">✓</span><span v-else class="perm-no">-</span></div>
-          <div class="check-col"><span v-if="row.tech" class="perm-yes">✓</span><span v-else class="perm-no">-</span></div>
-          <div class="check-col"><span v-if="row.referee" class="perm-yes">✓</span><span v-else class="perm-no">-</span></div>
+          <div class="check-col">
+            <span v-if="row.owner" class="material-symbols-outlined perm-yes">check</span>
+            <span v-else class="perm-no">-</span>
+          </div>
+          <div class="check-col">
+            <span v-if="row.manager" class="material-symbols-outlined perm-yes">check</span>
+            <span v-else class="perm-no">-</span>
+          </div>
+          <div class="check-col">
+            <span v-if="row.receptionist" class="material-symbols-outlined perm-yes">check</span>
+            <span v-else class="perm-no">-</span>
+          </div>
+          <div class="check-col">
+            <span v-if="row.tech" class="material-symbols-outlined perm-yes">check</span>
+            <span v-else class="perm-no">-</span>
+          </div>
+          <div class="check-col">
+            <span v-if="row.referee" class="material-symbols-outlined perm-yes">check</span>
+            <span v-else class="perm-no">-</span>
+          </div>
         </div>
       </div>
     </div>
@@ -61,14 +83,25 @@ const permissionsMatrix = [
   padding: 20px;
 }
 
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .matrix-heading {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 16px;
   font-weight: 700;
 }
 
 .matrix-sub {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 12px;
   color: var(--muted);
 }
@@ -121,13 +154,15 @@ const permissionsMatrix = [
 }
 
 .check-col {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 800;
 }
 
 .perm-yes {
   color: #10b981;
-  font-size: 15px;
+  font-size: 18px;
 }
 
 .perm-no {

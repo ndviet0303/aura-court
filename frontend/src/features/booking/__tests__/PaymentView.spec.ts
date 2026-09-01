@@ -1,20 +1,28 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createI18n } from 'vue-i18n'
 import { setActivePinia, createPinia } from 'pinia'
 import PaymentView from '../views/PaymentView.vue'
-import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
+import viMessages from '@/i18n/locales/vi'
 
-const mockPush = vi.fn<() => void>()
+const i18n = createI18n({
+  legacy: false,
+  locale: 'vi',
+  messages: {
+    vi: viMessages,
+  },
+})
+
 let mockRoute = {
-  path: '/payment',
-  params: {} as Record<string, any>,
-  query: {} as Record<string, any>,
+  path: '/payment/BK-2026-TEST',
+  params: { code: 'BK-2026-TEST' },
+  query: {},
 }
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({
-    push: mockPush,
+    push: vi.fn(),
   }),
   useRoute: () => mockRoute,
   RouterLink: {
@@ -22,47 +30,47 @@ vi.mock('vue-router', () => ({
   },
 }))
 
-vi.mock('@/core/api/client', () => ({
-  api: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-  apiV2: {
-    get: vi.fn().mockResolvedValue({
-      tournament: {
-        id: 10,
+vi.mock('@/features/tournament/api/tournamentApi', () => ({
+  tournamentApi: {
+    getById: vi.fn(() =>
+      Promise.resolve({
+        id: 1,
         uuid: '01a05cdc-4ec8-7159-b493-d3744b36c2a1',
         name: 'Saigon Open Tennis Masters 2026',
-        sport: 'tennis',
-        format: 'single_elimination',
-        status: 'open',
-        prize_pool: '50.000.000 ₫',
-        dates: '15/09/2026 - 18/09/2026',
-        venue: 'Aura Tennis Center',
-        city: 'TP. Hồ Chí Minh',
         entry_fee: '500.000 ₫ / VĐV',
-        image_url: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0',
-        current_slots: 8,
-        max_slots: 32,
-      },
-    }),
-    post: vi.fn(),
+        venue: 'Aura Center Court A',
+      })
+    ),
+    getTournament: vi.fn(() =>
+      Promise.resolve({
+        id: 1,
+        uuid: '01a05cdc-4ec8-7159-b493-d3744b36c2a1',
+        name: 'Saigon Open Tennis Masters 2026',
+        entry_fee: '500.000 ₫ / VĐV',
+        venue: 'Aura Center Court A',
+      })
+    ),
   },
-  errorMessage: (err: unknown, fallback: string) => fallback,
+}))
+
+vi.mock('@/core/services/api', () => ({
+  apiClient: {
+    get: vi.fn(() => Promise.resolve({ data: {} })),
+    post: vi.fn(() => Promise.resolve({ data: { success: true } })),
+  },
 }))
 
 describe('PaymentView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    vi.clearAllMocks()
     mockRoute = {
-      path: '/payment',
-      params: {},
+      path: '/payment/BK-2026-TEST',
+      params: { code: 'BK-2026-TEST' },
       query: {},
     }
   })
 
-  it('renders payment checkout layout with tabs and summary when payment session exists', async () => {
+  it('renders payment checkout layout with wallet payment and summary when payment session exists', () => {
     const store = useBookingStore()
     store.payment = {
       code: 'BK-2026-TEST',
@@ -81,7 +89,7 @@ describe('PaymentView', () => {
 
     expect(wrapper.find('.checkout-stepper').exists()).toBe(true)
     expect(wrapper.find('.player-details-panel').exists()).toBe(true)
-    expect(wrapper.find('.payment-methods-panel').exists()).toBe(true)
+    expect(wrapper.find('.wallet-pay-card').exists()).toBe(true)
     expect(wrapper.find('.summary-card-dark').exists()).toBe(true)
     expect(wrapper.text()).toContain('BK-2026-TEST')
   })
@@ -116,7 +124,7 @@ describe('PaymentView', () => {
     expect(wrapper.text()).toContain('500.000')
   })
 
-  it('switches between payment method tabs (SePay VietQR and Stripe Card)', async () => {
+  it('renders wallet pay action and allows paying when balance is sufficient', async () => {
     const store = useBookingStore()
     store.payment = {
       code: 'BK-2026-TEST',
@@ -126,6 +134,7 @@ describe('PaymentView', () => {
       qrUrl: 'https://img.vietqr.io/image/MB-0987654321-compact.png',
       expiresAt: new Date(Date.now() + 900000).toISOString(),
     }
+    store.fetchWalletBalance = vi.fn().mockResolvedValue(500000)
 
     const wrapper = mount(PaymentView, {
       global: {
@@ -133,13 +142,36 @@ describe('PaymentView', () => {
       },
     })
 
-    const tabs = wrapper.findAll('.method-tab-btn')
-    expect(tabs.length).toBe(2)
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
-    // Switch to Stripe Card
-    await tabs[1]!.trigger('click')
-    expect(wrapper.find('.card-method-box').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Stripe')
+    const walletBtn = wrapper.find('.btn-wallet-pay')
+    expect(walletBtn.exists()).toBe(true)
+    expect(walletBtn.text()).toContain('Xác Nhận Thanh Toán')
+  })
+
+  it('shows insufficient balance warning and topup button when balance is low', async () => {
+    const store = useBookingStore()
+    store.payment = {
+      code: 'BK-2026-TEST',
+      amount: 150000,
+      bank: 'Ví Aura',
+      accountNumber: 'WALLET',
+      qrUrl: '',
+      expiresAt: '',
+    }
+    store.fetchWalletBalance = vi.fn().mockResolvedValue(50000)
+
+    const wrapper = mount(PaymentView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    expect(wrapper.find('.insufficient-box').exists()).toBe(true)
+    expect(wrapper.find('.btn-topup-wallet').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Số dư ví chưa đủ')
   })
 
   it('shows empty session state when no payment exists', () => {
@@ -154,5 +186,6 @@ describe('PaymentView', () => {
     })
 
     expect(wrapper.find('.empty-payment-panel').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Chưa Có Phiên Thanh Toán Nào')
   })
 })

@@ -1,15 +1,30 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const daysInWeek = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật']
+const { t } = useI18n()
+
+const daysInWeek = computed(() => [
+  t('admin.pricing.monday'),
+  t('admin.pricing.tuesday'),
+  t('admin.pricing.wednesday'),
+  t('admin.pricing.thursday'),
+  t('admin.pricing.friday'),
+  t('admin.pricing.saturday'),
+  t('admin.pricing.sunday'),
+])
+
+const now = new Date()
+const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
+const currentYear = now.getFullYear()
 
 const weekDates = computed(() => {
-  const now = new Date()
-  const currentDay = now.getDay() // 0 = Sun, 1 = Mon...
+  const date = new Date()
+  const currentDay = date.getDay() // 0 = Sun, 1 = Mon...
   const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay
-  return daysInWeek.map((_, idx) => {
-    const d = new Date(now)
-    d.setDate(now.getDate() + mondayOffset + idx)
+  return daysInWeek.value.map((_, idx) => {
+    const d = new Date(date)
+    d.setDate(date.getDate() + mondayOffset + idx)
     return d.getDate()
   })
 })
@@ -18,8 +33,11 @@ const weekDates = computed(() => {
 <template>
   <div class="pricing-calendar-container">
     <div class="calendar-header">
-      <h3 class="section-title">📅 Lịch giá & Ma trận Khung Giờ (Pricing Calendar View)</h3>
-      <span class="sub">Tháng 08 / 2026</span>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">calendar_month</span>
+        <h3 class="section-title">{{ t('admin.pricing.calendarViewTitle') }}</h3>
+      </div>
+      <span class="sub font-mono">{{ t('admin.pricing.monthLabel', { month: currentMonth, year: currentYear }) }}</span>
     </div>
 
     <div class="calendar-grid">
@@ -27,24 +45,24 @@ const weekDates = computed(() => {
         <div class="day-hdr">{{ day }} ({{ weekDates[idx] }})</div>
         <div class="slots-list">
           <div class="slot-item off-peak">
-            <span class="time">06:00 - 11:00</span>
-            <strong class="price">100.000 ₫</strong>
+            <span class="time font-mono">06:00 - 11:00</span>
+            <strong class="price font-mono">100.000 ₫</strong>
           </div>
           <div class="slot-item promo">
-            <span class="time">11:00 - 14:00</span>
-            <strong class="price text-blue">90.000 ₫</strong>
+            <span class="time font-mono">11:00 - 14:00</span>
+            <strong class="price text-blue font-mono">90.000 ₫</strong>
           </div>
           <div class="slot-item off-peak">
-            <span class="time">14:00 - 17:00</span>
-            <strong class="price">120.000 ₫</strong>
+            <span class="time font-mono">14:00 - 17:00</span>
+            <strong class="price font-mono">120.000 ₫</strong>
           </div>
           <div class="slot-item peak">
-            <span class="time">17:00 - 21:00</span>
-            <strong class="price text-pink">180.000 ₫</strong>
+            <span class="time font-mono">17:00 - 21:00</span>
+            <strong class="price text-pink font-mono">180.000 ₫</strong>
           </div>
           <div class="slot-item off-peak">
-            <span class="time">21:00 - 23:00</span>
-            <strong class="price">110.000 ₫</strong>
+            <span class="time font-mono">21:00 - 23:00</span>
+            <strong class="price font-mono">110.000 ₫</strong>
           </div>
         </div>
       </div>
@@ -61,6 +79,17 @@ const weekDates = computed(() => {
   border-radius: 16px;
   border: 1px solid var(--outline);
   padding: 20px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .calendar-header {

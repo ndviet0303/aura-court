@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { resolveLocalizedText } from '@/i18n'
 import type { Court, Venue, SportZone } from '@/features/court/types/court'
 import type { Refund } from '@/features/booking/types/booking'
 import { useAuthStore } from '@/stores/auth'
@@ -51,8 +52,8 @@ export function useAdminManageCourts() {
       const matchStatus = statusFilter.value === 'all' || (statusFilter.value === 'active' ? c.is_active !== false : c.is_active === false)
       const matchSearch =
         !searchQuery.value.trim() ||
-        c.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        (c.venue?.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+        resolveLocalizedText(c.name).toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        resolveLocalizedText(c.venue?.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
       return matchVenue && matchStatus && matchSearch
     })
   })

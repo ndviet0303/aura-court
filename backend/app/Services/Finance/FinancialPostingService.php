@@ -156,6 +156,57 @@ class FinancialPostingService
         ]);
     }
 
+    public function postWalletBookingPayment(Booking $booking, Payment $payment, int $walletAccountId): Journal
+    {
+        $organizationId = $booking->court?->venue?->organization_id;
+        $amount = (int) $payment->amount;
+        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
+        $tenantPayable = $amount - $commission;
+        $accounts = $this->ledger->systemAccounts($organizationId);
+        $entries = [
+            ['account_id' => $accounts['wallet_liability']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => Payment::class, 'source_id' => $payment->id],
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $tenantPayable, 'source_type' => Payment::class, 'source_id' => $payment->id],
+        ];
+        if ($commission > 0) {
+            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'credit', 'amount' => $commission, 'source_type' => Payment::class, 'source_id' => $payment->id];
+        }
+
+        return $this->ledger->post([
+            'organization_id' => $organizationId,
+            'event_type' => 'booking.wallet_payment',
+            'event_id' => "booking:{$booking->id}:payment:{$payment->id}",
+            'reference' => $booking->code,
+            'currency' => config('finance.currency', 'VND'),
+            'description' => 'Booking payment via wallet balance',
+            'metadata' => ['provider' => 'wallet', 'wallet_account_id' => $walletAccountId, 'commission' => $commission],
+        ], $entries);
+    }
+
+    public function postWalletBookingRefund(Booking $booking, int $amount, int $walletAccountId): Journal
+    {
+        $organizationId = $booking->court?->venue?->organization_id;
+        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
+        $tenantPayable = $amount - $commission;
+        $accounts = $this->ledger->systemAccounts($organizationId);
+        $entries = [
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'debit', 'amount' => $tenantPayable, 'source_type' => Booking::class, 'source_id' => $booking->id],
+            ['account_id' => $accounts['wallet_liability']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => Booking::class, 'source_id' => $booking->id],
+        ];
+        if ($commission > 0) {
+            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'debit', 'amount' => $commission, 'source_type' => Booking::class, 'source_id' => $booking->id];
+        }
+
+        return $this->ledger->post([
+            'organization_id' => $organizationId,
+            'event_type' => 'booking.wallet_refund',
+            'event_id' => "booking:{$booking->id}:refund:" . uniqid(),
+            'reference' => $booking->code,
+            'currency' => config('finance.currency', 'VND'),
+            'description' => 'Booking cancellation refund to wallet',
+            'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => $commission],
+        ], $entries);
+    }
+
     public function compensate(Journal $original, string $eventId, string $reason, array $metadata = []): Journal
     {
         $entries = $original->entries()->orderBy('line_number')->get()->map(function ($entry) {

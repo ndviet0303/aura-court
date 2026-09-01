@@ -106,8 +106,8 @@ describe('AdminVenuesView', () => {
     expect(wrapper.text()).toContain('Aura Center')
     expect(wrapper.text()).toContain('Riverside Club')
     expect(wrapper.text()).toContain('District 1 Hub')
-    expect(wrapper.text()).toContain('ACTIVE')
-    expect(wrapper.text()).toContain('MAINTENANCE')
+    expect(wrapper.text()).toContain('Đang mở cửa')
+    expect(wrapper.text()).toContain('Đang bảo trì / Tạm dừng')
 
     // KPI total venues count
     expect(wrapper.text()).toContain('3')

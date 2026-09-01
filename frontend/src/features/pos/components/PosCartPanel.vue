@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { CartItem, CustomerProfile, CourtReservation } from '../types/pos'
 
 defineProps<{
@@ -38,6 +39,8 @@ const emit = defineEmits<{
   (e: 'saveDraft'): void
 }>()
 
+const { t } = useI18n()
+
 function formatMoney(val: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0)
 }
@@ -49,32 +52,35 @@ function formatMoney(val: number): string {
     <div class="cart-header">
       <div class="cart-title-row">
         <h3 class="cart-title">
-          🛒 Đơn Hàng Hiện Tại
+          <span class="material-symbols-outlined icon-20">shopping_cart</span>
+          <span>{{ t('admin.pos.currentOrder') }}</span>
           <span v-if="totalItems > 0" class="cart-count-badge">{{ totalItems }}</span>
         </h3>
         <button
           v-if="cart.length > 0"
+          type="button"
           class="clear-cart-link"
-          title="Xoá toàn bộ giỏ hàng"
+          :title="t('admin.pos.clearCartConfirm')"
           @click="emit('clearCart')"
         >
-          Xoá hết
+          {{ t('admin.pos.clearCart') }}
         </button>
       </div>
 
       <!-- Customer & Court Tab Bar -->
       <div class="cart-meta-bar">
         <button
+          type="button"
           class="customer-tag-btn"
           :class="{ selected: !!selectedCustomer }"
           @click="emit('openCustomerSearchModal')"
         >
-          <span class="cust-icon">👤</span>
+          <span class="material-symbols-outlined cust-icon">person</span>
           <span v-if="selectedCustomer" class="cust-info">
             <strong>{{ selectedCustomer.name }}</strong>
-            <span class="cust-tier">({{ selectedCustomer.tier }} - Giảm {{ selectedCustomer.discount_rate * 100 }}%)</span>
+            <span class="cust-tier">({{ selectedCustomer.tier }} - {{ selectedCustomer.discount_rate * 100 }}%)</span>
           </span>
-          <span v-else class="cust-placeholder">Khách vãng lai (F3 để tìm)</span>
+          <span v-else class="cust-placeholder">{{ t('admin.pos.walkInCustomer') }}</span>
         </button>
 
         <select
@@ -82,7 +88,7 @@ function formatMoney(val: number): string {
           class="court-tab-select"
           @change="emit('update:selectedReservationId', ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
         >
-          <option value="">Gắn vào Sân (Tuỳ chọn)</option>
+          <option value="">{{ t('admin.pos.attachToCourt') }}</option>
           <option
             v-for="res in activeReservations"
             :key="res.id"
@@ -97,9 +103,9 @@ function formatMoney(val: number): string {
     <!-- Cart Items Scroll Area -->
     <div class="cart-items-container">
       <div v-if="cart.length === 0" class="empty-cart-view">
-        <div class="empty-cart-icon">🛒</div>
-        <h4>Giỏ hàng đang trống</h4>
-        <p>Chọn món hoặc quét mã vạch để thêm vào hoá đơn.</p>
+        <span class="material-symbols-outlined empty-cart-icon">shopping_cart</span>
+        <h4>{{ t('admin.pos.emptyCart') }}</h4>
+        <p>{{ t('admin.pos.emptyCartSub') }}</p>
       </div>
 
       <div v-else class="cart-items-list">
@@ -116,8 +122,9 @@ function formatMoney(val: number): string {
           <!-- Controls: Quantity & Rental Hours -->
           <div class="item-controls-row">
             <div v-if="item.product.is_rental" class="rental-hours-pill">
-              <span class="ctrl-label">Giờ:</span>
+              <span class="ctrl-label">{{ t('admin.pos.rentalHours') }}:</span>
               <button
+                type="button"
                 class="qty-btn"
                 :disabled="(item.rental_hours || 1) <= 1"
                 @click="emit('updateRentalHours', idx, -1)"
@@ -125,13 +132,31 @@ function formatMoney(val: number): string {
                 -
               </button>
               <span class="qty-num">{{ item.rental_hours || 1 }}h</span>
-              <button class="qty-btn" @click="emit('updateRentalHours', idx, 1)">+</button>
+              <button
+                type="button"
+                class="qty-btn"
+                @click="emit('updateRentalHours', idx, 1)"
+              >
+                +
+              </button>
             </div>
 
             <div class="item-qty-stepper">
-              <button class="qty-btn" @click="emit('updateQuantity', idx, -1)">-</button>
+              <button
+                type="button"
+                class="qty-btn"
+                @click="emit('updateQuantity', idx, -1)"
+              >
+                -
+              </button>
               <span class="qty-num">{{ item.quantity }}</span>
-              <button class="qty-btn" @click="emit('updateQuantity', idx, 1)">+</button>
+              <button
+                type="button"
+                class="qty-btn"
+                @click="emit('updateQuantity', idx, 1)"
+              >
+                +
+              </button>
             </div>
 
             <div class="item-total-col">
@@ -139,11 +164,12 @@ function formatMoney(val: number): string {
                 {{ formatMoney(item.product.price * item.quantity * (item.rental_hours || 1)) }}
               </span>
               <button
+                type="button"
                 class="remove-item-btn"
-                title="Xoá món này"
+                title="Remove"
                 @click="emit('removeFromCart', idx)"
               >
-                🗑️
+                <span class="material-symbols-outlined icon-16">delete</span>
               </button>
             </div>
           </div>
@@ -161,11 +187,11 @@ function formatMoney(val: number): string {
             type="checkbox"
             @change="emit('update:includeVat', ($event.target as HTMLInputElement).checked)"
           />
-          <span>VAT (8%)</span>
+          <span>{{ t('admin.pos.vatCheckbox') }}</span>
         </label>
 
         <div class="discount-input-wrap">
-          <span class="disc-label">Chiết khấu (%):</span>
+          <span class="disc-label">{{ t('admin.pos.discountLabel') }}</span>
           <input
             :value="customDiscountPercent"
             type="number"
@@ -180,19 +206,19 @@ function formatMoney(val: number): string {
       <!-- Financial Calculations -->
       <div class="cart-totals-breakdown">
         <div class="total-row subtotal">
-          <span>Tiền hàng:</span>
+          <span>{{ t('admin.pos.subtotal') }}</span>
           <span>{{ formatMoney(subtotal) }}</span>
         </div>
         <div v-if="discountAmount > 0" class="total-row discount">
-          <span>Giảm giá ({{ discountPercent }}%):</span>
+          <span>{{ t('admin.pos.discountSummary', { percent: discountPercent }) }}</span>
           <span class="discount-val">-{{ formatMoney(discountAmount) }}</span>
         </div>
         <div v-if="includeVat" class="total-row vat">
-          <span>Thuế VAT (8%):</span>
+          <span>{{ t('admin.pos.vatSummary') }}</span>
           <span>+{{ formatMoney(taxAmount) }}</span>
         </div>
         <div class="total-row grand-total">
-          <span class="gt-label">TỔNG THANH TOÁN:</span>
+          <span class="gt-label">{{ t('admin.pos.totalPayment') }}</span>
           <span class="gt-amount">{{ formatMoney(grandTotal) }}</span>
         </div>
       </div>
@@ -200,39 +226,47 @@ function formatMoney(val: number): string {
       <!-- Payment Methods -->
       <div class="payment-method-selector">
         <button
+          type="button"
           class="pay-btn"
           :class="{ active: paymentMethod === 'cash' }"
           @click="emit('update:paymentMethod', 'cash')"
         >
-          💵 Tiền mặt
+          <span class="material-symbols-outlined icon-16">payments</span>
+          <span>{{ t('admin.pos.payCash') }}</span>
         </button>
         <button
+          type="button"
           class="pay-btn"
           :class="{ active: paymentMethod === 'qr' }"
           @click="emit('update:paymentMethod', 'qr')"
         >
-          📱 QR VietQR
+          <span class="material-symbols-outlined icon-16">qr_code_2</span>
+          <span>{{ t('admin.pos.payQr') }}</span>
         </button>
         <button
+          type="button"
           class="pay-btn"
           :class="{ active: paymentMethod === 'wallet' }"
           @click="emit('update:paymentMethod', 'wallet')"
         >
-          💳 Ví Aura
+          <span class="material-symbols-outlined icon-16">account_balance_wallet</span>
+          <span>{{ t('admin.pos.payWallet') }}</span>
         </button>
         <button
+          type="button"
           class="pay-btn"
           :class="{ active: paymentMethod === 'court_tab' }"
           @click="emit('update:paymentMethod', 'court_tab')"
         >
-          📋 Ghi sổ sân
+          <span class="material-symbols-outlined icon-16">receipt_long</span>
+          <span>{{ t('admin.pos.payCourtTab') }}</span>
         </button>
       </div>
 
       <!-- Cash Tendered Quick Input -->
       <div v-if="paymentMethod === 'cash' && grandTotal > 0" class="cash-tendered-box">
         <div class="cash-input-row">
-          <span>Tiền khách đưa:</span>
+          <span>{{ t('admin.pos.cashTenderedLabel') }}</span>
           <input
             :value="cashTendered"
             type="number"
@@ -246,6 +280,7 @@ function formatMoney(val: number): string {
           <button
             v-for="amt in quickCashSuggestions"
             :key="amt"
+            type="button"
             class="quick-cash-tag"
             @click="emit('update:cashTendered', amt)"
           >
@@ -254,7 +289,7 @@ function formatMoney(val: number): string {
         </div>
 
         <div v-if="cashChange > 0" class="cash-change-row">
-          <span>Tiền thừa trả khách:</span>
+          <span>{{ t('admin.pos.cashChangeLabel') }}</span>
           <strong class="change-amount">{{ formatMoney(cashChange) }}</strong>
         </div>
       </div>
@@ -262,27 +297,32 @@ function formatMoney(val: number): string {
       <!-- Action Buttons -->
       <div class="cart-actions-row">
         <button
+          type="button"
           class="draft-btn"
-          title="Lưu tạm đơn hàng (F4)"
+          :title="t('admin.pos.saveDraft')"
           :disabled="cart.length === 0"
           @click="emit('saveDraft')"
         >
-          💾 Lưu tạm
+          <span class="material-symbols-outlined icon-16">save</span>
+          <span>{{ t('admin.pos.saveDraft') }}</span>
         </button>
         <button
+          type="button"
           class="draft-btn"
-          title="Xem danh sách đơn tạm"
+          :title="t('admin.pos.viewDrafts')"
           @click="emit('openDraftsModal')"
         >
-          📂 Đơn tạm
+          <span class="material-symbols-outlined icon-16">folder_open</span>
+          <span>{{ t('admin.pos.viewDrafts') }}</span>
         </button>
         <button
+          type="button"
           class="checkout-submit-btn"
           :disabled="cart.length === 0 || processingCheckout"
           @click="emit('checkout')"
         >
-          <span v-if="processingCheckout">Đang xử lý...</span>
-          <span v-else>THANH TOÁN (F9)</span>
+          <span v-if="processingCheckout">{{ t('admin.pos.checkoutProcessing') }}</span>
+          <span v-else>{{ t('admin.pos.checkoutBtn') }}</span>
         </button>
       </div>
     </div>
@@ -370,6 +410,11 @@ function formatMoney(val: number): string {
   background: rgba(59, 130, 246, 0.06);
 }
 
+.cust-icon {
+  font-size: 18px;
+  color: var(--muted);
+}
+
 .cust-tier {
   color: var(--pink-dark, #db2777);
   font-weight: 600;
@@ -380,6 +425,8 @@ function formatMoney(val: number): string {
   border-radius: 10px;
   border: 1px solid var(--outline);
   font-size: 13px;
+  background: var(--surface);
+  color: var(--ink);
 }
 
 .cart-items-container {
@@ -402,6 +449,7 @@ function formatMoney(val: number): string {
 .empty-cart-icon {
   font-size: 40px;
   margin-bottom: 8px;
+  color: var(--muted);
 }
 
 .cart-items-list {
@@ -505,12 +553,14 @@ function formatMoney(val: number): string {
   background: transparent;
   cursor: pointer;
   padding: 4px;
-  font-size: 13px;
-  opacity: 0.6;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .remove-item-btn:hover {
-  opacity: 1;
+  color: var(--danger, #ef4444);
 }
 
 .cart-footer {
@@ -592,6 +642,10 @@ function formatMoney(val: number): string {
 }
 
 .pay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 8px 6px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -669,6 +723,10 @@ function formatMoney(val: number): string {
 }
 
 .draft-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--outline);
@@ -701,5 +759,13 @@ function formatMoney(val: number): string {
 .checkout-submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.icon-16 {
+  font-size: 16px;
+}
+
+.icon-20 {
+  font-size: 20px;
 }
 </style>

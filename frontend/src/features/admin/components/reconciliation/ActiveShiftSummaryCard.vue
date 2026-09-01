@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatCurrency } from '@/i18n'
 import type { CashShiftItem } from '../../composables/useAdminShiftReconciliation'
 
 defineProps<{
@@ -10,65 +12,68 @@ const emit = defineEmits<{
   (e: 'openCashDrops'): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="active-shift-card">
     <div class="shift-top-row">
       <div class="shift-headline">
-        <span class="live-pulse">● ĐANG HOẠT ĐỘNG</span>
+        <span class="live-pulse">● {{ t('admin.shifts.statusLive') }}</span>
         <h3 class="shift-title">{{ shift.shift_name }}</h3>
-        <span class="shift-venue">📍 {{ shift.venue_name }} · Thu ngân: <strong>{{ shift.cashier_name }}</strong></span>
+        <span class="shift-venue">
+          <span class="material-symbols-outlined icon-14">location_on</span>
+          <span>{{ resolveLocalizedText(shift.venue_name) }} · {{ t('admin.shifts.cashierLabel', { name: shift.cashier_name }) }}</span>
+        </span>
       </div>
 
       <div class="shift-quick-actions">
-        <button class="btn-action-outline" @click="emit('openCashDrops')">
-          💸 Rút Tiền Két ({{ shift.cash_drops.length }})
+        <button type="button" class="btn-action-outline" @click="emit('openCashDrops')">
+          <span class="material-symbols-outlined icon-16">payments</span>
+          <span>{{ t('admin.shifts.cashDropsBtn', { count: shift.cash_drops.length }) }}</span>
         </button>
-        <button class="btn-action-primary" @click="emit('openDenominations')">
-          💵 Kiểm Đếm Tiền Mặt
+        <button type="button" class="btn-action-primary" @click="emit('openDenominations')">
+          <span class="material-symbols-outlined icon-16">calculate</span>
+          <span>{{ t('admin.shifts.auditDenominationsBtn') }}</span>
         </button>
       </div>
     </div>
 
     <div class="shift-metrics-grid">
       <div class="metric-box">
-        <span class="metric-lbl">Tiền Mặt Đầu Ca:</span>
-        <strong class="metric-val">{{ formatMoney(shift.opening_cash) }}</strong>
+        <span class="metric-lbl">{{ t('admin.shifts.openingCashLabel') }}</span>
+        <strong class="metric-val font-mono">{{ formatCurrency(shift.opening_cash) }}</strong>
       </div>
 
       <div class="metric-box">
-        <span class="metric-lbl">Doanh Thu Tiền Mặt:</span>
-        <strong class="metric-val text-green">+{{ formatMoney(shift.cash_sales) }}</strong>
+        <span class="metric-lbl">{{ t('admin.shifts.cashSalesLabel') }}</span>
+        <strong class="metric-val text-green font-mono">+{{ formatCurrency(shift.cash_sales) }}</strong>
       </div>
 
       <div class="metric-box">
-        <span class="metric-lbl">Thanh Toán QR / Ví:</span>
-        <strong class="metric-val text-blue">{{ formatMoney(shift.qr_sales + shift.wallet_sales) }}</strong>
+        <span class="metric-lbl">{{ t('admin.shifts.qrSalesLabel') }}</span>
+        <strong class="metric-val text-blue font-mono">{{ formatCurrency(shift.qr_sales + shift.wallet_sales) }}</strong>
       </div>
 
       <div class="metric-box">
-        <span class="metric-lbl">Tổng Doanh Số Ca:</span>
-        <strong class="metric-val text-pink">{{ formatMoney(shift.total_sales) }}</strong>
+        <span class="metric-lbl">{{ t('admin.shifts.totalSalesLabel') }}</span>
+        <strong class="metric-val text-pink font-mono">{{ formatCurrency(shift.total_sales) }}</strong>
       </div>
     </div>
 
     <div class="shift-variance-bar" :class="{ 'has-diff': shift.variance !== 0 }">
       <div class="variance-item">
-        <span>Tiền mặt dự kiến két:</span>
-        <strong>{{ formatMoney(shift.expected_cash) }}</strong>
+        <span>{{ t('admin.shifts.expectedCashLabel') }}</span>
+        <strong class="font-mono">{{ formatCurrency(shift.expected_cash) }}</strong>
       </div>
       <div class="variance-item">
-        <span>Tiền mặt thực tế đếm:</span>
-        <strong>{{ formatMoney(shift.declared_cash) }}</strong>
+        <span>{{ t('admin.shifts.declaredCashLabel') }}</span>
+        <strong class="font-mono">{{ formatCurrency(shift.declared_cash) }}</strong>
       </div>
       <div class="variance-item">
-        <span>Chênh lệch đối soát:</span>
-        <strong :class="shift.variance < 0 ? 'text-red' : shift.variance > 0 ? 'text-yellow' : 'text-green'">
-          {{ shift.variance > 0 ? '+' : '' }}{{ formatMoney(shift.variance) }}
+        <span>{{ t('admin.shifts.varianceLabel') }}</span>
+        <strong class="font-mono" :class="shift.variance < 0 ? 'text-red' : shift.variance > 0 ? 'text-yellow' : 'text-green'">
+          {{ shift.variance > 0 ? '+' : '' }}{{ formatCurrency(shift.variance) }}
         </strong>
       </div>
     </div>
@@ -94,6 +99,12 @@ function formatMoney(amount: number): string {
   gap: 12px;
 }
 
+.shift-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .live-pulse {
   font-size: 11px;
   font-weight: 800;
@@ -107,6 +118,9 @@ function formatMoney(amount: number): string {
 }
 
 .shift-venue {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -117,6 +131,9 @@ function formatMoney(amount: number): string {
 }
 
 .btn-action-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -125,9 +142,18 @@ function formatMoney(amount: number): string {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-outline:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
 }
 
 .btn-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
   border: 0;
@@ -186,6 +212,14 @@ function formatMoney(amount: number): string {
   display: flex;
   gap: 6px;
   align-items: center;
+}
+
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 
 @media (max-width: 800px) {

@@ -1,44 +1,52 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { TournamentAdminData } from '../../types/tournamentAdmin'
 
 defineProps<{
   tournament: TournamentAdminData
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="tournament-overview-container">
-    <h3 class="overview-title">Tổng Quan Hoạt Động Giải Đấu</h3>
-    <p class="overview-sub">Thống kê chỉ số vận hành, tài chính giải và tiến độ các vòng đấu.</p>
+    <div class="title-with-icon">
+      <span class="material-symbols-outlined card-title-icon">dashboard</span>
+      <div>
+        <h3 class="overview-title">{{ t('admin.tournaments.overviewTitle') }}</h3>
+        <p class="overview-sub">{{ t('admin.tournaments.overviewSub') }}</p>
+      </div>
+    </div>
 
     <!-- 4 KPI Cards -->
     <div class="kpi-cards-grid">
       <div class="kpi-card">
-        <span class="kpi-icon">👥</span>
-        <span class="kpi-label">Tổng Vận Động Viên</span>
-        <strong class="kpi-val">142 VĐV</strong>
-        <span class="kpi-trend text-green">↑ Đạt 100% chỉ tiêu</span>
+        <span class="material-symbols-outlined kpi-icon">groups</span>
+        <span class="kpi-label">{{ t('admin.tournaments.kpiTotalAthletes') }}</span>
+        <strong class="kpi-val font-mono">{{ t('admin.tournaments.kpiAthletesVal', { count: 142 }) }}</strong>
+        <span class="kpi-trend text-green">↑ {{ t('admin.tournaments.kpiAthletesTrend') }}</span>
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">💰</span>
-        <span class="kpi-label">Tổng Giải Thưởng</span>
-        <strong class="kpi-val">{{ tournament.prizePool }}</strong>
-        <span class="kpi-trend">{{ tournament.prizePoolUsd }}</span>
+        <span class="material-symbols-outlined kpi-icon">payments</span>
+        <span class="kpi-label">{{ t('admin.tournaments.kpiPrizePool') }}</span>
+        <strong class="kpi-val font-mono">{{ tournament.prizePool }}</strong>
+        <span class="kpi-trend font-mono">{{ tournament.prizePoolUsd }}</span>
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">🏸</span>
-        <span class="kpi-label">Trận Đã Hoàn Thành</span>
-        <strong class="kpi-val">18 / 31 Trận</strong>
-        <span class="kpi-trend text-blue">Tiến độ: 58%</span>
+        <span class="material-symbols-outlined kpi-icon">sports_tennis</span>
+        <span class="kpi-label">{{ t('admin.tournaments.kpiCompletedMatches') }}</span>
+        <strong class="kpi-val font-mono">{{ t('admin.tournaments.kpiMatchesVal', { completed: 18, total: 31 }) }}</strong>
+        <span class="kpi-trend text-blue">{{ t('admin.tournaments.kpiMatchesProgress', { percent: 58 }) }}</span>
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">⏱️</span>
-        <span class="kpi-label">Sân Đang Khai Thác</span>
-        <strong class="kpi-val">4 / 4 Sân</strong>
-        <span class="kpi-trend text-green">Hoạt động bình thường</span>
+        <span class="material-symbols-outlined kpi-icon">stadium</span>
+        <span class="kpi-label">{{ t('admin.tournaments.kpiCourtsInUse') }}</span>
+        <strong class="kpi-val font-mono">{{ t('admin.tournaments.kpiCourtsVal', { active: 4, total: 4 }) }}</strong>
+        <span class="kpi-trend text-green">{{ t('admin.tournaments.kpiCourtsStatus') }}</span>
       </div>
     </div>
   </div>
@@ -55,6 +63,17 @@ defineProps<{
   padding: 20px;
 }
 
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title-icon {
+  font-size: 24px;
+  color: var(--pink-dark, #db2777);
+}
+
 .overview-title {
   margin: 0;
   font-size: 16px;
@@ -62,7 +81,7 @@ defineProps<{
 }
 
 .overview-sub {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: 12px;
   color: var(--muted);
 }
@@ -85,7 +104,8 @@ defineProps<{
 }
 
 .kpi-icon {
-  font-size: 20px;
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .kpi-label {

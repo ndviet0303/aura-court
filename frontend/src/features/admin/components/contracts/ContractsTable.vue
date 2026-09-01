@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatCurrency } from '@/i18n'
 import type { RecurringContract } from '../../composables/useAdminContracts'
 
 defineProps<{
@@ -14,9 +16,7 @@ const emit = defineEmits<{
   (e: 'openCreate'): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
@@ -25,34 +25,38 @@ function formatMoney(amount: number): string {
     <div class="contracts-toolbar">
       <div class="status-pills-bar">
         <button
+          type="button"
           class="tab-pill"
           :class="{ active: activeStatusTab === 'all' }"
           @click="emit('update:activeStatusTab', 'all')"
         >
-          Tất cả hợp đồng
+          {{ t('admin.contracts.allContracts') }}
         </button>
         <button
+          type="button"
           class="tab-pill"
           :class="{ active: activeStatusTab === 'active' }"
           @click="emit('update:activeStatusTab', 'active')"
         >
-          Đang hoạt động
+          {{ t('admin.contracts.statusActive') }}
         </button>
         <button
+          type="button"
           class="tab-pill"
           :class="{ active: activeStatusTab === 'overdue' }"
           @click="emit('update:activeStatusTab', 'overdue')"
         >
-          Quá hạn thanh toán
+          {{ t('admin.contracts.statusOverdue') }}
         </button>
       </div>
 
       <div class="search-input-box">
+        <span class="material-symbols-outlined search-icon">search</span>
         <input
           :value="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Tìm theo tên khách, CLB, mã HĐ..."
+          :placeholder="t('admin.contracts.searchPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -61,12 +65,12 @@ function formatMoney(amount: number): string {
     <!-- Contracts Table -->
     <div class="contracts-table-card">
       <div class="table-header">
-        <span>Hợp Đồng & Khách Hàng</span>
-        <span>Sân & Khung Giờ</span>
-        <span>Lịch Thi Đấu</span>
-        <span>Giá Trị Tháng</span>
-        <span>Trạng Thái</span>
-        <span>Thao Tác</span>
+        <span>{{ t('admin.contracts.hdrContractAndCustomer') }}</span>
+        <span>{{ t('admin.contracts.hdrCourtAndSlot') }}</span>
+        <span>{{ t('admin.contracts.hdrMatchSchedule') }}</span>
+        <span>{{ t('admin.contracts.hdrMonthlyValue') }}</span>
+        <span>{{ t('admin.contracts.hdrStatus') }}</span>
+        <span>{{ t('admin.contracts.hdrActions') }}</span>
       </div>
 
       <div class="table-body">
@@ -81,18 +85,18 @@ function formatMoney(amount: number): string {
           </div>
 
           <div class="court-col">
-            <span class="court-name">{{ c.court_name }}</span>
-            <span class="venue-sub">{{ c.venue_name }}</span>
+            <span class="court-name">{{ resolveLocalizedText(c.court_name) }}</span>
+            <span class="venue-sub">{{ resolveLocalizedText(c.venue_name) }}</span>
           </div>
 
           <div class="schedule-col">
             <strong>{{ c.weekday }}</strong>
-            <span class="time-slot">{{ c.time_slot }}</span>
+            <span class="time-slot font-mono">{{ c.time_slot }}</span>
           </div>
 
           <div class="price-col">
-            <strong class="text-pink">{{ formatMoney(c.total_monthly_amount) }}</strong>
-            <span class="deposit-sub">Cọc: {{ formatMoney(c.deposit_amount) }}</span>
+            <strong class="text-pink font-mono">{{ formatCurrency(c.total_monthly_amount) }}</strong>
+            <span class="deposit-sub">{{ t('admin.contracts.depositLabel', { amount: formatCurrency(c.deposit_amount) }) }}</span>
           </div>
 
           <div class="status-col">
@@ -100,17 +104,19 @@ function formatMoney(amount: number): string {
               class="status-tag"
               :class="c.status === 'active' ? 'tag-active' : 'tag-overdue'"
             >
-              ● {{ c.status === 'active' ? 'Đang hiệu lực' : 'Quá hạn' }}
+              ● {{ c.status === 'active' ? t('admin.contracts.activeEffective') : t('admin.contracts.overdueBadge') }}
             </span>
           </div>
 
           <div class="actions-col">
             <button
+              type="button"
               class="btn-view"
               data-testid="btn-view-detail"
               @click="emit('viewDetail', c)"
             >
-              👁️ Chi tiết
+              <span class="material-symbols-outlined icon-16">visibility</span>
+              <span>{{ t('admin.contracts.detailBtn') }}</span>
             </button>
           </div>
         </div>
@@ -160,16 +166,27 @@ function formatMoney(amount: number): string {
 .search-input-box {
   flex: 1;
   max-width: 320px;
-}
-
-.search-input {
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
   color: var(--ink);
   font-size: 13px;
+  outline: none;
 }
 
 .contracts-table-card {
@@ -183,7 +200,7 @@ function formatMoney(amount: number): string {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.5fr 1.2fr 1fr 100px;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1.2fr 1fr 110px;
   padding: 12px 16px;
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
   border-bottom: 1px solid var(--outline);
@@ -199,7 +216,7 @@ function formatMoney(amount: number): string {
 
 .contract-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.5fr 1.2fr 1fr 100px;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1.2fr 1fr 110px;
   padding: 14px 16px;
   align-items: center;
   border-bottom: 1px solid var(--outline);
@@ -241,6 +258,9 @@ function formatMoney(amount: number): string {
 .tag-overdue { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
 .btn-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -249,9 +269,15 @@ function formatMoney(amount: number): string {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 
 .btn-view:hover {
   border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

@@ -4,6 +4,7 @@ export type { VenueWallet, Transaction, TransactionType, PaymentMethodType, Card
 import { walletApi } from '../api/walletApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/features/auth/stores/authStore'
+import { useBookingStore } from '@/stores/booking'
 
 const DEFAULT_WALLETS: VenueWallet[] = [
   {
@@ -12,8 +13,8 @@ const DEFAULT_WALLETS: VenueWallet[] = [
     venue_name: 'Ví Hội Viên Toàn Hệ Thống Aura',
     card_number: 'AUR-9902-8142',
     address: 'Toàn bộ hệ thống cơ sở Aura Court',
-    balance: 1500000,
-    points: 1250,
+    balance: 0,
+    points: 0,
     is_active: true,
     currency: 'VND',
     member_tier: 'gold',
@@ -28,8 +29,8 @@ const DEFAULT_WALLETS: VenueWallet[] = [
     venue_name: 'Aura Court Thảo Điền (TP. Thủ Đức)',
     card_number: 'AUR-7721-6601',
     address: '215 Nguyễn Văn Hưởng, P. Thảo Điền, TP. Thủ Đức',
-    balance: 450000,
-    points: 380,
+    balance: 0,
+    points: 0,
     is_active: true,
     currency: 'VND',
     member_tier: 'silver',
@@ -44,8 +45,8 @@ const DEFAULT_WALLETS: VenueWallet[] = [
     venue_name: 'Aura Court Cầu Giấy (Hà Nội)',
     card_number: 'AUR-5510-4498',
     address: '18 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội',
-    balance: 200000,
-    points: 150,
+    balance: 0,
+    points: 0,
     is_active: true,
     currency: 'VND',
     member_tier: 'standard',
@@ -56,113 +57,48 @@ const DEFAULT_WALLETS: VenueWallet[] = [
   },
 ]
 
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  {
-    id: 'txn-101',
-    type: 'topup',
-    title: 'Nạp tiền tự động VietQR SePay',
-    venue_name: 'Ví Hệ Thống Aura',
-    description: 'Chuyển khoản liên ngân hàng tự động · Giao dịch tức thì qua SePay',
-    date: '31/08/2026',
-    time: '20:15',
-    amount: 500000,
-    balance_after: 1500000,
-    status: 'success',
-    reference: 'SEPAY-20260831-9812',
-    method_label: 'VietQR SePay Auto',
-  },
-  {
-    id: 'txn-102',
-    type: 'booking',
-    title: 'Thanh toán giữ chỗ Sân 02 (Giờ cao điểm)',
-    venue_name: 'Aura Court Thảo Điền',
-    description: 'Khung giờ 18:00 - 20:00 (2 giờ) · Sân thảm Yonex BWF',
-    date: '30/08/2026',
-    time: '17:45',
-    amount: -240000,
-    balance_after: 1000000,
-    status: 'success',
-    reference: 'BK-20260830-4410',
-    method_label: 'Ví trả trước',
-  },
-  {
-    id: 'txn-103',
-    type: 'pos',
-    title: 'Thanh toán dịch vụ POS quầy lễ tân',
-    venue_name: 'Aura Court Thảo Điền',
-    description: '02 Nước điện giải Pocari Sweat + 01 Hộp bóng Hải Yến',
-    date: '30/08/2026',
-    time: '20:05',
-    amount: -75000,
-    balance_after: 1240000,
-    status: 'success',
-    reference: 'POS-20260830-1120',
-    method_label: 'Quét mã QR Member Pass',
-  },
-  {
-    id: 'txn-104',
-    type: 'refund',
-    title: 'Hoàn tiền huỷ lịch đặt sân đúng hạn',
-    venue_name: 'Aura Court Cầu Giấy',
-    description: 'Hoàn trả 100% về ví do huỷ lịch trước 24 giờ quy định',
-    date: '28/08/2026',
-    time: '09:30',
-    amount: 180000,
-    balance_after: 1315000,
-    status: 'success',
-    reference: 'RF-20260828-0902',
-    method_label: 'Hoàn tiền tự động',
-  },
-  {
-    id: 'txn-105',
-    type: 'topup',
-    title: 'Nạp tiền ví qua Cổng Quốc Tế Stripe',
-    venue_name: 'Ví Hệ Thống Aura',
-    description: 'Thanh toán thẻ Visa/MasterCard bảo mật qua cổng Stripe',
-    date: '25/08/2026',
-    time: '14:22',
-    amount: 1000000,
-    balance_after: 1135000,
-    status: 'success',
-    reference: 'STRIPE-20260825-8831',
-    method_label: 'Stripe Checkout',
-  },
-]
-
 export function useWallet() {
   const auth = useAuthStore()
+  const bookingStore = useBookingStore()
 
   const loading = ref(false)
   const processing = ref(false)
   const notice = ref('')
   const error = ref('')
 
+  // Filters & Search
   const transactionFilter = ref<TransactionType | 'all'>('all')
   const selectedVenueFilter = ref<string>('all')
-  const searchQuery = ref('')
+  const searchQuery = ref<string>('')
 
+  // Modals state
   const isDepositModalOpen = ref(false)
   const depositStep = ref<'select' | 'sepay_pay' | 'stripe_pay'>('select')
   const isQrModalOpen = ref(false)
   const selectedWalletForAction = ref<VenueWallet | null>(null)
 
-  const depositAmount = ref<number>(500000)
+  // Deposit Form State
+  const depositAmount = ref<number>(200000)
   const depositMethod = ref<PaymentMethodType>('sepay')
   const depositTargetWalletId = ref<string>('wallet-main')
 
-  // Stripe Card Details State
+  // Stripe card state
   const cardNumber = ref('')
   const cardExpiry = ref('')
   const cardCvc = ref('')
   const cardName = ref('')
 
+  // Quick Amount Presets
   const quickAmounts = [100000, 200000, 500000, 1000000, 2000000, 5000000]
 
-  const wallets = ref<VenueWallet[]>([...DEFAULT_WALLETS])
-  const transactions = ref<Transaction[]>([...INITIAL_TRANSACTIONS])
+  // Data
+  const wallets = ref<VenueWallet[]>(DEFAULT_WALLETS)
+  const transactions = ref<Transaction[]>([])
 
   const totalBalance = computed(() => {
-    return wallets.value.reduce((sum, w) => sum + (w.balance || 0), 0)
+    // Total system available balance is the main wallet balance
+    const mainWallet = wallets.value.find((w) => w.id === 'wallet-main')
+    return mainWallet ? mainWallet.balance : wallets.value.reduce((sum, w) => sum + (w.balance || 0), 0)
   })
 
   const totalPoints = computed(() => {
@@ -210,33 +146,80 @@ export function useWallet() {
     error.value = ''
     try {
       const res = await walletApi.getWallet()
-      if (res && typeof res.balance === 'number') {
-        const userName = auth.user?.name || 'AURA MEMBER'
-        wallets.value = [
-          {
-            id: 'wallet-main',
-            venue_id: 1,
-            venue_name: 'Ví Hội Viên Toàn Hệ Thống Aura',
-            card_number: 'AUR-9902-8142',
-            address: 'Toàn bộ hệ thống cơ sở Aura Court',
-            balance: res.balance,
-            points: 1250,
-            is_active: true,
-            currency: 'VND',
-            member_tier: 'gold',
-            tier_label: 'Gold Athlete',
-            accent_theme: 'burgundy',
-            card_holder: userName,
-            expiry_date: '12/2028',
-          },
-          ...DEFAULT_WALLETS.slice(1).map((w) => ({
-            ...w,
-            card_holder: userName,
-          })),
-        ]
+      const userName = auth.user?.name || 'AURA MEMBER'
+      const realBal = typeof res?.balance === 'number' ? res.balance : 0
+      const realPts = typeof res?.points === 'number' ? res.points : Math.floor(realBal / 1000)
+
+      wallets.value = [
+        {
+          id: 'wallet-main',
+          venue_id: 1,
+          venue_name: 'Ví Hội Viên Toàn Hệ Thống Aura',
+          card_number: 'AUR-9902-8142',
+          address: 'Toàn bộ hệ thống cơ sở Aura Court',
+          balance: realBal,
+          points: realPts,
+          is_active: true,
+          currency: 'VND',
+          member_tier: 'gold',
+          tier_label: 'Gold Athlete',
+          accent_theme: 'burgundy',
+          card_holder: userName,
+          expiry_date: '12/2028',
+        },
+        {
+          id: 'wallet-thaodien',
+          venue_id: 2,
+          venue_name: 'Aura Court Thảo Điền (TP. Thủ Đức)',
+          card_number: 'AUR-7721-6601',
+          address: '215 Nguyễn Văn Hưởng, P. Thảo Điền, TP. Thủ Đức',
+          balance: realBal,
+          points: realPts,
+          is_active: true,
+          currency: 'VND',
+          member_tier: 'silver',
+          tier_label: 'Silver Athlete',
+          accent_theme: 'gold',
+          card_holder: userName,
+          expiry_date: '08/2027',
+        },
+        {
+          id: 'wallet-caugiay',
+          venue_id: 3,
+          venue_name: 'Aura Court Cầu Giấy (Hà Nội)',
+          card_number: 'AUR-5510-4498',
+          address: '18 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội',
+          balance: realBal,
+          points: realPts,
+          is_active: true,
+          currency: 'VND',
+          member_tier: 'standard',
+          tier_label: 'Standard Athlete',
+          accent_theme: 'navy',
+          card_holder: userName,
+          expiry_date: '06/2027',
+        },
+      ]
+
+      if (Array.isArray(res?.transactions)) {
+        transactions.value = res.transactions.map((t: any) => ({
+          id: `txn-${t.id}`,
+          type: t.type === 'credit' ? 'topup' : 'booking',
+          title: t.type === 'credit' ? 'Nạp tiền ví Aura' : 'Thanh toán đặt sân',
+          venue_name: 'Hệ Thống Aura Court',
+          description: t.description || (t.type === 'credit' ? 'Nạp tiền vào ví' : 'Trừ số dư đặt sân'),
+          date: t.created_at ? new Date(t.created_at).toLocaleDateString('vi-VN') : '',
+          time: t.created_at ? new Date(t.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
+          amount: t.type === 'credit' ? t.amount : -t.amount,
+          balance_after: t.balance_after || realBal,
+          status: 'success',
+          reference: t.reference || `TXN-${t.id}`,
+          method_label: 'Ví Aura',
+        }))
       }
+
+      bookingStore.walletBalance = realBal
     } catch {
-      // Fallback graceful mode for demo/local environment
       const userName = auth.user?.name || 'AURA MEMBER'
       wallets.value = DEFAULT_WALLETS.map((w) => ({
         ...w,
@@ -283,53 +266,32 @@ export function useWallet() {
     processing.value = true
     error.value = ''
     try {
-      try {
-        await walletApi.credit({
-          amount: depositAmount.value,
-          method: depositMethod.value,
-          wallet_id: depositTargetWalletId.value,
-          note: depositMethod.value === 'stripe' ? `Stripe Card: ${cardNumber.value.slice(-4) || '4242'}` : undefined,
-        })
-      } catch {
-        // Local simulation fallback
-      }
-
-      // Update local wallet balance
-      const target = wallets.value.find((w) => w.id === depositTargetWalletId.value)
-      if (target) {
-        target.balance += depositAmount.value
-        target.points += Math.floor(depositAmount.value / 10000)
-      } else if (wallets.value[0]) {
-        wallets.value[0].balance += depositAmount.value
-        wallets.value[0].points += Math.floor(depositAmount.value / 10000)
-      }
-
       const isSepay = depositMethod.value === 'sepay'
-      const methodLabel = isSepay ? 'VietQR SePay Auto' : 'Thẻ Quốc Tế Stripe'
-      const prefixRef = isSepay ? 'SEPAY' : 'STRIPE'
+      const methodLabel = isSepay ? 'VietQR SePay Auto' : 'Thanh Toán Trực Tuyến'
 
-      // Add transaction record
-      const newTxn: Transaction = {
-        id: `txn-${Date.now()}`,
-        type: 'topup',
-        title: `Nạp tiền ví qua ${methodLabel}`,
-        venue_name: target?.venue_name || 'Ví Hệ Thống Aura',
-        description: isSepay
-          ? 'Chuyển khoản VietQR SePay tự động · Tiền khả dụng tức thì'
-          : `Thanh toán thẻ Visa/Mastercard (${cardNumber.value.slice(-4) || '4242'}) bảo mật bởi Stripe`,
-        date: new Date().toLocaleDateString('vi-VN'),
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      // Credit to backend real database
+      const res = await walletApi.credit({
         amount: depositAmount.value,
-        balance_after: totalBalance.value,
-        status: 'success',
-        reference: `${prefixRef}-${Date.now().toString().slice(-6)}`,
-        method_label: methodLabel,
-      }
+        method: depositMethod.value,
+        note: `Nạp tiền qua ${methodLabel}`,
+      })
 
-      transactions.value.unshift(newTxn)
+      const newBal = res?.balance || (totalBalance.value + depositAmount.value)
+
+      // Update all wallet cards with unified real balance
+      wallets.value.forEach((w) => {
+        w.balance = newBal
+        w.points += Math.floor(depositAmount.value / 1000)
+      })
+
+      bookingStore.walletBalance = newBal
+
+      // Reload fresh data from backend
+      await loadWalletData()
+
       isDepositModalOpen.value = false
       depositStep.value = 'select'
-      showNotice(`Nạp thành công ${depositAmount.value.toLocaleString('vi-VN')} ₫ vào ví qua ${methodLabel}!`)
+      showNotice(`Nạp thành công ${depositAmount.value.toLocaleString('vi-VN')} ₫ vào ví! Số dư mới: ${newBal.toLocaleString('vi-VN')} ₫`)
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể thực hiện nạp tiền vào ví.')
     } finally {

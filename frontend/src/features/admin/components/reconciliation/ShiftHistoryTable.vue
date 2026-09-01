@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatCurrency, formatDateTime } from '@/i18n'
 import type { CashShiftItem } from '../../composables/useAdminShiftReconciliation'
 
 defineProps<{
@@ -12,9 +14,7 @@ const emit = defineEmits<{
   (e: 'update:searchQuery', q: string): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
@@ -23,41 +23,46 @@ function formatMoney(amount: number): string {
     <div class="history-toolbar">
       <div class="status-tabs">
         <button
+          type="button"
           class="status-btn"
           :class="{ active: statusFilter === 'all' }"
           @click="emit('update:statusFilter', 'all')"
         >
-          Tất cả ca
+          {{ t('admin.shifts.allShifts') }}
         </button>
         <button
+          type="button"
           class="status-btn"
           :class="{ active: statusFilter === 'matched' }"
           @click="emit('update:statusFilter', 'matched')"
         >
-          Khớp 100%
+          {{ t('admin.shifts.matched100') }}
         </button>
         <button
+          type="button"
           class="status-btn"
           :class="{ active: statusFilter === 'exception' }"
           @click="emit('update:statusFilter', 'exception')"
         >
-          Có chênh lệch
+          {{ t('admin.shifts.hasVariance') }}
         </button>
         <button
+          type="button"
           class="status-btn"
           :class="{ active: statusFilter === 'approved' }"
           @click="emit('update:statusFilter', 'approved')"
         >
-          Đã duyệt đối soát
+          {{ t('admin.shifts.approvedReconciliation') }}
         </button>
       </div>
 
       <div class="search-box">
+        <span class="material-symbols-outlined search-icon">search</span>
         <input
           :value="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Tìm theo mã ca, thu ngân, cơ sở..."
+          :placeholder="t('admin.shifts.searchShiftsPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -66,12 +71,12 @@ function formatMoney(amount: number): string {
     <!-- History Table -->
     <div class="history-table-card">
       <div class="table-header">
-        <span>Mã Ca & Thu Ngân</span>
-        <span>Cơ Sở Vận Hành</span>
-        <span>Doanh Số Ca</span>
-        <span>Tiền Mặt Đếm</span>
-        <span>Chênh Lệch</span>
-        <span>Trạng Thái Đối Soát</span>
+        <span>{{ t('admin.shifts.hdrShiftAndCashier') }}</span>
+        <span>{{ t('admin.shifts.hdrOperationalVenue') }}</span>
+        <span>{{ t('admin.shifts.hdrShiftSales') }}</span>
+        <span>{{ t('admin.shifts.hdrCountedCash') }}</span>
+        <span>{{ t('admin.shifts.hdrVariance') }}</span>
+        <span>{{ t('admin.shifts.hdrReconciliationStatus') }}</span>
       </div>
 
       <div class="table-body">
@@ -86,23 +91,23 @@ function formatMoney(amount: number): string {
           </div>
 
           <div class="venue-col">
-            <span>{{ s.venue_name }}</span>
-            <span class="time-sub">{{ s.opened_at }}</span>
+            <span>{{ resolveLocalizedText(s.venue_name) }}</span>
+            <span class="time-sub font-mono">{{ s.opened_at ? formatDateTime(s.opened_at) : '' }}</span>
           </div>
 
           <div class="sales-col">
-            <strong class="text-pink">{{ formatMoney(s.total_sales) }}</strong>
-            <span class="orders-count">{{ s.orders_count }} đơn hàng</span>
+            <strong class="text-pink font-mono">{{ formatCurrency(s.total_sales) }}</strong>
+            <span class="orders-count">{{ t('admin.shifts.ordersCountLabel', { count: s.orders_count }) }}</span>
           </div>
 
           <div class="cash-col">
-            <strong>{{ formatMoney(s.declared_cash) }}</strong>
-            <span class="expected-sub">Dự kiến: {{ formatMoney(s.expected_cash) }}</span>
+            <strong class="font-mono">{{ formatCurrency(s.declared_cash) }}</strong>
+            <span class="expected-sub">{{ t('admin.shifts.expectedSubLabel', { amount: formatCurrency(s.expected_cash) }) }}</span>
           </div>
 
           <div class="diff-col">
-            <strong :class="s.variance === 0 ? 'text-green' : s.variance < 0 ? 'text-red' : 'text-yellow'">
-              {{ s.variance > 0 ? '+' : '' }}{{ formatMoney(s.variance) }}
+            <strong class="font-mono" :class="s.variance === 0 ? 'text-green' : s.variance < 0 ? 'text-red' : 'text-yellow'">
+              {{ s.variance > 0 ? '+' : '' }}{{ formatCurrency(s.variance) }}
             </strong>
           </div>
 
@@ -113,10 +118,10 @@ function formatMoney(amount: number): string {
             >
               {{
                 s.reconciliation_status === 'matched'
-                  ? '✓ Khớp hoàn toàn'
+                  ? t('admin.shifts.statusMatched')
                   : s.reconciliation_status === 'approved'
-                  ? '✓ Đã duyệt lệch'
-                  : '⚠️ Lệch tiền két'
+                  ? t('admin.shifts.statusApproved')
+                  : t('admin.shifts.statusException')
               }}
             </span>
           </div>
@@ -155,6 +160,7 @@ function formatMoney(amount: number): string {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s;
 }
 
 .status-btn.active {
@@ -166,16 +172,27 @@ function formatMoney(amount: number): string {
 .search-box {
   flex: 1;
   max-width: 320px;
-}
-
-.search-input {
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
   color: var(--ink);
   font-size: 13px;
+  outline: none;
 }
 
 .history-table-card {

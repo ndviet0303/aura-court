@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { posApi } from '../api/posApi'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -13,7 +14,10 @@ import PosProductGrid from '../components/PosProductGrid.vue'
 import PosCartPanel from '../components/PosCartPanel.vue'
 import PosReceiptModal from '../components/PosReceiptModal.vue'
 import PosShiftModal from '../components/PosShiftModal.vue'
+import PosCustomerModal from '../components/PosCustomerModal.vue'
+import PosCustomItemModal from '../components/PosCustomItemModal.vue'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 
 // Composables
@@ -76,17 +80,8 @@ const currentReceipt = ref<OrderReceipt | null>(null)
 
 // Drafts & Local Database
 const drafts = ref<Draft[]>([])
-const customerQuery = ref('')
-
 const activeReservations = ref<CourtReservation[]>([])
 const customerDatabase = ref<CustomerProfile[]>([])
-
-// Custom Item Form
-const customItemForm = ref({
-  name: '',
-  price: 50000,
-  quantity: 1,
-})
 
 function showNotice(msg: string) {
   notice.value = msg
@@ -114,29 +109,27 @@ function toggleFullscreen() {
 
 function handleSelectProduct(prod: Product) {
   if (!prod.is_service && prod.stock_quantity <= 0) {
-    showError(`Sản phẩm "${prod.name}" đã hết hàng!`)
+    showError(t('admin.pos.outOfStock', { name: prod.name }))
     return
   }
   addToCart(prod, 1)
-  showNotice(`Đã thêm "${prod.name}" vào giỏ hàng`)
+  showNotice(t('admin.pos.addedToCart', { name: prod.name }))
 }
 
-function handleAddCustomItem() {
-  if (!customItemForm.value.name.trim()) return
+function handleAddCustomItem(payload: { name: string; price: number; quantity: number }) {
   const newProd: Product = {
     id: Date.now(),
     sku: `CUSTOM-${Date.now().toString().slice(-4)}`,
-    name: customItemForm.value.name,
-    price: customItemForm.value.price || 0,
+    name: payload.name,
+    price: payload.price,
     category: 'services',
     stock_quantity: 999,
     is_service: true,
   }
   addCustomProduct(newProd)
-  addToCart(newProd, customItemForm.value.quantity || 1)
-  customItemForm.value = { name: '', price: 50000, quantity: 1 }
+  addToCart(newProd, payload.quantity)
   showCustomItemModal.value = false
-  showNotice('Đã thêm món tuỳ chỉnh!')
+  showNotice(t('admin.pos.addedCustom'))
 }
 
 function handleSaveDraft() {
@@ -144,7 +137,7 @@ function handleSaveDraft() {
   const draftId = `DRAFT-${Date.now().toString().slice(-4)}`
   drafts.value.push({
     id: draftId,
-    name: selectedCustomer.value?.name || `Đơn ${new Date().toLocaleTimeString('vi-VN')}`,
+    name: selectedCustomer.value?.name || `Draft ${new Date().toLocaleTimeString()}`,
     items: cart.value.map((c) => ({
       product_id: c.product.id,
       quantity: c.quantity,
@@ -152,11 +145,11 @@ function handleSaveDraft() {
     })),
     reservation_id: selectedReservationId.value,
     customer_name: selectedCustomer.value?.name,
-    saved_at: new Date().toLocaleTimeString('vi-VN'),
+    saved_at: new Date().toLocaleTimeString(),
     total_amount: grandTotal.value,
   })
   clearCart()
-  showNotice(`Đã lưu đơn tạm #${draftId}`)
+  showNotice(t('admin.pos.draftSaved', { id: draftId }))
 }
 
 function handleLoadDraft(draft: Draft) {
@@ -170,7 +163,7 @@ function handleLoadDraft(draft: Draft) {
   selectedReservationId.value = draft.reservation_id || null
   showDraftsModal.value = false
   drafts.value = drafts.value.filter((d) => d.id !== draft.id)
-  showNotice(`Đã mở lại đơn tạm #${draft.id}`)
+  showNotice(t('admin.pos.draftLoaded', { id: draft.id }))
 }
 
 async function handleCheckout() {
@@ -199,14 +192,13 @@ async function handleCheckout() {
     try {
       await posApi.completeOrder(payload)
     } catch {
-      // Offline fallback for smooth demo experience
+      // Demo fallback
     }
 
-    // Build Receipt
     const receiptData: OrderReceipt = {
       order_code: `POS-${Math.floor(100000 + Math.random() * 900000)}`,
-      created_at: new Date().toLocaleString('vi-VN'),
-      cashier_name: auth.user?.name || 'Thu ngân Aura',
+      created_at: new Date().toLocaleString(),
+      cashier_name: auth.user?.name || 'Aura Cashier',
       customer_name: selectedCustomer.value?.name,
       court_info: activeReservations.value.find((r) => r.id === selectedReservationId.value)?.court_name,
       items: cart.value.map((c) => ({
@@ -224,7 +216,6 @@ async function handleCheckout() {
       cash_change: cashChange.value || undefined,
     }
 
-    // Deduct stock
     cart.value.forEach((item) => {
       adjustProductStock(item.product.id, -item.quantity)
     })
@@ -232,9 +223,9 @@ async function handleCheckout() {
     currentReceipt.value = receiptData
     showReceiptModal.value = true
     clearCart()
-    showNotice('Thanh toán đơn hàng thành công!')
+    showNotice(t('admin.pos.orderSuccess'))
   } catch (e) {
-    showError(errorMessage(e, 'Thanh toán thất bại. Vui lòng thử lại.'))
+    showError(errorMessage(e, t('admin.pos.orderError')))
   } finally {
     processingCheckout.value = false
   }
@@ -243,16 +234,16 @@ async function handleCheckout() {
 function handleOpenShift(cash: number) {
   openShift(cash)
   showShiftModal.value = false
-  showNotice('Đã mở ca làm việc mới!')
+  showNotice(t('admin.pos.openShiftSuccess'))
 }
 
 async function handleCloseShift(shiftId: number, declaredCash: number, note: string) {
   try {
     await closeShift(shiftId, { declared_cash: declaredCash, note })
     showShiftModal.value = false
-    showNotice('Đã kết thúc ca làm việc!')
+    showNotice(t('admin.pos.closeShiftSuccess'))
   } catch {
-    // error handled in composable
+    // handled in composable
   }
 }
 
@@ -296,9 +287,9 @@ onUnmounted(() => {
     <header class="pos-topbar">
       <div class="topbar-left">
         <RouterLink to="/" class="pos-brand">
-          <span class="brand-badge">AURA POS</span>
+          <span class="brand-badge">{{ t('admin.pos.brand') }}</span>
         </RouterLink>
-        <span class="pos-mode-tag">Hệ Thống Bán Hàng & Thu Ngân</span>
+        <span class="pos-mode-tag">{{ t('admin.pos.modeTag') }}</span>
       </div>
 
       <div class="topbar-center">
@@ -307,11 +298,14 @@ onUnmounted(() => {
       </div>
 
       <div class="topbar-right">
-        <button class="topbar-btn" @click="showShiftModal = true">
-          💼 <span v-if="activeShift">Ca #{{ activeShift.id }}</span><span v-else>Mở Ca</span>
+        <button type="button" class="topbar-btn" @click="showShiftModal = true">
+          <span class="material-symbols-outlined icon-18">badge</span>
+          <span v-if="activeShift">{{ t('admin.pos.shiftNumber', { id: activeShift.id }) }}</span>
+          <span v-else>{{ t('admin.pos.openShift') }}</span>
         </button>
-        <button class="topbar-btn" @click="toggleFullscreen">
-          {{ isFullscreen ? '🗗 Thu nhỏ' : '🗖 Toàn màn hình' }}
+        <button type="button" class="topbar-btn" @click="toggleFullscreen">
+          <span class="material-symbols-outlined icon-18">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</span>
+          <span>{{ isFullscreen ? t('admin.pos.minimize') : t('admin.pos.fullscreen') }}</span>
         </button>
       </div>
     </header>
@@ -374,7 +368,7 @@ onUnmounted(() => {
       :show="showReceiptModal"
       :receipt="currentReceipt"
       @close="showReceiptModal = false"
-      @print="showNotice('Đang gửi lệnh in tới máy in hoá đơn (POS-80)...')"
+      @print="showNotice(t('admin.pos.printCommand'))"
     />
 
     <PosShiftModal
@@ -386,66 +380,18 @@ onUnmounted(() => {
       @close-shift="handleCloseShift"
     />
 
-    <!-- Customer Search Modal -->
-    <div v-if="showCustomerModal" class="modal-backdrop" @click.self="showCustomerModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3 class="modal-title">👤 Tìm Kiếm Khách Hàng / Hội Viên</h3>
-          <button class="modal-close-btn" @click="showCustomerModal = false">✕</button>
-        </div>
-        <div class="modal-body">
-          <input
-            v-model="customerQuery"
-            type="text"
-            class="form-input"
-            placeholder="Nhập tên hoặc số điện thoại..."
-            autofocus
-          />
-          <div class="customer-list-box">
-            <div
-              v-for="cust in customerDatabase.filter(c => c.name.includes(customerQuery) || c.phone.includes(customerQuery))"
-              :key="cust.id"
-              class="customer-select-item"
-              @click="selectedCustomer = cust; showCustomerModal = false; showNotice(`Đã chọn khách: ${cust.name}`)"
-            >
-              <div>
-                <strong>{{ cust.name }}</strong> ({{ cust.phone }})
-                <div class="cust-tier-tag">{{ cust.tier }} · Giảm {{ cust.discount_rate * 100 }}% · Điểm: {{ cust.loyalty_points }}</div>
-              </div>
-              <button class="btn-select">Chọn</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PosCustomerModal
+      :show="showCustomerModal"
+      :customer-database="customerDatabase"
+      @close="showCustomerModal = false"
+      @select="selectedCustomer = $event; showCustomerModal = false; showNotice(t('admin.pos.selectedCustomerNotice', { name: $event.name }))"
+    />
 
-    <!-- Custom Item Modal -->
-    <div v-if="showCustomItemModal" class="modal-backdrop" @click.self="showCustomItemModal = false">
-      <div class="modal-card modal-sm">
-        <div class="modal-header">
-          <h3 class="modal-title">➕ Thêm Mục Bán Tuỳ Chỉnh</h3>
-          <button class="modal-close-btn" @click="showCustomItemModal = false">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Tên món / dịch vụ:</label>
-            <input v-model="customItemForm.name" type="text" class="form-input" placeholder="Vd: Thuê sân phát sinh..." />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Đơn giá (VND):</label>
-            <input v-model.number="customItemForm.price" type="number" step="10000" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Số lượng:</label>
-            <input v-model.number="customItemForm.quantity" type="number" min="1" class="form-input" />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showCustomItemModal = false">Huỷ</button>
-          <button class="btn-primary" @click="handleAddCustomItem">Thêm vào giỏ</button>
-        </div>
-      </div>
-    </div>
+    <PosCustomItemModal
+      :show="showCustomItemModal"
+      @close="showCustomItemModal = false"
+      @add="handleAddCustomItem"
+    />
   </div>
 </template>
 
@@ -492,7 +438,10 @@ onUnmounted(() => {
 }
 
 .topbar-btn {
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 8px;
   border: 1px solid var(--outline);
   background: var(--surface);
@@ -500,6 +449,12 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s;
+}
+
+.topbar-btn:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
 }
 
 .pos-main-workspace {
@@ -535,58 +490,8 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.customer-list-box {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 250px;
-  overflow-y: auto;
-}
-
-.customer-select-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  cursor: pointer;
-}
-
-.cust-tier-tag {
-  font-size: 11px;
-  color: var(--pink-dark, #db2777);
-  margin-top: 2px;
-}
-
-.btn-select {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.btn-cancel {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.btn-primary {
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
+.icon-18 {
+  font-size: 18px;
 }
 
 @media (max-width: 1024px) {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 defineProps<{
   datePreset: 'today' | '7days' | 'thisMonth' | 'custom'
   from: string
@@ -12,6 +14,8 @@ const emit = defineEmits<{
   (e: 'update:to', val: string): void
   (e: 'filter'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -23,7 +27,7 @@ const emit = defineEmits<{
         :class="{ active: datePreset === 'today' }"
         @click="emit('preset', 'today')"
       >
-        Hôm nay
+        {{ t('admin.dashboard.today') }}
       </button>
       <button
         type="button"
@@ -31,7 +35,7 @@ const emit = defineEmits<{
         :class="{ active: datePreset === '7days' }"
         @click="emit('preset', '7days')"
       >
-        7 ngày qua
+        {{ t('admin.dashboard.last7Days') }}
       </button>
       <button
         type="button"
@@ -39,7 +43,7 @@ const emit = defineEmits<{
         :class="{ active: datePreset === 'thisMonth' }"
         @click="emit('preset', 'thisMonth')"
       >
-        Tháng này
+        {{ t('admin.dashboard.thisMonth') }}
       </button>
       <button
         type="button"
@@ -47,7 +51,7 @@ const emit = defineEmits<{
         :class="{ active: datePreset === 'custom' }"
         @click="emit('preset', 'custom')"
       >
-        Tùy chỉnh
+        {{ t('admin.dashboard.custom') }}
       </button>
     </div>
 
@@ -58,7 +62,7 @@ const emit = defineEmits<{
         class="date-input"
         @input="emit('update:from', ($event.target as HTMLInputElement).value)"
       />
-      <span>➔</span>
+      <span class="material-symbols-outlined icon-arrow">arrow_forward</span>
       <input
         :value="to"
         type="date"
@@ -66,13 +70,14 @@ const emit = defineEmits<{
         @input="emit('update:to', ($event.target as HTMLInputElement).value)"
       />
       <button type="button" class="btn-apply-filter" @click="emit('filter')">
-        Lọc
+        {{ t('admin.dashboard.filter') }}
       </button>
     </div>
 
     <div class="actions-right">
       <a :href="csvUrl" target="_blank" class="btn-export-csv">
-        📥 Xuất Báo Cáo (CSV)
+        <span class="material-symbols-outlined icon-18">download</span>
+        <span>{{ t('admin.dashboard.exportCsv') }}</span>
       </a>
     </div>
   </div>
@@ -139,6 +144,9 @@ const emit = defineEmits<{
 }
 
 .btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -148,5 +156,20 @@ const emit = defineEmits<{
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.btn-export-csv:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+}
+
+.icon-arrow {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

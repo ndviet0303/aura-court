@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import { usePricingCalendarV2, type PriceRuleItem } from '../composables/usePricingCalendarV2'
 
 import PricingRulePriorityStack from '../components/pricing/PricingRulePriorityStack.vue'
@@ -7,6 +9,8 @@ import PricingCalendarGrid from '../components/pricing/PricingCalendarGrid.vue'
 import PricingSimulatorModal from '../components/pricing/PricingSimulatorModal.vue'
 import PricingRuleModal from '../components/pricing/PricingRuleModal.vue'
 import PricingPresetsModal from '../components/pricing/PricingPresetsModal.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -43,17 +47,22 @@ onMounted(() => {
     <!-- Header Section -->
     <header class="pricing-header">
       <div class="header-titles">
-        <h1 class="page-title">⚡ Thiết lập Ma trận Giá linh hoạt (Dynamic Pricing V2)</h1>
-        <p class="page-sub">Cài đặt quy tắc định giá giờ cao điểm, phụ thu ngày lễ và tự động điều chỉnh theo nhu cầu.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">price_change</span>
+          <h1 class="page-title">{{ t('admin.pricing.title') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.pricing.subtitle') }}</p>
       </div>
 
       <div class="header-actions">
-        <button class="btn-presets" @click="showPresetsModal = true">
-          📑 Mẫu cài đặt giá
-        </button>
-        <button class="btn-simulator" @click="showSimulatorModal = true">
-          🧮 Mô phỏng báo giá
-        </button>
+        <AuraButton variant="secondary" @click="showPresetsModal = true">
+          <span class="material-symbols-outlined icon-18">tune</span>
+          <span>{{ t('admin.pricing.presetsBtn') }}</span>
+        </AuraButton>
+        <AuraButton variant="outline" @click="showSimulatorModal = true">
+          <span class="material-symbols-outlined icon-18">calculate</span>
+          <span>{{ t('admin.pricing.simulatorBtn') }}</span>
+        </AuraButton>
       </div>
     </header>
 
@@ -87,7 +96,7 @@ onMounted(() => {
     <PricingPresetsModal
       :show="showPresetsModal"
       @close="showPresetsModal = false"
-      @apply-preset="showNotice(`Đã áp dụng mẫu: ${$event}`); showPresetsModal = false"
+      @apply-preset="showNotice(t('admin.pricing.presetApplied', { name: $event })); showPresetsModal = false"
     />
   </div>
 </template>
@@ -111,14 +120,25 @@ onMounted(() => {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }
@@ -126,22 +146,7 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 10px;
-}
-
-.btn-presets, .btn-simulator {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-presets:hover, .btn-simulator:hover {
-  border-color: var(--pink-dark, #db2777);
-  color: var(--pink-dark, #db2777);
+  align-items: center;
 }
 
 .alert-pill {
@@ -160,5 +165,9 @@ onMounted(() => {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

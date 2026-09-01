@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 
 defineProps<{
   show: boolean
@@ -8,6 +10,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+const { t } = useI18n()
 
 const selectedDate = ref('2026-08-30')
 const selectedTime = ref('18:00')
@@ -33,53 +37,67 @@ const calculatedQuote = computed(() => {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">🧮 Trình Mô Phỏng & Báo Giá Tự Động (Price Quote Simulator)</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">calculate</span>
+          <h3 class="modal-title">{{ t('admin.pricing.simulatorModalTitle') }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
-        <p class="sim-intro">Kiểm tra đơn giá chính xác sẽ áp dụng cho khách hàng dựa trên ma trận quy tắc động:</p>
+        <p class="sim-intro">{{ t('admin.pricing.simIntro') }}</p>
 
         <div class="sim-form-grid">
           <div class="form-group">
-            <label class="form-label">Chọn ngày đặt sân:</label>
-            <input v-model="selectedDate" type="date" class="form-input" />
+            <label class="form-label">{{ t('admin.pricing.selectBookingDate') }}</label>
+            <input v-model="selectedDate" type="date" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Chọn giờ bắt đầu:</label>
-            <input v-model="selectedTime" type="time" class="form-input" />
+            <label class="form-label">{{ t('admin.pricing.selectStartTime') }}</label>
+            <input v-model="selectedTime" type="time" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Thời lượng thuê (giờ):</label>
-            <input v-model.number="durationHours" type="number" min="1" max="12" class="form-input" />
+            <label class="form-label">{{ t('admin.pricing.rentalDuration') }}</label>
+            <input v-model.number="durationHours" type="number" min="1" max="12" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Là ngày lễ / Tết?</label>
+            <label class="form-label">{{ t('admin.pricing.isHolidayLabel') }}</label>
             <label class="check-lbl">
               <input v-model="isHoliday" type="checkbox" />
-              <span>Áp dụng phụ thu ngày lễ (+30%)</span>
+              <span>{{ t('admin.pricing.holidaySurchargeCheckbox') }}</span>
             </label>
           </div>
         </div>
 
         <div class="quote-result-card">
-          <span class="quote-lbl">Báo giá ước tính cho khách:</span>
-          <strong class="quote-price text-pink">{{ calculatedQuote.toLocaleString('vi-VN') }} ₫</strong>
-          <span class="quote-note">Đã tự động tính toán qua ma trận ưu tiên (Priority Rules)</span>
+          <span class="quote-lbl">{{ t('admin.pricing.estimatedQuote') }}</span>
+          <strong class="quote-price text-pink font-mono">{{ formatCurrency(calculatedQuote) }}</strong>
+          <span class="quote-note">{{ t('admin.pricing.calculatedNote') }}</span>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Đóng</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .sim-intro {
   margin: 0 0 16px;
   font-size: 13px;

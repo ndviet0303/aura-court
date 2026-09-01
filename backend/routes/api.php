@@ -26,10 +26,10 @@ use App\Http\Controllers\Social\SocialController;
 use App\Http\Controllers\Tournament\TournamentController;
 use App\Http\Controllers\Webhook\ProviderWebhookController;
 use App\Http\Controllers\Webhook\SepayWebhookController;
-use App\Http\Controllers\Webhook\StripeWebhookController;
 use App\Http\Middleware\RequireOrganizationRole;
 use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,37 +51,90 @@ Route::prefix('v1')->group(function () {
     Route::get('sport-zones/{sportZone}', [SportZoneController::class, 'show']);
     Route::get('availability', AvailabilityController::class);
     Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
-    Route::post('webhooks/stripe', StripeWebhookController::class)->withoutMiddleware('throttle:api');
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('auth/me', fn (Request $request) => $request->user());
+        Route::get('auth/me', function (Request $request, WalletPaymentService $walletService) {
+            $user = $request->user();
+            $wallet = $walletService->getOrCreateWallet($user->id);
+            $user->wallet_balance = $wallet->balance;
+            return response()->json($user);
+        });
         Route::post('auth/onboarding', [AuthController::class, 'onboarding']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::post('auth/email/verification-notification', function (Request $request) {
-            if (! $request->user()->hasVerifiedEmail()) {
-                $request->user()->sendEmailVerificationNotification();
-            }
-
-            return ['message' => 'Đã gửi email xác thực.'];
-        })->middleware('throttle:6,1');
-        Route::get('auth/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+            $request->user()->sendEmailVerificationNotification();
+            return response()->json(['message' => 'Email verification link sent.']);
+        });
+        Route::get('auth/verify-email/{id}/{hash}', function (EmailVerificationRequest $request) {
             $request->fulfill();
-
-            return ['message' => 'Email đã được xác thực.'];
-        })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+            return response()->json(['message' => 'Email has been verified.']);
+        })->name('verification.verify');
         Route::patch('profile', function (Request $request) {
             $data = $request->validate([
-                'name' => 'sometimes|string|max:120',
-                'phone' => 'nullable|string|max:30',
-                'play_level' => 'nullable|string|max:50',
-                'favorite_sports' => 'nullable|array',
-                'avatar_url' => 'nullable|string|max:255',
+                'name' => 'sometimes|string|max:255',
+                'phone' => 'nullable|string|max:20',
+                'avatar' => 'nullable|string|max:2048',
+                'bio' => 'nullable|string|max:1000',
+                'skill_level' => 'nullable|string|in:beginner,intermediate,advanced,pro',
             ]);
             $user = $request->user();
             $user->update($data);
             return response()->json($user->fresh());
         });
         Route::patch('profile/password', [AuthController::class, 'changePassword']);
+        Route::get('wallet', function (Request $request, WalletPaymentService $walletService) {
+            $wallet = $walletService->getOrCreateWallet($request->user()->id);
+            $transactions = $wallet->transactions()->latest('id')->take(20)->get();
+            return response()->json([
+                'id' => 'wallet-main',
+                'balance' => $wallet->balance,
+                'currency' => $wallet->currency,
+                'points' => (int) ($wallet->balance / 1000),
+                'transactions' => $transactions,
+            ]);
+        });
+        Route::get('wallet/balance', function (Request $request, WalletPaymentService $walletService) {
+            $wallet = $walletService->getOrCreateWallet($request->user()->id);
+            return response()->json(['balance' => $wallet->balance, 'currency' => $wallet->currency]);
+        });
+        Route::post('wallet/topup', function (Request $request, WalletPaymentService $walletService) {
+            $data = $request->validate([
+                'amount' => 'required|integer|min:10000|max:50000000',
+            ]);
+            $user = $request->user();
+            $wallet = $walletService->getOrCreateWallet($user->id);
+            $tx = $walletService->credit(
+                $wallet,
+                $data['amount'],
+                'wallet_deposit',
+                (int) (now()->timestamp + rand(100, 999)),
+                $request->input('note', 'Nạp tiền ví Aura')
+            );
+            return response()->json([
+                'message' => 'Nạp tiền vào ví thành công.',
+                'balance' => $wallet->fresh()->balance,
+                'transaction_id' => $tx->id,
+            ], 201);
+        });
+        Route::post('wallet/credit', function (Request $request, WalletPaymentService $walletService) {
+            $data = $request->validate([
+                'amount' => 'required|integer|min:10000|max:50000000',
+            ]);
+            $user = $request->user();
+            $wallet = $walletService->getOrCreateWallet($user->id);
+            $tx = $walletService->credit(
+                $wallet,
+                $data['amount'],
+                'wallet_deposit',
+                (int) (now()->timestamp + rand(100, 999)),
+                $request->input('note', 'Nạp tiền ví Aura')
+            );
+            return response()->json([
+                'message' => 'Nạp tiền vào ví thành công.',
+                'balance' => $wallet->fresh()->balance,
+                'transaction_id' => $tx->id,
+            ], 201);
+        });
         Route::get('bookings', [BookingController::class, 'index']);
         Route::post('bookings', [BookingController::class, 'store'])->middleware('verified');
         Route::post('bookings/recurring', [BookingController::class, 'recurring'])->middleware('verified');
@@ -94,9 +147,7 @@ Route::prefix('v1')->group(function () {
         Route::get('bookings/{booking:code}/payment-status', [BookingController::class, 'paymentStatus']);
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
         Route::post('bookings/{booking:code}/coupon', [BookingController::class, 'applyCoupon']);
-        Route::post('bookings/{booking:code}/stripe-pay', [BookingController::class, 'stripePay']);
         Route::get('bookings/{booking:code}/calendar.ics', [BookingController::class, 'calendar']);
-        Route::post('bookings/{booking:code}/demo-pay', [BookingController::class, 'demoPay']);
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);

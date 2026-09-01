@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 
 defineProps<{
@@ -10,6 +12,8 @@ const emit = defineEmits<{
   (e: 'edit', venue: AdminVenueItem): void
   (e: 'showQr', venue: AdminVenueItem): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -17,16 +21,19 @@ const emit = defineEmits<{
     <div class="venue-card-top">
       <div class="venue-meta-info">
         <div class="venue-name-row">
-          <h3 class="venue-title">{{ venue.name }}</h3>
+          <h3 class="venue-title">{{ resolveLocalizedText(venue.name) }}</h3>
           <span class="status-chip" :class="venue.is_active ? 'chip-active' : 'chip-maintenance'">
-            {{ venue.is_active ? 'ACTIVE' : 'MAINTENANCE' }}
+            {{ venue.is_active ? t('admin.venues.statusActive') : t('admin.venues.statusInactive') }}
           </span>
         </div>
-        <p class="venue-address">📍 {{ venue.address || 'Chưa cấu hình địa chỉ' }}</p>
+        <p class="venue-address">
+          <span class="material-symbols-outlined icon-14">location_on</span>
+          <span>{{ resolveLocalizedText(venue.address) || t('admin.venues.noAddress') }}</span>
+        </p>
       </div>
 
       <!-- Active switch -->
-      <label class="switch-control-wrap" title="Bật/Tắt hoạt động cơ sở">
+      <label class="switch-control-wrap" :title="t('admin.venues.toggleStatusTooltip')">
         <input
           type="checkbox"
           :checked="venue.is_active"
@@ -37,16 +44,24 @@ const emit = defineEmits<{
     </div>
 
     <div class="venue-stats-bar">
-      <span>🏟️ Quy mô: <strong>{{ venue.courts_count || 0 }} sân</strong></span>
-      <span>🔗 Slug: <code class="font-mono">{{ venue.slug }}</code></span>
+      <span class="stat-item">
+        <span class="material-symbols-outlined icon-16">sports_tennis</span>
+        <span>{{ t('admin.venues.courtsScale', { count: venue.courts_count || 0 }) }}</span>
+      </span>
+      <span class="stat-item">
+        <span class="material-symbols-outlined icon-16">link</span>
+        <code class="font-mono">{{ venue.slug }}</code>
+      </span>
     </div>
 
     <div class="venue-card-actions">
-      <button class="btn-action-sm" @click="emit('showQr', venue)">
-        📱 Mã QR Đặt Sân
+      <button type="button" class="btn-action-sm" @click="emit('showQr', venue)">
+        <span class="material-symbols-outlined icon-16">qr_code_2</span>
+        <span>{{ t('admin.venues.qrBtn') }}</span>
       </button>
-      <button class="btn-action-sm" @click="emit('edit', venue)">
-        ✏️ Chỉnh Sửa
+      <button type="button" class="btn-action-sm" @click="emit('edit', venue)">
+        <span class="material-symbols-outlined icon-16">edit</span>
+        <span>{{ t('admin.venues.editBtn') }}</span>
       </button>
       <a
         v-if="venue.google_maps_url"
@@ -55,7 +70,8 @@ const emit = defineEmits<{
         rel="noopener noreferrer"
         class="btn-action-sm link-maps"
       >
-        🗺️ Bản Đồ
+        <span class="material-symbols-outlined icon-16">map</span>
+        <span>{{ t('admin.venues.mapsBtn') }}</span>
       </a>
     </div>
   </div>
@@ -119,6 +135,9 @@ const emit = defineEmits<{
 
 .venue-address {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -133,6 +152,12 @@ const emit = defineEmits<{
   font-size: 12px;
 }
 
+.stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .venue-card-actions {
   display: flex;
   gap: 8px;
@@ -140,6 +165,9 @@ const emit = defineEmits<{
 }
 
 .btn-action-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -149,6 +177,12 @@ const emit = defineEmits<{
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.btn-action-sm:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
 }
 
 .switch-control-wrap {
@@ -191,5 +225,13 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

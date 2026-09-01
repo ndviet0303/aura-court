@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { Organization } from '../../composables/useOrganizationOwner'
 
 defineProps<{
@@ -9,18 +11,20 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:activeTab', tab: 'profile' | 'venues' | 'members' | 'policies'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="org-hero-card">
     <div class="org-main-row">
       <div class="org-badge-logo">
-        <span>🏢</span>
+        <span class="material-symbols-outlined org-icon-main">domain</span>
       </div>
 
       <div class="org-meta">
         <div class="title-row">
-          <h1 class="org-name">{{ org.name }}</h1>
+          <h1 class="org-name">{{ resolveLocalizedText(org.name) }}</h1>
           <span class="status-pill font-mono">● {{ org.status.toUpperCase() }}</span>
         </div>
         <p class="org-sub font-mono">MST: {{ org.tax_code }} · Hotline: {{ org.phone }} · {{ org.support_email }}</p>
@@ -30,32 +34,40 @@ const emit = defineEmits<{
     <!-- Tabs Navigation -->
     <div class="org-tabs-bar">
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'profile' }"
         @click="emit('update:activeTab', 'profile')"
       >
-        🏢 Hồ Sơ Doanh Nghiệp & Thương Hiệu
+        <span class="material-symbols-outlined icon-16">corporate_fare</span>
+        <span>{{ t('admin.org.tabProfile') }}</span>
       </button>
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'venues' }"
         @click="emit('update:activeTab', 'venues')"
       >
-        📍 Cụm Sân Trực Thuộc ({{ org.venues?.length || 0 }})
+        <span class="material-symbols-outlined icon-16">location_on</span>
+        <span>{{ t('admin.org.tabVenues', { count: org.venues?.length || 0 }) }}</span>
       </button>
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'members' }"
         @click="emit('update:activeTab', 'members')"
       >
-        👥 Đội Ngũ Quản Trị ({{ org.members?.length || 0 }})
+        <span class="material-symbols-outlined icon-16">group</span>
+        <span>{{ t('admin.org.tabMembers', { count: org.members?.length || 0 }) }}</span>
       </button>
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'policies' }"
         @click="emit('update:activeTab', 'policies')"
       >
-        ⚙️ Chính Sách Vận Hành & Tự Động
+        <span class="material-symbols-outlined icon-16">settings</span>
+        <span>{{ t('admin.org.tabPolicies') }}</span>
       </button>
     </div>
   </div>
@@ -87,7 +99,11 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+}
+
+.org-icon-main {
+  font-size: 32px;
+  color: var(--pink-dark, #db2777);
 }
 
 .org-meta {
@@ -132,6 +148,9 @@ const emit = defineEmits<{
 }
 
 .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid transparent;
@@ -147,5 +166,9 @@ const emit = defineEmits<{
   background: rgba(236, 72, 153, 0.1);
   color: var(--pink-dark, #db2777);
   border-color: rgba(236, 72, 153, 0.2);
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

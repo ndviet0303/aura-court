@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { StaffMember } from '../../composables/useAdminStaff'
 
 defineProps<{
@@ -10,6 +11,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'invite', member: { name: string; email: string; phone: string; role: StaffMember['role'] }): void
 }>()
+
+const { t } = useI18n()
 
 const name = ref('')
 const email = ref('')
@@ -34,60 +37,64 @@ function handleSend() {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-sm">
       <div class="modal-header">
-        <h3 class="modal-title">✉️ Thêm Nhân Viên Mới & Phân Quyền</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">person_add</span>
+          <h3 class="modal-title">{{ t('admin.staff.inviteModalTitle') }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Họ và tên nhân sự <span class="required">*</span>:</label>
+          <label class="form-label">{{ t('admin.staff.fullNameLabel') }} <span class="required">*</span>:</label>
           <input
             v-model="name"
             type="text"
             class="form-input"
-            placeholder="Vd: Nguyễn Văn A..."
+            :placeholder="t('admin.staff.fullNamePlaceholder')"
           />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Email công việc <span class="required">*</span>:</label>
+          <label class="form-label">{{ t('admin.staff.workEmailLabel') }} <span class="required">*</span>:</label>
           <input
             v-model="email"
             type="email"
-            class="form-input"
+            class="form-input font-mono"
             placeholder="nhanvien@auracourt.vn"
           />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Số điện thoại liên hệ:</label>
+          <label class="form-label">{{ t('admin.staff.phoneContactLabel') }}</label>
           <input
             v-model="phone"
             type="tel"
-            class="form-input"
+            class="form-input font-mono"
             placeholder="0901 234 567"
           />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Vai trò & Vị trí đảm nhiệm:</label>
+          <label class="form-label">{{ t('admin.staff.assignedRoleLabel') }}</label>
           <select v-model="role" class="form-input">
-            <option value="Manager">Quản lý cơ sở (Manager)</option>
-            <option value="Receptionist">Thu ngân / Lễ tân (Receptionist)</option>
-            <option value="Technician">Kỹ thuật viên sân (Technician)</option>
-            <option value="Referee">Trọng tài giải đấu (Referee)</option>
+            <option value="Manager">{{ t('admin.staff.roleManager') }}</option>
+            <option value="Receptionist">{{ t('admin.staff.roleReceptionist') }}</option>
+            <option value="Technician">{{ t('admin.staff.roleTechnician') }}</option>
+            <option value="Referee">{{ t('admin.staff.roleReferee') }}</option>
           </select>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Huỷ</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
         <button
+          type="button"
           class="btn-primary btn-send-invite"
           :disabled="!name.trim() || !email.trim()"
           @click="handleSend"
         >
-          Gửi Thư Mời
+          {{ t('admin.staff.sendInviteBtn') }}
         </button>
       </div>
     </div>
@@ -95,6 +102,17 @@ function handleSend() {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .btn-cancel {
   padding: 8px 16px;
   border-radius: 8px;

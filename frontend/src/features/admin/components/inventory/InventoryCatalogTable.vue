@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatCurrency } from '@/i18n'
 import type { InventoryProduct } from '../../types/inventory'
 
 defineProps<{
@@ -18,21 +20,22 @@ const emit = defineEmits<{
   (e: 'stockOut', product: InventoryProduct): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="catalog-table-card">
     <div class="table-toolbar">
-      <input
-        :value="search"
-        type="text"
-        class="search-input"
-        placeholder="Tìm theo tên sản phẩm, mã SKU..."
-        @input="emit('update:search', ($event.target as HTMLInputElement).value)"
-      />
+      <div class="search-input-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input
+          :value="search"
+          type="text"
+          class="search-input"
+          :placeholder="t('admin.inventory.searchPlaceholder')"
+          @input="emit('update:search', ($event.target as HTMLInputElement).value)"
+        />
+      </div>
 
       <div class="filters-group">
         <select
@@ -40,7 +43,7 @@ function formatMoney(amount: number): string {
           class="filter-select"
           @change="emit('update:categoryFilter', ($event.target as HTMLSelectElement).value)"
         >
-          <option value="all">Tất cả danh mục</option>
+          <option value="all">{{ t('admin.inventory.allCategories') }}</option>
           <option v-for="c in categories.filter(x => x !== 'all')" :key="c" :value="c">
             {{ c }}
           </option>
@@ -51,54 +54,63 @@ function formatMoney(amount: number): string {
           class="filter-select"
           @change="emit('update:stockFilter', ($event.target as HTMLSelectElement).value as any)"
         >
-          <option value="all">Tất cả trạng thái kho</option>
-          <option value="low">Cảnh báo sắp hết</option>
-          <option value="out">Đã hết hàng</option>
+          <option value="all">{{ t('admin.inventory.allStockStatuses') }}</option>
+          <option value="low">{{ t('admin.inventory.lowStockOption') }}</option>
+          <option value="out">{{ t('admin.inventory.outOfStockOption') }}</option>
         </select>
       </div>
     </div>
 
     <div class="table-responsive">
       <div class="inventory-table">
-      <div class="table-hdr">
-        <span>Sản Phẩm & SKU</span>
-        <span>Danh Mục</span>
-        <span>Giá Vốn / Bán</span>
-        <span>Tồn Kho Hiện Tại</span>
-        <span>Hành Động</span>
-      </div>
+        <div class="table-hdr">
+          <span>{{ t('admin.inventory.hdrProductAndSku') }}</span>
+          <span>{{ t('admin.inventory.hdrCategory') }}</span>
+          <span>{{ t('admin.inventory.hdrCostAndPrice') }}</span>
+          <span>{{ t('admin.inventory.hdrCurrentStock') }}</span>
+          <span>{{ t('admin.inventory.hdrActions') }}</span>
+        </div>
 
-      <div class="table-body">
-        <div v-for="p in products" :key="p.id" class="product-row">
-          <div class="p-name-sku">
-            <strong class="p-name">{{ p.name }}</strong>
-            <span class="p-sku font-mono">SKU: {{ p.sku }}</span>
-          </div>
+        <div class="table-body">
+          <div v-for="p in products" :key="p.id" class="product-row">
+            <div class="p-name-sku">
+              <strong class="p-name">{{ resolveLocalizedText(p.name) }}</strong>
+              <span class="p-sku font-mono">SKU: {{ p.sku }}</span>
+            </div>
 
-          <span class="p-cat-tag">{{ p.category }}</span>
+            <span class="p-cat-tag">{{ p.category }}</span>
 
-          <div class="p-prices">
-            <span class="cost-sub">Vốn: {{ formatMoney(p.cost) }}</span>
-            <strong class="price-val text-pink">{{ formatMoney(p.price) }}</strong>
-          </div>
+            <div class="p-prices">
+              <span class="cost-sub font-mono">{{ t('admin.inventory.costSubLabel', { amount: formatCurrency(p.cost) }) }}</span>
+              <strong class="price-val text-pink font-mono">{{ formatCurrency(p.price) }}</strong>
+            </div>
 
-          <div class="p-stock-info">
-            <strong class="stock-qty font-mono" :class="p.stock_quantity <= p.min_stock ? 'text-red' : 'text-green'">
-              {{ p.stock_quantity }} {{ p.unit }}
-            </strong>
-            <span v-if="p.stock_quantity <= p.min_stock" class="min-alert">
-              ⚠️ Dưới mức tối thiểu ({{ p.min_stock }})
-            </span>
-          </div>
+            <div class="p-stock-info">
+              <strong class="stock-qty font-mono" :class="p.stock_quantity <= p.min_stock ? 'text-red' : 'text-green'">
+                {{ p.stock_quantity }} {{ p.unit }}
+              </strong>
+              <span v-if="p.stock_quantity <= p.min_stock" class="min-alert">
+                <span class="material-symbols-outlined icon-14">warning</span>
+                <span>{{ t('admin.inventory.belowMinAlert', { min: p.min_stock }) }}</span>
+              </span>
+            </div>
 
-          <div class="row-actions">
-            <button class="btn-sm" title="Nhập kho" @click="emit('stockIn', p)">+ Nhập</button>
-            <button class="btn-sm" title="Xuất kho" @click="emit('stockOut', p)">- Xuất</button>
-            <button class="btn-sm" title="Sửa" @click="emit('edit', p)">✏️</button>
+            <div class="row-actions">
+              <button type="button" class="btn-sm" :title="t('admin.inventory.stockInBtn')" @click="emit('stockIn', p)">
+                <span class="material-symbols-outlined icon-14">add</span>
+                <span>{{ t('admin.inventory.stockInBtn') }}</span>
+              </button>
+              <button type="button" class="btn-sm" :title="t('admin.inventory.stockOutBtn')" @click="emit('stockOut', p)">
+                <span class="material-symbols-outlined icon-14">remove</span>
+                <span>{{ t('admin.inventory.stockOutBtn') }}</span>
+              </button>
+              <button type="button" class="btn-sm" :title="t('admin.inventory.editProduct')" @click="emit('edit', p)">
+                <span class="material-symbols-outlined icon-14">edit</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
@@ -122,14 +134,30 @@ function formatMoney(amount: number): string {
   flex-wrap: wrap;
 }
 
-.search-input {
+.search-input-wrap {
   flex: 1;
   min-width: 240px;
-  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink);
   font-size: 13px;
+  outline: none;
 }
 
 .filters-group {
@@ -142,6 +170,7 @@ function formatMoney(amount: number): string {
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  color: var(--ink);
   font-size: 13px;
 }
 
@@ -216,6 +245,9 @@ function formatMoney(amount: number): string {
 .text-red { color: #ef4444; }
 
 .min-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   color: #ef4444;
 }
@@ -226,11 +258,25 @@ function formatMoney(amount: number): string {
 }
 
 .btn-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  color: var(--ink);
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-sm:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+}
+
+.icon-14 {
+  font-size: 14px;
 }
 </style>

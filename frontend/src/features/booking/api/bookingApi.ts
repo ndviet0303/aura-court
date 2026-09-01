@@ -1,5 +1,5 @@
 import { api, apiV2 } from '@/core/api/client'
-import type { Booking, PaymentInfo, CreateBookingPayload, CardDetails } from '../types/booking'
+import type { Booking, CreateBookingPayload } from '../types/booking'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 
 export const bookingApi = {
@@ -14,36 +14,28 @@ export const bookingApi = {
   getAvailability: (courtId: number, date: string) =>
     api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`),
 
+  getWalletBalance: () =>
+    api.get<{ balance: number; currency?: string }>('/wallet/balance'),
+
   create: (payload: CreateBookingPayload) =>
-    api.post<{ booking: Booking; payment: PaymentInfo }>('/bookings', payload),
+    api.post<{ booking: Booking }>('/bookings', payload),
 
   createRecurring: (payload: { court_id: number; slots: string[]; weeks: number }) =>
-    api.post<{ bookings: { booking: Booking; payment: PaymentInfo }[] }>('/bookings/recurring', payload),
+    api.post<{ bookings: { booking: Booking }[] }>('/bookings/recurring', payload),
 
   getPayment: (code: string) =>
-    api.get<{ booking?: Booking; payment: PaymentInfo; status: string }>(`/bookings/${code}/payment`),
+    api.get<{ booking?: Booking; wallet?: { balance: number }; status: string }>(`/bookings/${code}/payment`),
 
   getPaymentStatus: (code: string) =>
-    api.get<{ status: string; payment: unknown; expiresAt: string }>(`/bookings/${code}/payment-status`),
+    api.get<{ status: string; payment: unknown }>(`/bookings/${code}/payment-status`),
 
   applyCoupon: (code: string, couponCode?: string | null) =>
-    api.post<{ booking: Booking; payment: PaymentInfo; status: string }>(`/bookings/${code}/coupon`, {
+    api.post<{ booking: Booking; status: string }>(`/bookings/${code}/coupon`, {
       coupon_code: couponCode || null,
     }),
 
   previewCoupon: <T = unknown>(payload: { subtotal: number; code: string }) =>
     api.post<T>('/coupons/preview', payload),
-
-  stripePay: (code: string, cardDetails: CardDetails = {}) =>
-    api.post<{ status: string; booking: Booking }>(`/bookings/${code}/stripe-pay`, {
-      card_number: cardDetails.cardNumber,
-      card_expiry: cardDetails.cardExpiry,
-      card_cvc: cardDetails.cardCvc,
-      card_name: cardDetails.cardName,
-    }),
-
-  demoPay: (code: string) =>
-    api.post<{ status: string; booking: Booking }>(`/bookings/${code}/demo-pay`),
 
   cancel: (code: string, reason?: string) =>
     api.post<Booking>(`/bookings/${code}/cancel`, { reason }),
@@ -85,7 +77,7 @@ export const bookingApi = {
     api.post('/waitlist', payload),
 
   reschedule: (code: string, courtId: number, slots: string[]) =>
-    api.post<{ booking: Booking; payment: PaymentInfo }>(`/bookings/${code}/reschedule`, {
+    api.post<{ booking: Booking }>(`/bookings/${code}/reschedule`, {
       court_id: courtId,
       slots,
     }),

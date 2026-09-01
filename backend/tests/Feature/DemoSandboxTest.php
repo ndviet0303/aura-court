@@ -43,9 +43,10 @@ class DemoSandboxTest extends TestCase
             'name' => 'Sân mô phỏng',
             'venue_id' => Venue::firstOrFail()->id,
             'description' => 'Không được lưu',
+            'image_url' => 'https://example.com/demo-simulated.jpg',
             'is_active' => true,
         ])->assertCreated()->assertHeader('X-Demo-Simulated', 'true');
 
-        $this->assertDatabaseMissing('courts', ['name' => 'Sân mô phỏng']);
+        $this->assertDatabaseMissing('courts', ['image_url' => 'https://example.com/demo-simulated.jpg']);
     }
 }

@@ -15,7 +15,7 @@ class EloquentVenueRepository implements VenueRepositoryInterface
             ->when($sportType, function ($q, $sportType) {
                 $q->whereHas('sportZones', fn ($z) => $z->where('sport_type', $sportType)->where('is_active', true));
             })
-            ->orderBy('name')
+            ->orderBy('id')
             ->get();
     }
 

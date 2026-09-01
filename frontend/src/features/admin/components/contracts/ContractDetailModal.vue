@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatCurrency } from '@/i18n'
 import type { RecurringContract } from '../../composables/useAdminContracts'
 
 defineProps<{
@@ -10,50 +12,51 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
   <div v-if="show && contract" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">
-          📋 Chi Tiết Hợp Đồng: {{ contract.contract_code }}
-        </h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">description</span>
+          <h3 class="modal-title">
+            {{ t('admin.contracts.contractDetailTitle', { code: contract.contract_code }) }}
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="contract-meta-grid">
           <div class="meta-item">
-            <span class="meta-lbl">Khách hàng / CLB:</span>
+            <span class="meta-lbl">{{ t('admin.contracts.customerClubLabel') }}</span>
             <strong>{{ contract.customer_name }} ({{ contract.phone }})</strong>
           </div>
           <div class="meta-item">
-            <span class="meta-lbl">Sân đặt định kỳ:</span>
-            <strong>{{ contract.court_name }} - {{ contract.venue_name }}</strong>
+            <span class="meta-lbl">{{ t('admin.contracts.fixedCourtLabel') }}</span>
+            <strong>{{ resolveLocalizedText(contract.court_name) }} - {{ resolveLocalizedText(contract.venue_name) }}</strong>
           </div>
           <div class="meta-item">
-            <span class="meta-lbl">Lịch & Khung giờ:</span>
+            <span class="meta-lbl">{{ t('admin.contracts.scheduleAndSlotLabel') }}</span>
             <strong>{{ contract.weekday }} · {{ contract.time_slot }}</strong>
           </div>
           <div class="meta-item">
-            <span class="meta-lbl">Thời hạn hợp đồng:</span>
-            <strong>{{ contract.start_date }} ➔ {{ contract.end_date }}</strong>
+            <span class="meta-lbl">{{ t('admin.contracts.contractTermLabel') }}</span>
+            <strong class="font-mono">{{ contract.start_date }} - {{ contract.end_date }}</strong>
           </div>
         </div>
 
         <div class="cycles-history-box">
-          <h4 class="cycles-title">Lịch Sử Các Kỳ Hóa Đơn Hàng Tháng</h4>
+          <h4 class="cycles-title">{{ t('admin.contracts.invoiceCyclesTitle') }}</h4>
           <div class="cycles-table">
             <div class="cycles-header">
-              <span>Kỳ Hoá Đơn</span>
-              <span>Hạn Đóng</span>
-              <span>Số Tiền</span>
-              <span>Trạng Thái</span>
-              <span>Mã Thu</span>
+              <span>{{ t('admin.contracts.hdrInvoiceCycle') }}</span>
+              <span>{{ t('admin.contracts.hdrDueDate') }}</span>
+              <span>{{ t('admin.contracts.hdrAmount') }}</span>
+              <span>{{ t('admin.contracts.hdrCycleStatus') }}</span>
+              <span>{{ t('admin.contracts.hdrReceiptCode') }}</span>
             </div>
             <div
               v-for="cycle in contract.payment_cycles"
@@ -61,13 +64,13 @@ function formatMoney(amount: number): string {
               class="cycle-row"
             >
               <strong>{{ cycle.cycle_name }}</strong>
-              <span>{{ cycle.due_date }}</span>
-              <strong class="text-pink">{{ formatMoney(cycle.amount) }}</strong>
+              <span class="font-mono">{{ cycle.due_date }}</span>
+              <strong class="text-pink font-mono">{{ formatCurrency(cycle.amount) }}</strong>
               <span
                 class="cycle-status"
                 :class="cycle.status === 'paid' ? 'paid' : 'overdue'"
               >
-                ● {{ cycle.status === 'paid' ? 'Đã thanh toán' : 'Chưa đóng' }}
+                ● {{ cycle.status === 'paid' ? t('admin.contracts.statusPaid') : t('admin.contracts.statusUnpaid') }}
               </span>
               <span class="font-mono">{{ cycle.invoice_code }}</span>
             </div>
@@ -76,13 +79,24 @@ function formatMoney(amount: number): string {
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Đóng</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .contract-meta-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

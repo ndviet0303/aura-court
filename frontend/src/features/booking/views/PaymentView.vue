@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import { usePaymentProcessing } from '../composables/usePaymentProcessing'
 
-import PaymentMethodSelector from '../components/PaymentMethodSelector.vue'
+import WalletPayButton from '../components/WalletPayButton.vue'
 import PaymentSummaryCard from '../components/PaymentSummaryCard.vue'
 
 const router = useRouter()
@@ -13,29 +13,23 @@ const store = useBookingStore()
 
 const {
   loading,
+  isPaying,
   isTournament,
   tournament,
   payment,
   booking,
   court,
   playerDetails,
+  walletBalance,
+  paymentAmount,
   error,
-  copyNotice,
-  selectedMethod,
   showSuccessModal,
   couponCode,
   couponLoading,
   couponError,
   couponSuccess,
-  cardNumber,
-  cardExpiry,
-  cardCvc,
-  cardName,
-  isCardProcessing,
-  countdownFormatted,
   applyCoupon,
-  handleStripePay,
-  copyToClipboard,
+  handleWalletPay,
   startTimers,
   stopTimers,
 } = usePaymentProcessing()
@@ -76,10 +70,10 @@ function handleDoneTournament() {
     </div>
 
     <!-- Empty State if No Payment Session -->
-    <div v-else-if="!payment" class="empty-payment-panel">
-      <span class="material-symbols-outlined empty-icon">payments</span>
-      <h2>{{ $t('payment.noSessionTitle') }}</h2>
-      <p>{{ $t('payment.noSessionDesc') }}</p>
+    <div v-else-if="!payment && !booking" class="empty-payment-panel">
+      <span class="material-symbols-outlined empty-icon">account_balance_wallet</span>
+      <h2>{{ $t('payment.noSessionTitle') || 'Không có phiên thanh toán nào' }}</h2>
+      <p>{{ $t('payment.noSessionDesc') || 'Vui lòng chọn sân và khung giờ để bắt đầu đặt lịch.' }}</p>
       <div class="empty-actions">
         <AuraButton to="/courts" variant="primary" size="md" icon="sports_tennis">
           {{ $t('payment.selectCourtCta') }}
@@ -104,8 +98,8 @@ function handleDoneTournament() {
           <span class="step-text">{{ isTournament ? $t('payment.stepTournamentFee') : $t('payment.stepPayment') }}</span>
         </div>
         <div class="stepper-line"></div>
-        <div class="stepper-step">
-          <span class="step-circle">3</span>
+        <div class="stepper-step" :class="{ completed: showSuccessModal }">
+          <span class="step-circle">{{ showSuccessModal ? '✓' : '3' }}</span>
           <span class="step-text">{{ isTournament ? $t('payment.stepConfirmTournament') : $t('payment.stepConfirmBooking') }}</span>
         </div>
       </div>
@@ -141,33 +135,29 @@ function handleDoneTournament() {
             </div>
           </div>
 
-          <!-- Payment Methods Selector -->
-          <PaymentMethodSelector
-            :payment="payment"
-            :selected-method="selectedMethod"
-            :card-number="cardNumber"
-            :card-expiry="cardExpiry"
-            :card-cvc="cardCvc"
-            :card-name="cardName"
-            :is-card-processing="isCardProcessing"
-            :copy-notice="copyNotice"
-            @update:selected-method="selectedMethod = $event"
-            @update:card-number="cardNumber = $event"
-            @update:card-expiry="cardExpiry = $event"
-            @update:card-cvc="cardCvc = $event"
-            @update:card-name="cardName = $event"
-            @pay-stripe="handleStripePay"
-            @copy="copyToClipboard"
+          <!-- Error Feedback -->
+          <div v-if="error" class="alert-box-error">
+            <span class="material-symbols-outlined">error</span>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Wallet Pay Button / Component -->
+          <WalletPayButton
+            :amount="paymentAmount"
+            :wallet-balance="walletBalance"
+            :loading="loading"
+            :processing="isPaying"
+            @pay="handleWalletPay"
           />
         </div>
 
         <div class="checkout-right-col">
           <!-- Summary Card -->
           <PaymentSummaryCard
-            :payment="payment"
+            v-if="payment || booking"
+            :payment="payment || { code: booking?.code || '', amount: booking?.total_amount || 0, type: 'booking', bank: '', accountNumber: '', qrUrl: '', expiresAt: '' }"
             :booking="booking"
             :court="court"
-            :countdown-formatted="countdownFormatted"
             :coupon-code="couponCode"
             :coupon-loading="couponLoading"
             :coupon-error="couponError"
@@ -188,7 +178,7 @@ function handleDoneTournament() {
           </span>
           <h3>{{ isTournament ? $t('payment.tournamentSuccessTitle') : $t('payment.successTitle') }}</h3>
           <p>
-            {{ $t('payment.txCodeConfirmed', { code: payment?.code }) }}
+            {{ $t('payment.txCodeConfirmed', { code: booking?.code || payment?.code }) }}
           </p>
 
           <div class="success-actions">
@@ -382,6 +372,18 @@ function handleDoneTournament() {
 }
 
 .info-val {
+  font-size: 13px;
+}
+
+.alert-box-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
   font-size: 13px;
 }
 

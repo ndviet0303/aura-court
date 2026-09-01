@@ -93,6 +93,11 @@ class AdminController extends Controller
 
     private function validatedVenue(Request $request): array
     {
+        $rawName = $request->input('name');
+        if (is_string($rawName)) {
+            $request->merge(['name' => ['vi' => $rawName, 'en' => $rawName]]);
+        }
+
         $data = $request->validate([
             'name' => 'required|array',
             'name.*' => 'string|max:120',

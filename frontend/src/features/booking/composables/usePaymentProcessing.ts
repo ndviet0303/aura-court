@@ -15,11 +15,12 @@ export function usePaymentProcessing() {
   const auth = useAuthStore()
 
   const loading = ref(false)
+  const isPaying = ref(false)
   const status = ref('pending_payment')
   const error = ref('')
   const copyNotice = ref('')
-  const selectedMethod = ref<'qr' | 'card'>('qr')
   const showSuccessModal = ref(false)
+  const walletBalance = ref(0)
 
   // Tournament specific state
   const tournament = ref<TournamentItem | null>(null)
@@ -35,17 +36,6 @@ export function usePaymentProcessing() {
   const couponLoading = ref(false)
   const couponError = ref('')
   const couponSuccess = ref('')
-
-  // Stripe Card Form
-  const cardNumber = ref('')
-  const cardExpiry = ref('')
-  const cardCvc = ref('')
-  const cardName = ref('')
-  const isCardProcessing = ref(false)
-
-  const remainingSeconds = ref(900) // 15 mins default
-  let timer: number | undefined
-  let countdownTimer: number | undefined
 
   const payment = computed(() => store.payment)
   const booking = computed<Booking | null>(() => store.current)
@@ -79,23 +69,19 @@ export function usePaymentProcessing() {
     }
   })
 
-  const countdownFormatted = computed(() => {
-    const m = Math.floor(remainingSeconds.value / 60)
-    const s = remainingSeconds.value % 60
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  const paymentAmount = computed(() => {
+    if (isTournament.value && tournament.value) {
+      return parseFeeAmount(tournament.value.entry_fee)
+    }
+    return booking.value?.total_amount || store.payment?.amount || 0
   })
 
-  async function checkPaymentStatus() {
+  async function loadBalance() {
     try {
-      if (isTournament.value) return
-      const res = await store.refreshPaymentStatus()
-      if (res?.status === 'confirmed' || res?.status === 'completed') {
-        status.value = 'confirmed'
-        showSuccessModal.value = true
-        clearInterval(timer)
-      }
+      const bal = await store.fetchWalletBalance()
+      walletBalance.value = bal
     } catch {
-      // polling error ignored
+      walletBalance.value = store.walletBalance
     }
   }
 
@@ -126,29 +112,29 @@ export function usePaymentProcessing() {
     }
   }
 
-  async function handleStripePay() {
-    isCardProcessing.value = true
+  async function handleWalletPay() {
+    isPaying.value = true
     error.value = ''
     try {
       if (isTournament.value) {
-        // Simulate Stripe transaction processing
-        await new Promise((resolve) => setTimeout(resolve, 1000))
         status.value = 'confirmed'
         showSuccessModal.value = true
       } else {
-        await store.stripePay({
-          cardNumber: cardNumber.value,
-          cardExpiry: cardExpiry.value,
-          cardCvc: cardCvc.value,
-          cardName: cardName.value,
-        })
+        // If booking is already confirmed, just show success
+        if (booking.value?.status === 'confirmed') {
+          status.value = 'confirmed'
+          showSuccessModal.value = true
+          return
+        }
+        // Refresh balance and show confirmed
+        await loadBalance()
         status.value = 'confirmed'
         showSuccessModal.value = true
       }
     } catch (e) {
-      error.value = errorMessage(e, 'Thanh toán thẻ thất bại. Vui lòng thử lại.')
+      error.value = errorMessage(e, 'Thanh toán từ ví thất bại. Vui lòng thử lại.')
     } finally {
-      isCardProcessing.value = false
+      isPaying.value = false
     }
   }
 
@@ -175,6 +161,7 @@ export function usePaymentProcessing() {
     error.value = ''
 
     try {
+      await loadBalance()
       const tourneyUuid = (route.query.tournament_uuid || route.query.tournament_id) as string | undefined
       const codeParam = route.params.code as string | undefined
 
@@ -187,7 +174,6 @@ export function usePaymentProcessing() {
             const tourneyData = await tournamentApi.getById(identifier)
             tournament.value = tourneyData
           } catch {
-            // Fallback default tournament
             tournament.value = {
               id: 1,
               name: 'Aura Tournament Championship 2026',
@@ -207,7 +193,6 @@ export function usePaymentProcessing() {
           }
         }
 
-        // Parse athlete info
         athleteInfo.value = {
           name: (route.query.name as string) || (route.query.athlete_name as string) || auth.user?.name || 'Vận Động Viên Aura',
           phone: (route.query.phone as string) || auth.user?.phone || '0901234567',
@@ -224,19 +209,21 @@ export function usePaymentProcessing() {
         store.payment = {
           code: tourneyCode,
           amount: fee,
-          bank: 'TPBank',
-          accountNumber: '83403032005',
-          qrUrl: `https://api.vietqr.io/image/970423-83403032005-compact2.png?amount=${fee}&addInfo=${encodeURIComponent(tourneyCode)}&accountName=${encodeURIComponent('AURA COURT')}`,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          bank: 'Ví Aura',
+          accountNumber: 'WALLET',
+          qrUrl: '',
+          expiresAt: '',
           type: 'tournament',
           title: tournament.value?.name || 'Lệ Phí Giải Đấu Aura',
           tournament: tournament.value,
           athleteDetails: athleteInfo.value,
         }
-      } else if (codeParam && codeParam.startsWith('BK-')) {
-        // Booking code
+      } else if (codeParam && codeParam.startsWith('BK')) {
         try {
           await store.loadPayment(codeParam)
+          if (store.current?.status === 'confirmed') {
+            status.value = 'confirmed'
+          }
         } catch {
           store.restorePayment()
         }
@@ -247,28 +234,6 @@ export function usePaymentProcessing() {
       error.value = errorMessage(e, 'Không thể tải thông tin thanh toán.')
     } finally {
       loading.value = false
-      setupTimers()
-    }
-  }
-
-  function setupTimers() {
-    if (payment.value?.expiresAt) {
-      const exp = new Date(payment.value.expiresAt).getTime()
-      remainingSeconds.value = Math.max(0, Math.floor((exp - Date.now()) / 1000))
-    }
-
-    clearInterval(countdownTimer)
-    countdownTimer = window.setInterval(() => {
-      if (remainingSeconds.value > 0) {
-        remainingSeconds.value--
-      } else {
-        clearInterval(countdownTimer)
-      }
-    }, 1000)
-
-    clearInterval(timer)
-    if (!isTournament.value) {
-      timer = window.setInterval(checkPaymentStatus, 4000)
     }
   }
 
@@ -276,13 +241,11 @@ export function usePaymentProcessing() {
     initPaymentSession()
   }
 
-  function stopTimers() {
-    clearInterval(timer)
-    clearInterval(countdownTimer)
-  }
+  function stopTimers() {}
 
   return {
     loading,
+    isPaying,
     isTournament,
     tournament,
     athleteInfo,
@@ -290,24 +253,18 @@ export function usePaymentProcessing() {
     booking,
     court,
     playerDetails,
+    walletBalance,
+    paymentAmount,
     status,
     error,
     copyNotice,
-    selectedMethod,
     showSuccessModal,
     couponCode,
     couponLoading,
     couponError,
     couponSuccess,
-    cardNumber,
-    cardExpiry,
-    cardCvc,
-    cardName,
-    isCardProcessing,
-    remainingSeconds,
-    countdownFormatted,
     applyCoupon,
-    handleStripePay,
+    handleWalletPay,
     copyToClipboard,
     startTimers,
     stopTimers,

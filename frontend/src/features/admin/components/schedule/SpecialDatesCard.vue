@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { SpecialDateItem } from '../../composables/useAdminSchedule'
 
 defineProps<{
@@ -8,29 +9,42 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'add'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="special-dates-card">
     <div class="card-header">
       <div>
-        <h3 class="title">🎉 Ngày Đặc Biệt & Sự Kiện (Holidays / Events)</h3>
-        <p class="sub">Lịch hoạt động riêng biệt cho các dịp lễ Tết, giải đấu nội bộ hoặc sửa chữa cụm sân.</p>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">event</span>
+          <h3 class="title">{{ t('admin.schedule.specialDatesTitle') }}</h3>
+        </div>
+        <p class="sub">{{ t('admin.schedule.specialDatesSub') }}</p>
       </div>
 
-      <button class="btn-add-circle" @click="emit('add')">
-        + Thêm ngày đặc biệt
+      <button type="button" class="btn-add-circle" @click="emit('add')">
+        <span class="material-symbols-outlined icon-16">add</span>
+        <span>{{ t('admin.schedule.addSpecialDateBtn') }}</span>
       </button>
     </div>
 
-    <div class="dates-list">
+    <div v-if="specialDates.length === 0" class="empty-dates">
+      {{ t('admin.schedule.noSpecialDates') }}
+    </div>
+
+    <div v-else class="dates-list">
       <div v-for="d in specialDates" :key="d.id" class="date-row">
         <div class="date-info">
           <strong class="date-name">{{ d.name }}</strong>
-          <span class="date-val font-mono">📅 {{ d.date }} · {{ d.hours || 'Theo lịch chuẩn' }}</span>
+          <span class="date-val font-mono">
+            <span class="material-symbols-outlined icon-14">calendar_today</span>
+            <span>{{ d.date }} · {{ d.hours || t('admin.schedule.standardHours') }}</span>
+          </span>
         </div>
         <span class="type-tag" :class="`type-${d.type}`">
-          {{ d.type === 'holiday' ? 'Ngày Lễ' : 'Giờ Đặc Biệt' }}
+          {{ d.type === 'holiday' ? t('admin.schedule.typeHoliday') : t('admin.schedule.typeSpecialHours') }}
         </span>
       </div>
     </div>
@@ -53,6 +67,18 @@ const emit = defineEmits<{
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
@@ -68,6 +94,9 @@ const emit = defineEmits<{
 }
 
 .btn-add-circle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
   border: 0;
@@ -77,6 +106,13 @@ const emit = defineEmits<{
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.empty-dates {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .dates-list {
@@ -103,6 +139,9 @@ const emit = defineEmits<{
 }
 
 .date-val {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
   color: var(--muted);
 }
@@ -116,4 +155,12 @@ const emit = defineEmits<{
 
 .type-holiday { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 .type-special_hours { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-16 {
+  font-size: 16px;
+}
 </style>

@@ -11,12 +11,12 @@ export function usePosProducts() {
   const error = ref('')
 
   const categories = [
-    { key: 'all', label: 'Tất Cả', icon: '⚡' },
-    { key: 'drinks', label: 'Nước Giải Khát', icon: '🥤' },
-    { key: 'equipment', label: 'Dụng Cụ & Phụ Kiện', icon: '🏸' },
-    { key: 'rental', label: 'Cho Thuê', icon: '⏱️' },
-    { key: 'services', label: 'Dịch Vụ Sân', icon: '🔧' },
-    { key: 'membership', label: 'Gói Hội Viên', icon: '👑' },
+    { key: 'all', labelKey: 'admin.pos.catAll', label: 'Tất Cả', icon: 'grid_view' },
+    { key: 'drinks', labelKey: 'admin.pos.catDrinks', label: 'Nước Giải Khát', icon: 'local_cafe' },
+    { key: 'equipment', labelKey: 'admin.pos.catEquipment', label: 'Dụng Cụ & Phụ Kiện', icon: 'sports_tennis' },
+    { key: 'rental', labelKey: 'admin.pos.catRental', label: 'Cho Thuê', icon: 'schedule' },
+    { key: 'services', labelKey: 'admin.pos.catServices', label: 'Dịch Vụ Sân', icon: 'build' },
+    { key: 'membership', labelKey: 'admin.pos.catMembership', label: 'Gói Hội Viên', icon: 'card_membership' },
   ]
 
   const filteredProducts = computed(() => {

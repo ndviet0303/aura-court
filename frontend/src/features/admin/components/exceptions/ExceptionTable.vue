@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import type { FinancialException, ExceptionFilterTab } from '../../types/exceptions'
 
 defineProps<{
@@ -12,6 +14,8 @@ const emit = defineEmits<{
   (e: 'update:activeTab', tab: ExceptionFilterTab): void
   (e: 'override', item: FinancialException): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -19,39 +23,45 @@ const emit = defineEmits<{
     <!-- Filter Tabs -->
     <div class="tab-filter-bar">
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'all' }"
         @click="emit('update:activeTab', 'all')"
       >
-        Tất cả ngoại lệ ({{ totalCount }})
+        {{ t('admin.exceptions.allExceptionsTab', { count: totalCount }) }}
       </button>
       <button
-        class="tab-btn"
+        type="button"
+        class="tab-btn btn-critical"
         :class="{ active: activeTab === 'critical' }"
         @click="emit('update:activeTab', 'critical')"
       >
-        🔴 Cảnh báo Đỏ ({{ criticalCount }})
+        <span class="status-dot-critical">●</span>
+        <span>{{ t('admin.exceptions.criticalTab', { count: criticalCount }) }}</span>
       </button>
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'refund' }"
         @click="emit('update:activeTab', 'refund')"
       >
-        Hoàn tiền trễ hạn
+        {{ t('admin.exceptions.delayedRefundTab') }}
       </button>
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'deposit' }"
         @click="emit('update:activeTab', 'deposit')"
       >
-        Bất thường Nạp/Rút
+        {{ t('admin.exceptions.depositAnomalyTab') }}
       </button>
       <button
+        type="button"
         class="tab-btn"
         :class="{ active: activeTab === 'deposit_hold' }"
         @click="emit('update:activeTab', 'deposit_hold')"
       >
-        Lệch cọc giữ chỗ
+        {{ t('admin.exceptions.depositHoldTab') }}
       </button>
     </div>
 
@@ -60,36 +70,36 @@ const emit = defineEmits<{
       <table class="aura-data-table">
         <thead>
           <tr>
-            <th>Mã TXN</th>
-            <th>Thời gian & Ca trực</th>
-            <th>Khách hàng / Tài khoản</th>
-            <th class="text-right">Số tiền</th>
-            <th>Loại ngoại lệ</th>
-            <th>Mức rủi ro</th>
-            <th class="text-right">Thao tác</th>
+            <th>{{ t('admin.exceptions.hdrTxnCode') }}</th>
+            <th>{{ t('admin.exceptions.hdrTimeAndShift') }}</th>
+            <th>{{ t('admin.exceptions.hdrCustomerAccount') }}</th>
+            <th class="text-right">{{ t('admin.exceptions.hdrAmount') }}</th>
+            <th>{{ t('admin.exceptions.hdrExceptionType') }}</th>
+            <th>{{ t('admin.exceptions.hdrRiskLevel') }}</th>
+            <th class="text-right">{{ t('admin.exceptions.hdrActions') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id" :class="{ 'row-resolved': item.status === 'resolved' }">
             <td class="code-cell font-mono">{{ item.reference }}</td>
             <td>
-              <div class="time-main">{{ item.detected_at }}</div>
+              <div class="time-main font-mono">{{ item.detected_at }}</div>
               <div class="time-sub">{{ (item.metadata?.shift || item.type) }}</div>
             </td>
             <td>
               <div class="user-cell">
-                <div class="user-avatar-initial">{{ (item.resolver?.name || 'Hệ thống').charAt(0) }}</div>
+                <div class="user-avatar-initial">{{ (item.resolver?.name || t('admin.schedule.systemUser')).charAt(0) }}</div>
                 <div>
-                  <div class="user-name">{{ (item.resolver?.name || 'Hệ thống') }}</div>
-                  <div class="user-sub">{{ (item.resolver?.id || '') }} · {{ (item.metadata?.tier || '') }}</div>
+                  <div class="user-name">{{ resolveLocalizedText(item.resolver?.name || t('admin.schedule.systemUser')) }}</div>
+                  <div class="user-sub font-mono">{{ (item.resolver?.id || '') }} · {{ (item.metadata?.tier || '') }}</div>
                 </div>
               </div>
             </td>
             <td class="text-right font-mono font-bold amount-cell">
-              {{ item.amount.toLocaleString('vi-VN') }} ₫
+              {{ formatCurrency(item.amount) }}
             </td>
             <td>
-              <span class="reason-pill">{{ item.description }}</span>
+              <span class="reason-pill">{{ resolveLocalizedText(item.description) }}</span>
             </td>
             <td>
               <span
@@ -100,26 +110,28 @@ const emit = defineEmits<{
                   'risk-low': item.severity === 'low',
                 }"
               >
-                {{ item.severity === 'critical' ? 'Cao' : item.severity === 'medium' ? 'Trung bình' : 'Thấp' }}
+                {{ item.severity === 'critical' ? t('admin.exceptions.riskHigh') : item.severity === 'medium' ? t('admin.exceptions.riskMedium') : t('admin.exceptions.riskLow') }}
               </span>
             </td>
             <td class="text-right">
               <div class="action-buttons">
                 <span v-if="item.status === 'resolved'" class="status-done">
-                  <span class="material-symbols-outlined">done_all</span> Đã xử lý
+                  <span class="material-symbols-outlined icon-16">done_all</span>
+                  <span>{{ t('admin.exceptions.statusDone') }}</span>
                 </span>
                 <button
                   v-else
+                  type="button"
                   class="btn-override"
                   @click="emit('override', item)"
                 >
-                  Can thiệp
+                  {{ t('admin.exceptions.overrideBtn') }}
                 </button>
               </div>
             </td>
           </tr>
           <tr v-if="items.length === 0">
-            <td colspan="7" class="empty-cell">Không có giao dịch ngoại lệ nào khớp bộ lọc.</td>
+            <td colspan="7" class="empty-cell">{{ t('admin.exceptions.noExceptionsFound') }}</td>
           </tr>
         </tbody>
       </table>
@@ -144,6 +156,9 @@ const emit = defineEmits<{
 }
 
 .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #f8f9fa;
   border: 1px solid #e1e3e4;
   border-radius: 999px;
@@ -154,6 +169,11 @@ const emit = defineEmits<{
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
+}
+
+.status-dot-critical {
+  color: #ef4444;
+  font-size: 10px;
 }
 
 .tab-btn.active {
@@ -298,5 +318,9 @@ const emit = defineEmits<{
   text-align: center;
   padding: 32px;
   color: #817476;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

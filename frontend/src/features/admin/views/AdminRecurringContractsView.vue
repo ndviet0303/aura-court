@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import { useAdminContracts } from '../composables/useAdminContracts'
 
 import ContractsTable from '../components/contracts/ContractsTable.vue'
 import ContractDetailModal from '../components/contracts/ContractDetailModal.vue'
 import ContractCreateModal from '../components/contracts/ContractCreateModal.vue'
+
+const { t } = useI18n()
 
 const {
   activeStatusTab,
@@ -42,7 +46,7 @@ function handleCreateContract(payload: any) {
     payment_cycles: [],
   })
   showCreateModal.value = false
-  showNotice(`Đã tạo thành công hợp đồng định kỳ mới cho ${payload.customer_name}!`)
+  showNotice(t('admin.contracts.createSuccess', { customer: payload.customer_name }))
 }
 </script>
 
@@ -51,48 +55,61 @@ function handleCreateContract(payload: any) {
     <!-- Header Section -->
     <header class="contracts-header">
       <div class="header-titles">
-        <h1 class="page-title">📅 Quản Lý Hợp Đồng Đặt Sân Định Kỳ</h1>
-        <p class="page-sub">Theo dõi hợp đồng cố định hàng tháng, lịch thu tiền định kỳ và tỷ lệ lấp đầy sân.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">contract</span>
+          <h1 class="page-title">{{ t('admin.contracts.title') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.contracts.subtitle') }}</p>
       </div>
 
       <div class="header-actions">
-        <button class="btn-export-excel" @click="showNotice('Đang xuất file Excel hợp đồng...')">
-          📊 Xuất Báo Cáo Excel
-        </button>
-        <button class="btn-create-contract btn-primary-pink" @click="showCreateModal = true">
-          ➕ Tạo Hợp Đồng Mới
-        </button>
+        <AuraButton variant="outline" @click="showNotice(t('admin.contracts.exportNotice'))">
+          <span class="material-symbols-outlined icon-18">download</span>
+          <span>{{ t('admin.contracts.exportExcel') }}</span>
+        </AuraButton>
+        <AuraButton variant="primary" class="btn-primary-pink" @click="showCreateModal = true">
+          <span class="material-symbols-outlined icon-18">post_add</span>
+          <span>{{ t('admin.contracts.createContract') }}</span>
+        </AuraButton>
       </div>
     </header>
 
     <!-- 4 KPI Stat Cards -->
     <div class="contracts-kpi-grid">
       <div class="kpi-card">
-        <span class="kpi-icon">📝</span>
-        <span class="kpi-label">Tổng Hợp Đồng Đang Chạy</span>
-        <strong class="kpi-value">{{ stats.activeContracts }} Hợp đồng</strong>
-        <span class="kpi-trend text-green">↑ Tăng 12% so với tháng trước</span>
+        <div class="kpi-top-row">
+          <span class="material-symbols-outlined kpi-icon">contract</span>
+          <span class="kpi-label">{{ t('admin.contracts.activeContracts') }}</span>
+        </div>
+        <strong class="kpi-value">{{ t('admin.contracts.activeContractsCount', { count: stats.activeContracts }) }}</strong>
+        <span class="kpi-trend text-green">{{ t('admin.contracts.activeTrend') }}</span>
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">💰</span>
-        <span class="kpi-label">Doanh Thu Định Kỳ (MRR)</span>
+        <div class="kpi-top-row">
+          <span class="material-symbols-outlined kpi-icon text-pink">payments</span>
+          <span class="kpi-label">{{ t('admin.contracts.mrrLabel') }}</span>
+        </div>
         <strong class="kpi-value text-pink">{{ formatMoney(stats.mrrAmount) }}</strong>
-        <span class="kpi-trend">Đóng góp 65% tổng doanh thu</span>
+        <span class="kpi-trend">{{ t('admin.contracts.mrrContribution') }}</span>
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">⚠️</span>
-        <span class="kpi-label">Kỳ Thanh Toán Cần Xử Lý</span>
-        <strong class="kpi-value text-yellow">{{ stats.overdueCycles }} Kỳ cần thu</strong>
-        <span class="kpi-trend text-red">Quá hạn thanh toán</span>
+        <div class="kpi-top-row">
+          <span class="material-symbols-outlined kpi-icon text-yellow">warning</span>
+          <span class="kpi-label">{{ t('admin.contracts.overdueCycles') }}</span>
+        </div>
+        <strong class="kpi-value text-yellow">{{ t('admin.contracts.overdueCount', { count: stats.overdueCycles }) }}</strong>
+        <span class="kpi-trend text-red">{{ t('admin.contracts.overdueWarning') }}</span>
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">⚡</span>
-        <span class="kpi-label">Lấp Đầy Giờ Vàng</span>
+        <div class="kpi-top-row">
+          <span class="material-symbols-outlined kpi-icon text-green">bolt</span>
+          <span class="kpi-label">{{ t('admin.contracts.primeTimeUtilization') }}</span>
+        </div>
         <strong class="kpi-value text-green">{{ stats.primeTimeUtilization }}%</strong>
-        <span class="kpi-trend">Khung 17:00 - 21:00</span>
+        <span class="kpi-trend">{{ t('admin.contracts.primeTimeHours') }}</span>
       </div>
     </div>
 
@@ -145,14 +162,25 @@ function handleCreateContract(payload: any) {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }
@@ -160,28 +188,7 @@ function handleCreateContract(payload: any) {
 .header-actions {
   display: flex;
   gap: 10px;
-}
-
-.btn-export-excel {
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-create-contract {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
+  align-items: center;
 }
 
 .contracts-kpi-grid {
@@ -200,8 +207,15 @@ function handleCreateContract(payload: any) {
   background: var(--surface);
 }
 
+.kpi-top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .kpi-icon {
-  font-size: 22px;
+  font-size: 20px;
+  color: var(--muted);
 }
 
 .kpi-label {
@@ -239,6 +253,10 @@ function handleCreateContract(payload: any) {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 @media (max-width: 900px) {

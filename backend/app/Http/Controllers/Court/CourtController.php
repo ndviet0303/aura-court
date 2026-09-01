@@ -42,6 +42,13 @@ class CourtController extends Controller
 
     public function store(Request $request)
     {
+        if (is_string($request->input('name'))) {
+            $request->merge(['name' => ['vi' => $request->input('name'), 'en' => $request->input('name')]]);
+        }
+        if (is_string($request->input('description'))) {
+            $request->merge(['description' => ['vi' => $request->input('description'), 'en' => $request->input('description')]]);
+        }
+
         $data = $request->validate([
             'name' => 'required|array',
             'name.*' => 'string|max:120',
@@ -58,10 +65,17 @@ class CourtController extends Controller
 
     public function update(Request $request, Court $court)
     {
+        if (is_string($request->input('name'))) {
+            $request->merge(['name' => ['vi' => $request->input('name'), 'en' => $request->input('name')]]);
+        }
+        if (is_string($request->input('description'))) {
+            $request->merge(['description' => ['vi' => $request->input('description'), 'en' => $request->input('description')]]);
+        }
+
         $data = $request->validate([
-            'name' => 'sometimes|array',
+            'name' => 'sometimes|required|array',
             'name.*' => 'string|max:120',
-            'venue_id' => ['sometimes', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
+            'venue_id' => ['sometimes', 'required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
             'sport_zone_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sport_zones', 'id')->where('is_active', true)],
             'description' => 'nullable|array',
             'description.*' => 'string',

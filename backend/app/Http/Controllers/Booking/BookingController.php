@@ -9,11 +9,10 @@ use App\Http\Requests\Booking\RecurringBookingRequest;
 use App\Http\Requests\Booking\RescheduleBookingRequest;
 use App\Http\Requests\Booking\StoreBookingRequest;
 use App\Models\Booking;
-use App\Models\Payment;
 use App\Services\Booking\BookingService;
 use App\Services\Payment\PaymentService;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
@@ -21,6 +20,7 @@ class BookingController extends Controller
         private readonly BookingRepositoryInterface $bookingRepo,
         private readonly BookingService $bookings,
         private readonly PaymentService $payments,
+        private readonly WalletPaymentService $walletPayments,
     ) {}
 
     public function index(Request $request)
@@ -33,7 +33,7 @@ class BookingController extends Controller
         $data = $request->toData();
         $booking = $this->bookings->create($data->userId, $data->courtId, $data->slots, $data->couponCode);
 
-        return response()->json(['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)], 201);
+        return response()->json(['booking' => $booking], 201);
     }
 
     public function recurring(RecurringBookingRequest $request)
@@ -41,7 +41,7 @@ class BookingController extends Controller
         $data = $request->validated();
         $bookings = $this->bookings->createRecurring($request->user()->id, $data['court_id'], $data['slots'], $data['weeks']);
 
-        return response()->json(['bookings' => collect($bookings)->map(fn (Booking $booking) => ['booking' => $booking, 'payment' => $this->payments->qrPayload($booking)])->values()], 201);
+        return response()->json(['bookings' => collect($bookings)->map(fn (Booking $booking) => ['booking' => $booking])->values()], 201);
     }
 
     public function show(Request $request, Booking $booking)
@@ -72,29 +72,26 @@ class BookingController extends Controller
         $data = $request->validated();
         $replacement = $this->bookings->reschedule($booking, $data['court_id'], $data['slots']);
 
-        return response()->json(['booking' => $replacement, 'payment' => $this->payments->qrPayload($replacement)], 201);
+        return response()->json(['booking' => $replacement], 201);
     }
 
     public function paymentStatus(Request $request, Booking $booking)
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
 
-        if ($booking->status === 'pending_payment' && $booking->payment_expires_at?->isPast()) {
-            $this->bookings->expirePending();
-            $booking->refresh();
-        }
-
-        return ['status' => $booking->status, 'payment' => $booking->payments()->latest()->first(), 'expiresAt' => $booking->payment_expires_at];
+        return ['status' => $booking->status, 'payment' => $booking->payments()->latest()->first()];
     }
 
     public function payment(Request $request, Booking $booking)
     {
         abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $booking->loadMissing('court.venue');
+        $orgId = $booking->court?->venue?->organization_id;
+        $wallet = $this->walletPayments->getOrCreateWallet($request->user()->id, $orgId);
 
         return [
             'booking' => $booking->load(['court.venue', 'slots', 'coupon']),
-            'payment' => $this->payments->qrPayload($booking),
-            'stripe' => $this->payments->stripePayload($booking),
+            'wallet' => $wallet,
             'status' => $booking->status,
         ];
     }
@@ -110,60 +107,8 @@ class BookingController extends Controller
 
         return response()->json([
             'booking' => $updated->load(['court.venue', 'slots', 'coupon']),
-            'payment' => $this->payments->qrPayload($updated),
-            'stripe' => $this->payments->stripePayload($updated),
             'status' => $updated->status,
         ]);
-    }
-
-    public function stripePay(Request $request, Booking $booking)
-    {
-        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
-        $data = $request->validate([
-            'card_number' => 'nullable|string|max:30',
-            'card_expiry' => 'nullable|string|max:10',
-            'card_cvc' => 'nullable|string|max:10',
-            'card_name' => 'nullable|string|max:120',
-            'stripe_token' => 'nullable|string|max:255',
-        ]);
-
-        return $this->payments->processStripePayment($booking, $data);
-    }
-
-    public function demoPay(Request $request, Booking $booking)
-    {
-        abort_unless(app()->environment(['local', 'testing']), 404);
-        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
-        abort_unless($booking->status === 'pending_payment', 422, 'Booking không ở trạng thái chờ thanh toán.');
-        abort_if($booking->payment_expires_at?->isPast(), 422, 'Phiên thanh toán đã hết hạn.');
-
-        return DB::transaction(function () use ($booking) {
-            $payment = $booking->payments()->latest()->first();
-            if ($payment instanceof Payment) {
-                $payment->update([
-                    'status' => 'paid',
-                    'amount' => $booking->total_amount,
-                    'payload' => array_merge($payment->payload ?? [], ['demo' => true, 'paid_at' => now()->toIso8601String()]),
-                    'received_at' => now(),
-                ]);
-            } else {
-                $booking->payments()->create([
-                    'provider' => 'demo',
-                    'external_transaction_id' => 'demo-'.$booking->code,
-                    'amount' => $booking->total_amount,
-                    'transfer_code' => $booking->code,
-                    'status' => 'paid',
-                    'payload' => ['demo' => true],
-                    'received_at' => now(),
-                ]);
-            }
-            $booking->update(['status' => 'confirmed']);
-            $booking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
-
-            $this->payments->notifyConfirmed($booking->fresh(['user', 'court']));
-
-            return ['status' => 'confirmed', 'booking' => $booking->fresh(['court.venue', 'slots', 'payments'])];
-        });
     }
 
     public function calendar(Request $request, Booking $booking)

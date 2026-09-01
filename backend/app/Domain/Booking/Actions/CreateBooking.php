@@ -11,6 +11,8 @@ use App\Models\Booking;
 use App\Notifications\AuraBookingNotification;
 use App\Services\Booking\DiscountService;
 use App\Services\Booking\WaitlistService;
+use App\Services\Finance\FinancialPostingService;
+use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +28,8 @@ class CreateBooking
         private readonly BookingRepositoryInterface $bookings,
         private readonly DiscountService $discounts,
         private readonly WaitlistService $waitlists,
+        private readonly WalletPaymentService $walletPayments,
+        private readonly FinancialPostingService $financials,
     ) {}
 
     public function execute(CreateBookingData $data): Booking
@@ -92,16 +96,45 @@ class CreateBooking
 
                 $subtotal = $resolved->sum(fn ($row) => $row[1]);
                 $discount = $this->discounts->reserve($userId, $subtotal, $couponCode);
+                $totalAmount = (int) $discount['total'];
+
+                // Get and validate wallet
+                $orgId = $court->venue?->organization_id;
+                $wallet = $this->walletPayments->getOrCreateWallet($userId, $orgId);
+
                 $booking = $this->bookings->create([
                     'code' => 'BK'.strtoupper(Str::random(12)),
                     'user_id' => $userId,
                     'court_id' => $court->id,
                     'coupon_id' => $discount['coupon']?->id,
-                    'total_amount' => $discount['total'],
+                    'total_amount' => $totalAmount,
                     'discount_amount' => $discount['discount'],
                     'membership_discount_amount' => $discount['membership_discount'],
-                    'status' => 'pending_payment',
-                    'payment_expires_at' => now()->addMinutes(15),
+                    'status' => 'confirmed',
+                    'payment_expires_at' => null,
+                ]);
+
+                // Debit wallet
+                $walletTx = $this->walletPayments->debit(
+                    $wallet,
+                    $totalAmount,
+                    'booking_payment',
+                    $booking->id,
+                    $booking->code
+                );
+
+                // Create payment record
+                $payment = $booking->payments()->create([
+                    'provider' => 'wallet',
+                    'external_transaction_id' => "wallet-txn-{$walletTx->id}",
+                    'amount' => $totalAmount,
+                    'transfer_code' => $booking->code,
+                    'status' => 'paid',
+                    'payload' => [
+                        'wallet_account_id' => $wallet->id,
+                        'wallet_transaction_id' => $walletTx->id,
+                    ],
+                    'received_at' => now(),
                 ]);
 
                 $slotsData = [];
@@ -111,12 +144,15 @@ class CreateBooking
                         'starts_at' => $time->copy()->utc(),
                         'ends_at' => $time->copy()->addHour()->utc(),
                         'unit_price' => $price,
-                        'status' => 'held',
+                        'status' => 'confirmed',
                     ];
                 }
                 $this->bookings->createSlots($booking, $slotsData);
 
-                return $booking->load(['user', 'court.venue', 'slots', 'coupon']);
+                // Post ledger journal
+                $this->financials->postWalletBookingPayment($booking->fresh(['court.venue']), $payment, $wallet->id);
+
+                return $booking->load(['user', 'court.venue', 'slots', 'coupon', 'payments']);
             });
         } catch (QueryException $exception) {
             if (str_contains($exception->getMessage(), 'booking_slots_active_unique')
@@ -128,10 +164,10 @@ class CreateBooking
         }
 
         $booking->user->notify(new AuraBookingNotification(
-            'booking_created',
-            'Lịch đặt sân đã được giữ',
-            "Booking {$booking->code} đã được giữ. Vui lòng hoàn tất thanh toán trước ".($booking->payment_expires_at?->setTimezone(config('app.timezone'))->format('H:i d/m')).'.',
-            '/payment/'.$booking->code,
+            'payment_confirmed',
+            'Đặt sân thành công',
+            "Booking {$booking->code} tại {$booking->court->name} đã được thanh toán thành công qua số dư ví.",
+            '/booking',
         ));
 
         return $booking;

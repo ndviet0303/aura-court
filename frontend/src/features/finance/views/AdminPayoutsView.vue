@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import { useAdminPayouts } from '../composables/useAdminPayouts'
 
 import PayoutMetricsBar from '../components/payouts/PayoutMetricsBar.vue'
@@ -8,6 +10,8 @@ import PayoutStepper from '../components/payouts/PayoutStepper.vue'
 import PayoutHistoryTable from '../components/payouts/PayoutHistoryTable.vue'
 import CreatePayoutModal from '../components/payouts/CreatePayoutModal.vue'
 import EditBeneficiaryModal from '../components/payouts/EditBeneficiaryModal.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -34,14 +38,18 @@ onMounted(() => {
     <!-- Header Section -->
     <header class="payouts-header">
       <div class="header-titles">
-        <h1 class="page-title">💰 Báo cáo Doanh thu & Rút tiền</h1>
-        <p class="page-sub">Theo dõi doanh thu thanh toán qua cổng điện tử, đối soát phí sàn và thực hiện lệnh rút tiền về tài khoản ngân hàng.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">account_balance_wallet</span>
+          <h1 class="page-title">{{ t('admin.payouts.title') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.payouts.subtitle') }}</p>
       </div>
 
       <div class="header-actions">
-        <button class="btn-create-payout btn-primary-action" @click="showCreateModal = true">
-          💸 Tạo Lệnh Rút Tiền
-        </button>
+        <AuraButton variant="primary" class="btn-primary-action" @click="showCreateModal = true">
+          <span class="material-symbols-outlined icon-18">payments</span>
+          <span>{{ t('admin.payouts.createPayoutBtn') }}</span>
+        </AuraButton>
       </div>
     </header>
 
@@ -104,27 +112,32 @@ onMounted(() => {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }
 
-.btn-create-payout {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+.header-actions {
+  display: flex;
+  align-items: center;
 }
 
 .alert-pill {
@@ -143,5 +156,9 @@ onMounted(() => {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

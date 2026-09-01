@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Product } from '../types/pos'
 
 defineProps<{
   products: Product[]
-  categories: Array<{ key: string; label: string; icon: string }>
+  categories: Array<{ key: string; label: string; icon: string; labelKey?: string }>
   selectedCategory: string
   searchQuery: string
   loading?: boolean
@@ -16,6 +17,8 @@ const emit = defineEmits<{
   (e: 'openCustomItemModal'): void
 }>()
 
+const { t } = useI18n()
+
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
 }
@@ -26,30 +29,33 @@ function formatMoney(amount: number): string {
     <!-- Header & Search Toolbar -->
     <div class="pos-catalog-toolbar">
       <div class="search-box-wrap">
-        <span class="search-icon">🔍</span>
+        <span class="material-symbols-outlined search-icon">search</span>
         <input
           :value="searchQuery"
           type="text"
           class="catalog-search-input"
-          placeholder="Tìm sản phẩm, barcode, SKU (F2 để tìm nhanh)..."
+          :placeholder="t('admin.pos.searchPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
         <button
           v-if="searchQuery"
+          type="button"
           class="clear-search-btn"
-          title="Xóa tìm kiếm"
+          title="Clear"
           @click="emit('update:searchQuery', '')"
         >
-          ✕
+          <span class="material-symbols-outlined icon-16">close</span>
         </button>
       </div>
 
       <button
+        type="button"
         class="custom-item-btn"
-        title="Thêm mục tính tiền nhanh"
+        :title="t('admin.pos.customItemBtn')"
         @click="emit('openCustomItemModal')"
       >
-        <span class="plus-icon">＋</span> Thêm mục tuỳ chỉnh
+        <span class="material-symbols-outlined icon-18">add</span>
+        <span>{{ t('admin.pos.customItemBtn') }}</span>
       </button>
     </div>
 
@@ -58,12 +64,13 @@ function formatMoney(amount: number): string {
       <button
         v-for="cat in categories"
         :key="cat.key"
+        type="button"
         class="cat-tab-btn"
         :class="{ active: selectedCategory === cat.key }"
         @click="emit('update:selectedCategory', cat.key)"
       >
-        <span class="cat-icon">{{ cat.icon }}</span>
-        <span class="cat-label">{{ cat.label }}</span>
+        <span class="material-symbols-outlined cat-icon">{{ cat.icon }}</span>
+        <span class="cat-label">{{ cat.labelKey ? t(cat.labelKey) : cat.label }}</span>
       </button>
     </div>
 
@@ -71,13 +78,13 @@ function formatMoney(amount: number): string {
     <div class="products-grid-container">
       <div v-if="loading" class="catalog-loading-state">
         <div class="spinner"></div>
-        <p>Đang tải danh mục hàng hoá...</p>
+        <p>{{ t('admin.pos.loadingState') }}</p>
       </div>
 
       <div v-else-if="products.length === 0" class="catalog-empty-state">
-        <div class="empty-icon">📦</div>
-        <h3>Không tìm thấy sản phẩm nào</h3>
-        <p>Thử đổi từ khoá tìm kiếm hoặc chọn danh mục khác.</p>
+        <span class="material-symbols-outlined empty-icon">inventory_2</span>
+        <h3>{{ t('admin.pos.noProductsFound') }}</h3>
+        <p>{{ t('admin.pos.noProductsSub') }}</p>
       </div>
 
       <div v-else class="products-grid">
@@ -96,22 +103,22 @@ function formatMoney(amount: number): string {
               loading="lazy"
             />
             <div v-else class="no-img-placeholder">
-              <span>🏸</span>
+              <span class="material-symbols-outlined fallback-icon">sports_tennis</span>
             </div>
-            <span v-if="prod.is_rental" class="badge-rental">Thuê theo giờ</span>
-            <span v-else-if="prod.is_service" class="badge-service">Dịch vụ</span>
+            <span v-if="prod.is_rental" class="badge-rental">{{ t('admin.pos.badgeRental') }}</span>
+            <span v-else-if="prod.is_service" class="badge-service">{{ t('admin.pos.badgeService') }}</span>
             <span
               v-else-if="prod.stock_quantity <= 0"
               class="badge-out-of-stock"
             >
-              Hết hàng
+              {{ t('admin.pos.badgeOutOfStock') }}
             </span>
           </div>
 
           <div class="prod-details">
             <h4 class="prod-name" :title="prod.name">{{ prod.name }}</h4>
             <div class="prod-meta">
-              <span class="prod-price">{{ formatMoney(prod.price) }}</span>
+              <strong class="prod-price">{{ formatMoney(prod.price) }}</strong>
               <span v-if="!prod.is_service" class="prod-stock">
                 SL: {{ prod.stock_quantity }} {{ prod.unit || 'món' }}
               </span>
@@ -152,8 +159,8 @@ function formatMoney(amount: number): string {
 .search-icon {
   position: absolute;
   left: 14px;
-  font-size: 16px;
-  opacity: 0.6;
+  font-size: 18px;
+  color: var(--muted);
   pointer-events: none;
 }
 
@@ -165,7 +172,7 @@ function formatMoney(amount: number): string {
   border: 1px solid var(--outline);
   background: var(--surface-secondary, rgba(0, 0, 0, 0.03));
   color: var(--ink);
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   transition: all 0.2s;
 }
@@ -179,13 +186,15 @@ function formatMoney(amount: number): string {
 
 .clear-search-btn {
   position: absolute;
-  right: 12px;
+  right: 10px;
   background: transparent;
   border: 0;
   color: var(--muted);
   cursor: pointer;
-  padding: 4px 8px;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
 }
 
 .custom-item-btn {
@@ -196,7 +205,7 @@ function formatMoney(amount: number): string {
   padding: 0 16px;
   border-radius: 12px;
   border: 1px dashed var(--pink-dark, #db2777);
-  background: var(--pink-light, rgba(236, 72, 153, 0.08));
+  background: rgba(236, 72, 153, 0.08);
   color: var(--pink-dark, #db2777);
   font-weight: 600;
   font-size: 13px;
@@ -222,8 +231,8 @@ function formatMoney(amount: number): string {
 .cat-tab-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
@@ -244,6 +253,10 @@ function formatMoney(amount: number): string {
   background: var(--pink-dark, #db2777);
   color: #fff;
   border-color: var(--pink-dark, #db2777);
+}
+
+.cat-icon {
+  font-size: 18px;
 }
 
 .products-grid-container {
@@ -300,7 +313,12 @@ function formatMoney(amount: number): string {
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 32px;
+}
+
+.fallback-icon {
+  font-size: 36px;
+  color: var(--muted);
+  opacity: 0.4;
 }
 
 .badge-rental,
@@ -383,5 +401,14 @@ function formatMoney(amount: number): string {
 .empty-icon {
   font-size: 48px;
   margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.icon-16 {
+  font-size: 16px;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

@@ -2,12 +2,14 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useBookingStore } from '@/stores/booking'
 import { useThemeStore } from '@/stores/theme'
-import { getCurrentLocale, setAppLocale, type AppLocale } from '@/i18n'
+import { getCurrentLocale, setAppLocale, formatCurrency, type AppLocale } from '@/i18n'
 import { applySeo } from '@/lib/seo'
 import { getAvatarUrl } from '@/lib/avatar'
 
 const auth = useAuthStore()
+const bookingStore = useBookingStore()
 const themeStore = useThemeStore()
 const route = useRoute()
 const currentLocale = ref<AppLocale>(getCurrentLocale())
@@ -38,8 +40,21 @@ const userRoleBadge = computed(() => {
   return 'GUEST'
 })
 
+const displayedBalance = computed(() => {
+  if (typeof bookingStore.walletBalance === 'number' && bookingStore.walletBalance > 0) {
+    return bookingStore.walletBalance
+  }
+  if (typeof (auth.user as any)?.wallet_balance === 'number') {
+    return (auth.user as any).wallet_balance
+  }
+  return bookingStore.walletBalance || 0
+})
+
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
+  if (isDropdownOpen.value && auth.user) {
+    bookingStore.fetchWalletBalance().catch(() => {})
+  }
 }
 
 function closeDropdown() {
@@ -74,6 +89,9 @@ watch(() => route.path, closeDropdown)
 onMounted(() => {
   document.addEventListener('click', handleOutsideClick)
   document.addEventListener('keydown', handleKeydown)
+  if (auth.user) {
+    bookingStore.fetchWalletBalance().catch(() => {})
+  }
 })
 
 onBeforeUnmount(() => {
@@ -122,6 +140,28 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <!-- Luxury Wallet Card Highlight (Clickable to /wallet) -->
+        <RouterLink to="/wallet" class="dropdown-wallet-card" @click="closeDropdown">
+          <div class="wallet-card-header">
+            <div class="wallet-badge-pill">
+              <span class="material-symbols-outlined wallet-icon-glow">account_balance_wallet</span>
+              <span class="wallet-title-txt">VÍ AURA</span>
+            </div>
+            <span class="btn-wallet-topup-luxury">
+              <span class="material-symbols-outlined icon-14">add</span>
+              <span>Nạp tiền</span>
+            </span>
+          </div>
+
+          <div class="wallet-balance-display">
+            <div class="balance-meta">
+              <span class="balance-sub">Số dư khả dụng</span>
+              <strong class="balance-amount font-mono">{{ formatCurrency(displayedBalance) }}</strong>
+            </div>
+            <span class="material-symbols-outlined wallet-arrow-icon">chevron_right</span>
+          </div>
+        </RouterLink>
+
         <div class="dropdown-divider"></div>
 
         <!-- Navigation Links -->
@@ -134,11 +174,6 @@ onBeforeUnmount(() => {
           <RouterLink to="/notifications" class="dropdown-item" @click="closeDropdown">
             <span class="material-symbols-outlined item-ico">notifications</span>
             <span class="item-label">{{ $t('nav.notifications') }}</span>
-          </RouterLink>
-
-          <RouterLink to="/wallet" class="dropdown-item" @click="closeDropdown">
-            <span class="material-symbols-outlined item-ico">account_balance_wallet</span>
-            <span class="item-label">{{ $t('nav.wallet') }}</span>
           </RouterLink>
 
           <RouterLink to="/booking" class="dropdown-item" @click="closeDropdown">
@@ -457,13 +492,13 @@ html.dark .user-avatar-btn {
   top: calc(100% + 8px);
   right: 0;
   z-index: 100;
-  min-width: 250px;
-  max-width: 290px;
+  min-width: 285px;
+  max-width: 320px;
   background: #ffffff;
   border: 1px solid #ebdccb;
-  border-radius: 18px;
-  box-shadow: 0 16px 40px rgba(107, 45, 63, 0.14);
-  padding: 10px;
+  border-radius: 20px;
+  box-shadow: 0 20px 48px rgba(107, 45, 63, 0.16);
+  padding: 12px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -472,7 +507,7 @@ html.dark .user-avatar-btn {
 html.dark .user-dropdown-menu {
   background: #1e181c !important;
   border-color: #382f35 !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75) !important;
 }
 
 /* Header User Details */
@@ -544,6 +579,160 @@ html.dark .header-email {
 
 html.dark .dropdown-divider {
   background: #382f35;
+}
+
+/* Luxury Wallet Card in Dropdown */
+.dropdown-wallet-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin: 4px 2px 8px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(219, 39, 119, 0.08) 0%, rgba(201, 161, 90, 0.1) 100%);
+  border: 1px solid rgba(219, 39, 119, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-wallet-card:hover {
+  border-color: rgba(219, 39, 119, 0.45);
+  box-shadow: 0 4px 14px rgba(219, 39, 119, 0.15);
+  transform: translateY(-1px);
+}
+
+html.dark .dropdown-wallet-card {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(201, 161, 90, 0.08) 100%);
+  border-color: rgba(236, 72, 153, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+html.dark .dropdown-wallet-card:hover {
+  border-color: rgba(236, 72, 153, 0.5);
+  box-shadow: 0 6px 18px rgba(236, 72, 153, 0.2);
+}
+
+.wallet-arrow-icon {
+  font-size: 18px;
+  color: var(--muted, #6e6668);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-wallet-card:hover .wallet-arrow-icon {
+  color: var(--pink-dark, #db2777);
+  transform: translateX(2px);
+}
+
+html.dark .dropdown-wallet-card:hover .wallet-arrow-icon {
+  color: #f472b6;
+}
+
+.wallet-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wallet-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wallet-icon-glow {
+  font-size: 16px;
+  color: var(--pink-dark, #db2777);
+}
+
+html.dark .wallet-icon-glow {
+  color: #f472b6;
+}
+
+.wallet-title-txt {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--pink-dark, #db2777);
+  text-transform: uppercase;
+}
+
+html.dark .wallet-title-txt {
+  color: #f472b6;
+}
+
+.btn-wallet-topup-luxury {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--pink-dark, #db2777) 0%, #be185d 100%);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(219, 39, 119, 0.3);
+  flex-shrink: 0;
+}
+
+.btn-wallet-topup-luxury:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(219, 39, 119, 0.4);
+}
+
+.wallet-balance-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.balance-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.balance-sub {
+  font-size: 10.5px;
+  color: var(--muted, #6e6668);
+  font-weight: 500;
+}
+
+html.dark .balance-sub {
+  color: #a89ba2;
+}
+
+.balance-amount {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink, #1c1618);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+html.dark .balance-amount {
+  color: #ffffff;
+}
+
+.wallet-side-badge {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--pink-dark, #db2777);
+  background: rgba(219, 39, 119, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(219, 39, 119, 0.15);
+}
+
+html.dark .wallet-side-badge {
+  color: #f472b6;
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.3);
 }
 
 /* Links List */

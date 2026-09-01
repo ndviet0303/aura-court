@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, watch, onMounted } from 'vue'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useBookingStore } from '@/stores/booking'
+import { formatCurrency, formatShortCurrency } from '@/i18n'
 import NavbarSkeleton from './NavbarSkeleton.vue'
 
 import NavbarBrand from './components/NavbarBrand.vue'
@@ -11,10 +13,23 @@ import NavbarUserProfile from './components/NavbarUserProfile.vue'
 import NavbarMobileDrawer from './components/NavbarMobileDrawer.vue'
 
 const auth = useAuthStore()
+const bookingStore = useBookingStore()
 const route = useRoute()
 const router = useRouter()
 const topbar = ref<HTMLElement | null>(null)
 const isMobileMenuOpen = ref(false)
+
+onMounted(() => {
+  if (auth.user) {
+    bookingStore.fetchWalletBalance().catch(() => {})
+  }
+})
+
+watch(() => auth.user, (user) => {
+  if (user) {
+    bookingStore.fetchWalletBalance().catch(() => {})
+  }
+})
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -44,6 +59,17 @@ watch(() => route.path, closeMobileMenu)
 
       <!-- Right Actions & Profile -->
       <div class="nav-right">
+        <!-- Wallet Balance Pill (when authenticated) -->
+        <RouterLink
+          v-if="auth.user"
+          to="/wallet"
+          class="nav-wallet-pill"
+          :title="`Số dư ví: ${formatCurrency(bookingStore.walletBalance)} · Bấm để quản lý ví`"
+        >
+          <span class="material-symbols-outlined wallet-pill-icon">account_balance_wallet</span>
+          <span class="wallet-pill-amount font-mono">{{ formatShortCurrency(bookingStore.walletBalance) }}</span>
+        </RouterLink>
+
         <!-- Notification Bell Icon Button (when authenticated) -->
         <NavbarNotificationBell />
 
@@ -168,6 +194,60 @@ watch(() => route.path, closeMobileMenu)
   .mobile-menu-btn {
     width: 38px;
     height: 38px;
+  }
+}
+
+.nav-wallet-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(219, 39, 119, 0.08);
+  border: 1px solid rgba(219, 39, 119, 0.25);
+  color: var(--pink-dark, #db2777);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.08);
+}
+
+:global(html.dark) .nav-wallet-pill {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.35);
+  color: #f472b6;
+}
+
+.nav-wallet-pill:hover {
+  background: var(--pink-dark, #db2777);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(219, 39, 119, 0.25);
+}
+
+.nav-wallet-pill:hover .wallet-pill-icon {
+  color: #ffffff;
+}
+
+.wallet-pill-icon {
+  font-size: 17px;
+  color: var(--pink-dark, #db2777);
+  transition: color 0.2s ease;
+}
+
+:global(html.dark) .wallet-pill-icon {
+  color: #f472b6;
+}
+
+.wallet-pill-amount {
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 640px) {
+  .nav-wallet-pill {
+    padding: 5px 9px;
+    font-size: 12px;
   }
 }
 </style>

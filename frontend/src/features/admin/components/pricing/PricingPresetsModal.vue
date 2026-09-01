@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 defineProps<{
   show: boolean
 }>()
@@ -7,6 +9,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'applyPreset', name: string): void
 }>()
+
+const { t } = useI18n()
 
 const presets = [
   {
@@ -26,8 +30,11 @@ const presets = [
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">📋 Mẫu Cấu Hình Ma Trận Giá Tiêu Chuẩn</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">auto_awesome_motion</span>
+          <h3 class="modal-title">{{ t('admin.pricing.presetsModalTitle') }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
@@ -38,21 +45,32 @@ const presets = [
               <strong class="p-title">{{ p.name }}</strong>
               <p class="p-desc">{{ p.desc }}</p>
             </div>
-            <button class="btn-apply-preset" @click="emit('applyPreset', p.name)">
-              Áp Dụng
+            <button type="button" class="btn-apply-preset" @click="emit('applyPreset', p.name)">
+              {{ t('admin.pricing.applyPresetBtn') }}
             </button>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Đóng</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .presets-list {
   display: flex;
   flex-direction: column;

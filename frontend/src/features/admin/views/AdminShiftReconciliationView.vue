@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAdminShiftReconciliation } from '../composables/useAdminShiftReconciliation'
 
 import ActiveShiftSummaryCard from '../components/reconciliation/ActiveShiftSummaryCard.vue'
 import DenominationCalculatorModal from '../components/reconciliation/DenominationCalculatorModal.vue'
 import CashDropsModal from '../components/reconciliation/CashDropsModal.vue'
 import ShiftHistoryTable from '../components/reconciliation/ShiftHistoryTable.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -28,7 +31,7 @@ function handleSaveDenominations() {
   activeShift.value.declared_cash = totalDenominationCash.value
   activeShift.value.variance = activeShift.value.declared_cash - activeShift.value.expected_cash
   showDenominationModal.value = false
-  showNotice(`Đã cập nhật tiền két thực tế: ${totalDenominationCash.value.toLocaleString('vi-VN')} ₫`)
+  showNotice(t('admin.shifts.updatedCashNotice', { amount: `${totalDenominationCash.value.toLocaleString('vi-VN')} ₫` }))
 }
 </script>
 
@@ -37,8 +40,11 @@ function handleSaveDenominations() {
     <!-- Header Section -->
     <header class="reconciliation-header">
       <div class="header-titles">
-        <h1 class="page-title">⚖️ Đối Soát Ca Thu Ngân & Két Tiền Mặt</h1>
-        <p class="page-sub">Theo dõi tiền mặt thực tế, kiểm đếm từng mệnh giá và phát hiện chênh lệch thu chi trong ca.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">receipt_long</span>
+          <h1 class="page-title">{{ t('admin.shifts.title') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.shifts.subtitle') }}</p>
       </div>
 
       <div class="header-feedback">
@@ -58,7 +64,10 @@ function handleSaveDenominations() {
 
     <!-- Shift History & Variance Audit -->
     <section class="history-section">
-      <h2 class="section-title">📜 Lịch Sử Ca & Báo Cáo Đối Soát</h2>
+      <div class="section-title-row">
+        <span class="material-symbols-outlined icon-20">history</span>
+        <h2 class="section-title">{{ t('admin.shifts.historyTitle') }}</h2>
+      </div>
       <ShiftHistoryTable
         :shifts="filteredHistory"
         :status-filter="statusFilter"
@@ -105,14 +114,25 @@ function handleSaveDenominations() {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }
@@ -141,9 +161,20 @@ function handleSaveDenominations() {
   gap: 12px;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .section-title {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
+}
+
+.icon-20 {
+  font-size: 20px;
+  color: var(--muted);
 }
 </style>

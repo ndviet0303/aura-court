@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { PriceRuleItem } from '../../composables/usePricingCalendarV2'
 
 const props = defineProps<{
@@ -11,6 +12,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', payload: any): void
 }>()
+
+const { t } = useI18n()
 
 const name = ref('')
 const type = ref<'holiday' | 'peak' | 'special_event' | 'bad_weather' | 'surge'>('peak')
@@ -60,63 +63,66 @@ function handleSave() {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">
-          {{ rule ? '✏️ Chỉnh Sửa Quy Tắc Giá' : '➕ Thêm Quy Tắc Giá Linh Hoạt Mới' }}
-        </h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">{{ rule ? 'edit' : 'add_circle' }}</span>
+          <h3 class="modal-title">
+            {{ rule ? t('admin.pricing.editRuleTitle') : t('admin.pricing.createRuleTitle') }}
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="rule-form-grid">
           <div class="form-group">
-            <label class="form-label">Tên quy tắc:</label>
-            <input v-model="name" type="text" class="form-input" placeholder="Vd: Giờ Vàng Buổi Tối..." />
+            <label class="form-label">{{ t('admin.pricing.ruleNameLabel') }}</label>
+            <input v-model="name" type="text" class="form-input" :placeholder="t('admin.pricing.ruleNamePlaceholder')" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Loại quy tắc:</label>
+            <label class="form-label">{{ t('admin.pricing.ruleTypeLabel') }}</label>
             <select v-model="type" class="form-input">
-              <option value="peak">Giờ cao điểm (Peak)</option>
-              <option value="holiday">Ngày lễ / Tết (Holiday)</option>
-              <option value="surge">Khuyến mãi / Giảm giá (Surge/Discount)</option>
-              <option value="special_event">Sự kiện đặc biệt</option>
+              <option value="peak">{{ t('admin.pricing.typePeakOption') }}</option>
+              <option value="holiday">{{ t('admin.pricing.typeHolidayOption') }}</option>
+              <option value="surge">{{ t('admin.pricing.typeSurgeOption') }}</option>
+              <option value="special_event">{{ t('admin.pricing.typeSpecialEventOption') }}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Độ ưu tiên (1 = Cao nhất):</label>
-            <input v-model.number="priority" type="number" min="1" max="10" class="form-input" />
+            <label class="form-label">{{ t('admin.pricing.priorityLabel') }}</label>
+            <input v-model.number="priority" type="number" min="1" max="10" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Loại điều chỉnh giá:</label>
+            <label class="form-label">{{ t('admin.pricing.adjustmentTypeLabel') }}</label>
             <select v-model="adjustmentType" class="form-input">
-              <option value="fixed">Số tiền cố định (₫)</option>
-              <option value="percentage_add">Cộng thêm phần trăm (%)</option>
-              <option value="percentage_discount">Giảm giá phần trăm (%)</option>
+              <option value="fixed">{{ t('admin.pricing.adjFixedOption') }}</option>
+              <option value="percentage_add">{{ t('admin.pricing.adjPercentAddOption') }}</option>
+              <option value="percentage_discount">{{ t('admin.pricing.adjPercentDiscountOption') }}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Giá trị điều chỉnh:</label>
-            <input v-model.number="adjustmentValue" type="number" class="form-input" />
+            <label class="form-label">{{ t('admin.pricing.adjustmentValueLabel') }}</label>
+            <input v-model.number="adjustmentValue" type="number" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Khung giờ áp dụng:</label>
+            <label class="form-label">{{ t('admin.pricing.applicableHoursLabel') }}</label>
             <div class="time-range-row">
-              <input v-model="startsAt" type="time" class="form-input" />
-              <span>➔</span>
-              <input v-model="endsAt" type="time" class="form-input" />
+              <input v-model="startsAt" type="time" class="form-input font-mono" />
+              <span class="material-symbols-outlined icon-16">arrow_forward</span>
+              <input v-model="endsAt" type="time" class="form-input font-mono" />
             </div>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Huỷ</button>
-        <button class="btn-primary" :disabled="!name.trim()" @click="handleSave">
-          Lưu Quy Tắc
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn-primary" :disabled="!name.trim()" @click="handleSave">
+          {{ t('admin.pricing.saveRuleBtn') }}
         </button>
       </div>
     </div>
@@ -124,6 +130,17 @@ function handleSave() {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .rule-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -153,5 +170,9 @@ function handleSave() {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

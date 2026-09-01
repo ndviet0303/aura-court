@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import { useAdminVenues, type AdminVenueItem } from '../composables/useAdminVenues'
 
 import VenueKpiBar from '../components/venues/VenueKpiBar.vue'
 import VenueCard from '../components/venues/VenueCard.vue'
 import VenueFormModal from '../components/venues/VenueFormModal.vue'
 import VenueQrModal from '../components/venues/VenueQrModal.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -43,10 +47,9 @@ function handleShowQr(venue: AdminVenueItem) {
 function handleSaveVenue(payload: any) {
   if (editingVenue.value) {
     Object.assign(editingVenue.value, payload)
-    showNotice(`Đã cập nhật cơ sở ${payload.name}!`)
+    showNotice(t('admin.venues.updateVenueSuccess', { name: payload.name }))
   } else {
-    // create simulation
-    showNotice(`Đã tạo cơ sở mới ${payload.name}!`)
+    showNotice(t('admin.venues.createVenueSuccess', { name: payload.name }))
   }
   showVenueModal.value = false
 }
@@ -61,14 +64,18 @@ onMounted(() => {
     <!-- Header Section -->
     <header class="venues-header">
       <div class="header-titles">
-        <h1 class="page-title">🏢 Quản lý Cụm sân & Cơ sở (Venues)</h1>
-        <p class="page-sub">Quản trị toàn bộ hệ thống cơ sở thi đấu, định vị Google Maps, mã QR đặt sân và trạng thái hoạt động.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">location_on</span>
+          <h1 class="page-title">{{ t('admin.venues.title') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.venues.subtitle') }}</p>
       </div>
 
       <div class="header-actions">
-        <button class="btn-create-venue" @click="handleStartCreate">
-          ➕ Thêm Cơ Sở Mới
-        </button>
+        <AuraButton variant="primary" @click="handleStartCreate">
+          <span class="material-symbols-outlined icon-18">add_business</span>
+          <span>{{ t('admin.venues.addNewVenue') }}</span>
+        </AuraButton>
       </div>
     </header>
 
@@ -85,26 +92,27 @@ onMounted(() => {
     <!-- Filter & Search Toolbar -->
     <div class="venues-toolbar">
       <div class="search-input-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
         <input
           v-model="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Tìm cơ sở theo tên, địa chỉ, quận huyện..."
+          :placeholder="t('admin.venues.searchPlaceholder')"
         />
       </div>
 
       <select v-model="statusFilter" class="status-filter-select">
-        <option value="all">Tất cả trạng thái</option>
-        <option value="active">Đang mở cửa</option>
-        <option value="inactive">Đang bảo trì / Tạm dừng</option>
+        <option value="all">{{ t('admin.venues.allStatuses') }}</option>
+        <option value="active">{{ t('admin.venues.statusActive') }}</option>
+        <option value="inactive">{{ t('admin.venues.statusInactive') }}</option>
       </select>
     </div>
 
     <!-- Venue Cards Grid -->
     <div v-if="filteredVenues.length === 0" class="empty-venues-state">
-      <span>🏢</span>
-      <h3>Không tìm thấy cơ sở nào</h3>
-      <p>Thử tìm kiếm với từ khóa khác hoặc thêm cơ sở mới.</p>
+      <span class="material-symbols-outlined empty-icon">domain_disabled</span>
+      <h3>{{ t('admin.venues.noVenuesFound') }}</h3>
+      <p>{{ t('admin.venues.noVenuesSub') }}</p>
     </div>
 
     <div v-else class="venues-grid">
@@ -153,27 +161,32 @@ onMounted(() => {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }
 
-.btn-create-venue {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+.header-actions {
+  display: flex;
+  align-items: center;
 }
 
 .alert-pill {
@@ -205,19 +218,36 @@ onMounted(() => {
 .search-input-wrap {
   flex: 1;
   min-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
 }
 
-.search-input, .status-filter-select {
+.search-icon {
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+  color: var(--ink);
+}
+
+.status-filter-select {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
   color: var(--ink);
   font-size: 13px;
-}
-
-.search-input {
-  width: 100%;
 }
 
 .venues-grid {
@@ -237,8 +267,13 @@ onMounted(() => {
   border: 1px solid var(--outline);
 }
 
-.empty-venues-state span {
+.empty-icon {
   font-size: 48px;
+  color: var(--muted);
   margin-bottom: 12px;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

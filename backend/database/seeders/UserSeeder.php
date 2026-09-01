@@ -58,6 +58,33 @@ class UserSeeder extends Seeder
             );
         }
 
+        // 2b. Zịt Admin (soicuteeee@gmail.com)
+        $soicuteUser = User::firstOrNew(['email' => 'soicuteeee@gmail.com']);
+        $soicuteUser->forceFill([
+            'name' => 'Zịt',
+            'password' => Hash::make('Admin@123456'),
+            'role' => 'admin',
+            'phone' => '0987654321',
+            'play_level' => 'advanced',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => $now,
+        ])->save();
+
+        if ($org) {
+            OrganizationMember::updateOrCreate(
+                ['organization_id' => $org->id, 'user_id' => $soicuteUser->id],
+                ['role' => 'organization_owner', 'status' => 'active', 'permissions' => ['*']]
+            );
+        }
+
+        // Seed 1,000,000,000 VND into soicuteeee wallet
+        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $soicuteWallet = $walletService->getOrCreateWallet($soicuteUser->id, $org?->id);
+        if ($soicuteWallet->balance < 1000000000) {
+            $walletService->credit($soicuteWallet, 1000000000 - $soicuteWallet->balance, 'manual_seed', 1, 'Admin nạp 1 tỷ đồng khởi tạo');
+        }
+
         // 3. Demo Admin
         $demoAdmin = User::firstOrNew([
             'email' => env('SEED_DEMO_ADMIN_EMAIL', 'demo-20260811@demo.auracourt.vn'),

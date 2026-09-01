@@ -4,9 +4,13 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
+import { useAuthStore } from '@/stores/auth'
+import { useBookingStore } from '@/stores/booking'
 import type { Court, AvailabilitySlot } from '../../types/court'
 
 const { t, locale } = useI18n()
+const auth = useAuthStore()
+const bookingStore = useBookingStore()
 
 const props = defineProps<{
   court: Court
@@ -151,7 +155,13 @@ const durationHours = computed(() => {
         </button>
       </div>
       <p class="error-msg">{{ error }}</p>
-      <div v-if="isUnverified" class="unverified-action-row">
+      <div v-if="error.toLowerCase().includes('ví') || error.toLowerCase().includes('wallet') || error.toLowerCase().includes('nạp')" class="unverified-action-row">
+        <RouterLink to="/wallet" class="btn-resend-verify">
+          <span class="material-symbols-outlined icon-14">add_card</span>
+          <span>{{ $t('payment.topupNowCta') || 'Nạp tiền vào ví ngay' }}</span>
+        </RouterLink>
+      </div>
+      <div v-else-if="isUnverified" class="unverified-action-row">
         <button
           type="button"
           class="btn-resend-verify"
@@ -174,6 +184,25 @@ const durationHours = computed(() => {
         <div class="breakdown-row">
           <span>{{ $t('schedule.playDuration') }}</span>
           <strong>{{ $t('schedule.hours', { count: durationHours }) }}</strong>
+        </div>
+        <div v-if="auth.user" class="breakdown-row wallet-status-row">
+          <div class="wallet-status-left">
+            <span class="material-symbols-outlined icon-14">account_balance_wallet</span>
+            <span>{{ $t('payment.currentBalance') || 'Số dư ví' }}:</span>
+          </div>
+          <div class="wallet-status-right">
+            <strong class="font-mono" :class="bookingStore.walletBalance >= totalPrice ? 'text-emerald' : 'text-danger'">
+              {{ formatCurrency(bookingStore.walletBalance) }}
+            </strong>
+            <RouterLink
+              v-if="bookingStore.walletBalance < totalPrice && selectedSlots.length > 0"
+              to="/wallet"
+              class="badge-topup-link"
+              :title="$t('payment.topupNowCta') || 'Nạp ví ngay'"
+            >
+              + Nạp ví
+            </RouterLink>
+          </div>
         </div>
         <div class="breakdown-row total-row">
           <span>{{ $t('schedule.totalPayment') }}</span>
@@ -502,6 +531,58 @@ const durationHours = computed(() => {
   align-items: center;
   font-size: 12.5px;
   color: var(--muted);
+}
+
+.wallet-status-row {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(219, 39, 119, 0.05);
+  border: 1px dashed rgba(219, 39, 119, 0.2);
+}
+
+:global(html.dark) .wallet-status-row {
+  background: rgba(236, 72, 153, 0.08);
+  border-color: rgba(236, 72, 153, 0.25);
+}
+
+.wallet-status-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.wallet-status-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.text-emerald {
+  color: #10b981 !important;
+}
+
+.text-danger {
+  color: #ef4444 !important;
+}
+
+.badge-topup-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--pink-dark, #db2777);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.badge-topup-link:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
 .total-row {

@@ -70,6 +70,6 @@ class VenueFeatureTest extends TestCase
         $this->actingAs($demo)->postJson('/api/v1/admin/venues', [
             'name' => 'Demo venue', 'address' => 'Địa chỉ demo', 'google_maps_url' => 'https://maps.app.goo.gl/demo',
         ])->assertCreated()->assertHeader('X-Demo-Simulated', 'true');
-        $this->assertDatabaseMissing('venues', ['name' => 'Demo venue']);
+        $this->assertDatabaseMissing('venues', ['address' => 'Địa chỉ demo']);
     }
 }

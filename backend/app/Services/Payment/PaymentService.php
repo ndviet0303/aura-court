@@ -2,74 +2,17 @@
 
 namespace App\Services\Payment;
 
-use App\Services\Finance\FinancialPostingService;
-
 use App\Domain\Payment\Actions\ProcessQrPayment;
-use App\Domain\Payment\Actions\ProcessStripePayment;
 use App\Models\Booking;
 use App\Notifications\AuraBookingNotification;
+use App\Services\Finance\FinancialPostingService;
 
 class PaymentService
 {
     public function __construct(
         private readonly FinancialPostingService $financials,
-        private readonly ProcessStripePayment $processStripePaymentAction,
         private readonly ProcessQrPayment $processQrPaymentAction,
     ) {}
-
-    public function qrPayload(Booking $booking): array
-    {
-        $account = config('services.sepay.account') ?: '83403032005';
-        $bank = config('services.sepay.bank') ?: 'TPBank';
-        $accountName = config('services.sepay.account_name') ?: 'AURA COURT';
-        $prefix = (string) (config('services.sepay.prefix') ?: 'ORD');
-        $memo = trim($prefix . $booking->id);
-        $query = http_build_query(['acc' => $account, 'bank' => $bank, 'amount' => $booking->total_amount, 'des' => $memo]);
-
-        return [
-            'provider' => 'sepay',
-            'code' => $memo,
-            'bookingCode' => $booking->code,
-            'amount' => $booking->total_amount,
-            'bank' => $bank,
-            'accountNumber' => $account,
-            'accountName' => $accountName,
-            'qrUrl' => "https://vietqr.app/img?{$query}",
-            'expiresAt' => $booking->payment_expires_at,
-        ];
-    }
-
-    public function stripePayload(Booking $booking): array
-    {
-        $key = config('services.stripe.key') ?: 'pk_test_auracourt';
-
-        return [
-            'provider' => 'stripe',
-            'publishableKey' => $key,
-            'amount' => $booking->total_amount,
-            'currency' => 'vnd',
-            'clientSecret' => 'pi_'.strtolower($booking->code).'_secret_'.substr(md5($booking->code), 0, 16),
-            'code' => $booking->code,
-        ];
-    }
-
-    public function processStripePayment(Booking $booking, array $cardDetails = []): array
-    {
-        return $this->processStripePaymentAction->execute($booking, $cardDetails);
-    }
-
-    public function handleStripeWebhook(array $data, string $raw, string $signature): void
-    {
-        $event = $data['type'] ?? '';
-        if (in_array($event, ['payment_intent.succeeded', 'charge.succeeded', 'checkout.session.completed'])) {
-            $obj = $data['data']['object'] ?? [];
-            $code = $obj['metadata']['booking_code'] ?? $obj['description'] ?? '';
-            $booking = Booking::where('code', $code)->first();
-            if ($booking && $booking->status === 'pending_payment') {
-                $this->processStripePayment($booking, ['stripe_event_id' => $data['id'] ?? null]);
-            }
-        }
-    }
 
     public function handleWebhook(array $data, string $raw): void
     {

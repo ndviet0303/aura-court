@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { InventoryProduct } from '../../types/inventory'
 
 const props = defineProps<{
@@ -11,6 +12,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', payload: any): void
 }>()
+
+const { t } = useI18n()
 
 const name = ref('')
 const sku = ref('')
@@ -66,60 +69,63 @@ function handleSave() {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">
-          {{ product ? '✏️ Chỉnh Sửa Sản Phẩm' : '➕ Thêm Mặt Hàng Mới' }}
-        </h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">{{ product ? 'edit' : 'add_box' }}</span>
+          <h3 class="modal-title">
+            {{ product ? t('admin.inventory.editProductTitle') : t('admin.inventory.addProductTitle') }}
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="form-grid">
           <div class="form-group full-width">
-            <label class="form-label">Tên sản phẩm:</label>
-            <input v-model="name" type="text" class="form-input" placeholder="Vd: Nước bù khoáng Pocari..." />
+            <label class="form-label">{{ t('admin.inventory.productNameLabel') }}</label>
+            <input v-model="name" type="text" class="form-input" :placeholder="t('admin.inventory.productNamePlaceholder')" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Mã SKU:</label>
+            <label class="form-label">{{ t('admin.inventory.skuLabel') }}</label>
             <input v-model="sku" type="text" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Danh mục:</label>
+            <label class="form-label">{{ t('admin.inventory.categoryLabel') }}</label>
             <select v-model="category" class="form-input">
-              <option value="drinks">Đồ uống (Drinks)</option>
-              <option value="equipment">Thiết bị & Dụng cụ</option>
-              <option value="accessories">Phụ kiện thi đấu</option>
-              <option value="snacks">Đồ ăn nhẹ</option>
+              <option value="drinks">{{ t('admin.inventory.catDrinksOption') }}</option>
+              <option value="equipment">{{ t('admin.inventory.catEquipmentOption') }}</option>
+              <option value="accessories">{{ t('admin.inventory.catAccessoriesOption') }}</option>
+              <option value="snacks">{{ t('admin.inventory.catSnacksOption') }}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Giá vốn (Cost):</label>
-            <input v-model.number="cost" type="number" step="1000" class="form-input" />
+            <label class="form-label">{{ t('admin.inventory.costLabel') }}</label>
+            <input v-model.number="cost" type="number" step="1000" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Giá bán lẻ (Price):</label>
-            <input v-model.number="price" type="number" step="1000" class="form-input" />
+            <label class="form-label">{{ t('admin.inventory.priceLabel') }}</label>
+            <input v-model.number="price" type="number" step="1000" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Số lượng tồn ban đầu:</label>
-            <input v-model.number="stockQty" type="number" class="form-input" />
+            <label class="form-label">{{ t('admin.inventory.initialStockLabel') }}</label>
+            <input v-model.number="stockQty" type="number" class="form-input font-mono" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Mức tồn tối thiểu (Min):</label>
-            <input v-model.number="minStock" type="number" class="form-input" />
+            <label class="form-label">{{ t('admin.inventory.minStockLabel') }}</label>
+            <input v-model.number="minStock" type="number" class="form-input font-mono" />
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Huỷ</button>
-        <button class="btn-primary" :disabled="!name.trim()" @click="handleSave">
-          Lưu Mặt Hàng
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn-primary" :disabled="!name.trim()" @click="handleSave">
+          {{ t('admin.inventory.saveProductBtn') }}
         </button>
       </div>
     </div>
@@ -127,6 +133,17 @@ function handleSave() {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

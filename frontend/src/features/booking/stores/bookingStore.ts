@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { bookingApi } from '../api/bookingApi'
-import type { Booking, PaymentInfo, CardDetails } from '../types/booking'
+import type { Booking, PaymentInfo } from '../types/booking'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 
 const paymentStorageKey = 'aura-court-payment'
@@ -13,6 +13,7 @@ export const useBookingStore = defineStore('booking', () => {
   const selectedSlots = ref<AvailabilitySlot[]>([])
   const current = ref<Booking | null>(null)
   const payment = ref<PaymentInfo | null>(null)
+  const walletBalance = ref<number>(0)
   const error = ref('')
   const courtsLoading = ref(false)
   const slotsLoading = ref(false)
@@ -71,13 +72,26 @@ export const useBookingStore = defineStore('booking', () => {
     return payment.value
   }
 
+  async function fetchWalletBalance() {
+    try {
+      const res = await bookingApi.getWalletBalance()
+      if (typeof res?.balance === 'number') {
+        walletBalance.value = res.balance
+      }
+      return walletBalance.value
+    } catch {
+      return walletBalance.value
+    }
+  }
+
   async function loadPayment(code: string) {
     const result = await bookingApi.getPayment(code)
-    payment.value = result.payment
     if (result.booking) {
       current.value = result.booking
     }
-    persistPayment()
+    if (result.wallet && typeof result.wallet.balance === 'number') {
+      walletBalance.value = result.wallet.balance
+    }
     return result
   }
 
@@ -94,43 +108,19 @@ export const useBookingStore = defineStore('booking', () => {
       quote_token: quoteToken || undefined,
     })
     current.value = result.booking
-    payment.value = result.payment
-    persistPayment()
     return result
   }
 
   async function refreshPaymentStatus() {
-    restorePayment()
-    if (!payment.value) return null
-    return bookingApi.getPaymentStatus(payment.value.code)
-  }
-
-  async function stripePay(cardDetails: CardDetails = {}) {
-    restorePayment()
-    const code = payment.value?.code || current.value?.code
-    if (!code) throw new Error('Chưa có phiên thanh toán.')
-    const result = await bookingApi.stripePay(code, cardDetails)
-    if (result.booking) current.value = result.booking
-    return result
-  }
-
-  async function demoPay() {
-    restorePayment()
-    const code = payment.value?.code || current.value?.code
-    if (!code) throw new Error('Chưa có phiên thanh toán.')
-    const result = await bookingApi.demoPay(code)
-    if (result.booking) current.value = result.booking
-    return result
+    if (!current.value?.code) return null
+    return bookingApi.getPaymentStatus(current.value.code)
   }
 
   async function applyCoupon(couponCode?: string) {
-    restorePayment()
-    const code = payment.value?.code || current.value?.code
-    if (!code) throw new Error('Chưa có phiên thanh toán.')
+    const code = current.value?.code
+    if (!code) throw new Error('Chưa có booking.')
     const result = await bookingApi.applyCoupon(code, couponCode)
     current.value = result.booking
-    payment.value = result.payment
-    persistPayment()
     return result
   }
 
@@ -141,6 +131,7 @@ export const useBookingStore = defineStore('booking', () => {
     selectedSlots,
     current,
     payment,
+    walletBalance,
     error,
     loading,
     courtsLoading,
@@ -154,7 +145,6 @@ export const useBookingStore = defineStore('booking', () => {
     loadPayment,
     clearPayment,
     refreshPaymentStatus,
-    demoPay,
-    stripePay,
+    fetchWalletBalance,
   }
 })

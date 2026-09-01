@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { FixtureMatch } from '../../types/tournamentAdmin'
 
-const props = defineProps<{
+defineProps<{
   matches: FixtureMatch[]
   selectedRound: 'all' | 'r16' | 'qf' | 'sf' | 'final'
   isGenerating?: boolean
@@ -12,6 +13,8 @@ const emit = defineEmits<{
   (e: 'selectMatch', match: FixtureMatch): void
   (e: 'regenerate'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -20,49 +23,61 @@ const emit = defineEmits<{
     <div class="bracket-toolbar">
       <div class="round-filters-group">
         <button
+          type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'all' }"
           @click="emit('update:selectedRound', 'all')"
         >
-          Tất cả các vòng
+          {{ t('admin.tournaments.allRounds') }}
         </button>
         <button
+          type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'r16' }"
           @click="emit('update:selectedRound', 'r16')"
         >
-          Vòng 1/16 (R16)
+          {{ t('admin.tournaments.roundR16') }}
         </button>
         <button
+          type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'qf' }"
           @click="emit('update:selectedRound', 'qf')"
         >
-          Tứ Kết (QF)
+          {{ t('admin.tournaments.roundQF') }}
         </button>
         <button
+          type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'sf' }"
           @click="emit('update:selectedRound', 'sf')"
         >
-          Bán Kết (SF)
+          {{ t('admin.tournaments.roundSF') }}
         </button>
         <button
+          type="button"
           class="round-filter-btn"
           :class="{ active: selectedRound === 'final' }"
           @click="emit('update:selectedRound', 'final')"
         >
-          Chung Kết (Final)
+          {{ t('admin.tournaments.roundFinal') }}
         </button>
       </div>
 
       <button
+        type="button"
         class="btn-regenerate-bracket"
         :disabled="isGenerating"
         @click="emit('regenerate')"
       >
-        <span v-if="isGenerating">🔄 Đang tạo nhánh...</span>
-        <span v-else>🎲 Tái tạo bảng phân nhánh</span>
+        <span v-if="isGenerating" class="flex-align">
+          <span class="material-symbols-outlined icon-16 spin">sync</span>
+          <span>{{ t('admin.tournaments.generatingBracket') }}</span>
+        </span>
+        <span v-else class="flex-align">
+          <span class="material-symbols-outlined icon-16">alt_route</span>
+          <span>{{ t('admin.tournaments.regenerateBracketBtn') }}</span>
+        </span>
       </button>
     </div>
 
@@ -75,8 +90,8 @@ const emit = defineEmits<{
           class="bracket-round-column"
         >
           <div class="round-header">
-            <h4>VÒNG 1/16 (R16)</h4>
-            <span class="round-meta">16 VĐV · 8 Trận</span>
+            <h4>{{ t('admin.tournaments.roundR16Header') }}</h4>
+            <span class="round-meta">{{ t('admin.tournaments.roundR16Meta') }}</span>
           </div>
 
           <div class="round-matches-list">
@@ -89,7 +104,7 @@ const emit = defineEmits<{
             >
               <div class="match-meta-header">
                 <span class="match-court-name">{{ match.courtName }}</span>
-                <span class="match-time-tag">{{ match.scheduledTime }}</span>
+                <span class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
               </div>
 
               <div class="match-players-box">
@@ -98,7 +113,7 @@ const emit = defineEmits<{
                     <span v-if="match.player1.seed" class="seed-badge">[{{ match.player1.seed }}]</span>
                     <span class="player-name">{{ match.player1.name }}</span>
                   </div>
-                  <div class="player-scores">
+                  <div class="player-scores font-mono">
                     <span v-for="(s, idx) in match.player1.sets" :key="idx" class="set-score">{{ s }}</span>
                   </div>
                 </div>
@@ -108,7 +123,7 @@ const emit = defineEmits<{
                     <span v-if="match.player2.seed" class="seed-badge">[{{ match.player2.seed }}]</span>
                     <span class="player-name">{{ match.player2.name }}</span>
                   </div>
-                  <div class="player-scores">
+                  <div class="player-scores font-mono">
                     <span v-for="(s, idx) in match.player2.sets" :key="idx" class="set-score">{{ s }}</span>
                   </div>
                 </div>
@@ -123,8 +138,8 @@ const emit = defineEmits<{
           class="bracket-round-column"
         >
           <div class="round-header">
-            <h4>TỨ KẾT (QF)</h4>
-            <span class="round-meta">8 VĐV · 4 Trận</span>
+            <h4>{{ t('admin.tournaments.roundQFHeader') }}</h4>
+            <span class="round-meta">{{ t('admin.tournaments.roundQFMeta') }}</span>
           </div>
 
           <div class="round-matches-list">
@@ -137,8 +152,8 @@ const emit = defineEmits<{
             >
               <div class="match-meta-header">
                 <span class="match-court-name">{{ match.courtName }}</span>
-                <span v-if="match.status === 'live'" class="live-pill">LIVE</span>
-                <span v-else class="match-time-tag">{{ match.scheduledTime }}</span>
+                <span v-if="match.status === 'live'" class="live-pill">{{ t('admin.tournaments.liveBadge') }}</span>
+                <span v-else class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
               </div>
 
               <div class="match-players-box">
@@ -147,7 +162,7 @@ const emit = defineEmits<{
                     <span v-if="match.player1.seed" class="seed-badge">[{{ match.player1.seed }}]</span>
                     <span class="player-name">{{ match.player1.name }}</span>
                   </div>
-                  <div class="player-scores">
+                  <div class="player-scores font-mono">
                     <span v-for="(s, idx) in match.player1.sets" :key="idx" class="set-score">{{ s }}</span>
                     <span v-if="match.player1.currentScore !== undefined" class="current-score">{{ match.player1.currentScore }}</span>
                   </div>
@@ -158,7 +173,7 @@ const emit = defineEmits<{
                     <span v-if="match.player2.seed" class="seed-badge">[{{ match.player2.seed }}]</span>
                     <span class="player-name">{{ match.player2.name }}</span>
                   </div>
-                  <div class="player-scores">
+                  <div class="player-scores font-mono">
                     <span v-for="(s, idx) in match.player2.sets" :key="idx" class="set-score">{{ s }}</span>
                     <span v-if="match.player2.currentScore !== undefined" class="current-score">{{ match.player2.currentScore }}</span>
                   </div>
@@ -174,8 +189,8 @@ const emit = defineEmits<{
           class="bracket-round-column"
         >
           <div class="round-header">
-            <h4>BÁN KẾT (SF)</h4>
-            <span class="round-meta">4 VĐV · 2 Trận</span>
+            <h4>{{ t('admin.tournaments.roundSFHeader') }}</h4>
+            <span class="round-meta">{{ t('admin.tournaments.roundSFMeta') }}</span>
           </div>
 
           <div class="round-matches-list">
@@ -187,7 +202,7 @@ const emit = defineEmits<{
             >
               <div class="match-meta-header">
                 <span class="match-court-name">{{ match.courtName }}</span>
-                <span class="match-time-tag">{{ match.scheduledTime }}</span>
+                <span class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
               </div>
 
               <div class="match-players-box">
@@ -208,8 +223,11 @@ const emit = defineEmits<{
           class="bracket-round-column"
         >
           <div class="round-header">
-            <h4>CHUNG KẾT 🏆</h4>
-            <span class="round-meta">2 VĐV · 1 Trận</span>
+            <div class="flex-align">
+              <span class="material-symbols-outlined icon-18 trophy-gold">emoji_events</span>
+              <h4>{{ t('admin.tournaments.roundFinalHeader') }}</h4>
+            </div>
+            <span class="round-meta">{{ t('admin.tournaments.roundFinalMeta') }}</span>
           </div>
 
           <div class="round-matches-list">
@@ -221,7 +239,7 @@ const emit = defineEmits<{
             >
               <div class="match-meta-header">
                 <span class="match-court-name">{{ match.courtName }}</span>
-                <span class="match-time-tag">{{ match.scheduledTime }}</span>
+                <span class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
               </div>
 
               <div class="match-players-box">
@@ -294,6 +312,12 @@ const emit = defineEmits<{
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.flex-align {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .bracket-tree-scroll {
@@ -424,6 +448,21 @@ const emit = defineEmits<{
 
 .finals-card {
   border: 2px solid #f59e0b;
+}
+
+.trophy-gold {
+  color: #f59e0b;
+}
+
+.icon-16 { font-size: 16px; }
+.icon-18 { font-size: 18px; }
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes pulse {

@@ -86,7 +86,7 @@ export function useAdminSchedule() {
 
       // Load court maintenance blocks if courts exist
       if (courts.value.length > 0) {
-        const blocksPromises = courts.value.slice(0, 5).map((c) => adminApi.getBlocks(c.id).catch(() => []))
+        const blocksPromises = courts.value.map((c) => adminApi.getBlocks(c.id).catch(() => []))
         const blocksResults = await Promise.all(blocksPromises)
         const allBlocks: MaintenanceBlock[] = []
         blocksResults.forEach((blockList: CourtBlock[], idx) => {

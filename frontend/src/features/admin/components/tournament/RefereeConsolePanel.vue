@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{
+defineProps<{
   liveMatch: {
     matchCode: string
     courtName: string
@@ -25,6 +26,7 @@ const emit = defineEmits<{
   (e: 'resolveConflict'): void
 }>()
 
+const { t } = useI18n()
 const showPenaltyModal = ref(false)
 </script>
 
@@ -34,16 +36,18 @@ const showPenaltyModal = ref(false)
     <div class="stitch-referee-header-row">
       <div class="match-badge-info">
         <span class="live-indicator-dot"></span>
-        <strong class="match-code-tag">Live Match: {{ liveMatch.matchCode }}</strong>
+        <strong class="match-code-tag font-mono">{{ t('admin.tournaments.liveMatchLabel', { code: liveMatch.matchCode }) }}</strong>
         <span class="court-location-tag">{{ liveMatch.courtName }}</span>
       </div>
 
       <div class="referee-top-actions">
-        <button class="btn-test-conflict" @click="emit('simulateConflict')">
-          ⚡ Thử nghiệm xung đột điểm
+        <button type="button" class="btn-test-conflict" @click="emit('simulateConflict')">
+          <span class="material-symbols-outlined icon-14">flash_on</span>
+          <span>{{ t('admin.tournaments.testConflictBtn') }}</span>
         </button>
-        <button class="btn-switch-ends" @click="emit('switchEnds')">
-          🔄 Đổi sân (Switch Ends)
+        <button type="button" class="btn-switch-ends" @click="emit('switchEnds')">
+          <span class="material-symbols-outlined icon-14">swap_horiz</span>
+          <span>{{ t('admin.tournaments.switchEndsBtn') }}</span>
         </button>
       </div>
     </div>
@@ -51,14 +55,14 @@ const showPenaltyModal = ref(false)
     <!-- Conflict Warning Alert Banner -->
     <div v-if="liveMatch.hasConflict" id="conflict-alert" class="conflict-alert-banner">
       <div class="alert-content">
-        <span class="alert-icon">⚠️</span>
+        <span class="material-symbols-outlined alert-icon">warning</span>
         <div>
-          <strong>Score Synchronization Conflict</strong>
+          <strong>{{ t('admin.tournaments.conflictAlertTitle') }}</strong>
           <p>{{ liveMatch.conflictDesc }}</p>
         </div>
       </div>
-      <button class="btn-accept-remote" @click="emit('resolveConflict')">
-        Chấp nhận điểm Remote
+      <button type="button" class="btn-accept-remote" @click="emit('resolveConflict')">
+        {{ t('admin.tournaments.acceptRemoteScoreBtn') }}
       </button>
     </div>
 
@@ -70,30 +74,36 @@ const showPenaltyModal = ref(false)
       <!-- Player A Card -->
       <div class="referee-player-card player-left">
         <div class="player-header">
-          <span v-if="liveMatch.playerA.isServing" class="serving-indicator">🏸 ĐANG GIAO CẦU</span>
+          <span v-if="liveMatch.playerA.isServing" class="serving-indicator">
+            <span class="material-symbols-outlined icon-12">sports_tennis</span>
+            <span>{{ t('admin.tournaments.servingBadge') }}</span>
+          </span>
           <h3 class="player-name">{{ liveMatch.playerA.name }}</h3>
           <span class="player-club">{{ liveMatch.playerA.club }}</span>
         </div>
 
         <div class="big-score-box">
           <button
+            type="button"
             class="stitch-big-score-btn"
-            title="Nhấn để cộng 1 điểm"
+            :title="t('admin.tournaments.scoreClickHint')"
             @click="emit('incrementA')"
           >
-            <span id="score-a" class="score-display">{{ liveMatch.playerA.score }}</span>
+            <span id="score-a" class="score-display font-mono">{{ liveMatch.playerA.score }}</span>
           </button>
           
           <div class="score-adjust-bar">
-            <button class="btn-stitch-decrease" @click="emit('decrementA')">-1 Điểm</button>
+            <button type="button" class="btn-stitch-decrease" @click="emit('decrementA')">
+              {{ t('admin.tournaments.decreaseScoreBtn') }}
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Center Net Divider & Set Info -->
       <div class="arena-center-divider">
-        <div class="set-indicator-pill">SET {{ liveMatch.currentSet }}</div>
-        <div class="sets-history-row">
+        <div class="set-indicator-pill font-mono">SET {{ liveMatch.currentSet }}</div>
+        <div class="sets-history-row font-mono">
           <span class="set-history-score">{{ liveMatch.playerA.sets[0] || 21 }} - {{ liveMatch.playerB.sets[0] || 18 }}</span>
           <span class="set-history-score">{{ liveMatch.playerA.sets[1] || 19 }} - {{ liveMatch.playerB.sets[1] || 21 }}</span>
         </div>
@@ -102,22 +112,28 @@ const showPenaltyModal = ref(false)
       <!-- Player B Card -->
       <div class="referee-player-card player-right">
         <div class="player-header">
-          <span v-if="liveMatch.playerB.isServing" class="serving-indicator">🏸 ĐANG GIAO CẦU</span>
+          <span v-if="liveMatch.playerB.isServing" class="serving-indicator">
+            <span class="material-symbols-outlined icon-12">sports_tennis</span>
+            <span>{{ t('admin.tournaments.servingBadge') }}</span>
+          </span>
           <h3 class="player-name">{{ liveMatch.playerB.name }}</h3>
           <span class="player-club">{{ liveMatch.playerB.club }}</span>
         </div>
 
         <div class="big-score-box">
           <button
+            type="button"
             class="stitch-big-score-btn"
-            title="Nhấn để cộng 1 điểm"
+            :title="t('admin.tournaments.scoreClickHint')"
             @click="emit('incrementB')"
           >
-            <span id="score-b" class="score-display">{{ liveMatch.playerB.score }}</span>
+            <span id="score-b" class="score-display font-mono">{{ liveMatch.playerB.score }}</span>
           </button>
 
           <div class="score-adjust-bar">
-            <button class="btn-stitch-decrease" @click="emit('decrementB')">-1 Điểm</button>
+            <button type="button" class="btn-stitch-decrease" @click="emit('decrementB')">
+              {{ t('admin.tournaments.decreaseScoreBtn') }}
+            </button>
           </div>
         </div>
       </div>
@@ -125,14 +141,17 @@ const showPenaltyModal = ref(false)
 
     <!-- Quick Referee Control Bar -->
     <div class="referee-bottom-toolbar">
-      <button class="btn-referee-action-sec" @click="showPenaltyModal = true">
-        🟨 Thẻ phạt & Lỗi kỹ thuật
+      <button type="button" class="btn-referee-action-sec" @click="showPenaltyModal = true">
+        <span class="material-symbols-outlined icon-16">style</span>
+        <span>{{ t('admin.tournaments.penaltiesAndCardsBtn') }}</span>
       </button>
-      <button class="btn-referee-action-sec">
-        ⏱️ Tạm dừng (Injury/Timeout)
+      <button type="button" class="btn-referee-action-sec">
+        <span class="material-symbols-outlined icon-16">timer</span>
+        <span>{{ t('admin.tournaments.timeoutBtn') }}</span>
       </button>
-      <button class="btn-referee-action-sec">
-        🏸 Kết thúc Set đấu
+      <button type="button" class="btn-referee-action-sec">
+        <span class="material-symbols-outlined icon-16">sports_score</span>
+        <span>{{ t('admin.tournaments.endSetBtn') }}</span>
       </button>
     </div>
 
@@ -140,19 +159,25 @@ const showPenaltyModal = ref(false)
     <div v-if="showPenaltyModal" class="modal-backdrop" @click.self="showPenaltyModal = false">
       <div class="modal-card modal-penalty-card modal-sm">
         <div class="modal-header">
-          <h3 class="modal-title">Thẻ Phạt & Lỗi Trọng Tài</h3>
-          <button class="modal-close-btn" @click="showPenaltyModal = false">✕</button>
+          <div class="title-with-icon">
+            <span class="material-symbols-outlined card-title-icon">gavel</span>
+            <h3 class="modal-title">{{ t('admin.tournaments.penaltyModalTitle') }}</h3>
+          </div>
+          <button type="button" class="modal-close-btn" @click="showPenaltyModal = false">✕</button>
         </div>
         <div class="modal-body">
           <div class="penalty-options">
-            <button class="penalty-btn card-yellow" @click="showPenaltyModal = false">
-              🟨 Thẻ Vàng (Cảnh cáo)
+            <button type="button" class="penalty-btn card-yellow" @click="showPenaltyModal = false">
+              <span class="square-tag yellow"></span>
+              <span>{{ t('admin.tournaments.yellowCardBtn') }}</span>
             </button>
-            <button class="penalty-btn card-red" @click="showPenaltyModal = false">
-              🟥 Thẻ Đỏ (Phạt 1 điểm đối phương)
+            <button type="button" class="penalty-btn card-red" @click="showPenaltyModal = false">
+              <span class="square-tag red"></span>
+              <span>{{ t('admin.tournaments.redCardBtn') }}</span>
             </button>
-            <button class="penalty-btn card-black" @click="showPenaltyModal = false">
-              ⬛ Thẻ Đen (Truất quyền thi đấu)
+            <button type="button" class="penalty-btn card-black" @click="showPenaltyModal = false">
+              <span class="square-tag black"></span>
+              <span>{{ t('admin.tournaments.blackCardBtn') }}</span>
             </button>
           </div>
         </div>
@@ -170,6 +195,17 @@ const showPenaltyModal = ref(false)
   border-radius: 16px;
   border: 1px solid var(--outline);
   padding: 16px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .stitch-referee-header-row {
@@ -209,6 +245,9 @@ const showPenaltyModal = ref(false)
 
 .btn-test-conflict,
 .btn-switch-ends {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -284,7 +323,9 @@ const showPenaltyModal = ref(false)
 }
 
 .serving-indicator {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;
   font-size: 11px;
@@ -331,7 +372,6 @@ const showPenaltyModal = ref(false)
   font-size: 64px;
   font-weight: 900;
   color: var(--pink-dark, #db2777);
-  font-family: inherit;
 }
 
 .score-adjust-bar {
@@ -379,6 +419,9 @@ const showPenaltyModal = ref(false)
 }
 
 .btn-referee-action-sec {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 10px;
   border: 1px solid var(--outline);
@@ -396,6 +439,9 @@ const showPenaltyModal = ref(false)
 }
 
 .penalty-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px;
   border-radius: 10px;
   border: 1px solid var(--outline);
@@ -404,4 +450,18 @@ const showPenaltyModal = ref(false)
   cursor: pointer;
   text-align: left;
 }
+
+.square-tag {
+  width: 16px;
+  height: 20px;
+  border-radius: 3px;
+}
+
+.square-tag.yellow { background: #facc15; }
+.square-tag.red { background: #ef4444; }
+.square-tag.black { background: #1f2937; }
+
+.icon-16 { font-size: 16px; }
+.icon-14 { font-size: 14px; }
+.icon-12 { font-size: 12px; }
 </style>

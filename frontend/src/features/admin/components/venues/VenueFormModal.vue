@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 
 const props = defineProps<{
@@ -11,6 +12,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', payload: any): void
 }>()
+
+const { t } = useI18n()
 
 const name = ref('')
 const address = ref('')
@@ -50,41 +53,44 @@ function handleSave() {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">
-          {{ venue ? '✏️ Chỉnh Sửa Cụm Sân' : '➕ Thêm Cơ Sở / Cụm Sân Mới' }}
-        </h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">{{ venue ? 'edit' : 'add_location' }}</span>
+          <h3 class="modal-title">
+            {{ venue ? t('admin.venues.editVenueModalTitle') : t('admin.venues.addVenueModalTitle') }}
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Tên cụm sân / cơ sở <span class="required">*</span>:</label>
-          <input v-model="name" type="text" class="form-input" placeholder="Vd: Aura Center - Quận 1..." />
+          <label class="form-label">{{ t('admin.venues.venueNameLabel') }} <span class="required">*</span>:</label>
+          <input v-model="name" type="text" class="form-input" :placeholder="t('admin.venues.venueNamePlaceholder')" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Địa chỉ đầy đủ:</label>
-          <input v-model="address" type="text" class="form-input" placeholder="Số nhà, tên đường, phường, quận..." />
+          <label class="form-label">{{ t('admin.venues.fullAddressLabel') }}</label>
+          <input v-model="address" type="text" class="form-input" :placeholder="t('admin.venues.fullAddressPlaceholder')" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Liên kết Google Maps:</label>
-          <input v-model="googleMapsUrl" type="url" class="form-input" placeholder="https://maps.google.com/..." />
+          <label class="form-label">{{ t('admin.venues.googleMapsLabel') }}</label>
+          <input v-model="googleMapsUrl" type="url" class="form-input font-mono" :placeholder="t('admin.venues.googleMapsPlaceholder')" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Trạng thái hoạt động:</label>
+          <label class="form-label">{{ t('admin.venues.operationalStatusLabel') }}</label>
           <label class="check-box-label">
             <input v-model="isActive" type="checkbox" />
-            <span>Đang mở cửa vận hành (Active)</span>
+            <span>{{ t('admin.venues.operatingOpenCheckbox') }}</span>
           </label>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Huỷ</button>
-        <button class="btn-primary" :disabled="!name.trim()" @click="handleSave">
-          Lưu Cơ Sở
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn-primary" :disabled="!name.trim()" @click="handleSave">
+          {{ t('admin.venues.saveVenueBtn') }}
         </button>
       </div>
     </div>
@@ -92,6 +98,17 @@ function handleSave() {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .check-box-label {
   display: flex;
   align-items: center;

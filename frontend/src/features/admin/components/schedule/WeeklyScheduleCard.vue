@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { WeekdaySchedule } from '../../composables/useAdminSchedule'
 
 defineProps<{
@@ -9,13 +10,18 @@ const emit = defineEmits<{
   (e: 'addShift', dayId: number): void
   (e: 'removeShift', dayId: number, shiftIdx: number): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="weekly-schedule-card">
     <div class="card-header">
-      <h3 class="title">🗓️ Lịch Hoạt Động Tiêu Chuẩn Hàng Tuần</h3>
-      <p class="sub">Thiết lập khung giờ mở cửa đón khách cho từng ngày trong tuần.</p>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">calendar_month</span>
+        <h3 class="title">{{ t('admin.schedule.weeklyTitle') }}</h3>
+      </div>
+      <p class="sub">{{ t('admin.schedule.weeklySub') }}</p>
     </div>
 
     <div class="days-list">
@@ -27,7 +33,7 @@ const emit = defineEmits<{
         <div class="day-name-col">
           <strong class="day-name">{{ day.dayName }}</strong>
           <span class="day-status" :class="day.isOpen ? 'text-green' : 'text-red'">
-            {{ day.isOpen ? '● Mở cửa' : '○ Tạm đóng' }}
+            {{ day.isOpen ? `● ${t('admin.schedule.statusOpen')}` : `○ ${t('admin.schedule.statusClosed')}` }}
           </span>
         </div>
 
@@ -38,15 +44,16 @@ const emit = defineEmits<{
             class="shift-time-chip"
           >
             <input v-model="shift.start" type="time" class="time-input" />
-            <span>➔</span>
+            <span class="material-symbols-outlined icon-arrow">arrow_forward</span>
             <input v-model="shift.end" type="time" class="time-input" />
             <button
               v-if="day.shifts.length > 1"
               type="button"
               class="btn-delete-shift"
+              title="Remove Shift"
               @click="emit('removeShift', day.id, sIdx)"
             >
-              ✕
+              <span class="material-symbols-outlined icon-14">close</span>
             </button>
           </div>
 
@@ -55,7 +62,8 @@ const emit = defineEmits<{
             class="btn-add-shift-link"
             @click="emit('addShift', day.id)"
           >
-            + Thêm ca
+            <span class="material-symbols-outlined icon-16">add</span>
+            <span>{{ t('admin.schedule.addShift') }}</span>
           </button>
         </div>
       </div>
@@ -78,6 +86,17 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
@@ -150,18 +169,41 @@ const emit = defineEmits<{
   color: var(--ink);
   font-size: 12px;
   font-weight: 600;
+  outline: none;
+}
+
+.icon-arrow {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 
 .btn-delete-shift {
   border: 0;
   background: transparent;
-  color: #ef4444;
+  color: var(--muted);
   cursor: pointer;
-  padding: 0 4px;
-  font-size: 11px;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-delete-shift:hover {
+  color: #ef4444;
 }
 
 .btn-add-shift-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 0;
   background: transparent;
   color: var(--pink-dark, #db2777);

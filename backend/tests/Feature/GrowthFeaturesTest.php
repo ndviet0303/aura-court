@@ -9,8 +9,10 @@ use App\Models\CourtPriceSlot;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\User;
+use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
 use App\Services\Booking\BookingService;
+use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -20,10 +22,20 @@ class GrowthFeaturesTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function fundUserWallet(User $user, int $amount = 1000000): void
+    {
+        $venue = Venue::firstOrFail();
+        $walletService = app(WalletPaymentService::class);
+        $wallet = $walletService->getOrCreateWallet($user->id, $venue->organization_id);
+        $walletService->credit($wallet, $amount, 'test_topup', 1, 'Fund for test');
+    }
+
     public function test_coupon_and_membership_discounts_are_applied_to_booking(): void
     {
         $user = User::factory()->create();
-        $court = Court::create(['name' => 'Sân Ưu Đãi', 'is_active' => true]);
+        $this->fundUserWallet($user, 500000);
+        $venue = Venue::firstOrFail();
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Ưu Đãi', 'is_active' => true]);
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 200000, 'is_active' => true]);
         $plan = MembershipPlan::create(['name' => 'Gold', 'discount_percent' => 10, 'is_active' => true]);
@@ -41,8 +53,10 @@ class GrowthFeaturesTest extends TestCase
     {
         Notification::fake();
         $owner = User::factory()->create();
+        $this->fundUserWallet($owner, 500000);
         $waiting = User::factory()->create();
-        $court = Court::create(['name' => 'Sân Danh Sách Chờ', 'is_active' => true]);
+        $venue = Venue::firstOrFail();
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Danh Sách Chờ', 'is_active' => true]);
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
         $booking = app(BookingService::class)->create($owner->id, $court->id, [$date->toIso8601String()]);

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAdminDashboard, type ReviewPayment } from '../composables/useAdminDashboard'
 
 import AdminKpiCards from '../components/dashboard/AdminKpiCards.vue'
@@ -8,6 +9,8 @@ import AdminAnalyticsCharts from '../components/dashboard/AdminAnalyticsCharts.v
 import AdminRecentBookingsTable from '../components/dashboard/AdminRecentBookingsTable.vue'
 import AdminPendingPaymentsCard from '../components/dashboard/AdminPendingPaymentsCard.vue'
 import AdminQuickNav from '../components/dashboard/AdminQuickNav.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -34,7 +37,7 @@ function handleVerifyPayment(p: ReviewPayment) {
   if (idx >= 0) {
     payments.value.splice(idx, 1)
   }
-  showNotice(`Đã duyệt giao dịch ${p.transfer_code} thành công!`)
+  showNotice(t('admin.dashboard.verifySuccess', { code: p.transfer_code }))
 }
 
 onMounted(() => {
@@ -47,8 +50,11 @@ onMounted(() => {
     <!-- Header Section -->
     <header class="dashboard-header">
       <div class="header-titles">
-        <h1 class="page-title">📈 Tổng Quan Báo Cáo & Quản Trị Hệ Thống</h1>
-        <p class="page-sub">Theo dõi doanh thu toàn hệ thống thời gian thực, công suất sử dụng sân và kiểm duyệt thanh toán.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined title-icon">analytics</span>
+          <h1 class="page-title">{{ t('admin.dashboard.pageTitle') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.dashboard.pageSubtitle') }}</p>
       </div>
     </header>
 
@@ -118,14 +124,25 @@ onMounted(() => {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-icon {
+  font-size: 28px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 24px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }

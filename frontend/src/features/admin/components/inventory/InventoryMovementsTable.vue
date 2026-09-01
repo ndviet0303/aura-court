@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatDateTime } from '@/i18n'
 import type { StockMovement } from '../../types/inventory'
 
 defineProps<{
@@ -9,55 +11,63 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:typeFilter', val: 'all' | 'in' | 'out' | 'adjust' | 'return'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="movements-table-card">
     <div class="table-toolbar">
-      <h3 class="title">📜 Nhật Ký Biến Động Nhập / Xuất Kho</h3>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">history</span>
+        <h3 class="title">{{ t('admin.inventory.movementsTitle') }}</h3>
+      </div>
 
       <select
         :value="typeFilter"
         class="type-select"
         @change="emit('update:typeFilter', ($event.target as HTMLSelectElement).value as any)"
       >
-        <option value="all">Tất cả loại giao dịch</option>
-        <option value="in">Nhập kho (Stock In)</option>
-        <option value="out">Xuất kho (Stock Out)</option>
-        <option value="adjust">Kiểm kê điều chỉnh</option>
+        <option value="all">{{ t('admin.inventory.allMovementTypes') }}</option>
+        <option value="in">{{ t('admin.inventory.typeInOption') }}</option>
+        <option value="out">{{ t('admin.inventory.typeOutOption') }}</option>
+        <option value="adjust">{{ t('admin.inventory.typeAdjustOption') }}</option>
       </select>
     </div>
 
     <div class="table-responsive">
       <div class="movements-table">
-      <div class="table-hdr">
-        <span>Thời Gian</span>
-        <span>Sản Phẩm</span>
-        <span>Loại Giao Dịch</span>
-        <span>Số Lượng</span>
-        <span>Ghi Chú & Người Thực Hiện</span>
-      </div>
+        <div class="table-hdr">
+          <span>{{ t('admin.inventory.hdrTimestamp') }}</span>
+          <span>{{ t('admin.inventory.hdrProduct') }}</span>
+          <span>{{ t('admin.inventory.hdrTransactionType') }}</span>
+          <span>{{ t('admin.inventory.hdrQuantity') }}</span>
+          <span>{{ t('admin.inventory.hdrNoteAndPerformer') }}</span>
+        </div>
 
-      <div class="table-body">
-        <div v-for="m in movements" :key="m.id" class="movement-row">
-          <span class="font-mono time-val">{{ m.created_at.slice(0, 10) }} {{ m.created_at.slice(11, 16) }}</span>
-          <strong>{{ m.product_name }}</strong>
-          <span
-            class="type-badge"
-            :class="m.type === 'in' ? 'type-in' : m.type === 'out' ? 'type-out' : 'type-adjust'"
-          >
-            {{ m.type === 'in' ? '↓ NHẬP KHO' : m.type === 'out' ? '↑ XUẤT KHO' : '🔄 ĐIỀU CHỈNH' }}
-          </span>
-          <strong class="qty-val font-mono" :class="m.type === 'in' ? 'text-green' : 'text-pink'">
-            {{ m.type === 'in' ? `+${m.quantity}` : `-${m.quantity}` }}
-          </strong>
-          <div class="note-user">
-            <span>{{ m.note || 'Không có ghi chú' }}</span>
-            <span class="user-sub">Bởi: {{ m.created_by || 'Admin' }}</span>
+        <div class="table-body">
+          <div v-for="m in movements" :key="m.id" class="movement-row">
+            <span class="font-mono time-val">{{ m.created_at ? formatDateTime(m.created_at) : '' }}</span>
+            <strong>{{ resolveLocalizedText(m.product_name) }}</strong>
+            <span
+              class="type-badge"
+              :class="m.type === 'in' ? 'type-in' : m.type === 'out' ? 'type-out' : 'type-adjust'"
+            >
+              <span class="material-symbols-outlined icon-12">
+                {{ m.type === 'in' ? 'arrow_downward' : m.type === 'out' ? 'arrow_upward' : 'sync' }}
+              </span>
+              <span>{{ m.type === 'in' ? t('admin.inventory.badgeIn') : m.type === 'out' ? t('admin.inventory.badgeOut') : t('admin.inventory.badgeAdjust') }}</span>
+            </span>
+            <strong class="qty-val font-mono" :class="m.type === 'in' ? 'text-green' : 'text-pink'">
+              {{ m.type === 'in' ? `+${m.quantity}` : `-${m.quantity}` }}
+            </strong>
+            <div class="note-user">
+              <span>{{ m.note || t('admin.inventory.noNote') }}</span>
+              <span class="user-sub">{{ t('admin.inventory.performerSub', { user: m.created_by || 'Admin' }) }}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
@@ -77,6 +87,17 @@ const emit = defineEmits<{
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
@@ -129,6 +150,9 @@ const emit = defineEmits<{
 .time-val { font-size: 11px; color: var(--muted); }
 
 .type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   font-weight: 800;
   padding: 3px 8px;
@@ -152,4 +176,8 @@ const emit = defineEmits<{
 }
 
 .user-sub { font-size: 11px; color: var(--muted); }
+
+.icon-12 {
+  font-size: 12px;
+}
 </style>

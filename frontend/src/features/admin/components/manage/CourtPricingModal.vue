@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatCurrency } from '@/i18n'
 import type { Court } from '@/features/court/types/court'
 
 defineProps<{
@@ -31,19 +33,20 @@ const emit = defineEmits<{
   (e: 'deleteSlot', slotId: number): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
   <div v-if="show && court" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-xl">
       <div class="modal-header">
-        <h3 class="modal-title">
-          💰 Thiết Lập Bảng Giá: <strong>{{ court.name }}</strong>
-        </h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">price_change</span>
+          <h3 class="modal-title">
+            {{ t('admin.manage.pricingModalTitle', { name: resolveLocalizedText(court.name) }) }}
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body pricing-modal-body">
@@ -53,16 +56,18 @@ function formatMoney(amount: number): string {
         <!-- Weekday Navigation Tabs -->
         <div class="weekday-tabs-row">
           <button
+            type="button"
             class="weekday-tab-btn"
             :class="{ active: selectedWeekdayTab === 0 }"
             @click="emit('update:selectedWeekdayTab', 0)"
           >
-            Tất Cả Các Ngày
+            {{ t('admin.manage.allDaysTab') }}
           </button>
 
           <button
             v-for="d in weekdayList"
             :key="d.id"
+            type="button"
             class="weekday-tab-btn"
             :class="{ active: selectedWeekdayTab === d.id, weekend: d.isWeekend }"
             @click="emit('update:selectedWeekdayTab', d.id)"
@@ -73,24 +78,27 @@ function formatMoney(amount: number): string {
 
         <!-- Bulk Price Setup Section -->
         <div class="bulk-pricing-section">
-          <h4 class="section-title">⚡ Cài Đặt Giá Hàng Loạt Cho Khung Giờ</h4>
+          <h4 class="section-title">
+            <span class="material-symbols-outlined icon-16">flash_on</span>
+            <span>{{ t('admin.manage.bulkPricingSectionTitle') }}</span>
+          </h4>
           <div class="bulk-inputs-grid">
             <div class="form-group">
-              <label class="form-label">Phạm vi áp dụng:</label>
+              <label class="form-label">{{ t('admin.manage.applyScopeLabel') }}</label>
               <select
                 :value="bulkScope"
                 class="form-input"
                 @change="emit('update:bulkScope', ($event.target as HTMLSelectElement).value as any)"
               >
-                <option value="current">Ngày đang chọn</option>
-                <option value="weekdays">Thứ 2 đến Thứ 6 (Trong tuần)</option>
-                <option value="weekends">Thứ 7 & Chủ Nhật (Cuối tuần)</option>
-                <option value="all">Tất cả 7 ngày trong tuần</option>
+                <option value="current">{{ t('admin.manage.scopeCurrentDay') }}</option>
+                <option value="weekdays">{{ t('admin.manage.scopeWeekdays') }}</option>
+                <option value="weekends">{{ t('admin.manage.scopeWeekends') }}</option>
+                <option value="all">{{ t('admin.manage.scopeAllDays') }}</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Từ giờ:</label>
+              <label class="form-label">{{ t('admin.manage.fromHourLabel') }}</label>
               <select
                 :value="bulkStartHour"
                 class="form-input"
@@ -103,7 +111,7 @@ function formatMoney(amount: number): string {
             </div>
 
             <div class="form-group">
-              <label class="form-label">Đến giờ:</label>
+              <label class="form-label">{{ t('admin.manage.toHourLabel') }}</label>
               <select
                 :value="bulkEndHour"
                 class="form-input"
@@ -116,23 +124,24 @@ function formatMoney(amount: number): string {
             </div>
 
             <div class="form-group">
-              <label class="form-label">Đơn giá (VND/giờ):</label>
+              <label class="form-label">{{ t('admin.manage.hourlyRateLabel') }}</label>
               <input
                 :value="bulkPrice"
                 type="number"
                 step="10000"
-                class="form-input"
+                class="form-input font-mono"
                 @input="emit('update:bulkPrice', Number(($event.target as HTMLInputElement).value) || 0)"
               />
             </div>
 
             <button
+              type="button"
               class="btn-apply-bulk"
               :disabled="bulkSaving"
               @click="emit('applyBulk')"
             >
-              <span v-if="bulkSaving">Đang áp dụng...</span>
-              <span v-else>Áp Dụng Giá</span>
+              <span v-if="bulkSaving">{{ t('admin.manage.applyingBulk') }}</span>
+              <span v-else>{{ t('admin.manage.applyBulkPriceBtn') }}</span>
             </button>
           </div>
         </div>
@@ -140,45 +149,57 @@ function formatMoney(amount: number): string {
         <!-- Slots Matrices by Period -->
         <div class="slots-matrices-container">
           <div class="period-group">
-            <h5 class="period-heading">🌅 Sáng (06:00 - 12:00) · {{ morningSlots.length }} Khung</h5>
+            <h5 class="period-heading">
+              <span class="material-symbols-outlined icon-16">wb_twilight</span>
+              <span>{{ t('admin.manage.morningSlotsTitle', { count: morningSlots.length }) }}</span>
+            </h5>
             <div class="period-slots-grid">
               <div v-for="slot in morningSlots" :key="slot.id" class="slot-pill">
-                <span class="slot-time">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
-                <span class="slot-price">{{ formatMoney(slot.price) }}</span>
-                <button class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
+                <span class="slot-price font-mono">{{ formatCurrency(slot.price) }}</span>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
               </div>
             </div>
           </div>
 
           <div class="period-group">
-            <h5 class="period-heading">☀️ Chiều (12:00 - 17:00) · {{ afternoonSlots.length }} Khung</h5>
+            <h5 class="period-heading">
+              <span class="material-symbols-outlined icon-16">light_mode</span>
+              <span>{{ t('admin.manage.afternoonSlotsTitle', { count: afternoonSlots.length }) }}</span>
+            </h5>
             <div class="period-slots-grid">
               <div v-for="slot in afternoonSlots" :key="slot.id" class="slot-pill">
-                <span class="slot-time">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
-                <span class="slot-price">{{ formatMoney(slot.price) }}</span>
-                <button class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
+                <span class="slot-price font-mono">{{ formatCurrency(slot.price) }}</span>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
               </div>
             </div>
           </div>
 
           <div class="period-group highlight-peak">
-            <h5 class="period-heading">🔥 Giờ Vàng Cao Điểm (17:00 - 22:00) · {{ peakSlots.length }} Khung</h5>
+            <h5 class="period-heading">
+              <span class="material-symbols-outlined icon-16 text-pink">local_fire_department</span>
+              <span>{{ t('admin.manage.peakSlotsTitle', { count: peakSlots.length }) }}</span>
+            </h5>
             <div class="period-slots-grid">
               <div v-for="slot in peakSlots" :key="slot.id" class="slot-pill">
-                <span class="slot-time">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
-                <span class="slot-price text-pink">{{ formatMoney(slot.price) }}</span>
-                <button class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
+                <span class="slot-price text-pink font-mono">{{ formatCurrency(slot.price) }}</span>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
               </div>
             </div>
           </div>
 
           <div v-if="nightSlots.length" class="period-group">
-            <h5 class="period-heading">🌙 Đêm muộn (22:00 - 06:00) · {{ nightSlots.length }} Khung</h5>
+            <h5 class="period-heading">
+              <span class="material-symbols-outlined icon-16">bedtime</span>
+              <span>{{ t('admin.manage.nightSlotsTitle', { count: nightSlots.length }) }}</span>
+            </h5>
             <div class="period-slots-grid">
               <div v-for="slot in nightSlots" :key="slot.id" class="slot-pill">
-                <span class="slot-time">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
-                <span class="slot-price">{{ formatMoney(slot.price) }}</span>
-                <button class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
+                <span class="slot-price font-mono">{{ formatCurrency(slot.price) }}</span>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
               </div>
             </div>
           </div>
@@ -187,18 +208,29 @@ function formatMoney(amount: number): string {
 
       <div class="modal-footer pricing-modal-footer">
         <div class="pricing-stats-summary">
-          <span>Tổng: <strong>{{ pricingStats.count }}</strong> khung</span> · 
-          <span>Thấp nhất: <strong>{{ formatMoney(pricingStats.min) }}</strong></span> · 
-          <span>Cao nhất: <strong>{{ formatMoney(pricingStats.max) }}</strong></span> · 
-          <span>Trung bình: <strong>{{ formatMoney(pricingStats.avg) }}</strong></span>
+          <span>{{ t('admin.manage.totalSlotsSummary', { count: pricingStats.count }) }}</span> · 
+          <span>{{ t('admin.manage.minPriceSummary', { amount: formatCurrency(pricingStats.min) }) }}</span> · 
+          <span>{{ t('admin.manage.maxPriceSummary', { amount: formatCurrency(pricingStats.max) }) }}</span> · 
+          <span>{{ t('admin.manage.avgPriceSummary', { amount: formatCurrency(pricingStats.avg) }) }}</span>
         </div>
-        <button class="btn-primary" @click="emit('close')">Xong (Đóng)</button>
+        <button type="button" class="btn-primary" @click="emit('close')">{{ t('admin.manage.finishCloseBtn') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .pricing-modal-body {
   display: flex;
   flex-direction: column;
@@ -244,6 +276,9 @@ function formatMoney(amount: number): string {
 }
 
 .section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0 0 12px;
   font-size: 13px;
   font-weight: 700;
@@ -287,6 +322,9 @@ function formatMoney(amount: number): string {
 }
 
 .period-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 700;
@@ -338,6 +376,8 @@ function formatMoney(amount: number): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .pricing-stats-summary {
@@ -369,5 +409,9 @@ function formatMoney(amount: number): string {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

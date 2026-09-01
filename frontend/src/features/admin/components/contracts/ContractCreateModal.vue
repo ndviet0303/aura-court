@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 defineProps<{
   show: boolean
@@ -9,6 +10,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'create', payload: any): void
 }>()
+
+const { t } = useI18n()
 
 const customerName = ref('')
 const phone = ref('')
@@ -34,53 +37,56 @@ function handleCreate() {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">➕ Tạo Hợp Đồng Đặt Sân Định Kỳ Mới</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">note_add</span>
+          <h3 class="modal-title">{{ t('admin.contracts.createContractTitle') }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <form @submit.prevent="handleCreate">
         <div class="modal-body">
           <div class="create-form-grid">
             <div class="form-group">
-              <label class="form-label">Tên khách hàng / CLB đại diện:</label>
-              <input v-model="customerName" type="text" class="form-input" placeholder="Vd: CLB Cầu Lông Tân Bình..." />
+              <label class="form-label">{{ t('admin.contracts.customerNameLabel') }}</label>
+              <input v-model="customerName" type="text" class="form-input" :placeholder="t('admin.contracts.customerNamePlaceholder')" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Số điện thoại liên hệ:</label>
-              <input v-model="phone" type="tel" class="form-input" placeholder="0901 234 567" />
+              <label class="form-label">{{ t('admin.contracts.phoneNumberLabel') }}</label>
+              <input v-model="phone" type="tel" class="form-input font-mono" placeholder="0901 234 567" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Chọn sân thi đấu:</label>
+              <label class="form-label">{{ t('admin.contracts.selectCourtLabel') }}</label>
               <input v-model="courtName" type="text" class="form-input" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Lịch thứ trong tuần:</label>
-              <input v-model="weekday" type="text" class="form-input" placeholder="Vd: Thứ 2, 4, 6" />
+              <label class="form-label">{{ t('admin.contracts.weekdayScheduleLabel') }}</label>
+              <input v-model="weekday" type="text" class="form-input" :placeholder="t('admin.contracts.weekdaySchedulePlaceholder')" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Khung giờ cố định:</label>
-              <input v-model="timeSlot" type="text" class="form-input" placeholder="18:00 - 20:00" />
+              <label class="form-label">{{ t('admin.contracts.fixedTimeSlotLabel') }}</label>
+              <input v-model="timeSlot" type="text" class="form-input font-mono" placeholder="18:00 - 20:00" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Giá trị hợp đồng mỗi tháng (VND):</label>
-              <input v-model.number="monthlyAmount" type="number" step="100000" class="form-input" />
+              <label class="form-label">{{ t('admin.contracts.monthlyContractValueLabel') }}</label>
+              <input v-model.number="monthlyAmount" type="number" step="100000" class="form-input font-mono" />
             </div>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn-cancel" @click="emit('close')">Huỷ</button>
+          <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
           <button
             type="submit"
             class="btn-primary"
             :disabled="!customerName.trim() || !phone.trim()"
           >
-            Ký Hợp Đồng & Kích Hoạt
+            {{ t('admin.contracts.signAndActivateBtn') }}
           </button>
         </div>
       </form>
@@ -89,6 +95,17 @@ function handleCreate() {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .create-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

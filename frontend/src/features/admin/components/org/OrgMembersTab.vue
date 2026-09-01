@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { OrgMember } from '../../composables/useOrganizationOwner'
 
 defineProps<{
@@ -9,6 +10,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'invite', email: string, role: string): void
 }>()
+
+const { t } = useI18n()
 
 const emailInput = ref('')
 const roleInput = ref('staff')
@@ -23,8 +26,13 @@ function handleInvite() {
 <template>
   <div class="org-members-tab-card">
     <div class="card-header">
-      <h3 class="tab-title">👥 Đội Ngũ Quản Trị Doanh Nghiệp</h3>
-      <span class="sub">Phân quyền quản lý cụm sân, nhân viên thu ngân và vận hành</span>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">group</span>
+        <div>
+          <h3 class="tab-title">{{ t('admin.org.membersTitle') }}</h3>
+          <span class="sub">{{ t('admin.org.membersSub') }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Quick invite form -->
@@ -32,31 +40,32 @@ function handleInvite() {
       <input
         v-model="emailInput"
         type="email"
-        placeholder="Nhập email nhân sự cần mời..."
-        class="form-input"
+        :placeholder="t('admin.org.inviteEmailPlaceholder')"
+        class="form-input font-mono"
       />
       <select v-model="roleInput" class="form-input role-select">
-        <option value="venue_manager">Quản Lý Cơ Sở (Manager)</option>
-        <option value="cashier">Thu Ngân (Cashier)</option>
-        <option value="staff">Nhân Viên Sân (Staff)</option>
+        <option value="venue_manager">{{ t('admin.org.roleManager') }}</option>
+        <option value="cashier">{{ t('admin.org.roleCashier') }}</option>
+        <option value="staff">{{ t('admin.org.roleStaff') }}</option>
       </select>
-      <button class="btn-invite" :disabled="!emailInput.trim()" @click="handleInvite">
-        + Gửi Lời Mời
+      <button type="button" class="btn-invite" :disabled="!emailInput.trim()" @click="handleInvite">
+        <span class="material-symbols-outlined icon-16">person_add</span>
+        <span>{{ t('admin.org.sendInviteBtn') }}</span>
       </button>
     </div>
 
     <div class="members-table">
       <div class="table-hdr">
-        <span>Thành Viên</span>
-        <span>Email</span>
-        <span>Vai Trò</span>
-        <span>Trạng Thái</span>
+        <span>{{ t('admin.org.hdrMember') }}</span>
+        <span>{{ t('admin.org.hdrEmail') }}</span>
+        <span>{{ t('admin.org.hdrRole') }}</span>
+        <span>{{ t('admin.org.hdrStatus') }}</span>
       </div>
 
       <div class="table-body">
         <div v-for="m in members" :key="m.id" class="member-row">
-          <strong>{{ m.user?.name || 'Nhân sự' }}</strong>
-          <span class="email-val">{{ m.user?.email }}</span>
+          <strong>{{ m.user?.name || t('admin.staff.hdrMember') }}</strong>
+          <span class="email-val font-mono">{{ m.user?.email }}</span>
           <span class="role-badge">{{ m.role }}</span>
           <span class="status-badge" :class="`status-${m.status}`">● {{ m.status }}</span>
         </div>
@@ -74,6 +83,17 @@ function handleInvite() {
   border-radius: 20px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title-icon {
+  font-size: 24px;
+  color: var(--pink-dark, #db2777);
 }
 
 .card-header {
@@ -113,6 +133,9 @@ function handleInvite() {
 }
 
 .btn-invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 18px;
   border-radius: 8px;
   border: 0;
@@ -170,5 +193,9 @@ function handleInvite() {
   font-size: 11px;
   font-weight: 700;
   color: #10b981;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

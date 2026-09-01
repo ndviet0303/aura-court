@@ -18,7 +18,7 @@ class SportZoneController extends Controller
             ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
             ->withCount('courts')
             ->with(['venue', 'courts'])
-            ->orderBy('name')
+            ->orderBy('id')
             ->get();
     }
 

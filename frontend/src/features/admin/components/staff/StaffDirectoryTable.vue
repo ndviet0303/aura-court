@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { StaffMember } from '../../composables/useAdminStaff'
 
 defineProps<{
@@ -12,6 +14,19 @@ const emit = defineEmits<{
   (e: 'update:selectedRoleFilter', val: string): void
   (e: 'openInviteModal'): void
 }>()
+
+const { t } = useI18n()
+
+function getRoleLabel(role: string): string {
+  switch (role) {
+    case 'Owner': return t('admin.staff.roleOwner')
+    case 'Manager': return t('admin.staff.roleManager')
+    case 'Receptionist': return t('admin.staff.roleReceptionist')
+    case 'Technician': return t('admin.staff.roleTechnician')
+    case 'Referee': return t('admin.staff.roleReferee')
+    default: return role
+  }
+}
 </script>
 
 <template>
@@ -19,11 +34,12 @@ const emit = defineEmits<{
     <!-- Toolbar -->
     <div class="directory-toolbar">
       <div class="search-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
         <input
           :value="searchQuery"
           type="text"
           class="header-search-input"
-          placeholder="Tìm theo tên, email, SĐT nhân viên..."
+          :placeholder="t('admin.staff.searchStaffPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -34,16 +50,17 @@ const emit = defineEmits<{
           class="role-filter-select"
           @change="emit('update:selectedRoleFilter', ($event.target as HTMLSelectElement).value)"
         >
-          <option value="all">Tất cả vai trò</option>
-          <option value="Owner">Chủ hệ thống (Owner)</option>
-          <option value="Manager">Quản lý cơ sở (Manager)</option>
-          <option value="Receptionist">Thu ngân / Lễ tân (Receptionist)</option>
-          <option value="Technician">Kỹ thuật viên sân (Technician)</option>
-          <option value="Referee">Trọng tài giải đấu (Referee)</option>
+          <option value="all">{{ t('admin.staff.allRoles') }}</option>
+          <option value="Owner">{{ t('admin.staff.roleOwner') }}</option>
+          <option value="Manager">{{ t('admin.staff.roleManager') }}</option>
+          <option value="Receptionist">{{ t('admin.staff.roleReceptionist') }}</option>
+          <option value="Technician">{{ t('admin.staff.roleTechnician') }}</option>
+          <option value="Referee">{{ t('admin.staff.roleReferee') }}</option>
         </select>
 
-        <button class="btn-invite-staff btn-primary-cta" @click="emit('openInviteModal')">
-          + Mời Nhân Sự Mới
+        <button type="button" class="btn-invite-staff btn-primary-cta" @click="emit('openInviteModal')">
+          <span class="material-symbols-outlined icon-16">person_add</span>
+          <span>{{ t('admin.staff.inviteStaffBtn') }}</span>
         </button>
       </div>
     </div>
@@ -51,12 +68,12 @@ const emit = defineEmits<{
     <!-- Staff Table Grid -->
     <div class="staff-table-wrap">
       <div class="table-header-row">
-        <span>Thành Viên</span>
-        <span>Vai Trò</span>
-        <span>Cơ Sở Phụ Trách</span>
-        <span>Quyền Hạn</span>
-        <span>Trạng Thái</span>
-        <span>Thao Tác</span>
+        <span>{{ t('admin.staff.hdrMember') }}</span>
+        <span>{{ t('admin.staff.hdrRole') }}</span>
+        <span>{{ t('admin.staff.hdrVenue') }}</span>
+        <span>{{ t('admin.staff.hdrPermissions') }}</span>
+        <span>{{ t('admin.staff.hdrStatus') }}</span>
+        <span>{{ t('admin.staff.hdrActions') }}</span>
       </div>
 
       <div class="table-body-rows">
@@ -78,16 +95,16 @@ const emit = defineEmits<{
 
           <div class="role-col">
             <span class="role-badge" :class="`role-${member.role.toLowerCase()}`">
-              {{ member.role }}
+              {{ getRoleLabel(member.role) }}
             </span>
           </div>
 
           <div class="venue-col">
-            <span>{{ member.venueName }}</span>
+            <span>{{ resolveLocalizedText(member.venueName) }}</span>
           </div>
 
           <div class="perms-col">
-            <span class="perms-badge">{{ member.permissionsCount }} quyền</span>
+            <span class="perms-badge">{{ t('admin.staff.permissionsCount', { count: member.permissionsCount }) }}</span>
           </div>
 
           <div class="status-col">
@@ -95,13 +112,17 @@ const emit = defineEmits<{
               class="status-indicator"
               :class="member.status === 'active' ? 'active' : 'invited'"
             >
-              ● {{ member.status === 'active' ? 'Hoạt động' : 'Đã mời' }}
+              ● {{ member.status === 'active' ? t('admin.staff.statusActive') : t('admin.staff.statusInvited') }}
             </span>
           </div>
 
           <div class="actions-col">
-            <button class="btn-action-sm">✏️</button>
-            <button class="btn-action-sm">🔒</button>
+            <button type="button" class="btn-action-sm" :title="t('admin.staff.editStaff')">
+              <span class="material-symbols-outlined icon-16">edit</span>
+            </button>
+            <button type="button" class="btn-action-sm" :title="t('admin.staff.lockStaff')">
+              <span class="material-symbols-outlined icon-16">lock</span>
+            </button>
           </div>
         </div>
       </div>
@@ -127,16 +148,27 @@ const emit = defineEmits<{
 .search-wrap {
   flex: 1;
   min-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: var(--muted);
 }
 
 .header-search-input {
   width: 100%;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
+  border: none;
+  background: transparent;
   color: var(--ink);
   font-size: 13px;
+  outline: none;
 }
 
 .filter-actions-group {
@@ -154,6 +186,9 @@ const emit = defineEmits<{
 }
 
 .btn-invite-staff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 18px;
   border-radius: 10px;
   border: 0;
@@ -176,7 +211,7 @@ const emit = defineEmits<{
 
 .table-header-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 80px;
+  grid-template-columns: 2fr 1.2fr 1.5fr 1fr 1fr 90px;
   padding: 12px 16px;
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
   border-bottom: 1px solid var(--outline);
@@ -192,7 +227,7 @@ const emit = defineEmits<{
 
 .table-grid-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 80px;
+  grid-template-columns: 2fr 1.2fr 1.5fr 1fr 1fr 90px;
   padding: 12px 16px;
   align-items: center;
   border-bottom: 1px solid var(--outline);
@@ -278,15 +313,28 @@ const emit = defineEmits<{
 
 .actions-col {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .btn-action-sm {
-  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
   border-radius: 6px;
   border: 1px solid var(--outline);
-  background: transparent;
+  background: var(--surface);
+  color: var(--muted);
   cursor: pointer;
-  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.btn-action-sm:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

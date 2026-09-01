@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { Participant } from '../../types/tournamentAdmin'
 
 const props = defineProps<{
@@ -20,6 +22,8 @@ const emit = defineEmits<{
   (e: 'update:searchQuery', q: string): void
   (e: 'toggleCheckIn', ath: Participant): void
 }>()
+
+const { t } = useI18n()
 
 const showQrScannerModal = ref(false)
 const showPassModal = ref(false)
@@ -48,14 +52,18 @@ function handleScanCode() {
 <template>
   <div class="checkin-panel-container">
     <div class="checkin-header-row">
-      <div>
-        <h3 class="panel-headline">📋 Điểm Danh Vận Động Viên</h3>
-        <p class="panel-sub">Quản lý trạng thái có mặt, kiểm tra vợt và phát thẻ VĐV số.</p>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">badge</span>
+        <div>
+          <h3 class="panel-headline">{{ t('admin.tournaments.checkInHeadline') }}</h3>
+          <p class="panel-sub">{{ t('admin.tournaments.checkInSub') }}</p>
+        </div>
       </div>
 
       <div class="checkin-actions-bar">
-        <button class="btn-scan-qr" @click="showQrScannerModal = true; scannedAthlete = null">
-          📷 Quét mã QR
+        <button type="button" class="btn-scan-qr" @click="showQrScannerModal = true; scannedAthlete = null">
+          <span class="material-symbols-outlined icon-16">qr_code_scanner</span>
+          <span>{{ t('admin.tournaments.scanQrBtn') }}</span>
         </button>
       </div>
     </div>
@@ -73,23 +81,23 @@ function handleScanCode() {
             :stroke-dasharray="`${metrics.percentage}, 100`"
             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
           />
-          <text x="18" y="20.35" class="percentage">{{ metrics.percentage }}%</text>
+          <text x="18" y="20.35" class="percentage font-mono">{{ metrics.percentage }}%</text>
         </svg>
-        <span class="gauge-label">Tỷ Lệ Điểm Danh</span>
+        <span class="gauge-label">{{ t('admin.tournaments.attendanceRate') }}</span>
       </div>
 
       <div class="metric-counters-grid">
         <div class="cnt-card">
-          <span class="cnt-label">Tổng VĐV</span>
-          <strong class="cnt-num">{{ metrics.total }}</strong>
+          <span class="cnt-label">{{ t('admin.tournaments.totalAthletes') }}</span>
+          <strong class="cnt-num font-mono">{{ metrics.total }}</strong>
         </div>
         <div class="cnt-card text-green">
-          <span class="cnt-label">Đã Có Mặt</span>
-          <strong class="cnt-num">{{ metrics.checkedInCount }}</strong>
+          <span class="cnt-label">{{ t('admin.tournaments.checkedInAthletes') }}</span>
+          <strong class="cnt-num font-mono">{{ metrics.checkedInCount }}</strong>
         </div>
         <div class="cnt-card text-yellow">
-          <span class="cnt-label">Chưa Đến</span>
-          <strong class="cnt-num">{{ metrics.pending_count }}</strong>
+          <span class="cnt-label">{{ t('admin.tournaments.pendingAthletes') }}</span>
+          <strong class="cnt-num font-mono">{{ metrics.pending_count }}</strong>
         </div>
       </div>
     </div>
@@ -98,32 +106,36 @@ function handleScanCode() {
     <div class="checkin-filter-toolbar">
       <div class="filter-pills-bar">
         <button
+          type="button"
           class="filter-pill-item"
           :class="{ active: filterStatus === 'all' }"
           @click="emit('update:filterStatus', 'all')"
         >
-          Tất cả ({{ metrics.total }})
+          {{ t('admin.tournaments.tabAllAthletes', { count: metrics.total }) }}
         </button>
         <button
+          type="button"
           class="filter-pill-item"
           :class="{ active: filterStatus === 'pending' }"
           @click="emit('update:filterStatus', 'pending')"
         >
-          Chưa đến ({{ metrics.pending_count }})
+          {{ t('admin.tournaments.tabPendingAthletes', { count: metrics.pending_count }) }}
         </button>
         <button
+          type="button"
           class="filter-pill-item"
           :class="{ active: filterStatus === 'checked_in' }"
           @click="emit('update:filterStatus', 'checked_in')"
         >
-          Đã điểm danh ({{ metrics.checkedInCount }})
+          {{ t('admin.tournaments.tabCheckedInAthletes', { count: metrics.checkedInCount }) }}
         </button>
         <button
+          type="button"
           class="filter-pill-item"
           :class="{ active: filterStatus === 'no_show' }"
           @click="emit('update:filterStatus', 'no_show')"
         >
-          Vắng mặt (0)
+          {{ t('admin.tournaments.tabNoShowAthletes', { count: 0 }) }}
         </button>
       </div>
 
@@ -132,7 +144,7 @@ function handleScanCode() {
           :value="searchQuery"
           type="text"
           class="search-input-field"
-          placeholder="Tìm tên, CLB, mã thẻ..."
+          :placeholder="t('admin.tournaments.searchAthletePlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -153,28 +165,40 @@ function handleScanCode() {
 
         <div class="ath-info-col">
           <div class="ath-title-row">
-            <h4 class="ath-name">{{ ath.name }}</h4>
-            <span v-if="ath.seed" class="ath-seed-tag">Hạt giống #{{ ath.seed }}</span>
-            <span class="ath-category-tag">{{ ath.category || 'Đơn Nam' }}</span>
+            <h4 class="ath-name">{{ resolveLocalizedText(ath.name) }}</h4>
+            <span v-if="ath.seed" class="ath-seed-tag font-mono">{{ t('admin.tournaments.seedLabel', { seed: ath.seed }) }}</span>
+            <span class="ath-category-tag">{{ ath.category || t('admin.tournaments.defaultCategory') }}</span>
           </div>
 
           <div class="ath-meta-details">
-            <span class="meta-club">🏢 {{ ath.club || 'Tự do' }}</span>
-            <span class="meta-phone">📞 {{ ath.phone || '0901234567' }}</span>
-            <span v-if="ath.checkInTime" class="meta-time">⏱️ Có mặt lúc: {{ ath.checkInTime }}</span>
+            <span class="meta-club">
+              <span class="material-symbols-outlined icon-14">corporate_fare</span>
+              {{ ath.club || t('admin.tournaments.freeAgentClub') }}
+            </span>
+            <span class="meta-phone font-mono">
+              <span class="material-symbols-outlined icon-14">call</span>
+              {{ ath.phone || '0901234567' }}
+            </span>
+            <span v-if="ath.checkInTime" class="meta-time font-mono">
+              <span class="material-symbols-outlined icon-14">schedule</span>
+              {{ t('admin.tournaments.checkedInAt', { time: ath.checkInTime }) }}
+            </span>
           </div>
         </div>
 
         <div class="ath-actions-col">
-          <button class="quick-pill-btn" @click="openPassModal(ath)">
-            🪪 Thẻ VĐV
+          <button type="button" class="quick-pill-btn" @click="openPassModal(ath)">
+            <span class="material-symbols-outlined icon-14">badge</span>
+            <span>{{ t('admin.tournaments.digitalPassBtn') }}</span>
           </button>
           <button
+            type="button"
             class="btn-round-checkin"
             :class="{ 'btn-checked': ath.checkedIn }"
             @click="emit('toggleCheckIn', ath)"
           >
-            {{ ath.checkedIn ? '✓ Đã Có Mặt' : 'Điểm Danh' }}
+            <span class="material-symbols-outlined icon-14">{{ ath.checkedIn ? 'check' : 'how_to_reg' }}</span>
+            <span>{{ ath.checkedIn ? t('admin.tournaments.checkedInBadge') : t('admin.tournaments.checkInBtn') }}</span>
           </button>
         </div>
       </div>
@@ -184,31 +208,34 @@ function handleScanCode() {
     <div v-if="showQrScannerModal" class="modal-backdrop" @click.self="showQrScannerModal = false">
       <div class="modal-card modal-qr-scanner-card">
         <div class="modal-header">
-          <h3 class="modal-title">📷 Quét Mã QR Thẻ VĐV</h3>
-          <button class="modal-close-btn" @click="showQrScannerModal = false">✕</button>
+          <div class="title-with-icon">
+            <span class="material-symbols-outlined card-title-icon">qr_code_scanner</span>
+            <h3 class="modal-title">{{ t('admin.tournaments.qrScannerModalTitle') }}</h3>
+          </div>
+          <button type="button" class="modal-close-btn" @click="showQrScannerModal = false">✕</button>
         </div>
         <div class="modal-body scanner-body">
           <div class="camera-preview-box">
             <div class="laser-scanline"></div>
             <div class="scanner-frame-target"></div>
           </div>
-          <p class="scan-hint">Nhập hoặc quét mã QR trên thẻ vận động viên:</p>
+          <p class="scan-hint">{{ t('admin.tournaments.scanHint') }}</p>
           
           <div class="scan-input-row">
             <input
               v-model="scanCodeInput"
               type="text"
-              placeholder="Nhập mã thẻ VĐV hoặc tên..."
-              class="scan-code-field"
+              :placeholder="t('admin.tournaments.scanCodePlaceholder')"
+              class="scan-code-field font-mono"
               @keyup.enter="handleScanCode"
             />
-            <button class="btn-scan-submit" @click="handleScanCode">Xác nhận</button>
+            <button type="button" class="btn-scan-submit" @click="handleScanCode">{{ t('admin.tournaments.confirmScanBtn') }}</button>
           </div>
 
           <div v-if="scannedAthlete" class="qr-scan-feedback-box">
-            <span class="alert-pill">✓ Đã điểm danh thành công</span>
-            <strong>{{ scannedAthlete.name }} ({{ scannedAthlete.club || 'Tự do' }})</strong>
-            <p>Mã thẻ: {{ scannedAthlete.qrCode || scannedAthlete.id }}</p>
+            <span class="alert-pill">✓ {{ t('admin.tournaments.scanSuccessAlert') }}</span>
+            <strong>{{ resolveLocalizedText(scannedAthlete.name) }} ({{ scannedAthlete.club || t('admin.tournaments.freeAgentClub') }})</strong>
+            <p class="font-mono">{{ t('admin.tournaments.passCodeLabel', { code: scannedAthlete.qrCode || scannedAthlete.id }) }}</p>
           </div>
         </div>
       </div>
@@ -218,16 +245,19 @@ function handleScanCode() {
     <div v-if="showPassModal" class="modal-backdrop" @click.self="showPassModal = false">
       <div class="modal-card modal-pass-card modal-sm">
         <div class="modal-header">
-          <h3 class="modal-title">🪪 Thẻ Vận Động Viên Số</h3>
-          <button class="modal-close-btn" @click="showPassModal = false">✕</button>
+          <div class="title-with-icon">
+            <span class="material-symbols-outlined card-title-icon">badge</span>
+            <h3 class="modal-title">{{ t('admin.tournaments.digitalPassModalTitle') }}</h3>
+          </div>
+          <button type="button" class="modal-close-btn" @click="showPassModal = false">✕</button>
         </div>
         <div class="modal-body">
           <div class="digital-badge-container">
             <div class="pass-header-brand">AURA COURT CONTROL</div>
-            <div class="pass-ath-name">{{ selectedPassAthlete?.name || '' }}</div>
+            <div class="pass-ath-name">{{ resolveLocalizedText(selectedPassAthlete?.name || '') }}</div>
             <div class="pass-ath-club">{{ selectedPassAthlete?.club || '' }}</div>
             <div class="pass-qr-code">
-              <span class="qr-label">{{ selectedPassAthlete?.qrCode || '' }}</span>
+              <span class="qr-label font-mono">{{ selectedPassAthlete?.qrCode || '' }}</span>
             </div>
             <div class="pass-status-pill">ACCREDITED ATHLETE 2026</div>
           </div>
@@ -248,6 +278,17 @@ function handleScanCode() {
   padding: 16px;
 }
 
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title-icon {
+  font-size: 24px;
+  color: var(--pink-dark, #db2777);
+}
+
 .checkin-header-row {
   display: flex;
   justify-content: space-between;
@@ -261,12 +302,15 @@ function handleScanCode() {
 }
 
 .panel-sub {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 12px;
   color: var(--muted);
 }
 
 .btn-scan-qr {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 10px;
   border: 0;
@@ -470,9 +514,16 @@ function handleScanCode() {
 
 .ath-meta-details {
   display: flex;
+  align-items: center;
   gap: 12px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.meta-club, .meta-phone, .meta-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .ath-actions-col {
@@ -481,6 +532,9 @@ function handleScanCode() {
 }
 
 .quick-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -492,6 +546,9 @@ function handleScanCode() {
 }
 
 .btn-round-checkin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 14px;
   border-radius: 8px;
   border: 0;
@@ -637,6 +694,9 @@ function handleScanCode() {
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.2);
 }
+
+.icon-16 { font-size: 16px; }
+.icon-14 { font-size: 14px; }
 
 @keyframes scan {
   0%, 100% { top: 10%; }

@@ -28,9 +28,10 @@ class CreateVenue
         return $venue->load('sportZones');
     }
 
-    private function generateUniqueSlug(string $name): string
+    private function generateUniqueSlug(string|array $name): string
     {
-        $base = Str::slug($name) ?: 'venue';
+        $rawName = is_array($name) ? ($name['vi'] ?? $name['en'] ?? reset($name) ?: 'venue') : $name;
+        $base = Str::slug((string) $rawName) ?: 'venue';
         $slug = $base;
         $suffix = 2;
         while ($this->venues->existsBySlug($slug)) {

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { CourtForm } from '../../composables/useAdminManageCourts'
 import type { Venue, SportZone } from '@/features/court/types/court'
 import { adminApi } from '../../api/adminApi'
@@ -19,6 +21,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save'): void
 }>()
+
+const { t } = useI18n()
 
 const uploadingImage = ref(false)
 const uploadError = ref('')
@@ -105,62 +109,65 @@ async function handleFileUpload(event: Event) {
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">
-          {{ editingCourtId ? '✏️ Chỉnh Sửa Sân Cầu Lông' : '➕ Thêm Sân Cầu Lông Mới' }}
-        </h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">{{ editingCourtId ? 'edit' : 'add_circle' }}</span>
+          <h3 class="modal-title">
+            {{ editingCourtId ? t('admin.manage.editCourtModalTitle') : t('admin.manage.addCourtModalTitle') }}
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="modal-form-grid">
           <div class="form-group">
-            <label class="form-label">Tên sân thể thao <span class="required">*</span>:</label>
+            <label class="form-label">{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label>
             <input
               v-model="courtForm.name"
               type="text"
               class="form-input"
-              placeholder="Vd: Sân 1 (Thảm Yonex Đạt Chuẩn)..."
+              :placeholder="t('admin.manage.courtNamePlaceholder')"
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Cụm sân (Địa điểm) <span class="required">*</span>:</label>
+            <label class="form-label">{{ t('admin.manage.venueLabel') }} <span class="required">*</span>:</label>
             <select v-model="courtForm.venue_id" class="form-input">
               <option v-for="v in venues" :key="v.id" :value="v.id">
-                {{ v.name }}
+                {{ resolveLocalizedText(v.name) }}
               </option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Khu vực thể thao (Sport Zone):</label>
+            <label class="form-label">{{ t('admin.manage.sportZoneLabel') }}</label>
             <select v-model="courtForm.sport_zone_id" class="form-input">
-              <option :value="null">Mặc định (Khu Cầu Lông)</option>
+              <option :value="null">{{ t('admin.manage.defaultSportZone') }}</option>
               <option v-for="z in sportZones.filter(sz => sz.venue_id === courtForm.venue_id)" :key="z.id" :value="z.id">
-                {{ z.name }}
+                {{ resolveLocalizedText(z.name) }}
               </option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Trạng thái sân:</label>
+            <label class="form-label">{{ t('admin.manage.courtStatusLabel') }}</label>
             <label class="toggle-check-label">
               <input v-model="courtForm.is_active" type="checkbox" />
-              <span>Cho phép khách đặt sân (Đang hoạt động)</span>
+              <span>{{ t('admin.manage.allowBookingCheckbox') }}</span>
             </label>
           </div>
 
           <div class="form-group full-width">
-            <label class="form-label">Mô tả tiện ích sân:</label>
+            <label class="form-label">{{ t('admin.manage.courtDescLabel') }}</label>
             <textarea
               v-model="courtForm.description"
               rows="2"
               class="form-textarea"
-              placeholder="Tiện ích sân, loại thảm, ánh sáng..."
+              :placeholder="t('admin.manage.courtDescPlaceholder')"
             ></textarea>
 
             <div class="quick-tags-row">
-              <span class="tag-prompt">Gợi ý nhanh:</span>
+              <span class="tag-prompt">{{ t('admin.manage.quickSuggestions') }}</span>
               <button
                 v-for="tag in courtDescriptionTags"
                 :key="tag.label"
@@ -176,13 +183,13 @@ async function handleFileUpload(event: Event) {
 
           <!-- Image URL & Preset Selection -->
           <div class="form-group full-width">
-            <label class="form-label">Hình ảnh sân:</label>
+            <label class="form-label">{{ t('admin.manage.courtImageLabel') }}</label>
             <div class="img-input-row">
               <input
                 v-model="courtForm.image_url"
                 type="text"
                 class="form-input"
-                placeholder="Nhập URL hình ảnh hoặc tải ảnh lên..."
+                :placeholder="t('admin.manage.courtImagePlaceholder')"
               />
               <input
                 ref="fileInput"
@@ -197,13 +204,16 @@ async function handleFileUpload(event: Event) {
                 :disabled="uploadingImage"
                 @click="fileInput?.click()"
               >
-                <span v-if="uploadingImage">Đang tải...</span>
-                <span v-else>📁 Tải Ảnh Lên R2</span>
+                <span v-if="uploadingImage">{{ t('admin.manage.uploadingText') }}</span>
+                <span v-else class="btn-upload-content">
+                  <span class="material-symbols-outlined icon-16">cloud_upload</span>
+                  <span>{{ t('admin.manage.uploadToR2Btn') }}</span>
+                </span>
               </button>
             </div>
 
             <div class="presets-row">
-              <span class="tag-prompt">Ảnh mẫu đẹp:</span>
+              <span class="tag-prompt">{{ t('admin.manage.presetImagesLabel') }}</span>
               <button
                 v-for="preset in courtImagePresets"
                 :key="preset.name"
@@ -220,14 +230,15 @@ async function handleFileUpload(event: Event) {
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Huỷ</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
         <button
+          type="button"
           class="btn-primary"
           :disabled="saving || !courtForm.name.trim()"
           @click="emit('save')"
         >
-          <span v-if="saving">Đang lưu...</span>
-          <span v-else>Lưu Thông Tin Sân</span>
+          <span v-if="saving">{{ t('admin.manage.savingText') }}</span>
+          <span v-else>{{ t('admin.manage.saveCourtInfoBtn') }}</span>
         </button>
       </div>
     </div>
@@ -235,6 +246,17 @@ async function handleFileUpload(event: Event) {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .modal-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -303,6 +325,12 @@ async function handleFileUpload(event: Event) {
   white-space: nowrap;
 }
 
+.btn-upload-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .presets-row {
   display: flex;
   align-items: center;
@@ -348,5 +376,9 @@ async function handleFileUpload(event: Event) {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

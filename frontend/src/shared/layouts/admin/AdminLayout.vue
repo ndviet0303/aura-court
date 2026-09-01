@@ -25,13 +25,7 @@ interface NavGroup {
 const { t, locale } = useI18n()
 const auth = useAuthStore()
 
-const route = (() => {
-  try {
-    return useRoute() || { path: window.location.pathname }
-  } catch {
-    return { path: window.location.pathname }
-  }
-})()
+const route = useRoute()
 
 const isMobileSidebarOpen = ref(false)
 const searchQuery = ref('')

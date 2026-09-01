@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import { useFinancialReconciliation } from '@/features/finance/composables/useFinancialReconciliation'
 import ReconciliationKpiCards from '@/features/finance/components/reconciliation/ReconciliationKpiCards.vue'
 import ReconciliationAlertBanner from '@/features/finance/components/reconciliation/ReconciliationAlertBanner.vue'
@@ -6,6 +8,8 @@ import ReconciliationFilterBar from '@/features/finance/components/reconciliatio
 import ReconciliationGrid from '@/features/finance/components/reconciliation/ReconciliationGrid.vue'
 import ReconciliationInvestigationDrawer from '@/features/finance/components/reconciliation/ReconciliationInvestigationDrawer.vue'
 import ReconciliationHealthAnalytics from '@/features/finance/components/reconciliation/ReconciliationHealthAnalytics.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -38,22 +42,25 @@ const {
     <header class="view-header">
       <div class="header-titles">
         <div class="title-badge-row">
-          <h1 class="page-title">⚖️ Đối Soát Tài Chính & Cảnh Báo Thông Minh</h1>
+          <div class="title-with-icon">
+            <span class="material-symbols-outlined header-icon">account_balance</span>
+            <h1 class="page-title">{{ t('admin.reconciliation.title') }}</h1>
+          </div>
           <span class="live-sync-badge">
             <span class="live-dot"></span>
-            NAPAS & PSP: ONLINE 100%
+            {{ t('admin.reconciliation.liveSync') }}
           </span>
         </div>
         <p class="page-sub">
-          Hệ thống đối soát 3 chiều tự động giữa Sổ cái nội bộ Aura, Cổng thanh toán (PSP) và Tài khoản quyết toán ngân hàng.
+          {{ t('admin.reconciliation.subtitle') }}
         </p>
       </div>
 
       <div class="header-quick-actions">
-        <button class="btn-top-sync" type="button" :disabled="syncing" @click="triggerSync">
-          <span class="material-symbols-outlined" :class="{ 'spin-anim': syncing }">sync</span>
-          {{ syncing ? 'Đang đồng bộ...' : 'Đồng Bộ Tức Thì' }}
-        </button>
+        <AuraButton variant="primary" type="button" :disabled="syncing" @click="triggerSync">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': syncing }">sync</span>
+          <span>{{ syncing ? t('admin.reconciliation.syncing') : t('admin.reconciliation.syncNow') }}</span>
+        </AuraButton>
       </div>
     </header>
 
@@ -123,8 +130,7 @@ const {
   max-width: 1440px;
   margin: 0 auto;
   padding: 24px 20px;
-  color: #191c1d;
-  font-family: 'Inter', sans-serif;
+  color: var(--ink);
 }
 
 .view-header {
@@ -139,12 +145,24 @@ const {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
 }
 
 .page-title {
   font-size: 22px;
-  font-weight: 700;
-  color: #191c1d;
+  font-weight: 800;
+  color: var(--ink);
   margin: 0;
 }
 
@@ -154,8 +172,8 @@ const {
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  background: #e6f4ea;
-  color: #137333;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
   padding: 3px 10px;
   border-radius: 999px;
   letter-spacing: 0.04em;
@@ -165,32 +183,18 @@ const {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #137333;
+  background: #10b981;
 }
 
 .page-sub {
-  font-size: 14px;
-  color: #5d5f5f;
-  margin: 4px 0 0;
-}
-
-.btn-top-sync {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--primary, #6B2D3F);
-  color: var(--on-primary, #ffffff);
-  border: none;
-  padding: 8px 18px;
-  border-radius: 999px;
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+  color: var(--muted);
+  margin: 6px 0 0;
 }
 
-.btn-top-sync:hover:not(:disabled) {
-  background: var(--primary-hover, #562332);
+.header-quick-actions {
+  display: flex;
+  align-items: center;
 }
 
 .spin-anim {
@@ -206,23 +210,27 @@ const {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #d1fae5;
-  color: #065f46;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
   padding: 12px 16px;
   border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .alert-error {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #ffdad6;
-  color: #ba1a1a;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
   padding: 12px 16px;
   border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

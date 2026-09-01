@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import type { Refund } from '@/features/booking/types/booking'
 
 defineProps<{
@@ -11,24 +13,25 @@ const emit = defineEmits<{
   (e: 'reject', refundId: number): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="refunds-panel-container">
     <div class="refunds-header">
       <div>
-        <h3 class="panel-headline">💳 Yêu Cầu Hoàn Tiền Chờ Xử Lý</h3>
-        <p class="panel-sub">Duyệt các yêu cầu huỷ đơn đặt sân và hoàn tiền tự động về ví / tài khoản khách.</p>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">currency_exchange</span>
+          <h3 class="panel-headline">{{ t('admin.manage.refundsPanelTitle') }}</h3>
+        </div>
+        <p class="panel-sub">{{ t('admin.manage.refundsPanelSub') }}</p>
       </div>
-      <span class="refund-count-badge">{{ refunds.length }} yêu cầu</span>
+      <span class="refund-count-badge font-mono">{{ t('admin.manage.refundsCount', { count: refunds.length }) }}</span>
     </div>
 
     <div v-if="refunds.length === 0" class="empty-refunds-box">
-      <span>🎉</span>
-      <p>Không có yêu cầu hoàn tiền nào đang chờ duyệt.</p>
+      <span class="material-symbols-outlined empty-icon">check_circle</span>
+      <p>{{ t('admin.manage.noPendingRefunds') }}</p>
     </div>
 
     <div v-else class="refunds-list">
@@ -36,20 +39,22 @@ function formatMoney(amount: number): string {
         <div class="ref-info-col">
           <div class="ref-title-row">
             <span class="ref-booking-code font-mono">{{ ref.booking?.code }}</span>
-            <strong class="ref-amount text-pink">{{ formatMoney(ref.amount) }}</strong>
+            <strong class="ref-amount text-pink font-mono">{{ formatCurrency(ref.amount) }}</strong>
           </div>
           <p class="ref-customer">
-            Khách: <strong>{{ ref.booking?.user?.name || 'Khách hàng' }}</strong> ({{ ref.booking?.user?.phone || '0901234567' }})
+            {{ t('admin.manage.customerLabel', { name: ref.booking?.user?.name || t('admin.dashboard.walkInCustomer'), phone: ref.booking?.user?.phone || 'N/A' }) }}
           </p>
-          <p class="ref-reason">Lý do: {{ ref.note || 'Khách yêu cầu huỷ lịch' }}</p>
+          <p class="ref-reason">{{ t('admin.manage.reasonLabel', { reason: ref.note || t('admin.manage.defaultCancelReason') }) }}</p>
         </div>
 
         <div class="ref-actions-col">
-          <button class="btn-approve" @click="emit('approve', ref.id)">
-            ✓ Duyệt Hoàn Tiền
+          <button type="button" class="btn-approve" @click="emit('approve', ref.id)">
+            <span class="material-symbols-outlined icon-16">check</span>
+            <span>{{ t('admin.manage.approveRefundBtn') }}</span>
           </button>
-          <button class="btn-reject" @click="emit('reject', ref.id)">
-            ✕ Từ Chối
+          <button type="button" class="btn-reject" @click="emit('reject', ref.id)">
+            <span class="material-symbols-outlined icon-16">close</span>
+            <span>{{ t('admin.manage.rejectRefundBtn') }}</span>
           </button>
         </div>
       </div>
@@ -72,6 +77,17 @@ function formatMoney(amount: number): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .panel-headline {
@@ -105,8 +121,9 @@ function formatMoney(amount: number): string {
   font-size: 13px;
 }
 
-.empty-refunds-box span {
-  font-size: 32px;
+.empty-icon {
+  font-size: 36px;
+  color: #10b981;
   margin-bottom: 8px;
 }
 
@@ -166,6 +183,9 @@ function formatMoney(amount: number): string {
 }
 
 .btn-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 14px;
   border-radius: 8px;
   border: 0;
@@ -177,6 +197,9 @@ function formatMoney(amount: number): string {
 }
 
 .btn-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -185,5 +208,9 @@ function formatMoney(amount: number): string {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

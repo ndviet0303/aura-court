@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import type { FinancialException } from '../../types/exceptions'
 
 const props = defineProps<{
@@ -12,7 +14,9 @@ const emit = defineEmits<{
   (e: 'submit', payload: { actionType: string; reason: string }): void
 }>()
 
-const actionType = ref('Duyệt hoàn tiền thủ công')
+const { t } = useI18n()
+
+const actionType = ref(t('admin.exceptions.optManualRefund'))
 const reason = ref('')
 const agreed = ref(false)
 
@@ -22,18 +26,18 @@ watch(
     if (val) {
       reason.value = ''
       agreed.value = false
-      actionType.value = 'Duyệt hoàn tiền thủ công'
+      actionType.value = t('admin.exceptions.optManualRefund')
     }
   }
 )
 
 function handleSubmit() {
   if (reason.value.trim().length < 20) {
-    alert('Vui lòng nhập lý do giải trình kiểm toán (tối thiểu 20 ký tự).')
+    alert(t('admin.exceptions.auditReasonPlaceholder'))
     return
   }
   if (!agreed.value) {
-    alert('Vui lòng xác nhận cam kết trách nhiệm kiểm soát rủi ro.')
+    alert(t('admin.exceptions.legalCommitment'))
     return
   }
   emit('submit', { actionType: actionType.value, reason: reason.value.trim() })
@@ -45,8 +49,8 @@ function handleSubmit() {
   <div class="override-drawer" :class="{ 'is-open': show }">
     <div class="drawer-header">
       <div>
-        <h3 class="drawer-title">Phê Duyệt Can Thiệp Thủ Công</h3>
-        <p class="drawer-sub">Hành động này sẽ được ký số và ghi vĩnh viễn vào sổ cái kiểm toán.</p>
+        <h3 class="drawer-title">{{ t('admin.exceptions.overrideDrawerTitle') }}</h3>
+        <p class="drawer-sub">{{ t('admin.exceptions.overrideDrawerSub') }}</p>
       </div>
       <button class="btn-close-drawer" type="button" @click="emit('close')">
         <span class="material-symbols-outlined">close</span>
@@ -57,50 +61,53 @@ function handleSubmit() {
       <!-- Target summary card -->
       <div class="target-summary-box">
         <div class="summary-row">
-          <span class="summary-label">Mã giao dịch:</span>
+          <span class="summary-label">{{ t('admin.exceptions.txCodeLabel') }}</span>
           <span class="font-mono font-bold">{{ item.reference }}</span>
         </div>
         <div class="summary-row">
-          <span class="summary-label">Chủ thể:</span>
-          <span>{{ (item.resolver?.name || 'Hệ thống') }} ({{ (item.resolver?.id || '') }})</span>
+          <span class="summary-label">{{ t('admin.exceptions.entityLabel') }}</span>
+          <span>{{ resolveLocalizedText(item.resolver?.name || t('admin.schedule.systemUser')) }} ({{ (item.resolver?.id || '') }})</span>
         </div>
         <div class="summary-row">
-          <span class="summary-label">Số tiền yêu cầu:</span>
-          <span class="font-mono font-bold text-critical">{{ item.amount.toLocaleString('vi-VN') }} ₫</span>
+          <span class="summary-label">{{ t('admin.exceptions.requestedAmountLabel') }}</span>
+          <span class="font-mono font-bold text-critical">{{ formatCurrency(item.amount) }}</span>
         </div>
         <div class="summary-row">
-          <span class="summary-label">Lý do cảnh báo:</span>
-          <span class="reason-pill">{{ item.description }}</span>
+          <span class="summary-label">{{ t('admin.exceptions.alertReasonLabel') }}</span>
+          <span class="reason-pill">{{ resolveLocalizedText(item.description) }}</span>
         </div>
       </div>
 
       <!-- Form fields -->
       <div class="form-group">
-        <label class="form-label">Loại can thiệp thẩm quyền <span class="text-critical">*</span></label>
+        <label class="form-label">{{ t('admin.exceptions.actionTypeLabel') }} <span class="text-critical">*</span></label>
         <select v-model="actionType" class="form-select">
-          <option value="Duyệt hoàn tiền thủ công">Duyệt hoàn tiền thủ công</option>
-          <option value="Cân bằng số dư ví nội bộ">Cân bằng số dư ví nội bộ</option>
-          <option value="Gỡ cờ cảnh báo & Cho phép rút tiền">Gỡ cờ cảnh báo & Cho phép rút tiền</option>
-          <option value="Hủy giao dịch & Khóa tạm thời">Hủy giao dịch & Khóa tạm thời</option>
+          <option :value="t('admin.exceptions.optManualRefund')">{{ t('admin.exceptions.optManualRefund') }}</option>
+          <option :value="t('admin.exceptions.optWalletRebalance')">{{ t('admin.exceptions.optWalletRebalance') }}</option>
+          <option :value="t('admin.exceptions.optUnflagWithdrawal')">{{ t('admin.exceptions.optUnflagWithdrawal') }}</option>
+          <option :value="t('admin.exceptions.optCancelAndLock')">{{ t('admin.exceptions.optCancelAndLock') }}</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Giải trình lý do kiểm toán <span class="text-critical">*</span></label>
+        <label class="form-label">{{ t('admin.exceptions.auditReasonLabel') }} <span class="text-critical">*</span></label>
         <textarea
           v-model="reason"
-          placeholder="Nhập chi tiết căn cứ phê duyệt (Tối thiểu 20 ký tự)..."
+          :placeholder="t('admin.exceptions.auditReasonPlaceholder')"
           class="form-textarea"
           rows="4"
         ></textarea>
-        <span class="char-count">{{ reason.length }}/20 ký tự tối thiểu</span>
+        <span class="char-count font-mono">{{ t('admin.exceptions.minCharsCount', { count: reason.length }) }}</span>
       </div>
 
       <!-- E-Signature box -->
       <div class="form-group">
-        <label class="form-label">Chữ ký số điện tử & Xác thực quyền</label>
+        <label class="form-label">{{ t('admin.exceptions.signatureTitle') }}</label>
         <div class="signature-canvas-box">
-          <span class="sign-text">✍️ Đã xác thực Chữ ký số Quản trị viên</span>
+          <span class="sign-text">
+            <span class="material-symbols-outlined icon-16">draw</span>
+            <span>{{ t('admin.exceptions.signatureVerified') }}</span>
+          </span>
         </div>
       </div>
 
@@ -108,16 +115,16 @@ function handleSubmit() {
       <div class="legal-box">
         <input id="agreement" v-model="agreed" type="checkbox" class="legal-checkbox" />
         <label for="agreement" class="legal-label">
-          Tôi cam kết chịu trách nhiệm cá nhân về tính chính xác và tuân thủ quy chế kiểm soát rủi ro tài chính của tổ chức.
+          {{ t('admin.exceptions.legalCommitment') }}
         </label>
       </div>
     </div>
 
     <div class="drawer-footer">
-      <button class="btn-cancel" type="button" @click="emit('close')">Đóng</button>
+      <button class="btn-cancel" type="button" @click="emit('close')">{{ t('common.close') }}</button>
       <button class="btn-confirm-override" type="button" @click="handleSubmit">
-        <span class="material-symbols-outlined">verified</span>
-        Ký Duyệt & Ghi Vào Sổ Cái
+        <span class="material-symbols-outlined icon-16">verified</span>
+        <span>{{ t('admin.exceptions.signAndRecordBtn') }}</span>
       </button>
     </div>
   </div>
@@ -253,6 +260,12 @@ function handleSubmit() {
   font-weight: 600;
 }
 
+.sign-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .legal-box {
   display: flex;
   align-items: flex-start;
@@ -314,4 +327,5 @@ function handleSubmit() {
 }
 
 .text-critical { color: #ba1a1a; }
+.icon-16 { font-size: 16px; }
 </style>

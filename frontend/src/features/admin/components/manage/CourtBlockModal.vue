@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText, formatSlotRange } from '@/i18n'
 import type { Court } from '@/features/court/types/court'
 
 const props = defineProps<{
@@ -14,19 +16,22 @@ const emit = defineEmits<{
   (e: 'deleteBlock', blockId: number): void
 }>()
 
+const { t } = useI18n()
+
 const startsAt = ref('')
 const endsAt = ref('')
-const reason = ref('Bảo dưỡng mặt thảm định kỳ')
+const reason = ref('')
 
 function handleAdd() {
   if (!startsAt.value || !endsAt.value) return
   emit('addBlock', {
     starts_at: startsAt.value,
     ends_at: endsAt.value,
-    reason: reason.value,
+    reason: reason.value || t('admin.manage.defaultLockReason'),
   })
   startsAt.value = ''
   endsAt.value = ''
+  reason.value = ''
 }
 </script>
 
@@ -34,60 +39,65 @@ function handleAdd() {
   <div v-if="show && court" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">🔒 Khoá Sân Bảo Trì: {{ court.name }}</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">lock</span>
+          <h3 class="modal-title">{{ t('admin.manage.lockCourtModalTitle', { name: resolveLocalizedText(court.name) }) }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <!-- Add Block Form -->
         <div class="block-form-box">
-          <h4 class="form-sub-title">Thêm Khung Giờ Khoá Sân</h4>
+          <h4 class="form-sub-title">{{ t('admin.manage.addLockSlotTitle') }}</h4>
 
           <div class="form-group">
-            <label class="form-label">Thời gian bắt đầu khoá:</label>
+            <label class="form-label">{{ t('admin.manage.lockStartTime') }}</label>
             <input v-model="startsAt" type="datetime-local" class="form-input" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Thời gian kết thúc:</label>
+            <label class="form-label">{{ t('admin.manage.lockEndTime') }}</label>
             <input v-model="endsAt" type="datetime-local" class="form-input" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Lý do khoá sân:</label>
+            <label class="form-label">{{ t('admin.manage.lockReason') }}</label>
             <input
               v-model="reason"
               type="text"
               class="form-input"
-              placeholder="Vd: Thay thảm, giải đấu nội bộ..."
+              :placeholder="t('admin.manage.lockReasonPlaceholder')"
             />
           </div>
 
           <button
+            type="button"
             class="btn-add-block"
             :disabled="!startsAt || !endsAt || saving"
             @click="handleAdd"
           >
-            + Tạo Lịch Khoá Sân
+            <span class="material-symbols-outlined icon-16">add</span>
+            <span>{{ t('admin.manage.createLockBtn') }}</span>
           </button>
         </div>
 
         <!-- Existing Blocks List -->
         <div class="existing-blocks-section">
-          <h4 class="form-sub-title">Danh Sách Lịch Khoá Hiện Tại ({{ court.blocks?.length || 0 }})</h4>
+          <h4 class="form-sub-title">{{ t('admin.manage.currentLocksList', { count: court.blocks?.length || 0 }) }}</h4>
 
           <div v-if="!court.blocks?.length" class="empty-blocks-msg">
-            Chưa có lịch bảo trì hoặc khoá sân nào.
+            {{ t('admin.manage.noLocks') }}
           </div>
 
           <div v-else class="blocks-list">
             <div v-for="block in court.blocks" :key="block.id" class="block-item-row">
               <div class="block-info">
-                <strong>{{ block.reason || 'Khoá sân bảo trì' }}</strong>
-                <span>{{ block.starts_at }} ➔ {{ block.ends_at }}</span>
+                <strong>{{ block.reason || t('admin.manage.defaultLockReason') }}</strong>
+                <span class="font-mono">{{ formatSlotRange(block.starts_at, block.ends_at) }}</span>
               </div>
-              <button class="btn-del-block" @click="emit('deleteBlock', block.id)">
-                Xoá
+              <button type="button" class="btn-del-block" @click="emit('deleteBlock', block.id)">
+                {{ t('admin.manage.deleteBtn') }}
               </button>
             </div>
           </div>
@@ -95,13 +105,24 @@ function handleAdd() {
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Đóng</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .block-form-box {
   padding: 16px;
   border-radius: 12px;
@@ -117,6 +138,10 @@ function handleAdd() {
 }
 
 .btn-add-block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   width: 100%;
   padding: 10px;
   border-radius: 10px;
@@ -193,5 +218,9 @@ function handleAdd() {
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

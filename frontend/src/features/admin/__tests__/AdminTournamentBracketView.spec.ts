@@ -161,7 +161,7 @@ describe('AdminTournamentBracketView', () => {
     // Switch to Live Referee Console
     await subNavBtns[2]?.trigger('click')
     await flushPromises()
-    expect(wrapper.text()).toContain('Live Match')
+    expect(wrapper.text()).toContain('QF-M01')
     expect(wrapper.findAll('.referee-player-card').length).toBe(2)
 
     // Switch to Overview

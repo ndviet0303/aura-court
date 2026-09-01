@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useAdminMembership } from '../composables/useAdminMembership'
 
 import MembershipKpiBar from '../components/membership/MembershipKpiBar.vue'
@@ -8,6 +9,8 @@ import MembershipVersionTimeline from '../components/membership/MembershipVersio
 import MembershipPlanModal from '../components/membership/MembershipPlanModal.vue'
 import MultiplierRuleModal from '../components/membership/MultiplierRuleModal.vue'
 import VersionManageModal from '../components/membership/VersionManageModal.vue'
+
+const { t } = useI18n()
 
 const {
   notice,
@@ -41,8 +44,11 @@ const {
     <!-- Top Header -->
     <header class="membership-header-section">
       <div class="header-titles">
-        <h1 class="page-title">Quản lý Gói hội viên & Điểm thưởng</h1>
-        <p class="page-subtitle">Thiết kế các gói đặc quyền và cấu hình hệ thống tích điểm thông minh.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">card_membership</span>
+          <h1 class="page-title">{{ t('admin.membership.title') }}</h1>
+        </div>
+        <p class="page-subtitle">{{ t('admin.membership.subtitle') }}</p>
       </div>
 
       <div class="header-actions-area">
@@ -55,7 +61,7 @@ const {
           @click="openCreatePlanModal"
         >
           <span class="material-symbols-outlined icon-18">add</span>
-          <span>Tạo Gói Mới</span>
+          <span>{{ t('admin.membership.createPlanBtn') }}</span>
         </button>
       </div>
     </header>
@@ -121,7 +127,7 @@ const {
   max-width: 1440px;
   margin: 0 auto;
   padding: 28px 24px 60px;
-  color: var(--on-surface, #191c1d);
+  color: var(--ink);
 }
 
 .membership-header-section {
@@ -132,22 +138,28 @@ const {
   gap: 16px;
 }
 
-.page-title {
-  margin: 0 0 6px;
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--on-surface, #191c1d);
-  letter-spacing: -0.02em;
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-:global(html.dark) .page-title {
-  color: #ffffff;
+.header-icon {
+  font-size: 28px;
+  color: var(--pink-dark, #db2777);
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .page-subtitle {
-  margin: 0;
-  font-size: 15px;
-  color: var(--on-surface-variant, #4f4446);
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
 }
 
 .header-actions-area {
@@ -164,7 +176,6 @@ const {
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .alert-pill-error {
@@ -180,33 +191,20 @@ const {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 22px;
+  padding: 10px 20px;
   border-radius: 12px;
   border: none;
-  background: var(--primary, #6B2D3F);
-  color: var(--on-primary, #ffffff);
+  background: var(--pink-dark, #db2777);
+  color: #ffffff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .btn-create-plan:hover {
-  background: var(--primary-hover, #562332);
+  opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(107, 45, 63, 0.35);
-}
-
-:global(html.dark) .btn-create-plan {
-  background: var(--primary, #E58E9F);
-  color: var(--on-primary, #1c0a10);
-  font-weight: 800;
-  box-shadow: 0 4px 14px rgba(229, 142, 159, 0.3);
-}
-
-:global(html.dark) .btn-create-plan:hover {
-  background: #f0a3b2;
 }
 
 .membership-content-grid {
@@ -225,6 +223,10 @@ const {
 .sidebar-column-stack {
   display: flex;
   flex-direction: column;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 @media (max-width: 1100px) {

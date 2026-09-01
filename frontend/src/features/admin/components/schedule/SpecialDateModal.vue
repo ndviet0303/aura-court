@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SpecialDateItem } from '../../composables/useAdminSchedule'
 
 defineProps<{
@@ -10,6 +11,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'submit', payload: { date: string; name: string; type: SpecialDateItem['type']; hours?: string }): void
 }>()
+
+const { t } = useI18n()
 
 const date = ref('2026-11-20')
 const name = ref('Ngày Nhà Giáo VN 20/11')
@@ -31,40 +34,43 @@ function handleSubmit() {
   <div v-if="show" class="modal-backdrop modal-overlay-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title modal-title-text">🎉 Thêm ngày đặc biệt / Lễ Tết</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">event</span>
+          <h3 class="modal-title modal-title-text">{{ t('admin.schedule.addSpecialDateModalTitle') }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Chọn ngày diễn ra:</label>
+          <label class="form-label">{{ t('admin.schedule.dateLabel') }}</label>
           <input v-model="date" type="date" class="form-input" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Tên dịp đặc biệt:</label>
-          <input v-model="name" type="text" class="form-input" placeholder="Vd: Giáng Sinh, Tết Dương Lịch..." />
+          <label class="form-label">{{ t('admin.schedule.occasionNameLabel') }}</label>
+          <input v-model="name" type="text" class="form-input" :placeholder="t('admin.schedule.occasionPlaceholder')" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Loại cấu hình:</label>
+          <label class="form-label">{{ t('admin.schedule.configTypeLabel') }}</label>
           <select v-model="type" class="form-input">
-            <option value="holiday">Ngày nghỉ lễ (Holiday)</option>
-            <option value="special_hours">Khung giờ đặc biệt</option>
-            <option value="closed">Đóng cửa toàn cơ sở</option>
+            <option value="holiday">{{ t('admin.schedule.typeHolidayOption') }}</option>
+            <option value="special_hours">{{ t('admin.schedule.typeSpecialHoursOption') }}</option>
+            <option value="closed">{{ t('admin.schedule.typeClosedOption') }}</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Khung giờ áp dụng:</label>
+          <label class="form-label">{{ t('admin.schedule.hoursLabel') }}</label>
           <input v-model="hours" type="text" class="form-input" placeholder="08:00 - 22:00" />
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Huỷ</button>
-        <button class="btn-primary" @click="handleSubmit">
-          Thêm Ngày Đặc Biệt
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn-primary" @click="handleSubmit">
+          {{ t('admin.schedule.submitSpecialDateBtn') }}
         </button>
       </div>
     </div>
@@ -72,6 +78,17 @@ function handleSubmit() {
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .btn-cancel {
   padding: 8px 18px;
   border-radius: 8px;

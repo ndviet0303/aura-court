@@ -1,32 +1,46 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
-const navItems = [
-  { name: 'Quản Lý Sân & Bảng Giá', path: '/admin/manage', icon: '🏟️' },
-  { name: 'Phân Quyền Nhân Sự', path: '/admin/staff', icon: '👥' },
-  { name: 'Đối Soát Ca & Tiền Mặt', path: '/admin/shift-reconciliation', icon: '💵' },
-  { name: 'Hợp Đồng Định Kỳ', path: '/admin/contracts', icon: '📑' },
-  { name: 'Ma Trận Giá Linh Hoạt', path: '/admin/pricing', icon: '⚡' },
-  { name: 'Cụm Sân & Cơ Sở', path: '/admin/venues', icon: '🏢' },
-  { name: 'Doanh Thu & Rút Tiền', path: '/admin/payouts', icon: '💰' },
-  { name: 'Lịch Hoạt Động & Bảo Trì', path: '/admin/schedule', icon: '📅' },
-  { name: 'Cây Nhánh Giải Đấu', path: '/admin/tournaments/bracket', icon: '🏆' },
+const { t } = useI18n()
+
+interface QuickNavItem {
+  id: string
+  labelKey: string
+  path: string
+  icon: string
+}
+
+const navItems: QuickNavItem[] = [
+  { id: 'manage', labelKey: 'admin.dashboard.quickNavManage', path: '/admin/manage', icon: 'grid_view' },
+  { id: 'staff', labelKey: 'admin.dashboard.quickNavStaff', path: '/admin/staff', icon: 'badge' },
+  { id: 'shifts', labelKey: 'admin.dashboard.quickNavShifts', path: '/admin/shifts', icon: 'receipt_long' },
+  { id: 'contracts', labelKey: 'admin.dashboard.quickNavContracts', path: '/admin/contracts', icon: 'contract' },
+  { id: 'pricing', labelKey: 'admin.dashboard.quickNavPricing', path: '/admin/pricing', icon: 'price_change' },
+  { id: 'venues', labelKey: 'admin.dashboard.quickNavVenues', path: '/admin/venues', icon: 'location_on' },
+  { id: 'payouts', labelKey: 'admin.dashboard.quickNavPayouts', path: '/admin/payouts', icon: 'account_balance_wallet' },
+  { id: 'schedule', labelKey: 'admin.dashboard.quickNavSchedule', path: '/admin/schedule', icon: 'schedule' },
+  { id: 'tournaments', labelKey: 'admin.dashboard.quickNavTournaments', path: '/admin/tournaments', icon: 'account_tree' },
 ]
 </script>
 
 <template>
   <div class="admin-quick-nav-card">
-    <h3 class="title">⚡ Lối Tắt Quản Trị Hệ Thống (Quick Navigation)</h3>
+    <div class="title-with-icon">
+      <span class="material-symbols-outlined card-title-icon">speed</span>
+      <h3 class="title">{{ t('admin.dashboard.quickNavTitle') }}</h3>
+    </div>
     <div class="nav-grid">
       <RouterLink
         v-for="item in navItems"
-        :key="item.path"
+        :key="item.id"
         :to="item.path"
         class="nav-card-item"
       >
-        <span class="n-icon">{{ item.icon }}</span>
-        <strong class="n-name">{{ item.name }}</strong>
-        <span class="n-arrow">➔</span>
+        <span class="material-symbols-outlined n-icon">{{ item.icon }}</span>
+        <strong class="n-name">{{ t(item.labelKey) }}</strong>
+        <span class="material-symbols-outlined n-arrow">arrow_forward</span>
       </RouterLink>
     </div>
   </div>
@@ -41,6 +55,17 @@ const navItems = [
   border-radius: 16px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 20px;
+  color: var(--pink-dark, #db2777);
 }
 
 .title {
@@ -72,19 +97,27 @@ const navItems = [
   border-color: var(--pink-dark, #db2777);
   transform: translateY(-2px);
   background: var(--surface);
+  color: var(--pink-dark, #db2777);
 }
 
 .n-icon {
   font-size: 20px;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.nav-card-item:hover .n-icon {
+  color: var(--pink-dark, #db2777);
 }
 
 .n-name {
   font-size: 13px;
   flex: 1;
+  color: var(--ink);
 }
 
 .n-arrow {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--muted);
 }
 </style>

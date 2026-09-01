@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import type { DenominationCount } from '../../composables/useAdminShiftReconciliation'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   denominations: DenominationCount[]
   totalCash: number
@@ -12,25 +14,26 @@ const emit = defineEmits<{
   (e: 'save'): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
+const { t } = useI18n()
 </script>
 
 <template>
   <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <div class="modal-header">
-        <h3 class="modal-title">💵 Kiểm Đếm Tiền Mặt Theo Mệnh Giá</h3>
-        <button class="modal-close-btn" @click="emit('close')">✕</button>
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined card-title-icon">calculate</span>
+          <h3 class="modal-title">{{ t('admin.shifts.denomModalTitle') }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="denominations-table">
           <div class="denom-header">
-            <span>Mệnh Giá</span>
-            <span>Số Lượng Tờ</span>
-            <span>Thành Tiền</span>
+            <span>{{ t('admin.shifts.hdrDenom') }}</span>
+            <span>{{ t('admin.shifts.hdrCount') }}</span>
+            <span>{{ t('admin.shifts.hdrSubtotal') }}</span>
           </div>
 
           <div
@@ -38,32 +41,43 @@ function formatMoney(amount: number): string {
             :key="d.value"
             class="denom-row"
           >
-            <strong class="denom-val">{{ formatMoney(d.value) }}</strong>
+            <strong class="denom-val font-mono">{{ formatCurrency(d.value) }}</strong>
             <input
               v-model.number="d.count"
               type="number"
               min="0"
-              class="denom-input"
+              class="denom-input font-mono"
             />
-            <strong class="denom-subtotal text-pink">{{ formatMoney(d.value * (d.count || 0)) }}</strong>
+            <strong class="denom-subtotal text-pink font-mono">{{ formatCurrency(d.value * (d.count || 0)) }}</strong>
           </div>
         </div>
 
         <div class="total-denom-bar">
-          <span>Tổng tiền mặt kiểm đếm:</span>
-          <strong class="total-val">{{ formatMoney(totalCash) }}</strong>
+          <span>{{ t('admin.shifts.totalDenomLabel') }}</span>
+          <strong class="total-val font-mono">{{ formatCurrency(totalCash) }}</strong>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">Đóng</button>
-        <button class="btn-primary" @click="emit('save')">Xác Nhận Tiền Két</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
+        <button type="button" class="btn-primary" @click="emit('save')">{{ t('admin.shifts.confirmDrawerCash') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
+}
+
 .denominations-table {
   display: flex;
   flex-direction: column;

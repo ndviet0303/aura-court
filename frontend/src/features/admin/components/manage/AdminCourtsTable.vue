@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { Court, Venue } from '@/features/court/types/court'
-import { formatCurrency } from '@/i18n'
 import { AuraButton, SelectDropdown } from '@/shared/components'
 
 defineProps<{
@@ -23,6 +24,8 @@ const emit = defineEmits<{
   (e: 'openBlockModal', court: Court): void
   (e: 'toggleStatus', court: Court): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -30,12 +33,12 @@ const emit = defineEmits<{
     <!-- Search & Filter Controls -->
     <div class="courts-filter-toolbar">
       <div class="search-input-wrap">
-        <span class="search-ico">🔍</span>
+        <span class="material-symbols-outlined search-ico">search</span>
         <input
           :value="searchQuery"
           type="text"
           class="court-search-input"
-          placeholder="Tìm theo tên sân hoặc cụm sân..."
+          :placeholder="t('admin.manage.searchCourtPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -53,17 +56,18 @@ const emit = defineEmits<{
           @update:model-value="emit('update:statusFilter', $event as 'all' | 'active' | 'inactive')"
         />
 
-        <AuraButton variant="primary" icon="add" @click="emit('createCourt')">
-          Thêm Sân Mới
+        <AuraButton variant="primary" @click="emit('createCourt')">
+          <span class="material-symbols-outlined icon-18">add</span>
+          <span>{{ t('admin.manage.addNewCourt') }}</span>
         </AuraButton>
       </div>
     </div>
 
     <!-- Courts Cards Grid -->
     <div v-if="courts.length === 0" class="empty-courts-state">
-      <div class="empty-ico">🏟️</div>
-      <h3>Không tìm thấy sân nào</h3>
-      <p>Thử thay đổi bộ lọc hoặc thêm sân thể thao mới.</p>
+      <span class="material-symbols-outlined empty-ico">sports_tennis</span>
+      <h3>{{ t('admin.manage.noCourtsFound') }}</h3>
+      <p>{{ t('admin.manage.noCourtsSub') }}</p>
     </div>
 
     <div v-else class="courts-admin-grid">
@@ -77,66 +81,82 @@ const emit = defineEmits<{
           <img
             v-if="court.image_url"
             :src="court.image_url"
-            :alt="court.name"
+            :alt="resolveLocalizedText(court.name)"
             loading="lazy"
           />
           <div v-else class="no-img-box">
-            <span>🏟️</span>
+            <span class="material-symbols-outlined fallback-icon">sports_tennis</span>
           </div>
 
           <span
             class="status-chip"
             :class="court.is_active !== false ? 'chip-active' : 'chip-inactive'"
           >
-            {{ court.is_active !== false ? 'Đang mở' : 'Tạm dừng' }}
+            {{ court.is_active !== false ? t('admin.manage.statusOpen') : t('admin.manage.statusClosed') }}
           </span>
 
           <span v-if="court.sport_zone" class="zone-chip">
-            {{ court.sport_zone.name }}
+            {{ resolveLocalizedText(court.sport_zone.name) }}
           </span>
         </div>
 
         <div class="court-card-body">
           <div class="court-title-row">
-            <h4 class="court-name">{{ court.name }}</h4>
-            <span class="venue-name">📍 {{ court.venue?.name }}</span>
+            <h4 class="court-name">{{ resolveLocalizedText(court.name) }}</h4>
+            <span class="venue-name">
+              <span class="material-symbols-outlined icon-14">location_on</span>
+              <span>{{ resolveLocalizedText(court.venue?.name) }}</span>
+            </span>
           </div>
 
-          <p class="court-desc">{{ court.description || 'Sân tiêu chuẩn thi đấu Aura Court.' }}</p>
+          <p class="court-desc">{{ resolveLocalizedText(court.description) || t('admin.manage.standardDesc') }}</p>
 
           <div class="court-stats-row">
-            <span class="stat-badge">⏱️ {{ court.price_slots?.length || 0 }} khung giá</span>
-            <span class="stat-badge text-yellow">🔒 {{ court.blocks?.length || 0 }} lịch bảo trì</span>
+            <span class="stat-badge">
+              <span class="material-symbols-outlined icon-14">schedule</span>
+              <span>{{ t('admin.manage.priceSlotsCount', { count: court.price_slots?.length || 0 }) }}</span>
+            </span>
+            <span class="stat-badge text-yellow">
+              <span class="material-symbols-outlined icon-14">build</span>
+              <span>{{ t('admin.manage.blocksCount', { count: court.blocks?.length || 0 }) }}</span>
+            </span>
           </div>
 
           <div class="court-actions-footer">
             <button
+              type="button"
               class="btn-court-action"
-              title="Cài đặt bảng giá"
+              :title="t('admin.manage.btnPricing')"
               @click="emit('openPriceModal', court)"
             >
-              💰 Bảng Giá
+              <span class="material-symbols-outlined icon-14">price_change</span>
+              <span>{{ t('admin.manage.btnPricing') }}</span>
             </button>
             <button
+              type="button"
               class="btn-court-action"
-              title="Khoá lịch bảo trì"
+              :title="t('admin.manage.btnBlock')"
               @click="emit('openBlockModal', court)"
             >
-              🔒 Khoá Sân
+              <span class="material-symbols-outlined icon-14">lock</span>
+              <span>{{ t('admin.manage.btnBlock') }}</span>
             </button>
             <button
+              type="button"
               class="btn-court-action"
-              title="Chỉnh sửa sân"
+              :title="t('admin.manage.btnEdit')"
               @click="emit('editCourt', court)"
             >
-              ✏️ Sửa
+              <span class="material-symbols-outlined icon-14">edit</span>
+              <span>{{ t('admin.manage.btnEdit') }}</span>
             </button>
             <button
+              type="button"
               class="btn-court-action btn-toggle"
-              :title="court.is_active !== false ? 'Tạm ngừng sân' : 'Mở lại sân'"
+              :title="court.is_active !== false ? t('admin.manage.statusClosed') : t('admin.manage.statusOpen')"
               @click="emit('toggleStatus', court)"
             >
-              {{ court.is_active !== false ? '⏸️' : '▶️' }}
+              <span class="material-symbols-outlined icon-16">{{ court.is_active !== false ? 'pause' : 'play_arrow' }}</span>
             </button>
           </div>
         </div>
@@ -171,8 +191,8 @@ const emit = defineEmits<{
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px;
-  opacity: 0.6;
+  font-size: 18px;
+  color: var(--muted);
 }
 
 .court-search-input {
@@ -205,6 +225,7 @@ const emit = defineEmits<{
 
 .empty-ico {
   font-size: 48px;
+  color: var(--muted);
   margin-bottom: 12px;
 }
 
@@ -252,7 +273,12 @@ const emit = defineEmits<{
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 40px;
+}
+
+.fallback-icon {
+  font-size: 44px;
+  color: var(--muted);
+  opacity: 0.4;
 }
 
 .status-chip {
@@ -307,6 +333,9 @@ const emit = defineEmits<{
 }
 
 .venue-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -330,6 +359,9 @@ const emit = defineEmits<{
 }
 
 .stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 3px 8px;
   border-radius: 6px;
   background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
@@ -349,6 +381,10 @@ const emit = defineEmits<{
 
 .btn-court-action {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--outline);
@@ -358,13 +394,27 @@ const emit = defineEmits<{
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.15s;
 }
 
 .btn-court-action:hover {
   border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
 }
 
 .btn-toggle {
   flex: 0 0 34px;
+}
+
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-16 {
+  font-size: 16px;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 </style>

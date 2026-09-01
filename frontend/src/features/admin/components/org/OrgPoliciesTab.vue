@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Organization } from '../../composables/useOrganizationOwner'
 
 const props = defineProps<{
@@ -9,6 +10,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'save', payload: Partial<Organization>): void
 }>()
+
+const { t } = useI18n()
 
 const autoApprove = ref(props.org.auto_approve_booking ?? true)
 const resaleFee = ref(props.org.resale_fee_percent ?? 5)
@@ -34,13 +37,16 @@ function handleSave() {
 
 <template>
   <div class="org-policies-tab-card">
-    <h3 class="tab-title">⚙️ Chính Sách Vận Hành & Tự Động Hóa</h3>
+    <div class="title-with-icon">
+      <span class="material-symbols-outlined card-title-icon">tune</span>
+      <h3 class="tab-title">{{ t('admin.org.policiesTitle') }}</h3>
+    </div>
 
     <form class="policies-form" @submit.prevent="handleSave">
       <div class="policy-item-row">
         <div class="p-text">
-          <strong>Tự Động Duyệt Đơn Đặt Sân</strong>
-          <span>Đơn đặt sân thanh toán VietQR / Thẻ thành công sẽ tự động giữ lịch mà không cần nhân viên bấm duyệt.</span>
+          <strong>{{ t('admin.org.autoApproveTitle') }}</strong>
+          <span>{{ t('admin.org.autoApproveDesc') }}</span>
         </div>
         <label class="switch-lbl">
           <input v-model="autoApprove" type="checkbox" />
@@ -50,19 +56,20 @@ function handleSave() {
 
       <div class="form-grid grid-stack-mobile">
         <div class="form-group">
-          <label class="form-label">Phí sàn chuyển nhượng P2P (%):</label>
-          <input v-model.number="resaleFee" type="number" min="0" max="20" class="form-input" />
+          <label class="form-label">{{ t('admin.org.resaleFeeLabel') }}</label>
+          <input v-model.number="resaleFee" type="number" min="0" max="20" class="form-input font-mono" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Thời hạn hủy đặt sân trước giờ chơi (tiếng):</label>
-          <input v-model.number="graceHours" type="number" min="1" max="72" class="form-input" />
+          <label class="form-label">{{ t('admin.org.graceHoursLabel') }}</label>
+          <input v-model.number="graceHours" type="number" min="1" max="72" class="form-input font-mono" />
         </div>
       </div>
 
       <div class="form-actions">
         <button type="submit" class="btn-save">
-          💾 Lưu Cấu Hình Chính Sách
+          <span class="material-symbols-outlined icon-16">save</span>
+          <span>{{ t('admin.org.savePoliciesBtn') }}</span>
         </button>
       </div>
     </form>
@@ -78,6 +85,17 @@ function handleSave() {
   border-radius: 20px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .tab-title {
@@ -130,6 +148,9 @@ function handleSave() {
 }
 
 .btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 24px;
   border-radius: 10px;
   border: 0;
@@ -137,5 +158,9 @@ function handleSave() {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

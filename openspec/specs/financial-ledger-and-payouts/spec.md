@@ -8,21 +8,21 @@ tenant operations without mutable balances or duplicate external payment effects
 ## Requirements
 
 ### Requirement: Immutable balanced ledger
-Every financial business event SHALL produce an immutable journal whose debit and credit totals balance. The ledger MUST represent gross collection, provider fee, platform commission, tenant payable, refund, reserve, and wallet liability where applicable; balances and settlement amounts MUST be derived from journal entries rather than updated directly.
+Every financial business event SHALL produce an immutable journal whose debit and credit totals balance. The ledger MUST represent gross collection, provider fee, platform commission, tenant payable, refund, reserve, and wallet liability where applicable; balances and settlement amounts MUST be derived from journal entries rather than updated directly. Wallet payment and wallet refund events SHALL each produce their own balanced journal entries against the `wallet_liability` account.
 
 #### Scenario: Reservation payment is accepted
-- **WHEN** a reservation payment is confirmed
-- **THEN** the platform SHALL create a balanced immutable journal reflecting the associated collection and liabilities
+- **WHEN** a reservation payment is confirmed via wallet balance deduction
+- **THEN** the platform SHALL create a balanced immutable journal debiting `wallet_liability` and crediting the associated collection and liability accounts
 
 #### Scenario: Refund is processed
-- **WHEN** a previously recorded collection is refunded
-- **THEN** the platform SHALL create compensating balanced entries without modifying the original journal
+- **WHEN** a confirmed booking is cancelled and the wallet is credited with the refund amount
+- **THEN** the platform SHALL create compensating balanced entries crediting `wallet_liability` and debiting the appropriate reversal accounts, without modifying the original payment journal
 
 ### Requirement: Provider operations and webhook de-duplication
-The platform SHALL use a provider-neutral payment interface for collection, verified webhooks, refund, beneficiary onboarding, payout submission, and payout-status retrieval. Provider event identifiers MUST be unique, and replaying a verified event MUST NOT create another charge, refund, journal, or payout operation.
+The platform SHALL use a provider-neutral payment interface for wallet deposit collection, verified webhooks, beneficiary onboarding, payout submission, and payout-status retrieval. Provider event identifiers MUST be unique, and replaying a verified event MUST NOT create another charge, refund, journal, or payout operation. Booking payments and refunds no longer flow through external payment providers; they are handled internally via wallet balance operations.
 
 #### Scenario: Provider webhook is replayed
-- **WHEN** the platform receives a verified payment event with an already-recorded provider event identifier
+- **WHEN** the platform receives a verified wallet deposit event with an already-recorded provider event identifier
 - **THEN** it SHALL acknowledge the duplicate without repeating financial effects
 
 #### Scenario: Provider status is unavailable

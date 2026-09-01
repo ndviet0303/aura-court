@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Organization } from '../../composables/useOrganizationOwner'
 
 const props = defineProps<{
@@ -10,6 +11,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'save', payload: Partial<Organization>): void
 }>()
+
+const { t } = useI18n()
 
 const name = ref(props.org.name)
 const tax_code = ref(props.org.tax_code || '')
@@ -44,37 +47,40 @@ function handleSave() {
 
 <template>
   <div class="org-profile-tab-card">
-    <h3 class="tab-title">🏢 Hồ Sơ Doanh Nghiệp & Định Danh Thương Hiệu</h3>
+    <div class="title-with-icon">
+      <span class="material-symbols-outlined card-title-icon">corporate_fare</span>
+      <h3 class="tab-title">{{ t('admin.org.profileTitle') }}</h3>
+    </div>
 
     <form class="profile-form" @submit.prevent="handleSave">
       <div class="form-grid grid-stack-mobile">
         <div class="form-group">
-          <label class="form-label">Tên doanh nghiệp / Chuỗi sân:</label>
+          <label class="form-label">{{ t('admin.org.orgNameLabel') }}</label>
           <input v-model="name" type="text" class="form-input" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Mã số thuế (Tax ID):</label>
-          <input v-model="tax_code" type="text" class="form-input" />
+          <label class="form-label">{{ t('admin.org.taxCodeLabel') }}</label>
+          <input v-model="tax_code" type="text" class="form-input font-mono" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Email hỗ trợ khách hàng:</label>
-          <input v-model="supportEmail" type="email" class="form-input" />
+          <label class="form-label">{{ t('admin.org.supportEmailLabel') }}</label>
+          <input v-model="supportEmail" type="email" class="form-input font-mono" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Hotline liên hệ:</label>
-          <input v-model="phone" type="tel" class="form-input" />
+          <label class="form-label">{{ t('admin.org.phoneLabel') }}</label>
+          <input v-model="phone" type="tel" class="form-input font-mono" />
         </div>
 
         <div class="form-group full-width">
-          <label class="form-label">Địa chỉ trụ sở chính:</label>
+          <label class="form-label">{{ t('admin.org.addressLabel') }}</label>
           <input v-model="address" type="text" class="form-input" />
         </div>
 
         <div class="form-group full-width">
-          <label class="form-label">Màu sắc chủ đạo thương hiệu (Brand Color):</label>
+          <label class="form-label">{{ t('admin.org.brandColorLabel') }}</label>
           <div class="colors-palette-row">
             <label
               v-for="c in brandColors"
@@ -92,7 +98,8 @@ function handleSave() {
 
       <div class="form-actions">
         <button type="submit" class="btn-save">
-          💾 Lưu Thông Tin Doanh Nghiệp
+          <span class="material-symbols-outlined icon-16">save</span>
+          <span>{{ t('admin.org.saveOrgBtn') }}</span>
         </button>
       </div>
     </form>
@@ -108,6 +115,17 @@ function handleSave() {
   border-radius: 20px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: var(--pink-dark, #db2777);
 }
 
 .tab-title {
@@ -167,6 +185,9 @@ function handleSave() {
 }
 
 .btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 24px;
   border-radius: 10px;
   border: 0;
@@ -174,5 +195,9 @@ function handleSave() {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-16 {
+  font-size: 16px;
 }
 </style>

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { AdminReport } from '../../composables/useAdminDashboard'
 
 defineProps<{
   report: AdminReport
 }>()
+
+const { t } = useI18n()
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -13,31 +16,39 @@ function formatMoney(amount: number): string {
 <template>
   <div class="admin-kpi-grid">
     <div class="kpi-card">
-      <span class="kpi-icon">💰</span>
-      <span class="kpi-title">Tổng Doanh Thu</span>
+      <div class="kpi-top-row">
+        <span class="material-symbols-outlined kpi-icon text-pink">payments</span>
+        <span class="kpi-title">{{ t('admin.dashboard.totalRevenue') }}</span>
+      </div>
       <strong class="kpi-value text-pink">{{ formatMoney(report.revenue) }}</strong>
-      <span class="kpi-sub text-green">↑ 14.2% so với tháng trước</span>
+      <span class="kpi-sub text-green">{{ t('admin.dashboard.revenueTrend') }}</span>
     </div>
 
     <div class="kpi-card">
-      <span class="kpi-icon">🏸</span>
-      <span class="kpi-title">Lượt Đặt Sân</span>
+      <div class="kpi-top-row">
+        <span class="material-symbols-outlined kpi-icon">sports_tennis</span>
+        <span class="kpi-title">{{ t('admin.dashboard.totalBookings') }}</span>
+      </div>
       <strong class="kpi-value">{{ report.bookings }}</strong>
-      <span class="kpi-sub">{{ report.confirmed }} đơn thành công</span>
+      <span class="kpi-sub">{{ t('admin.dashboard.confirmedBookings', { count: report.confirmed }) }}</span>
     </div>
 
     <div class="kpi-card">
-      <span class="kpi-icon">📈</span>
-      <span class="kpi-title">Tỷ Lệ Lấp Đầy Sân</span>
+      <div class="kpi-top-row">
+        <span class="material-symbols-outlined kpi-icon text-green">trending_up</span>
+        <span class="kpi-title">{{ t('admin.dashboard.occupancyRate') }}</span>
+      </div>
       <strong class="kpi-value text-green">{{ report.occupancyRate || 85 }}%</strong>
-      <span class="kpi-sub">Công suất trung bình cả tuần</span>
+      <span class="kpi-sub">{{ t('admin.dashboard.avgWeeklyOccupancy') }}</span>
     </div>
 
     <div class="kpi-card">
-      <span class="kpi-icon">🔄</span>
-      <span class="kpi-title">Yêu Cầu Hoàn Tiền</span>
+      <div class="kpi-top-row">
+        <span class="material-symbols-outlined kpi-icon text-yellow">currency_exchange</span>
+        <span class="kpi-title">{{ t('admin.dashboard.pendingRefunds') }}</span>
+      </div>
       <strong class="kpi-value text-yellow">{{ report.pendingRefunds }}</strong>
-      <span class="kpi-sub">Chờ kế toán xác nhận</span>
+      <span class="kpi-sub">{{ t('admin.dashboard.awaitingAccounting') }}</span>
     </div>
   </div>
 </template>
@@ -52,16 +63,22 @@ function formatMoney(amount: number): string {
 .kpi-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   padding: 20px;
   border-radius: 16px;
   border: 1px solid var(--outline);
   background: var(--surface);
 }
 
-.kpi-icon {
-  font-size: 24px;
+.kpi-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 2px;
+}
+
+.kpi-icon {
+  font-size: 20px;
 }
 
 .kpi-title {

@@ -1,28 +1,40 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import type { OrgVenue } from '../../composables/useOrganizationOwner'
 
 defineProps<{
   venues: OrgVenue[]
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="org-venues-tab-card">
     <div class="card-header">
-      <h3 class="tab-title">📍 Danh Sách Cơ Sở & Cụm Sân Trực Thuộc</h3>
-      <span class="sub">Tất cả chi nhánh hoạt động dưới cùng pháp nhân doanh nghiệp</span>
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined card-title-icon">location_on</span>
+        <div>
+          <h3 class="tab-title">{{ t('admin.org.venuesTitle') }}</h3>
+          <span class="sub">{{ t('admin.org.venuesSub') }}</span>
+        </div>
+      </div>
     </div>
 
     <div class="venues-list">
       <div v-for="v in venues" :key="v.id" class="venue-item-row">
         <div class="v-info">
-          <strong class="v-name">{{ v.name }}</strong>
-          <span class="v-addr">📍 {{ v.address }}</span>
+          <strong class="v-name">{{ resolveLocalizedText(v.name) }}</strong>
+          <span class="v-addr">
+            <span class="material-symbols-outlined icon-14">pin_drop</span>
+            {{ v.address }}
+          </span>
         </div>
         <div class="v-meta">
-          <span class="courts-chip font-mono">{{ v.courts_count || 0 }} sân đấu</span>
+          <span class="courts-chip font-mono">{{ t('admin.org.courtsScale', { count: v.courts_count || 0 }) }}</span>
           <span class="status-chip" :class="v.is_active ? 'active' : 'inactive'">
-            {{ v.is_active ? '● Hoạt động' : '○ Tạm dừng' }}
+            {{ v.is_active ? `● ${t('admin.org.statusActive')}` : `○ ${t('admin.org.statusInactive')}` }}
           </span>
         </div>
       </div>
@@ -39,6 +51,17 @@ defineProps<{
   border-radius: 20px;
   border: 1px solid var(--outline);
   background: var(--surface);
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title-icon {
+  font-size: 24px;
+  color: var(--pink-dark, #db2777);
 }
 
 .card-header {
@@ -86,6 +109,9 @@ defineProps<{
 }
 
 .v-addr {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -114,4 +140,8 @@ defineProps<{
 
 .status-chip.active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .status-chip.inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.icon-14 {
+  font-size: 14px;
+}
 </style>

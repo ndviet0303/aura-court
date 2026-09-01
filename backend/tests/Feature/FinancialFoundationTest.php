@@ -97,4 +97,26 @@ class FinancialFoundationTest extends TestCase
         $this->assertSame('open', $exception->status);
         $this->assertTrue($exception->due_at->greaterThanOrEqualTo(now()->addMinutes(14)));
     }
+
+    public function test_wallet_booking_payment_and_refund_journals_are_balanced(): void
+    {
+        $organization = Organization::create(['name' => 'Wallet Finance Org', 'slug' => 'wallet-fin-'.uniqid()]);
+        $venue = \App\Models\Venue::create(['organization_id' => $organization->id, 'name' => 'Wallet Venue', 'slug' => 'wallet-venue-'.uniqid(), 'is_active' => true]);
+        $court = \App\Models\Court::create(['venue_id' => $venue->id, 'name' => 'Court 1', 'is_active' => true]);
+        $user = \App\Models\User::factory()->create();
+        $booking = \App\Models\Booking::create(['code' => 'BKWALLETFIN01', 'user_id' => $user->id, 'court_id' => $court->id, 'total_amount' => 200000, 'status' => 'confirmed']);
+        $payment = $booking->payments()->create(['provider' => 'wallet', 'external_transaction_id' => 'w-tx-1', 'amount' => 200000, 'status' => 'paid']);
+
+        $financials = app(\App\Services\Finance\FinancialPostingService::class);
+        $paymentJournal = $financials->postWalletBookingPayment($booking->load('court.venue'), $payment, 1);
+
+        $this->assertSame(200000, $paymentJournal->total_debit);
+        $this->assertSame($paymentJournal->total_debit, $paymentJournal->total_credit);
+        $this->assertSame('booking.wallet_payment', $paymentJournal->event_type);
+
+        $refundJournal = $financials->postWalletBookingRefund($booking->load('court.venue'), 200000, 1);
+        $this->assertSame(200000, $refundJournal->total_debit);
+        $this->assertSame($refundJournal->total_debit, $refundJournal->total_credit);
+        $this->assertSame('booking.wallet_refund', $refundJournal->event_type);
+    }
 }

@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court } from '@/features/court/types/court'
 import { useAdminManageCourts, type CourtForm } from '../composables/useAdminManageCourts'
 import { useAdminPricingMatrix } from '../composables/useAdminPricingMatrix'
 
+import ManageHeader from '../components/manage/ManageHeader.vue'
+import ManageKpiBar from '../components/manage/ManageKpiBar.vue'
 import AdminCourtsTable from '../components/manage/AdminCourtsTable.vue'
 import CourtFormModal from '../components/manage/CourtFormModal.vue'
 import CourtPricingModal from '../components/manage/CourtPricingModal.vue'
 import CourtBlockModal from '../components/manage/CourtBlockModal.vue'
 import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
 import AdminRefundsPanel from '../components/manage/AdminRefundsPanel.vue'
+
+const { t } = useI18n()
 
 // Composables
 const {
@@ -85,20 +90,20 @@ const couponSaving = ref(false)
 const activeTab = ref<'courts' | 'refunds'>('courts')
 
 const venueFilterOptions = computed(() => [
-  { value: 'all', label: `Tất cả địa điểm (${venues.value.length})`, icon: 'domain' },
+  { value: 'all', label: t('admin.manage.allVenuesFilter', { count: venues.value.length }), icon: 'domain' },
   ...venues.value.map((v) => ({
     value: v.id,
-    label: v.name,
+    label: resolveLocalizedText(v.name),
     sublabel: v.address || undefined,
     icon: 'location_on',
   })),
 ])
 
-const statusFilterOptions = [
-  { value: 'all', label: 'Tất cả trạng thái', icon: 'filter_list' },
-  { value: 'active', label: 'Đang mở cửa', icon: 'check_circle' },
-  { value: 'inactive', label: 'Đã tạm ngừng', icon: 'pause_circle' },
-]
+const statusFilterOptions = computed(() => [
+  { value: 'all', label: t('admin.manage.allStatusFilter'), icon: 'filter_list' },
+  { value: 'active', label: t('admin.manage.statusOpen'), icon: 'check_circle' },
+  { value: 'inactive', label: t('admin.manage.statusClosed'), icon: 'pause_circle' },
+])
 
 function handleStartCreateCourt() {
   editingCourtId.value = null
@@ -148,9 +153,9 @@ async function handleSaveCourt() {
                 sport_zone: sportZones.value.find((z) => z.id === payload.sport_zone_id) || null,
                 image_url: payload.image_url || undefined,
               }
-            : c
+            : c,
         )
-        notice.value = 'Đã mô phỏng cập nhật sân.'
+        notice.value = t('admin.manage.simulatedUpdateCourt')
       } else {
         const syntheticId = -Date.now()
         const newCourt: Court = {
@@ -160,12 +165,12 @@ async function handleSaveCourt() {
           sport_zone_id: payload.sport_zone_id,
           venue: venues.value.find((v) => v.id === payload.venue_id) || {
             id: payload.venue_id,
-            name: 'Địa điểm đã chọn',
-            slug: 'selected-venue',
-            address: 'Địa chỉ mẫu',
+            name: 'Downtown Arena',
+            slug: 'downtown-arena',
+            address: 'District 1',
             google_maps_url: 'https://maps.app.goo.gl/demo',
             is_active: true,
-            share_url: `${window.location.origin}/venues/selected-venue/directions`,
+            share_url: `${window.location.origin}/venues/downtown-arena/directions`,
           },
           sport_zone: sportZones.value.find((z) => z.id === payload.sport_zone_id) || null,
           description: payload.description || undefined,
@@ -175,7 +180,7 @@ async function handleSaveCourt() {
           blocks: [],
         }
         courts.value = [newCourt, ...courts.value]
-        notice.value = 'Đã mô phỏng tạo sân mới.'
+        notice.value = t('admin.manage.simulatedCreateCourt')
       }
       showCourtModal.value = false
       return
@@ -183,15 +188,15 @@ async function handleSaveCourt() {
 
     if (editingCourtId.value) {
       await adminApi.updateCourt(editingCourtId.value, payload)
-      notice.value = 'Đã cập nhật sân thành công.'
+      notice.value = t('admin.manage.updateCourtSuccess')
     } else {
       await adminApi.createCourt(payload)
-      notice.value = 'Đã tạo sân mới thành công.'
+      notice.value = t('admin.manage.createCourtSuccess')
     }
     showCourtModal.value = false
     await load()
   } catch (cause: unknown) {
-    error.value = errorMessage(cause, 'Không thể lưu thông tin sân.')
+    error.value = errorMessage(cause, t('admin.manage.saveCourtError'))
   } finally {
     saving.value = false
   }
@@ -220,14 +225,14 @@ async function handleAddBlock(payload: { starts_at: string; ends_at: string; rea
         reason: payload.reason,
       }
       selectedCourtForBlock.value.blocks = [syntheticBlock, ...(selectedCourtForBlock.value.blocks || [])]
-      notice.value = 'Đã mô phỏng tạo lịch khoá sân.'
+      notice.value = t('admin.manage.simulatedCreateBlock')
       return
     }
     await adminApi.createBlock(selectedCourtForBlock.value.id, payload)
-    notice.value = 'Đã tạo lịch khoá sân thành công.'
+    notice.value = t('admin.manage.createBlockSuccess')
     await load()
   } catch (e) {
-    error.value = errorMessage(e, 'Không thể tạo lịch khoá sân.')
+    error.value = errorMessage(e, t('admin.manage.createBlockError'))
   } finally {
     blockSaving.value = false
   }
@@ -238,14 +243,14 @@ async function handleDeleteBlock(blockId: number) {
   try {
     if (isDemoAdmin.value) {
       selectedCourtForBlock.value.blocks = selectedCourtForBlock.value.blocks?.filter((b) => b.id !== blockId)
-      notice.value = 'Đã mô phỏng xoá lịch khoá sân.'
+      notice.value = t('admin.manage.simulatedDeleteBlock')
       return
     }
     await adminApi.deleteBlock(selectedCourtForBlock.value.id, blockId)
-    notice.value = 'Đã xoá lịch khoá sân.'
+    notice.value = t('admin.manage.deleteBlockSuccess')
     await load()
   } catch (e) {
-    error.value = errorMessage(e, 'Không thể xoá lịch khoá sân.')
+    error.value = errorMessage(e, t('admin.manage.deleteBlockError'))
   }
 }
 
@@ -262,14 +267,14 @@ async function handleCreateCoupon(payload: { code: string; discount_type: 'fixed
         usage_limit: payload.usage_limit,
         is_active: true,
       })
-      notice.value = 'Đã mô phỏng tạo mã giảm giá mới.'
+      notice.value = t('admin.manage.simulatedCreateCoupon')
       return
     }
     await adminApi.createCoupon(payload)
-    notice.value = 'Đã tạo mã ưu đãi thành công.'
+    notice.value = t('admin.manage.createCouponSuccess')
     await load()
   } catch (e) {
-    error.value = errorMessage(e, 'Không thể tạo mã ưu đãi.')
+    error.value = errorMessage(e, t('admin.manage.createCouponError'))
   } finally {
     couponSaving.value = false
   }
@@ -279,14 +284,14 @@ async function handleApproveRefund(refundId: number) {
   try {
     if (isDemoAdmin.value) {
       refunds.value = refunds.value.filter((r) => r.id !== refundId)
-      notice.value = 'Đã mô phỏng duyệt hoàn tiền.'
+      notice.value = t('admin.manage.simulatedApproveRefund')
       return
     }
     await adminApi.processRefund(refundId, { status: 'approved' })
-    notice.value = 'Đã duyệt yêu cầu hoàn tiền.'
+    notice.value = t('admin.manage.approveRefundSuccess')
     await load()
   } catch (e) {
-    error.value = errorMessage(e, 'Không thể duyệt hoàn tiền.')
+    error.value = errorMessage(e, t('admin.manage.approveRefundError'))
   }
 }
 
@@ -294,14 +299,14 @@ async function handleRejectRefund(refundId: number) {
   try {
     if (isDemoAdmin.value) {
       refunds.value = refunds.value.filter((r) => r.id !== refundId)
-      notice.value = 'Đã mô phỏng từ chối hoàn tiền.'
+      notice.value = t('admin.manage.simulatedRejectRefund')
       return
     }
     await adminApi.processRefund(refundId, { status: 'rejected' })
-    notice.value = 'Đã từ chối hoàn tiền.'
+    notice.value = t('admin.manage.rejectRefundSuccess')
     await load()
   } catch (e) {
-    error.value = errorMessage(e, 'Không thể từ chối hoàn tiền.')
+    error.value = errorMessage(e, t('admin.manage.rejectRefundError'))
   }
 }
 
@@ -313,62 +318,44 @@ onMounted(() => {
 <template>
   <div class="admin-manage-page">
     <!-- Top Header -->
-    <header class="admin-page-header">
-      <div class="header-left">
-        <h1 class="page-title">⚙️ Quản Trị Hệ Thống Sân & Hoạt Động</h1>
-        <p class="page-sub">Quản lý danh sách sân thi đấu, bảng giá linh hoạt, lịch bảo trì và hoàn tiền.</p>
-      </div>
-
-      <div class="header-right">
-        <button class="btn-top-action" @click="showCouponModal = true">
-          🎟️ Mã Khuyến Mãi ({{ coupons.length }})
-        </button>
-        <button class="btn-top-action" @click="load">
-          🔄 Làm mới
-        </button>
-      </div>
-    </header>
+    <ManageHeader
+      :coupons-count="coupons.length"
+      @open-coupons="showCouponModal = true"
+      @refresh="load"
+    />
 
     <!-- KPI Stats Cards -->
-    <div class="manage-kpi-bar">
-      <div class="kpi-card">
-        <span class="kpi-lbl">Tổng số sân</span>
-        <strong class="kpi-num">{{ totalCourtsCount }}</strong>
-      </div>
-      <div class="kpi-card text-green">
-        <span class="kpi-lbl">Sân đang mở</span>
-        <strong class="kpi-num">{{ activeCourtsCount }}</strong>
-      </div>
-      <div class="kpi-card text-yellow">
-        <span class="kpi-lbl">Lịch bảo trì</span>
-        <strong class="kpi-num">{{ totalBlocksCount }}</strong>
-      </div>
-      <div class="kpi-card text-pink">
-        <span class="kpi-lbl">Hoàn tiền chờ duyệt</span>
-        <strong class="kpi-num">{{ pendingRefundsCount }}</strong>
-      </div>
-    </div>
+    <ManageKpiBar
+      :total-courts-count="totalCourtsCount"
+      :active-courts-count="activeCourtsCount"
+      :total-blocks-count="totalBlocksCount"
+      :pending-refunds-count="pendingRefundsCount"
+    />
 
     <!-- Alert Banners -->
     <div v-if="notice" class="alert-pill">{{ notice }}</div>
     <div v-if="error" class="alert-pill-error">{{ error }}</div>
 
-    <!-- Main Navigation Tabs -->
+    <!-- Main Navigation Subtabs -->
     <div class="manage-subtabs-row">
       <button
+        type="button"
         class="subtab-btn"
         :class="{ active: activeTab === 'courts' }"
         @click="activeTab = 'courts'"
       >
-        🏟️ Danh Sách Sân ({{ totalCourtsCount }})
+        <span class="material-symbols-outlined icon-18">grid_view</span>
+        <span>{{ t('admin.manage.tabCourts') }} ({{ totalCourtsCount }})</span>
       </button>
 
       <button
+        type="button"
         class="subtab-btn"
         :class="{ active: activeTab === 'refunds' }"
         @click="activeTab = 'refunds'"
       >
-        💳 Duyệt Hoàn Tiền ({{ pendingRefundsCount }})
+        <span class="material-symbols-outlined icon-18">currency_exchange</span>
+        <span>{{ t('admin.manage.tabRefunds') }} ({{ pendingRefundsCount }})</span>
       </button>
     </div>
 
@@ -473,71 +460,6 @@ onMounted(() => {
   color: var(--ink);
 }
 
-.admin-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.page-title {
-  margin: 0 0 6px;
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.page-sub {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.header-right {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-top-action {
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.manage-kpi-bar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.kpi-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-}
-
-.kpi-lbl {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.kpi-num {
-  font-size: 22px;
-}
-
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-pink { color: var(--pink-dark, #db2777); }
-
 .manage-subtabs-row {
   display: flex;
   gap: 8px;
@@ -546,6 +468,9 @@ onMounted(() => {
 }
 
 .subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 20px;
   border-radius: 12px;
   border: 1px solid var(--outline);
@@ -554,6 +479,12 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.15s;
+}
+
+.subtab-btn:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
 }
 
 .subtab-btn.active {
@@ -580,9 +511,7 @@ onMounted(() => {
   font-weight: 600;
 }
 
-@media (max-width: 800px) {
-  .manage-kpi-bar {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.icon-18 {
+  font-size: 18px;
 }
 </style>

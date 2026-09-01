@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import { useAdminSchedule } from '../composables/useAdminSchedule'
 
 import WeeklyScheduleCard from '../components/schedule/WeeklyScheduleCard.vue'
@@ -8,6 +10,8 @@ import MaintenanceScheduleCard from '../components/schedule/MaintenanceScheduleC
 import DowntimeScheduleModal from '../components/schedule/DowntimeScheduleModal.vue'
 import SpecialDateModal from '../components/schedule/SpecialDateModal.vue'
 import ScheduleAuditLogsModal from '../components/schedule/ScheduleAuditLogsModal.vue'
+
+const { t } = useI18n()
 
 const {
   loading,
@@ -38,14 +42,18 @@ onMounted(() => {
     <!-- Header Section -->
     <header class="schedule-header">
       <div class="header-titles">
-        <h1 class="page-headline">📅 Lịch hoạt động & Giờ Mở Cửa Toàn Hệ Thống</h1>
-        <p class="page-sub">Cấu hình thời gian mở sân chuẩn hàng tuần, ngày lễ Tết và lên lịch khoá bảo trì từng sân đấu.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">schedule</span>
+          <h1 class="page-headline">{{ t('admin.schedule.title') }}</h1>
+        </div>
+        <p class="page-sub">{{ t('admin.schedule.subtitle') }}</p>
       </div>
 
       <div class="header-actions">
-        <button class="btn-action-neutral" @click="showAuditLogsModal = true">
-          🔒 Nhật Ký Kiểm Toán
-        </button>
+        <AuraButton variant="outline" class="btn-action-neutral" @click="showAuditLogsModal = true">
+          <span class="material-symbols-outlined icon-18">history</span>
+          <span>{{ t('admin.schedule.auditLogsBtn') }}</span>
+        </AuraButton>
       </div>
     </header>
 
@@ -114,27 +122,27 @@ onMounted(() => {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-headline {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-sub {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
-}
-
-.btn-action-neutral {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .alert-pill {
@@ -159,6 +167,10 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 @media (max-width: 900px) {

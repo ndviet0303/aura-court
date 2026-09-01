@@ -11,7 +11,7 @@ const props = defineProps<{
   payment: PaymentInfo
   booking: Booking | null
   court: Court | null
-  countdownFormatted: string
+  countdownFormatted?: string
   couponCode: string
   couponLoading?: boolean
   couponError?: string
@@ -41,10 +41,14 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
         </span>
         <span>{{ isTournament ? $t('payment.tournamentSummaryTitle') : $t('payment.courtSummaryTitle') }}</span>
       </h3>
-      <div class="countdown-tag">
+      <div v-if="countdownFormatted" class="countdown-tag">
         <span class="material-symbols-outlined timer-icon">timer</span>
         <span>{{ $t('payment.expiresIn') }}</span>
         <strong class="font-mono">{{ countdownFormatted }}</strong>
+      </div>
+      <div v-else class="wallet-tag">
+        <span class="material-symbols-outlined wallet-mini-icon">account_balance_wallet</span>
+        <span>{{ $t('payment.walletPaymentBadge') || 'Ví Aura' }}</span>
       </div>
     </div>
 
@@ -190,6 +194,22 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
   background: rgba(245, 158, 11, 0.1);
   padding: 3px 8px;
   border-radius: 6px;
+}
+
+.wallet-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pink-dark, #db2777);
+  background: rgba(236, 72, 153, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.wallet-mini-icon {
+  font-size: 14px;
 }
 
 .timer-icon {

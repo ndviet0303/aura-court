@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useAdminStaff } from '../composables/useAdminStaff'
 
 import StaffDirectoryTable from '../components/staff/StaffDirectoryTable.vue'
 import StaffRoleMatrix from '../components/staff/StaffRoleMatrix.vue'
 import StaffAuditLogs from '../components/staff/StaffAuditLogs.vue'
 import StaffInviteModal from '../components/staff/StaffInviteModal.vue'
+
+const { t } = useI18n()
 
 const {
   activeView,
@@ -25,8 +28,11 @@ const {
     <!-- Top Header -->
     <header class="staff-header-section">
       <div class="header-titles">
-        <h1 class="page-title">👥 Nhân sự & Phân quyền</h1>
-        <p class="page-subtitle">Quản trị danh sách nhân sự, phân quyền vai trò và theo dõi nhật ký hoạt động hệ thống.</p>
+        <div class="header-title-row">
+          <span class="material-symbols-outlined header-icon">badge</span>
+          <h1 class="page-title">{{ t('admin.staff.title') }}</h1>
+        </div>
+        <p class="page-subtitle">{{ t('admin.staff.subtitle') }}</p>
       </div>
 
       <div class="header-feedback">
@@ -38,58 +44,72 @@ const {
     <!-- 4 KPI Stat Cards -->
     <div class="staff-kpi-grid">
       <div class="stat-card">
-        <span class="stat-icon">👥</span>
-        <span class="stat-label">Tổng Nhân Sự</span>
-        <strong class="stat-value">{{ stats.totalStaff }} Nhân viên</strong>
-        <span class="stat-trend text-green">100% tài khoản bảo mật</span>
+        <div class="stat-top-row">
+          <span class="material-symbols-outlined stat-icon">group</span>
+          <span class="stat-label">{{ t('admin.staff.totalStaff') }}</span>
+        </div>
+        <strong class="stat-value">{{ t('admin.staff.totalStaffCount', { count: stats.totalStaff }) }}</strong>
+        <span class="stat-trend text-green">{{ t('admin.staff.securityGuaranteed') }}</span>
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">🛡️</span>
-        <span class="stat-label">Quản Lý Cơ Sở</span>
-        <strong class="stat-value">{{ stats.activeManagers }} Quản lý</strong>
-        <span class="stat-trend text-blue">2 cơ sở vận hành</span>
+        <div class="stat-top-row">
+          <span class="material-symbols-outlined stat-icon text-blue">shield</span>
+          <span class="stat-label">{{ t('admin.staff.activeManagers') }}</span>
+        </div>
+        <strong class="stat-value">{{ t('admin.staff.activeManagersCount', { count: stats.activeManagers }) }}</strong>
+        <span class="stat-trend text-blue">{{ t('admin.staff.venuesOperational') }}</span>
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">💼</span>
-        <span class="stat-label">Lễ Tân / Thu Ngân</span>
-        <strong class="stat-value">{{ stats.receptionistsOnline }} Đang online</strong>
-        <span class="stat-trend text-green">Đầy đủ ca trực</span>
+        <div class="stat-top-row">
+          <span class="material-symbols-outlined stat-icon text-green">support_agent</span>
+          <span class="stat-label">{{ t('admin.staff.receptionistsOnline') }}</span>
+        </div>
+        <strong class="stat-value">{{ t('admin.staff.receptionistsOnlineCount', { count: stats.receptionistsOnline }) }}</strong>
+        <span class="stat-trend text-green">{{ t('admin.staff.shiftsCovered') }}</span>
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">👑</span>
-        <span class="stat-label">Vai Trò Hệ Thống</span>
-        <strong class="stat-value">{{ stats.systemRoles }} Nhóm quyền</strong>
-        <span class="stat-trend">Phân quyền đa cấp (RBAC)</span>
+        <div class="stat-top-row">
+          <span class="material-symbols-outlined stat-icon text-pink">admin_panel_settings</span>
+          <span class="stat-label">{{ t('admin.staff.systemRoles') }}</span>
+        </div>
+        <strong class="stat-value">{{ t('admin.staff.systemRolesCount', { count: stats.systemRoles }) }}</strong>
+        <span class="stat-trend">{{ t('admin.staff.rbacDesc') }}</span>
       </div>
     </div>
 
     <!-- 3 View Navigation Buttons -->
     <div class="view-navigation-bar">
       <button
+        type="button"
         class="view-nav-btn"
         :class="{ active: activeView === 'directory' }"
         @click="activeView = 'directory'"
       >
-        📋 Danh Sách Nhân Sự
+        <span class="material-symbols-outlined icon-18">badge</span>
+        <span>{{ t('admin.staff.tabDirectory') }}</span>
       </button>
 
       <button
+        type="button"
         class="view-nav-btn"
         :class="{ active: activeView === 'roles' }"
         @click="activeView = 'roles'"
       >
-        🛡️ Ma Trận Phân Quyền
+        <span class="material-symbols-outlined icon-18">shield</span>
+        <span>{{ t('admin.staff.tabRoles') }}</span>
       </button>
 
       <button
+        type="button"
         class="view-nav-btn"
         :class="{ active: activeView === 'audit' }"
         @click="activeView = 'audit'"
       >
-        🔒 Nhật Ký Bảo Mật
+        <span class="material-symbols-outlined icon-18">security</span>
+        <span>{{ t('admin.staff.tabAudit') }}</span>
       </button>
     </div>
 
@@ -143,14 +163,25 @@ const {
   gap: 12px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 26px;
+  color: var(--pink-dark, #db2777);
+}
+
 .page-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 22px;
   font-weight: 800;
 }
 
 .page-subtitle {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
 }
@@ -171,8 +202,15 @@ const {
   background: var(--surface);
 }
 
+.stat-top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .stat-icon {
-  font-size: 22px;
+  font-size: 20px;
+  color: var(--muted);
 }
 
 .stat-label {
@@ -191,6 +229,7 @@ const {
 
 .text-green { color: #10b981; }
 .text-blue { color: #3b82f6; }
+.text-pink { color: var(--pink-dark, #db2777); }
 
 .view-navigation-bar {
   display: flex;
@@ -200,6 +239,9 @@ const {
 }
 
 .view-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 18px;
   border-radius: 12px;
   border: 1px solid var(--outline);
@@ -243,6 +285,10 @@ const {
 .tab-pane {
   display: flex;
   flex-direction: column;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 @media (max-width: 900px) {
