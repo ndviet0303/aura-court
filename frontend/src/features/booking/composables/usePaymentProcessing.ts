@@ -224,9 +224,9 @@ export function usePaymentProcessing() {
         store.payment = {
           code: tourneyCode,
           amount: fee,
-          bank: 'MB Bank',
-          accountNumber: '0399888999',
-          qrUrl: `https://img.vietqr.io/image/MB-0399888999-compact2.png?amount=${fee}&addInfo=${encodeURIComponent(tourneyCode)}&accountName=AURA%20SPORTS`,
+          bank: 'TPBank',
+          accountNumber: '83403032005',
+          qrUrl: `https://api.vietqr.io/image/970423-83403032005-compact2.png?amount=${fee}&addInfo=${encodeURIComponent(tourneyCode)}&accountName=${encodeURIComponent('AURA COURT')}`,
           expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
           type: 'tournament',
           title: tournament.value?.name || 'Lệ Phí Giải Đấu Aura',

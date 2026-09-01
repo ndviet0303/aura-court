@@ -70,6 +70,7 @@ export default {
     booking: 'Lịch đặt sân',
     recurringBooking: 'Đặt sân định kỳ',
     wallet: 'Ví của tôi',
+    splitBill: 'Chia tiền nhóm',
     resale: 'Chợ nhượng sân',
     tournaments: 'Giải đấu',
     bracket: 'Sơ đồ thi đấu',

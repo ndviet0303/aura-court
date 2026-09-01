@@ -104,12 +104,12 @@ async function copyToClipboard(text: string, fieldName: string) {
         <div class="invoice-summary-box">
           <div class="info-row">
             <span class="info-lbl">Ngân hàng thụ hưởng:</span>
-            <strong class="info-val">MBBank (Ngân hàng Quân Đội)</strong>
+            <strong class="info-val">TPBank (Ngân hàng Tiên Phong)</strong>
           </div>
 
           <div class="info-row">
             <span class="info-lbl">Chủ tài khoản:</span>
-            <strong class="info-val">AURA COURT - CONG TY THE THAO AURA</strong>
+            <strong class="info-val">AURA COURT</strong>
           </div>
 
           <div class="info-row info-row-copyable">

@@ -105,6 +105,16 @@ onBeforeUnmount(() => {
             <span class="material-symbols-outlined">account_balance_wallet</span>
             <span>{{ $t('nav.wallet') }}</span>
           </RouterLink>
+          <RouterLink
+            to="/split-bill"
+            class="nav-dropdown-item"
+            :class="{ 'router-link-active': (route?.path || '').startsWith('/split-bill') }"
+            role="menuitem"
+            @click="closeMenu"
+          >
+            <span class="material-symbols-outlined">payments</span>
+            <span>{{ $t('nav.splitBill') }}</span>
+          </RouterLink>
         </div>
       </Transition>
     </div>

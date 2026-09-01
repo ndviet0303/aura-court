@@ -157,7 +157,7 @@ const sportLabel = computed(() => {
 
         <!-- Split Bill with teammates -->
         <RouterLink
-          :to="`/split-bill?booking=${booking.code}`"
+          :to="`/split-bill/${booking.code}`"
           class="btn-card-secondary"
         >
           <span class="material-symbols-outlined">group</span>
