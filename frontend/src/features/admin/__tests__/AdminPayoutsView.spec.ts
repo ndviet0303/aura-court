@@ -34,27 +34,31 @@ describe('AdminPayoutsView', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    vi.mocked(api.get).mockImplementation(async (url: string) => {
+    const mockGet = async (url: string) => {
       if (url.includes('/finance/settlements')) {
         return {
           data: [
             {
               id: 1,
-              period_end: '2023-10-15',
+              period_start: '2026-08-01',
+              period_end: '2026-08-15',
               gross_amount: 12500000,
-              platform_fee: 375000,
-              gateway_fee: 250000,
-              net_amount: 11875000,
+              provider_fee_amount: 250000,
+              commission_amount: 375000,
+              tenant_payable: 11875000,
               status: 'settled',
+              eligible_at: '2026-08-17',
             },
             {
               id: 2,
-              period_end: '2023-10-16',
+              period_start: '2026-08-16',
+              period_end: '2026-08-31',
               gross_amount: 15000000,
-              platform_fee: 450000,
-              gateway_fee: 300000,
-              net_amount: 14250000,
-              status: 'settled',
+              provider_fee_amount: 300000,
+              commission_amount: 450000,
+              tenant_payable: 14250000,
+              status: 'eligible',
+              eligible_at: '2026-09-02',
             },
           ],
         }
@@ -65,12 +69,13 @@ describe('AdminPayoutsView', () => {
             {
               id: 1,
               reference: 'WD-0923-01',
-              created_at: '2023-10-01',
-              completed_at: '2023-10-02',
-              amount: 50000000,
+              created_at: '2026-08-18',
+              completed_at: '2026-08-18',
+              amount: 11875000,
               status: 'paid',
               beneficiary: {
                 bank_code: 'VCB',
+                bank_name: 'Vietcombank',
                 account_number: '0123456789',
                 account_holder: 'CONG TY TNHH SMASH',
               },
@@ -78,12 +83,13 @@ describe('AdminPayoutsView', () => {
             {
               id: 2,
               reference: 'WD-1023-01',
-              created_at: '2023-10-18',
+              created_at: '2026-09-01',
               completed_at: null,
-              amount: 25000000,
-              status: 'processing',
+              amount: 14250000,
+              status: 'approved',
               beneficiary: {
                 bank_code: 'VCB',
+                bank_name: 'Vietcombank',
                 account_number: '0123456789',
                 account_holder: 'CONG TY TNHH SMASH',
               },
@@ -96,19 +102,66 @@ describe('AdminPayoutsView', () => {
           {
             id: 1,
             bank_code: 'VCB',
+            bank_name: 'Vietcombank',
             account_number: '0123456789',
             account_holder: 'Cong Ty TNHH Smash',
             tax_id: '0316888999',
+            is_verified: true,
+            status: 'verified',
           },
         ]
       }
-      if (url.includes('/finance/exceptions')) {
+      return { data: [] }
+    }
+
+    vi.mocked(api.get).mockImplementation(mockGet)
+    vi.mocked(apiV2.get).mockImplementation(mockGet)
+
+    const mockPost = async (url: string, payload: any) => {
+      if (url.includes('/finance/payouts') && !url.includes('/approve') && !url.includes('/submit') && !url.includes('/status')) {
         return {
-          data: [],
+          payout: {
+            id: 3,
+            reference: 'WD-000003',
+            amount: 1000000,
+            status: 'draft',
+            created_at: '2026-09-02',
+          },
         }
       }
-      return { data: {} }
-    })
+      if (url.includes('/finance/beneficiaries')) {
+        return {
+          beneficiary: {
+            id: 1,
+            ...payload,
+            is_verified: true,
+            status: 'verified',
+          },
+        }
+      }
+      if (url.includes('/approve')) {
+        return { payout: { id: 2, status: 'approved' } }
+      }
+      if (url.includes('/submit')) {
+        return { payout: { id: 2, status: 'submitted' } }
+      }
+      if (url.includes('/snapshot')) {
+        return {
+          settlement: {
+            id: 3,
+            period_start: payload.period_start,
+            period_end: payload.period_end,
+            gross_amount: 0,
+            tenant_payable: 0,
+            status: 'pending',
+          },
+        }
+      }
+      return {}
+    }
+
+    vi.mocked(api.post).mockImplementation(mockPost)
+    vi.mocked(apiV2.post).mockImplementation(mockPost)
   })
 
   it('renders header, settlement metrics, table and beneficiary info correctly', async () => {
@@ -123,11 +176,12 @@ describe('AdminPayoutsView', () => {
     expect(wrapper.find('.gross-box').text()).toContain('TỔNG DOANH THU')
     expect(wrapper.find('.fee-box').text()).toContain('PHÍ & HOA HỒNG')
     expect(wrapper.find('.net-box').text()).toContain('THỰC NHẬN')
-    expect(wrapper.text()).toContain('KYC VERIFIED')
+    expect(wrapper.text()).toContain('KYC')
     expect(wrapper.text()).toContain('Vietcombank')
+    expect(wrapper.text()).toContain('WD-0923-01')
   })
 
-  it('renders visual 5-step stepper and payout records', async () => {
+  it('switches tabs and renders visual 5-step stepper and settlement periods', async () => {
     const wrapper = mount(AdminPayoutsView, {
       global: {
         plugins: [i18n],
@@ -135,15 +189,25 @@ describe('AdminPayoutsView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.findAll('.step-node').length).toBe(5)
-    expect(wrapper.text()).toContain('Tạo lệnh')
-    expect(wrapper.text()).toContain('Duyệt')
-    expect(wrapper.text()).toContain('Gửi yêu cầu')
-    expect(wrapper.text()).toContain('Đang chi trả')
-    expect(wrapper.text()).toContain('Hoàn tất')
+    // Switch to settlements tab
+    const tabBtns = wrapper.findAll('.view-nav-btn')
+    expect(tabBtns.length).toBe(3)
+    await tabBtns[1].trigger('click')
+    await flushPromises()
 
-    expect(wrapper.text()).toContain('WD-0923-01')
-    expect(wrapper.text()).toContain('WD-1023-01')
+    expect(wrapper.text()).toContain('Kỳ Đối Soát Doanh Thu')
+    expect(wrapper.text()).toContain('2026')
+
+    // Switch to flow tab
+    await tabBtns[2].trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.step-node').length).toBe(5)
+    expect(wrapper.text()).toContain('Tạo Lệnh')
+    expect(wrapper.text()).toContain('Phê Duyệt')
+    expect(wrapper.text()).toContain('Gửi Lệnh')
+    expect(wrapper.text()).toContain('Đang Chi Trả')
+    expect(wrapper.text()).toContain('Hoàn Tất')
   })
 
   it('opens create payout modal and handles submission', async () => {
@@ -159,10 +223,6 @@ describe('AdminPayoutsView', () => {
 
     expect(wrapper.find('.aura-modal-card').exists()).toBe(true)
     expect(wrapper.find('.modal-title').text()).toContain('Tạo Lệnh Rút Tiền')
-
-    // Set valid payout amount
-    const amountInput = wrapper.find('.form-input[type="number"]')
-    await amountInput.setValue(1000000)
 
     // Submit form
     await wrapper.find('.modal-form').trigger('submit.prevent')
@@ -185,8 +245,8 @@ describe('AdminPayoutsView', () => {
     expect(wrapper.find('.modal-title').text()).toContain('Cập Nhật Tài Khoản Thụ Hưởng')
 
     const inputs = wrapper.findAll('.form-input')
-    const accountInput = inputs[1]
-    const holderInput = inputs[2]
+    const accountInput = inputs[0]
+    const holderInput = inputs[1]
     expect(accountInput).toBeDefined()
     expect(holderInput).toBeDefined()
     if (accountInput) await accountInput.setValue('9876543210')

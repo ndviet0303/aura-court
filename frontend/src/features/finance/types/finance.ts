@@ -1,41 +1,71 @@
 export interface SettlementRecord {
   id: number
-  date: string
-  period_start?: string
-  period_end?: string
+  organization_id?: number
+  period_start: string
+  period_end: string
+  eligible_at?: string | null
   gross_amount: number
-  platform_fee: number
-  gateway_fee: number
-  net_amount: number
-  status: 'settled' | 'pending' | 'processing' | 'disputed' | string
+  refund_amount?: number
+  provider_fee_amount?: number
+  commission_amount?: number
+  tenant_payable: number
+  currency?: string
+  status: 'eligible' | 'pending' | 'settled' | string
+  snapshotted_at?: string | null
+  payouts?: PayoutRecord[]
+  // Legacy aliases
+  date?: string
+  platform_fee?: number
+  gateway_fee?: number
+  net_amount?: number
   notes?: string
 }
 
 export interface PayoutRecord {
   id: number
-  code: string
-  created_at: string
-  completed_at?: string | null
+  organization_id?: number
+  settlement_id?: number
+  beneficiary_id?: number
   amount: number
-  status: 'draft' | 'pending_approval' | 'approved' | 'submitted' | 'processing' | 'paid' | 'failed' | 'rejected' | string
-  beneficiary_name: string
-  beneficiary_bank: string
-  beneficiary_account: string
-  current_step: number
+  currency?: string
+  provider?: string
+  provider_payout_id?: string | null
+  idempotency_key?: string
+  status: 'draft' | 'approved' | 'submitted' | 'processing' | 'paid' | 'failed' | 'reversed' | 'pending_approval' | 'rejected' | string
+  failure_reason?: string | null
+  approved_at?: string | null
+  submitted_at?: string | null
+  paid_at?: string | null
+  failed_at?: string | null
+  reversed_at?: string | null
+  created_at: string
+  updated_at?: string
+  completed_at?: string | null
+  reference?: string
+  code?: string
+  beneficiary_name?: string
+  beneficiary_bank?: string
+  beneficiary_account?: string
+  current_step?: number
   step_description?: string
   tx_hash?: string
-  reference?: string
+  settlement?: SettlementRecord
+  beneficiary?: BeneficiaryAccount
 }
 
 export interface BeneficiaryAccount {
   id: number
+  organization_id?: number
   provider?: string
+  provider_beneficiary_id?: string | null
   bank_code: string
-  bank_name: string
+  bank_name?: string
   account_number: string
   account_holder: string
   tax_id?: string
-  is_verified: boolean
+  status?: 'verified' | 'pending' | 'rejected' | string
+  is_verified?: boolean
+  verified_at?: string | null
   updated_at?: string
 }
 

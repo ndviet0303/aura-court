@@ -2,23 +2,43 @@ import { api, apiV2 } from '@/core/api/client'
 import type { SettlementRecord, PayoutRecord, BeneficiaryAccount, FinanceExceptionItem, SplitGroup } from '../types/finance'
 
 export const financeApi = {
-  getBeneficiaries: <T = BeneficiaryAccount[]>() => apiV2.get<T>('/finance/beneficiaries'),
+  getBeneficiaries: () => apiV2.get<BeneficiaryAccount[]>('/finance/beneficiaries'),
 
-  createBeneficiary: (payload: any) => apiV2.post<BeneficiaryAccount>('/finance/beneficiaries', payload),
+  storeBeneficiary: (payload: {
+    bank_code: string
+    account_number: string
+    account_holder?: string
+    tax_id?: string
+    provider?: string
+  }) => apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>('/finance/beneficiaries', payload),
 
-  getSettlements: <T = { data: SettlementRecord[] }>() => apiV2.get<T>('/finance/settlements'),
+  // Alias for backward compatibility
+  createBeneficiary: (payload: {
+    bank_code: string
+    account_number: string
+    account_holder?: string
+    tax_id?: string
+    provider?: string
+  }) => apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>('/finance/beneficiaries', payload),
 
-  snapshotSettlement: (payload?: any) => apiV2.post<SettlementRecord>('/finance/settlements/snapshot', payload),
+  getSettlements: () => apiV2.get<{ data: SettlementRecord[] } | SettlementRecord[]>('/finance/settlements'),
 
-  getPayouts: <T = { data: PayoutRecord[] }>() => apiV2.get<T>('/finance/payouts'),
+  snapshotSettlement: (payload: { period_start: string; period_end: string }) =>
+    apiV2.post<{ settlement: SettlementRecord } | SettlementRecord>('/finance/settlements/snapshot', payload),
 
-  createPayout: (payload: any) => apiV2.post<PayoutRecord>('/finance/payouts', payload),
+  getPayouts: () => apiV2.get<{ data: PayoutRecord[] } | PayoutRecord[]>('/finance/payouts'),
 
-  approvePayout: (payoutId: number | string) => apiV2.post(`/finance/payouts/${payoutId}/approve`, {}),
+  createPayout: (payload: { settlement_id: number; beneficiary_id: number }) =>
+    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>('/finance/payouts', payload),
 
-  submitPayout: (payoutId: number | string) => apiV2.post(`/finance/payouts/${payoutId}/submit`, {}),
+  approvePayout: (payoutId: number | string) =>
+    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/approve`, {}),
 
-  queryPayoutStatus: (payoutId: number | string) => apiV2.post(`/finance/payouts/${payoutId}/status`, {}),
+  submitPayout: (payoutId: number | string) =>
+    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/submit`, {}),
+
+  queryPayoutStatus: (payoutId: number | string) =>
+    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/status`, {}),
 
   getExceptions: <T = { data: FinanceExceptionItem[] }>() => apiV2.get<T>('/finance/exceptions'),
 

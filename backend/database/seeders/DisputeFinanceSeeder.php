@@ -205,5 +205,125 @@ class DisputeFinanceSeeder extends Seeder
                 ],
             ]
         );
+
+        // 4. Beneficiaries, Settlements, and Payouts
+        $allOrgs = Organization::whereIn('id', [1, 2])->get();
+        if ($allOrgs->isEmpty()) {
+            $allOrgs = collect([$org]);
+        }
+
+        foreach ($allOrgs as $currentOrg) {
+            $beneficiary = \App\Models\Beneficiary::updateOrCreate(
+                ['organization_id' => $currentOrg->id, 'account_number' => '0071000888999'],
+                [
+                    'provider' => 'payos',
+                    'provider_beneficiary_id' => 'ben_vcb_' . $currentOrg->id,
+                    'bank_code' => 'VCB',
+                    'account_holder' => 'CONG TY CP THE THAO AURA',
+                    'tax_id' => '0317892110',
+                    'status' => 'verified',
+                    'verified_at' => $now->copy()->subMonths(1),
+                    'verification_payload' => ['napas_verified' => true, 'score' => 100],
+                ]
+            );
+
+            // Settlement 1 (Settled / Eligible in the past)
+            $settlement1 = \App\Models\Settlement::updateOrCreate(
+                [
+                    'organization_id' => $currentOrg->id,
+                    'period_start' => $now->copy()->subDays(30)->toDateString(),
+                    'period_end' => $now->copy()->subDays(16)->toDateString(),
+                ],
+                [
+                    'eligible_at' => $now->copy()->subDays(14),
+                    'gross_amount' => 45000000,
+                    'refund_amount' => 0,
+                    'provider_fee_amount' => 900000,
+                    'commission_amount' => 1350000,
+                    'tenant_payable' => 42750000,
+                    'currency' => 'VND',
+                    'status' => 'eligible',
+                    'snapshot' => [
+                        'gross_amount' => 45000000,
+                        'refund_amount' => 0,
+                        'provider_fee_amount' => 900000,
+                        'commission_amount' => 1350000,
+                        'tenant_payable' => 42750000,
+                        'captured_at' => $now->copy()->subDays(14)->toIso8601String(),
+                    ],
+                    'snapshotted_at' => $now->copy()->subDays(14),
+                ]
+            );
+
+            // Settlement 2 (Eligible recently)
+            $settlement2 = \App\Models\Settlement::updateOrCreate(
+                [
+                    'organization_id' => $currentOrg->id,
+                    'period_start' => $now->copy()->subDays(15)->toDateString(),
+                    'period_end' => $now->copy()->subDays(1)->toDateString(),
+                ],
+                [
+                    'eligible_at' => $now->copy()->addDay(),
+                    'gross_amount' => 58500000,
+                    'refund_amount' => 500000,
+                    'provider_fee_amount' => 1170000,
+                    'commission_amount' => 1755000,
+                    'tenant_payable' => 55075000,
+                    'currency' => 'VND',
+                    'status' => 'eligible',
+                    'snapshot' => [
+                        'gross_amount' => 58500000,
+                        'refund_amount' => 500000,
+                        'provider_fee_amount' => 1170000,
+                        'commission_amount' => 1755000,
+                        'tenant_payable' => 55075000,
+                        'captured_at' => $now->copy()->subDays(1)->toIso8601String(),
+                    ],
+                    'snapshotted_at' => $now->copy()->subDays(1),
+                ]
+            );
+
+            // Payout 1: Paid
+            \App\Models\Payout::updateOrCreate(
+                [
+                    'organization_id' => $currentOrg->id,
+                    'idempotency_key' => "settlement:{$settlement1->id}:payout",
+                ],
+                [
+                    'settlement_id' => $settlement1->id,
+                    'beneficiary_id' => $beneficiary->id,
+                    'amount' => $settlement1->tenant_payable,
+                    'currency' => 'VND',
+                    'provider' => 'payos',
+                    'provider_payout_id' => 'pout_vcb_001_' . $currentOrg->id,
+                    'status' => 'paid',
+                    'settlement_snapshot' => $settlement1->snapshot,
+                    'approved_at' => $now->copy()->subDays(13),
+                    'submitted_at' => $now->copy()->subDays(13)->addMinutes(10),
+                    'paid_at' => $now->copy()->subDays(13)->addMinutes(30),
+                ]
+            );
+
+            // Payout 2: Approved
+            \App\Models\Payout::updateOrCreate(
+                [
+                    'organization_id' => $currentOrg->id,
+                    'idempotency_key' => "settlement:{$settlement2->id}:payout",
+                ],
+                [
+                    'settlement_id' => $settlement2->id,
+                    'beneficiary_id' => $beneficiary->id,
+                    'amount' => $settlement2->tenant_payable,
+                    'currency' => 'VND',
+                    'provider' => 'payos',
+                    'provider_payout_id' => null,
+                    'status' => 'approved',
+                    'settlement_snapshot' => $settlement2->snapshot,
+                    'approved_at' => $now->copy()->subHours(5),
+                    'submitted_at' => null,
+                    'paid_at' => null,
+                ]
+            );
+        }
     }
 }

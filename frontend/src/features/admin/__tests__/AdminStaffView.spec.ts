@@ -155,4 +155,21 @@ describe('AdminStaffView', () => {
     expect(wrapper.find('.modal-card').exists()).toBe(true)
     expect(wrapper.find('.modal-title').text()).toContain('Thêm Nhân Viên Mới')
   })
+
+  it('opens edit role modal when edit button is clicked', async () => {
+    const wrapper = mount(AdminStaffView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    const editBtns = wrapper.findAll('.actions-col button')
+    expect(editBtns.length).toBeGreaterThan(0)
+    await editBtns[0]?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.modal-card').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Cập nhật Quyền hạn & Trạng thái')
+  })
 })
