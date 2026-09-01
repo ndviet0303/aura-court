@@ -45,7 +45,16 @@ class SocialController extends Controller
 
         $orgId = $organization?->id;
         if (! $orgId) {
-            $orgId = \App\Models\Organization::where('status', 'active')->value('id') ?? 1;
+            $explicitOrgId = $request->header('X-Organization-Id')
+                ?? $request->header('X-Organization-ID')
+                ?? $request->input('organization_id');
+            if ($explicitOrgId) {
+                $orgId = (int) $explicitOrgId;
+            } else {
+                $orgId = \App\Models\Organization::where('status', 'active')->whereHas('venues')->value('id')
+                    ?? \App\Models\Organization::where('status', 'active')->value('id')
+                    ?? 1;
+            }
         }
 
         return response()->json(['matches' => $this->matches->discover($orgId, $request->all())]);

@@ -53,7 +53,7 @@ const router = createRouter({
     { path: '/tournaments', name: 'tournaments', component: () => import('@/features/tournament/views/TournamentsView.vue'), meta: { title: 'Danh Sách Giải Đấu | Aura Court Control', indexable: true } },
     { path: '/tournaments/:id/bracket', name: 'tournament-bracket', component: () => import('@/features/tournament/views/TournamentBracketView.vue'), meta: { title: 'Sơ Đồ Thi Đấu & Nhánh Đấu | Aura Court Control', indexable: true } },
     { path: '/tournaments/:id/live', name: 'tournament-live', component: () => import('@/features/tournament/views/LiveScoreView.vue'), meta: { title: 'Tỷ Số Trực Tiếp | Aura Court Control', indexable: true } },
-    { path: '/matchmaking', alias: '/tournaments/social', name: 'matchmaking', component: () => import('@/features/tournament/views/SocialTournamentView.vue'), meta: { title: 'Tìm Kèo Giao Lưu | Aura Court', indexable: true } },
+    { path: '/matchmaking', alias: '/tournaments/social', name: 'matchmaking', component: () => import('@/features/social/views/MatchmakingView.vue'), meta: { title: 'Tìm Kèo Giao Lưu & Ghép Trận | Aura Court', indexable: true } },
     { path: '/matchmaking/create', name: 'create-match', component: () => import('@/features/social/views/CreateMatchView.vue'), meta: { auth: true, titleKey: 'seo.createMatchTitle', indexable: false } },
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, titleKey: 'seo.paymentTitle', indexable: false } },
     { path: '/split-bill/:code?', name: 'split-bill', component: () => import('@/features/finance/views/GroupSplitBillView.vue'), meta: { auth: true, title: 'Chia tiền & Quyết toán nhóm | Aura Court', indexable: false } },
