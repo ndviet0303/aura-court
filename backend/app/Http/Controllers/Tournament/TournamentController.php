@@ -20,16 +20,47 @@ class TournamentController extends Controller
 
     public function index(Request $request)
     {
-        $organization = $this->organization($request);
-        return Tournament::query()->where('organization_id', $organization->id)->withCount('participants')->latest()->paginate(20);
+        $organization = null;
+        try {
+            $organization = $this->organization($request);
+        } catch (\Throwable $e) {
+            $organization = null;
+        }
+
+        $query = Tournament::query()->withCount('participants')->latest();
+
+        if ($organization && $request->header('X-Organization-Id')) {
+            $query->where('organization_id', $organization->id);
+        } elseif ($organization) {
+            $hasOrgTournaments = Tournament::where('organization_id', $organization->id)->exists();
+            if ($hasOrgTournaments) {
+                $query->where('organization_id', $organization->id);
+            }
+        }
+
+        if ($request->filled('sport')) {
+            $query->where('settings->sport', $request->input('sport'));
+        }
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $query->where('status', $request->input('status'));
+        }
+        if ($request->filled('search')) {
+            $search = '%' . $request->input('search') . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)
+                  ->orWhere('settings->venue', 'like', $search)
+                  ->orWhere('settings->city', 'like', $search);
+            });
+        }
+
+        return $query->paginate(20);
     }
 
     public function show(Request $request, Tournament $tournament)
     {
-        $organization = $this->organization($request);
-        abort_unless($tournament->organization_id === $organization->id, 404);
         return response()->json(['tournament' => $tournament->load(['participants.user', 'fixtures', 'standings.participant.user'])]);
     }
+
 
     public function create(Request $request)
     {

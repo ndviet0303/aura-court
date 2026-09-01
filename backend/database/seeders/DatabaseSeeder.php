@@ -1277,119 +1277,127 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
-        foreach ($tournaments as $tData) {
-            $tournament = Tournament::updateOrCreate(
-                ['organization_id' => $org->id, 'name' => $tData['name']],
-                [
-                    'created_by' => $admin->id,
-                    'format' => $tData['format'],
-                    'status' => $tData['status'],
-                    'version' => 1,
-                    'starts_at' => $tData['starts_at'],
-                    'settings' => $tData['settings'],
-                ]
-            );
+        $targetOrgs = Organization::where('status', 'active')->get();
+        if ($targetOrgs->isEmpty()) {
+            $targetOrgs = collect([$org]);
+        }
 
-            // Add 8 participants for tournament
-            $participants = [];
-            foreach (range(1, 8) as $pIdx) {
-                $user = $customers[$pIdx - 1];
-                $part = TournamentParticipant::updateOrCreate(
-                    ['organization_id' => $org->id, 'tournament_id' => $tournament->id, 'user_id' => $user->id],
+        foreach ($targetOrgs as $currentOrg) {
+            foreach ($tournaments as $tData) {
+                $tournament = Tournament::updateOrCreate(
+                    ['organization_id' => $currentOrg->id, 'name' => $tData['name']],
                     [
-                        'seed' => $pIdx,
-                        'status' => 'registered',
-                        'checked_in_at' => in_array($tData['status'], ['ongoing', 'completed']) ? $now : null
-                    ]
-                );
-                $participants[] = $part;
-            }
-
-            // Create Fixtures (Quarters, Semis, Finals)
-            if (count($participants) >= 8) {
-                $isDoneOrLive = in_array($tData['status'], ['ongoing', 'completed']);
-
-                // Quarter Finals (Round 1)
-                $qfScores = [
-                    ['p1' => 21, 'p2' => 18, 'winner' => 0],
-                    ['p1' => 21, 'p2' => 19, 'winner' => 0],
-                    ['p1' => 17, 'p2' => 21, 'winner' => 1],
-                    ['p1' => 21, 'p2' => 15, 'winner' => 0],
-                ];
-
-                for ($pos = 1; $pos <= 4; $pos++) {
-                    $p1Idx = ($pos - 1) * 2;
-                    $p2Idx = $p1Idx + 1;
-                    $cfg = $qfScores[$pos - 1];
-                    $wId = $isDoneOrLive ? ($cfg['winner'] === 0 ? $participants[$p1Idx]->id : $participants[$p2Idx]->id) : null;
-
-                    TournamentFixture::updateOrCreate(
-                        ['organization_id' => $org->id, 'tournament_id' => $tournament->id, 'round' => 1, 'position' => $pos],
-                        [
-                            'participant_one_id' => $participants[$p1Idx]->id,
-                            'participant_two_id' => $participants[$p2Idx]->id,
-                            'winner_id' => $wId,
-                            'score' => $isDoneOrLive ? ['p1' => $cfg['p1'], 'p2' => $cfg['p2'], 'sets' => [['p1' => $cfg['p1'], 'p2' => $cfg['p2']]]] : null,
-                            'status' => $isDoneOrLive ? 'completed' : 'scheduled',
-                            'version' => 1,
-                        ]
-                    );
-                }
-
-                // Semi Finals (Round 2)
-                $sfPairs = [
-                    ['p1' => 0, 'p2' => 2, 'score' => ['p1' => 21, 'p2' => 17]],
-                    ['p1' => 5, 'p2' => 6, 'score' => ['p1' => 19, 'p2' => 21]],
-                ];
-
-                for ($pos = 1; $pos <= 2; $pos++) {
-                    $pair = $sfPairs[$pos - 1];
-                    $wId = $tData['status'] === 'completed' ? $participants[$pair['p1']]->id : null;
-                    $isLive = $tData['status'] === 'ongoing';
-
-                    TournamentFixture::updateOrCreate(
-                        ['organization_id' => $org->id, 'tournament_id' => $tournament->id, 'round' => 2, 'position' => $pos],
-                        [
-                            'participant_one_id' => $participants[$pair['p1']]->id,
-                            'participant_two_id' => $participants[$pair['p2']]->id,
-                            'winner_id' => $wId,
-                            'score' => $tData['status'] === 'completed' ? $pair['score'] : ($isLive ? ['p1' => 14, 'p2' => 12] : null),
-                            'status' => $tData['status'] === 'completed' ? 'completed' : ($isLive ? 'ongoing' : 'scheduled'),
-                            'version' => 1,
-                        ]
-                    );
-                }
-
-                // Finals (Round 3)
-                $finalWinnerId = $tData['status'] === 'completed' ? $participants[0]->id : null;
-                TournamentFixture::updateOrCreate(
-                    ['organization_id' => $org->id, 'tournament_id' => $tournament->id, 'round' => 3, 'position' => 1],
-                    [
-                        'participant_one_id' => $participants[0]->id,
-                        'participant_two_id' => $participants[6]->id,
-                        'winner_id' => $finalWinnerId,
-                        'score' => $tData['status'] === 'completed' ? ['p1' => 21, 'p2' => 19, 'sets' => [['p1' => 21, 'p2' => 19]]] : null,
-                        'status' => $tData['status'] === 'completed' ? 'completed' : 'scheduled',
+                        'created_by' => $admin->id,
+                        'format' => $tData['format'],
+                        'status' => $tData['status'],
                         'version' => 1,
+                        'starts_at' => $tData['starts_at'],
+                        'settings' => $tData['settings'],
                     ]
                 );
-            }
 
-            // Standings
-            foreach ($participants as $rank => $part) {
-                TournamentStanding::updateOrCreate(
-                    ['organization_id' => $org->id, 'tournament_id' => $tournament->id, 'participant_id' => $part->id],
-                    [
-                        'rank' => $rank + 1,
-                        'points' => (8 - $rank) * 350,
-                        'wins' => max(0, 4 - (int)($rank / 2)),
-                        'losses' => min(3, (int)($rank / 2)),
-                        'draws' => 0,
-                        'played' => max(1, 4 - (int)($rank / 2)),
-                    ]
-                );
+                // Add 8 participants for tournament
+                $participants = [];
+                foreach (range(1, 8) as $pIdx) {
+                    $user = $customers[$pIdx - 1];
+                    $part = TournamentParticipant::updateOrCreate(
+                        ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'user_id' => $user->id],
+                        [
+                            'seed' => $pIdx,
+                            'status' => 'registered',
+                            'checked_in_at' => in_array($tData['status'], ['ongoing', 'completed']) ? $now : null
+                        ]
+                    );
+                    $participants[] = $part;
+                }
+
+                // Create Fixtures (Quarters, Semis, Finals)
+                if (count($participants) >= 8) {
+                    $isDoneOrLive = in_array($tData['status'], ['ongoing', 'completed']);
+
+                    // Quarter Finals (Round 1)
+                    $qfScores = [
+                        ['p1' => 21, 'p2' => 18, 'winner' => 0],
+                        ['p1' => 21, 'p2' => 19, 'winner' => 0],
+                        ['p1' => 17, 'p2' => 21, 'winner' => 1],
+                        ['p1' => 21, 'p2' => 15, 'winner' => 0],
+                    ];
+
+                    for ($pos = 1; $pos <= 4; $pos++) {
+                        $p1Idx = ($pos - 1) * 2;
+                        $p2Idx = $p1Idx + 1;
+                        $cfg = $qfScores[$pos - 1];
+                        $wId = $isDoneOrLive ? ($cfg['winner'] === 0 ? $participants[$p1Idx]->id : $participants[$p2Idx]->id) : null;
+
+                        TournamentFixture::updateOrCreate(
+                            ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'round' => 1, 'position' => $pos],
+                            [
+                                'participant_one_id' => $participants[$p1Idx]->id,
+                                'participant_two_id' => $participants[$p2Idx]->id,
+                                'winner_id' => $wId,
+                                'score' => $isDoneOrLive ? ['p1' => $cfg['p1'], 'p2' => $cfg['p2'], 'sets' => [['p1' => $cfg['p1'], 'p2' => $cfg['p2']]]] : null,
+                                'status' => $isDoneOrLive ? 'completed' : 'scheduled',
+                                'version' => 1,
+                            ]
+                        );
+                    }
+
+                    // Semi Finals (Round 2)
+                    $sfPairs = [
+                        ['p1' => 0, 'p2' => 2, 'score' => ['p1' => 21, 'p2' => 17]],
+                        ['p1' => 5, 'p2' => 6, 'score' => ['p1' => 19, 'p2' => 21]],
+                    ];
+
+                    for ($pos = 1; $pos <= 2; $pos++) {
+                        $pair = $sfPairs[$pos - 1];
+                        $wId = $tData['status'] === 'completed' ? $participants[$pair['p1']]->id : null;
+                        $isLive = $tData['status'] === 'ongoing';
+
+                        TournamentFixture::updateOrCreate(
+                            ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'round' => 2, 'position' => $pos],
+                            [
+                                'participant_one_id' => $participants[$pair['p1']]->id,
+                                'participant_two_id' => $participants[$pair['p2']]->id,
+                                'winner_id' => $wId,
+                                'score' => $tData['status'] === 'completed' ? $pair['score'] : ($isLive ? ['p1' => 14, 'p2' => 12] : null),
+                                'status' => $tData['status'] === 'completed' ? 'completed' : ($isLive ? 'ongoing' : 'scheduled'),
+                                'version' => 1,
+                            ]
+                        );
+                    }
+
+                    // Finals (Round 3)
+                    $finalWinnerId = $tData['status'] === 'completed' ? $participants[0]->id : null;
+                    TournamentFixture::updateOrCreate(
+                        ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'round' => 3, 'position' => 1],
+                        [
+                            'participant_one_id' => $participants[0]->id,
+                            'participant_two_id' => $participants[6]->id,
+                            'winner_id' => $finalWinnerId,
+                            'score' => $tData['status'] === 'completed' ? ['p1' => 21, 'p2' => 19, 'sets' => [['p1' => 21, 'p2' => 19]]] : null,
+                            'status' => $tData['status'] === 'completed' ? 'completed' : 'scheduled',
+                            'version' => 1,
+                        ]
+                    );
+                }
+
+                // Standings
+                foreach ($participants as $rank => $part) {
+                    TournamentStanding::updateOrCreate(
+                        ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'participant_id' => $part->id],
+                        [
+                            'rank' => $rank + 1,
+                            'points' => (8 - $rank) * 350,
+                            'wins' => max(0, 4 - (int)($rank / 2)),
+                            'losses' => min(3, (int)($rank / 2)),
+                            'draws' => 0,
+                            'played' => max(1, 4 - (int)($rank / 2)),
+                        ]
+                    );
+                }
             }
         }
+
 
 
         // =========================================================================

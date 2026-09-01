@@ -205,22 +205,16 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
             Route::get('social/profile', [SocialController::class, 'profile']);
             Route::put('social/profile', [SocialController::class, 'updateProfile']);
-            Route::get('social/matches', [SocialController::class, 'index']);
             Route::post('social/matches', [SocialController::class, 'create']);
-            Route::get('social/matches/{post}', [SocialController::class, 'show']);
             Route::post('social/matches/{post}/invite', [SocialController::class, 'invite']);
             Route::post('social/matches/{post}/join', [SocialController::class, 'join']);
             Route::post('social/invitations/{invitation}/respond', [SocialController::class, 'respond']);
             Route::post('social/reputation/activity', [SocialController::class, 'recordActivity'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
             Route::post('social/reputation/activities/{activity}/dispute', [SocialController::class, 'fileDispute']);
             Route::post('social/reputation/disputes/{dispute}/resolve', [SocialController::class, 'resolveDispute'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::get('tournaments', [TournamentController::class, 'index']);
             Route::post('tournaments', [TournamentController::class, 'create'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
-            Route::get('tournaments/{tournament}', [TournamentController::class, 'show']);
             Route::post('tournament-participants/{participant}/check-in', [TournamentController::class, 'checkIn']);
             Route::post('tournaments/{tournament}/fixtures/{fixture}/score', [TournamentController::class, 'score'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
-            Route::get('tournaments/{tournament}/events', [TournamentController::class, 'events']);
-            Route::get('tournaments/{tournament}/poll', [TournamentController::class, 'poll']);
         });
 
         Route::middleware('feature:tenant_pos_and_wallet')->group(function () {
@@ -273,4 +267,15 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('admin/disputes/{id}/arbitrate', [AdminDisputeController::class, 'arbitrate']);
         });
     });
+
+    // Public Discoverable Routes (Tournaments & Matchmaking)
+    Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
+        Route::get('tournaments', [TournamentController::class, 'index']);
+        Route::get('tournaments/{tournament}', [TournamentController::class, 'show']);
+        Route::get('tournaments/{tournament}/events', [TournamentController::class, 'events']);
+        Route::get('tournaments/{tournament}/poll', [TournamentController::class, 'poll']);
+        Route::get('social/matches', [SocialController::class, 'index']);
+        Route::get('social/matches/{post}', [SocialController::class, 'show']);
+    });
 });
+

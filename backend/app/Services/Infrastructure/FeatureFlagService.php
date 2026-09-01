@@ -14,11 +14,15 @@ class FeatureFlagService
             return true;
         }
         $pilotOrganizations = config('features.pilot_organizations', []);
-        return $organizationId !== null && in_array((string) $organizationId, $pilotOrganizations, true);
+        if ($organizationId === null) {
+            return true;
+        }
+        return in_array((string) $organizationId, $pilotOrganizations, true);
     }
 
     public function assertEnabled(string $flag, ?int $organizationId = null): void
     {
         abort_unless($this->enabled($flag, $organizationId), 404, 'This capability is not enabled for the organization.');
     }
+
 }

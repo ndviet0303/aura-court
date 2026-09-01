@@ -50,10 +50,11 @@ const router = createRouter({
     { path: '/resale', name: 'resale-marketplace', component: () => import('@/features/marketplace/views/ResaleMarketplaceView.vue'), meta: { auth: true, title: 'Chợ Nhượng Sân | Aura Court', indexable: false } },
     { path: '/recurring-booking', name: 'recurring-booking', component: () => import('@/features/booking/views/RecurringBookingView.vue'), meta: { auth: true, title: 'Đặt sân định kỳ & Lịch cố định | Aura Court', indexable: false } },
     { path: '/recurring-booking/cycles/:id', name: 'payment-cycle-detail', component: () => import('@/features/finance/views/PaymentCycleDetailView.vue'), meta: { auth: true, title: 'Chi tiết kỳ thanh toán | Aura Court', indexable: false } },
-    { path: '/tournaments', name: 'tournaments', component: () => import('@/features/tournament/views/TournamentsView.vue'), meta: { auth: true, title: 'Danh Sách Giải Đấu | Aura Court Control', indexable: false } },
-    { path: '/tournaments/bracket', name: 'tournament-bracket', component: () => import('@/features/tournament/views/TournamentBracketView.vue'), meta: { auth: true, title: 'Sơ Đồ Thi Đấu & Nhánh Đấu | Aura Court Control', indexable: false } },
-    { path: '/tournaments/live', name: 'tournament-live', component: () => import('@/features/tournament/views/LiveScoreView.vue'), meta: { auth: true, title: 'Tỷ Số Trực Tiếp | Aura Court Control', indexable: false } },
-    { path: '/matchmaking', alias: '/tournaments/social', name: 'matchmaking', component: () => import('@/features/tournament/views/SocialTournamentView.vue'), meta: { auth: true, title: 'Tìm Kèo Giao Lưu | Aura Court', indexable: false } },
+    { path: '/tournaments', name: 'tournaments', component: () => import('@/features/tournament/views/TournamentsView.vue'), meta: { title: 'Danh Sách Giải Đấu | Aura Court Control', indexable: true } },
+    { path: '/tournaments/bracket', name: 'tournament-bracket', component: () => import('@/features/tournament/views/TournamentBracketView.vue'), meta: { title: 'Sơ Đồ Thi Đấu & Nhánh Đấu | Aura Court Control', indexable: true } },
+    { path: '/tournaments/live', name: 'tournament-live', component: () => import('@/features/tournament/views/LiveScoreView.vue'), meta: { title: 'Tỷ Số Trực Tiếp | Aura Court Control', indexable: true } },
+    { path: '/matchmaking', alias: '/tournaments/social', name: 'matchmaking', component: () => import('@/features/tournament/views/SocialTournamentView.vue'), meta: { title: 'Tìm Kèo Giao Lưu | Aura Court', indexable: true } },
+
     { path: '/matchmaking/create', name: 'create-match', component: () => import('@/features/social/views/CreateMatchView.vue'), meta: { auth: true, titleKey: 'seo.createMatchTitle', indexable: false } },
 
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, titleKey: 'seo.paymentTitle', indexable: false } },
