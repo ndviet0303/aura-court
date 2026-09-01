@@ -34,7 +34,7 @@
   padding: 10px 14px;
   border: 1px solid var(--outline);
   border-radius: 10px;
-  background: var(--surface);
+  background-color: var(--surface);
   color: var(--ink);
   font-size: 14px;
   font-family: inherit;

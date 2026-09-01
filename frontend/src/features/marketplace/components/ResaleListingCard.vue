@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ResaleListing } from '../types/marketplace'
+import { AuraButton } from '@/shared/components'
 
-defineProps<{
+const props = defineProps<{
   listing: ResaleListing
 }>()
 
@@ -9,162 +11,331 @@ const emit = defineEmits<{
   (e: 'buy', listing: ResaleListing): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+const discountPercent = computed(() => {
+  if (!props.listing.originalPrice || props.listing.originalPrice <= props.listing.resalePrice) {
+    return 0
+  }
+  return Math.round(((props.listing.originalPrice - props.listing.resalePrice) / props.listing.originalPrice) * 100)
+})
+
+function formatVND(amount?: number): string {
+  if (!amount) return '0 ₫'
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 }
 </script>
 
 <template>
   <div class="resale-card" :class="{ 'is-featured': listing.isFeatured }">
-    <div class="card-top">
+    <!-- Card Header -->
+    <div class="card-header">
       <div class="venue-info">
-        <span class="venue-name font-mono">🏢 {{ listing.venueName }}</span>
-        <h3 class="court-title">{{ listing.courtName }}</h3>
+        <span class="material-symbols-outlined venue-icon">location_on</span>
+        <span class="venue-name">{{ listing.venueName || 'Aura Court' }}</span>
       </div>
 
-      <span
-        v-if="listing.badge"
-        class="badge-pill"
-        :class="`badge-${listing.badge}`"
+      <!-- Badge (Hot / Deal / Urgent) -->
+      <div v-if="listing.badge" class="badge-chip" :class="listing.badge">
+        <span class="material-symbols-outlined badge-icon">
+          {{ listing.badge === 'hot' ? 'local_fire_department' : listing.badge === 'urgent' ? 'bolt' : 'savings' }}
+        </span>
+        <span class="badge-text">
+          {{ listing.badge === 'hot' ? 'Giờ Vàng' : listing.badge === 'urgent' ? 'Pass Gấp' : 'Giá Hời' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Court Title -->
+    <h3 class="court-title">{{ listing.courtName }}</h3>
+
+    <!-- Schedule Info Box -->
+    <div class="schedule-box">
+      <div class="meta-row">
+        <div class="meta-item">
+          <span class="material-symbols-outlined meta-icon">calendar_today</span>
+          <span class="meta-label">Ngày chơi</span>
+          <span class="meta-value highlight">{{ listing.dateStr }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="material-symbols-outlined meta-icon">schedule</span>
+          <span class="meta-label">Khung giờ</span>
+          <span class="meta-value">{{ listing.timeSlot }}</span>
+        </div>
+      </div>
+
+      <!-- Seller & Escrow Guarantee -->
+      <div class="seller-row">
+        <div class="seller-info">
+          <span class="material-symbols-outlined seller-avatar-icon">account_circle</span>
+          <span class="seller-name">{{ listing.sellerName }}</span>
+        </div>
+        <div class="escrow-chip">
+          <span class="material-symbols-outlined escrow-icon">verified_user</span>
+          <span>Aura Escrow</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seller Note -->
+    <p v-if="listing.notes" class="seller-note">
+      "{{ listing.notes }}"
+    </p>
+
+    <!-- Card Footer: Pricing & Action -->
+    <div class="card-footer">
+      <div class="pricing-wrap">
+        <div v-if="discountPercent > 0" class="original-price-wrap">
+          <span class="original-price">{{ formatVND(listing.originalPrice) }}</span>
+          <span class="discount-pill">-{{ discountPercent }}%</span>
+        </div>
+        <div class="resale-price">{{ formatVND(listing.resalePrice) }}</div>
+      </div>
+
+      <AuraButton
+        variant="primary"
+        size="sm"
+        icon="payments"
+        class="btn-buy"
+        @click="emit('buy', listing)"
       >
-        {{ listing.badge === 'hot' ? '🔥 GIỜ VÀNG' : listing.badge === 'urgent' ? '⚡ CẦN PASS GẤP' : '🏷️ GIÁ TỐT' }}
-      </span>
-    </div>
-
-    <div class="slot-details">
-      <div class="detail-row">
-        <span>📅 Ngày chơi:</span>
-        <strong>{{ listing.dateStr }}</strong>
-      </div>
-      <div class="detail-row">
-        <span>⏰ Khung giờ:</span>
-        <strong class="text-pink font-mono">{{ listing.timeSlot }}</strong>
-      </div>
-      <div class="detail-row">
-        <span>👤 Người pass:</span>
-        <span>{{ listing.sellerName }} (Uy tín 5.0 ⭐)</span>
-      </div>
-    </div>
-
-    <div class="pricing-bottom">
-      <div class="price-box">
-        <span class="orig-price">{{ formatMoney(listing.originalPrice) }}</span>
-        <strong class="resale-price text-pink font-mono">{{ formatMoney(listing.resalePrice) }}</strong>
-      </div>
-
-      <button class="btn-buy-slot" @click="emit('buy', listing)">
-        ⚡ Nhận Lịch Ngay
-      </button>
+        Mua Lại
+      </AuraButton>
     </div>
   </div>
 </template>
 
 <style scoped>
 .resale-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  transition: transform 0.15s, box-shadow 0.15s;
+  gap: 14px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
 }
 
 .resale-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px);
+  border-color: var(--primary, #6B2D3F);
+  box-shadow: 0 12px 28px rgba(107, 45, 63, 0.12);
+}
+
+:global(html.dark) .resale-card:hover {
+  border-color: var(--accent, #C9A15A);
+  box-shadow: 0 12px 28px rgba(201, 161, 90, 0.12);
 }
 
 .resale-card.is-featured {
-  border-color: rgba(236, 72, 153, 0.4);
-  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.08);
+  border-color: rgba(201, 161, 90, 0.4);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-subtle, rgba(201, 161, 90, 0.03)) 100%);
 }
 
-.card-top {
+.card-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .venue-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.venue-icon {
+  font-size: 16px;
+  color: var(--accent, #C9A15A);
+}
+
+.badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.badge-chip.hot {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge-chip.urgent {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge-chip.deal {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-icon {
+  font-size: 14px;
+}
+
+.court-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.schedule-box {
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.meta-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.venue-name {
-  font-size: 11px;
+.meta-icon {
+  font-size: 14px;
   color: var(--muted);
+  display: none;
 }
 
-.court-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 800;
+.meta-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
 }
 
-.badge-pill {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 6px;
+.meta-value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-.badge-hot { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.badge-urgent { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-.badge-deal { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.meta-value.highlight {
+  color: var(--primary, #6B2D3F);
+}
 
-.slot-details {
+:global(html.dark) .meta-value.highlight {
+  color: var(--on-surface, #FAF7F3);
+}
+
+.seller-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  font-size: 12px;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-}
-
-.pricing-bottom {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid var(--outline);
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--outline);
 }
 
-.price-box {
+.seller-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.seller-avatar-icon {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.escrow-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.escrow-icon {
+  font-size: 14px;
+}
+
+.seller-note {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.pricing-wrap {
   display: flex;
   flex-direction: column;
 }
 
-.orig-price {
-  font-size: 11px;
-  text-decoration: line-through;
+.original-price-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.original-price {
+  font-size: 11.5px;
   color: var(--muted);
+  text-decoration: line-through;
+}
+
+.discount-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 
 .resale-price {
-  font-size: 18px;
+  font-size: 17px;
+  font-weight: 850;
+  color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
+:global(html.dark) .resale-price {
+  color: #ffffff;
+}
 
-.btn-buy-slot {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+.btn-buy {
+  padding: 8px 16px;
 }
 </style>

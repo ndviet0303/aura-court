@@ -1663,6 +1663,8 @@ class DatabaseSeeder extends Seeder
                 ],
             ]
         );
+
+        $this->call(MarketplaceSeeder::class);
     }
 }
 

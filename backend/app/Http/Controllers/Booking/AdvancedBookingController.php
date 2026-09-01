@@ -103,8 +103,38 @@ class AdvancedBookingController extends Controller
 
     public function listings(Request $request)
     {
-        $organization = $this->organization($request);
-        return MarketplaceListing::query()->where('organization_id', $organization->id)->where('status', 'listed')->where('cutoff_at', '>', now())->with(['entitlement.court', 'seller'])->latest()->paginate(30);
+        $organization = null;
+        if ($request->user()) {
+            try {
+                $organization = $this->organization($request);
+            } catch (\Throwable $e) {
+                // Ignore auth/tenant exception for public browsing
+            }
+        }
+
+        if (! $organization) {
+            $orgId = $request->header('X-Organization-Id') ?? $request->input('organization_id');
+            if ($orgId) {
+                $organization = Organization::where('id', $orgId)->first();
+            }
+            if (! $organization) {
+                $organization = Organization::whereHas('venues')->first() ?? Organization::first();
+            }
+        }
+
+        $query = MarketplaceListing::query()
+            ->when($organization, fn ($q) => $q->where('organization_id', $organization->id))
+            ->with(['entitlement.court.venue', 'seller'])
+            ->latest();
+
+        if ($request->boolean('mine')) {
+            abort_unless($request->user(), 401, 'Unauthenticated.');
+            $query->where('seller_id', $request->user()->id);
+        } else {
+            $query->where('status', 'listed')->where('cutoff_at', '>', now());
+        }
+
+        return $query->paginate(30);
     }
 
     public function createListing(Request $request, ReservationEntitlement $entitlement)

@@ -29,7 +29,10 @@ const emit = defineEmits<{
 <template>
   <div class="recurring-wizard-card">
     <div class="wizard-header">
-      <h3 class="wizard-title">✨ Tạo lịch định kỳ mới (Recurring Booking)</h3>
+      <h3 class="wizard-title">
+        <span class="material-symbols-outlined icon-heading">event_repeat</span>
+        Tạo lịch định kỳ mới (Recurring Booking)
+      </h3>
       <p class="wizard-sub">Giữ sân cố định hàng tuần hoặc hàng tháng, tự động tạo hóa đơn và thanh toán định kỳ.</p>
     </div>
 
@@ -141,6 +144,14 @@ const emit = defineEmits<{
   margin: 0 0 4px;
   font-size: 16px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wizard-title .icon-heading {
+  font-size: 20px;
+  color: var(--pink-dark, #db2777);
 }
 
 .wizard-sub {
