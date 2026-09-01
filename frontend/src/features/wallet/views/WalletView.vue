@@ -56,22 +56,22 @@ function scrollToHistory() {
       <div class="header-titles">
         <div class="category-eyebrow">
           <span class="material-symbols-outlined eyebrow-icon">account_balance_wallet</span>
-          <span class="font-mono">AURA CLUB MEMBERSHIP & WALLET</span>
+          <span class="font-mono">{{ $t('wallet.membershipEyebrow') }}</span>
         </div>
-        <h1 class="page-title">Ví Hội Viên & Nạp Tiền Đa Cụm Sân</h1>
+        <h1 class="page-title">{{ $t('wallet.title') }}</h1>
         <p class="page-sub">
-          Quản lý số dư trả trước, nạp tiền tự động 24/7 qua VietQR và thanh toán không tiền mặt tại tất cả cụm sân Aura Court.
+          {{ $t('wallet.subtitle') }}
         </p>
       </div>
 
       <div class="header-actions">
-        <button class="btn btn-outline btn-refresh" :disabled="loading" @click="loadWalletData" title="Làm mới số dư">
+        <button class="btn btn-outline btn-refresh" :disabled="loading" :title="$t('wallet.refreshBalance')" @click="loadWalletData">
           <span class="material-symbols-outlined" :class="{ spinning: loading }">refresh</span>
-          <span>Làm mới</span>
+          <span>{{ $t('wallet.refresh') }}</span>
         </button>
         <button class="btn btn-primary" @click="openDepositModal()">
           <span class="material-symbols-outlined">add_card</span>
-          <span>Nạp Tiền Ngay</span>
+          <span>{{ $t('wallet.depositBtn') }}</span>
         </button>
       </div>
     </header>

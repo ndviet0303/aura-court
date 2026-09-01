@@ -21,7 +21,7 @@ const {
   <div class="venue-directions-page">
     <div v-if="loading" class="directions-loading-state">
       <span class="material-symbols-outlined spinner-icon">progress_activity</span>
-      <p>Đang tải thông tin địa điểm & bản đồ...</p>
+      <p>{{ $t('directions.loading') }}</p>
     </div>
 
     <div v-else-if="venue" class="directions-content-layout">

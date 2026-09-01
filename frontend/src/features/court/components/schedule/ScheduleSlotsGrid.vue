@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import type { AvailabilitySlot } from '../../types/court'
 import type { ScheduleTimeFilter } from '../../composables/useCourtSchedule'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   slots: AvailabilitySlot[]
@@ -36,19 +40,15 @@ function isPeakHour(slot: AvailabilitySlot): boolean {
   }
 }
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
-
 const availableCount = computed(() => props.slots.filter((s) => s.available).length)
 
-const filterButtons: Array<{ key: ScheduleTimeFilter; label: string; icon: string }> = [
-  { key: 'all', label: 'Tất cả 24h', icon: 'schedule' },
-  { key: 'morning', label: 'Sáng (06h-12h)', icon: 'wb_sunny' },
-  { key: 'afternoon', label: 'Chiều (12h-17h)', icon: 'partly_cloudy_day' },
-  { key: 'evening', label: 'Tối (17h-23h)', icon: 'nights_stay' },
-  { key: 'peak', label: 'Giờ vàng 🔥', icon: 'local_fire_department' },
-]
+const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; icon: string }>>(() => [
+  { key: 'all', label: t('schedule.filterAll'), icon: 'schedule' },
+  { key: 'morning', label: t('schedule.filterMorning'), icon: 'wb_sunny' },
+  { key: 'afternoon', label: t('schedule.filterAfternoon'), icon: 'partly_cloudy_day' },
+  { key: 'evening', label: t('schedule.filterEvening'), icon: 'nights_stay' },
+  { key: 'peak', label: t('schedule.filterPeak'), icon: 'local_fire_department' },
+])
 </script>
 
 <template>
@@ -60,9 +60,9 @@ const filterButtons: Array<{ key: ScheduleTimeFilter; label: string; icon: strin
           <span class="material-symbols-outlined icon-20">grid_view</span>
         </div>
         <div class="title-col">
-          <h3 class="section-title">Khung Giờ Thi Đấu</h3>
+          <h3 class="section-title">{{ $t('schedule.slotsSectionTitle') }}</h3>
           <span class="available-badge">
-            <strong class="font-mono">{{ availableCount }}</strong> / {{ slots.length }} khung giờ sẵn sàng
+            {{ $t('schedule.slotsAvailableCount', { available: availableCount, total: slots.length }) }}
           </span>
         </div>
       </div>
@@ -72,30 +72,30 @@ const filterButtons: Array<{ key: ScheduleTimeFilter; label: string; icon: strin
         <button
           type="button"
           class="btn-quick"
+          :title="$t('schedule.quick1h')"
           @click="emit('quickSelect', 1)"
-          title="Chọn nhanh 1 giờ trống gần nhất"
         >
           <span class="material-symbols-outlined icon-14">flash_on</span>
-          <span>Chọn 1h</span>
+          <span>{{ $t('schedule.quick1h') }}</span>
         </button>
         <button
           type="button"
           class="btn-quick"
+          :title="$t('schedule.quick2h')"
           @click="emit('quickSelect', 2)"
-          title="Chọn nhanh 2 giờ trống liền kề"
         >
           <span class="material-symbols-outlined icon-14">flash_on</span>
-          <span>Chọn 2h</span>
+          <span>{{ $t('schedule.quick2h') }}</span>
         </button>
         <button
           v-if="selectedSlots.length > 0"
           type="button"
           class="btn-quick btn-clear"
+          :title="$t('schedule.clearSelected', { count: selectedSlots.length })"
           @click="emit('clearSelected')"
-          title="Bỏ chọn tất cả giờ"
         >
           <span class="material-symbols-outlined icon-14">close</span>
-          <span>Bỏ chọn ({{ selectedSlots.length }})</span>
+          <span>{{ $t('schedule.clearSelected', { count: selectedSlots.length }) }}</span>
         </button>
       </div>
     </div>
@@ -117,10 +117,10 @@ const filterButtons: Array<{ key: ScheduleTimeFilter; label: string; icon: strin
 
     <!-- Status Legend -->
     <div class="section-legend">
-      <div class="legend-item"><span class="box-legend available"></span> Còn trống</div>
-      <div class="legend-item"><span class="box-legend selected"></span> Đang chọn</div>
-      <div class="legend-item"><span class="box-legend peak"></span> Giờ vàng (Peak)</div>
-      <div class="legend-item"><span class="box-legend occupied"></span> Đã có người đặt</div>
+      <div class="legend-item"><span class="box-legend available"></span> {{ $t('schedule.legendAvailable') }}</div>
+      <div class="legend-item"><span class="box-legend selected"></span> {{ $t('schedule.legendSelected') }}</div>
+      <div class="legend-item"><span class="box-legend peak"></span> {{ $t('schedule.legendPeak') }}</div>
+      <div class="legend-item"><span class="box-legend occupied"></span> {{ $t('schedule.legendOccupied') }}</div>
     </div>
 
     <!-- Loading Skeleton -->
@@ -131,8 +131,8 @@ const filterButtons: Array<{ key: ScheduleTimeFilter; label: string; icon: strin
     <!-- Empty State -->
     <div v-else-if="slots.length === 0" class="empty-slots">
       <span class="material-symbols-outlined empty-icon">event_busy</span>
-      <p class="empty-title">Không tìm thấy khung giờ phù hợp</p>
-      <p class="empty-sub">Hãy thử đổi sang ngày khác hoặc cơ sở/sân khác.</p>
+      <p class="empty-title">{{ $t('schedule.emptyTitle') }}</p>
+      <p class="empty-sub">{{ $t('schedule.emptySub') }}</p>
     </div>
 
     <!-- Slots Grid -->
@@ -174,7 +174,7 @@ const filterButtons: Array<{ key: ScheduleTimeFilter; label: string; icon: strin
         <span class="s-time font-mono">
           {{ slot.startsAt.slice(11, 16) }} - {{ slot.endsAt.slice(11, 16) }}
         </span>
-        <span class="s-price font-mono">{{ formatMoney(slot.price) }}</span>
+        <span class="s-price font-mono">{{ formatCurrency(slot.price) }}</span>
       </button>
     </div>
   </div>

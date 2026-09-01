@@ -100,14 +100,14 @@ const {
         <div class="empty-icon-circle">
           <span class="material-symbols-outlined">group_off</span>
         </div>
-        <h3 class="empty-title">Không tìm thấy kèo giao lưu phù hợp</h3>
-        <p class="empty-sub">Hãy thử chọn môn thể thao khác hoặc tự mở kèo để mời bạn bè tham gia.</p>
+        <h3 class="empty-title">{{ $t('matchmaking.emptyTitle') }}</h3>
+        <p class="empty-sub">{{ $t('matchmaking.emptySub') }}</p>
         <div class="empty-actions">
           <AuraButton variant="secondary" size="md" icon="restart_alt" @click="resetFilters">
-            Xóa Bộ Lọc
+            {{ $t('matchmaking.resetFilters') }}
           </AuraButton>
           <AuraButton to="/matchmaking/create" variant="primary" size="md" icon="add_circle">
-            Tạo Kèo Mới
+            {{ $t('matchmaking.createMatchBtn') }}
           </AuraButton>
         </div>
       </div>

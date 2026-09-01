@@ -14,13 +14,13 @@ defineProps<{
         <span class="material-symbols-outlined badge-icon">verified</span>
         <span>AURA COURT VENUES</span>
       </span>
-      <h1 class="page-title">Khám Phá Cụm Sân & Sân Đấu Chuyên Nghiệp</h1>
+      <h1 class="page-title">{{ $t('courts.courtsHeroTitle') }}</h1>
       <div v-if="loading && totalCount === 0" class="hero-sub-loading">
         <SkeletonLoader width="360px" height="14px" rounded="4px" />
       </div>
       <p v-else class="page-sub">
         <span class="material-symbols-outlined sub-icon">stadium</span>
-        <span>Hơn {{ totalCount }} sân thi đấu thể thao tiêu chuẩn quốc tế: Cầu lông, Pickleball, Tennis và bóng rổ.</span>
+        <span>{{ $t('courts.courtsHeroSub', { count: totalCount }) }}</span>
       </p>
     </div>
   </div>

@@ -43,10 +43,10 @@ function getIconForType(type: TransactionType): string {
       <div class="title-meta">
         <h3 class="card-title">
           <span class="material-symbols-outlined title-icon">history</span>
-          <span>Lịch Sử Giao Dịch & Biến Động Số Dư</span>
+          <span>{{ $t('wallet.transactionsTitle') }}</span>
         </h3>
         <p class="card-sub">
-          Theo dõi lịch sử nạp tiền, thanh toán đặt sân tự động, hoàn huỷ và chi tiêu dịch vụ tại quầy.
+          {{ $t('wallet.transactionsSubtitle') }}
         </p>
       </div>
 
@@ -57,7 +57,7 @@ function getIconForType(type: TransactionType): string {
           <input
             type="text"
             :value="searchQuery"
-            placeholder="Tìm theo mã GD, sân..."
+            :placeholder="$t('wallet.searchPlaceholder')"
             class="search-input"
             @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
           />
@@ -70,35 +70,28 @@ function getIconForType(type: TransactionType): string {
             :class="{ active: filter === 'all' }"
             @click="emit('update:filter', 'all')"
           >
-            Tất cả
+            {{ $t('wallet.filterAll') }}
           </button>
           <button
             class="p-tab"
             :class="{ active: filter === 'topup' }"
             @click="emit('update:filter', 'topup')"
           >
-            Nạp tiền
+            {{ $t('wallet.filterDeposit') }}
           </button>
           <button
             class="p-tab"
             :class="{ active: filter === 'booking' }"
             @click="emit('update:filter', 'booking')"
           >
-            Đặt sân
-          </button>
-          <button
-            class="p-tab"
-            :class="{ active: filter === 'pos' }"
-            @click="emit('update:filter', 'pos')"
-          >
-            Quầy POS
+            {{ $t('wallet.filterPayment') }}
           </button>
           <button
             class="p-tab"
             :class="{ active: filter === 'refund' }"
             @click="emit('update:filter', 'refund')"
           >
-            Hoàn tiền
+            {{ $t('wallet.filterRefund') }}
           </button>
         </div>
       </div>

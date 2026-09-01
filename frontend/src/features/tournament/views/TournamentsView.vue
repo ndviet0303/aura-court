@@ -33,9 +33,9 @@ const {
     <header class="tournaments-hero-banner">
       <div class="hero-content">
         <span class="hero-tag">AURA TOURNAMENT CIRCUIT 2026</span>
-        <h1 class="hero-title">Hệ Thống Giải Đấu & Tranh Tài Cao Cấp</h1>
+        <h1 class="hero-title">{{ $t('tournament.title') }}</h1>
         <p class="hero-sub">
-          Đăng ký tham gia tranh tài các giải đấu Cầu lông, Pickleball, Tennis chuẩn chuyên nghiệp. Theo dõi nhánh đấu, bảng xếp hạng và tỷ số thời gian thực.
+          {{ $t('tournament.subtitle') }}
         </p>
       </div>
 
@@ -43,7 +43,7 @@ const {
         <div class="hero-stat-card">
           <span class="stat-lbl">
             <span class="material-symbols-outlined stat-ico">emoji_events</span>
-            Tổng Giải Đấu
+            {{ $t('tournament.totalTournaments') }}
           </span>
           <SkeletonLoader v-if="loading" type="rect" width="48px" height="28px" rounded="6px" />
           <strong v-else class="stat-val font-mono">{{ stats.total }}</strong>
@@ -52,16 +52,15 @@ const {
         <div class="hero-stat-card highlight">
           <span class="stat-lbl">
             <span class="material-symbols-outlined stat-ico">how_to_reg</span>
-            Đang Mở Đăng Ký
+            {{ $t('tournament.openRegistration') }}
           </span>
           <SkeletonLoader v-if="loading" type="rect" width="48px" height="28px" rounded="6px" />
           <strong v-else class="stat-val font-mono">{{ stats.open }}</strong>
         </div>
-
         <div class="hero-stat-card gold">
           <span class="stat-lbl">
             <span class="material-symbols-outlined stat-ico">payments</span>
-            Tổng Quỹ Thưởng
+            {{ $t('tournament.totalPrize') }}
           </span>
           <SkeletonLoader v-if="loading" type="rect" width="100px" height="28px" rounded="6px" />
           <strong v-else class="stat-val font-mono">{{ stats.prizePoolTotal }}</strong>
@@ -126,10 +125,10 @@ const {
       <div class="empty-icon-circle">
         <span class="material-symbols-outlined">sports_tennis</span>
       </div>
-      <h3 class="empty-title">Không tìm thấy giải đấu nào phù hợp</h3>
-      <p class="empty-sub">Hãy thử đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc thể thức và bộ môn.</p>
+      <h3 class="empty-title">{{ $t('tournament.emptyTournamentsTitle') }}</h3>
+      <p class="empty-sub">{{ $t('tournament.emptyTournamentsSub') }}</p>
       <AuraButton variant="secondary" size="md" icon="restart_alt" @click="resetFilters">
-        Đặt lại bộ lọc
+        {{ $t('tournament.resetFilters') }}
       </AuraButton>
     </div>
 

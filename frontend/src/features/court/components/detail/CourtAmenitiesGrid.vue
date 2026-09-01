@@ -1,19 +1,24 @@
 <script setup lang="ts">
-const amenities = [
-  { icon: 'local_parking', name: 'Bãi Đỗ Xe Rộng Rãi', desc: 'Có chỗ đỗ ô tô & xe máy an ninh' },
-  { icon: 'wifi', name: 'Wifi 6 Tốc Độ Cao', desc: 'Livestream thi đấu mượt mà' },
-  { icon: 'shower', name: 'Phòng Thay Đồ & Tắm', desc: 'Có bình nóng lạnh và máy sấy' },
-  { icon: 'local_cafe', name: 'Quầy Nước & Đồ Ăn Nhẹ', desc: 'Phục vụ điện giải, sinh tố' },
-  { icon: 'sports_tennis', name: 'Cửa Hàng & Căng Vợt', desc: 'Căng cước 4 nút điện tử chuẩn' },
-  { icon: 'weekend', name: 'Khu Ghế Chờ Khán Giả', desc: 'Ghế bọc đệm êm ái thoáng mát' },
-]
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const amenities = computed(() => [
+  { icon: 'local_parking', name: t('courtDetail.amenityParking'), desc: t('courtDetail.amenityParkingDesc') },
+  { icon: 'wifi', name: t('courtDetail.amenityWifi'), desc: t('courtDetail.amenityWifiDesc') },
+  { icon: 'shower', name: t('courtDetail.amenityShower'), desc: t('courtDetail.amenityShowerDesc') },
+  { icon: 'local_cafe', name: t('courtDetail.amenityCafe'), desc: t('courtDetail.amenityCafeDesc') },
+  { icon: 'sports_tennis', name: t('courtDetail.amenityShop'), desc: t('courtDetail.amenityShopDesc') },
+  { icon: 'weekend', name: t('courtDetail.amenityLounge'), desc: t('courtDetail.amenityLoungeDesc') },
+])
 </script>
 
 <template>
   <div class="court-amenities-section">
     <h3 class="section-title">
       <span class="material-symbols-outlined title-icon">room_service</span>
-      <span>Tiện Ích & Dịch Vụ Đi Kèm</span>
+      <span>{{ $t('courtDetail.amenitiesTitle') }}</span>
     </h3>
     <div class="amenities-grid">
       <div v-for="a in amenities" :key="a.name" class="amenity-card">

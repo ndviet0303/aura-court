@@ -46,11 +46,11 @@ function handleSubmit() {
             <span class="material-symbols-outlined">how_to_reg</span>
           </div>
           <div>
-            <h3 class="modal-title">Ghi Danh Tham Gia Giải Đấu</h3>
-            <p class="modal-sub">Hoàn tất biểu mẫu để giữ chỗ chính thức trong nhánh thi đấu.</p>
+            <h3 class="modal-title">{{ $t('tournament.registerModalTitle') }}</h3>
+            <p class="modal-sub">{{ $t('tournament.registerModalSub') }}</p>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" aria-label="Đóng" @click="emit('close')">
+        <button type="button" class="modal-close-btn" :aria-label="$t('common.close')" @click="emit('close')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -67,7 +67,7 @@ function handleSubmit() {
             </span>
             <span class="detail-tag">
               <span class="material-symbols-outlined mini-ico">payments</span>
-              Lệ phí: {{ tournament.entry_fee || 'Miễn phí' }}
+              {{ $t('tournament.entryFeeLabel') }} {{ tournament.entry_fee || $t('payment.free') }}
             </span>
             <span class="detail-tag">
               <span class="material-symbols-outlined mini-ico">location_on</span>
@@ -80,7 +80,7 @@ function handleSubmit() {
         <form class="reg-form" @submit.prevent="handleSubmit">
           <div class="form-group">
             <label class="form-label" for="reg-athlete-name">
-              Họ và tên VĐV / Đội trưởng <span class="required">*</span>
+              {{ $t('tournament.athleteCaptainLabel') }} <span class="required">*</span>
             </label>
             <div class="input-with-icon">
               <span class="material-symbols-outlined field-ico">person</span>
@@ -89,7 +89,7 @@ function handleSubmit() {
                 v-model="name"
                 type="text"
                 class="form-input"
-                placeholder="Vd: Nguyễn Văn A"
+                :placeholder="$t('tournament.athleteCaptainPlaceholder')"
                 required
               />
             </div>
@@ -97,7 +97,7 @@ function handleSubmit() {
 
           <div class="form-group">
             <label class="form-label" for="reg-athlete-phone">
-              Số điện thoại liên hệ <span class="required">*</span>
+              {{ $t('tournament.contactPhoneLabel') }} <span class="required">*</span>
             </label>
             <div class="input-with-icon">
               <span class="material-symbols-outlined field-ico">phone_in_talk</span>
@@ -106,7 +106,7 @@ function handleSubmit() {
                 v-model="phone"
                 type="tel"
                 class="form-input"
-                placeholder="0901 234 567"
+                :placeholder="$t('tournament.contactPhonePlaceholder')"
                 required
               />
             </div>
@@ -117,7 +117,7 @@ function handleSubmit() {
             class="form-group"
           >
             <label class="form-label" for="reg-partner-name">
-              Họ và tên đồng đội (Partner / Đồng đội):
+              {{ $t('tournament.partnerNameLabel') }}
             </label>
             <div class="input-with-icon">
               <span class="material-symbols-outlined field-ico">group_add</span>
@@ -126,19 +126,19 @@ function handleSubmit() {
                 v-model="partnerName"
                 type="text"
                 class="form-input"
-                placeholder="Vd: Trần Văn B (hoặc tên CLB)"
+                :placeholder="$t('tournament.partnerNamePlaceholder')"
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="reg-notes">Ghi chú thêm (CLB, áo thi đấu...):</label>
+            <label class="form-label" for="reg-notes">{{ $t('tournament.notesLabel') }}</label>
             <input
               id="reg-notes"
               v-model="notes"
               type="text"
               class="form-input"
-              placeholder="Vd: Size áo L, CLB Aura Badminton Club..."
+              :placeholder="$t('tournament.notesPlaceholder')"
             />
           </div>
         </form>
@@ -147,7 +147,7 @@ function handleSubmit() {
       <!-- Modal Footer -->
       <div class="modal-footer">
         <AuraButton variant="ghost" size="md" @click="emit('close')">
-          Hủy bỏ
+          {{ $t('tournament.cancelBtn') }}
         </AuraButton>
 
         <AuraButton
@@ -158,7 +158,7 @@ function handleSubmit() {
           :loading="loading"
           @click="handleSubmit"
         >
-          Xác Nhận & Ghi Danh
+          {{ $t('tournament.confirmRegisterBtn') }}
         </AuraButton>
       </div>
     </div>

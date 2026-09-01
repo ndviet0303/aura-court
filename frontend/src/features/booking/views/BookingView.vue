@@ -95,13 +95,13 @@ onMounted(() => {
       data-testid="booking-empty-state"
     >
       <span class="material-symbols-outlined empty-icon">event_busy</span>
-      <h3 class="empty-title">Không Tìm Thấy Lịch Đặt Sân</h3>
+      <h3 class="empty-title">{{ $t('booking.emptyTitle') }}</h3>
       <p class="empty-desc">
-        {{ searchQuery ? 'Không có kết quả khớp với từ khóa tìm kiếm của bạn.' : 'Bạn chưa có lịch đặt sân nào trong danh mục này. Hãy chọn sân và đặt giờ chơi ngay!' }}
+        {{ searchQuery ? $t('courts.noResults') : $t('booking.emptyDesc') }}
       </p>
       <RouterLink to="/courts" class="btn-find-court">
         <span class="material-symbols-outlined">sports_tennis</span>
-        <span>Khám Phá Sân Đấu</span>
+        <span>{{ $t('booking.bookNowBtn') }}</span>
       </RouterLink>
     </div>
 

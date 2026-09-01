@@ -51,16 +51,16 @@ onMounted(() => {
     <!-- Top Navigation -->
     <div class="top-nav-bar">
       <AuraButton to="/matchmaking" variant="ghost" size="sm" icon="arrow_back">
-        Quay lại Ghép Kèo
+        {{ $t('matchmaking.backToMatchmaking') }}
       </AuraButton>
     </div>
 
     <!-- Header Hero -->
     <header class="create-hero">
-      <span class="hero-badge font-mono">MỞ KÈO GIAO LƯU</span>
-      <h1 class="page-title">Khởi Tạo Kèo Mới & Ghép Trận</h1>
+      <span class="hero-badge font-mono">{{ $t('matchmaking.eyebrow') }}</span>
+      <h1 class="page-title">{{ $t('matchmaking.createMatchPageTitle') }}</h1>
       <p class="page-subtitle">
-        Tìm kiếm đối thủ, kết nối đồng đội và tự động chia sẻ chi phí sân thể thao Aura Court.
+        {{ $t('matchmaking.createMatchPageSub') }}
       </p>
     </header>
 
@@ -87,14 +87,14 @@ onMounted(() => {
         <div class="custom-title-card">
           <label for="match-title-custom" class="title-label">
             <span class="material-symbols-outlined label-icon">edit</span>
-            Tiêu đề kèo giao lưu (tự động gợi ý nếu để trống)
+            {{ $t('matchmaking.customTitleLabel') }}
           </label>
           <input
             id="match-title-custom"
             v-model="matchTitle"
             type="text"
             class="title-text-input"
-            placeholder="Ví dụ: Tìm 2 bạn đánh đôi nam/nữ cầu lông trình độ khá thứ 7..."
+            :placeholder="$t('matchmaking.customTitlePlaceholder')"
           />
         </div>
 

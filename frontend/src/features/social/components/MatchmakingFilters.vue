@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SocialSportType } from '../types/social'
 import { SelectDropdown, AuraButton } from '@/shared/components'
+
+const { t } = useI18n()
 
 defineProps<{
   activeTab: 'all' | 'open' | 'my_matches' | 'partners'
@@ -23,30 +27,30 @@ const emit = defineEmits<{
   (e: 'reset'): void
 }>()
 
-const sportsList: Array<{ id: SocialSportType; label: string; icon: string }> = [
-  { id: 'all', label: 'Tất cả môn', icon: 'sports' },
-  { id: 'badminton', label: 'Cầu lông', icon: 'sports_tennis' },
-  { id: 'pickleball', label: 'Pickleball', icon: 'sports_tennis' },
-  { id: 'tennis', label: 'Tennis', icon: 'sports_tennis' },
-  { id: 'football', label: 'Bóng đá', icon: 'sports_soccer' },
-  { id: 'basketball', label: 'Bóng rổ', icon: 'sports_basketball' },
+const sportsList = computed<Array<{ id: SocialSportType; label: string; icon: string }>>(() => [
+  { id: 'all', label: t('matchmaking.filterAllSports'), icon: 'sports' },
+  { id: 'badminton', label: t('tournament.filterBadminton'), icon: 'sports_tennis' },
+  { id: 'pickleball', label: t('tournament.filterPickleball'), icon: 'sports_tennis' },
+  { id: 'tennis', label: t('tournament.filterTennis'), icon: 'sports_tennis' },
+  { id: 'football', label: t('tournament.filterFootball5'), icon: 'sports_soccer' },
+  { id: 'basketball', label: t('home.filterBasketball'), icon: 'sports_basketball' },
   { id: 'volleyball', label: 'Bóng chuyền', icon: 'sports_volleyball' },
   { id: 'table_tennis', label: 'Bóng bàn', icon: 'sports_tennis' },
-]
+])
 
-const skillOptions = [
-  { value: 'all', label: 'Tất cả trình độ' },
-  { value: '2', label: 'Level 1 - 2 (Mới chơi / Cơ bản)' },
-  { value: '3', label: 'Level 3 (Trung bình / Phong trào)' },
+const skillOptions = computed(() => [
+  { value: 'all', label: t('matchmaking.filterAllSkills') },
+  { value: '2', label: 'Level 1 - 2 (' + t('matchmaking.levelBeginner') + ')' },
+  { value: '3', label: 'Level 3 (' + t('matchmaking.levelIntermediate') + ')' },
   { value: '4', label: 'Level 4 (Khá / Thi đấu)' },
-  { value: '5', label: 'Level 5 (Bán chuyên / Nâng cao)' },
-]
+  { value: '5', label: 'Level 5 (' + t('matchmaking.levelAdvanced') + ')' },
+])
 
-const cityOptions = [
-  { value: 'all', label: 'Tất cả khu vực' },
+const cityOptions = computed(() => [
+  { value: 'all', label: t('matchmaking.filterAllCities') },
   { value: 'Hà Nội', label: 'Hà Nội' },
   { value: 'TP. Hồ Chí Minh', label: 'TP. Hồ Chí Minh' },
-]
+])
 </script>
 
 <template>
@@ -61,7 +65,7 @@ const cityOptions = [
         @click="emit('update:activeTab', 'all')"
       >
         <span class="material-symbols-outlined tab-ico">list_alt</span>
-        <span>Tất Cả Kèo</span>
+        <span>{{ $t('matchmaking.tabAllMatches') }}</span>
         <span class="tab-badge">{{ totalCount }}</span>
       </button>
 
@@ -73,7 +77,7 @@ const cityOptions = [
         @click="emit('update:activeTab', 'open')"
       >
         <span class="material-symbols-outlined tab-ico">how_to_reg</span>
-        <span>Đang Tuyển Người</span>
+        <span>{{ $t('matchmaking.tabOpen') }}</span>
         <span class="tab-badge highlight">{{ openCount }}</span>
       </button>
 
@@ -85,7 +89,7 @@ const cityOptions = [
         @click="emit('update:activeTab', 'my_matches')"
       >
         <span class="material-symbols-outlined tab-ico">person_check</span>
-        <span>Kèo Của Tôi</span>
+        <span>{{ $t('matchmaking.tabMyMatches') }}</span>
         <span v-if="myMatchesCount > 0" class="tab-badge">{{ myMatchesCount }}</span>
       </button>
 
@@ -97,7 +101,7 @@ const cityOptions = [
         @click="emit('update:activeTab', 'partners')"
       >
         <span class="material-symbols-outlined tab-ico">handshake</span>
-        <span>Tìm Bạn Ghép Cặp</span>
+        <span>{{ $t('matchmaking.tabPartners') }}</span>
         <span class="tab-badge">{{ partnersCount }}</span>
       </button>
     </div>
@@ -125,14 +129,14 @@ const cityOptions = [
           :value="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Tìm theo tên kèo, cơ sở sân, người tạo hoặc môn thể thao..."
+          :placeholder="$t('matchmaking.searchPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
         <button
           v-if="searchQuery"
           type="button"
           class="clear-search-btn"
-          aria-label="Xóa tìm kiếm"
+          :aria-label="$t('picker.clear')"
           @click="emit('update:searchQuery', '')"
         >
           <span class="material-symbols-outlined">close</span>
@@ -144,7 +148,7 @@ const cityOptions = [
           <SelectDropdown
             :model-value="selectedSkill"
             :options="skillOptions"
-            placeholder="Trình độ"
+            :placeholder="$t('matchmaking.filterAllSkills')"
             @update:model-value="emit('update:selectedSkill', String($event))"
           />
         </div>
@@ -153,7 +157,7 @@ const cityOptions = [
           <SelectDropdown
             :model-value="selectedCity"
             :options="cityOptions"
-            placeholder="Khu vực"
+            :placeholder="$t('matchmaking.filterAllCities')"
             @update:model-value="emit('update:selectedCity', String($event))"
           />
         </div>
@@ -161,11 +165,11 @@ const cityOptions = [
         <AuraButton
           v-if="searchQuery || selectedSport !== 'all' || selectedSkill !== 'all' || selectedCity !== 'all'"
           variant="ghost"
-          size="sm"
+          size="md"
           icon="restart_alt"
           @click="emit('reset')"
         >
-          Đặt lại
+          {{ $t('matchmaking.resetFilters') }}
         </AuraButton>
       </div>
     </div>

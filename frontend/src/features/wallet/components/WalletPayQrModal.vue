@@ -34,9 +34,9 @@ function formatMoney(amount: number): string {
       <div class="modal-header">
         <div class="modal-title-box">
           <span class="material-symbols-outlined header-icon">qr_code_2</span>
-          <h3 class="modal-title">Mã QR Check-in & POS</h3>
+          <h3 class="modal-title">{{ $t('wallet.modalQrTitle') }}</h3>
         </div>
-        <button class="modal-close-btn" @click="emit('close')" aria-label="Đóng">
+        <button class="modal-close-btn" :aria-label="$t('common.close')" @click="emit('close')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -48,7 +48,7 @@ function formatMoney(amount: number): string {
         </div>
 
         <p class="qr-sub">
-          Đưa mã này cho nhân viên tại quầy lễ tân để check-in nhận sân hoặc thanh toán nước & phụ kiện thể thao.
+          {{ $t('wallet.modalQrDesc') }}
         </p>
 
         <!-- QR Code Container -->
@@ -63,14 +63,14 @@ function formatMoney(amount: number): string {
         <!-- Member Card Details Strip -->
         <div class="member-id-strip">
           <div class="card-num-box">
-            <span class="label">Mã thẻ hội viên:</span>
+            <span class="label">{{ $t('wallet.cardNumber') }}</span>
             <strong class="val font-mono">{{ wallet.card_number }}</strong>
           </div>
           <button
             type="button"
             class="btn-copy-code"
-            @click="emit('copy', wallet.card_number, 'Đã sao chép mã thẻ hội viên')"
-            title="Sao chép mã thẻ"
+            :title="$t('payment.copy')"
+            @click="emit('copy', wallet.card_number, $t('wallet.copyCardSuccess'))"
           >
             <span class="material-symbols-outlined">content_copy</span>
           </button>
@@ -78,20 +78,20 @@ function formatMoney(amount: number): string {
 
         <!-- Balance Info -->
         <div class="wallet-balance-pill">
-          <span class="bal-label">Số dư khả dụng:</span>
+          <span class="bal-label">{{ $t('wallet.availableBalance') }}:</span>
           <strong class="bal-val text-primary font-mono">{{ formatMoney(wallet.balance) }}</strong>
         </div>
 
         <!-- Refresh Action -->
         <button type="button" class="btn-refresh-qr" :disabled="refreshing" @click="refreshQr">
           <span class="material-symbols-outlined" :class="{ spinning: refreshing }">refresh</span>
-          <span>Làm mới mã bảo mật</span>
+          <span>{{ $t('common.theme.toggle') ? $t('wallet.refreshBtn') : 'Refresh' }}</span>
         </button>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="btn btn-outline full-width" @click="emit('close')">
-          <span>Đóng Cửa Sổ</span>
+          <span>{{ $t('common.close') }}</span>
         </button>
       </div>
     </div>

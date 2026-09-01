@@ -2,11 +2,11 @@
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { LanguageSwitcher, ThemeToggle } from '@/shared/components'
 import NavbarSkeleton from './NavbarSkeleton.vue'
 
 import NavbarBrand from './components/NavbarBrand.vue'
 import NavbarDesktopNav from './components/NavbarDesktopNav.vue'
+import NavbarNotificationBell from './components/NavbarNotificationBell.vue'
 import NavbarUserProfile from './components/NavbarUserProfile.vue'
 import NavbarMobileDrawer from './components/NavbarMobileDrawer.vue'
 
@@ -44,13 +44,10 @@ watch(() => route.path, closeMobileMenu)
 
       <!-- Right Actions & Profile -->
       <div class="nav-right">
-        <!-- Desktop theme & language toggles -->
-        <div class="desktop-only-controls">
-          <ThemeToggle />
-          <LanguageSwitcher />
-        </div>
+        <!-- Notification Bell Icon Button (when authenticated) -->
+        <NavbarNotificationBell />
 
-        <!-- User Profile Component -->
+        <!-- User Profile Component (includes Theme & Language in dropdown) -->
         <NavbarUserProfile @logout="handleLogout" />
 
         <!-- Mobile Drawer Toggle Button -->
@@ -101,22 +98,16 @@ watch(() => route.path, closeMobileMenu)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
   min-width: 0;
-}
-
-.desktop-only-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 /* Mobile Menu Toggle Button */
@@ -159,9 +150,6 @@ watch(() => route.path, closeMobileMenu)
 }
 
 @media (max-width: 1080px) {
-  .desktop-only-controls {
-    display: none !important;
-  }
   .mobile-menu-btn {
     display: flex !important;
   }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatCurrency } from '@/i18n'
 import type { ResaleListing } from '../types/marketplace'
 import { AuraButton } from '@/shared/components'
 
@@ -17,11 +18,6 @@ const discountPercent = computed(() => {
   }
   return Math.round(((props.listing.originalPrice - props.listing.resalePrice) / props.listing.originalPrice) * 100)
 })
-
-function formatVND(amount?: number): string {
-  if (!amount) return '0 ₫'
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
-}
 </script>
 
 <template>
@@ -52,12 +48,12 @@ function formatVND(amount?: number): string {
       <div class="meta-row">
         <div class="meta-item">
           <span class="material-symbols-outlined meta-icon">calendar_today</span>
-          <span class="meta-label">Ngày chơi</span>
+          <span class="meta-label">{{ $t('schedule.summaryDate') }}</span>
           <span class="meta-value highlight">{{ listing.dateStr }}</span>
         </div>
         <div class="meta-item">
           <span class="material-symbols-outlined meta-icon">schedule</span>
-          <span class="meta-label">Khung giờ</span>
+          <span class="meta-label">{{ $t('schedule.summaryTime') }}</span>
           <span class="meta-value">{{ listing.timeSlot }}</span>
         </div>
       </div>
@@ -84,10 +80,10 @@ function formatVND(amount?: number): string {
     <div class="card-footer">
       <div class="pricing-wrap">
         <div v-if="discountPercent > 0" class="original-price-wrap">
-          <span class="original-price">{{ formatVND(listing.originalPrice) }}</span>
+          <span class="original-price">{{ formatCurrency(listing.originalPrice || 0) }}</span>
           <span class="discount-pill">-{{ discountPercent }}%</span>
         </div>
-        <div class="resale-price">{{ formatVND(listing.resalePrice) }}</div>
+        <div class="resale-price">{{ formatCurrency(listing.resalePrice) }}</div>
       </div>
 
       <AuraButton
@@ -97,7 +93,7 @@ function formatVND(amount?: number): string {
         class="btn-buy"
         @click="emit('buy', listing)"
       >
-        Mua Lại
+        {{ $t('resale.buyNowBtn') }}
       </AuraButton>
     </div>
   </div>

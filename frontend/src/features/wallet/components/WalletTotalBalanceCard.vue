@@ -25,12 +25,12 @@ function formatMoney(amount: number): string {
           <span class="badge-text font-mono">AURA ATHLETE MULTI-PASS</span>
           <span class="status-indicator">
             <span class="status-dot"></span>
-            <span>Đang kích hoạt</span>
+            <span>{{ $t('wallet.activeCard') }}</span>
           </span>
         </div>
 
         <div class="balance-meta">
-          <span class="balance-label">Tổng số dư khả dụng toàn hệ thống</span>
+          <span class="balance-label">{{ $t('wallet.totalAvailable') }}</span>
           <div class="balance-amount-row">
             <span class="balance-val font-mono">{{ formatMoney(totalBalance) }}</span>
           </div>
@@ -39,11 +39,11 @@ function formatMoney(amount: number): string {
         <div class="sub-stats-row">
           <div class="stat-pill">
             <span class="material-symbols-outlined pill-icon">account_balance</span>
-            <span>Liên kết <strong>{{ walletsCount }}</strong> cụm sân</span>
+            <span>{{ $t('wallet.linkedVenues', { count: walletsCount }) }}</span>
           </div>
           <div class="stat-pill highlight-gold">
             <span class="material-symbols-outlined pill-icon">stars</span>
-            <span>Điểm tích lũy: <strong class="font-mono">{{ totalPoints.toLocaleString('vi-VN') }} pts</strong></span>
+            <span>{{ $t('wallet.accumulatedPoints', { points: totalPoints.toLocaleString() }) }}</span>
           </div>
         </div>
       </div>
@@ -51,12 +51,12 @@ function formatMoney(amount: number): string {
       <div class="balance-actions">
         <button class="btn btn-primary btn-cta" @click="emit('deposit')">
           <span class="material-symbols-outlined">add_card</span>
-          <span>Nạp Tiền Vào Ví</span>
+          <span>{{ $t('wallet.depositBtn') }}</span>
         </button>
 
         <button class="btn btn-outline" @click="emit('qr')">
           <span class="material-symbols-outlined">qr_code_2</span>
-          <span>Mã QR Check-in & POS</span>
+          <span>{{ $t('wallet.modalQrTitle') }}</span>
         </button>
       </div>
     </div>

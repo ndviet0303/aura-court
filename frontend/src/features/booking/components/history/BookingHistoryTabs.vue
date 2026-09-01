@@ -29,7 +29,7 @@ const emit = defineEmits<{
         @click="emit('update:activeTab', 'all')"
       >
         <span class="material-symbols-outlined tab-icon">view_list</span>
-        <span>Tất cả</span>
+        <span>{{ $t('booking.tabAll') }}</span>
         <span class="count-pill">{{ totalCount }}</span>
       </button>
 
@@ -42,7 +42,7 @@ const emit = defineEmits<{
         @click="emit('update:activeTab', 'upcoming')"
       >
         <span class="material-symbols-outlined tab-icon">schedule</span>
-        <span>Sắp diễn ra</span>
+        <span>{{ $t('booking.tabUpcoming') }}</span>
         <span class="count-pill upcoming-pill">{{ upcomingCount }}</span>
       </button>
 
@@ -55,7 +55,7 @@ const emit = defineEmits<{
         @click="emit('update:activeTab', 'completed')"
       >
         <span class="material-symbols-outlined tab-icon">check_circle</span>
-        <span>Đã hoàn thành</span>
+        <span>{{ $t('booking.tabCompleted') }}</span>
         <span class="count-pill">{{ completedCount }}</span>
       </button>
 
@@ -68,7 +68,7 @@ const emit = defineEmits<{
         @click="emit('update:activeTab', 'cancelled')"
       >
         <span class="material-symbols-outlined tab-icon">cancel</span>
-        <span>Đã huỷ</span>
+        <span>{{ $t('booking.tabCancelled') }}</span>
         <span class="count-pill">{{ cancelledCount }}</span>
       </button>
     </div>
@@ -80,14 +80,15 @@ const emit = defineEmits<{
         :value="search"
         type="text"
         class="search-input"
-        placeholder="Tìm theo mã đơn (#BK-...), tên sân..."
+        :placeholder="$t('booking.searchPlaceholder')"
+        :aria-label="$t('booking.searchPlaceholder')"
         @input="emit('update:search', ($event.target as HTMLInputElement).value)"
       />
       <button
         v-if="search"
         class="btn-clear-search"
         type="button"
-        title="Xóa tìm kiếm"
+        :title="$t('picker.clear')"
         @click="emit('update:search', '')"
       >
         <span class="material-symbols-outlined">close</span>

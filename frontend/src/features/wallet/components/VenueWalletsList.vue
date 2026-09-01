@@ -22,15 +22,15 @@ function formatMoney(amount: number): string {
       <div class="hdr-text">
         <h3 class="section-title">
           <span class="material-symbols-outlined hdr-icon">account_balance</span>
-          <span>Thẻ Hội Viên & Ví Từng Cụm Sân</span>
+          <span>{{ $t('wallet.venueWalletsTitle') }}</span>
         </h3>
         <p class="section-sub">
-          Số dư trả trước và điểm tích lũy được định danh và đồng bộ tự động tại từng câu lạc bộ Aura Court.
+          {{ $t('wallet.venueWalletsSubtitle') }}
         </p>
       </div>
 
       <div class="hdr-count">
-        <span class="count-tag font-mono">{{ wallets.length }} THẺ KHẢ DỤNG</span>
+        <span class="count-tag font-mono">{{ $t('wallet.availableCards', { count: wallets.length }) }}</span>
       </div>
     </div>
 
@@ -68,12 +68,12 @@ function formatMoney(amount: number): string {
         <!-- Card Balance & Points Footer -->
         <div class="card-balance-row">
           <div class="bal-box">
-            <span class="bal-label">Số dư khả dụng</span>
+            <span class="bal-label">{{ $t('wallet.availableBalance') }}</span>
             <strong class="bal-value font-mono">{{ formatMoney(w.balance) }}</strong>
           </div>
           <div class="pts-box">
-            <span class="pts-label">Điểm Aura</span>
-            <span class="pts-value font-mono">{{ (w.points || 0).toLocaleString('vi-VN') }} pts</span>
+            <span class="pts-label">{{ $t('wallet.auraPoints') }}</span>
+            <span class="pts-value font-mono">{{ (w.points || 0).toLocaleString() }} pts</span>
           </div>
         </div>
 
@@ -81,11 +81,11 @@ function formatMoney(amount: number): string {
         <div class="card-actions-row">
           <button class="pass-btn pass-btn-primary" @click="emit('deposit', w)">
             <span class="material-symbols-outlined">add_card</span>
-            <span>Nạp Tiền</span>
+            <span>{{ $t('wallet.topupCardBtn') }}</span>
           </button>
           <button class="pass-btn pass-btn-ghost" @click="emit('qr', w)">
             <span class="material-symbols-outlined">qr_code_2</span>
-            <span>Mã QR Check-in</span>
+            <span>{{ $t('wallet.payQrBtn') }}</span>
           </button>
         </div>
       </div>

@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { formatCurrency } from '@/i18n'
 import type { Court } from '../../types/court'
 
 defineProps<{
   court: Court
   index: number
 }>()
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
 </script>
 
 <template>
@@ -37,7 +34,7 @@ function formatMoney(amount: number): string {
           v-if="court.venue?.address"
           :to="`/courts/${court.slug || court.id}/directions`"
           class="c-addr-link"
-          title="Xem chỉ đường đến sân"
+          :title="$t('courts.directionsBtn')"
         >
           <span class="material-symbols-outlined icon-addr">near_me</span>
           <span>{{ court.venue.address }}</span>
@@ -47,28 +44,20 @@ function formatMoney(amount: number): string {
 
       <div class="card-bottom">
         <div class="pricing-box">
-          <span class="p-lbl">Giá từ</span>
+          <span class="p-lbl">{{ $t('courts.fromPrice') }}</span>
           <strong class="p-val text-pink font-mono">
-            {{ formatMoney(court.price_slots?.[0]?.price || 120000) }} <small class="p-unit">/h</small>
+            {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }} <small class="p-unit">/h</small>
           </strong>
         </div>
 
         <div class="card-actions">
-          <RouterLink
-            :to="`/courts/${court.slug || court.id}/directions`"
-            class="btn-directions"
-            title="Xem chỉ đường & bản đồ"
-          >
-            <span class="material-symbols-outlined btn-icon">directions</span>
-            <span>Chỉ Đường</span>
-          </RouterLink>
           <RouterLink :to="`/courts/${court.slug || court.id}`" class="btn-detail">
             <span class="material-symbols-outlined btn-icon">info</span>
-            <span>Chi Tiết</span>
+            <span>{{ $t('courts.detailBtn') }}</span>
           </RouterLink>
           <RouterLink :to="`/courts/${court.slug || court.id}/schedule`" class="btn-book">
             <span class="material-symbols-outlined btn-icon">event_available</span>
-            <span>Đặt Sân</span>
+            <span>{{ $t('courts.bookBtn') }}</span>
           </RouterLink>
         </div>
       </div>
@@ -199,12 +188,15 @@ function formatMoney(amount: number): string {
   margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid var(--outline);
+  gap: 12px;
 }
 
 .pricing-box {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .p-lbl {
@@ -219,6 +211,7 @@ function formatMoney(amount: number): string {
   font-size: 15px;
   font-weight: 800;
   color: var(--primary);
+  white-space: nowrap;
 }
 
 .p-unit {
@@ -234,14 +227,15 @@ function formatMoney(amount: number): string {
 .card-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.btn-directions,
 .btn-detail {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 11px;
+  padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
@@ -249,17 +243,16 @@ function formatMoney(amount: number): string {
   font-size: 11.5px;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
-.btn-directions:hover,
 .btn-detail:hover {
   background: var(--soft);
   border-color: var(--accent);
   color: var(--primary);
 }
 
-:global(html.dark) .btn-directions:hover,
 :global(html.dark) .btn-detail:hover {
   background: #281d23;
   color: #e58e9f;
@@ -277,6 +270,7 @@ function formatMoney(amount: number): string {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
   transition: all 0.15s ease;
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.2);
 }

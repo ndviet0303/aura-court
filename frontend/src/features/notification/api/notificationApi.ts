@@ -6,8 +6,8 @@ export const notificationApi = {
     api.get<{ unread: number; notifications: { data: AppNotification[] } }>('/notifications'),
 
   markAsRead: (id: string | number) =>
-    api.post(`/notifications/${id}/read`),
+    api.post<{ message?: string }>(`/notifications/${id}/read`),
 
   markAllAsRead: () =>
-    api.post('/notifications/read-all'),
+    api.post<{ message?: string }>('/notifications/read-all'),
 }

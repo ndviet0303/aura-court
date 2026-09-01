@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import type { PaymentInfo, Booking } from '../types/booking'
 import type { Court } from '@/features/court/types/court'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   payment: PaymentInfo
@@ -25,10 +29,6 @@ const isTournament = computed(() => {
 
 const tournament = computed(() => props.payment.tournament)
 const athleteDetails = computed(() => props.payment.athleteDetails)
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
 </script>
 
 <template>
@@ -39,11 +39,11 @@ function formatMoney(amount: number): string {
         <span class="material-symbols-outlined summary-icon">
           {{ isTournament ? 'emoji_events' : 'receipt_long' }}
         </span>
-        <span>{{ isTournament ? 'Thông Tin Lệ Phí Giải Đấu' : 'Thông Tin Đơn Đặt Sân' }}</span>
+        <span>{{ isTournament ? $t('payment.tournamentSummaryTitle') : $t('payment.courtSummaryTitle') }}</span>
       </h3>
       <div class="countdown-tag">
         <span class="material-symbols-outlined timer-icon">timer</span>
-        <span>Hết hạn:</span>
+        <span>{{ $t('payment.expiresIn') }}</span>
         <strong class="font-mono">{{ countdownFormatted }}</strong>
       </div>
     </div>
@@ -69,19 +69,19 @@ function formatMoney(amount: number): string {
 
       <div class="athlete-meta-list">
         <div class="summary-row">
-          <span>Mã ghi danh:</span>
+          <span>{{ $t('payment.registrationCode') }}</span>
           <strong class="font-mono text-pink">{{ payment.code }}</strong>
         </div>
         <div v-if="athleteDetails?.name" class="summary-row">
-          <span>VĐV đăng ký:</span>
+          <span>{{ $t('payment.athleteFullName') }}</span>
           <strong>{{ athleteDetails.name }}</strong>
         </div>
         <div v-if="athleteDetails?.partnerName" class="summary-row">
-          <span>Đồng đội (Partner):</span>
+          <span>{{ $t('payment.partner') }}</span>
           <strong>{{ athleteDetails.partnerName }}</strong>
         </div>
         <div v-if="tournament?.prize_pool" class="summary-row">
-          <span>Tổng quỹ thưởng:</span>
+          <span>{{ $t('tournament.totalPrizePool') }}:</span>
           <strong class="prize-tag">{{ tournament.prize_pool }}</strong>
         </div>
       </div>
@@ -90,16 +90,16 @@ function formatMoney(amount: number): string {
     <!-- Standard Court Booking Meta Info -->
     <div v-else class="summary-meta-info">
       <div class="summary-row">
-        <span>Mã đặt sân:</span>
+        <span>{{ $t('payment.bookingCode') }}</span>
         <strong class="font-mono text-pink">{{ payment.code }}</strong>
       </div>
       <div v-if="court" class="summary-row">
-        <span>Sân đặt:</span>
+        <span>{{ $t('payment.courtName') }}:</span>
         <strong>{{ court.name }}</strong>
       </div>
       <div v-if="booking?.slots?.length" class="summary-row">
-        <span>Số khung giờ:</span>
-        <strong>{{ booking.slots.length }} Slot</strong>
+        <span>{{ $t('payment.timeSlot') }}:</span>
+        <strong>{{ $t('payment.slotsCountUnit', { count: booking.slots.length }) }}</strong>
       </div>
     </div>
 
@@ -110,7 +110,7 @@ function formatMoney(amount: number): string {
           :value="couponCode"
           type="text"
           class="coupon-text-input"
-          :placeholder="isTournament ? 'Nhập mã ưu đãi giải (Vd: AURA2026)...' : 'Nhập mã ưu đãi...'"
+          :placeholder="isTournament ? 'Nhập mã ưu đãi giải (Vd: AURA2026)...' : $t('payment.couponPlaceholder')"
           @input="emit('update:couponCode', ($event.target as HTMLInputElement).value)"
         />
         <button
@@ -119,7 +119,7 @@ function formatMoney(amount: number): string {
           @click="emit('applyCoupon')"
         >
           <span v-if="couponLoading">...</span>
-          <span v-else>Áp Dụng</span>
+          <span v-else>{{ $t('payment.applyCouponBtn') }}</span>
         </button>
       </div>
 
@@ -130,16 +130,16 @@ function formatMoney(amount: number): string {
     <!-- Price Breakdown -->
     <div class="summary-price-breakdown">
       <div class="breakdown-row">
-        <span>{{ isTournament ? 'Lệ phí tham gia:' : 'Tiền thuê sân:' }}</span>
-        <span>{{ formatMoney(payment.amount + (booking?.discount_amount || 0)) }}</span>
+        <span>{{ isTournament ? $t('payment.entryFee') : $t('payment.courtRentalFee') }}</span>
+        <span>{{ formatCurrency(payment.amount + (booking?.discount_amount || 0)) }}</span>
       </div>
       <div v-if="booking?.discount_amount" class="breakdown-row discount">
-        <span>Khuyến mãi / Giảm giá:</span>
-        <span>-{{ formatMoney(booking.discount_amount) }}</span>
+        <span>{{ $t('payment.discount') }}</span>
+        <span>-{{ formatCurrency(booking.discount_amount) }}</span>
       </div>
       <div class="breakdown-row total">
-        <strong class="total-label">TỔNG THANH TOÁN:</strong>
-        <strong class="total-amount">{{ formatMoney(payment.amount) }}</strong>
+        <strong class="total-label">{{ $t('payment.totalCheckout') }}</strong>
+        <strong class="total-amount">{{ formatCurrency(payment.amount) }}</strong>
       </div>
     </div>
   </div>

@@ -1,63 +1,121 @@
 <script setup lang="ts">
+import type { User } from '@/core/types/common'
+import type { ProfileTabType } from '../types/profile'
+
 defineProps<{
-  user: any
+  user: User | null
   initials: string
-  activeTab: 'general' | 'security' | 'membership' | 'shortcuts'
+  avatarUrl: string
+  activeTab: ProfileTabType
+  isEmailVerified: boolean
+  resendingVerification: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:activeTab', tab: 'general' | 'security' | 'membership' | 'shortcuts'): void
+  (e: 'update:activeTab', tab: ProfileTabType): void
+  (e: 'resendVerification'): void
 }>()
 </script>
 
 <template>
   <div class="athlete-hero-card">
-    <div class="athlete-main-info">
-      <div class="avatar-initials-badge">
-        {{ initials }}
+    <div class="athlete-top-bar">
+      <!-- Avatar Section -->
+      <div class="avatar-wrapper">
+        <img :src="avatarUrl" :alt="user?.name || 'Aura Athlete'" class="athlete-avatar-img" />
+        <span class="online-indicator" title="Tài khoản đang hoạt động"></span>
       </div>
 
-      <div class="athlete-meta">
-        <div class="name-row">
-          <h1 class="athlete-display-name">{{ user?.name || 'Vận Động Viên' }}</h1>
-          <span class="role-chip font-mono">{{ (user?.role || 'customer').toUpperCase() }}</span>
-          <span v-if="user?.social_provider" class="badge-social font-mono">Google</span>
+      <!-- Athlete Info & Meta -->
+      <div class="athlete-info-col">
+        <div class="name-badge-row">
+          <h1 class="athlete-name">{{ user?.name || 'Vận Động Viên Aura' }}</h1>
+          <span class="role-badge font-mono" :class="{ 'role-admin': user?.role === 'admin' }">
+            <span class="material-symbols-outlined role-icon">
+              {{ user?.role === 'admin' ? 'admin_panel_settings' : 'sports_tennis' }}
+            </span>
+            {{ (user?.role === 'admin' ? 'ADMIN' : 'ATHLETE').toUpperCase() }}
+          </span>
+
+          <span v-if="user?.social_provider" class="provider-pill font-mono">
+            {{ user.social_provider.toUpperCase() }}
+          </span>
         </div>
-        <p class="athlete-email">✉️ {{ user?.email }} · 📱 {{ user?.phone || 'Chưa cập nhật SĐT' }}</p>
+
+        <div class="contact-meta-row">
+          <div class="meta-item">
+            <span class="material-symbols-outlined meta-ico">mail</span>
+            <span>{{ user?.email || 'Chưa có email' }}</span>
+          </div>
+
+          <div class="meta-item">
+            <span class="material-symbols-outlined meta-ico">call</span>
+            <span>{{ user?.phone || 'Chưa cập nhật SĐT' }}</span>
+          </div>
+
+          <!-- Email Verification Status Badge -->
+          <div v-if="isEmailVerified" class="verify-status-badge verified">
+            <span class="material-symbols-outlined verify-ico">verified</span>
+            <span>{{ $t('profile.emailVerified') }}</span>
+          </div>
+          <div v-else class="verify-status-badge unverified">
+            <span class="material-symbols-outlined verify-ico">warning</span>
+            <span>{{ $t('profile.emailUnverified') }}</span>
+            <button
+              type="button"
+              class="resend-btn"
+              :disabled="resendingVerification"
+              @click="emit('resendVerification')"
+            >
+              {{ resendingVerification ? $t('common.submitting') : $t('profile.resendVerification') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Tabs Navigation Bar -->
-    <div class="stitch-tabs-bar">
+    <!-- Clean Navigation Tabs (No Raw Emojis) -->
+    <nav class="profile-tabs-nav" aria-label="Profile navigation tabs">
       <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'general' }"
+        type="button"
+        class="tab-item-btn"
+        :class="{ 'is-active': activeTab === 'general' }"
         @click="emit('update:activeTab', 'general')"
       >
-        👤 Thông Tin Cá Nhân
+        <span class="material-symbols-outlined tab-ico">person</span>
+        <span class="tab-text">{{ $t('profile.tabGeneral') }}</span>
       </button>
+
       <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'security' }"
+        type="button"
+        class="tab-item-btn"
+        :class="{ 'is-active': activeTab === 'security' }"
         @click="emit('update:activeTab', 'security')"
       >
-        🔒 Bảo Mật & Mật Khẩu
+        <span class="material-symbols-outlined tab-ico">lock</span>
+        <span class="tab-text">{{ $t('profile.tabSecurity') }}</span>
       </button>
+
       <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'membership' }"
+        type="button"
+        class="tab-item-btn"
+        :class="{ 'is-active': activeTab === 'membership' }"
         @click="emit('update:activeTab', 'membership')"
       >
-        🏅 Hội Viên & Điểm Thưởng
+        <span class="material-symbols-outlined tab-ico">workspace_premium</span>
+        <span class="tab-text">{{ $t('profile.tabMembership') }}</span>
       </button>
+
       <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'shortcuts' }"
+        type="button"
+        class="tab-item-btn"
+        :class="{ 'is-active': activeTab === 'shortcuts' }"
         @click="emit('update:activeTab', 'shortcuts')"
       >
-        ⚡ Lối Tắt Nhanh
+        <span class="material-symbols-outlined tab-ico">grid_view</span>
+        <span class="tab-text">{{ $t('profile.tabQuickLinks') }}</span>
       </button>
-    </div>
+    </nav>
   </div>
 </template>
 
@@ -65,89 +123,276 @@ const emit = defineEmits<{
 .athlete-hero-card {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
-  border-radius: 20px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
+  gap: 22px;
+  padding: 24px 28px 0;
+  border-radius: 24px;
+  border: 1px solid var(--outline, #e2dad0);
+  background: var(--surface, #ffffff);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.athlete-main-info {
+html.dark .athlete-hero-card {
+  background: var(--surface, #1e191d);
+  border-color: var(--outline, #352c32);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.athlete-top-bar {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 22px;
+  width: 100%;
+  min-width: 0;
 }
 
-.avatar-initials-badge {
-  width: 64px;
-  height: 64px;
+.avatar-wrapper {
+  position: relative;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 900;
-  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.3);
+  border: 3px solid var(--outline, #ebdccb);
+  background: #FAF7F3;
+  flex-shrink: 0;
+  overflow: visible;
+  box-shadow: 0 6px 16px rgba(107, 45, 63, 0.12);
 }
 
-.athlete-meta {
+html.dark .avatar-wrapper {
+  border-color: rgba(223, 186, 114, 0.35);
+  background: #251e22;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.athlete-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2.5px solid var(--surface, #ffffff);
+}
+
+.athlete-info-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
-.name-row {
+.name-badge-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.athlete-display-name {
+.athlete-name {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink, #1c1618);
 }
 
-.role-chip {
+html.dark .athlete-name {
+  color: #faf7f3;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   font-weight: 800;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(107, 45, 63, 0.08);
+  color: #6B2D3F;
+  border: 1px solid rgba(107, 45, 63, 0.2);
 }
 
-.athlete-email {
-  margin: 0;
+html.dark .role-badge {
+  background: rgba(223, 186, 114, 0.15);
+  color: #dfba72;
+  border-color: rgba(223, 186, 114, 0.35);
+}
+
+.role-badge.role-admin {
+  background: rgba(147, 51, 234, 0.1);
+  color: #9333ea;
+  border-color: rgba(147, 51, 234, 0.3);
+}
+
+html.dark .role-badge.role-admin {
+  background: rgba(192, 132, 252, 0.15);
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.35);
+}
+
+.role-icon {
+  font-size: 14px;
+}
+
+.provider-pill {
+  font-size: 10px;
+  font-weight: 750;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-container, rgba(0, 0, 0, 0.05));
+  color: var(--muted, #6e6668);
+  border: 1px solid var(--outline, #e2dad0);
+}
+
+.contact-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted, #6e6668);
 }
 
-.stitch-tabs-bar {
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.meta-ico {
+  font-size: 16px;
+  color: var(--muted, #6e6668);
+}
+
+.verify-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.verify-status-badge.verified {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.verify-status-badge.unverified {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.verify-ico {
+  font-size: 15px;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: var(--pink-dark, #db2777);
+  font-weight: 700;
+  font-size: 11.5px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: 2px;
+}
+
+.resend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Tabs Navigation */
+.profile-tabs-nav {
   display: flex;
   gap: 8px;
-  border-top: 1px solid var(--outline);
-  padding-top: 16px;
+  border-top: 1px solid var(--outline, #e2dad0);
+  margin: 0 -28px;
+  padding: 0 28px;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.tab-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid transparent;
+.profile-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
   background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--muted, #6e6668);
+  font-size: 13.5px;
+  font-weight: 650;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.2s ease;
+  margin-bottom: -1px;
 }
 
-.tab-btn.active {
-  background: rgba(236, 72, 153, 0.1);
+.tab-item-btn:hover {
+  color: var(--ink, #1c1618);
+}
+
+html.dark .tab-item-btn:hover {
+  color: #faf7f3;
+}
+
+.tab-item-btn.is-active {
   color: var(--pink-dark, #db2777);
-  border-color: rgba(236, 72, 153, 0.2);
+  border-bottom-color: var(--pink-dark, #db2777);
+}
+
+html.dark .tab-item-btn.is-active {
+  color: #dfba72;
+  border-bottom-color: #dfba72;
+}
+
+.tab-ico {
+  font-size: 18px;
+}
+
+@media (max-width: 640px) {
+  .athlete-hero-card {
+    padding: 20px 16px 0;
+  }
+  .athlete-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .profile-tabs-nav {
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+  .contact-meta-row {
+    gap: 10px;
+  }
+  .tab-item-btn {
+    padding: 12px 14px;
+    font-size: 12.5px;
+  }
 }
 </style>

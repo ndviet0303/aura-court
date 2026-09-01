@@ -12,9 +12,9 @@ defineProps<{
   <header class="venue-hero-section">
     <!-- Breadcrumbs -->
     <nav class="directions-breadcrumbs" aria-label="Breadcrumb">
-      <RouterLink to="/" class="bc-link">Trang chủ</RouterLink>
+      <RouterLink to="/" class="bc-link">{{ $t('directions.breadcrumbHome') }}</RouterLink>
       <span class="material-symbols-outlined bc-sep">chevron_right</span>
-      <RouterLink to="/courts" class="bc-link">Danh sách sân</RouterLink>
+      <RouterLink to="/courts" class="bc-link">{{ $t('directions.breadcrumbCourts') }}</RouterLink>
       <template v-if="matchedCourt">
         <span class="material-symbols-outlined bc-sep">chevron_right</span>
         <RouterLink :to="`/courts/${matchedCourt.slug || matchedCourt.id}`" class="bc-link">
@@ -22,7 +22,7 @@ defineProps<{
         </RouterLink>
       </template>
       <span class="material-symbols-outlined bc-sep">chevron_right</span>
-      <span class="bc-current">Chỉ đường & Vị trí</span>
+      <span class="bc-current">{{ $t('directions.breadcrumbCurrent') }}</span>
     </nav>
 
     <!-- Main Title Card -->
@@ -32,7 +32,7 @@ defineProps<{
           <span class="brand-eyebrow">Aura Court Club</span>
           <span class="status-open-pill">
             <span class="pulse-dot"></span>
-            <span>Mở cửa 06:00 - 23:00</span>
+            <span>{{ $t('directions.openStatus') }}</span>
           </span>
         </div>
 
@@ -46,15 +46,15 @@ defineProps<{
         <div class="venue-tags-row">
           <span class="amenity-pill">
             <span class="material-symbols-outlined icon-14">sports_tennis</span>
-            <span>Sân Thảm BWF Chuẩn Thi Đấu</span>
+            <span>{{ $t('directions.amenityBwf') }}</span>
           </span>
           <span class="amenity-pill">
             <span class="material-symbols-outlined icon-14">local_parking</span>
-            <span>Bãi Đỗ Ô Tô & Xe Máy Miễn Phí</span>
+            <span>{{ $t('directions.amenityParking') }}</span>
           </span>
           <span class="amenity-pill">
             <span class="material-symbols-outlined icon-14">ac_unit</span>
-            <span>Điều Hòa & Phòng Nghỉ VIP</span>
+            <span>{{ $t('directions.amenityAc') }}</span>
           </span>
         </div>
       </div>

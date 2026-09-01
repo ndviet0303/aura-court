@@ -20,23 +20,22 @@ const emit = defineEmits<{
     <div class="hero-content">
       <div class="category-eyebrow">
         <span class="material-symbols-outlined eyebrow-icon">storefront</span>
-        <span class="font-mono">P2P ESCROW MARKETPLACE</span>
+        <span class="font-mono">{{ $t('resale.eyebrow') }}</span>
       </div>
 
-      <h1 class="hero-title">Chợ Chuyển Nhượng & Pass Sân</h1>
+      <h1 class="hero-title">{{ $t('resale.title') }}</h1>
       <p class="hero-sub">
-        Mua lại slot giờ vàng giá tốt hoặc nhượng lại lịch đặt khi bận đột xuất.
-        Giao dịch minh bạch, an toàn tuyệt đối qua cơ chế Escrow bảo vệ người dùng 100%.
+        {{ $t('resale.subtitle') }}
       </p>
 
       <div class="hero-badges">
         <div class="trust-pill">
           <span class="material-symbols-outlined icon-trust">verified_user</span>
-          <span>Bảo hiểm giao dịch Aura Escrow</span>
+          <span>{{ $t('resale.escrowBadge') }}</span>
         </div>
         <div class="trust-pill">
           <span class="material-symbols-outlined icon-trust">bolt</span>
-          <span>Chuyển nhượng vé tức thì</span>
+          <span>{{ $t('resale.instantTransferBadge') }}</span>
         </div>
       </div>
     </div>
@@ -52,7 +51,7 @@ const emit = defineEmits<{
           @click="emit('update:activeTab', 'buy')"
         >
           <span class="material-symbols-outlined tab-icon">shopping_bag</span>
-          <span>Tìm Slot Pass</span>
+          <span>{{ $t('resale.findSlotsTab') }}</span>
           <span v-if="activeListingsCount > 0" class="tab-count-badge">{{ activeListingsCount }}</span>
         </button>
 
@@ -65,7 +64,7 @@ const emit = defineEmits<{
           @click="emit('update:activeTab', 'sell')"
         >
           <span class="material-symbols-outlined tab-icon">sell</span>
-          <span>Pass Sân Của Tôi</span>
+          <span>{{ $t('resale.myPassTab') }}</span>
           <span v-if="eligibleSlotsCount > 0" class="tab-count-badge gold">{{ eligibleSlotsCount }}</span>
         </button>
 
@@ -78,7 +77,7 @@ const emit = defineEmits<{
           @click="emit('update:activeTab', 'my-listings')"
         >
           <span class="material-symbols-outlined tab-icon">receipt_long</span>
-          <span>Tin Đã Đăng</span>
+          <span>{{ $t('resale.myListingsTab') }}</span>
           <span v-if="myListingsCount > 0" class="tab-count-badge">{{ myListingsCount }}</span>
         </button>
       </div>

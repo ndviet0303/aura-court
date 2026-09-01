@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { SelectDropdown } from '@/shared/components'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   search: string
@@ -15,7 +18,7 @@ const emit = defineEmits<{
 
 const dropdownOptions = computed(() => {
   return [
-    { value: 'all', label: 'Tất cả cụm sân Aura', icon: 'stadium' },
+    { value: 'all', label: t('courts.allVenues'), icon: 'stadium' },
     ...props.venueOptions
       .filter((x) => x !== 'all')
       .map((v) => ({ value: v, label: v, icon: 'location_on' })),
@@ -31,7 +34,8 @@ const dropdownOptions = computed(() => {
         :value="search"
         type="text"
         class="search-input"
-        placeholder="Tìm sân theo tên, cơ sở hoặc khu vực..."
+        :placeholder="t('courts.searchPlaceholder')"
+        :aria-label="t('courts.searchPlaceholder')"
         @input="emit('update:search', ($event.target as HTMLInputElement).value)"
       />
     </div>
@@ -41,7 +45,7 @@ const dropdownOptions = computed(() => {
         :model-value="venue"
         :options="dropdownOptions"
         variant="bordered"
-        aria-label="Chọn cụm sân Aura"
+        :aria-label="t('courts.allVenues')"
         @update:model-value="emit('update:venue', String($event))"
       />
     </div>

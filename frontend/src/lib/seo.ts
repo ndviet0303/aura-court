@@ -23,7 +23,7 @@ function setCanonical(url: string): void {
   element.href = url
 }
 
-export function applySeo(route: RouteLocationNormalizedLoaded): void {
+export function applySeo(route?: RouteLocationNormalizedLoaded): void {
   const t = i18n.global.t
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://auracourt.vn'
 
@@ -31,20 +31,20 @@ export function applySeo(route: RouteLocationNormalizedLoaded): void {
   let description = t('seo.homeDesc')
   const defaultImage = `${origin}/og-image.jpg`
 
-  if (typeof route.meta?.titleKey === 'string') {
+  if (typeof route?.meta?.titleKey === 'string') {
     title = t(route.meta.titleKey)
-  } else if (typeof route.meta?.title === 'string') {
+  } else if (typeof route?.meta?.title === 'string') {
     title = route.meta.title
   }
 
-  if (typeof route.meta?.descriptionKey === 'string') {
+  if (typeof route?.meta?.descriptionKey === 'string') {
     description = t(route.meta.descriptionKey)
-  } else if (typeof route.meta?.description === 'string') {
+  } else if (typeof route?.meta?.description === 'string') {
     description = route.meta.description
   }
 
-  const indexable = route.meta?.indexable !== false
-  const canonical = new URL(route.path || '/', origin).toString()
+  const indexable = route?.meta?.indexable !== false
+  const canonical = new URL(route?.path || '/', origin).toString()
 
   if (typeof document !== 'undefined') {
     document.title = title

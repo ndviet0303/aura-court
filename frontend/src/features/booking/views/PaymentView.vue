@@ -78,14 +78,14 @@ function handleDoneTournament() {
     <!-- Empty State if No Payment Session -->
     <div v-else-if="!payment" class="empty-payment-panel">
       <span class="material-symbols-outlined empty-icon">payments</span>
-      <h2>Chưa Có Phiên Thanh Toán Nào</h2>
-      <p>Vui lòng chọn sân hoặc giải đấu để tiến hành thanh toán.</p>
+      <h2>{{ $t('payment.noSessionTitle') }}</h2>
+      <p>{{ $t('payment.noSessionDesc') }}</p>
       <div class="empty-actions">
         <AuraButton to="/courts" variant="primary" size="md" icon="sports_tennis">
-          Chọn Sân Đặt Lịch
+          {{ $t('payment.selectCourtCta') }}
         </AuraButton>
         <AuraButton to="/tournaments" variant="outline" size="md" icon="emoji_events">
-          Xem Danh Sách Giải Đấu
+          {{ $t('payment.viewTournamentsCta') }}
         </AuraButton>
       </div>
     </div>
@@ -96,17 +96,17 @@ function handleDoneTournament() {
       <div class="checkout-stepper">
         <div class="stepper-step completed">
           <span class="step-circle"><span class="material-symbols-outlined step-check-icon">check</span></span>
-          <span class="step-text">{{ isTournament ? 'Ghi Danh VĐV' : 'Chọn Sân & Giờ' }}</span>
+          <span class="step-text">{{ isTournament ? $t('payment.stepRegisterAthlete') : $t('payment.stepSelectCourt') }}</span>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step active">
           <span class="step-circle">2</span>
-          <span class="step-text">{{ isTournament ? 'Lệ Phí Giải' : 'Thanh Toán' }}</span>
+          <span class="step-text">{{ isTournament ? $t('payment.stepTournamentFee') : $t('payment.stepPayment') }}</span>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step">
           <span class="step-circle">3</span>
-          <span class="step-text">{{ isTournament ? 'Xác Nhận Thi Đấu' : 'Xác Nhận Đặt Sân' }}</span>
+          <span class="step-text">{{ isTournament ? $t('payment.stepConfirmTournament') : $t('payment.stepConfirmBooking') }}</span>
         </div>
       </div>
 
@@ -119,23 +119,23 @@ function handleDoneTournament() {
               <span class="material-symbols-outlined panel-icon">
                 {{ isTournament ? 'sports_handball' : 'person' }}
               </span>
-              <span>{{ isTournament ? 'Thông Tin Vận Động Viên Đăng Ký' : 'Thông Tin Khách Hàng' }}</span>
+              <span>{{ isTournament ? $t('payment.athleteInfo') : $t('payment.customerInfo') }}</span>
             </h3>
             <div class="player-info-grid">
               <div class="info-item">
-                <span class="info-label">{{ isTournament ? 'Họ và tên VĐV:' : 'Họ và tên:' }}</span>
+                <span class="info-label">{{ isTournament ? $t('payment.athleteFullName') : $t('payment.fullName') }}</span>
                 <strong class="info-val">{{ playerDetails.name }}</strong>
               </div>
               <div class="info-item">
-                <span class="info-label">Số điện thoại:</span>
+                <span class="info-label">{{ $t('payment.phone') }}</span>
                 <strong class="info-val">{{ playerDetails.phone }}</strong>
               </div>
               <div v-if="isTournament && playerDetails.partnerName" class="info-item">
-                <span class="info-label">Đồng đội (Partner):</span>
+                <span class="info-label">{{ $t('payment.partner') }}</span>
                 <strong class="info-val">{{ playerDetails.partnerName }}</strong>
               </div>
               <div v-else class="info-item">
-                <span class="info-label">Email liên hệ:</span>
+                <span class="info-label">{{ $t('payment.email') }}</span>
                 <strong class="info-val">{{ playerDetails.email }}</strong>
               </div>
             </div>
@@ -186,23 +186,23 @@ function handleDoneTournament() {
           <span class="material-symbols-outlined success-icon">
             {{ isTournament ? 'emoji_events' : 'verified' }}
           </span>
-          <h3>{{ isTournament ? 'Ghi Danh Giải Đấu Thành Công!' : 'Thanh Toán Thành Công!' }}</h3>
+          <h3>{{ isTournament ? $t('payment.tournamentSuccessTitle') : $t('payment.successTitle') }}</h3>
           <p>
-            Mã giao dịch <strong>{{ payment?.code }}</strong> đã được hệ thống xác nhận chính thức.
+            {{ $t('payment.txCodeConfirmed', { code: payment?.code }) }}
           </p>
 
           <div class="success-actions">
             <template v-if="isTournament">
               <AuraButton variant="primary" size="md" icon="account_tree" @click="handleDoneTournament">
-                Xem Sơ Đồ Thi Đấu
+                {{ $t('payment.viewBracketCta') }}
               </AuraButton>
               <AuraButton to="/tournaments" variant="ghost" size="sm" @click="store.clearPayment()">
-                Danh Sách Giải Đấu
+                {{ $t('payment.viewTournamentsCta') }}
               </AuraButton>
             </template>
             <template v-else>
               <AuraButton variant="primary" size="md" icon="calendar_month" @click="store.clearPayment(); router.push('/booking')">
-                Xem Lịch Của Tôi
+                {{ $t('payment.viewScheduleCta') }}
               </AuraButton>
             </template>
           </div>

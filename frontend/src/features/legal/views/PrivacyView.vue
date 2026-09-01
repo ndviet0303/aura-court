@@ -62,29 +62,29 @@ onUnmounted(() => {
       <div class="legal-header">
         <div class="legal-badge">
           <span class="material-symbols-outlined icon-18">shield</span>
-          <span>BẢO MẬT &amp; QUYỀN RIÊNG TƯ AURA COURT</span>
+          <span>{{ $t('legal.badge') }}</span>
         </div>
-        <h1 class="legal-title">Chính sách bảo mật</h1>
+        <h1 class="legal-title">{{ $t('legal.privacyTitle') }}</h1>
         <p class="legal-subtitle">
-          Aura Court cam kết tôn trọng, bảo vệ an toàn tuyệt đối thông tin cá nhân và dữ liệu thanh toán của bạn theo tiêu chuẩn an toàn bảo mật cao nhất.
+          {{ $t('legal.privacySubtitle') }}
         </p>
 
         <!-- Navigation switcher -->
         <div class="doc-switcher">
           <RouterLink to="/terms" class="doc-tab">
             <span class="material-symbols-outlined">description</span>
-            <span>Điều khoản dịch vụ</span>
+            <span>{{ $t('legal.tabTerms') }}</span>
           </RouterLink>
           <span class="doc-tab active">
             <span class="material-symbols-outlined">shield</span>
-            <span>Chính sách bảo mật</span>
+            <span>{{ $t('legal.tabPrivacy') }}</span>
           </span>
         </div>
 
         <div class="legal-meta-row">
           <div class="meta-item">
             <span class="material-symbols-outlined">update</span>
-            <span>Cập nhật: <strong>Tháng 08/2026</strong></span>
+            <span>{{ $t('legal.updatedDate') }}</span>
           </div>
           <div class="meta-item">
             <span class="material-symbols-outlined">lock_clock</span>
@@ -105,7 +105,7 @@ onUnmounted(() => {
           <div class="sidebar-sticky-card">
             <h3 class="sidebar-title">
               <span class="material-symbols-outlined">format_list_bulleted</span>
-              <span>Mục lục bảo mật</span>
+              <span>{{ $t('legal.tableOfContents') }}</span>
             </h3>
             <nav class="sidebar-nav">
               <button
@@ -125,8 +125,8 @@ onUnmounted(() => {
               <div class="support-icon">
                 <span class="material-symbols-outlined">verified_user</span>
               </div>
-              <h4>Cam kết bảo mật 100%</h4>
-              <p>Không bao giờ thương mại hóa hoặc chia sẻ dữ liệu hội viên cho bên thứ ba trái quy định.</p>
+              <h4>{{ $t('legal.supportTitle') }}</h4>
+              <p>{{ $t('legal.supportDesc') }}</p>
               <a href="mailto:ndviet.dev@gmail.com" class="support-btn">
                 <span class="material-symbols-outlined">mail</span>
                 <span>Gửi phản hồi DPO</span>

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { TournamentItem } from '../types/tournament'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   tournament: TournamentItem
@@ -15,14 +18,14 @@ const emit = defineEmits<{
 const statusLabel = computed(() => {
   switch (props.tournament.status) {
     case 'open':
-      return 'Đang mở đăng ký'
+      return t('tournament.statusOpen')
     case 'ongoing':
-      return 'Đang tranh tài'
+      return t('tournament.statusOngoing')
     case 'completed':
-      return 'Đã kết thúc'
+      return t('tournament.statusCompleted')
     case 'upcoming':
     default:
-      return 'Sắp diễn ra'
+      return t('tournament.statusUpcoming')
   }
 })
 
@@ -115,7 +118,7 @@ const slotPercentage = computed(() => {
       <!-- Winner info if completed -->
       <div v-if="tournament.winner_team" class="winner-box">
         <span class="material-symbols-outlined winner-ico">emoji_events</span>
-        <span>Vô địch: <strong>{{ tournament.winner_team }}</strong></span>
+        <span>{{ $t('tournament.championWinner') }} <strong>{{ tournament.winner_team }}</strong></span>
       </div>
 
       <!-- Slots & Prize Pool Summary Bar -->
@@ -123,7 +126,7 @@ const slotPercentage = computed(() => {
         <div class="prize-col">
           <span class="lbl">
             <span class="material-symbols-outlined mini-ico">payments</span>
-            Tổng Quỹ Thưởng
+            {{ $t('tournament.totalPrizePool') }}
           </span>
           <strong class="prize-val">{{ tournament.prize_pool }}</strong>
         </div>
@@ -132,11 +135,11 @@ const slotPercentage = computed(() => {
           <div class="slots-info">
             <span class="lbl">
               <span class="material-symbols-outlined mini-ico">group</span>
-              Suất Tham Gia
+              {{ $t('tournament.entrySlots') }}
             </span>
             <strong class="slots-count">{{ tournament.current_slots }}/{{ tournament.max_slots }}</strong>
           </div>
-          <div class="progress-track" :title="`${slotPercentage}% đã đăng ký`">
+          <div class="progress-track" :title="$t('tournament.registeredPercentage', { percent: slotPercentage })">
             <div class="progress-fill" :style="{ width: `${slotPercentage}%` }"></div>
           </div>
         </div>
@@ -152,7 +155,7 @@ const slotPercentage = computed(() => {
           block
           @click="emit('register', tournament)"
         >
-          Đăng Ký
+          {{ $t('tournament.registerBtn') }}
         </AuraButton>
 
         <AuraButton
@@ -161,7 +164,7 @@ const slotPercentage = computed(() => {
           size="sm"
           icon="account_tree"
         >
-          Sơ Đồ
+          {{ $t('tournament.bracketBtn') }}
         </AuraButton>
 
         <AuraButton
@@ -170,7 +173,7 @@ const slotPercentage = computed(() => {
           size="sm"
           icon="scoreboard"
         >
-          Tỷ Số
+          {{ $t('tournament.liveScoresBtn') }}
         </AuraButton>
       </div>
     </div>

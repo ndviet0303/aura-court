@@ -1,17 +1,22 @@
 <script setup lang="ts">
-const specs = [
-  { icon: 'layers', label: 'Mặt Thảm', val: 'Taraflex BWF Approved' },
-  { icon: 'height', label: 'Chiều Cao Trần', val: '9.5 mét tiêu chuẩn' },
-  { icon: 'lightbulb', label: 'Hệ Thống Đèn', val: 'LED 500 Lux chống chói' },
-  { icon: 'mode_fan', label: 'Không Khí', val: 'Điều hòa & Thông gió liên tục' },
-]
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const specs = computed(() => [
+  { icon: 'layers', label: t('courtDetail.specMat'), val: t('courtDetail.specMatDesc') },
+  { icon: 'height', label: t('courtDetail.specCeiling'), val: t('courtDetail.specCeilingDesc') },
+  { icon: 'lightbulb', label: t('courtDetail.specLighting'), val: t('courtDetail.specLightingDesc') },
+  { icon: 'mode_fan', label: t('courtDetail.specVentilation'), val: t('courtDetail.specVentilationDesc') },
+])
 </script>
 
 <template>
   <div class="court-specs-section">
     <h3 class="section-title">
       <span class="material-symbols-outlined title-icon">straighten</span>
-      <span>Thông Số Kỹ Thuật Sân Đấu</span>
+      <span>{{ $t('courtDetail.specsTitle') }}</span>
     </h3>
     <div class="specs-grid">
       <div v-for="s in specs" :key="s.label" class="spec-card">

@@ -41,7 +41,6 @@ const bookingItems = [
   { to: '/booking', icon: 'calendar_month', key: 'nav.booking' },
   { to: '/recurring-booking', icon: 'event_repeat', key: 'nav.recurringBooking' },
   { to: '/wallet', icon: 'account_balance_wallet', key: 'nav.wallet' },
-  { to: '/split-bill', icon: 'payments', key: 'nav.splitBill' },
 ]
 
 const communityItems = [

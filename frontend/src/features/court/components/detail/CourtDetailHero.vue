@@ -22,7 +22,7 @@ const emit = defineEmits<{
         />
         <div class="gallery-overlay">
           <span class="material-symbols-outlined icon-18">photo_library</span>
-          <span>Xem tất cả ảnh sân</span>
+          <span>{{ $t('courtDetail.viewMorePhotos', { count: '' }) }}</span>
         </div>
       </div>
     </div>
@@ -32,10 +32,10 @@ const emit = defineEmits<{
         <h1 class="court-title">
           {{ court.name }} · <span class="venue-name">{{ court.venue?.name }}</span>
         </h1>
-        <a href="#reviews-section" class="rating-display rating-display-link" title="Xem tất cả đánh giá của người chơi">
+        <a href="#reviews-section" class="rating-display rating-display-link" :title="$t('courtDetail.reviewsCount', { count: court.reviews_count || 42 })">
           <span class="material-symbols-outlined icon-star">star</span>
           <strong>{{ Number(court.reviews_avg_rating || 4.8).toFixed(1) }}</strong>
-          <span class="reviews-count">({{ court.reviews_count || 42 }} đánh giá)</span>
+          <span class="reviews-count">({{ $t('courtDetail.reviewsCount', { count: court.reviews_count || 42 }) }})</span>
           <span class="material-symbols-outlined icon-12">expand_more</span>
         </a>
       </div>
@@ -49,15 +49,15 @@ const emit = defineEmits<{
           v-if="court.venue"
           :to="`/courts/${court.slug || court.id}/directions`"
           class="btn-directions-pill"
-          title="Xem bản đồ & chỉ đường chi tiết đến sân"
+          :title="$t('courtDetail.directions')"
         >
           <span class="material-symbols-outlined icon-14">directions</span>
-          <span>Xem bản đồ & Chỉ đường</span>
+          <span>{{ $t('courtDetail.directions') }}</span>
           <span class="material-symbols-outlined icon-12">arrow_forward</span>
         </RouterLink>
       </div>
 
-      <p class="court-desc">{{ court.description || 'Sân thi đấu chuyên nghiệp với mặt thảm cao cấp chống trơn trượt.' }}</p>
+      <p class="court-desc">{{ court.description || $t('courtDetail.aboutDefaultDesc') }}</p>
     </div>
   </div>
 </template>

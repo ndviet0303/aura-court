@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import type { Booking } from '../../types/booking'
+
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   booking: Booking
@@ -13,15 +17,11 @@ const emit = defineEmits<{
   (e: 'qr', booking: Booking): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
-
 function formatDate(iso: string): string {
   if (!iso) return ''
   try {
     const d = new Date(iso)
-    return d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+    return d.toLocaleDateString(locale.value === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
   } catch {
     return iso.slice(0, 10)
   }
@@ -33,30 +33,28 @@ const isCancelled = computed(() => ['cancelled', 'expired', 'refunded'].includes
 
 const statusMeta = computed(() => {
   if (isConfirmed.value) {
-    return { label: 'ĐÃ XÁC NHẬN', icon: 'verified', class: 'status-confirmed' }
+    return { label: t('booking.statusConfirmed'), icon: 'verified', class: 'status-confirmed' }
   }
   if (isPendingPayment.value) {
-    return { label: 'CHỜ THANH TOÁN', icon: 'schedule', class: 'status-pending' }
+    return { label: t('booking.statusPending'), icon: 'schedule', class: 'status-pending' }
   }
   if (props.booking.status === 'refunded') {
-    return { label: 'ĐÃ HOÀN TIỀN', icon: 'currency_exchange', class: 'status-refunded' }
+    return { label: t('booking.statusRefunded'), icon: 'currency_exchange', class: 'status-refunded' }
   }
-  return { label: 'ĐÃ HUỶ', icon: 'cancel', class: 'status-cancelled' }
+  return { label: t('booking.statusCancelled'), icon: 'cancel', class: 'status-cancelled' }
 })
 
 const sportLabel = computed(() => {
   const st = props.booking.court?.sport_zone?.sport_type || 'badminton'
   const map: Record<string, string> = {
-    badminton: 'Cầu Lông',
-    pickleball: 'Pickleball',
-    tennis: 'Tennis',
-    football_5v5: 'Bóng Đá 5v5',
-    football_7v7: 'Bóng Đá 7v7',
-    basketball: 'Bóng Rổ',
-    volleyball: 'Bóng Chuyền',
-    table_tennis: 'Bóng Bàn',
+    badminton: t('home.filterBadminton'),
+    pickleball: t('home.filterPickleball'),
+    tennis: t('home.filterTennis'),
+    football_5v5: t('home.filterFootball5'),
+    football_7v7: t('home.filterFootball7'),
+    basketball: t('home.filterBasketball'),
   }
-  return map[st] || 'Sân Thể Thao'
+  return map[st] || t('home.filterCourt')
 })
 </script>
 
@@ -86,9 +84,9 @@ const sportLabel = computed(() => {
             v-if="booking.court?.slug"
             :to="`/courts/${booking.court.slug}/directions`"
             class="directions-link"
-            title="Xem chỉ đường"
+            :title="$t('courts.directionsBtn')"
           >
-            (Chỉ đường)
+            ({{ $t('courts.directionsBtn') }})
           </RouterLink>
         </div>
       </div>
@@ -111,26 +109,26 @@ const sportLabel = computed(() => {
           <span class="slot-date">{{ formatDate(s.starts_at) }}</span>
         </div>
         <div class="slot-price-col">
-          <span class="slot-price font-mono">{{ formatMoney(s.unit_price) }}</span>
+          <span class="slot-price font-mono">{{ formatCurrency(s.unit_price) }}</span>
         </div>
       </div>
 
       <div v-if="booking.discount_amount && booking.discount_amount > 0" class="discount-row">
-        <span class="discount-label">Mã ưu đãi ({{ booking.coupon?.code || 'COUPON' }}):</span>
-        <span class="discount-value font-mono">-{{ formatMoney(booking.discount_amount) }}</span>
+        <span class="discount-label">{{ $t('payment.couponDiscount') }} ({{ booking.coupon?.code || 'COUPON' }}):</span>
+        <span class="discount-value font-mono">-{{ formatCurrency(booking.discount_amount) }}</span>
       </div>
 
       <div v-if="booking.membership_discount_amount && booking.membership_discount_amount > 0" class="discount-row">
-        <span class="discount-label">Ưu đãi Hội viên VIP:</span>
-        <span class="discount-value font-mono">-{{ formatMoney(booking.membership_discount_amount) }}</span>
+        <span class="discount-label">{{ $t('payment.memberDiscount') }}:</span>
+        <span class="discount-value font-mono">-{{ formatCurrency(booking.membership_discount_amount) }}</span>
       </div>
     </div>
 
     <!-- Card Bottom & Actions -->
     <div class="card-footer">
       <div class="total-section">
-        <span class="total-label">Tổng thanh toán:</span>
-        <strong class="total-amount font-mono">{{ formatMoney(booking.total_amount) }}</strong>
+        <span class="total-label">{{ $t('booking.totalAmountLabel') }}</span>
+        <strong class="total-amount font-mono">{{ formatCurrency(booking.total_amount) }}</strong>
       </div>
 
       <div class="actions-group">
@@ -141,7 +139,7 @@ const sportLabel = computed(() => {
           class="btn-card-pay"
         >
           <span class="material-symbols-outlined">payments</span>
-          <span>Thanh Toán Ngay</span>
+          <span>{{ $t('booking.payNowBtn') }}</span>
         </RouterLink>
 
         <!-- QR Check-in Pass -->
@@ -152,7 +150,7 @@ const sportLabel = computed(() => {
           @click="emit('qr', booking)"
         >
           <span class="material-symbols-outlined">qr_code_2</span>
-          <span>Mã Check-in</span>
+          <span>{{ $t('booking.checkInQrBtn') }}</span>
         </button>
 
         <!-- Split Bill with teammates -->
@@ -161,7 +159,7 @@ const sportLabel = computed(() => {
           class="btn-card-secondary"
         >
           <span class="material-symbols-outlined">group</span>
-          <span>Chia Tiền</span>
+          <span>{{ $t('booking.splitBillBtn') }}</span>
         </RouterLink>
 
         <!-- Review (if confirmed) -->
@@ -172,7 +170,7 @@ const sportLabel = computed(() => {
           @click="emit('review', booking)"
         >
           <span class="material-symbols-outlined">rate_review</span>
-          <span>{{ booking.review ? `Đánh Giá (${booking.review.rating}★)` : 'Đánh Giá' }}</span>
+          <span>{{ booking.review ? `${$t('booking.reviewBtn')} (${booking.review.rating}★)` : $t('booking.reviewBtn') }}</span>
         </button>
 
         <!-- Cancel Booking (if pending or confirmed) -->
@@ -183,7 +181,7 @@ const sportLabel = computed(() => {
           @click="emit('cancel', booking)"
         >
           <span class="material-symbols-outlined">close</span>
-          <span>Huỷ Đơn</span>
+          <span>{{ $t('booking.cancelBookingBtn') }}</span>
         </button>
       </div>
     </div>

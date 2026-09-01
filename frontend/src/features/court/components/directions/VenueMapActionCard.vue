@@ -25,9 +25,9 @@ const encodedAddress = computed(() => {
       <div class="header-title-col">
         <h2 class="card-title">
           <span class="material-symbols-outlined icon-22">explore</span>
-          <span>Bản Đồ & Điều Hướng Trực Tiếp</span>
+          <span>{{ $t('directions.mapTitle') }}</span>
         </h2>
-        <p class="card-sub">Xem vị trí thực tế trên Google Maps và nhận chỉ đường chính xác</p>
+        <p class="card-sub">{{ $t('directions.mapSub') }}</p>
       </div>
 
       <div class="action-buttons-group">
@@ -37,7 +37,7 @@ const encodedAddress = computed(() => {
           @click="emit('openMaps')"
         >
           <span class="material-symbols-outlined icon-18">directions</span>
-          <span>Dẫn đường Google Maps</span>
+          <span>{{ $t('directions.openGoogleMaps') }}</span>
         </button>
 
         <button
@@ -49,14 +49,14 @@ const encodedAddress = computed(() => {
           <span class="material-symbols-outlined icon-16">
             {{ copied ? 'check' : 'content_copy' }}
           </span>
-          <span>{{ copied ? 'Đã sao chép' : 'Sao chép địa chỉ' }}</span>
+          <span>{{ copied ? $t('directions.copied') : $t('directions.copyAddress') }}</span>
         </button>
 
         <button
           type="button"
           class="btn-secondary-action btn-icon-only"
+          :title="$t('directions.shareLocation')"
           @click="emit('share')"
-          title="Chia sẻ vị trí này"
         >
           <span class="material-symbols-outlined icon-16">share</span>
         </button>

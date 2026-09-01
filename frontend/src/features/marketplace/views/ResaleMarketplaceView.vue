@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useResaleMarketplace } from '../composables/useResaleMarketplace'
 import { SkeletonLoader, AuraButton } from '@/shared/components'
+import { formatCurrency } from '@/i18n'
 
 import MarketplaceHero from '../components/MarketplaceHero.vue'
 import MarketplaceFiltersBar from '../components/MarketplaceFiltersBar.vue'
@@ -38,10 +39,6 @@ const {
   confirmSell,
   cancelListing,
 } = useResaleMarketplace()
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
 </script>
 
 <template>
@@ -123,8 +120,8 @@ function formatMoney(amount: number): string {
       <!-- Listings Grid / Empty State -->
       <div v-else-if="filteredListings.length === 0" class="empty-state-card">
         <span class="material-symbols-outlined empty-icon">sports_tennis</span>
-        <h3>Chưa có slot nào phù hợp với bộ lọc</h3>
-        <p>Thử điều chỉnh tiêu chí tìm kiếm hoặc kiểm tra lại sau khi có thành viên khác đăng tin pass sân.</p>
+        <h3>{{ $t('resale.emptyListingsTitle') }}</h3>
+        <p>{{ $t('resale.emptyListingsDesc') }}</p>
         <AuraButton
           variant="outline"
           size="sm"
@@ -132,7 +129,7 @@ function formatMoney(amount: number): string {
           class="btn-reset-empty"
           @click="resetFilters"
         >
-          Xóa bộ lọc & Xem tất cả
+          {{ $t('resale.resetAndShowAll') }}
         </AuraButton>
       </div>
 
@@ -151,9 +148,9 @@ function formatMoney(amount: number): string {
       <div class="sell-intro-card">
         <div class="sell-intro-head">
           <div class="sell-head-meta">
-            <h2 class="sell-title">Danh Sách Lịch Đã Đặt Có Thể Pass Lại</h2>
+            <h2 class="sell-title">{{ $t('resale.sellIntroTitle') }}</h2>
             <p class="sell-sub">
-              Chỉ các suất chơi thuộc lịch đã thanh toán thành công và cách giờ bắt đầu tối thiểu 2 tiếng mới đủ điều kiện đăng nhượng.
+              {{ $t('resale.sellIntroSub') }}
             </p>
           </div>
         </div>
@@ -168,9 +165,9 @@ function formatMoney(amount: number): string {
         <!-- Empty user slots -->
         <div v-else-if="userSlots.length === 0" class="empty-slots-box">
           <span class="material-symbols-outlined empty-icon">event_busy</span>
-          <p>Hiện bạn không có lịch đặt sân nào sắp tới để chuyển nhượng.</p>
+          <p>{{ $t('resale.emptyUserSlots') }}</p>
           <AuraButton to="/booking" variant="primary" size="md" icon="add_circle">
-            Đặt Sân Ngay
+            {{ $t('resale.bookNowBtn') }}
           </AuraButton>
         </div>
 
@@ -184,7 +181,7 @@ function formatMoney(amount: number): string {
             <div class="slot-card-body">
               <div class="slot-card-head">
                 <strong class="slot-court-name">{{ slot.courtName }}</strong>
-                <span class="slot-paid-badge font-mono">{{ formatMoney(slot.originalPrice) }}</span>
+                <span class="slot-paid-badge font-mono">{{ formatCurrency(slot.originalPrice) }}</span>
               </div>
 
               <div class="slot-card-meta">
@@ -217,7 +214,7 @@ function formatMoney(amount: number): string {
                 :disabled="!slot.eligible"
                 @click="openSellModal(slot)"
               >
-                Pass Lại Slot Này
+                {{ $t('resale.passSlotBtn') }}
               </AuraButton>
             </div>
           </div>

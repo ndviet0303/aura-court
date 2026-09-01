@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { SocialMatch } from '../types/social'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   match: SocialMatch
@@ -19,11 +23,6 @@ const remainingSlots = computed(() => {
 const isFull = computed(() => {
   return props.match.joined_count >= props.match.required_participants
 })
-
-function formatMoney(amount?: number): string {
-  if (!amount) return 'Miễn phí'
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
-}
 </script>
 
 <template>
@@ -39,7 +38,7 @@ function formatMoney(amount?: number): string {
 
       <div class="slots-status-badge" :class="{ full: isFull, open: !isFull }">
         <span class="material-symbols-outlined status-ico">{{ isFull ? 'check_circle' : 'group_add' }}</span>
-        <span>{{ isFull ? 'Đã đủ người' : `Cần thêm ${remainingSlots} người` }}</span>
+        <span>{{ isFull ? $t('matchmaking.fullBadge') : $t('matchmaking.slotsStatusNeed', { count: remainingSlots }) }}</span>
       </div>
     </div>
 
@@ -57,12 +56,12 @@ function formatMoney(amount?: number): string {
         <div class="host-text-col">
           <div class="host-name-row">
             <span class="host-name">{{ match.host_name }}</span>
-            <span v-if="match.host_reputation" class="reputation-badge" title="Điểm uy tín thi đấu">
+            <span v-if="match.host_reputation" class="reputation-badge" :title="$t('matchmaking.reputationScoreTitle')">
               <span class="material-symbols-outlined rep-ico">verified</span>
               {{ match.host_reputation }}%
             </span>
           </div>
-          <span class="host-sub">Chủ phòng · {{ match.city }}</span>
+          <span class="host-sub">{{ $t('matchmaking.hostLabel') }} · {{ match.city }}</span>
         </div>
       </div>
 
@@ -89,7 +88,7 @@ function formatMoney(amount?: number): string {
 
           <div class="meta-item">
             <span class="material-symbols-outlined meta-ico">payments</span>
-            <span class="meta-val font-mono highlight">{{ formatMoney(match.cost_per_person) }}</span>
+            <span class="meta-val font-mono highlight">{{ match.cost_per_person ? formatCurrency(match.cost_per_person) : $t('matchmaking.freeCost') }}</span>
           </div>
         </div>
       </div>
@@ -97,7 +96,7 @@ function formatMoney(amount?: number): string {
       <!-- Slots Progress Visualizer -->
       <div class="slots-visualizer">
         <div class="slots-header">
-          <span class="slots-label">Danh sách tham gia:</span>
+          <span class="slots-label">{{ $t('matchmaking.joinedListLabel') }}</span>
           <span class="slots-count font-mono">{{ match.joined_count }} / {{ match.required_participants }}</span>
         </div>
 
@@ -111,7 +110,7 @@ function formatMoney(amount?: number): string {
               host: idx === 1,
               empty: idx > match.joined_count
             }"
-            :title="idx <= match.joined_count ? (match.participants[idx - 1]?.name || 'Đã có người') : 'Vị trí còn trống'"
+            :title="idx <= match.joined_count ? (match.participants[idx - 1]?.name || $t('matchmaking.slotFilledTitle')) : $t('matchmaking.slotEmptyTitle')"
           >
             <span v-if="idx === 1" class="material-symbols-outlined bubble-ico">crown</span>
             <span v-else-if="idx <= match.joined_count" class="material-symbols-outlined bubble-ico">person</span>
@@ -131,7 +130,7 @@ function formatMoney(amount?: number): string {
         block
         disabled
       >
-        Đã Tham Gia Kèo
+        {{ $t('matchmaking.alreadyJoinedBtn') }}
       </AuraButton>
 
       <AuraButton
@@ -143,7 +142,7 @@ function formatMoney(amount?: number): string {
         :disabled="isFull"
         @click="emit('join', match)"
       >
-        {{ isFull ? 'Kèo Đã Đầy Chỗ' : 'Tham Gia Kèo Này' }}
+        {{ isFull ? $t('matchmaking.matchFullBtn') : $t('matchmaking.joinThisMatchBtn') }}
       </AuraButton>
     </div>
   </article>

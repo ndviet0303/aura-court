@@ -52,9 +52,9 @@ onMounted(async () => {
   <div class="schedule-view-page">
     <!-- Breadcrumbs -->
     <nav class="schedule-breadcrumbs" aria-label="Breadcrumb">
-      <RouterLink to="/" class="bc-link">Trang chủ</RouterLink>
+      <RouterLink to="/" class="bc-link">{{ $t('schedule.breadcrumbHome') }}</RouterLink>
       <span class="material-symbols-outlined bc-sep">chevron_right</span>
-      <RouterLink to="/courts" class="bc-link">Danh sách sân</RouterLink>
+      <RouterLink to="/courts" class="bc-link">{{ $t('schedule.breadcrumbCourts') }}</RouterLink>
       <template v-if="court">
         <span class="material-symbols-outlined bc-sep">chevron_right</span>
         <RouterLink :to="`/courts/${court.slug || court.id}`" class="bc-link">
@@ -62,7 +62,7 @@ onMounted(async () => {
         </RouterLink>
       </template>
       <span class="material-symbols-outlined bc-sep">chevron_right</span>
-      <span class="bc-current">Lịch đặt trực tiếp</span>
+      <span class="bc-current">{{ $t('schedule.breadcrumbSchedule') }}</span>
     </nav>
 
     <!-- Header Banner -->
@@ -70,15 +70,15 @@ onMounted(async () => {
       <div class="hdr-title-row">
         <h1 class="page-title">
           <span class="material-symbols-outlined hdr-icon">event_available</span>
-          <span>Lịch Đặt Sân Theo Ngày</span>
+          <span>{{ $t('schedule.schedulePageTitle') }}</span>
         </h1>
         <span class="live-pill">
           <span class="live-dot"></span>
-          <span>Cập nhật trực tiếp</span>
+          <span>{{ $t('schedule.liveUpdatePill') }}</span>
         </span>
       </div>
       <p class="page-sub">
-        Xem tình trạng khung giờ trống theo thời gian thực và chọn lịch thi đấu phù hợp tại
+        {{ $t('schedule.schedulePageSub') }}
         <strong>{{ court?.venue?.name || 'Aura Court' }}</strong>.
       </p>
     </header>

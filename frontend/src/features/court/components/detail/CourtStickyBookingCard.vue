@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { formatCurrency } from '@/i18n'
 import type { Court } from '../../types/court'
 
 defineProps<{
@@ -13,25 +14,21 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:selectedDuration', val: number): void
 }>()
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
 </script>
 
 <template>
   <div class="sticky-booking-card">
     <div class="card-price-header">
-      <span class="price-lbl">Giá thuê từ:</span>
+      <span class="price-lbl">{{ $t('courtDetail.rateLabel') }}</span>
       <div class="price-val">
-        <strong class="price-num text-pink font-mono">{{ formatMoney(basePrice) }}</strong>
-        <span class="unit">/ giờ</span>
+        <strong class="price-num text-pink font-mono">{{ formatCurrency(basePrice) }}</strong>
+        <span class="unit">{{ $t('courtDetail.perHour') }}</span>
       </div>
     </div>
 
     <!-- Duration Picker -->
     <div class="duration-picker-box">
-      <label class="d-lbl">Chọn thời lượng thuê:</label>
+      <label class="d-lbl">{{ $t('courtDetail.selectDuration') }}:</label>
       <div class="durations-grid">
         <button
           v-for="opt in durationOptions"
@@ -48,8 +45,8 @@ function formatMoney(amount: number): string {
 
     <!-- Estimate Summary -->
     <div class="estimate-box">
-      <span>Tạm tính ước tính:</span>
-      <strong class="estimate-amount text-pink font-mono">{{ formatMoney(estimatedTotal) }}</strong>
+      <span>{{ $t('courtDetail.estimatedTotal', { duration: selectedDuration }) }}:</span>
+      <strong class="estimate-amount text-pink font-mono">{{ formatCurrency(estimatedTotal) }}</strong>
     </div>
 
     <!-- Book CTA -->
@@ -57,7 +54,7 @@ function formatMoney(amount: number): string {
       :to="`/courts/${court.slug || court.id}/schedule`"
       class="btn-book-now"
     >
-      Chọn Giờ & Đặt Sân Ngay
+      {{ $t('courtDetail.confirmAndBook') }}
     </RouterLink>
   </div>
 </template>

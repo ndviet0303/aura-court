@@ -2,10 +2,15 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
+import { getCurrentLocale, setAppLocale, type AppLocale } from '@/i18n'
+import { applySeo } from '@/lib/seo'
 import { getAvatarUrl } from '@/lib/avatar'
 
 const auth = useAuthStore()
+const themeStore = useThemeStore()
 const route = useRoute()
+const currentLocale = ref<AppLocale>(getCurrentLocale())
 
 const emit = defineEmits<{
   (e: 'logout'): void
@@ -39,6 +44,12 @@ function toggleDropdown() {
 
 function closeDropdown() {
   isDropdownOpen.value = false
+}
+
+function handleLocaleChange(target: AppLocale) {
+  setAppLocale(target)
+  currentLocale.value = target
+  applySeo(route)
 }
 
 function handleOutsideClick(event: MouseEvent) {
@@ -117,22 +128,27 @@ onBeforeUnmount(() => {
         <div class="dropdown-links-list">
           <RouterLink to="/profile" class="dropdown-item" @click="closeDropdown">
             <span class="material-symbols-outlined item-ico">person</span>
-            <span class="item-label">Hồ sơ cá nhân</span>
+            <span class="item-label">{{ $t('nav.profile') }}</span>
+          </RouterLink>
+
+          <RouterLink to="/notifications" class="dropdown-item" @click="closeDropdown">
+            <span class="material-symbols-outlined item-ico">notifications</span>
+            <span class="item-label">{{ $t('nav.notifications') }}</span>
           </RouterLink>
 
           <RouterLink to="/wallet" class="dropdown-item" @click="closeDropdown">
             <span class="material-symbols-outlined item-ico">account_balance_wallet</span>
-            <span class="item-label">Ví Aura & Nạp tiền</span>
+            <span class="item-label">{{ $t('nav.wallet') }}</span>
           </RouterLink>
 
-          <RouterLink to="/bookings" class="dropdown-item" @click="closeDropdown">
+          <RouterLink to="/booking" class="dropdown-item" @click="closeDropdown">
             <span class="material-symbols-outlined item-ico">calendar_month</span>
-            <span class="item-label">Lịch sử đặt sân</span>
+            <span class="item-label">{{ $t('nav.history') }}</span>
           </RouterLink>
 
           <RouterLink to="/tournaments" class="dropdown-item" @click="closeDropdown">
             <span class="material-symbols-outlined item-ico">emoji_events</span>
-            <span class="item-label">Giải đấu & Tranh tài</span>
+            <span class="item-label">{{ $t('nav.tournaments') }}</span>
           </RouterLink>
 
           <RouterLink
@@ -142,8 +158,71 @@ onBeforeUnmount(() => {
             @click="closeDropdown"
           >
             <span class="material-symbols-outlined item-ico">admin_panel_settings</span>
-            <span class="item-label">Quản trị hệ thống</span>
+            <span class="item-label">{{ $t('nav.adminSystem') }}</span>
           </RouterLink>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <!-- Preferences (Theme & Language) -->
+        <div class="dropdown-preferences">
+          <!-- Theme Row -->
+          <div class="pref-row">
+            <div class="pref-label">
+              <span class="material-symbols-outlined pref-icon">palette</span>
+              <span>{{ $t('nav.appearance') }}</span>
+            </div>
+            <div class="pref-segment-group">
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: themeStore.theme !== 'dark' }"
+                @click="themeStore.theme === 'dark' && themeStore.toggleTheme()"
+                :title="$t('common.theme.light')"
+              >
+                <span class="material-symbols-outlined btn-ico">light_mode</span>
+                <span>{{ $t('nav.lightMode') }}</span>
+              </button>
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: themeStore.theme === 'dark' }"
+                @click="themeStore.theme !== 'dark' && themeStore.toggleTheme()"
+                :title="$t('common.theme.dark')"
+              >
+                <span class="material-symbols-outlined btn-ico">dark_mode</span>
+                <span>{{ $t('nav.darkMode') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Language Row -->
+          <div class="pref-row">
+            <div class="pref-label">
+              <span class="material-symbols-outlined pref-icon">translate</span>
+              <span>{{ $t('nav.language') }}</span>
+            </div>
+            <div class="pref-segment-group">
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: currentLocale === 'vi' }"
+                @click="handleLocaleChange('vi')"
+                title="Tiếng Việt"
+              >
+                <span>VI</span>
+              </button>
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: currentLocale === 'en' }"
+                @click="handleLocaleChange('en')"
+                title="English"
+              >
+                <span>EN</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="dropdown-divider"></div>
@@ -151,21 +230,111 @@ onBeforeUnmount(() => {
         <!-- Logout Action -->
         <button type="button" class="dropdown-item logout-item" @click="onLogoutClick">
           <span class="material-symbols-outlined item-ico">logout</span>
-          <span class="item-label">Đăng xuất</span>
+          <span class="item-label">{{ $t('nav.logout') }}</span>
         </button>
       </div>
     </transition>
   </div>
 
-  <!-- Guest State (Login / Register Trigger) -->
-  <div v-else class="user-profile-group">
-    <RouterLink to="/login" class="user-meta">
-      <span class="user-name">{{ $t('nav.guest') }}</span>
-      <span class="user-badge">{{ $t('nav.login') }}</span>
-    </RouterLink>
-    <RouterLink to="/login" class="user-avatar-btn" :aria-label="$t('nav.login')" :title="$t('nav.login')">
-      <span class="material-symbols-outlined">person</span>
-    </RouterLink>
+  <!-- Guest State (Login / Register Trigger + Quick Preferences) -->
+  <div v-else ref="dropdownRoot" class="user-dropdown-wrapper">
+    <button
+      type="button"
+      class="user-dropdown-trigger guest-trigger"
+      :class="{ 'is-active': isDropdownOpen }"
+      aria-haspopup="true"
+      :aria-expanded="isDropdownOpen"
+      @click="toggleDropdown"
+    >
+      <div class="user-meta">
+        <span class="user-name">{{ $t('nav.guest') }}</span>
+        <span class="user-badge">{{ $t('nav.login') }}</span>
+      </div>
+
+      <div class="user-avatar-btn">
+        <span class="material-symbols-outlined">person</span>
+      </div>
+
+      <span class="material-symbols-outlined chevron-icon" :class="{ 'is-rotated': isDropdownOpen }">
+        expand_more
+      </span>
+    </button>
+
+    <!-- Guest Dropdown Menu -->
+    <transition name="dropdown-fade">
+      <div v-if="isDropdownOpen" class="user-dropdown-menu guest-menu" role="menu">
+        <div class="guest-menu-header">
+          <span class="guest-menu-title">{{ $t('nav.guest') }}</span>
+          <span class="guest-menu-subtitle">{{ $t('nav.loginPrompt') }}</span>
+        </div>
+
+        <div class="guest-actions">
+          <RouterLink to="/login" class="guest-primary-btn" @click="closeDropdown">
+            <span class="material-symbols-outlined">login</span>
+            <span>{{ $t('nav.login') }}</span>
+          </RouterLink>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <!-- Preferences (Theme & Language) for Guest -->
+        <div class="dropdown-preferences">
+          <!-- Theme Row -->
+          <div class="pref-row">
+            <div class="pref-label">
+              <span class="material-symbols-outlined pref-icon">palette</span>
+              <span>{{ $t('nav.appearance') }}</span>
+            </div>
+            <div class="pref-segment-group">
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: themeStore.theme !== 'dark' }"
+                @click="themeStore.theme === 'dark' && themeStore.toggleTheme()"
+              >
+                <span class="material-symbols-outlined btn-ico">light_mode</span>
+                <span>{{ $t('nav.lightMode') }}</span>
+              </button>
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: themeStore.theme === 'dark' }"
+                @click="themeStore.theme !== 'dark' && themeStore.toggleTheme()"
+              >
+                <span class="material-symbols-outlined btn-ico">dark_mode</span>
+                <span>{{ $t('nav.darkMode') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Language Row -->
+          <div class="pref-row">
+            <div class="pref-label">
+              <span class="material-symbols-outlined pref-icon">translate</span>
+              <span>{{ $t('nav.language') }}</span>
+            </div>
+            <div class="pref-segment-group">
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: currentLocale === 'vi' }"
+                @click="handleLocaleChange('vi')"
+              >
+                <span>VI</span>
+              </button>
+              <button
+                type="button"
+                class="pref-segment-btn"
+                :class="{ active: currentLocale === 'en' }"
+                @click="handleLocaleChange('en')"
+              >
+                <span>EN</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -244,101 +413,92 @@ html.dark .user-name {
 html.dark .user-badge {
   background: rgba(223, 186, 114, 0.15) !important;
   color: #dfba72 !important;
-  border: 1px solid rgba(223, 186, 114, 0.35) !important;
-  box-shadow: 0 0 10px rgba(223, 186, 114, 0.15) !important;
+  border-color: rgba(223, 186, 114, 0.3) !important;
 }
 
 .user-avatar-btn {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 999px;
   overflow: hidden;
-  background: #FAF7F3;
-  color: #6B2D3F;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid #ebdccb;
+  background: #f8e8ec;
+  border: 1.5px solid #6B2D3F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 html.dark .user-avatar-btn {
-  background: #251e22;
-  color: #dfba72;
-  border-color: rgba(223, 186, 114, 0.35);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  background: #361a24;
+  border-color: #dfba72;
 }
 
 .user-avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .chevron-icon {
   font-size: 19px;
   color: var(--muted, #6e6668);
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chevron-icon.is-rotated {
   transform: rotate(180deg);
-  color: var(--primary, #6B2D3F);
 }
 
-html.dark .chevron-icon.is-rotated {
-  color: #dfba72;
-}
-
-/* Floating Dropdown Menu */
+/* Floating Dropdown Card */
 .user-dropdown-menu {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   right: 0;
+  z-index: 100;
   min-width: 250px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, #e2dad0);
+  max-width: 290px;
+  background: #ffffff;
+  border: 1px solid #ebdccb;
   border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(107, 45, 63, 0.14);
   padding: 10px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06);
-  z-index: 1050;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transform-origin: top right;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 html.dark .user-dropdown-menu {
-  background: #1c181b;
-  border-color: #3b3238;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.3);
+  background: #1e181c !important;
+  border-color: #382f35 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
 }
 
-/* Dropdown User Header */
+/* Header User Details */
 .dropdown-user-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 8px 8px 10px;
 }
 
 .header-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
   object-fit: cover;
-  border: 2px solid var(--outline, #ebdccb);
+  border: 1.5px solid #6B2D3F;
   flex-shrink: 0;
 }
 
 html.dark .header-avatar {
-  border-color: rgba(223, 186, 114, 0.4);
+  border-color: #dfba72;
 }
 
 .header-details {
   display: flex;
   flex-direction: column;
-  gap: 3px;
   min-width: 0;
   flex: 1;
 }
@@ -352,7 +512,7 @@ html.dark .header-avatar {
 
 .header-name {
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 700;
   color: var(--ink, #1c1618);
   white-space: nowrap;
   overflow: hidden;
@@ -360,28 +520,33 @@ html.dark .header-avatar {
 }
 
 html.dark .header-name {
-  color: #faf7f3;
+  color: #ffffff;
 }
 
 .header-email {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--muted, #6e6668);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+html.dark .header-email {
+  color: #9c9298;
 }
 
 .dropdown-divider {
   height: 1px;
-  background: var(--outline, rgba(0, 0, 0, 0.08));
-  margin: 6px 4px;
+  background: var(--outline, #ebdccb);
+  margin: 6px 0;
 }
 
 html.dark .dropdown-divider {
-  background: rgba(255, 255, 255, 0.08);
+  background: #382f35;
 }
 
-/* Dropdown Menu Links */
+/* Links List */
 .dropdown-links-list {
   display: flex;
   flex-direction: column;
@@ -391,123 +556,239 @@ html.dark .dropdown-divider {
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
+  gap: 11px;
   padding: 9px 12px;
-  border-radius: 10px;
-  border: 0;
-  background: transparent;
+  border-radius: 11px;
   color: var(--ink, #1c1618);
+  text-decoration: none;
   font-size: 13.5px;
   font-weight: 600;
-  text-decoration: none;
+  transition: all 0.16s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.15s ease;
   box-sizing: border-box;
 }
 
 html.dark .dropdown-item {
-  color: #e5dde2;
-}
-
-.dropdown-item:hover {
-  background: var(--surface-container, rgba(0, 0, 0, 0.05));
-  color: var(--primary, #6B2D3F);
-}
-
-html.dark .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #dfba72;
+  color: #ded6dc;
 }
 
 .dropdown-item .item-ico {
   font-size: 19px;
-  color: var(--muted, #6e6668);
-  transition: color 0.15s ease;
+  color: #6B2D3F;
+  flex-shrink: 0;
+  transition: color 0.16s ease;
 }
 
-.dropdown-item:hover .item-ico {
-  color: var(--primary, #6B2D3F);
-}
-
-html.dark .dropdown-item:hover .item-ico {
+html.dark .dropdown-item .item-ico {
   color: #dfba72;
 }
 
-.admin-item {
-  color: #9333ea;
+.dropdown-item:hover,
+.dropdown-item.router-link-active {
+  background: #FAF7F3;
+  color: #6B2D3F;
 }
 
-html.dark .admin-item {
-  color: #c084fc;
+html.dark .dropdown-item:hover,
+html.dark .dropdown-item.router-link-active {
+  background: #2b2228;
+  color: #dfba72;
 }
 
-.admin-item:hover {
-  background: rgba(147, 51, 234, 0.08);
-  color: #7e22ce;
+.dropdown-item.admin-item {
+  color: #9e3650;
 }
 
-.admin-item .item-ico {
-  color: #9333ea;
+html.dark .dropdown-item.admin-item {
+  color: #e59310;
 }
 
-html.dark .admin-item .item-ico {
-  color: #c084fc;
+.dropdown-item.admin-item .item-ico {
+  color: #9e3650;
 }
 
-/* Logout Item */
-.logout-item {
+html.dark .dropdown-item.admin-item .item-ico {
+  color: #e59310;
+}
+
+.dropdown-item.logout-item {
   color: #dc2626;
 }
 
-.logout-item .item-ico {
+.dropdown-item.logout-item .item-ico {
   color: #dc2626;
 }
 
-.logout-item:hover {
+.dropdown-item.logout-item:hover {
   background: rgba(220, 38, 38, 0.08);
   color: #b91c1c;
 }
 
-html.dark .logout-item {
+html.dark .dropdown-item.logout-item:hover {
+  background: rgba(220, 38, 38, 0.15);
   color: #f87171;
 }
 
-html.dark .logout-item .item-ico {
-  color: #f87171;
+/* Preferences Section (Theme & Language) */
+.dropdown-preferences {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 4px;
 }
 
-html.dark .logout-item:hover {
-  background: rgba(248, 113, 113, 0.12);
-  color: #fca5a5;
+.pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-/* Transition Animations */
+.pref-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted, #6e6668);
+}
+
+html.dark .pref-label {
+  color: #a89fa5;
+}
+
+.pref-icon {
+  font-size: 17px;
+  color: #6B2D3F;
+}
+
+html.dark .pref-icon {
+  color: #dfba72;
+}
+
+.pref-segment-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  background: var(--surface-subtle, #f5f0e8);
+  border: 1px solid var(--outline, #ebdccb);
+  border-radius: 999px;
+  gap: 2px;
+}
+
+html.dark .pref-segment-group {
+  background: #282025;
+  border-color: #382f35;
+}
+
+.pref-segment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted, #6e6668);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  line-height: 1;
+}
+
+html.dark .pref-segment-btn {
+  color: #a89fa5;
+}
+
+.pref-segment-btn .btn-ico {
+  font-size: 14px;
+}
+
+.pref-segment-btn.active {
+  background: #6B2D3F;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(107, 45, 63, 0.25);
+}
+
+html.dark .pref-segment-btn.active {
+  background: #dfba72;
+  color: #191c1d;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Guest Dropdown Menu */
+.guest-menu {
+  min-width: 230px;
+}
+
+.guest-menu-header {
+  padding: 6px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guest-menu-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #1c1618);
+}
+
+html.dark .guest-menu-title {
+  color: #ffffff;
+}
+
+.guest-menu-subtitle {
+  font-size: 11.5px;
+  color: var(--muted, #6e6668);
+}
+
+html.dark .guest-menu-subtitle {
+  color: #9c9298;
+}
+
+.guest-actions {
+  padding: 4px 6px;
+}
+
+.guest-primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(107, 45, 63, 0.25);
+  box-sizing: border-box;
+}
+
+.guest-primary-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Dropdown Animation */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dropdown-fade-enter-from,
 .dropdown-fade-leave-to {
   opacity: 0;
-  transform: translateY(-6px) scale(0.96);
-}
-
-/* Guest State */
-.user-profile-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-profile-group .user-meta {
-  text-decoration: none;
-}
-
-@media (max-width: 1080px) {
-  .user-dropdown-trigger .user-meta {
-    display: none !important;
-  }
+  transform: translateY(-8px) scale(0.96);
 }
 </style>

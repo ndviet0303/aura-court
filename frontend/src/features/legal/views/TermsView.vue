@@ -63,37 +63,37 @@ onUnmounted(() => {
       <div class="legal-header">
         <div class="legal-badge">
           <span class="material-symbols-outlined icon-18">verified</span>
-          <span>QUY ĐỊNH &amp; PHÁP LÝ AURA COURT</span>
+          <span>{{ $t('legal.badge') }}</span>
         </div>
-        <h1 class="legal-title">Điều khoản dịch vụ</h1>
+        <h1 class="legal-title">{{ $t('legal.termsTitle') }}</h1>
         <p class="legal-subtitle">
-          Vui lòng đọc kỹ các điều khoản dưới đây trước khi sử dụng dịch vụ đặt sân trực tuyến và tham gia hoạt động thể thao tại hệ thống sân thi đấu chuyên nghiệp Aura Court.
+          {{ $t('legal.termsSubtitle') }}
         </p>
         
         <!-- Navigation switcher -->
         <div class="doc-switcher">
           <span class="doc-tab active">
             <span class="material-symbols-outlined">description</span>
-            <span>Điều khoản dịch vụ</span>
+            <span>{{ $t('legal.tabTerms') }}</span>
           </span>
           <RouterLink to="/privacy" class="doc-tab">
             <span class="material-symbols-outlined">shield</span>
-            <span>Chính sách bảo mật</span>
+            <span>{{ $t('legal.tabPrivacy') }}</span>
           </RouterLink>
         </div>
 
         <div class="legal-meta-row">
           <div class="meta-item">
             <span class="material-symbols-outlined">update</span>
-            <span>Cập nhật: <strong>Tháng 08/2026</strong></span>
+            <span>{{ $t('legal.updatedDate') }}</span>
           </div>
           <div class="meta-item">
             <span class="material-symbols-outlined">gavel</span>
-            <span>Phiên bản: <strong>2.4 (Toàn hệ thống Aura Court)</strong></span>
+            <span>{{ $t('legal.versionLabel') }}</span>
           </div>
           <div class="meta-item">
             <span class="material-symbols-outlined">sports_tennis</span>
-            <span>Tiêu chuẩn: <strong>BWF Standard Arena</strong></span>
+            <span>{{ $t('legal.standardLabel') }}</span>
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@ onUnmounted(() => {
           <div class="sidebar-sticky-card">
             <h3 class="sidebar-title">
               <span class="material-symbols-outlined">format_list_bulleted</span>
-              <span>Mục lục điều khoản</span>
+              <span>{{ $t('legal.tableOfContents') }}</span>
             </h3>
             <nav class="sidebar-nav">
               <button
@@ -126,8 +126,8 @@ onUnmounted(() => {
               <div class="support-icon">
                 <span class="material-symbols-outlined">headset_mic</span>
               </div>
-              <h4>Hỗ trợ trực tiếp 24/7</h4>
-              <p>Hotline Aura Court tiếp nhận yêu cầu &amp; hỗ trợ hội viên</p>
+              <h4>{{ $t('legal.supportTitle') }}</h4>
+              <p>{{ $t('legal.supportDesc') }}</p>
               <a href="tel:0963792413" class="support-btn">
                 <span class="material-symbols-outlined">call</span>
                 <span>0963 792 413</span>

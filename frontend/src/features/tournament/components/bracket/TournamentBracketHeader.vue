@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { SelectDropdown, AuraButton } from '@/shared/components'
 import type { TournamentItem } from '../../composables/useTournamentBracket'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   tournament: TournamentItem | null
@@ -10,7 +13,6 @@ const props = defineProps<{
   selectedCategory: 'singles_men' | 'doubles_men' | 'mixed_doubles'
   activeTab: 'bracket' | 'standings'
 }>()
-
 
 const emit = defineEmits<{
   (e: 'update:selectedTournamentId', id: string | number): void
@@ -26,18 +28,18 @@ const tournamentOptions = computed(() => {
   }))
 })
 
-const categoryOptions = [
-  { value: 'singles_men', label: 'Đơn Nam (Men\'s Singles)', icon: 'person' },
-  { value: 'doubles_men', label: 'Đôi Nam (Men\'s Doubles)', icon: 'group' },
-  { value: 'mixed_doubles', label: 'Đôi Nam Nữ (Mixed Doubles)', icon: 'diversity_3' },
-]
+const categoryOptions = computed(() => [
+  { value: 'singles_men', label: t('tournament.categorySinglesMen'), icon: 'person' },
+  { value: 'doubles_men', label: t('tournament.categoryDoublesMen'), icon: 'group' },
+  { value: 'mixed_doubles', label: t('tournament.categoryMixedDoubles'), icon: 'diversity_3' },
+])
 </script>
 
 <template>
   <header class="bracket-header-card">
     <div class="header-top-nav">
       <AuraButton to="/tournaments" variant="ghost" size="sm" icon="arrow_back">
-        Quay lại Danh Sách Giải
+        {{ $t('tournament.backToTournaments') }}
       </AuraButton>
     </div>
 
@@ -61,7 +63,7 @@ const categoryOptions = [
           </span>
           <span class="meta-tag">
             <span class="material-symbols-outlined meta-ico">group</span>
-            {{ tournament.playersCount }} VĐV tham gia
+            {{ $t('tournament.playersParticipating', { count: tournament.playersCount }) }}
           </span>
         </div>
       </div>
@@ -72,7 +74,7 @@ const categoryOptions = [
             :model-value="selectedTournamentId"
             :options="tournamentOptions"
             variant="bordered"
-            aria-label="Chọn giải đấu"
+            :aria-label="$t('tournament.selectTournamentPlaceholder')"
             @update:model-value="emit('update:selectedTournamentId', $event as any)"
           />
         </div>
@@ -82,7 +84,7 @@ const categoryOptions = [
             :model-value="selectedCategory"
             :options="categoryOptions"
             variant="bordered"
-            aria-label="Chọn hạng mục thi đấu"
+            :aria-label="$t('tournament.selectCategoryPlaceholder')"
             @update:model-value="emit('update:selectedCategory', $event as any)"
           />
         </div>
@@ -100,7 +102,7 @@ const categoryOptions = [
         @click="emit('update:activeTab', 'bracket')"
       >
         <span class="material-symbols-outlined tab-ico">account_tree</span>
-        <span>Sơ Đồ Cây Nhánh Đấu (Knockout Bracket)</span>
+        <span>{{ $t('tournament.tabBracket') }}</span>
       </button>
       <button
         type="button"
@@ -111,7 +113,7 @@ const categoryOptions = [
         @click="emit('update:activeTab', 'standings')"
       >
         <span class="material-symbols-outlined tab-ico">leaderboard</span>
-        <span>Bảng Xếp Hạng Vòng Bảng (Standings)</span>
+        <span>{{ $t('tournament.tabStandings') }}</span>
       </button>
     </div>
   </header>

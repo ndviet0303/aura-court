@@ -55,8 +55,8 @@ onMounted(async () => {
       data-testid="courts-empty-state"
     >
       <span class="material-symbols-outlined empty-icon">search_off</span>
-      <h3>Không tìm thấy sân đấu phù hợp</h3>
-      <p>Thử tìm kiếm với từ khóa khác hoặc bỏ chọn bộ lọc khu vực.</p>
+      <h3>{{ $t('courts.emptyTitle') }}</h3>
+      <p>{{ $t('courts.emptyDesc') }}</p>
     </div>
 
     <!-- Courts Grid -->

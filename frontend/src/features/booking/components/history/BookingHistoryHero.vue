@@ -14,19 +14,19 @@ defineProps<{
         <span class="material-symbols-outlined tag-icon">confirmation_number</span>
         <span class="font-mono">AURA RESERVATIONS</span>
       </div>
-      <h1 class="page-title">Quản Lý Lịch Đặt Sân Của Tôi</h1>
+      <h1 class="page-title">{{ $t('booking.title') }}</h1>
       <p class="page-sub">
-        Theo dõi lịch thi đấu, check-in mã QR tại sân và quản lý trạng thái thanh toán nhanh chóng.
+        {{ $t('booking.subtitle') }}
       </p>
 
       <div class="stats-pills">
         <div class="stat-pill">
           <span class="stat-num font-mono">{{ upcomingCount }}</span>
-          <span class="stat-lbl">Trận đấu sắp tới</span>
+          <span class="stat-lbl">{{ $t('booking.upcomingCountLabel') }}</span>
         </div>
         <div class="stat-pill">
           <span class="stat-num font-mono">{{ totalCount }}</span>
-          <span class="stat-lbl">Tổng lượt đặt sân</span>
+          <span class="stat-lbl">{{ $t('booking.totalBookingsLabel') }}</span>
         </div>
       </div>
     </div>
@@ -34,17 +34,17 @@ defineProps<{
     <div class="hero-actions">
       <RouterLink to="/courts" class="btn-action-primary">
         <span class="material-symbols-outlined">add_circle</span>
-        <span>Đặt Sân Mới</span>
+        <span>{{ $t('booking.newBookingBtn') }}</span>
       </RouterLink>
 
       <RouterLink to="/recurring-booking" class="btn-action-secondary">
         <span class="material-symbols-outlined">event_repeat</span>
-        <span>Lịch Cố Định Tháng</span>
+        <span>{{ $t('booking.recurringBookingBtn') }}</span>
       </RouterLink>
 
       <RouterLink to="/resale" class="btn-action-secondary">
         <span class="material-symbols-outlined">swap_horiz</span>
-        <span>Chợ Nhượng Sân</span>
+        <span>{{ $t('booking.resaleMarketplaceBtn') }}</span>
       </RouterLink>
     </div>
   </div>

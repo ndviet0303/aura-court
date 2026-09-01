@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot } from '../../types/court'
+
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   court: Court
@@ -22,16 +26,12 @@ const emit = defineEmits<{
   (e: 'clearError'): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
-
 const isUnverified = computed(() => isUnverifiedEmailError(props.error))
 
 const formattedDate = computed(() => {
   try {
     const d = new Date(props.date)
-    return d.toLocaleDateString('vi-VN', {
+    return d.toLocaleDateString(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
@@ -54,10 +54,10 @@ const durationHours = computed(() => {
       <div class="title-row">
         <h3 class="title">
           <span class="material-symbols-outlined title-icon">receipt_long</span>
-          <span>Tóm Tắt Đặt Sân</span>
+          <span>{{ $t('schedule.summaryTitle') }}</span>
         </h3>
         <span v-if="selectedSlots.length > 0" class="badge-count">
-          {{ selectedSlots.length }} khung giờ
+          {{ $t('schedule.slotsBadge', { count: selectedSlots.length }) }}
         </span>
       </div>
 
@@ -66,7 +66,7 @@ const durationHours = computed(() => {
         <RouterLink
           :to="`/courts/${court.slug || court.id}/directions`"
           class="venue-info-link"
-          title="Xem chỉ đường đến cơ sở"
+          :title="$t('courts.directionsBtn')"
         >
           <span class="material-symbols-outlined icon-14">location_on</span>
           <span>{{ court.venue?.name || 'Aura Court' }}</span>
@@ -82,15 +82,15 @@ const durationHours = computed(() => {
     <!-- Selected Slots Section -->
     <div class="selected-slots-section">
       <div class="section-label-row">
-        <span class="section-sub-label">Khung giờ đã chọn:</span>
+        <span class="section-sub-label">{{ $t('schedule.selectedSlotsLabel') }}</span>
         <span v-if="durationHours > 0" class="duration-badge">
-          Tổng: {{ durationHours }} giờ thi đấu
+          {{ $t('schedule.totalPlayDuration', { count: durationHours }) }}
         </span>
       </div>
 
       <div v-if="selectedSlots.length === 0" class="no-slots-hint">
         <span class="material-symbols-outlined hint-icon">touch_app</span>
-        <p class="hint-text">Vui lòng bấm chọn một hoặc nhiều khung giờ trên bảng lịch để tiếp tục.</p>
+        <p class="hint-text">{{ $t('schedule.noSlotsSelectedHint') }}</p>
       </div>
 
       <div v-else class="slots-list-wrap">
@@ -107,12 +107,12 @@ const durationHours = computed(() => {
           </div>
 
           <div class="slot-price-wrap">
-            <span class="font-mono item-price">{{ formatMoney(s.price) }}</span>
+            <span class="font-mono item-price">{{ formatCurrency(s.price) }}</span>
             <button
               type="button"
               class="btn-remove-slot"
+              :title="$t('schedule.removeSlot')"
               @click="emit('removeSlot', s)"
-              title="Bỏ chọn khung giờ này"
             >
               <span class="material-symbols-outlined icon-14">close</span>
             </button>
@@ -125,11 +125,11 @@ const durationHours = computed(() => {
     <div class="trust-perks-box">
       <div class="perk-item">
         <span class="material-symbols-outlined perk-icon">bolt</span>
-        <span>Giữ chỗ tức thì 100% thời gian thực</span>
+        <span>{{ $t('schedule.instantHoldPerk') }}</span>
       </div>
       <div class="perk-item">
         <span class="material-symbols-outlined perk-icon">verified_user</span>
-        <span>Hỗ trợ đổi lịch linh hoạt trước giờ chơi 2h</span>
+        <span>{{ $t('schedule.flexReschedulePerk') }}</span>
       </div>
     </div>
 
@@ -144,9 +144,9 @@ const durationHours = computed(() => {
       <div class="error-header">
         <div class="error-header-left">
           <span class="material-symbols-outlined error-icon">error</span>
-          <strong class="error-title">Không thể tạo đơn đặt</strong>
+          <strong class="error-title">{{ $t('schedule.cannotCreateBooking') }}</strong>
         </div>
-        <button type="button" class="btn-dismiss-error" @click="emit('clearError')" aria-label="Đóng">
+        <button type="button" class="btn-dismiss-error" aria-label="Đóng" @click="emit('clearError')">
           <span class="material-symbols-outlined icon-14">close</span>
         </button>
       </div>
@@ -159,11 +159,11 @@ const durationHours = computed(() => {
           @click="emit('resendVerification')"
         >
           <span class="material-symbols-outlined icon-14">mail</span>
-          <span>{{ resendingEmail ? 'Đang gửi email...' : 'Gửi lại email xác thực' }}</span>
+          <span>{{ resendingEmail ? $t('schedule.sendingEmail') : $t('schedule.resendVerificationEmail') }}</span>
         </button>
         <RouterLink to="/profile" class="btn-goto-profile">
           <span class="material-symbols-outlined icon-14">person</span>
-          <span>Đến trang cá nhân</span>
+          <span>{{ $t('schedule.goToProfile') }}</span>
         </RouterLink>
       </div>
     </div>
@@ -172,12 +172,12 @@ const durationHours = computed(() => {
     <div class="summary-footer">
       <div class="price-breakdown">
         <div class="breakdown-row">
-          <span>Thời lượng thi đấu:</span>
-          <strong>{{ durationHours }} giờ</strong>
+          <span>{{ $t('schedule.playDuration') }}</span>
+          <strong>{{ $t('schedule.hours', { count: durationHours }) }}</strong>
         </div>
         <div class="breakdown-row total-row">
-          <span>Tổng thanh toán:</span>
-          <strong class="total-num font-mono">{{ formatMoney(totalPrice) }}</strong>
+          <span>{{ $t('schedule.totalPayment') }}</span>
+          <strong class="total-num font-mono">{{ formatCurrency(totalPrice) }}</strong>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ const durationHours = computed(() => {
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>
-        <span>{{ loading ? 'Đang khởi tạo đơn...' : 'Xác Nhận Giữ Chỗ & Thanh Toán' }}</span>
+        <span>{{ loading ? $t('schedule.initializingBooking') : $t('schedule.confirmAndPayBtn') }}</span>
       </button>
     </div>
   </div>

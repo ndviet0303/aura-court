@@ -10,7 +10,7 @@ defineProps<{
   <div class="transport-guide-card">
     <h3 class="section-title">
       <span class="material-symbols-outlined icon-20">commute</span>
-      <span>Hướng Dẫn Di Chuyển & Tiện Ích Đỗ Xe</span>
+      <span>{{ $t('directions.transportTitle') }}</span>
     </h3>
 
     <div class="transport-grid">
@@ -20,8 +20,8 @@ defineProps<{
           <span class="material-symbols-outlined">directions_car</span>
         </div>
         <div class="mode-content">
-          <strong class="mode-title">Dành cho Ô tô</strong>
-          <p class="mode-desc">Bãi đỗ ô tô miễn phí tại khuôn viên tòa nhà, bảo vệ túc trực và hướng dẫn đỗ 24/7.</p>
+          <strong class="mode-title">{{ $t('directions.carTitle') }}</strong>
+          <p class="mode-desc">{{ $t('directions.carDesc') }}</p>
         </div>
       </div>
 
@@ -31,8 +31,8 @@ defineProps<{
           <span class="material-symbols-outlined">two_wheeler</span>
         </div>
         <div class="mode-content">
-          <strong class="mode-title">Dành cho Xe máy</strong>
-          <p class="mode-desc">Hầm giữ xe có mái che, quẹt thẻ từ tự động, an ninh kiểm soát chặt chẽ.</p>
+          <strong class="mode-title">{{ $t('directions.bikeTitle') }}</strong>
+          <p class="mode-desc">{{ $t('directions.bikeDesc') }}</p>
         </div>
       </div>
 
@@ -42,8 +42,8 @@ defineProps<{
           <span class="material-symbols-outlined">directions_bus</span>
         </div>
         <div class="mode-content">
-          <strong class="mode-title">Phương tiện công cộng</strong>
-          <p class="mode-desc">Trạm dừng xe buýt và tuyến tàu điện cách lối vào sân chỉ 150m đi bộ thuận tiện.</p>
+          <strong class="mode-title">{{ $t('directions.transitTitle') }}</strong>
+          <p class="mode-desc">{{ $t('directions.transitDesc') }}</p>
         </div>
       </div>
 
@@ -53,8 +53,8 @@ defineProps<{
           <span class="material-symbols-outlined">meeting_room</span>
         </div>
         <div class="mode-content">
-          <strong class="mode-title">Lối vào & Lễ tân</strong>
-          <p class="mode-desc">Đi sảnh A tầng 1, thang máy lên tầng 2 là quầy Check-in và khu thay đồ tiện nghi.</p>
+          <strong class="mode-title">{{ $t('directions.lobbyTitle') }}</strong>
+          <p class="mode-desc">{{ $t('directions.lobbyDesc') }}</p>
         </div>
       </div>
     </div>

@@ -82,10 +82,10 @@ describe('MatchmakingView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Ghép Trận & Tìm Kèo Giao Lưu')
-    expect(wrapper.text()).toContain('Tổng Kèo Giao Lưu')
-    expect(wrapper.text()).toContain('Đang Tuyển Người')
-    expect(wrapper.text()).toContain('Tất Cả Kèo')
+    expect(wrapper.text()).toContain('Ghép Kèo Giao Lưu')
+    expect(wrapper.text()).toContain('Tất Cả Kèo Giao Lưu')
+    expect(wrapper.text()).toContain('Kèo đang tuyển người')
+    expect(wrapper.text()).toContain('Tất Cả Kèo Giao Lưu')
     expect(wrapper.text()).toContain('Cầu lông')
     expect(wrapper.text()).toContain('Pickleball')
 
@@ -128,7 +128,7 @@ describe('MatchmakingView', () => {
     })
     await flushPromises()
 
-    const partnerTab = wrapper.findAll('.tab-btn').find((b) => b.text().includes('Tìm Bạn Ghép Cặp'))
+    const partnerTab = wrapper.findAll('.tab-btn').find((b) => b.text().includes('Tìm Bạn Thi Đấu'))
     expect(partnerTab).toBeDefined()
     await partnerTab?.trigger('click')
     await flushPromises()

@@ -18,11 +18,11 @@ const emit = defineEmits<{
       <div class="hero-main-content">
         <div class="hero-tag-pill">
           <span class="material-symbols-outlined tag-icon">groups</span>
-          <span>AURA SPORTS MATCHMAKING & SOCIAL</span>
+          <span>{{ $t('matchmaking.eyebrow') }}</span>
         </div>
-        <h1 class="hero-title">Ghép Trận & Tìm Kèo Giao Lưu Thể Thao</h1>
+        <h1 class="hero-title">{{ $t('matchmaking.title') }}</h1>
         <p class="hero-subtitle">
-          Kết nối cộng đồng người chơi Cầu lông, Pickleball, Tennis, Bóng đá cùng trình độ. Tạo phòng ghép trận, chia sẻ tiền sân văn minh và tìm kiếm bạn đồng hành thi đấu.
+          {{ $t('matchmaking.subtitle') }}
         </p>
       </div>
 
@@ -33,7 +33,7 @@ const emit = defineEmits<{
           size="md"
           icon="add_circle"
         >
-          Tạo Kèo Mới
+          {{ $t('matchmaking.createMatchBtn') }}
         </AuraButton>
 
         <AuraButton
@@ -42,7 +42,7 @@ const emit = defineEmits<{
           icon="person_search"
           @click="emit('switchTab', 'partners')"
         >
-          Tìm Bạn Chơi
+          {{ $t('matchmaking.tabPartners') }}
         </AuraButton>
       </div>
     </div>
@@ -54,7 +54,7 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">sports</span>
         </div>
         <div class="stat-info">
-          <span class="stat-label">Tổng Kèo Giao Lưu</span>
+          <span class="stat-label">{{ $t('matchmaking.tabAllMatches') }}</span>
           <SkeletonLoader v-if="loading" type="rect" width="50px" height="24px" rounded="6px" />
           <span v-else class="stat-number font-mono">{{ stats.totalMatches }}</span>
         </div>
@@ -65,7 +65,7 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">group_add</span>
         </div>
         <div class="stat-info">
-          <span class="stat-label">Đang Tuyển Người</span>
+          <span class="stat-label">{{ $t('matchmaking.openMatches') }}</span>
           <SkeletonLoader v-if="loading" type="rect" width="50px" height="24px" rounded="6px" />
           <span v-else class="stat-number font-mono">{{ stats.openMatches }}</span>
         </div>
@@ -76,7 +76,7 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">person</span>
         </div>
         <div class="stat-info">
-          <span class="stat-label">VĐV Tham Gia</span>
+          <span class="stat-label">{{ $t('matchmaking.totalMembers') }}</span>
           <SkeletonLoader v-if="loading" type="rect" width="50px" height="24px" rounded="6px" />
           <span v-else class="stat-number font-mono">{{ stats.activePlayers }}+</span>
         </div>
@@ -87,9 +87,9 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">stadium</span>
         </div>
         <div class="stat-info">
-          <span class="stat-label">Cụm Sân Đối Tác</span>
+          <span class="stat-label">{{ $t('matchmaking.totalVenues') }}</span>
           <SkeletonLoader v-if="loading" type="rect" width="50px" height="24px" rounded="6px" />
-          <span v-else class="stat-number font-mono">{{ stats.totalVenues }} Cơ sở</span>
+          <span v-else class="stat-number font-mono">{{ stats.totalVenues }}</span>
         </div>
       </div>
     </div>

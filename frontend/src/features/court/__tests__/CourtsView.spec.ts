@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import CourtsView from '../views/CourtsView.vue'
+import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
 import { api } from '@/core/api/client'
 
@@ -40,7 +41,11 @@ describe('CourtsView', () => {
     store.courts = []
     store.courtsLoading = true
 
-    const wrapper = mount(CourtsView)
+    const wrapper = mount(CourtsView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
 
     expect(wrapper.find('[data-testid="courts-skeleton"]').exists()).toBe(true)
     const skeletonCards = wrapper.findAll('.skeleton-court-card')
@@ -91,7 +96,11 @@ describe('CourtsView', () => {
       },
     ]
 
-    const wrapper = mount(CourtsView)
+    const wrapper = mount(CourtsView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
 
     expect(wrapper.find('[data-testid="courts-skeleton"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="courts-grid"]').exists()).toBe(true)
@@ -112,7 +121,11 @@ describe('CourtsView', () => {
       },
     ]
 
-    const wrapper = mount(CourtsView)
+    const wrapper = mount(CourtsView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
 
     const searchInput = wrapper.find('.search-input')
     await searchInput.setValue('Tên sân không tồn tại')
@@ -139,7 +152,11 @@ describe('CourtsView', () => {
       },
     ]
 
-    const wrapper = mount(CourtsView)
+    const wrapper = mount(CourtsView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
 
     // Open dropdown and click Aura Landmark
     const dropdownTrigger = wrapper.find('.custom-dropdown-trigger')

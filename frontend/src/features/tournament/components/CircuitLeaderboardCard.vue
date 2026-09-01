@@ -29,11 +29,11 @@ function getRankIcon(rank: number): string {
         </div>
         <div>
           <div class="hdr-title-row">
-            <h2 class="hdr-title">Bảng Xếp Hạng Circuit Aura Points 2026</h2>
+            <h2 class="hdr-title">{{ $t('tournament.leaderboardTitle') }}</h2>
             <span class="circuit-badge">Master Cup Race</span>
           </div>
           <p class="hdr-sub">
-            Tích lũy điểm thưởng qua từng giải đấu trong hệ thống để giành suất tham dự vòng Chung Kết Toàn Quốc Aura Master Cup.
+            {{ $t('tournament.leaderboardSub') }}
           </p>
         </div>
       </div>
@@ -58,7 +58,7 @@ function getRankIcon(rank: number): string {
             <div class="sub-meta">
               <span class="won-tag">
                 <span class="material-symbols-outlined mini-trophy">emoji_events</span>
-                {{ team.tournamentsWon }} Cup Vô Địch
+                {{ $t('tournament.championshipCupsWon', { count: team.tournamentsWon }) }}
               </span>
               <span v-if="team.city" class="city-tag">· {{ team.city }}</span>
             </div>

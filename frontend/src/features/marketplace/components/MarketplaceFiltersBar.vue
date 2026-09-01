@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { SelectDropdown, AuraButton } from '@/shared/components'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   search: string
@@ -19,23 +22,23 @@ const emit = defineEmits<{
 }>()
 
 const venueOptions = computed(() => [
-  { value: 'all', label: 'Tất cả cụm sân', icon: 'location_on' },
+  { value: 'all', label: t('resale.filterAllVenues'), icon: 'location_on' },
   ...props.venuesList.map((v) => ({ value: v, label: v, icon: 'location_on' })),
 ])
 
-const timePeriodOptions = [
-  { value: 'all', label: 'Tất cả khung giờ', icon: 'schedule' },
-  { value: 'morning', label: 'Sáng (06:00 - 12:00)', icon: 'wb_sunny' },
-  { value: 'afternoon', label: 'Chiều (12:00 - 17:00)', icon: 'wb_twilight' },
-  { value: 'evening', label: 'Giờ vàng tối (17:00 - 22:00)', icon: 'nights_stay' },
-]
+const timePeriodOptions = computed(() => [
+  { value: 'all', label: t('resale.filterAllTime'), icon: 'schedule' },
+  { value: 'morning', label: t('resale.filterMorning'), icon: 'wb_sunny' },
+  { value: 'afternoon', label: t('resale.filterAfternoon'), icon: 'wb_twilight' },
+  { value: 'evening', label: t('resale.filterEvening'), icon: 'nights_stay' },
+])
 
-const sortOptions = [
-  { value: 'newest', label: 'Mới đăng nhất', icon: 'swap_vert' },
-  { value: 'price_asc', label: 'Giá: Thấp đến Cao', icon: 'trending_down' },
-  { value: 'price_desc', label: 'Giá: Cao đến Thấp', icon: 'trending_up' },
-  { value: 'time_asc', label: 'Giờ chơi: Sớm nhất', icon: 'schedule' },
-]
+const sortOptions = computed(() => [
+  { value: 'newest', label: t('resale.sortNewest'), icon: 'swap_vert' },
+  { value: 'price_asc', label: t('resale.sortPriceAsc'), icon: 'trending_down' },
+  { value: 'price_desc', label: t('resale.sortPriceDesc'), icon: 'trending_up' },
+  { value: 'time_asc', label: t('resale.sortTimeAsc'), icon: 'schedule' },
+])
 
 const hasActiveFilters = computed(() => {
   return (
@@ -56,7 +59,7 @@ const hasActiveFilters = computed(() => {
         :value="search"
         type="text"
         class="search-input"
-        placeholder="Tìm theo tên sân, cụm sân, người bán..."
+        :placeholder="$t('resale.searchPlaceholder')"
         @input="emit('update:search', ($event.target as HTMLInputElement).value)"
       />
       <button

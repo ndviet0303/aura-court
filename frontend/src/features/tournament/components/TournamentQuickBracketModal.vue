@@ -28,11 +28,11 @@ const participantsList = computed(() => {
             <span class="material-symbols-outlined">account_tree</span>
           </div>
           <div>
-            <h3 class="modal-title">Tổng Quan Nhánh Đấu: {{ tournament.name }}</h3>
-            <p class="modal-sub">Thông tin thi đấu, danh sách hạt giống và tiến trình giải.</p>
+            <h3 class="modal-title">{{ $t('tournament.quickBracketTitle', { name: tournament.name }) }}</h3>
+            <p class="modal-sub">{{ $t('tournament.quickBracketSub') }}</p>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" aria-label="Đóng" @click="emit('close')">
+        <button type="button" class="modal-close-btn" :aria-label="$t('common.close')" @click="emit('close')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -59,7 +59,7 @@ const participantsList = computed(() => {
         </div>
 
         <div v-if="participantsList.length > 0" class="participants-preview-section">
-          <h4 class="sec-title">Danh Sách Hạt Giống & Vận Động Viên</h4>
+          <h4 class="sec-title">{{ $t('tournament.seedsListTitle') }}</h4>
           <div class="participants-grid">
             <div
               v-for="(p, idx) in participantsList"
@@ -78,14 +78,14 @@ const participantsList = computed(() => {
 
         <div v-else class="empty-preview-box">
           <span class="material-symbols-outlined">info</span>
-          <span>Nhấn nút bên dưới để mở toàn bộ sơ đồ cây nhánh đấu và chi tiết từng trận.</span>
+          <span>{{ $t('tournament.openFullBracketHelp') }}</span>
         </div>
       </div>
 
       <!-- Modal Footer -->
       <div class="modal-footer">
         <AuraButton variant="ghost" size="md" @click="emit('close')">
-          Đóng
+          {{ $t('common.close') }}
         </AuraButton>
 
         <AuraButton
@@ -95,7 +95,7 @@ const participantsList = computed(() => {
           icon-right="arrow_forward"
           @click="emit('close')"
         >
-          Xem Cây Nhánh Đầy Đủ & Điểm Số
+          {{ $t('tournament.viewFullBracketBtn') }}
         </AuraButton>
       </div>
     </div>

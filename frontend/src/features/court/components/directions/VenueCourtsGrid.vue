@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { formatCurrency } from '@/i18n'
 import type { Court } from '../../types/court'
 
 defineProps<{
   courts: Court[]
 }>()
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
 
 function getCourtPrice(c: Court): number {
   if (c.price_slots && c.price_slots.length > 0) {
@@ -23,9 +20,9 @@ function getCourtPrice(c: Court): number {
     <div class="section-header">
       <h3 class="section-title">
         <span class="material-symbols-outlined icon-20">sports_tennis</span>
-        <span>Danh Sách Sân Tại Cơ Sở Này</span>
+        <span>{{ $t('directions.courtsAtLocation') }}</span>
       </h3>
-      <span class="court-count-badge">{{ courts.length }} sân sẵn sàng</span>
+      <span class="court-count-badge">{{ $t('directions.readyCourts', { count: courts.length }) }}</span>
     </div>
 
     <div class="courts-grid">
@@ -36,8 +33,8 @@ function getCourtPrice(c: Court): number {
         </div>
 
         <div class="card-price-row">
-          <span class="price-lbl">Giá thuê từ:</span>
-          <strong class="price-val font-mono">{{ formatMoney(getCourtPrice(c)) }} /h</strong>
+          <span class="price-lbl">{{ $t('directions.priceFrom') }}</span>
+          <strong class="price-val font-mono">{{ formatCurrency(getCourtPrice(c)) }} /h</strong>
         </div>
 
         <div class="card-actions-row">
@@ -46,14 +43,14 @@ function getCourtPrice(c: Court): number {
             class="btn-schedule-action"
           >
             <span class="material-symbols-outlined icon-14">event_available</span>
-            <span>Đặt lịch ngay</span>
+            <span>{{ $t('directions.bookNow') }}</span>
           </RouterLink>
 
           <RouterLink
             :to="`/courts/${c.slug || c.id}`"
             class="btn-detail-action"
           >
-            <span>Chi tiết</span>
+            <span>{{ $t('directions.details') }}</span>
           </RouterLink>
         </div>
       </div>

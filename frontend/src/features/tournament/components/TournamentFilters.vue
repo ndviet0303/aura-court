@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { SelectDropdown, AuraButton } from '@/shared/components'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   activeTab: 'all' | 'open' | 'ongoing' | 'completed' | 'my'
@@ -20,20 +23,20 @@ const emit = defineEmits<{
   (e: 'reset'): void
 }>()
 
-const sportOptions = [
-  { value: 'all', label: 'Tất cả bộ môn', icon: 'sports' },
-  { value: 'badminton', label: 'Cầu lông (Badminton)', icon: 'sports_handball' },
-  { value: 'pickleball', label: 'Pickleball', icon: 'sports_tennis' },
-  { value: 'tennis', label: 'Tennis (Quần vợt)', icon: 'sports_tennis' },
-  { value: 'football_5v5', label: 'Bóng đá mini 5v5', icon: 'sports_soccer' },
-]
+const sportOptions = computed(() => [
+  { value: 'all', label: t('tournament.filterAllSports'), icon: 'sports' },
+  { value: 'badminton', label: t('tournament.filterBadminton'), icon: 'sports_handball' },
+  { value: 'pickleball', label: t('tournament.filterPickleball'), icon: 'sports_tennis' },
+  { value: 'tennis', label: t('tournament.filterTennis'), icon: 'sports_tennis' },
+  { value: 'football_5v5', label: t('tournament.filterFootball5'), icon: 'sports_soccer' },
+])
 
-const formatOptions = [
-  { value: 'all', label: 'Mọi thể thức', icon: 'tune' },
-  { value: 'single_elimination', label: 'Loại trực tiếp (Knockout)', icon: 'account_tree' },
-  { value: 'round_robin', label: 'Vòng tròn tính điểm (Round Robin)', icon: 'sync' },
-  { value: 'double_elimination', label: 'Nhánh Thắng - Thua (Double)', icon: 'call_split' },
-]
+const formatOptions = computed(() => [
+  { value: 'all', label: t('tournament.filterAllFormats'), icon: 'tune' },
+  { value: 'single_elimination', label: t('tournament.formatKnockout'), icon: 'account_tree' },
+  { value: 'round_robin', label: t('tournament.formatRoundRobin'), icon: 'sync' },
+  { value: 'double_elimination', label: t('tournament.formatDouble'), icon: 'call_split' },
+])
 
 const isFiltered = computed(() => {
   return (
@@ -58,7 +61,7 @@ const isFiltered = computed(() => {
         @click="emit('update:activeTab', 'all')"
       >
         <span class="material-symbols-outlined tab-ico">view_list</span>
-        <span>Tất Cả Giải</span>
+        <span>{{ $t('tournament.tabAll') }}</span>
         <span v-if="totalCount !== undefined" class="tab-count">{{ totalCount }}</span>
       </button>
 
@@ -71,7 +74,7 @@ const isFiltered = computed(() => {
         @click="emit('update:activeTab', 'open')"
       >
         <span class="material-symbols-outlined tab-ico">how_to_reg</span>
-        <span>Đang Mở Đăng Ký</span>
+        <span>{{ $t('tournament.tabOpen') }}</span>
         <span v-if="openCount" class="tab-count highlight-green">{{ openCount }}</span>
       </button>
 
@@ -84,7 +87,7 @@ const isFiltered = computed(() => {
         @click="emit('update:activeTab', 'ongoing')"
       >
         <span class="material-symbols-outlined tab-ico">bolt</span>
-        <span>Đang Tranh Tài</span>
+        <span>{{ $t('tournament.tabOngoing') }}</span>
         <span v-if="ongoingCount" class="tab-count highlight-pink">{{ ongoingCount }}</span>
       </button>
 
@@ -97,7 +100,7 @@ const isFiltered = computed(() => {
         @click="emit('update:activeTab', 'completed')"
       >
         <span class="material-symbols-outlined tab-ico">check_circle</span>
-        <span>Đã Kết Thúc</span>
+        <span>{{ $t('tournament.tabCompleted') }}</span>
       </button>
 
       <button
@@ -109,7 +112,7 @@ const isFiltered = computed(() => {
         @click="emit('update:activeTab', 'my')"
       >
         <span class="material-symbols-outlined tab-ico">person</span>
-        <span>Giải Của Tôi</span>
+        <span>{{ $t('tournament.tabMyTournaments') }}</span>
       </button>
     </div>
 
@@ -122,14 +125,14 @@ const isFiltered = computed(() => {
           :value="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Tìm giải theo tên, địa điểm, thể thức..."
+          :placeholder="$t('tournament.searchPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
         <button
           v-if="searchQuery"
           type="button"
           class="clear-search-btn"
-          title="Xoá tìm kiếm"
+          :title="$t('picker.clear')"
           @click="emit('update:searchQuery', '')"
         >
           <span class="material-symbols-outlined">close</span>
@@ -142,7 +145,7 @@ const isFiltered = computed(() => {
           :model-value="selectedSport"
           :options="sportOptions"
           variant="bordered"
-          aria-label="Chọn bộ môn"
+          :aria-label="$t('tournament.filterAllSports')"
           @update:model-value="emit('update:selectedSport', String($event))"
         />
       </div>
@@ -153,7 +156,7 @@ const isFiltered = computed(() => {
           :model-value="selectedFormat"
           :options="formatOptions"
           variant="bordered"
-          aria-label="Chọn thể thức"
+          :aria-label="$t('tournament.filterAllFormats')"
           @update:model-value="emit('update:selectedFormat', String($event))"
         />
       </div>
@@ -166,7 +169,7 @@ const isFiltered = computed(() => {
         icon="restart_alt"
         @click="emit('reset')"
       >
-        Đặt lại
+        {{ $t('tournament.resetFilters') }}
       </AuraButton>
     </div>
   </div>
