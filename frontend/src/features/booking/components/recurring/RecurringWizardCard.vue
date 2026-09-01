@@ -1,22 +1,30 @@
 <script setup lang="ts">
+import { AuraButton } from '@/shared/components'
 import type { Court } from '@/features/court/types/court'
+import type { RecurringFrequency, WeekdayOption } from '../../types/recurring'
 
-defineProps<{
+const props = defineProps<{
   courts: Court[]
   selectedCourtId: number
-  frequency: 'weekly' | 'biweekly' | 'monthly'
+  selectedCourt: Court | null
+  frequency: RecurringFrequency
   selectedWeekdays: number[]
   startTime: string
   endTime: string
   startDate: string
   endDate: string
-  weekdayButtons: Array<{ id: number; label: string; name: string }>
+  weekdayButtons: WeekdayOption[]
+  sessionDurationHours: number
+  hourlyRate: number
+  previewSessions: Array<{ date: string; weekdayName: string; time: string }>
+  estimatedSessionsCount: number
+  estimatedTotalAmount: number
   submitting?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:selectedCourtId', id: number): void
-  (e: 'update:frequency', freq: 'weekly' | 'biweekly' | 'monthly'): void
+  (e: 'update:frequency', freq: RecurringFrequency): void
   (e: 'update:startTime', val: string): void
   (e: 'update:endTime', val: string): void
   (e: 'update:startDate', val: string): void
@@ -24,48 +32,101 @@ const emit = defineEmits<{
   (e: 'toggleWeekday', dayId: number): void
   (e: 'submit'): void
 }>()
+
+function formatMoney(amount: number): string {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+}
 </script>
 
 <template>
   <div class="recurring-wizard-card">
     <div class="wizard-header">
-      <h3 class="wizard-title">
+      <div class="header-icon-box">
         <span class="material-symbols-outlined icon-heading">event_repeat</span>
-        Tạo lịch định kỳ mới (Recurring Booking)
-      </h3>
-      <p class="wizard-sub">Giữ sân cố định hàng tuần hoặc hàng tháng, tự động tạo hóa đơn và thanh toán định kỳ.</p>
+      </div>
+      <div>
+        <h3 class="wizard-title">Tạo Lịch Định Kỳ Mới</h3>
+        <p class="wizard-sub">Giữ sân cố định theo tuần hoặc tháng, tự động tạo hóa đơn và lịch chơi.</p>
+      </div>
     </div>
 
     <form class="wizard-form" @submit.prevent="emit('submit')">
-      <div class="form-grid">
+      <!-- Step 1: Court Selection -->
+      <div class="form-section">
+        <div class="section-title-row">
+          <span class="section-badge">1</span>
+          <span class="section-label">Chọn Sân Thể Thao</span>
+        </div>
+
         <div class="form-group">
-          <label class="form-label">Chọn sân thể thao:</label>
+          <label class="form-label" for="court-select">Sân và Cụm Sân:</label>
           <select
+            id="court-select"
             :value="selectedCourtId"
             class="form-input"
             @change="emit('update:selectedCourtId', Number(($event.target as HTMLSelectElement).value))"
           >
             <option v-for="c in courts" :key="c.id" :value="c.id">
-              {{ c.name }} {{ c.venue ? `(${c.venue.name})` : '' }}
+              {{ c.name }} {{ c.venue ? `— ${c.venue.name}` : '' }}
             </option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Tần suất lặp:</label>
-          <select
-            :value="frequency"
-            class="form-input"
-            @change="emit('update:frequency', ($event.target as HTMLSelectElement).value as any)"
-          >
-            <option value="weekly">Hàng tuần (Weekly)</option>
-            <option value="biweekly">2 tuần một lần (Bi-weekly)</option>
-            <option value="monthly">Hàng tháng (Monthly)</option>
-          </select>
+        <!-- Court Preview Mini Card -->
+        <div v-if="selectedCourt" class="court-preview-pill">
+          <span class="material-symbols-outlined court-icon">sports_tennis</span>
+          <div class="court-info">
+            <span class="court-name">{{ selectedCourt.name }}</span>
+            <span v-if="selectedCourt.venue" class="court-venue">
+              <span class="material-symbols-outlined loc-icon">location_on</span>
+              {{ selectedCourt.venue.name }}
+            </span>
+          </div>
+          <div class="court-rate font-mono">
+            {{ formatMoney(hourlyRate) }}/h
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Frequency & Weekdays -->
+      <div class="form-section">
+        <div class="section-title-row">
+          <span class="section-badge">2</span>
+          <span class="section-label">Tần Suất & Ngày Trong Tuần</span>
         </div>
 
-        <div class="form-group full-width">
-          <label class="form-label">Chọn các ngày trong tuần:</label>
+        <div class="form-group">
+          <label class="form-label">Tần suất chu kỳ:</label>
+          <div class="frequency-tabs">
+            <button
+              type="button"
+              class="freq-btn"
+              :class="{ active: frequency === 'weekly' }"
+              @click="emit('update:frequency', 'weekly')"
+            >
+              Hàng tuần
+            </button>
+            <button
+              type="button"
+              class="freq-btn"
+              :class="{ active: frequency === 'biweekly' }"
+              @click="emit('update:frequency', 'biweekly')"
+            >
+              2 tuần / lần
+            </button>
+            <button
+              type="button"
+              class="freq-btn"
+              :class="{ active: frequency === 'monthly' }"
+              @click="emit('update:frequency', 'monthly')"
+            >
+              Hàng tháng
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Các ngày chơi trong tuần:</label>
           <div class="weekdays-row">
             <button
               v-for="btn in weekdayButtons"
@@ -73,58 +134,131 @@ const emit = defineEmits<{
               type="button"
               class="weekday-circle-btn"
               :class="{ active: selectedWeekdays.includes(btn.id) }"
+              :title="btn.fullName"
               @click="emit('toggleWeekday', btn.id)"
             >
               {{ btn.label }}
             </button>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Giờ bắt đầu:</label>
-          <input
-            :value="startTime"
-            type="time"
-            class="form-input"
-            @input="emit('update:startTime', ($event.target as HTMLInputElement).value)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Giờ kết thúc:</label>
-          <input
-            :value="endTime"
-            type="time"
-            class="form-input"
-            @input="emit('update:endTime', ($event.target as HTMLInputElement).value)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Ngày bắt đầu chuỗi:</label>
-          <input
-            :value="startDate"
-            type="date"
-            class="form-input"
-            @input="emit('update:startDate', ($event.target as HTMLInputElement).value)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Ngày kết thúc chuỗi:</label>
-          <input
-            :value="endDate"
-            type="date"
-            class="form-input"
-            @input="emit('update:endDate', ($event.target as HTMLInputElement).value)"
-          />
+          <span class="hint-text">
+            Đã chọn: {{ selectedWeekdays.map(id => weekdayButtons.find(w => w.id === id)?.name).join(', ') || 'Chưa chọn' }}
+          </span>
         </div>
       </div>
 
-      <button type="submit" class="btn-submit-series" :disabled="submitting">
-        <span v-if="submitting">Đang xử lý...</span>
-        <span v-else>🚀 Đặt Lịch Cố Định Ngay</span>
-      </button>
+      <!-- Step 3: Time & Horizon -->
+      <div class="form-section">
+        <div class="section-title-row">
+          <span class="section-badge">3</span>
+          <span class="section-label">Khung Giờ & Thời Gian Áp Dụng</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Giờ bắt đầu:</label>
+            <input
+              :value="startTime"
+              type="time"
+              class="form-input"
+              @input="emit('update:startTime', ($event.target as HTMLInputElement).value)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Giờ kết thúc:</label>
+            <input
+              :value="endTime"
+              type="time"
+              class="form-input"
+              @input="emit('update:endTime', ($event.target as HTMLInputElement).value)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ngày bắt đầu:</label>
+            <input
+              :value="startDate"
+              type="date"
+              class="form-input"
+              @input="emit('update:startDate', ($event.target as HTMLInputElement).value)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ngày kết thúc:</label>
+            <input
+              :value="endDate"
+              type="date"
+              class="form-input"
+              @input="emit('update:endDate', ($event.target as HTMLInputElement).value)"
+            />
+          </div>
+        </div>
+
+        <div class="duration-badge">
+          <span class="material-symbols-outlined dur-icon">schedule</span>
+          <span>Thời lượng mỗi buổi: <strong>{{ sessionDurationHours }} giờ</strong> ({{ startTime }} - {{ endTime }})</span>
+        </div>
+      </div>
+
+      <!-- Step 4: Live Estimate Summary Card -->
+      <div class="estimate-summary-box">
+        <div class="estimate-header">
+          <span class="material-symbols-outlined est-icon">calculate</span>
+          <span class="estimate-title">Dự Toán Hợp Đồng Định Kỳ</span>
+        </div>
+
+        <div class="estimate-grid">
+          <div class="estimate-item">
+            <span class="est-label">Tổng số buổi dự kiến</span>
+            <span class="est-value font-mono">{{ estimatedSessionsCount }} buổi</span>
+          </div>
+
+          <div class="estimate-item">
+            <span class="est-label">Thời lượng mỗi buổi</span>
+            <span class="est-value font-mono">{{ sessionDurationHours }}h</span>
+          </div>
+
+          <div class="estimate-item">
+            <span class="est-label">Đơn giá tham khảo</span>
+            <span class="est-value font-mono">{{ formatMoney(hourlyRate) }}</span>
+          </div>
+
+          <div class="estimate-item total-item">
+            <span class="est-label">Tổng giá trị dự tính</span>
+            <span class="est-value-total font-mono">{{ formatMoney(estimatedTotalAmount) }}</span>
+          </div>
+        </div>
+
+        <!-- Preview Sessions Chips -->
+        <div v-if="previewSessions.length > 0" class="preview-sessions-wrap">
+          <span class="preview-label">Xem trước các buổi chơi đầu tiên:</span>
+          <div class="sessions-chips-row">
+            <span
+              v-for="(s, idx) in previewSessions.slice(0, 4)"
+              :key="idx"
+              class="session-chip"
+            >
+              {{ s.weekdayName }} {{ s.date.slice(5) }} ({{ s.time }})
+            </span>
+            <span v-if="previewSessions.length > 4" class="more-chip">
+              +{{ previewSessions.length - 4 }} buổi khác
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Action -->
+      <AuraButton
+        type="submit"
+        variant="primary"
+        size="lg"
+        icon="event_available"
+        :loading="submitting"
+        class="submit-action-btn"
+      >
+        <span>Đặt Lịch Cố Định Ngay</span>
+      </AuraButton>
     </form>
   </div>
 </template>
@@ -133,58 +267,200 @@ const emit = defineEmits<{
 .recurring-wizard-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
+  gap: 20px;
+  padding: 24px;
   border-radius: 16px;
   border: 1px solid var(--outline);
   background: var(--surface);
 }
 
-.wizard-title {
-  margin: 0 0 4px;
-  font-size: 16px;
-  font-weight: 700;
+.wizard-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--outline);
 }
 
-.wizard-title .icon-heading {
-  font-size: 20px;
+.header-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(219, 39, 119, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-heading {
+  font-size: 24px;
   color: var(--pink-dark, #db2777);
+}
+
+.wizard-title {
+  margin: 0 0 2px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .wizard-sub {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 
 .wizard-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
-.form-grid {
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pink-dark, #db2777);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--pink-dark, #db2777);
+}
+
+.court-preview-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--outline);
+}
+
+.court-icon {
+  font-size: 20px;
+  color: var(--pink-dark, #db2777);
+}
+
+.court-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.court-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.court-venue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.loc-icon {
+  font-size: 13px;
+}
+
+.court-rate {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pink-dark, #db2777);
+}
+
+.frequency-tabs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
-.full-width {
-  grid-column: 1 / -1;
+.freq-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.freq-btn:hover {
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
+}
+
+.freq-btn.active {
+  background: var(--pink-dark, #db2777);
+  border-color: var(--pink-dark, #db2777);
+  color: #fff;
 }
 
 .weekdays-row {
   display: flex;
-  gap: 10px;
-  margin-top: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .weekday-circle-btn {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 1px solid var(--outline);
   background: var(--surface);
@@ -198,21 +474,144 @@ const emit = defineEmits<{
   transition: all 0.15s;
 }
 
+.weekday-circle-btn:hover {
+  border-color: var(--pink-dark, #db2777);
+}
+
 .weekday-circle-btn.active {
   background: var(--pink-dark, #db2777);
   color: #fff;
   border-color: var(--pink-dark, #db2777);
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.3);
 }
 
-.btn-submit-series {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-weight: 700;
+.hint-text {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.duration-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--outline);
+}
+
+.dur-icon {
+  font-size: 16px;
+  color: #f59e0b;
+}
+
+.estimate-summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--outline);
+}
+
+.estimate-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.est-icon {
+  font-size: 18px;
+  color: #10b981;
+}
+
+.estimate-title {
   font-size: 14px;
-  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.estimate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.estimate-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.est-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.est-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.total-item {
+  grid-column: 1 / -1;
+  padding-top: 8px;
+  border-top: 1px dashed var(--outline);
+}
+
+.est-value-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--pink-dark, #db2777);
+}
+
+.preview-sessions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--outline);
+}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.sessions-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.session-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.more-chip {
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.submit-action-btn {
+  width: 100%;
 }
 </style>

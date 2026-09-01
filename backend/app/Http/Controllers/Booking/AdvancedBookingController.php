@@ -32,7 +32,7 @@ class AdvancedBookingController extends Controller
     public function series(Request $request)
     {
         $organization = $this->organization($request);
-        return RecurringSeries::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)->with(['occurrences', 'invoices'])->latest()->paginate(20);
+        return RecurringSeries::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)->with(['court.venue', 'occurrences', 'invoices'])->latest()->paginate(20);
     }
 
     public function createSeries(Request $request)
@@ -49,9 +49,12 @@ class AdvancedBookingController extends Controller
         
         $invoice->load(['series.court.venue', 'series.user']);
         
+        $periodStart = \Carbon\Carbon::parse($invoice->period_start)->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($invoice->period_end)->endOfDay();
+
         $occurrences = \App\Models\RecurringOccurrence::query()
             ->where('recurring_series_id', $invoice->recurring_series_id)
-            ->whereBetween('starts_at', [$invoice->period_start->copy()->startOfDay(), $invoice->period_end->copy()->endOfDay()])
+            ->whereBetween('starts_at', [$periodStart, $periodEnd])
             ->with(['reservation'])
             ->orderBy('starts_at')
             ->get();

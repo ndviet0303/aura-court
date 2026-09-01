@@ -1,4 +1,5 @@
 export * from './types/booking'
+export * from './types/recurring'
 export * from './types/v2Reservation'
 export * from './api/bookingApi'
 export * from './composables/useUserBookings'

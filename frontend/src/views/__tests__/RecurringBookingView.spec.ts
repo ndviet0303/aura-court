@@ -96,9 +96,9 @@ describe('RecurringBookingView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Đặt Sân Cố Định & Quản Lý Lịch Định Kỳ')
-    expect(wrapper.text()).toContain('Tạo lịch định kỳ mới')
-    expect(wrapper.text()).toContain('Quản lý Lịch Định Kỳ')
-    expect(wrapper.text()).toContain('Hóa Đơn Hàng Tháng')
+    expect(wrapper.text()).toContain('Tạo Lịch Định Kỳ Mới')
+    expect(wrapper.text()).toContain('Quản Lý Hợp Đồng Đặt Sân Cố Định')
+    expect(wrapper.text()).toContain('Hóa Đơn Chu Kỳ Tháng')
     expect(wrapper.text()).toContain('1.200.000')
   })
 

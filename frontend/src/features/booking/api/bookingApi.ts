@@ -56,10 +56,10 @@ export const bookingApi = {
   submitReview: (bookingCode: string, payload: { rating: number; body?: string }) =>
     api.post('/reviews', { booking_code: bookingCode, ...payload }),
 
-  createRecurringSeries: <T = unknown>(payload: any) =>
+  createRecurringSeries: <T = { series: import('../types/recurring').RecurringSeries }>(payload: import('../types/recurring').CreateRecurringSeriesPayload) =>
     apiV2.post<T>('/recurring-series', payload),
 
-  getRecurringSeries: <T = unknown>() =>
+  getRecurringSeries: <T = { data: import('../types/recurring').RecurringSeries[] }>() =>
     apiV2.get<T>('/recurring-series'),
 
   // V2 Reservations & Quotes
