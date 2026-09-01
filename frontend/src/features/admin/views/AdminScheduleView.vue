@@ -1,35 +1,50 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { AuraButton } from '@/shared/components'
 import { useAdminSchedule } from '../composables/useAdminSchedule'
 
+import ScheduleHeader from '../components/schedule/ScheduleHeader.vue'
+import ScheduleKpiBar from '../components/schedule/ScheduleKpiBar.vue'
 import WeeklyScheduleCard from '../components/schedule/WeeklyScheduleCard.vue'
-import SpecialDatesCard from '../components/schedule/SpecialDatesCard.vue'
 import MaintenanceScheduleCard from '../components/schedule/MaintenanceScheduleCard.vue'
+import SpecialDatesCard from '../components/schedule/SpecialDatesCard.vue'
 import DowntimeScheduleModal from '../components/schedule/DowntimeScheduleModal.vue'
 import SpecialDateModal from '../components/schedule/SpecialDateModal.vue'
 import ScheduleAuditLogsModal from '../components/schedule/ScheduleAuditLogsModal.vue'
-
-const { t } = useI18n()
+import CourtUnlockConfirmModal from '../components/schedule/CourtUnlockConfirmModal.vue'
 
 const {
   loading,
+  saving,
   notice,
   error,
-  courts,
+  venues,
   auditLogs,
+  selectedVenueFilter,
   weeklySchedule,
   specialDates,
-  maintenanceBlocks,
   showDowntimeModal,
   showSpecialDateModal,
   showAuditLogsModal,
+  showUnlockConfirmModal,
+  blockToUnlock,
+  filteredCourts,
+  filteredMaintenanceBlocks,
+  totalVenuesCount,
+  totalCourtsCount,
+  activeCourtsCount,
+  totalBlocksCount,
+  specialDatesCount,
+  loadData,
   addShift,
   removeShift,
-  loadData,
+  toggleDayOpen,
+  copySchedule,
+  saveWeeklySchedule,
   addDowntime,
+  promptUnlockCourt,
+  confirmUnlockCourt,
   addSpecialDate,
+  deleteSpecialDate,
 } = useAdminSchedule()
 
 onMounted(() => {
@@ -40,51 +55,63 @@ onMounted(() => {
 <template>
   <div class="admin-schedule-view">
     <!-- Header Section -->
-    <header class="schedule-header">
-      <div class="header-titles">
-        <div class="header-title-row">
-          <span class="material-symbols-outlined header-icon">schedule</span>
-          <h1 class="page-headline">{{ t('admin.schedule.title') }}</h1>
-        </div>
-        <p class="page-sub">{{ t('admin.schedule.subtitle') }}</p>
-      </div>
-
-      <div class="header-actions">
-        <AuraButton variant="outline" class="btn-action-neutral" @click="showAuditLogsModal = true">
-          <span class="material-symbols-outlined icon-18">history</span>
-          <span>{{ t('admin.schedule.auditLogsBtn') }}</span>
-        </AuraButton>
-      </div>
-    </header>
+    <ScheduleHeader
+      :venues="venues"
+      :selected-venue-id="selectedVenueFilter"
+      :saving="saving"
+      :loading="loading"
+      @update:selected-venue-id="selectedVenueFilter = $event"
+      @open-audit-logs="showAuditLogsModal = true"
+      @save-schedule="saveWeeklySchedule(true)"
+      @refresh="loadData"
+    />
 
     <!-- Feedback Alerts -->
     <div v-if="notice" class="alert-pill">{{ notice }}</div>
     <div v-if="error" class="alert-pill-error">{{ error }}</div>
 
-    <!-- Standard Weekly Schedule -->
-    <WeeklyScheduleCard
-      :schedule="weeklySchedule"
-      @add-shift="addShift"
-      @remove-shift="removeShift"
+    <!-- KPI Summary Bar -->
+    <ScheduleKpiBar
+      :total-venues="totalVenuesCount"
+      :total-courts="totalCourtsCount"
+      :active-courts="activeCourtsCount"
+      :total-blocks="totalBlocksCount"
+      :special-dates="specialDatesCount"
+      :loading="loading"
     />
 
-    <!-- Special Dates & Maintenance Row -->
+    <!-- Standard Weekly Operating Schedule -->
+    <WeeklyScheduleCard
+      :schedule="weeklySchedule"
+      :loading="loading"
+      @add-shift="addShift"
+      @remove-shift="removeShift"
+      @toggle-open="toggleDayOpen"
+      @copy-schedule="copySchedule"
+    />
+
+    <!-- Court Maintenance & Special Dates Grid -->
     <div class="schedule-sub-grid">
-      <SpecialDatesCard
-        :special-dates="specialDates"
-        @add="showSpecialDateModal = true"
+      <MaintenanceScheduleCard
+        :blocks="filteredMaintenanceBlocks"
+        :loading="loading"
+        @schedule-downtime="showDowntimeModal = true"
+        @unlock-court="promptUnlockCourt"
       />
 
-      <MaintenanceScheduleCard
-        :blocks="maintenanceBlocks"
-        @schedule-downtime="showDowntimeModal = true"
+      <SpecialDatesCard
+        :special-dates="specialDates"
+        :loading="loading"
+        @add="showSpecialDateModal = true"
+        @delete="deleteSpecialDate"
       />
     </div>
 
     <!-- Modals -->
     <DowntimeScheduleModal
       :show="showDowntimeModal"
-      :courts="courts"
+      :courts="filteredCourts"
+      :loading="loading"
       @close="showDowntimeModal = false"
       @submit="addDowntime"
     />
@@ -100,6 +127,14 @@ onMounted(() => {
       :logs="auditLogs"
       @close="showAuditLogsModal = false"
     />
+
+    <CourtUnlockConfirmModal
+      :show="showUnlockConfirmModal"
+      :block="blockToUnlock"
+      :loading="loading"
+      @close="showUnlockConfirmModal = false"
+      @confirm="confirmUnlockCourt"
+    />
   </div>
 </template>
 
@@ -114,53 +149,24 @@ onMounted(() => {
   color: var(--ink);
 }
 
-.schedule-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-icon {
-  font-size: 26px;
-  color: var(--pink-dark, #db2777);
-}
-
-.page-headline {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.page-sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-
 .alert-pill {
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
   background: #10b981;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+  animation: slide-in 0.2s ease-out;
 }
 
 .alert-pill-error {
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
   background: #ef4444;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+  animation: slide-in 0.2s ease-out;
 }
 
 .schedule-sub-grid {
@@ -169,8 +175,15 @@ onMounted(() => {
   gap: 20px;
 }
 
-.icon-18 {
-  font-size: 18px;
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 900px) {

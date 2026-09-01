@@ -7,10 +7,6 @@ import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/venues' }),
-  RouterLink: {
-    props: ['to'],
-    template: '<a :href="typeof to === \'object\' ? to.path : to"><slot /></a>',
-  },
 }))
 
 vi.mock('qrcode', () => ({
@@ -97,6 +93,11 @@ describe('AdminVenuesView', () => {
     const wrapper = mount(AdminVenuesView, {
       global: {
         plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            template: '<a :href="$attrs.to"><slot /></a>',
+          },
+        },
       },
     })
 
@@ -119,12 +120,17 @@ describe('AdminVenuesView', () => {
     const wrapper = mount(AdminVenuesView, {
       global: {
         plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            template: '<a :href="$attrs.to"><slot /></a>',
+          },
+        },
       },
     })
 
     await flushPromises()
 
-    const searchInput = wrapper.find('.search-input')
+    const searchInput = wrapper.find('.venues-search-input')
     await searchInput.setValue('Riverside')
 
     expect(wrapper.text()).toContain('Riverside Club')
@@ -138,6 +144,11 @@ describe('AdminVenuesView', () => {
     const wrapper = mount(AdminVenuesView, {
       global: {
         plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            template: '<a :href="$attrs.to"><slot /></a>',
+          },
+        },
       },
     })
 
@@ -150,5 +161,30 @@ describe('AdminVenuesView', () => {
     await flushPromises()
 
     expect(api.patch).toHaveBeenCalledWith('/admin/venues/1', { is_active: false })
+  })
+
+  it('opens QR modal when clicking QR button', async () => {
+    const wrapper = mount(AdminVenuesView, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            template: '<a :href="$attrs.to"><slot /></a>',
+          },
+        },
+      },
+    })
+
+    await flushPromises()
+
+    const qrBtns = wrapper.findAll('.btn-action-sm')
+    const qrBtn = qrBtns.find((b) => b.text().includes('Mã QR Đặt Sân'))
+    expect(qrBtn).toBeDefined()
+
+    await qrBtn?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Mã QR Cơ Sở: Aura Center')
+    expect(wrapper.text()).toContain('Tải Mã QR (PNG)')
   })
 })

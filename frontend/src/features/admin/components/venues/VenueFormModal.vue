@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { AuraButton } from '@/shared/components'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 
 const props = defineProps<{
   show: boolean
   venue: AdminVenueItem | null
+  saving?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -19,13 +21,15 @@ const name = ref('')
 const address = ref('')
 const googleMapsUrl = ref('')
 const isActive = ref(true)
+const validationError = ref('')
 
 watch(
   () => props.venue,
   (v) => {
+    validationError.value = ''
     if (v) {
-      name.value = v.name
-      address.value = v.address || ''
+      name.value = typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
+      address.value = typeof v.address === 'string' ? v.address : (v.address as any)?.vi || (v.address as any)?.en || ''
       googleMapsUrl.value = v.google_maps_url || ''
       isActive.value = v.is_active
     } else {
@@ -38,23 +42,44 @@ watch(
   { immediate: true }
 )
 
+const isValidMapsUrl = computed(() => {
+  const url = googleMapsUrl.value.trim()
+  if (!url) return false
+  return url.startsWith('https://') && (url.includes('google.com') || url.includes('goo.gl') || url.includes('maps'))
+})
+
 function handleSave() {
-  if (!name.value.trim()) return
+  validationError.value = ''
+  const trimmedName = name.value.trim()
+  const trimmedAddress = address.value.trim()
+  const trimmedMaps = googleMapsUrl.value.trim()
+
+  if (!trimmedName) {
+    validationError.value = t('admin.venues.venueNameLabel') + ' is required'
+    return
+  }
+
+  if (trimmedMaps && !isValidMapsUrl.value) {
+    validationError.value = t('admin.venues.googleMapsInvalid')
+    return
+  }
+
   emit('save', {
-    name: name.value.trim(),
-    address: address.value.trim(),
-    google_maps_url: googleMapsUrl.value.trim() || undefined,
+    name: trimmedName,
+    address: trimmedAddress || undefined,
+    google_maps_url: trimmedMaps || undefined,
     is_active: isActive.value,
   })
 }
 </script>
 
 <template>
-  <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="show" class="modal-backdrop modal-overlay-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
+      <!-- Modal Header -->
       <div class="modal-header">
         <div class="title-with-icon">
-          <span class="material-symbols-outlined card-title-icon">{{ venue ? 'edit' : 'add_location' }}</span>
+          <span class="material-symbols-outlined card-title-icon">{{ venue ? 'edit' : 'add_business' }}</span>
           <h3 class="modal-title">
             {{ venue ? t('admin.venues.editVenueModalTitle') : t('admin.venues.addVenueModalTitle') }}
           </h3>
@@ -62,46 +87,145 @@ function handleSave() {
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
+      <!-- Modal Body -->
       <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">{{ t('admin.venues.venueNameLabel') }} <span class="required">*</span>:</label>
-          <input v-model="name" type="text" class="form-input" :placeholder="t('admin.venues.venueNamePlaceholder')" />
+        <div v-if="validationError" class="form-error-banner">
+          <span class="material-symbols-outlined icon-16">error</span>
+          <span>{{ validationError }}</span>
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('admin.venues.fullAddressLabel') }}</label>
-          <input v-model="address" type="text" class="form-input" :placeholder="t('admin.venues.fullAddressPlaceholder')" />
+          <label class="form-label">
+            {{ t('admin.venues.venueNameLabel') }} <span class="required">*</span>
+          </label>
+          <input
+            v-model="name"
+            type="text"
+            class="form-input"
+            :placeholder="t('admin.venues.venueNamePlaceholder')"
+            required
+          />
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('admin.venues.googleMapsLabel') }}</label>
-          <input v-model="googleMapsUrl" type="url" class="form-input font-mono" :placeholder="t('admin.venues.googleMapsPlaceholder')" />
+          <label class="form-label">
+            {{ t('admin.venues.fullAddressLabel') }}
+          </label>
+          <input
+            v-model="address"
+            type="text"
+            class="form-input"
+            :placeholder="t('admin.venues.fullAddressPlaceholder')"
+          />
         </div>
 
+        <div class="form-group">
+          <label class="form-label">
+            {{ t('admin.venues.googleMapsLabel') }}
+          </label>
+          <input
+            v-model="googleMapsUrl"
+            type="url"
+            class="form-input font-mono"
+            :placeholder="t('admin.venues.googleMapsPlaceholder')"
+          />
+          <span class="field-hint">{{ t('admin.venues.googleMapsHint') }}</span>
+        </div>
+
+        <!-- Custom Status Toggle Card -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.venues.operationalStatusLabel') }}</label>
-          <label class="check-box-label">
-            <input v-model="isActive" type="checkbox" />
-            <span>{{ t('admin.venues.operatingOpenCheckbox') }}</span>
-          </label>
+          <div class="status-toggle-card" :class="{ 'is-active': isActive }" @click="isActive = !isActive">
+            <div class="toggle-card-left">
+              <span class="material-symbols-outlined status-card-icon" :class="isActive ? 'text-green' : 'text-muted'">
+                {{ isActive ? 'check_circle' : 'pause_circle' }}
+              </span>
+              <div class="toggle-card-info">
+                <strong class="toggle-card-title">{{ t('admin.venues.operatingOpenCheckbox') }}</strong>
+                <span class="toggle-card-desc">
+                  {{ isActive ? t('admin.venues.statusActive') : t('admin.venues.statusInactive') }}
+                </span>
+              </div>
+            </div>
+            <div class="switch-control-wrap" @click.stop>
+              <input v-model="isActive" type="checkbox" />
+              <span class="slider"></span>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Modal Footer -->
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
-        <button type="button" class="btn-primary" :disabled="!name.trim()" @click="handleSave">
-          {{ t('admin.venues.saveVenueBtn') }}
-        </button>
+        <AuraButton variant="secondary" @click="emit('close')">
+          {{ t('common.cancel') }}
+        </AuraButton>
+        <AuraButton
+          variant="primary"
+          :loading="saving"
+          :disabled="!name.trim()"
+          @click="handleSave"
+        >
+          <span class="material-symbols-outlined icon-18">check</span>
+          <span>{{ t('admin.venues.saveVenueBtn') }}</span>
+        </AuraButton>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  width: 100%;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-md {
+  max-width: 520px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--outline);
+}
+
 .title-with-icon {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .card-title-icon {
@@ -109,30 +233,195 @@ function handleSave() {
   color: var(--pink-dark, #db2777);
 }
 
-.check-box-label {
+.modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.modal-body {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-error-banner {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
-  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.btn-cancel {
-  padding: 8px 18px;
-  border-radius: 8px;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.required {
+  color: #ef4444;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
   border: 1px solid var(--outline);
-  background: transparent;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
   color: var(--ink);
-  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
-.btn-primary {
-  padding: 8px 24px;
-  border-radius: 8px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
+.form-input:focus {
+  border-color: var(--pink-dark, #db2777);
+  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.15);
 }
+
+.field-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Status toggle card */
+.status-toggle-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.status-toggle-card:hover {
+  border-color: rgba(219, 39, 119, 0.3);
+}
+
+.status-toggle-card.is-active {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.toggle-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-card-icon {
+  font-size: 22px;
+}
+
+.toggle-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.toggle-card-desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Switch control */
+.switch-control-wrap {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.switch-control-wrap input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+input:checked + .slider {
+  background-color: #10b981;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--outline);
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+}
+
+.text-green { color: #10b981; }
+.text-muted { color: var(--muted); }
+.icon-16 { font-size: 16px; }
+.icon-18 { font-size: 18px; }
 </style>

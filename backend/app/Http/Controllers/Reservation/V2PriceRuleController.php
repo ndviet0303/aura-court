@@ -77,7 +77,7 @@ class V2PriceRuleController extends Controller
             'venue_id' => $prefix.'nullable|integer',
             'sport_zone_id' => $prefix.'nullable|integer',
             'court_id' => $prefix.'nullable|integer',
-            'type' => $prefix.'required|in:base,weekly,peak,date_exception,holiday',
+            'type' => $prefix.'required|in:base,weekly,peak,date_exception,holiday,standard,special_event,bad_weather,surge',
             'weekday' => $prefix.'nullable|integer|min:1|max:7',
             'exception_date' => $prefix.'nullable|date',
             'starts_at' => $prefix.'nullable|date_format:H:i',

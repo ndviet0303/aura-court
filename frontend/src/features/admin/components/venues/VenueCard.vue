@@ -32,7 +32,7 @@ const { t } = useI18n()
         </p>
       </div>
 
-      <!-- Active switch -->
+      <!-- Active switch toggle -->
       <label class="switch-control-wrap" :title="t('admin.venues.toggleStatusTooltip')">
         <input
           type="checkbox"
@@ -43,12 +43,23 @@ const { t } = useI18n()
       </label>
     </div>
 
+    <!-- Sport Zones Tags if available -->
+    <div v-if="venue.sport_zones && venue.sport_zones.length > 0" class="venue-zones-row">
+      <span
+        v-for="zone in venue.sport_zones"
+        :key="zone.id"
+        class="zone-tag"
+      >
+        {{ resolveLocalizedText(zone.name) }}
+      </span>
+    </div>
+
     <div class="venue-stats-bar">
       <span class="stat-item">
         <span class="material-symbols-outlined icon-16">sports_tennis</span>
         <span>{{ t('admin.venues.courtsScale', { count: venue.courts_count || 0 }) }}</span>
       </span>
-      <span class="stat-item">
+      <span class="stat-item slug-stat">
         <span class="material-symbols-outlined icon-16">link</span>
         <code class="font-mono">{{ venue.slug }}</code>
       </span>
@@ -69,10 +80,20 @@ const { t } = useI18n()
         target="_blank"
         rel="noopener noreferrer"
         class="btn-action-sm link-maps"
+        :title="t('admin.venues.mapsBtn')"
       >
         <span class="material-symbols-outlined icon-16">map</span>
         <span>{{ t('admin.venues.mapsBtn') }}</span>
       </a>
+      <RouterLink
+        :to="`/courts/${venue.slug}/directions`"
+        target="_blank"
+        class="btn-action-sm link-directions"
+        :title="t('admin.venues.directionsBtn')"
+      >
+        <span class="material-symbols-outlined icon-16">directions</span>
+        <span>{{ t('admin.venues.directionsBtn') }}</span>
+      </RouterLink>
     </div>
   </div>
 </template>
@@ -86,16 +107,18 @@ const { t } = useI18n()
   border-radius: 16px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .venue-admin-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  border-color: rgba(219, 39, 119, 0.3);
 }
 
 .venue-admin-card.is-inactive {
   opacity: 0.75;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.01));
 }
 
 .venue-card-top {
@@ -109,29 +132,41 @@ const { t } = useI18n()
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
 }
 
 .venue-name-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .venue-title {
   margin: 0;
   font-size: 16px;
   font-weight: 800;
+  color: var(--ink);
 }
 
 .status-chip {
   font-size: 10px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.chip-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.chip-maintenance { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.chip-active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.chip-maintenance {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
 
 .venue-address {
   margin: 0;
@@ -140,6 +175,22 @@ const { t } = useI18n()
   gap: 4px;
   font-size: 12px;
   color: var(--muted);
+  line-height: 1.4;
+}
+
+.venue-zones-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.zone-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(219, 39, 119, 0.08);
+  color: var(--pink-dark, #db2777);
 }
 
 .venue-stats-bar {
@@ -147,21 +198,30 @@ const { t } = useI18n()
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
   font-size: 12px;
+  color: var(--ink);
 }
 
 .stat-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.slug-stat code {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .venue-card-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: auto;
+  padding-top: 4px;
 }
 
 .btn-action-sm {
@@ -177,12 +237,13 @@ const { t } = useI18n()
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: border-color 0.15s;
+  transition: all 0.15s ease;
 }
 
 .btn-action-sm:hover {
   border-color: var(--pink-dark, #db2777);
   color: var(--pink-dark, #db2777);
+  background: rgba(219, 39, 119, 0.04);
 }
 
 .switch-control-wrap {
@@ -191,6 +252,7 @@ const { t } = useI18n()
   width: 44px;
   height: 24px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .switch-control-wrap input {
@@ -217,6 +279,7 @@ const { t } = useI18n()
   background-color: white;
   transition: 0.2s;
   border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 input:checked + .slider {

@@ -3,9 +3,11 @@ import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import { useAdminVenues, type AdminVenueItem } from '../composables/useAdminVenues'
+import type { VenueForm } from '../types/admin'
 
 import VenueKpiBar from '../components/venues/VenueKpiBar.vue'
 import VenueCard from '../components/venues/VenueCard.vue'
+import VenueCardSkeleton from '../components/venues/VenueCardSkeleton.vue'
 import VenueFormModal from '../components/venues/VenueFormModal.vue'
 import VenueQrModal from '../components/venues/VenueQrModal.vue'
 
@@ -13,6 +15,7 @@ const { t } = useI18n()
 
 const {
   loading,
+  saving,
   notice,
   error,
   searchQuery,
@@ -23,9 +26,11 @@ const {
   selectedVenueForQr,
   filteredVenues,
   totalVenuesCount,
+  activeVenuesCount,
   totalCourtsCount,
+  mapsLinkedCount,
   loadData,
-  showNotice,
+  saveVenue,
   toggleVenueActive,
 } = useAdminVenues()
 
@@ -44,14 +49,8 @@ function handleShowQr(venue: AdminVenueItem) {
   showQrModal.value = true
 }
 
-function handleSaveVenue(payload: any) {
-  if (editingVenue.value) {
-    Object.assign(editingVenue.value, payload)
-    showNotice(t('admin.venues.updateVenueSuccess', { name: payload.name }))
-  } else {
-    showNotice(t('admin.venues.createVenueSuccess', { name: payload.name }))
-  }
-  showVenueModal.value = false
+async function handleSaveVenue(payload: VenueForm) {
+  await saveVenue(payload)
 }
 
 onMounted(() => {
@@ -72,6 +71,10 @@ onMounted(() => {
       </div>
 
       <div class="header-actions">
+        <AuraButton variant="secondary" :disabled="loading" @click="loadData">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span>{{ t('admin.venues.refreshBtn') }}</span>
+        </AuraButton>
         <AuraButton variant="primary" @click="handleStartCreate">
           <span class="material-symbols-outlined icon-18">add_business</span>
           <span>{{ t('admin.venues.addNewVenue') }}</span>
@@ -80,13 +83,22 @@ onMounted(() => {
     </header>
 
     <!-- Feedback Alerts -->
-    <div v-if="notice" class="alert-pill">{{ notice }}</div>
-    <div v-if="error" class="alert-pill-error">{{ error }}</div>
+    <div v-if="notice" class="alert-pill">
+      <span class="material-symbols-outlined icon-16">check_circle</span>
+      <span>{{ notice }}</span>
+    </div>
+    <div v-if="error" class="alert-pill-error">
+      <span class="material-symbols-outlined icon-16">error</span>
+      <span>{{ error }}</span>
+    </div>
 
     <!-- KPI Summary Bar -->
     <VenueKpiBar
       :total-venues="totalVenuesCount"
+      :active-venues="activeVenuesCount"
       :total-courts="totalCourtsCount"
+      :maps-linked="mapsLinkedCount"
+      :loading="loading"
     />
 
     <!-- Filter & Search Toolbar -->
@@ -96,25 +108,48 @@ onMounted(() => {
         <input
           v-model="searchQuery"
           type="text"
-          class="search-input"
+          class="venues-search-input"
           :placeholder="t('admin.venues.searchPlaceholder')"
         />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-search-btn"
+          @click="searchQuery = ''"
+        >
+          ✕
+        </button>
       </div>
 
-      <select v-model="statusFilter" class="status-filter-select">
-        <option value="all">{{ t('admin.venues.allStatuses') }}</option>
-        <option value="active">{{ t('admin.venues.statusActive') }}</option>
-        <option value="inactive">{{ t('admin.venues.statusInactive') }}</option>
-      </select>
+      <div class="toolbar-right">
+        <select v-model="statusFilter" class="status-filter-select">
+          <option value="all">{{ t('admin.venues.allStatuses') }}</option>
+          <option value="active">{{ t('admin.venues.statusActive') }}</option>
+          <option value="inactive">{{ t('admin.venues.statusInactive') }}</option>
+        </select>
+        <span v-if="!loading" class="results-count-badge">
+          {{ t('admin.venues.resultsCount', { count: filteredVenues.length }) }}
+        </span>
+      </div>
     </div>
 
-    <!-- Venue Cards Grid -->
-    <div v-if="filteredVenues.length === 0" class="empty-venues-state">
+    <!-- Skeleton Loading Grid -->
+    <div v-if="loading" class="venues-grid">
+      <VenueCardSkeleton v-for="i in 6" :key="i" />
+    </div>
+
+    <!-- Empty Venues State -->
+    <div v-else-if="filteredVenues.length === 0" class="empty-venues-state">
       <span class="material-symbols-outlined empty-icon">domain_disabled</span>
-      <h3>{{ t('admin.venues.noVenuesFound') }}</h3>
-      <p>{{ t('admin.venues.noVenuesSub') }}</p>
+      <h3 class="empty-title">{{ t('admin.venues.noVenuesFound') }}</h3>
+      <p class="empty-sub">{{ t('admin.venues.noVenuesSub') }}</p>
+      <AuraButton variant="primary" class="mt-4" @click="handleStartCreate">
+        <span class="material-symbols-outlined icon-18">add_business</span>
+        <span>{{ t('admin.venues.addNewVenue') }}</span>
+      </AuraButton>
     </div>
 
+    <!-- Real Venue Cards Grid -->
     <div v-else class="venues-grid">
       <VenueCard
         v-for="v in filteredVenues"
@@ -130,6 +165,7 @@ onMounted(() => {
     <VenueFormModal
       :show="showVenueModal"
       :venue="editingVenue"
+      :saving="saving"
       @close="showVenueModal = false"
       @save="handleSaveVenue"
     />
@@ -158,7 +194,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .header-title-row {
@@ -168,7 +204,7 @@ onMounted(() => {
 }
 
 .header-icon {
-  font-size: 26px;
+  font-size: 28px;
   color: var(--pink-dark, #db2777);
 }
 
@@ -182,29 +218,39 @@ onMounted(() => {
   margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
+  line-height: 1.4;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .alert-pill {
-  padding: 8px 16px;
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
   background: #10b981;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .alert-pill-error {
-  padding: 8px 16px;
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
   background: #ef4444;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .venues-toolbar {
@@ -225,6 +271,11 @@ onMounted(() => {
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+
+.search-input-wrap:focus-within {
+  border-color: var(--pink-dark, #db2777);
 }
 
 .search-icon {
@@ -232,7 +283,7 @@ onMounted(() => {
   color: var(--muted);
 }
 
-.search-input {
+.venues-search-input {
   border: none;
   background: transparent;
   outline: none;
@@ -241,19 +292,51 @@ onMounted(() => {
   color: var(--ink);
 }
 
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.clear-search-btn:hover {
+  color: var(--ink);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .status-filter-select {
-  padding: 10px 14px;
+  padding: 9px 14px;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
   color: var(--ink);
   font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.status-filter-select:focus {
+  border-color: var(--pink-dark, #db2777);
+}
+
+.results-count-badge {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .venues-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .empty-venues-state {
@@ -268,12 +351,35 @@ onMounted(() => {
 }
 
 .empty-icon {
-  font-size: 48px;
+  font-size: 52px;
   color: var(--muted);
   margin-bottom: 12px;
 }
 
-.icon-18 {
+.empty-title {
+  margin: 0;
   font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
 }
+
+.empty-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 400px;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.icon-16 { font-size: 16px; }
+.icon-18 { font-size: 18px; }
+.mt-4 { margin-top: 16px; }
 </style>

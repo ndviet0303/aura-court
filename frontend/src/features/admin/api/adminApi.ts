@@ -81,12 +81,16 @@ export const adminApi = {
     api.delete(`/organizations/${orgId}/members/${memberId}`),
 
   // Pricing Rules Calendar (V2)
-  getPricingCalendar: <T = unknown>() =>
-    apiV2.get<T>('/pricing/calendar'),
-  createPriceRule: <T = unknown>(payload: any) =>
+  getPriceRules: <T = { rules: any[] }>(params?: Record<string, any>) =>
+    apiV2.get<T>('/price-rules', { params }),
+  getPricingCalendar: <T = { rules: any[] }>(params?: Record<string, any>) =>
+    apiV2.get<T>('/pricing/calendar', { params }),
+  createPriceRule: <T = { rule: any }>(payload: any) =>
     apiV2.post<T>('/price-rules', payload),
-  updatePriceRule: <T = unknown>(id: number | string, payload: any) =>
+  updatePriceRule: <T = { rule: any }>(id: number | string, payload: any) =>
     apiV2.patch<T>(`/price-rules/${id}`, payload),
   deletePriceRule: (id: number | string) =>
     apiV2.delete(`/price-rules/${id}`),
+  quotePrice: <T = { quote: any }>(payload: { court_id: number; slots: string[] }) =>
+    apiV2.post<T>('/price-quotes', payload),
 }
