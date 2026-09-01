@@ -9,6 +9,7 @@ import TournamentMatchDetailModal from '../components/bracket/TournamentMatchDet
 
 const {
   loading,
+  detailLoading,
   currentTournamentId,
   selectedCategory,
   activeTab,
@@ -21,6 +22,7 @@ const {
   finalMatch,
   groupStandings,
   openMatchDetail,
+  selectTournament,
 } = useTournamentBracket()
 </script>
 
@@ -33,7 +35,7 @@ const {
       :selected-tournament-id="currentTournamentId"
       :selected-category="selectedCategory"
       :active-tab="activeTab"
-      @update:selected-tournament-id="currentTournamentId = $event"
+      @update:selected-tournament-id="selectTournament($event)"
       @update:selected-category="selectedCategory = $event"
       @update:active-tab="activeTab = $event"
     />
@@ -41,7 +43,7 @@ const {
     <!-- Main Content Area -->
     <main class="bracket-main-body">
       <!-- Loading Skeleton State -->
-      <div v-if="loading" class="bracket-skeleton-wrapper">
+      <div v-if="loading || detailLoading" class="bracket-skeleton-wrapper">
         <div class="bracket-skeleton-grid">
           <div v-for="col in 3" :key="col" class="bracket-skeleton-col">
             <div class="col-head-skeleton">
@@ -93,11 +95,11 @@ const {
     <TournamentMatchDetailModal
       :show="isMatchDetailModalOpen"
       :match="selectedMatch"
+      :tournament-id="currentTournament?.uuid || currentTournamentId"
       @close="isMatchDetailModalOpen = false"
     />
   </div>
 </template>
-
 
 <style scoped>
 .tournament-bracket-view {
@@ -106,7 +108,7 @@ const {
   gap: 24px;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 20px;
+  padding: 24px 20px 48px;
   color: var(--ink);
 }
 
@@ -176,4 +178,3 @@ const {
   gap: 8px;
 }
 </style>
-

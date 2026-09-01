@@ -82,7 +82,9 @@ const slotPercentage = computed(() => {
 
     <!-- Card Main Body -->
     <div class="card-body">
-      <h3 class="tournament-name" :title="tournament.name">{{ tournament.name }}</h3>
+      <RouterLink :to="`/tournaments/${tournament.uuid || tournament.id}/bracket`" class="tournament-name-link">
+        <h3 class="tournament-name" :title="tournament.name">{{ tournament.name }}</h3>
+      </RouterLink>
 
       <div class="meta-row">
         <span class="meta-item">
@@ -154,17 +156,16 @@ const slotPercentage = computed(() => {
         </AuraButton>
 
         <AuraButton
+          :to="`/tournaments/${tournament.uuid || tournament.id}/bracket`"
           variant="outline"
           size="sm"
           icon="account_tree"
-          @click="emit('viewBracket', tournament)"
         >
           Sơ Đồ
         </AuraButton>
 
         <AuraButton
-          v-if="tournament.slug"
-          :to="`/tournaments/${tournament.slug}/live`"
+          :to="`/tournaments/${tournament.uuid || tournament.id}/live`"
           variant="secondary"
           size="sm"
           icon="scoreboard"
@@ -290,6 +291,15 @@ const slotPercentage = computed(() => {
   flex: 1;
 }
 
+.tournament-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.tournament-name-link:hover .tournament-name {
+  color: var(--pink-dark, #db2777);
+}
+
 .tournament-name {
   margin: 0;
   font-size: 16px;
@@ -300,6 +310,7 @@ const slotPercentage = computed(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.15s ease;
 }
 
 .meta-row {

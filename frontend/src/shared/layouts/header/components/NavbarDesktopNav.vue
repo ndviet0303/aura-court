@@ -132,14 +132,6 @@ onBeforeUnmount(() => {
             <span class="material-symbols-outlined">emoji_events</span>
             <span>{{ $t('nav.tournaments') }}</span>
           </RouterLink>
-          <RouterLink to="/tournaments/bracket" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
-            <span class="material-symbols-outlined">account_tree</span>
-            <span>{{ $t('nav.bracket') }}</span>
-          </RouterLink>
-          <RouterLink to="/tournaments/live" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
-            <span class="material-symbols-outlined">live_tv</span>
-            <span>{{ $t('nav.liveScore') }}</span>
-          </RouterLink>
           <RouterLink to="/matchmaking" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
             <span class="material-symbols-outlined">sports_tennis</span>
             <span>{{ $t('nav.matchmaking') }}</span>

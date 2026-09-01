@@ -46,8 +46,6 @@ const bookingItems = [
 const communityItems = [
   { to: '/resale', icon: 'swap_horiz', key: 'nav.resale' },
   { to: '/tournaments', icon: 'emoji_events', key: 'nav.tournaments' },
-  { to: '/tournaments/bracket', icon: 'account_tree', key: 'nav.bracket' },
-  { to: '/tournaments/live', icon: 'live_tv', key: 'nav.liveScore' },
   { to: '/matchmaking', icon: 'sports_tennis', key: 'nav.matchmaking' },
   { to: '/matchmaking/create', icon: 'add_circle', key: 'nav.createMatch' },
 ]

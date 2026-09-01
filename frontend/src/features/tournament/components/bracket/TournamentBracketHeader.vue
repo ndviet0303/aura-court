@@ -6,21 +6,21 @@ import type { TournamentItem } from '../../composables/useTournamentBracket'
 const props = defineProps<{
   tournament: TournamentItem | null
   tournaments: TournamentItem[]
-  selectedTournamentId: number | null
+  selectedTournamentId: string | number | null
   selectedCategory: 'singles_men' | 'doubles_men' | 'mixed_doubles'
   activeTab: 'bracket' | 'standings'
 }>()
 
 
 const emit = defineEmits<{
-  (e: 'update:selectedTournamentId', id: number): void
+  (e: 'update:selectedTournamentId', id: string | number): void
   (e: 'update:selectedCategory', cat: 'singles_men' | 'doubles_men' | 'mixed_doubles'): void
   (e: 'update:activeTab', tab: 'bracket' | 'standings'): void
 }>()
 
 const tournamentOptions = computed(() => {
   return props.tournaments.map((t) => ({
-    value: t.id,
+    value: t.uuid || t.id,
     label: t.name,
     icon: 'emoji_events',
   }))
@@ -73,7 +73,7 @@ const categoryOptions = [
             :options="tournamentOptions"
             variant="bordered"
             aria-label="Chọn giải đấu"
-            @update:model-value="emit('update:selectedTournamentId', Number($event))"
+            @update:model-value="emit('update:selectedTournamentId', $event as any)"
           />
         </div>
 

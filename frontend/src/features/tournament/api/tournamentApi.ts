@@ -36,6 +36,7 @@ function mapRawTournament(t: any): TournamentItem {
 
   return {
     id: t.id,
+    uuid: t.uuid,
     name: t.name || 'Giải Đấu Aura Circuit 2026',
     slug: t.slug || `tournament-${t.id}`,
     category: t.category || (sport === 'pickleball' ? 'Pickleball Đôi Open' : sport === 'badminton' ? 'Cầu Lông Đơn Nam Nâng Cao' : 'Tennis Open'),

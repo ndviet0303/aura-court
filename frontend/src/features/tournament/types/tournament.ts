@@ -43,6 +43,7 @@ export interface CircuitLeaderboardItem {
 
 export interface TournamentItem {
   id: number
+  uuid?: string
   name: string
   title?: string
   slug?: string

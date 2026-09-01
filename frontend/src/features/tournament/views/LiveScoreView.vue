@@ -12,12 +12,19 @@ const {
   loading,
   isUmpireMode,
   notice,
+  tournamentTitle,
   fixtures,
   selectedFixtureId,
   activeMatch,
   playEvents,
+  pointState,
+  intervalSeconds,
   addPoint,
   undoPoint,
+  toggleServer,
+  switchSides,
+  penaltyCard,
+  triggerInterval,
 } = useLiveScore()
 </script>
 
@@ -28,8 +35,12 @@ const {
       <div class="header-titles">
         <div class="top-nav">
           <AuraButton to="/tournaments" variant="ghost" size="sm" icon="arrow_back">
-            Quay lại Giải Đấu
+            Quay lại Danh Sách Giải
           </AuraButton>
+          <span v-if="tournamentTitle" class="t-badge">
+            <span class="material-symbols-outlined t-badge-ico">emoji_events</span>
+            {{ tournamentTitle }}
+          </span>
         </div>
         <h1 class="page-title">Live Score & Tỉ Số Trực Tiếp</h1>
         <p class="page-sub">Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.</p>
@@ -49,7 +60,7 @@ const {
 
     <!-- Feedback Alerts -->
     <transition name="fade">
-      <div v-if="notice" class="alert-pill-success">
+      <div v-if="notice" class="alert-pill-success" role="status">
         <span class="material-symbols-outlined alert-ico">check_circle</span>
         <span>{{ notice }}</span>
       </div>
@@ -57,40 +68,51 @@ const {
 
     <!-- Loading Skeleton State -->
     <div v-if="loading" class="live-skeleton-stack">
+      <!-- Selector Row Skeleton -->
       <div class="selector-skeleton-row">
-        <SkeletonLoader v-for="i in 3" :key="i" type="rect" width="160px" height="42px" rounded="12px" />
+        <SkeletonLoader v-for="i in 4" :key="i" type="rect" width="180px" height="46px" rounded="12px" />
       </div>
+
+      <!-- Main Scoreboard Skeleton Card -->
       <div class="scoreboard-skeleton-card">
         <div class="sb-sk-header">
-          <SkeletonLoader type="rect" width="220px" height="18px" rounded="6px" />
-          <SkeletonLoader type="rect" width="90px" height="18px" rounded="6px" />
+          <SkeletonLoader type="rect" width="240px" height="20px" rounded="6px" />
+          <SkeletonLoader type="rect" width="110px" height="22px" rounded="999px" />
         </div>
         <div class="sb-sk-grid">
           <div class="sb-sk-player">
-            <SkeletonLoader type="rect" width="56px" height="56px" rounded="50%" />
+            <SkeletonLoader type="rect" width="60px" height="60px" rounded="50%" />
             <div class="sb-sk-info">
-              <SkeletonLoader type="rect" width="140px" height="18px" rounded="4px" />
-              <SkeletonLoader type="rect" width="90px" height="12px" rounded="4px" />
+              <SkeletonLoader type="rect" width="160px" height="20px" rounded="4px" />
+              <SkeletonLoader type="rect" width="100px" height="14px" rounded="4px" />
             </div>
-            <SkeletonLoader type="rect" width="40px" height="40px" rounded="8px" />
+            <SkeletonLoader type="rect" width="48px" height="48px" rounded="10px" />
           </div>
           <div class="sb-sk-center">
-            <SkeletonLoader type="rect" width="60px" height="20px" rounded="6px" />
-            <SkeletonLoader type="rect" width="80px" height="32px" rounded="6px" />
+            <SkeletonLoader type="rect" width="50px" height="24px" rounded="6px" />
+            <SkeletonLoader type="rect" width="90px" height="36px" rounded="8px" />
           </div>
           <div class="sb-sk-player">
-            <SkeletonLoader type="rect" width="40px" height="40px" rounded="8px" />
+            <SkeletonLoader type="rect" width="48px" height="48px" rounded="10px" />
             <div class="sb-sk-info text-right">
-              <SkeletonLoader type="rect" width="140px" height="18px" rounded="4px" />
-              <SkeletonLoader type="rect" width="90px" height="12px" rounded="4px" />
+              <SkeletonLoader type="rect" width="160px" height="20px" rounded="4px" />
+              <SkeletonLoader type="rect" width="100px" height="14px" rounded="4px" />
             </div>
-            <SkeletonLoader type="rect" width="56px" height="56px" rounded="50%" />
+            <SkeletonLoader type="rect" width="60px" height="60px" rounded="50%" />
           </div>
         </div>
       </div>
+
+      <!-- Analytics & Ticker Grid Skeleton -->
       <div class="live-analytics-grid">
-        <SkeletonLoader type="rect" width="100%" height="220px" rounded="16px" />
-        <SkeletonLoader type="rect" width="100%" height="220px" rounded="16px" />
+        <div class="skeleton-box-card">
+          <SkeletonLoader type="rect" width="260px" height="22px" rounded="6px" />
+          <SkeletonLoader v-for="j in 5" :key="j" type="rect" width="100%" height="38px" rounded="8px" />
+        </div>
+        <div class="skeleton-box-card">
+          <SkeletonLoader type="rect" width="220px" height="22px" rounded="6px" />
+          <SkeletonLoader v-for="k in 4" :key="k" type="rect" width="100%" height="46px" rounded="10px" />
+        </div>
       </div>
     </div>
 
@@ -105,7 +127,6 @@ const {
       </p>
     </div>
 
-
     <template v-else>
       <!-- Active Fixtures Selector Bar -->
       <LiveFixturesSelector
@@ -114,19 +135,25 @@ const {
         @select="selectedFixtureId = $event"
       />
 
-
       <!-- Main Scoreboard Display -->
       <LiveMatchScoreboard
         v-if="activeMatch"
         :match="activeMatch"
+        :point-state="pointState"
       />
 
       <!-- Umpire Controls (when activated) -->
       <LiveUmpireControlPanel
         v-if="isUmpireMode && activeMatch"
         :match="activeMatch"
+        :point-state="pointState"
+        :interval-seconds="intervalSeconds"
         @add-point="addPoint"
         @undo-point="undoPoint"
+        @toggle-server="toggleServer"
+        @switch-sides="switchSides"
+        @penalty-card="penaltyCard"
+        @trigger-interval="triggerInterval"
       />
 
       <!-- Analytics & Ticker Grid -->
@@ -138,8 +165,6 @@ const {
   </main>
 </template>
 
-
-
 <style scoped>
 .live-score-view {
   display: flex;
@@ -147,7 +172,7 @@ const {
   gap: 24px;
   max-width: 1300px;
   margin: 0 auto;
-  padding: 24px 20px;
+  padding: 28px 24px 60px;
   color: var(--ink);
 }
 
@@ -156,54 +181,77 @@ const {
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.t-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pink-dark, #db2777);
+  background: rgba(219, 39, 119, 0.08);
+  border: 1px solid rgba(219, 39, 119, 0.2);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.t-badge-ico {
+  font-size: 14px;
 }
 
 .page-title {
-  margin: 0 0 6px;
-  font-size: 22px;
-  font-weight: 800;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--ink);
 }
 
 .page-sub {
   margin: 0;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--muted);
 }
 
-.btn-umpire-toggle {
+.alert-pill-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 650;
+  width: fit-content;
 }
 
-.btn-umpire-toggle.active {
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  border-color: var(--pink-dark, #db2777);
-}
-
-.alert-pill {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #10b981;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
+.alert-ico {
+  font-size: 18px;
 }
 
 .live-analytics-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 20px;
 }
 
-@media (max-width: 850px) {
+@media (max-width: 900px) {
   .live-analytics-grid {
     grid-template-columns: 1fr;
   }
@@ -313,11 +361,19 @@ const {
   gap: 10px;
 }
 
+.skeleton-box-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+}
+
 @media (max-width: 850px) {
   .sb-sk-grid {
     grid-template-columns: 1fr;
   }
 }
 </style>
-
-

@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { AuraButton } from '@/shared/components'
 import type { TournamentItem } from '../types/tournament'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   tournament: TournamentItem | null
 }>()
@@ -10,6 +11,11 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+const participantsList = computed(() => {
+  if (!props.tournament?.participants) return []
+  return props.tournament.participants.slice(0, 8)
+})
 </script>
 
 <template>
@@ -22,8 +28,8 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined">account_tree</span>
           </div>
           <div>
-            <h3 class="modal-title">Sơ Đồ Nhánh Đấu Nhanh: {{ tournament.name }}</h3>
-            <p class="modal-sub">Xem nhanh kết quả các vòng tứ kết, bán kết và chung kết giải đấu.</p>
+            <h3 class="modal-title">Tổng Quan Nhánh Đấu: {{ tournament.name }}</h3>
+            <p class="modal-sub">Thông tin thi đấu, danh sách hạt giống và tiến trình giải.</p>
           </div>
         </div>
         <button type="button" class="modal-close-btn" aria-label="Đóng" @click="emit('close')">
@@ -33,65 +39,46 @@ const emit = defineEmits<{
 
       <!-- Modal Body -->
       <div class="modal-body">
-        <div class="bracket-preview-tree">
-          <!-- Round 1: Quarter Finals -->
-          <div class="bracket-round">
-            <span class="round-hdr">Tứ Kết (Quarterfinals)</span>
-            <div class="match-box">
-              <div class="p-item winner">
-                <span class="p-name">Nguyễn Tiến Minh</span>
-                <strong class="p-score font-mono">2</strong>
-              </div>
-              <div class="p-item">
-                <span class="p-name">Lê Đức Phát</span>
-                <strong class="p-score font-mono">0</strong>
-              </div>
-            </div>
+        <div class="tournament-summary-strip">
+          <div class="summary-item">
+            <span class="material-symbols-outlined s-ico">location_on</span>
+            <span>{{ tournament.venue }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="material-symbols-outlined s-ico">calendar_month</span>
+            <span>{{ tournament.dates }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="material-symbols-outlined s-ico">group</span>
+            <span>{{ tournament.current_slots }}/{{ tournament.max_slots }} VĐV</span>
+          </div>
+          <div class="summary-item">
+            <span class="material-symbols-outlined s-ico">payments</span>
+            <span class="text-pink font-bold">{{ tournament.prize_pool }}</span>
+          </div>
+        </div>
 
-            <div class="match-box">
-              <div class="p-item winner">
-                <span class="p-name">Phạm Cao Cường</span>
-                <strong class="p-score font-mono">2</strong>
-              </div>
-              <div class="p-item">
-                <span class="p-name">Nguyễn Hải Đăng</span>
-                <strong class="p-score font-mono">1</strong>
+        <div v-if="participantsList.length > 0" class="participants-preview-section">
+          <h4 class="sec-title">Danh Sách Hạt Giống & Vận Động Viên</h4>
+          <div class="participants-grid">
+            <div
+              v-for="(p, idx) in participantsList"
+              :key="p.id || idx"
+              class="participant-mini-card"
+            >
+              <span class="seed-num font-mono">#{{ p.seed || idx + 1 }}</span>
+              <img :src="p.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'" :alt="p.name" class="p-mini-avt" />
+              <div class="p-mini-info">
+                <span class="p-mini-name">{{ p.name }}</span>
+                <span class="p-mini-club">{{ p.club || 'Aura Club' }}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Round 2: Semi Finals -->
-          <div class="bracket-round">
-            <span class="round-hdr">Bán Kết (Semifinals)</span>
-            <div class="match-box">
-              <div class="p-item winner">
-                <span class="p-name">Nguyễn Tiến Minh</span>
-                <strong class="p-score font-mono">2</strong>
-              </div>
-              <div class="p-item">
-                <span class="p-name">Phạm Cao Cường</span>
-                <strong class="p-score font-mono">1</strong>
-              </div>
-            </div>
-          </div>
-
-          <!-- Round 3: Finals -->
-          <div class="bracket-round">
-            <span class="round-hdr highlight">Chung Kết (Finals)</span>
-            <div class="match-box highlight-final">
-              <div class="p-item winner">
-                <div class="p-name-champ">
-                  <span class="material-symbols-outlined champ-ico">emoji_events</span>
-                  <span>Nguyễn Tiến Minh</span>
-                </div>
-                <strong class="p-score font-mono">2</strong>
-              </div>
-              <div class="p-item">
-                <span class="p-name">Trần Minh Quân</span>
-                <strong class="p-score font-mono">0</strong>
-              </div>
-            </div>
-          </div>
+        <div v-else class="empty-preview-box">
+          <span class="material-symbols-outlined">info</span>
+          <span>Nhấn nút bên dưới để mở toàn bộ sơ đồ cây nhánh đấu và chi tiết từng trận.</span>
         </div>
       </div>
 
@@ -102,10 +89,11 @@ const emit = defineEmits<{
         </AuraButton>
 
         <AuraButton
-          :to="`/tournaments/bracket?id=${tournament.id}`"
+          :to="`/tournaments/${tournament.uuid || tournament.id}/bracket`"
           variant="primary"
           size="md"
           icon-right="arrow_forward"
+          @click="emit('close')"
         >
           Xem Cây Nhánh Đầy Đủ & Điểm Số
         </AuraButton>
@@ -130,7 +118,7 @@ const emit = defineEmits<{
 
 .modal-card {
   width: 100%;
-  max-width: 780px;
+  max-width: 720px;
   background: var(--surface);
   border-radius: 20px;
   border: 1px solid var(--outline);
@@ -197,86 +185,114 @@ const emit = defineEmits<{
 
 .modal-body {
   padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.bracket-preview-tree {
+.tournament-summary-strip {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  padding: 18px;
-  background: var(--surface-container, rgba(0, 0, 0, 0.02));
-  border-radius: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface-container, rgba(0, 0, 0, 0.03));
   border: 1px solid var(--outline);
-  overflow-x: auto;
+  font-size: 12px;
 }
 
-.bracket-round {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 180px;
-  justify-content: space-around;
-}
-
-.round-hdr {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--muted);
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding-bottom: 4px;
-}
-
-.round-hdr.highlight {
-  color: var(--pink-dark, #db2777);
-}
-
-.match-box {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  overflow: hidden;
-  font-size: 12.5px;
-}
-
-.highlight-final {
-  border-color: rgba(201, 161, 90, 0.5);
-  box-shadow: 0 4px 16px rgba(201, 161, 90, 0.15);
-}
-
-.p-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--outline);
-}
-
-.p-item:last-child {
-  border-bottom: 0;
-}
-
-.p-item.winner {
-  font-weight: 750;
-  color: var(--pink-dark, #db2777);
-  background: rgba(236, 72, 153, 0.04);
-}
-
-.p-name-champ {
+.summary-item {
   display: flex;
   align-items: center;
   gap: 6px;
+  color: var(--ink);
 }
 
-.champ-ico {
+.s-ico {
   font-size: 16px;
-  color: var(--accent, #c9a15a);
+  color: var(--pink-dark, #db2777);
 }
 
-.p-score {
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+
+.font-bold {
+  font-weight: 800;
+}
+
+.participants-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sec-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--muted);
+}
+
+.participants-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.participant-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+}
+
+.seed-num {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--pink-dark, #db2777);
+}
+
+.p-mini-avt {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.p-mini-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.p-mini-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.p-mini-club {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.empty-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-container, rgba(0, 0, 0, 0.02));
+  border: 1px dashed var(--outline);
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -290,4 +306,3 @@ const emit = defineEmits<{
   background: var(--surface-container-low, rgba(0, 0, 0, 0.01));
 }
 </style>
-

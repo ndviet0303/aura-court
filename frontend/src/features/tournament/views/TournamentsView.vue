@@ -219,6 +219,12 @@ const {
   line-height: 1.5;
 }
 
+.hero-cta-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 .hero-stats-row {
   display: flex;
   gap: 12px;
