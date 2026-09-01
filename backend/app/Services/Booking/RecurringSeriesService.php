@@ -25,6 +25,11 @@ class RecurringSeriesService
 
     public function createAndConfirm(User $user, int $organizationId, array $data): RecurringSeries
     {
+        $court = \App\Models\Court::with('venue')->findOrFail((int) $data['court_id']);
+        if ($court->venue?->organization_id) {
+            $organizationId = (int) $court->venue->organization_id;
+        }
+
         $frequency = strtolower((string) ($data['frequency'] ?? ''));
         if (! in_array($frequency, ['weekly', 'biweekly', 'monthly'], true)) {
             throw ValidationException::withMessages(['frequency' => 'Frequency must be weekly, biweekly or monthly.']);

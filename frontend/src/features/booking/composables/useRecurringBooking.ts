@@ -22,14 +22,26 @@ export function useRecurringBooking() {
   const notice = ref('')
   const error = ref('')
 
+  const formatIsoDate = (d: Date): string => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const defaultStart = new Date()
+  defaultStart.setDate(defaultStart.getDate() + 1)
+  const defaultEnd = new Date()
+  defaultEnd.setMonth(defaultEnd.getMonth() + 3)
+
   // Wizard State
   const selectedCourtId = ref<number>(1)
   const frequency = ref<RecurringFrequency>('weekly')
   const selectedWeekdays = ref<number[]>([1, 3, 5])
   const startTime = ref('18:00')
   const endTime = ref('20:00')
-  const startDate = ref('2026-09-01')
-  const endDate = ref('2026-11-30')
+  const startDate = ref(formatIsoDate(defaultStart))
+  const endDate = ref(formatIsoDate(defaultEnd))
 
   const weekdayButtons: WeekdayOption[] = [
     { id: 1, label: 'T2', name: 'Thứ 2', fullName: 'Thứ Hai' },
@@ -157,8 +169,12 @@ export function useRecurringBooking() {
         }
       }
 
-      if (seriesRes && seriesRes.data) {
-        seriesList.value = seriesRes.data
+      if (seriesRes) {
+        if (Array.isArray(seriesRes)) {
+          seriesList.value = seriesRes
+        } else if (Array.isArray((seriesRes as Record<string, any>).data)) {
+          seriesList.value = (seriesRes as Record<string, any>).data
+        }
       }
     } catch (err: unknown) {
       // Graceful fallback for offline/development

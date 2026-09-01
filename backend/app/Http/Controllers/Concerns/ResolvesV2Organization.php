@@ -19,6 +19,16 @@ trait ResolvesV2Organization
         $context = app(TenantContext::class);
         $organization = $context->getOrganization();
 
+        // If court_id is provided, bind organization context directly to the court's venue organization
+        if ($request->filled('court_id')) {
+            $court = Court::with('venue.organization')->find($request->input('court_id'));
+            if ($court?->venue?->organization && $court->venue->organization->status === 'active') {
+                $organization = $court->venue->organization;
+                $context->setOrganization($organization);
+                return $organization;
+            }
+        }
+
         if (! $organization) {
             // 1. Check explicit header or request parameter
             $explicitOrgId = $request->header('X-Organization-Id')
@@ -27,14 +37,6 @@ trait ResolvesV2Organization
 
             if ($explicitOrgId) {
                 $organization = Organization::where('id', $explicitOrgId)->where('status', 'active')->first();
-            }
-
-            // 2. Resolve from court_id if present
-            if (! $organization && $request->filled('court_id')) {
-                $court = Court::with('venue.organization')->find($request->input('court_id'));
-                if ($court?->venue?->organization && $court->venue->organization->status === 'active') {
-                    $organization = $court->venue->organization;
-                }
             }
 
             // 3. Resolve from quote_token / quote_id if present

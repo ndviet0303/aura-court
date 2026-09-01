@@ -7,6 +7,12 @@ const TRANSLATIONS: Record<string, string> = {
   'Too Many Attempts.': 'Bạn đã thử quá số lần cho phép. Vui lòng đợi trong giây lát.',
   'The given data was invalid.': 'Dữ liệu cung cấp không hợp lệ. Vui lòng kiểm tra lại.',
   'Server Error': 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.',
+  'The selected court-time is no longer available.': 'Khung giờ bạn chọn trên sân này đã có người đặt hoặc bị trùng lịch. Vui lòng chọn khung giờ khác.',
+  'A recurring series may not exceed a 12-month horizon.': 'Hợp đồng định kỳ không được vượt quá thời hạn 12 tháng.',
+  'A recurring series may not exceed 104 occurrences.': 'Số buổi trong hợp đồng định kỳ không được vượt quá 104 buổi.',
+  'Frequency must be weekly, biweekly or monthly.': 'Tần suất phải là hàng tuần, 2 tuần/lần hoặc hàng tháng.',
+  'Price quote has already been accepted.': 'Báo giá đã được chấp nhận trước đó.',
+  'Price quote has expired.': 'Báo giá đã hết hạn. Vui lòng thử lại.',
 }
 
 function translateMessage(msg: string): string {

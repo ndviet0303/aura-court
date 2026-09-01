@@ -28,7 +28,7 @@ class ReservationService
                     (int) ($data['court_id'] ?? 0),
                     (array) ($data['slots'] ?? []),
                 );
-                $quote = PriceQuote::query()->whereKey($quote->id)->lockForUpdate()->firstOrFail();
+                $quote = PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
 
             $organizationId = $quote->organization_id;
@@ -132,7 +132,7 @@ class ReservationService
     private function findQuote(int $userId, int $organizationId, array $data): ?PriceQuote
     {
         $query = PriceQuote::query()
-            ->where('organization_id', $organizationId)
+            ->withoutGlobalScope('tenant_isolation')
             ->where('user_id', $userId)
             ->where('status', 'open');
 

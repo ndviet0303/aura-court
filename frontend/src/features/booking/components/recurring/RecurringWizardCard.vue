@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { AuraButton } from '@/shared/components'
+import { computed } from 'vue'
+import { AuraButton, DatePicker, SelectDropdown, TimePicker } from '@/shared/components'
+import type { DropdownOption } from '@/shared/components/SelectDropdown.vue'
 import type { Court } from '@/features/court/types/court'
 import type { RecurringFrequency, WeekdayOption } from '../../types/recurring'
 
@@ -33,6 +35,15 @@ const emit = defineEmits<{
   (e: 'submit'): void
 }>()
 
+const courtOptions = computed<DropdownOption[]>(() =>
+  props.courts.map((c) => ({
+    value: c.id,
+    label: c.name,
+    sublabel: c.venue ? `— ${c.venue.name}` : undefined,
+    icon: 'sports_tennis',
+  }))
+)
+
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
 }
@@ -59,17 +70,15 @@ function formatMoney(amount: number): string {
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="court-select">Sân và Cụm Sân:</label>
-          <select
-            id="court-select"
-            :value="selectedCourtId"
-            class="form-input"
-            @change="emit('update:selectedCourtId', Number(($event.target as HTMLSelectElement).value))"
-          >
-            <option v-for="c in courts" :key="c.id" :value="c.id">
-              {{ c.name }} {{ c.venue ? `— ${c.venue.name}` : '' }}
-            </option>
-          </select>
+          <label class="form-label">Sân và Cụm Sân:</label>
+          <SelectDropdown
+            :model-value="selectedCourtId"
+            :options="courtOptions"
+            variant="bordered"
+            placeholder="Chọn sân thể thao..."
+            aria-label="Chọn Sân Thể Thao"
+            @update:model-value="emit('update:selectedCourtId', Number($event))"
+          />
         </div>
 
         <!-- Court Preview Mini Card -->
@@ -156,41 +165,38 @@ function formatMoney(amount: number): string {
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Giờ bắt đầu:</label>
-            <input
-              :value="startTime"
-              type="time"
-              class="form-input"
-              @input="emit('update:startTime', ($event.target as HTMLInputElement).value)"
+            <TimePicker
+              :model-value="startTime"
+              placeholder="00:00"
+              @update:model-value="emit('update:startTime', $event)"
             />
           </div>
 
           <div class="form-group">
             <label class="form-label">Giờ kết thúc:</label>
-            <input
-              :value="endTime"
-              type="time"
-              class="form-input"
-              @input="emit('update:endTime', ($event.target as HTMLInputElement).value)"
+            <TimePicker
+              :model-value="endTime"
+              placeholder="00:00"
+              @update:model-value="emit('update:endTime', $event)"
             />
           </div>
 
           <div class="form-group">
             <label class="form-label">Ngày bắt đầu:</label>
-            <input
-              :value="startDate"
-              type="date"
-              class="form-input"
-              @input="emit('update:startDate', ($event.target as HTMLInputElement).value)"
+            <DatePicker
+              :model-value="startDate"
+              placeholder="Chọn ngày bắt đầu"
+              @update:model-value="emit('update:startDate', $event)"
             />
           </div>
 
           <div class="form-group">
             <label class="form-label">Ngày kết thúc:</label>
-            <input
-              :value="endDate"
-              type="date"
-              class="form-input"
-              @input="emit('update:endDate', ($event.target as HTMLInputElement).value)"
+            <DatePicker
+              :model-value="endDate"
+              :min="startDate"
+              placeholder="Chọn ngày kết thúc"
+              @update:model-value="emit('update:endDate', $event)"
             />
           </div>
         </div>
@@ -494,6 +500,86 @@ function formatMoney(amount: number): string {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+.form-group :deep(.date-picker),
+.form-group :deep(.time-picker),
+.form-group :deep(.custom-dropdown) {
+  width: 100%;
+  min-width: 0;
+}
+
+.form-group :deep(.date-picker-trigger) {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 42px;
+}
+
+.form-group :deep(.date-picker-trigger:hover),
+.form-group :deep(.date-picker-trigger:focus-visible) {
+  border-color: var(--pink-dark, #db2777);
+}
+
+.form-group :deep(.date-picker-popover) {
+  z-index: 100;
+  left: 0;
+  right: auto;
+}
+
+.form-group :deep(.time-picker-trigger) {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 42px;
+}
+
+.form-group :deep(.time-picker-trigger:hover),
+.form-group :deep(.time-picker-trigger:focus-visible) {
+  border-color: var(--pink-dark, #db2777);
+}
+
+.form-group :deep(.time-picker-popover) {
+  z-index: 100;
+  left: 0;
+  right: auto;
+}
+
+.form-group :deep(.custom-dropdown.bordered .custom-dropdown-trigger) {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 42px;
+  transition: border-color 0.2s ease;
+}
+
+.form-group :deep(.custom-dropdown.bordered .custom-dropdown-trigger:hover),
+.form-group :deep(.custom-dropdown.open.bordered .custom-dropdown-trigger) {
+  border-color: var(--pink-dark, #db2777);
+}
+
+.form-group :deep(.custom-dropdown-menu) {
+  z-index: 100;
+  width: 100%;
+  max-width: 100%;
 }
 
 .duration-badge {

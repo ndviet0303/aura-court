@@ -31,8 +31,16 @@ class AdvancedBookingController extends Controller
 
     public function series(Request $request)
     {
-        $organization = $this->organization($request);
-        return RecurringSeries::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)->with(['court.venue', 'occurrences', 'invoices'])->latest()->paginate(20);
+        return RecurringSeries::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where('user_id', $request->user()->id)
+            ->with([
+                'court.venue',
+                'occurrences' => fn ($q) => $q->withoutGlobalScope('tenant_isolation'),
+                'invoices' => fn ($q) => $q->withoutGlobalScope('tenant_isolation'),
+            ])
+            ->latest()
+            ->paginate(20);
     }
 
     public function createSeries(Request $request)
@@ -44,8 +52,7 @@ class AdvancedBookingController extends Controller
 
     public function invoice(Request $request, MonthlyInvoice $invoice)
     {
-        $organization = $this->organization($request);
-        abort_unless($invoice->organization_id === $organization->id && $invoice->series()->where('user_id', $request->user()->id)->exists(), 404);
+        abort_unless($invoice->series()->withoutGlobalScope('tenant_isolation')->where('user_id', $request->user()->id)->exists() || $request->user()->isPlatformAdmin(), 404);
         
         $invoice->load(['series.court.venue', 'series.user']);
         
@@ -53,6 +60,7 @@ class AdvancedBookingController extends Controller
         $periodEnd = \Carbon\Carbon::parse($invoice->period_end)->endOfDay();
 
         $occurrences = \App\Models\RecurringOccurrence::query()
+            ->withoutGlobalScope('tenant_isolation')
             ->where('recurring_series_id', $invoice->recurring_series_id)
             ->whereBetween('starts_at', [$periodStart, $periodEnd])
             ->with(['reservation'])
@@ -67,8 +75,7 @@ class AdvancedBookingController extends Controller
 
     public function payInvoice(Request $request, MonthlyInvoice $invoice)
     {
-        $organization = $this->organization($request);
-        abort_unless($invoice->organization_id === $organization->id && $invoice->series()->where('user_id', $request->user()->id)->exists(), 404);
+        abort_unless($invoice->series()->withoutGlobalScope('tenant_isolation')->where('user_id', $request->user()->id)->exists() || $request->user()->isPlatformAdmin(), 404);
         $data = $request->validate(['payment_reference' => 'required|string|max:160']);
         return $this->idempotency->run($request, fn () => response()->json(['invoice' => $this->recurring->payInvoice($invoice, $data['payment_reference'])]));
     }

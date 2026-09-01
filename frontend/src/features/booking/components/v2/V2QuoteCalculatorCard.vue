@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { DatePicker, SelectDropdown } from '@/shared/components'
+import type { DropdownOption } from '@/shared/components/SelectDropdown.vue'
 import type { Court } from '@/features/court/types/court'
 import type { V2PriceQuote } from '../../types/v2Reservation'
 
@@ -43,6 +45,15 @@ const availableTimeSlots = [
   '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ]
 
+const courtOptions = computed<DropdownOption[]>(() =>
+  props.courts.map((c) => ({
+    value: c.id,
+    label: c.name,
+    sublabel: c.venue?.name ? `· ${c.venue.name}` : undefined,
+    icon: 'stadium',
+  }))
+)
+
 const selectedCourtObj = computed(() =>
   props.courts.find((c) => c.id === props.selectedCourtId)
 )
@@ -74,18 +85,14 @@ function setDatePreset(date: string) {
           <span class="material-symbols-outlined field-icon">stadium</span>
           <span>Chọn Sân Đấu</span>
         </label>
-        <select
-          :value="selectedCourtId"
-          class="form-select"
-          @change="emit('update:selectedCourtId', Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option v-if="courts.length === 0" disabled value="">
-            Đang tải danh sách sân...
-          </option>
-          <option v-for="c in courts" :key="c.id" :value="c.id">
-            {{ c.name }} · {{ c.venue?.name || 'Aura Court' }}
-          </option>
-        </select>
+        <SelectDropdown
+          :model-value="selectedCourtId ?? undefined"
+          :options="courtOptions"
+          variant="bordered"
+          placeholder="Chọn sân đấu..."
+          aria-label="Chọn Sân Đấu"
+          @update:model-value="emit('update:selectedCourtId', Number($event))"
+        />
         <span v-if="selectedCourtObj" class="court-sub-info">
           {{ selectedCourtObj.venue?.address || 'Cụm sân tiêu chuẩn quốc tế Aura' }}
         </span>
@@ -123,12 +130,11 @@ function setDatePreset(date: string) {
             Ngày kia
           </button>
         </div>
-        <input
-          :value="selectedDate"
-          type="date"
-          class="form-input date-input"
+        <DatePicker
+          :model-value="selectedDate"
           :min="todayStr"
-          @input="emit('update:selectedDate', ($event.target as HTMLInputElement).value)"
+          placeholder="Chọn ngày đặt sân..."
+          @update:model-value="emit('update:selectedDate', $event)"
         />
       </div>
 
@@ -308,6 +314,40 @@ function setDatePreset(date: string) {
 .form-select:focus, .form-input:focus {
   border-color: var(--primary, #6B2D3F);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.12);
+}
+
+.form-group :deep(.custom-dropdown),
+.form-group :deep(.date-picker) {
+  width: 100%;
+  min-width: 0;
+}
+
+.form-group :deep(.custom-dropdown.bordered .custom-dropdown-trigger) {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  min-height: 42px;
+  padding: 10px 14px;
+}
+
+.form-group :deep(.date-picker-trigger) {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  box-sizing: border-box;
+  min-height: 42px;
+  transition: all 0.2s ease;
+}
+
+.form-group :deep(.date-picker-popover) {
+  z-index: 100;
+  left: 0;
+  right: auto;
 }
 
 .court-sub-info {
