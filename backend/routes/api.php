@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
+use App\Http\Controllers\Admin\AdminMembershipController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
@@ -329,6 +330,21 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::get('admin/disputes/stats', [AdminDisputeController::class, 'stats']);
             Route::get('admin/disputes/{id}', [AdminDisputeController::class, 'show']);
             Route::post('admin/disputes/{id}/arbitrate', [AdminDisputeController::class, 'arbitrate']);
+        });
+
+        Route::middleware([RequireOrganizationRole::class.':organization_owner,venue_manager'])->group(function () {
+            Route::get('admin/memberships/plans', [AdminMembershipController::class, 'plans']);
+            Route::post('admin/memberships/plans', [AdminMembershipController::class, 'storePlan']);
+            Route::patch('admin/memberships/plans/{id}', [AdminMembershipController::class, 'updatePlan']);
+            Route::post('admin/memberships/plans/{id}/archive', [AdminMembershipController::class, 'archivePlan']);
+            Route::get('admin/memberships/loyalty-config', [AdminMembershipController::class, 'loyaltyConfig']);
+            Route::patch('admin/memberships/loyalty-config', [AdminMembershipController::class, 'updateLoyaltyConfig']);
+            Route::get('admin/memberships/multiplier-rules', [AdminMembershipController::class, 'multiplierRules']);
+            Route::post('admin/memberships/multiplier-rules', [AdminMembershipController::class, 'storeMultiplierRule']);
+            Route::patch('admin/memberships/multiplier-rules/{id}', [AdminMembershipController::class, 'updateMultiplierRule']);
+            Route::delete('admin/memberships/multiplier-rules/{id}', [AdminMembershipController::class, 'deleteMultiplierRule']);
+            Route::get('admin/memberships/version-history', [AdminMembershipController::class, 'versionHistory']);
+            Route::get('admin/memberships/stats', [AdminMembershipController::class, 'stats']);
         });
     });
 

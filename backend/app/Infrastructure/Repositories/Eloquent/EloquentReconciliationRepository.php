@@ -48,6 +48,12 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
             $query->where('status', $filter->status);
         }
 
+        if ($filter->channel && $filter->channel !== 'all') {
+            $query->where(function ($q) use ($filter) {
+                $q->where('details->channel', 'like', "%{$filter->channel}%");
+            });
+        }
+
         if ($filter->dateFrom) {
             $query->whereDate('run_date', '>=', $filter->dateFrom);
         }
@@ -60,7 +66,11 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
             $query->where(function ($q) use ($filter) {
                 $q->where('run_date', 'like', "%{$filter->search}%")
                   ->orWhere('status', 'like', "%{$filter->search}%")
-                  ->orWhere('id', 'like', "%{$filter->search}%");
+                  ->orWhere('id', 'like', "%{$filter->search}%")
+                  ->orWhere('details->channel', 'like', "%{$filter->search}%")
+                  ->orWhere('details->txnCode', 'like', "%{$filter->search}%")
+                  ->orWhere('details->customer', 'like', "%{$filter->search}%")
+                  ->orWhere('details->court', 'like', "%{$filter->search}%");
             });
         }
 

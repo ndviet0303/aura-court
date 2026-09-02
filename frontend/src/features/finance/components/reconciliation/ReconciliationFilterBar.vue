@@ -1,6 +1,13 @@
 <script setup lang="ts">
-defineProps<{
-  activeTab: string
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { SelectDropdown, DatePicker } from '@/shared/components'
+import type { DropdownOption } from '@/shared/components'
+
+const props = defineProps<{
+  activeTab: 'today' | 'yesterday' | '7days' | 'month' | 'custom'
+  dateFrom: string
+  dateTo: string
   selectedGateway: string
   selectedStatus: string
   selectedRisk: string
@@ -9,7 +16,9 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:activeTab', val: any): void
+  (e: 'update:activeTab', val: 'today' | 'yesterday' | '7days' | 'month' | 'custom'): void
+  (e: 'update:dateFrom', val: string): void
+  (e: 'update:dateTo', val: string): void
   (e: 'update:selectedGateway', val: string): void
   (e: 'update:selectedStatus', val: string): void
   (e: 'update:selectedRisk', val: string): void
@@ -17,6 +26,32 @@ const emit = defineEmits<{
   (e: 'sync'): void
   (e: 'export', format: 'pdf' | 'excel' | 'csv'): void
 }>()
+
+const { t } = useI18n()
+
+// Dropdown Options
+const gatewayOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.reconciliation.allGateways'), icon: 'apps' },
+  { value: 'VietQR', label: 'VietQR (MBBank)', icon: 'qr_code' },
+  { value: 'MoMo', label: 'MoMo Business', icon: 'account_balance_wallet' },
+  { value: 'VNPay', label: 'VNPay QR', icon: 'qr_code_scanner' },
+  { value: 'ZaloPay', label: 'ZaloPay Gateway', icon: 'wallet' },
+  { value: 'Stripe', label: 'Stripe International', icon: 'credit_card' },
+])
+
+const statusOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.reconciliation.allStatuses'), icon: 'filter_list' },
+  { value: 'matched', label: t('admin.reconciliation.statusMatched'), icon: 'check_circle' },
+  { value: 'mismatch', label: t('admin.reconciliation.statusMismatch'), icon: 'error' },
+  { value: 'running', label: t('admin.reconciliation.statusRunning'), icon: 'pending' },
+])
+
+const riskOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.reconciliation.allRisks'), icon: 'shield' },
+  { value: 'high', label: t('admin.reconciliation.riskHigh'), icon: 'crisis_alert' },
+  { value: 'medium', label: t('admin.reconciliation.riskMed'), icon: 'warning' },
+  { value: 'low', label: t('admin.reconciliation.riskLow'), icon: 'verified_user' },
+])
 </script>
 
 <template>
@@ -31,7 +66,7 @@ const emit = defineEmits<{
           @click="emit('update:activeTab', 'today')"
         >
           <span class="pulse-indicator"></span>
-          Hôm nay (T+0 Realtime)
+          {{ t('admin.reconciliation.tabToday') }}
         </button>
         <button
           type="button"
@@ -39,7 +74,7 @@ const emit = defineEmits<{
           :class="{ active: activeTab === 'yesterday' }"
           @click="emit('update:activeTab', 'yesterday')"
         >
-          Hôm qua (T+1)
+          {{ t('admin.reconciliation.tabYesterday') }}
         </button>
         <button
           type="button"
@@ -47,7 +82,7 @@ const emit = defineEmits<{
           :class="{ active: activeTab === '7days' }"
           @click="emit('update:activeTab', '7days')"
         >
-          7 Ngày qua
+          {{ t('admin.reconciliation.tab7Days') }}
         </button>
         <button
           type="button"
@@ -55,7 +90,16 @@ const emit = defineEmits<{
           :class="{ active: activeTab === 'month' }"
           @click="emit('update:activeTab', 'month')"
         >
-          Tháng 08/2026
+          {{ t('admin.reconciliation.tabMonth') }}
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          :class="{ active: activeTab === 'custom' }"
+          @click="emit('update:activeTab', 'custom')"
+        >
+          <span class="material-symbols-outlined tab-icon">calendar_month</span>
+          {{ t('admin.reconciliation.tabCustom') }}
         </button>
       </div>
 
@@ -67,18 +111,43 @@ const emit = defineEmits<{
           @click="emit('sync')"
         >
           <span class="material-symbols-outlined" :class="{ 'spin-anim': syncing }">sync</span>
-          {{ syncing ? 'Đang đối soát...' : 'Đối Soát Tức Thì' }}
+          {{ syncing ? t('admin.reconciliation.syncing') : t('admin.reconciliation.syncNow') }}
         </button>
-        <div class="export-dropdown">
+        <div class="export-dropdown-wrap">
           <button class="btn-export" type="button" @click="emit('export', 'pdf')">
             <span class="material-symbols-outlined">download</span>
-            Xuất Báo Cáo
+            {{ t('admin.reconciliation.exportBtn') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Row: Filter Controls -->
+    <!-- Custom Date Range Row (when Custom tab is active) -->
+    <div v-if="activeTab === 'custom'" class="custom-date-row">
+      <div class="date-input-item">
+        <label class="date-label">{{ t('admin.reconciliation.dateFromLabel') }}:</label>
+        <div class="date-picker-container">
+          <DatePicker
+            :model-value="dateFrom"
+            :placeholder="t('admin.reconciliation.dateFromLabel')"
+            @update:model-value="emit('update:dateFrom', $event)"
+          />
+        </div>
+      </div>
+      <span class="date-sep">→</span>
+      <div class="date-input-item">
+        <label class="date-label">{{ t('admin.reconciliation.dateToLabel') }}:</label>
+        <div class="date-picker-container">
+          <DatePicker
+            :model-value="dateTo"
+            :placeholder="t('admin.reconciliation.dateToLabel')"
+            @update:model-value="emit('update:dateTo', $event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Filter Controls using SelectDropdown -->
     <div class="filters-row">
       <!-- Search Input -->
       <div class="search-field">
@@ -86,57 +155,57 @@ const emit = defineEmits<{
         <input
           :value="searchQuery"
           type="text"
-          placeholder="Tìm theo Mã REC, TXN, Cổng thanh toán, Khách hàng..."
+          :placeholder="t('admin.reconciliation.searchPlaceholder')"
           class="search-input"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
+        <button
+          v-if="searchQuery"
+          class="clear-search-btn"
+          type="button"
+          @click="emit('update:searchQuery', '')"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
-      <!-- Gateway Filter -->
-      <div class="filter-select-wrap">
-        <label class="filter-label">Cổng TT:</label>
-        <select
-          :value="selectedGateway"
-          class="filter-select"
-          @change="emit('update:selectedGateway', ($event.target as HTMLSelectElement).value)"
-        >
-          <option value="all">Tất cả cổng</option>
-          <option value="VietQR">VietQR (MBBank)</option>
-          <option value="MoMo">MoMo Business</option>
-          <option value="VNPay">VNPay QR</option>
-          <option value="ZaloPay">ZaloPay</option>
-          <option value="Stripe">Stripe Quốc tế</option>
-        </select>
+      <!-- Gateway Dropdown -->
+      <div class="dropdown-filter-item">
+        <label class="dropdown-label">{{ t('admin.reconciliation.gatewayFilterLabel') }}</label>
+        <div class="dropdown-box">
+          <SelectDropdown
+            :model-value="selectedGateway"
+            :options="gatewayOptions"
+            variant="bordered"
+            @update:model-value="emit('update:selectedGateway', String($event))"
+          />
+        </div>
       </div>
 
-      <!-- Status Filter -->
-      <div class="filter-select-wrap">
-        <label class="filter-label">Trạng thái:</label>
-        <select
-          :value="selectedStatus"
-          class="filter-select"
-          @change="emit('update:selectedStatus', ($event.target as HTMLSelectElement).value)"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="matched">Đã khớp 100%</option>
-          <option value="mismatch">Phát hiện sai lệch</option>
-          <option value="running">Đang xử lý</option>
-        </select>
+      <!-- Status Dropdown -->
+      <div class="dropdown-filter-item">
+        <label class="dropdown-label">{{ t('admin.reconciliation.statusFilterLabel') }}</label>
+        <div class="dropdown-box">
+          <SelectDropdown
+            :model-value="selectedStatus"
+            :options="statusOptions"
+            variant="bordered"
+            @update:model-value="emit('update:selectedStatus', String($event))"
+          />
+        </div>
       </div>
 
-      <!-- Risk Level Filter -->
-      <div class="filter-select-wrap">
-        <label class="filter-label">Rủi ro:</label>
-        <select
-          :value="selectedRisk"
-          class="filter-select"
-          @change="emit('update:selectedRisk', ($event.target as HTMLSelectElement).value)"
-        >
-          <option value="all">Tất cả rủi ro</option>
-          <option value="high">Rủi ro cao (Đỏ)</option>
-          <option value="medium">Cần chú ý (Vàng)</option>
-          <option value="low">An toàn (Xanh)</option>
-        </select>
+      <!-- Risk Level Dropdown -->
+      <div class="dropdown-filter-item">
+        <label class="dropdown-label">{{ t('admin.reconciliation.riskFilterLabel') }}</label>
+        <div class="dropdown-box">
+          <SelectDropdown
+            :model-value="selectedRisk"
+            :options="riskOptions"
+            variant="bordered"
+            @update:model-value="emit('update:selectedRisk', String($event))"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -144,10 +213,10 @@ const emit = defineEmits<{
 
 <style scoped>
 .filter-wrapper {
-  background: #ffffff;
+  background: var(--surface, #ffffff);
   border-radius: 16px;
   padding: 16px 20px;
-  border: 1px solid #e1e3e4;
+  border: 1px solid var(--outline, #e1e3e4);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
@@ -166,10 +235,11 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f8f9fa;
+  background: var(--soft, #f8f9fa);
   padding: 4px;
   border-radius: 999px;
-  border: 1px solid #e1e3e4;
+  border: 1px solid var(--outline, #e1e3e4);
+  flex-wrap: wrap;
 }
 
 .tab-btn {
@@ -180,7 +250,7 @@ const emit = defineEmits<{
   border-radius: 999px;
   font-size: 13px;
   font-weight: 500;
-  color: #4f4446;
+  color: var(--muted, #4f4446);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -188,14 +258,18 @@ const emit = defineEmits<{
 }
 
 .tab-btn:hover {
-  color: #191c1d;
+  color: var(--ink, #191c1d);
 }
 
 .tab-btn.active {
-  background: var(--primary-container, #F8E8EC);
-  color: var(--on-primary-container, #4e1827);
+  background: var(--pink-dark, #db2777);
+  color: #ffffff;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(107, 45, 63, 0.1);
+  box-shadow: 0 2px 6px rgba(219, 39, 119, 0.25);
+}
+
+.tab-icon {
+  font-size: 16px;
 }
 
 .pulse-indicator {
@@ -203,6 +277,10 @@ const emit = defineEmits<{
   height: 6px;
   border-radius: 50%;
   background: #059669;
+}
+
+.tab-btn.active .pulse-indicator {
+  background: #ffffff;
 }
 
 .quick-actions-group {
@@ -215,7 +293,7 @@ const emit = defineEmits<{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--primary-container, #F8E8EC);
+  background: var(--primary-container, #f8e8ec);
   color: var(--on-primary-container, #4e1827);
   border: none;
   padding: 8px 16px;
@@ -248,19 +326,51 @@ const emit = defineEmits<{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #f8f9fa);
+  border: 1px solid var(--outline, #e1e3e4);
   padding: 8px 14px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .btn-export:hover {
-  background: #edeeef;
+  background: var(--soft, #edeeef);
+}
+
+.custom-date-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--soft, #f8f9fa);
+  border-radius: 12px;
+  border: 1px solid var(--outline, #e1e3e4);
+  flex-wrap: wrap;
+}
+
+.date-input-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #5d5f5f);
+}
+
+.date-picker-container {
+  min-width: 160px;
+}
+
+.date-sep {
+  color: var(--muted, #817476);
+  font-weight: 700;
 }
 
 .filters-row {
@@ -269,24 +379,24 @@ const emit = defineEmits<{
   flex-wrap: wrap;
   gap: 12px;
   padding-top: 10px;
-  border-top: 1px solid #f3f4f5;
+  border-top: 1px solid var(--outline, #f3f4f5);
 }
 
 .search-field {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
-  border-radius: 999px;
-  padding: 6px 14px;
+  background: var(--soft, #f8f9fa);
+  border: 1px solid var(--outline, #e1e3e4);
+  border-radius: 12px;
+  padding: 8px 14px;
   flex: 1;
-  min-width: 280px;
+  min-width: 260px;
 }
 
 .search-icon {
   font-size: 18px;
-  color: #817476;
+  color: var(--muted, #817476);
 }
 
 .search-input {
@@ -295,32 +405,35 @@ const emit = defineEmits<{
   outline: none;
   font-size: 13px;
   width: 100%;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
 }
 
-.filter-select-wrap {
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted, #817476);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.dropdown-filter-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
-  border-radius: 999px;
-  padding: 4px 12px;
+  min-width: 170px;
 }
 
-.filter-label {
+.dropdown-label {
   font-size: 12px;
   font-weight: 600;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
+  white-space: nowrap;
 }
 
-.filter-select {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 13px;
-  color: #191c1d;
-  font-weight: 500;
-  cursor: pointer;
+.dropdown-box {
+  flex: 1;
+  min-width: 150px;
 }
 </style>

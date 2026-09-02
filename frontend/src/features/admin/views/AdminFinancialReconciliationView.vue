@@ -18,6 +18,8 @@ const {
   notice,
   error,
   activeTab,
+  dateFrom,
+  dateTo,
   selectedGateway,
   selectedStatus,
   selectedRisk,
@@ -75,7 +77,7 @@ const {
     </div>
 
     <!-- 4 Summary KPI Cards -->
-    <ReconciliationKpiCards :stats="stats" />
+    <ReconciliationKpiCards :stats="stats" :loading="loading" />
 
     <!-- Realtime Anomaly Alert Banner -->
     <ReconciliationAlertBanner
@@ -87,6 +89,8 @@ const {
     <!-- Filter Controls Bar -->
     <ReconciliationFilterBar
       v-model:active-tab="activeTab"
+      v-model:date-from="dateFrom"
+      v-model:date-to="dateTo"
       v-model:selected-gateway="selectedGateway"
       v-model:selected-status="selectedStatus"
       v-model:selected-risk="selectedRisk"
@@ -108,6 +112,7 @@ const {
     <ReconciliationHealthAnalytics
       :health-trend="stats.health_trend"
       :match-rate="stats.match_rate"
+      :loading="loading"
     />
 
     <!-- Slide-over Drawer for Drill-down Investigation -->

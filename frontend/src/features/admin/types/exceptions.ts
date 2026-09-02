@@ -1,5 +1,5 @@
 export type RiskLevel = 'critical' | 'medium' | 'low'
-export type ExceptionStatus = 'pending' | 'resolved' | 'investigating'
+export type ExceptionStatus = 'open' | 'pending' | 'resolved' | 'investigating'
 export type AuditLogType = 'override' | 'flag' | 'block' | 'unlock'
 
 export interface ExceptionUser {
@@ -9,8 +9,19 @@ export interface ExceptionUser {
   tier?: string
 }
 
+export interface FinancialExceptionMetadata {
+  shift?: string
+  user?: ExceptionUser
+  reason?: string
+  court?: string
+  gateway?: string
+  expected_amount?: number
+  actual_amount?: number
+  [key: string]: any
+}
+
 export interface FinancialException {
-  id: string
+  id: string | number
   organization_id?: number
   type: string
   severity: RiskLevel
@@ -20,7 +31,7 @@ export interface FinancialException {
   reference?: string
   description: string
   links?: Record<string, string>
-  metadata?: Record<string, any>
+  metadata?: FinancialExceptionMetadata
   detected_at?: string
   due_at?: string
   resolved_at?: string
@@ -35,7 +46,7 @@ export interface FinancialException {
 }
 
 export interface AuditLog {
-  id: string
+  id: string | number
   author: string
   role: string
   time: string
@@ -43,6 +54,7 @@ export interface AuditLog {
   details: string
   hash: string
   type: AuditLogType
+  created_at?: string
 }
 
 export interface ExceptionStats {
@@ -53,3 +65,11 @@ export interface ExceptionStats {
 }
 
 export type ExceptionFilterTab = 'all' | 'critical' | 'refund' | 'deposit' | 'deposit_hold'
+
+export interface ManualOverridePayload {
+  actionType: string
+  reason: string
+  proofFileName?: string
+  signatureData?: string
+}
+

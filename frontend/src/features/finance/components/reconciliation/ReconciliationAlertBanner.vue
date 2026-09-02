@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 defineProps<{
   alertsCount: number
 }>()
@@ -7,6 +9,8 @@ const emit = defineEmits<{
   (e: 'auto-resolve'): void
   (e: 'open-investigation'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -17,22 +21,22 @@ const emit = defineEmits<{
       </div>
       <div class="banner-content">
         <div class="banner-title">
-          Phát hiện {{ alertsCount }} sai lệch tài chính cần xử lý trước chu kỳ quyết toán 17:00 hôm nay
+          {{ t('admin.reconciliation.alertBannerTitle', { count: alertsCount }) }}
         </div>
         <p class="banner-desc">
-          Bao gồm: 1 giao dịch trễ Webhook Napas247 (TXN-88291A), 1 chênh lệch làm tròn phí đối tác 10,000 ₫ (TXN-88288D) và 1 phiên đối soát chờ bù trừ.
+          {{ t('admin.reconciliation.alertBannerDesc') }}
         </p>
       </div>
     </div>
 
     <div class="banner-actions">
       <button class="btn-auto-fix" type="button" @click="emit('auto-resolve')">
-        <span class="material-symbols-outlined">auto_fix_high</span>
-        Xử lý hàng loạt bằng AI
+        <span class="material-symbols-outlined">rule</span>
+        {{ t('admin.reconciliation.autoResolveSafeBtn') }}
       </button>
       <button class="btn-open-investigate" type="button" @click="emit('open-investigation')">
         <span class="material-symbols-outlined">manage_search</span>
-        Mở Trình Điều Tra
+        {{ t('admin.reconciliation.openInvestigationBtn') }}
       </button>
     </div>
   </div>
@@ -45,7 +49,7 @@ const emit = defineEmits<{
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  background: #fffbfa;
+  background: var(--surface, #ffffff);
   border-left: 4px solid #ba1a1a;
   border-radius: 14px;
   padding: 16px 20px;
@@ -53,6 +57,13 @@ const emit = defineEmits<{
   border-right: 1px solid #ffdad6;
   border-bottom: 1px solid #ffdad6;
   box-shadow: 0 2px 10px rgba(186, 26, 26, 0.04);
+}
+
+:global(html.dark) .alert-banner {
+  background: #251618;
+  border-top-color: #5c2025;
+  border-right-color: #5c2025;
+  border-bottom-color: #5c2025;
 }
 
 .banner-left {
@@ -74,6 +85,10 @@ const emit = defineEmits<{
   flex-shrink: 0;
 }
 
+:global(html.dark) .warning-badge {
+  background: #49171b;
+}
+
 .warning-icon {
   font-size: 22px;
   color: #ba1a1a;
@@ -87,15 +102,16 @@ const emit = defineEmits<{
 }
 
 .banner-title {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #ba1a1a;
 }
 
 .banner-desc {
   font-size: 13px;
-  color: #4f4446;
+  color: var(--ink, #4f4446);
   margin: 0;
+  opacity: 0.9;
 }
 
 .banner-actions {
@@ -108,7 +124,7 @@ const emit = defineEmits<{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--primary, #6B2D3F);
+  background: var(--pink-dark, #db2777);
   color: #ffffff;
   border: none;
   padding: 8px 16px;
@@ -116,11 +132,11 @@ const emit = defineEmits<{
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: all 0.2s ease;
 }
 
 .btn-auto-fix:hover {
-  background: #5e3e47;
+  background: var(--pink-deep, #be185d);
   transform: translateY(-1px);
 }
 
@@ -128,9 +144,9 @@ const emit = defineEmits<{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ffffff;
-  color: #191c1d;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  color: var(--ink, #191c1d);
+  border: 1px solid var(--outline, #e1e3e4);
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 13px;
@@ -140,6 +156,6 @@ const emit = defineEmits<{
 }
 
 .btn-open-investigate:hover {
-  background: #f3f4f5;
+  background: var(--soft, #f3f4f5);
 }
 </style>

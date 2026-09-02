@@ -29,6 +29,10 @@ use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
+use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
+use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
 use App\Infrastructure\Storage\FileStorageService;
 use Illuminate\Support\ServiceProvider;
 
@@ -51,6 +55,8 @@ class RepositoryServiceProvider extends ServiceProvider
         ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
         DisputeRepositoryInterface::class => EloquentDisputeRepository::class,
         RecurringContractRepositoryInterface::class => EloquentRecurringContractRepository::class,
+        TenantMembershipPlanRepositoryInterface::class => EloquentTenantMembershipPlanRepository::class,
+        LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
     ];
 

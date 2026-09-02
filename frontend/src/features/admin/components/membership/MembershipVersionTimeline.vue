@@ -1,308 +1,139 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
+import { SkeletonLoader } from '@/shared/components'
 import type { PlanVersionAudit } from '../../types/membership'
 
 const props = defineProps<{
   audits: PlanVersionAudit[]
+  loading?: boolean
 }>()
 
+const { t } = useI18n()
 const isExpanded = ref(false)
 
 function getVisibleAudits() {
   if (isExpanded.value) return props.audits
-  return props.audits.slice(0, 4)
+  return props.audits.slice(0, 6)
 }
 </script>
 
 <template>
-  <div class="version-timeline-card">
-    <div class="card-header-row">
-      <h3 class="card-title">Lịch sử phiên bản</h3>
-      <span class="material-symbols-outlined header-icon">history</span>
+  <div class="version-timeline-wrapper">
+    <div class="timeline-header-card">
+      <div class="title-with-icon">
+        <span class="material-symbols-outlined header-icon">history_edu</span>
+        <div>
+          <h3 class="card-title">{{ t('admin.membership.versionTimelineTitle') }}</h3>
+          <p class="card-desc">{{ t('admin.membership.versionTimelineDesc') }}</p>
+        </div>
+      </div>
+      <span v-if="!loading" class="audits-count-pill">{{ audits.length }} bản ghi</span>
     </div>
 
-    <p class="card-description">
-      Thay đổi quyền lợi sẽ được lưu thành phiên bản mới để không ảnh hưởng user cũ đang duy trì gói.
-    </p>
+    <!-- Skeleton Loading -->
+    <div v-if="loading" class="timeline-grid">
+      <div v-for="i in 3" :key="i" class="version-card skeleton-card">
+        <SkeletonLoader height="20px" width="40%" />
+        <SkeletonLoader height="12px" width="60%" class="my-2" />
+        <SkeletonLoader height="32px" width="100%" radius="10px" class="mt-2" />
+      </div>
+    </div>
 
-    <!-- Timeline stack -->
-    <div class="timeline-container">
+    <!-- Empty State -->
+    <div v-else-if="!audits.length" class="empty-timeline-box">
+      <span class="material-symbols-outlined empty-icon">history</span>
+      <p class="empty-text">{{ t('admin.membership.noHistoryRecorded') }}</p>
+    </div>
+
+    <!-- Version Cards Grid -->
+    <div v-else class="timeline-grid">
       <div
         v-for="(item, idx) in getVisibleAudits()"
         :key="item.id || idx"
-        class="timeline-item"
+        class="version-card"
         :class="{ 'is-archived': item.status === 'archived' }"
       >
-        <!-- Timeline node circle -->
-        <div class="timeline-node" :class="{ 'node-active': item.status === 'active', 'node-archived': item.status === 'archived' }">
-          <div v-if="item.status === 'active'" class="node-inner-dot"></div>
+        <div class="version-card-head">
+          <div class="version-title-block">
+            <strong class="ver-plan-name">{{ resolveLocalizedText(item.planName) }}</strong>
+            <span class="ver-badge">{{ item.version }}</span>
+          </div>
+          <span class="status-badge" :class="item.status === 'active' ? 'active' : 'archived'">
+            {{ item.status === 'active' ? t('admin.membership.activeStatus') : t('admin.membership.archivedStatus') }}
+          </span>
         </div>
 
-        <!-- Content -->
-        <div class="timeline-content">
-          <div class="item-header-row">
-            <h4 class="item-title" :class="{ 'strike-text': item.status === 'archived' }">
-              {{ item.planName }} {{ item.version }}
-            </h4>
-            <span
-              class="status-pill"
-              :class="{ 'pill-active': item.status === 'active', 'pill-archived': item.status === 'archived' }"
-            >
-              {{ item.status === 'active' ? 'Active' : 'Archived' }}
-            </span>
-          </div>
-
-          <p class="item-meta">
-            {{ item.updatedAt }} • Cập nhật bởi {{ item.updatedBy }}
-            <span v-if="item.activeSubscribersCount > 0" class="subscribers-count">
-              ({{ item.activeSubscribersCount }} users active)
-            </span>
-          </p>
-
-          <div v-if="item.changes && item.changes.length" class="changes-box">
-            <div v-for="(change, cIdx) in item.changes" :key="cIdx" class="change-line">
-              + {{ change }}
-            </div>
-          </div>
-
-          <p v-if="item.note" class="archived-note">
-            {{ item.note }}
-          </p>
+        <div class="version-meta-row">
+          <span class="meta-txt">{{ item.updatedAt }} • {{ t('admin.membership.updatedByLabel', { user: item.updatedBy }) }}</span>
+          <span v-if="item.activeSubscribersCount > 0" class="subscribers-pill">
+            <span class="material-symbols-outlined icon-14">group</span>
+            {{ t('admin.membership.activeSubscribersCount', { count: item.activeSubscribersCount }) }}
+          </span>
         </div>
+
+        <div v-if="item.changes && item.changes.length" class="changes-chip-list">
+          <div v-for="(change, cIdx) in item.changes" :key="cIdx" class="change-tag">
+            <span class="material-symbols-outlined icon-14 text-pink">add_circle</span>
+            <span>{{ resolveLocalizedText(change) }}</span>
+          </div>
+        </div>
+
+        <p v-if="item.note" class="ver-note">{{ resolveLocalizedText(item.note) }}</p>
       </div>
     </div>
 
     <button
-      v-if="audits.length > 3"
+      v-if="!loading && audits.length > 6"
       type="button"
-      class="btn-toggle-expand"
+      class="btn-expand-timeline"
       @click="isExpanded = !isExpanded"
     >
-      {{ isExpanded ? 'Thu gọn lịch sử' : 'Xem tất cả lịch sử' }}
+      {{ isExpanded ? t('admin.membership.collapseHistoryBtn') : t('admin.membership.expandHistoryBtn') }}
     </button>
   </div>
 </template>
 
 <style scoped>
-.version-timeline-card {
-  background: var(--surface-container-lowest, #ffffff);
-  border-radius: 20px;
-  padding: 24px;
-  border: 1px solid var(--outline-variant, #e1e3e4);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-  position: sticky;
-  top: 24px;
-}
-
-:global(html.dark) .version-timeline-card {
-  background: #1e2025;
-  border-color: #353942;
-}
-
-.card-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.card-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--on-surface, #191c1d);
-}
-
-:global(html.dark) .card-title {
-  color: #ffffff;
-}
-
-.header-icon {
-  color: var(--on-surface-variant, #4f4446);
-  font-size: 22px;
-}
-
-.card-description {
-  margin: 0 0 24px 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--on-surface-variant, #4f4446);
-}
-
-.timeline-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.timeline-container::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 10px;
-  width: 2px;
-  background: var(--surface-container-high, #e7e8e9);
-  z-index: 1;
-}
-
-:global(html.dark) .timeline-container::before {
-  background: #353942;
-}
-
-.timeline-item {
-  position: relative;
-  display: flex;
-  gap: 16px;
-  z-index: 2;
-}
-
-.timeline-item.is-archived {
-  opacity: 0.7;
-}
-
-.timeline-node {
-  width: 22px;
-  height: 22px;
-  border-radius: 9999px;
-  background: var(--surface-container-lowest, #ffffff);
-  border: 3px solid var(--surface-container-high, #e7e8e9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-:global(html.dark) .timeline-node {
-  background: #1e2025;
-  border-color: #353942;
-}
-
-.timeline-node.node-active {
-  border-color: var(--primary-container, #ffd1dc);
-  background: var(--primary-container, #ffd1dc);
-}
-
-.node-inner-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: var(--primary, #78555e);
-}
-
-.timeline-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.item-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.item-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--on-surface, #191c1d);
-}
-
-:global(html.dark) .item-title {
-  color: #ffffff;
-}
-
-.strike-text {
-  text-decoration: line-through;
-  color: var(--on-surface-variant, #4f4446);
-}
-
-.status-pill {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
-}
-
-.pill-active {
-  background: var(--primary-fixed, #ffd9e2);
-  color: var(--primary, #78555e);
-}
-
-.pill-archived {
-  background: var(--surface-container, #edeeef);
-  color: var(--on-surface-variant, #4f4446);
-}
-
-:global(html.dark) .pill-archived {
-  background: #2b2e36;
-  color: #a0aec0;
-}
-
-.item-meta {
-  margin: 0 0 6px 0;
-  font-size: 11px;
-  color: var(--on-surface-variant, #4f4446);
-}
-
-.subscribers-count {
-  font-weight: 600;
-  color: var(--primary, #78555e);
-}
-
-:global(html.dark) .subscribers-count {
-  color: #f8b4c4;
-}
-
-.changes-box {
-  background: var(--surface-container-low, #f3f4f5);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--on-surface, #191c1d);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-:global(html.dark) .changes-box {
-  background: #262930;
-  color: #e2e8f0;
-}
-
-.archived-note {
-  margin: 4px 0 0 0;
-  font-size: 11px;
-  font-style: italic;
-  color: var(--on-surface-variant, #4f4446);
-}
-
-.btn-toggle-expand {
-  width: 100%;
-  margin-top: 20px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--outline-variant, #d3c3c5);
-  background: transparent;
-  color: var(--on-surface-variant, #4f4446);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-toggle-expand:hover {
-  background: var(--surface-container-low, #f3f4f5);
-  color: var(--on-surface, #191c1d);
-}
-
-:global(html.dark) .btn-toggle-expand:hover {
-  background: #2b2e36;
-  color: #ffffff;
-}
+.version-timeline-wrapper { display: flex; flex-direction: column; gap: 16px; }
+.timeline-header-card { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--outline); border-radius: 20px; padding: 20px 24px; }
+:global(html.dark) .timeline-header-card { background: #181a20; border-color: #2a2d36; }
+.title-with-icon { display: flex; align-items: center; gap: 14px; }
+.header-icon { font-size: 28px; color: var(--pink-dark, #db2777); }
+.card-title { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink); }
+.card-desc { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+.audits-count-pill { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; background: rgba(0, 0, 0, 0.08); color: var(--muted); }
+:global(html.dark) .audits-count-pill { background: #252830; }
+.timeline-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.version-card { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--outline); border-radius: 18px; padding: 18px; transition: transform 0.2s, box-shadow 0.2s; }
+:global(html.dark) .version-card { background: #181a20; border-color: #2a2d36; }
+.version-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05); }
+.version-card.is-archived { opacity: 0.65; }
+.version-card-head { display: flex; justify-content: space-between; align-items: center; }
+.version-title-block { display: flex; align-items: center; gap: 8px; }
+.ver-plan-name { font-size: 15px; font-weight: 800; color: var(--ink); }
+.ver-badge { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(219, 39, 119, 0.12); color: var(--pink-dark, #db2777); font-family: monospace; }
+.status-badge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+.status-badge.active { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.status-badge.archived { background: var(--surface-container-high, #e5e7eb); color: var(--muted); }
+:global(html.dark) .status-badge.archived { background: #252830; }
+.version-meta-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--muted); flex-wrap: wrap; gap: 6px; }
+.subscribers-pill { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--pink-dark, #db2777); }
+.changes-chip-list { display: flex; flex-direction: column; gap: 4px; background: var(--surface-container-high, #f8f9fa); border-radius: 10px; padding: 8px 12px; }
+:global(html.dark) .changes-chip-list { background: #1e2129; }
+.change-tag { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
+:global(html.dark) .change-tag { color: #d1d5db; }
+.ver-note { margin: 0; font-size: 11.5px; font-style: italic; color: var(--muted); }
+.btn-expand-timeline { padding: 10px; border-radius: 12px; border: 1px solid var(--outline); background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-expand-timeline:hover { color: var(--ink); background: var(--surface-container-high, #f3f4f6); }
+:global(html.dark) .btn-expand-timeline { background: #181a20; border-color: #2a2d36; }
+.empty-timeline-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; background: var(--surface); border: 1px dashed var(--outline); border-radius: 20px; }
+.empty-icon { font-size: 40px; color: var(--muted); margin-bottom: 8px; }
+.empty-text { margin: 0; font-size: 13.5px; color: var(--muted); }
+.text-pink { color: var(--pink-dark, #db2777); }
+.icon-14 { font-size: 14px; }
+.my-2 { margin: 8px 0; }
+.mt-2 { margin-top: 8px; }
+@media (max-width: 800px) { .timeline-grid { grid-template-columns: 1fr; } }
 </style>

@@ -1,4 +1,5 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { reconciliationApi } from '../api/reconciliationApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type {
@@ -8,6 +9,8 @@ import type {
 } from '../types/reconciliation'
 
 export function useFinancialReconciliation() {
+  const { t } = useI18n()
+
   const loading = ref(false)
   const syncing = ref(false)
   const detailLoading = ref(false)
@@ -15,6 +18,8 @@ export function useFinancialReconciliation() {
   const error = ref<string | null>(null)
 
   const activeTab = ref<'today' | 'yesterday' | '7days' | 'month' | 'custom'>('today')
+  const dateFrom = ref<string>('')
+  const dateTo = ref<string>('')
   const selectedGateway = ref<string>('all')
   const selectedStatus = ref<string>('all')
   const selectedRisk = ref<string>('all')
@@ -40,12 +45,45 @@ export function useFinancialReconciliation() {
 
   const runs = ref<ReconciliationRun[]>([])
 
+  // Watch activeTab to set default date ranges when switching tabs
+  watch(activeTab, (tab) => {
+    const today = new Date()
+    const toDateStr = (d: Date) => d.toISOString().slice(0, 10)
+
+    if (tab === 'today') {
+      dateFrom.value = toDateStr(today)
+      dateTo.value = toDateStr(today)
+    } else if (tab === 'yesterday') {
+      const y = new Date(today)
+      y.setDate(y.getDate() - 1)
+      dateFrom.value = toDateStr(y)
+      dateTo.value = toDateStr(y)
+    } else if (tab === '7days') {
+      const past7 = new Date(today)
+      past7.setDate(past7.getDate() - 6)
+      dateFrom.value = toDateStr(past7)
+      dateTo.value = toDateStr(today)
+    } else if (tab === 'month') {
+      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      dateFrom.value = toDateStr(firstOfMonth)
+      dateTo.value = toDateStr(today)
+    }
+  }, { immediate: true })
+
   // Filtered runs
   const filteredRuns = computed(() => {
     return runs.value.filter((item) => {
+      // Date range filter
+      if (dateFrom.value && item.run_date < dateFrom.value) {
+        return false
+      }
+      if (dateTo.value && item.run_date > dateTo.value) {
+        return false
+      }
+
       // Gateway filter
       if (selectedGateway.value !== 'all') {
-        const itemChannel = item.channel?.toLowerCase() || ''
+        const itemChannel = (item.channel || item.details?.channel || '').toLowerCase()
         if (!itemChannel.includes(selectedGateway.value.toLowerCase())) {
           return false
         }
@@ -60,7 +98,8 @@ export function useFinancialReconciliation() {
 
       // Risk level filter
       if (selectedRisk.value !== 'all') {
-        if (item.riskLevel !== selectedRisk.value) {
+        const risk = item.riskLevel || item.details?.riskLevel || 'low'
+        if (risk !== selectedRisk.value) {
           return false
         }
       }
@@ -68,10 +107,10 @@ export function useFinancialReconciliation() {
       // Search query filter
       if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase()
-        const matchTxn = item.txnCode?.toLowerCase().includes(q)
-        const matchChannel = item.channel?.toLowerCase().includes(q)
-        const matchCustomer = item.details?.customer?.toLowerCase().includes(q)
-        const matchCourt = item.details?.court?.toLowerCase().includes(q)
+        const matchTxn = (item.txnCode || item.details?.txnCode || `REC-${item.id}`).toLowerCase().includes(q)
+        const matchChannel = (item.channel || item.details?.channel || '').toLowerCase().includes(q)
+        const matchCustomer = (item.details?.customer || '').toLowerCase().includes(q)
+        const matchCourt = (item.details?.court || '').toLowerCase().includes(q)
         if (!matchTxn && !matchChannel && !matchCustomer && !matchCourt) {
           return false
         }
@@ -97,7 +136,7 @@ export function useFinancialReconciliation() {
         runs.value = runsRes.data
       }
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể tải dữ liệu đối soát tài chính.')
+      error.value = errorMessage(e, t('admin.reconciliation.loadError'))
     } finally {
       loading.value = false
     }
@@ -117,7 +156,7 @@ export function useFinancialReconciliation() {
         runDetail.value = res
       }
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể tải chi tiết phiên đối soát.')
+      error.value = errorMessage(e, t('admin.reconciliation.detailError'))
     } finally {
       detailLoading.value = false
     }
@@ -136,10 +175,10 @@ export function useFinancialReconciliation() {
     error.value = null
     try {
       await reconciliationApi.triggerRun({ force: true })
-      notice.value = '⚡ Đã kích hoạt đồng bộ và đối soát toàn diện với Cổng thanh toán!'
+      notice.value = `⚡ ${t('admin.reconciliation.syncSuccess')}`
       await loadData()
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Kích hoạt phiên đối soát thất bại.')
+      error.value = errorMessage(e, t('admin.reconciliation.syncError'))
     } finally {
       syncing.value = false
       setTimeout(() => {
@@ -153,13 +192,13 @@ export function useFinancialReconciliation() {
     loading.value = true
     try {
       await reconciliationApi.autoResolve({ run_id: runId, scope: 'safe_only' })
-      notice.value = '✨ AI đã tự động bù trừ các mục chênh lệch an toàn!'
+      notice.value = `✨ ${t('admin.reconciliation.autoResolveSuccess')}`
       await loadData()
       if (isDrawerOpen.value) {
         closeDrawer()
       }
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể tự động giải quyết ngoại lệ.')
+      error.value = errorMessage(e, t('admin.reconciliation.resolveError'))
     } finally {
       loading.value = false
       setTimeout(() => {
@@ -169,9 +208,10 @@ export function useFinancialReconciliation() {
   }
 
   function exportReport(format: 'pdf' | 'excel' | 'csv' = 'pdf') {
-    notice.value = `📥 Đang tạo báo cáo đối soát định dạng ${format.toUpperCase()}... File sẽ tự động tải xuống.`
+    const fileName = `Bao_Cao_Doi_Soat_${new Date().toISOString().slice(0, 10)}.${format}`
+    notice.value = `📥 ${t('admin.reconciliation.exportingMsg', { format: format.toUpperCase() })}`
     setTimeout(() => {
-      notice.value = `✅ Đã xuất thành công Báo_Cáo_Doi_Soat_${new Date().toISOString().slice(0, 10)}.${format}`
+      notice.value = `✅ ${t('admin.reconciliation.exportedMsg', { fileName })}`
       setTimeout(() => {
         notice.value = null
       }, 4000)
@@ -189,6 +229,8 @@ export function useFinancialReconciliation() {
     notice,
     error,
     activeTab,
+    dateFrom,
+    dateTo,
     selectedGateway,
     selectedStatus,
     selectedRisk,

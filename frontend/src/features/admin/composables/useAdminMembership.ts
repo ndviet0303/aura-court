@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type {
   MembershipPlan,
   LoyaltyConversionConfig,
@@ -8,8 +9,11 @@ import type {
 } from '../types/membership'
 import { membershipApi } from '../api/membershipApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { resolveLocalizedText } from '@/i18n'
 
 export function useAdminMembership() {
+  const { t } = useI18n()
+
   const loading = ref(false)
   const error = ref<string | null>(null)
   const notice = ref<string | null>(null)
@@ -35,7 +39,6 @@ export function useAdminMembership() {
   const isPlanModalOpen = ref(false)
   const isRuleModalOpen = ref(false)
   const isVersionModalOpen = ref(false)
-  const isHistoryModalOpen = ref(false)
 
   const editingPlan = ref<MembershipPlan | null>(null)
   const editingRule = ref<MultiplierRule | null>(null)
@@ -85,7 +88,7 @@ export function useAdminMembership() {
         stats.value = resStats.value
       }
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Không thể tải thông tin gói hội viên và điểm thưởng.'))
+      showError(errorMessage(e, t('admin.membership.loadDataError')))
     } finally {
       loading.value = false
     }
@@ -111,7 +114,7 @@ export function useAdminMembership() {
     try {
       if (editingPlan.value && !createNewVersion) {
         await membershipApi.updatePlan(editingPlan.value.id, planData)
-        showNotice(`Đã cập nhật thông tin gói ${planData.name || editingPlan.value.name}!`)
+        showNotice(t('admin.membership.planSavedNotice', { name: resolveLocalizedText(planData.name || editingPlan.value.name) }))
       } else if (editingPlan.value && createNewVersion) {
         const curVer = editingPlan.value.version || 'v1.0'
         const parts = curVer.replace('v', '').split('.')
@@ -123,15 +126,29 @@ export function useAdminMembership() {
           ...planData,
           version: nextVer,
         })
-        showNotice(`Đã lưu phiên bản mới ${nextVer} cho gói ${planData.name || editingPlan.value.name}!`)
+        showNotice(t('admin.membership.planVersionSavedNotice', { version: nextVer, name: resolveLocalizedText(planData.name || editingPlan.value.name) }))
       } else {
         await membershipApi.createPlan(planData)
-        showNotice(`Đã tạo thành công gói ${planData.name}!`)
+        showNotice(t('admin.membership.planSavedNotice', { name: resolveLocalizedText(planData.name || '') }))
       }
       await loadData()
       isPlanModalOpen.value = false
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Có lỗi khi lưu thông tin gói hội viên.'))
+      showError(errorMessage(e, t('admin.membership.savePlanError')))
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function archivePlan(planId: string | number) {
+    loading.value = true
+    try {
+      const plan = plans.value.find((p) => p.id === planId)
+      await membershipApi.archivePlan(planId)
+      showNotice(t('admin.membership.planArchivedNotice', { name: resolveLocalizedText(plan?.name || '') }))
+      await loadData()
+    } catch (e: unknown) {
+      showError(errorMessage(e, t('admin.membership.savePlanError')))
     } finally {
       loading.value = false
     }
@@ -153,9 +170,9 @@ export function useAdminMembership() {
       try {
         await membershipApi.updateMultiplierRule(ruleId, { isActive: !r.isActive })
         r.isActive = !r.isActive
-        showNotice(`${r.isActive ? 'Đã kích hoạt' : 'Đã tạm dừng'} quy tắc: ${r.name}`)
+        showNotice(t('admin.membership.toggleStatusSuccess'))
       } catch (e: unknown) {
-        showError(errorMessage(e, 'Không thể thay đổi trạng thái quy tắc.'))
+        showError(errorMessage(e, t('admin.membership.saveRuleError')))
       }
     }
   }
@@ -165,15 +182,15 @@ export function useAdminMembership() {
     try {
       if (editingRule.value) {
         await membershipApi.updateMultiplierRule(editingRule.value.id, ruleData)
-        showNotice(`Đã cập nhật quy tắc: ${ruleData.name || editingRule.value.name}`)
+        showNotice(t('admin.membership.ruleSavedNotice', { name: resolveLocalizedText(ruleData.name || editingRule.value.name) }))
       } else {
         await membershipApi.createMultiplierRule(ruleData)
-        showNotice(`Đã thêm quy tắc nhân điểm: ${ruleData.name}`)
+        showNotice(t('admin.membership.ruleSavedNotice', { name: resolveLocalizedText(ruleData.name || '') }))
       }
       await loadData()
       isRuleModalOpen.value = false
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Có lỗi khi lưu quy tắc nhân điểm.'))
+      showError(errorMessage(e, t('admin.membership.saveRuleError')))
     } finally {
       loading.value = false
     }
@@ -183,10 +200,10 @@ export function useAdminMembership() {
     loading.value = true
     try {
       await membershipApi.deleteMultiplierRule(ruleId)
-      showNotice('Đã xóa quy tắc nhân điểm thành công!')
+      showNotice(t('admin.membership.ruleDeletedNotice'))
       await loadData()
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Không thể xóa quy tắc nhân điểm.'))
+      showError(errorMessage(e, t('admin.membership.deleteRuleError')))
     } finally {
       loading.value = false
     }
@@ -196,10 +213,10 @@ export function useAdminMembership() {
     loading.value = true
     try {
       await membershipApi.updateLoyaltyConfig(payload)
-      showNotice('Đã cập nhật cấu hình tỷ lệ tích điểm và đổi thưởng thành công!')
+      showNotice(t('admin.membership.ratesUpdatedNotice'))
       await loadData()
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Không thể cập nhật cấu hình tích điểm.'))
+      showError(errorMessage(e, t('admin.membership.updateRatesError')))
     } finally {
       loading.value = false
     }
@@ -224,7 +241,6 @@ export function useAdminMembership() {
     isPlanModalOpen,
     isRuleModalOpen,
     isVersionModalOpen,
-    isHistoryModalOpen,
     editingPlan,
     editingRule,
     targetPlanForVersion,
@@ -233,6 +249,7 @@ export function useAdminMembership() {
     openEditPlanModal,
     openManageVersionModal,
     savePlan,
+    archivePlan,
     openCreateRuleModal,
     openEditRuleModal,
     toggleRuleActive,

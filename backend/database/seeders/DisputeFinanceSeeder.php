@@ -137,6 +137,10 @@ class DisputeFinanceSeeder extends Seeder
                     'shift' => 'Ca Sáng (06:00 - 14:00)',
                     'user' => ['name' => 'Lê Văn B.', 'id' => 'UID-442', 'tier' => 'Hội viên Vàng'],
                     'reason' => 'Vượt hạn mức nạp 24h',
+                    'court' => 'Sân Cầu Lông Aura Q7',
+                    'gateway' => 'VietQR Pro (MBBank)',
+                    'expected_amount' => 2000000,
+                    'actual_amount' => 4500000,
                 ],
             ],
             [
@@ -153,6 +157,10 @@ class DisputeFinanceSeeder extends Seeder
                     'shift' => 'Ca Sáng (06:00 - 14:00)',
                     'user' => ['name' => 'Trần Thị C.', 'id' => 'UID-119', 'tier' => 'Khách vãng lai'],
                     'reason' => 'Lệch đối soát VietQR',
+                    'court' => 'Sân Cầu Lông Aura Phú Nhuận',
+                    'gateway' => 'VietQR (Napas 247)',
+                    'expected_amount' => 12000000,
+                    'actual_amount' => 11000000,
                 ],
             ],
             [
@@ -169,23 +177,211 @@ class DisputeFinanceSeeder extends Seeder
                     'shift' => 'Ca Sáng (06:00 - 14:00)',
                     'user' => ['name' => 'Minh Quân', 'id' => 'UID-992', 'tier' => 'Hội viên Kim Cương'],
                     'reason' => 'Hoàn tiền hủy sân quá 48h',
+                    'court' => 'Sân Cầu Lông Aura Tân Bình',
+                    'gateway' => 'Ví Điện Tử MoMo',
+                    'expected_amount' => 2150000,
+                    'actual_amount' => 2150000,
+                ],
+            ],
+            [
+                'reference' => 'TXN-88288D',
+                'type' => 'voucher_hunting',
+                'severity' => 'critical',
+                'status' => 'open',
+                'amount' => 50000000,
+                'currency' => 'VND',
+                'description' => 'Bất thường Nạp/Rút: Nghi vấn tạo lệnh ảo săn voucher',
+                'detected_at' => $now->copy()->subHours(8),
+                'due_at' => $now->copy()->addHours(16),
+                'metadata' => [
+                    'shift' => 'Ca Chiều (14:00 - 22:00)',
+                    'user' => ['name' => 'Nguyễn Hoàng Nam', 'id' => 'UID-8831', 'tier' => 'Tài khoản mới'],
+                    'reason' => 'Bất thường nạp rút liên tiếp',
+                    'court' => 'Sân Cầu Lông Aura Q7',
+                    'gateway' => 'Chuyển khoản VCB',
+                    'expected_amount' => 0,
+                    'actual_amount' => 50000000,
+                ],
+            ],
+            [
+                'reference' => 'TXN-88287E',
+                'type' => 'deposit_hold_mismatch',
+                'severity' => 'medium',
+                'status' => 'open',
+                'amount' => 500000,
+                'currency' => 'VND',
+                'description' => 'Lệch cọc giữ chỗ: Timeout cổng thanh toán giữ sân',
+                'detected_at' => $now->copy()->subHours(10),
+                'due_at' => $now->copy()->addHours(14),
+                'metadata' => [
+                    'shift' => 'Ca Tối (22:00 - 06:00)',
+                    'user' => ['name' => 'Đỗ Tuấn Kiệt', 'id' => 'UID-512', 'tier' => 'Hội viên Bạc'],
+                    'reason' => 'Lệch tiền cọc giữ sân cuối tuần',
+                    'court' => 'Sân Cầu Lông Aura Bình Thạnh',
+                    'gateway' => 'ZaloPay Gateway',
+                    'expected_amount' => 500000,
+                    'actual_amount' => 0,
+                ],
+            ],
+            [
+                'reference' => 'TXN-88286F',
+                'type' => 'duplicate_charge',
+                'severity' => 'low',
+                'status' => 'open',
+                'amount' => 1200000,
+                'currency' => 'VND',
+                'description' => 'Trùng lặp giao dịch quét mã QR Momo 2 lần liên tiếp',
+                'detected_at' => $now->copy()->subHours(12),
+                'due_at' => $now->copy()->addHours(12),
+                'metadata' => [
+                    'shift' => 'Ca Sáng (06:00 - 14:00)',
+                    'user' => ['name' => 'Phạm Thu Hà', 'id' => 'UID-330', 'tier' => 'Hội viên Vàng'],
+                    'reason' => 'Trùng lặp quét mã 2 lần',
+                    'court' => 'Sân Cầu Lông Aura Q7',
+                    'gateway' => 'MoMo QR',
+                    'expected_amount' => 600000,
+                    'actual_amount' => 1200000,
+                ],
+            ],
+            [
+                'reference' => 'TXN-88285G',
+                'type' => 'court_flooded_refund',
+                'severity' => 'low',
+                'status' => 'resolved',
+                'amount' => 3600000,
+                'currency' => 'VND',
+                'description' => 'Hoàn tiền do sự cố ngập sân đột xuất tại cụm sân Bình Thạnh',
+                'detected_at' => $now->copy()->subHours(16),
+                'due_at' => $now->copy()->addHours(8),
+                'resolved_at' => $now->copy()->subHours(1),
+                'resolution' => 'Đã can thiệp hoàn tiền vào ví hội viên do sự cố bất khả kháng ngập sân.',
+                'metadata' => [
+                    'shift' => 'Ca Tối (18:00 - 22:00)',
+                    'user' => ['name' => 'Hoàng Văn Thái', 'id' => 'UID-704', 'tier' => 'Hội viên Kim Cương'],
+                    'reason' => 'Sự cố thời tiết ngập sân',
+                    'court' => 'Sân Cầu Lông Aura Bình Thạnh',
+                    'gateway' => 'Ví Aura Pay',
+                    'expected_amount' => 3600000,
+                    'actual_amount' => 3600000,
                 ],
             ],
         ];
 
-        foreach ($financeExceptions as $fEx) {
-            FinanceException::updateOrCreate(
-                ['reference' => $fEx['reference']],
-                array_merge($fEx, [
-                    'organization_id' => $org->id,
-                ])
+        $allOrgs = Organization::all();
+        if ($allOrgs->isEmpty() && $org) {
+            $allOrgs = collect([$org]);
+        }
+
+        foreach ($allOrgs as $currentOrg) {
+            foreach ($financeExceptions as $fEx) {
+                FinanceException::updateOrCreate(
+                    [
+                        'reference' => $fEx['reference'],
+                        'organization_id' => $currentOrg->id,
+                    ],
+                    array_merge($fEx, [
+                        'organization_id' => $currentOrg->id,
+                    ])
+                );
+            }
+        }
+
+        // 2b. Audit Logs for Immutable Ledger
+        $adminUser = \App\Models\User::where('email', 'like', '%admin%')->first() ?? \App\Models\User::first();
+        $auditLogs = [
+            [
+                'user_id' => $adminUser?->id,
+                'action' => 'finance_exception.resolve',
+                'auditable_type' => FinanceException::class,
+                'auditable_id' => 1,
+                'ip_address' => '118.69.182.45',
+                'user_agent' => 'Aura-Admin-Client/2.0',
+                'metadata' => [
+                    'action_type' => 'Duyệt hoàn tiền',
+                    'reference' => 'TXN-99412B',
+                    'amount' => 3600000,
+                    'author_name' => 'Admin_Sarah',
+                    'author_role' => 'Risk Lead',
+                    'resolution' => 'Đã can thiệp hoàn tiền cho TXN-99412B do sự cố ngập sân tại Bình Thạnh.',
+                    'audit_hash' => '0x8F92A1B4',
+                    'type' => 'override',
+                ],
+                'created_at' => $now->copy()->subMinutes(25),
+            ],
+            [
+                'user_id' => $adminUser?->id,
+                'action' => 'finance_exception.flag',
+                'auditable_type' => FinanceException::class,
+                'auditable_id' => 2,
+                'ip_address' => '118.69.182.45',
+                'user_agent' => 'Aura-Admin-Client/2.0',
+                'metadata' => [
+                    'action_type' => 'Gắn cờ cảnh báo',
+                    'reference' => 'UID-8831',
+                    'amount' => 50000000,
+                    'author_name' => 'Risk_Officer_Tuan',
+                    'author_role' => 'Risk Analyst',
+                    'resolution' => 'Gắn cờ UID-8831 do hành vi tạo lệnh nạp rút ảo săn voucher.',
+                    'audit_hash' => '0x3B17C89E',
+                    'type' => 'flag',
+                ],
+                'created_at' => $now->copy()->subMinutes(55),
+            ],
+            [
+                'user_id' => null,
+                'action' => 'finance_exception.block',
+                'auditable_type' => FinanceException::class,
+                'auditable_id' => 3,
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'System-Sentinel/1.0',
+                'metadata' => [
+                    'action_type' => 'Tự động chặn',
+                    'reference' => 'TXN-88288D',
+                    'amount' => 50000000,
+                    'author_name' => 'System_Sentinel',
+                    'author_role' => 'Security Guard',
+                    'resolution' => 'Tự động chặn giao dịch nạp 50.000.000 ₫ do vượt hạn mức ngày.',
+                    'audit_hash' => '0x7D42E9F1',
+                    'type' => 'block',
+                ],
+                'created_at' => $now->copy()->subHours(1)->subMinutes(15),
+            ],
+            [
+                'user_id' => $adminUser?->id,
+                'action' => 'finance_exception.unlock',
+                'auditable_type' => FinanceException::class,
+                'auditable_id' => 4,
+                'ip_address' => '118.69.182.45',
+                'user_agent' => 'Aura-Admin-Client/2.0',
+                'metadata' => [
+                    'action_type' => 'Mở khóa hoàn cọc',
+                    'reference' => 'TXN-88287E',
+                    'amount' => 500000,
+                    'author_name' => 'Admin_Duc',
+                    'author_role' => 'Operations Lead',
+                    'resolution' => 'Mở khóa hoàn cọc 500.000 ₫ sau khi xác minh biên lai ngân hàng.',
+                    'audit_hash' => '0x12A9F450',
+                    'type' => 'unlock',
+                ],
+                'created_at' => $now->copy()->subHours(2)->subMinutes(10),
+            ],
+        ];
+
+        foreach ($auditLogs as $log) {
+            \App\Models\AuditLog::firstOrCreate(
+                [
+                    'action' => $log['action'],
+                    'auditable_id' => $log['auditable_id'],
+                    'metadata->audit_hash' => $log['metadata']['audit_hash'],
+                ],
+                $log
             );
         }
 
-        // 3. Reconciliation Run
-        ReconciliationRun::updateOrCreate(
-            ['organization_id' => $org->id, 'run_date' => $now->toDateString()],
+        // 3. Multi-Day & Multi-Channel Reconciliation Runs
+        $reconRuns = [
             [
+                'run_date' => $now->toDateString(),
                 'status' => 'mismatch',
                 'provider_total' => 842560000,
                 'journal_total' => 842560000,
@@ -203,8 +399,135 @@ class DisputeFinanceSeeder extends Seeder
                     'court' => 'Sân Cầu Lông Aura Q7 - Sân VIP 1',
                     'customer' => 'Trần Minh Quang (UID-8821)',
                 ],
-            ]
-        );
+            ],
+            [
+                'run_date' => $now->copy()->subDays(1)->toDateString(),
+                'status' => 'matched',
+                'provider_total' => 789400000,
+                'journal_total' => 789400000,
+                'settlement_total' => 789400000,
+                'payout_total' => 295000000,
+                'mismatch_amount' => 0,
+                'started_at' => $now->copy()->subDays(1)->setTime(6, 0),
+                'completed_at' => $now->copy()->subDays(1)->setTime(6, 15),
+                'details' => [
+                    'channel' => 'MoMo Business',
+                    'txnCode' => 'TXN-88288D',
+                    'riskLevel' => 'low',
+                    'statusLabel' => 'Đã Khớp 100%',
+                    'reason' => 'Tất cả 1,420 giao dịch khớp hoàn toàn với sổ cái.',
+                    'court' => 'Sân Cầu Lông Aura Tân Bình',
+                    'customer' => 'Nguyễn Hoàng Nam (UID-8831)',
+                ],
+            ],
+            [
+                'run_date' => $now->copy()->subDays(2)->toDateString(),
+                'status' => 'matched',
+                'provider_total' => 912000000,
+                'journal_total' => 912000000,
+                'settlement_total' => 912000000,
+                'payout_total' => 340000000,
+                'mismatch_amount' => 0,
+                'started_at' => $now->copy()->subDays(2)->setTime(6, 0),
+                'completed_at' => $now->copy()->subDays(2)->setTime(6, 12),
+                'details' => [
+                    'channel' => 'VNPay QR',
+                    'txnCode' => 'TXN-88285C',
+                    'riskLevel' => 'low',
+                    'statusLabel' => 'Đã Khớp 100%',
+                    'reason' => 'Khớp đối soát tự động chu kỳ T+1.',
+                    'court' => 'Sân Cầu Lông Aura Bình Thạnh',
+                    'customer' => 'Phạm Thu Hà (UID-330)',
+                ],
+            ],
+            [
+                'run_date' => $now->copy()->subDays(3)->toDateString(),
+                'status' => 'mismatch',
+                'provider_total' => 654000000,
+                'journal_total' => 654000000,
+                'settlement_total' => 653990000,
+                'payout_total' => 240000000,
+                'mismatch_amount' => 10000,
+                'started_at' => $now->copy()->subDays(3)->setTime(6, 0),
+                'completed_at' => $now->copy()->subDays(3)->setTime(6, 20),
+                'details' => [
+                    'channel' => 'ZaloPay',
+                    'txnCode' => 'TXN-88279B',
+                    'riskLevel' => 'medium',
+                    'statusLabel' => 'Lệch Làm Tròn Phí',
+                    'reason' => 'Chênh lệch 10.000 ₫ do làm tròn phí đối tác cổng thanh toán.',
+                    'court' => 'Sân Cầu Lông Aura Phú Thọ',
+                    'customer' => 'Đỗ Tuấn Kiệt (UID-512)',
+                ],
+            ],
+            [
+                'run_date' => $now->copy()->subDays(4)->toDateString(),
+                'status' => 'matched',
+                'provider_total' => 820000000,
+                'journal_total' => 820000000,
+                'settlement_total' => 820000000,
+                'payout_total' => 310000000,
+                'mismatch_amount' => 0,
+                'started_at' => $now->copy()->subDays(4)->setTime(6, 0),
+                'completed_at' => $now->copy()->subDays(4)->setTime(6, 14),
+                'details' => [
+                    'channel' => 'VietQR Pro (MBBank)',
+                    'txnCode' => 'TXN-88264A',
+                    'riskLevel' => 'low',
+                    'statusLabel' => 'Đã Khớp 100%',
+                    'reason' => 'Khớp đối chiếu sao kê ngân hàng MT940.',
+                    'court' => 'Sân Cầu Lông Aura Q7',
+                    'customer' => 'Lê Hoàng Long (UID-102)',
+                ],
+            ],
+            [
+                'run_date' => $now->copy()->subDays(5)->toDateString(),
+                'status' => 'matched',
+                'provider_total' => 745000000,
+                'journal_total' => 745000000,
+                'settlement_total' => 745000000,
+                'payout_total' => 280000000,
+                'mismatch_amount' => 0,
+                'started_at' => $now->copy()->subDays(5)->setTime(6, 0),
+                'completed_at' => $now->copy()->subDays(5)->setTime(6, 10),
+                'details' => [
+                    'channel' => 'Stripe',
+                    'txnCode' => 'TXN-88250X',
+                    'riskLevel' => 'low',
+                    'statusLabel' => 'Đã Khớp 100%',
+                    'reason' => 'Thẻ quốc tế Visa/Mastercard đã quyết toán về VCB.',
+                    'court' => 'Sân Cầu Lông Aura Tân Bình',
+                    'customer' => 'Alex Lawson (UID-402)',
+                ],
+            ],
+            [
+                'run_date' => $now->copy()->subDays(6)->toDateString(),
+                'status' => 'matched',
+                'provider_total' => 690000000,
+                'journal_total' => 690000000,
+                'settlement_total' => 690000000,
+                'payout_total' => 260000000,
+                'mismatch_amount' => 0,
+                'started_at' => $now->copy()->subDays(6)->setTime(6, 0),
+                'completed_at' => $now->copy()->subDays(6)->setTime(6, 11),
+                'details' => [
+                    'channel' => 'VietQR Pro (MBBank)',
+                    'txnCode' => 'TXN-88241Y',
+                    'riskLevel' => 'low',
+                    'statusLabel' => 'Đã Khớp 100%',
+                    'reason' => 'Khớp đối soát tự động.',
+                    'court' => 'Sân Cầu Lông Aura Q7',
+                    'customer' => 'Vũ Minh Tuấn (UID-319)',
+                ],
+            ],
+        ];
+
+        foreach ($reconRuns as $rRun) {
+            ReconciliationRun::updateOrCreate(
+                ['organization_id' => $org->id, 'run_date' => $rRun['run_date']],
+                $rRun
+            );
+        }
 
         // 4. Beneficiaries, Settlements, and Payouts
         $allOrgs = Organization::whereIn('id', [1, 2])->get();
@@ -228,7 +551,7 @@ class DisputeFinanceSeeder extends Seeder
             );
 
             // Settlement 1 (Settled / Eligible in the past)
-            $settlement1 = \App\Models\Settlement::updateOrCreate(
+            $settlement1 = \App\Models\Settlement::firstOrCreate(
                 [
                     'organization_id' => $currentOrg->id,
                     'period_start' => $now->copy()->subDays(30)->toDateString(),
@@ -256,7 +579,7 @@ class DisputeFinanceSeeder extends Seeder
             );
 
             // Settlement 2 (Eligible recently)
-            $settlement2 = \App\Models\Settlement::updateOrCreate(
+            $settlement2 = \App\Models\Settlement::firstOrCreate(
                 [
                     'organization_id' => $currentOrg->id,
                     'period_start' => $now->copy()->subDays(15)->toDateString(),
