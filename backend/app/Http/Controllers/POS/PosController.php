@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
 use App\Models\CashShift;
 use App\Models\LoyaltyRule;
+use App\Models\PosOrder;
 use App\Models\PosProduct;
 use App\Models\TenantMembershipPlan;
 use App\Models\WalletAccount;
@@ -67,14 +68,40 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $query = CashShift::where('organization_id', $organization->id)
-            ->with(['reconciliation', 'cashier:id,name,email'])
+            ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
             ->latest('opened_at');
 
         if ($request->has('status') && in_array($request->status, ['open', 'closed'])) {
             $query->where('status', $request->status);
         }
 
-        return $query->paginate((int) ($request->get('per_page', 20)));
+        $shifts = $query->paginate((int) ($request->get('per_page', 50)));
+
+        $shifts->getCollection()->transform(function ($shift) {
+            $endTime = $shift->closed_at ?: now();
+            $orders = PosOrder::where('organization_id', $shift->organization_id)
+                ->where('cashier_id', $shift->cashier_id)
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$shift->opened_at, $endTime])
+                ->get();
+
+            $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
+            $qrSales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
+            $walletSales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
+            $totalSales = (int) $orders->sum('total_amount');
+
+            $shift->cash_sales = $cashSales;
+            $shift->qr_sales = $qrSales;
+            $shift->wallet_sales = $walletSales;
+            $shift->total_sales = $totalSales;
+            $shift->orders_count = $orders->count();
+            if ($shift->expected_cash == 0 && $shift->status === 'open') {
+                $shift->expected_cash = $shift->opening_cash + $cashSales;
+            }
+            return $shift;
+        });
+
+        return $shifts;
     }
 
     public function activeShift(Request $request)
@@ -83,16 +110,36 @@ class PosController extends Controller
         $shift = CashShift::where('organization_id', $organization->id)
             ->where('cashier_id', $request->user()->id)
             ->where('status', 'open')
-            ->with(['cashier:id,name,email'])
+            ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
             ->latest('opened_at')
             ->first();
 
         if (!$shift) {
             $shift = CashShift::where('organization_id', $organization->id)
                 ->where('status', 'open')
-                ->with(['cashier:id,name,email'])
+                ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
                 ->latest('opened_at')
                 ->first();
+        }
+
+        if ($shift) {
+            $orders = PosOrder::where('organization_id', $shift->organization_id)
+                ->where('cashier_id', $shift->cashier_id)
+                ->where('status', 'completed')
+                ->where('created_at', '>=', $shift->opened_at)
+                ->get();
+
+            $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
+            $qrSales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
+            $walletSales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
+            $totalSales = (int) $orders->sum('total_amount');
+
+            $shift->cash_sales = $cashSales;
+            $shift->qr_sales = $qrSales;
+            $shift->wallet_sales = $walletSales;
+            $shift->total_sales = $totalSales;
+            $shift->orders_count = $orders->count();
+            $shift->expected_cash = $shift->opening_cash + $cashSales;
         }
 
         return response()->json(['shift' => $shift]);

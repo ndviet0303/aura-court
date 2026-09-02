@@ -1,79 +1,118 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useAdminShiftReconciliation } from '../composables/useAdminShiftReconciliation'
 
+import ShiftHeader from '../components/reconciliation/ShiftHeader.vue'
+import ShiftKpiBar from '../components/reconciliation/ShiftKpiBar.vue'
 import ActiveShiftSummaryCard from '../components/reconciliation/ActiveShiftSummaryCard.vue'
+import ShiftHistoryTable from '../components/reconciliation/ShiftHistoryTable.vue'
 import DenominationCalculatorModal from '../components/reconciliation/DenominationCalculatorModal.vue'
 import CashDropsModal from '../components/reconciliation/CashDropsModal.vue'
-import ShiftHistoryTable from '../components/reconciliation/ShiftHistoryTable.vue'
-
-const { t } = useI18n()
+import OpenShiftModal from '../components/reconciliation/OpenShiftModal.vue'
+import CloseShiftModal from '../components/reconciliation/CloseShiftModal.vue'
+import ShiftReconciliationDetailModal from '../components/reconciliation/ShiftReconciliationDetailModal.vue'
 
 const {
   loading,
+  saving,
   notice,
   error,
+  venuesList,
+  activeShift,
+  hasActiveShift,
   searchQuery,
   statusFilter,
-  activeShift,
+  selectedVenueId,
+  selectedDate,
+  showOpenShiftModal,
+  showCloseShiftModal,
+  showDenominationModal,
+  showCashDropsModal,
+  showReconciliationDetailModal,
+  selectedShiftForReview,
   denominations,
   totalDenominationCash,
   filteredHistory,
-  showNotice,
+  activeShiftsCount,
+  todayCashCollected,
+  todayDigitalRevenue,
+  totalVarianceDiscrepancy,
+  matchRatePercent,
+  loadData,
+  incrementDenom,
+  resetDenominations,
+  openNewShift,
+  closeCurrentShift,
+  reviewShiftReconciliation,
   addCashDrop,
+  applyCountedCashToDeclared,
+  openReviewModal,
 } = useAdminShiftReconciliation()
 
-const showDenominationModal = ref(false)
-const showCashDropsModal = ref(false)
+async function handleOpenShiftSubmit(openingCash: number) {
+  await openNewShift(openingCash)
+}
 
-function handleSaveDenominations() {
-  activeShift.value.declared_cash = totalDenominationCash.value
-  activeShift.value.variance = activeShift.value.declared_cash - activeShift.value.expected_cash
-  showDenominationModal.value = false
-  showNotice(t('admin.shifts.updatedCashNotice', { amount: `${totalDenominationCash.value.toLocaleString('vi-VN')} ₫` }))
+async function handleCloseShiftSubmit(payload: { declaredCash: number; note?: string }) {
+  await closeCurrentShift(payload.declaredCash, payload.note)
+}
+
+async function handleSaveReviewDecision(payload: { shiftId: number; status: string; note?: string }) {
+  await reviewShiftReconciliation(payload.shiftId, payload.status, payload.note)
 }
 </script>
 
 <template>
-  <div class="admin-reconciliation-view">
+  <div class="admin-shifts-view">
     <!-- Header Section -->
-    <header class="reconciliation-header">
-      <div class="header-titles">
-        <div class="header-title-row">
-          <span class="material-symbols-outlined header-icon">receipt_long</span>
-          <h1 class="page-title">{{ t('admin.shifts.title') }}</h1>
-        </div>
-        <p class="page-sub">{{ t('admin.shifts.subtitle') }}</p>
-      </div>
+    <ShiftHeader
+      :loading="loading"
+      :saving="saving"
+      :has-active-shift="hasActiveShift"
+      :notice="notice"
+      :error="error"
+      @refresh="loadData"
+      @open-shift="showOpenShiftModal = true"
+      @close-shift="showCloseShiftModal = true"
+    />
 
-      <div class="header-feedback">
-        <div v-if="notice" class="alert-pill">{{ notice }}</div>
-        <div v-if="error" class="alert-pill-error">{{ error }}</div>
-      </div>
-    </header>
+    <!-- KPI Summary Bar with Skeleton Loading -->
+    <ShiftKpiBar
+      :active-shifts="activeShiftsCount"
+      :today-cash="todayCashCollected"
+      :today-digital="todayDigitalRevenue"
+      :total-variance="totalVarianceDiscrepancy"
+      :match-rate="matchRatePercent"
+      :loading="loading"
+    />
 
-    <!-- Active Shift Realtime Card -->
+    <!-- Realtime Active Shift Section -->
     <section class="active-shift-section">
       <ActiveShiftSummaryCard
         :shift="activeShift"
+        :has-active-shift="hasActiveShift"
+        :loading="loading"
         @open-denominations="showDenominationModal = true"
         @open-cash-drops="showCashDropsModal = true"
+        @open-shift="showOpenShiftModal = true"
+        @close-shift="showCloseShiftModal = true"
       />
     </section>
 
-    <!-- Shift History & Variance Audit -->
+    <!-- Shift History & Variance Audit Section -->
     <section class="history-section">
-      <div class="section-title-row">
-        <span class="material-symbols-outlined icon-20">history</span>
-        <h2 class="section-title">{{ t('admin.shifts.historyTitle') }}</h2>
-      </div>
       <ShiftHistoryTable
         :shifts="filteredHistory"
+        :venues="venuesList"
         :status-filter="statusFilter"
+        :selected-venue-id="selectedVenueId"
+        :selected-date="selectedDate"
         :search-query="searchQuery"
+        :loading="loading"
         @update:status-filter="statusFilter = $event"
+        @update:selected-venue-id="selectedVenueId = $event"
+        @update:selected-date="selectedDate = $event"
         @update:search-query="searchQuery = $event"
+        @open-review="openReviewModal"
       />
     </section>
 
@@ -83,7 +122,9 @@ function handleSaveDenominations() {
       :denominations="denominations"
       :total-cash="totalDenominationCash"
       @close="showDenominationModal = false"
-      @save="handleSaveDenominations"
+      @save="applyCountedCashToDeclared"
+      @increment="incrementDenom"
+      @reset="resetDenominations"
     />
 
     <CashDropsModal
@@ -92,89 +133,50 @@ function handleSaveDenominations() {
       @close="showCashDropsModal = false"
       @add-drop="addCashDrop"
     />
+
+    <OpenShiftModal
+      :show="showOpenShiftModal"
+      :saving="saving"
+      @close="showOpenShiftModal = false"
+      @submit="handleOpenShiftSubmit"
+    />
+
+    <CloseShiftModal
+      :show="showCloseShiftModal"
+      :shift="activeShift"
+      :saving="saving"
+      @close="showCloseShiftModal = false"
+      @submit="handleCloseShiftSubmit"
+      @open-denominations="showDenominationModal = true"
+    />
+
+    <ShiftReconciliationDetailModal
+      :show="showReconciliationDetailModal"
+      :shift="selectedShiftForReview"
+      :saving="saving"
+      @close="showReconciliationDetailModal = false"
+      @save-decision="handleSaveReviewDecision"
+    />
   </div>
 </template>
 
 <style scoped>
-.admin-reconciliation-view {
+.admin-shifts-view {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px 20px;
+  gap: 22px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 24px 28px;
   color: var(--ink);
+  box-sizing: border-box;
 }
 
-.reconciliation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-icon {
-  font-size: 26px;
-  color: var(--pink-dark, #db2777);
-}
-
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.page-sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.alert-pill {
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: #10b981;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.alert-pill-error {
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.active-shift-section, .history-section {
+.active-shift-section,
+.history-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.section-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.icon-20 {
-  font-size: 20px;
-  color: var(--muted);
 }
 </style>

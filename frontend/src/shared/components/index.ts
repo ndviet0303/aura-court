@@ -7,6 +7,7 @@ export type { DropdownOption } from './forms/SelectDropdown.vue'
 export { default as DatePicker } from './forms/DatePicker.vue'
 export { default as DateTimePicker } from './forms/DateTimePicker.vue'
 export { default as TimePicker } from './forms/TimePicker.vue'
+export { default as CurrencyInput } from './forms/CurrencyInput.vue'
 
 // Feedback & Modals
 export { default as SkeletonLoader } from './feedback/SkeletonLoader.vue'

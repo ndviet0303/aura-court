@@ -165,6 +165,13 @@ const buttonClasses = computed(() => [
 }
 
 /* ================= ICONS & SPINNER ================= */
+.aura-btn__content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .aura-btn__icon {
   font-size: 1.2em;
   display: inline-flex;

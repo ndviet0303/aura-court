@@ -5,7 +5,7 @@ import type { CourtForm, PriceForm, BlockForm, VenueForm } from '../types/admin'
 
 export const adminApi = {
   // Venues
-  getVenues: () => api.get<Venue[]>('/admin/venues'),
+  getVenues: () => apiV2.get<Venue[]>('/admin/venues'),
   createVenue: (payload: VenueForm) => api.post<Venue>('/admin/venues', payload),
   updateVenue: (id: number, payload: Partial<VenueForm> | { is_active?: boolean }) =>
     api.patch<Venue>(`/admin/venues/${id}`, payload),
