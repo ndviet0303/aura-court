@@ -1,8 +1,68 @@
 <?php
+
 namespace App\Models;
+
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-#[Fillable(['organization_id','sku','barcode','name','description','price','cost','stock_quantity','is_active','metadata'])]
-class PosProduct extends Model { use BelongsToTenant; protected function casts(): array { return ['price'=>'integer','cost'=>'integer','stock_quantity'=>'integer','is_active'=>'boolean','metadata'=>'array']; } public function movements(): HasMany { return $this->hasMany(StockMovement::class,'product_id'); } }
+
+#[Fillable(['organization_id', 'sku', 'barcode', 'name', 'description', 'price', 'cost', 'stock_quantity', 'is_active', 'metadata'])]
+class PosProduct extends Model
+{
+    use BelongsToTenant;
+
+    protected $appends = ['category', 'unit', 'min_stock', 'supplier', 'tax_rate'];
+
+    protected function casts(): array
+    {
+        return [
+            'price' => 'integer',
+            'cost' => 'integer',
+            'stock_quantity' => 'integer',
+            'is_active' => 'boolean',
+            'metadata' => 'array',
+        ];
+    }
+
+    public function movements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class, 'product_id');
+    }
+
+    public function getCategoryAttribute(): string
+    {
+        return $this->metadata['category'] ?? 'drinks';
+    }
+
+    public function getUnitAttribute(): string
+    {
+        return $this->metadata['unit'] ?? 'chai';
+    }
+
+    public function getMinStockAttribute(): int
+    {
+        return (int) ($this->metadata['min_stock'] ?? 10);
+    }
+
+    public function getSupplierAttribute(): ?string
+    {
+        return $this->metadata['supplier'] ?? null;
+    }
+
+    public function getTaxRateAttribute(): int
+    {
+        if (isset($this->metadata['tax_rate']) && is_numeric($this->metadata['tax_rate'])) {
+            return (int) $this->metadata['tax_rate'];
+        }
+        $cat = $this->category;
+        if (in_array($cat, ['drinks', 'snacks', 'nutrition', 'rental'], true)) {
+            return 8;
+        }
+        if ($cat === 'services') {
+            return 10;
+        }
+        return 8;
+    }
+}
+

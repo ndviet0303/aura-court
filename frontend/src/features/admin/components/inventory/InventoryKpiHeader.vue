@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { AuraButton } from '@/shared/components'
+import { formatCurrency } from '@/i18n'
+import { AuraButton, SkeletonLoader } from '@/shared/components'
 
 defineProps<{
   kpis: {
@@ -10,6 +11,7 @@ defineProps<{
     outOfStockCount: number
   }
   activeTab: 'catalog' | 'movements'
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -17,13 +19,10 @@ const emit = defineEmits<{
   (e: 'addProduct'): void
   (e: 'stockIn'): void
   (e: 'audit'): void
+  (e: 'refresh'): void
 }>()
 
 const { t } = useI18n()
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
 </script>
 
 <template>
@@ -38,14 +37,21 @@ function formatMoney(amount: number): string {
       </div>
 
       <div class="header-actions">
+        <AuraButton variant="outline" :disabled="loading" @click="emit('refresh')">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': loading }">refresh</span>
+          <span>{{ t('common.refresh') }}</span>
+        </AuraButton>
+
         <AuraButton variant="primary" @click="emit('addProduct')">
           <span class="material-symbols-outlined icon-18">add_box</span>
           <span>{{ t('admin.inventory.addProduct') }}</span>
         </AuraButton>
+
         <AuraButton variant="secondary" @click="emit('stockIn')">
           <span class="material-symbols-outlined icon-18">move_to_inbox</span>
           <span>{{ t('admin.inventory.stockIn') }}</span>
         </AuraButton>
+
         <AuraButton variant="outline" @click="emit('audit')">
           <span class="material-symbols-outlined icon-18">fact_check</span>
           <span>{{ t('admin.inventory.auditStock') }}</span>
@@ -60,28 +66,35 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined kpi-icon">inventory</span>
           <span class="lbl">{{ t('admin.inventory.totalItems') }}</span>
         </div>
-        <strong class="val">{{ t('admin.inventory.totalItemsCount', { count: kpis.totalItems }) }}</strong>
+        <SkeletonLoader v-if="loading" type="text" width="90px" height="22px" />
+        <strong v-else class="val font-mono">{{ t('admin.inventory.totalItemsCount', { count: kpis.totalItems }) }}</strong>
       </div>
+
       <div class="kpi-card">
         <div class="kpi-top-row">
           <span class="material-symbols-outlined kpi-icon text-pink">payments</span>
           <span class="lbl">{{ t('admin.inventory.totalValue') }}</span>
         </div>
-        <strong class="val text-pink">{{ formatMoney(kpis.totalValue) }}</strong>
+        <SkeletonLoader v-if="loading" type="text" width="120px" height="22px" />
+        <strong v-else class="val text-pink font-mono">{{ formatCurrency(kpis.totalValue) }}</strong>
       </div>
+
       <div class="kpi-card">
         <div class="kpi-top-row">
           <span class="material-symbols-outlined kpi-icon text-yellow">warning</span>
           <span class="lbl">{{ t('admin.inventory.lowStock') }}</span>
         </div>
-        <strong class="val text-yellow">{{ t('admin.inventory.lowStockCount', { count: kpis.lowStockCount }) }}</strong>
+        <SkeletonLoader v-if="loading" type="text" width="90px" height="22px" />
+        <strong v-else class="val text-yellow font-mono">{{ t('admin.inventory.lowStockCount', { count: kpis.lowStockCount }) }}</strong>
       </div>
+
       <div class="kpi-card">
         <div class="kpi-top-row">
           <span class="material-symbols-outlined kpi-icon text-red">error</span>
           <span class="lbl">{{ t('admin.inventory.outOfStock') }}</span>
         </div>
-        <strong class="val text-red">{{ t('admin.inventory.outOfStockCount', { count: kpis.outOfStockCount }) }}</strong>
+        <SkeletonLoader v-if="loading" type="text" width="90px" height="22px" />
+        <strong v-else class="val text-red font-mono">{{ t('admin.inventory.outOfStockCount', { count: kpis.outOfStockCount }) }}</strong>
       </div>
     </div>
 
@@ -118,6 +131,7 @@ function formatMoney(amount: number): string {
   border-radius: 20px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .header-top {
@@ -135,7 +149,7 @@ function formatMoney(amount: number): string {
 }
 
 .header-icon {
-  font-size: 26px;
+  font-size: 28px;
   color: var(--pink-dark, #db2777);
 }
 
@@ -143,11 +157,12 @@ function formatMoney(amount: number): string {
   margin: 0;
   font-size: 22px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .page-sub {
   margin: 6px 0 0;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--muted);
 }
 
@@ -167,11 +182,17 @@ function formatMoney(amount: number): string {
 .kpi-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 12px;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(219, 39, 119, 0.3);
 }
 
 .kpi-top-row {
@@ -186,13 +207,17 @@ function formatMoney(amount: number): string {
 }
 
 .lbl {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .val {
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .text-pink { color: var(--pink-dark, #db2777); }
@@ -209,30 +234,52 @@ function formatMoney(amount: number): string {
 .tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--ink);
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
 }
 
 .tab-btn.active {
-  background: rgba(236, 72, 153, 0.1);
+  background: rgba(219, 39, 119, 0.1);
   color: var(--pink-dark, #db2777);
-  border-color: rgba(236, 72, 153, 0.2);
+  border-color: rgba(219, 39, 119, 0.25);
+  font-weight: 700;
 }
 
 .icon-18 {
   font-size: 18px;
 }
 
+.spin-anim {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 900px) {
   .kpis-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .kpis-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

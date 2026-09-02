@@ -24,19 +24,114 @@ class PosService
 {
     public function __construct(private readonly FinancialPostingService $financials) {}
 
-    public function createProduct(int $organizationId, array $data): PosProduct
+    public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
     {
-        return PosProduct::create(['organization_id' => $organizationId, 'sku' => $data['sku'], 'barcode' => $data['barcode'] ?? null, 'name' => $data['name'], 'description' => $data['description'] ?? null, 'price' => $data['price'], 'cost' => $data['cost'] ?? 0, 'stock_quantity' => 0, 'metadata' => $data['metadata'] ?? []]);
+        $metadata = $data['metadata'] ?? [];
+        if (isset($data['category'])) $metadata['category'] = $data['category'];
+        if (isset($data['unit'])) $metadata['unit'] = $data['unit'];
+        if (isset($data['min_stock'])) $metadata['min_stock'] = (int) $data['min_stock'];
+        if (isset($data['supplier'])) $metadata['supplier'] = $data['supplier'];
+        if (isset($data['tax_rate'])) $metadata['tax_rate'] = (int) $data['tax_rate'];
+
+        $initialStock = (int) ($data['stock_quantity'] ?? 0);
+
+        return DB::transaction(function () use ($organizationId, $data, $metadata, $initialStock, $actor): PosProduct {
+            $product = PosProduct::create([
+                'organization_id' => $organizationId,
+                'sku' => $data['sku'],
+                'barcode' => $data['barcode'] ?? null,
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'price' => (int) $data['price'],
+                'cost' => (int) ($data['cost'] ?? 0),
+                'stock_quantity' => $initialStock,
+                'is_active' => true,
+                'metadata' => $metadata,
+            ]);
+
+            if ($initialStock > 0) {
+                StockMovement::create([
+                    'organization_id' => $organizationId,
+                    'product_id' => $product->id,
+                    'type' => 'in',
+                    'quantity_delta' => $initialStock,
+                    'unit_cost' => $product->cost,
+                    'reference_type' => 'initial_stock',
+                    'reference_id' => null,
+                    'created_by' => $actor?->id,
+                    'metadata' => [
+                        'note' => 'Khởi tạo tồn kho ban đầu',
+                        'balance_after' => $initialStock,
+                        'product_name' => $product->name,
+                        'product_sku' => $product->sku,
+                        'unit' => $product->unit,
+                    ],
+                ]);
+            }
+
+            return $product;
+        });
     }
 
-    public function adjustStock(PosProduct $product, int $delta, User $actor, string $type = 'adjustment', ?string $reference = null): PosProduct
+    public function updateProduct(PosProduct $product, array $data): PosProduct
     {
-        return DB::transaction(function () use ($product, $delta, $actor, $type, $reference): PosProduct {
+        $metadata = $product->metadata ?? [];
+        if (isset($data['category'])) $metadata['category'] = $data['category'];
+        if (isset($data['unit'])) $metadata['unit'] = $data['unit'];
+        if (isset($data['min_stock'])) $metadata['min_stock'] = (int) $data['min_stock'];
+        if (isset($data['supplier'])) $metadata['supplier'] = $data['supplier'];
+        if (isset($data['tax_rate'])) $metadata['tax_rate'] = (int) $data['tax_rate'];
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            $metadata = array_merge($metadata, $data['metadata']);
+        }
+
+        $product->update([
+            'sku' => $data['sku'] ?? $product->sku,
+            'barcode' => array_key_exists('barcode', $data) ? $data['barcode'] : $product->barcode,
+            'name' => $data['name'] ?? $product->name,
+            'description' => array_key_exists('description', $data) ? $data['description'] : $product->description,
+            'price' => isset($data['price']) ? (int) $data['price'] : $product->price,
+            'cost' => isset($data['cost']) ? (int) $data['cost'] : $product->cost,
+            'is_active' => isset($data['is_active']) ? (bool) $data['is_active'] : $product->is_active,
+            'metadata' => $metadata,
+        ]);
+
+        return $product->fresh();
+    }
+
+    public function deleteProduct(PosProduct $product): void
+    {
+        $product->update(['is_active' => false]);
+    }
+
+    public function adjustStock(PosProduct $product, int $delta, User $actor, string $type = 'adjustment', ?string $reference = null, ?string $note = null): PosProduct
+    {
+        return DB::transaction(function () use ($product, $delta, $actor, $type, $reference, $note): PosProduct {
             $product = PosProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             abort_unless($product->stock_quantity + $delta >= 0, 409, 'Insufficient stock.');
             $product->increment('stock_quantity', $delta);
-            StockMovement::create(['organization_id' => $product->organization_id, 'product_id' => $product->id, 'type' => $type, 'quantity_delta' => $delta, 'unit_cost' => $product->cost, 'reference_type' => 'pos', 'reference_id' => null, 'created_by' => $actor->id, 'metadata' => ['reference' => $reference]]);
-            return $product->fresh();
+            $fresh = $product->fresh();
+
+            StockMovement::create([
+                'organization_id' => $product->organization_id,
+                'product_id' => $product->id,
+                'type' => $type,
+                'quantity_delta' => $delta,
+                'unit_cost' => $product->cost,
+                'reference_type' => 'pos',
+                'reference_id' => null,
+                'created_by' => $actor->id,
+                'metadata' => [
+                    'reference' => $reference,
+                    'note' => $note ?? $reference,
+                    'balance_after' => $fresh->stock_quantity,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
+                    'unit' => $product->unit,
+                ],
+            ]);
+
+            return $fresh;
         });
     }
 
