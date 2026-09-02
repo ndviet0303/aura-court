@@ -45,13 +45,18 @@ describe('AdminKycVerificationView', () => {
         tax_status: 'Đang hoạt động',
         representative_name: 'NGUYEN VAN AN',
         id_card_number: '079092008892',
+        id_card_front_url: '/aura/court-1.jpg',
+        business_license_url: '/aura/court-2.jpg',
         bank_name: 'MBBank',
         bank_code: 'MBBANK',
         bank_account_number: '0909 888 999',
         bank_account_holder: 'CONG TY TNHH THE THAO SMASH CITY',
         napas_match_status: 'matched',
         court_scale: 12,
+        ai_ocr_score: 99.0,
+        face_match_score: 99.4,
         status: 'pending',
+        submitted_at: '2026-08-30 08:30',
         checklist_state: {
           rep_identity_matched: true,
           business_license_valid: true,
@@ -76,7 +81,10 @@ describe('AdminKycVerificationView', () => {
         bank_account_holder: 'TRAN THI BICH',
         napas_match_status: 'matched',
         court_scale: 6,
+        ai_ocr_score: 98.2,
+        face_match_score: 99.0,
         status: 'pending',
+        submitted_at: '2026-08-30 06:30',
       },
     ]
 
@@ -113,8 +121,8 @@ describe('AdminKycVerificationView', () => {
 
     expect(wrapper.text()).toContain('Phê Duyệt KYC & Thẩm Định Chủ Sân')
     expect(wrapper.text()).toContain('Hồ sơ Chờ thẩm định')
-    expect(wrapper.text()).toContain('Độ tin cậy AI OCR & NAPAS')
-    expect(wrapper.text()).toContain('Thời gian xử lý trung bình')
+    expect(wrapper.text()).toContain('Độ tin cậy OCR & NAPAS')
+    expect(wrapper.text()).toContain('Thời gian xử lý TB')
     expect(wrapper.text()).toContain('Cảnh báo sai lệch / Rủi ro')
 
     // Initial selected item from queue
@@ -151,12 +159,14 @@ describe('AdminKycVerificationView', () => {
 
     await flushPromises()
 
-    const approveBtn = wrapper.find('.btn-action.approve')
-    expect(approveBtn.exists()).toBe(true)
+    const approveBtn = wrapper.findAll('button').find((b) => b.text().includes('Phê duyệt & Kích hoạt'))
+    expect(approveBtn).toBeDefined()
+    expect(approveBtn?.exists()).toBe(true)
 
-    await approveBtn.trigger('click')
+    await approveBtn?.trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Hồ sơ KYC đã được phê duyệt và kích hoạt chủ sân thành công.')
   })
 })
+

@@ -80,7 +80,7 @@ const router = createRouter({
         { path: 'reconciliation', name: 'admin-reconciliation', component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'), meta: { titleKey: 'seo.adminReconciliationTitle', indexable: false } },
         { path: 'kyc', name: 'admin-kyc', component: () => import('@/features/admin/views/AdminKycVerificationView.vue'), meta: { titleKey: 'seo.adminKycTitle', indexable: false } },
         { path: 'disputes', name: 'admin-disputes', component: () => import('@/features/admin/views/AdminDisputeResolutionView.vue'), meta: { titleKey: 'seo.adminDisputesTitle', indexable: false } },
-      ],
+      ],  
     },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true, titleKey: 'seo.profileTitle', descriptionKey: 'seo.profileDesc', indexable: false } },
     { path: '/notifications', name: 'notifications', component: NotificationsView, meta: { auth: true, titleKey: 'seo.notificationsTitle', descriptionKey: 'seo.notificationsDesc', indexable: false } },

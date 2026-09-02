@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { DisputeCase } from '../../types/dispute'
 
 defineProps<{
@@ -8,7 +10,61 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:activeEvidenceTab', tab: 'logs' | 'chat' | 'map'): void
+  (e: 'print'): void
 }>()
+
+const { t } = useI18n()
+
+// Drag-to-scroll for evidence tabs
+const evidenceTabsRef = ref<HTMLElement | null>(null)
+const isMouseDown = ref(false)
+const hasDragged = ref(false)
+const startX = ref(0)
+const scrollStart = ref(0)
+
+function onMouseDown(e: MouseEvent) {
+  if (!evidenceTabsRef.value) return
+  isMouseDown.value = true
+  hasDragged.value = false
+  startX.value = e.clientX
+  scrollStart.value = evidenceTabsRef.value.scrollLeft
+
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function onMouseMove(e: MouseEvent) {
+  if (!isMouseDown.value || !evidenceTabsRef.value) return
+  const currentX = e.clientX
+  const walk = (currentX - startX.value) * 1.5
+  if (Math.abs(walk) > 3) {
+    hasDragged.value = true
+  }
+  evidenceTabsRef.value.scrollLeft = scrollStart.value - walk
+}
+
+function onMouseUp() {
+  isMouseDown.value = false
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+}
+
+function handleTabClick(tab: 'logs' | 'chat' | 'map', e: MouseEvent) {
+  if (hasDragged.value) {
+    e.preventDefault()
+    e.stopPropagation()
+    return
+  }
+  emit('update:activeEvidenceTab', tab)
+}
+
+function onWheel(e: WheelEvent) {
+  if (!evidenceTabsRef.value) return
+  if (e.deltaY !== 0 && e.deltaX === 0) {
+    evidenceTabsRef.value.scrollLeft += e.deltaY
+    e.preventDefault()
+  }
+}
 </script>
 
 <template>
@@ -17,22 +73,30 @@ const emit = defineEmits<{
     <div class="workbench-header">
       <div class="header-main-info">
         <div class="tags-row">
-          <span class="status-badge" :class="{ 'status-critical': item.severity === 'critical', 'status-resolved': item.status === 'resolved' }">
-            {{ item.status === 'resolved' ? 'ĐÃ PHÁN QUYẾT' : 'ĐANG ĐIỀU TRA KHẨN CẤP' }}
+          <span
+            class="status-badge"
+            :class="{
+              'status-critical': item.severity === 'critical',
+              'status-resolved': item.status === 'resolved',
+            }"
+          >
+            {{ item.status === 'resolved' ? t('admin.disputes.badgeArbitrated') : t('admin.disputes.badgeInvestigating') }}
           </span>
           <span class="reference-tag">
-            Hồ sơ #{{ item.disputeCode }} • Tham chiếu #BK-{{ item.bookingId || '99482' }}
+            {{ t('admin.disputes.dossierRef', { code: item.disputeCode, ref: item.bookingId ? `BK-${item.bookingId}` : 'BK-99482' }) }}
           </span>
         </div>
         <h2 class="dispute-title">{{ item.title }}</h2>
       </div>
 
       <div class="header-tools">
-        <button type="button" class="icon-tool-btn" title="In hồ sơ vụ việc">
+        <button
+          type="button"
+          class="icon-tool-btn"
+          :title="t('admin.disputes.printDossier')"
+          @click="emit('print')"
+        >
           <span class="material-symbols-outlined">print</span>
-        </button>
-        <button type="button" class="icon-tool-btn" title="Tùy chọn khác">
-          <span class="material-symbols-outlined">more_vert</span>
         </button>
       </div>
     </div>
@@ -45,10 +109,10 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">person</span>
         </div>
         <div class="party-details">
-          <span class="party-role">NGUYÊN ĐƠN</span>
+          <span class="party-role">{{ t('admin.disputes.roleComplainant') }}</span>
           <p class="party-name">{{ item.complainant.name }}</p>
           <span class="party-badge text-gold">
-            {{ item.complainant.tier || 'Hạng Vàng' }} • Uy tín: {{ item.complainant.reputationScore || 98 }}/100
+            {{ item.complainant.tier || 'Hạng Vàng' }} • {{ t('admin.disputes.reputationScore', { score: item.complainant.reputationScore || 95 }) }}
           </span>
         </div>
       </div>
@@ -59,10 +123,10 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">sports_kabaddi</span>
         </div>
         <div class="party-details">
-          <span class="party-role">BỊ ĐƠN</span>
+          <span class="party-role">{{ t('admin.disputes.roleRespondent') }}</span>
           <p class="party-name">{{ item.respondent.name }}</p>
           <span class="party-badge text-diamond">
-            {{ item.respondent.tier || 'Hạng Kim Cương' }} • Uy tín: {{ item.respondent.reputationScore || 96 }}/100
+            {{ item.respondent.tier || 'Hạng Kim Cương' }} • {{ t('admin.disputes.reputationScore', { score: item.respondent.reputationScore || 90 }) }}
           </span>
         </div>
       </div>
@@ -73,10 +137,10 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined">stadium</span>
         </div>
         <div class="party-details">
-          <span class="party-role">CƠ SỞ THỂ THAO</span>
+          <span class="party-role">{{ t('admin.disputes.roleFacility') }}</span>
           <p class="party-name">{{ item.facility.name }}</p>
           <span class="party-badge text-facility">
-            {{ item.facility.operatorName || 'Xác thực API đang hoạt động' }}
+            {{ item.facility.operatorName || t('admin.disputes.facilityApiActive') }}
           </span>
         </div>
       </div>
@@ -84,40 +148,54 @@ const emit = defineEmits<{
 
     <!-- Evidence Tabs & Content -->
     <div class="evidence-section">
-      <div class="evidence-nav-tabs">
+      <div
+        ref="evidenceTabsRef"
+        class="evidence-nav-tabs"
+        :class="{ 'is-dragging': isMouseDown }"
+        style="scrollbar-width: none;"
+        @mousedown="onMouseDown"
+        @mousemove="onMouseMove"
+        @mouseup="onMouseUp"
+        @mouseleave="onMouseUp"
+        @wheel="onWheel"
+      >
         <button
           type="button"
           class="evidence-tab-btn"
           :class="{ active: activeEvidenceTab === 'logs' }"
-          @click="emit('update:activeEvidenceTab', 'logs')"
+          @click="handleTabClick('logs', $event)"
         >
           <span class="material-symbols-outlined tab-ico">timeline</span>
-          Nhật ký Hệ thống
+          <span>{{ t('admin.disputes.tabLogs') }}</span>
         </button>
         <button
           type="button"
           class="evidence-tab-btn"
           :class="{ active: activeEvidenceTab === 'chat' }"
-          @click="emit('update:activeEvidenceTab', 'chat')"
+          @click="handleTabClick('chat', $event)"
         >
           <span class="material-symbols-outlined tab-ico">chat</span>
-          Đoạn Chat Đối Chất
+          <span>{{ t('admin.disputes.tabChat') }}</span>
         </button>
         <button
           type="button"
           class="evidence-tab-btn"
           :class="{ active: activeEvidenceTab === 'map' }"
-          @click="emit('update:activeEvidenceTab', 'map')"
+          @click="handleTabClick('map', $event)"
         >
           <span class="material-symbols-outlined tab-ico">grid_view</span>
-          Sơ Đồ &amp; Camera Sân
+          <span>{{ t('admin.disputes.tabMap') }}</span>
         </button>
       </div>
 
       <!-- Tab Content: Timeline Logs -->
       <div v-if="activeEvidenceTab === 'logs'" class="tab-pane">
-        <h4 class="pane-subtitle">Chuỗi Sự Kiện Bằng Chứng Kỹ Thuật</h4>
-        <div class="timeline-container">
+        <h4 class="pane-subtitle">{{ t('admin.disputes.logsTitle') }}</h4>
+        <div v-if="item.timelineEvents.length === 0" class="empty-pane">
+          <span class="material-symbols-outlined">info</span>
+          <span>Chưa có sự kiện kỹ thuật nào được ghi nhận.</span>
+        </div>
+        <div v-else class="timeline-container">
           <div
             v-for="(event, idx) in item.timelineEvents"
             :key="idx"
@@ -137,8 +215,12 @@ const emit = defineEmits<{
 
       <!-- Tab Content: Live Chat -->
       <div v-else-if="activeEvidenceTab === 'chat'" class="tab-pane">
-        <h4 class="pane-subtitle">Lịch Sử Trao Đổi 3 Bên</h4>
-        <div class="chat-container" style="scrollbar-width: none;">
+        <h4 class="pane-subtitle">{{ t('admin.disputes.chatTitle') }}</h4>
+        <div v-if="item.chatMessages.length === 0" class="empty-pane">
+          <span class="material-symbols-outlined">forum</span>
+          <span>Chưa có tin nhắn đối chất giữa các bên.</span>
+        </div>
+        <div v-else class="chat-container" style="scrollbar-width: none;">
           <div
             v-for="(msg, idx) in item.chatMessages"
             :key="idx"
@@ -149,7 +231,7 @@ const emit = defineEmits<{
             }"
           >
             <div v-if="msg.role !== 'system'" class="msg-avatar">
-              {{ msg.avatar || 'U' }}
+              {{ msg.avatar || msg.sender.slice(0, 2).toUpperCase() }}
             </div>
             <div class="msg-bubble">
               <div class="msg-header">
@@ -164,8 +246,12 @@ const emit = defineEmits<{
 
       <!-- Tab Content: Court Map Context -->
       <div v-else-if="activeEvidenceTab === 'map'" class="tab-pane">
-        <h4 class="pane-subtitle">Mặt Bằng Cụm Sân - Trạng Thái Thời Gian Thực</h4>
-        <div class="court-map-grid">
+        <h4 class="pane-subtitle">{{ t('admin.disputes.mapTitle') }}</h4>
+        <div v-if="item.courtMapContext.length === 0" class="empty-pane">
+          <span class="material-symbols-outlined">grid_off</span>
+          <span>Không có dữ liệu mặt bằng sân cho vụ việc này.</span>
+        </div>
+        <div v-else class="court-map-grid">
           <div
             v-for="(court, idx) in item.courtMapContext"
             :key="idx"
@@ -180,26 +266,26 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <!-- AI Decision Assistant Card -->
-    <div v-if="item.aiAnalysis" class="ai-assistant-card">
-      <div class="ai-card-header">
-        <span class="material-symbols-outlined ai-icon">smart_toy</span>
-        <h4 class="ai-title">Trợ Lý AI Phân Tích &amp; Gợi Ý Phán Quyết</h4>
+    <!-- Analysis & Arbitration Proposal Card -->
+    <div v-if="item.aiAnalysis" class="analysis-card">
+      <div class="analysis-card-header">
+        <span class="material-symbols-outlined analysis-icon">insights</span>
+        <h4 class="analysis-title">{{ t('admin.disputes.analysisTitle') }}</h4>
       </div>
-      <div class="ai-card-body">
-        <div class="ai-fault-row">
-          <span class="fault-badge">
-            Lỗi Cơ Sở: <strong>{{ item.aiAnalysis.faultRateFacility }}%</strong>
+      <div class="analysis-card-body">
+        <div class="fault-row">
+          <span class="fault-badge badge-facility">
+            {{ t('admin.disputes.faultFacility', { rate: item.aiAnalysis.faultRateFacility }) }}
           </span>
-          <span class="fault-badge">
-            Lỗi Khách Hàng: <strong>{{ item.aiAnalysis.faultRateUser }}%</strong>
+          <span class="fault-badge badge-user">
+            {{ t('admin.disputes.faultUser', { rate: item.aiAnalysis.faultRateUser }) }}
           </span>
         </div>
-        <p class="ai-root-cause">
-          <strong>Nguyên nhân gốc rễ:</strong> {{ item.aiAnalysis.rootCause }}
+        <p class="analysis-root-cause">
+          <strong>{{ t('admin.disputes.rootCauseLabel') }}</strong> {{ item.aiAnalysis.rootCause }}
         </p>
-        <div class="ai-recommendation">
-          <strong>Đề xuất giải quyết:</strong> {{ item.aiAnalysis.recommendationSummary }}
+        <div class="analysis-recommendation">
+          <strong>{{ t('admin.disputes.recommendationLabel') }}</strong> {{ item.aiAnalysis.recommendationSummary }}
         </div>
       </div>
     </div>
@@ -208,22 +294,24 @@ const emit = defineEmits<{
 
 <style scoped>
 .dispute-workbench {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 16px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  color: var(--ink);
 }
 
 .workbench-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 1px solid #edeeef;
+  border-bottom: 1px solid var(--outline);
   padding-bottom: 16px;
+  gap: 16px;
 }
 
 .tags-row {
@@ -231,6 +319,7 @@ const emit = defineEmits<{
   align-items: center;
   gap: 10px;
   margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .status-badge {
@@ -239,26 +328,27 @@ const emit = defineEmits<{
   padding: 3px 10px;
   border-radius: 6px;
   letter-spacing: 0.04em;
-  background: #ffdad6;
-  color: #ba1a1a;
+  background: var(--error-bg, rgba(198, 40, 40, 0.2));
+  color: var(--error-text, #f87171);
 }
 
 .status-resolved {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-bg, rgba(46, 125, 50, 0.25));
+  color: var(--success-text, #4ade80);
 }
 
 .reference-tag {
   font-size: 12px;
-  color: #5d5f5f;
+  color: var(--muted);
   font-weight: 600;
 }
 
 .dispute-title {
   font-size: 20px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .header-tools {
@@ -270,9 +360,9 @@ const emit = defineEmits<{
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid #e1e3e4;
-  background: #f8f9fa;
-  color: #5d5f5f;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle, var(--soft));
+  color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -281,8 +371,8 @@ const emit = defineEmits<{
 }
 
 .icon-tool-btn:hover {
-  background: #edeeef;
-  color: #191c1d;
+  background: var(--soft);
+  color: var(--ink);
 }
 
 .tri-party-grid {
@@ -292,8 +382,8 @@ const emit = defineEmits<{
 }
 
 .party-card {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -312,18 +402,18 @@ const emit = defineEmits<{
 }
 
 .avatar-complainant {
-  background: var(--primary-container, #F8E8EC);
-  color: var(--on-primary-container, #4e1827);
+  background: var(--primary-container);
+  color: var(--primary);
 }
 
 .avatar-respondent {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
 }
 
 .avatar-facility {
-  background: #edeeef;
-  color: #5d5f5f;
+  background: var(--soft);
+  color: var(--muted);
 }
 
 .party-details {
@@ -336,14 +426,15 @@ const emit = defineEmits<{
 .party-role {
   font-size: 10px;
   font-weight: 700;
-  color: #817476;
+  color: var(--muted);
   letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .party-name {
   font-size: 14px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -356,20 +447,20 @@ const emit = defineEmits<{
 }
 
 .text-gold {
-  color: #b45309;
+  color: var(--accent, #D8B46E);
 }
 
 .text-diamond {
-  color: #0288d1;
+  color: #38bdf8;
 }
 
 .text-facility {
-  color: #5d5f5f;
+  color: var(--muted);
 }
 
 .evidence-section {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
   border-radius: 14px;
   padding: 18px 20px;
   display: flex;
@@ -380,8 +471,22 @@ const emit = defineEmits<{
 .evidence-nav-tabs {
   display: flex;
   gap: 8px;
-  border-bottom: 1px solid #e1e3e4;
+  border-bottom: 1px solid var(--outline);
   padding-bottom: 8px;
+  overflow-x: auto;
+  cursor: grab;
+  user-select: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.evidence-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.evidence-nav-tabs.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
 }
 
 .evidence-tab-btn {
@@ -392,21 +497,25 @@ const emit = defineEmits<{
   border: none;
   font-size: 13px;
   font-weight: 600;
-  color: #5d5f5f;
+  color: var(--muted);
   padding: 6px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .evidence-tab-btn:hover {
-  background: #edeeef;
-  color: #191c1d;
+  background: var(--soft);
+  color: var(--ink);
 }
 
 .evidence-tab-btn.active {
-  background: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background: var(--primary-container);
+  color: var(--primary);
+  font-weight: 700;
 }
 
 .tab-ico {
@@ -414,12 +523,22 @@ const emit = defineEmits<{
 }
 
 .pane-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: #5d5f5f;
+  color: var(--muted);
   margin: 0 0 12px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+}
+
+.empty-pane {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  padding: 24px;
+  font-size: 13px;
+  justify-content: center;
 }
 
 .timeline-container {
@@ -442,14 +561,14 @@ const emit = defineEmits<{
   flex-shrink: 0;
 }
 
-.dot-primary { background: var(--primary, #6B2D3F); }
-.dot-warning { background: #f59e0b; }
-.dot-error { background: #ba1a1a; }
-.dot-success { background: #16a34a; }
+.dot-primary { background: var(--primary); }
+.dot-warning { background: var(--warning-text, #fb923c); }
+.dot-error { background: var(--error-text, #f87171); }
+.dot-success { background: var(--success-text, #4ade80); }
 
 .timeline-content {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 10px;
   padding: 10px 14px;
   flex: 1;
@@ -465,18 +584,18 @@ const emit = defineEmits<{
 .event-title {
   font-size: 13px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink);
 }
 
 .event-time {
   font-size: 11px;
-  color: #817476;
+  color: var(--muted);
   font-family: monospace;
 }
 
 .event-desc {
   font-size: 12px;
-  color: #5d5f5f;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -506,33 +625,34 @@ const emit = defineEmits<{
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #edeeef;
+  background: var(--soft);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink);
   flex-shrink: 0;
 }
 
 .msg-bubble {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 12px;
   padding: 8px 12px;
   max-width: 75%;
 }
 
 .msg-self .msg-bubble {
-  background: var(--primary-container, #F8E8EC);
-  border-color: var(--border, #e8e1d7);
-  color: var(--on-primary-container, #4e1827);
+  background: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--ink);
 }
 
 .msg-system .msg-bubble {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--surface-container);
+  border-color: var(--outline);
+  color: var(--muted);
   text-align: center;
   max-width: 90%;
 }
@@ -547,17 +667,17 @@ const emit = defineEmits<{
 .msg-sender {
   font-size: 11px;
   font-weight: 700;
-  color: #78555e;
+  color: var(--primary);
 }
 
 .msg-time {
   font-size: 10px;
-  color: #817476;
+  color: var(--muted);
 }
 
 .msg-text {
   font-size: 13px;
-  color: #191c1d;
+  color: var(--ink);
   margin: 0;
 }
 
@@ -566,16 +686,17 @@ const emit = defineEmits<{
   gap: 16px;
   justify-content: center;
   padding: 16px;
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 12px;
-  border: 1px solid #e1e3e4;
+  border: 1px solid var(--outline);
+  flex-wrap: wrap;
 }
 
 .court-node {
   width: 130px;
-  height: 170px;
+  height: 160px;
   border-radius: 12px;
-  border: 2px solid #e1e3e4;
+  border: 2px solid var(--outline);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -585,14 +706,14 @@ const emit = defineEmits<{
 }
 
 .node-occupied {
-  background: #f8f9fa;
-  opacity: 0.6;
+  background: var(--surface-container);
+  opacity: 0.7;
 }
 
 .node-conflict {
-  background: #ffdad6;
-  border-color: #ba1a1a;
-  box-shadow: 0 0 15px rgba(186, 26, 26, 0.2);
+  background: var(--error-bg, rgba(198, 40, 40, 0.2));
+  border-color: var(--error-text, #f87171);
+  box-shadow: 0 0 15px rgba(248, 113, 113, 0.25);
   animation: pulseConflict 1.5s infinite ease-in-out;
 }
 
@@ -602,33 +723,34 @@ const emit = defineEmits<{
 }
 
 .node-available {
-  background: #dcfce7;
-  border-color: #16a34a;
+  background: var(--success-bg, rgba(46, 125, 50, 0.25));
+  border-color: var(--success-text, #4ade80);
 }
 
 .court-node-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
 }
 
-.node-conflict .court-node-name { color: #ba1a1a; }
-.node-available .court-node-name { color: #16a34a; }
+.node-conflict .court-node-name { color: var(--error-text, #f87171); }
+.node-available .court-node-name { color: var(--success-text, #4ade80); }
 
 .node-icon {
-  font-size: 28px;
-  color: #ba1a1a;
+  font-size: 26px;
+  color: var(--error-text, #f87171);
 }
 
 .court-node-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   text-align: center;
+  color: var(--muted);
 }
 
-.ai-assistant-card {
-  background: #fdf4ff;
-  border: 1px solid #f0abfc;
+.analysis-card {
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
   border-radius: 14px;
   padding: 16px 20px;
   display: flex;
@@ -636,61 +758,72 @@ const emit = defineEmits<{
   gap: 10px;
 }
 
-.ai-card-header {
+.analysis-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #86198f;
+  color: var(--primary);
 }
 
-.ai-icon {
+.analysis-icon {
   font-size: 22px;
 }
 
-.ai-title {
-  font-size: 13px;
+.analysis-title {
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin: 0;
+  color: var(--primary);
 }
 
-.ai-card-body {
-  background: #ffffff;
-  border: 1px solid #fae8ff;
+.analysis-card-body {
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 10px;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   font-size: 13px;
-  color: #191c1d;
+  color: var(--ink);
 }
 
-.ai-fault-row {
+.fault-row {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .fault-badge {
-  font-size: 12px;
-  background: #fdf4ff;
-  color: #701a75;
-  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
   border-radius: 6px;
 }
 
-.ai-root-cause {
-  margin: 0;
-  color: #5d5f5f;
+.badge-facility {
+  background: var(--error-bg, rgba(198, 40, 40, 0.2));
+  color: var(--error-text, #f87171);
 }
 
-.ai-recommendation {
-  background: #f5f3ff;
-  border-left: 3px solid #8b5cf6;
-  padding: 6px 10px;
+.badge-user {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.analysis-root-cause {
+  margin: 0;
+  color: var(--muted);
+}
+
+.analysis-recommendation {
+  background: var(--primary-container);
+  border-left: 3px solid var(--primary);
+  padding: 8px 12px;
   border-radius: 4px;
   font-size: 13px;
-  color: #4c1d95;
+  color: var(--ink);
 }
 </style>

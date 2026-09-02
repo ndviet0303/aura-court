@@ -1,27 +1,89 @@
 <script setup lang="ts">
-import type { HostKyc } from '../../types/kyc'
+import { useI18n } from 'vue-i18n'
+import type { DocumentInspectPayload, HostKyc, KycBusinessType } from '../../types/kyc'
+import { SkeletonLoader } from '@/shared/components'
 
-const props = defineProps<{
-  item: HostKyc
-  checklist: {
-    rep_identity_matched: boolean
-    business_license_valid: boolean
-    bank_account_matched: boolean
-    brand_name_discrepancy_accepted: boolean
-    facility_inspected: boolean
+const props = withDefaults(
+  defineProps<{
+    item: HostKyc
+    checklist: {
+      rep_identity_matched: boolean
+      business_license_valid: boolean
+      bank_account_matched: boolean
+      brand_name_discrepancy_accepted: boolean
+      facility_inspected: boolean
+    }
+    reviewer_notes: string
+    loading?: boolean
+  }>(),
+  {
+    loading: false,
   }
-  reviewer_notes: string
-}>()
+)
 
 const emit = defineEmits<{
   (e: 'update:checklist', val: typeof props.checklist): void
   (e: 'update:reviewer_notes', val: string): void
+  (e: 'inspectDocument', payload: DocumentInspectPayload): void
+  (e: 'openHistory'): void
+  (e: 'callHotline'): void
 }>()
+
+const { t } = useI18n()
+
+function getBusinessTypeLabel(type: KycBusinessType): string {
+  switch (type) {
+    case 'enterprise':
+      return t('admin.kyc.businessEnterprise')
+    case 'business_household':
+      return t('admin.kyc.businessHousehold')
+    case 'individual':
+      return t('admin.kyc.businessIndividual')
+    default:
+      return type
+  }
+}
 
 function toggleChecklist(key: keyof typeof props.checklist) {
   emit('update:checklist', {
     ...props.checklist,
     [key]: !props.checklist[key],
+  })
+}
+
+function inspectCccd() {
+  emit('inspectDocument', {
+    title: `${t('admin.kyc.sec1Title')} - ${props.item.representative_name}`,
+    type: 'cccd',
+    imageUrl: props.item.id_card_front_url || '/aura/court-1.jpg',
+    docMeta: {
+      [t('admin.kyc.sec1FullName')]: props.item.representative_name,
+      [t('admin.kyc.sec1CccdNumber')]: props.item.id_card_number,
+      [t('admin.kyc.kpiConfidence')]: `${props.item.ai_ocr_score}%`,
+    },
+  })
+}
+
+function inspectLicense() {
+  emit('inspectDocument', {
+    title: `${t('admin.kyc.sec2Title')} - ${props.item.legal_name}`,
+    type: 'gpkd',
+    imageUrl: props.item.business_license_url || '/aura/court-2.jpg',
+    docMeta: {
+      [t('admin.kyc.sec2LegalName')]: props.item.legal_name,
+      [t('admin.kyc.taxCode')]: props.item.tax_code,
+    },
+  })
+}
+
+function inspectFacility(imgUrl: string, idx: number) {
+  emit('inspectDocument', {
+    title: `${t('admin.kyc.sec4Title')} (#${idx + 1}) - ${props.item.business_name}`,
+    type: 'facility',
+    imageUrl: imgUrl,
+    docMeta: {
+      [t('admin.kyc.sec4CourtsCount')]: `${props.item.court_scale}`,
+    },
   })
 }
 </script>
@@ -37,21 +99,23 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div>
           <h2 class="host-title">{{ item.business_name }}</h2>
           <div class="host-sub-row">
-            <span class="sub-item">MST: <strong>{{ item.tax_code }}</strong></span>
+            <span class="sub-item">{{ t('admin.kyc.taxCode') }}: <strong>{{ item.tax_code }}</strong></span>
             <span class="dot-separator"></span>
-            <span class="sub-item">Đại diện: <strong>{{ item.representative_name }}</strong></span>
+            <span class="sub-item">{{ t('admin.kyc.representative') }}: <strong>{{ item.representative_name }}</strong></span>
             <span class="dot-separator"></span>
-            <span class="sub-item">Loại hình: <strong>{{ item.business_type === 'enterprise' ? 'Doanh nghiệp TNHH' : item.business_type === 'business_household' ? 'Hộ kinh doanh' : 'Cá nhân' }}</strong></span>
+            <span class="sub-item">{{ t('admin.kyc.businessTypeLabel') }}: <strong>{{ getBusinessTypeLabel(item.business_type) }}</strong></span>
           </div>
         </div>
       </div>
 
       <div class="header-tools">
-        <button type="button" class="btn-tool" title="Xem lịch sử thay đổi">
-          <span class="material-symbols-outlined icon-18">history</span> Lịch sử
+        <button type="button" class="btn-tool" :title="t('admin.kyc.historyBtn')" @click="emit('openHistory')">
+          <span class="material-symbols-outlined icon-18">history</span>
+          <span>{{ t('admin.kyc.historyBtn') }}</span>
         </button>
-        <button type="button" class="btn-tool" title="Gọi hotline chủ sân">
-          <span class="material-symbols-outlined icon-18">call</span> Hotline
+        <button type="button" class="btn-tool" :title="t('admin.kyc.hotlineBtn')" @click="emit('callHotline')">
+          <span class="material-symbols-outlined icon-18">call</span>
+          <span>{{ t('admin.kyc.hotlineBtn') }}</span>
         </button>
       </div>
     </div>
@@ -63,52 +127,52 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div class="section-title-row">
           <div class="title-left">
             <span class="material-symbols-outlined title-icon primary">badge</span>
-            <h3 class="section-title">1. Xác minh Định danh Người Đại diện (CCCD)</h3>
+            <h3 class="section-title">{{ t('admin.kyc.sec1Title') }}</h3>
           </div>
           <span class="status-tag success">
-            <span class="material-symbols-outlined icon-16">check_circle</span> Đã đối khớp CSDL
+            <span class="material-symbols-outlined icon-16">check_circle</span>
+            <span>{{ t('admin.kyc.sec1MatchedBadge') }}</span>
           </span>
         </div>
 
         <div class="verify-grid">
-          <!-- Document Viewer -->
           <div class="doc-viewer-box">
             <div
               class="doc-img"
-              :style="{ backgroundImage: `url(${item.id_card_front_url})` }"
+              :style="{ backgroundImage: `url(${item.id_card_front_url || '/aura/court-1.jpg'})` }"
             ></div>
-            <div class="doc-watermark">AURA KYC VERIFIED</div>
-            <button type="button" class="btn-inspect">
-              <span class="material-symbols-outlined icon-18">zoom_in</span> Xem chi tiết
+            <div class="doc-watermark">AURA VERIFIED</div>
+            <button type="button" class="btn-inspect" @click="inspectCccd">
+              <span class="material-symbols-outlined icon-18">zoom_in</span>
+              <span>{{ t('admin.kyc.sec1InspectBtn') }}</span>
             </button>
           </div>
 
-          <!-- OCR Extracted Table -->
           <div class="extracted-data-card">
             <div class="data-row">
-              <span class="data-label">Họ và tên</span>
+              <span class="data-label">{{ t('admin.kyc.sec1FullName') }}</span>
               <div class="data-val-group">
                 <span class="data-value">{{ item.representative_name }}</span>
-                <span class="match-badge">100% Khớp</span>
+                <span class="match-badge">{{ t('admin.kyc.sec1Match100') }}</span>
               </div>
             </div>
             <div class="data-row">
-              <span class="data-label">Số CCCD</span>
+              <span class="data-label">{{ t('admin.kyc.sec1CccdNumber') }}</span>
               <div class="data-val-group">
                 <span class="data-value font-mono">{{ item.id_card_number }}</span>
-                <span class="match-badge">Khớp CSDL Dân cư</span>
+                <span class="match-badge">{{ t('admin.kyc.sec1DbMatched') }}</span>
               </div>
             </div>
             <div class="data-row">
-              <span class="data-label">Sinh trắc khuôn mặt (Face-Match)</span>
+              <span class="data-label">{{ t('admin.kyc.sec1FaceMatch') }}</span>
               <div class="data-val-group">
                 <span class="data-value">{{ item.face_match_score }}%</span>
-                <span class="match-badge success">Khớp selfie</span>
+                <span class="match-badge success">{{ t('admin.kyc.sec1FaceSelfie') }}</span>
               </div>
             </div>
             <div class="ai-banner success">
               <span class="material-symbols-outlined icon-20">verified_user</span>
-              <p>Điểm tin cậy AI OCR: <strong>{{ item.ai_ocr_score }}%</strong>. Dữ liệu trùng khớp hoàn toàn với Cổng Dịch vụ công Quốc gia.</p>
+              <p>{{ t('admin.kyc.sec1Banner', { score: item.ai_ocr_score }) }}</p>
             </div>
           </div>
         </div>
@@ -119,41 +183,41 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div class="section-title-row">
           <div class="title-left">
             <span class="material-symbols-outlined title-icon warning">description</span>
-            <h3 class="section-title">2. Giấy Phép Đăng Ký Kinh Doanh (GPKD)</h3>
+            <h3 class="section-title">{{ t('admin.kyc.sec2Title') }}</h3>
           </div>
           <span class="status-tag warning">
-            <span class="material-symbols-outlined icon-16">warning</span> Cảnh báo chênh lệch tên
+            <span class="material-symbols-outlined icon-16">warning</span>
+            <span>{{ t('admin.kyc.sec2WarningBadge') }}</span>
           </span>
         </div>
 
         <div class="verify-grid">
-          <!-- Document Viewer -->
           <div class="doc-viewer-box">
             <div
               class="doc-img"
-              :style="{ backgroundImage: `url(${item.business_license_url})` }"
+              :style="{ backgroundImage: `url(${item.business_license_url || '/aura/court-2.jpg'})` }"
             ></div>
-            <div class="doc-watermark">AURA KYC VERIFIED</div>
-            <button type="button" class="btn-inspect">
-              <span class="material-symbols-outlined icon-18">zoom_in</span> Xem bản scan
+            <div class="doc-watermark">AURA VERIFIED</div>
+            <button type="button" class="btn-inspect" @click="inspectLicense">
+              <span class="material-symbols-outlined icon-18">zoom_in</span>
+              <span>{{ t('admin.kyc.sec2ScanBtn') }}</span>
             </button>
           </div>
 
-          <!-- Comparison Table -->
           <div class="extracted-data-card">
             <div class="data-row-block">
-              <span class="data-label">Tên pháp lý trên GPKD</span>
+              <span class="data-label">{{ t('admin.kyc.sec2LegalName') }}</span>
               <span class="data-value highlight">{{ item.legal_name }}</span>
             </div>
             <div class="data-row-block">
-              <span class="data-label">Tên hiển thị thương hiệu</span>
+              <span class="data-label">{{ t('admin.kyc.sec2BrandName') }}</span>
               <div class="brand-diff-row">
                 <span class="data-value line-through-text">{{ item.business_name }}</span>
                 <span class="material-symbols-outlined icon-18 warning-icon">error</span>
               </div>
             </div>
             <div class="data-row">
-              <span class="data-label">Mã số thuế (Tổng cục Thuế)</span>
+              <span class="data-label">{{ t('admin.kyc.sec2TaxStatus') }}</span>
               <div class="data-val-group">
                 <span class="data-value font-mono">{{ item.tax_code }}</span>
                 <span class="match-badge success">{{ item.tax_status }}</span>
@@ -161,7 +225,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
             </div>
             <div class="ai-banner warning">
               <span class="material-symbols-outlined icon-20">lightbulb</span>
-              <p>Tên hiển thị trên app khác với tên pháp lý doanh nghiệp. Đã kiểm tra ngành nghề kinh doanh Cầu lông (mã 9311): Hợp lệ.</p>
+              <p>{{ t('admin.kyc.sec2Banner') }}</p>
             </div>
           </div>
         </div>
@@ -172,22 +236,23 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div class="section-title-row">
           <div class="title-left">
             <span class="material-symbols-outlined title-icon success">account_balance</span>
-            <h3 class="section-title">3. Xác Thực Tài Khoản Thụ Hưởng (NAPAS 24/7)</h3>
+            <h3 class="section-title">{{ t('admin.kyc.sec3Title') }}</h3>
           </div>
           <span class="status-tag success">
-            <span class="material-symbols-outlined icon-16">check_circle</span> Đã liên kết tài khoản
+            <span class="material-symbols-outlined icon-16">check_circle</span>
+            <span>{{ t('admin.kyc.sec3LinkedBadge') }}</span>
           </span>
         </div>
 
         <div class="bank-card-container">
-          <div class="bank-logo-box">MB</div>
+          <div class="bank-logo-box">{{ item.bank_code || 'MB' }}</div>
           <div class="bank-details">
             <div class="bank-name-text">{{ item.bank_name }}</div>
             <div class="bank-acc-number font-mono">{{ item.bank_account_number }}</div>
             <div class="bank-holder-row">
-              <span class="label-text">Chủ tài khoản:</span>
+              <span class="label-text">{{ t('admin.kyc.sec3BankHolder') }}:</span>
               <span class="holder-name">{{ item.bank_account_holder }}</span>
-              <span class="match-badge success">Match 100%</span>
+              <span class="match-badge success">{{ t('admin.kyc.sec3Match100') }}</span>
             </div>
           </div>
         </div>
@@ -198,10 +263,11 @@ function toggleChecklist(key: keyof typeof props.checklist) {
         <div class="section-title-row">
           <div class="title-left">
             <span class="material-symbols-outlined title-icon primary">stadium</span>
-            <h3 class="section-title">4. Thẩm Định Cơ Sở Vật Chất & Mặt Bằng Sân</h3>
+            <h3 class="section-title">{{ t('admin.kyc.sec4Title') }}</h3>
           </div>
           <span class="status-tag success">
-            <span class="material-symbols-outlined icon-16">check_circle</span> Đạt chuẩn
+            <span class="material-symbols-outlined icon-16">check_circle</span>
+            <span>{{ t('admin.kyc.sec4QualifiedBadge') }}</span>
           </span>
         </div>
 
@@ -212,18 +278,31 @@ function toggleChecklist(key: keyof typeof props.checklist) {
               :key="idx"
               class="facility-photo"
               :style="{ backgroundImage: `url(${img})` }"
-            ></div>
-            <div v-if="item.facility_images.length > 3" class="facility-photo more-photo">+{{ item.facility_images.length - 3 }} ảnh khác</div>
+              @click="inspectFacility(img, idx)"
+            >
+              <div class="photo-overlay">
+                <span class="material-symbols-outlined icon-18">zoom_in</span>
+              </div>
+            </div>
+            <div
+              v-if="item.facility_images.length > 3 && item.facility_images[3]"
+              class="facility-photo more-photo"
+              @click="inspectFacility(item.facility_images[3], 3)"
+            >
+              {{ t('admin.kyc.sec4MorePhotos', { count: item.facility_images.length - 3 }) }}
+            </div>
           </div>
 
           <div class="facility-specs-card">
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">sports_tennis</span>
-              <span class="spec-text"><strong>{{ item.court_scale }} sân</strong> tiêu chuẩn thi đấu BWF</span>
+              <span class="spec-text">
+                <strong>{{ t('admin.kyc.sec4CourtsCount', { count: item.court_scale }) }}</strong>
+              </span>
             </div>
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">lightbulb</span>
-              <span class="spec-text">{{ item.lighting_spec || 'Hệ thống đèn LED chống chói 1000W' }}</span>
+              <span class="spec-text">{{ item.lighting_spec || t('admin.kyc.sec4LightingDefault') }}</span>
             </div>
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">real_estate_agent</span>
@@ -235,7 +314,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 
       <!-- Section 5: Underwriter Checklist & Internal Notes -->
       <section class="checklist-section">
-        <h4 class="checklist-title">Checklist Thẩm Định Viên</h4>
+        <h4 class="checklist-title">{{ t('admin.kyc.sec5Title') }}</h4>
         <div class="checklist-grid">
           <label class="check-item">
             <input
@@ -243,7 +322,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
               :checked="checklist.rep_identity_matched"
               @change="toggleChecklist('rep_identity_matched')"
             />
-            <span>Khớp CCCD & sinh trắc người đại diện</span>
+            <span>{{ t('admin.kyc.checkRepIdentity') }}</span>
           </label>
           <label class="check-item">
             <input
@@ -251,7 +330,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
               :checked="checklist.business_license_valid"
               @change="toggleChecklist('business_license_valid')"
             />
-            <span>Mã số thuế & GPKD đang hoạt động</span>
+            <span>{{ t('admin.kyc.checkBusinessLicense') }}</span>
           </label>
           <label class="check-item">
             <input
@@ -259,7 +338,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
               :checked="checklist.bank_account_matched"
               @change="toggleChecklist('bank_account_matched')"
             />
-            <span>Tài khoản ngân hàng chính chủ NAPAS</span>
+            <span>{{ t('admin.kyc.checkBankAccount') }}</span>
           </label>
           <label class="check-item">
             <input
@@ -267,15 +346,15 @@ function toggleChecklist(key: keyof typeof props.checklist) {
               :checked="checklist.brand_name_discrepancy_accepted"
               @change="toggleChecklist('brand_name_discrepancy_accepted')"
             />
-            <span>Chấp nhận sai lệch tên thương hiệu</span>
+            <span>{{ t('admin.kyc.checkBrandDiscrepancy') }}</span>
           </label>
         </div>
 
         <div class="notes-box">
-          <label class="notes-label">Ghi chú biên bản thẩm định nội bộ:</label>
+          <label class="notes-label">{{ t('admin.kyc.notesLabel') }}</label>
           <textarea
             :value="reviewer_notes"
-            placeholder="Nhập ý kiến thẩm định, căn cứ xét duyệt hoặc lý do yêu cầu bổ sung..."
+            :placeholder="t('admin.kyc.notesPlaceholder')"
             rows="3"
             class="notes-textarea"
             @input="emit('update:reviewer_notes', ($event.target as HTMLTextAreaElement).value)"
@@ -288,8 +367,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 
 <style scoped>
 .kyc-detail-workbench {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
@@ -299,8 +378,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 
 .workbench-header {
   padding: 16px 24px;
-  background: #ffffff;
-  border-bottom: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border-bottom: 1px solid var(--outline, #e1e3e4);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -318,18 +397,23 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background: var(--primary-container, #ffd1dc);
+  color: var(--primary, #78555e);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
+.icon-28 { font-size: 28px; }
+.icon-20 { font-size: 20px; }
+.icon-18 { font-size: 18px; }
+.icon-16 { font-size: 16px; }
+
 .host-title {
   font-size: 18px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   margin: 0;
 }
 
@@ -339,7 +423,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   gap: 8px;
   margin-top: 4px;
   font-size: 13px;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
   flex-wrap: wrap;
 }
 
@@ -347,7 +431,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #d3c3c5;
+  background: var(--outline, #d3c3c5);
 }
 
 .header-tools {
@@ -356,13 +440,13 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 }
 
 .btn-tool {
-  border: 1px solid #e1e3e4;
-  background: #f8f9fa;
+  border: 1px solid var(--outline, #e1e3e4);
+  background: var(--surface-container-low, #f8f9fa);
   padding: 6px 12px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -371,16 +455,35 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 }
 
 .btn-tool:hover {
-  background: #edeeef;
+  background: var(--surface-container, #edeeef);
 }
 
 .workbench-body {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
   max-height: calc(100vh - 350px);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--outline, rgba(140, 140, 140, 0.25)) transparent;
+}
+
+.workbench-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.workbench-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.workbench-body::-webkit-scrollbar-thumb {
+  background: var(--outline, #e1e3e4);
+  border-radius: 999px;
+}
+
+.workbench-body::-webkit-scrollbar-thumb:hover {
+  background: var(--muted, #817476);
 }
 
 .verify-section {
@@ -393,7 +496,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #edeeef;
+  border-bottom: 1px solid var(--surface-container, #edeeef);
   padding-bottom: 8px;
 }
 
@@ -406,11 +509,11 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 .section-title {
   font-size: 15px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   margin: 0;
 }
 
-.title-icon.primary { color: #78555e; }
+.title-icon.primary { color: var(--primary, #78555e); }
 .title-icon.warning { color: #d97706; }
 .title-icon.success { color: #059669; }
 
@@ -440,8 +543,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 }
 
 .doc-viewer-box {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-container-low, #f8f9fa);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 14px;
   height: 200px;
   position: relative;
@@ -477,8 +580,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   position: relative;
   z-index: 2;
   background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #e1e3e4;
-  color: #191c1d;
+  border: 1px solid var(--outline, #e1e3e4);
+  color: var(--ink, #191c1d);
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 12px;
@@ -491,8 +594,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 }
 
 .extracted-data-card {
-  background: #fdfdfd;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 14px;
   padding: 14px 16px;
   display: flex;
@@ -505,7 +608,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f3f4f5;
+  border-bottom: 1px solid var(--surface-container-low, #f3f4f5);
 }
 
 .data-row-block {
@@ -513,27 +616,27 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   flex-direction: column;
   gap: 2px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f3f4f5;
+  border-bottom: 1px solid var(--surface-container-low, #f3f4f5);
 }
 
 .data-label {
   font-size: 12px;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
 }
 
 .data-value {
   font-size: 14px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
 }
 
 .data-value.highlight {
-  color: #78555e;
+  color: var(--primary, #78555e);
 }
 
 .line-through-text {
   text-decoration: line-through;
-  color: #817476;
+  color: var(--muted, #817476);
 }
 
 .brand-diff-row {
@@ -585,8 +688,8 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 }
 
 .bank-card-container {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 14px;
   padding: 14px 18px;
   display: flex;
@@ -600,7 +703,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   border-radius: 10px;
   background: #003399;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -617,13 +720,13 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 .bank-name-text {
   font-size: 14px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
 }
 
 .bank-acc-number {
   font-size: 16px;
   font-weight: 800;
-  color: #78555e;
+  color: var(--primary, #78555e);
 }
 
 .bank-holder-row {
@@ -631,12 +734,12 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
 }
 
 .holder-name {
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
 }
 
 .facility-grid {
@@ -662,7 +765,26 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   border-radius: 10px;
   background-size: cover;
   background-position: center;
-  background-color: #f3f4f5;
+  background-color: var(--surface-container, #f3f4f5);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.facility-photo:hover .photo-overlay {
+  opacity: 1;
 }
 
 .facility-photo.more-photo {
@@ -671,13 +793,14 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  color: #5d5f5f;
-  background: #edeeef;
+  color: var(--muted, #5d5f5f);
+  background: var(--surface-container, #edeeef);
+  cursor: pointer;
 }
 
 .facility-specs-card {
-  background: #fdfdfd;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 14px;
   padding: 14px 16px;
   display: flex;
@@ -691,17 +814,17 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
 }
 
 .spec-icon {
-  color: #78555e;
+  color: var(--primary, #78555e);
   font-size: 20px;
 }
 
 .checklist-section {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-container-low, #f8f9fa);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 16px;
   padding: 16px 20px;
   display: flex;
@@ -712,7 +835,7 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 .checklist-title {
   font-size: 14px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   margin: 0;
 }
 
@@ -734,12 +857,12 @@ function toggleChecklist(key: keyof typeof props.checklist) {
   gap: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   cursor: pointer;
 }
 
 .check-item input[type='checkbox'] {
-  accent-color: #78555e;
+  accent-color: var(--primary, #78555e);
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -754,22 +877,22 @@ function toggleChecklist(key: keyof typeof props.checklist) {
 .notes-label {
   font-size: 12px;
   font-weight: 600;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
 }
 
 .notes-textarea {
-  border: 1px solid #e1e3e4;
-  background: #ffffff;
+  border: 1px solid var(--outline, #e1e3e4);
+  background: var(--surface, #ffffff);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 13px;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   outline: none;
   resize: none;
   font-family: inherit;
 }
 
 .notes-textarea:focus {
-  border-color: #78555e;
+  border-color: var(--primary, #78555e);
 }
 </style>

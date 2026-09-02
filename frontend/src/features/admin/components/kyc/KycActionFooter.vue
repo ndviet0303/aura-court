@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { AuraButton, SelectDropdown } from '@/shared/components'
+
 const props = defineProps<{
   selectedReason: string
   customReason: string
@@ -14,69 +18,70 @@ const emit = defineEmits<{
   (e: 'requestSupplement'): void
 }>()
 
-const rejectionReasonTemplates = [
-  { value: 'Ảnh CCCD mờ, mất góc hoặc không rõ số', label: 'Ảnh CCCD mờ, mất góc hoặc không rõ số' },
-  { value: 'Tên thương hiệu sai lệch hoàn toàn với Giấy phép ĐKKD', label: 'Tên thương hiệu sai lệch hoàn toàn với Giấy phép ĐKKD' },
-  { value: 'Tài khoản ngân hàng thụ hưởng không chính chủ', label: 'Tài khoản ngân hàng thụ hưởng không chính chủ' },
-  { value: 'Thiếu hợp đồng thuê mặt bằng / quyền sử dụng sân', label: 'Thiếu hợp đồng thuê mặt bằng / quyền sử dụng sân' },
-  { value: 'Mã số thuế doanh nghiệp đang trong tình trạng tạm ngừng hoạt động', label: 'Mã số thuế doanh nghiệp đang tạm ngừng' },
-]
+const { t } = useI18n()
+
+const reasonOptions = computed(() => [
+  { value: '', label: t('admin.kyc.reasonSelectPlaceholder') },
+  { value: t('admin.kyc.reasonCccdBlurry'), label: t('admin.kyc.reasonCccdBlurry') },
+  { value: t('admin.kyc.reasonNameMismatch'), label: t('admin.kyc.reasonNameMismatch') },
+  { value: t('admin.kyc.reasonBankMismatch'), label: t('admin.kyc.reasonBankMismatch') },
+  { value: t('admin.kyc.reasonMissingLease'), label: t('admin.kyc.reasonMissingLease') },
+  { value: t('admin.kyc.reasonTaxSuspended'), label: t('admin.kyc.reasonTaxSuspended') },
+])
 </script>
 
 <template>
   <div class="kyc-action-footer">
     <div class="footer-left">
-      <select
-        :value="selectedReason"
-        class="reason-select"
-        @change="emit('update:selectedReason', ($event.target as HTMLSelectElement).value)"
-      >
-        <option value="">-- Chọn mẫu lý do từ chối / yêu cầu bổ sung --</option>
-        <option v-for="r in rejectionReasonTemplates" :key="r.value" :value="r.value">
-          {{ r.label }}
-        </option>
-      </select>
+      <SelectDropdown
+        :model-value="selectedReason"
+        :options="reasonOptions"
+        variant="bordered"
+        :placeholder="t('admin.kyc.reasonSelectPlaceholder')"
+        @update:model-value="emit('update:selectedReason', String($event))"
+      />
     </div>
 
     <div class="footer-actions">
-      <button
-        type="button"
-        class="btn-action supplement"
+      <!-- Request Supplement -->
+      <AuraButton
+        variant="outline"
         :disabled="isSubmitting"
         @click="emit('requestSupplement')"
       >
         <span class="material-symbols-outlined icon-18">edit_note</span>
-        Yêu cầu bổ sung
-      </button>
+        <span>{{ t('admin.kyc.btnSupplement') }}</span>
+      </AuraButton>
 
-      <button
-        type="button"
-        class="btn-action reject"
+      <!-- Reject -->
+      <AuraButton
+        variant="danger"
         :disabled="isSubmitting"
         @click="emit('reject')"
       >
         <span class="material-symbols-outlined icon-18">block</span>
-        Từ chối hồ sơ
-      </button>
+        <span>{{ t('admin.kyc.btnReject') }}</span>
+      </AuraButton>
 
-      <button
-        type="button"
-        class="btn-action approve"
-        :disabled="isSubmitting"
+      <!-- Approve & Activate -->
+      <AuraButton
+        variant="primary"
+        :disabled="isSubmitting || isApproved"
         @click="emit('approve')"
       >
-        <span class="material-symbols-outlined icon-18">verified</span>
-        <span>Phê duyệt & Kích hoạt Chủ sân</span>
-      </button>
+        <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': isSubmitting }">
+          {{ isSubmitting ? 'sync' : 'verified' }}
+        </span>
+        <span>{{ isSubmitting ? t('admin.kyc.submitting') : t('admin.kyc.btnApprove') }}</span>
+      </AuraButton>
     </div>
   </div>
 </template>
 
 <style scoped>
 .kyc-action-footer {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 16px;
   padding: 14px 20px;
   display: flex;
@@ -92,23 +97,6 @@ const rejectionReasonTemplates = [
   min-width: 280px;
 }
 
-.reason-select {
-  width: 100%;
-  border: 1px solid #e1e3e4;
-  background: #ffffff;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #191c1d;
-  outline: none;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.reason-select:focus {
-  border-color: #78555e;
-}
-
 .footer-actions {
   display: flex;
   align-items: center;
@@ -116,53 +104,18 @@ const rejectionReasonTemplates = [
   flex-wrap: wrap;
 }
 
-.btn-action {
-  border: none;
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
+.icon-18 {
+  font-size: 18px;
 }
 
-.btn-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.spin-icon {
+  animation: spin 1s linear infinite;
 }
 
-.btn-action.supplement {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
-  color: #191c1d;
-}
-
-.btn-action.supplement:hover:not(:disabled) {
-  background: #edeeef;
-}
-
-.btn-action.reject {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-}
-
-.btn-action.reject:hover:not(:disabled) {
-  background: #fecaca;
-}
-
-.btn-action.approve {
-  background: #78555e;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(120, 85, 94, 0.25);
-}
-
-.btn-action.approve:hover:not(:disabled) {
-  background: #5e3e47;
-  box-shadow: 0 6px 18px rgba(120, 85, 94, 0.35);
-  transform: translateY(-1px);
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
+

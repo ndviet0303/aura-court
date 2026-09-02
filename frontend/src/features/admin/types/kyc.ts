@@ -14,6 +14,7 @@ export interface HostKyc {
   tax_code: string
   tax_status: string
   representative_name: string
+  representative_phone?: string
   id_card_number: string
   id_card_front_url: string
   id_card_back_url?: string
@@ -58,7 +59,9 @@ export interface KycStats {
 
 export interface KycFilterParams {
   status?: KycStatus | 'all'
+  business_type?: KycBusinessType | 'all'
   search?: string
+  date?: string
   perPage?: number
   page?: number
 }
@@ -69,3 +72,22 @@ export interface ReviewKycPayload {
   reviewer_notes?: string
   checklist_state?: Record<string, boolean>
 }
+
+export interface KycAuditLog {
+  id: string | number
+  kyc_id: number
+  action: string
+  reviewer_name: string
+  decision: KycStatus
+  notes?: string
+  rejection_reason?: string
+  created_at: string
+}
+
+export interface DocumentInspectPayload {
+  title: string
+  type: 'cccd' | 'gpkd' | 'facility' | 'other'
+  imageUrl: string
+  docMeta?: Record<string, string | number>
+}
+

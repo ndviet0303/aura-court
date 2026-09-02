@@ -1,68 +1,87 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { SkeletonLoader } from '@/shared/components'
 import type { DisputeStats } from '../../types/dispute'
 
 defineProps<{
   stats: DisputeStats
+  loading?: boolean
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="dispute-kpi-grid">
-    <!-- Card 1 -->
-    <div class="kpi-card">
-      <div class="kpi-icon-wrap icon-pending">
-        <span class="material-symbols-outlined">pending_actions</span>
-      </div>
-      <div class="kpi-content">
-        <span class="kpi-label">Chờ Thụ Lý & Phán Quyết</span>
-        <div class="kpi-value-row">
-          <span class="kpi-value text-pending">{{ stats.pending_count }}</span>
-          <span class="kpi-sub">vụ việc</span>
+    <!-- Skeleton Loading State -->
+    <template v-if="loading">
+      <div v-for="i in 4" :key="i" class="kpi-card skeleton-card">
+        <SkeletonLoader type="avatar" width="44px" height="44px" />
+        <div class="kpi-content skeleton-text-wrap">
+          <SkeletonLoader type="text" width="120px" height="12px" />
+          <SkeletonLoader type="title" width="60px" height="24px" />
         </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Card 2 -->
-    <div class="kpi-card">
-      <div class="kpi-icon-wrap icon-investigating">
-        <span class="material-symbols-outlined">search_insights</span>
-      </div>
-      <div class="kpi-content">
-        <span class="kpi-label">Đang Điều Tra Bằng Chứng</span>
-        <div class="kpi-value-row">
-          <span class="kpi-value text-investigating">{{ stats.investigatingCount }}</span>
-          <span class="kpi-sub">vụ đang thụ lý</span>
+    <!-- Real KPI Cards -->
+    <template v-else>
+      <!-- Card 1: Pending -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap icon-pending">
+          <span class="material-symbols-outlined">pending_actions</span>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ t('admin.disputes.kpiPending') }}</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value text-pending">{{ stats.pending_count }}</span>
+            <span class="kpi-sub">{{ t('admin.disputes.kpiPendingSub') }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Card 3 -->
-    <div class="kpi-card">
-      <div class="kpi-icon-wrap icon-sla">
-        <span class="material-symbols-outlined">alarm</span>
-      </div>
-      <div class="kpi-content">
-        <span class="kpi-label">Khẩn Cấp (SLA &lt; 15 phút)</span>
-        <div class="kpi-value-row">
-          <span class="kpi-value text-sla">{{ stats.criticalSlaCount }}</span>
-          <span class="kpi-sub">ưu tiên cao</span>
+      <!-- Card 2: Investigating -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap icon-investigating">
+          <span class="material-symbols-outlined">search_insights</span>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ t('admin.disputes.kpiInvestigating') }}</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value text-investigating">{{ stats.investigatingCount }}</span>
+            <span class="kpi-sub">{{ t('admin.disputes.kpiInvestigatingSub') }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Card 4 -->
-    <div class="kpi-card">
-      <div class="kpi-icon-wrap icon-consensus">
-        <span class="material-symbols-outlined">handshake</span>
-      </div>
-      <div class="kpi-content">
-        <span class="kpi-label">Tỷ Lệ Đồng Thuận Phán Quyết</span>
-        <div class="kpi-value-row">
-          <span class="kpi-value text-consensus">{{ stats.consensusRate }}%</span>
-          <span class="kpi-sub">128 đã giải quyết</span>
+      <!-- Card 3: Critical SLA -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap icon-sla">
+          <span class="material-symbols-outlined">alarm</span>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ t('admin.disputes.kpiCriticalSla') }}</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value text-sla">{{ stats.criticalSlaCount }}</span>
+            <span class="kpi-sub">{{ t('admin.disputes.kpiCriticalSlaSub') }}</span>
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- Card 4: Consensus Rate -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap icon-consensus">
+          <span class="material-symbols-outlined">handshake</span>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ t('admin.disputes.kpiConsensus') }}</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value text-consensus">{{ stats.consensusRate }}%</span>
+            <span class="kpi-sub">{{ t('admin.disputes.kpiConsensusSub', { count: stats.resolvedCount }) }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -74,20 +93,21 @@ defineProps<{
 }
 
 .kpi-card {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface);
+  border: 1px solid var(--outline);
   border-radius: 16px;
   padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
   transition: transform 0.2s, box-shadow 0.2s;
+  color: var(--ink);
 }
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
 }
 
 .kpi-icon-wrap {
@@ -105,23 +125,23 @@ defineProps<{
 }
 
 .icon-pending {
-  background: var(--primary-container, #F8E8EC);
-  color: var(--on-primary-container, #4e1827);
+  background: var(--primary-container);
+  color: var(--primary);
 }
 
 .icon-investigating {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
 }
 
 .icon-sla {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--error-bg, rgba(198, 40, 40, 0.2));
+  color: var(--error-text, #f87171);
 }
 
 .icon-consensus {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-bg, rgba(46, 125, 50, 0.25));
+  color: var(--success-text, #4ade80);
 }
 
 .kpi-content {
@@ -130,9 +150,14 @@ defineProps<{
   gap: 2px;
 }
 
+.skeleton-text-wrap {
+  flex: 1;
+  gap: 6px;
+}
+
 .kpi-label {
   font-size: 12px;
-  color: #5d5f5f;
+  color: var(--muted);
   font-weight: 500;
 }
 
@@ -149,23 +174,23 @@ defineProps<{
 }
 
 .text-pending {
-  color: #78555e;
+  color: var(--primary);
 }
 
 .text-investigating {
-  color: #0369a1;
+  color: #38bdf8;
 }
 
 .text-sla {
-  color: #b91c1c;
+  color: var(--error-text, #f87171);
 }
 
 .text-consensus {
-  color: #15803d;
+  color: var(--success-text, #4ade80);
 }
 
 .kpi-sub {
   font-size: 11px;
-  color: #817476;
+  color: var(--muted);
 }
 </style>

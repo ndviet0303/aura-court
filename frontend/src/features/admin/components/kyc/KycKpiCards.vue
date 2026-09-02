@@ -1,52 +1,89 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { KycStats } from '../../types/kyc'
+import { SkeletonLoader } from '@/shared/components'
 
-defineProps<{
-  stats: KycStats
-}>()
+withDefaults(
+  defineProps<{
+    stats: KycStats
+    loading?: boolean
+  }>(),
+  {
+    loading: false,
+  }
+)
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="kyc-kpi-grid">
-    <!-- Card 1: Pending -->
-    <div class="kpi-card">
-      <div class="kpi-label">Hồ sơ Chờ thẩm định</div>
-      <div class="kpi-value-row">
-        <span class="kpi-number">{{ stats.pending_count }}</span>
-        <span class="kpi-badge warning">3 ưu tiên</span>
+    <!-- Skeleton State -->
+    <template v-if="loading">
+      <div v-for="i in 4" :key="i" class="kpi-card skeleton-card">
+        <SkeletonLoader type="text" width="60%" height="14px" />
+        <div class="kpi-value-row">
+          <SkeletonLoader type="title" width="40%" height="28px" />
+          <SkeletonLoader type="rect" width="50px" height="20px" rounded="999px" />
+        </div>
+        <SkeletonLoader type="text" width="90%" height="12px" />
       </div>
-      <div class="kpi-desc">Cần xử lý trước giờ mở sàn giao dịch</div>
-    </div>
+    </template>
 
-    <!-- Card 2: AI OCR Confidence -->
-    <div class="kpi-card">
-      <div class="kpi-label">Độ tin cậy AI OCR & NAPAS</div>
-      <div class="kpi-value-row">
-        <span class="kpi-number">{{ stats.ai_confidence_rate }}%</span>
-        <span class="kpi-badge success">Tự động</span>
+    <!-- Loaded State -->
+    <template v-else>
+      <!-- Card 1: Pending -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">{{ t('admin.kyc.kpiPending') }}</div>
+          <span class="material-symbols-outlined kpi-icon">hourglass_top</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number">{{ stats.pending_count }}</span>
+          <span class="kpi-badge warning">{{ t('admin.kyc.kpiPendingBadge') }}</span>
+        </div>
+        <div class="kpi-desc">{{ t('admin.kyc.kpiPendingDesc') }}</div>
       </div>
-      <div class="kpi-desc">Tỷ lệ so khớp CCCD & tài khoản ngân hàng</div>
-    </div>
 
-    <!-- Card 3: Avg Processing Time -->
-    <div class="kpi-card">
-      <div class="kpi-label">Thời gian xử lý trung bình</div>
-      <div class="kpi-value-row">
-        <span class="kpi-number">{{ stats.avg_processing_time_minutes }}</span>
-        <span class="kpi-unit">phút / hồ sơ</span>
+      <!-- Card 2: Confidence Rate -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">{{ t('admin.kyc.kpiConfidence') }}</div>
+          <span class="material-symbols-outlined kpi-icon success">verified_user</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number">{{ stats.ai_confidence_rate }}%</span>
+          <span class="kpi-badge success">{{ t('admin.kyc.kpiConfidenceBadge') }}</span>
+        </div>
+        <div class="kpi-desc">{{ t('admin.kyc.kpiConfidenceDesc') }}</div>
       </div>
-      <div class="kpi-desc">Tối ưu hơn 40% so với quy trình thủ công</div>
-    </div>
 
-    <!-- Card 4: High Risk / Flagged -->
-    <div class="kpi-card alert-card">
-      <div class="kpi-label alert-text">Cảnh báo sai lệch / Rủi ro</div>
-      <div class="kpi-value-row">
-        <span class="kpi-number alert-text">{{ stats.flagged_count }}</span>
-        <span class="kpi-badge danger">Cần can thiệp</span>
+      <!-- Card 3: Avg Processing Time -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">{{ t('admin.kyc.kpiAvgTime') }}</div>
+          <span class="material-symbols-outlined kpi-icon">speed</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number">{{ stats.avg_processing_time_minutes }}</span>
+          <span class="kpi-unit">{{ t('admin.kyc.kpiAvgTimeUnit') }}</span>
+        </div>
+        <div class="kpi-desc">{{ t('admin.kyc.kpiAvgTimeDesc') }}</div>
       </div>
-      <div class="kpi-desc alert-desc">Trùng địa chỉ hoặc tên GPKD khác biệt</div>
-    </div>
+
+      <!-- Card 4: High Risk / Flagged -->
+      <div class="kpi-card alert-card">
+        <div class="kpi-header">
+          <div class="kpi-label alert-text">{{ t('admin.kyc.kpiFlagged') }}</div>
+          <span class="material-symbols-outlined kpi-icon alert-text">warning</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number alert-text">{{ stats.flagged_count }}</span>
+          <span class="kpi-badge danger">{{ t('admin.kyc.kpiFlaggedBadge') }}</span>
+        </div>
+        <div class="kpi-desc alert-desc">{{ t('admin.kyc.kpiFlaggedDesc') }}</div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -70,35 +107,55 @@ defineProps<{
 }
 
 .kpi-card {
-  background: #ffffff;
-  border: 1px solid #e1e3e4;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline, #e1e3e4);
   border-radius: 16px;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .kpi-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary, #78555e);
+}
+
+.kpi-card.skeleton-card {
+  gap: 10px;
+}
+
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kpi-icon {
+  font-size: 20px;
+  color: var(--muted, #817476);
+}
+
+.kpi-icon.success {
+  color: #10b981;
 }
 
 .alert-card {
-  background: #fff8f7;
-  border-color: #ffdad6;
+  background: var(--surface, #ffffff);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .kpi-label {
   font-size: 13px;
   font-weight: 600;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
 }
 
 .alert-text {
-  color: #ba1a1a !important;
+  color: #ef4444 !important;
 }
 
 .kpi-value-row {
@@ -110,26 +167,26 @@ defineProps<{
 .kpi-number {
   font-size: 28px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink, #191c1d);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
 .kpi-unit {
   font-size: 13px;
-  color: #5d5f5f;
+  color: var(--muted, #5d5f5f);
   font-weight: 500;
 }
 
 .kpi-desc {
   font-size: 12px;
-  color: #817476;
+  color: var(--muted, #817476);
   margin-top: 2px;
 }
 
 .alert-desc {
-  color: #ba1a1a;
-  opacity: 0.85;
+  color: #ef4444;
+  opacity: 0.9;
 }
 
 .kpi-badge {
@@ -154,3 +211,4 @@ defineProps<{
   color: #dc2626;
 }
 </style>
+

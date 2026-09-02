@@ -63,6 +63,7 @@
   --surface-container-high: #eae2d7;
   --surface-container-low: #f8f4ee;
   --surface-container-lowest: #ffffff;
+  --surface-low: #f8f4ee;
   --outline-variant: #dcd3c5;
 
   /* Warm ambient shadows */
@@ -131,6 +132,7 @@ html.dark {
   --surface-container-high: #322b30;
   --surface-container-low: #191417;
   --surface-container-lowest: #141113;
+  --surface-low: #191417;
   --outline-variant: #4d4049;
 
   /* Dark mode warm glow shadows */

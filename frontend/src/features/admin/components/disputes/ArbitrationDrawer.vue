@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { DisputeCase, ArbitrateDisputePayload } from '../../types/dispute'
 
 const props = defineProps<{
@@ -13,6 +14,8 @@ const emit = defineEmits<{
   (e: 'submit', payload: ArbitrateDisputePayload): void
 }>()
 
+const { t, locale } = useI18n()
+
 const selectedRefundMethod = ref<'wallet' | 'payos_bank' | 'partial_wallet' | 'none'>('wallet')
 const refundAmount = ref<number>(360000)
 const selectedGoodwill = ref<'voucher_20' | 'reputation_points' | 'none'>('voucher_20')
@@ -25,8 +28,14 @@ watch(
   (newItem) => {
     if (newItem) {
       refundAmount.value = newItem.amountDisputed || 360000
-      penaltyNotes.value = 'Lập biên bản nhắc nhở ca trực do lỗi ghi đè thủ công không kiểm tra đối soát.'
-      arbitratorNotes.value = 'Chấp thuận hoàn 100% giá trị đặt sân cho nguyên đơn do lỗi hệ thống và thao tác của cơ sở.'
+      penaltyNotes.value =
+        locale.value === 'en'
+          ? 'Operational reminder notice issued to shift operator regarding manual override error.'
+          : 'Lập biên bản nhắc nhở ca trực do lỗi ghi đè thủ công không kiểm tra đối soát.'
+      arbitratorNotes.value =
+        locale.value === 'en'
+          ? 'Approved 100% refund to complainant due to facility webhook latency and front-desk conflict.'
+          : 'Chấp thuận hoàn 100% giá trị đặt sân cho nguyên đơn do lỗi hệ thống và thao tác của cơ sở.'
     }
   },
   { immediate: true }
@@ -34,15 +43,15 @@ watch(
 
 function handleSubmit() {
   const goodwillMap = {
-    voucher_20: 'Voucher giảm 20% đơn tiếp theo',
-    reputation_points: '500 Điểm Danh Vọng Aura Rewards',
-    none: 'Không bồi thường thêm',
+    voucher_20: locale.value === 'en' ? '20% Discount Voucher' : 'Voucher giảm 20% đơn tiếp theo',
+    reputation_points: locale.value === 'en' ? '+500 Aura Club Reputation Points' : '500 Điểm Danh Vọng Aura Rewards',
+    none: locale.value === 'en' ? 'None' : 'Không bồi thường thêm',
   }
 
   emit('submit', {
-    decision: 'resolve_and_refund',
+    decision: selectedRefundMethod.value === 'none' ? 'resolve' : 'resolve_and_refund',
     refundMethod: selectedRefundMethod.value,
-    refundAmount: refundAmount.value,
+    refundAmount: selectedRefundMethod.value === 'none' ? 0 : refundAmount.value,
     compensationType: selectedGoodwill.value,
     compensationValue: goodwillMap[selectedGoodwill.value],
     penaltyNotes: penaltyNotes.value,
@@ -50,6 +59,20 @@ function handleSubmit() {
     notes: arbitratorNotes.value,
   })
 }
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.show) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -71,9 +94,9 @@ function handleSubmit() {
       <!-- Drawer Header -->
       <div class="drawer-header">
         <div>
-          <h3 class="drawer-title">Lập Biên Bản Phán Quyết &amp; Bồi Thường</h3>
+          <h3 class="drawer-title">{{ t('admin.disputes.drawerTitle') }}</h3>
           <p class="drawer-sub">
-            Vụ việc: #{{ item?.disputeCode }} • Cụm sân: {{ item?.facility.name }}
+            {{ t('admin.disputes.drawerSubtitle', { code: item?.disputeCode, facility: item?.facility.name }) }}
           </p>
         </div>
         <button type="button" class="btn-close" @click="emit('close')">
@@ -86,31 +109,31 @@ function handleSubmit() {
         <!-- Financial Context -->
         <div class="context-card">
           <div class="context-row">
-            <span class="context-lbl">Tổng giá trị tranh chấp:</span>
+            <span class="context-lbl">{{ t('admin.disputes.totalDisputedLabel') }}</span>
             <span class="context-val text-primary font-bold">
-              {{ (item?.amountDisputed || 0).toLocaleString('vi-VN') }} ₫
+              {{ (item?.amountDisputed || 0).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN') }} ₫
             </span>
           </div>
           <div class="context-row">
-            <span class="context-lbl">Nguyên đơn nhận bồi hoàn:</span>
+            <span class="context-lbl">{{ t('admin.disputes.beneficiaryLabel') }}</span>
             <span class="context-val">{{ item?.complainant.name }}</span>
           </div>
         </div>
 
         <!-- Form 1: Refund Method -->
         <div class="form-group">
-          <label class="form-label">Phương thức bồi hoàn tài chính</label>
+          <label class="form-label">{{ t('admin.disputes.refundMethodLabel') }}</label>
           <select v-model="selectedRefundMethod" class="form-select">
-            <option value="wallet">Hoàn 100% vào Ví Nội Bộ (Khuyên dùng - Tức thì)</option>
-            <option value="payos_bank">Hoàn về Tài khoản Ngân hàng nguồn (PayOS 1-2 ngày)</option>
-            <option value="partial_wallet">Hoàn 50% vào Ví Nội Bộ (Thỏa thuận chia sẻ)</option>
-            <option value="none">Không hoàn tiền (Bác bỏ bồi hoàn)</option>
+            <option value="wallet">{{ t('admin.disputes.refundOptWallet') }}</option>
+            <option value="payos_bank">{{ t('admin.disputes.refundOptBank') }}</option>
+            <option value="partial_wallet">{{ t('admin.disputes.refundOptPartial') }}</option>
+            <option value="none">{{ t('admin.disputes.refundOptNone') }}</option>
           </select>
         </div>
 
         <!-- Form 2: Goodwill Compensation -->
         <div class="form-group">
-          <label class="form-label">Gói đền bù thiện chí (Goodwill Compensation)</label>
+          <label class="form-label">{{ t('admin.disputes.goodwillLabel') }}</label>
           <div class="radio-options">
             <label class="radio-card" :class="{ selected: selectedGoodwill === 'voucher_20' }">
               <input
@@ -120,8 +143,8 @@ function handleSubmit() {
                 class="radio-input"
               />
               <div class="radio-text">
-                <span class="radio-title">Voucher Giảm 20%</span>
-                <span class="radio-desc">Áp dụng cho mọi cụm sân Aura</span>
+                <span class="radio-title">{{ t('admin.disputes.goodwillVoucher20Title') }}</span>
+                <span class="radio-desc">{{ t('admin.disputes.goodwillVoucher20Desc') }}</span>
               </div>
             </label>
 
@@ -133,8 +156,21 @@ function handleSubmit() {
                 class="radio-input"
               />
               <div class="radio-text">
-                <span class="radio-title">+500 Điểm Danh Vọng</span>
-                <span class="radio-desc">Cộng trực tiếp vào Aura Club</span>
+                <span class="radio-title">{{ t('admin.disputes.goodwillPointsTitle') }}</span>
+                <span class="radio-desc">{{ t('admin.disputes.goodwillPointsDesc') }}</span>
+              </div>
+            </label>
+
+            <label class="radio-card" :class="{ selected: selectedGoodwill === 'none' }">
+              <input
+                v-model="selectedGoodwill"
+                type="radio"
+                value="none"
+                class="radio-input"
+              />
+              <div class="radio-text">
+                <span class="radio-title">{{ t('admin.disputes.goodwillNoneTitle') }}</span>
+                <span class="radio-desc">{{ t('admin.disputes.goodwillNoneDesc') }}</span>
               </div>
             </label>
           </div>
@@ -142,22 +178,22 @@ function handleSubmit() {
 
         <!-- Form 3: Facility Penalty Notes -->
         <div class="form-group">
-          <label class="form-label">Ghi nhận chế tài đối với Cơ sở Vận hành</label>
+          <label class="form-label">{{ t('admin.disputes.penaltyNotesLabel') }}</label>
           <textarea
             v-model="penaltyNotes"
             class="form-textarea"
-            placeholder="Nhập nội dung xử lý vi phạm ca trực..."
+            :placeholder="t('admin.disputes.penaltyNotesPlaceholder')"
             rows="3"
           ></textarea>
         </div>
 
         <!-- Form 4: Arbitrator Notes -->
         <div class="form-group">
-          <label class="form-label">Căn cứ &amp; Diễn giải Phán quyết Kiểm toán</label>
+          <label class="form-label">{{ t('admin.disputes.arbitratorNotesLabel') }}</label>
           <textarea
             v-model="arbitratorNotes"
             class="form-textarea"
-            placeholder="Nhập căn cứ pháp lý & điều khoản đối soát..."
+            :placeholder="t('admin.disputes.arbitratorNotesPlaceholder')"
             rows="3"
           ></textarea>
         </div>
@@ -166,8 +202,8 @@ function handleSubmit() {
         <div class="signature-box">
           <span class="material-symbols-outlined sig-icon">verified_user</span>
           <div class="sig-details">
-            <span class="sig-title">Ký số xác thực bởi Trưởng ban Kiểm soát</span>
-            <span class="sig-hash">SHA256: 8f9a2c...b109e4 (Lưu vào sổ cái bất biến)</span>
+            <span class="sig-title">{{ t('admin.disputes.signatureTitle') }}</span>
+            <span class="sig-hash">{{ t('admin.disputes.signatureHash', { hash: '8f9a2c...b109e4' }) }}</span>
           </div>
         </div>
       </div>
@@ -180,7 +216,7 @@ function handleSubmit() {
           :disabled="isSubmitting"
           @click="emit('close')"
         >
-          Hủy bỏ
+          {{ t('admin.disputes.btnCancel') }}
         </button>
         <button
           type="button"
@@ -188,8 +224,8 @@ function handleSubmit() {
           :disabled="isSubmitting"
           @click="handleSubmit"
         >
-          <span class="material-symbols-outlined">check_circle</span>
-          {{ isSubmitting ? 'Đang ban hành...' : 'Ban Hành Phán Quyết Ký Số' }}
+          <span class="material-symbols-outlined icon-18">check_circle</span>
+          <span>{{ isSubmitting ? t('admin.disputes.btnSubmitting') : t('admin.disputes.btnSubmitArbitration') }}</span>
         </button>
       </div>
     </div>
@@ -200,8 +236,8 @@ function handleSubmit() {
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(25, 28, 29, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(20, 17, 19, 0.6);
+  backdrop-filter: blur(6px);
   z-index: 999;
   animation: fadeIn 0.2s ease-out;
 }
@@ -211,15 +247,16 @@ function handleSubmit() {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 480px;
+  width: 500px;
   max-width: 90vw;
-  background: #ffffff;
+  background: var(--surface);
   z-index: 1000;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--ink);
 }
 
 .drawer-open {
@@ -228,38 +265,41 @@ function handleSubmit() {
 
 .drawer-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #edeeef;
+  border-bottom: 1px solid var(--outline);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: #f8f9fa;
+  background: var(--surface-subtle);
 }
 
 .drawer-title {
   font-size: 16px;
   font-weight: 800;
-  color: #191c1d;
+  color: var(--ink);
   margin: 0;
 }
 
 .drawer-sub {
   font-size: 12px;
-  color: #5d5f5f;
+  color: var(--muted);
   margin: 4px 0 0;
 }
 
 .btn-close {
   background: transparent;
   border: none;
-  color: #817476;
+  color: var(--muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-close:hover {
-  background: #edeeef;
-  color: #191c1d;
+  background: var(--soft);
+  color: var(--ink);
 }
 
 .drawer-body {
@@ -272,8 +312,8 @@ function handleSubmit() {
 }
 
 .context-card {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -288,16 +328,16 @@ function handleSubmit() {
 }
 
 .context-lbl {
-  color: #5d5f5f;
+  color: var(--muted);
 }
 
 .context-val {
-  color: #191c1d;
+  color: var(--ink);
   font-weight: 600;
 }
 
 .text-primary {
-  color: #78555e;
+  color: var(--primary);
 }
 
 .form-group {
@@ -309,17 +349,17 @@ function handleSubmit() {
 .form-label {
   font-size: 13px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink);
 }
 
 .form-select,
 .form-textarea {
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 13px;
-  color: #191c1d;
+  color: var(--ink);
   outline: none;
   font-family: inherit;
   transition: border-color 0.2s;
@@ -327,8 +367,8 @@ function handleSubmit() {
 
 .form-select:focus,
 .form-textarea:focus {
-  border-color: #78555e;
-  background: #ffffff;
+  border-color: var(--primary);
+  background: var(--surface);
 }
 
 .radio-options {
@@ -342,24 +382,24 @@ function handleSubmit() {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border: 1px solid #e1e3e4;
+  border: 1px solid var(--outline);
   border-radius: 10px;
-  background: #f8f9fa;
+  background: var(--surface-subtle);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .radio-card:hover {
-  background: #edeeef;
+  background: var(--soft);
 }
 
 .radio-card.selected {
-  background: var(--primary-container, #F8E8EC);
-  border-color: var(--border, #e8e1d7);
+  background: var(--primary-container);
+  border-color: var(--primary);
 }
 
 .radio-input {
-  accent-color: var(--primary, #6B2D3F);
+  accent-color: var(--primary);
 }
 
 .radio-text {
@@ -371,17 +411,17 @@ function handleSubmit() {
 .radio-title {
   font-size: 13px;
   font-weight: 700;
-  color: #191c1d;
+  color: var(--ink);
 }
 
 .radio-desc {
   font-size: 11px;
-  color: #5d5f5f;
+  color: var(--muted);
 }
 
 .signature-box {
-  background: #fdf4ff;
-  border: 1px solid #f0abfc;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
   border-radius: 10px;
   padding: 12px 16px;
   display: flex;
@@ -391,7 +431,7 @@ function handleSubmit() {
 
 .sig-icon {
   font-size: 24px;
-  color: #86198f;
+  color: #c084fc;
 }
 
 .sig-details {
@@ -402,59 +442,69 @@ function handleSubmit() {
 .sig-title {
   font-size: 12px;
   font-weight: 700;
-  color: #701a75;
+  color: var(--ink);
 }
 
 .sig-hash {
   font-size: 10px;
-  color: #86198f;
+  color: #c084fc;
   font-family: monospace;
 }
 
 .drawer-footer {
   padding: 16px 24px;
-  border-top: 1px solid #edeeef;
-  background: #ffffff;
+  border-top: 1px solid var(--outline);
+  background: var(--surface);
   display: flex;
   gap: 12px;
 }
 
 .btn-cancel {
   flex: 1;
-  background: #f8f9fa;
-  border: 1px solid #e1e3e4;
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
   border-radius: 10px;
   padding: 10px 16px;
   font-size: 13px;
   font-weight: 600;
-  color: #5d5f5f;
+  color: var(--muted);
   cursor: pointer;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: var(--soft);
+  color: var(--ink);
 }
 
 .btn-submit {
   flex: 2;
-  background: #78555e;
+  background: var(--primary);
   border: none;
   border-radius: 10px;
   padding: 10px 18px;
   font-size: 13px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--on-primary, #ffffff);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   box-shadow: 0 2px 8px rgba(120, 85, 94, 0.25);
+  transition: all 0.2s;
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: #5e3e47;
+  background: var(--primary-hover);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 @keyframes fadeIn {
