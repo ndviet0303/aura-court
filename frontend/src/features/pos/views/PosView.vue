@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { posApi } from '../api/posApi'
@@ -10,17 +9,18 @@ import { usePosCart } from '../composables/usePosCart'
 import { usePosProducts } from '../composables/usePosProducts'
 import { usePosShift } from '../composables/usePosShift'
 
+import PosTopBar from '../components/PosTopBar.vue'
 import PosProductGrid from '../components/PosProductGrid.vue'
 import PosCartPanel from '../components/PosCartPanel.vue'
 import PosReceiptModal from '../components/PosReceiptModal.vue'
 import PosShiftModal from '../components/PosShiftModal.vue'
 import PosCustomerModal from '../components/PosCustomerModal.vue'
 import PosCustomItemModal from '../components/PosCustomItemModal.vue'
+import PosDraftsModal from '../components/PosDraftsModal.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 
-// Composables
 const {
   products,
   selectedCategory,
@@ -37,8 +37,7 @@ const {
   cart,
   selectedCustomer,
   selectedReservationId,
-  includeVat,
-  vatRate,
+  vatBreakdown,
   customDiscountPercent,
   discountPercent,
   paymentMethod,
@@ -51,6 +50,7 @@ const {
   quickCashSuggestions,
   cashChange,
   addToCart,
+  updateItemVatRate,
   removeFromCart,
   updateQuantity,
   updateRentalHours,
@@ -66,11 +66,11 @@ const {
   closeShift,
 } = usePosShift()
 
-// UI State
 const isFullscreen = ref(false)
 const notice = ref('')
 const error = ref('')
 const processingCheckout = ref(false)
+
 const showShiftModal = ref(false)
 const showDraftsModal = ref(false)
 const showReceiptModal = ref(false)
@@ -78,7 +78,6 @@ const showCustomItemModal = ref(false)
 const showCustomerModal = ref(false)
 const currentReceipt = ref<OrderReceipt | null>(null)
 
-// Drafts & Local Database
 const drafts = ref<Draft[]>([])
 const activeReservations = ref<CourtReservation[]>([])
 const customerDatabase = ref<CustomerProfile[]>([])
@@ -116,7 +115,7 @@ function handleSelectProduct(prod: Product) {
   showNotice(t('admin.pos.addedToCart', { name: prod.name }))
 }
 
-function handleAddCustomItem(payload: { name: string; price: number; quantity: number }) {
+function handleAddCustomItem(payload: { name: string; price: number; quantity: number; vat_rate: number }) {
   const newProd: Product = {
     id: Date.now(),
     sku: `CUSTOM-${Date.now().toString().slice(-4)}`,
@@ -125,11 +124,19 @@ function handleAddCustomItem(payload: { name: string; price: number; quantity: n
     category: 'services',
     stock_quantity: 999,
     is_service: true,
+    vat_rate: payload.vat_rate,
   }
   addCustomProduct(newProd)
-  addToCart(newProd, payload.quantity)
+  addToCart(newProd, payload.quantity, undefined, payload.vat_rate)
   showCustomItemModal.value = false
   showNotice(t('admin.pos.addedCustom'))
+}
+
+function handleApplyBulkTax(vat: number) {
+  cart.value.forEach((item) => {
+    item.vat_rate = vat
+  })
+  showNotice(t('admin.pos.vatSummary', { percent: Math.round(vat * 100) }))
 }
 
 function handleSaveDraft() {
@@ -142,8 +149,11 @@ function handleSaveDraft() {
       product_id: c.product.id,
       quantity: c.quantity,
       rental_hours: c.rental_hours,
+      product_name: c.product.name,
+      price: c.product.price,
     })),
     reservation_id: selectedReservationId.value,
+    customer_id: selectedCustomer.value?.id,
     customer_name: selectedCustomer.value?.name,
     saved_at: new Date().toLocaleTimeString(),
     total_amount: grandTotal.value,
@@ -161,9 +171,16 @@ function handleLoadDraft(draft: Draft) {
     }
   })
   selectedReservationId.value = draft.reservation_id || null
+  if (draft.customer_id) {
+    selectedCustomer.value = customerDatabase.value.find((c) => c.id === draft.customer_id) || null
+  }
   showDraftsModal.value = false
   drafts.value = drafts.value.filter((d) => d.id !== draft.id)
   showNotice(t('admin.pos.draftLoaded', { id: draft.id }))
+}
+
+function handleDeleteDraft(id: string) {
+  drafts.value = drafts.value.filter((d) => d.id !== id)
 }
 
 async function handleCheckout() {
@@ -172,27 +189,23 @@ async function handleCheckout() {
   error.value = ''
 
   try {
+    const backendPaymentMethod = paymentMethod.value === 'court_tab' ? 'cash' : paymentMethod.value
     const payload = {
       items: cart.value.map((c) => ({
         product_id: c.product.id,
         quantity: c.quantity,
-        rental_hours: c.rental_hours,
-        unit_price: c.product.price,
       })),
       customer_id: selectedCustomer.value?.id,
       reservation_id: selectedReservationId.value,
-      payment_method: paymentMethod.value,
-      subtotal: subtotal.value,
+      payment_method: backendPaymentMethod,
       discount_amount: discountAmount.value,
-      tax_amount: taxAmount.value,
-      grand_total: grandTotal.value,
-      cash_tendered: paymentMethod.value === 'cash' ? cashTendered.value : undefined,
+      payment_reference: paymentMethod.value === 'court_tab' ? `court-tab:${selectedReservationId.value}` : undefined,
     }
 
     try {
       await posApi.completeOrder(payload)
     } catch {
-      // Demo fallback
+      // Graceful fallback for non-persisted test items
     }
 
     const receiptData: OrderReceipt = {
@@ -206,13 +219,15 @@ async function handleCheckout() {
         quantity: c.quantity,
         price: c.product.price,
         total: c.product.price * c.quantity * (c.rental_hours || 1),
+        vat_rate: c.vat_rate ?? (c.product.vat_rate ?? 0.08),
       })),
       subtotal: subtotal.value,
       discount_amount: discountAmount.value,
       tax_amount: taxAmount.value,
+      vat_breakdown: vatBreakdown.value,
       grand_total: grandTotal.value,
       payment_method: paymentMethod.value,
-      cash_tendered: cashTendered.value || undefined,
+      cash_tendered: paymentMethod.value === 'cash' ? (cashTendered.value || grandTotal.value) : undefined,
       cash_change: cashChange.value || undefined,
     }
 
@@ -231,10 +246,14 @@ async function handleCheckout() {
   }
 }
 
-function handleOpenShift(cash: number) {
-  openShift(cash)
-  showShiftModal.value = false
-  showNotice(t('admin.pos.openShiftSuccess'))
+async function handleOpenShift(cash: number) {
+  try {
+    await openShift(cash)
+    showShiftModal.value = false
+    showNotice(t('admin.pos.openShiftSuccess'))
+  } catch {
+    // Handled in composable
+  }
 }
 
 async function handleCloseShift(shiftId: number, declaredCash: number, note: string) {
@@ -243,7 +262,7 @@ async function handleCloseShift(shiftId: number, declaredCash: number, note: str
     showShiftModal.value = false
     showNotice(t('admin.pos.closeShiftSuccess'))
   } catch {
-    // handled in composable
+    // Handled in composable
   }
 }
 
@@ -266,8 +285,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
-  await loadProducts()
-  await checkActiveShift()
+  await Promise.allSettled([loadProducts(), checkActiveShift()])
   const [resList, custList] = await Promise.allSettled([
     posApi.getActiveReservations(),
     posApi.searchCustomers(),
@@ -283,34 +301,15 @@ onUnmounted(() => {
 
 <template>
   <div class="pos-layout-wrapper" :class="{ fullscreen: isFullscreen }">
-    <!-- Top POS Navigation Bar -->
-    <header class="pos-topbar">
-      <div class="topbar-left">
-        <RouterLink to="/" class="pos-brand">
-          <span class="brand-badge">{{ t('admin.pos.brand') }}</span>
-        </RouterLink>
-        <span class="pos-mode-tag">{{ t('admin.pos.modeTag') }}</span>
-      </div>
+    <PosTopBar
+      :active-shift="activeShift"
+      :is-fullscreen="isFullscreen"
+      :notice="notice"
+      :error="error || shiftError"
+      @open-shift-modal="showShiftModal = true"
+      @toggle-fullscreen="toggleFullscreen"
+    />
 
-      <div class="topbar-center">
-        <div v-if="notice" class="pos-banner-notice">{{ notice }}</div>
-        <div v-if="error || shiftError" class="pos-banner-error">{{ error || shiftError }}</div>
-      </div>
-
-      <div class="topbar-right">
-        <button type="button" class="topbar-btn" @click="showShiftModal = true">
-          <span class="material-symbols-outlined icon-18">badge</span>
-          <span v-if="activeShift">{{ t('admin.pos.shiftNumber', { id: activeShift.id }) }}</span>
-          <span v-else>{{ t('admin.pos.openShift') }}</span>
-        </button>
-        <button type="button" class="topbar-btn" @click="toggleFullscreen">
-          <span class="material-symbols-outlined icon-18">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</span>
-          <span>{{ isFullscreen ? t('admin.pos.minimize') : t('admin.pos.fullscreen') }}</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main POS Grid (Left: Catalog, Right: Cart) -->
     <main class="pos-main-workspace">
       <div class="pos-left-column">
         <PosProductGrid
@@ -319,7 +318,7 @@ onUnmounted(() => {
           :selected-category="selectedCategory"
           :search-query="searchQuery"
           :loading="productsLoading"
-          @update:selected-category="selectedCategory = $event"
+          @update:selected-category="selectedCategory = $event as any"
           @update:search-query="searchQuery = $event"
           @select-product="handleSelectProduct"
           @open-custom-item-modal="showCustomItemModal = true"
@@ -332,8 +331,7 @@ onUnmounted(() => {
           :selected-customer="selectedCustomer"
           :selected-reservation-id="selectedReservationId"
           :active-reservations="activeReservations"
-          :include-vat="includeVat"
-          :vat-rate="vatRate"
+          :vat-breakdown="vatBreakdown"
           :discount-percent="discountPercent"
           :custom-discount-percent="customDiscountPercent"
           :payment-method="paymentMethod"
@@ -346,7 +344,8 @@ onUnmounted(() => {
           :quick-cash-suggestions="quickCashSuggestions"
           :cash-change="cashChange"
           :processing-checkout="processingCheckout"
-          @update:include-vat="includeVat = $event"
+          @update-item-vat="updateItemVatRate"
+          @apply-bulk-tax="handleApplyBulkTax"
           @update:custom-discount-percent="customDiscountPercent = $event"
           @update:payment-method="paymentMethod = $event"
           @update:cash-tendered="cashTendered = $event"
@@ -363,7 +362,6 @@ onUnmounted(() => {
       </div>
     </main>
 
-    <!-- Modals -->
     <PosReceiptModal
       :show="showReceiptModal"
       :receipt="currentReceipt"
@@ -392,6 +390,14 @@ onUnmounted(() => {
       @close="showCustomItemModal = false"
       @add="handleAddCustomItem"
     />
+
+    <PosDraftsModal
+      :show="showDraftsModal"
+      :drafts="drafts"
+      @close="showDraftsModal = false"
+      @load-draft="handleLoadDraft"
+      @delete-draft="handleDeleteDraft"
+    />
   </div>
 </template>
 
@@ -399,105 +405,59 @@ onUnmounted(() => {
 .pos-layout-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: var(--bg);
-  color: var(--ink);
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  background: var(--bg, #0f172a);
+  color: var(--ink, #ffffff);
   overflow: hidden;
 }
 
-.pos-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 20px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--outline);
-}
-
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-badge {
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--pink-dark, #db2777);
-  letter-spacing: 0.5px;
-}
-
-.pos-mode-tag {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.topbar-right {
-  display: flex;
-  gap: 8px;
-}
-
-.topbar-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.topbar-btn:hover {
-  border-color: var(--pink-dark, #db2777);
-  color: var(--pink-dark, #db2777);
+.pos-layout-wrapper.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  height: 100vh;
 }
 
 .pos-main-workspace {
   flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: 1fr 380px;
+  gap: 14px;
+  padding: 14px;
   overflow: hidden;
 }
 
-.pos-left-column,
-.pos-right-column {
+.pos-left-column {
+  min-width: 0;
   height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-.pos-banner-notice {
-  padding: 4px 12px;
-  border-radius: 6px;
-  background: #10b981;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.pos-banner-error {
-  padding: 4px 12px;
-  border-radius: 6px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.icon-18 {
-  font-size: 18px;
+.pos-right-column {
+  width: 380px;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @media (max-width: 1024px) {
   .pos-main-workspace {
     grid-template-columns: 1fr;
     overflow-y: auto;
+    height: auto;
+  }
+  .pos-right-column {
+    width: 100%;
+    height: auto;
+    min-height: 520px;
   }
 }
 </style>

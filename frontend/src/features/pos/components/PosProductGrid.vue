@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Product } from '../types/pos'
+import type { Product, ProductCategory } from '../types/pos'
+import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 
 defineProps<{
   products: Product[]
   categories: Array<{ key: string; label: string; icon: string; labelKey?: string }>
-  selectedCategory: string
+  selectedCategory: ProductCategory
   searchQuery: string
   loading?: boolean
 }>()
@@ -18,6 +20,14 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const categoryScrollRef = ref<HTMLElement | null>(null)
+
+function onCategoryWheel(e: WheelEvent) {
+  if (!categoryScrollRef.value) return
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    categoryScrollRef.value.scrollLeft += e.deltaY
+  }
+}
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -54,13 +64,17 @@ function formatMoney(amount: number): string {
         :title="t('admin.pos.customItemBtn')"
         @click="emit('openCustomItemModal')"
       >
-        <span class="material-symbols-outlined icon-18">add</span>
+        <span class="material-symbols-outlined icon-18">add_circle</span>
         <span>{{ t('admin.pos.customItemBtn') }}</span>
       </button>
     </div>
 
     <!-- Category Tabs -->
-    <div class="category-tabs-scroll">
+    <div
+      ref="categoryScrollRef"
+      class="category-tabs-scroll"
+      @wheel.passive="onCategoryWheel"
+    >
       <button
         v-for="cat in categories"
         :key="cat.key"
@@ -76,24 +90,35 @@ function formatMoney(amount: number): string {
 
     <!-- Products Grid -->
     <div class="products-grid-container">
-      <div v-if="loading" class="catalog-loading-state">
-        <div class="spinner"></div>
-        <p>{{ t('admin.pos.loadingState') }}</p>
+      <!-- Skeleton Loading State -->
+      <div v-if="loading" class="catalog-skeleton-grid">
+        <div v-for="i in 8" :key="i" class="product-skeleton-card">
+          <SkeletonLoader type="rect" height="110px" rounded="10px" />
+          <div class="skeleton-meta">
+            <SkeletonLoader type="title" width="85%" />
+            <SkeletonLoader type="text" width="55%" />
+          </div>
+        </div>
       </div>
 
+      <!-- Empty State -->
       <div v-else-if="products.length === 0" class="catalog-empty-state">
         <span class="material-symbols-outlined empty-icon">inventory_2</span>
         <h3>{{ t('admin.pos.noProductsFound') }}</h3>
         <p>{{ t('admin.pos.noProductsSub') }}</p>
       </div>
 
+      <!-- Real Products List -->
       <div v-else class="products-grid">
         <div
           v-for="prod in products"
           :key="prod.id"
           class="product-card"
           :class="{ 'out-of-stock': !prod.is_service && prod.stock_quantity <= 0 }"
+          role="button"
+          tabindex="0"
           @click="emit('selectProduct', prod)"
+          @keydown.enter="emit('selectProduct', prod)"
         >
           <div class="prod-img-wrap">
             <img
@@ -103,13 +128,15 @@ function formatMoney(amount: number): string {
               loading="lazy"
             />
             <div v-else class="no-img-placeholder">
-              <span class="material-symbols-outlined fallback-icon">sports_tennis</span>
+              <span class="material-symbols-outlined fallback-icon">
+                {{ prod.is_rental ? 'schedule' : prod.is_service ? 'build' : prod.category === 'drinks' ? 'local_cafe' : 'sports_tennis' }}
+              </span>
             </div>
-            <span v-if="prod.is_rental" class="badge-rental">{{ t('admin.pos.badgeRental') }}</span>
-            <span v-else-if="prod.is_service" class="badge-service">{{ t('admin.pos.badgeService') }}</span>
+            <span v-if="prod.is_rental" class="badge-tag badge-rental">{{ t('admin.pos.badgeRental') }}</span>
+            <span v-else-if="prod.is_service" class="badge-tag badge-service">{{ t('admin.pos.badgeService') }}</span>
             <span
               v-else-if="prod.stock_quantity <= 0"
-              class="badge-out-of-stock"
+              class="badge-tag badge-out-of-stock"
             >
               {{ t('admin.pos.badgeOutOfStock') }}
             </span>
@@ -119,9 +146,17 @@ function formatMoney(amount: number): string {
             <h4 class="prod-name" :title="prod.name">{{ prod.name }}</h4>
             <div class="prod-meta">
               <strong class="prod-price">{{ formatMoney(prod.price) }}</strong>
-              <span v-if="!prod.is_service" class="prod-stock">
-                SL: {{ prod.stock_quantity }} {{ prod.unit || 'món' }}
-              </span>
+              <div class="prod-sub-meta">
+                <span v-if="!prod.is_service" class="prod-stock">
+                  SL: {{ prod.stock_quantity }}
+                </span>
+                <span v-else class="prod-stock service-tag">
+                  {{ prod.unit || 'dịch vụ' }}
+                </span>
+                <span class="prod-vat-tag" :class="`vat-${Math.round((prod.vat_rate ?? 0.08) * 100)}`">
+                  {{ Math.round((prod.vat_rate ?? 0.08) * 100) }}%
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -135,124 +170,137 @@ function formatMoney(amount: number): string {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--surface, #1e293b);
   border-radius: 16px;
-  border: 1px solid var(--outline);
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
 }
 
 .pos-catalog-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid var(--outline);
+  padding: 14px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  background: var(--surface, #1e293b);
 }
 
 .search-box-wrap {
-  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
+  position: relative;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 0 12px;
+  transition: border-color 0.2s ease;
+}
+
+.search-box-wrap:focus-within {
+  border-color: var(--primary, #10b981);
 }
 
 .search-icon {
-  position: absolute;
-  left: 14px;
-  font-size: 18px;
-  color: var(--muted);
-  pointer-events: none;
+  color: var(--muted, #94a3b8);
+  font-size: 20px;
 }
 
 .catalog-search-input {
   width: 100%;
-  height: 44px;
-  padding: 0 40px 0 42px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.03));
-  color: var(--ink);
-  font-size: 13px;
-  font-family: inherit;
-  transition: all 0.2s;
+  padding: 10px 8px;
+  background: transparent;
+  border: none;
+  color: var(--ink, #ffffff);
+  font-size: 14px;
+  outline: none;
 }
 
-.catalog-search-input:focus {
-  outline: 0;
-  border-color: var(--pink-dark, #db2777);
-  background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.12);
+.catalog-search-input::placeholder {
+  color: var(--muted, #94a3b8);
 }
 
 .clear-search-btn {
-  position: absolute;
-  right: 10px;
   background: transparent;
-  border: 0;
-  color: var(--muted);
+  border: none;
+  color: var(--muted, #94a3b8);
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px;
+}
+
+.clear-search-btn:hover {
+  color: var(--ink, #ffffff);
 }
 
 .custom-item-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 44px;
-  padding: 0 16px;
-  border-radius: 12px;
-  border: 1px dashed var(--pink-dark, #db2777);
-  background: rgba(236, 72, 153, 0.08);
-  color: var(--pink-dark, #db2777);
-  font-weight: 600;
+  padding: 10px 14px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  color: var(--primary, #10b981);
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .custom-item-btn:hover {
-  background: var(--pink-dark, #db2777);
-  color: #fff;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--primary, #10b981);
 }
 
 .category-tabs-scroll {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
+  flex-shrink: 0;
   overflow-x: auto;
-  border-bottom: 1px solid var(--outline);
-  background: var(--surface);
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.category-tabs-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+  width: 0;
+  height: 0;
 }
 
 .cat-tab-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
+  border-radius: 999px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  color: var(--muted, #94a3b8);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
 }
 
 .cat-tab-btn:hover {
-  border-color: var(--pink-dark, #db2777);
-  color: var(--pink-dark, #db2777);
+  color: var(--ink, #ffffff);
+  border-color: var(--outline-strong, rgba(255, 255, 255, 0.2));
 }
 
 .cat-tab-btn.active {
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  border-color: var(--pink-dark, #db2777);
+  background: var(--primary, #10b981);
+  border-color: var(--primary, #10b981);
+  color: #ffffff;
 }
 
 .cat-icon {
@@ -261,8 +309,76 @@ function formatMoney(amount: number): string {
 
 .products-grid-container {
   flex: 1;
-  overflow-y: auto;
   padding: 16px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.products-grid-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.products-grid-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.products-grid-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.products-grid-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.catalog-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.product-skeleton-card {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.catalog-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--muted, #94a3b8);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.catalog-empty-state h3 {
+  color: var(--ink, #ffffff);
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.catalog-empty-state p {
+  margin: 0;
+  font-size: 13px;
 }
 
 .products-grid {
@@ -274,30 +390,39 @@ function formatMoney(amount: number): string {
 .product-card {
   display: flex;
   flex-direction: column;
-  border-radius: 14px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
+  background: var(--surface-hover, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .product-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  border-color: var(--pink-dark, #db2777);
+  border-color: var(--primary, #10b981);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  background: var(--surface-active, rgba(255, 255, 255, 0.06));
 }
 
 .product-card.out-of-stock {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
+.product-card.out-of-stock:hover {
+  transform: none;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
 .prod-img-wrap {
+  height: 115px;
   position: relative;
-  width: 100%;
-  height: 120px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
@@ -305,6 +430,11 @@ function formatMoney(amount: number): string {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .prod-img-wrap img {
+  transform: scale(1.05);
 }
 
 .no-img-placeholder {
@@ -313,55 +443,53 @@ function formatMoney(amount: number): string {
   justify-content: center;
   width: 100%;
   height: 100%;
+  color: var(--muted, #94a3b8);
 }
 
 .fallback-icon {
   font-size: 36px;
-  color: var(--muted);
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
-.badge-rental,
-.badge-service,
-.badge-out-of-stock {
+.badge-tag {
   position: absolute;
   top: 8px;
-  left: 8px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  right: 8px;
   font-size: 11px;
   font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #ffffff;
+  letter-spacing: 0.3px;
 }
 
 .badge-rental {
-  background: #3b82f6;
-  color: #fff;
+  background: #f59e0b;
 }
 
 .badge-service {
-  background: #8b5cf6;
-  color: #fff;
+  background: #3b82f6;
 }
 
 .badge-out-of-stock {
   background: #ef4444;
-  color: #fff;
 }
 
 .prod-details {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
   flex: 1;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .prod-name {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink);
-  line-height: 1.35;
+  color: var(--ink, #ffffff);
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -372,36 +500,51 @@ function formatMoney(amount: number): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto;
-  font-size: 12px;
+  gap: 4px;
 }
 
 .prod-price {
+  color: var(--primary, #10b981);
+  font-size: 14px;
   font-weight: 700;
-  color: var(--pink-dark, #db2777);
-  font-size: 13px;
 }
 
 .prod-stock {
-  color: var(--muted);
   font-size: 11px;
+  color: var(--muted, #94a3b8);
 }
 
-.catalog-loading-state,
-.catalog-empty-state {
+.prod-sub-meta {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--muted);
+  gap: 5px;
 }
 
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-  color: var(--muted);
+.prod-vat-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  line-height: 1.2;
+}
+
+.prod-vat-tag.vat-10 {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.prod-vat-tag.vat-8 {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.service-tag {
+  color: #3b82f6;
 }
 
 .icon-16 {

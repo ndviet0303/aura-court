@@ -122,8 +122,10 @@ onBeforeUnmount(() => {
         >
           <div class="item-text-wrap">
             <span v-if="item.icon" class="material-symbols-outlined item-icon">{{ item.icon }}</span>
-            <span class="item-label">{{ item.label }}</span>
-            <span v-if="item.sublabel" class="item-sublabel">{{ item.sublabel }}</span>
+            <div class="item-labels-box">
+              <span class="item-label">{{ item.label }}</span>
+              <span v-if="item.sublabel" class="item-sublabel">{{ item.sublabel }}</span>
+            </div>
           </div>
           <span v-if="item.value === modelValue" class="material-symbols-outlined item-check">
             check
@@ -196,7 +198,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.4;
   min-width: 0;
   display: block;
@@ -232,23 +234,38 @@ onBeforeUnmount(() => {
 /* Menu Popover */
 .custom-dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  top: calc(100% + 6px);
+  right: 0;
   min-width: 100%;
   width: max-content;
-  max-width: 320px;
-  z-index: 60;
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: min(360px, calc(100vw - 24px));
+  z-index: 999;
+  background: var(--surface, #1e293b);
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.15));
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.12);
   padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  max-height: 260px;
+  gap: 3px;
+  max-height: 280px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
   backdrop-filter: blur(16px);
+}
+
+.custom-dropdown-menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
 }
 
 .dropdown-item {
@@ -258,12 +275,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  color: var(--ink);
-  font-size: 13.5px;
+  color: var(--ink, #ffffff);
+  font-size: 13px;
   font-weight: 500;
   text-align: left;
   transition: all 0.15s ease;
@@ -271,19 +288,19 @@ onBeforeUnmount(() => {
 }
 
 .dropdown-item:hover {
-  background: var(--soft);
-  color: var(--pink-dark);
+  background: var(--soft, rgba(255, 255, 255, 0.08));
+  color: var(--primary, #10b981);
 }
 
 .dropdown-item.selected {
-  background: var(--pink-light);
-  color: var(--pink-dark);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--primary, #10b981);
   font-weight: 700;
 }
 
 .item-text-wrap {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   flex: 1;
   min-width: 0;
@@ -291,23 +308,36 @@ onBeforeUnmount(() => {
 
 .item-icon {
   font-size: 18px;
-  color: var(--pink-dark);
+  color: var(--primary, #10b981);
   flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.item-labels-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
 }
 
 .item-label {
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.3;
+  word-break: break-word;
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .item-sublabel {
-  font-size: 11.5px;
-  color: var(--muted);
-  margin-left: 4px;
+  font-size: 11px;
+  color: var(--muted, #94a3b8);
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .item-check {
   font-size: 18px;
-  color: var(--pink-dark);
+  color: var(--primary, #10b981);
   font-weight: 700;
   flex-shrink: 0;
 }

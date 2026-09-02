@@ -15,8 +15,7 @@ export function usePosShift() {
       const shift = await posApi.getActiveShift()
       activeShift.value = shift
       return shift
-    } catch (e) {
-      // Default to null if backend returns 404 or empty
+    } catch {
       activeShift.value = null
       return null
     } finally {
@@ -30,7 +29,6 @@ export function usePosShift() {
     try {
       const newShift = await posApi.openShift({
         opening_cash: openingCash,
-        initial_cash: openingCash,
       })
       activeShift.value = newShift
       return newShift

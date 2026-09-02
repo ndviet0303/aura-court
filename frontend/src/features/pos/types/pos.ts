@@ -1,9 +1,19 @@
+export type ProductCategory =
+  | 'all'
+  | 'drinks'
+  | 'nutrition'
+  | 'equipment'
+  | 'rental'
+  | 'services'
+  | 'membership'
+  | string
+
 export interface Product {
   id: number
   sku: string
   barcode?: string
   name: string
-  category: 'drinks' | 'equipment' | 'rental' | 'services' | 'membership' | string
+  category: ProductCategory
   price: number
   cost?: number
   stock_quantity: number
@@ -11,14 +21,23 @@ export interface Product {
   unit?: string
   is_rental?: boolean
   is_service?: boolean
+  vat_rate?: number
   description?: string
+  metadata?: Record<string, any>
 }
 
 export interface CartItem {
   product: Product
   quantity: number
   rental_hours?: number
+  vat_rate?: number
   note?: string
+}
+
+export interface VatBreakdown {
+  rate: number
+  percent: number
+  amount: number
 }
 
 export interface CourtReservation {
@@ -44,11 +63,17 @@ export interface CustomerProfile {
 
 export interface PosShift {
   id: number
+  cashier_id?: number
   cashier_name?: string
+  cashier?: {
+    id: number
+    name: string
+    email: string
+  }
   status: 'open' | 'closed' | string
   opened_at: string
   closed_at?: string
-  initial_cash: number
+  initial_cash?: number
   opening_cash?: number
   cash_sales?: number
   qr_sales?: number
@@ -56,6 +81,8 @@ export interface PosShift {
   expected_cash?: number
   total_orders?: number
   total_cash?: number
+  declared_cash?: number
+  variance?: number
   discrepancy?: number
   note?: string
 }
@@ -63,8 +90,9 @@ export interface PosShift {
 export interface Draft {
   id: string
   name: string
-  items: Array<{ product_id: number; quantity: number; rental_hours?: number }>
+  items: Array<{ product_id: number; quantity: number; rental_hours?: number; product_name?: string; price?: number }>
   reservation_id?: number | null
+  customer_id?: number | null
   customer_name?: string
   saved_at: string
   total_amount: number
@@ -75,6 +103,7 @@ export interface OrderReceiptItem {
   quantity: number
   price: number
   total: number
+  vat_rate?: number
 }
 
 export interface OrderReceipt {
@@ -87,6 +116,8 @@ export interface OrderReceipt {
   subtotal: number
   discount_amount: number
   tax_amount: number
+  vat_percent?: number
+  vat_breakdown?: VatBreakdown[]
   grand_total: number
   payment_method: 'cash' | 'qr' | 'wallet' | 'court_tab' | string
   cash_tendered?: number

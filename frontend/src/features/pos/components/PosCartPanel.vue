@@ -1,14 +1,15 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartItem, CustomerProfile, CourtReservation } from '../types/pos'
+import type { CartItem, CustomerProfile, CourtReservation, VatBreakdown } from '../types/pos'
+import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
 
-defineProps<{
+const props = defineProps<{
   cart: CartItem[]
   selectedCustomer: CustomerProfile | null
   selectedReservationId: number | null
   activeReservations: CourtReservation[]
-  includeVat: boolean
-  vatRate: number
+  vatBreakdown: VatBreakdown[]
   discountPercent: number
   customDiscountPercent: number
   paymentMethod: 'cash' | 'qr' | 'wallet' | 'court_tab'
@@ -24,7 +25,8 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:includeVat', val: boolean): void
+  (e: 'updateItemVat', idx: number, val: number): void
+  (e: 'applyBulkTax', val: number): void
   (e: 'update:customDiscountPercent', val: number): void
   (e: 'update:paymentMethod', val: 'cash' | 'qr' | 'wallet' | 'court_tab'): void
   (e: 'update:cashTendered', val: number): void
@@ -40,9 +42,45 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const quickCashScrollRef = ref<HTMLElement | null>(null)
+
+function cycleItemVat(idx: number, currentVat: number) {
+  let next = 0.08
+  if (Math.abs(currentVat - 0.08) < 0.001) next = 0.10
+  else if (Math.abs(currentVat - 0.10) < 0.001) next = 0
+  else if (currentVat === 0) next = 0.08
+  emit('updateItemVat', idx, next)
+}
+
+function onQuickCashWheel(e: WheelEvent) {
+  if (!quickCashScrollRef.value) return
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    quickCashScrollRef.value.scrollLeft += e.deltaY
+  }
+}
 
 function formatMoney(val: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0)
+}
+
+const courtOptions = computed(() => {
+  const defaultOpt = {
+    value: '',
+    label: t('admin.pos.attachToCourt'),
+    sublabel: 'Không gắn sân',
+    icon: 'sports_tennis',
+  }
+  const mapped = props.activeReservations.map((res) => ({
+    value: res.id,
+    label: res.court_name,
+    sublabel: `${res.customer_name} • ${res.time_slot}`,
+    icon: 'sports_tennis',
+  }))
+  return [defaultOpt, ...mapped]
+})
+
+function handleCourtChange(val: string | number) {
+  emit('update:selectedReservationId', val ? Number(val) : null)
 }
 </script>
 
@@ -76,27 +114,27 @@ function formatMoney(val: number): string {
           @click="emit('openCustomerSearchModal')"
         >
           <span class="material-symbols-outlined cust-icon">person</span>
-          <span v-if="selectedCustomer" class="cust-info">
-            <strong>{{ selectedCustomer.name }}</strong>
-            <span class="cust-tier">({{ selectedCustomer.tier }} - {{ selectedCustomer.discount_rate * 100 }}%)</span>
-          </span>
-          <span v-else class="cust-placeholder">{{ t('admin.pos.walkInCustomer') }}</span>
+          <div v-if="selectedCustomer" class="cust-info">
+            <span class="cust-label-prefix">{{ t('admin.pos.customer') }}:</span>
+            <strong class="cust-name">{{ selectedCustomer.name }}</strong>
+            <span class="cust-tier">({{ selectedCustomer.tier }} -{{ Math.round(selectedCustomer.discount_rate * 100) }}%)</span>
+          </div>
+          <div v-else class="cust-info">
+            <span class="cust-placeholder">{{ t('admin.pos.walkInCustomer') }}</span>
+            <span class="cust-hint">(F3 để tìm)</span>
+          </div>
+          <span class="material-symbols-outlined action-icon">search</span>
         </button>
 
-        <select
-          :value="selectedReservationId || ''"
-          class="court-tab-select"
-          @change="emit('update:selectedReservationId', ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-        >
-          <option value="">{{ t('admin.pos.attachToCourt') }}</option>
-          <option
-            v-for="res in activeReservations"
-            :key="res.id"
-            :value="res.id"
-          >
-            {{ res.court_name }} - {{ res.customer_name }}
-          </option>
-        </select>
+        <div class="court-dropdown-wrap">
+          <SelectDropdown
+            :model-value="selectedReservationId || ''"
+            :options="courtOptions"
+            :placeholder="t('admin.pos.attachToCourt')"
+            variant="bordered"
+            @change="handleCourtChange"
+          />
+        </div>
       </div>
     </div>
 
@@ -115,7 +153,18 @@ function formatMoney(val: number): string {
           class="cart-item-row"
         >
           <div class="item-primary-info">
-            <h5 class="item-name">{{ item.product.name }}</h5>
+            <div class="item-name-wrap">
+              <h5 class="item-name">{{ item.product.name }}</h5>
+              <button
+                type="button"
+                class="item-vat-badge"
+                :class="`vat-${Math.round((item.vat_rate ?? 0.08) * 100)}`"
+                :title="`Thuế VAT: ${Math.round((item.vat_rate ?? 0.08) * 100)}% (Bấm để đổi)`"
+                @click="cycleItemVat(idx, item.vat_rate ?? 0.08)"
+              >
+                {{ Math.round((item.vat_rate ?? 0.08) * 100) }}% VAT
+              </button>
+            </div>
             <span class="item-unit-price">{{ formatMoney(item.product.price) }}</span>
           </div>
 
@@ -147,7 +196,8 @@ function formatMoney(val: number): string {
                 class="qty-btn"
                 @click="emit('updateQuantity', idx, -1)"
               >
-                -
+                <span class="material-symbols-outlined icon-14" v-if="item.quantity === 1">delete</span>
+                <span v-else>-</span>
               </button>
               <span class="qty-num">{{ item.quantity }}</span>
               <button
@@ -159,170 +209,198 @@ function formatMoney(val: number): string {
               </button>
             </div>
 
-            <div class="item-total-col">
-              <span class="item-total-price">
-                {{ formatMoney(item.product.price * item.quantity * (item.rental_hours || 1)) }}
-              </span>
-              <button
-                type="button"
-                class="remove-item-btn"
-                title="Remove"
-                @click="emit('removeFromCart', idx)"
-              >
-                <span class="material-symbols-outlined icon-16">delete</span>
-              </button>
-            </div>
+            <strong class="item-line-total">
+              {{ formatMoney(item.product.price * item.quantity * (item.rental_hours || 1)) }}
+            </strong>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Summary & Checkout Footer -->
-    <div class="cart-footer">
-      <!-- Discount & VAT Controls -->
-      <div class="cart-modifiers-row">
-        <label class="modifier-check">
-          <input
-            :checked="includeVat"
-            type="checkbox"
-            @change="emit('update:includeVat', ($event.target as HTMLInputElement).checked)"
-          />
-          <span>{{ t('admin.pos.vatCheckbox') }}</span>
-        </label>
+    <!-- Cart Summary & Payment -->
+    <div class="cart-footer-area">
+      <!-- Calculations Section -->
+      <div class="calculations-box">
+        <div class="calc-row">
+          <span class="calc-label">{{ t('admin.pos.subtotal') }}</span>
+          <span class="calc-val">{{ formatMoney(subtotal) }}</span>
+        </div>
 
-        <div class="discount-input-wrap">
-          <span class="disc-label">{{ t('admin.pos.discountLabel') }}</span>
-          <input
-            :value="customDiscountPercent"
-            type="number"
-            min="0"
-            max="100"
-            class="disc-input"
-            @input="emit('update:customDiscountPercent', Number(($event.target as HTMLInputElement).value) || 0)"
-          />
+        <div class="discount-vat-controls">
+          <div class="discount-input-wrap">
+            <label class="ctrl-sublabel">{{ t('admin.pos.discountLabel') }}</label>
+            <input
+              :value="customDiscountPercent"
+              type="number"
+              min="0"
+              max="100"
+              class="discount-input"
+              @input="emit('update:customDiscountPercent', Number(($event.target as HTMLInputElement).value || 0))"
+            />
+            <span class="unit-pct">%</span>
+          </div>
+
+          <div class="vat-rate-selector">
+            <label class="ctrl-sublabel">{{ t('admin.pos.vatRateLabel') }}</label>
+            <div class="vat-pill-group">
+              <button
+                type="button"
+                class="vat-pill-btn"
+                title="Đặt tất cả món thành 0% VAT"
+                @click="emit('applyBulkTax', 0)"
+              >
+                0%
+              </button>
+              <button
+                type="button"
+                class="vat-pill-btn"
+                title="Đặt tất cả món thành 8% VAT"
+                @click="emit('applyBulkTax', 0.08)"
+              >
+                8%
+              </button>
+              <button
+                type="button"
+                class="vat-pill-btn"
+                title="Đặt tất cả món thành 10% VAT"
+                @click="emit('applyBulkTax', 0.10)"
+              >
+                10%
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="discountAmount > 0" class="calc-row discount-row">
+          <span class="calc-label">{{ t('admin.pos.discountSummary', { percent: discountPercent }) }}</span>
+          <span class="calc-val text-green">-{{ formatMoney(discountAmount) }}</span>
+        </div>
+
+        <div
+          v-for="b in vatBreakdown"
+          :key="b.rate"
+          class="calc-row vat-row"
+        >
+          <span class="calc-label">{{ t('admin.pos.vatSummary', { percent: b.percent }) }}</span>
+          <span class="calc-val">+{{ formatMoney(b.amount) }}</span>
+        </div>
+
+        <div class="calc-row grand-total-row">
+          <span class="calc-label">{{ t('admin.pos.totalPayment') }}</span>
+          <strong class="grand-total-val">{{ formatMoney(grandTotal) }}</strong>
         </div>
       </div>
 
-      <!-- Financial Calculations -->
-      <div class="cart-totals-breakdown">
-        <div class="total-row subtotal">
-          <span>{{ t('admin.pos.subtotal') }}</span>
-          <span>{{ formatMoney(subtotal) }}</span>
-        </div>
-        <div v-if="discountAmount > 0" class="total-row discount">
-          <span>{{ t('admin.pos.discountSummary', { percent: discountPercent }) }}</span>
-          <span class="discount-val">-{{ formatMoney(discountAmount) }}</span>
-        </div>
-        <div v-if="includeVat" class="total-row vat">
-          <span>{{ t('admin.pos.vatSummary') }}</span>
-          <span>+{{ formatMoney(taxAmount) }}</span>
-        </div>
-        <div class="total-row grand-total">
-          <span class="gt-label">{{ t('admin.pos.totalPayment') }}</span>
-          <span class="gt-amount">{{ formatMoney(grandTotal) }}</span>
-        </div>
-      </div>
-
-      <!-- Payment Methods -->
-      <div class="payment-method-selector">
+      <!-- Payment Method Selector -->
+      <div class="payment-methods-grid">
         <button
           type="button"
-          class="pay-btn"
+          class="pay-method-btn"
           :class="{ active: paymentMethod === 'cash' }"
           @click="emit('update:paymentMethod', 'cash')"
         >
-          <span class="material-symbols-outlined icon-16">payments</span>
-          <span>{{ t('admin.pos.payCash') }}</span>
+          <span class="material-symbols-outlined method-icon">payments</span>
+          <span class="method-text">{{ t('admin.pos.payCash') }}</span>
         </button>
+
         <button
           type="button"
-          class="pay-btn"
+          class="pay-method-btn"
           :class="{ active: paymentMethod === 'qr' }"
           @click="emit('update:paymentMethod', 'qr')"
         >
-          <span class="material-symbols-outlined icon-16">qr_code_2</span>
-          <span>{{ t('admin.pos.payQr') }}</span>
+          <span class="material-symbols-outlined method-icon">qr_code_scanner</span>
+          <span class="method-text">{{ t('admin.pos.payQr') }}</span>
         </button>
+
         <button
           type="button"
-          class="pay-btn"
+          class="pay-method-btn"
           :class="{ active: paymentMethod === 'wallet' }"
           @click="emit('update:paymentMethod', 'wallet')"
         >
-          <span class="material-symbols-outlined icon-16">account_balance_wallet</span>
-          <span>{{ t('admin.pos.payWallet') }}</span>
+          <span class="material-symbols-outlined method-icon">account_balance_wallet</span>
+          <span class="method-text">{{ t('admin.pos.payWallet') }}</span>
         </button>
+
         <button
           type="button"
-          class="pay-btn"
+          class="pay-method-btn"
           :class="{ active: paymentMethod === 'court_tab' }"
           @click="emit('update:paymentMethod', 'court_tab')"
         >
-          <span class="material-symbols-outlined icon-16">receipt_long</span>
-          <span>{{ t('admin.pos.payCourtTab') }}</span>
+          <span class="material-symbols-outlined method-icon">sports_tennis</span>
+          <span class="method-text">{{ t('admin.pos.payCourtTab') }}</span>
         </button>
       </div>
 
-      <!-- Cash Tendered Quick Input -->
-      <div v-if="paymentMethod === 'cash' && grandTotal > 0" class="cash-tendered-box">
+      <!-- Cash Tendered & Quick Suggestions (If Cash Selected) -->
+      <div v-if="paymentMethod === 'cash'" class="cash-tendered-section">
         <div class="cash-input-row">
-          <span>{{ t('admin.pos.cashTenderedLabel') }}</span>
+          <label class="cash-label">{{ t('admin.pos.cashTenderedLabel') }}</label>
           <input
-            :value="cashTendered"
+            :value="cashTendered || ''"
             type="number"
             step="1000"
-            class="cash-input"
-            @input="emit('update:cashTendered', Number(($event.target as HTMLInputElement).value) || 0)"
+            class="cash-tendered-input"
+            :placeholder="formatMoney(grandTotal)"
+            @input="emit('update:cashTendered', Number(($event.target as HTMLInputElement).value || 0))"
           />
         </div>
 
-        <div class="quick-cash-tags">
+        <div
+          ref="quickCashScrollRef"
+          class="quick-cash-chips"
+          @wheel.passive="onQuickCashWheel"
+        >
           <button
-            v-for="amt in quickCashSuggestions"
-            :key="amt"
+            v-for="sug in quickCashSuggestions"
+            :key="sug"
             type="button"
-            class="quick-cash-tag"
-            @click="emit('update:cashTendered', amt)"
+            class="cash-chip"
+            @click="emit('update:cashTendered', sug)"
           >
-            {{ formatMoney(amt) }}
+            {{ formatMoney(sug) }}
           </button>
         </div>
 
-        <div v-if="cashChange > 0" class="cash-change-row">
+        <div v-if="cashChange > 0" class="cash-change-alert">
           <span>{{ t('admin.pos.cashChangeLabel') }}</span>
           <strong class="change-amount">{{ formatMoney(cashChange) }}</strong>
         </div>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons (Drafts, Checkout) -->
       <div class="cart-actions-row">
         <button
           type="button"
-          class="draft-btn"
-          :title="t('admin.pos.saveDraft')"
+          class="draft-action-btn"
           :disabled="cart.length === 0"
+          :title="t('admin.pos.saveDraft')"
           @click="emit('saveDraft')"
         >
-          <span class="material-symbols-outlined icon-16">save</span>
+          <span class="material-symbols-outlined icon-18">bookmark_add</span>
           <span>{{ t('admin.pos.saveDraft') }}</span>
         </button>
+
         <button
           type="button"
-          class="draft-btn"
+          class="draft-action-btn"
           :title="t('admin.pos.viewDrafts')"
           @click="emit('openDraftsModal')"
         >
-          <span class="material-symbols-outlined icon-16">folder_open</span>
+          <span class="material-symbols-outlined icon-18">folder_open</span>
           <span>{{ t('admin.pos.viewDrafts') }}</span>
         </button>
+
         <button
           type="button"
           class="checkout-submit-btn"
           :disabled="cart.length === 0 || processingCheckout"
           @click="emit('checkout')"
         >
-          <span v-if="processingCheckout">{{ t('admin.pos.checkoutProcessing') }}</span>
-          <span v-else>{{ t('admin.pos.checkoutBtn') }}</span>
+          <span class="material-symbols-outlined icon-20">check_circle</span>
+          <span>{{ processingCheckout ? t('admin.pos.checkoutProcessing') : t('admin.pos.checkoutBtn') }}</span>
         </button>
       </div>
     </div>
@@ -334,55 +412,62 @@ function formatMoney(val: number): string {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface);
+  min-height: 0;
+  background: var(--surface, #1e293b);
   border-radius: 16px;
-  border: 1px solid var(--outline);
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
   overflow: hidden;
 }
 
 .cart-header {
-  padding: 16px;
-  border-bottom: 1px solid var(--outline);
-  background: var(--surface);
+  position: relative;
+  z-index: 25;
+  padding: 14px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  background: var(--surface, #1e293b);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .cart-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
 }
 
 .cart-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
 }
 
 .cart-count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 11px;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
+  background: var(--primary, #10b981);
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .clear-cart-link {
   background: transparent;
-  border: 0;
-  color: var(--danger, #ef4444);
+  border: none;
+  color: var(--muted, #94a3b8);
   font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.clear-cart-link:hover {
+  color: #ef4444;
 }
 
 .cart-meta-bar {
@@ -394,45 +479,125 @@ function formatMoney(val: number): string {
 .customer-tag-btn {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  color: var(--ink);
-  font-size: 13px;
+  border-radius: 8px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
   cursor: pointer;
   text-align: left;
+  font-size: 13px;
+  min-height: 40px;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.customer-tag-btn:hover {
+  border-color: var(--primary, #10b981);
+  background: var(--surface-hover, rgba(255, 255, 255, 0.07));
 }
 
 .customer-tag-btn.selected {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.06);
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--primary, #10b981);
 }
 
 .cust-icon {
-  font-size: 18px;
-  color: var(--muted);
+  font-size: 20px;
+  color: var(--primary, #10b981);
+  flex-shrink: 0;
+}
+
+.cust-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.cust-label-prefix {
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+}
+
+.cust-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
 }
 
 .cust-tier {
-  color: var(--pink-dark, #db2777);
+  font-size: 11px;
+  color: #10b981;
   font-weight: 600;
 }
 
-.court-tab-select {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
+.cust-placeholder {
+  color: var(--ink, #ffffff);
   font-size: 13px;
-  background: var(--surface);
-  color: var(--ink);
+  font-weight: 600;
+}
+
+.cust-hint {
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+}
+
+.action-icon {
+  font-size: 18px;
+  color: var(--muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.court-dropdown-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.court-dropdown-wrap :deep(.custom-dropdown-trigger) {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  min-height: 40px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+}
+
+.court-dropdown-wrap :deep(.custom-dropdown-trigger:hover) {
+  border-color: var(--primary, #10b981);
 }
 
 .cart-items-container {
   flex: 1;
   overflow-y: auto;
   padding: 12px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.cart-items-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.cart-items-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cart-items-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.cart-items-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .empty-cart-view {
@@ -440,51 +605,103 @@ function formatMoney(val: number): string {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  padding: 40px 10px;
   text-align: center;
-  color: var(--muted);
-  padding: 40px 20px;
+  color: var(--muted, #94a3b8);
 }
 
 .empty-cart-icon {
   font-size: 40px;
   margin-bottom: 8px;
-  color: var(--muted);
+  opacity: 0.4;
+}
+
+.empty-cart-view h4 {
+  margin: 0 0 4px;
+  color: var(--ink, #ffffff);
+  font-size: 14px;
+}
+
+.empty-cart-view p {
+  margin: 0;
+  font-size: 12px;
 }
 
 .cart-items-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .cart-item-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.06));
 }
 
 .item-primary-info {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 8px;
+}
+
+.item-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .item-name {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink, #ffffff);
+  line-height: 1.3;
+}
+
+.item-vat-badge {
+  border: none;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.item-vat-badge.vat-10 {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.item-vat-badge.vat-8 {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.item-vat-badge.vat-0 {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.item-vat-badge:hover {
+  filter: brightness(1.2);
 }
 
 .item-unit-price {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted, #94a3b8);
   white-space: nowrap;
 }
 
@@ -495,274 +712,378 @@ function formatMoney(val: number): string {
   gap: 8px;
 }
 
-.rental-hours-pill,
-.item-qty-stepper {
-  display: flex;
+.rental-hours-pill {
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid var(--outline);
-  border-radius: 8px;
-  padding: 2px 4px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: #f59e0b;
 }
 
-.ctrl-label {
-  font-size: 11px;
-  color: var(--muted);
-  margin-left: 2px;
+.item-qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 2px;
 }
 
 .qty-btn {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--surface, #1e293b);
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 4px;
 }
 
-.qty-btn:hover:not(:disabled) {
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.08));
+.qty-btn:hover {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.1));
+  border-color: var(--primary, #10b981);
 }
 
 .qty-num {
+  min-width: 20px;
+  text-align: center;
   font-size: 12px;
   font-weight: 700;
-  min-width: 22px;
-  text-align: center;
+  color: var(--ink, #ffffff);
 }
 
-.item-total-col {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.item-total-price {
+.item-line-total {
   font-size: 13px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--primary, #10b981);
 }
 
-.remove-item-btn {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  padding: 4px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.remove-item-btn:hover {
-  color: var(--danger, #ef4444);
-}
-
-.cart-footer {
-  padding: 16px;
-  border-top: 1px solid var(--outline);
-  background: var(--surface);
+.cart-footer-area {
+  padding: 12px 14px;
+  flex-shrink: 0;
+  background: var(--surface, #1e293b);
+  border-top: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.cart-modifiers-row {
+.calculations-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc-label {
+  color: var(--muted, #94a3b8);
+}
+
+.calc-val {
+  color: var(--ink, #ffffff);
+  font-weight: 600;
+}
+
+.discount-vat-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
-}
-
-.modifier-check {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
+  gap: 10px;
+  padding: 4px 0;
 }
 
 .discount-input-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.disc-input {
-  width: 50px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--outline);
-  text-align: center;
-  font-size: 12px;
-}
-
-.cart-totals-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 10px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  font-size: 13px;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-}
-
-.discount-val {
-  color: var(--danger, #ef4444);
-  font-weight: 600;
-}
-
-.grand-total {
-  margin-top: 4px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--outline);
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.gt-amount {
-  font-size: 16px;
-  color: var(--pink-dark, #db2777);
-}
-
-.payment-method-selector {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-}
-
-.pay-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 6px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.pay-btn.active {
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  border-color: var(--pink-dark, #db2777);
-}
-
-.cash-tendered-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(236, 72, 153, 0.04);
-  border: 1px solid var(--outline);
-}
-
-.cash-input-row,
-.cash-change-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-}
-
-.cash-input {
-  width: 110px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--outline);
-  text-align: right;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.quick-cash-tags {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
 }
 
-.quick-cash-tag {
-  padding: 3px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
+.ctrl-sublabel {
+  font-size: 11px;
+  color: var(--muted, #94a3b8);
 }
 
-.quick-cash-tag:hover {
-  border-color: var(--pink-dark, #db2777);
-  color: var(--pink-dark, #db2777);
+.discount-input {
+  width: 50px;
+  padding: 4px 6px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  color: var(--ink, #ffffff);
+  font-size: 12px;
+  font-weight: bold;
+  text-align: right;
+  outline: none;
+}
+
+.unit-pct {
+  font-size: 11px;
+  color: var(--muted, #94a3b8);
+}
+
+.vat-rate-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vat-pill-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.vat-pill-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.vat-pill-btn:hover {
+  color: var(--ink, #ffffff);
+}
+
+.vat-pill-btn.active {
+  background: var(--primary, #10b981);
+  color: #ffffff;
+}
+
+.text-green {
+  color: #10b981 !important;
+}
+
+.grand-total-row {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--outline, rgba(255, 255, 255, 0.15));
+}
+
+.grand-total-val {
+  font-size: 18px;
+  color: var(--primary, #10b981);
+  font-weight: 800;
+}
+
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.pay-method-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.08));
+  color: var(--muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pay-method-btn:hover {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--ink, #ffffff);
+}
+
+.pay-method-btn.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--primary, #10b981);
+  color: var(--primary, #10b981);
+}
+
+.method-icon {
+  font-size: 20px;
+}
+
+.cash-tendered-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface-hover, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.cash-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cash-label {
+  font-size: 12px;
+  color: var(--muted, #94a3b8);
+}
+
+.cash-tendered-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--surface, #1e293b);
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--ink, #ffffff);
+  font-size: 13px;
+  font-weight: bold;
+  text-align: right;
+  outline: none;
+}
+
+.quick-cash-chips {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding-bottom: 2px;
+}
+
+.quick-cash-chips::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.cash-chip {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--surface, #1e293b);
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cash-chip:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--primary, #10b981);
+}
+
+.cash-change-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: 12px;
+  color: #10b981;
 }
 
 .change-amount {
-  color: #10b981;
   font-size: 14px;
+  font-weight: 800;
 }
 
 .cart-actions-row {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.draft-btn {
+.draft-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--surface-hover, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--outline, rgba(255, 255, 255, 0.1));
+  color: var(--ink, #ffffff);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.draft-action-btn:hover:not(:disabled) {
+  background: var(--surface-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--outline-strong, rgba(255, 255, 255, 0.2));
+}
+
+.draft-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .checkout-submit-btn {
   flex: 1;
-  padding: 12px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
   border-radius: 10px;
-  border: 0;
-  background: var(--pink-dark, #db2777);
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary, #10b981) 0%, #059669 100%);
+  border: none;
+  color: #ffffff;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
 }
 
 .checkout-submit-btn:hover:not(:disabled) {
-  opacity: 0.95;
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 .checkout-submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
-.icon-16 {
-  font-size: 16px;
+.icon-14 {
+  font-size: 14px;
+}
+
+.icon-18 {
+  font-size: 18px;
 }
 
 .icon-20 {
