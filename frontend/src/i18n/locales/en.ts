@@ -1598,6 +1598,7 @@ export default {
       activeEffective: 'Active',
       overdueBadge: 'Overdue',
       detailBtn: 'Details',
+      createFirstContract: 'Create First Contract',
       contractDetailTitle: 'Contract Details: {code}',
       customerClubLabel: 'Customer / Club:',
       fixedCourtLabel: 'Assigned Court:',

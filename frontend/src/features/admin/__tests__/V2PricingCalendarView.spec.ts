@@ -78,9 +78,9 @@ describe('V2PricingCalendarView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Thiết lập Ma trận Giá linh hoạt')
-    expect(wrapper.text()).toContain('Độ ưu tiên giá')
-    expect(wrapper.text()).toContain('Lịch giá')
+    expect(wrapper.text()).toContain('Thiết Lập Ma Trận Giá Linh Hoạt')
+    expect(wrapper.text()).toContain('Độ Ưu Tiên Quy Tắc')
+    expect(wrapper.text()).toContain('Danh Sách Quy Tắc Giá')
   })
 
   it('opens simulator modal and calculates quote correctly', async () => {
@@ -91,7 +91,7 @@ describe('V2PricingCalendarView', () => {
     })
     await flushPromises()
 
-    const simBtn = wrapper.findAll('button').find((b) => b.text().includes('Mô phỏng báo giá'))
+    const simBtn = wrapper.findAll('button').find((b) => b.text().includes('Mô Phỏng Báo Giá'))
     expect(simBtn).toBeDefined()
     await simBtn?.trigger('click')
 
@@ -106,7 +106,7 @@ describe('V2PricingCalendarView', () => {
     })
     await flushPromises()
 
-    const presetBtn = wrapper.findAll('button').find((b) => b.text().includes('Mẫu cài đặt'))
+    const presetBtn = wrapper.findAll('button').find((b) => b.text().includes('Bộ Quy Tắc Mẫu'))
     expect(presetBtn).toBeDefined()
     await presetBtn?.trigger('click')
 

@@ -36,8 +36,8 @@ const mockBookings = [
     },
     slots: [
       {
-        starts_at: '2026-09-01T18:00:00Z',
-        ends_at: '2026-09-01T20:00:00Z',
+        starts_at: '2099-09-01T18:00:00Z',
+        ends_at: '2099-09-01T20:00:00Z',
         unit_price: 350000,
       },
     ],
@@ -56,8 +56,8 @@ const mockBookings = [
     },
     slots: [
       {
-        starts_at: '2026-09-02T08:00:00Z',
-        ends_at: '2026-09-02T10:00:00Z',
+        starts_at: '2099-09-02T08:00:00Z',
+        ends_at: '2099-09-02T10:00:00Z',
         unit_price: 200000,
       },
     ],

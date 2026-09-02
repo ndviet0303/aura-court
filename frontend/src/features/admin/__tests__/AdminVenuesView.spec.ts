@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminVenuesView from '../views/AdminVenuesView.vue'
 import { i18n } from '@/i18n'
-import { api } from '@/core/api/client'
+import { api, apiV2 } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/venues' }),
@@ -32,59 +32,50 @@ vi.mock('@/core/api/client', () => ({
 }))
 
 describe('AdminVenuesView', () => {
+  const mockVenues = [
+    {
+      id: 1,
+      name: 'Aura Center',
+      slug: 'aura-center',
+      address: '142 Wellness Blvd, Downtown',
+      google_maps_url: 'https://maps.google.com/?q=142+Wellness+Blvd',
+      is_active: true,
+      share_url: 'https://auracourt.vn/venues/aura-center/directions',
+      courts_count: 12,
+    },
+    {
+      id: 2,
+      name: 'Riverside Club',
+      slug: 'riverside-club',
+      address: '88 Waterway Point, East Side',
+      google_maps_url: 'https://maps.google.com/?q=88+Waterway+Point',
+      is_active: true,
+      share_url: 'https://auracourt.vn/venues/riverside-club/directions',
+      courts_count: 8,
+    },
+    {
+      id: 3,
+      name: 'District 1 Hub',
+      slug: 'district-1-hub',
+      address: '404 Innovation Sector, North',
+      google_maps_url: 'https://maps.google.com/?q=404+Innovation+Sector',
+      is_active: false,
+      share_url: 'https://auracourt.vn/venues/district-1-hub/directions',
+      courts_count: 16,
+    },
+  ]
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
     vi.mocked(api.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') {
-        return [
-          {
-            id: 1,
-            name: 'Aura Center',
-            slug: 'aura-center',
-            address: '142 Wellness Blvd, Downtown',
-            google_maps_url: 'https://maps.google.com/?q=142+Wellness+Blvd',
-            is_active: true,
-            share_url: 'https://auracourt.vn/venues/aura-center/directions',
-            courts_count: 12,
-          },
-          {
-            id: 2,
-            name: 'Riverside Club',
-            slug: 'riverside-club',
-            address: '88 Waterway Point, East Side',
-            google_maps_url: 'https://maps.google.com/?q=88+Waterway+Point',
-            is_active: true,
-            share_url: 'https://auracourt.vn/venues/riverside-club/directions',
-            courts_count: 8,
-          },
-          {
-            id: 3,
-            name: 'District 1 Hub',
-            slug: 'district-1-hub',
-            address: '404 Innovation Sector, North',
-            google_maps_url: 'https://maps.google.com/?q=404+Innovation+Sector',
-            is_active: false,
-            share_url: 'https://auracourt.vn/venues/district-1-hub/directions',
-            courts_count: 16,
-          },
-        ]
-      }
-      if (url.startsWith('/admin/sport-zones')) {
-        return [
-          {
-            id: 10,
-            venue_id: 1,
-            name: 'Khu Cầu Lông VIP',
-            sport_type: 'badminton',
-            slot_duration: 60,
-            description: 'Sàn gỗ BWF',
-            is_active: true,
-            courts_count: 8,
-          },
-        ]
-      }
+      if (url === '/admin/venues') return mockVenues
+      if (url.startsWith('/admin/sport-zones')) return []
+      return []
+    })
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/venues') return mockVenues
       return []
     })
   })

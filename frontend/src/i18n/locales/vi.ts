@@ -1598,6 +1598,7 @@ export default {
       activeEffective: 'Đang hiệu lực',
       overdueBadge: 'Quá hạn',
       detailBtn: 'Chi tiết',
+      createFirstContract: 'Tạo hợp đồng đầu tiên',
       contractDetailTitle: 'Chi Tiết Hợp Đồng: {code}',
       customerClubLabel: 'Khách hàng / CLB:',
       fixedCourtLabel: 'Sân đặt định kỳ:',

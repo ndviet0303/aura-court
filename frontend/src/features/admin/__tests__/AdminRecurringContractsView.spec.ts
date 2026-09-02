@@ -16,12 +16,12 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
+    get: vi.fn().mockResolvedValue([]),
+    post: vi.fn().mockResolvedValue({}),
   },
   apiV2: {
-    get: vi.fn(),
-    post: vi.fn(),
+    get: vi.fn().mockResolvedValue([]),
+    post: vi.fn().mockResolvedValue({}),
   },
   errorMessage: (_err: unknown, fallback: string) => fallback,
 }))
@@ -85,7 +85,30 @@ describe('AdminRecurringContractsView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
-    vi.mocked(apiV2.get).mockResolvedValue({ data: sampleContracts })
+    const mockVenues = [{ id: 1, name: 'Downtown Arena', courts: [{ id: 1, name: 'Sân 1' }] }]
+    const mockCourts = [{ id: 1, name: 'Sân 1', venue_id: 1 }]
+
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/contracts') {
+        return { data: sampleContracts }
+      }
+      if (url === '/admin/venues') {
+        return mockVenues
+      }
+      if (url.startsWith('/courts')) {
+        return mockCourts
+      }
+      return []
+    })
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/contracts') {
+        return { data: sampleContracts }
+      }
+      if (url === '/admin/venues') {
+        return mockVenues
+      }
+      return []
+    })
   })
 
   it('renders header, title, action buttons, and KPI stat cards correctly', async () => {
@@ -155,6 +178,34 @@ describe('AdminRecurringContractsView', () => {
   })
 
   it('allows creating a new recurring contract via modal', async () => {
+    vi.mocked(api.post).mockImplementation(async (_url: string, payload: any) => {
+      const newContract = {
+        id: 4,
+        contract_code: 'CTR-2026-004',
+        customer_name: 'CLB Victor Elite',
+        phone: '0911.222.333',
+        status: 'active',
+        total_monthly_amount: 4800000,
+        deposit_amount: 5000000,
+        court_name: 'Sân 1 (Sân Huấn Luyện)',
+        venue_name: 'Downtown Arena (Quận 1)',
+        time_slot: '18:00 - 20:00',
+        weekday: 'Thứ 2, 4, 6',
+        payment_cycles: [],
+        metadata: {
+          contract_code: 'CTR-2026-004',
+          customer_name: 'CLB Victor Elite',
+          phone: '0911.222.333',
+        },
+        user: {
+          name: 'CLB Victor Elite',
+          phone: '0911.222.333',
+        },
+      }
+      sampleContracts.push(newContract)
+      return { data: newContract, metadata: { contract_code: 'CTR-2026-004' } }
+    })
+
     const wrapper = mount(AdminRecurringContractsView, {
       global: {
         plugins: [i18n],
@@ -179,8 +230,9 @@ describe('AdminRecurringContractsView', () => {
 
     // Submit form
     await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
 
     expect(wrapper.text()).toContain('CLB Victor Elite')
-    expect(wrapper.find('.toast-floating-banner').text()).toContain('Đã tạo thành công hợp đồng định kỳ mới')
+    expect(wrapper.find('.alert-pill').text()).toContain('Đã tạo thành công')
   })
 })
