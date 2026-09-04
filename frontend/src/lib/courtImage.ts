@@ -8,7 +8,15 @@ export interface CourtImageEntity {
   } | null
 }
 
-export const SPORT_DEFAULT_IMAGES = {
+export const BADMINTON_DEFAULT_IMAGE = '/courts/badminton-0.jpg'
+export const BADMINTON_GALLERY: string[] = [
+  '/courts/badminton-0.jpg',
+  '/courts/badminton-court.jpg',
+  '/courts/badminton-night.jpg',
+  '/courts/badminton-wood.jpg',
+]
+
+export const SPORT_DEFAULT_IMAGES: Record<string, string> = {
   football: '/courts/football-mini-turf.jpg',
   football_5v5: '/courts/football-mini-turf.jpg',
   football_7v7: '/courts/football-wide.jpg',
@@ -17,8 +25,8 @@ export const SPORT_DEFAULT_IMAGES = {
   basketball: '/courts/basketball-nba.jpg',
   table_tennis: '/courts/table-tennis-1.jpg',
   volleyball: '/courts/volleyball-indoor.jpg',
-  badminton: '/courts/badminton-0.jpg',
-} as const
+  badminton: BADMINTON_DEFAULT_IMAGE,
+}
 
 export const SPORT_GALLERY_COLLECTIONS: Record<string, string[]> = {
   football: [
@@ -52,12 +60,7 @@ export const SPORT_GALLERY_COLLECTIONS: Record<string, string[]> = {
     '/courts/volleyball-1.jpg',
     '/courts/volleyball-2.jpg',
   ],
-  badminton: [
-    '/courts/badminton-0.jpg',
-    '/courts/badminton-court.jpg',
-    '/courts/badminton-night.jpg',
-    '/courts/badminton-wood.jpg',
-  ],
+  badminton: BADMINTON_GALLERY,
 }
 
 /**
@@ -137,7 +140,7 @@ export function resolveCourtImage(court?: CourtImageEntity | null): string {
     return court.image_url.trim()
   }
   const sport = detectCourtSport(court)
-  return SPORT_DEFAULT_IMAGES[sport] || SPORT_DEFAULT_IMAGES.badminton
+  return SPORT_DEFAULT_IMAGES[sport] ?? BADMINTON_DEFAULT_IMAGE
 }
 
 /**
@@ -147,8 +150,8 @@ export function getCourtGalleryImages(court?: CourtImageEntity | null): string[]
   const primary = resolveCourtImage(court)
   const sport = detectCourtSport(court)
   const baseKey = sport.startsWith('football') ? 'football' : sport
-  const collection = SPORT_GALLERY_COLLECTIONS[baseKey] || SPORT_GALLERY_COLLECTIONS.badminton
+  const collection: string[] = SPORT_GALLERY_COLLECTIONS[baseKey] ?? BADMINTON_GALLERY
 
-  const set = new Set([primary, ...collection])
+  const set = new Set<string>([primary, ...collection])
   return Array.from(set)
 }
