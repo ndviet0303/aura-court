@@ -17,14 +17,6 @@ export interface RegisterPayload {
   courts_count?: number
 }
 
-export interface SocialLoginPayload {
-  provider: 'google' | 'facebook'
-  email: string
-  name: string
-  provider_id?: string
-  account_type?: 'customer' | 'court_owner'
-}
-
 export interface OnboardingPayload {
   account_type: 'customer' | 'court_owner'
   phone?: string

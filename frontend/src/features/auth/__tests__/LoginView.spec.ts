@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LoginView from '../views/LoginView.vue'
 import { i18n } from '@/i18n'
+import { api } from '@/core/api/client'
 
 const mockPush = vi.fn<() => void>()
 const mockReplace = vi.fn<() => void>()
@@ -66,5 +67,25 @@ describe('LoginView', () => {
     expect(wrapper.find('.google-btn').exists()).toBe(true)
     expect(wrapper.find('.facebook-btn').exists()).toBe(true)
     expect(wrapper.find('.social-divider').exists()).toBe(true)
+  })
+
+  it('does not fall back to an unverified profile login when OAuth is unavailable', async () => {
+    const getSpy = vi.spyOn(api, 'get').mockResolvedValue({
+      url: null,
+      message: 'Google OAuth is not configured.',
+    })
+    const postSpy = vi.spyOn(api, 'post')
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    await wrapper.find('.google-btn').trigger('click')
+    await flushPromises()
+
+    expect(getSpy).toHaveBeenCalledWith('/auth/google/redirect')
+    expect(postSpy).not.toHaveBeenCalled()
+    expect(wrapper.find('[role="alert"]').text()).toContain('Google OAuth is not configured.')
   })
 })

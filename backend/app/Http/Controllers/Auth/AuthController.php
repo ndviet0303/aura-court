@@ -122,44 +122,6 @@ class AuthController extends Controller
         return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
     }
 
-    public function socialLogin(Request $request)
-    {
-        $data = $request->validate([
-            'provider' => ['required', 'string', 'in:google,facebook'],
-            'email' => ['required', 'email', 'max:190'],
-            'name' => ['required', 'string', 'max:120'],
-            'provider_id' => ['nullable', 'string', 'max:255'],
-            'avatar_url' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $user = User::where('email', $data['email'])->first();
-
-        if (! $user) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make(Str::random(32)),
-                'role' => 'customer',
-                'avatar_url' => $data['avatar_url'] ?? null,
-                'onboarded' => false,
-                'password_set' => false,
-                'social_provider' => $data['provider'],
-            ]);
-            $user->email_verified_at = now();
-            $user->save();
-        } else {
-            if (!empty($data['avatar_url']) && (empty($user->avatar_url) || str_contains($user->avatar_url, 'athlete-'))) {
-                $user->avatar_url = $data['avatar_url'];
-                $user->save();
-            }
-        }
-
-        Auth::login($user, true);
-        $request->session()->regenerate();
-
-        return response()->json(['user' => $user->fresh()], 200);
-    }
-
     protected function resolveOAuthRedirectUri(Request $request, string $provider): string
     {
         $configured = config("services.{$provider}.redirect");

@@ -257,8 +257,8 @@ export function useWallet() {
   async function proceedToPaymentStep() {
     if (depositMethod.value === 'sepay') {
       depositStep.value = 'sepay_pay'
-    } else if (depositMethod.value === 'stripe') {
-      depositStep.value = 'stripe_pay'
+    } else {
+      error.value = 'Nạp tiền qua Stripe chưa được cấu hình. Vui lòng sử dụng chuyển khoản VietQR.'
     }
   }
 
@@ -266,32 +266,15 @@ export function useWallet() {
     processing.value = true
     error.value = ''
     try {
-      const isSepay = depositMethod.value === 'sepay'
-      const methodLabel = isSepay ? 'VietQR SePay Auto' : 'Thanh Toán Trực Tuyến'
+      if (depositMethod.value !== 'sepay') {
+        throw new Error('Nạp tiền qua Stripe chưa được cấu hình. Vui lòng sử dụng chuyển khoản VietQR.')
+      }
 
-      // Credit to backend real database
-      const res = await walletApi.credit({
-        amount: depositAmount.value,
-        method: depositMethod.value,
-        note: `Nạp tiền qua ${methodLabel}`,
-      })
-
-      const newBal = res?.balance || (totalBalance.value + depositAmount.value)
-
-      // Update all wallet cards with unified real balance
-      wallets.value.forEach((w) => {
-        w.balance = newBal
-        w.points += Math.floor(depositAmount.value / 1000)
-      })
-
-      bookingStore.walletBalance = newBal
-
-      // Reload fresh data from backend
       await loadWalletData()
 
       isDepositModalOpen.value = false
       depositStep.value = 'select'
-      showNotice(`Nạp thành công ${depositAmount.value.toLocaleString('vi-VN')} ₫ vào ví! Số dư mới: ${newBal.toLocaleString('vi-VN')} ₫`)
+      showNotice('Giao dịch sẽ được cộng vào ví sau khi SePay xác nhận chuyển khoản.')
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể thực hiện nạp tiền vào ví.')
     } finally {

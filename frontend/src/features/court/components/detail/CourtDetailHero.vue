@@ -1,14 +1,25 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import type { Court } from '../../types/court'
+import { resolveCourtImage } from '@/lib/courtImage'
 
-defineProps<{
+const props = defineProps<{
   court: Court
 }>()
 
 const emit = defineEmits<{
   (e: 'openGallery'): void
 }>()
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement | null
+  if (target) {
+    const fallback = resolveCourtImage({ ...props.court, image_url: undefined })
+    if (target.src !== fallback) {
+      target.src = fallback
+    }
+  }
+}
 </script>
 
 <template>
@@ -16,9 +27,10 @@ const emit = defineEmits<{
     <div class="gallery-main" @click="emit('openGallery')">
       <div class="main-img-wrap">
         <img
-          src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&q=80"
-          alt="Court Banner"
+          :src="resolveCourtImage(court)"
+          :alt="court.name"
           class="hero-img"
+          @error="handleImageError"
         />
         <div class="gallery-overlay">
           <span class="material-symbols-outlined icon-18">photo_library</span>

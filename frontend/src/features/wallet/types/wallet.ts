@@ -42,13 +42,6 @@ export interface Transaction {
   method_label?: string
 }
 
-export interface CreditWalletPayload {
-  amount: number
-  method?: string
-  wallet_id?: string | number
-  note?: string
-}
-
 export interface SpendWalletPayload {
   amount: number
   order_id?: number

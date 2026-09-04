@@ -24,13 +24,13 @@ function mapRawTournament(t: any): TournamentItem {
   let imageUrl = t.image_url
   if (!imageUrl) {
     if (sport === 'pickleball') {
-      imageUrl = 'https://images.unsplash.com/photo-1599474924187-334a4ae5bd3c?w=800&auto=format&fit=crop&q=80'
+      imageUrl = '/courts/pickleball-neon.jpg'
     } else if (sport === 'tennis') {
-      imageUrl = 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=80'
-    } else if (sport === 'football_5v5') {
-      imageUrl = 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=80'
+      imageUrl = '/courts/tennis-1.jpg'
+    } else if (sport === 'football_5v5' || sport === 'football_7v7') {
+      imageUrl = '/courts/football-mini-turf.jpg'
     } else {
-      imageUrl = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop&q=80'
+      imageUrl = '/courts/badminton-0.jpg'
     }
   }
 

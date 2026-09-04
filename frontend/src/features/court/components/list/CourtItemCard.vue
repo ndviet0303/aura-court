@@ -1,25 +1,61 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { formatCurrency } from '@/i18n'
 import type { Court } from '../../types/court'
+import { resolveCourtImage } from '@/lib/courtImage'
 
-defineProps<{
+const props = defineProps<{
   court: Court
   index: number
 }>()
+
+const sportTag = computed(() => {
+  if (props.court.sport_zone?.name) {
+    return props.court.sport_zone.name
+  }
+  const name = props.court.name.toLowerCase()
+  if (name.includes('pickleball')) return 'Pickleball Pro'
+  if (name.includes('tennis')) return 'Hard Court Tennis'
+  if (name.includes('bóng rổ') || name.includes('basketball')) return 'FIBA Hardwood'
+  if (name.includes('bóng đá') || name.includes('football')) return 'FIFA Turf'
+  return 'BWF Taraflex'
+})
+
+const sportIcon = computed(() => {
+  const type = props.court.sport_zone?.sport_type?.toLowerCase() || ''
+  const name = props.court.name.toLowerCase()
+  if (type === 'basketball' || name.includes('bóng rổ') || name.includes('basketball')) return 'sports_basketball'
+  if (type.startsWith('football') || name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
+  if (type === 'table_tennis' || name.includes('bóng bàn')) return 'table_restaurant'
+  if (type === 'volleyball' || name.includes('bóng chuyền')) return 'sports_volleyball'
+  return 'sports_tennis'
+})
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement | null
+  if (target) {
+    const fallback = resolveCourtImage({ ...props.court, image_url: undefined })
+    if (target.src !== fallback) {
+      target.src = fallback
+    }
+  }
+}
 </script>
 
 <template>
   <div class="court-card-item">
     <div class="card-img-wrap">
       <img
-        :src="court.image_url || `https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80`"
+        :src="resolveCourtImage(court)"
         :alt="court.name"
         class="court-img"
+        loading="lazy"
+        @error="handleImageError"
       />
       <span class="sport-tag font-mono">
-        <span class="material-symbols-outlined tag-icon">sports_tennis</span>
-        <span>BWF Taraflex</span>
+        <span class="material-symbols-outlined tag-icon">{{ sportIcon }}</span>
+        <span>{{ sportTag }}</span>
       </span>
     </div>
 

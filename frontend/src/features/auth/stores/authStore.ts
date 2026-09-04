@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi } from '../api/authApi'
-import type { User, RegisterPayload, SocialLoginPayload, OnboardingPayload, UpdateProfilePayload } from '../types/auth'
+import type { User, RegisterPayload, OnboardingPayload, UpdateProfilePayload } from '../types/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -42,25 +42,6 @@ export const useAuthStore = defineStore('auth', () => {
       password,
       password_confirmation,
       ...extra,
-    })
-    user.value = result.user
-    loaded.value = true
-    return result.user
-  }
-
-  async function socialLogin(
-    provider: 'google' | 'facebook',
-    email: string,
-    name: string,
-    provider_id?: string,
-    account_type?: 'customer' | 'court_owner'
-  ) {
-    const result = await authApi.socialLogin({
-      provider,
-      email,
-      name,
-      provider_id,
-      account_type,
     })
     user.value = result.user
     loaded.value = true
@@ -112,7 +93,6 @@ export const useAuthStore = defineStore('auth', () => {
     load,
     login,
     register,
-    socialLogin,
     completeOnboarding,
     forgotPassword,
     resetPassword,

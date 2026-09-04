@@ -133,23 +133,11 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
   socialLoading.value = provider
   error.value = ''
   try {
-    const res = await api.get<{ url?: string | null; demo_mode?: boolean }>(`/auth/${provider}/redirect`).catch(() => null)
-    if (res?.url) {
-      window.location.href = res.url
-      return
+    const res = await api.get<{ url?: string | null; message?: string }>(`/auth/${provider}/redirect`)
+    if (!res.url) {
+      throw new Error(res.message || `${provider} OAuth is not configured.`)
     }
-
-    const defaultEmail = provider === 'google' ? 'user.google@gmail.com' : 'user.facebook@facebook.com'
-    const defaultName = provider === 'google' ? 'Google Athlete' : 'Facebook Athlete'
-
-    const user = await auth.socialLogin(
-      provider,
-      defaultEmail,
-      defaultName,
-      provider + '_' + Date.now()
-    )
-
-    handlePostAuthRedirect(user)
+    window.location.href = res.url
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('auth.invalidCredentials'))
   } finally {

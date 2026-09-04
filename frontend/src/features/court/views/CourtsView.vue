@@ -10,8 +10,14 @@ import CourtItemCard from '../components/list/CourtItemCard.vue'
 const {
   store,
   searchQuery,
+  selectedSportType,
   selectedVenue,
+  selectedPriceRange,
+  sortBy,
+  sportCategories,
   venueOptions,
+  hasActiveFilters,
+  resetFilters,
   filteredCourts,
 } = useCourtsList()
 
@@ -33,10 +39,21 @@ onMounted(async () => {
     <!-- Filter & Search Bar -->
     <CourtsFilterBar
       :search="searchQuery"
+      :sport-type="selectedSportType"
       :venue="selectedVenue"
+      :price-range="selectedPriceRange"
+      :sort-by="sortBy"
       :venue-options="venueOptions"
+      :total-count="store.courts.length"
+      :filtered-count="filteredCourts.length"
+      :has-active-filters="hasActiveFilters"
+      :sport-categories="sportCategories"
       @update:search="searchQuery = $event"
+      @update:sport-type="selectedSportType = $event"
       @update:venue="selectedVenue = $event"
+      @update:price-range="selectedPriceRange = $event"
+      @update:sort-by="sortBy = $event"
+      @reset="resetFilters"
     />
 
     <!-- Skeleton Loading State -->
@@ -57,6 +74,16 @@ onMounted(async () => {
       <span class="material-symbols-outlined empty-icon">search_off</span>
       <h3>{{ $t('courts.emptyTitle') }}</h3>
       <p>{{ $t('courts.emptyDesc') }}</p>
+      <button
+        v-if="hasActiveFilters"
+        type="button"
+        class="btn-reset-empty"
+        data-testid="empty-reset-btn"
+        @click="resetFilters"
+      >
+        <span class="material-symbols-outlined">filter_alt_off</span>
+        <span>{{ $t('courts.resetFilters') }}</span>
+      </button>
     </div>
 
     <!-- Courts Grid -->
@@ -103,5 +130,27 @@ onMounted(async () => {
   font-size: 48px;
   margin-bottom: 12px;
   color: var(--muted);
+}
+
+.btn-reset-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reset-empty:hover {
+  background: var(--primary-container);
+  border-color: var(--primary);
+  transform: translateY(-1px);
 }
 </style>

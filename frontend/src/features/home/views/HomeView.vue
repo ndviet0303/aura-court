@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { AvailabilitySlot, Court } from '@/features/court/types/court'
 import { formatCurrency, formatTime } from '@/i18n'
 import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
+import { resolveCourtImage } from '@/lib/courtImage'
 
 const { t } = useI18n()
 const store = useBookingStore()
@@ -59,7 +60,7 @@ const timeOptions = computed(() => [
 ])
 
 const total = computed(() => store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0))
-const image = (index: number) => store.courts[index]?.image_url || `/aura/court-${index + 4}.jpg`
+const image = (index: number) => resolveCourtImage(store.courts[index])
 const visibleSlots = computed(() => store.slots.filter((slot: AvailabilitySlot) => {
   const hour = Number(new Date(slot.startsAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hour12: false }))
   return timeFilter.value === 'morning' ? hour < 17 : timeFilter.value === 'evening' ? hour >= 17 : true
@@ -75,7 +76,10 @@ async function loadAvailability() {
   }
 }
 
-async function chooseCourt() {
+async function chooseCourt(courtId?: string | number) {
+  if (courtId !== undefined && courtId !== null) {
+    selected.value = Number(courtId)
+  }
   await loadAvailability()
 }
 

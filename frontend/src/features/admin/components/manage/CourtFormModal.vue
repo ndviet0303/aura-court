@@ -29,24 +29,34 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 const courtImagePresets = computed(() => [
   {
+    name: t('admin.manage.presetFootball'),
+    sub: t('admin.manage.presetFootballSub'),
+    url: '/courts/football-mini-turf.jpg',
+  },
+  {
+    name: t('admin.manage.presetPickleball'),
+    sub: t('admin.manage.presetPickleballSub'),
+    url: '/courts/pickleball-neon.jpg',
+  },
+  {
+    name: t('admin.manage.presetTennis'),
+    sub: t('admin.manage.presetTennisSub'),
+    url: '/courts/tennis-1.jpg',
+  },
+  {
+    name: t('admin.manage.presetBasketball'),
+    sub: t('admin.manage.presetBasketballSub'),
+    url: '/courts/basketball-nba.jpg',
+  },
+  {
     name: t('admin.manage.presetYonex'),
     sub: t('admin.manage.presetYonexSub'),
-    url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
+    url: '/courts/badminton-0.jpg',
   },
   {
     name: t('admin.manage.presetBlue'),
     sub: t('admin.manage.presetBlueSub'),
-    url: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: t('admin.manage.presetIndoor'),
-    sub: t('admin.manage.presetIndoorSub'),
-    url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: t('admin.manage.presetLed'),
-    sub: t('admin.manage.presetLedSub'),
-    url: 'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?auto=format&fit=crop&w=800&q=80',
+    url: '/courts/badminton-court.jpg',
   },
 ])
 

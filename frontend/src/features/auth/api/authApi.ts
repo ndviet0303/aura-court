@@ -3,7 +3,6 @@ import type {
   User,
   LoginPayload,
   RegisterPayload,
-  SocialLoginPayload,
   OnboardingPayload,
   ForgotPasswordPayload,
   ResetPasswordPayload,
@@ -32,13 +31,6 @@ export const authApi = {
 
   getSocialRedirect: (provider: string) =>
     api.get<{ url?: string | null; demo_mode?: boolean }>(`/auth/${provider}/redirect`),
-
-  socialLogin: async (payload: SocialLoginPayload) => {
-    await api.csrf()
-    const result = await api.post<{ user: User }>('/auth/social-login', payload)
-    await api.csrf()
-    return result
-  },
 
   onboarding: async (payload: OnboardingPayload) => {
     await api.csrf()

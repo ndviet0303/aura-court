@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Court } from '../../types/court'
+import { getCourtGalleryImages } from '@/lib/courtImage'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   court: Court
 }>()
@@ -10,11 +12,7 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const galleryImages = [
-  'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&q=80',
-  'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=1200&q=80',
-  'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?w=1200&q=80',
-]
+const galleryImages = computed(() => getCourtGalleryImages(props.court))
 </script>
 
 <template>

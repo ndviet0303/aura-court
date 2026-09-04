@@ -120,7 +120,7 @@ function scrollToPillars() {
             </div>
             <div class="image-stack">
               <div class="image-card short-card">
-                <img src="/aura/court-1.jpg" alt="Aura Court Pickleball Arena" loading="lazy" />
+                <img src="/courts/pickleball-neon.jpg" alt="Aura Court Pickleball Arena" loading="lazy" />
                 <div class="image-overlay">
                   <span class="chip-venue">USA Pickleball Certified</span>
                 </div>
@@ -220,7 +220,7 @@ function scrollToPillars() {
 
           <div class="sport-card">
             <div class="sport-media">
-              <img src="/aura/court-1.jpg" alt="Pickleball" loading="lazy" />
+              <img src="/courts/pickleball-outdoor.jpg" alt="Pickleball" loading="lazy" />
               <div class="sport-tag">Trending #1</div>
             </div>
             <div class="sport-body">
@@ -231,7 +231,7 @@ function scrollToPillars() {
 
           <div class="sport-card">
             <div class="sport-media">
-              <img src="/aura/court-3.jpg" alt="Football 5v5" loading="lazy" />
+              <img src="/courts/football-mini-turf.jpg" alt="Football 5v5" loading="lazy" />
               <div class="sport-tag">FIFA Turf</div>
             </div>
             <div class="sport-body">
@@ -242,7 +242,7 @@ function scrollToPillars() {
 
           <div class="sport-card">
             <div class="sport-media">
-              <img src="/aura/court-4.jpg" alt="Table Tennis" loading="lazy" />
+              <img src="/courts/table-tennis-1.jpg" alt="Table Tennis" loading="lazy" />
               <div class="sport-tag">ITTF Arena</div>
             </div>
             <div class="sport-body">

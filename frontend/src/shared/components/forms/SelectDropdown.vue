@@ -16,6 +16,7 @@ const props = withDefaults(
     disabled?: boolean
     ariaLabel?: string
     variant?: 'inline' | 'bordered'
+    align?: 'left' | 'right'
   }>(),
   {
     modelValue: undefined,
@@ -23,6 +24,7 @@ const props = withDefaults(
     disabled: false,
     ariaLabel: 'Dropdown',
     variant: 'inline',
+    align: 'left',
   }
 )
 
@@ -86,7 +88,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="custom-dropdown" :class="[variant, { open, disabled }]">
+  <div ref="root" class="custom-dropdown" :class="[variant, `align-${align}`, { open, disabled }]">
     <button
       type="button"
       class="custom-dropdown-trigger"
@@ -143,6 +145,10 @@ onBeforeUnmount(() => {
   max-width: 100%;
   min-width: 0;
   user-select: none;
+}
+
+.custom-dropdown.open {
+  z-index: 50;
 }
 
 .custom-dropdown-trigger {
@@ -235,7 +241,8 @@ onBeforeUnmount(() => {
 .custom-dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  left: 0;
+  right: auto;
   min-width: 100%;
   width: max-content;
   max-width: min(360px, calc(100vw - 24px));
@@ -253,6 +260,11 @@ onBeforeUnmount(() => {
   overflow-x: hidden;
   scrollbar-width: thin;
   backdrop-filter: blur(16px);
+}
+
+.custom-dropdown.align-right .custom-dropdown-menu {
+  left: auto;
+  right: 0;
 }
 
 .custom-dropdown-menu::-webkit-scrollbar {

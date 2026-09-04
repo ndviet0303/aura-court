@@ -39,7 +39,6 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);
-    Route::post('auth/social-login', [AuthController::class, 'socialLogin']);
     Route::middleware('web')->group(function () {
         Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
         Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);
@@ -98,44 +97,6 @@ Route::prefix('v1')->group(function () {
         Route::get('wallet/balance', function (Request $request, WalletPaymentService $walletService) {
             $wallet = $walletService->getOrCreateWallet($request->user()->id);
             return response()->json(['balance' => $wallet->balance, 'currency' => $wallet->currency]);
-        });
-        Route::post('wallet/topup', function (Request $request, WalletPaymentService $walletService) {
-            $data = $request->validate([
-                'amount' => 'required|integer|min:10000|max:50000000',
-            ]);
-            $user = $request->user();
-            $wallet = $walletService->getOrCreateWallet($user->id);
-            $tx = $walletService->credit(
-                $wallet,
-                $data['amount'],
-                'wallet_deposit',
-                (int) (now()->timestamp + rand(100, 999)),
-                $request->input('note', 'Nạp tiền ví Aura')
-            );
-            return response()->json([
-                'message' => 'Nạp tiền vào ví thành công.',
-                'balance' => $wallet->fresh()->balance,
-                'transaction_id' => $tx->id,
-            ], 201);
-        });
-        Route::post('wallet/credit', function (Request $request, WalletPaymentService $walletService) {
-            $data = $request->validate([
-                'amount' => 'required|integer|min:10000|max:50000000',
-            ]);
-            $user = $request->user();
-            $wallet = $walletService->getOrCreateWallet($user->id);
-            $tx = $walletService->credit(
-                $wallet,
-                $data['amount'],
-                'wallet_deposit',
-                (int) (now()->timestamp + rand(100, 999)),
-                $request->input('note', 'Nạp tiền ví Aura')
-            );
-            return response()->json([
-                'message' => 'Nạp tiền vào ví thành công.',
-                'balance' => $wallet->fresh()->balance,
-                'transaction_id' => $tx->id,
-            ], 201);
         });
         Route::get('bookings', [BookingController::class, 'index']);
         Route::post('bookings', [BookingController::class, 'store'])->middleware('verified');
@@ -358,4 +319,3 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::get('social/matches/{post}', [SocialController::class, 'show']);
     });
 });
-

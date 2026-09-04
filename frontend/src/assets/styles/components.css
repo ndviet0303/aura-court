@@ -175,6 +175,9 @@ html.dark .hero h1 em {
   gap: 4px;
   border: 1px solid var(--border);
   box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+  z-index: 10;
 }
 
 .search-field {
@@ -184,7 +187,14 @@ html.dark .hero h1 em {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
+}
+
+.search-field:focus-within,
+.search-field:has(.custom-dropdown.open),
+.search-field:has(.date-picker-popover) {
+  z-index: 40;
 }
 
 .search-field label {
