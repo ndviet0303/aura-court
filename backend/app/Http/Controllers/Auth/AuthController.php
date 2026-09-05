@@ -239,6 +239,7 @@ class AuthController extends Controller
     public function onboarding(Request $request)
     {
         $user = $request->user();
+        abort_if($user->onboarded, 400, 'Tài khoản đã hoàn tất thiết lập ban đầu.');
         $data = $request->validate([
             'account_type' => ['required', 'string', 'in:customer,court_owner'],
             'phone' => ['nullable', 'string', 'max:30'],

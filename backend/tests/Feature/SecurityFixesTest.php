@@ -84,4 +84,46 @@ class SecurityFixesTest extends TestCase
         $this->assertDatabaseCount('wallet_accounts', 0);
         $this->assertDatabaseCount('wallet_transactions', 0);
     }
+
+    public function test_onboarded_user_cannot_re_onboard_or_escalate_to_admin(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'customer',
+            'onboarded' => true,
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/api/v1/auth/onboarding', [
+            'account_type' => 'court_owner',
+            'organization_name' => 'Attacker Club',
+            'phone' => '0987654321',
+        ]);
+
+        $response->assertStatus(400);
+        $this->assertSame('customer', $user->fresh()->role);
+    }
+
+    public function test_non_onboarded_user_can_complete_onboarding_only_once(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'customer',
+            'onboarded' => false,
+        ]);
+
+        $this->actingAs($user)->postJson('/api/v1/auth/onboarding', [
+            'account_type' => 'customer',
+            'phone' => '0912345678',
+            'play_level' => 'intermediate',
+        ])->assertOk();
+
+        $this->assertTrue($user->fresh()->onboarded);
+        $this->assertSame('customer', $user->fresh()->role);
+
+        // Subsequent call must be blocked
+        $this->actingAs($user->fresh())->postJson('/api/v1/auth/onboarding', [
+            'account_type' => 'court_owner',
+            'organization_name' => 'Escalated Club',
+        ])->assertStatus(400);
+
+        $this->assertSame('customer', $user->fresh()->role);
+    }
 }
