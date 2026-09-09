@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DatePicker, SelectDropdown, type DropdownOption } from '@/shared/components'
 
+const { t } = useI18n()
 import type { Court } from '@/features/court/types/court'
 import type { V2PriceQuote } from '../../types/v2Reservation'
 
@@ -25,6 +27,7 @@ const emit = defineEmits<{
   (e: 'update:selectedTimeSlot', value: string): void
   (e: 'calculate'): void
   (e: 'hold'): void
+  (e: 'checkout'): void
 }>()
 
 const getLocalDateString = (offsetDays = 0): string => {
@@ -70,9 +73,9 @@ function setDatePreset(date: string) {
         <span class="material-symbols-outlined icon">receipt_long</span>
       </div>
       <div>
-        <h2 class="card-title">Tạo Báo Giá Động Thời Gian Thực</h2>
+        <h2 class="card-title">{{ t('v2Reservations.calculator.title') }}</h2>
         <p class="card-desc">
-          Chọn cụm sân và khung giờ chơi để tạo báo giá khóa cứng, không bị ảnh hưởng bởi biến động giá tiếp theo.
+          {{ t('v2Reservations.calculator.desc') }}
         </p>
       </div>
     </div>
@@ -83,18 +86,18 @@ function setDatePreset(date: string) {
       <div class="form-group">
         <label class="field-label">
           <span class="material-symbols-outlined field-icon">stadium</span>
-          <span>Chọn Sân Đấu</span>
+          <span>{{ t('v2Reservations.calculator.courtLabel') }}</span>
         </label>
         <SelectDropdown
           :model-value="selectedCourtId ?? undefined"
           :options="courtOptions"
           variant="bordered"
-          placeholder="Chọn sân đấu..."
-          aria-label="Chọn Sân Đấu"
+          :placeholder="t('v2Reservations.calculator.courtPlaceholder')"
+          :aria-label="t('v2Reservations.calculator.courtLabel')"
           @update:model-value="emit('update:selectedCourtId', Number($event))"
         />
         <span v-if="selectedCourtObj" class="court-sub-info">
-          {{ selectedCourtObj.venue?.address || 'Cụm sân tiêu chuẩn quốc tế Aura' }}
+          {{ selectedCourtObj.venue?.address || t('v2Reservations.calculator.courtSubInfoDefault') }}
         </span>
       </div>
 
@@ -102,7 +105,7 @@ function setDatePreset(date: string) {
       <div class="form-group">
         <label class="field-label">
           <span class="material-symbols-outlined field-icon">calendar_today</span>
-          <span>Ngày Đặt Sân</span>
+          <span>{{ t('v2Reservations.calculator.dateLabel') }}</span>
         </label>
         <div class="date-quick-presets">
           <button
@@ -111,7 +114,7 @@ function setDatePreset(date: string) {
             :class="{ active: selectedDate === todayStr }"
             @click="setDatePreset(todayStr)"
           >
-            Hôm nay
+            {{ t('v2Reservations.calculator.today') }}
           </button>
           <button
             type="button"
@@ -119,7 +122,7 @@ function setDatePreset(date: string) {
             :class="{ active: selectedDate === tomorrowStr }"
             @click="setDatePreset(tomorrowStr)"
           >
-            Ngày mai
+            {{ t('v2Reservations.calculator.tomorrow') }}
           </button>
           <button
             type="button"
@@ -127,13 +130,13 @@ function setDatePreset(date: string) {
             :class="{ active: selectedDate === dayAfterStr }"
             @click="setDatePreset(dayAfterStr)"
           >
-            Ngày kia
+            {{ t('v2Reservations.calculator.dayAfter') }}
           </button>
         </div>
         <DatePicker
           :model-value="selectedDate"
           :min="todayStr"
-          placeholder="Chọn ngày đặt sân..."
+          :placeholder="t('v2Reservations.calculator.datePlaceholder')"
           @update:model-value="emit('update:selectedDate', $event)"
         />
       </div>
@@ -142,7 +145,7 @@ function setDatePreset(date: string) {
       <div class="form-group">
         <label class="field-label">
           <span class="material-symbols-outlined field-icon">schedule</span>
-          <span>Khung Giờ Bắt Đầu</span>
+          <span>{{ t('v2Reservations.calculator.timeLabel') }}</span>
         </label>
         <div class="slots-pill-grid">
           <button
@@ -169,7 +172,7 @@ function setDatePreset(date: string) {
         <span class="material-symbols-outlined" :class="{ spinning: calculating }">
           {{ calculating ? 'refresh' : 'price_change' }}
         </span>
-        <span>{{ calculating ? 'Đang Định Giá Động...' : 'Tính Báo Giá Động' }}</span>
+        <span>{{ calculating ? t('v2Reservations.calculator.calculating') : t('v2Reservations.calculator.calculateBtn') }}</span>
       </button>
     </div>
 
@@ -179,50 +182,62 @@ function setDatePreset(date: string) {
         <div class="quote-panel-header">
           <div class="quote-badge">
             <span class="material-symbols-outlined badge-icon">lock_clock</span>
-            <span>BÁO GIÁ ĐÃ KHÓA BẢO LƯU</span>
+            <span>{{ t('v2Reservations.calculator.lockedBadge') }}</span>
           </div>
           <div class="quote-timer">
-            <span class="timer-label">Hết hạn sau:</span>
+            <span class="timer-label">{{ t('v2Reservations.calculator.expiresIn') }}</span>
             <span class="timer-countdown font-mono">{{ formattedRemaining }}</span>
           </div>
         </div>
 
         <div class="quote-breakdown-box">
           <div class="quote-row">
-            <span class="row-label">Sân đấu:</span>
-            <span class="row-value font-bold">{{ selectedCourtObj?.name || 'Sân Aura Court' }}</span>
+            <span class="row-label">{{ t('v2Reservations.calculator.courtRow') }}</span>
+            <span class="row-value font-bold">{{ selectedCourtObj?.name || 'Aura Court' }}</span>
           </div>
           <div class="quote-row">
-            <span class="row-label">Thời gian:</span>
+            <span class="row-label">{{ t('v2Reservations.calculator.timeRow') }}</span>
             <span class="row-value font-mono">
               {{ selectedDate }} · {{ selectedTimeSlot }} - {{ String(Number(selectedTimeSlot.slice(0, 2)) + 1).padStart(2, '0') }}:00
             </span>
           </div>
           <div class="quote-row">
-            <span class="row-label">Mã token báo giá:</span>
+            <span class="row-label">{{ t('v2Reservations.calculator.tokenRow') }}</span>
             <span class="row-value font-mono token-text">#{{ activeQuote.quote_token.slice(0, 16) }}...</span>
           </div>
           <div class="quote-divider"></div>
           <div class="quote-row total">
-            <span class="total-label">Tổng Chi Phí Báo Giá:</span>
+            <span class="total-label">{{ t('v2Reservations.calculator.totalCost') }}</span>
             <span class="total-value font-mono">{{ money(activeQuote.total_amount) }}</span>
           </div>
         </div>
 
         <div class="quote-actions-row">
           <p class="quote-note">
-            * Sau khi nhấn giữ chỗ, sân sẽ được khóa riêng cho bạn trong 10 phút để hoàn tất xác nhận.
+            {{ t('v2Reservations.calculator.instantNote') }}
           </p>
-          <button
-            class="btn btn-hold-slot"
-            :disabled="holding"
-            @click="emit('hold')"
-          >
-            <span class="material-symbols-outlined" :class="{ spinning: holding }">
-              {{ holding ? 'hourglass_top' : 'bookmark_add' }}
-            </span>
-            <span>{{ holding ? 'Đang Giữ Chỗ...' : 'Giữ Chỗ Tức Thì (Hold Slot)' }}</span>
-          </button>
+          <div class="quote-action-buttons">
+            <button
+              class="btn btn-checkout-slot"
+              :disabled="holding"
+              @click="emit('checkout')"
+            >
+              <span class="material-symbols-outlined" :class="{ spinning: holding }">
+                {{ holding ? 'hourglass_top' : 'account_balance_wallet' }}
+              </span>
+              <span>{{ holding ? t('v2Reservations.calculator.paying') : t('v2Reservations.calculator.payAndBookNow') }}</span>
+            </button>
+            <button
+              class="btn btn-hold-slot"
+              :disabled="holding"
+              @click="emit('hold')"
+            >
+              <span class="material-symbols-outlined" :class="{ spinning: holding }">
+                {{ holding ? 'hourglass_top' : 'bookmark_add' }}
+              </span>
+              <span>{{ holding ? t('v2Reservations.calculator.holding') : t('v2Reservations.calculator.holdTemporary') }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </transition>
@@ -542,26 +557,54 @@ function setDatePreset(date: string) {
   margin: 0;
 }
 
-.btn-hold-slot {
+.quote-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-checkout-slot {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 10px 22px;
   border-radius: 9999px;
-  background: var(--accent, #C9A15A);
-  color: #1c1618;
+  background: var(--primary, #6B2D3F);
+  color: #fff;
   font-size: 13.5px;
   font-weight: 800;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(201, 161, 90, 0.3);
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.3);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-checkout-slot:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-hold-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .btn-hold-slot:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+  background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+  color: var(--ink);
 }
 
 @media (max-width: 900px) {

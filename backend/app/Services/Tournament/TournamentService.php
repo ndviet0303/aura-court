@@ -9,11 +9,29 @@ use App\Models\TournamentParticipant;
 use App\Models\TournamentStanding;
 use App\Models\User;
 use App\Services\Infrastructure\OutboxService;
+use App\Services\Finance\FinancialPostingService;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Support\Facades\DB;
 
 class TournamentService
 {
-    public function __construct(private readonly OutboxService $outbox) {}
+    public function __construct(
+        private readonly OutboxService $outbox,
+        private readonly WalletPaymentService $walletPayment,
+        private readonly FinancialPostingService $financialPosting
+    ) {}
+
+    public static function parseEntryFee(mixed $fee): int
+    {
+        if (is_numeric($fee)) {
+            return (int) $fee;
+        }
+        if (is_string($fee)) {
+            $digits = preg_replace('/\D/', '', $fee);
+            return $digits !== '' ? (int) $digits : 0;
+        }
+        return 0;
+    }
 
     public function createAndGenerate(User $creator, int $organizationId, string $name, string $format, array $seedUserIds = [], array $settings = []): Tournament
     {
@@ -57,6 +75,121 @@ class TournamentService
             }
 
             return $tournament->fresh(['participants.user', 'fixtures', 'standings']);
+        });
+    }
+
+    public function register(Tournament $tournament, User $user, array $data = []): array
+    {
+        return DB::transaction(function () use ($tournament, $user, $data): array {
+            $tournament = Tournament::query()->whereKey($tournament->id)->lockForUpdate()->firstOrFail();
+
+            // Check if tournament is open for registration
+            abort_unless(in_array($tournament->status, ['draft', 'open', 'ready'], true), 409, 'Tournament is not open for registration.');
+
+            // Idempotency / Retry check: return existing registration and receipt
+            $existing = TournamentParticipant::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            $entryFee = self::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
+
+            if ($existing) {
+                return [
+                    'participant' => $existing->load('user'),
+                    'already_registered' => true,
+                    'receipt' => [
+                        'receipt_code' => "RCP-TRN-{$tournament->id}-{$existing->id}",
+                        'tournament_id' => $tournament->id,
+                        'tournament_name' => $tournament->name,
+                        'participant_id' => $existing->id,
+                        'entry_fee' => $entryFee,
+                        'currency' => 'VND',
+                        'status' => 'confirmed',
+                        'registered_at' => $existing->created_at?->toIso8601String() ?? now()->toIso8601String(),
+                    ],
+                ];
+            }
+
+            // Capacity check
+            $maxParticipants = (int) ($tournament->settings['max_participants'] ?? 16);
+            $currentCount = $tournament->participants()->count();
+            abort_if($currentCount >= $maxParticipants, 409, 'Tournament has reached maximum participant capacity.');
+
+            // Payment handling: paid entry debits wallet, free entry does not
+            $wallet = null;
+            if ($entryFee > 0) {
+                $wallet = $this->walletPayment->getOrCreateWallet($user->id, $tournament->organization_id);
+                $this->walletPayment->debit(
+                    $wallet,
+                    $entryFee,
+                    'tournament_registration',
+                    $tournament->id,
+                    "Phí đăng ký giải đấu: {$tournament->name}"
+                );
+            }
+
+            // Persist participant
+            $seed = $currentCount + 1;
+            $participant = TournamentParticipant::create([
+                'organization_id' => $tournament->organization_id,
+                'tournament_id' => $tournament->id,
+                'user_id' => $user->id,
+                'seed' => $seed,
+                'status' => 'registered',
+            ]);
+
+            TournamentStanding::firstOrCreate([
+                'organization_id' => $tournament->organization_id,
+                'tournament_id' => $tournament->id,
+                'participant_id' => $participant->id,
+            ]);
+
+            // Post balanced financial ledger if paid entry
+            if ($entryFee > 0 && $wallet) {
+                $this->financialPosting->postTournamentRegistrationPayment(
+                    $tournament->organization_id,
+                    $tournament->id,
+                    $participant->id,
+                    $entryFee,
+                    $wallet->id
+                );
+            }
+
+            // Outbox notification
+            DB::afterCommit(function () use ($tournament, $participant, $user) {
+                $this->outbox->enqueue([
+                    'organization_id' => $tournament->organization_id,
+                    'message_key' => "tournament_participant:{$tournament->id}:{$participant->id}",
+                    'channel' => 'notification',
+                    'event_type' => 'tournament.participant_registered',
+                    'aggregate_type' => Tournament::class,
+                    'aggregate_id' => $tournament->id,
+                ], [
+                    'user_id' => $user->id,
+                    'notification' => [
+                        'title' => 'Đăng ký giải đấu thành công',
+                        'body' => "Bạn đã được ghi danh tham gia giải đấu: {$tournament->name}",
+                        'type' => 'tournament_update',
+                        'source_id' => $tournament->id,
+                        'tournament_id' => $tournament->id,
+                    ],
+                ]);
+            });
+
+            return [
+                'participant' => $participant->load('user'),
+                'already_registered' => false,
+                'receipt' => [
+                    'receipt_code' => "RCP-TRN-{$tournament->id}-{$participant->id}",
+                    'tournament_id' => $tournament->id,
+                    'tournament_name' => $tournament->name,
+                    'participant_id' => $participant->id,
+                    'entry_fee' => $entryFee,
+                    'currency' => 'VND',
+                    'status' => 'confirmed',
+                    'registered_at' => $participant->created_at?->toIso8601String() ?? now()->toIso8601String(),
+                ],
+            ];
         });
     }
 

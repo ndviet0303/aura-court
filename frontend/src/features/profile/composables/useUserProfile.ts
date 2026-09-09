@@ -162,8 +162,8 @@ export function useUserProfile() {
     }
   }
 
-  onMounted(() => {
-    loadMembership()
+  onMounted(async () => {
+    await Promise.allSettled([auth.load(true), loadMembership()])
   })
 
   return {

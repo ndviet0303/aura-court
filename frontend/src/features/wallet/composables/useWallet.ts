@@ -6,56 +6,23 @@ import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useBookingStore } from '@/stores/booking'
 
-const DEFAULT_WALLETS: VenueWallet[] = [
-  {
-    id: 'wallet-main',
-    venue_id: 1,
-    venue_name: 'Ví Hội Viên Toàn Hệ Thống Aura',
-    card_number: 'AUR-9902-8142',
-    address: 'Toàn bộ hệ thống cơ sở Aura Court',
-    balance: 0,
-    points: 0,
-    is_active: true,
-    currency: 'VND',
-    member_tier: 'gold',
-    tier_label: 'Gold Athlete',
-    accent_theme: 'burgundy',
-    card_holder: 'AURA MEMBER',
-    expiry_date: '12/2028',
-  },
-  {
-    id: 'wallet-thaodien',
-    venue_id: 2,
-    venue_name: 'Aura Court Thảo Điền (TP. Thủ Đức)',
-    card_number: 'AUR-7721-6601',
-    address: '215 Nguyễn Văn Hưởng, P. Thảo Điền, TP. Thủ Đức',
-    balance: 0,
-    points: 0,
-    is_active: true,
-    currency: 'VND',
-    member_tier: 'silver',
-    tier_label: 'Silver Athlete',
-    accent_theme: 'gold',
-    card_holder: 'AURA MEMBER',
-    expiry_date: '08/2027',
-  },
-  {
-    id: 'wallet-caugiay',
-    venue_id: 3,
-    venue_name: 'Aura Court Cầu Giấy (Hà Nội)',
-    card_number: 'AUR-5510-4498',
-    address: '18 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội',
-    balance: 0,
-    points: 0,
-    is_active: true,
-    currency: 'VND',
-    member_tier: 'standard',
-    tier_label: 'Standard Athlete',
-    accent_theme: 'navy',
-    card_holder: 'AURA MEMBER',
-    expiry_date: '06/2027',
-  },
-]
+export interface ActiveDeposit {
+  id: number
+  reference: string
+  organization_id: number
+  amount: number
+  currency: string
+  status: string
+  provider: string
+  transfer_info: {
+    bank: string
+    account_number: string
+    account_name: string
+    code: string
+    amount: number
+    qr_url: string
+  }
+}
 
 export function useWallet() {
   const auth = useAuthStore()
@@ -81,6 +48,7 @@ export function useWallet() {
   const depositAmount = ref<number>(200000)
   const depositMethod = ref<PaymentMethodType>('sepay')
   const depositTargetWalletId = ref<string>('wallet-main')
+  const activeDeposit = ref<ActiveDeposit | null>(null)
 
   // Stripe card state
   const cardNumber = ref('')
@@ -92,13 +60,11 @@ export function useWallet() {
   const quickAmounts = [100000, 200000, 500000, 1000000, 2000000, 5000000]
 
   // Data
-  const wallets = ref<VenueWallet[]>(DEFAULT_WALLETS)
+  const wallets = ref<VenueWallet[]>([])
   const transactions = ref<Transaction[]>([])
 
   const totalBalance = computed(() => {
-    // Total system available balance is the main wallet balance
-    const mainWallet = wallets.value.find((w) => w.id === 'wallet-main')
-    return mainWallet ? mainWallet.balance : wallets.value.reduce((sum, w) => sum + (w.balance || 0), 0)
+    return wallets.value.reduce((sum, w) => sum + (w.balance || 0), 0)
   })
 
   const totalPoints = computed(() => {
@@ -120,8 +86,20 @@ export function useWallet() {
     })
   })
 
-  // SePay VietQR Transfer Info
+  // SePay VietQR Transfer Info from server or computed fallback
   const transferInfo = computed(() => {
+    if (activeDeposit.value?.transfer_info) {
+      const info = activeDeposit.value.transfer_info
+      return {
+        bank: info.bank,
+        accountNo: info.account_number,
+        accountName: info.account_name,
+        memo: info.code,
+        qrUrl: info.qr_url,
+        amount: info.amount,
+      }
+    }
+
     const bank = 'TPBank'
     const accountNo = '83403032005'
     const accountName = 'AURA COURT'
@@ -152,52 +130,20 @@ export function useWallet() {
 
       wallets.value = [
         {
-          id: 'wallet-main',
+          id: res?.id || 'wallet-main',
           venue_id: 1,
-          venue_name: 'Ví Hội Viên Toàn Hệ Thống Aura',
-          card_number: 'AUR-9902-8142',
+          venue_name: 'Ví Hội Viên Hệ Thống Aura Court',
+          card_number: `AUR-9902-${String(auth.user?.id || 1).padStart(4, '0')}`,
           address: 'Toàn bộ hệ thống cơ sở Aura Court',
           balance: realBal,
           points: realPts,
           is_active: true,
-          currency: 'VND',
+          currency: res?.currency || 'VND',
           member_tier: 'gold',
           tier_label: 'Gold Athlete',
           accent_theme: 'burgundy',
           card_holder: userName,
           expiry_date: '12/2028',
-        },
-        {
-          id: 'wallet-thaodien',
-          venue_id: 2,
-          venue_name: 'Aura Court Thảo Điền (TP. Thủ Đức)',
-          card_number: 'AUR-7721-6601',
-          address: '215 Nguyễn Văn Hưởng, P. Thảo Điền, TP. Thủ Đức',
-          balance: realBal,
-          points: realPts,
-          is_active: true,
-          currency: 'VND',
-          member_tier: 'silver',
-          tier_label: 'Silver Athlete',
-          accent_theme: 'gold',
-          card_holder: userName,
-          expiry_date: '08/2027',
-        },
-        {
-          id: 'wallet-caugiay',
-          venue_id: 3,
-          venue_name: 'Aura Court Cầu Giấy (Hà Nội)',
-          card_number: 'AUR-5510-4498',
-          address: '18 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội',
-          balance: realBal,
-          points: realPts,
-          is_active: true,
-          currency: 'VND',
-          member_tier: 'standard',
-          tier_label: 'Standard Athlete',
-          accent_theme: 'navy',
-          card_holder: userName,
-          expiry_date: '06/2027',
         },
       ]
 
@@ -211,7 +157,7 @@ export function useWallet() {
           date: t.created_at ? new Date(t.created_at).toLocaleDateString('vi-VN') : '',
           time: t.created_at ? new Date(t.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
           amount: t.type === 'credit' ? t.amount : -t.amount,
-          balance_after: t.balance_after || realBal,
+          balance_after: t.balance_after ?? realBal,
           status: 'success',
           reference: t.reference || `TXN-${t.id}`,
           method_label: 'Ví Aura',
@@ -219,12 +165,11 @@ export function useWallet() {
       }
 
       bookingStore.walletBalance = realBal
-    } catch {
-      const userName = auth.user?.name || 'AURA MEMBER'
-      wallets.value = DEFAULT_WALLETS.map((w) => ({
-        ...w,
-        card_holder: userName,
-      }))
+    } catch (e: unknown) {
+      // Prohibit fallback balances: on error, do not fabricate synthetic balances or default cards
+      wallets.value = []
+      bookingStore.walletBalance = 0
+      error.value = errorMessage(e, 'Không thể tải thông tin số dư ví từ máy chủ.')
     } finally {
       loading.value = false
     }
@@ -245,6 +190,7 @@ export function useWallet() {
       depositTargetWalletId.value = wallets.value[0]?.id || 'wallet-main'
       selectedWalletForAction.value = wallets.value[0] || null
     }
+    activeDeposit.value = null
     depositStep.value = 'select'
     isDepositModalOpen.value = true
   }
@@ -256,7 +202,20 @@ export function useWallet() {
 
   async function proceedToPaymentStep() {
     if (depositMethod.value === 'sepay') {
-      depositStep.value = 'sepay_pay'
+      processing.value = true
+      error.value = ''
+      try {
+        const initRes = await walletApi.initiateDeposit({
+          amount: depositAmount.value,
+          provider: 'sepay',
+        })
+        activeDeposit.value = initRes
+        depositStep.value = 'sepay_pay'
+      } catch (e: unknown) {
+        error.value = errorMessage(e, 'Không thể khởi tạo giao dịch nạp tiền. Vui lòng thử lại.')
+      } finally {
+        processing.value = false
+      }
     } else {
       error.value = 'Nạp tiền qua Stripe chưa được cấu hình. Vui lòng sử dụng chuyển khoản VietQR.'
     }
@@ -270,13 +229,38 @@ export function useWallet() {
         throw new Error('Nạp tiền qua Stripe chưa được cấu hình. Vui lòng sử dụng chuyển khoản VietQR.')
       }
 
-      await loadWalletData()
+      if (activeDeposit.value?.reference) {
+        const statusRes = await walletApi.getDepositStatus(activeDeposit.value.reference)
+        if (statusRes.status === 'succeeded') {
+          await loadWalletData()
+          isDepositModalOpen.value = false
+          depositStep.value = 'select'
+          showNotice(`Nạp tiền thành công! Đã cộng ${statusRes.amount.toLocaleString('vi-VN')} VND vào ví.`)
+          activeDeposit.value = null
+          return
+        }
 
+        if (statusRes.status === 'failed') {
+          error.value = 'Giao dịch nạp tiền đã thất bại hoặc hết hạn.'
+          isDepositModalOpen.value = false
+          depositStep.value = 'select'
+          activeDeposit.value = null
+          return
+        }
+
+        // Pending status
+        isDepositModalOpen.value = false
+        depositStep.value = 'select'
+        showNotice('Giao dịch đang chờ ngân hàng/SePay xác thực. Số dư sẽ tự động được cộng khi hệ thống nhận được giao dịch.')
+        return
+      }
+
+      await loadWalletData()
       isDepositModalOpen.value = false
       depositStep.value = 'select'
       showNotice('Giao dịch sẽ được cộng vào ví sau khi SePay xác nhận chuyển khoản.')
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể thực hiện nạp tiền vào ví.')
+      error.value = errorMessage(e, 'Không thể kiểm tra trạng thái nạp tiền.')
     } finally {
       processing.value = false
     }
@@ -312,6 +296,7 @@ export function useWallet() {
     depositAmount,
     depositMethod,
     depositTargetWalletId,
+    activeDeposit,
     cardNumber,
     cardExpiry,
     cardCvc,

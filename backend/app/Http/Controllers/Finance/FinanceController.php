@@ -102,6 +102,88 @@ class FinanceController extends Controller
         return $this->idempotency->run($request, fn () => response()->json(['exception' => $this->reconciliation->resolve($exception, $request->user()->id, $data['resolution'])]));
     }
 
+    public function exportSettlementsCsv(Request $request)
+    {
+        $organization = $this->organization($request);
+        $settlements = Settlement::query()->where('organization_id', $organization->id)->latest('period_end')->get();
+
+        return response()->streamDownload(function () use ($settlements) {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['ID', 'Period Start', 'Period End', 'Gross Amount', 'Refund Amount', 'Provider Fee', 'Commission', 'Tenant Payable', 'Currency', 'Status', 'Eligible At', 'Created At']);
+            foreach ($settlements as $s) {
+                fputcsv($output, [
+                    $s->id,
+                    $s->period_start,
+                    $s->period_end,
+                    $s->gross_amount,
+                    $s->refund_amount,
+                    $s->provider_fee_amount,
+                    $s->commission_amount,
+                    $s->tenant_payable,
+                    $s->currency,
+                    $s->status,
+                    $s->eligible_at?->toIso8601String(),
+                    $s->created_at?->toIso8601String(),
+                ]);
+            }
+            fclose($output);
+        }, 'settlements-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function exportPayoutsCsv(Request $request)
+    {
+        $organization = $this->organization($request);
+        $payouts = Payout::query()->where('organization_id', $organization->id)->with('beneficiary')->latest()->get();
+
+        return response()->streamDownload(function () use ($payouts) {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['ID', 'Settlement ID', 'Beneficiary', 'Bank Code', 'Account Number', 'Amount', 'Currency', 'Status', 'Provider', 'Submitted At', 'Paid At', 'Created At']);
+            foreach ($payouts as $p) {
+                fputcsv($output, [
+                    $p->id,
+                    $p->settlement_id,
+                    $p->beneficiary?->account_holder,
+                    $p->beneficiary?->bank_code,
+                    $p->beneficiary?->account_number,
+                    $p->amount,
+                    $p->currency,
+                    $p->status,
+                    $p->provider,
+                    $p->submitted_at?->toIso8601String(),
+                    $p->paid_at?->toIso8601String(),
+                    $p->created_at?->toIso8601String(),
+                ]);
+            }
+            fclose($output);
+        }, 'payouts-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function exportExceptionsCsv(Request $request)
+    {
+        $organization = $this->organization($request);
+        $exceptions = FinanceException::query()->where('organization_id', $organization->id)->latest()->get();
+
+        return response()->streamDownload(function () use ($exceptions) {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['ID', 'Reference', 'Type', 'Severity', 'Amount', 'Status', 'Description', 'Detected At', 'Due At', 'Resolved At']);
+            foreach ($exceptions as $e) {
+                fputcsv($output, [
+                    $e->id,
+                    $e->reference,
+                    $e->type,
+                    $e->severity,
+                    $e->amount,
+                    $e->status,
+                    $e->description,
+                    $e->detected_at?->toIso8601String(),
+                    $e->due_at?->toIso8601String(),
+                    $e->resolved_at?->toIso8601String(),
+                ]);
+            }
+            fclose($output);
+        }, 'finance-exceptions-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     private function assertPayoutOrganization(Request $request, Payout $payout): void
     {
         $organization = $this->organization($request);

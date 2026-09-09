@@ -47,7 +47,11 @@ const emit = defineEmits<{
     </div>
 
     <!-- Friends Grid -->
-    <div class="friends-grid">
+    <div v-if="friends.length === 0" class="empty-friends-notice">
+      <span class="material-symbols-outlined empty-ico">group_off</span>
+      <p>Chưa tìm thấy bạn bè nào trong danh sách kết nối.</p>
+    </div>
+    <div v-else class="friends-grid">
       <div
         v-for="f in friends"
         :key="f.id"
@@ -105,6 +109,25 @@ const emit = defineEmits<{
   border: 1px solid var(--outline);
   border-radius: 18px;
   box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+}
+
+.empty-friends-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--outline);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 13.5px;
+  text-align: center;
+}
+.empty-ico {
+  font-size: 28px;
+  opacity: 0.6;
 }
 
 .section-head {

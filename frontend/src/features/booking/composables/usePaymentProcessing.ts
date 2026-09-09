@@ -117,19 +117,36 @@ export function usePaymentProcessing() {
     error.value = ''
     try {
       if (isTournament.value) {
-        status.value = 'confirmed'
-        showSuccessModal.value = true
-      } else {
-        // If booking is already confirmed, just show success
-        if (booking.value?.status === 'confirmed') {
-          status.value = 'confirmed'
-          showSuccessModal.value = true
-          return
+        const tourneyId = tournament.value?.uuid || tournament.value?.id || (route.query.tournament_uuid as string) || (route.query.tournament_id as string)
+        if (!tourneyId) {
+          throw new Error('Không tìm thấy thông tin giải đấu để đăng ký.')
         }
-        // Refresh balance and show confirmed
-        await loadBalance()
+        const res = await tournamentApi.register(tourneyId, {
+          name: athleteInfo.value.name || (route.query.name as string) || (route.query.athlete_name as string) || auth.user?.name || 'Vận Động Viên Aura',
+          phone: athleteInfo.value.phone || (route.query.phone as string) || auth.user?.phone || '0901234567',
+          partner: athleteInfo.value.partnerName || (route.query.partner as string) || (route.query.partner_name as string) || undefined,
+          notes: athleteInfo.value.notes || (route.query.notes as string) || undefined,
+        })
+        if (res?.receipt && store.payment) {
+          store.payment.receipt = res.receipt
+          store.payment.participant = res.participant
+          store.payment.code = res.receipt.receipt_code || store.payment.code
+        }
         status.value = 'confirmed'
         showSuccessModal.value = true
+        await loadBalance()
+      } else {
+        const code = booking.value?.code || (route.params.code as string | undefined)
+        if (code) {
+          const paymentData = await store.loadPayment(code)
+          if (paymentData.status === 'confirmed' || paymentData.booking?.status === 'confirmed') {
+            status.value = 'confirmed'
+            showSuccessModal.value = true
+            await loadBalance()
+            return
+          }
+        }
+        throw new Error('Đơn đặt sân chưa được thanh toán thành công hoặc đã hết hạn.')
       }
     } catch (e) {
       error.value = errorMessage(e, 'Thanh toán từ ví thất bại. Vui lòng thử lại.')
@@ -220,12 +237,15 @@ export function usePaymentProcessing() {
         }
       } else if (codeParam && codeParam.startsWith('BK')) {
         try {
-          await store.loadPayment(codeParam)
-          if (store.current?.status === 'confirmed') {
+          const paymentData = await store.loadPayment(codeParam)
+          if (paymentData.status === 'confirmed' || paymentData.booking?.status === 'confirmed') {
             status.value = 'confirmed'
+          } else {
+            status.value = 'pending_payment'
           }
         } catch {
           store.restorePayment()
+          status.value = 'pending_payment'
         }
       } else {
         store.restorePayment()
@@ -238,7 +258,7 @@ export function usePaymentProcessing() {
   }
 
   function startTimers() {
-    initPaymentSession()
+    return initPaymentSession()
   }
 
   function stopTimers() {}

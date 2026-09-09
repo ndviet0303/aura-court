@@ -20,6 +20,7 @@ class V2ReservationController extends Controller
         private readonly PriceQuoteService $quotes,
         private readonly ReservationService $reservations,
         private readonly IdempotencyService $idempotency,
+        private readonly \App\Services\Booking\OrdinaryCheckoutService $checkoutService,
     ) {}
 
     public function index(Request $request)
@@ -69,10 +70,70 @@ class V2ReservationController extends Controller
             'court_id' => 'required_without_all:quote_id,quote_token|integer',
             'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
             'slots.*' => 'required',
+            'customer_id' => 'nullable|integer',
         ]);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
-            $reservation = $this->reservations->hold($request->user(), $organization->id, $data);
+            $user = $request->user();
+            $actor = null;
+            if (! empty($data['customer_id'])) {
+                abort_unless(
+                    $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, ['organization_owner', 'venue_manager', 'staff', 'cashier']),
+                    403,
+                    'Only staff can perform walk-in bookings for other customers.'
+                );
+                $customer = \App\Models\User::findOrFail((int) $data['customer_id']);
+                abort_unless(
+                    $organization->hasMember($customer->id) || \App\Models\TenantCustomer::where('organization_id', $organization->id)->where('user_id', $customer->id)->exists(),
+                    422,
+                    'Customer does not belong to this organization.'
+                );
+                $actor = $user;
+                $user = $customer;
+            }
+
+            if ($request->boolean('checkout')) {
+                $reservation = $this->checkoutService->checkoutV2($user, $organization->id, $data, $actor);
+            } else {
+                $reservation = $this->reservations->hold($user, $organization->id, $data);
+            }
+
+            return response()->json(['reservation' => $reservation], 201);
+        });
+    }
+
+    public function checkout(Request $request)
+    {
+        $organization = $this->organization($request);
+        $data = $request->validate([
+            'quote_id' => 'nullable|integer',
+            'quote_token' => 'nullable|string|max:80',
+            'court_id' => 'required_without_all:quote_id,quote_token|integer',
+            'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
+            'slots.*' => 'required',
+            'customer_id' => 'nullable|integer',
+        ]);
+
+        return $this->idempotency->run($request, function () use ($request, $organization, $data) {
+            $user = $request->user();
+            $actor = null;
+            if (! empty($data['customer_id'])) {
+                abort_unless(
+                    $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, ['organization_owner', 'venue_manager', 'staff', 'cashier']),
+                    403,
+                    'Only staff can perform walk-in bookings for other customers.'
+                );
+                $customer = \App\Models\User::findOrFail((int) $data['customer_id']);
+                abort_unless(
+                    $organization->hasMember($customer->id) || \App\Models\TenantCustomer::where('organization_id', $organization->id)->where('user_id', $customer->id)->exists(),
+                    422,
+                    'Customer does not belong to this organization.'
+                );
+                $actor = $user;
+                $user = $customer;
+            }
+
+            $reservation = $this->checkoutService->checkoutV2($user, $organization->id, $data, $actor);
 
             return response()->json(['reservation' => $reservation], 201);
         });

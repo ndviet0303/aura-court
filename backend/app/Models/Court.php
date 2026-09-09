@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'is_active'])]
+#[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'amenities', 'is_active'])]
 class Court extends Model
 {
     use HasTranslations;
@@ -47,7 +47,24 @@ class Court extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'amenities' => 'array',
+        ];
+    }
+
+    public function getAmenitiesAttribute($value): array
+    {
+        if ($value !== null) {
+            $decoded = is_string($value) ? json_decode($value, true) : $value;
+            if (is_array($decoded) && count($decoded) > 0) {
+                return $decoded;
+            }
+        }
+        if ($this->relationLoaded('venue') && $this->venue) {
+            return $this->venue->amenities;
+        }
+        return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
     }
 
     public function priceSlots(): HasMany
@@ -83,6 +100,10 @@ class Court extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->where(ctype_digit((string) $value) ? 'id' : 'slug', $value)->first();
     }
 
     public function toArray()

@@ -70,6 +70,9 @@ class AdvancedBookingMarketplaceTest extends TestCase
         $court = $venue->courts()->create(['name' => 'Advanced Court', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.marketplace_split_payments' => true, 'features.flags.marketplace_slot_resale' => true]);
+        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $wallet = $walletService->getOrCreateWallet($user->id, $organization->id);
+        $walletService->credit($wallet, 5000000, 'test_topup', 1, 'Fund for test');
         return [$organization, $user, $court];
     }
 

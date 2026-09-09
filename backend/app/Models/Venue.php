@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['organization_id', 'name', 'slug', 'address', 'google_maps_url', 'is_active'])]
+#[Fillable(['organization_id', 'name', 'slug', 'address', 'google_maps_url', 'amenities', 'is_active'])]
 class Venue extends Model
 {
     use HasTranslations;
@@ -19,7 +19,21 @@ class Venue extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'amenities' => 'array',
+        ];
+    }
+
+    public function getAmenitiesAttribute($value): array
+    {
+        if ($value !== null) {
+            $decoded = is_string($value) ? json_decode($value, true) : $value;
+            if (is_array($decoded) && count($decoded) > 0) {
+                return $decoded;
+            }
+        }
+        return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
     }
 
     public function organization(): BelongsTo

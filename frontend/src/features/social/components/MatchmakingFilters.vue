@@ -7,7 +7,7 @@ import { SelectDropdown, AuraButton } from '@/shared/components'
 const { t } = useI18n()
 
 defineProps<{
-  activeTab: 'all' | 'open' | 'my_matches' | 'partners'
+  activeTab: 'all' | 'open' | 'my_matches' | 'partners' | 'feed' | 'connections'
   searchQuery: string
   selectedSport: SocialSportType
   selectedSkill: string
@@ -19,7 +19,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:activeTab', tab: 'all' | 'open' | 'my_matches' | 'partners'): void
+  (e: 'update:activeTab', tab: 'all' | 'open' | 'my_matches' | 'partners' | 'feed' | 'connections'): void
   (e: 'update:searchQuery', val: string): void
   (e: 'update:selectedSport', sport: SocialSportType): void
   (e: 'update:selectedSkill', skill: string): void
@@ -103,6 +103,28 @@ const cityOptions = computed(() => [
         <span class="material-symbols-outlined tab-ico">handshake</span>
         <span>{{ $t('matchmaking.tabPartners') }}</span>
         <span class="tab-badge">{{ partnersCount }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="tab-btn"
+        :class="{ active: activeTab === 'feed' }"
+        @click="emit('update:activeTab', 'feed')"
+      >
+        <span class="material-symbols-outlined tab-ico">dynamic_feed</span>
+        <span>Bảng tin CLB</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="tab-btn"
+        :class="{ active: activeTab === 'connections' }"
+        @click="emit('update:activeTab', 'connections')"
+      >
+        <span class="material-symbols-outlined tab-ico">people</span>
+        <span>Bạn bè & Kết nối</span>
       </button>
     </div>
 

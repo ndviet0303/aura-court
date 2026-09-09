@@ -4,7 +4,7 @@ import type { TournamentItem, TournamentRegistrationPayload } from '../types/tou
 function mapRawTournament(t: any): TournamentItem {
   const settings = t.settings || {}
   const sport = settings.sport || t.sport || 'badminton'
-  const maxSlots = settings.max_participants || t.max_slots || 16
+  const maxSlots = settings.max_participants || t.max_slots || t.max_participants || 16
   const currentSlots = t.participants_count ?? t.current_slots ?? 8
   const prizePool = settings.prize_pool || t.prize_pool || '15.000.000 ₫'
   const venue = t.venue?.name || t.venue || 'Aura Sport Arena'
@@ -50,7 +50,7 @@ function mapRawTournament(t: any): TournamentItem {
     court_name: t.court_name,
     current_slots: currentSlots,
     max_slots: maxSlots,
-    entry_fee: t.entry_fee || '300.000 ₫ / VĐV',
+    entry_fee: settings.entry_fee || t.entry_fee || '300.000 ₫ / VĐV',
     image_url: imageUrl,
     description: t.description || `Giải đấu chính thức thuộc hệ thống Aura Circuit 2026, tích lũy điểm thưởng và tranh cúp vô địch Master Cup.`,
     version: t.version || 1,
@@ -138,6 +138,12 @@ export const tournamentApi = {
 
   scoreFixture: (tournamentId: number | string, fixtureId: number | string, scorePayload: any) =>
     apiV2.post(`/tournaments/${tournamentId}/fixtures/${fixtureId}/score`, scorePayload),
+
+  register: (tournamentId: number | string, payload?: any) =>
+    apiV2.post<{ participant: any; receipt: any; already_registered: boolean; message: string }>(`/tournaments/${tournamentId}/register`, payload),
+
+  getRegistration: (tournamentId: number | string) =>
+    apiV2.get<{ registered: boolean; participant?: any; receipt?: any }>(`/tournaments/${tournamentId}/registration`),
 
   getEvents: (tournamentId: number | string) =>
     apiV2.get<any[]>(`/tournaments/${tournamentId}/events`),

@@ -23,7 +23,7 @@ class CancelBooking
     public function execute(Booking $booking, ?string $reason = null): Booking
     {
         if (in_array($booking->status, ['cancelled', 'expired', 'refunded'], true)) {
-            throw ValidationException::withMessages(['booking' => 'Booking đã kết thúc.']);
+            return $booking->load(['court', 'slots', 'refunds']);
         }
         $firstSlot = $booking->slots()->orderBy('starts_at')->firstOrFail();
         if ($booking->status === 'confirmed' && now()->greaterThan($firstSlot->starts_at->copy()->subHours(2))) {
@@ -39,6 +39,12 @@ class CancelBooking
             $booking->update(['status' => $newStatus, 'cancelled_at' => now(), 'cancellation_reason' => $reason]);
             $booking->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => 'cancelled']);
 
+            // Sync cancellation to mapped V2 reservations
+            foreach ($booking->legacyMapping as $mapping) {
+                $mapping->reservation?->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+                $mapping->reservation?->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => 'cancelled']);
+                $mapping->reservation?->entitlements()->whereIn('status', ['held', 'active'])->update(['status' => 'cancelled']);
+            }
             if ($wasConfirmed && (int) $booking->total_amount > 0) {
                 $booking->loadMissing('court.venue');
                 $orgId = $booking->court?->venue?->organization_id;

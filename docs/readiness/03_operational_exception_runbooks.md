@@ -138,3 +138,90 @@
    - All automated disbursements, split share distributions, and marketplace transfers are blocked.
 3. **Notify Leadership Team**:
    - Post to `#incident-room` with timestamp, trigger metric, and mitigation status.
+
+---
+
+## 6. Capability Flags & Package Entry/Exit Governance
+
+### Active Capability Flags
+| Flag Name | Scope | Default | Description | Entry Gate | Exit Gate |
+|---|---|---|---|---|---|
+| `v2_reservations_enabled` | Global | `true` | V2 reservation and pricing engine | Full parity regression pass | Rollback to legacy mappings verified |
+| `organization_tenancy_enforced` | Global | `true` | Multi-tenant isolation and role matrix | TenantIsolation tests pass | No cross-tenant access in audit logs |
+| `tenant_pos_and_wallet` | Pilot-only | `false` | POS checkout, inventory, wallet payments, shift reconciliation | Balanced posting, no client-side receipts, stock atomicity | Zero unmapped orders, cash drawers reconciled |
+| `social_matchmaking_tournaments` | Pilot-only | `false` | Social feed, friendships, matchmaking, tournament registration/brackets | Audience isolation, wallet entry fee debit, idempotent retry | No unmoderated flagged posts, bracket integrity confirmed |
+| `marketplace_payouts` | Pilot-only | `false` | Automated provider payout batches | Sandbox UAT, D+2 threshold adherence | Reconciled bank statements, 0 unmapped transfers |
+| `marketplace_split_payments` | Pilot-only | `false` | Bill split groups and multi-payer shares | Split ledger balance tests pass | All group transactions settled or refunded |
+| `marketplace_slot_resale` | Pilot-only | `false` | Secondary marketplace court transfers | Transfer atomicity, anti-scalp rules verified | 0 duplicate slot ownership claims |
+
+### Entry / Exit Protocol
+1. **Pilot Admission**: Organization must be enumerated in `PILOT_ORGANIZATION_IDS` and achieve passing readiness checks.
+2. **Package Promotion**: All regression suites (`tests/Feature`, `type-check`, `playwright`) must be green.
+3. **Emergency Disablement**: Setting flag to `false` disables specialized routes while preserving all committed financial and operational history.
+
+---
+
+## 7. Runbook SOP-OPS-06: POS Stock Variance & Inventory Discrepancies
+
+### Symptoms
+- Cashier reports actual shelf inventory differs from on-hand quantity in POS view.
+- Sale rejection due to `INSUFFICIENT_STOCK` when physical item is present, or vice-versa.
+
+### Step-by-Step Resolution
+1. **Identify Inventory Drift**:
+   - Query stock movement ledger for the product:
+     ```sql
+     SELECT id, product_id, change_amount, reason, created_at 
+     FROM pos_stock_movements 
+     WHERE product_id = :product_id 
+     ORDER BY created_at DESC LIMIT 20;
+     ```
+2. **Perform Physical Count Audit**:
+   - Count physical stock at the venue.
+   - Calculate variance: `diff = physical_count - recorded_stock`.
+3. **Post Authorized Stock Adjustment**:
+   - Staff with `organization_owner` or `venue_manager` role executes adjustment API:
+     ```bash
+     curl -X POST /api/v2/pos/products/{id}/adjust-stock \
+       -H "Authorization: Bearer <token>" \
+       -H "X-Organization-ID: <org_id>" \
+       -d '{"adjustment": <diff>, "reason": "Physical count audit discrepancy approved by manager"}'
+     ```
+4. **Audit Recording**:
+   - The adjustment creates an immutable `pos_stock_movements` record referencing the actor and rationale.
+
+---
+
+## 8. Runbook SOP-MOD-07: Social Content Moderation & Dispute Handling
+
+### Symptoms
+- Community post or comment flagged by users for terms of service violation or inappropriate behavior.
+- Player dispute raised regarding match score, reputation penalty, or tournament bracket conflict.
+
+### Step-by-Step Resolution
+1. **Review Flagged Content**:
+   - Query open moderation reports:
+     ```sql
+     SELECT id, post_id, comment_id, reporter_id, reason, status, created_at 
+     FROM social_reports 
+     WHERE status = 'pending' ORDER BY created_at ASC;
+     ```
+2. **Apply Moderation Decision**:
+   - Authorized moderators (`organization_owner`, `venue_manager`) hide offensive content:
+     ```bash
+     curl -X POST /api/v2/social/posts/{id}/hide \
+       -H "Authorization: Bearer <token>" \
+       -H "X-Organization-ID: <org_id>" \
+       -d '{"reason": "Inappropriate content violating community guidelines"}'
+     ```
+   - Hidden content is immediately filtered from public and friend feeds while preserving the record for auditing.
+3. **Resolve Disputes**:
+   - For score or reputation disputes, review match logs and referee notes, then resolve via:
+     ```bash
+     curl -X POST /api/v2/social/reputation/disputes/{id}/resolve \
+       -H "Authorization: Bearer <token>" \
+       -H "X-Organization-ID: <org_id>" \
+       -d '{"decision": "upheld|dismissed", "note": "Verified by venue match coordinator"}'
+     ```
+4. **Audit and Restore**:
+   - If a post was hidden erroneously, authorized managers can restore it via the restore endpoint, recording the justification in the audit trail.

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineProps<{
   activeTab: 'all' | 'held' | 'confirmed' | 'cancelled'
   searchQuery: string
@@ -24,7 +28,7 @@ const emit = defineEmits<{
         :class="{ active: activeTab === 'all' }"
         @click="emit('update:activeTab', 'all')"
       >
-        <span>Tất cả</span>
+        <span>{{ t('v2Reservations.tabs.all') }}</span>
         <span class="tab-badge font-mono">{{ totalCount }}</span>
       </button>
 
@@ -34,7 +38,7 @@ const emit = defineEmits<{
         :class="{ active: activeTab === 'held' }"
         @click="emit('update:activeTab', 'held')"
       >
-        <span>Đang giữ chỗ</span>
+        <span>{{ t('v2Reservations.tabs.held') }}</span>
         <span class="tab-badge font-mono held-badge">{{ heldCount }}</span>
       </button>
 
@@ -44,7 +48,7 @@ const emit = defineEmits<{
         :class="{ active: activeTab === 'confirmed' }"
         @click="emit('update:activeTab', 'confirmed')"
       >
-        <span>Đã xác nhận</span>
+        <span>{{ t('v2Reservations.tabs.confirmed') }}</span>
         <span class="tab-badge font-mono confirmed-badge">{{ confirmedCount }}</span>
       </button>
 
@@ -55,7 +59,7 @@ const emit = defineEmits<{
         :class="{ active: activeTab === 'cancelled' }"
         @click="emit('update:activeTab', 'cancelled')"
       >
-        <span>Đã hủy</span>
+        <span>{{ t('v2Reservations.tabs.cancelled') }}</span>
         <span class="tab-badge font-mono muted-badge">{{ cancelledCount }}</span>
       </button>
     </div>
@@ -66,7 +70,7 @@ const emit = defineEmits<{
       <input
         :value="searchQuery"
         type="text"
-        placeholder="Tìm theo mã đơn, tên sân..."
+        :placeholder="t('v2Reservations.tabs.searchPlaceholder')"
         class="search-input"
         @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />

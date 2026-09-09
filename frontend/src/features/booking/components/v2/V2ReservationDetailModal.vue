@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
 
+const { t } = useI18n()
 defineProps<{
   show: boolean
   reservation: V2Reservation | null
@@ -21,8 +23,8 @@ const emit = defineEmits<{
         <div class="title-row">
           <span class="material-symbols-outlined header-icon">receipt_long</span>
           <div>
-            <h3 class="modal-title">Chi Tiết Báo Giá & Lịch Đặt V2</h3>
-            <span class="modal-subtitle font-mono">MÃ ĐƠN: #{{ reservation.code }}</span>
+            <h3 class="modal-title">{{ t('v2Reservations.modal.detailsTitle') }}</h3>
+            <span class="modal-subtitle font-mono">{{ t('v2Reservations.modal.reservationCode', { code: reservation.code }) }}</span>
           </div>
         </div>
         <button class="modal-close-btn" type="button" @click="emit('close')">
@@ -34,12 +36,12 @@ const emit = defineEmits<{
         <!-- Status & Court Summary -->
         <div class="summary-section">
           <div class="info-group">
-            <span class="info-label">Cụm sân thi đấu</span>
-            <strong class="info-value">{{ reservation.court?.name || 'Sân Aura Court' }}</strong>
+            <span class="info-label">{{ t('v2Reservations.modal.courtInfo') }}</span>
+            <strong class="info-value">{{ reservation.court?.name || 'Aura Court' }}</strong>
             <span class="info-sub">{{ reservation.court?.venue?.name || 'Aura Court' }} · {{ reservation.court?.venue?.address || '' }}</span>
           </div>
           <div class="info-group">
-            <span class="info-label">Trạng thái đơn</span>
+            <span class="info-label">{{ t('v2Reservations.modal.statusLabel') }}</span>
             <span class="status-badge" :class="reservation.status">
               {{ reservation.status }}
             </span>
@@ -50,19 +52,19 @@ const emit = defineEmits<{
         <div v-if="reservation.quote" class="quote-snapshot-box">
           <div class="snapshot-header">
             <span class="material-symbols-outlined snap-icon">lock</span>
-            <span>Bảo lưu giá bất biến (Snapshot)</span>
+            <span>{{ t('v2Reservations.modal.quoteSnapshotTitle') }}</span>
           </div>
           <div class="snapshot-details">
             <div class="detail-line">
-              <span class="detail-k">Token báo giá:</span>
+              <span class="detail-k">{{ t('v2Reservations.modal.quoteToken') }}</span>
               <span class="detail-v font-mono">#{{ reservation.quote.quote_token }}</span>
             </div>
             <div class="detail-line">
-              <span class="detail-k">Thời gian tạo:</span>
+              <span class="detail-k">{{ t('v2Reservations.modal.createdAt') }}</span>
               <span class="detail-v font-mono">{{ formatDate(reservation.created_at || '') }}</span>
             </div>
             <div class="detail-line">
-              <span class="detail-k">Hết hạn giữ giá:</span>
+              <span class="detail-k">{{ t('v2Reservations.modal.expiresAt') }}</span>
               <span class="detail-v font-mono">{{ formatDate(reservation.quote.expires_at) }}</span>
             </div>
           </div>
@@ -70,7 +72,7 @@ const emit = defineEmits<{
 
         <!-- Slots Table -->
         <div class="slots-table-section">
-          <h4 class="section-heading">Danh Sách Khung Giờ</h4>
+          <h4 class="section-heading">{{ t('v2Reservations.modal.slotsHeading') }}</h4>
           <div class="slots-list">
             <div
               v-for="(slot, idx) in reservation.slots"
@@ -92,7 +94,7 @@ const emit = defineEmits<{
         <!-- Total Breakdown -->
         <div class="total-breakdown-card">
           <div class="total-row">
-            <span>Tổng chi phí (Đã chốt cố định):</span>
+            <span>{{ t('v2Reservations.modal.totalPriceFixed') }}</span>
             <strong class="total-price font-mono">{{ money(reservation.total_amount) }}</strong>
           </div>
         </div>
@@ -100,7 +102,7 @@ const emit = defineEmits<{
 
       <div class="modal-footer">
         <button class="btn btn-primary" type="button" @click="emit('close')">
-          Đóng
+          {{ t('v2Reservations.modal.close') }}
         </button>
       </div>
     </div>

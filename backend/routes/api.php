@@ -6,11 +6,13 @@ use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminMembershipController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
 use App\Http\Controllers\Booking\BookingController;
 use App\Http\Controllers\Booking\WaitlistController;
+use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Court\CourtController;
 use App\Http\Controllers\Court\ReviewController;
 use App\Http\Controllers\Court\SportZoneController;
@@ -20,12 +22,16 @@ use App\Http\Controllers\Finance\FinancialReconciliationController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Organization\OrganizationController;
 use App\Http\Controllers\POS\PosController;
+use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Promotion\PromotionController;
 use App\Http\Controllers\Reservation\LegacyBookingAdapterController;
 use App\Http\Controllers\Reservation\V2PriceRuleController;
 use App\Http\Controllers\Reservation\V2ReservationController;
+use App\Http\Controllers\Social\CommunityFeedController;
+use App\Http\Controllers\Social\FriendshipController;
 use App\Http\Controllers\Social\SocialController;
 use App\Http\Controllers\Tournament\TournamentController;
+use App\Http\Controllers\Wallet\WalletDepositController;
 use App\Http\Controllers\Webhook\ProviderWebhookController;
 use App\Http\Controllers\Webhook\SepayWebhookController;
 use App\Http\Middleware\RequireOrganizationRole;
@@ -34,6 +40,7 @@ use App\Http\Middleware\SimulateDemoMutations;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -45,7 +52,33 @@ Route::prefix('v1')->group(function () {
     });
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('auth/verify-email/{id}/{hash}', function (Request $request, string $id, string $hash) {
+        $user = User::find($id);
+        if (! $user) {
+            return response()->json(['message' => __('auth.user_not_found')], 404);
+        }
+
+        if (! hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+            return response()->json(['message' => __('auth.invalid_verification_link')], 403);
+        }
+
+        if (! $request->hasValidSignature()) {
+            return response()->json(['message' => __('auth.expired_verification_link')], 403);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new \Illuminate\Auth\Events\Verified($user));
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => __('auth.email_verified_successfully')]);
+        }
+        $frontend = rtrim((string) config('app.frontend_url'), '/');
+        return redirect()->away($frontend.'/login?verified=1');
+    })->name('verification.verify');
     Route::get('courts', [CourtController::class, 'index']);
+    Route::get('courts/{court}', [CourtController::class, 'show']);
     Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
     Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
     Route::get('sport-zones', [SportZoneController::class, 'index']);
@@ -57,37 +90,55 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', function (Request $request, WalletPaymentService $walletService) {
             $user = $request->user();
             $wallet = $walletService->getOrCreateWallet($user->id);
-            $user->wallet_balance = $wallet->balance;
-            return response()->json($user);
+            return response()->json(array_merge($user->toArray(), [
+                'wallet_balance' => $wallet->balance,
+            ]));
         });
         Route::post('auth/onboarding', [AuthController::class, 'onboarding']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::post('auth/email/verification-notification', function (Request $request) {
+            if ($request->user()->hasVerifiedEmail()) {
+                return response()->json(['message' => 'Email đã được xác thực trước đó.']);
+            }
             $request->user()->sendEmailVerificationNotification();
-            return response()->json(['message' => 'Email verification link sent.']);
+            return response()->json(['message' => 'Liên kết xác thực email đã được gửi.']);
         });
-        Route::get('auth/verify-email/{id}/{hash}', function (EmailVerificationRequest $request) {
-            $request->fulfill();
-            return response()->json(['message' => 'Email has been verified.']);
-        })->name('verification.verify');
         Route::patch('profile', function (Request $request) {
             $data = $request->validate([
                 'name' => 'sometimes|string|max:255',
                 'phone' => 'nullable|string|max:20',
+                'avatar_url' => 'nullable|string|max:2048',
                 'avatar' => 'nullable|string|max:2048',
-                'bio' => 'nullable|string|max:1000',
+                'play_level' => 'nullable|string|in:beginner,intermediate,advanced,pro',
                 'skill_level' => 'nullable|string|in:beginner,intermediate,advanced,pro',
+                'favorite_sports' => 'nullable|array',
+                'favorite_sports.*' => 'string|max:50',
             ]);
+
             $user = $request->user();
-            $user->update($data);
+            $update = [];
+            if (array_key_exists('name', $data)) $update['name'] = $data['name'];
+            if (array_key_exists('phone', $data)) $update['phone'] = $data['phone'];
+            if (array_key_exists('avatar_url', $data)) $update['avatar_url'] = $data['avatar_url'];
+            elseif (array_key_exists('avatar', $data)) $update['avatar_url'] = $data['avatar'];
+            if (array_key_exists('play_level', $data)) $update['play_level'] = $data['play_level'];
+            elseif (array_key_exists('skill_level', $data)) $update['play_level'] = $data['skill_level'];
+            if (array_key_exists('favorite_sports', $data)) $update['favorite_sports'] = $data['favorite_sports'];
+
+            if (! empty($update)) {
+                $user->update($update);
+            }
+
             return response()->json($user->fresh());
         });
         Route::patch('profile/password', [AuthController::class, 'changePassword']);
         Route::get('wallet', function (Request $request, WalletPaymentService $walletService) {
-            $wallet = $walletService->getOrCreateWallet($request->user()->id);
+            $orgId = $request->query('organization_id') ? (int) $request->query('organization_id') : null;
+            $wallet = $walletService->getOrCreateWallet($request->user()->id, $orgId);
             $transactions = $wallet->transactions()->latest('id')->take(20)->get();
             return response()->json([
-                'id' => 'wallet-main',
+                'id' => $orgId ? "wallet-org-{$wallet->organization_id}" : 'wallet-main',
+                'organization_id' => $wallet->organization_id,
                 'balance' => $wallet->balance,
                 'currency' => $wallet->currency,
                 'points' => (int) ($wallet->balance / 1000),
@@ -95,9 +146,17 @@ Route::prefix('v1')->group(function () {
             ]);
         });
         Route::get('wallet/balance', function (Request $request, WalletPaymentService $walletService) {
-            $wallet = $walletService->getOrCreateWallet($request->user()->id);
-            return response()->json(['balance' => $wallet->balance, 'currency' => $wallet->currency]);
+            $orgId = $request->query('organization_id') ? (int) $request->query('organization_id') : null;
+            $wallet = $walletService->getOrCreateWallet($request->user()->id, $orgId);
+            return response()->json([
+                'balance' => $wallet->balance,
+                'currency' => $wallet->currency,
+                'organization_id' => $wallet->organization_id,
+            ]);
         });
+        Route::get('wallet/deposits', [WalletDepositController::class, 'index']);
+        Route::post('wallet/deposits', [WalletDepositController::class, 'store']);
+        Route::get('wallet/deposits/{reference}', [WalletDepositController::class, 'show']);
         Route::get('bookings', [BookingController::class, 'index']);
         Route::post('bookings', [BookingController::class, 'store'])->middleware('verified');
         Route::post('bookings/recurring', [BookingController::class, 'recurring'])->middleware('verified');
@@ -189,7 +248,19 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::post('organizations/{organization}/members', [OrganizationController::class, 'addMember']);
         Route::patch('organizations/{organization}/members/{member}', [OrganizationController::class, 'updateMemberRole']);
         Route::delete('organizations/{organization}/members/{member}', [OrganizationController::class, 'removeMember']);
+        Route::get('capabilities', [OrganizationController::class, 'capabilities']);
+        Route::get('organizations/{organization}/capabilities', [OrganizationController::class, 'capabilities']);
+        Route::get('customers', [CustomerController::class, 'index']);
+        Route::post('customers', [CustomerController::class, 'store'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier');
+        Route::get('customers/{customer}', [CustomerController::class, 'show']);
 
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
+
+        Route::get('wallet/deposits', [WalletDepositController::class, 'index']);
+        Route::post('wallet/deposits', [WalletDepositController::class, 'store']);
+        Route::get('wallet/deposits/{reference}', [WalletDepositController::class, 'show']);
         // Reservation commands are the canonical v2 write path. Each command
         // controller delegates to IdempotencyService and persists its outcome.
         Route::get('reservations', [V2ReservationController::class, 'index']);
@@ -200,9 +271,23 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::patch('price-rules/{rule}', [V2PriceRuleController::class, 'update']);
         Route::delete('price-rules/{rule}', [V2PriceRuleController::class, 'destroy']);
         Route::post('reservations', [V2ReservationController::class, 'store']);
+        Route::post('reservations/checkout', [V2ReservationController::class, 'checkout']);
         Route::get('reservations/{reservation}', [V2ReservationController::class, 'show']);
         Route::post('reservations/{reservation}/confirm', [V2ReservationController::class, 'confirm']);
         Route::post('reservations/{reservation}/cancel', [V2ReservationController::class, 'cancel']);
+
+        Route::middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier')->group(function () {
+            Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
+            Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
+            Route::get('attendance/{code}', [AttendanceController::class, 'show']);
+
+            Route::get('service-tabs', [ServiceTabController::class, 'index']);
+            Route::post('service-tabs', [ServiceTabController::class, 'store']);
+            Route::get('service-tabs/{reservation}', [ServiceTabController::class, 'show']);
+            Route::delete('service-tabs/{reservation}/items/{item}', [ServiceTabController::class, 'removeItem']);
+            Route::post('service-tabs/{tab}/settle', [ServiceTabController::class, 'settle']);
+            Route::post('service-tabs/{tab}/cancel', [ServiceTabController::class, 'cancel']);
+        });
 
         Route::get('recurring-series', [AdvancedBookingController::class, 'series']);
         Route::post('recurring-series', [AdvancedBookingController::class, 'createSeries']);
@@ -225,6 +310,34 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
             Route::get('social/profile', [SocialController::class, 'profile']);
             Route::put('social/profile', [SocialController::class, 'updateProfile']);
+            // Friendships & Connections
+            Route::get('social/friends', [FriendshipController::class, 'index']);
+            Route::get('social/friends/requests', [FriendshipController::class, 'requests']);
+            Route::post('social/friends/requests', [FriendshipController::class, 'sendRequest']);
+            Route::post('social/friends/requests/{friendship}/accept', [FriendshipController::class, 'accept']);
+            Route::post('social/friends/requests/{friendship}/decline', [FriendshipController::class, 'decline']);
+            Route::delete('social/friends/{friendship}', [FriendshipController::class, 'destroy']);
+            // Community Feed, Comments, Reactions & Moderation
+            Route::get('social/feed', [CommunityFeedController::class, 'index']);
+            Route::post('social/feed', [CommunityFeedController::class, 'store']);
+            Route::get('social/feed/reports', [CommunityFeedController::class, 'reports'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::get('social/feed/reports/{report}', [CommunityFeedController::class, 'showReport'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::get('social/feed/{post}', [CommunityFeedController::class, 'show']);
+            Route::put('social/feed/{post}', [CommunityFeedController::class, 'update']);
+            Route::delete('social/feed/{post}', [CommunityFeedController::class, 'destroy']);
+            Route::post('social/feed/{post}/comments', [CommunityFeedController::class, 'storeComment']);
+            Route::put('social/feed/comments/{comment}', [CommunityFeedController::class, 'updateComment']);
+            Route::delete('social/feed/comments/{comment}', [CommunityFeedController::class, 'destroyComment']);
+            Route::post('social/feed/{post}/react', [CommunityFeedController::class, 'reactPost']);
+            Route::post('social/feed/comments/{comment}/react', [CommunityFeedController::class, 'reactComment']);
+            Route::post('social/feed/{post}/report', [CommunityFeedController::class, 'reportPost']);
+            Route::post('social/feed/comments/{comment}/report', [CommunityFeedController::class, 'reportComment']);
+            Route::post('social/feed/{post}/hide', [CommunityFeedController::class, 'hidePost'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::post('social/feed/{post}/restore', [CommunityFeedController::class, 'restorePost'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::post('social/feed/comments/{comment}/hide', [CommunityFeedController::class, 'hideComment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::post('social/feed/comments/{comment}/restore', [CommunityFeedController::class, 'restoreComment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+
+
             Route::post('social/matches', [SocialController::class, 'create']);
             Route::post('social/matches/{post}/invite', [SocialController::class, 'invite']);
             Route::post('social/matches/{post}/join', [SocialController::class, 'join']);
@@ -236,18 +349,25 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('tournaments/{tournament}/regenerate', [TournamentController::class, 'regenerateBracket'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
             Route::post('tournaments/{tournament}/participants', [TournamentController::class, 'addParticipant'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
             Route::post('tournament-participants/{participant}/check-in', [TournamentController::class, 'checkIn']);
+            Route::post('tournaments/{tournament}/register', [TournamentController::class, 'register']);
+            Route::get('tournaments/{tournament}/registration', [TournamentController::class, 'registration']);
             Route::post('tournaments/{tournament}/fixtures/{fixture}/score', [TournamentController::class, 'score'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
         });
 
         Route::middleware('feature:tenant_pos_and_wallet')->group(function () {
             Route::get('pos/products', [PosController::class, 'products']);
+            Route::get('pos/products/{product}', [PosController::class, 'showProduct']);
             Route::post('pos/products', [PosController::class, 'storeProduct'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::put('pos/products/{product}', [PosController::class, 'updateProduct'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::delete('pos/products/{product}', [PosController::class, 'destroyProduct'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
             Route::post('pos/products/{product}/stock', [PosController::class, 'adjustStock'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::get('pos/inventory/movements', [PosController::class, 'movements'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::get('pos/inventory/kpis', [PosController::class, 'inventoryKpis'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
+            Route::post('pos/quote', [PosController::class, 'quote'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders', [PosController::class, 'completeOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
+            Route::get('pos/orders/{order}', [PosController::class, 'showOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
+            Route::post('pos/orders/{order}/confirm-qr', [PosController::class, 'confirmQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
+            Route::post('pos/orders/{order}/cancel-qr', [PosController::class, 'cancelQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::get('pos/shifts', [PosController::class, 'shifts'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::get('pos/shifts/active', [PosController::class, 'activeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/shifts', [PosController::class, 'openShift'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
@@ -269,11 +389,14 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('finance/beneficiaries', [FinanceController::class, 'storeBeneficiary']);
             Route::get('finance/settlements', [FinanceController::class, 'settlements']);
             Route::post('finance/settlements/snapshot', [FinanceController::class, 'snapshotSettlement']);
+            Route::get('finance/settlements.csv', [FinanceController::class, 'exportSettlementsCsv']);
             Route::get('finance/payouts', [FinanceController::class, 'payouts']);
             Route::post('finance/payouts', [FinanceController::class, 'createPayout']);
             Route::post('finance/payouts/{payout}/approve', [FinanceController::class, 'approvePayout']);
             Route::post('finance/payouts/{payout}/submit', [FinanceController::class, 'submitPayout']);
             Route::post('finance/payouts/{payout}/status', [FinanceController::class, 'payoutStatus']);
+            Route::get('finance/payouts.csv', [FinanceController::class, 'exportPayoutsCsv']);
+            Route::get('finance/exceptions.csv', [FinanceController::class, 'exportExceptionsCsv']);
             Route::get('finance/exceptions/stats', [FinanceExceptionController::class, 'stats']);
             Route::get('finance/exceptions', [FinanceExceptionController::class, 'index']);
             Route::post('finance/exceptions/{id}/resolve', [FinanceExceptionController::class, 'resolve']);

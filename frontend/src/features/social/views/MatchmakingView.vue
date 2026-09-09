@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useMatchmaking } from '../composables/useMatchmaking'
+import { useAuthStore } from '@/stores/auth'
 import { SkeletonLoader, AuraButton } from '@/shared/components'
 
 import MatchmakingHero from '../components/MatchmakingHero.vue'
@@ -7,7 +9,16 @@ import MatchmakingFilters from '../components/MatchmakingFilters.vue'
 import MatchCard from '../components/MatchCard.vue'
 import MatchJoinModal from '../components/MatchJoinModal.vue'
 import PartnerFinderList from '../components/PartnerFinderList.vue'
+import CommunityFeedPanel from '../components/CommunityFeedPanel.vue'
+import SocialConnectionsPanel from '../components/SocialConnectionsPanel.vue'
+import SocialModerationModal from '../components/SocialModerationModal.vue'
 
+const auth = useAuthStore()
+const showModModal = ref(false)
+const canModerate = computed(() => {
+  const role = (auth.user?.role as string) || ''
+  return role === 'admin' || role === 'organization_owner' || role === 'venue_manager'
+})
 const {
   loading,
   processing,
@@ -73,9 +84,33 @@ const {
       @reset="resetFilters"
     />
 
+    <!-- Moderation Trigger Button for Managers -->
+    <div v-if="canModerate" class="moderation-bar">
+      <button type="button" class="btn-open-mod" @click="showModModal = true">
+        <span class="material-symbols-outlined">gavel</span>
+        <span>Quản Lý Báo Cáo & Kiểm Duyệt Cộng Đồng</span>
+      </button>
+    </div>
+
+    <!-- Tab 5: Community Feed -->
+    <section v-if="activeTab === 'feed'" class="tab-content-panel">
+      <CommunityFeedPanel />
+    </section>
+
+    <!-- Tab 6: Friends & Connections -->
+    <section v-else-if="activeTab === 'connections'" class="tab-content-panel">
+      <SocialConnectionsPanel />
+    </section>
+
+    <!-- Tab 4: Partner Finder -->
+    <PartnerFinderList
+      v-else-if="activeTab === 'partners'"
+      :partners="partners"
+      @connect="showNotice(`Đã gửi lời mời giao lưu đến ${$event.name}!`)"
+    />
+
     <!-- Tab 1 & 2 & 3: Matches Grid -->
-    <section v-if="activeTab !== 'partners'" class="matches-section">
-      <!-- Skeleton Loading State -->
+    <section v-else class="matches-section">
       <div v-if="loading" class="matches-grid">
         <div v-for="i in 6" :key="i" class="match-skeleton-card">
           <div class="sk-top">
@@ -123,12 +158,6 @@ const {
       </div>
     </section>
 
-    <!-- Tab 4: Partner Finder -->
-    <PartnerFinderList
-      v-else
-      :partners="partners"
-      @connect="showNotice(`Đã gửi lời mời giao lưu đến ${$event.name}!`)"
-    />
 
     <!-- Join Match Modal -->
     <MatchJoinModal
@@ -137,6 +166,12 @@ const {
       :processing="processing"
       @close="selectedMatchForJoin = null"
       @confirm="joinMatch"
+    />
+
+    <!-- Moderation Modal -->
+    <SocialModerationModal
+      :show="showModModal"
+      @close="showModModal = false"
     />
   </main>
 </template>

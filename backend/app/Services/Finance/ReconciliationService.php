@@ -34,7 +34,7 @@ class ReconciliationService
             $from = now()->parse($date)->startOfDay();
             $to = now()->parse($date)->endOfDay();
             $providerTotal = (int) ProviderEvent::query()->where('organization_id', $organization->id)->whereIn('status', ['PAID', 'COMPLETED', 'SUCCEEDED', 'SUCCESS', 'paid', 'completed', 'succeeded', 'success'])->whereBetween('verified_at', [$from, $to])->sum('amount');
-            $journalTotal = (int) Journal::query()->where('organization_id', $organization->id)->whereIn('event_type', ['provider.collection', 'reservation.payment', 'booking.payment'])->whereBetween('posted_at', [$from, $to])->sum('total_credit');
+            $journalTotal = (int) Journal::query()->where('organization_id', $organization->id)->whereIn('event_type', ['provider.collection', 'reservation.payment', 'booking.payment', 'wallet.deposit'])->whereBetween('posted_at', [$from, $to])->sum('total_credit');
             $settlementTotal = (int) Settlement::query()->where('organization_id', $organization->id)->whereBetween('period_start', [$from->toDateString(), $to->toDateString()])->sum('tenant_payable');
             $payoutTotal = (int) Payout::query()->where('organization_id', $organization->id)->whereBetween('created_at', [$from, $to])->whereIn('status', ['submitted', 'paid', 'failed', 'reversed'])->sum('amount');
             $mismatch = abs($providerTotal - $journalTotal);

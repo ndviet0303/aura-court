@@ -47,7 +47,7 @@ describe('AdminScheduleView', () => {
             id: 2,
             name: 'Sân 02 - VIP Match',
             venue: { id: 2, name: 'Aura Westside' },
-            blocks: [],
+            blocks: [] as any[],
           },
         ]
       }
@@ -62,6 +62,16 @@ describe('AdminScheduleView', () => {
       }
       return []
     })
+
+    vi.mocked(api.post).mockResolvedValue({
+      id: 202,
+      court_id: 1,
+      starts_at: '2026-10-15T09:00',
+      ends_at: '2026-10-15T11:00',
+      reason: 'Thay lưới thi đấu',
+    })
+
+    vi.mocked(api.delete).mockResolvedValue({ message: 'Đã mở khóa lịch sân.' })
   })
 
   it('renders standard weekly schedule, special dates and maintenance panel', async () => {
@@ -149,5 +159,144 @@ describe('AdminScheduleView', () => {
 
     expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(true)
     expect(wrapper.find('.modal-title-text').text()).toContain('Nhật ký kiểm toán')
+  })
+
+  it('persists maintenance block via API and preserves it across reload', async () => {
+    let apiCourts = [
+      {
+        id: 1,
+        name: 'Sân 01 - Tiêu Chuẩn',
+        venue: { id: 1, name: 'Aura Downtown' },
+        blocks: [] as any[],
+      },
+    ]
+
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/courts') return apiCourts
+      if (url === '/admin/venues') return [{ id: 1, name: 'Aura Downtown' }]
+      if (url === '/admin/audit-logs') return { data: [] }
+      return []
+    })
+
+    const wrapper = mount(AdminScheduleView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    // Initially no maintenance blocks
+    expect(wrapper.findAll('.block-row').length).toBe(0)
+
+    // Open modal
+    await wrapper.find('.btn-schedule-downtime-cta').trigger('click')
+    expect(wrapper.find('.modal-overlay-backdrop').exists()).toBe(true)
+
+    // Submit downtime modal
+    const downtimeModal = wrapper.findComponent({ name: 'DowntimeScheduleModal' })
+    expect(downtimeModal.exists()).toBe(true)
+
+    downtimeModal.vm.$emit('submit', {
+      court_id: 1,
+      starts_at: '2026-10-15T09:00',
+      ends_at: '2026-10-15T11:00',
+      reason: 'Bảo dưỡng định kỳ',
+    })
+    await flushPromises()
+
+    // Verify API was called
+    expect(api.post).toHaveBeenCalledWith('/admin/courts/1/blocks', {
+      starts_at: '2026-10-15T09:00',
+      ends_at: '2026-10-15T11:00',
+      reason: 'Bảo dưỡng định kỳ',
+    })
+
+    // Backend now returns the updated blocks on reload
+    apiCourts = [
+      {
+        id: 1,
+        name: 'Sân 01 - Tiêu Chuẩn',
+        venue: { id: 1, name: 'Aura Downtown' },
+        blocks: [
+          {
+            id: 202,
+            court_id: 1,
+            starts_at: '2026-10-15T09:00',
+            ends_at: '2026-10-15T11:00',
+            reason: 'Bảo dưỡng định kỳ',
+          },
+        ],
+      },
+    ]
+
+    // Mount new instance (simulating page reload)
+    const reloadWrapper = mount(AdminScheduleView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    // Proves block is rendered after reload
+    expect(reloadWrapper.findAll('.block-row').length).toBe(1)
+    expect(reloadWrapper.find('.block-reason').text()).toBe('Bảo dưỡng định kỳ')
+  })
+
+  it('persists court unlock via API and updates list across reload', async () => {
+    let apiCourts = [
+      {
+        id: 1,
+        name: 'Sân 01 - Tiêu Chuẩn',
+        venue: { id: 1, name: 'Aura Downtown' },
+        blocks: [
+          {
+            id: 101,
+            court_id: 1,
+            starts_at: '2026-10-12T08:00',
+            ends_at: '2026-10-14T17:00',
+            reason: 'Court 4 Resurfacing',
+          },
+        ],
+      },
+    ]
+
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/courts') return apiCourts
+      if (url === '/admin/venues') return [{ id: 1, name: 'Aura Downtown' }]
+      if (url === '/admin/audit-logs') return { data: [] }
+      return []
+    })
+
+    const wrapper = mount(AdminScheduleView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    // Unlock court
+    const unlockBtn = wrapper.find('.btn-unlock-court')
+    expect(unlockBtn.exists()).toBe(true)
+    await unlockBtn.trigger('click')
+
+    // Confirm modal
+    const confirmModal = wrapper.findComponent({ name: 'CourtUnlockConfirmModal' })
+    expect(confirmModal.exists()).toBe(true)
+    confirmModal.vm.$emit('confirm')
+    await flushPromises()
+
+    // Verify delete API called
+    expect(api.delete).toHaveBeenCalledWith('/admin/courts/1/blocks/101')
+
+    // Simulate backend reload with block removed
+    apiCourts = [
+      {
+        id: 1,
+        name: 'Sân 01 - Tiêu Chuẩn',
+        venue: { id: 1, name: 'Aura Downtown' },
+        blocks: [],
+      },
+    ]
+
+    const reloadWrapper = mount(AdminScheduleView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    expect(reloadWrapper.findAll('.block-row').length).toBe(0)
   })
 })

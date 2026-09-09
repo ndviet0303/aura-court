@@ -20,7 +20,7 @@ const filteredCustomers = computed(() => {
   const q = customerQuery.value.trim().toLowerCase()
   if (!q) return props.customerDatabase
   return props.customerDatabase.filter(
-    (c) => c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.tier.toLowerCase().includes(q)
+    (c) => c.name.toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.tier ? c.tier.toLowerCase().includes(q) : false)
   )
 })
 
@@ -83,8 +83,8 @@ function formatMoney(val: number): string {
                 <span class="cust-phone">{{ cust.phone }}</span>
               </div>
               <div class="cust-badges-line">
-                <span class="tier-pill" :class="cust.tier.toLowerCase()">
-                  {{ cust.tier }}
+                <span class="tier-pill" :class="(cust.tier || 'standard').toLowerCase()">
+                  {{ cust.tier || 'Standard' }}
                 </span>
                 <span class="discount-pill">
                   -{{ Math.round(cust.discount_rate * 100) }}%

@@ -35,7 +35,7 @@ const {
         <CourtSpecsGrid />
 
         <!-- Amenities -->
-        <CourtAmenitiesGrid />
+        <CourtAmenitiesGrid :amenities="court.amenities" />
 
         <!-- Player Reviews & Ratings Section -->
         <CourtReviewsSection

@@ -8,8 +8,8 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const loaded = ref(false)
 
-  async function load() {
-    if (loaded.value) return user.value
+  async function load(force = false) {
+    if (loaded.value && !force) return user.value
     loading.value = true
     try {
       user.value = await authApi.me()

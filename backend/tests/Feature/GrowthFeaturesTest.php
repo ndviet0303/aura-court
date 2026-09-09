@@ -16,6 +16,7 @@ use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class GrowthFeaturesTest extends TestCase
@@ -47,6 +48,28 @@ class GrowthFeaturesTest extends TestCase
         $this->assertSame(160000, $booking->total_amount);
         $this->assertSame(40000, $booking->discount_amount);
         $this->assertDatabaseHas('coupons', ['id' => $coupon->id, 'usage_count' => 1]);
+    }
+
+    public function test_expired_or_invalid_coupon_rejected_in_booking(): void
+    {
+        $user = User::factory()->create();
+        $this->fundUserWallet($user, 500000);
+        $venue = Venue::firstOrFail();
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Kiểm Tra Mã', 'is_active' => true]);
+        $date = now()->addDays(2)->setTime(10, 0);
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 200000, 'is_active' => true]);
+
+        Coupon::create([
+            'code' => 'EXPIRED_CODE',
+            'discount_type' => 'percent',
+            'discount_value' => 15,
+            'starts_at' => now()->subMonths(2),
+            'ends_at' => now()->subDay(),
+            'is_active' => true,
+        ]);
+
+        $this->expectException(ValidationException::class);
+        app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()], 'EXPIRED_CODE');
     }
 
     public function test_cancelled_slot_notifies_waitlist(): void

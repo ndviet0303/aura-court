@@ -79,3 +79,58 @@ Before any subsequent phase (Phase 1, 2, 3, 4) is activated in production, the f
 - Product Lead:     [ ] APPROVED  [ ] REJECTED
 - Finance/Ops Lead: [ ] APPROVED  [ ] REJECTED
 ```
+
+---
+
+## 5. Independent Pilot Activation and Disable Procedures
+
+### 5.1 Independent Pilot Activation Procedure
+Each pilot package (`tenant_pos_and_wallet`, `social_matchmaking_tournaments`, `marketplace_payouts`, `marketplace_split_payments`, `marketplace_slot_resale`) can be independently enabled for specific tenant organizations without affecting the rest of the platform.
+
+1. **Organization Eligibility Verification**:
+   - Verify the candidate organization has completed KYC and holds active membership in the approved pilot cohort.
+   - Verify that baseline data migrations and mapping checksums are healthy.
+
+2. **Scoped Activation Configuration**:
+   - Append the organization ID to `PILOT_ORGANIZATION_IDS` in the environment configuration:
+     ```bash
+     PILOT_ORGANIZATION_IDS="1,2,3,<new_pilot_org_id>"
+     ```
+   - Enable the targeted package flag:
+     ```bash
+     FEATURE_TENANT_POS_WALLET=true # or FEATURE_SOCIAL_TOURNAMENTS=true, etc.
+     ```
+   - Reload configuration cache:
+     ```bash
+     php artisan config:cache
+     ```
+
+3. **Verification of Scoped Exposure**:
+   - Verify that the target organization has access to the new capabilities.
+   - Verify that non-pilot organizations remain strictly blocked with `403 Forbidden` on pilot endpoints.
+
+### 5.2 Independent Pilot Disable Procedure (Preserving Committed History)
+If an issue is encountered, a package can be disabled immediately for a specific organization or globally:
+
+1. **Immediate Ingress Disablement**:
+   - Remove the organization ID from `PILOT_ORGANIZATION_IDS`, or disable the specific package flag:
+     ```bash
+     FEATURE_TENANT_POS_WALLET=false
+     ```
+   - Reload configuration cache:
+     ```bash
+     php artisan config:cache
+     ```
+
+2. **Preservation of Committed History (Core Invariant)**:
+   - **NO DATA DELETION**: Under no circumstances are existing POS orders, payments, wallet transactions, ledger journal entries, tournament participants, or reservations dropped or purged.
+   - Existing records remain fully queryable by finance, auditors, and administrators.
+   - Open cash shifts and pending service tabs can be reconciled using canonical administrative and finance tools.
+
+3. **Post-Disable Audit**:
+   - Run `php artisan finance:reconcile --organization=<org_id>` to verify that all balances and journals remain intact and balanced.
+   - Run `php artisan v2:backfill-legacy-bookings --audit --organization=<org_id>` to confirm legacy-to-canonical mapping consistency.
+
+### 5.3 Production Activation Governance
+**Production Activation Constraint**:
+No package or pilot capability shall be activated globally across production without a separate, explicit user instruction. All changes in this phase remain strictly scoped to approved pilot cohorts and test/staging environments.

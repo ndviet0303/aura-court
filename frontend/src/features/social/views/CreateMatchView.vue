@@ -36,6 +36,7 @@ const {
   selectedFriendsCount,
   previewMatch,
   loadCourts,
+  loadFriends,
   toggleFriend,
   selectQuickVenue,
   submitMatch,
@@ -43,6 +44,7 @@ const {
 
 onMounted(() => {
   loadCourts()
+  loadFriends()
 })
 </script>
 

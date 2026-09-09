@@ -7,13 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
+use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrganizationController extends Controller
 {
-    public function __construct(private readonly TenantContext $tenantContext) {}
+    public function __construct(
+        private readonly TenantContext $tenantContext,
+        private readonly FeatureFlagService $featureFlags,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -35,6 +39,27 @@ class OrganizationController extends Controller
         $organization->load(['venues.courts', 'members.user']);
 
         return response()->json(['organization' => $organization]);
+    }
+    public function capabilities(Request $request, ?Organization $organization = null): JsonResponse
+    {
+        $targetOrg = $organization ?? $this->tenantContext->getOrganization();
+        if (! $targetOrg && $request->has('organization_id')) {
+            $targetOrg = Organization::find((int) $request->input('organization_id'));
+        }
+
+        $orgId = $targetOrg?->id;
+        $capabilities = $this->featureFlags->effectiveCapabilities($orgId);
+
+        $user = $request->user();
+        $role = $orgId && $user ? $user->roleInOrganization($orgId) : null;
+        $isPlatformAdmin = $user ? $user->isPlatformAdmin() : false;
+
+        return response()->json([
+            'organization_id' => $orgId,
+            'capabilities' => $capabilities,
+            'role' => $role,
+            'is_platform_admin' => $isPlatformAdmin,
+        ]);
     }
 
     public function update(Request $request, Organization $organization): JsonResponse

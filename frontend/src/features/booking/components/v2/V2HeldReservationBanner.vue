@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
 
+const { t } = useI18n()
 defineProps<{
   reservation: V2Reservation
   confirmingCode: string | null
@@ -28,11 +30,11 @@ const emit = defineEmits<{
 
     <div class="banner-info-col">
       <div class="held-eyebrow">
-        <span class="badge-held">ĐANG GIỮ CHỖ TỨC THÌ</span>
-        <span class="code font-mono">MÃ ĐƠN: #{{ reservation.code }}</span>
+        <span class="badge-held">{{ t('v2Reservations.heldBanner.badge') }}</span>
+        <span class="code font-mono">{{ t('v2Reservations.heldBanner.orderCode', { code: reservation.code }) }}</span>
       </div>
       <h3 class="held-title">
-        {{ reservation.court?.name || 'Sân Aura Court' }} · {{ reservation.court?.venue?.name || 'Aura Badminton Center' }}
+        {{ reservation.court?.name || 'Aura Court' }} · {{ reservation.court?.venue?.name || 'Aura Sports Club' }}
       </h3>
       <div class="held-meta">
         <span v-if="reservation.slots && reservation.slots.length && reservation.slots[0]" class="meta-item">
@@ -60,7 +62,7 @@ const emit = defineEmits<{
         <span class="material-symbols-outlined" :class="{ spinning: confirmingCode === reservation.code }">
           {{ confirmingCode === reservation.code ? 'refresh' : 'check_circle' }}
         </span>
-        <span>{{ confirmingCode === reservation.code ? 'Đang xác nhận...' : 'Xác Nhận Đặt Sân' }}</span>
+        <span>{{ confirmingCode === reservation.code ? t('v2Reservations.heldBanner.confirming') : t('v2Reservations.heldBanner.confirmBtn') }}</span>
       </button>
 
       <button
@@ -69,7 +71,7 @@ const emit = defineEmits<{
         @click="emit('cancel', reservation)"
       >
         <span class="material-symbols-outlined">close</span>
-        <span>Hủy</span>
+        <span>{{ t('v2Reservations.heldBanner.cancelBtn') }}</span>
       </button>
     </div>
   </div>

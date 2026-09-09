@@ -25,10 +25,15 @@ class WaitlistService
         $court = Court::query()->whereKey($courtId)->where('is_active', true)->firstOrFail();
         $startUtc = $start->copy()->utc();
         $startDbValues = array_values(array_unique([$startUtc->format('Y-m-d H:i:s'), $start->format('Y-m-d H:i:s')]));
-        $occupied = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])
+        $v1Occupied = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])
             ->whereHas('slots', fn ($query) => $query->whereIn('starts_at', $startDbValues)->whereIn('status', ['held', 'confirmed']))
             ->exists();
-        if (! $occupied) {
+        $v2Occupied = \App\Models\ReservationSlot::query()
+            ->where('court_id', $court->id)
+            ->whereIn('starts_at', $startDbValues)
+            ->whereIn('status', ['held', 'confirmed'])
+            ->exists();
+        if (! $v1Occupied && ! $v2Occupied) {
             throw ValidationException::withMessages(['starts_at' => 'Slot đang còn trống, bạn có thể đặt ngay.']);
         }
 

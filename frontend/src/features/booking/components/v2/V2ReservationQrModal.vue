@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
+
+const { t } = useI18n()
 
 defineProps<{
   show: boolean
@@ -20,8 +23,8 @@ const emit = defineEmits<{
         <div class="title-row">
           <span class="material-symbols-outlined header-icon">qr_code_2</span>
           <div>
-            <h3 class="modal-title">Thẻ Vào Sân Aura Court Pass</h3>
-            <span class="modal-subtitle font-mono">MÃ ĐƠN: #{{ reservation.code }}</span>
+            <h3 class="modal-title">{{ t('v2Reservations.modal.qrTitle') }}</h3>
+            <span class="modal-subtitle font-mono">{{ t('v2Reservations.modal.reservationCode', { code: reservation.code }) }}</span>
           </div>
         </div>
         <button class="modal-close-btn" type="button" @click="emit('close')">
@@ -31,7 +34,7 @@ const emit = defineEmits<{
 
       <div class="modal-body">
         <div class="court-summary-badge">
-          <span class="court-name">{{ reservation.court?.name || 'Sân Aura Court' }}</span>
+          <span class="court-name">{{ reservation.court?.name || 'Aura Court' }}</span>
           <span class="venue-address">
             <span class="material-symbols-outlined loc-icon">location_on</span>
             {{ reservation.court?.venue?.name || 'Aura Court' }}
@@ -41,13 +44,12 @@ const emit = defineEmits<{
         <div class="qr-box">
           <img
             :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=AURA_V2_RESERVATION_${reservation.code}&margin=8`"
-            :alt="`QR Vào sân ${reservation.code}`"
+            :alt="`Aura QR #${reservation.code}`"
             class="qr-image"
           />
           <span class="qr-instruction">
-            Quét mã này tại máy quét cổng tự động hoặc quầy tiếp đón
+            {{ t('v2Reservations.modal.qrInstruction') }}
           </span>
-        </div>
 
         <div class="schedule-summary-box">
           <div
@@ -64,7 +66,7 @@ const emit = defineEmits<{
 
       <div class="modal-footer">
         <button class="btn btn-primary" type="button" @click="emit('close')">
-          Hoàn tất
+          {{ t('v2Reservations.modal.done') }}
         </button>
       </div>
     </div>

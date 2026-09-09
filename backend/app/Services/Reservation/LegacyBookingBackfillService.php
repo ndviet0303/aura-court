@@ -12,8 +12,100 @@ use Illuminate\Support\Facades\DB;
 
 class LegacyBookingBackfillService
 {
-    public function backfill(?int $organizationId = null): array
+    public function audit(?int $organizationId = null): array
     {
+        $query = Booking::query()->with(['court.venue', 'slots'])->orderBy('id');
+        if ($organizationId !== null) {
+            $query->whereHas('court.venue', fn ($venue) => $venue->where('organization_id', $organizationId));
+        }
+
+        $bookings = $query->get();
+        $totalBookings = $bookings->count();
+        $legacyIds = $bookings->pluck('id');
+
+        $mappingsQuery = LegacyBookingMapping::query()->whereIn('legacy_booking_id', $legacyIds);
+        if ($organizationId !== null) {
+            $mappingsQuery->where('organization_id', $organizationId);
+        }
+        $mappings = $mappingsQuery->get()->keyBy('legacy_booking_id');
+
+        $orphans = [];
+        $collisions = [];
+        $mappedCount = 0;
+        $pendingCount = 0;
+
+        foreach ($bookings as $booking) {
+            $venueOrgId = $booking->court?->venue?->organization_id;
+            if (! $venueOrgId) {
+                $orphans[] = [
+                    'legacy_booking_id' => $booking->id,
+                    'code' => $booking->code,
+                    'reason' => 'Missing venue or organization owner',
+                ];
+                continue;
+            }
+
+            if ($booking->slots->isEmpty()) {
+                $orphans[] = [
+                    'legacy_booking_id' => $booking->id,
+                    'code' => $booking->code,
+                    'reason' => 'Booking has zero slots',
+                ];
+                continue;
+            }
+
+            if ($mappings->has($booking->id)) {
+                $mapping = $mappings->get($booking->id);
+                $expectedChecksum = $this->bookingChecksum($booking);
+                if ($mapping->source_checksum !== $expectedChecksum) {
+                    $collisions[] = [
+                        'legacy_booking_id' => $booking->id,
+                        'code' => $booking->code,
+                        'reason' => 'Source checksum mismatch against existing mapping',
+                    ];
+                } else {
+                    $mappedCount++;
+                }
+            } else {
+                $pendingCount++;
+            }
+        }
+
+        $legacySlotCount = $bookings->flatMap->slots->count();
+        $slotMappingsCount = LegacyBookingSlotMapping::query()
+            ->when($organizationId !== null, fn ($q) => $q->where('organization_id', $organizationId))
+            ->count();
+
+        return [
+            'dry_run' => true,
+            'organization_id' => $organizationId,
+            'legacy_bookings_total' => $totalBookings,
+            'mapped_count' => $mappedCount,
+            'pending_count' => $pendingCount,
+            'orphan_count' => count($orphans),
+            'orphans' => $orphans,
+            'collision_count' => count($collisions),
+            'collisions' => $collisions,
+            'legacy_total_amount' => (int) $bookings->sum('total_amount'),
+            'mapped_total_amount' => (int) $mappings->sum('legacy_total_amount'),
+            'legacy_slots' => $legacySlotCount,
+            'mapped_slots' => $slotMappingsCount,
+            'valid' => count($orphans) === 0 && count($collisions) === 0 && $pendingCount === 0,
+        ];
+    }
+
+    public function backfill(?int $organizationId = null, bool $dryRun = false): array
+    {
+        if ($dryRun) {
+            $audit = $this->audit($organizationId);
+            $audit['created'] = 0;
+            $audit['existing'] = $audit['mapped_count'];
+            return $audit;
+        }
+
+        $audit = $this->audit($organizationId);
+        $orphanIds = collect($audit['orphans'])->pluck('legacy_booking_id')->all();
+
         $query = Booking::query()->with(['court.venue', 'slots'])->orderBy('id');
         if ($organizationId !== null) {
             $query->whereHas('court.venue', fn ($venue) => $venue->where('organization_id', $organizationId));
@@ -22,12 +114,16 @@ class LegacyBookingBackfillService
         $bookings = $query->get();
         $created = 0;
         $existing = 0;
+
         foreach ($bookings as $booking) {
+            if (in_array($booking->id, $orphanIds, true)) {
+                continue;
+            }
+
             $mapping = LegacyBookingMapping::query()->where('legacy_booking_id', $booking->id)->first();
             if ($mapping) {
                 $this->assertMapping($booking, $mapping);
                 $existing++;
-
                 continue;
             }
 
@@ -36,10 +132,41 @@ class LegacyBookingBackfillService
         }
 
         $result = $this->validate($organizationId);
+        $result['dry_run'] = false;
         $result['created'] = $created;
         $result['existing'] = $existing;
+        $result['orphan_count'] = count($audit['orphans']);
+        $result['orphans'] = $audit['orphans'];
+        $result['collision_count'] = count($audit['collisions']);
+        $result['collisions'] = $audit['collisions'];
 
         return $result;
+    }
+
+    public function resolveCanonicalReservationId(int $idOrLegacyId, int $organizationId): int
+    {
+        // 1. Check if it's already a valid canonical reservation for this tenant
+        $canonicalExists = Reservation::query()
+            ->where('organization_id', $organizationId)
+            ->where('id', $idOrLegacyId)
+            ->exists();
+
+        if ($canonicalExists) {
+            return $idOrLegacyId;
+        }
+
+        // 2. Explicitly resolve legacy booking mapping
+        $mapping = LegacyBookingMapping::query()
+            ->where('organization_id', $organizationId)
+            ->where('legacy_booking_id', $idOrLegacyId)
+            ->first();
+
+        if ($mapping) {
+            return (int) $mapping->reservation_id;
+        }
+
+        // 3. Reject unmapped legacy booking - NO numerical ID coincidence fallback!
+        abort(422, "Legacy booking {$idOrLegacyId} has no canonical reservation mapping.");
     }
 
     public function backfillBooking(Booking $booking): LegacyBookingMapping

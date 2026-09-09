@@ -16,4 +16,63 @@ export const walletApi = {
 
   spend: (payload: SpendWalletPayload) =>
     api.post('/wallet/spend', payload),
+
+  initiateDeposit: (payload: {
+    amount: number
+    organization_id?: number
+    provider?: string
+    idempotency_key?: string
+  }) =>
+    api.post<{
+      id: number
+      reference: string
+      organization_id: number
+      amount: number
+      currency: string
+      status: string
+      provider: string
+      transfer_info: {
+        bank: string
+        account_number: string
+        account_name: string
+        code: string
+        amount: number
+        qr_url: string
+      }
+      created_at: string
+    }>('/wallet/deposits', payload),
+
+  getDepositStatus: (reference: string) =>
+    api.get<{
+      id: number
+      reference: string
+      organization_id: number
+      amount: number
+      currency: string
+      status: string
+      provider: string
+      transfer_info?: any
+      wallet_balance: number
+      succeeded_at?: string
+      failed_at?: string
+      created_at: string
+    }>(`/wallet/deposits/${encodeURIComponent(reference)}`),
+
+  getDeposits: (organizationId?: number) =>
+    api.get<{
+      deposits: Array<{
+        id: number
+        reference: string
+        organization_id: number
+        amount: number
+        currency: string
+        status: string
+        provider: string
+        succeeded_at?: string
+        failed_at?: string
+        created_at: string
+      }>
+    }>('/wallet/deposits', {
+      params: organizationId ? { organization_id: organizationId } : undefined,
+    }),
 }

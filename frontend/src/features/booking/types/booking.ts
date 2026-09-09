@@ -70,6 +70,8 @@ export type PaymentInfo = {
     partnerName?: string
     notes?: string
   }
+  receipt?: any
+  participant?: any
 }
 
 export type Refund = {

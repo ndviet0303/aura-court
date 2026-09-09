@@ -92,4 +92,9 @@ class Booking extends Model
     {
         return $this->hasOne(Review::class);
     }
+
+    public function legacyMapping(): HasMany
+    {
+        return $this->hasMany(LegacyBookingMapping::class, 'legacy_booking_id');
+    }
 }

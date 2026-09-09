@@ -67,6 +67,9 @@ export const bookingApi = {
   holdReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(payload: import('../types/v2Reservation').V2HoldReservationPayload) =>
     apiV2.post<T>('/reservations', payload),
 
+  checkoutReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(payload: import('../types/v2Reservation').V2HoldReservationPayload) =>
+    apiV2.post<T>('/reservations/checkout', payload),
+
   confirmReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(code: string) =>
     apiV2.post<T>(`/reservations/${code}/confirm`),
 

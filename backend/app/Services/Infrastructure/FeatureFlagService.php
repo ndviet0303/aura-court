@@ -25,4 +25,14 @@ class FeatureFlagService
         abort_unless($this->enabled($flag, $organizationId), 404, 'This capability is not enabled for the organization.');
     }
 
+    public function effectiveCapabilities(?int $organizationId = null): array
+    {
+        $flags = array_keys(config('features.flags', []));
+        $result = [];
+        foreach ($flags as $flag) {
+            $result[$flag] = $this->enabled($flag, $organizationId);
+        }
+
+        return $result;
+    }
 }

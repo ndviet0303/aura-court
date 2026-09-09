@@ -7,6 +7,7 @@ use App\Models\MatchParticipation;
 use App\Models\MatchPost;
 use App\Models\PlayerProfile;
 use App\Models\User;
+use App\Services\Infrastructure\OutboxService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -75,14 +76,14 @@ class MatchService
         $requestedMin = isset($filters['min_skill']) ? (int) $filters['min_skill'] : null;
         $requestedMax = isset($filters['max_skill']) ? (int) $filters['max_skill'] : null;
         $availability = $filters['availability'] ?? null;
-        $city = isset($filters['city']) ? strtolower((string) $filters['city']) : null;
+        $city = isset($filters['city']) ? mb_strtolower(trim((string) $filters['city'])) : null;
         $lat = isset($filters['latitude']) ? (float) $filters['latitude'] : null;
         $lng = isset($filters['longitude']) ? (float) $filters['longitude'] : null;
         $radius = isset($filters['radius_km']) ? (float) $filters['radius_km'] : null;
 
         return $posts->filter(function (MatchPost $post) use ($requestedMin, $requestedMax, $availability, $city, $lat, $lng, $radius): bool {
             if ($post->joined_count >= $post->required_participants) return false;
-            if ($city && ! str_contains(strtolower((string) $post->city), $city)) return false;
+            if ($city && ! str_contains(mb_strtolower((string) $post->city), $city)) return false;
             if ($requestedMin !== null && $post->max_skill !== null && $post->max_skill < $requestedMin) return false;
             if ($requestedMax !== null && $post->min_skill !== null && $post->min_skill > $requestedMax) return false;
             if ($availability && ! empty(array_diff((array) $availability, (array) $post->availability))) return false;
@@ -93,7 +94,7 @@ class MatchService
 
     public function show(MatchPost $post, User $viewer): MatchPost
     {
-        if ($post->visibility === 'invite_only' && $post->creator_id !== $viewer->id && ! $post->invitations()->where('invitee_id', $viewer->id)->where('status', 'accepted')->exists()) {
+        if ($post->visibility === 'invite_only' && $post->creator_id !== $viewer->id && ! $post->invitations()->where('invitee_id', $viewer->id)->whereIn('status', ['pending', 'accepted'])->exists()) {
             abort(404);
         }
         return $post->load('participations', 'invitations');
@@ -102,7 +103,120 @@ class MatchService
     public function invite(MatchPost $post, User $creator, int $inviteeId): MatchInvitation
     {
         abort_unless($post->creator_id === $creator->id, 403);
-        return MatchInvitation::firstOrCreate(['match_post_id' => $post->id, 'invitee_id' => $inviteeId], ['organization_id' => $post->organization_id, 'invited_by' => $creator->id, 'status' => 'pending']);
+        abort_if($post->creator_id === $inviteeId, 422, 'Cannot invite yourself.');
+        User::findOrFail($inviteeId);
+
+        $invitation = MatchInvitation::firstOrCreate(
+            ['match_post_id' => $post->id, 'invitee_id' => $inviteeId],
+            ['organization_id' => $post->organization_id, 'invited_by' => $creator->id, 'status' => 'pending']
+        );
+
+        if ($invitation->wasRecentlyCreated) {
+            DB::afterCommit(function () use ($invitation, $post, $creator, $inviteeId) {
+                app(OutboxService::class)->enqueue([
+                    'organization_id' => $post->organization_id,
+                    'message_key' => "match_invitation:{$invitation->id}",
+                    'channel' => 'notification',
+                    'event_type' => 'social.match_invitation',
+                    'aggregate_type' => MatchInvitation::class,
+                    'aggregate_id' => $invitation->id,
+                ], [
+                    'user_id' => $inviteeId,
+                    'notification' => [
+                        'title' => 'Lời mời tham gia trận đấu',
+                        'body' => "{$creator->name} đã mời bạn tham gia trận đấu: {$post->title}",
+                        'type' => 'match_invitation',
+                        'source_id' => $post->id,
+                        'invitation_id' => $invitation->id,
+                        'match_id' => $post->id,
+                    ],
+                ]);
+            });
+        }
+
+        return $invitation;
+    }
+
+    public function inviteMany(MatchPost $post, User $creator, array $inviteeIds): array
+    {
+        abort_unless($post->creator_id === $creator->id, 403);
+
+        $results = [];
+        $invitations = [];
+        $invitedCount = 0;
+        $failedCount = 0;
+
+        foreach ($inviteeIds as $inviteeId) {
+            $inviteeId = (int) $inviteeId;
+
+            if ($inviteeId === $creator->id) {
+                $results[] = [
+                    'invitee_id' => $inviteeId,
+                    'status' => 'failed',
+                    'reason' => 'Cannot invite match creator.',
+                ];
+                $failedCount++;
+                continue;
+            }
+
+            $user = User::find($inviteeId);
+            if (!$user) {
+                $results[] = [
+                    'invitee_id' => $inviteeId,
+                    'status' => 'failed',
+                    'reason' => 'User not found or does not exist.',
+                ];
+                $failedCount++;
+                continue;
+            }
+
+            if ($post->joined_count >= $post->required_participants) {
+                $results[] = [
+                    'invitee_id' => $inviteeId,
+                    'status' => 'failed',
+                    'reason' => 'Match is already full.',
+                ];
+                $failedCount++;
+                continue;
+            }
+
+            if ($post->participations()->where('user_id', $inviteeId)->exists()) {
+                $results[] = [
+                    'invitee_id' => $inviteeId,
+                    'status' => 'failed',
+                    'reason' => 'User already joined this match.',
+                ];
+                $failedCount++;
+                continue;
+            }
+
+            $invitation = MatchInvitation::firstOrCreate(
+                ['match_post_id' => $post->id, 'invitee_id' => $inviteeId],
+                [
+                    'organization_id' => $post->organization_id,
+                    'invited_by' => $creator->id,
+                    'status' => 'pending',
+                ]
+            );
+
+            $invitations[] = $invitation;
+            $results[] = [
+                'invitee_id' => $inviteeId,
+                'status' => 'invited',
+                'invitation_id' => $invitation->id,
+            ];
+            $invitedCount++;
+        }
+
+        return [
+            'invitations' => $invitations,
+            'results' => $results,
+            'summary' => [
+                'total' => count($inviteeIds),
+                'invited' => $invitedCount,
+                'failed' => $failedCount,
+            ],
+        ];
     }
 
     public function join(MatchPost $post, User $user): MatchParticipation
@@ -116,7 +230,9 @@ class MatchService
             $participation = MatchParticipation::firstOrCreate(['match_post_id' => $post->id, 'user_id' => $user->id], ['organization_id' => $post->organization_id, 'status' => 'joined', 'joined_at' => now()]);
             if ($participation->wasRecentlyCreated) {
                 $post->increment('joined_count');
-                if ($post->joined_count >= $post->required_participants) $post->update(['status' => 'full']);
+                if ($post->joined_count >= $post->required_participants) {
+                    $post->update(['status' => 'full']);
+                }
             }
             return $participation->fresh();
         });
@@ -124,11 +240,40 @@ class MatchService
 
     public function respond(MatchInvitation $invitation, User $user, string $status): MatchInvitation
     {
-        abort_unless($invitation->invitee_id === $user->id, 403);
+        abort_unless($invitation->invitee_id === $user->id, 403, 'Unauthorized to respond to this invitation.');
         abort_unless(in_array($status, ['accepted', 'declined'], true), 422);
-        $invitation->update(['status' => $status, 'responded_at' => now()]);
-        if ($status === 'accepted') $this->join($invitation->post, $user);
-        return $invitation->fresh();
+        abort_unless($invitation->status === 'pending', 409, 'Invitation has already been responded to.');
+
+        return DB::transaction(function () use ($invitation, $user, $status) {
+            $invitation->update(['status' => $status, 'responded_at' => now()]);
+            if ($status === 'accepted') {
+                $this->join($invitation->post, $user);
+            }
+
+            DB::afterCommit(function () use ($invitation, $user, $status) {
+                $post = $invitation->post;
+                app(OutboxService::class)->enqueue([
+                    'organization_id' => $invitation->organization_id,
+                    'message_key' => "match_invitation_response:{$invitation->id}:{$status}",
+                    'channel' => 'notification',
+                    'event_type' => 'social.match_invitation_response',
+                    'aggregate_type' => MatchInvitation::class,
+                    'aggregate_id' => $invitation->id,
+                ], [
+                    'user_id' => $post->creator_id,
+                    'notification' => [
+                        'title' => 'Phản hồi lời mời trận đấu',
+                        'body' => "{$user->name} đã " . ($status === 'accepted' ? 'chấp nhận' : 'từ chối') . " lời mời tham gia trận đấu: {$post->title}",
+                        'type' => 'match_invitation_response',
+                        'source_id' => $post->id,
+                        'invitation_id' => $invitation->id,
+                        'status' => $status,
+                    ],
+                ]);
+            });
+
+            return $invitation->fresh();
+        });
     }
 
     private function distance(float $lat1, float $lon1, float $lat2, float $lon2): float

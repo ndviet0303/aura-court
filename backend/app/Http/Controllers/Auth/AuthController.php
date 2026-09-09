@@ -35,9 +35,16 @@ class AuthController extends Controller
             'password_set' => true,
             'social_provider' => null,
         ]);
+        event(new \Illuminate\Auth\Events\Registered($user));
 
         Auth::login($user);
-        $request->session()->regenerate();
+        try {
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
+        } catch (\Throwable) {
+            // Stateless request
+        }
 
         return response()->json(['user' => $user], 201);
     }
@@ -46,31 +53,47 @@ class AuthController extends Controller
     {
         $data = $request->validated();
         if (! Auth::attempt($data, true)) {
-            return response()->json(['message' => 'Thông tin đăng nhập không đúng.'], 422);
+            return response()->json(['message' => __('auth.failed')], 422);
         }
-        $request->session()->regenerate();
+        try {
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
+        } catch (\Throwable) {
+            // Stateless request
+        }
 
         return ['user' => $request->user()];
     }
 
     public function logout(Request $request)
     {
+        $token = $request->user()?->currentAccessToken();
+        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+            $token->delete();
+        }
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        try {
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        } catch (\Throwable) {
+            // Stateless request
+        }
 
-        return response()->json(['message' => 'Đã đăng xuất.']);
+        return response()->json(['message' => __('auth.logged_out')]);
     }
 
     public function forgotPassword(ForgotPasswordRequest $request)
     {
         $data = $request->validated();
         if (User::where('email', $data['email'])->first()?->isDemo()) {
-            return ['message' => 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.'];
+            return ['message' => __('auth.password_reset_sent')];
         }
         Password::sendResetLink(['email' => $data['email']]);
 
-        return ['message' => 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.'];
+        return ['message' => __('auth.password_reset_sent')];
     }
 
     public function resetPassword(ResetPasswordRequest $request)
@@ -80,9 +103,18 @@ class AuthController extends Controller
             $user->forceFill(['password' => Hash::make($password), 'password_set' => true])->save();
         });
 
-        return $status === Password::PASSWORD_RESET ? ['message' => 'Mật khẩu đã được cập nhật.'] : response()->json(['message' => __($status)], 422);
-    }
+        if ($status === Password::PASSWORD_RESET) {
+            return ['message' => __('passwords.reset')];
+        }
 
+        $message = match ($status) {
+            Password::INVALID_TOKEN => __('passwords.token'),
+            Password::INVALID_USER => __('passwords.user'),
+            default => __('passwords.token'),
+        };
+
+        return response()->json(['message' => $message], 422);
+    }
     public function changePassword(Request $request)
     {
         $user = $request->user();

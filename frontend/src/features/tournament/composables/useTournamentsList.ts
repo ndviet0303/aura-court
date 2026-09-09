@@ -3,9 +3,11 @@ import { useRouter } from 'vue-router'
 import type { TournamentItem, CircuitLeaderboardItem, TournamentRegistrationPayload } from '../types/tournament'
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { useAuthStore } from '@/stores/auth'
 
 export function useTournamentsList() {
   const router = useRouter()
+  const auth = useAuthStore()
 
   const activeTab = ref<'all' | 'open' | 'ongoing' | 'completed' | 'my'>('all')
   const searchQuery = ref('')
@@ -79,7 +81,18 @@ export function useTournamentsList() {
     error.value = ''
     try {
       const res = await tournamentApi.list<TournamentItem[]>()
-      tournaments.value = Array.isArray(res) ? res : []
+      if (Array.isArray(res)) {
+        tournaments.value = res
+        const authUserId = auth.user?.id
+        if (authUserId) {
+          const fromServer = res
+            .filter((t) => t.participants?.some((p: any) => p.user_id === authUserId || p.id === authUserId))
+            .map((t) => t.id)
+          registeredTournamentIds.value = Array.from(new Set([...registeredTournamentIds.value, ...fromServer]))
+        }
+      } else {
+        tournaments.value = []
+      }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách giải đấu.')
       tournaments.value = []
@@ -108,30 +121,20 @@ export function useTournamentsList() {
 
     processing.value = true
     try {
-      targetTournament.current_slots = Math.min(
-        targetTournament.max_slots,
-        (targetTournament.current_slots || 0) + 1
-      )
-      if (!registeredTournamentIds.value.includes(targetTournament.id)) {
-        registeredTournamentIds.value.push(targetTournament.id)
+      const tourneyUuid = targetTournament.uuid || targetTournament.id
+      const res = await tournamentApi.register(tourneyUuid, payload)
+
+      if (res?.participant) {
+        if (!registeredTournamentIds.value.includes(targetTournament.id)) {
+          registeredTournamentIds.value.push(targetTournament.id)
+        }
+        showNotice(res.message || `Đăng ký tham gia giải "${targetTournament.name}" thành công!`)
       }
 
-      const tourneyUuid = targetTournament.uuid || targetTournament.id
       selectedTournamentForRegister.value = null
-
-      router.push({
-        name: 'payment',
-        params: { code: `ORD${targetTournament.id}` },
-        query: {
-          tournament_uuid: tourneyUuid,
-          name: payload.name,
-          phone: payload.phone,
-          partner: payload.partnerName,
-          type: 'tournament',
-        },
-      })
+      await loadTournaments()
     } catch (e: unknown) {
-      showNotice(errorMessage(e, `Đã ghi danh tham dự giải "${targetTournament.name}".`))
+      showNotice(errorMessage(e, `Không thể đăng ký tham dự giải "${targetTournament.name}".`))
       selectedTournamentForRegister.value = null
     } finally {
       processing.value = false
@@ -156,6 +159,7 @@ export function useTournamentsList() {
     selectedTournamentForBracket,
     tournaments,
     circuitLeaderboard,
+    registeredTournamentIds,
     filteredTournaments,
     loadTournaments,
     showNotice,

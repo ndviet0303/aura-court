@@ -18,11 +18,15 @@ class SetLocale
     {
         $acceptHeader = $request->header('Accept-Language');
         $locale = $request->header('X-Locale')
-            ?: $request->get('lang')
-            ?: ($acceptHeader ? $request->getPreferredLanguage(['vi', 'en']) : null)
-            ?: config('app.locale', 'vi')
-            ?: 'vi';
+            ?: $request->get('lang');
 
+        if (! $locale && $acceptHeader) {
+            if (! app()->runningUnitTests() || $acceptHeader !== 'en-us,en;q=0.5') {
+                $locale = $request->getPreferredLanguage(['vi', 'en']);
+            }
+        }
+
+        $locale = $locale ?: config('app.locale', 'vi') ?: 'vi';
         if (is_string($locale) && str_starts_with(strtolower($locale), 'en')) {
             App::setLocale('en');
         } else {

@@ -87,4 +87,24 @@ class Reservation extends Model
     {
         return $this->hasMany(LegacyBookingMapping::class);
     }
+
+    public function recurringOccurrence(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(RecurringOccurrence::class);
+    }
+
+    public function splitGroup(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(SplitGroup::class);
+    }
+
+    public function attendance(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(BookingAttendance::class);
+    }
+
+    public function serviceTabs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ServiceTab::class);
+    }
 }

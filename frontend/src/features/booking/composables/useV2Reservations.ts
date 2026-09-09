@@ -3,7 +3,9 @@ import { bookingApi } from '../api/bookingApi'
 import type { Court } from '@/features/court/types/court'
 import type { V2Reservation, V2PriceQuote } from '../types/v2Reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { i18n, formatCurrency } from '@/i18n'
 
+const t = (key: string, params?: Record<string, any>) => i18n.global.t(key, params || {})
 export function useV2Reservations() {
   const courts = ref<Court[]>([])
   const reservations = ref<V2Reservation[]>([])
@@ -24,7 +26,7 @@ export function useV2Reservations() {
 
   const activeQuote = ref<V2PriceQuote | null>(null)
   const quoteExpiresInSeconds = ref<number>(0)
-  let quoteTimerInterval: ReturnType<typeof setInterval> | null = null
+  let quoteTimerInterval: number | NodeJS.Timeout | undefined = undefined
 
   const loading = ref(false)
   const calculatingQuote = ref(false)
@@ -40,13 +42,13 @@ export function useV2Reservations() {
   const selectedReservationForDetails = ref<V2Reservation | null>(null)
   const selectedReservationForQr = ref<V2Reservation | null>(null)
 
-  const money = (value: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+  const money = (value: number) => formatCurrency(value)
 
   const formatDate = (value: string) => {
     if (!value) return ''
     try {
-      return new Date(value).toLocaleString('vi-VN', {
+      const loc = (i18n.global.locale as any).value === 'en' ? 'en-US' : 'vi-VN'
+      return new Date(value).toLocaleString(loc, {
         timeZone: 'Asia/Ho_Chi_Minh',
         day: '2-digit',
         month: '2-digit',
@@ -82,7 +84,7 @@ export function useV2Reservations() {
       quoteExpiresInSeconds.value = diff
       if (diff <= 0 && quoteTimerInterval) {
         clearInterval(quoteTimerInterval)
-        quoteTimerInterval = null
+        quoteTimerInterval = undefined
       }
     }
 
@@ -124,7 +126,7 @@ export function useV2Reservations() {
         }
       }
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể tải dữ liệu lịch đặt v2.')
+      error.value = errorMessage(cause, t('v2Reservations.messages.loadError'))
     } finally {
       loading.value = false
     }
@@ -132,7 +134,7 @@ export function useV2Reservations() {
 
   async function calculateQuote() {
     if (!selectedCourtId.value || !selectedDate.value || !selectedTimeSlot.value) {
-      error.value = 'Vui lòng chọn sân và khung giờ chơi.'
+      error.value = t('v2Reservations.messages.selectCourtAndTime')
       return
     }
 
@@ -150,10 +152,10 @@ export function useV2Reservations() {
       if (response && response.quote) {
         activeQuote.value = response.quote
         startQuoteCountdown(response.quote.expires_at)
-        notice.value = 'Đã tạo báo giá động bất biến! Báo giá được bảo đảm trong 15 phút.'
+        notice.value = t('v2Reservations.messages.quoteSuccess')
       }
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể tạo báo giá cho khung giờ này.')
+      error.value = errorMessage(cause, t('v2Reservations.messages.quoteError'))
     } finally {
       calculatingQuote.value = false
     }
@@ -170,16 +172,39 @@ export function useV2Reservations() {
         quote_token: activeQuote.value.quote_token,
       })
       activeQuote.value = null
-      if (quoteTimerInterval) clearInterval(quoteTimerInterval)
-      notice.value = 'Đã giữ lịch thành công! Vui lòng xác nhận thanh toán để kích hoạt quyền vào sân.'
+      clearInterval(quoteTimerInterval)
+      notice.value = t('v2Reservations.messages.holdSuccess')
       await loadData()
       activeTab.value = 'held'
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể giữ lịch đặt.')
+      error.value = errorMessage(cause, t('v2Reservations.messages.holdError'))
     } finally {
       holdingReservation.value = false
     }
   }
+  async function checkoutReservation() {
+    if (!activeQuote.value) return
+    holdingReservation.value = true
+    error.value = ''
+    notice.value = ''
+
+    try {
+      const res: any = await bookingApi.checkoutReservation({
+        quote_token: activeQuote.value.quote_token,
+      })
+      const code = res?.reservation?.code || res?.data?.reservation?.code || ''
+      activeQuote.value = null
+      clearInterval(quoteTimerInterval)
+      notice.value = t('v2Reservations.messages.checkoutSuccess', { code })
+      await loadData()
+      activeTab.value = 'confirmed'
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('v2Reservations.messages.checkoutError'))
+    } finally {
+      holdingReservation.value = false
+    }
+  }
+
 
   async function confirmReservation(reservation: V2Reservation) {
     confirmingCode.value = reservation.code
@@ -188,27 +213,27 @@ export function useV2Reservations() {
 
     try {
       await bookingApi.confirmReservation(reservation.code)
-      notice.value = `Lịch đặt #${reservation.code} đã được xác nhận thành công!`
+      notice.value = t('v2Reservations.messages.confirmSuccess', { code: reservation.code })
       await loadData()
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể xác nhận lịch đặt.')
+      error.value = errorMessage(cause, t('v2Reservations.messages.confirmError'))
     } finally {
       confirmingCode.value = null
     }
   }
 
   async function cancelReservation(reservation: V2Reservation) {
-    if (!confirm('Bạn có chắc chắn muốn hủy lịch giữ chỗ này không?')) return
+    if (!confirm(t('v2Reservations.messages.cancelConfirm'))) return
     cancellingCode.value = reservation.code
     error.value = ''
     notice.value = ''
 
     try {
       await bookingApi.cancelReservation(reservation.code)
-      notice.value = `Đã hủy lịch giữ chỗ #${reservation.code}.`
+      notice.value = t('v2Reservations.messages.cancelSuccess', { code: reservation.code })
       await loadData()
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể hủy lịch đặt.')
+      error.value = errorMessage(cause, t('v2Reservations.messages.cancelError'))
     } finally {
       cancellingCode.value = null
     }
@@ -304,6 +329,7 @@ export function useV2Reservations() {
     loadData,
     calculateQuote,
     holdReservation,
+    checkoutReservation,
     confirmReservation,
     cancelReservation,
     openDetails,

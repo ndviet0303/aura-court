@@ -30,19 +30,77 @@ export const posApi = {
     return (res as any)?.product || res
   },
 
+  getQuote: async (payload: {
+    items: Array<{
+      product_id: number
+      quantity: number
+      rental_duration_hours?: number
+      rental_hours?: number
+      vat_rate?: number
+    }>
+    customer_id?: number | null
+    reservation_id?: number | null
+    coupon_code?: string
+    discount_amount?: number
+    payment_method?: 'cash' | 'qr' | 'wallet'
+    cash_tendered?: number
+    rounding_amount?: number
+  }) => {
+    const res = await apiV2.post<{ quote: any }>('/pos/quote', payload)
+    return (res as any)?.quote || res
+  },
+
   completeOrder: async (payload: {
-    items: Array<{ product_id: number; quantity: number }>
+    items: Array<{
+      product_id: number
+      quantity: number
+      rental_duration_hours?: number
+      rental_hours?: number
+      vat_rate?: number
+    }>
     customer_id?: number | null
     reservation_id?: number | null
     payment_method: 'cash' | 'qr' | 'wallet'
     payment_reference?: string
     discount_amount?: number
+    coupon_code?: string
+    cash_tendered?: number
+    rounding_amount?: number
     offline?: boolean
-  }) => {
-    const res = await apiV2.post<{ order: any } | any>('/pos/orders', payload)
-    return res?.order || res
+  }, idempotencyKey?: string) => {
+    const config = idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined
+    const res = await apiV2.post<{ order: any; receipt?: any } | any>('/pos/orders', payload, config)
+    return res
   },
 
+  getOrder: async (orderId: number | string) => {
+    return await apiV2.get<{ order: any; receipt: any }>(`/pos/orders/${orderId}`)
+  },
+
+  confirmQrPayment: async (
+    orderId: number | string,
+    payload: {
+      external_transaction_id?: string
+      amount?: number
+      provider?: string
+      notes?: string
+    } = {}
+  ) => {
+    return await apiV2.post<{ order: any; receipt: any }>(
+      `/pos/orders/${orderId}/confirm-qr`,
+      payload
+    )
+  },
+
+  cancelQrPayment: async (
+    orderId: number | string,
+    payload: { reason?: string } = {}
+  ) => {
+    return await apiV2.post<{ order: any; receipt: any }>(
+      `/pos/orders/${orderId}/cancel-qr`,
+      payload
+    )
+  },
   getShifts: async (): Promise<PosShift[]> => {
     const res = await apiV2.get<{ data?: PosShift[] } | PosShift[]>('/pos/shifts')
     return Array.isArray(res) ? res : (res as any)?.data || []
@@ -80,28 +138,65 @@ export const posApi = {
     return (res as any)?.shift || res
   },
 
+  getTab: async (reservationId: number | string) => {
+    return apiV2.get<{ tab: any }>(`/service-tabs/${reservationId}`)
+  },
+
+  addItemToTab: async (payload: {
+    reservation_id: number
+    items: Array<{ product_id: number; quantity: number }>
+  }) => {
+    return apiV2.post<{ tab: any; message: string }>('/service-tabs', payload)
+  },
+
+  removeItemFromTab: async (reservationId: number | string, itemId: number) => {
+    return apiV2.delete<{ tab: any; message: string }>(`/service-tabs/${reservationId}/items/${itemId}`)
+  },
+
+  settleTab: async (
+    tabId: number,
+    payload: {
+      payment_method: 'cash' | 'wallet' | 'qr'
+      cash_tendered?: number
+      customer_id?: number
+    }
+  ) => {
+    return apiV2.post<{ tab: any; order: any; receipt: any; message: string }>(
+      `/service-tabs/${tabId}/settle`,
+      payload
+    )
+  },
+
+  cancelTab: async (tabId: number, reason?: string) => {
+    return apiV2.post<{ tab: any; message: string }>(`/service-tabs/${tabId}/cancel`, { reason })
+  },
+
   getActiveReservations: async (): Promise<CourtReservation[]> => {
     try {
-      const res = await api.get<{ data?: any[] } | any[]>('/admin/bookings?status=confirmed')
+      const res = await apiV2.get<{ data?: any[] } | any[]>('/reservations?status=confirmed')
       const list = Array.isArray(res) ? res : res?.data || []
-      return list.map((b: any) => {
-        let courtName = b.court?.name
+      return list.map((r: any) => {
+        let courtName = r.court?.name
         if (typeof courtName === 'object' && courtName !== null) {
           courtName = courtName.vi || courtName.en || Object.values(courtName)[0]
         }
-        let customerName = b.user?.name || b.customer_name
+        let customerName = r.user?.name || r.customer_name
         if (typeof customerName === 'object' && customerName !== null) {
           customerName = customerName.vi || customerName.en || Object.values(customerName)[0]
         }
+        const timeSlot = r.slots?.[0]
+          ? `${r.slots[0].starts_at?.slice(11, 16) || ''} - ${r.slots[r.slots.length - 1]?.ends_at?.slice(11, 16) || ''}`
+          : r.time_slot || '18:00 - 20:00'
+
         return {
-          id: b.id,
-          court_name: (courtName as string) || `Sân #${b.court_id}`,
-          court_number: b.court?.id || b.court_id || 1,
+          id: r.id,
+          court_name: (courtName as string) || `Sân #${r.court_id || 1}`,
+          court_number: r.court?.id || r.court_id || 1,
           customer_name: (customerName as string) || 'Khách vãng lai',
-          phone: b.user?.phone || b.phone || '',
-          status: b.status === 'confirmed' ? 'playing' : 'waiting',
-          time_slot: b.time_slot || `${b.start_time || '18:00'} - ${b.end_time || '20:00'}`,
-          deposit_paid: b.deposit_paid ?? b.total_amount ?? b.total_price ?? 0,
+          phone: r.user?.phone || r.phone || '',
+          status: r.status === 'confirmed' ? 'playing' : 'waiting',
+          time_slot: timeSlot,
+          deposit_paid: r.deposit_paid ?? r.total_amount ?? 0,
         }
       })
     } catch {
@@ -111,33 +206,20 @@ export const posApi = {
 
   searchCustomers: async (query?: string): Promise<CustomerProfile[]> => {
     try {
-      const orgsRes = await apiV2.get<{ organizations?: any[] } | any[]>('/organizations')
-      const orgs = Array.isArray(orgsRes) ? orgsRes : (orgsRes as any)?.organizations || []
-      const orgId = orgs[0]?.id || 2
-      const res = await apiV2.get<{ members?: any[] } | any[]>(`/organizations/${orgId}/members`)
-      const list = Array.isArray(res) ? res : (res as any)?.members || []
-      
-      const q = query ? query.toLowerCase().trim() : ''
-      return list
-        .filter((m: any) => {
-          if (!q) return true
-          const name = (m.user?.name || m.name || '').toLowerCase()
-          const phone = (m.user?.phone || m.phone || '').toLowerCase()
-          const email = (m.user?.email || m.email || '').toLowerCase()
-          return name.includes(q) || phone.includes(q) || email.includes(q)
-        })
-        .map((m: any) => {
-          const isOwner = m.role === 'organization_owner'
-          return {
-            id: m.user?.id || m.user_id,
-            name: m.user?.name || m.name || 'Hội viên',
-            phone: m.user?.phone || m.phone || '0901234567',
-            tier: isOwner ? 'VIP' : (m.tier || 'Gold'),
-            discount_rate: isOwner ? 0.2 : 0.1,
-            wallet_balance: m.wallet_balance ?? 500000,
-            loyalty_points: m.loyalty_points ?? 250,
-          }
-        })
+      const q = query ? query.trim() : ''
+      const url = q ? `/customers?q=${encodeURIComponent(q)}` : '/customers'
+      const res = await apiV2.get<{ customers?: any[] } | any[]>(url)
+      const list = Array.isArray(res) ? res : (res as any)?.customers || []
+
+      return list.map((c: any) => ({
+        id: c.id,
+        name: c.name || 'Hội viên',
+        phone: c.phone || '',
+        tier: c.tier || 'Standard',
+        discount_rate: typeof c.discount_rate === 'number' ? c.discount_rate : 0,
+        wallet_balance: typeof c.wallet_balance === 'number' ? c.wallet_balance : 0,
+        loyalty_points: typeof c.loyalty_points === 'number' ? c.loyalty_points : 0,
+      }))
     } catch {
       return []
     }

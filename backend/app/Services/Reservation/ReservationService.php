@@ -50,6 +50,7 @@ class ReservationService
                 'currency' => $quote->currency,
                 'total_amount' => $quote->total_amount,
                 'hold_expires_at' => $quote->expires_at,
+                'metadata' => $data['metadata'] ?? null,
             ]);
 
             foreach ($quote->slot_snapshot as $slotSnapshot) {
@@ -107,11 +108,38 @@ class ReservationService
                 $this->release($reservation, 'expired');
                 abort(409, 'Reservation hold has expired.');
             }
+            $totalAmount = (int) $reservation->total_amount;
+            if ($totalAmount > 0) {
+                $isSpecialized = ($reservation->metadata['type'] ?? null) === 'recurring_series'
+                    || ($reservation->splitGroup && in_array($reservation->splitGroup->status, ['completed', 'settled'], true))
+                    || $reservation->recurringOccurrence()->exists();
+                if (! $isSpecialized) {
+                    $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+                    $wallet = $walletService->getOrCreateWallet($reservation->user_id, $reservation->organization_id);
+                    if ((int) $wallet->balance < $totalAmount) {
+                        abort(409, 'Cannot confirm unpaid reservation: insufficient wallet balance.');
+                    }
+
+                    $walletTx = $walletService->debit(
+                        $wallet,
+                        $totalAmount,
+                        'reservation_payment',
+                        $reservation->id,
+                        $reservation->code
+                    );
+
+                    app(\App\Services\Finance\FinancialPostingService::class)->postWalletReservationPayment(
+                        $reservation,
+                        $totalAmount,
+                        $wallet->id,
+                        $walletTx->id
+                    );
+                }
+            }
 
             $reservation->update(['status' => 'confirmed', 'confirmed_at' => now()]);
             $reservation->slots()->where('status', 'held')->update(['status' => 'confirmed']);
             $reservation->entitlements()->where('status', 'held')->update(['status' => 'active']);
-
             return $reservation->fresh(['court.venue', 'quote', 'slots', 'entitlements']);
         });
     }
@@ -123,6 +151,24 @@ class ReservationService
             if (in_array($reservation->status, ['cancelled', 'expired'], true)) {
                 return $reservation->load(['court.venue', 'slots', 'entitlements']);
             }
+
+            if ($reservation->status === 'confirmed' && (int) $reservation->total_amount > 0) {
+                $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+                $wallet = $walletService->getOrCreateWallet($reservation->user_id, $reservation->organization_id);
+                $walletService->credit(
+                    $wallet,
+                    (int) $reservation->total_amount,
+                    'reservation_refund',
+                    $reservation->id,
+                    "Refund for {$reservation->code}"
+                );
+                app(\App\Services\Finance\FinancialPostingService::class)->postWalletReservationRefund(
+                    $reservation,
+                    (int) $reservation->total_amount,
+                    $wallet->id
+                );
+            }
+
             $this->release($reservation, 'cancelled');
 
             return $reservation->fresh(['court.venue', 'slots', 'entitlements']);

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/core/api/client'
 import { socialApi } from '../api/socialApi'
@@ -61,13 +61,35 @@ export function useCreateMatch() {
 
   // Friends & Invite Network
   const friendSearchQuery = ref('')
-  const friends = ref<FriendInvite[]>([
-    { id: 1, name: 'Hoàng Minh Tuấn', avatar: '', skill: 'Level 4.0', skillLevel: 4, reputation: 98, city: 'Hà Nội', isSelected: false },
-    { id: 2, name: 'Trần Đăng Khoa', avatar: '', skill: 'Level 3.5', skillLevel: 3, reputation: 95, city: 'Hà Nội', isSelected: false },
-    { id: 3, name: 'Nguyễn Bích Ngọc', avatar: '', skill: 'Level 2.5', skillLevel: 2, reputation: 92, city: 'Hà Nội', isSelected: false },
-    { id: 4, name: 'Lê Quốc Bảo', avatar: '', skill: 'Level 4.5', skillLevel: 5, reputation: 99, city: 'TP. Hồ Chí Minh', isSelected: false },
-    { id: 5, name: 'Phạm Thuỳ Linh', avatar: '', skill: 'Level 3.0', skillLevel: 3, reputation: 94, city: 'Hà Nội', isSelected: false },
-  ])
+  const friends = ref<FriendInvite[]>([])
+  const loadingFriends = ref(false)
+
+  async function loadFriends(query?: string) {
+    loadingFriends.value = true
+    try {
+      const res = await socialApi.getFriends(query)
+      const list = (res as any)?.friends || []
+      const previouslySelected = new Set(selectedFriends.value.map((f) => f.id))
+      friends.value = list.map((f: any) => ({
+        id: f.id,
+        name: f.name || 'Người chơi',
+        avatar: f.avatar_url || '',
+        skill: f.play_level ? `Level ${f.play_level}.0` : 'Level 3.0',
+        skillLevel: f.play_level || 3,
+        reputation: 95,
+        city: f.city || 'Hà Nội',
+        isSelected: previouslySelected.has(f.id),
+      }))
+    } catch {
+      friends.value = []
+    } finally {
+      loadingFriends.value = false
+    }
+  }
+
+  watch(friendSearchQuery, (q) => {
+    loadFriends(q)
+  })
 
   const filteredFriends = computed(() => {
     if (!friendSearchQuery.value.trim()) return friends.value
@@ -303,15 +325,27 @@ export function useCreateMatch() {
       const createdMatchId = (res as any)?.match?.id || (res as any)?.id
 
       // Invite selected friends if match id exists
+      // Batch invite selected friends with individual failure reporting
       if (createdMatchId && selectedFriends.value.length > 0) {
-        await Promise.allSettled(
-          selectedFriends.value.map((f) =>
-            socialApi.invitePartner(createdMatchId, { invitee_id: f.id })
+        try {
+          const inviteRes = await socialApi.invitePartners(
+            createdMatchId,
+            selectedFriends.value.map((f) => f.id)
           )
-        )
+          const failed = inviteRes?.results?.filter((r) => r.status === 'failed') || []
+          if (failed.length > 0) {
+            const reasons = failed.map((f) => `ID ${f.invitee_id}: ${f.reason || 'Lỗi'}`).join(', ')
+            notice.value = `Mở kèo thành công! Lưu ý một số lời mời thất bại: ${reasons}`
+          } else {
+            notice.value = 'Mở kèo giao lưu & gửi lời mời bạn chơi thành công!'
+          }
+        } catch {
+          notice.value = 'Mở kèo thành công (không thể gửi lời mời bạn chơi tự động).'
+        }
       }
-
-      notice.value = 'Mở kèo giao lưu & tìm kiếm bạn chơi thành công!'
+      if (!notice.value) {
+        notice.value = 'Mở kèo giao lưu & tìm kiếm bạn chơi thành công!'
+      }
       setTimeout(() => {
         router.push({ path: '/matchmaking' })
       }, 1000)
@@ -355,6 +389,8 @@ export function useCreateMatch() {
     generatedAutoTitle,
     previewMatch,
     loadCourts,
+    loadFriends,
+    loadingFriends,
     toggleFriend,
     selectQuickVenue,
     submitMatch,

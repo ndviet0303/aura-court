@@ -122,4 +122,5 @@ export interface OrderReceipt {
   payment_method: 'cash' | 'qr' | 'wallet' | 'court_tab' | string
   cash_tendered?: number
   cash_change?: number
+  change_due?: number
 }

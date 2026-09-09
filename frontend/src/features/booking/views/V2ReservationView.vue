@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useV2Reservations } from '../composables/useV2Reservations'
+
+const { t } = useI18n()
 
 import V2ReservationHero from '../components/v2/V2ReservationHero.vue'
 import V2QuoteCalculatorCard from '../components/v2/V2QuoteCalculatorCard.vue'
@@ -40,6 +43,7 @@ const {
   loadData,
   calculateQuote,
   holdReservation,
+  checkoutReservation,
   confirmReservation,
   cancelReservation,
   openDetails,
@@ -114,14 +118,15 @@ function scrollToCalculator() {
       @update:selected-time-slot="selectedTimeSlot = $event"
       @calculate="calculateQuote"
       @hold="holdReservation"
+      @checkout="checkoutReservation"
     />
 
     <!-- Reservations List Section -->
     <section class="reservations-list-section">
       <div class="section-title-row">
         <div>
-          <h2 class="section-title">Lịch Đặt Sân V2 Của Tôi</h2>
-          <p class="section-subtitle">Danh sách lịch đặt được bảo chứng giá và quản lý theo mã xác thực độc quyền.</p>
+          <h2 class="section-title">{{ t('v2Reservations.view.myReservationsTitle') }}</h2>
+          <p class="section-subtitle">{{ t('v2Reservations.view.myReservationsSubtitle') }}</p>
         </div>
       </div>
 
@@ -149,17 +154,17 @@ function scrollToCalculator() {
       <!-- Empty State -->
       <div v-else-if="filteredReservations.length === 0" class="empty-state-card">
         <span class="material-symbols-outlined empty-icon">event_busy</span>
-        <h3 class="empty-title">Không Tìm Thấy Lịch Đặt V2</h3>
+        <h3 class="empty-title">{{ t('v2Reservations.view.emptyTitle') }}</h3>
         <p class="empty-desc">
           {{
             searchQuery
-              ? 'Không có kết quả khớp với từ khóa tìm kiếm.'
-              : 'Bạn chưa có lịch đặt sân v2 nào trong danh mục này. Hãy tạo báo giá và khóa lịch ngay ở trên!'
+              ? t('v2Reservations.view.emptySearchDesc')
+              : t('v2Reservations.view.emptyDesc')
           }}
         </p>
         <button class="btn btn-primary" @click="scrollToCalculator">
           <span class="material-symbols-outlined">calculate</span>
-          <span>Tạo Báo Giá Ngay</span>
+          <span>{{ t('v2Reservations.view.createQuoteNow') }}</span>
         </button>
       </div>
 

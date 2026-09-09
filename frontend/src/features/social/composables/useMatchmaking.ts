@@ -51,7 +51,7 @@ export function useMatchmaking() {
 
   const loading = ref(false)
   const processing = ref(false)
-  const activeTab = ref<'all' | 'open' | 'my_matches' | 'partners'>('all')
+  const activeTab = ref<'all' | 'open' | 'my_matches' | 'partners' | 'feed' | 'connections'>('all')
 
   // Filters
   const searchQuery = ref('')

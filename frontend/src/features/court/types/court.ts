@@ -32,6 +32,7 @@ export type Venue = {
   courts_count?: number
   sport_zones?: SportZone[]
   image_url?: string
+  amenities?: string[]
 }
 
 export type CourtBlock = {
@@ -74,6 +75,7 @@ export type Court = {
   blocks?: CourtBlock[]
   reviews_count?: number
   reviews_avg_rating?: number | null
+  amenities?: string[]
 }
 
 export type CourtReview = {

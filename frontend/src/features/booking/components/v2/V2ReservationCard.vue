@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
 
+const { t } = useI18n()
 defineProps<{
   reservation: V2Reservation
   confirmingCode: string | null
@@ -37,11 +39,11 @@ const emit = defineEmits<{
         <span>
           {{
             reservation.status === 'held'
-              ? 'Đang giữ chỗ'
+              ? t('v2Reservations.card.statusHeld')
               : reservation.status === 'confirmed'
-              ? 'Đã xác nhận'
+              ? t('v2Reservations.card.statusConfirmed')
               : reservation.status === 'cancelled'
-              ? 'Đã hủy'
+              ? t('v2Reservations.card.statusCancelled')
               : reservation.status
           }}
         </span>
@@ -55,8 +57,8 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined court-icon">sports_tennis</span>
         </div>
         <div class="court-text-col">
-          <h4 class="court-title">{{ reservation.court?.name || 'Sân Aura Court' }}</h4>
-          <p class="court-address">{{ reservation.court?.venue?.address || 'Khu phức hợp thể thao Aura Court' }}</p>
+          <h4 class="court-title">{{ reservation.court?.name || 'Aura Court' }}</h4>
+          <p class="court-address">{{ reservation.court?.venue?.address || 'Aura Sports Complex' }}</p>
         </div>
       </div>
 
@@ -77,7 +79,7 @@ const emit = defineEmits<{
     <!-- Card Footer -->
     <div class="card-footer">
       <div class="pricing-col">
-        <span class="pricing-label">Tổng thanh toán</span>
+        <span class="pricing-label">{{ t('v2Reservations.card.totalLabel') }}</span>
         <strong class="pricing-value font-mono">{{ money(reservation.total_amount) }}</strong>
       </div>
 
@@ -90,7 +92,7 @@ const emit = defineEmits<{
             @click="emit('cancel', reservation)"
           >
             <span class="material-symbols-outlined">close</span>
-            <span>Hủy</span>
+            <span>{{ t('v2Reservations.card.cancelBtn') }}</span>
           </button>
           <button
             class="btn btn-primary btn-confirm"
@@ -100,7 +102,7 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined" :class="{ spinning: confirmingCode === reservation.code }">
               {{ confirmingCode === reservation.code ? 'refresh' : 'check' }}
             </span>
-            <span>{{ confirmingCode === reservation.code ? 'Đang xử lý...' : 'Xác Nhận Đặt Sân' }}</span>
+            <span>{{ confirmingCode === reservation.code ? t('v2Reservations.card.confirming') : t('v2Reservations.card.confirmBtn') }}</span>
           </button>
         </template>
 
@@ -111,14 +113,14 @@ const emit = defineEmits<{
             @click="emit('details', reservation)"
           >
             <span class="material-symbols-outlined">receipt</span>
-            <span>Báo giá</span>
+            <span>{{ t('v2Reservations.card.quoteDetailsBtn') }}</span>
           </button>
           <button
             class="btn btn-qr-pass"
             @click="emit('qr', reservation)"
           >
             <span class="material-symbols-outlined">qr_code_2</span>
-            <span>Mã Vào Sân</span>
+            <span>{{ t('v2Reservations.card.qrPassBtn') }}</span>
           </button>
         </template>
 
@@ -129,7 +131,7 @@ const emit = defineEmits<{
             @click="emit('details', reservation)"
           >
             <span class="material-symbols-outlined">info</span>
-            <span>Chi Tiết</span>
+            <span>{{ t('v2Reservations.card.quoteDetailsBtn') }}</span>
           </button>
         </template>
       </div>

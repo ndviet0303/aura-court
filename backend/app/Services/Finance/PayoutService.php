@@ -91,9 +91,23 @@ class PayoutService
                 'description' => $attributes['failure_reason'] ?: 'Provider payout failed.',
                 'links' => ['payout_id' => $payout->id],
                 'detected_at' => now(),
+                'due_at' => now()->addMinutes(15),
             ]);
         } elseif ($normalized === 'reversed') {
             $attributes['reversed_at'] = now();
+            FinanceException::firstOrCreate([
+                'organization_id' => $payout->organization_id,
+                'type' => 'payout_reversed',
+                'reference' => (string) $payout->id,
+                'status' => 'open',
+            ], [
+                'severity' => 'critical',
+                'amount' => $payout->amount,
+                'description' => $status->failureMessage ?: "Provider payout {$payout->id} was reversed.",
+                'links' => ['payout_id' => $payout->id],
+                'detected_at' => now(),
+                'due_at' => now()->addMinutes(15),
+            ]);
         }
         $payout->update($attributes);
         return $payout->fresh(['settlement', 'beneficiary']);

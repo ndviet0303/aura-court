@@ -39,6 +39,14 @@ class CourtController extends Controller
         return response()->json($courts);
     }
 
+    public function show(Court $court)
+    {
+        $court->loadMissing(['priceSlots', 'venue', 'sportZone'])
+            ->loadCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
+            ->loadAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating');
+
+        return response()->json($court);
+    }
     public function adminIndex(Request $request)
     {
         return Court::with(['priceSlots', 'venue', 'sportZone', 'blocks' => fn ($query) => $query->latest('starts_at')])
@@ -66,6 +74,8 @@ class CourtController extends Controller
             'description' => 'nullable|array',
             'description.*' => 'string',
             'image_url' => 'nullable|url',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
             'is_active' => 'boolean',
         ]);
 
@@ -92,6 +102,8 @@ class CourtController extends Controller
             'description' => 'nullable|array',
             'description.*' => 'string',
             'image_url' => 'nullable|url',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
             'is_active' => 'boolean',
         ]);
         $court->update($data);

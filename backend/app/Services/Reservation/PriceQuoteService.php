@@ -2,10 +2,13 @@
 
 namespace App\Services\Reservation;
 
+use App\Models\BookingSlot;
 use App\Models\Court;
+use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
 use App\Models\PriceQuote;
 use App\Models\PriceRule;
+use App\Models\ReservationSlot;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -35,6 +38,41 @@ class PriceQuoteService
 
         $duration = (int) ($court->sportZone?->slot_duration ?: 60);
         $resolvedSlots = $this->resolveSlots($slots, $duration);
+
+        // Check for maintenance closures / court blocks
+        $firstSlot = $resolvedSlots->first();
+        $lastSlot = $resolvedSlots->last();
+        $blockStarts = $firstSlot->copy()->utc();
+        $blockEnds = $lastSlot->copy()->addMinutes($duration)->utc();
+
+        $overlappingBlock = CourtBlock::query()
+            ->where('court_id', $court->id)
+            ->where('starts_at', '<', $blockEnds)
+            ->where('ends_at', '>', $blockStarts)
+            ->first();
+
+        if ($overlappingBlock) {
+            abort(409, 'Sân đang bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
+        }
+
+        $v1Overlapping = BookingSlot::query()
+            ->where('court_id', $court->id)
+            ->where('starts_at', '<', $blockEnds)
+            ->where('ends_at', '>', $blockStarts)
+            ->whereHas('booking', fn ($b) => $b->whereIn('status', ['confirmed', 'pending_payment']))
+            ->exists();
+
+        $v2Overlapping = ReservationSlot::query()
+            ->where('court_id', $court->id)
+            ->where('starts_at', '<', $blockEnds)
+            ->where('ends_at', '>', $blockStarts)
+            ->whereHas('reservation', fn ($r) => $r->whereIn('status', ['held', 'confirmed']))
+            ->exists();
+
+        if ($v1Overlapping || $v2Overlapping) {
+            abort(409, 'The selected court-time is no longer available.');
+        }
+
         $rules = PriceRule::query()
             ->where('organization_id', $organizationId)
             ->where('is_active', true)

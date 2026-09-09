@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineProps<{
   totalCount: number
   heldCount: number
@@ -18,31 +22,31 @@ const emit = defineEmits<{
     <div class="hero-content">
       <div class="category-eyebrow">
         <span class="material-symbols-outlined eyebrow-icon">sports_tennis</span>
-        <span class="font-mono">AURA COURT RESERVATIONS V2</span>
+        <span class="font-mono">{{ t('v2Reservations.hero.eyebrow') }}</span>
       </div>
-      <h1 class="hero-title">Báo Giá Động & Lịch Đặt Sân V2</h1>
+      <h1 class="hero-title">{{ t('v2Reservations.hero.title') }}</h1>
       <p class="hero-description">
-        Hệ thống khóa giá bất biến trong 15 phút với thuật toán định giá theo nhu cầu thời gian thực, đảm bảo giữ chỗ tức thì và quyền vào sân tự động.
+        {{ t('v2Reservations.hero.desc') }}
       </p>
 
       <!-- Stat Badges Strip -->
       <div class="stats-strip">
         <div class="stat-pill">
-          <span class="stat-label">Tổng lịch đặt</span>
+          <span class="stat-label">{{ t('v2Reservations.hero.statTotal') }}</span>
           <span class="stat-value font-mono">{{ totalCount }}</span>
         </div>
         <div class="stat-pill held">
           <span class="pulse-dot"></span>
-          <span class="stat-label">Đang giữ chỗ</span>
+          <span class="stat-label">{{ t('v2Reservations.hero.statHeld') }}</span>
           <span class="stat-value font-mono">{{ heldCount }}</span>
         </div>
         <div class="stat-pill confirmed">
           <span class="material-symbols-outlined stat-icon">verified</span>
-          <span class="stat-label">Đã xác nhận</span>
+          <span class="stat-label">{{ t('v2Reservations.hero.statConfirmed') }}</span>
           <span class="stat-value font-mono">{{ confirmedCount }}</span>
         </div>
         <div v-if="cancelledCount > 0" class="stat-pill muted">
-          <span class="stat-label">Đã hủy/Hết hạn</span>
+          <span class="stat-label">{{ t('v2Reservations.hero.statCancelled') }}</span>
           <span class="stat-value font-mono">{{ cancelledCount }}</span>
         </div>
       </div>
@@ -53,14 +57,14 @@ const emit = defineEmits<{
         class="btn btn-outline-refresh"
         :disabled="loading"
         @click="emit('refresh')"
-        title="Làm mới danh sách"
+        :title="t('v2Reservations.hero.refreshTitle')"
       >
         <span class="material-symbols-outlined" :class="{ spinning: loading }">refresh</span>
-        <span>Làm mới</span>
+        <span>{{ t('v2Reservations.hero.refresh') }}</span>
       </button>
       <button class="btn btn-primary" @click="emit('create-quote')">
         <span class="material-symbols-outlined">calculate</span>
-        <span>Tính Báo Giá Mới</span>
+        <span>{{ t('v2Reservations.hero.createQuote') }}</span>
       </button>
     </div>
   </header>

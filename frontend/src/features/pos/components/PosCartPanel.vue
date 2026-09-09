@@ -22,6 +22,8 @@ const props = defineProps<{
   quickCashSuggestions: number[]
   cashChange: number
   processingCheckout?: boolean
+  disabled?: boolean
+  activeTab?: any
 }>()
 
 const emit = defineEmits<{
@@ -39,6 +41,7 @@ const emit = defineEmits<{
   (e: 'openCustomerSearchModal'): void
   (e: 'openDraftsModal'): void
   (e: 'saveDraft'): void
+  (e: 'settleTab', tabId: number): void
 }>()
 
 const { t } = useI18n()
@@ -135,6 +138,24 @@ function handleCourtChange(val: string | number) {
             @change="handleCourtChange"
           />
         </div>
+      </div>
+
+      <div v-if="activeTab && activeTab.total_amount > 0" class="active-tab-banner">
+        <div class="tab-banner-left">
+          <span class="material-symbols-outlined tab-icon">receipt_long</span>
+          <div>
+            <span class="tab-label">{{ t('admin.pos.unpaidCourtTab') || 'Tab sân chưa trả:' }} </span>
+            <strong class="tab-amount">{{ formatMoney(activeTab.total_amount) }}</strong>
+            <span class="tab-count"> ({{ activeTab.items?.length || 0 }} món)</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-settle-tab"
+          @click="emit('settleTab', activeTab.id)"
+        >
+          {{ t('admin.pos.settleTabBtn') || 'Thanh toán Tab' }}
+        </button>
       </div>
     </div>
 
@@ -396,11 +417,11 @@ function handleCourtChange(val: string | number) {
         <button
           type="button"
           class="checkout-submit-btn"
-          :disabled="cart.length === 0 || processingCheckout"
+          :disabled="cart.length === 0 || processingCheckout || disabled"
           @click="emit('checkout')"
         >
           <span class="material-symbols-outlined icon-20">check_circle</span>
-          <span>{{ processingCheckout ? t('admin.pos.checkoutProcessing') : t('admin.pos.checkoutBtn') }}</span>
+          <span>{{ processingCheckout ? t('admin.pos.checkoutProcessing') : (paymentMethod === 'court_tab' ? (t('admin.pos.recordToTab') || 'Ghi vào Tab Sân') : t('admin.pos.checkoutBtn')) }}</span>
         </button>
       </div>
     </div>
@@ -429,6 +450,49 @@ function handleCourtChange(val: string | number) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.active-tab-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 4px;
+}
+.tab-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.tab-icon {
+  color: #f59e0b;
+  font-size: 20px;
+}
+.tab-amount {
+  color: #f59e0b;
+  font-weight: 700;
+}
+.tab-count {
+  color: var(--muted, #94a3b8);
+  font-size: 12px;
+}
+.btn-settle-tab {
+  background: #f59e0b;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-settle-tab:hover {
+  background: #d97706;
 }
 
 .cart-title-row {

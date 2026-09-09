@@ -44,12 +44,25 @@ class PosController extends Controller
         return $query->orderBy('name')->get();
     }
 
+    public function showProduct(Request $request, PosProduct $product)
+    {
+        $organization = $this->organization($request);
+        abort_unless($product->organization_id === $organization->id, 404);
+        return response()->json(['product' => $product->load('movements')]);
+    }
+
     public function storeProduct(Request $request)
     {
         $organization = $this->organization($request);
         $data = $request->validate([
-            'sku' => 'required|string|max:80',
-            'barcode' => 'nullable|string|max:100',
+            'sku' => [
+                'required', 'string', 'max:80',
+                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id),
+            ],
+            'barcode' => [
+                'nullable', 'string', 'max:100',
+                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id),
+            ],
             'name' => 'required|string|max:180',
             'description' => 'nullable|string',
             'price' => 'required|integer|min:0',
@@ -70,8 +83,14 @@ class PosController extends Controller
         $organization = $this->organization($request);
         abort_unless($product->organization_id === $organization->id, 404);
         $data = $request->validate([
-            'sku' => 'sometimes|string|max:80',
-            'barcode' => 'nullable|string|max:100',
+            'sku' => [
+                'sometimes', 'string', 'max:80',
+                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id)->ignore($product->id),
+            ],
+            'barcode' => [
+                'nullable', 'string', 'max:100',
+                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id)->ignore($product->id),
+            ],
             'name' => 'sometimes|string|max:180',
             'description' => 'nullable|string',
             'price' => 'sometimes|integer|min:0',
@@ -94,7 +113,6 @@ class PosController extends Controller
         $this->pos->deleteProduct($product);
         return response()->json(['message' => 'Product deleted successfully.']);
     }
-
     public function adjustStock(Request $request, PosProduct $product)
     {
         $organization = $this->organization($request);
@@ -184,11 +202,109 @@ class PosController extends Controller
         ]);
     }
 
+    public function quote(Request $request)
+    {
+        $organization = $this->organization($request);
+        $data = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|integer',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.rental_duration_hours' => 'nullable|integer|min:1',
+            'items.*.rental_hours' => 'nullable|integer|min:1',
+            'items.*.vat_rate' => 'nullable|numeric|min:0|max:1',
+            'customer_id' => 'nullable|integer',
+            'reservation_id' => 'nullable|integer',
+            'coupon_code' => 'nullable|string|max:50',
+            'discount_amount' => 'nullable|integer|min:0',
+            'payment_method' => 'nullable|in:cash,qr,wallet',
+            'cash_tendered' => 'nullable|integer|min:0',
+            'rounding_amount' => 'nullable|integer',
+        ]);
+        $quote = $this->pos->calculateQuote($organization->id, $data, $request->user());
+        return response()->json(['quote' => $quote]);
+    }
+
     public function completeOrder(Request $request)
     {
         $organization = $this->organization($request);
-        $data = $request->validate(['items' => 'required|array|min:1', 'items.*.product_id' => 'required|integer', 'items.*.quantity' => 'required|integer|min:1', 'customer_id' => 'nullable|integer', 'reservation_id' => 'nullable|integer', 'payment_method' => 'required|in:cash,qr,wallet', 'payment_reference' => 'nullable|string|max:160', 'discount_amount' => 'nullable|integer|min:0', 'offline' => 'nullable|boolean']);
-        return $this->idempotency->run($request, fn () => response()->json(['order' => $this->pos->completeOrder($request->user(), $organization->id, $data)], 201));
+        $data = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|integer',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.rental_duration_hours' => 'nullable|integer|min:1',
+            'items.*.rental_hours' => 'nullable|integer|min:1',
+            'items.*.vat_rate' => 'nullable|numeric|min:0|max:1',
+            'customer_id' => 'nullable|integer',
+            'reservation_id' => 'nullable|integer',
+            'payment_method' => 'required|in:cash,qr,wallet',
+            'payment_reference' => 'nullable|string|max:160',
+            'discount_amount' => 'nullable|integer|min:0',
+            'coupon_code' => 'nullable|string|max:50',
+            'cash_tendered' => 'nullable|integer|min:0',
+            'rounding_amount' => 'nullable|integer',
+            'offline' => 'nullable|boolean',
+        ]);
+
+        $activeShift = CashShift::where('organization_id', $organization->id)
+            ->where('cashier_id', $request->user()->id)
+            ->where('status', 'open')
+            ->first();
+        abort_unless($activeShift !== null, 409, 'Cashier does not have an active open shift.');
+
+        return $this->idempotency->run($request, function () use ($request, $organization, $data) {
+            $order = $this->pos->completeOrder($request->user(), $organization->id, $data);
+            return response()->json([
+                'order' => $order,
+                'receipt' => $order->receipt,
+            ], 201);
+        });
+    }
+
+    public function showOrder(Request $request, PosOrder $order)
+    {
+        $organization = $this->organization($request);
+        abort_unless($order->organization_id === $organization->id, 404);
+        return response()->json([
+            'order' => $order->load(['items', 'payments', 'customer:id,name,email,phone', 'cashier:id,name']),
+            'receipt' => $order->receipt,
+        ]);
+    }
+
+    public function confirmQrPayment(Request $request, PosOrder $order)
+    {
+        $organization = $this->organization($request);
+        abort_unless($order->organization_id === $organization->id, 404);
+        $data = $request->validate([
+            'external_transaction_id' => 'nullable|string|max:160',
+            'amount' => 'nullable|integer|min:1',
+            'provider' => 'nullable|string|max:50',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        return $this->idempotency->run($request, function () use ($order, $data) {
+            $confirmed = $this->pos->confirmQrPayment($order, $data);
+            return response()->json([
+                'order' => $confirmed,
+                'receipt' => $confirmed->receipt,
+            ]);
+        });
+    }
+
+    public function cancelQrPayment(Request $request, PosOrder $order)
+    {
+        $organization = $this->organization($request);
+        abort_unless($order->organization_id === $organization->id, 404);
+        $data = $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        return $this->idempotency->run($request, function () use ($order, $data) {
+            $cancelled = $this->pos->cancelPendingQr($order, $data['reason'] ?? 'cancelled_by_cashier');
+            return response()->json([
+                'order' => $cancelled,
+                'receipt' => $cancelled->receipt,
+            ]);
+        });
     }
 
     public function openShift(Request $request)

@@ -32,6 +32,19 @@ API root trả JSON trạng thái, còn toàn bộ endpoint phiên bản hiện 
 - Xuất lịch đặt sân dạng Google Calendar/iCal, đánh giá sân, dashboard occupancy theo giờ và audit log quản trị.
 - Tài khoản demo quản trị được mô phỏng trong phiên; thao tác quản trị demo được rollback để không phá dữ liệu thật.
 
+
+## Hệ thống 7 nhóm chức năng (Phase Hardening)
+
+Hệ thống đã hoàn thiện và kiểm thử toàn diện 7 nhóm năng lực theo đặc tả OpenSpec:
+1. **Account Lifecycle & Tenant Isolation**: Xác thực email, phiên đăng nhập, phân quyền đa người thuê (Organization Tenant Context, RLS, Role Matrix).
+2. **Venue, Court & Catalog Operations**: Quản lý sân, loại hình thể thao, lịch hoạt động và khóa sân bảo trì.
+3. **Pricing Engine, Coupons & Memberships**: Bảng giá động theo khung giờ/ngày trong tuần, coupon giảm giá và tích điểm hội viên.
+4. **Advanced Booking & Marketplace**: Đặt định kỳ theo chu kỳ, hoàn tiền ví tự động, chia hóa đơn nhóm (split-bill) và thị trường chuyển nhượng slot (resale).
+5. **Wallet Payments & Tournament Checkout**: Thanh toán ví số dư, nạp tiền ví, đăng ký giải đấu nguyên tử (trừ ví, ghi sổ kép tài chính cân bằng, idempotency).
+6. **Point of Sale (POS), Attendance & Service Tabs**: Bán hàng quầy, mở/đóng ca tiền mặt, quét mã QR check-in tham gia sân và quản lý tab dịch vụ giữ hàng kho.
+7. **Customer Community & Tournament Lifecycle**: Hồ sơ khách hàng, kết bạn, bảng tin cộng đồng kiểm duyệt, nhánh đấu giải đấu (vòng tròn / loại trực tiếp) và tranh chấp điểm số.
+
+Chi tiết bằng chứng kiểm thử thực tế và các cổng nghiệm thu xem tại: [docs/readiness/seven_group_capability_report.md](docs/readiness/seven_group_capability_report.md).
 ## Chạy backend local
 
 Yêu cầu PHP 8.3+, Composer và PostgreSQL.

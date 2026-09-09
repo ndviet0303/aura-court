@@ -245,12 +245,15 @@ export function useAdminSchedule() {
         ends_at: block.ends_at,
         reason: block.reason,
       })
-
       const court = courts.value.find((c) => c.id === block.court_id)
+      if (court) {
+        if (!(court as any).blocks) (court as any).blocks = []
+        ;(court as any).blocks.push(created)
+      }
       maintenanceBlocks.value.unshift({
         id: (created as any)?.id || Date.now(),
         court_id: block.court_id,
-        court_name: court ? court.name : 'Sân đã chọn',
+        court_name: court ? court.name : { vi: 'Sân đã chọn', en: 'Selected court' },
         venue_id: court?.venue_id || court?.venue?.id,
         starts_at: block.starts_at,
         ends_at: block.ends_at,
@@ -279,9 +282,12 @@ export function useAdminSchedule() {
     try {
       await adminApi.deleteBlock(block.court_id, block.id)
       maintenanceBlocks.value = maintenanceBlocks.value.filter((b) => b.id !== block.id)
+      const court = courts.value.find((c) => c.id === block.court_id)
+      if (court && Array.isArray((court as any).blocks)) {
+        ;(court as any).blocks = (court as any).blocks.filter((b: any) => b.id !== block.id)
+      }
       showUnlockConfirmModal.value = false
       blockToUnlock.value = null
-      showNotice(t('admin.schedule.unlockSuccess'))
     } catch (e: unknown) {
       error.value = errorMessage(e, t('admin.schedule.unlockError'))
     } finally {

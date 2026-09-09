@@ -72,7 +72,7 @@ class AdminController extends Controller
 
     public function updateVenue(Request $request, Venue $venue)
     {
-        if ($request->hasAny(['name', 'address', 'google_maps_url'])) {
+        if ($request->hasAny(['name', 'address', 'google_maps_url', 'amenities'])) {
             $data = $this->validatedVenue($request);
             $this->updateVenueAction->execute($venue, $data);
         }
@@ -109,15 +109,18 @@ class AdminController extends Controller
             $request->merge(['name' => ['vi' => $rawName, 'en' => $rawName]]);
         }
 
+        $isPatch = $request->isMethod('patch');
         $data = $request->validate([
-            'name' => 'required|array',
+            'name' => ($isPatch ? 'sometimes|' : '').'required|array',
             'name.*' => 'string|max:120',
-            'address' => 'required|string|max:255',
-            'google_maps_url' => 'required|url|max:2048',
+            'address' => ($isPatch ? 'sometimes|' : '').'required|string|max:255',
+            'google_maps_url' => ($isPatch ? 'sometimes|' : '').'required|url|max:2048',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
             'is_active' => 'boolean',
         ]);
 
-        if (! $this->isGoogleMapsUrl($data['google_maps_url'])) {
+        if (isset($data['google_maps_url']) && ! $this->isGoogleMapsUrl($data['google_maps_url'])) {
             throw ValidationException::withMessages([
                 'google_maps_url' => 'Chỉ chấp nhận liên kết Google Maps HTTPS hợp lệ.',
             ]);

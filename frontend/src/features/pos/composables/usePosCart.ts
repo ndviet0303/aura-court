@@ -8,7 +8,18 @@ export function usePosCart() {
   const customDiscountPercent = ref(0)
   const paymentMethod = ref<'cash' | 'qr' | 'wallet' | 'court_tab'>('cash')
   const cashTendered = ref<number>(0)
+  const checkoutKey = ref<string | null>(null)
 
+  function getCheckoutKey(): string {
+    if (!checkoutKey.value) {
+      checkoutKey.value = `pos-chk-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    }
+    return checkoutKey.value
+  }
+
+  function resetCheckoutKey() {
+    checkoutKey.value = null
+  }
   const discountPercent = computed(() => {
     if (selectedCustomer.value && selectedCustomer.value.discount_rate > 0) {
       return Math.max(customDiscountPercent.value, Math.round(selectedCustomer.value.discount_rate * 100))
@@ -96,6 +107,7 @@ export function usePosCart() {
   }
 
   function addToCart(product: Product, quantity = 1, rentalHours?: number, vatRate?: number) {
+    resetCheckoutKey()
     const itemVat = vatRate !== undefined ? vatRate : getItemDefaultVat(product)
     const existingIndex = cart.value.findIndex(
       (item) => item.product.id === product.id && (item.rental_hours || 1) === (rentalHours || 1) && (item.vat_rate ?? getItemDefaultVat(item.product)) === itemVat
@@ -114,6 +126,7 @@ export function usePosCart() {
   }
 
   function updateItemVatRate(index: number, newVatRate: number) {
+    resetCheckoutKey()
     const item = cart.value[index]
     if (item) {
       item.vat_rate = newVatRate
@@ -121,12 +134,14 @@ export function usePosCart() {
   }
 
   function removeFromCart(index: number) {
+    resetCheckoutKey()
     if (index >= 0 && index < cart.value.length) {
       cart.value.splice(index, 1)
     }
   }
 
   function updateQuantity(index: number, delta: number) {
+    resetCheckoutKey()
     const item = cart.value[index]
     if (!item) return
     const newQty = item.quantity + delta
@@ -138,6 +153,7 @@ export function usePosCart() {
   }
 
   function updateRentalHours(index: number, delta: number) {
+    resetCheckoutKey()
     const item = cart.value[index]
     if (!item || !item.rental_hours) return
     const newHours = item.rental_hours + delta
@@ -147,6 +163,7 @@ export function usePosCart() {
   }
 
   function clearCart() {
+    resetCheckoutKey()
     cart.value = []
     selectedCustomer.value = null
     selectedReservationId.value = null
@@ -177,5 +194,7 @@ export function usePosCart() {
     updateQuantity,
     updateRentalHours,
     clearCart,
+    getCheckoutKey,
+    resetCheckoutKey,
   }
 }

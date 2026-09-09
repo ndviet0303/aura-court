@@ -21,8 +21,14 @@ class OperationalDrillService
                 'realtime-degradation' => ['status' => 'manual', 'instruction' => 'Stop realtime consumer and verify tournament polling/resync remains authoritative.'],
                 default => throw new \InvalidArgumentException('Unsupported operational drill.'),
             };
-            $status = $evidence['status'] === 'failed' ? 'failed' : ($evidence['status'] === 'manual' ? 'manual' : 'passed');
-            $run->update(['status' => $status, 'evidence' => $evidence, 'completed_at' => now()]);
+            $isBlocked = ($evidence['exit_code'] ?? 0) === 127 || str_contains($evidence['output'] ?? '', 'not found');
+            $status = $isBlocked ? 'blocked' : ($evidence['status'] === 'failed' ? 'failed' : ($evidence['status'] === 'manual' ? 'manual' : 'passed'));
+            $run->update([
+                'status' => $status,
+                'evidence' => $evidence,
+                'failure_reason' => $isBlocked ? 'External prerequisite unavailable: '.trim($evidence['output'] ?? '') : null,
+                'completed_at' => now(),
+            ]);
         } catch (\Throwable $exception) {
             $run->update(['status' => 'blocked', 'failure_reason' => $exception->getMessage(), 'completed_at' => now()]);
         }

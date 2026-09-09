@@ -13,6 +13,18 @@ use Illuminate\Support\Str;
 class Tournament extends Model
 {
     use BelongsToTenant;
+    protected $appends = ['entry_fee', 'max_participants'];
+
+    public function getEntryFeeAttribute(): string
+    {
+        return (string) ($this->settings['entry_fee'] ?? '300.000 ₫ / VĐV');
+    }
+
+    public function getMaxParticipantsAttribute(): int
+    {
+        return (int) ($this->settings['max_participants'] ?? 16);
+    }
+
 
     protected static function booted(): void
     {

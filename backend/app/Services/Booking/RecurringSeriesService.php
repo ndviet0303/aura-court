@@ -60,7 +60,10 @@ class RecurringSeriesService
             $total = 0;
             foreach ($starts as $sequence => $start) {
                 $quote = $this->quotes->create($user->id, $organizationId, $series->court_id, [$start->toIso8601String()]);
-                $reservation = $this->reservations->hold($user, $organizationId, ['quote_id' => $quote->id]);
+                $reservation = $this->reservations->hold($user, $organizationId, [
+                    'quote_id' => $quote->id,
+                    'metadata' => ['type' => 'recurring_series', 'series_id' => $series->id],
+                ]);
                 $reservation = $this->reservations->confirm($reservation);
                 $amount = (int) $reservation->total_amount;
                 $total += $amount;

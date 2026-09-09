@@ -68,6 +68,17 @@ class WalletPaymentService
         abort_unless($amount > 0, 422, 'Số tiền hoàn phải lớn hơn 0.');
 
         $wallet = WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+
+        $existing = WalletTransaction::where('organization_id', $wallet->organization_id)
+            ->where('wallet_account_id', $wallet->id)
+            ->where('source_type', $sourceType)
+            ->where('source_id', $sourceId)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
         $wallet->increment('balance', $amount);
 
         return WalletTransaction::create([

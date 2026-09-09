@@ -24,7 +24,7 @@ class SocialController extends Controller
     public function profile(Request $request)
     {
         $organization = $this->organization($request);
-        return PlayerProfile::firstOrCreate(['organization_id' => $organization->id, 'user_id' => $request->user()->id], ['skill_level' => 1, 'reputation_score' => 60]);
+        return response()->json(PlayerProfile::firstOrCreate(['organization_id' => $organization->id, 'user_id' => $request->user()->id], ['skill_level' => 1, 'reputation_score' => 60]));
     }
 
     public function updateProfile(Request $request)
@@ -82,8 +82,35 @@ class SocialController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($post->organization_id === $organization->id, 404);
-        $data = $request->validate(['invitee_id' => 'required|integer']);
-        return $this->idempotency->run($request, fn () => response()->json(['invitation' => $this->matches->invite($post, $request->user(), $data['invitee_id'])], 201));
+        $data = $request->validate([
+            'invitee_id' => 'nullable|integer',
+            'invitee_ids' => 'nullable|array',
+            'invitee_ids.*' => 'integer',
+        ]);
+
+        return $this->idempotency->run($request, function () use ($post, $request, $data) {
+            if (!empty($data['invitee_ids'])) {
+                $batch = $this->matches->inviteMany($post, $request->user(), $data['invitee_ids']);
+                $first = $batch['invitations'][0] ?? null;
+
+                return response()->json(array_merge($batch, ['invitation' => $first]), 201);
+            }
+
+            abort_unless(!empty($data['invitee_id']), 422, 'invitee_id or invitee_ids is required.');
+            $invitation = $this->matches->invite($post, $request->user(), (int) $data['invitee_id']);
+
+            return response()->json([
+                'invitation' => $invitation,
+                'results' => [
+                    ['invitee_id' => (int) $data['invitee_id'], 'status' => 'invited', 'invitation_id' => $invitation->id],
+                ],
+                'summary' => [
+                    'total' => 1,
+                    'invited' => 1,
+                    'failed' => 0,
+                ],
+            ], 201);
+        });
     }
 
     public function join(Request $request, MatchPost $post)

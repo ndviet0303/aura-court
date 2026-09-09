@@ -2,16 +2,47 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+const props = defineProps<{
+  amenities?: string[]
+}>()
+
 const { t } = useI18n()
 
-const amenities = computed(() => [
-  { icon: 'local_parking', name: t('courtDetail.amenityParking'), desc: t('courtDetail.amenityParkingDesc') },
-  { icon: 'wifi', name: t('courtDetail.amenityWifi'), desc: t('courtDetail.amenityWifiDesc') },
-  { icon: 'shower', name: t('courtDetail.amenityShower'), desc: t('courtDetail.amenityShowerDesc') },
-  { icon: 'local_cafe', name: t('courtDetail.amenityCafe'), desc: t('courtDetail.amenityCafeDesc') },
-  { icon: 'sports_tennis', name: t('courtDetail.amenityShop'), desc: t('courtDetail.amenityShopDesc') },
-  { icon: 'weekend', name: t('courtDetail.amenityLounge'), desc: t('courtDetail.amenityLoungeDesc') },
-])
+const amenityMap: Record<string, { icon: string; nameKey: string; descKey: string }> = {
+  parking: { icon: 'local_parking', nameKey: 'courtDetail.amenityParking', descKey: 'courtDetail.amenityParkingDesc' },
+  wifi: { icon: 'wifi', nameKey: 'courtDetail.amenityWifi', descKey: 'courtDetail.amenityWifiDesc' },
+  shower: { icon: 'shower', nameKey: 'courtDetail.amenityShower', descKey: 'courtDetail.amenityShowerDesc' },
+  cafe: { icon: 'local_cafe', nameKey: 'courtDetail.amenityCafe', descKey: 'courtDetail.amenityCafeDesc' },
+  shop: { icon: 'sports_tennis', nameKey: 'courtDetail.amenityShop', descKey: 'courtDetail.amenityShopDesc' },
+  lounge: { icon: 'weekend', nameKey: 'courtDetail.amenityLounge', descKey: 'courtDetail.amenityLoungeDesc' },
+}
+
+const displayedAmenities = computed(() => {
+  if (props.amenities && props.amenities.length > 0) {
+    return props.amenities.map((item) => {
+      const key = item.toLowerCase()
+      const meta = amenityMap[key] || {
+        icon: 'check_circle',
+        nameKey: item,
+        descKey: item,
+      }
+      return {
+        icon: meta.icon,
+        name: meta.nameKey.startsWith('courtDetail.') ? t(meta.nameKey) : item,
+        desc: meta.descKey.startsWith('courtDetail.') ? t(meta.descKey) : item,
+      }
+    })
+  }
+
+  return [
+    { icon: 'local_parking', name: t('courtDetail.amenityParking'), desc: t('courtDetail.amenityParkingDesc') },
+    { icon: 'wifi', name: t('courtDetail.amenityWifi'), desc: t('courtDetail.amenityWifiDesc') },
+    { icon: 'shower', name: t('courtDetail.amenityShower'), desc: t('courtDetail.amenityShowerDesc') },
+    { icon: 'local_cafe', name: t('courtDetail.amenityCafe'), desc: t('courtDetail.amenityCafeDesc') },
+    { icon: 'sports_tennis', name: t('courtDetail.amenityShop'), desc: t('courtDetail.amenityShopDesc') },
+    { icon: 'weekend', name: t('courtDetail.amenityLounge'), desc: t('courtDetail.amenityLoungeDesc') },
+  ]
+})
 </script>
 
 <template>
@@ -21,7 +52,7 @@ const amenities = computed(() => [
       <span>{{ $t('courtDetail.amenitiesTitle') }}</span>
     </h3>
     <div class="amenities-grid">
-      <div v-for="a in amenities" :key="a.name" class="amenity-card">
+      <div v-for="a in displayedAmenities" :key="a.name" class="amenity-card">
         <span class="material-symbols-outlined a-icon">{{ a.icon }}</span>
         <strong class="a-name">{{ a.name }}</strong>
         <span class="a-desc">{{ a.desc }}</span>

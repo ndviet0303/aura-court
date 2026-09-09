@@ -109,12 +109,17 @@ class FinancialPostingService
 
     public function postPosSale(int $organizationId, int $orderId, int $amount, string $paymentMethod, string $reference): Journal
     {
+        $eventId = "pos:{$orderId}";
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'pos.sale')->where('event_id', $eventId)->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
         $accounts = $this->ledger->systemAccounts($organizationId);
         $debit = $paymentMethod === 'wallet' ? $accounts['wallet_liability'] : $accounts['cash_clearing'];
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'pos.sale',
-            'event_id' => "pos:{$orderId}",
+            'event_id' => $eventId,
             'reference' => $reference,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Connected POS sale',
@@ -126,6 +131,10 @@ class FinancialPostingService
 
     public function postWalletCredit(int $organizationId, int $walletId, int $amount, string $reference): Journal
     {
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'wallet.credit')->where('event_id', "wallet:{$walletId}:credit:{$reference}")->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
         $accounts = $this->ledger->systemAccounts($organizationId);
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -140,13 +149,39 @@ class FinancialPostingService
         ]);
     }
 
+    public function postWalletDeposit(int $organizationId, int $walletId, int $amount, string $reference, ?string $sourceType = null, ?int $sourceId = null): Journal
+    {
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'wallet.deposit')->where('event_id', "wallet:{$walletId}:deposit:{$reference}")->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
+        $accounts = $this->ledger->systemAccounts($organizationId);
+        return $this->ledger->post([
+            'organization_id' => $organizationId,
+            'event_type' => 'wallet.deposit',
+            'event_id' => "wallet:{$walletId}:deposit:{$reference}",
+            'reference' => $reference,
+            'currency' => config('finance.currency', 'VND'),
+            'description' => 'Tenant wallet deposit funded via provider',
+            'metadata' => ['wallet_account_id' => $walletId],
+        ], [
+            ['account_id' => $accounts['cash_clearing']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => $sourceType, 'source_id' => $sourceId],
+            ['account_id' => $accounts['wallet_liability']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => $sourceType, 'source_id' => $sourceId],
+        ]);
+    }
+
     public function postWalletSpend(int $organizationId, int $walletId, int $amount, string $reference): Journal
     {
+        $eventId = "wallet:{$walletId}:spend:{$reference}";
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'wallet.spend')->where('event_id', $eventId)->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
         $accounts = $this->ledger->systemAccounts($organizationId);
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'wallet.spend',
-            'event_id' => "wallet:{$walletId}:spend:{$reference}",
+            'event_id' => $eventId,
             'reference' => $reference,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Tenant wallet liability redeemed',
@@ -159,6 +194,11 @@ class FinancialPostingService
     public function postWalletBookingPayment(Booking $booking, Payment $payment, int $walletAccountId): Journal
     {
         $organizationId = $booking->court?->venue?->organization_id;
+        $eventId = "booking:{$booking->id}:payment:{$payment->id}";
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'booking.wallet_payment')->where('event_id', $eventId)->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
         $amount = (int) $payment->amount;
         $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
         $tenantPayable = $amount - $commission;
@@ -174,7 +214,7 @@ class FinancialPostingService
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'booking.wallet_payment',
-            'event_id' => "booking:{$booking->id}:payment:{$payment->id}",
+            'event_id' => $eventId,
             'reference' => $booking->code,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Booking payment via wallet balance',
@@ -182,9 +222,14 @@ class FinancialPostingService
         ], $entries);
     }
 
-    public function postWalletBookingRefund(Booking $booking, int $amount, int $walletAccountId): Journal
+    public function postWalletBookingRefund(Booking $booking, int $amount, int $walletAccountId, ?string $refundReference = null): Journal
     {
         $organizationId = $booking->court?->venue?->organization_id;
+        $eventId = "booking:{$booking->id}:refund:" . ($refundReference ?? 'full');
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'booking.wallet_refund')->where('event_id', $eventId)->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
         $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
         $tenantPayable = $amount - $commission;
         $accounts = $this->ledger->systemAccounts($organizationId);
@@ -199,11 +244,131 @@ class FinancialPostingService
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'booking.wallet_refund',
-            'event_id' => "booking:{$booking->id}:refund:" . uniqid(),
+            'event_id' => $eventId,
             'reference' => $booking->code,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Booking cancellation refund to wallet',
             'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => $commission],
+        ], $entries);
+    }
+
+    public function postWalletReservationPayment(Reservation $reservation, int $amount, int $walletAccountId, ?int $walletTxId = null): Journal
+    {
+        $organizationId = $reservation->organization_id;
+        $eventId = "reservation:{$reservation->id}:payment:" . ($walletTxId ?? $reservation->id);
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'reservation.wallet_payment')->where('event_id', $eventId)->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
+        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
+        $tenantPayable = $amount - $commission;
+        $accounts = $this->ledger->systemAccounts($organizationId);
+        $entries = [
+            ['account_id' => $accounts['wallet_liability']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $tenantPayable, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
+        ];
+        if ($commission > 0) {
+            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'credit', 'amount' => $commission, 'source_type' => Reservation::class, 'source_id' => $reservation->id];
+        }
+
+        return $this->ledger->post([
+            'organization_id' => $organizationId,
+            'event_type' => 'reservation.wallet_payment',
+            'event_id' => $eventId,
+            'reference' => $reservation->code,
+            'currency' => config('finance.currency', 'VND'),
+            'description' => 'Reservation payment via wallet balance',
+            'metadata' => ['provider' => 'wallet', 'wallet_account_id' => $walletAccountId, 'commission' => $commission],
+        ], $entries);
+    }
+
+    public function postWalletReservationRefund(Reservation $reservation, int $amount, int $walletAccountId, ?string $refundReference = null): Journal
+    {
+        $organizationId = $reservation->organization_id;
+        $eventId = "reservation:{$reservation->id}:refund:" . ($refundReference ?? 'full');
+        $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'reservation.wallet_refund')->where('event_id', $eventId)->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
+        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
+        $tenantPayable = $amount - $commission;
+        $accounts = $this->ledger->systemAccounts($organizationId);
+        $entries = [
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'debit', 'amount' => $tenantPayable, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
+            ['account_id' => $accounts['wallet_liability']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
+        ];
+        if ($commission > 0) {
+            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'debit', 'amount' => $commission, 'source_type' => Reservation::class, 'source_id' => $reservation->id];
+        }
+
+        return $this->ledger->post([
+            'organization_id' => $organizationId,
+            'event_type' => 'reservation.wallet_refund',
+            'event_id' => $eventId,
+            'reference' => $reservation->code,
+            'currency' => config('finance.currency', 'VND'),
+            'description' => 'Reservation cancellation refund to wallet',
+            'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => $commission],
+        ], $entries);
+    }
+
+    public function postTournamentRegistrationPayment(int $organizationId, int $tournamentId, int $participantId, int $amount, int $walletAccountId, ?string $reference = null): Journal
+    {
+        $eventId = "tournament:{$tournamentId}:participant:{$participantId}";
+        $existing = Journal::query()
+            ->where('organization_id', $organizationId)
+            ->where('event_type', 'tournament.registration')
+            ->where('event_id', $eventId)
+            ->first();
+
+        if ($existing) {
+            return $existing->load('entries');
+        }
+
+        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
+        $tenantPayable = $amount - $commission;
+        $accounts = $this->ledger->systemAccounts($organizationId);
+
+        $entries = [
+            [
+                'account_id' => $accounts['wallet_liability']->id,
+                'side' => 'debit',
+                'amount' => $amount,
+                'source_type' => 'App\\Models\\TournamentParticipant',
+                'source_id' => $participantId,
+            ],
+            [
+                'account_id' => $accounts['tenant_payable']->id,
+                'side' => 'credit',
+                'amount' => $tenantPayable,
+                'source_type' => 'App\\Models\\TournamentParticipant',
+                'source_id' => $participantId,
+            ],
+        ];
+
+        if ($commission > 0) {
+            $entries[] = [
+                'account_id' => $accounts['platform_commission']->id,
+                'side' => 'credit',
+                'amount' => $commission,
+                'source_type' => 'App\\Models\\TournamentParticipant',
+                'source_id' => $participantId,
+            ];
+        }
+
+        return $this->ledger->post([
+            'organization_id' => $organizationId,
+            'event_type' => 'tournament.registration',
+            'event_id' => $eventId,
+            'reference' => $reference ?? "TRN-{$tournamentId}-{$participantId}",
+            'currency' => config('finance.currency', 'VND'),
+            'description' => 'Tournament registration fee funded via wallet',
+            'metadata' => [
+                'tournament_id' => $tournamentId,
+                'participant_id' => $participantId,
+                'wallet_account_id' => $walletAccountId,
+                'commission' => $commission,
+            ],
         ], $entries);
     }
 

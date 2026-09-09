@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { VenueWallet, PaymentMethodType } from '../composables/useWallet'
 
 const props = defineProps<{
@@ -39,6 +40,8 @@ const emit = defineEmits<{
   (e: 'back'): void
   (e: 'copy', text: string, label: string): void
 }>()
+const { t } = useI18n()
+
 
 const customAmountInput = ref<number>(props.amount)
 
@@ -68,12 +71,12 @@ function formatMoney(amount: number): string {
             {{ step === 'stripe_pay' ? 'credit_card' : 'account_balance_wallet' }}
           </span>
           <h3 class="modal-title">
-            <template v-if="step === 'sepay_pay'">Chuyển Khoản Nạp Tiền VietQR SePay 24/7</template>
-            <template v-else-if="step === 'stripe_pay'">Thanh Toán Thẻ Quốc Tế Qua Stripe</template>
-            <template v-else>Nạp Tiền Vào Ví Hội Viên</template>
+            <template v-if="step === 'sepay_pay'">{{ t('wallet.depositModal.titleSepay') }}</template>
+            <template v-else-if="step === 'stripe_pay'">{{ t('wallet.depositModal.titleStripe') }}</template>
+            <template v-else>{{ t('wallet.depositModal.titleDefault') }}</template>
           </h3>
         </div>
-        <button class="modal-close-btn" @click="emit('close')" aria-label="Đóng">
+        <button class="modal-close-btn" @click="emit('close')" :aria-label="t('wallet.depositModal.cancelBtn')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -84,7 +87,7 @@ function formatMoney(amount: number): string {
         <div class="form-group">
           <label class="form-label">
             <span class="material-symbols-outlined label-icon">credit_card</span>
-            <span>Chọn thẻ / ví muốn nạp:</span>
+            <span>{{ t('wallet.depositModal.selectWalletLabel') }}</span>
           </label>
           <select
             :value="targetWalletId"
@@ -92,7 +95,7 @@ function formatMoney(amount: number): string {
             @change="emit('update:targetWalletId', ($event.target as HTMLSelectElement).value)"
           >
             <option v-for="w in wallets" :key="w.id" :value="w.id">
-              {{ w.venue_name }} · Số dư hiện tại: {{ formatMoney(w.balance) }}
+              {{ w.venue_name }} · {{ t('wallet.depositModal.currentBalance', { amount: formatMoney(w.balance) }) }}
             </option>
           </select>
         </div>
@@ -101,7 +104,7 @@ function formatMoney(amount: number): string {
         <div class="form-group">
           <label class="form-label">
             <span class="material-symbols-outlined label-icon">payments</span>
-            <span>Chọn nhanh mệnh giá nạp:</span>
+            <span>{{ t('wallet.depositModal.quickAmountsLabel') }}</span>
           </label>
           <div class="presets-grid">
             <button
@@ -122,7 +125,7 @@ function formatMoney(amount: number): string {
         <div class="form-group">
           <label class="form-label">
             <span class="material-symbols-outlined label-icon">edit</span>
-            <span>Hoặc nhập số tiền tùy chỉnh:</span>
+            <span>{{ t('wallet.depositModal.customAmountLabel') }}</span>
           </label>
           <div class="input-with-suffix">
             <input
@@ -131,19 +134,19 @@ function formatMoney(amount: number): string {
               min="50000"
               step="50000"
               class="form-input-luxury font-mono"
-              placeholder="Nhập số tiền..."
+              :placeholder="t('wallet.depositModal.customAmountPlaceholder')"
               @input="onCustomInput"
             />
             <span class="input-suffix font-mono">VND</span>
           </div>
-          <span class="input-help">Mức nạp tối thiểu là 50.000 ₫ · Không giới hạn số lần nạp</span>
+          <span class="input-help">{{ t('wallet.depositModal.minDepositNote') }}</span>
         </div>
 
         <!-- Payment Method Selection -->
         <div class="form-group">
           <label class="form-label">
             <span class="material-symbols-outlined label-icon">account_balance</span>
-            <span>Phương thức thanh toán:</span>
+            <span>{{ t('wallet.depositModal.paymentMethodLabel') }}</span>
           </label>
           <div class="methods-list">
             <!-- 1. SePay VietQR -->
@@ -159,11 +162,11 @@ function formatMoney(amount: number): string {
               <div class="method-meta">
                 <div class="method-title-row">
                   <span class="material-symbols-outlined method-icon text-accent">qr_code_scanner</span>
-                  <strong>Chuyển khoản VietQR SePay (Khuyên dùng)</strong>
-                  <span class="instant-pill">Tức thì 3s</span>
+                  <strong>{{ t('wallet.depositModal.methodSepayTitle') }}</strong>
+                  <span class="instant-pill">{{ t('wallet.depositModal.methodSepayTag') }}</span>
                 </div>
                 <p class="method-desc">
-                  Quét mã VietQR chuyển khoản liên ngân hàng 24/7 qua cổng SePay tự động cộng số dư tức thì sau 3 giây.
+                  {{ t('wallet.depositModal.methodSepayDesc') }}
                 </p>
               </div>
             </label>
@@ -181,11 +184,11 @@ function formatMoney(amount: number): string {
               <div class="method-meta">
                 <div class="method-title-row">
                   <span class="material-symbols-outlined method-icon">credit_card</span>
-                  <strong>Cổng thanh toán quốc tế Stripe</strong>
-                  <span class="stripe-pill">Bảo mật SSL</span>
+                  <strong>{{ t('wallet.depositModal.methodStripeTitle') }}</strong>
+                  <span class="stripe-pill">{{ t('wallet.depositModal.methodStripeTag') }}</span>
                 </div>
                 <p class="method-desc">
-                  Hỗ trợ thẻ tín dụng / ghi nợ quốc tế Visa, MasterCard, JCB, Apple Pay với chuẩn mã hóa PCI-DSS Level 1.
+                  {{ t('wallet.depositModal.methodStripeDesc') }}
                 </p>
               </div>
             </label>
@@ -195,20 +198,20 @@ function formatMoney(amount: number): string {
         <!-- Breakdown summary -->
         <div class="summary-box">
           <div class="sum-row">
-            <span>Số tiền nạp:</span>
+            <span>{{ t('wallet.depositModal.summaryDepositAmount') }}</span>
             <strong class="font-mono">{{ formatMoney(amount) }}</strong>
           </div>
           <div class="sum-row">
-            <span>Phí giao dịch:</span>
-            <span class="text-green font-mono">0 ₫ (Miễn phí)</span>
+            <span>{{ t('wallet.depositModal.summaryFee') }}</span>
+            <span class="text-green font-mono">{{ t('wallet.depositModal.summaryFeeFree') }}</span>
           </div>
           <div class="sum-row">
-            <span>Điểm tích lũy nhận kèm:</span>
+            <span>{{ t('wallet.depositModal.summaryPoints') }}</span>
             <span class="text-gold font-mono">+{{ Math.floor(amount / 10000) }} pts</span>
           </div>
           <div class="sum-divider"></div>
           <div class="sum-row total">
-            <span>Tổng thanh toán:</span>
+            <span>{{ t('wallet.depositModal.summaryTotal') }}</span>
             <strong class="total-val font-mono">{{ formatMoney(amount) }}</strong>
           </div>
         </div>
@@ -218,7 +221,7 @@ function formatMoney(amount: number): string {
       <div v-else-if="step === 'sepay_pay'" class="modal-body vietqr-body">
         <div class="vqr-instructions">
           <p class="vqr-lead">
-            Quét mã QR SePay bằng ứng dụng ngân hàng bất kỳ để hoàn tất nạp tiền tự động:
+            {{ t('wallet.depositModal.vqrLead') }}
           </p>
         </div>
 
@@ -229,19 +232,19 @@ function formatMoney(amount: number): string {
 
           <div class="vqr-details-table">
             <div class="vqr-detail-row">
-              <span class="vqr-d-label">Ngân hàng thụ hưởng:</span>
+              <span class="vqr-d-label">{{ t('wallet.depositModal.beneficiaryBank') }}</span>
               <strong class="vqr-d-val font-mono">{{ transferInfo.bank }}</strong>
             </div>
 
             <div class="vqr-detail-row">
-              <span class="vqr-d-label">Số tài khoản:</span>
+              <span class="vqr-d-label">{{ t('wallet.depositModal.accountNumber') }}</span>
               <div class="vqr-d-copyable">
                 <strong class="vqr-d-val font-mono">{{ transferInfo.accountNo }}</strong>
                 <button
                   type="button"
                   class="btn-copy-mini"
-                  @click="emit('copy', transferInfo.accountNo, 'Đã chép số tài khoản')"
-                  title="Sao chép số tài khoản"
+                  @click="emit('copy', transferInfo.accountNo, t('wallet.depositModal.copiedAccount'))"
+                  :title="t('wallet.depositModal.copiedAccount')"
                 >
                   <span class="material-symbols-outlined">content_copy</span>
                 </button>
@@ -249,24 +252,24 @@ function formatMoney(amount: number): string {
             </div>
 
             <div class="vqr-detail-row">
-              <span class="vqr-d-label">Tên chủ tài khoản:</span>
+              <span class="vqr-d-label">{{ t('wallet.depositModal.accountName') }}</span>
               <strong class="vqr-d-val">{{ transferInfo.accountName }}</strong>
             </div>
 
             <div class="vqr-detail-row">
-              <span class="vqr-d-label">Số tiền:</span>
+              <span class="vqr-d-label">{{ t('wallet.depositModal.amountLabel') }}</span>
               <strong class="vqr-d-val text-primary font-mono">{{ formatMoney(transferInfo.amount) }}</strong>
             </div>
 
             <div class="vqr-detail-row highlight-memo">
-              <span class="vqr-d-label">Nội dung chuyển khoản:</span>
+              <span class="vqr-d-label">{{ t('wallet.depositModal.transferMemo') }}</span>
               <div class="vqr-d-copyable">
                 <strong class="vqr-d-val font-mono">{{ transferInfo.memo }}</strong>
                 <button
                   type="button"
                   class="btn-copy-mini"
-                  @click="emit('copy', transferInfo.memo, 'Đã chép nội dung chuyển khoản')"
-                  title="Sao chép nội dung"
+                  @click="emit('copy', transferInfo.memo, t('wallet.depositModal.copiedMemo'))"
+                  :title="t('wallet.depositModal.copiedMemo')"
                 >
                   <span class="material-symbols-outlined">content_copy</span>
                 </button>
@@ -277,7 +280,7 @@ function formatMoney(amount: number): string {
 
         <div class="vqr-listening-pill">
           <span class="pulse-dot"></span>
-          <span>Hệ thống SePay đang tự động lắng nghe giao dịch chuyển khoản...</span>
+          <span>{{ t('wallet.depositModal.vqrListening') }}</span>
         </div>
       </div>
 
@@ -285,20 +288,19 @@ function formatMoney(amount: number): string {
       <div v-else-if="step === 'stripe_pay'" class="modal-body stripe-body">
         <div class="stripe-badge-banner">
           <span class="material-symbols-outlined lock-icon">lock</span>
-          <span>Thanh toán bảo mật trực tiếp qua cổng <strong>Stripe</strong> (Mã hóa SSL 256-bit)</span>
+          <span>{{ t('wallet.depositModal.stripeBanner') }}</span>
         </div>
-
         <div class="stripe-form">
           <div class="form-group">
             <label class="form-label">
               <span class="material-symbols-outlined label-icon">credit_card</span>
-              <span>Số thẻ tín dụng / ghi nợ:</span>
+              <span>{{ t('wallet.depositModal.stripeCardNumber') }}:</span>
             </label>
             <input
               type="text"
               :value="cardNumber"
               class="form-input-luxury font-mono"
-              placeholder="4242 •••• •••• 4242"
+              :placeholder="t('wallet.depositModal.stripeCardNumberPlaceholder')"
               maxlength="19"
               @input="emit('update:cardNumber', ($event.target as HTMLInputElement).value)"
             />
@@ -308,7 +310,7 @@ function formatMoney(amount: number): string {
             <div class="form-group">
               <label class="form-label">
                 <span class="material-symbols-outlined label-icon">calendar_month</span>
-                <span>Hạn thẻ (MM/YY):</span>
+                <span>{{ t('wallet.depositModal.stripeExpiry') }}:</span>
               </label>
               <input
                 type="text"
@@ -323,7 +325,7 @@ function formatMoney(amount: number): string {
             <div class="form-group">
               <label class="form-label">
                 <span class="material-symbols-outlined label-icon">pin</span>
-                <span>Mã CVC/CVV:</span>
+                <span>{{ t('wallet.depositModal.stripeCvc') }}:</span>
               </label>
               <input
                 type="password"
@@ -339,22 +341,20 @@ function formatMoney(amount: number): string {
           <div class="form-group">
             <label class="form-label">
               <span class="material-symbols-outlined label-icon">person</span>
-              <span>Tên in trên thẻ:</span>
+              <span>{{ t('wallet.depositModal.stripeName') }}:</span>
             </label>
             <input
               type="text"
               :value="cardName"
               class="form-input-luxury"
-              placeholder="NGUYEN VAN A"
+              :placeholder="t('wallet.depositModal.stripeNamePlaceholder')"
               @input="emit('update:cardName', ($event.target as HTMLInputElement).value)"
             />
           </div>
         </div>
 
         <div class="stripe-summary-pill">
-          <span>Số tiền nạp qua thẻ: </span>
-          <strong class="font-mono text-primary">{{ formatMoney(amount) }}</strong>
-          <span>(Miễn phí giao dịch)</span>
+          <span>{{ t('wallet.depositModal.stripeSummaryPill', { amount: formatMoney(amount) }) }}</span>
         </div>
       </div>
 
@@ -367,7 +367,7 @@ function formatMoney(amount: number): string {
           @click="emit('back')"
         >
           <span class="material-symbols-outlined">arrow_back</span>
-          <span>Quay Lại</span>
+          <span>{{ t('wallet.depositModal.backBtn') }}</span>
         </button>
         <button
           v-else
@@ -375,7 +375,7 @@ function formatMoney(amount: number): string {
           class="btn btn-outline"
           @click="emit('close')"
         >
-          <span>Huỷ Bỏ</span>
+          <span>{{ t('wallet.depositModal.cancelBtn') }}</span>
         </button>
 
         <button
@@ -385,8 +385,8 @@ function formatMoney(amount: number): string {
           :disabled="processing || amount < 50000"
           @click="emit('proceed')"
         >
-          <span v-if="processing">Đang xử lý...</span>
-          <span v-else>Tiếp Tục Thanh Toán · {{ formatMoney(amount) }}</span>
+          <span v-if="processing">{{ t('admin.pos.processing') }}</span>
+          <span v-else>{{ t('wallet.depositModal.continueBtn') }} · {{ formatMoney(amount) }}</span>
         </button>
 
         <button
@@ -397,8 +397,8 @@ function formatMoney(amount: number): string {
           @click="emit('confirm')"
         >
           <span class="material-symbols-outlined">check_circle</span>
-          <span v-if="processing">Đang xác thực...</span>
-          <span v-else>Xác Nhận Đã Chuyển Tiền</span>
+          <span v-if="processing">{{ t('wallet.depositModal.stripeVerifying') }}</span>
+          <span v-else>{{ t('wallet.depositModal.confirmTransferredBtn') }}</span>
         </button>
 
         <button
@@ -409,8 +409,8 @@ function formatMoney(amount: number): string {
           @click="emit('confirm')"
         >
           <span class="material-symbols-outlined">lock</span>
-          <span v-if="processing">Đang xử lý thẻ...</span>
-          <span v-else>Nạp Ngay {{ formatMoney(amount) }} Qua Stripe</span>
+          <span v-if="processing">{{ t('wallet.depositModal.stripeProcessing') }}</span>
+          <span v-else>{{ t('wallet.depositModal.payNowBtn', { amount: formatMoney(amount) }) }}</span>
         </button>
       </div>
     </div>

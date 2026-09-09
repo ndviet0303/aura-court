@@ -100,6 +100,10 @@ class Organization extends Model
     {
         return $this->hasMany(OrganizationMember::class);
     }
+    public function customers(): HasMany
+    {
+        return $this->hasMany(TenantCustomer::class);
+    }
 
     public function users(): BelongsToMany
     {

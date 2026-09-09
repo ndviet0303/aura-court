@@ -12,8 +12,7 @@ class PosProduct extends Model
 {
     use BelongsToTenant;
 
-    protected $appends = ['category', 'unit', 'min_stock', 'supplier', 'tax_rate'];
-
+    protected $appends = ['category', 'unit', 'min_stock', 'supplier', 'tax_rate', 'is_rental'];
     protected function casts(): array
     {
         return [
@@ -32,9 +31,8 @@ class PosProduct extends Model
 
     public function getCategoryAttribute(): string
     {
-        return $this->metadata['category'] ?? 'drinks';
+        return $this->metadata['category'] ?? 'general';
     }
-
     public function getUnitAttribute(): string
     {
         return $this->metadata['unit'] ?? 'chai';
@@ -56,13 +54,17 @@ class PosProduct extends Model
             return (int) $this->metadata['tax_rate'];
         }
         $cat = $this->category;
-        if (in_array($cat, ['drinks', 'snacks', 'nutrition', 'rental'], true)) {
+        if (in_array($cat, ['drinks', 'snacks', 'nutrition'], true)) {
             return 8;
         }
         if ($cat === 'services') {
             return 10;
         }
-        return 8;
+        return 0;
+    }
+    public function getIsRentalAttribute(): bool
+    {
+        return (bool) ($this->metadata['is_rental'] ?? ($this->category === 'rental'));
     }
 }
 

@@ -11,10 +11,21 @@ class ResolveFinanceExceptionRequest extends FormRequest
         return $this->user() !== null;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('resolution')) {
+            if ($this->has('note')) {
+                $this->merge(['resolution' => $this->input('note')]);
+            } elseif ($this->has('reason')) {
+                $this->merge(['resolution' => $this->input('reason')]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'resolution' => ['required', 'string', 'min:20', 'max:2000'],
+            'resolution' => ['required', 'string', 'min:5', 'max:2000'],
             'action_type' => ['nullable', 'string', 'max:100'],
         ];
     }

@@ -102,6 +102,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Membership::class);
     }
+    public function tenantCustomers(): HasMany
+    {
+        return $this->hasMany(TenantCustomer::class);
+    }
 
     public function waitlistEntries(): HasMany
     {

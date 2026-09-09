@@ -109,4 +109,69 @@ describe('CreateMatchView', () => {
     expect(pushMock).toHaveBeenCalledWith(expect.objectContaining({ path: '/matchmaking' }))
     vi.useRealTimers()
   })
+
+  it('Task 8.2: loads persisted friends from /social/friends, toggles selection, and sends batch invitations with individual failure reporting', async () => {
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+      if (url.startsWith('/social/friends')) {
+        return {
+          friends: [
+            { id: 101, name: 'Lê Văn An', avatar_url: '', play_level: 4, city: 'Hà Nội' },
+            { id: 102, name: 'Trần Thị Bình', avatar_url: '', play_level: 3, city: 'Hà Nội' },
+          ],
+          total: 2,
+        }
+      }
+      return []
+    })
+
+    vi.mocked(apiV2.post).mockImplementation(async (url: string, payload: any) => {
+      if (url === '/social/matches') {
+        return { match: { id: 777, title: 'Match Test 8.2' } }
+      }
+      if (url === '/social/matches/777/invite') {
+        return {
+          results: [
+            { invitee_id: 101, status: 'invited', invitation_id: 1 },
+            { invitee_id: 102, status: 'failed', reason: 'User not permitted' },
+          ],
+          summary: { total: 2, invited: 1, failed: 1 },
+        }
+      }
+      return {}
+    })
+
+    const wrapper = mount(CreateMatchView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    // 1. Verifies friends were loaded from persisted /social/friends endpoint
+    expect(apiV2.get).toHaveBeenCalledWith('/social/friends')
+    expect(wrapper.text()).toContain('Lê Văn An')
+    expect(wrapper.text()).toContain('Trần Thị Bình')
+
+    // 2. Select both friends
+    const friendCards = wrapper.findAll('.friend-card')
+    expect(friendCards.length).toBe(2)
+    await friendCards[0]?.trigger('click')
+    await friendCards[1]?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Đã chọn 2')
+
+    // 3. Submit match
+    const form = wrapper.find('form.create-layout')
+    await form.trigger('submit')
+    await flushPromises()
+
+    // 4. Batch invitations sent with individual IDs
+    expect(apiV2.post).toHaveBeenCalledWith('/social/matches/777/invite', {
+      invitee_ids: [101, 102],
+    })
+
+    // 5. Individual failure outcome reported in notice
+    expect(wrapper.text()).toContain('Lưu ý một số lời mời thất bại: ID 102: User not permitted')
+  })
 })

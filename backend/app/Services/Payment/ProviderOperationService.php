@@ -17,6 +17,10 @@ class ProviderOperationService
 {
     public function __construct(private readonly PaymentProviderManager $providers) {}
 
+    public function provider(?string $name = null): \App\Contracts\Payment\PaymentProviderInterface
+    {
+        return $this->providers->provider($name);
+    }
     public function createPaymentIntent(PaymentIntentRequest $request, ?int $organizationId = null, ?int $userId = null): PaymentIntentResponse
     {
         $provider = $this->providers->provider();
