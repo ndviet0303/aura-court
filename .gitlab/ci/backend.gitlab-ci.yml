@@ -61,6 +61,7 @@ deploy_to_portainer:
   image: debian:trixie-slim
   stage: deploy
   needs: [build_api]
+  allow_failure: true
   rules:
     - <<: *if-mr-to-dev-main
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH) && $PORTAINER_WEBHOOK_URLS'
@@ -72,5 +73,5 @@ deploy_to_portainer:
       echo "Deploying booking images to Portainer..."
       for item in $(echo "$PORTAINER_WEBHOOK_URLS" | jq -r '.[]'); do
         echo "Processing Portainer webhook: $item"
-        curl -fsS -X POST "$item"
+        curl -fsS -X POST "$item" || echo "Warning: Portainer webhook endpoint returned error, deployment may require manual trigger once server is reachable."
       done
