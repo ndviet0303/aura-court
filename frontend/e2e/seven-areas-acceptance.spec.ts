@@ -17,9 +17,8 @@ test.describe('Seven Functional Areas Browser Acceptance Matrix', () => {
     await page.locator('input[type="password"], input[name="password"]').fill('wrongpassword123')
     await page.locator('button[type="submit"].auth-submit-btn').click()
 
-    // Error feedback is rendered from real backend API without unhandled crash
-    await expect(page.locator('.text-rose-400, .text-red-500, .bg-red-500\\/10, [role="alert"]').or(page.getByText(/thất bại|không chính xác|invalid|failed|unauthorized/i))).toBeVisible({ timeout: 10000 })
-
+    // Error feedback is rendered without unhandled crash
+    await expect(page.locator('[role="alert"], .error-banner').first()).toBeVisible({ timeout: 10000 })
     // Unauthenticated guard on protected route redirects to login
     await page.goto('/wallet')
     await expect(page).toHaveURL(/.*login.*redirect=.*wallet/)
