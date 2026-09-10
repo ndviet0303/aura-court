@@ -45,7 +45,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
         }
 
         if ($search) {
-            $term = '%' . trim($search) . '%';
+            $term = '%'.trim($search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('dispute_code', 'like', $term)
                     ->orWhere('title', 'like', $term)
@@ -87,6 +87,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
     public function update(DisputeCase $dispute, array $attributes): DisputeCase
     {
         $dispute->update($attributes);
+
         return $dispute->fresh(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator']);
     }
 }

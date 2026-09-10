@@ -11,7 +11,10 @@ class EloquentVenueRepository implements VenueRepositoryInterface
 {
     public function getActiveVenuesWithCourts(?string $sportType = null): Collection
     {
-        return Venue::withCount('courts')
+        return Venue::withCount(['courts' => fn ($q) => $q->where('is_active', true)])
+            ->where('is_active', true)
+            ->whereIn('status', ['published', 'active'])
+            ->whereHas('organization', fn ($q) => $q->where('partner_status', 'approved')->where('status', 'active'))
             ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->withCount('courts')])
             ->when($sportType, function ($q, $sportType) {
                 $q->whereHas('sportZones', fn ($z) => $z->where('sport_type', $sportType)->where('is_active', true));
@@ -24,6 +27,8 @@ class EloquentVenueRepository implements VenueRepositoryInterface
     {
         return Venue::where('slug', $slug)
             ->where('is_active', true)
+            ->whereIn('status', ['published', 'active'])
+            ->whereHas('organization', fn ($q) => $q->where('partner_status', 'approved')->where('status', 'active'))
             ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->with(['courts' => fn ($c) => $c->where('is_active', true)->with('priceSlots')])])
             ->first();
     }
@@ -37,6 +42,7 @@ class EloquentVenueRepository implements VenueRepositoryInterface
     {
         $venue = Venue::create($attributes);
         Cache::increment('venues_version');
+
         return $venue;
     }
 
@@ -44,6 +50,7 @@ class EloquentVenueRepository implements VenueRepositoryInterface
     {
         $updated = $venue->update($attributes);
         Cache::increment('venues_version');
+
         return $updated;
     }
 

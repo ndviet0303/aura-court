@@ -19,6 +19,29 @@ class BookingFlowsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $org = \App\Models\Organization::first();
+        if ($org) {
+            $org->update(['partner_status' => 'approved', 'status' => 'active']);
+            $plan = \App\Models\PlatformPlan::firstOrCreate(
+                ['code' => 'PLATFORM_GROWTH'],
+                ['name' => 'Growth', 'price' => 100000, 'billing_cycle' => 'monthly', 'is_active' => true]
+            );
+            \App\Models\PlatformSubscription::firstOrCreate(
+                ['organization_id' => $org->id],
+                ['plan_id' => $plan->id, 'status' => 'active', 'starts_at' => now()->subDay(), 'ends_at' => now()->addMonth()]
+            );
+        }
+
+        $venue = \App\Models\Venue::first();
+        if ($venue) {
+            $venue->update(['status' => 'published', 'is_active' => true]);
+        }
+    }
+
     private function fundUserWallet(User $user, int $amount = 1000000): void
     {
         $venue = Venue::firstOrFail();

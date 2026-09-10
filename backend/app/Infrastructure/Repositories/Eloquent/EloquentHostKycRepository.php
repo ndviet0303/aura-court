@@ -4,6 +4,9 @@ namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Models\HostKyc;
+use App\Models\PartnerConsent;
+use App\Models\PartnerDocument;
+use App\Models\PartnerReviewHistory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class EloquentHostKycRepository implements HostKycRepositoryInterface
@@ -11,15 +14,56 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
     public function findById(int $id): ?HostKyc
     {
         return HostKyc::query()
-            ->with(['organization', 'venue', 'user', 'reviewer'])
+            ->with(['organization', 'venue', 'user', 'reviewer', 'documents', 'consents', 'reviewHistories'])
+            ->find($id);
+    }
+
+    public function findByIdWithLock(int $id): ?HostKyc
+    {
+        return HostKyc::query()
+            ->lockForUpdate()
+            ->with(['organization', 'venue', 'user', 'reviewer', 'documents', 'consents', 'reviewHistories'])
             ->find($id);
     }
 
     public function findByCode(string $code): ?HostKyc
     {
         return HostKyc::query()
-            ->with(['organization', 'venue', 'user', 'reviewer'])
+            ->with(['organization', 'venue', 'user', 'reviewer', 'documents', 'consents', 'reviewHistories'])
             ->where('kyc_code', $code)
+            ->first();
+    }
+
+    public function findLatestByUserId(int $userId): ?HostKyc
+    {
+        return HostKyc::query()
+            ->where('user_id', $userId)
+            ->latest('id')
+            ->first();
+    }
+
+    public function findCurrentByUserId(int $userId): ?HostKyc
+    {
+        return HostKyc::query()
+            ->where('current_user_id', $userId)
+            ->with(['organization', 'venue', 'user', 'reviewer', 'documents', 'consents', 'reviewHistories'])
+            ->first();
+    }
+
+    public function findCurrentByUserIdWithLock(int $userId): ?HostKyc
+    {
+        return HostKyc::query()
+            ->where('current_user_id', $userId)
+            ->lockForUpdate()
+            ->with(['organization', 'venue', 'user', 'reviewer', 'documents', 'consents', 'reviewHistories'])
+            ->first();
+    }
+
+    public function findByTaxCode(string $taxCode): ?HostKyc
+    {
+        return HostKyc::query()
+            ->where('tax_code', $taxCode)
+            ->whereIn('status', ['draft', 'pending', 'revision_required', 'approved'])
             ->first();
     }
 
@@ -35,7 +79,7 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
         }
 
         if ($search) {
-            $term = '%' . trim($search) . '%';
+            $term = '%'.trim($search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('kyc_code', 'like', $term)
                     ->orWhere('business_name', 'like', $term)
@@ -46,7 +90,7 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
             });
         }
 
-        return $query->orderByRaw("CASE WHEN status = 'pending' THEN 1 WHEN status = 'flagged' THEN 2 WHEN status = 'needs_supplement' THEN 3 ELSE 4 END")
+        return $query->orderByRaw("CASE WHEN status = 'pending' THEN 1 WHEN status = 'flagged' THEN 2 WHEN status = 'revision_required' THEN 3 WHEN status = 'needs_supplement' THEN 4 ELSE 5 END")
             ->orderByDesc('submitted_at')
             ->paginate($perPage);
     }
@@ -56,7 +100,7 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
         $pending = HostKyc::query()->where('status', 'pending')->count();
         $flagged = HostKyc::query()->where('status', 'flagged')->count();
         $approved = HostKyc::query()->where('status', 'approved')->count();
-        $needsSupplement = HostKyc::query()->where('status', 'needs_supplement')->count();
+        $revisionRequired = HostKyc::query()->whereIn('status', ['revision_required', 'needs_supplement'])->count();
         $avgConfidence = HostKyc::query()->avg('ai_ocr_score') ?: 0.0;
 
         return [
@@ -65,7 +109,7 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
             'avg_processing_time_minutes' => 14.2,
             'flagged_count' => $flagged,
             'approved_count' => $approved,
-            'needs_supplement_count' => $needsSupplement,
+            'needs_supplement_count' => $revisionRequired,
         ];
     }
 
@@ -77,6 +121,32 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
     public function update(HostKyc $kyc, array $attributes): HostKyc
     {
         $kyc->update($attributes);
-        return $kyc->fresh(['organization', 'venue', 'user', 'reviewer']);
+
+        return $kyc->fresh(['organization', 'venue', 'user', 'reviewer', 'documents', 'consents', 'reviewHistories']);
+    }
+
+    public function attachDocument(HostKyc $kyc, array $attributes): PartnerDocument
+    {
+        return $kyc->documents()->create($attributes);
+    }
+
+    public function findDocument(int $documentId): ?PartnerDocument
+    {
+        return PartnerDocument::query()->find($documentId);
+    }
+
+    public function deleteDocument(PartnerDocument $document): bool
+    {
+        return (bool) $document->delete();
+    }
+
+    public function recordConsent(HostKyc $kyc, array $attributes): PartnerConsent
+    {
+        return $kyc->consents()->create($attributes);
+    }
+
+    public function recordReview(HostKyc $kyc, array $attributes): PartnerReviewHistory
+    {
+        return $kyc->reviewHistories()->create($attributes);
     }
 }

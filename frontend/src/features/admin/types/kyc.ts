@@ -46,6 +46,27 @@ export interface HostKyc {
   reviewed_at?: string
   submitted_at: string
   created_at?: string
+  version?: number
+  submitted_version?: number
+  submission_snapshot?: Record<string, unknown> | null
+  documents?: Array<{
+    id: number
+    document_type: string
+    original_name: string
+    mime_type: string
+    file_size_bytes: number
+    version: number
+    download_url?: string
+  }>
+  review_history?: Array<{
+    id: number
+    decision: string
+    reason?: string | null
+    feedback_fields?: Record<string, string> | null
+    reviewed_by: number
+    reviewer_name?: string
+    reviewed_at: string
+  }>
 }
 
 export interface KycStats {
@@ -71,6 +92,8 @@ export interface ReviewKycPayload {
   rejection_reason?: string
   reviewer_notes?: string
   checklist_state?: Record<string, boolean>
+  expected_version?: number
+  feedback_fields?: Record<string, string>
 }
 
 export interface KycAuditLog {

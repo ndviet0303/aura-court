@@ -4,23 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Organization extends Model
 {
     use HasFactory;
-
     protected $fillable = [
         'name',
         'slug',
         'tax_code',
         'status',
+        'partner_status',
+        'partner_status_reason',
+        'partner_status_changed_at',
+        'source_kyc_id',
         'settings',
     ];
-
     protected $casts = [
         'settings' => 'array',
+        'partner_status_changed_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -111,6 +115,17 @@ class Organization extends Model
             ->withPivot(['role', 'permissions', 'status'])
             ->withTimestamps();
     }
+    public function owner()
+    {
+        return $this->hasOneThrough(
+            User::class,
+            OrganizationMember::class,
+            'organization_id',
+            'id',
+            'id',
+            'user_id'
+        )->where('organization_members.role', 'owner');
+    }
 
     public function hasMember(int $userId, ?string $role = null): bool
     {
@@ -119,5 +134,42 @@ class Organization extends Model
             $query->where('role', $role);
         }
         return $query->exists();
+    }
+
+    public function sourceKyc(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(HostKyc::class, 'source_kyc_id');
+    }
+
+    public function isApprovedPartner(): bool
+    {
+        return $this->partner_status === 'approved';
+    }
+
+    public function isSuspendedPartner(): bool
+    {
+        return $this->partner_status === 'suspended';
+    }
+
+    public function isTerminatedPartner(): bool
+    {
+        return $this->partner_status === 'terminated';
+    }
+
+    public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PlatformSubscription::class);
+    }
+
+    public function activeSubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PlatformSubscription::class)
+            ->whereIn('status', ['active', 'trial'])
+            ->latestOfMany();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription !== null && $this->activeSubscription->isValid();
     }
 }

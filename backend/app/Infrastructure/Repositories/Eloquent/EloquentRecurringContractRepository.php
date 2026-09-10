@@ -98,6 +98,7 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
             }
             $occurrenceCount = max(1, $s->occurrence_count ?: 4);
             $totalAmount = $s->total_amount ?: 0;
+
             return (int) round(($totalAmount / $occurrenceCount) * 4);
         });
 
@@ -135,7 +136,7 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
                 $user = User::create([
                     'name' => $data['customer_name'] ?? 'Khách hàng HĐ',
                     'phone' => $data['phone'] ?? null,
-                    'email' => ! empty($data['email']) ? $data['email'] : 'customer_' . time() . '_' . Str::random(4) . '@auracontrol.vn',
+                    'email' => ! empty($data['email']) ? $data['email'] : 'customer_'.time().'_'.Str::random(4).'@auracontrol.vn',
                     'password' => bcrypt(Str::random(16)),
                     'role' => 'customer',
                 ]);
@@ -174,7 +175,7 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
                     'monthly_amount' => $monthlyAmount,
                     'weekday' => $data['weekday'] ?? 'Thứ 2, 4, 6',
                     'time_slot' => $data['time_slot'] ?? '18:00 - 20:00',
-                    'contract_code' => 'CTR-' . date('Y') . '-' . str_pad((string) (RecurringSeries::count() + 1), 4, '0', STR_PAD_LEFT),
+                    'contract_code' => 'CTR-'.date('Y').'-'.str_pad((string) (RecurringSeries::count() + 1), 4, '0', STR_PAD_LEFT),
                     'notes' => $data['notes'] ?? null,
                 ],
             ]);
@@ -213,7 +214,7 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
                     'due_at' => $dueAt,
                     'amount' => $monthlyAmount,
                     'status' => $m === 0 ? 'paid' : ($m === 1 ? 'pending' : 'pending'),
-                    'payment_reference' => $m === 0 ? 'AUTO-DEP-' . strtoupper(Str::random(6)) : null,
+                    'payment_reference' => $m === 0 ? 'AUTO-DEP-'.strtoupper(Str::random(6)) : null,
                     'paid_at' => $m === 0 ? now() : null,
                     'uuid' => (string) Str::uuid(),
                 ]);

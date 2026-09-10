@@ -104,6 +104,8 @@ function inspectFacility(imgUrl: string, idx: number) {
             <span class="sub-item">{{ t('admin.kyc.representative') }}: <strong>{{ item.representative_name }}</strong></span>
             <span class="dot-separator"></span>
             <span class="sub-item">{{ t('admin.kyc.businessTypeLabel') }}: <strong>{{ getBusinessTypeLabel(item.business_type) }}</strong></span>
+            <span class="dot-separator"></span>
+            <span class="sub-item">Phiên bản: <strong>v{{ item.version || 1 }}</strong></span>
           </div>
         </div>
       </div>

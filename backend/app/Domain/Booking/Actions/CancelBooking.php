@@ -26,8 +26,9 @@ class CancelBooking
             return $booking->load(['court', 'slots', 'refunds']);
         }
         $firstSlot = $booking->slots()->orderBy('starts_at')->firstOrFail();
-        if ($booking->status === 'confirmed' && now()->greaterThan($firstSlot->starts_at->copy()->subHours(2))) {
-            abort(409, 'Booking chỉ được hủy trước giờ chơi ít nhất 2 giờ.');
+        $graceHours = (int) ($booking->policy_snapshot['cancellation_grace_hours'] ?? 2);
+        if ($booking->status === 'confirmed' && now()->greaterThan($firstSlot->starts_at->copy()->subHours($graceHours))) {
+            abort(409, "Booking chỉ được hủy trước giờ chơi ít nhất {$graceHours} giờ.");
         }
 
         $slotRefs = $booking->slots()->whereIn('status', ['held', 'confirmed'])->get()->map(fn (BookingSlot $slot) => [$slot->court_id, $slot->starts_at])->all();

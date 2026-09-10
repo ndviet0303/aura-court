@@ -34,6 +34,18 @@ use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanReposit
 use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
 use App\Infrastructure\Storage\FileStorageService;
+use App\Contracts\Storage\PartnerDocumentStorageInterface;
+use App\Infrastructure\Storage\PrivatePartnerDocumentStorage;
+use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
+use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionRepository;
+use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
+use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
+use App\Infrastructure\Services\DurableNotificationService;
+use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
+use App\Infrastructure\Repositories\Eloquent\EloquentOrganizationLockRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -58,6 +70,13 @@ class RepositoryServiceProvider extends ServiceProvider
         TenantMembershipPlanRepositoryInterface::class => EloquentTenantMembershipPlanRepository::class,
         LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
+        PlatformPlanRepositoryInterface::class => EloquentPlatformPlanRepository::class,
+        PlatformSubscriptionRepositoryInterface::class => EloquentPlatformSubscriptionRepository::class,
+        VenueLifecycleRepositoryInterface::class => EloquentVenueLifecycleRepository::class,
+        OrganizationLockRepositoryInterface::class => EloquentOrganizationLockRepository::class,
+        PartnerDocumentStorageInterface::class => PrivatePartnerDocumentStorage::class,
+        DurableNotificationServiceInterface::class => DurableNotificationService::class,
+        \App\Contracts\Repositories\UserRepositoryInterface::class => \App\Infrastructure\Repositories\Eloquent\EloquentUserRepository::class,
     ];
 
     public function register(): void

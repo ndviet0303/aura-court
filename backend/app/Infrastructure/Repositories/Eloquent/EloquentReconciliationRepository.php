@@ -65,12 +65,12 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
         if ($filter->search) {
             $query->where(function ($q) use ($filter) {
                 $q->where('run_date', 'like', "%{$filter->search}%")
-                  ->orWhere('status', 'like', "%{$filter->search}%")
-                  ->orWhere('id', 'like', "%{$filter->search}%")
-                  ->orWhere('details->channel', 'like', "%{$filter->search}%")
-                  ->orWhere('details->txnCode', 'like', "%{$filter->search}%")
-                  ->orWhere('details->customer', 'like', "%{$filter->search}%")
-                  ->orWhere('details->court', 'like', "%{$filter->search}%");
+                    ->orWhere('status', 'like', "%{$filter->search}%")
+                    ->orWhere('id', 'like', "%{$filter->search}%")
+                    ->orWhere('details->channel', 'like', "%{$filter->search}%")
+                    ->orWhere('details->txnCode', 'like', "%{$filter->search}%")
+                    ->orWhere('details->customer', 'like', "%{$filter->search}%")
+                    ->orWhere('details->court', 'like', "%{$filter->search}%");
             });
         }
 

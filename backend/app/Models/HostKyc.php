@@ -46,6 +46,22 @@ class HostKyc extends Model
         'reviewed_by',
         'reviewed_at',
         'submitted_at',
+        'version',
+        'current_user_id',
+        'parent_kyc_id',
+        'contact_name',
+        'contact_phone',
+        'contact_email',
+        'address_line',
+        'ward',
+        'district',
+        'city',
+        'postal_code',
+        'sports',
+        'submission_snapshot',
+        'submitted_version',
+        'reapplication_policy',
+        'investigation_status',
     ];
 
     protected $casts = [
@@ -56,8 +72,12 @@ class HostKyc extends Model
         'court_scale' => 'integer',
         'reviewed_at' => 'datetime',
         'submitted_at' => 'datetime',
+        'sports' => 'array',
+        'submission_snapshot' => 'array',
+        'reapplication_policy' => 'array',
+        'version' => 'integer',
+        'submitted_version' => 'integer',
     ];
-
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
@@ -76,6 +96,59 @@ class HostKyc extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+    public function currentUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'current_user_id');
+    }
+
+    public function parentKyc(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_kyc_id');
+    }
+
+    public function childKycs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(self::class, 'parent_kyc_id');
+    }
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PartnerDocument::class);
+    }
+
+    public function consents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PartnerConsent::class);
+    }
+
+    public function reviewHistories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PartnerReviewHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    public function provisionedOrganization(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Organization::class, 'source_kyc_id');
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    public function isRevisionRequired(): bool
+    {
+        return $this->status === 'revision_required' || $this->status === 'needs_supplement';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
+    }
+
+    public function isCurrent(): bool
+    {
+        return $this->current_user_id !== null;
     }
 
     public function isPending(): bool

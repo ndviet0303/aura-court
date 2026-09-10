@@ -55,6 +55,14 @@ const userShortcuts = [
     icon: 'call_split',
     color: '#7c3aed',
   },
+  {
+    key: 'PartnerRegistration',
+    nameKey: 'profile.scPartnerTitle',
+    descKey: 'profile.scPartnerDesc',
+    path: '/partner-registration',
+    icon: 'storefront',
+    color: '#10b981',
+  },
 ]
 </script>
 

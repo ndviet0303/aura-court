@@ -11,14 +11,11 @@ use Illuminate\Http\Request;
 
 class AvailabilityController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, \App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility $eligibility)
     {
         $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'date' => 'required|date_format:Y-m-d']);
-        $court = Court::whereKey($data['court_id'])
-            ->where('is_active', true)
-            ->whereHas('venue', fn ($query) => $query->where('is_active', true))
-            ->with(['venue.organization', 'priceSlots', 'blocks', 'sportZone'])
-            ->firstOrFail();
+        $court = $eligibility->assertEligible((int) $data['court_id'], publicFacing: true);
+        $court->loadMissing(['priceSlots', 'blocks', 'sportZone']);
 
         $zone = $court->venue?->organization?->timezone ?: config('app.timezone', 'Asia/Ho_Chi_Minh');
         $date = Carbon::createFromFormat('Y-m-d', $data['date'], $zone)->startOfDay();

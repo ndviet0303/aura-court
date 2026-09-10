@@ -28,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentProviderManager::class, fn ($app) => new PaymentProviderManager(
             $app->make(PayOsPaymentProvider::class),
         ));
+        $this->app->singleton(
+            \App\Contracts\Infrastructure\SubscriptionPaymentAdapterInterface::class,
+            \App\Infrastructure\Payment\ProviderNeutralSubscriptionPaymentAdapter::class
+        );
     }
 
     /**

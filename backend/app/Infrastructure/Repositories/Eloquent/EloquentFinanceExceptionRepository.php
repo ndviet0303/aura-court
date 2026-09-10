@@ -67,6 +67,7 @@ class EloquentFinanceExceptionRepository implements FinanceExceptionRepositoryIn
     public function update(FinanceException $exception, array $attributes): FinanceException
     {
         $exception->update($attributes);
+
         return $exception->fresh();
     }
 }

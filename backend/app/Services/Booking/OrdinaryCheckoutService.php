@@ -82,14 +82,29 @@ class OrdinaryCheckoutService
             }
         }
 
-        $court = $this->courts->findActiveWithActiveVenue($data->courtId);
-        abort_unless($court, 404, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+        $eligibility = app(\App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility::class);
+        $court = $eligibility->assertEligible($data->courtId, publicFacing: true);
 
         $userId = $data->userId;
         $couponCode = $data->couponCode;
 
         try {
             $booking = DB::transaction(function () use ($userId, $court, $local, $couponCode) {
+                $lockedVenue = \App\Models\Venue::query()
+                    ->whereKey($court->venue_id)
+                    ->lockForUpdate()
+                    ->first();
+                $rollout = app(\App\Domain\Partner\Services\PartnerRolloutService::class);
+                $enforcePublication = $rollout->shouldEnforce($lockedVenue->organization_id, 'publication');
+
+                abort_unless($lockedVenue && $lockedVenue->is_active && ($enforcePublication ? $lockedVenue->isPublished() : true), 409, 'Cơ sở thể thao vừa thay đổi trạng thái hoặc ngừng hoạt động.');
+
+                $lockedOrg = \App\Models\Organization::query()
+                    ->whereKey($lockedVenue->organization_id)
+                    ->lockForUpdate()
+                    ->first();
+                abort_unless($lockedOrg && $lockedOrg->status === 'active' && ($enforcePublication ? $lockedOrg->isApprovedPartner() : true), 409, 'Câu lạc bộ vừa bị tạm ngừng hoạt động.');
+
                 $prices = $this->priceSlots->getActiveForCourt($court);
                 $hasBlock = $this->courtBlocks->hasOverlappingBlock(
                     $court,
@@ -147,6 +162,19 @@ class OrdinaryCheckoutService
                     ]);
                 }
 
+                $priceSnapshot = $resolved->map(fn ($item) => [
+                    'starts_at' => $item[0]->toIso8601String(),
+                    'ends_at' => $item[0]->copy()->addHour()->toIso8601String(),
+                    'unit_price' => (int) $item[1],
+                ])->all();
+
+                $graceHours = (int) ($lockedOrg->settings['cancellation_grace_hours'] ?? ($lockedOrg->cancellation_grace_hours ?? 12));
+                $policySnapshot = [
+                    'cancellation_grace_hours' => $graceHours,
+                    'policy_version' => 'v1',
+                    'captured_at' => now()->toIso8601String(),
+                ];
+
                 $booking = $this->bookings->create([
                     'code' => 'BK'.strtoupper(Str::random(12)),
                     'user_id' => $userId,
@@ -157,6 +185,13 @@ class OrdinaryCheckoutService
                     'membership_discount_amount' => $discount['membership_discount'],
                     'status' => 'confirmed',
                     'payment_expires_at' => null,
+                    'policy_snapshot' => $policySnapshot,
+                    'price_snapshot' => $priceSnapshot,
+                    'metadata' => [
+                        'venue_id' => $court->venue_id,
+                        'organization_id' => $orgId,
+                        'venue_name' => $lockedVenue->name,
+                    ],
                 ]);
 
                 // Debit wallet atomically

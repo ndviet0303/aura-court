@@ -67,8 +67,10 @@ async function handleComplete() {
       courts_count: isOwner.value ? courtsCount.value : undefined,
     })
 
-    if (updatedUser.role === 'admin' || isOwner.value) {
+    if (updatedUser.role === 'admin') {
       router.push('/admin/organization')
+    } else if (isOwner.value) {
+      router.push('/partner-registration')
     } else {
       const redirectUrl = String(route.query.redirect || '/')
       router.push(redirectUrl)

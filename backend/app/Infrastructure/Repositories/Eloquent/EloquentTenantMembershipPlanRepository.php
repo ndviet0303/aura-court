@@ -52,6 +52,7 @@ class EloquentTenantMembershipPlanRepository implements TenantMembershipPlanRepo
     public function update(TenantMembershipPlan $plan, array $data): TenantMembershipPlan
     {
         $plan->update($data);
+
         return $plan->fresh();
     }
 

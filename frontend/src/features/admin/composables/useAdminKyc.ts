@@ -105,6 +105,17 @@ export function useAdminKyc() {
     }
   }
 
+  async function refreshSelectedKyc(id: number) {
+    try {
+      const res = await adminKycApi.getDetail(id)
+      if (res.data) {
+        selectKyc(res.data)
+      }
+    } catch {
+      await fetchQueue()
+    }
+  }
+
   function showNotice(msg: string) {
     notice.value = msg
     setTimeout(() => {
@@ -207,13 +218,19 @@ export function useAdminKyc() {
         decision: 'approve',
         reviewer_notes: reviewer_notes.value,
         checklist_state: checklist.value,
+        expected_version: selectedKyc.value.version,
       })
       showNotice(res.message)
       selectedKyc.value.status = 'approved'
       await fetchQueue()
       await fetchStats()
     } catch (err: any) {
-      showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại')
+      if (err.status === 409 || err.message?.includes('409') || err.message?.includes('xung đột')) {
+        showNotice('Xung đột xét duyệt: Hồ sơ đã được cập nhật phiên bản mới hoặc đã được xử lý.')
+        await refreshSelectedKyc(selectedKyc.value.id)
+      } else {
+        showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại')
+      }
     } finally {
       isSubmitting.value = false
     }
@@ -229,13 +246,19 @@ export function useAdminKyc() {
         rejection_reason: reason,
         reviewer_notes: reviewer_notes.value,
         checklist_state: checklist.value,
+        expected_version: selectedKyc.value.version,
       })
       showNotice(res.message)
       selectedKyc.value.status = 'rejected'
       await fetchQueue()
       await fetchStats()
     } catch (err: any) {
-      showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại')
+      if (err.status === 409 || err.message?.includes('409') || err.message?.includes('xung đột')) {
+        showNotice('Xung đột xét duyệt: Hồ sơ đã được cập nhật phiên bản mới hoặc đã được xử lý.')
+        await refreshSelectedKyc(selectedKyc.value.id)
+      } else {
+        showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại')
+      }
     } finally {
       isSubmitting.value = false
     }
@@ -251,15 +274,44 @@ export function useAdminKyc() {
         rejection_reason: reason,
         reviewer_notes: reviewer_notes.value,
         checklist_state: checklist.value,
+        expected_version: selectedKyc.value.version,
       })
       showNotice(res.message)
       selectedKyc.value.status = 'needs_supplement'
       await fetchQueue()
       await fetchStats()
     } catch (err: any) {
-      showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại')
+      if (err.status === 409 || err.message?.includes('409') || err.message?.includes('xung đột')) {
+        showNotice('Xung đột xét duyệt: Hồ sơ đã được cập nhật phiên bản mới hoặc đã được xử lý.')
+        await refreshSelectedKyc(selectedKyc.value.id)
+      } else {
+        showNotice(err.message || 'Có lỗi xảy ra, vui lòng thử lại')
+      }
     } finally {
       isSubmitting.value = false
+    }
+  }
+
+  async function inspectAuthorizedDocument(doc: { id?: number; title: string; type: string; url?: string }) {
+    if (doc.id && selectedKyc.value) {
+      try {
+        const res = await adminKycApi.getDocumentUrl(selectedKyc.value.id, doc.id)
+        openInspectModal({
+          title: doc.title,
+          type: doc.type as any,
+          imageUrl: res.url,
+        })
+        return
+      } catch {
+        // Fallback to url if available
+      }
+    }
+    if (doc.url) {
+      openInspectModal({
+        title: doc.title,
+        type: doc.type as any,
+        imageUrl: doc.url,
+      })
     }
   }
 
@@ -326,6 +378,7 @@ export function useAdminKyc() {
     handleApprove,
     handleReject,
     handleRequestSupplement,
+    inspectAuthorizedDocument,
   }
 }
 

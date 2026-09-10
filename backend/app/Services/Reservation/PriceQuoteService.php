@@ -26,11 +26,9 @@ class PriceQuoteService
 
     public function create(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
     {
-        $court = Court::query()
-            ->whereKey($courtId)
-            ->where('is_active', true)
-            ->with(['venue', 'sportZone'])
-            ->firstOrFail();
+        $eligibility = app(\App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility::class);
+        $court = $eligibility->assertEligible($courtId, publicFacing: true);
+        $court->loadMissing(['sportZone']);
 
         if ($court->venue?->organization_id) {
             $organizationId = (int) $court->venue->organization_id;

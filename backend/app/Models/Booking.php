@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason'])]
+#[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason', 'policy_snapshot', 'price_snapshot', 'metadata'])]
 class Booking extends Model
 {
     protected static function booted(): void
@@ -55,6 +55,9 @@ class Booking extends Model
             'payment_expiring_notified_at' => 'datetime',
             'coupon_usage_released_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'policy_snapshot' => 'array',
+            'price_snapshot' => 'array',
+            'metadata' => 'array',
         ];
     }
 

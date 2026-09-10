@@ -39,6 +39,15 @@ class ReservationService
             if ($quote->expires_at?->isPast()) {
                 abort(409, 'Price quote has expired.');
             }
+            $lockedCourt = \App\Models\Court::query()
+                ->whereKey($quote->court_id)
+                ->with(['venue.organization'])
+                ->lockForUpdate()
+                ->first();
+            abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+            abort_unless($lockedCourt->venue && $lockedCourt->venue->isPublished() && $lockedCourt->venue->is_active, 409, 'Cơ sở thể thao vừa thay đổi trạng thái hoặc ngừng hoạt động.');
+            abort_unless($lockedCourt->venue->organization && $lockedCourt->venue->organization->isApprovedPartner() && $lockedCourt->venue->organization->status === 'active', 409, 'Câu lạc bộ vừa bị tạm ngừng hoạt động.');
+
 
             $reservation = Reservation::create([
                 'organization_id' => $organizationId,

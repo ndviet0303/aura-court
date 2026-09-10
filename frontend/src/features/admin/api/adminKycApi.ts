@@ -28,4 +28,8 @@ export const adminKycApi = {
   ): Promise<{ message: string; data: HostKyc }> => {
     return apiV2.post<{ message: string; data: HostKyc }>(`/admin/kyc/${id}/review`, payload)
   },
+
+  getDocumentUrl: async (kycId: number, documentId: number): Promise<{ url: string }> => {
+    return apiV2.get<{ url: string }>(`/admin/kyc/${kycId}/documents/${documentId}/url`)
+  },
 }

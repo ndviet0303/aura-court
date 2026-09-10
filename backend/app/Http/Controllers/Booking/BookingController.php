@@ -46,21 +46,33 @@ class BookingController extends Controller
 
     public function show(Request $request, Booking $booking)
     {
-        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $user = $request->user();
+        $isOwnerOrStaff = $booking->court?->venue?->organization_id
+            && $user->hasRoleInOrganization($booking->court->venue->organization_id, ['organization_owner', 'venue_manager', 'staff']);
+
+        abort_unless($booking->user_id === $user->id || $user->isAdmin() || $isOwnerOrStaff, 403);
 
         return $booking->load(['court.venue', 'slots', 'payments', 'refunds']);
     }
 
     public function cancel(Request $request, Booking $booking)
     {
-        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $user = $request->user();
+        $isOwnerOrStaff = $booking->court?->venue?->organization_id
+            && $user->hasRoleInOrganization($booking->court->venue->organization_id, ['organization_owner', 'venue_manager', 'staff']);
+
+        abort_unless($booking->user_id === $user->id || $user->isAdmin() || $isOwnerOrStaff, 403);
 
         return $this->bookings->cancel($booking, $request->input('reason'));
     }
 
     public function cancelSlots(CancelSlotsRequest $request, Booking $booking)
     {
-        abort_unless($booking->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+        $user = $request->user();
+        $isOwnerOrStaff = $booking->court?->venue?->organization_id
+            && $user->hasRoleInOrganization($booking->court->venue->organization_id, ['organization_owner', 'venue_manager', 'staff']);
+
+        abort_unless($booking->user_id === $user->id || $user->isAdmin() || $isOwnerOrStaff, 403);
         $data = $request->validated();
 
         return $this->bookings->cancelSlots($booking, $data['slot_ids'], $data['reason'] ?? null);

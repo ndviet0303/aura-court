@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['organization_id', 'name', 'slug', 'address', 'google_maps_url', 'amenities', 'is_active'])]
+#[Fillable(['organization_id', 'name', 'slug', 'address', 'google_maps_url', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id'])]
 class Venue extends Model
 {
     use HasTranslations;
@@ -22,7 +22,32 @@ class Venue extends Model
         return [
             'is_active' => 'boolean',
             'amenities' => 'array',
+            'published_at' => 'datetime',
+            'approved_public_snapshot' => 'array',
         ];
+    }
+
+    public function getIsActiveAttribute(): bool
+    {
+        if (isset($this->attributes['status']) && in_array($this->attributes['status'], ['temporarily_closed', 'suspended', 'rejected'], true)) {
+            return false;
+        }
+
+        if (isset($this->attributes['is_active'])) {
+            return (bool) $this->attributes['is_active'];
+        }
+
+        return in_array($this->attributes['status'] ?? 'draft', ['published', 'active'], true);
+    }
+
+    public function setIsActiveAttribute($value): void
+    {
+        $this->attributes['is_active'] = (bool) $value;
+        if ($value && (!isset($this->attributes['status']) || $this->attributes['status'] === 'temporarily_closed')) {
+            $this->attributes['status'] = 'published';
+        } elseif (!$value && ($this->attributes['status'] ?? null) === 'published') {
+            $this->attributes['status'] = 'temporarily_closed';
+        }
     }
 
     public function getAmenitiesAttribute($value): array
@@ -49,6 +74,61 @@ class Venue extends Model
     public function sportZones(): HasMany
     {
         return $this->hasMany(SportZone::class);
+    }
+
+    public function publicationRevisions(): HasMany
+    {
+        return $this->hasMany(VenuePublicationRevision::class)->orderBy('revision_number', 'desc');
+    }
+
+    public function currentPublicationRevision(): BelongsTo
+    {
+        return $this->belongsTo(VenuePublicationRevision::class, 'current_publication_revision_id');
+    }
+
+    public function isPublished(): bool
+    {
+        return in_array($this->status ?? 'draft', ['published', 'active'], true);
+    }
+
+    public function isDraft(): bool
+    {
+        return ($this->status ?? 'draft') === 'draft';
+    }
+
+    public function isPendingPublication(): bool
+    {
+        return $this->status === 'pending_publication';
+    }
+
+    public function isRevisionRequired(): bool
+    {
+        return $this->status === 'revision_required';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function isTemporarilyClosed(): bool
+    {
+        return $this->status === 'temporarily_closed';
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspended';
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === 'closed';
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->status === 'archived';
     }
 
     public function getShareUrlAttribute(): string

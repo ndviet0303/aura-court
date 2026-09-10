@@ -4,6 +4,10 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
+use App\Http\Controllers\Admin\AdminVenuePublicationController;
+use App\Http\Controllers\Admin\PartnerReviewController;
+use App\Http\Controllers\Subscription\PlatformSubscriptionController;
+use App\Http\Controllers\Partner\PartnerVenueController;
 use App\Http\Controllers\Admin\AdminMembershipController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Attendance\AttendanceController;
@@ -38,6 +42,7 @@ use App\Http\Middleware\RequireOrganizationRole;
 use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
 use App\Services\Payment\WalletPaymentService;
+use App\Http\Controllers\Partner\PartnerApplicationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -46,12 +51,15 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);
+    Route::get('platform/plans', [\App\Http\Controllers\Subscription\PlatformPlanController::class, 'index']);
     Route::middleware('web')->group(function () {
         Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
         Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);
     });
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('partner/documents/download', [\App\Http\Controllers\Partner\PartnerDocumentController::class, 'download'])
+        ->middleware('signed');
     Route::get('auth/verify-email/{id}/{hash}', function (Request $request, string $id, string $hash) {
         $user = User::find($id);
         if (! $user) {
@@ -80,6 +88,7 @@ Route::prefix('v1')->group(function () {
     Route::get('courts', [CourtController::class, 'index']);
     Route::get('courts/{court}', [CourtController::class, 'show']);
     Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
+    Route::get('venues', [AdminController::class, 'venues']);
     Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
     Route::get('sport-zones', [SportZoneController::class, 'index']);
     Route::get('sport-zones/{sportZone}', [SportZoneController::class, 'show']);
@@ -90,8 +99,30 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', function (Request $request, WalletPaymentService $walletService) {
             $user = $request->user();
             $wallet = $walletService->getOrCreateWallet($user->id);
+
+            $memberships = $user->organizationMembers()
+                ->where('status', 'active')
+                ->with('organization')
+                ->get();
+
+            $ownerMemberships = $memberships->filter(fn ($m) => in_array($m->role, ['organization_owner', 'venue_manager']));
+            $primaryOrg = $ownerMemberships->first()?->organization;
+
             return response()->json(array_merge($user->toArray(), [
                 'wallet_balance' => $wallet->balance,
+                'organizations' => $memberships->map(fn ($m) => [
+                    'organization_id' => $m->organization_id,
+                    'organization_name' => $m->organization?->name,
+                    'role' => $m->role,
+                    'status' => $m->status,
+                    'partner_status' => $m->organization?->partner_status,
+                ])->values(),
+                'capabilities' => [
+                    'is_platform_admin' => $user->isPlatformAdmin(),
+                    'can_manage_venues' => $ownerMemberships->isNotEmpty(),
+                    'active_organization_id' => $primaryOrg?->id,
+                    'partner_status' => $primaryOrg?->partner_status,
+                ],
             ]));
         });
         Route::post('auth/onboarding', [AuthController::class, 'onboarding']);
@@ -103,6 +134,37 @@ Route::prefix('v1')->group(function () {
             $request->user()->sendEmailVerificationNotification();
             return response()->json(['message' => 'Liên kết xác thực email đã được gửi.']);
         });
+        // Partner registration routes
+        Route::prefix('partner')->group(function () {
+            Route::get('application/current', [PartnerApplicationController::class, 'current']);
+            Route::get('application/{id}', [PartnerApplicationController::class, 'show']);
+            Route::post('application/start', [PartnerApplicationController::class, 'start']);
+            Route::put('application/{id}', [PartnerApplicationController::class, 'save']);
+            Route::post('application/{id}/documents', [\App\Http\Controllers\Partner\PartnerDocumentController::class, 'upload']);
+            Route::get('application/{id}/completeness', [PartnerApplicationController::class, 'completeness']);
+            Route::post('application/{id}/submit', [PartnerApplicationController::class, 'submit']);
+            Route::get('application/{id}/history', [PartnerApplicationController::class, 'history']);
+        });
+        Route::prefix('partner/organizations/{organizationId}/subscription')->group(function () {
+            Route::get('current', [PlatformSubscriptionController::class, 'current']);
+            Route::post('select-plan', [PlatformSubscriptionController::class, 'selectPlan']);
+            Route::post('activate-trial', [PlatformSubscriptionController::class, 'activateTrial']);
+            Route::post('initiate-payment', [PlatformSubscriptionController::class, 'initiatePayment']);
+            Route::post('confirm-payment', [PlatformSubscriptionController::class, 'confirmPayment']);
+            Route::post('cancel-renewal', [PlatformSubscriptionController::class, 'cancelRenewal']);
+            Route::post('renew', [PlatformSubscriptionController::class, 'renew']);
+        });
+        Route::prefix('partner/organizations/{organizationId}/venues')->group(function () {
+            Route::get('', [PartnerVenueController::class, 'index']);
+            Route::post('', [PartnerVenueController::class, 'store']);
+            Route::get('{venueId}', [PartnerVenueController::class, 'show']);
+            Route::put('{venueId}', [PartnerVenueController::class, 'update']);
+            Route::get('{venueId}/readiness', [PartnerVenueController::class, 'readiness']);
+            Route::post('{venueId}/submit-publication', [PartnerVenueController::class, 'submitPublication']);
+            Route::post('{venueId}/operational-status', [PartnerVenueController::class, 'transitionLifecycle']);
+            Route::post('{venueId}/lifecycle', [PartnerVenueController::class, 'transitionLifecycle']);
+        });
+        Route::post('partner/subscription/confirm-payment', [PlatformSubscriptionController::class, 'confirmPayment']);
         Route::patch('profile', function (Request $request) {
             $data = $request->validate([
                 'name' => 'sometimes|string|max:255',
@@ -194,6 +256,12 @@ Route::prefix('v1')->group(function () {
             Route::post('venues', [AdminController::class, 'storeVenue']);
             Route::patch('venues/{venue}', [AdminController::class, 'updateVenue']);
             Route::delete('venues/{venue}', [AdminController::class, 'destroyVenue']);
+            Route::prefix('venues')->group(function () {
+                Route::get('publication-queue', [AdminVenuePublicationController::class, 'queue']);
+                Route::get('revisions/{revisionId}', [AdminVenuePublicationController::class, 'show']);
+                Route::post('revisions/{revisionId}/review', [AdminVenuePublicationController::class, 'review']);
+                Route::post('{venueId}/lifecycle', [AdminVenuePublicationController::class, 'transitionLifecycle']);
+            });
             Route::apiResource('sport-zones', SportZoneController::class)->except(['create', 'edit']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
             Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
@@ -222,6 +290,16 @@ Route::prefix('v1')->group(function () {
             Route::get('kyc/stats', [AdminKycController::class, 'stats']);
             Route::get('kyc/{id}', [AdminKycController::class, 'show']);
             Route::post('kyc/{id}/review', [AdminKycController::class, 'review']);
+            // Admin partner application review and lifecycle management
+            Route::prefix('partner')->group(function () {
+                Route::get('applications', [PartnerReviewController::class, 'index']);
+                Route::get('applications/{id}', [PartnerReviewController::class, 'show']);
+                Route::post('applications/{id}/review', [PartnerReviewController::class, 'review']);
+                Route::post('applications/{id}/clear-investigation', [PartnerReviewController::class, 'clearInvestigation']);
+                Route::post('{organizationId}/suspend', [PartnerReviewController::class, 'suspend']);
+                Route::post('{organizationId}/restore', [PartnerReviewController::class, 'restore']);
+                Route::post('{organizationId}/terminate', [PartnerReviewController::class, 'terminate']);
+            });
             Route::get('disputes', [AdminDisputeController::class, 'index']);
             Route::get('disputes/stats', [AdminDisputeController::class, 'stats']);
             Route::get('disputes/{id}', [AdminDisputeController::class, 'show']);

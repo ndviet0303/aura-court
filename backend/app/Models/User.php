@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'role', 'phone', 'play_level', 'favorite_sports', 'avatar_url', 'onboarded', 'password_set', 'social_provider'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'phone', 'play_level', 'favorite_sports', 'avatar_url', 'onboarded', 'password_set', 'social_provider'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -42,6 +42,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->role === 'admin';
     }
+    public function isRestricted(): bool
+    {
+        return in_array($this->status, ['suspended', 'banned', 'locked'], true);
+    }
+
 
     public function isPlatformAdmin(): bool
     {

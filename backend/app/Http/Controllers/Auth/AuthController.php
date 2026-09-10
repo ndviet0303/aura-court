@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use App\Domain\Auth\Actions\CompletePersonalOnboarding;
+use App\Domain\Auth\DTOs\CompletePersonalOnboardingData;
+use App\Http\Requests\Auth\CompletePersonalOnboardingRequest;
 
 class AuthController extends Controller
 {
@@ -268,93 +271,19 @@ class AuthController extends Controller
         }
     }
 
-    public function onboarding(Request $request)
-    {
-        $user = $request->user();
-        abort_if($user->onboarded, 400, 'Tài khoản đã hoàn tất thiết lập ban đầu.');
-        $data = $request->validate([
-            'account_type' => ['required', 'string', 'in:customer,court_owner'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'play_level' => ['nullable', 'string', 'max:50'],
-            'organization_name' => ['nullable', 'string', 'max:160'],
-            'venue_address' => ['nullable', 'string', 'max:255'],
-            'courts_count' => ['nullable', 'integer', 'min:1', 'max:50'],
-        ]);
+    public function onboarding(
+        CompletePersonalOnboardingRequest $request,
+        CompletePersonalOnboarding $action
+    ) {
+        $dto = CompletePersonalOnboardingData::fromRequest($request);
+        $result = $action->execute($dto);
 
-        $accountType = $data['account_type'];
-        $role = $accountType === 'court_owner' ? 'admin' : 'customer';
-
-        $user->forceFill([
-            'role' => $role,
-            'phone' => $data['phone'] ?? $user->phone,
-            'play_level' => $data['play_level'] ?? $user->play_level,
-            'onboarded' => true,
-        ])->save();
-
-        if ($accountType === 'court_owner') {
-            $orgName = !empty($data['organization_name']) ? trim($data['organization_name']) : ($user->name . ' Badminton Club');
-            $slugBase = Str::slug($orgName);
-            if (empty($slugBase)) {
-                $slugBase = 'club';
-            }
-            $slug = $slugBase . '-' . substr(uniqid(), -5);
-
-            $org = Organization::create([
-                'name' => $orgName,
-                'slug' => $slug,
-                'status' => 'active',
-                'settings' => [
-                    'phone' => $data['phone'] ?? null,
-                    'address' => $data['venue_address'] ?? null,
-                    'courts_count' => $data['courts_count'] ?? null,
-                ],
-            ]);
-
-            OrganizationMember::create([
-                'organization_id' => $org->id,
-                'user_id' => $user->id,
-                'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                'status' => 'active',
-            ]);
-
-            $venue = Venue::create([
-                'organization_id' => $org->id,
-                'name' => $orgName,
-                'slug' => $slug . '-venue',
-                'address' => $data['venue_address'] ?? 'Việt Nam',
-                'is_active' => true,
-            ]);
-
-            $courtsCount = isset($data['courts_count']) ? (int) $data['courts_count'] : 2;
-            if ($courtsCount > 0) {
-                for ($i = 1; $i <= min($courtsCount, 20); $i++) {
-                    $court = Court::create([
-                        'venue_id' => $venue->id,
-                        'name' => 'Sân ' . $i,
-                        'description' => 'Sân cầu lông chất lượng cao.',
-                        'is_active' => true,
-                    ]);
-
-                    $priceRows = [];
-                    for ($weekday = 1; $weekday <= 7; $weekday++) {
-                        for ($hour = 6; $hour < 23; $hour++) {
-                            $priceRows[] = [
-                                'court_id' => $court->id,
-                                'weekday' => $weekday,
-                                'starts_at' => sprintf('%02d:00', $hour),
-                                'ends_at' => sprintf('%02d:00', $hour + 1),
-                                'price' => 120000,
-                                'is_active' => true,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
-                        }
-                    }
-                    CourtPriceSlot::insert($priceRows);
-                }
-            }
-        }
-
-        return response()->json(['user' => $user->fresh()], 200);
+        return response()->json([
+            'user' => $result['user'],
+            'account_type' => $result['account_type'],
+            'next_step' => $result['next_step'],
+            'partner_registration_url' => $result['partner_registration_url'],
+            'message' => $result['message'],
+        ], 200);
     }
 }

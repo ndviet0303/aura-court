@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Organization;
+use App\Models\PlatformPlan;
+use App\Models\PlatformSubscription;
 use App\Models\Venue;
-use Illuminate\Database\Seeder;
 
 class OrganizationVenueSeeder extends Seeder
 {
@@ -15,7 +16,28 @@ class OrganizationVenueSeeder extends Seeder
             [
                 'name' => 'Aura Sports Marketplace Club',
                 'status' => 'active',
-                'settings' => ['currency' => 'VND', 'timezone' => 'Asia/Ho_Chi_Minh'],
+                'partner_status' => 'approved',
+                'settings' => ['currency' => 'VND', 'timezone' => 'Asia/Ho_Chi_Minh', 'cancellation_grace_hours' => 2],
+            ]
+        );
+
+        $plan = PlatformPlan::updateOrCreate(
+            ['code' => 'PLATFORM_GROWTH'],
+            [
+                'name' => 'Gói Phát Triển',
+                'price' => 500000,
+                'billing_cycle' => 'monthly',
+                'is_active' => true,
+            ]
+        );
+
+        PlatformSubscription::updateOrCreate(
+            ['organization_id' => $org->id],
+            [
+                'plan_id' => $plan->id,
+                'status' => 'active',
+                'starts_at' => now()->subMonths(1),
+                'ends_at' => now()->addYear(),
             ]
         );
 
@@ -59,7 +81,9 @@ class OrganizationVenueSeeder extends Seeder
                     'name' => $vd['name'],
                     'address' => $vd['address'],
                     'google_maps_url' => $vd['google_maps_url'],
+                    'status' => 'published',
                     'is_active' => true,
+                    'published_at' => now()->subMonths(1),
                     'organization_id' => $org->id,
                 ]
             );
