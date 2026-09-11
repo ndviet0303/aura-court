@@ -58,20 +58,21 @@ build_api:
     - docker push "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
 
 deploy_to_portainer:
-  image: debian:trixie-slim
+  image: alpine:latest
   stage: deploy
+  timeout: 5m
   needs: [build_api]
   allow_failure: true
   rules:
     - <<: *if-mr-to-dev-main
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH) && $PORTAINER_WEBHOOK_URLS'
   before_script:
-    - apt-get update -y && apt-get install -y jq curl
+    - apk add --no-cache curl jq
   script:
     - |
       set -euo pipefail
       echo "Deploying booking images to Portainer..."
       for item in $(echo "$PORTAINER_WEBHOOK_URLS" | jq -r '.[]'); do
         echo "Processing Portainer webhook: $item"
-        curl -fsS -X POST "$item" || echo "Warning: Portainer webhook endpoint returned error, deployment may require manual trigger once server is reachable."
+        curl -fsS --connect-timeout 10 --max-time 30 -X POST "$item" || echo "Warning: Portainer webhook endpoint returned error, deployment may require manual trigger once server is reachable."
       done
