@@ -9,7 +9,7 @@ const sections = [
   { id: 'account', title: '2. Đăng ký & Bảo mật tài khoản', icon: 'person_shield' },
   { id: 'booking-rules', title: '3. Quy định Đặt sân & Giữ chỗ', icon: 'event_available' },
   { id: 'payment', title: '4. Thanh toán & Đối soát giao dịch', icon: 'payments' },
-  { id: 'refund-policy', title: '5. Đổi giờ, Hủy sân & Hoàn tiền', icon: 'published_with_changes' },
+  { id: 'refund-policy', title: '5. Chính sách Không hỗ trợ Hủy & Đổi lịch', icon: 'published_with_changes' },
   { id: 'court-rules', title: '6. Nội quy sân đấu & Trang phục', icon: 'sports_tennis' },
   { id: 'liability', title: '7. Trách nhiệm & Tài sản cá nhân', icon: 'health_and_safety' },
   { id: 'contact', title: '8. Liên hệ & Giải quyết khiếu nại', icon: 'support_agent' },
@@ -251,46 +251,19 @@ onUnmounted(() => {
               <div class="section-icon-box">
                 <span class="material-symbols-outlined">published_with_changes</span>
               </div>
-              <h2>5. Chính sách Đổi giờ, Hủy sân &amp; Hoàn tiền</h2>
+              <h2>5. Chính sách Không hỗ trợ Hủy &amp; Đổi lịch</h2>
             </div>
             <div class="section-text">
               <p>
-                Nhằm tối ưu hóa công tác sắp xếp sân và quyền lợi công bằng cho cộng đồng thể thao, chính sách hoàn hủy được áp dụng minh bạch như sau:
+                Aura Court áp dụng chính sách vận hành cố định: <strong>Toàn bộ các đơn đặt sân không hỗ trợ hủy hoặc đổi sân/giờ thi đấu</strong> sau khi đã hoàn tất thanh toán hoặc xác nhận giữ chỗ.
               </p>
-              
-              <div class="table-responsive">
-                <table class="legal-table">
-                  <thead>
-                    <tr>
-                      <th>Thời gian yêu cầu hủy</th>
-                      <th>Mức hoàn tiền</th>
-                      <th>Hình thức hoàn</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Trước giờ thi đấu <strong>&ge; 24 tiếng</strong></td>
-                      <td><span class="badge-success">Hoàn 100%</span></td>
-                      <td>Hoàn về ví Aura Wallet hoặc chuyển khoản ngân hàng</td>
-                    </tr>
-                    <tr>
-                      <td>Trước giờ thi đấu <strong>từ 12 đến dưới 24 tiếng</strong></td>
-                      <td><span class="badge-warning">Hoàn 70%</span></td>
-                      <td>Cộng điểm hoàn vào ví Aura Wallet cho lần đặt tiếp theo</td>
-                    </tr>
-                    <tr>
-                      <td>Trước giờ thi đấu <strong>dưới 12 tiếng</strong></td>
-                      <td><span class="badge-danger">Không hoàn tiền</span></td>
-                      <td>Hỗ trợ đăng nhượng lại slot trên Chợ Nhượng Sân Aura</td>
-                    </tr>
-                    <tr>
-                      <td>Sự cố kỹ thuật bất khả kháng (Mất điện lưới, bảo trì đột xuất)</td>
-                      <td><span class="badge-success">Hoàn 100% + Ưu tiên xếp lịch</span></td>
-                      <td>Xử lý hoàn tiền hoặc đổi lịch ngay trong ngày</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <ul>
+                <li><strong>Không hỗ trợ hủy đơn:</strong> Người chơi không thể yêu cầu hủy đơn đặt sân đã xác nhận qua ứng dụng hoặc qua tổng đài hỗ trợ.</li>
+                <li><strong>Không hỗ trợ đổi lịch/giờ:</strong> Đơn đặt sân không hỗ trợ đổi sang khung giờ, ngày chơi hoặc sân đấu khác.</li>
+                <li><strong>Không hoàn tiền tự động:</strong> Do không hỗ trợ hủy hoặc đổi lịch, hệ thống không phát sinh các khoản hoàn tiền về ví hoặc ngân hàng từ hai thao tác này.</li>
+                <li><strong>Chuyển nhượng vé (P2P Resale):</strong> Trường hợp người chơi không thể tham gia thi đấu đúng giờ đã đặt, quý khách có thể chủ động đăng bán lại slot đặt sân trên Chợ Nhượng Vé Aura Court để tìm người mua lại theo quy định sàn.</li>
+                <li><strong>Sự cố bất khả kháng từ sân:</strong> Trường hợp sự cố kỹ thuật đột xuất từ phía cơ sở vận hành (mất điện lưới diện rộng, thiên tai ngập sân), ban quản trị sẽ chủ động liên hệ để xử lý bồi hoàn thỏa đáng.</li>
+              </ul>
             </div>
           </section>
 

@@ -23,10 +23,21 @@ class RecurringSeriesAndInvoicesTest extends TestCase
     /** @return array{0:Organization,1:User,2:Court} */
     private function tenant(): array
     {
-        $organization = Organization::create(['name' => 'Series Tenant', 'slug' => 'series-'.uniqid()]);
+        $organization = Organization::create([
+            'name' => 'Series Tenant',
+            'slug' => 'series-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
         $user = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
-        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Series Venue', 'slug' => 'series-venue-'.uniqid(), 'is_active' => true]);
+        $venue = Venue::create([
+            'organization_id' => $organization->id,
+            'name' => 'Series Venue',
+            'slug' => 'series-venue-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
         $court = $venue->courts()->create(['name' => 'Series Court', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000]);
 

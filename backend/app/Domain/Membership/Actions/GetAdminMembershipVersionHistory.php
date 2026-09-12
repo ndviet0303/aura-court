@@ -33,9 +33,6 @@ class GetAdminMembershipVersionHistory
             if (! empty($benefits['advance_booking_days'])) {
                 $changes[] = 'Đặt sân trước ' . $benefits['advance_booking_days'] . ' ngày';
             }
-            if (! empty($benefits['cancellation_fee_waived'])) {
-                $changes[] = 'Miễn phí hủy sân trước 24h';
-            }
             if (! empty($benefits['perks']) && is_array($benefits['perks'])) {
                 foreach (array_slice($benefits['perks'], 0, 2) as $p) {
                     $changes[] = $p;

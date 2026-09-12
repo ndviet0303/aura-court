@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Venue;
 
-use App\Domain\Booking\Actions\CancelBooking;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
@@ -87,29 +86,54 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
 
         $bookingId = $bookRes->json('booking.id');
         $booking = Booking::findOrFail($bookingId);
-        $org->update(['settings' => ['cancellation_grace_hours' => 48]]);
-        // Verify policy snapshot was captured!
+
+        // Verify new policy snapshot was captured without obsolete cancellation fields
         $this->assertNotNull($booking->policy_snapshot);
-        $this->assertEquals(2, $booking->policy_snapshot['cancellation_grace_hours']);
+        $this->assertArrayNotHasKey('cancellation_grace_hours', $booking->policy_snapshot);
         $this->assertNotNull($booking->price_snapshot);
 
-        // 2. Operator changes organization policy to 48 hours (retroactive attempt)
-        $org->update(['cancellation_grace_hours' => 48]);
+        // 2. Pre-existing historical booking with captured cancellation grace hours
+        $historicalBooking = Booking::create([
+            'code' => 'BK-HISTORICAL-01',
+            'user_id' => $customer->id,
+            'court_id' => $court->id,
+            'total_amount' => 100000,
+            'status' => 'confirmed',
+            'policy_snapshot' => ['cancellation_grace_hours' => 2, 'policy_version' => 'legacy'],
+            'price_snapshot' => ['base_price' => 100000],
+        ]);
+        $historicalBooking->slots()->create([
+            'court_id' => $court->id,
+            'starts_at' => now()->addDays(3)->setTime(10, 0),
+            'ends_at' => now()->addDays(3)->setTime(11, 0),
+            'unit_price' => 100000,
+            'status' => 'confirmed',
+        ]);
 
-        // 3. Customer cancels booking (currently ~48 hours before slot, or simulate cancellation within 3 hours)
-        // With captured snapshot grace of 2 hours, cancellation at 3 hours before start time must succeed!
-        $cancelAction = app(CancelBooking::class);
-        $cancelled = $cancelAction->execute($booking, 'Thay đổi lịch cá nhân');
+        // 3. Customer attempts to cancel either booking: routes are retired and return 404
+        $this->postJson("/api/v1/bookings/{$booking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
+        $this->postJson("/api/v1/bookings/{$historicalBooking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
 
-        $this->assertEquals('refunded', $cancelled->status);
+        // 4. Invariants: Bookings remain confirmed, wallet balance untouched, snapshots preserved
+        $booking->refresh();
+        $this->assertEquals('confirmed', $booking->status);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
 
-        // Verify instant wallet refund credited back
+        $historicalBooking->refresh();
+        $this->assertEquals('confirmed', $historicalBooking->status);
+        $this->assertEquals(2, $historicalBooking->policy_snapshot['cancellation_grace_hours']);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $historicalBooking->id]);
+
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($customer->id, $org->id);
-        $this->assertEquals(500000, (int) $wallet->balance);
+        $this->assertEquals(400000, (int) $wallet->balance);
+
+        // Historical read succeeds for both
+        $this->getJson("/api/v1/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
+        $this->getJson("/api/v1/bookings/{$historicalBooking->code}")->assertOk()->assertJsonPath('code', $historicalBooking->code);
     }
 
-    public function test_existing_booking_remains_refundable_after_venue_suspension(): void
+    public function test_existing_booking_preserves_snapshot_and_rejects_retired_commands_after_venue_suspension(): void
     {
         $owner = User::factory()->create(['role' => 'customer']);
 
@@ -166,14 +190,21 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         // Venue gets suspended!
         $venue->update(['status' => 'suspended', 'is_active' => false]);
 
-        // Customer cancels existing booking: must succeed and refund!
-        $cancelAction = app(CancelBooking::class);
-        $cancelled = $cancelAction->execute($booking, 'Sân bị ngưng');
+        // Customer attempts to cancel existing booking: returns 404
+        $cancelRes = $this->postJson("/api/v1/bookings/{$booking->code}/cancel", [
+            'reason' => 'Sân bị ngưng',
+        ]);
+        $cancelRes->assertNotFound();
 
-        $this->assertEquals('refunded', $cancelled->status);
+        $booking->refresh();
+        $this->assertEquals('confirmed', $booking->status);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
 
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($customer->id, $org->id);
-        $this->assertEquals(500000, (int) $wallet->balance);
+        $this->assertEquals(400000, (int) $wallet->balance);
+
+        // Historical read succeeds
+        $this->getJson("/api/v1/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
     }
 }

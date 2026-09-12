@@ -31,9 +31,9 @@ const perks = [
     desc: 'Mở khóa lịch thi đấu trước các thành viên phổ thông.',
   },
   {
-    icon: 'lock_clock',
-    title: 'Chính sách hoàn hủy linh hoạt',
-    desc: 'Hỗ trợ đổi giờ và hoàn tiền vào ví hội viên nhanh chóng.',
+    icon: 'support_agent',
+    title: 'Hỗ trợ khách hàng ưu tiên',
+    desc: 'Được phục vụ ưu tiên bởi đội ngũ chăm sóc khách hàng Aura Court.',
   },
   {
     icon: 'water_drop',
@@ -104,11 +104,11 @@ const perks = [
 
         <div class="perk-card">
           <div class="perk-icon-box">
-            <span class="material-symbols-outlined">lock_clock</span>
+            <span class="material-symbols-outlined">support_agent</span>
           </div>
           <div class="perk-content">
             <strong class="perk-title">{{ $t('profile.perk2') }}</strong>
-            <p class="perk-desc">{{ $t('courtDetail.cancellationPolicy') }}</p>
+            <p class="perk-desc">{{ $t('profile.perk2Desc') }}</p>
           </div>
         </div>
 

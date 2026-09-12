@@ -37,11 +37,6 @@ export const bookingApi = {
   previewCoupon: <T = unknown>(payload: { subtotal: number; code: string }) =>
     api.post<T>('/coupons/preview', payload),
 
-  cancel: (code: string, reason?: string) =>
-    api.post<Booking>(`/bookings/${code}/cancel`, { reason }),
-
-  cancelSlots: (code: string, slotIds: number[], reason?: string) =>
-    api.post<Booking>(`/bookings/${code}/cancel-slots`, { slot_ids: slotIds, reason }),
 
   list: () => api.get<{ data: Booking[] }>('/bookings'),
 
@@ -73,15 +68,6 @@ export const bookingApi = {
   confirmReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(code: string) =>
     apiV2.post<T>(`/reservations/${code}/confirm`),
 
-  cancelReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(code: string) =>
-    apiV2.post<T>(`/reservations/${code}/cancel`),
-
   joinWaitlist: (payload: { court_id?: number; starts_at: string }) =>
     api.post('/waitlist', payload),
-
-  reschedule: (code: string, courtId: number, slots: string[]) =>
-    api.post<{ booking: Booking }>(`/bookings/${code}/reschedule`, {
-      court_id: courtId,
-      slots,
-    }),
 }

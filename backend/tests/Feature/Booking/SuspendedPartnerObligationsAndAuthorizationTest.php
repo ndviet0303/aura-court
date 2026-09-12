@@ -133,12 +133,43 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
         $crossTenantRes = $this->getJson("/api/v1/bookings/{$existingBooking->code}");
         $crossTenantRes->assertStatus(403);
 
-        // 5. Customer can cancel their existing booking per cancellation policy
-        Sanctum::actingAs($customer);
-        $cancelRes = $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel", [
-            'reason' => 'Thay đổi lịch cá nhân',
+        // 5. Create a legacy unpaid hold
+        $legacyHold = \App\Models\Reservation::create([
+            'organization_id' => $org->id,
+            'user_id' => $customer->id,
+            'court_id' => $court->id,
+            'code' => 'HOLD-LEGACY-01',
+            'status' => 'held',
+            'currency' => 'VND',
+            'total_amount' => 100000,
+            'hold_expires_at' => now()->addMinutes(15),
         ]);
-        $cancelRes->assertStatus(200);
-        $this->assertEquals('refunded', $existingBooking->fresh()->status);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+
+        // 6. Retired commands are rejected (404) across customer, staff, and admin actors
+        // Customer actor
+        Sanctum::actingAs($customer);
+        $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
+        $this->postJson("/api/v1/bookings/{$existingBooking->code}/reschedule", ['court_id' => $court->id, 'slots' => [$targetSlot->toIso8601String()]])->assertNotFound();
+        $this->postJson("/api/v2/reservations/{$legacyHold->code}/cancel")->assertNotFound();
+
+        // Staff / Owner actor
+        Sanctum::actingAs($owner);
+        $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel")->assertNotFound();
+        $this->postJson("/api/v2/reservations/{$legacyHold->code}/cancel")->assertNotFound();
+
+        // Admin actor
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel")->assertNotFound();
+        $this->postJson("/api/v2/reservations/{$legacyHold->code}/cancel")->assertNotFound();
+
+        // 7. Verify invariants: states, wallet balances, and inventory remain untouched
+        $this->assertSame('confirmed', $existingBooking->fresh()->status);
+        $this->assertSame('confirmed', $existingBooking->slots()->first()->status);
+        $this->assertSame('held', $legacyHold->fresh()->status);
+        $this->assertSame(500000, (int) $wallet->fresh()->balance);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $existingBooking->id]);
     }
 }
+

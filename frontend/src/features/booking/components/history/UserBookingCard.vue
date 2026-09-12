@@ -12,7 +12,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'cancel', booking: Booking): void
   (e: 'review', booking: Booking): void
   (e: 'qr', booking: Booking): void
 }>()
@@ -173,16 +172,6 @@ const sportLabel = computed(() => {
           <span>{{ booking.review ? `${$t('booking.reviewBtn')} (${booking.review.rating}★)` : $t('booking.reviewBtn') }}</span>
         </button>
 
-        <!-- Cancel Booking (if pending or confirmed) -->
-        <button
-          v-if="!isCancelled"
-          type="button"
-          class="btn-card-danger"
-          @click="emit('cancel', booking)"
-        >
-          <span class="material-symbols-outlined">close</span>
-          <span>{{ $t('booking.cancelBookingBtn') }}</span>
-        </button>
       </div>
     </div>
   </div>

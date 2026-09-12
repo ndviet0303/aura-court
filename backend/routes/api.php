@@ -225,9 +225,6 @@ Route::prefix('v1')->group(function () {
         Route::get('bookings/{booking:code}', [BookingController::class, 'show']);
         Route::post('bookings/{booking:code}/sync-v2', [LegacyBookingAdapterController::class, 'sync']);
         Route::get('legacy/reservations/{reservation}', [LegacyBookingAdapterController::class, 'projection']);
-        Route::post('bookings/{booking:code}/cancel', [BookingController::class, 'cancel']);
-        Route::post('bookings/{booking:code}/cancel-slots', [BookingController::class, 'cancelSlots']);
-        Route::post('bookings/{booking:code}/reschedule', [BookingController::class, 'reschedule']);
         Route::get('bookings/{booking:code}/payment-status', [BookingController::class, 'paymentStatus']);
         Route::get('bookings/{booking:code}/payment', [BookingController::class, 'payment']);
         Route::post('bookings/{booking:code}/coupon', [BookingController::class, 'applyCoupon']);
@@ -277,7 +274,6 @@ Route::prefix('v1')->group(function () {
             Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
             Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
             Route::get('refunds', [AdminController::class, 'refunds']);
-            Route::patch('refunds/{refund}', [AdminController::class, 'processRefund']);
             Route::get('reports', [AdminController::class, 'report']);
             Route::get('reports.csv', [AdminController::class, 'reportCsv']);
             Route::get('audit-logs', [AuditLogController::class, 'index']);
@@ -352,7 +348,6 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::post('reservations/checkout', [V2ReservationController::class, 'checkout']);
         Route::get('reservations/{reservation}', [V2ReservationController::class, 'show']);
         Route::post('reservations/{reservation}/confirm', [V2ReservationController::class, 'confirm']);
-        Route::post('reservations/{reservation}/cancel', [V2ReservationController::class, 'cancel']);
 
         Route::middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier')->group(function () {
             Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);

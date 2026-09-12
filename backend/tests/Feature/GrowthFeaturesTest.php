@@ -72,7 +72,7 @@ class GrowthFeaturesTest extends TestCase
         app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()], 'EXPIRED_CODE');
     }
 
-    public function test_cancelled_slot_notifies_waitlist(): void
+    public function test_expired_pending_hold_notifies_waitlist(): void
     {
         Notification::fake();
         $owner = User::factory()->create();
@@ -82,10 +82,28 @@ class GrowthFeaturesTest extends TestCase
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Danh Sách Chờ', 'is_active' => true]);
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        $booking = app(BookingService::class)->create($owner->id, $court->id, [$date->toIso8601String()]);
+
+        // Create pending payment booking holding the slot
+        $booking = Booking::create([
+            'code' => 'BKPENDINGWAIT',
+            'user_id' => $owner->id,
+            'court_id' => $court->id,
+            'total_amount' => 100000,
+            'status' => 'pending_payment',
+            'payment_expires_at' => now()->subMinute(),
+        ]);
+        $booking->slots()->create([
+            'court_id' => $court->id,
+            'starts_at' => $date,
+            'ends_at' => $date->copy()->addHour(),
+            'unit_price' => 100000,
+            'status' => 'held',
+        ]);
 
         $this->actingAs($waiting)->postJson('/api/v1/waitlist', ['court_id' => $court->id, 'starts_at' => $date->toIso8601String()])->assertCreated();
-        $this->actingAs($owner)->postJson('/api/v1/bookings/'.$booking->code.'/cancel')->assertOk();
+
+        // Expire pending bookings releases held inventory and notifies waitlist
+        app(BookingService::class)->expirePending();
 
         $this->assertDatabaseHas('waitlist_entries', ['user_id' => $waiting->id, 'status' => 'notified']);
         Notification::assertSentTo($waiting, AuraBookingNotification::class, fn (AuraBookingNotification $notification) => $notification->event === 'waitlist_available');

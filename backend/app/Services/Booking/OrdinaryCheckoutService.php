@@ -168,9 +168,7 @@ class OrdinaryCheckoutService
                     'unit_price' => (int) $item[1],
                 ])->all();
 
-                $graceHours = (int) ($lockedOrg->settings['cancellation_grace_hours'] ?? ($lockedOrg->cancellation_grace_hours ?? 12));
                 $policySnapshot = [
-                    'cancellation_grace_hours' => $graceHours,
                     'policy_version' => 'v1',
                     'captured_at' => now()->toIso8601String(),
                 ];

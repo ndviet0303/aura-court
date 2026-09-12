@@ -187,11 +187,10 @@ describe('BookingView (/booking)', () => {
     expect(wrapper.find('.qr-image').exists()).toBe(false)
   })
 
-  it('opens cancellation modal and confirms cancel', async () => {
+  it('does not render cancellation or rescheduling controls and displays permanent booking policy notice', async () => {
     vi.spyOn(bookingApi, 'list').mockResolvedValue({
       data: mockBookings as any,
     })
-    const cancelSpy = vi.spyOn(bookingApi, 'cancel').mockResolvedValue({} as any)
 
     const wrapper = mount(BookingView, {
       global: { plugins: [i18n] },
@@ -199,22 +198,20 @@ describe('BookingView (/booking)', () => {
 
     await flushPromises()
 
-    const cancelBtn = wrapper.find('.btn-card-danger')
-    expect(cancelBtn.text()).toContain('Huỷ Đơn')
-    await cancelBtn.trigger('click')
-    await flushPromises()
+    // 1. Danger/cancellation button does not exist anywhere on cards
+    expect(wrapper.find('.btn-card-danger').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Huỷ Đơn')
+    expect(wrapper.text()).not.toContain('Đổi Lịch')
 
-    expect(wrapper.find('.modal-title').text()).toContain('Xác Nhận Huỷ Lịch Đặt Sân')
+    // 2. Clear booking policy notice is displayed
+    const policyNotice = wrapper.find('.policy-notice')
+    expect(policyNotice.exists()).toBe(true)
+    expect(policyNotice.text()).toContain('Đặt sân không hỗ trợ hủy hoặc đổi lịch')
+    expect(policyNotice.text()).toContain('Không hỗ trợ hủy hoặc đổi lịch sau khi xác nhận')
 
-    // Fill reason and confirm
-    const reasonInput = wrapper.find('.form-input')
-    await reasonInput.setValue('Bận việc đột xuất')
-
-    const confirmBtn = wrapper.find('.btn-confirm-cancel')
-    await confirmBtn.trigger('click')
-    await flushPromises()
-
-    expect(cancelSpy).toHaveBeenCalledWith('BK-20260831-01', 'Bận việc đột xuất')
+    // 3. Historical cancelled card shows status label properly without actions
+    const cancelledCard = wrapper.findAll('.user-booking-card')[2]
+    expect(cancelledCard?.text()).toContain('ĐÃ HỦY')
   })
 
   it('opens review modal and submits review', async () => {

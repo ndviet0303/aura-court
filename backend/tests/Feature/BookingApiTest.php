@@ -57,17 +57,19 @@ class BookingApiTest extends TestCase
         $this->assertDatabaseMissing('bookings', ['user_id' => $user->id]);
     }
 
-    public function test_customer_cannot_cancel_confirmed_booking_after_deadline(): void
+    public function test_cancellation_endpoint_is_retired_and_returns_404(): void
     {
         $user = User::factory()->create();
         $court = Court::create(['name' => 'Sân B', 'is_active' => true]);
         $booking = $user->bookings()->create(['code' => 'BKTEST123', 'court_id' => $court->id, 'total_amount' => 100000, 'status' => 'confirmed']);
         $booking->slots()->create(['court_id' => $court->id, 'starts_at' => now()->addHour(), 'ends_at' => now()->addHours(2), 'unit_price' => 100000, 'status' => 'confirmed']);
 
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel")->assertStatus(409);
+        $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel")->assertNotFound();
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
     }
 
-    public function test_cancel_confirmed_booking_refunds_to_wallet_instantly(): void
+    public function test_retired_cancellation_does_not_refund_wallet_or_change_booking_state(): void
     {
         $user = User::factory()->create();
         $venue = Venue::firstOrFail();
@@ -83,12 +85,17 @@ class BookingApiTest extends TestCase
         $this->assertSame(380000, $wallet->fresh()->balance);
 
         $response = $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel");
-        $response->assertOk()->assertJsonPath('status', 'refunded');
+        $response->assertNotFound();
 
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'refunded']);
-        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'cancelled']);
-        $this->assertSame(500000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('wallet_transactions', ['wallet_account_id' => $wallet->id, 'type' => 'credit', 'amount' => 120000]);
+        // Repeat attempt
+        $retryResponse = $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel");
+        $retryResponse->assertNotFound();
+
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertSame(380000, $wallet->fresh()->balance);
+        $this->assertDatabaseMissing('wallet_transactions', ['wallet_account_id' => $wallet->id, 'type' => 'credit', 'amount' => 120000]);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
     }
 
     public function test_customer_can_fetch_wallet_balance(): void

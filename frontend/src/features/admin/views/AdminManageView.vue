@@ -41,7 +41,6 @@ const {
   totalCourtsCount,
   activeCourtsCount,
   totalBlocksCount,
-  pendingRefundsCount,
   venueFilterOptions,
   statusFilterOptions,
   load,
@@ -54,8 +53,6 @@ const {
   deleteBlock,
   openCouponModal,
   createCoupon,
-  approveRefund,
-  rejectRefund,
 } = useAdminManageCourts()
 
 // Pricing Matrix Composable
@@ -100,7 +97,6 @@ onMounted(() => {
       :total-courts-count="totalCourtsCount"
       :active-courts-count="activeCourtsCount"
       :total-blocks-count="totalBlocksCount"
-      :pending-refunds-count="pendingRefundsCount"
       :loading="loading"
     />
 
@@ -126,8 +122,8 @@ onMounted(() => {
         :class="{ active: activeTab === 'refunds' }"
         @click="activeTab = 'refunds'"
       >
-        <span class="material-symbols-outlined icon-18">currency_exchange</span>
-        <span>{{ t('admin.manage.tabRefunds') }} ({{ pendingRefundsCount }})</span>
+        <span class="material-symbols-outlined icon-18">history</span>
+        <span>{{ t('admin.manage.tabRefunds') }} ({{ refunds.length }})</span>
       </button>
     </div>
 
@@ -158,8 +154,6 @@ onMounted(() => {
       <AdminRefundsPanel
         :refunds="refunds"
         :loading="loading"
-        @approve="approveRefund"
-        @reject="rejectRefund"
       />
     </div>
 

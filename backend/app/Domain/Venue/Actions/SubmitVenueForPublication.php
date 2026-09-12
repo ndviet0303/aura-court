@@ -82,7 +82,6 @@ class SubmitVenueForPublication
                 'organization' => [
                     'id' => $venue->organization_id,
                     'name' => $org->name,
-                    'cancellation_grace_hours' => $org->cancellation_grace_hours ?? 12,
                 ],
                 'submitted_at' => now()->toIso8601String(),
             ];

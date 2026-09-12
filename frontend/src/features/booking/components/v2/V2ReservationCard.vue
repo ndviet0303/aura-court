@@ -6,7 +6,6 @@ const { t } = useI18n()
 defineProps<{
   reservation: V2Reservation
   confirmingCode: string | null
-  cancellingCode: string | null
   money: (value: number) => string
   formatDate: (value: string) => string
   formatTimeSlot: (startsAt: string, endsAt?: string) => string
@@ -14,7 +13,6 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'confirm', reservation: V2Reservation): void
-  (e: 'cancel', reservation: V2Reservation): void
   (e: 'qr', reservation: V2Reservation): void
   (e: 'details', reservation: V2Reservation): void
 }>()
@@ -87,16 +85,15 @@ const emit = defineEmits<{
         <!-- Held Actions -->
         <template v-if="reservation.status === 'held'">
           <button
-            class="btn btn-outline-cancel"
-            :disabled="cancellingCode === reservation.code || confirmingCode === reservation.code"
-            @click="emit('cancel', reservation)"
+            class="btn btn-outline-details"
+            @click="emit('details', reservation)"
           >
-            <span class="material-symbols-outlined">close</span>
-            <span>{{ t('v2Reservations.card.cancelBtn') }}</span>
+            <span class="material-symbols-outlined">info</span>
+            <span>{{ t('v2Reservations.card.quoteDetailsBtn') }}</span>
           </button>
           <button
             class="btn btn-primary btn-confirm"
-            :disabled="confirmingCode === reservation.code || cancellingCode === reservation.code"
+            :disabled="confirmingCode === reservation.code"
             @click="emit('confirm', reservation)"
           >
             <span class="material-symbols-outlined" :class="{ spinning: confirmingCode === reservation.code }">

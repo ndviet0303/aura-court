@@ -1,0 +1,279 @@
+<?php
+
+namespace Tests\Feature\Booking;
+
+use App\Domain\Booking\Actions\ExpirePendingBookings;
+use App\Models\Booking;
+use App\Models\Coupon;
+use App\Models\Court;
+use App\Models\CourtPriceSlot;
+use App\Models\Organization;
+use App\Models\OrganizationMember;
+use App\Models\PriceRule;
+use App\Models\Reservation;
+use App\Models\ReservationEntitlement;
+use App\Models\User;
+use App\Models\Venue;
+use App\Models\WaitlistEntry;
+use App\Notifications\AuraBookingNotification;
+use App\Services\Booking\BookingService;
+use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\ReservationService;
+use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Tests\TestCase;
+
+class AutomaticUnpaidExpiryTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function setupTenant(): array
+    {
+        $org = Organization::create([
+            'name' => 'Expiry Org',
+            'slug' => 'expiry-org-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
+        $venue = Venue::create([
+            'organization_id' => $org->id,
+            'name' => 'Expiry Venue',
+            'slug' => 'expiry-venue-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $court = $venue->courts()->create(['name' => 'Court Expiry', 'is_active' => true]);
+
+        return [$org, $venue, $court];
+    }
+
+    private function fundUserWallet(User $user, int $organizationId, int $amount = 1000000): void
+    {
+        $walletService = app(WalletPaymentService::class);
+        $wallet = $walletService->getOrCreateWallet($user->id, $organizationId);
+        $walletService->credit($wallet, $amount, 'test_topup', 1, 'Top up');
+    }
+
+    public function test_v1_automatic_unpaid_expiry_releases_inventory_and_coupon_and_is_retry_safe(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $unpaidUser = User::factory()->create(['role' => 'customer']);
+        $paidUser = User::factory()->create(['role' => 'customer']);
+        $waiter = User::factory()->create(['role' => 'customer']);
+
+        $this->fundUserWallet($paidUser, $org->id, 500000);
+        $this->fundUserWallet($unpaidUser, $org->id, 500000);
+
+        $walletService = app(WalletPaymentService::class);
+        $unpaidWallet = $walletService->getOrCreateWallet($unpaidUser->id, $org->id);
+        $paidWallet = $walletService->getOrCreateWallet($paidUser->id, $org->id);
+        $unpaidBalanceBefore = (int) $unpaidWallet->fresh()->balance;
+        $paidBalanceBefore = (int) $paidWallet->fresh()->balance;
+
+        $date1 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
+        $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(14, 0)->startOfHour();
+
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date1->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 100000, 'is_active' => true]);
+
+        $coupon = Coupon::create([
+            'code' => 'COUPONEXP',
+            'discount_type' => 'fixed',
+            'discount_value' => 20000,
+            'starts_at' => now()->subDays(2),
+            'ends_at' => now()->addDays(2),
+            'is_active' => true,
+            'usage_count' => 1,
+        ]);
+
+        // 1. Pending unpaid booking on date1 (past payment_expires_at)
+        $pendingBooking = Booking::create([
+            'code' => 'BK-UNPAID-01',
+            'user_id' => $unpaidUser->id,
+            'court_id' => $court->id,
+            'coupon_id' => $coupon->id,
+            'total_amount' => 80000,
+            'discount_amount' => 20000,
+            'status' => 'pending_payment',
+            'payment_expires_at' => now()->subMinutes(5),
+        ]);
+        $pendingSlot = $pendingBooking->slots()->create([
+            'court_id' => $court->id,
+            'starts_at' => $date1,
+            'ends_at' => $date1->copy()->addHour(),
+            'unit_price' => 100000,
+            'status' => 'held',
+        ]);
+
+        // 2. Confirmed paid booking on date2
+        $paidBooking = Booking::create([
+            'code' => 'BK-PAID-01',
+            'user_id' => $paidUser->id,
+            'court_id' => $court->id,
+            'total_amount' => 100000,
+            'status' => 'confirmed',
+            'payment_expires_at' => null,
+        ]);
+        $paidSlot = $paidBooking->slots()->create([
+            'court_id' => $court->id,
+            'starts_at' => $date2,
+            'ends_at' => $date2->copy()->addHour(),
+            'unit_price' => 100000,
+            'status' => 'confirmed',
+        ]);
+
+        // 3. Waiter joins waitlist for date1
+        WaitlistEntry::create([
+            'user_id' => $waiter->id,
+            'court_id' => $court->id,
+            'starts_at' => $date1,
+            'ends_at' => $date1->copy()->addHour(),
+            'status' => 'waiting',
+        ]);
+
+        Notification::fake();
+
+        // 4. Run automatic expiry
+        $expiredCount = app(BookingService::class)->expirePending();
+        $this->assertSame(1, $expiredCount);
+
+        // Assert pending booking expired and held slot expired (released)
+        $this->assertSame('expired', $pendingBooking->fresh()->status);
+        $this->assertSame('expired', $pendingSlot->fresh()->status);
+        $this->assertNotNull($pendingBooking->fresh()->coupon_usage_released_at);
+
+        // Assert coupon usage released
+        $this->assertSame(0, (int) $coupon->fresh()->usage_count);
+
+        // Assert notifications sent: user notified of expiry, waiter notified of availability
+        Notification::assertSentTo($unpaidUser, AuraBookingNotification::class, function ($n) {
+            return $n->event === 'booking_expired';
+        });
+        Notification::assertSentTo($waiter, AuraBookingNotification::class, function ($n) {
+            return $n->event === 'waitlist_available';
+        });
+
+        // Invariant: Confirmed paid booking remains confirmed and was NOT touched
+        $this->assertSame('confirmed', $paidBooking->fresh()->status);
+        $this->assertSame('confirmed', $paidSlot->fresh()->status);
+
+        // Invariant: Neither user's wallet was credited or debited
+        $this->assertSame($unpaidBalanceBefore, (int) $unpaidWallet->fresh()->balance);
+        $this->assertSame($paidBalanceBefore, (int) $paidWallet->fresh()->balance);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $pendingBooking->id]);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $paidBooking->id]);
+
+        // 5. Retry safety: running again immediately returns 0 and leaves state identical
+        $secondRun = app(BookingService::class)->expirePending();
+        $this->assertSame(0, $secondRun);
+        $this->assertSame(0, (int) $coupon->fresh()->usage_count);
+        $this->assertSame($unpaidBalanceBefore, (int) $unpaidWallet->fresh()->balance);
+    }
+
+    public function test_v2_automatic_unpaid_hold_expiry_releases_inventory_without_crediting_wallets(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $unpaidUser = User::factory()->create(['role' => 'customer']);
+        $paidUser = User::factory()->create(['role' => 'customer']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $unpaidUser->id, 'role' => 'customer', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $paidUser->id, 'role' => 'customer', 'status' => 'active']);
+
+        $this->fundUserWallet($unpaidUser, $org->id, 500000);
+        $this->fundUserWallet($paidUser, $org->id, 500000);
+
+        $walletService = app(WalletPaymentService::class);
+        $unpaidWallet = $walletService->getOrCreateWallet($unpaidUser->id, $org->id);
+        $paidWallet = $walletService->getOrCreateWallet($paidUser->id, $org->id);
+        $unpaidBalanceBefore = (int) $unpaidWallet->fresh()->balance;
+        $paidBalanceBefore = (int) $paidWallet->fresh()->balance;
+
+        PriceRule::create(['organization_id' => $org->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000]);
+
+        $date1 = Carbon::now(config('app.timezone'))->addDays(3)->setTime(10, 0)->startOfHour();
+        $date2 = Carbon::now(config('app.timezone'))->addDays(3)->setTime(14, 0)->startOfHour();
+
+        // 1. Expired held reservation
+        $heldReservation = Reservation::create([
+            'organization_id' => $org->id,
+            'user_id' => $unpaidUser->id,
+            'court_id' => $court->id,
+            'code' => 'RES-HELD-EXP-01',
+            'status' => 'held',
+            'currency' => 'VND',
+            'total_amount' => 150000,
+            'hold_expires_at' => now()->subMinutes(5),
+        ]);
+        $heldSlot = $heldReservation->slots()->create([
+            'organization_id' => $org->id,
+            'court_id' => $court->id,
+            'starts_at' => $date1,
+            'ends_at' => $date1->copy()->addHour(),
+            'unit_price' => 150000,
+            'status' => 'held',
+        ]);
+        $heldEntitlement = $heldReservation->entitlements()->create([
+            'organization_id' => $org->id,
+            'user_id' => $unpaidUser->id,
+            'court_id' => $court->id,
+            'reservation_slot_id' => $heldSlot->id,
+            'starts_at' => $date1,
+            'ends_at' => $date1->copy()->addHour(),
+            'amount' => 150000,
+            'status' => 'held',
+        ]);
+
+        // 2. Confirmed paid reservation
+        $confirmedReservation = Reservation::create([
+            'organization_id' => $org->id,
+            'user_id' => $paidUser->id,
+            'court_id' => $court->id,
+            'code' => 'RES-CONFIRMED-01',
+            'status' => 'confirmed',
+            'currency' => 'VND',
+            'total_amount' => 150000,
+            'hold_expires_at' => null,
+            'confirmed_at' => now()->subHour(),
+        ]);
+        $confirmedSlot = $confirmedReservation->slots()->create([
+            'organization_id' => $org->id,
+            'court_id' => $court->id,
+            'starts_at' => $date2,
+            'ends_at' => $date2->copy()->addHour(),
+            'unit_price' => 150000,
+            'status' => 'confirmed',
+        ]);
+        $confirmedEntitlement = $confirmedReservation->entitlements()->create([
+            'organization_id' => $org->id,
+            'user_id' => $paidUser->id,
+            'court_id' => $court->id,
+            'reservation_slot_id' => $confirmedSlot->id,
+            'starts_at' => $date2,
+            'ends_at' => $date2->copy()->addHour(),
+            'amount' => 150000,
+            'status' => 'active',
+        ]);
+
+        // 3. Trigger hold expiry via confirm or release
+        $resService = app(ReservationService::class);
+        $resService->release($heldReservation, 'expired');
+
+        // Assert held reservation, entitlement, and slot are released with status 'expired'
+        $this->assertSame('expired', $heldReservation->fresh()->status);
+        $this->assertSame('expired', $heldEntitlement->fresh()->status);
+        $this->assertSame('expired', $heldSlot->fresh()->status);
+
+        // Invariant: Confirmed reservation and entitlements untouched
+        $this->assertSame('confirmed', $confirmedReservation->fresh()->status);
+        $this->assertSame('active', $confirmedEntitlement->fresh()->status);
+
+        // Invariant: Wallets untouched, no refunds
+        $this->assertSame($unpaidBalanceBefore, (int) $unpaidWallet->fresh()->balance);
+        $this->assertSame($paidBalanceBefore, (int) $paidWallet->fresh()->balance);
+
+        // 4. Retry safety
+        $resService->release($heldReservation->fresh(), 'expired');
+        $this->assertSame('expired', $heldReservation->fresh()->status);
+        $this->assertSame($unpaidBalanceBefore, (int) $unpaidWallet->fresh()->balance);
+    }
+}

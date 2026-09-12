@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Subscription;
 
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Platform\PlatformPlanResource;
 use Illuminate\Http\JsonResponse;
 
 class PlatformPlanController extends Controller
@@ -15,7 +16,7 @@ class PlatformPlanController extends Controller
         $plans = $planRepo->listActive();
 
         return response()->json([
-            'data' => $plans,
+            'data' => PlatformPlanResource::collection($plans),
         ]);
     }
 }

@@ -15,4 +15,6 @@ interface RefundRepositoryInterface
     public function update(Refund $refund, array $attributes): bool;
 
     public function paginatePending(int $perPage = 30): LengthAwarePaginator;
+
+    public function paginateHistory(int $perPage = 30): LengthAwarePaginator;
 }

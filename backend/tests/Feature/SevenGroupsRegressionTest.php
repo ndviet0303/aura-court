@@ -209,10 +209,21 @@ class SevenGroupsRegressionTest extends TestCase
 
     private function tenant(): array
     {
-        $organization = Organization::create(['name' => 'Regression Tenant', 'slug' => 'reg-tenant-'.uniqid()]);
+        $organization = Organization::create([
+            'name' => 'Regression Tenant',
+            'slug' => 'reg-tenant-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
         $user = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
-        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Reg Venue', 'slug' => 'reg-venue-'.uniqid(), 'is_active' => true]);
+        $venue = Venue::create([
+            'organization_id' => $organization->id,
+            'name' => 'Reg Venue',
+            'slug' => 'reg-venue-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Reg Court', 'is_active' => true]);
 
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.tenant_pos_and_wallet' => true]);

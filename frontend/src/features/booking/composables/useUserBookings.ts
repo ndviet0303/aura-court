@@ -24,11 +24,6 @@ export function useUserBookings() {
   const showQrModal = ref(false)
   const qrBooking = ref<Booking | null>(null)
 
-  // Cancel modal state
-  const showCancelModal = ref(false)
-  const cancellingBooking = ref<Booking | null>(null)
-  const cancelReason = ref('')
-  const cancelling = ref(false)
 
   async function load() {
     loading.value = true
@@ -110,33 +105,6 @@ export function useUserBookings() {
     qrBooking.value = null
   }
 
-  // Cancel Modal Handlers
-  function openCancel(b: Booking) {
-    cancellingBooking.value = b
-    cancelReason.value = ''
-    showCancelModal.value = true
-  }
-
-  function closeCancel() {
-    showCancelModal.value = false
-    cancellingBooking.value = null
-    cancelReason.value = ''
-  }
-
-  async function confirmCancel() {
-    if (!cancellingBooking.value) return
-    cancelling.value = true
-    try {
-      await bookingApi.cancel(cancellingBooking.value.code, cancelReason.value || 'Người dùng yêu cầu huỷ đơn')
-      showNotice('Huỷ lịch đặt sân thành công!')
-      closeCancel()
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể huỷ đơn đặt sân.')
-    } finally {
-      cancelling.value = false
-    }
-  }
 
   // Review Modal Handlers
   function openReview(b: Booking) {
@@ -188,17 +156,10 @@ export function useUserBookings() {
     submittingReview,
     showQrModal,
     qrBooking,
-    showCancelModal,
-    cancellingBooking,
-    cancelReason,
-    cancelling,
     load,
     showNotice,
     openQr,
     closeQr,
-    openCancel,
-    closeCancel,
-    confirmCancel,
     openReview,
     closeReview,
     submitReview,

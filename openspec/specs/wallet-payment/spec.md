@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Enables users to pay for bookings and tournament fees by deducting from their wallet balance, and automatically credits refunds back to the wallet upon eligible cancellation.
+Enables users to pay for bookings and tournament fees by deducting from their wallet balance without generating wallet credits or debits from retired booking cancellation or rescheduling.
 
 ## Requirements
 
@@ -28,20 +28,20 @@ The platform SHALL allow a user to pay tournament entry fees by deducting from t
 - **WHEN** a user confirms tournament registration with an entry fee of 300,000 VND and wallet balance of 400,000 VND
 - **THEN** the platform SHALL deduct 300,000 VND, confirm the tournament registration, and record an immutable wallet transaction referencing the tournament as its source
 
-### Requirement: Automatic refund to wallet on cancellation
-When a confirmed booking is cancelled within the refund policy (at least 2 hours before the first slot), the platform SHALL credit the full booking amount back to the user's wallet balance immediately. The refund SHALL be recorded as an immutable wallet credit transaction referencing the original booking. No admin review or manual approval SHALL be required.
+### Requirement: No wallet movement from retired booking changes
+The platform SHALL NOT create wallet credits, price-difference debits, refund requests or replacement payment records from attempted booking cancellation, partial cancellation or rescheduling. Retiring these operations SHALL NOT delete, reverse or recompute historical wallet transactions or balances. Existing deposit, booking payment, tournament payment and unrelated authorized compensation behavior SHALL remain unchanged.
 
-#### Scenario: Eligible cancellation refunds to wallet instantly
-- **WHEN** a user cancels a confirmed booking 3 hours before the first slot start time
-- **THEN** the platform SHALL credit the full booking amount to the user's wallet, set the booking status to `refunded`, and record an immutable wallet credit transaction
+#### Scenario: Cancel or reschedule attempt leaves wallet untouched
+- **WHEN** a client attempts a retired cancellation or rescheduling command, including repeated attempts
+- **THEN** the wallet balance and transaction history SHALL remain unchanged and no refund request SHALL be created
 
-#### Scenario: Late cancellation does not refund
-- **WHEN** a user cancels a confirmed booking 1 hour before the first slot start time
-- **THEN** the platform SHALL reject the cancellation per the existing 2-hour policy without modifying the wallet balance
+#### Scenario: Historical refund remains visible
+- **WHEN** a user reloads wallet history containing a cancellation or rescheduling refund issued before retirement
+- **THEN** the original amount, transaction reference and recorded balance SHALL remain available without issuing or reversing a credit
 
-#### Scenario: Pending booking cancellation does not refund
-- **WHEN** a user cancels a booking that has not yet been paid (no wallet deduction occurred)
-- **THEN** the platform SHALL cancel the booking without creating any wallet transaction
+#### Scenario: Unpaid hold expires
+- **WHEN** an unpaid booking expires automatically
+- **THEN** expiry SHALL release eligible inventory without crediting a wallet
 
 ### Requirement: Wallet is the sole booking payment method
 The platform SHALL NOT accept QR bank transfer or card payments as direct booking payment methods. The only path to pay for a booking or tournament fee SHALL be through wallet balance deduction. Wallet deposit (adding funds to the wallet) remains available via the existing deposit flow.

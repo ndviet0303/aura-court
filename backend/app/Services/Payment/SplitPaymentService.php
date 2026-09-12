@@ -98,7 +98,7 @@ class SplitPaymentService
                 return $group;
             }
             $group->update(['status' => 'expired']);
-            $this->reservations->cancel($group->reservation);
+            $this->reservations->release($group->reservation, 'cancelled');
             $group->shares()->where('status', 'pending')->update(['status' => 'expired']);
             return $group->fresh('shares', 'reservation');
         });

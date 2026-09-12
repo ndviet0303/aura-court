@@ -11,6 +11,7 @@ use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class OrganizationController extends Controller
 {
@@ -70,6 +71,12 @@ class OrganizationController extends Controller
             403
         );
 
+        if ($request->has('cancellation_grace_hours') || array_key_exists('cancellation_grace_hours', (array) $request->input('settings', []))) {
+            throw ValidationException::withMessages([
+                'cancellation_grace_hours' => 'Cấu hình thời gian hủy đặt sân không còn được hỗ trợ.',
+            ]);
+        }
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:160',
             'tax_code' => 'nullable|string|max:50',
@@ -81,7 +88,8 @@ class OrganizationController extends Controller
             'logo_url' => 'nullable|string|max:255',
             'auto_approve_booking' => 'nullable|boolean',
             'resale_fee_percent' => 'nullable|numeric|min:0|max:100',
-            'cancellation_grace_hours' => 'nullable|numeric|min:0|max:168',
+            'cancellation_grace_hours' => 'prohibited',
+            'settings.cancellation_grace_hours' => 'prohibited',
             'currency' => 'nullable|string|max:10',
             'timezone' => 'nullable|string|max:50',
         ]);
@@ -99,7 +107,6 @@ class OrganizationController extends Controller
             'logo_url',
             'auto_approve_booking',
             'resale_fee_percent',
-            'cancellation_grace_hours',
             'currency',
             'timezone',
         ];

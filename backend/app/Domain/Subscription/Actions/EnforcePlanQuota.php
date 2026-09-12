@@ -49,6 +49,7 @@ class EnforcePlanQuota
 
                 case 'courts':
                     $currentCourts = $org->courts()->count();
+                    $maxCourts = (int) ($plan->max_courts ?? 4);
                     if (($currentCourts + $additionalUnits) > $maxCourts) {
                         throw ValidationException::withMessages([
                             'quota' => "Đã đạt giới hạn tối đa {$maxCourts} sân thể thao của gói {$plan->name}. Vui lòng nâng cấp gói để tạo thêm sân mới.",

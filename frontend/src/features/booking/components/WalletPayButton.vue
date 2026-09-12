@@ -89,8 +89,8 @@ function goToWallet() {
         <span>{{ $t('payment.instantConfirmation') || 'Xác nhận tức thì không chờ đợi' }}</span>
       </div>
       <div class="trust-item">
-        <span class="material-symbols-outlined trust-icon">assignment_return</span>
-        <span>{{ $t('payment.autoRefundNotice') || 'Hoàn tiền 100% tự động về ví khi huỷ lịch' }}</span>
+        <span class="material-symbols-outlined trust-icon">policy</span>
+        <span>{{ $t('payment.autoRefundNotice') || 'Không hỗ trợ hủy hoặc đổi lịch sau khi xác nhận' }}</span>
       </div>
     </div>
   </div>

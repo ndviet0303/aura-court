@@ -142,14 +142,48 @@ class WaitlistLifecycleTest extends TestCase
             'starts_at' => $date->toIso8601String(),
         ])->assertCreated();
 
-        // 3. Owner cancels booking -> releases slot
-        $cancelRes = $this->actingAs($owner)->postJson("/api/v1/bookings/{$bookingCode}/cancel");
-        $cancelRes->assertOk();
+        // 3. Attempting to cancel confirmed booking returns 404 and does NOT notify waitlist
+        $this->actingAs($owner)->postJson("/api/v1/bookings/{$bookingCode}/cancel")->assertNotFound();
+        Notification::assertNotSentTo($waiter, AuraBookingNotification::class);
+        $this->assertDatabaseHas('waitlist_entries', [
+            'user_id' => $waiter->id,
+            'court_id' => $court->id,
+            'status' => 'waiting',
+        ]);
+
+        // Supported release path: create pending hold and expire it
+        $court2 = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Expiry Waitlist', 'is_active' => true]);
+        $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(14, 0)->startOfHour();
+        CourtPriceSlot::create(['court_id' => $court2->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 100000, 'is_active' => true]);
+
+        $pendingBooking = Booking::create([
+            'code' => 'BK-PENDING-WAIT-02',
+            'user_id' => $owner->id,
+            'court_id' => $court2->id,
+            'total_amount' => 100000,
+            'status' => 'pending_payment',
+            'payment_expires_at' => now()->subMinute(),
+        ]);
+        $pendingBooking->slots()->create([
+            'court_id' => $court2->id,
+            'starts_at' => $date2,
+            'ends_at' => $date2->copy()->addHour(),
+            'unit_price' => 100000,
+            'status' => 'held',
+        ]);
+
+        $this->actingAs($waiter)->postJson('/api/v1/waitlist', [
+            'court_id' => $court2->id,
+            'starts_at' => $date2->toIso8601String(),
+        ])->assertCreated();
+
+        // Expire pending booking -> releases held inventory and notifies waitlist
+        app(\App\Services\Booking\BookingService::class)->expirePending();
 
         // 4. Waitlist entry marked 'notified' and notification sent without automatic booking promises
         $this->assertDatabaseHas('waitlist_entries', [
             'user_id' => $waiter->id,
-            'court_id' => $court->id,
+            'court_id' => $court2->id,
             'status' => 'notified',
         ]);
 
@@ -161,8 +195,8 @@ class WaitlistLifecycleTest extends TestCase
 
         // 5. The waiter must complete normal checkout themselves
         $waiterBookRes = $this->actingAs($waiter)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
+            'court_id' => $court2->id,
+            'slots' => [$date2->toIso8601String()],
         ]);
         $waiterBookRes->assertCreated();
         $waiterBookRes->assertJsonPath('booking.status', 'confirmed');

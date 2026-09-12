@@ -31,4 +31,11 @@ class EloquentRefundRepository implements RefundRepositoryInterface
             ->latest()
             ->paginate($perPage);
     }
+
+    public function paginateHistory(int $perPage = 30): LengthAwarePaginator
+    {
+        return Refund::with(['booking.user', 'booking.court'])
+            ->latest()
+            ->paginate($perPage);
+    }
 }

@@ -6,7 +6,6 @@ const { t } = useI18n()
 defineProps<{
   reservation: V2Reservation
   confirmingCode: string | null
-  cancellingCode: string | null
   money: (value: number) => string
   formatDate: (value: string) => string
   formatTimeSlot: (startsAt: string, endsAt?: string) => string
@@ -14,7 +13,6 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'confirm', reservation: V2Reservation): void
-  (e: 'cancel', reservation: V2Reservation): void
   (e: 'details', reservation: V2Reservation): void
 }>()
 </script>
@@ -56,22 +54,13 @@ const emit = defineEmits<{
     <div class="banner-actions-col">
       <button
         class="btn btn-primary btn-confirm-held"
-        :disabled="confirmingCode === reservation.code || cancellingCode === reservation.code"
+        :disabled="confirmingCode === reservation.code"
         @click="emit('confirm', reservation)"
       >
         <span class="material-symbols-outlined" :class="{ spinning: confirmingCode === reservation.code }">
           {{ confirmingCode === reservation.code ? 'refresh' : 'check_circle' }}
         </span>
         <span>{{ confirmingCode === reservation.code ? t('v2Reservations.heldBanner.confirming') : t('v2Reservations.heldBanner.confirmBtn') }}</span>
-      </button>
-
-      <button
-        class="btn btn-cancel-held"
-        :disabled="confirmingCode === reservation.code || cancellingCode === reservation.code"
-        @click="emit('cancel', reservation)"
-      >
-        <span class="material-symbols-outlined">close</span>
-        <span>{{ t('v2Reservations.heldBanner.cancelBtn') }}</span>
       </button>
     </div>
   </div>

@@ -5,7 +5,6 @@ defineProps<{
   totalCourtsCount: number
   activeCourtsCount: number
   totalBlocksCount: number
-  pendingRefundsCount: number
   loading?: boolean
 }>()
 
@@ -15,7 +14,7 @@ const { t } = useI18n()
 <template>
   <div class="manage-kpi-bar">
     <template v-if="loading">
-      <div v-for="i in 4" :key="i" class="kpi-card skeleton-card">
+      <div v-for="i in 3" :key="i" class="kpi-card skeleton-card">
         <div class="kpi-top-row">
           <div class="skeleton-item skeleton-icon"></div>
           <div class="skeleton-item skeleton-lbl"></div>
@@ -48,14 +47,6 @@ const { t } = useI18n()
         </div>
         <strong class="kpi-num">{{ totalBlocksCount }}</strong>
       </div>
-
-      <div class="kpi-card text-pink">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-pink">currency_exchange</span>
-          <span class="kpi-lbl">{{ t('admin.manage.pendingRefunds') }}</span>
-        </div>
-        <strong class="kpi-num">{{ pendingRefundsCount }}</strong>
-      </div>
     </template>
   </div>
 </template>
@@ -63,7 +54,7 @@ const { t } = useI18n()
 <style scoped>
 .manage-kpi-bar {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 

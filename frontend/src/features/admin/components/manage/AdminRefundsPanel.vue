@@ -8,12 +8,22 @@ defineProps<{
   loading?: boolean
 }>()
 
-const emit = defineEmits<{
-  (e: 'approve', refundId: number): void
-  (e: 'reject', refundId: number): void
-}>()
-
 const { t } = useI18n()
+
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'pending':
+      return t('admin.dashboard.statusRefundPending')
+    case 'approved':
+    case 'refunded':
+    case 'completed':
+      return t('admin.dashboard.statusRefunded')
+    case 'rejected':
+      return t('admin.manage.statusRejected')
+    default:
+      return status
+  }
+}
 </script>
 
 <template>
@@ -21,7 +31,7 @@ const { t } = useI18n()
     <div class="refunds-header">
       <div>
         <div class="title-with-icon">
-          <span class="material-symbols-outlined card-title-icon">currency_exchange</span>
+          <span class="material-symbols-outlined card-title-icon">history</span>
           <h3 class="panel-headline">{{ t('admin.manage.refundsPanelTitle') }}</h3>
         </div>
         <p class="panel-sub">{{ t('admin.manage.refundsPanelSub') }}</p>
@@ -41,16 +51,15 @@ const { t } = useI18n()
           <div class="skeleton-item skeleton-text short"></div>
         </div>
 
-        <div class="ref-actions-col">
-          <div class="skeleton-item skeleton-action-btn"></div>
-          <div class="skeleton-item skeleton-action-btn"></div>
+        <div class="ref-status-col">
+          <div class="skeleton-item skeleton-status-badge"></div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="refunds.length === 0" class="empty-refunds-box">
-      <span class="material-symbols-outlined empty-icon">check_circle</span>
+      <span class="material-symbols-outlined empty-icon">history</span>
       <p>{{ t('admin.manage.noPendingRefunds') }}</p>
     </div>
 
@@ -68,15 +77,10 @@ const { t } = useI18n()
           <p class="ref-reason">{{ t('admin.manage.reasonLabel', { reason: ref.note || t('admin.manage.defaultCancelReason') }) }}</p>
         </div>
 
-        <div class="ref-actions-col">
-          <button type="button" class="btn-approve" @click="emit('approve', ref.id)">
-            <span class="material-symbols-outlined icon-16">check</span>
-            <span>{{ t('admin.manage.approveRefundBtn') }}</span>
-          </button>
-          <button type="button" class="btn-reject" @click="emit('reject', ref.id)">
-            <span class="material-symbols-outlined icon-16">close</span>
-            <span>{{ t('admin.manage.rejectRefundBtn') }}</span>
-          </button>
+        <div class="ref-status-col">
+          <span class="status-badge" :class="`status-${ref.status}`">
+            {{ getStatusLabel(ref.status) }}
+          </span>
         </div>
       </div>
     </div>
@@ -198,41 +202,39 @@ const { t } = useI18n()
   color: var(--muted);
 }
 
-.ref-actions-col {
+.ref-status-col {
   display: flex;
-  gap: 8px;
+  align-items: center;
 }
 
-.btn-approve {
+.status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 0;
-  background: #10b981;
-  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
+  text-transform: capitalize;
 }
 
-.btn-reject {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: #ef4444;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+.status-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.icon-16 {
-  font-size: 16px;
+.status-approved,
+.status-refunded,
+.status-completed {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* Shimmer Skeleton */
@@ -296,10 +298,10 @@ const { t } = useI18n()
   width: 160px;
 }
 
-.skeleton-action-btn {
+.skeleton-status-badge {
   width: 90px;
-  height: 32px;
-  border-radius: 8px;
+  height: 28px;
+  border-radius: 20px;
 }
 
 @keyframes shimmer-wave {

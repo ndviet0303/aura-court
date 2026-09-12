@@ -153,35 +153,14 @@ class ReservationService
         });
     }
 
-    public function cancel(Reservation $reservation): Reservation
+    public function release(Reservation $reservation, string $status): void
     {
-        return DB::transaction(function () use ($reservation): Reservation {
-            $reservation = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
-            if (in_array($reservation->status, ['cancelled', 'expired'], true)) {
-                return $reservation->load(['court.venue', 'slots', 'entitlements']);
-            }
-
-            if ($reservation->status === 'confirmed' && (int) $reservation->total_amount > 0) {
-                $walletService = app(\App\Services\Payment\WalletPaymentService::class);
-                $wallet = $walletService->getOrCreateWallet($reservation->user_id, $reservation->organization_id);
-                $walletService->credit(
-                    $wallet,
-                    (int) $reservation->total_amount,
-                    'reservation_refund',
-                    $reservation->id,
-                    "Refund for {$reservation->code}"
-                );
-                app(\App\Services\Finance\FinancialPostingService::class)->postWalletReservationRefund(
-                    $reservation,
-                    (int) $reservation->total_amount,
-                    $wallet->id
-                );
-            }
-
-            $this->release($reservation, 'cancelled');
-
-            return $reservation->fresh(['court.venue', 'slots', 'entitlements']);
-        });
+        $reservation->update([
+            'status' => $status,
+            'cancelled_at' => $status === 'cancelled' ? now() : $reservation->cancelled_at,
+        ]);
+        $reservation->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => $status]);
+        $reservation->entitlements()->whereIn('status', ['held', 'active'])->update(['status' => $status]);
     }
 
     private function findQuote(int $userId, int $organizationId, array $data): ?PriceQuote
@@ -200,16 +179,6 @@ class ReservationService
         }
 
         return $query->lockForUpdate()->firstOrFail();
-    }
-
-    private function release(Reservation $reservation, string $status): void
-    {
-        $reservation->update([
-            'status' => $status,
-            'cancelled_at' => $status === 'cancelled' ? now() : $reservation->cancelled_at,
-        ]);
-        $reservation->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => $status]);
-        $reservation->entitlements()->whereIn('status', ['held', 'active'])->update(['status' => $status]);
     }
 
     private function uniqueCode(): string

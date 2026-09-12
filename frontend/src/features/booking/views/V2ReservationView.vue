@@ -24,7 +24,6 @@ const {
   calculatingQuote,
   holdingReservation,
   confirmingCode,
-  cancellingCode,
   activeTab,
   searchQuery,
   notice,
@@ -45,7 +44,6 @@ const {
   holdReservation,
   checkoutReservation,
   confirmReservation,
-  cancelReservation,
   openDetails,
   closeDetails,
   openQr,
@@ -91,12 +89,10 @@ function scrollToCalculator() {
       v-if="activeHeldReservation"
       :reservation="activeHeldReservation"
       :confirming-code="confirmingCode"
-      :cancelling-code="cancellingCode"
       :money="money"
       :format-date="formatDate"
       :format-time-slot="formatTimeSlot"
       @confirm="confirmReservation"
-      @cancel="cancelReservation"
       @details="openDetails"
     />
 
@@ -175,12 +171,10 @@ function scrollToCalculator() {
           :key="r.id"
           :reservation="r"
           :confirming-code="confirmingCode"
-          :cancelling-code="cancellingCode"
           :money="money"
           :format-date="formatDate"
           :format-time-slot="formatTimeSlot"
           @confirm="confirmReservation"
-          @cancel="cancelReservation"
           @qr="openQr"
           @details="openDetails"
         />

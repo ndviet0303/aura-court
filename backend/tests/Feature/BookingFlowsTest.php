@@ -152,7 +152,7 @@ class BookingFlowsTest extends TestCase
             ->assertJsonPath('status', 'confirmed');
     }
 
-    public function test_customer_can_cancel_booking_with_instant_wallet_refund(): void
+    public function test_customer_cannot_cancel_booking_returns_404_with_no_side_effects(): void
     {
         $user = User::factory()->create();
         $this->fundUserWallet($user, 500000);
@@ -162,9 +162,14 @@ class BookingFlowsTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
         $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
 
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel")->assertOk();
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'refunded']);
-        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'cancelled']);
+        $wallet = app(WalletPaymentService::class)->getOrCreateWallet($user->id, $venue->organization_id);
+        $balanceBefore = $wallet->fresh()->balance;
+
+        $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel")->assertNotFound();
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
+        $this->assertSame($balanceBefore, $wallet->fresh()->balance);
     }
 
     public function test_recurring_booking_creates_all_weeks_atomically(): void
@@ -181,7 +186,7 @@ class BookingFlowsTest extends TestCase
         $this->assertDatabaseCount('bookings', 2);
     }
 
-    public function test_customer_can_reschedule_a_confirmed_booking(): void
+    public function test_customer_cannot_reschedule_booking_returns_404_with_no_side_effects(): void
     {
         $user = User::factory()->create();
         $this->fundUserWallet($user, 1000000);
@@ -194,9 +199,14 @@ class BookingFlowsTest extends TestCase
         }
         $booking = app(BookingService::class)->create($user->id, $court->id, [$oldDate->toIso8601String()]);
 
+        $wallet = app(WalletPaymentService::class)->getOrCreateWallet($user->id, $venue->organization_id);
+        $balanceBefore = $wallet->fresh()->balance;
+
         $response = $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/reschedule", ['court_id' => $court->id, 'slots' => [$newDate->toIso8601String()]]);
-        $response->assertCreated()->assertJsonPath('booking.status', 'confirmed');
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'refunded']);
+        $response->assertNotFound();
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertSame($balanceBefore, $wallet->fresh()->balance);
     }
 
     public function test_unverified_customer_cannot_create_booking(): void

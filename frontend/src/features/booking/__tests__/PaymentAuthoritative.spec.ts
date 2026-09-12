@@ -19,7 +19,6 @@ vi.mock('../api/bookingApi', () => ({
   bookingApi: {
     list: vi.fn(),
     getPayment: vi.fn(),
-    cancel: vi.fn(),
     submitReview: vi.fn(),
     getPaymentStatus: vi.fn(),
   },
@@ -77,49 +76,32 @@ describe('Payment & History Authoritative Integration', () => {
     expect(error.value).toBeTruthy()
   })
 
-  it('Booking history cancels and reloads authoritative state on success, preserves state on error', async () => {
+  it('Booking history loads authoritative state and does not expose cancellation controls', async () => {
     vi.mocked(bookingApi.list).mockResolvedValue({
       data: [
         {
           id: 1,
-          code: 'BK-CANCEL-TEST',
+          code: 'BK-HISTORY-TEST',
           status: 'confirmed',
           total_amount: 200000,
           slots: [{ id: 1, starts_at: '2026-10-10T10:00:00Z', ends_at: '2026-10-10T11:00:00Z' }],
         } as any,
-      ],
-    })
-
-    const { load, bookings, confirmCancel, openCancel, error } = useUserBookings()
-    await load()
-    const firstBooking = bookings.value[0]!
-    expect(firstBooking.status).toBe('confirmed')
-
-    // 1. Cancellation failure preserves original status and exposes error
-    vi.mocked(bookingApi.cancel).mockRejectedValue(new Error('Booking cannot be cancelled within 2 hours'))
-    openCancel(firstBooking)
-    await confirmCancel()
-
-    expect(error.value).toContain('Booking cannot be cancelled within 2 hours')
-    expect(bookings.value[0]?.status).toBe('confirmed')
-    // 2. Cancellation success calls cancel and reloads authoritative list
-    vi.mocked(bookingApi.cancel).mockResolvedValue({} as any)
-    vi.mocked(bookingApi.list).mockResolvedValue({
-      data: [
         {
-          id: 1,
-          code: 'BK-CANCEL-TEST',
-          status: 'refunded',
-          total_amount: 200000,
-          slots: [{ id: 1, starts_at: '2026-10-10T10:00:00Z', ends_at: '2026-10-10T11:00:00Z' }],
+          id: 2,
+          code: 'BK-HISTORICAL-CANCELLED',
+          status: 'cancelled',
+          total_amount: 150000,
+          slots: [{ id: 2, starts_at: '2026-09-01T10:00:00Z', ends_at: '2026-09-01T11:00:00Z' }],
         } as any,
       ],
     })
 
-    openCancel(bookings.value[0]!)
-    await confirmCancel()
+    const { load, bookings, filteredBookings } = useUserBookings()
+    await load()
 
-    expect(bookingApi.cancel).toHaveBeenCalledWith('BK-CANCEL-TEST', expect.any(String))
-    expect(bookings.value[0]?.status).toBe('refunded')
+    expect(bookings.value.length).toBe(2)
+    expect(bookings.value[0]?.status).toBe('confirmed')
+    expect(bookings.value[1]?.status).toBe('cancelled')
+    expect(filteredBookings.value.length).toBe(2)
   })
 })

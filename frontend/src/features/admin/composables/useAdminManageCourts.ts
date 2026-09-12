@@ -73,7 +73,6 @@ export function useAdminManageCourts() {
   const totalCourtsCount = computed(() => courts.value.length)
   const activeCourtsCount = computed(() => courts.value.filter((c) => c.is_active !== false).length)
   const totalBlocksCount = computed(() => courts.value.reduce((sum, c) => sum + (c.blocks?.length || 0), 0))
-  const pendingRefundsCount = computed(() => refunds.value.length)
 
   const venueFilterOptions = computed(() => [
     { value: 'all', label: t('admin.manage.allVenuesFilter', { count: venues.value.length }), icon: 'domain' },
@@ -247,28 +246,6 @@ export function useAdminManageCourts() {
     }
   }
 
-  async function approveRefund(refundId: number) {
-    clearAlerts()
-    try {
-      await adminApi.processRefund(refundId, { status: 'approved' })
-      notice.value = t('admin.manage.approveRefundSuccess')
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.approveRefundError'))
-    }
-  }
-
-  async function rejectRefund(refundId: number) {
-    clearAlerts()
-    try {
-      await adminApi.processRefund(refundId, { status: 'rejected' })
-      notice.value = t('admin.manage.rejectRefundSuccess')
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.rejectRefundError'))
-    }
-  }
-
   return {
     courts,
     venues,
@@ -296,7 +273,6 @@ export function useAdminManageCourts() {
     totalCourtsCount,
     activeCourtsCount,
     totalBlocksCount,
-    pendingRefundsCount,
     venueFilterOptions,
     statusFilterOptions,
     load,
@@ -309,7 +285,5 @@ export function useAdminManageCourts() {
     deleteBlock,
     openCouponModal,
     createCoupon,
-    approveRefund,
-    rejectRefund,
   }
 }

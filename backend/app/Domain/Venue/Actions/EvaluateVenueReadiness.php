@@ -4,6 +4,7 @@ namespace App\Domain\Venue\Actions;
 
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
+use App\Models\Court;
 use App\Models\Venue;
 
 class EvaluateVenueReadiness
@@ -107,18 +108,7 @@ class EvaluateVenueReadiness
             ];
         }
 
-        // 6. Cancellation & Supported Policies
-        $cancellationPolicyValid = ($org?->cancellation_grace_hours ?? 12) >= 0;
-        $checklist['cancellation_policy'] = $cancellationPolicyValid;
-        if (! $cancellationPolicyValid) {
-            $missingItems[] = [
-                'code' => 'CANCELLATION_POLICY_INVALID',
-                'message' => 'Chính sách hủy đặt sân của câu lạc bộ không hợp lệ.',
-                'field' => 'cancellation_policy',
-            ];
-        }
-
-        // 7. Quota Compliance (Venues and Courts within Plan Limits)
+        // 6. Quota Compliance (Venues and Courts within Plan Limits)
         $quotaCompliant = true;
         if ($sub && $sub->plan && $org) {
             $totalCourts = $org->courts()->count();

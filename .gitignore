@@ -19,5 +19,6 @@ backend/bootstrap/cache/*.php
 .DS_Store
 .idea/
 .vscode/
+.antigravity/
 *.log
 frontend/public/aura-fb-logo.jpg

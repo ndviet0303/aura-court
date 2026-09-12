@@ -177,14 +177,16 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         // 3. Booking history list returns paginated bookings
         $listRes = $this->actingAs($user)->getJson('/api/v1/bookings');
         $listRes->assertOk();
-        $this->assertGreaterThanOrEqual(1, count($listRes->json('data')));
-
-        // 4. Cancel booking returns {message: ..., booking: ...} and refunds wallet
-        $cancelRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel");
-        $cancelRes->assertOk();
-        $this->assertSame('refunded', $cancelRes->json('status'));
+        // 4. Cancel booking returns 404 and preserves booking and wallet balance
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $organization->id);
-        $this->assertSame(1000000, (int) $wallet->balance);
+        $balanceBefore = (int) $wallet->fresh()->balance;
+
+        $cancelRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel");
+        $cancelRes->assertNotFound();
+        $this->assertSame('confirmed', Booking::where('code', $code)->value('status'));
+        $this->assertSame($balanceBefore, (int) $wallet->fresh()->balance);
+        $this->assertDatabaseMissing('refunds', ['booking_id' => $createRes->json('booking.id')]);
     }
 }
+

@@ -32,7 +32,6 @@ export function useV2Reservations() {
   const calculatingQuote = ref(false)
   const holdingReservation = ref(false)
   const confirmingCode = ref<string | null>(null)
-  const cancellingCode = ref<string | null>(null)
 
   const activeTab = ref<'all' | 'held' | 'confirmed' | 'cancelled'>('all')
   const searchQuery = ref('')
@@ -222,22 +221,6 @@ export function useV2Reservations() {
     }
   }
 
-  async function cancelReservation(reservation: V2Reservation) {
-    if (!confirm(t('v2Reservations.messages.cancelConfirm'))) return
-    cancellingCode.value = reservation.code
-    error.value = ''
-    notice.value = ''
-
-    try {
-      await bookingApi.cancelReservation(reservation.code)
-      notice.value = t('v2Reservations.messages.cancelSuccess', { code: reservation.code })
-      await loadData()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('v2Reservations.messages.cancelError'))
-    } finally {
-      cancellingCode.value = null
-    }
-  }
 
   const filteredReservations = computed(() => {
     let list = reservations.value
@@ -310,7 +293,6 @@ export function useV2Reservations() {
     calculatingQuote,
     holdingReservation,
     confirmingCode,
-    cancellingCode,
     activeTab,
     searchQuery,
     notice,
@@ -331,7 +313,6 @@ export function useV2Reservations() {
     holdReservation,
     checkoutReservation,
     confirmReservation,
-    cancelReservation,
     openDetails,
     closeDetails,
     openQr,

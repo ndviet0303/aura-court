@@ -35,7 +35,6 @@ class Organization extends Model
         'logo_url',
         'auto_approve_booking',
         'resale_fee_percent',
-        'cancellation_grace_hours',
         'currency',
         'timezone',
     ];
@@ -73,11 +72,6 @@ class Organization extends Model
     public function getResaleFeePercentAttribute(): float
     {
         return (float) ($this->settings['resale_fee_percent'] ?? 5);
-    }
-
-    public function getCancellationGraceHoursAttribute(): int
-    {
-        return (int) ($this->settings['cancellation_grace_hours'] ?? 12);
     }
 
     public function getCurrencyAttribute(): string

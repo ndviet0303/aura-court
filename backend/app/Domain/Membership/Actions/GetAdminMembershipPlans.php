@@ -37,7 +37,7 @@ class GetAdminMembershipPlans
                 'pointMultiplier' => (float) ($benefits['point_multiplier'] ?? 1.5),
                 'advanceBookingDays' => (int) ($benefits['advance_booking_days'] ?? 7),
                 'freeWeekendHours' => (int) ($benefits['free_weekend_hours'] ?? 0),
-                'cancellationFeeWaived' => (bool) ($benefits['cancellation_fee_waived'] ?? false),
+                'cancellationFeeWaived' => false,
                 'activeSubscribers' => (int) ($plan->active_subscribers ?? 0),
                 'isPopular' => (bool) ($benefits['is_popular'] ?? $benefits['isPopular'] ?? false),
                 'highlightColor' => $benefits['highlight_color'] ?? ($benefits['is_popular'] ?? false ? 'gold' : null),

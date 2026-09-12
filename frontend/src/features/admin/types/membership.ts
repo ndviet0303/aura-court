@@ -16,7 +16,6 @@ export type MembershipPlan = {
   pointMultiplier: number
   advanceBookingDays: number
   freeWeekendHours: number
-  cancellationFeeWaived: boolean
   activeSubscribers: number
   isPopular?: boolean
   highlightColor?: string

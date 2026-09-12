@@ -26,7 +26,6 @@ const formCourtDiscount = ref(10)
 const formPointMultiplier = ref(1.5)
 const formAdvanceDays = ref(7)
 const formFreeHours = ref(0)
-const formWaiveCancelFee = ref(false)
 const formIsPopular = ref(false)
 const formPerks = ref<string[]>([])
 const newPerkInput = ref('')
@@ -51,7 +50,6 @@ watch(
       formPointMultiplier.value = val.pointMultiplier
       formAdvanceDays.value = val.advanceBookingDays
       formFreeHours.value = val.freeWeekendHours
-      formWaiveCancelFee.value = val.cancellationFeeWaived
       formIsPopular.value = !!val.isPopular
       formPerks.value = [...(val.perks || [])]
       createNewVersion.value = true
@@ -65,7 +63,6 @@ watch(
       formPointMultiplier.value = 1.5
       formAdvanceDays.value = 7
       formFreeHours.value = 0
-      formWaiveCancelFee.value = false
       formIsPopular.value = false
       formPerks.value = ['Giảm 15% đặt sân giờ vàng', 'Tích lũy x1.5 điểm thưởng', 'Đặt sân trước 7 ngày']
       createNewVersion.value = false
@@ -98,7 +95,6 @@ function onSubmit() {
     pointMultiplier: Number(formPointMultiplier.value),
     advanceBookingDays: Number(formAdvanceDays.value),
     freeWeekendHours: Number(formFreeHours.value),
-    cancellationFeeWaived: formWaiveCancelFee.value,
     isPopular: formIsPopular.value,
     perks: formPerks.value,
   }, createNewVersion.value)
@@ -180,7 +176,6 @@ function onSubmit() {
               </div>
             </div>
             <div class="checkbox-row">
-              <label class="custom-check-lbl"><input v-model="formWaiveCancelFee" type="checkbox" class="check-box" /><span>{{ t('admin.membership.waiveCancelFee') }}</span></label>
               <label class="custom-check-lbl"><input v-model="formIsPopular" type="checkbox" class="check-box" /><span>{{ t('admin.membership.markVipPopular') }}</span></label>
             </div>
           </div>

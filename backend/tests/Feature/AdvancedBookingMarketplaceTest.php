@@ -63,10 +63,21 @@ class AdvancedBookingMarketplaceTest extends TestCase
     /** @return array{0:Organization,1:User,2:\App\Models\Court} */
     private function tenant(): array
     {
-        $organization = Organization::create(['name' => 'Advanced Tenant', 'slug' => 'advanced-'.uniqid()]);
+        $organization = Organization::create([
+            'name' => 'Advanced Tenant',
+            'slug' => 'advanced-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
         $user = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => 'organization_owner', 'status' => 'active']);
-        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Advanced Venue', 'slug' => 'advanced-venue-'.uniqid(), 'is_active' => true]);
+        $venue = Venue::create([
+            'organization_id' => $organization->id,
+            'name' => 'Advanced Venue',
+            'slug' => 'advanced-venue-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
         $court = $venue->courts()->create(['name' => 'Advanced Court', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.marketplace_split_payments' => true, 'features.flags.marketplace_slot_resale' => true]);

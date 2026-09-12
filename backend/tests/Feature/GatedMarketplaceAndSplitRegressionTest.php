@@ -25,13 +25,24 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
 
     private function setupTenantAndReservation(bool $enablePilot = false): array
     {
-        $organization = Organization::create(['name' => 'Org Gated', 'slug' => 'org-gated-'.uniqid()]);
+        $organization = Organization::create([
+            'name' => 'Org Gated',
+            'slug' => 'org-gated-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
         $owner = User::factory()->create();
         $customer = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $customer->id, 'role' => 'customer', 'status' => 'active']);
 
-        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Venue Gated', 'slug' => 'venue-gated-'.uniqid(), 'is_active' => true]);
+        $venue = Venue::create([
+            'organization_id' => $organization->id,
+            'name' => 'Venue Gated',
+            'slug' => 'venue-gated-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
         $court = $venue->courts()->create(['name' => 'Court Gated', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
 

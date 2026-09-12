@@ -17,14 +17,12 @@ const { t } = useI18n()
 
 const autoApprove = ref(props.org.auto_approve_booking ?? true)
 const resaleFee = ref(props.org.resale_fee_percent ?? 5)
-const graceHours = ref(props.org.cancellation_grace_hours ?? 12)
 
 watch(
   () => props.org,
   (o) => {
     autoApprove.value = o.auto_approve_booking ?? true
     resaleFee.value = o.resale_fee_percent ?? 5
-    graceHours.value = o.cancellation_grace_hours ?? 12
   },
   { deep: true }
 )
@@ -33,7 +31,6 @@ function handleSave() {
   emit('save', {
     auto_approve_booking: autoApprove.value,
     resale_fee_percent: Number(resaleFee.value),
-    cancellation_grace_hours: Number(graceHours.value),
   })
 }
 </script>
@@ -96,38 +93,6 @@ function handleSave() {
               class="form-input font-mono num-input"
             />
             <span class="unit-tag">%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grace Hours Rule -->
-      <div class="policy-card-item">
-        <div class="p-info">
-          <div class="p-header">
-            <span class="material-symbols-outlined p-icon">schedule</span>
-            <strong class="p-title">{{ t('admin.org.graceHoursLabel') }}</strong>
-          </div>
-          <p class="p-desc">{{ t('admin.org.graceHoursDesc') }}</p>
-        </div>
-
-        <div class="p-control-box">
-          <input
-            v-model.number="graceHours"
-            type="range"
-            min="1"
-            max="72"
-            step="1"
-            class="range-slider"
-          />
-          <div class="number-input-wrap">
-            <input
-              v-model.number="graceHours"
-              type="number"
-              min="1"
-              max="72"
-              class="form-input font-mono num-input"
-            />
-            <span class="unit-tag">hrs</span>
           </div>
         </div>
       </div>

@@ -132,7 +132,7 @@ const durationHours = computed(() => {
         <span>{{ $t('schedule.instantHoldPerk') }}</span>
       </div>
       <div class="perk-item">
-        <span class="material-symbols-outlined perk-icon">verified_user</span>
+        <span class="material-symbols-outlined perk-icon">policy</span>
         <span>{{ $t('schedule.flexReschedulePerk') }}</span>
       </div>
     </div>

@@ -37,7 +37,6 @@ export interface Organization {
   status: string
   auto_approve_booking?: boolean
   resale_fee_percent?: number
-  cancellation_grace_hours?: number
   currency?: string
   timezone?: string
   settings?: Record<string, any>
@@ -65,7 +64,6 @@ export function useOrganizationOwner() {
     brand_color: '#6B2D3F',
     auto_approve_booking: true,
     resale_fee_percent: 5,
-    cancellation_grace_hours: 12,
     currency: 'VND',
     timezone: 'Asia/Ho_Chi_Minh',
     venues: [],

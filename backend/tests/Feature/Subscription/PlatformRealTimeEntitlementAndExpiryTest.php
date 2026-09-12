@@ -23,6 +23,8 @@ class PlatformRealTimeEntitlementAndExpiryTest extends TestCase
 
     public function test_booking_request_after_expiry_before_batch_job_is_rejected_and_transitions_subscription(): void
     {
+        config(['partner.enforce_subscription_check' => true]);
+
         $owner = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
         $org = Organization::create([

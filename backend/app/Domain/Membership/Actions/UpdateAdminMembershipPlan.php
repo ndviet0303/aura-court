@@ -13,6 +13,12 @@ class UpdateAdminMembershipPlan
 
     public function execute(TenantMembershipPlan $plan, array $data): TenantMembershipPlan
     {
+        if (array_key_exists('cancellationFeeWaived', $data) || array_key_exists('cancellation_fee_waived', $data)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'cancellationFeeWaived' => 'Membership cancellation fee waiver is no longer supported.',
+            ]);
+        }
+
         $currentBenefits = $plan->benefits ?? [];
 
         if (isset($data['code'])) $currentBenefits['code'] = $data['code'];
@@ -22,7 +28,6 @@ class UpdateAdminMembershipPlan
         if (isset($data['pointMultiplier'])) $currentBenefits['point_multiplier'] = (float) $data['pointMultiplier'];
         if (isset($data['advanceBookingDays'])) $currentBenefits['advance_booking_days'] = (int) $data['advanceBookingDays'];
         if (isset($data['freeWeekendHours'])) $currentBenefits['free_weekend_hours'] = (int) $data['freeWeekendHours'];
-        if (array_key_exists('cancellationFeeWaived', $data)) $currentBenefits['cancellation_fee_waived'] = (bool) $data['cancellationFeeWaived'];
         if (array_key_exists('isPopular', $data)) $currentBenefits['is_popular'] = (bool) $data['isPopular'];
         if (isset($data['perks'])) $currentBenefits['perks'] = $data['perks'];
 

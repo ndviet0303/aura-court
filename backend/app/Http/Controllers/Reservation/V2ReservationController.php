@@ -149,16 +149,6 @@ class V2ReservationController extends Controller
         });
     }
 
-    public function cancel(Request $request, string $reservation)
-    {
-        $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization->id, $reservation);
-
-        return $this->idempotency->run($request, function () use ($record) {
-            return response()->json(['reservation' => $this->reservations->cancel($record)]);
-        });
-    }
-
     public function pricingCalendar(Request $request)
     {
         $organization = $this->organization($request);

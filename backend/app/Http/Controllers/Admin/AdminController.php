@@ -11,7 +11,6 @@ use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Domain\Admin\Actions\CreateVenue;
 use App\Domain\Admin\Actions\ManageCourtBlocks;
 use App\Domain\Admin\Actions\ManageCourtPrices;
-use App\Domain\Admin\Actions\ProcessRefund;
 use App\Domain\Admin\Actions\ReviewPayment;
 use App\Domain\Admin\Actions\UpdateVenue;
 use App\Http\Controllers\Controller;
@@ -46,7 +45,6 @@ class AdminController extends Controller
         private readonly ManageCourtPrices $manageCourtPricesAction,
         private readonly ManageCourtBlocks $manageCourtBlocksAction,
         private readonly ReviewPayment $reviewPaymentAction,
-        private readonly ProcessRefund $processRefundAction,
     ) {}
 
     public function venues(Request $request)
@@ -252,7 +250,7 @@ class AdminController extends Controller
 
     public function refunds(Request $request)
     {
-        return $this->refunds->paginatePending(30);
+        return $this->refunds->paginateHistory(30);
     }
 
     public function payments(Request $request)
@@ -281,19 +279,6 @@ class AdminController extends Controller
         $this->audits->record($request, 'booking.no_show', $booking);
 
         return $booking->fresh(['court', 'slots']);
-    }
-
-    public function processRefund(Request $request, Refund $refund)
-    {
-        $data = $request->validate([
-            'status' => 'required|in:processed,rejected',
-            'note' => 'nullable|string|max:1000',
-        ]);
-
-        $updated = $this->processRefundAction->execute($refund, $data, $request->user());
-        $this->audits->record($request, 'refund.processed', $updated, ['status' => $data['status']]);
-
-        return $updated;
     }
 
     public function report(Request $request)

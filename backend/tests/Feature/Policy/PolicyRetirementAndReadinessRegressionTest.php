@@ -1,0 +1,218 @@
+<?php
+
+namespace Tests\Feature\Policy;
+
+use App\Models\Booking;
+use App\Models\Court;
+use App\Models\CourtPriceSlot;
+use App\Models\MembershipPlan;
+use App\Models\Organization;
+use App\Models\OrganizationMember;
+use App\Models\PlatformPlan;
+use App\Models\PlatformSubscription;
+use App\Models\User;
+use App\Models\Venue;
+use App\Services\Payment\WalletPaymentService;
+use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class PolicyRetirementAndReadinessRegressionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function setupTenant(): array
+    {
+        $org = Organization::create([
+            'name' => 'Policy Org',
+            'slug' => 'policy-org-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
+        $venue = Venue::create([
+            'organization_id' => $org->id,
+            'name' => 'Policy Venue',
+            'slug' => 'policy-venue-'.uniqid(),
+            'address' => '123 Main Street, District 1',
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $court = $venue->courts()->create(['name' => 'Policy Court 1', 'is_active' => true]);
+
+        return [$org, $venue, $court];
+    }
+
+    public function test_obsolete_organization_cancellation_policy_writes_are_rejected(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $owner = User::factory()->create(['role' => 'customer']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
+
+        Sanctum::actingAs($owner);
+
+        // 1. Direct field write rejection
+        $res1 = $this->patchJson("/api/v1/organizations/{$org->id}", [
+            'name' => 'Updated Org Name',
+            'cancellation_grace_hours' => 4,
+        ]);
+        $res1->assertStatus(422);
+        $res1->assertJsonValidationErrors(['cancellation_grace_hours']);
+
+        // 2. Settings nested write rejection
+        $res2 = $this->patchJson("/api/v1/organizations/{$org->id}", [
+            'name' => 'Updated Org Name',
+            'settings' => [
+                'cancellation_grace_hours' => 4,
+            ],
+        ]);
+        $res2->assertStatus(422);
+        $res2->assertJsonValidationErrors(['cancellation_grace_hours']);
+    }
+
+    public function test_obsolete_membership_cancellation_waiver_writes_are_rejected(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $admin = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($admin);
+
+        // 1. Membership plan store rejection (camelCase & snake_case)
+        $planRes1 = $this->withHeader('X-Organization-ID', (string) $org->id)
+            ->postJson('/api/v2/admin/memberships/plans', [
+                'name' => 'VIP Plan 1',
+                'price' => 200000,
+                'cancellationFeeWaived' => true,
+            ]);
+        $planRes1->assertStatus(422);
+        $planRes1->assertJsonValidationErrors(['cancellationFeeWaived']);
+
+        $planRes2 = $this->withHeader('X-Organization-ID', (string) $org->id)
+            ->postJson('/api/v2/admin/memberships/plans', [
+                'name' => 'VIP Plan 2',
+                'price' => 200000,
+                'cancellation_fee_waived' => true,
+            ]);
+        $planRes2->assertStatus(422);
+        $planRes2->assertJsonValidationErrors(['cancellation_fee_waived']);
+
+        // 2. Membership plan update rejection
+        $existingPlan = \App\Models\TenantMembershipPlan::create([
+            'organization_id' => $org->id,
+            'name' => 'Existing Plan',
+            'version' => 1,
+            'price' => 150000,
+            'benefits' => [],
+            'status' => 'published',
+        ]);
+
+        $updateRes = $this->withHeader('X-Organization-ID', (string) $org->id)
+            ->patchJson("/api/v2/admin/memberships/plans/{$existingPlan->id}", [
+                'cancellationFeeWaived' => true,
+            ]);
+        $updateRes->assertStatus(422);
+        $updateRes->assertJsonValidationErrors(['cancellationFeeWaived']);
+    }
+
+    public function test_venue_readiness_passes_without_cancellation_configuration(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $owner = User::factory()->create(['role' => 'customer']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
+
+        $plan = PlatformPlan::create(['code' => 'PLAN_READY', 'name' => 'Plan', 'price' => 200000, 'billing_cycle' => 'monthly', 'is_active' => true]);
+        PlatformSubscription::create([
+            'organization_id' => $org->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addMonth(),
+        ]);
+
+        CourtPriceSlot::create([
+            'court_id' => $court->id,
+            'weekday' => 1,
+            'starts_at' => '06:00',
+            'ends_at' => '22:00',
+            'price' => 100000,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($owner);
+
+        $res = $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
+        $res->assertOk()
+            ->assertJsonPath('data.is_ready', true)
+            ->assertJsonCount(0, 'data.missing_items');
+
+        // Verify checklist does not mention or require cancellation policy
+        $checklist = $res->json('data.checklist');
+        $this->assertArrayNotHasKey('cancellation_policy', $checklist);
+        $this->assertArrayNotHasKey('cancellation_grace_hours', $checklist);
+    }
+
+    public function test_preserved_historical_snapshots_and_continued_wallet_checkout_and_checkin(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $staff = User::factory()->create(['role' => 'customer']);
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $customer->id, 'role' => 'customer', 'status' => 'active']);
+
+        // Fund customer wallet
+        $walletService = app(WalletPaymentService::class);
+        $wallet = $walletService->getOrCreateWallet($customer->id, $org->id);
+        $walletService->credit($wallet, 500000, 'test_topup', 1, 'Top up');
+
+        $date = Carbon::now(config('app.timezone'))->setTime(20, 0)->startOfHour();
+        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '20:00', 'ends_at' => '21:00', 'price' => 100000, 'is_active' => true]);
+
+        // 1. Preserved historical booking with old snapshot
+        $historicalBooking = Booking::create([
+            'code' => 'BK-HIST-POLICY-01',
+            'user_id' => $customer->id,
+            'court_id' => $court->id,
+            'total_amount' => 100000,
+            'status' => 'confirmed',
+            'policy_snapshot' => ['cancellation_grace_hours' => 24, 'version' => 'legacy'],
+            'price_snapshot' => ['base_price' => 100000],
+        ]);
+        $historicalBooking->slots()->create([
+            'court_id' => $court->id,
+            'starts_at' => Carbon::now()->addDays(5)->setTime(10, 0),
+            'ends_at' => Carbon::now()->addDays(5)->setTime(11, 0),
+            'unit_price' => 100000,
+            'status' => 'confirmed',
+        ]);
+
+        Sanctum::actingAs($customer);
+        $histShowRes = $this->getJson("/api/v1/bookings/{$historicalBooking->code}");
+        $histShowRes->assertOk();
+        $this->assertEquals(24, $historicalBooking->fresh()->policy_snapshot['cancellation_grace_hours']);
+
+        // 2. Continued ordinary wallet checkout
+        $checkoutRes = $this->actingAs($customer)->postJson('/api/v1/bookings', [
+            'court_id' => $court->id,
+            'slots' => [$date->toIso8601String()],
+        ])->assertCreated();
+
+        $newBookingCode = $checkoutRes->json('booking.code');
+        $newBooking = Booking::where('code', $newBookingCode)->firstOrFail();
+        $this->assertSame('confirmed', $newBooking->status);
+        $this->assertSame(400000, (int) $wallet->fresh()->balance);
+
+        // New snapshot does not have cancellation_grace_hours
+        $this->assertArrayNotHasKey('cancellation_grace_hours', $newBooking->policy_snapshot ?? []);
+
+        // 3. Continued check-in behavior
+        Sanctum::actingAs($staff);
+        $checkInRes = $this->withHeaders([
+            'X-Organization-ID' => (string) $org->id,
+            'Idempotency-Key' => uniqid('idem-'),
+        ])->postJson('/api/v2/attendance/check-in', [
+            'code' => $newBookingCode,
+        ]);
+        $checkInRes->assertCreated();
+        $this->assertSame('checked_in', $checkInRes->json('attendance.status'));
+    }
+}

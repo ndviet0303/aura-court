@@ -52,8 +52,6 @@ export const adminApi = {
   markNoShow: (bookingId: number | string) =>
     api.patch(`/admin/bookings/${bookingId}/no-show`, {}),
   getRefunds: <T = Refund[]>() => api.get<T>('/admin/refunds'),
-  processRefund: (refundId: number, payload: { status: string; note?: string }) =>
-    api.patch(`/admin/refunds/${refundId}`, payload),
 
   // Coupons
   getCoupons: <T = Coupon[]>() => api.get<T>('/admin/coupons'),

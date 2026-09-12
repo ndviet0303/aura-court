@@ -8,7 +8,6 @@ import BookingHistoryTabs from '../components/history/BookingHistoryTabs.vue'
 import UserBookingCard from '../components/history/UserBookingCard.vue'
 import BookingReviewModal from '../components/history/BookingReviewModal.vue'
 import BookingQrCheckInModal from '../components/history/BookingQrCheckInModal.vue'
-import BookingCancelModal from '../components/history/BookingCancelModal.vue'
 
 const {
   bookings,
@@ -29,16 +28,9 @@ const {
   submittingReview,
   showQrModal,
   qrBooking,
-  showCancelModal,
-  cancellingBooking,
-  cancelReason,
-  cancelling,
   load,
   openQr,
   closeQr,
-  openCancel,
-  closeCancel,
-  confirmCancel,
   openReview,
   closeReview,
   submitReview,
@@ -65,6 +57,12 @@ onMounted(() => {
     <div v-if="error" class="alert-pill-error">
       <span class="material-symbols-outlined alert-icon">error</span>
       <span>{{ error }}</span>
+    </div>
+
+    <!-- Permanent Booking Policy Notice -->
+    <div class="policy-notice">
+      <span class="material-symbols-outlined alert-icon">info</span>
+      <span>{{ $t('payment.cancellationNotice') }} - {{ $t('payment.autoRefundNotice') }}</span>
     </div>
 
     <!-- Status Tabs & Quick Search Bar -->
@@ -112,7 +110,6 @@ onMounted(() => {
         :key="b.id"
         :booking="b"
         @qr="openQr"
-        @cancel="openCancel"
         @review="openReview"
       />
     </div>
@@ -124,16 +121,6 @@ onMounted(() => {
       @close="closeQr"
     />
 
-    <!-- Cancellation Confirmation Modal -->
-    <BookingCancelModal
-      :show="showCancelModal"
-      :booking="cancellingBooking"
-      :reason="cancelReason"
-      :loading="cancelling"
-      @update:reason="cancelReason = $event"
-      @close="closeCancel"
-      @confirm="confirmCancel"
-    />
 
     <!-- Review Rating Modal -->
     <BookingReviewModal
@@ -295,5 +282,23 @@ onMounted(() => {
 
 .btn-find-court .material-symbols-outlined {
   font-size: 18px;
+}
+
+.policy-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(107, 45, 63, 0.08);
+  border: 1px solid rgba(107, 45, 63, 0.15);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.policy-notice .alert-icon {
+  color: var(--primary, #6b2d3f);
+  font-size: 20px;
 }
 </style>

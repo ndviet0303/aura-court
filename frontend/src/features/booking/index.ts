@@ -14,7 +14,6 @@ export { default as BookingHistoryTabs } from './components/history/BookingHisto
 export { default as UserBookingCard } from './components/history/UserBookingCard.vue'
 export { default as BookingReviewModal } from './components/history/BookingReviewModal.vue'
 export { default as BookingQrCheckInModal } from './components/history/BookingQrCheckInModal.vue'
-export { default as BookingCancelModal } from './components/history/BookingCancelModal.vue'
 export { default as V2ReservationHero } from './components/v2/V2ReservationHero.vue'
 export { default as V2QuoteCalculatorCard } from './components/v2/V2QuoteCalculatorCard.vue'
 export { default as V2HeldReservationBanner } from './components/v2/V2HeldReservationBanner.vue'
