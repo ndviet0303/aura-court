@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown, DatePicker, type DropdownOption } from '@/shared/components'
 import type { SettlementRecord } from '../../types/finance'
+import { getProviderFee, getHistoricalCommission, getTotalDeduction, getNetPayable } from '../../composables/useAdminPayouts'
 
 const props = withDefaults(
   defineProps<{
@@ -180,15 +181,22 @@ function resetFilters() {
             </td>
 
             <td>
-              <span class="fee-val text-red">
-                -{{ formatMoney((s.provider_fee_amount || s.gateway_fee || 0) + (s.commission_amount || s.platform_fee || 0)) }}
-              </span>
+              <div class="fee-cell-content">
+                <span class="fee-val text-red">
+                  -{{ formatMoney(getTotalDeduction(s)) }}
+                </span>
+                <div class="fee-sub-breakdown text-11 text-muted">
+                  <span class="provider-fee-tag">{{ t('admin.payouts.providerFee') }}: {{ formatMoney(getProviderFee(s)) }}</span>
+                  <span v-if="getHistoricalCommission(s) > 0" class="hist-comm-tag">
+                    • {{ t('admin.payouts.historicalCommission') }}: {{ formatMoney(getHistoricalCommission(s)) }}
+                  </span>
+                </div>
+              </div>
             </td>
 
             <td>
-              <strong class="net-val text-pink">{{ formatMoney(s.tenant_payable || s.net_amount || 0) }}</strong>
+              <strong class="net-val text-pink">{{ formatMoney(getNetPayable(s)) }}</strong>
             </td>
-
             <td>
               <div class="eligible-badge">
                 <span class="material-symbols-outlined icon-14 text-muted">event_available</span>

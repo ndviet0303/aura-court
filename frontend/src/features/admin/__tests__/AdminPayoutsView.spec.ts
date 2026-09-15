@@ -174,7 +174,9 @@ describe('AdminPayoutsView', () => {
 
     expect(wrapper.find('.page-title').text()).toContain('Báo cáo Doanh thu & Rút tiền')
     expect(wrapper.find('.gross-box').text()).toContain('TỔNG DOANH THU')
-    expect(wrapper.find('.fee-box').text()).toContain('PHÍ & HOA HỒNG')
+    expect(wrapper.find('.fee-box').text()).toContain('KHẤU TRỪ & PHÍ')
+    expect(wrapper.find('.fee-box').text()).toContain('Phí cổng')
+    expect(wrapper.find('.fee-box').text()).toContain('Hoa hồng lịch sử')
     expect(wrapper.find('.net-box').text()).toContain('THỰC NHẬN')
     expect(wrapper.text()).toContain('KYC')
     expect(wrapper.text()).toContain('Vietcombank')
@@ -256,5 +258,73 @@ describe('AdminPayoutsView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('thành công')
+  })
+
+  it('renders zero commission and provider-fees-only for new post-retirement settlements', async () => {
+    const customGet = async (url: string) => {
+      if (url.includes('/finance/settlements')) {
+        return {
+          data: [
+            {
+              id: 10,
+              period_start: '2026-09-01',
+              period_end: '2026-09-15',
+              gross_amount: 10000000,
+              provider_fee_amount: 100000,
+              commission_amount: 0,
+              tenant_payable: 9900000,
+              status: 'eligible',
+            },
+          ],
+        }
+      }
+      return { data: [] }
+    }
+    vi.mocked(api.get).mockImplementation(customGet)
+    vi.mocked(apiV2.get).mockImplementation(customGet)
+
+    const wrapper = mount(AdminPayoutsView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.fee-box').text()).toContain('KHẤU TRỪ & PHÍ')
+    expect(wrapper.find('.fee-box').text()).toContain('0% hoa hồng sàn')
+    expect(wrapper.find('.fee-box').text()).not.toContain('Hoa hồng lịch sử')
+  })
+
+  it('honors canonical zero commission over stale legacy platform_fee alias', async () => {
+    const customGet = async (url: string) => {
+      if (url.includes('/finance/settlements')) {
+        return {
+          data: [
+            {
+              id: 11,
+              period_start: '2026-09-01',
+              period_end: '2026-09-15',
+              gross_amount: 10000000,
+              provider_fee_amount: 100000,
+              commission_amount: 0,
+              platform_fee: 500000, // Stale legacy alias must be ignored
+              tenant_payable: 9900000,
+              status: 'eligible',
+            },
+          ],
+        }
+      }
+      return { data: [] }
+    }
+    vi.mocked(api.get).mockImplementation(customGet)
+    vi.mocked(apiV2.get).mockImplementation(customGet)
+
+    const wrapper = mount(AdminPayoutsView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    // Fee is only 100,000 (provider fee), not 600,000 (100k + 500k)
+    expect(wrapper.find('.fee-box').text()).toContain('100.000')
+    expect(wrapper.find('.fee-box').text()).not.toContain('600.000')
+    expect(wrapper.find('.fee-box').text()).toContain('0% hoa hồng sàn')
   })
 })

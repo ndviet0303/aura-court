@@ -120,7 +120,7 @@ async function handleCancelRenew() {
           {{ subscription ? 'Thay đổi hoặc Nâng cấp Gói' : 'Chọn Gói Dịch vụ để Kích hoạt' }}
         </h2>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          Giá dịch vụ minh bạch, bao gồm đầy đủ hạn mức vận hành và hỗ trợ kỹ thuật.
+          Mô hình thuê bao cố định (tháng / năm) minh bạch, 0% hoa hồng doanh thu, tách biệt hoàn toàn phí cổng thanh toán.
         </p>
       </div>
 

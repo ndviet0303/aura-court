@@ -81,6 +81,8 @@ function formatMoney(amount: number): string {
       <!-- Terms and Transparency Disclosure -->
       <div class="pt-3 border-t border-gray-100 dark:border-gray-700 text-[11px] text-gray-500 dark:text-gray-400 space-y-1">
         <p>Phiên bản điều khoản: <strong>v1.0</strong></p>
+        <p>Thuê bao dịch vụ cố định — <strong>0% hoa hồng nền tảng</strong> trên mọi lượt đặt sân và giải đấu.</p>
+        <p>Phí xử lý giao dịch cổng thanh toán (nếu có) được tách biệt riêng theo thực tế đối tác.</p>
         <p>Tự động gia hạn mỗi kỳ; có thể hủy gia hạn bất kỳ lúc nào.</p>
       </div>
     </div>

@@ -31,7 +31,7 @@ class MarketplaceService
                 'seller_id' => $seller->id,
                 'original_price' => $entitlement->amount,
                 'asking_price' => $askingPrice,
-                'fee_bps' => (int) config('marketplace.fee_bps', 500),
+                'fee_bps' => 0,
                 'status' => 'listed',
                 'cutoff_at' => $entitlement->starts_at->copy()->subHours(2),
             ]);
@@ -51,8 +51,8 @@ class MarketplaceService
         return DB::transaction(function () use ($listing, $buyer, $idempotencyKey, $buyerPaymentReference, $sellerRefundReference, $sellerRefundAccepted): EntitlementTransfer {
             $listing = MarketplaceListing::query()->whereKey($listing->id)->lockForUpdate()->firstOrFail();
             abort_unless($listing->status === 'listed' && $listing->cutoff_at?->isFuture(), 409, 'Listing is no longer available.');
-            $fee = intdiv($listing->asking_price * $listing->fee_bps, 10000);
-            $sellerRefund = $listing->asking_price - $fee;
+            $fee = 0;
+            $sellerRefund = $listing->asking_price;
             $transfer = EntitlementTransfer::firstOrCreate([
                 'organization_id' => $listing->organization_id,
                 'idempotency_key' => $idempotencyKey,
@@ -62,7 +62,7 @@ class MarketplaceService
                 'buyer_id' => $buyer->id,
                 'seller_entitlement_id' => $listing->reservation_entitlement_id,
                 'buyer_amount' => $listing->asking_price,
-                'marketplace_fee' => $fee,
+                'marketplace_fee' => 0,
                 'seller_refund' => $sellerRefund,
                 'buyer_payment_reference' => $buyerPaymentReference,
                 'seller_refund_reference' => $sellerRefundReference,
@@ -107,7 +107,7 @@ class MarketplaceService
             ]);
             $transfer->update(['buyer_entitlement_id' => $buyerEntitlement->id, 'status' => 'completed']);
             $listing->update(['status' => 'sold', 'sold_at' => now()]);
-            $this->financials->postMarketplaceSale($listing->organization_id, $listing->id, $listing->asking_price, $sellerRefund, $fee, $buyerPaymentReference);
+            $this->financials->postMarketplaceSale($listing->organization_id, $listing->id, $listing->asking_price, $sellerRefund, 0, $buyerPaymentReference);
             return $transfer->fresh(['listing', 'buyerEntitlement']);
         });
     }

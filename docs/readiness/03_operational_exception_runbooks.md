@@ -110,7 +110,7 @@
    ```
 2. **Identify Variance Category**:
    - `PROVIDER_LEDGER_MISMATCH`: Sum of provider captured transactions != Sum of platform `Gross Collection` journal debits.
-   - `COMMISSION_MISMATCH`: Platform commission rate application error.
+   - `COMMISSION_MISMATCH`: Historical platform commission rate application error or unexpected post-retirement commission. Note: Platform commissions are retired (0% on all new activity). For historical events, verify recorded allocations against the original immutable journal. For unexpected new commission, verify zero-commission enforcement and reject unauthorized commission accruals.
    - `PAYOUT_DISCREPANCY`: Payout total != Disbursed bank batch sum.
 3. **Investigate Specific Transactions**:
    ```sql

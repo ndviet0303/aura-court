@@ -121,6 +121,8 @@ onMounted(() => {
       :fee="metrics.fee"
       :net="metrics.net"
       :paid="metrics.paid"
+      :provider-fee="metrics.providerFee"
+      :commission="metrics.commission"
       :loading="loading"
     />
 

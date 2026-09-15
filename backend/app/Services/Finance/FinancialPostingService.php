@@ -89,14 +89,22 @@ class FinancialPostingService
 
     public function postMarketplaceSale(int $organizationId, int $listingId, int $buyerAmount, int $sellerRefund, int $fee, string $buyerReference): Journal
     {
+        $existing = Journal::query()
+            ->where('organization_id', $organizationId)
+            ->where('event_type', 'marketplace.sale')
+            ->where('event_id', "marketplace:{$listingId}")
+            ->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
+        if ($fee > 0) {
+            throw new \InvalidArgumentException('New marketplace sales cannot charge a platform fee.');
+        }
         $accounts = $this->ledger->systemAccounts($organizationId);
         $entries = [
             ['account_id' => $accounts['cash_clearing']->id, 'side' => 'debit', 'amount' => $buyerAmount],
             ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $sellerRefund],
         ];
-        if ($fee > 0) {
-            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'credit', 'amount' => $fee];
-        }
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'marketplace.sale',
@@ -104,6 +112,11 @@ class FinancialPostingService
             'reference' => $buyerReference,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Marketplace entitlement transfer',
+            'metadata' => [
+                'buyer_reference' => $buyerReference,
+                'seller_refund' => $sellerRefund,
+                'marketplace_fee' => 0,
+            ],
         ], $entries);
     }
 
@@ -200,16 +213,11 @@ class FinancialPostingService
             return $existing->load('entries');
         }
         $amount = (int) $payment->amount;
-        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
-        $tenantPayable = $amount - $commission;
         $accounts = $this->ledger->systemAccounts($organizationId);
         $entries = [
             ['account_id' => $accounts['wallet_liability']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => Payment::class, 'source_id' => $payment->id],
-            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $tenantPayable, 'source_type' => Payment::class, 'source_id' => $payment->id],
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => Payment::class, 'source_id' => $payment->id],
         ];
-        if ($commission > 0) {
-            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'credit', 'amount' => $commission, 'source_type' => Payment::class, 'source_id' => $payment->id];
-        }
 
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -218,7 +226,7 @@ class FinancialPostingService
             'reference' => $booking->code,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Booking payment via wallet balance',
-            'metadata' => ['provider' => 'wallet', 'wallet_account_id' => $walletAccountId, 'commission' => $commission],
+            'metadata' => ['provider' => 'wallet', 'wallet_account_id' => $walletAccountId, 'commission' => 0],
         ], $entries);
     }
 
@@ -230,16 +238,11 @@ class FinancialPostingService
         if ($existing) {
             return $existing->load('entries');
         }
-        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
-        $tenantPayable = $amount - $commission;
         $accounts = $this->ledger->systemAccounts($organizationId);
         $entries = [
-            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'debit', 'amount' => $tenantPayable, 'source_type' => Booking::class, 'source_id' => $booking->id],
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => Booking::class, 'source_id' => $booking->id],
             ['account_id' => $accounts['wallet_liability']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => Booking::class, 'source_id' => $booking->id],
         ];
-        if ($commission > 0) {
-            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'debit', 'amount' => $commission, 'source_type' => Booking::class, 'source_id' => $booking->id];
-        }
 
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -248,7 +251,7 @@ class FinancialPostingService
             'reference' => $booking->code,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Booking cancellation refund to wallet',
-            'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => $commission],
+            'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => 0],
         ], $entries);
     }
 
@@ -260,16 +263,12 @@ class FinancialPostingService
         if ($existing) {
             return $existing->load('entries');
         }
-        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
-        $tenantPayable = $amount - $commission;
+        $amount = (int) $amount;
         $accounts = $this->ledger->systemAccounts($organizationId);
         $entries = [
             ['account_id' => $accounts['wallet_liability']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
-            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $tenantPayable, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
         ];
-        if ($commission > 0) {
-            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'credit', 'amount' => $commission, 'source_type' => Reservation::class, 'source_id' => $reservation->id];
-        }
 
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -278,7 +277,7 @@ class FinancialPostingService
             'reference' => $reservation->code,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Reservation payment via wallet balance',
-            'metadata' => ['provider' => 'wallet', 'wallet_account_id' => $walletAccountId, 'commission' => $commission],
+            'metadata' => ['provider' => 'wallet', 'wallet_account_id' => $walletAccountId, 'commission' => 0],
         ], $entries);
     }
 
@@ -290,16 +289,11 @@ class FinancialPostingService
         if ($existing) {
             return $existing->load('entries');
         }
-        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
-        $tenantPayable = $amount - $commission;
         $accounts = $this->ledger->systemAccounts($organizationId);
         $entries = [
-            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'debit', 'amount' => $tenantPayable, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
+            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
             ['account_id' => $accounts['wallet_liability']->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => Reservation::class, 'source_id' => $reservation->id],
         ];
-        if ($commission > 0) {
-            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'debit', 'amount' => $commission, 'source_type' => Reservation::class, 'source_id' => $reservation->id];
-        }
 
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -308,7 +302,7 @@ class FinancialPostingService
             'reference' => $reservation->code,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Reservation cancellation refund to wallet',
-            'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => $commission],
+            'metadata' => ['wallet_account_id' => $walletAccountId, 'commission' => 0],
         ], $entries);
     }
 
@@ -325,8 +319,7 @@ class FinancialPostingService
             return $existing->load('entries');
         }
 
-        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
-        $tenantPayable = $amount - $commission;
+        $amount = (int) $amount;
         $accounts = $this->ledger->systemAccounts($organizationId);
 
         $entries = [
@@ -340,21 +333,11 @@ class FinancialPostingService
             [
                 'account_id' => $accounts['tenant_payable']->id,
                 'side' => 'credit',
-                'amount' => $tenantPayable,
+                'amount' => $amount,
                 'source_type' => 'App\\Models\\TournamentParticipant',
                 'source_id' => $participantId,
             ],
         ];
-
-        if ($commission > 0) {
-            $entries[] = [
-                'account_id' => $accounts['platform_commission']->id,
-                'side' => 'credit',
-                'amount' => $commission,
-                'source_type' => 'App\\Models\\TournamentParticipant',
-                'source_id' => $participantId,
-            ];
-        }
 
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -364,10 +347,11 @@ class FinancialPostingService
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Tournament registration fee funded via wallet',
             'metadata' => [
+                'provider' => 'wallet',
                 'tournament_id' => $tournamentId,
                 'participant_id' => $participantId,
                 'wallet_account_id' => $walletAccountId,
-                'commission' => $commission,
+                'commission' => 0,
             ],
         ], $entries);
     }
@@ -390,7 +374,7 @@ class FinancialPostingService
             'event_type' => 'compensation',
             'event_id' => $eventId,
             'reference' => $original->reference,
-            'currency' => $original->currency,
+            'currency' => $original->currency ?: config('finance.currency', 'VND'),
             'description' => $reason,
             'metadata' => $metadata + ['reverses_journal_id' => $original->id],
         ], $entries);
@@ -402,20 +386,19 @@ class FinancialPostingService
         if ($existing) {
             return $existing->load('entries');
         }
-        $commission = intdiv($amount * (int) config('finance.commission_bps', 500), 10000);
         $providerFee = intdiv($amount * (int) config('finance.provider_fee_bps', 0), 10000);
-        $tenantPayable = $amount - $commission - $providerFee;
+        $tenantPayable = $amount - $providerFee;
         $accounts = $this->ledger->systemAccounts($organizationId);
         $entries = [
             ['account_id' => $accounts['cash_clearing']->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => $sourceType, 'source_id' => $sourceId],
             ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $tenantPayable, 'source_type' => $sourceType, 'source_id' => $sourceId],
         ];
-        if ($commission > 0) {
-            $entries[] = ['account_id' => $accounts['platform_commission']->id, 'side' => 'credit', 'amount' => $commission, 'source_type' => $sourceType, 'source_id' => $sourceId];
-        }
         if ($providerFee > 0) {
             $entries[] = ['account_id' => $accounts['provider_fee_expense']->id, 'side' => 'credit', 'amount' => $providerFee, 'source_type' => $sourceType, 'source_id' => $sourceId];
         }
+
+        $metadata['commission'] = 0;
+        $metadata['provider_fee'] = $providerFee;
 
         return $this->ledger->post([
             'organization_id' => $organizationId,
@@ -424,7 +407,7 @@ class FinancialPostingService
             'reference' => $reference,
             'currency' => config('finance.currency', 'VND'),
             'description' => 'Gross payment collection',
-            'metadata' => $metadata + ['commission' => $commission, 'provider_fee' => $providerFee],
+            'metadata' => $metadata,
         ], $entries);
     }
 }

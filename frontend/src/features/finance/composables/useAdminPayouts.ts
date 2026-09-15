@@ -6,6 +6,31 @@ import { errorMessage } from '@/core/utils/errorMessage'
 
 export type { SettlementRecord as SettlementItem, PayoutRecord as PayoutItem, BeneficiaryAccount as BeneficiaryInfo }
 
+export function getProviderFee(s: SettlementRecord): number {
+  if (s.provider_fee_amount !== undefined && s.provider_fee_amount !== null) {
+    return Number(s.provider_fee_amount)
+  }
+  return Number(s.gateway_fee ?? 0)
+}
+
+export function getHistoricalCommission(s: SettlementRecord): number {
+  if (s.commission_amount !== undefined && s.commission_amount !== null) {
+    return Number(s.commission_amount)
+  }
+  return Number(s.platform_fee ?? 0)
+}
+
+export function getTotalDeduction(s: SettlementRecord): number {
+  return getProviderFee(s) + getHistoricalCommission(s)
+}
+
+export function getNetPayable(s: SettlementRecord): number {
+  if (s.tenant_payable !== undefined && s.tenant_payable !== null) {
+    return Number(s.tenant_payable)
+  }
+  return Number(s.net_amount ?? ((s.gross_amount || 0) - getTotalDeduction(s)))
+}
+
 export function useAdminPayouts() {
   const { t } = useI18n()
 
@@ -47,19 +72,15 @@ export function useAdminPayouts() {
   // Metrics computation
   const metrics = computed(() => {
     const gross = settlements.value.reduce((sum, s) => sum + (s.gross_amount || 0), 0)
-    const fee = settlements.value.reduce(
-      (sum, s) => sum + (s.provider_fee_amount || s.gateway_fee || 0) + (s.commission_amount || s.platform_fee || 0),
-      0
-    )
-    const net = settlements.value.reduce(
-      (sum, s) => sum + (s.tenant_payable || s.net_amount || 0),
-      0
-    )
+    const providerFee = settlements.value.reduce((sum, s) => sum + getProviderFee(s), 0)
+    const commission = settlements.value.reduce((sum, s) => sum + getHistoricalCommission(s), 0)
+    const fee = providerFee + commission
+    const net = settlements.value.reduce((sum, s) => sum + getNetPayable(s), 0)
     const paid = payouts.value
       .filter((p) => p.status === 'paid')
       .reduce((sum, p) => sum + (p.amount || 0), 0)
 
-    return { gross, fee, net, paid }
+    return { gross, fee, net, paid, providerFee, commission }
   })
 
   // Filtered lists

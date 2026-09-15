@@ -183,7 +183,7 @@ class MarketplaceSeeder extends Seeder
                 'seller_id' => $seller->id,
                 'original_price' => $sample['original_price'],
                 'asking_price' => $sample['asking_price'],
-                'fee_bps' => 500,
+                'fee_bps' => 0,
                 'status' => 'listed',
                 'cutoff_at' => $startsAt->copy()->subHours(2),
                 'metadata' => [
