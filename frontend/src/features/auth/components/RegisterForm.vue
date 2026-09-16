@@ -117,7 +117,7 @@ const passwordsMatch = computed(() => {
           type="button"
           class="pwd-toggle-btn"
           @click="showPassword = !showPassword"
-          :aria-label="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
         >
           <span class="material-symbols-outlined">
             {{ showPassword ? 'visibility_off' : 'visibility' }}
@@ -166,7 +166,7 @@ const passwordsMatch = computed(() => {
           type="button"
           class="pwd-toggle-btn"
           @click="showConfirmation = !showConfirmation"
-          :aria-label="showConfirmation ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          :aria-label="showConfirmation ? t('auth.hidePassword') : t('auth.showPassword')"
         >
           <span class="material-symbols-outlined">
             {{ showConfirmation ? 'visibility_off' : 'visibility' }}
@@ -200,7 +200,7 @@ const passwordsMatch = computed(() => {
     <button type="submit" class="auth-submit-btn" :disabled="loading || !acceptTerms">
       <span v-if="loading" class="spinner" aria-hidden="true"></span>
       <span v-else class="material-symbols-outlined submit-icon">person_add</span>
-      <span>{{ loading ? 'Đang tạo tài khoản...' : t('auth.registerBtn') }}</span>
+      <span>{{ loading ? t('auth.creatingAccount') : t('auth.registerBtn') }}</span>
     </button>
   </form>
 </template>

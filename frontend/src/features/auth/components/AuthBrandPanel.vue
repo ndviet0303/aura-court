@@ -76,19 +76,19 @@ const { t } = useI18n()
         </div>
 
         <div class="trust-content">
-          <h4>Cộng đồng thể thao Aura Club</h4>
-          <p>Kết nối hơn 3,500+ vận động viên, tự động ghép kèo đấu ELO và nhận ưu đãi tích điểm thành viên khi đặt sân.</p>
+          <h4>{{ t('auth.trustCommunityTitle') }}</h4>
+          <p>{{ t('auth.trustCommunityDesc') }}</p>
         </div>
 
         <div class="trust-tags">
           <span class="trust-tag">
-            <span class="dot-online"></span> Đặt sân tức thì
+            <span class="dot-online"></span> {{ t('auth.tagInstantBooking') }}
           </span>
           <span class="trust-tag">
-            <span class="material-symbols-outlined tag-icon">verified_user</span> Bảo chứng hoàn tiền
+            <span class="material-symbols-outlined tag-icon">verified_user</span> {{ t('auth.tagMoneyBack') }}
           </span>
           <span class="trust-tag">
-            <span class="material-symbols-outlined tag-icon">leaderboard</span> BXH & Xếp hạng
+            <span class="material-symbols-outlined tag-icon">leaderboard</span> {{ t('auth.tagLeaderboard') }}
           </span>
         </div>
       </div>

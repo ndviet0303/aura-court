@@ -51,9 +51,9 @@ onMounted(() => {
 
   if (route.query.error) {
     if (route.query.msg) {
-      error.value = `Đăng nhập thất bại: ${decodeURIComponent(String(route.query.msg))}`
+      error.value = `${t('auth.loginFailedPrefix')} ${decodeURIComponent(String(route.query.msg))}`
     } else {
-      error.value = 'Đăng nhập mạng xã hội không thành công. Vui lòng thử lại.'
+      error.value = t('auth.socialLoginFailed')
     }
   }
 })
@@ -177,7 +177,7 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
             <div v-if="error" class="error-banner" role="alert">
               <span class="material-symbols-outlined error-icon">error</span>
               <span class="error-text">{{ error }}</span>
-              <button type="button" class="error-close-btn" @click="error = ''" aria-label="Đóng">
+              <button type="button" class="error-close-btn" @click="error = ''" :aria-label="t('common.close')">
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>

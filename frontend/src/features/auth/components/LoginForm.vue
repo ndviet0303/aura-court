@@ -71,7 +71,7 @@ const showPassword = ref(false)
           type="button"
           class="pwd-toggle-btn"
           @click="showPassword = !showPassword"
-          :aria-label="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
         >
           <span class="material-symbols-outlined">
             {{ showPassword ? 'visibility_off' : 'visibility' }}

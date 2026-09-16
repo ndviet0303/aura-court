@@ -80,7 +80,7 @@ async function submit() {
           <span class="material-symbols-outlined warn-icon">link_off</span>
           <div class="missing-params-content">
             <h3>{{ t('auth.invalidResetLink') }}</h3>
-            <p>Vui lòng sử dụng đường link được gửi qua email hoặc gửi lại yêu cầu đặt lại mật khẩu mới.</p>
+            <p>{{ t('auth.invalidResetLinkDesc') }}</p>
           </div>
           <div class="missing-params-actions">
             <RouterLink to="/forgot-password" class="auth-submit-btn link-action-btn">
@@ -88,7 +88,7 @@ async function submit() {
               <span>{{ t('auth.requestNewLink') }}</span>
             </RouterLink>
             <button type="button" class="manual-toggle-btn" @click="showManualFields = true">
-              Nhập mã Token thủ công
+              {{ t('auth.enterTokenManually') }}
             </button>
           </div>
         </div>
@@ -114,7 +114,7 @@ async function submit() {
               <span class="pill-label">{{ t('auth.resetPasswordFor') }}</span>
               <span class="pill-email">{{ email }}</span>
             </div>
-            <div class="pill-badge" title="Tài khoản hợp lệ">
+            <div class="pill-badge" :title="t('auth.validAccountBadge')">
               <span class="material-symbols-outlined check-icon">verified_user</span>
             </div>
           </div>
@@ -153,7 +153,7 @@ async function submit() {
                     v-model="token"
                     type="text"
                     class="custom-input"
-                    placeholder="Nhập mã token đặt lại mật khẩu"
+                    :placeholder="t('auth.tokenPlaceholder')"
                     required
                   />
                 </div>
@@ -182,7 +182,7 @@ async function submit() {
                   type="button"
                   class="pwd-toggle-btn"
                   @click="showPassword = !showPassword"
-                  :aria-label="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                  :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
                 >
                   <span class="material-symbols-outlined">
                     {{ showPassword ? 'visibility_off' : 'visibility' }}
@@ -212,7 +212,7 @@ async function submit() {
                   type="button"
                   class="pwd-toggle-btn"
                   @click="showConfirmation = !showConfirmation"
-                  :aria-label="showConfirmation ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                  :aria-label="showConfirmation ? t('auth.hidePassword') : t('auth.showPassword')"
                 >
                   <span class="material-symbols-outlined">
                     {{ showConfirmation ? 'visibility_off' : 'visibility' }}
