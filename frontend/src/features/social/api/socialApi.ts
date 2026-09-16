@@ -3,6 +3,8 @@ import type {
   CreateMatchPayload,
   MatchResponse,
   InvitePartnerPayload,
+  DropInSessionBill,
+  SocialMatch,
 } from '../types/social'
 
 export const socialApi = {
@@ -12,8 +14,26 @@ export const socialApi = {
   invitePartner: (matchId: number | string, payload: InvitePartnerPayload) =>
     apiV2.post(`/social/matches/${matchId}/invite`, payload),
 
-  getMatches: <T = { matches?: any[]; data?: any[] }>() =>
-    apiV2.get<T>('/social/matches'),
+  getMatches: <T = { matches?: SocialMatch[]; data?: SocialMatch[] }>(
+    params?: Record<string, string | number | boolean | null | undefined>
+  ) => apiV2.get<T>('/social/matches', params ? { params } : undefined),
+  updateMatch: (matchId: number | string, payload: Record<string, unknown>) =>
+    apiV2.put<MatchResponse>(`/social/matches/${matchId}`, payload),
+
+  endSession: (matchId: number | string) =>
+    apiV2.post<MatchResponse>(`/social/matches/${matchId}/end`),
+
+  getSessionBill: (matchId: number | string) =>
+    apiV2.get<{ bill: DropInSessionBill }>(`/social/matches/${matchId}/bill`),
+
+  saveDraftBill: (matchId: number | string, payload: Record<string, unknown>) =>
+    apiV2.post<{ bill: DropInSessionBill }>(`/social/matches/${matchId}/bill/draft`, payload),
+
+  finalizeSessionBill: (matchId: number | string, payload: Record<string, unknown>) =>
+    apiV2.post<{ bill: DropInSessionBill }>(`/social/matches/${matchId}/bill/finalize`, payload),
+
+  getDefaultRates: (matchId: number | string) =>
+    apiV2.get<{ rates: { court_hourly_rate: number | null; shuttlecock_unit_price: number | null } }>(`/social/matches/${matchId}/rates`),
 
   getMatch: (id: number | string) =>
     apiV2.get<MatchResponse>(`/social/matches/${id}`),

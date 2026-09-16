@@ -5,7 +5,12 @@ import { socialApi } from '../api/socialApi'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court } from '@/features/court/types/court'
-import type { SocialMatch, SocialSportType } from '../types/social'
+import type {
+  SocialMatch,
+  SocialSportType,
+  DropInSessionCategory,
+  BadmintonSkillLabel,
+} from '../types/social'
 import type { DropdownOption } from '@/shared/components'
 
 export interface FriendInvite {
@@ -49,6 +54,11 @@ export function useCreateMatch() {
   const visibility = ref<'public' | 'invite_only'>('public')
   const matchDescription = ref('')
 
+  // Owner-hosted drop-in session fields
+  const isOwnerHostedSession = ref(false)
+  const sessionCategory = ref<DropInSessionCategory>('giao lưu')
+  const acceptedSkillLabels = ref<BadmintonSkillLabel[]>(['TBY', 'TB'])
+  const availableSkillLabels: BadmintonSkillLabel[] = ['newbie', 'Y', 'TBY', 'TB', 'K']
   // Venues & Courts
   const courts = ref<Court[]>([])
 
@@ -191,51 +201,67 @@ export function useCreateMatch() {
       // fallback
     }
 
-    return {
-      id: 9999,
-      title: displayTitle.value,
-      sport_type: selectedSport.value,
-      sport_name: sportNameVi.value,
-      sport_icon: sportIconName.value,
-      venue_name: selectedVenueName.value,
-      court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
-      city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
-      starts_at: formattedStart,
-      joined_count: 1 + selectedFriendsCount.value,
-      required_participants: maxPlayers.value,
-      visibility: visibility.value,
-      min_skill: minSk,
-      max_skill: maxSk,
-      game_format: formatNameVi.value,
-      cost_per_person: costPerPerson.value,
-      split_bill_mode: splitCost.value ? 'auto_split' : 'host_pays',
-      host_id: hostUser?.id || 1,
-      host_name: hostUser?.name || 'Tôi (Chủ phòng)',
-      host_avatar: (hostUser as any)?.avatar_url || (hostUser as any)?.avatar,
-      host_reputation: 99,
-      host_level: 'Level 3.5',
-      description: matchDescription.value.trim() || 'Mở kèo giao lưu thân thiện, vui vẻ và rèn luyện thể lực.',
-      status: 'open',
-      participants: [
-        {
-          id: hostUser?.id || 1,
-          name: hostUser?.name || 'Tôi (Chủ phòng)',
-          avatar: (hostUser as any)?.avatar_url || (hostUser as any)?.avatar,
-          skill_level: 3,
-          is_host: true,
-          role: 'Host',
-        },
-        ...selectedFriends.value.map((f) => ({
+    const isOwnerHosted = isOwnerHostedSession.value
+    const hostData = hostUser as { id?: number; name?: string; avatar_url?: string; avatar?: string } | null
+    const participantsList = isOwnerHosted
+      ? selectedFriends.value.map((f) => ({
           id: f.id,
           name: f.name,
           avatar: f.avatar,
           skill_level: f.skillLevel,
           is_host: false,
           role: 'Member',
-        })),
-      ],
-      is_joined: true,
-      is_host: true,
+        }))
+      : [
+          {
+            id: hostData?.id || 1,
+            name: hostData?.name || 'Tôi (Chủ phòng)',
+            avatar: hostData?.avatar_url || hostData?.avatar,
+            skill_level: 3,
+            is_host: true,
+            role: 'Host',
+          },
+          ...selectedFriends.value.map((f) => ({
+            id: f.id,
+            name: f.name,
+            avatar: f.avatar,
+            skill_level: f.skillLevel,
+            is_host: false,
+            role: 'Member',
+          })),
+        ]
+      return {
+        id: 9999,
+        title: displayTitle.value,
+        sport_type: selectedSport.value,
+        sport_name: sportNameVi.value,
+        sport_icon: sportIconName.value,
+        venue_name: selectedVenueName.value,
+        court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+        city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
+        starts_at: formattedStart,
+        joined_count: isOwnerHosted ? selectedFriendsCount.value : 1 + selectedFriendsCount.value,
+        required_participants: maxPlayers.value,
+        visibility: visibility.value,
+        min_skill: minSk,
+        max_skill: maxSk,
+        game_format: formatNameVi.value,
+        cost_per_person: isOwnerHosted ? undefined : costPerPerson.value,
+        split_bill_mode: isOwnerHosted ? 'Chia đều sau buổi' : (splitCost.value ? 'auto_split' : 'host_pays'),
+        host_id: hostData?.id || 1,
+        host_name: hostData?.name || (isOwnerHosted ? 'Tôi (Chủ cơ sở)' : 'Tôi (Chủ phòng)'),
+        host_avatar: hostData?.avatar_url || hostData?.avatar,
+        host_reputation: 99,
+        host_level: isOwnerHosted ? 'Chủ cơ sở' : 'Level 3.5',
+        description: matchDescription.value.trim() || 'Mở buổi giao lưu thân thiện, vui vẻ và rèn luyện thể lực.',
+        status: 'open',
+        is_owner_hosted: isOwnerHosted,
+        court_id: selectedCourtId.value || undefined,
+        category: isOwnerHosted ? sessionCategory.value : undefined,
+        skill_levels: isOwnerHosted ? acceptedSkillLabels.value : undefined,
+        participants: participantsList,
+        is_joined: !isOwnerHosted,
+        is_host: true,
     }
   })
 
@@ -289,38 +315,61 @@ export function useCreateMatch() {
 
       const selectedCourtObj = courts.value.find((c) => c.id === selectedCourtId.value)
 
-      const payload = {
-        title: displayTitle.value,
-        visibility: visibility.value,
-        starts_at: startDate.toISOString(),
-        ends_at: endDate.toISOString(),
-        city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
-        min_skill: skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1,
-        max_skill: 5,
-        required_participants: Math.max(2, maxPlayers.value),
-        availability: {
-          sport: selectedSport.value,
-          sport_name: sportNameVi.value,
-          format: matchFormat.value,
-          split_cost: splitCost.value,
-          cost_per_person: costPerPerson.value,
-          court_id: selectedCourtId.value || undefined,
-          court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
-          venue_name: selectedVenueName.value,
-          description: matchDescription.value.trim(),
-        },
-        metadata: {
-          sport: selectedSport.value,
-          sport_name: sportNameVi.value,
-          format: matchFormat.value,
-          court_id: selectedCourtId.value || undefined,
-          court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
-          venue_name: selectedVenueName.value,
-          cost_per_person: costPerPerson.value,
-          split_cost: splitCost.value,
-        },
-      }
+      let payload: Record<string, unknown>
 
+      if (isOwnerHostedSession.value) {
+        payload = {
+          title: displayTitle.value,
+          visibility: visibility.value,
+          starts_at: startDate.toISOString(),
+          ends_at: endDate.toISOString(),
+          court_id: selectedCourtId.value,
+          is_owner_hosted: true,
+          category: sessionCategory.value,
+          skill_levels: acceptedSkillLabels.value,
+          required_participants: Math.max(1, maxPlayers.value),
+          city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
+          metadata: {
+            is_owner_hosted: true,
+            category: sessionCategory.value,
+            skill_levels: acceptedSkillLabels.value,
+            court_id: selectedCourtId.value,
+            venue_name: selectedVenueName.value,
+          },
+        }
+      } else {
+        payload = {
+          title: displayTitle.value,
+          visibility: visibility.value,
+          starts_at: startDate.toISOString(),
+          ends_at: endDate.toISOString(),
+          city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
+          min_skill: skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1,
+          max_skill: 5,
+          required_participants: Math.max(2, maxPlayers.value),
+          availability: {
+            sport: selectedSport.value,
+            sport_name: sportNameVi.value,
+            format: matchFormat.value,
+            split_cost: splitCost.value,
+            cost_per_person: costPerPerson.value,
+            court_id: selectedCourtId.value || undefined,
+            court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+            venue_name: selectedVenueName.value,
+            description: matchDescription.value.trim(),
+          },
+          metadata: {
+            sport: selectedSport.value,
+            sport_name: sportNameVi.value,
+            format: matchFormat.value,
+            court_id: selectedCourtId.value || undefined,
+            court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+            venue_name: selectedVenueName.value,
+            cost_per_person: costPerPerson.value,
+            split_cost: splitCost.value,
+          },
+        }
+      }
       const res = await socialApi.createMatch(payload)
       const createdMatchId = (res as any)?.match?.id || (res as any)?.id
 
@@ -375,6 +424,10 @@ export function useCreateMatch() {
     maxPlayers,
     visibility,
     matchDescription,
+    isOwnerHostedSession,
+    sessionCategory,
+    acceptedSkillLabels,
+    availableSkillLabels,
     courts,
     courtOptions,
     quickVenues,

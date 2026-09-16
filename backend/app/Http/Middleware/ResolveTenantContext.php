@@ -14,8 +14,8 @@ class ResolveTenantContext
 
     public function handle(Request $request, Closure $next): Response
     {
-        $orgId = $request->header('X-Organization-ID');
-        $orgSlug = $request->header('X-Organization-Slug') ?? $request->route('organizationSlug');
+        $orgId = $request->header('X-Organization-ID') ?? $request->header('X-Organization-Id');
+        $orgSlug = $request->header('X-Organization-Slug') ?? $request->header('X-Organization-slug') ?? $request->route('organizationSlug');
         
         $organization = null;
 

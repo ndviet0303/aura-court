@@ -174,4 +174,49 @@ describe('CreateMatchView', () => {
     // 5. Individual failure outcome reported in notice
     expect(wrapper.text()).toContain('Lưu ý một số lời mời thất bại: ID 102: User not permitted')
   })
+  it('Task 4.1: allows facility owner to open drop-in session with court, category, and skill labels, not displaying host as player', async () => {
+    const wrapper = mount(CreateMatchView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    // 1. Toggle owner-hosted session
+    const ownerCheckbox = wrapper.find('.owner-session-toggle-box input[type="checkbox"]')
+    expect(ownerCheckbox.exists()).toBe(true)
+    await ownerCheckbox.setValue(true)
+    await flushPromises()
+
+    // Check that category and skill label buttons are rendered
+    expect(wrapper.text()).toContain('Phân loại buổi chơi:')
+    expect(wrapper.text()).toContain('Nhãn trình độ chấp nhận')
+    expect(wrapper.text()).toContain('TBY (Trung bình yếu)')
+
+    // Select skill label TBY
+    const tbyBtn = wrapper.findAll('.owner-session-toggle-box button').find((b) => b.text().includes('TBY'))
+    expect(tbyBtn).toBeDefined()
+    await tbyBtn?.trigger('click')
+    await flushPromises()
+
+    // 2. In live preview, host is NOT shown as a player
+    const livePreview = wrapper.findComponent({ name: 'MatchLivePreviewCard' })
+    expect(livePreview.exists()).toBe(true)
+    // Live preview participants should not have Host
+    expect(livePreview.text()).toContain('Chủ cơ sở')
+    expect(livePreview.text()).toContain('Chia đều sau buổi')
+
+    // 3. Submit match
+    const form = wrapper.find('form.create-layout')
+    await form.trigger('submit')
+    await flushPromises()
+
+    // 4. Verify payload sent to /social/matches
+    expect(apiV2.post).toHaveBeenCalledWith(
+      '/social/matches',
+      expect.objectContaining({
+        is_owner_hosted: true,
+        category: expect.stringMatching(/giao lưu|đánh vãng lai/),
+        skill_levels: expect.arrayContaining(['TB']),
+      })
+    )
+  })
 })

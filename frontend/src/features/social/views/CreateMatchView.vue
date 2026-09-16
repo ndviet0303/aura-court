@@ -28,6 +28,9 @@ const {
   maxPlayers,
   visibility,
   matchDescription,
+  isOwnerHostedSession,
+  sessionCategory,
+  acceptedSkillLabels,
   courts,
   courtOptions,
   quickVenues,
@@ -133,6 +136,9 @@ onMounted(() => {
           :max-players="maxPlayers"
           :visibility="visibility"
           :match-description="matchDescription"
+          :is-owner-hosted="isOwnerHostedSession"
+          :session-category="sessionCategory"
+          :accepted-skill-labels="acceptedSkillLabels"
           @update:format="matchFormat = $event"
           @update:skill-level="skillLevel = $event"
           @update:split-cost="splitCost = $event"
@@ -140,6 +146,9 @@ onMounted(() => {
           @update:max-players="maxPlayers = $event"
           @update:visibility="visibility = $event"
           @update:match-description="matchDescription = $event"
+          @update:is-owner-hosted="isOwnerHostedSession = $event"
+          @update:session-category="sessionCategory = $event"
+          @update:accepted-skill-labels="acceptedSkillLabels = $event"
         />
 
         <!-- Invite Network Card -->

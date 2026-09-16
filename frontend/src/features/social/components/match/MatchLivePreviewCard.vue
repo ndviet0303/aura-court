@@ -148,7 +148,7 @@ function formatMoney(amount?: number): string {
       </div>
       <div class="summary-item">
         <span class="summary-label">Hình thức chia tiền</span>
-        <span class="summary-val">{{ previewMatch.split_bill_mode === 'auto_split' ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu' }}</span>
+        <span class="summary-val">{{ previewMatch.is_owner_hosted ? 'Chia đều sau buổi' : (previewMatch.split_bill_mode === 'auto_split' ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu') }}</span>
       </div>
     </div>
 

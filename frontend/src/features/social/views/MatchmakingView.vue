@@ -12,9 +12,12 @@ import PartnerFinderList from '../components/PartnerFinderList.vue'
 import CommunityFeedPanel from '../components/CommunityFeedPanel.vue'
 import SocialConnectionsPanel from '../components/SocialConnectionsPanel.vue'
 import SocialModerationModal from '../components/SocialModerationModal.vue'
+import DropInSessionBillModal from '../components/DropInSessionBillModal.vue'
+import type { SocialMatch } from '../types/social'
 
 const auth = useAuthStore()
 const showModModal = ref(false)
+const selectedMatchForBill = ref<SocialMatch | null>(null)
 const canModerate = computed(() => {
   const role = (auth.user?.role as string) || ''
   return role === 'admin' || role === 'organization_owner' || role === 'venue_manager'
@@ -27,6 +30,8 @@ const {
   selectedSport,
   selectedSkill,
   selectedCity,
+  selectedCategory,
+  selectedBadmintonSkill,
   notice,
   error,
   selectedMatchForJoin,
@@ -35,6 +40,7 @@ const {
   stats,
   filteredMatches,
   myMatches,
+  loadMatches,
   joinMatch,
   resetFilters,
   showNotice,
@@ -72,6 +78,8 @@ const {
       :selected-sport="selectedSport"
       :selected-skill="selectedSkill"
       :selected-city="selectedCity"
+      :selected-category="selectedCategory"
+      :selected-badminton-skill="selectedBadmintonSkill"
       :total-count="matches.length"
       :open-count="stats.openMatches"
       :my-matches-count="myMatches.length"
@@ -81,6 +89,8 @@ const {
       @update:selected-sport="selectedSport = $event"
       @update:selected-skill="selectedSkill = $event"
       @update:selected-city="selectedCity = $event"
+      @update:selected-category="selectedCategory = $event"
+      @update:selected-badminton-skill="selectedBadmintonSkill = $event"
       @reset="resetFilters"
     />
 
@@ -154,6 +164,7 @@ const {
           :key="m.id"
           :match="m"
           @join="selectedMatchForJoin = $event"
+          @view-bill="selectedMatchForBill = $event"
         />
       </div>
     </section>
@@ -172,6 +183,15 @@ const {
     <SocialModerationModal
       :show="showModModal"
       @close="showModModal = false"
+    />
+
+    <!-- Drop-in Session Bill Modal -->
+    <DropInSessionBillModal
+      :show="!!selectedMatchForBill"
+      :match="selectedMatchForBill"
+      :is-host="selectedMatchForBill?.is_host"
+      @close="selectedMatchForBill = null"
+      @updated="loadMatches"
     />
   </main>
 </template>

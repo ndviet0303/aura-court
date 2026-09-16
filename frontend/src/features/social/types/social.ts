@@ -1,7 +1,47 @@
 import type { SportType } from '@/features/court/types/court'
 
 export type SocialSportType = 'all' | SportType | 'football'
+export type DropInSessionCategory = 'giao lưu' | 'đánh vãng lai'
+export type BadmintonSkillLabel = 'newbie' | 'Y' | 'TBY' | 'TB' | 'K'
 
+export interface DropInSessionBill {
+  id: number
+  match_post_id: number
+  organization_id: number
+  actual_headcount: number
+  court_duration_minutes: number
+  court_hourly_rate: number
+  shuttlecock_count: number
+  shuttlecock_unit_price: number
+  court_subtotal: number
+  shuttlecock_subtotal: number
+  total_amount: number
+  per_person_amount: number
+  is_approximate: boolean
+  status: 'draft' | 'finalized'
+  version: number
+  finalized_by?: number | { id: number; name: string }
+  finalized_at?: string
+  snapshot?: {
+    inputs: {
+      actual_headcount: number
+      court_duration_minutes: number
+      court_hourly_rate: number
+      shuttlecock_count: number
+      shuttlecock_unit_price: number
+    }
+    breakdown: {
+      court_subtotal: number
+      shuttlecock_subtotal: number
+      total_amount: number
+      divisor: number
+      per_person_amount: number
+      is_approximate: boolean
+    }
+    host?: { id: number; name: string }
+    finalized_at?: string
+  }
+}
 export interface SportCategory {
   id: string
   name: string
@@ -51,10 +91,15 @@ export interface SocialMatch {
   host_reputation?: number
   host_level?: string
   description?: string
-  status: 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled' | 'ended'
   participants: MatchParticipant[]
   is_joined?: boolean
   is_host?: boolean
+  is_owner_hosted?: boolean
+  court_id?: number
+  category?: DropInSessionCategory
+  skill_levels?: BadmintonSkillLabel[]
+  bill?: DropInSessionBill
 }
 
 export interface PartnerPlayer {
@@ -86,7 +131,9 @@ export interface CreateMatchPayload {
   venue_name?: string
   court_name?: string
   court_id?: number
-  starts_date?: string
+  is_owner_hosted?: boolean
+  category?: DropInSessionCategory
+  skill_levels?: BadmintonSkillLabel[]
   starts_time?: string
   ends_time?: string
   starts_at?: string

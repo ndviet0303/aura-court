@@ -7,9 +7,57 @@ import type {
   PartnerPlayer,
   SocialSportType,
   MatchmakingStats,
+  DropInSessionCategory,
+  BadmintonSkillLabel,
+  DropInSessionBill,
 } from '../types/social'
 
-export function detectSport(title: string, metadataSport?: string): { sport: SocialSportType; name: string; icon: string } {
+interface RawMatchRecord {
+  id: number
+  title?: string
+  sport_type?: string
+  venue_name?: string
+  court_name?: string
+  city?: string
+  starts_at?: string
+  ends_at?: string
+  joined_count?: number
+  required_participants?: number
+  visibility?: 'public' | 'invite_only' | 'private'
+  min_skill?: number
+  max_skill?: number
+  game_format?: string
+  split_bill_mode?: string
+  cost_per_person?: number
+  creator_id?: number
+  host_id?: number
+  host_name?: string
+  host_avatar?: string
+  host_reputation?: number
+  host_level?: string
+  description?: string
+  status?: 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled' | 'ended'
+  is_owner_hosted?: boolean
+  court_id?: number
+  category?: DropInSessionCategory
+  skill_levels?: BadmintonSkillLabel[]
+  bill?: DropInSessionBill
+  court?: { id?: number; name?: string; venue?: { id?: number; name?: string; city?: string } }
+  venue?: { id?: number; name?: string; city?: string }
+  creator?: { id?: number; name?: string; avatar_url?: string }
+  host?: { id?: number; name?: string }
+  participants?: Array<{
+    id?: number
+    user_id?: number
+    name?: string
+    avatar?: string
+    skill_level?: number
+    user?: { id?: number; name?: string; avatar_url?: string }
+  }>
+  metadata?: Record<string, unknown>
+  availability?: Record<string, unknown>
+}
+function detectSport(title: string, metadataSport?: string): { sport: SocialSportType; name: string; icon: string } {
   const t = (title + ' ' + (metadataSport || '')).toLowerCase()
   if (t.includes('pickleball')) return { sport: 'pickleball', name: 'Pickleball', icon: 'sports_tennis' }
   if (t.includes('tennis') || t.includes('quần vợt')) return { sport: 'tennis', name: 'Tennis', icon: 'sports_tennis' }
@@ -58,7 +106,8 @@ export function useMatchmaking() {
   const selectedSport = ref<SocialSportType>('all')
   const selectedSkill = ref<string>('all')
   const selectedCity = ref<string>('all')
-
+  const selectedCategory = ref<string>('all')
+  const selectedBadmintonSkill = ref<string>('all')
   // Feedback
   const notice = ref('')
   const error = ref('')
@@ -88,27 +137,36 @@ export function useMatchmaking() {
     loading.value = true
     error.value = ''
     try {
-      const res = await socialApi.getMatches<{ matches?: any[]; data?: any[] }>()
+      const res = await socialApi.getMatches<{ matches?: unknown[]; data?: unknown[] }>()
       const list = res?.matches || res?.data || (Array.isArray(res) ? res : [])
+      matches.value = list.map((item: unknown) => {
+        const m = item as RawMatchRecord
+        const title = m.title || ''
+        const metadata = m.metadata || {}
+        const availability = m.availability || {}
+        const detected = detectSport(title, metadata.sport as string | undefined)
+        const isOwnerHosted = Boolean(m.is_owner_hosted || metadata.is_owner_hosted)
+        const currentUserId = auth.user?.id
 
-      const currentUserId = auth.user?.id
-
-      matches.value = list.map((m: any) => {
-        const detected = detectSport(m.title || '', m.metadata?.sport)
+        const rawParticipants = m.participants || []
         const isUserJoined = currentUserId
-          ? m.creator_id === currentUserId ||
-            m.participants?.some((p: any) => p.user_id === currentUserId || p.id === currentUserId)
+          ? (isOwnerHosted
+              ? rawParticipants.some((p) => p.user_id === currentUserId || p.id === currentUserId)
+              : (m.creator_id === currentUserId || rawParticipants.some((p) => p.user_id === currentUserId || p.id === currentUserId)))
           : false
         const isHost = currentUserId ? m.creator_id === currentUserId : false
-
-        const venue = m.venue?.name || m.venue_name || m.availability?.venue_name || m.metadata?.venue_name || 'Aura Sport Hub'
-        const court = m.court?.name || m.court_name || m.availability?.court_name || m.metadata?.court_name || 'Sân tiêu chuẩn'
-        const format = m.game_format || m.availability?.format || m.metadata?.format || (detected.sport === 'football' ? '5v5' : detected.sport === 'basketball' ? '3x3' : 'Đánh đôi')
-        const cost = m.cost_per_person ?? m.availability?.cost_per_person ?? m.metadata?.cost_per_person ?? (detected.sport === 'football' ? 80000 : 50000)
-        const split = m.split_bill_mode || (m.availability?.split_cost ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu')
+        const venue = m.venue?.name || m.venue_name || (availability.venue_name as string) || (metadata.venue_name as string) || 'Aura Sport Hub'
+        const court = m.court?.name || m.court_name || (availability.court_name as string) || (metadata.court_name as string) || 'Sân tiêu chuẩn'
+        const format = (m.game_format as string) || (availability.format as string) || (metadata.format as string) || (detected.sport === 'football' ? '5v5' : detected.sport === 'basketball' ? '3x3' : 'Đánh đôi')
+        const cost = typeof m.cost_per_person === 'number'
+          ? m.cost_per_person
+          : (typeof availability.cost_per_person === 'number'
+              ? availability.cost_per_person
+              : (typeof metadata.cost_per_person === 'number' ? metadata.cost_per_person : (detected.sport === 'football' ? 80000 : 50000)))
+        const split = (m.split_bill_mode as string) || (availability.split_cost ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu')
 
         return {
-          id: m.id,
+          id: Number(m.id || 0),
           title: m.title || `Kèo ${detected.name} #${m.id}`,
           sport_type: detected.sport,
           sport_name: detected.name,
@@ -118,40 +176,51 @@ export function useMatchmaking() {
           city: m.city || m.venue?.city || (venue.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội'),
           starts_at: formatMatchTime(m.starts_at, m.ends_at),
           ends_at: m.ends_at,
-          joined_count: m.joined_count || (m.participants?.length ? m.participants.length : 1),
-          required_participants: m.required_participants || 4,
-          visibility: m.visibility || 'public',
+          joined_count: typeof m.joined_count === 'number'
+            ? m.joined_count
+            : (rawParticipants.length ? rawParticipants.length : (isOwnerHosted ? 0 : 1)),
+          required_participants: (m.required_participants as number) || 4,
+          visibility: (m.visibility as 'public' | 'invite_only' | 'private') || 'public',
           min_skill: m.min_skill ?? 2,
           max_skill: m.max_skill ?? 4,
           game_format: format,
           split_bill_mode: split,
           cost_per_person: cost,
           host_id: m.creator_id || m.host?.id,
-          host_name: m.creator?.name || m.host_name || m.metadata?.host || 'Chủ kèo Aura',
+          host_name: m.creator?.name || m.host_name || (typeof metadata.host === 'string' ? metadata.host : 'Chủ kèo Aura'),
           host_avatar: m.creator?.avatar_url || m.host_avatar,
           host_reputation: m.host_reputation || 98,
           host_level: m.host_level || 'Hạng Bán Chuyên',
-          description: m.description || m.availability?.description || `Tìm bạn chơi giao lưu nâng cao kỹ năng, tôn trọng văn hóa thi đấu fair-play tại ${venue}.`,
-          status: (m.joined_count >= (m.required_participants || 4)) ? 'full' : 'open',
-          participants: Array.isArray(m.participants) && m.participants.length > 0
-            ? m.participants.map((p: any) => ({
-                id: p.id || p.user_id,
-                name: p.name || p.user?.name || `VĐV #${p.id || 1}`,
+          description: m.description || (typeof availability.description === 'string' ? availability.description : undefined) || `Tìm bạn chơi giao lưu nâng cao kỹ năng, tôn trọng văn hóa thi đấu fair-play tại ${venue}.`,
+          status: (m.status === 'ended' || m.status === 'completed' || m.status === 'cancelled')
+            ? (m.status as 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled' | 'ended')
+            : (((typeof m.joined_count === 'number' ? m.joined_count : rawParticipants.length) >= ((m.required_participants as number) || 4)) ? 'full' : 'open'),
+          participants: rawParticipants.length > 0
+            ? rawParticipants.map((p) => ({
+                id: (p.id || p.user_id || 1) as number,
+                name: (p.name || p.user?.name || `VĐV #${p.id || 1}`) as string,
                 avatar: p.avatar || p.user?.avatar_url,
-                skill_level: p.skill_level || 3,
-                is_host: p.user_id === m.creator_id,
+                skill_level: (p.skill_level as number) || 3,
+                is_host: !isOwnerHosted && p.user_id === m.creator_id,
               }))
-            : [
-                {
-                  id: m.creator_id || 1,
-                  name: m.creator?.name || m.metadata?.host || 'Chủ kèo',
-                  avatar: m.creator?.avatar_url,
-                  skill_level: m.min_skill || 3,
-                  is_host: true,
-                },
-              ],
+            : (isOwnerHosted
+                ? []
+                : [
+                    {
+                      id: (m.creator_id as number) || 1,
+                      name: (m.creator?.name || (metadata.host as string) || 'Chủ kèo') as string,
+                      avatar: m.creator?.avatar_url,
+                      skill_level: (m.min_skill as number) || 3,
+                      is_host: true,
+                    },
+                  ]),
           is_joined: isUserJoined,
           is_host: isHost,
+          is_owner_hosted: isOwnerHosted,
+          court_id: (m.court_id || metadata.court_id) as number | undefined,
+          category: (m.category || metadata.category) as DropInSessionCategory | undefined,
+          skill_levels: (m.skill_levels || metadata.skill_levels || []) as BadmintonSkillLabel[],
+          bill: m.bill as DropInSessionBill | undefined,
         }
       })
     } catch (e: unknown) {
@@ -266,6 +335,18 @@ export function useMatchmaking() {
       if (selectedCity.value !== 'all' && !m.city.toLowerCase().includes(selectedCity.value.toLowerCase())) {
         return false
       }
+      // Category filter
+      if (selectedCategory.value !== 'all' && m.category !== selectedCategory.value) {
+        return false
+      }
+
+      // Badminton skill filter
+      if (selectedBadmintonSkill.value !== 'all') {
+        const skills = (m.skill_levels || []) as string[]
+        if (!skills.includes(selectedBadmintonSkill.value)) {
+          return false
+        }
+      }
 
       // Skill filter
       if (selectedSkill.value !== 'all') {
@@ -275,7 +356,6 @@ export function useMatchmaking() {
           if (m.max_skill && m.max_skill < skillNum) return false
         }
       }
-
       // Search query
       const q = searchQuery.value.trim().toLowerCase()
       if (q) {
@@ -322,6 +402,8 @@ export function useMatchmaking() {
     selectedSport.value = 'all'
     selectedSkill.value = 'all'
     selectedCity.value = 'all'
+    selectedCategory.value = 'all'
+    selectedBadmintonSkill.value = 'all'
   }
 
   onMounted(() => {
@@ -337,6 +419,8 @@ export function useMatchmaking() {
     selectedSport,
     selectedSkill,
     selectedCity,
+    selectedCategory,
+    selectedBadmintonSkill,
     notice,
     error,
     selectedMatchForJoin,

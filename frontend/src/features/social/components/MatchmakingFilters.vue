@@ -12,6 +12,8 @@ defineProps<{
   selectedSport: SocialSportType
   selectedSkill: string
   selectedCity: string
+  selectedCategory?: string
+  selectedBadmintonSkill?: string
   totalCount: number
   openCount: number
   myMatchesCount: number
@@ -24,8 +26,11 @@ const emit = defineEmits<{
   (e: 'update:selectedSport', sport: SocialSportType): void
   (e: 'update:selectedSkill', skill: string): void
   (e: 'update:selectedCity', city: string): void
+  (e: 'update:selectedCategory', cat: string): void
+  (e: 'update:selectedBadmintonSkill', skill: string): void
   (e: 'reset'): void
 }>()
+
 
 const sportsList = computed<Array<{ id: SocialSportType; label: string; icon: string }>>(() => [
   { id: 'all', label: t('matchmaking.filterAllSports'), icon: 'sports' },
@@ -51,6 +56,20 @@ const cityOptions = computed(() => [
   { value: 'Hà Nội', label: 'Hà Nội' },
   { value: 'TP. Hồ Chí Minh', label: 'TP. Hồ Chí Minh' },
 ])
+const categoryOptions = [
+  { value: 'all', label: 'Tất cả phân loại' },
+  { value: 'giao lưu', label: 'Giao lưu' },
+  { value: 'đánh vãng lai', label: 'Đánh vãng lai' },
+]
+
+const badmintonSkillOptions = [
+  { value: 'all', label: 'Mọi trình độ cầu lông' },
+  { value: 'newbie', label: 'Newbie (Mới chơi)' },
+  { value: 'Y', label: 'Y (Yếu)' },
+  { value: 'TBY', label: 'TBY (Trung bình yếu)' },
+  { value: 'TB', label: 'TB (Trung bình)' },
+  { value: 'K', label: 'K (Khá)' },
+]
 </script>
 
 <template>
@@ -172,6 +191,23 @@ const cityOptions = computed(() => [
             :options="skillOptions"
             :placeholder="$t('matchmaking.filterAllSkills')"
             @update:model-value="emit('update:selectedSkill', String($event))"
+          />
+        </div>
+        <div class="dropdown-item">
+          <SelectDropdown
+            :model-value="selectedCategory || 'all'"
+            :options="categoryOptions"
+            placeholder="Phân loại buổi"
+            @update:model-value="emit('update:selectedCategory', String($event))"
+          />
+        </div>
+
+        <div class="dropdown-item">
+          <SelectDropdown
+            :model-value="selectedBadmintonSkill || 'all'"
+            :options="badmintonSkillOptions"
+            placeholder="Trình độ vãng lai"
+            @update:model-value="emit('update:selectedBadmintonSkill', String($event))"
           />
         </div>
 

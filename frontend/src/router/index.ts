@@ -75,6 +75,7 @@ const router = createRouter({
     { path: '/matchmaking/create', name: 'create-match', component: () => import('@/features/social/views/CreateMatchView.vue'), meta: { auth: true, titleKey: 'seo.createMatchTitle', descriptionKey: 'seo.createMatchDesc', indexable: false } },
     { path: '/payment/:code?', name: 'payment', component: PaymentView, meta: { auth: true, titleKey: 'seo.paymentTitle', descriptionKey: 'seo.paymentDesc', indexable: false } },
     { path: '/split-bill/:code?', name: 'split-bill', component: () => import('@/features/finance/views/GroupSplitBillView.vue'), meta: { auth: true, titleKey: 'seo.splitBillTitle', descriptionKey: 'seo.splitBillDesc', indexable: false } },
+    { path: '/social/sessions/:id/bill', name: 'drop-in-session-bill', component: () => import('@/features/social/views/DropInSessionBillView.vue'), meta: { auth: true, titleKey: 'seo.dropInBillTitle', descriptionKey: 'seo.dropInBillDesc', indexable: false } },
     {
       path: '/admin',
       component: () => import('@/shared/layouts/admin/AdminLayout.vue'),

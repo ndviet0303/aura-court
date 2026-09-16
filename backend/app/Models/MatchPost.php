@@ -7,13 +7,82 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-#[Fillable(['organization_id', 'creator_id', 'title', 'visibility', 'starts_at', 'ends_at', 'city', 'approximate_latitude', 'approximate_longitude', 'min_skill', 'max_skill', 'required_participants', 'joined_count', 'status', 'availability', 'metadata'])]
+use Illuminate\Database\Eloquent\Relations\HasOne;
+#[Fillable([
+    'organization_id',
+    'creator_id',
+    'court_id',
+    'title',
+    'visibility',
+    'is_owner_hosted',
+    'category',
+    'skill_levels',
+    'starts_at',
+    'ends_at',
+    'city',
+    'approximate_latitude',
+    'approximate_longitude',
+    'min_skill',
+    'max_skill',
+    'required_participants',
+    'joined_count',
+    'status',
+    'availability',
+    'metadata',
+])]
 class MatchPost extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'approximate_latitude' => 'float', 'approximate_longitude' => 'float', 'availability' => 'array', 'metadata' => 'array']; }
+
+    public const CATEGORY_GIAO_LUU = 'giao lưu';
+    public const CATEGORY_VANG_LAI = 'đánh vãng lai';
+    public const VALID_CATEGORIES = [
+        self::CATEGORY_GIAO_LUU,
+        self::CATEGORY_VANG_LAI,
+        'giao_luu',
+        'danh_vang_lai',
+    ];
+
+    public const SKILL_NEWBIE = 'newbie';
+    public const SKILL_Y = 'Y';
+    public const SKILL_TBY = 'TBY';
+    public const SKILL_TB = 'TB';
+    public const SKILL_K = 'K';
+    public const VALID_SKILL_LABELS = [
+        self::SKILL_NEWBIE,
+        self::SKILL_Y,
+        self::SKILL_TBY,
+        self::SKILL_TB,
+        self::SKILL_K,
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'starts_at' => 'datetime',
+            'ends_at' => 'datetime',
+            'approximate_latitude' => 'float',
+            'approximate_longitude' => 'float',
+            'availability' => 'array',
+            'metadata' => 'array',
+            'is_owner_hosted' => 'boolean',
+            'skill_levels' => 'array',
+        ];
+    }
+
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'creator_id'); }
+    public function court(): BelongsTo { return $this->belongsTo(Court::class, 'court_id'); }
     public function invitations(): HasMany { return $this->hasMany(MatchInvitation::class); }
     public function participations(): HasMany { return $this->hasMany(MatchParticipation::class); }
+    public function bill(): HasOne { return $this->hasOne(MatchBill::class); }
+
+    public function isOwnerHosted(): bool
+    {
+        return (bool) ($this->is_owner_hosted || ($this->metadata['is_owner_hosted'] ?? false));
+    }
+
+    public function hasEnded(): bool
+    {
+        return in_array($this->status, ['ended', 'completed'], true);
+    }
 }

@@ -412,6 +412,12 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
 
 
             Route::post('social/matches', [SocialController::class, 'create']);
+            Route::put('social/matches/{post}', [SocialController::class, 'update']);
+            Route::post('social/matches/{post}/end', [SocialController::class, 'endSession']);
+            Route::get('social/matches/{post}/bill', [SocialController::class, 'getBill']);
+            Route::post('social/matches/{post}/bill/draft', [SocialController::class, 'saveDraftBill']);
+            Route::post('social/matches/{post}/bill/finalize', [SocialController::class, 'finalizeBill']);
+            Route::get('social/matches/{post}/rates', [SocialController::class, 'getDefaultRates']);
             Route::post('social/matches/{post}/invite', [SocialController::class, 'invite']);
             Route::post('social/matches/{post}/join', [SocialController::class, 'join']);
             Route::post('social/invitations/{invitation}/respond', [SocialController::class, 'respond']);

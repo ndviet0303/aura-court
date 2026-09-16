@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SelectDropdown, type DropdownOption } from '@/shared/components'
+import type { BadmintonSkillLabel, DropInSessionCategory } from '../../types/social'
 
 defineProps<{
   format: 'doubles' | 'singles' | 'team'
@@ -9,6 +10,9 @@ defineProps<{
   maxPlayers: number
   visibility: 'public' | 'invite_only'
   matchDescription: string
+  isOwnerHosted?: boolean
+  sessionCategory?: DropInSessionCategory
+  acceptedSkillLabels?: BadmintonSkillLabel[]
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +23,9 @@ const emit = defineEmits<{
   (e: 'update:maxPlayers', max: number): void
   (e: 'update:visibility', vis: 'public' | 'invite_only'): void
   (e: 'update:matchDescription', desc: string): void
+  (e: 'update:isOwnerHosted', val: boolean): void
+  (e: 'update:sessionCategory', cat: DropInSessionCategory): void
+  (e: 'update:acceptedSkillLabels', labels: BadmintonSkillLabel[]): void
 }>()
 
 const formatOptions: DropdownOption[] = [
@@ -37,7 +44,29 @@ const visibilityOptions: DropdownOption[] = [
   { value: 'public', label: 'Công khai (Public)', sublabel: 'Hiển thị trên bảng tin cộng đồng', icon: 'public' },
   { value: 'invite_only', label: 'Chỉ người được mời (Invite Only)', sublabel: 'Cần phê duyệt từ chủ phòng', icon: 'lock' },
 ]
+const categoryOptions: DropdownOption[] = [
+  { value: 'giao lưu', label: 'Giao lưu', sublabel: 'Buổi giao lưu thân mật', icon: 'handshake' },
+  { value: 'đánh vãng lai', label: 'Đánh vãng lai', sublabel: 'Buổi đánh vãng lai tự do', icon: 'directions_walk' },
+]
 
+const allBadmintonSkillLabels: Array<{ id: BadmintonSkillLabel; label: string; desc: string }> = [
+  { id: 'newbie', label: 'Newbie', desc: 'Mới tập chơi' },
+  { id: 'Y', label: 'Y (Yếu)', desc: 'Biết luật cơ bản' },
+  { id: 'TBY', label: 'TBY', desc: 'Trung bình yếu' },
+  { id: 'TB', label: 'TB', desc: 'Trung bình cứng' },
+  { id: 'K', label: 'K (Khá)', desc: 'Khá / Bán chuyên' },
+]
+
+function toggleSkillLabel(label: BadmintonSkillLabel, currentLabels: BadmintonSkillLabel[] | undefined) {
+  const list = currentLabels ? [...currentLabels] : []
+  const idx = list.indexOf(label)
+  if (idx >= 0) {
+    if (list.length > 1) list.splice(idx, 1)
+  } else {
+    list.push(label)
+  }
+  emit('update:acceptedSkillLabels', list)
+}
 const quickCosts = [
   { label: 'Miễn phí', value: 0 },
   { label: '30.000₫', value: 30000 },
@@ -60,6 +89,59 @@ function adjustPlayers(current: number, delta: number) {
         <h3 class="section-title">Thông Số & Quy Định Trận Đấu</h3>
       </div>
       <span class="section-desc">Thiết lập thể thức thi đấu, trình độ yêu cầu và chi phí chia sẻ</span>
+    </div>
+
+    <!-- Owner-hosted drop-in session toggle -->
+    <div class="owner-session-toggle-box" style="margin-bottom: 20px; padding: 14px 16px; background: rgba(var(--color-primary-rgb, 107, 45, 63), 0.08); border-radius: 12px; border: 1px solid rgba(var(--color-primary-rgb, 107, 45, 63), 0.2);">
+      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
+        <input
+          type="checkbox"
+          :checked="isOwnerHosted"
+          style="width: 18px; height: 18px; accent-color: #8b263e; cursor: pointer;"
+          @change="emit('update:isOwnerHosted', ($event.target as HTMLInputElement).checked)"
+        />
+        <span style="font-size: 15px;">Mở buổi cho chủ cơ sở (Owner-hosted Drop-in)</span>
+      </label>
+      <p style="margin: 6px 0 0 28px; font-size: 13px; color: #666;">
+        Dành cho chủ cơ sở mở sân nhận khách lẻ. Chủ cơ sở là người tổ chức (không tự tính vào người chơi). Bảng chi phí sân và cầu được chốt sau buổi.
+      </p>
+
+      <div v-if="isOwnerHosted" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Phân loại buổi chơi:</label>
+          <SelectDropdown
+            :model-value="sessionCategory || 'giao lưu'"
+            :options="categoryOptions"
+            variant="bordered"
+            placeholder="Chọn phân loại..."
+            @update:model-value="emit('update:sessionCategory', String($event) as 'giao lưu' | 'đánh vãng lai')"
+          />
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Nhãn trình độ chấp nhận (Chọn một hoặc nhiều):</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button
+              v-for="s in allBadmintonSkillLabels"
+              :key="s.id"
+              type="button"
+              :style="{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: (acceptedSkillLabels || ['TB']).includes(s.id) ? '2px solid #8b263e' : '1px solid #ccc',
+                background: (acceptedSkillLabels || ['TB']).includes(s.id) ? '#8b263e' : '#fff',
+                color: (acceptedSkillLabels || ['TB']).includes(s.id) ? '#fff' : '#333',
+                fontWeight: '600',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }"
+              @click="toggleSkillLabel(s.id, acceptedSkillLabels)"
+            >
+              {{ s.label }} ({{ s.desc }})
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="form-grid">
