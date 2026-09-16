@@ -8,29 +8,7 @@ services:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
     volumes:
-      - laravel_storage:/var/www/html/storage
-    restart: unless-stopped
-
-  queue:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    env_file: ./backend/.env
-    command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
-    depends_on: [app, db, redis]
-    volumes:
-      - laravel_storage:/var/www/html/storage
-    restart: unless-stopped
-
-  scheduler:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    env_file: ./backend/.env
-    command: php artisan schedule:work
-    depends_on: [app, db, redis]
-    volumes:
-      - laravel_storage:/var/www/html/storage
+      - laravel_storage:/app/storage
     restart: unless-stopped
 
   realtime:
@@ -41,7 +19,7 @@ services:
     command: php artisan realtime:work
     depends_on: [app, redis]
     volumes:
-      - laravel_storage:/var/www/html/storage
+      - laravel_storage:/app/storage
     restart: unless-stopped
 
   db:

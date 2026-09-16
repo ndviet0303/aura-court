@@ -42,22 +42,18 @@ SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SESSION_SAME_SITE=none
 CACHE_STORE=database
-QUEUE_CONNECTION=database
+QUEUE_CONNECTION=sync
 ```
 
 SMTP Brevo dùng cho email reset mật khẩu. SePay dùng cho webhook và trạng thái thanh toán. Không commit secret vào repository.
 
-## Worker và scheduler
+## Thực thi tác vụ và lập lịch (Worker-Free Architecture)
 
-Cache, queue, distributed locks, và pub/sub dùng Redis quản lý:
-
-```bash
-php artisan queue:work redis --sleep=3 --tries=3 --timeout=90
-php artisan schedule:work
-php artisan realtime:work
-```
-
-Scheduler tự giải phóng booking đang giữ quá hạn.
+Hệ thống hoạt động theo mô hình **không cần container worker hay scheduler riêng biệt**:
+- `QUEUE_CONNECTION=sync`: Các tác vụ được thực thi synchronous ngay trong tiến trình gọi (`after_commit = true` đảm bảo chạy sau khi commit database transaction gốc).
+- **Lập lịch qua host `crond`**: Máy chủ host gọi `php artisan schedule:run` mỗi phút vào container `court-server` để thực thi các tác vụ định kỳ và phục hồi thất bại thứ cấp (`recoverOutbox` và `recoverProviderEvents`).
+- Tác vụ realtime chạy qua service `booking-realtime` (`php artisan realtime:work`).
+- Chi tiết triển khai và runbook vận hành xem tại [`docs/operations/host-crond-scheduling-runbook.md`](../docs/operations/host-crond-scheduling-runbook.md).
 
 ## Tài khoản demo và test
 

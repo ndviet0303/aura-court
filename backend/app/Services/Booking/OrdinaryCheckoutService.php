@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Services\Booking;
-
+use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\BookingRepositoryInterface;
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Contracts\Repositories\CourtPriceSlotRepositoryInterface;
@@ -24,6 +24,7 @@ use App\Services\Reservation\PriceQuoteService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -40,6 +41,7 @@ class OrdinaryCheckoutService
         private readonly FinancialPostingService $financials,
         private readonly LegacyBookingBackfillService $backfill,
         private readonly PriceQuoteService $quotes,
+        private readonly DurableNotificationServiceInterface $durableNotification,
     ) {}
 
     /**
@@ -246,12 +248,20 @@ class OrdinaryCheckoutService
             throw $exception;
         }
 
-        $booking->user->notify(new AuraBookingNotification(
-            'payment_confirmed',
-            'Đặt sân thành công',
-            "Booking {$booking->code} tại {$booking->court->name} đã được thanh toán thành công qua số dư ví.",
-            '/booking',
-        ));
+        try {
+            $this->durableNotification->notifyBooking(
+                $booking,
+                'payment_confirmed',
+                'Đặt sân thành công',
+                "Booking {$booking->code} tại {$booking->court->name} đã được thanh toán thành công qua số dư ví.",
+                '/booking',
+            );
+        } catch (\Throwable $secondaryException) {
+            Log::warning("Secondary booking notification dispatch encountered failure: {$secondaryException->getMessage()}", [
+                'booking_code' => $booking->code,
+                'exception' => $secondaryException,
+            ]);
+        }
 
         return $booking;
     }

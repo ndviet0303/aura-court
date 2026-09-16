@@ -29,7 +29,7 @@ RUN php artisan event:cache
 # runtime.
 
 # Stage 2: Final
-FROM alpine:latest AS final
+FROM base AS final
 
 # Copy the application from the composer stage
 COPY --from=base /build /app
@@ -37,10 +37,9 @@ RUN mkdir -p \
         /app/storage/framework/cache/data \
         /app/storage/framework/sessions \
         /app/storage/framework/views \
-        /app/storage/logs
+        /app/storage/logs \
+        /app/bootstrap/cache \
+    && chown -R www-data:www-data /app/storage /app/bootstrap/cache 2>/dev/null || true
 
 # Set the working directory
 WORKDIR /app
-
-# Expose port or other settings as needed
-# EXPOSE 8000

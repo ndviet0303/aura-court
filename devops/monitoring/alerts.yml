@@ -10,7 +10,17 @@ groups:
         expr: aura_court_queue_depth{queue="default"} > 30
         for: 5m
         labels: { severity: warning }
-        annotations: { summary: "Aura Court queue lag exceeds pilot threshold" }
+        annotations: { summary: "Aura Court queue lag exceeds pilot threshold (applies in async rollback mode)" }
+      - alert: AuraCourtOutboxExhausted
+        expr: sum(rate({app="aura-court"}[5m]) * on (message) (message=~".*outbox.*exhausted.*")) > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "Outbox delivery attempts reached exhausted state and require operator review" }
+      - alert: AuraCourtProviderEventExhausted
+        expr: sum(rate({app="aura-court"}[5m]) * on (message) (message=~".*provider.*exhausted.*")) > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "Provider webhook events reached exhausted state and require operator review" }
       - alert: AuraCourtWebhookFailures
         expr: increase(aura_court_webhook_verification_failed_total[5m]) > 5
         for: 1m

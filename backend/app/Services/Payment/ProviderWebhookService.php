@@ -81,10 +81,12 @@ class ProviderWebhookService
     public function markFailed(ProviderEvent $event, \Throwable $exception): void
     {
         $attempts = $event->attempts + 1;
+        $isExhausted = $attempts >= 8;
         $event->forceFill([
             'attempts' => $attempts,
+            'status' => $isExhausted ? 'exhausted' : $event->status,
             'processing_error' => $exception->getMessage(),
-            'next_attempt_at' => now()->addSeconds(min(3600, 2 ** min($attempts, 10))),
+            'next_attempt_at' => $isExhausted ? null : now()->addSeconds(min(3600, 2 ** min($attempts, 10))),
         ])->save();
     }
 

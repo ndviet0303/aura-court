@@ -3,6 +3,7 @@
 namespace App\Contracts\Infrastructure;
 
 use App\Models\AuditLog;
+use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\OutboxMessage;
 use App\Models\PlatformPaymentAttempt;
@@ -42,4 +43,6 @@ interface DurableNotificationServiceInterface
     public function notifyPaymentFailed(PlatformPaymentAttempt $attempt): OutboxMessage;
 
     public function notifyPublicationReviewed(VenuePublicationRevision $revision, string $decision, ?string $reason = null): OutboxMessage;
+
+    public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage;
 }

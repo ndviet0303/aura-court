@@ -148,12 +148,12 @@ registry.gitlab.com/bantool/ziet-projects/booking/server:latest
 
 `server:latest` là image runtime FrankenPHP/Caddy, lắng nghe port `8080`. Stack production nằm tại [`devops/portainer/booking_app.stack.yml`](devops/portainer/booking_app.stack.yml) và gồm:
 
-- `court-server`: HTTP API.
-- `booking-queue`: `php artisan queue:work`.
-- `booking-scheduler`: `php artisan schedule:work`.
+- `court-server`: HTTP API và console runtime.
+- `booking-realtime`: `php artisan realtime:work` (phục vụ sự kiện realtime đa người dùng).
 
-Redis không được sử dụng. Cache và queue dùng database. Scheduler tự xử lý booking đang giữ quá hạn mỗi phút.
+Hệ thống chuẩn hóa `QUEUE_CONNECTION=sync` (xử lý synchronous in-process) và kích hoạt lịch định kỳ bằng host `crond` gọi `php artisan schedule:run` mỗi phút vào container `court-server`. Không sử dụng các container worker hoặc scheduler độc lập.
 
+Các thất bại thứ cấp (như lỗi kết nối SMTP) được lưu bền vững vào `outbox_messages` và `provider_events`, được tự động thử lại tối đa 8 lần qua scheduled recovery mỗi phút. Chi tiết xem tại [`docs/operations/host-crond-scheduling-runbook.md`](docs/operations/host-crond-scheduling-runbook.md).
 Trong Portainer, nhập biến môi trường trực tiếp vào Stack Environment. Không trỏ `env_file` tới đường dẫn chỉ tồn tại trong repository nếu Portainer không mount thư mục đó.
 
 Sau khi deploy image mới, chạy migration trong container API nếu có migration mới:

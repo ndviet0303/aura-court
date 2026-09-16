@@ -19,7 +19,7 @@ x-booking-runtime-environment: &booking-runtime-environment
   DB_USERNAME: ${DB_USERNAME}
   DB_PASSWORD: ${DB_PASSWORD}
   CACHE_STORE: ${CACHE_STORE:-redis}
-  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}
   REDIS_CLIENT: ${REDIS_CLIENT:-phpredis}
   REDIS_URL: ${REDIS_URL}
   REDIS_HOST: ${REDIS_HOST}
@@ -66,30 +66,6 @@ services:
     volumes:
       - booking_caddy_data:/data
       - booking_caddy_config:/config
-    networks:
-      - production
-
-  booking-queue:
-    image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
-    container_name: booking-queue
-    restart: unless-stopped
-    working_dir: /app/booking-api
-    command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
-    environment: *booking-runtime-environment
-    healthcheck:
-      disable: true
-    networks:
-      - production
-
-  booking-scheduler:
-    image: registry.gitlab.com/bantool/ziet-projects/booking/server:latest
-    container_name: booking-scheduler
-    restart: unless-stopped
-    working_dir: /app/booking-api
-    command: php artisan schedule:work
-    environment: *booking-runtime-environment
-    healthcheck:
-      disable: true
     networks:
       - production
 

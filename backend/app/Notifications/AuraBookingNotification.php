@@ -16,11 +16,12 @@ class AuraBookingNotification extends Notification implements ShouldQueue
         public readonly string $title,
         public readonly string $body,
         public readonly ?string $actionUrl = null,
+        public array $channels = ['database', 'mail'],
     ) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->channels;
     }
 
     public function toDatabase(object $notifiable): array

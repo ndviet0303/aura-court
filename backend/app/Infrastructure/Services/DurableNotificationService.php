@@ -5,6 +5,7 @@ namespace App\Infrastructure\Services;
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Models\AuditLog;
+use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\OutboxMessage;
 use App\Models\PlatformPaymentAttempt;
@@ -12,6 +13,7 @@ use App\Models\PlatformSubscription;
 use App\Models\VenuePublicationRevision;
 use App\Services\Infrastructure\OutboxService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class DurableNotificationService implements DurableNotificationServiceInterface
 {
@@ -182,5 +184,42 @@ class DurableNotificationService implements DurableNotificationServiceInterface
             ],
             orgId: $venue?->organization_id
         );
+    }
+
+    public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage
+    {
+        $booking->loadMissing(['court.venue']);
+        $key = "booking.notification.{$booking->id}.{$event}";
+        $orgId = $booking->court?->venue?->organization_id;
+
+        try {
+            return $this->recordOutboxNotification(
+                key: $key,
+                userId: (int) $booking->user_id,
+                eventType: 'booking.' . $event,
+                payload: [
+                    'user_id' => (int) $booking->user_id,
+                    'booking_id' => $booking->id,
+                    'booking_code' => $booking->code,
+                    'event' => $event,
+                    'title' => $title,
+                    'body' => $body,
+                    'action_url' => $actionUrl,
+                    'channels' => ['database', 'mail'],
+                    'delivered_channels' => [],
+                    'mail_view' => 'emails.booking-notification',
+                    'aggregate_type' => Booking::class,
+                    'aggregate_id' => $booking->id,
+                ],
+                orgId: $orgId
+            );
+        } catch (\Throwable $secondaryException) {
+            Log::warning("Secondary booking notification delivery failed immediately for booking {$booking->code}: {$secondaryException->getMessage()}", [
+                'booking_code' => $booking->code,
+                'exception' => $secondaryException,
+            ]);
+
+            return OutboxMessage::where('message_key', $key)->firstOrFail();
+        }
     }
 }

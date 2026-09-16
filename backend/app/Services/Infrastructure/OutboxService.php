@@ -32,11 +32,14 @@ class OutboxService
         return $message;
     }
 
-    public function claim(OutboxMessage $message): ?OutboxMessage
+    public function claim(OutboxMessage $message, int $leaseSeconds = 300): ?OutboxMessage
     {
-        return DB::transaction(function () use ($message) {
-            $locked = OutboxMessage::query()->whereKey($message->id)->lockForUpdate()->first();
-            if (! $locked || $locked->published_at || $locked->status === 'processing') {
+        return DB::transaction(function () use ($message, $leaseSeconds) {
+            $locked = OutboxMessage::query()->withoutGlobalScope('tenant_isolation')->whereKey($message->id)->lockForUpdate()->first();
+            if (! $locked || $locked->published_at || $locked->status === 'exhausted') {
+                return null;
+            }
+            if ($locked->status === 'processing' && $locked->locked_at && $locked->locked_at->isAfter(now()->subSeconds($leaseSeconds))) {
                 return null;
             }
             $locked->update(['status' => 'processing', 'locked_at' => now(), 'attempts' => $locked->attempts + 1]);
@@ -51,11 +54,14 @@ class OutboxService
 
     public function failed(OutboxMessage $message, \Throwable $exception): void
     {
+        $status = $message->attempts >= 8 ? 'exhausted' : 'pending';
+        $availableAt = $status === 'exhausted' ? null : now()->addSeconds(min(3600, 2 ** min($message->attempts, 10)));
+
         $message->update([
-            'status' => 'pending',
+            'status' => $status,
             'locked_at' => null,
             'last_error' => $exception->getMessage(),
-            'available_at' => now()->addSeconds(min(3600, 2 ** min($message->attempts, 10))),
+            'available_at' => $availableAt,
         ]);
     }
 
