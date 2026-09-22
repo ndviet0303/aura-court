@@ -15,8 +15,9 @@ export function usePosShift() {
       const shift = await posApi.getActiveShift()
       activeShift.value = shift
       return shift
-    } catch {
+    } catch (e: unknown) {
       activeShift.value = null
+      error.value = errorMessage(e, 'Không thể kiểm tra trạng thái ca làm việc.')
       return null
     } finally {
       loading.value = false

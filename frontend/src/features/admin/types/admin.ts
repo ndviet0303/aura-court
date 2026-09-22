@@ -28,7 +28,7 @@ export type VenueForm = {
   name: string
   address: string
   google_maps_url?: string
-  is_active: boolean
+  is_active?: boolean
 }
 
 export type OrganizationMember = {

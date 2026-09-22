@@ -53,6 +53,10 @@ export type V2Reservation = {
   quote?: V2PriceQuote | null
   slots: V2ReservationSlot[]
   entitlements?: V2ReservationEntitlement[]
+  loyalty_discount_amount?: number
+  loyalty_points_redeemed?: number
+  loyalty_snapshot?: any
+  net_payable?: number
 }
 
 export type V2PriceQuotePayload = {
@@ -65,4 +69,7 @@ export type V2HoldReservationPayload = {
   quote_id?: number
   court_id?: number
   slots?: string[]
+  loyalty_points?: number
+  loyalty_policy_version?: number
+  idempotency_key?: string
 }

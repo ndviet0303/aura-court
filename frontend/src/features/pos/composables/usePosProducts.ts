@@ -83,11 +83,6 @@ export function usePosProducts() {
       p.stock_quantity = Math.max(0, (p.stock_quantity || 0) + quantityChange)
     }
   }
-
-  onMounted(() => {
-    loadProducts()
-  })
-
   return {
     products,
     selectedCategory,

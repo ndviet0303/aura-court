@@ -112,6 +112,8 @@ class V2ReservationController extends Controller
             'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
             'slots.*' => 'required',
             'customer_id' => 'nullable|integer',
+            'loyalty_points' => 'nullable|integer|min:1',
+            'loyalty_policy_version' => 'nullable|integer',
         ]);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {

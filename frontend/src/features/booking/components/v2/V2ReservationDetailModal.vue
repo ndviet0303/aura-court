@@ -93,6 +93,20 @@ const emit = defineEmits<{
 
         <!-- Total Breakdown -->
         <div class="total-breakdown-card">
+          <div v-if="reservation.loyalty_discount_amount && reservation.loyalty_discount_amount > 0" class="loyalty-sub-breakdown">
+            <div class="breakdown-subline">
+              <span>{{ t('loyalty.pointsUsed') || 'Điểm đã dùng' }}:</span>
+              <strong class="font-mono">{{ reservation.loyalty_points_redeemed }}</strong>
+            </div>
+            <div class="breakdown-subline discount">
+              <span>{{ t('loyalty.discountAmount') || 'Giảm giá điểm' }}:</span>
+              <strong class="font-mono text-pink">-{{ money(reservation.loyalty_discount_amount) }}</strong>
+            </div>
+            <div class="breakdown-subline">
+              <span>{{ t('loyalty.netPaid') || 'Thực trả từ ví' }}:</span>
+              <strong class="font-mono">{{ money(reservation.net_payable ?? (reservation.total_amount - reservation.loyalty_discount_amount)) }}</strong>
+            </div>
+          </div>
           <div class="total-row">
             <span>{{ t('v2Reservations.modal.totalPriceFixed') }}</span>
             <strong class="total-price font-mono">{{ money(reservation.total_amount) }}</strong>

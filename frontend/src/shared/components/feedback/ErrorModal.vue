@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import {
+  errorMessage,
+  isRawInfrastructureMessage,
+  resolveErrorDescriptor,
+  translateMessage,
+} from '@/core/utils/errorMessage'
+
+const { t, locale } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -7,6 +16,7 @@ const props = withDefaults(
     open?: boolean
     title?: string
     message?: string
+    error?: unknown
     details?: string | string[] | Record<string, string[]> | null
     errorCode?: string | number | null
     confirmText?: string
@@ -16,12 +26,13 @@ const props = withDefaults(
   {
     modelValue: undefined,
     open: undefined,
-    title: 'Đã có lỗi xảy ra',
+    title: undefined,
     message: '',
+    error: undefined,
     details: null,
     errorCode: null,
-    confirmText: 'Đã hiểu',
-    retryText: 'Thử lại',
+    confirmText: undefined,
+    retryText: undefined,
     showRetry: false,
   },
 )
@@ -33,13 +44,63 @@ const emit = defineEmits<{
   retry: []
 }>()
 
+const modalCardRef = ref<HTMLElement | null>(null)
+let originatingElement: HTMLElement | null = null
+
 const isVisible = computed(() => {
   if (props.open !== undefined) return props.open
   if (props.modelValue !== undefined) return props.modelValue
   return false
 })
 
+// Structured error descriptor resolved reactively whenever error or locale changes
+const descriptor = computed(() => {
+  if (props.error) {
+    return resolveErrorDescriptor(props.error, props.message, locale.value)
+  }
+  return null
+})
+
+const displayTitle = computed(() => {
+  if (props.title) return props.title
+  return t('errorModal.defaultTitle')
+})
+
+const displayConfirmText = computed(() => {
+  if (props.confirmText) return props.confirmText
+  return t('errorModal.confirm')
+})
+
+const displayRetryText = computed(() => {
+  if (props.retryText) return props.retryText
+  return t('errorModal.retry')
+})
+const displayErrorCode = computed(() => {
+  if (props.errorCode) return props.errorCode
+  if (descriptor.value?.supportCode) return descriptor.value.supportCode
+  if (descriptor.value?.code) return descriptor.value.code
+  return null
+})
+
+const displayMessage = computed(() => {
+  if (descriptor.value?.message) {
+    return descriptor.value.message
+  }
+  if (props.message) {
+    if (isRawInfrastructureMessage(props.message)) {
+      return locale.value === 'en'
+        ? 'The server encountered an issue. Please try again later.'
+        : 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
+    }
+    return translateMessage(props.message, locale.value)
+  }
+  return ''
+})
+
 const formattedDetails = computed<string[]>(() => {
+  if (descriptor.value && descriptor.value.details.length > 0) {
+    return descriptor.value.details
+  }
   if (!props.details) return []
   if (typeof props.details === 'string') return [props.details]
   if (Array.isArray(props.details)) return props.details.filter(Boolean)
@@ -67,25 +128,79 @@ function handleRetry() {
   emit('retry')
 }
 
+// Focus Trap & Keyboard Navigation (Task 4.4)
+function getFocusableElements(): HTMLElement[] {
+  if (!modalCardRef.value) return []
+  const selector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  return Array.from(modalCardRef.value.querySelectorAll<HTMLElement>(selector))
+}
+
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && isVisible.value) {
+  if (!isVisible.value) return
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
     close()
+    return
+  }
+
+  if (event.key === 'Tab') {
+    const focusable = getFocusableElements()
+    if (focusable.length === 0) return
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (!first || !last) return
+    if (event.shiftKey) {
+      if (document.activeElement === first || !modalCardRef.value?.contains(document.activeElement)) {
+        event.preventDefault()
+        last.focus()
+      }
+    } else {
+      if (document.activeElement === last || !modalCardRef.value?.contains(document.activeElement)) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
   }
 }
 
-watch(isVisible, (val) => {
+async function setupFocus() {
+  await nextTick()
+  const focusable = getFocusableElements()
+  if (focusable.length > 0) {
+    const confirmBtn = modalCardRef.value?.querySelector<HTMLElement>('.btn-confirm-close')
+    if (confirmBtn) {
+      confirmBtn.focus()
+    } else {
+      focusable[0]?.focus()
+    }
+  }
+}
+
+watch(isVisible, async (val) => {
   if (typeof document !== 'undefined') {
     if (val) {
       document.body.style.overflow = 'hidden'
+      originatingElement = document.activeElement as HTMLElement | null
+      await setupFocus()
     } else {
       document.body.style.overflow = ''
+      if (originatingElement && typeof originatingElement.focus === 'function') {
+        originatingElement.focus()
+      }
     }
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   if (typeof document !== 'undefined') {
     document.addEventListener('keydown', handleKeydown)
+    if (isVisible.value) {
+      document.body.style.overflow = 'hidden'
+      originatingElement = document.activeElement as HTMLElement | null
+      await setupFocus()
+    }
   }
 })
 
@@ -93,6 +208,9 @@ onBeforeUnmount(() => {
   if (typeof document !== 'undefined') {
     document.removeEventListener('keydown', handleKeydown)
     document.body.style.overflow = ''
+    if (originatingElement && typeof originatingElement.focus === 'function') {
+      originatingElement.focus()
+    }
   }
 })
 </script>
@@ -106,19 +224,20 @@ onBeforeUnmount(() => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="error-modal-title"
+        aria-describedby="error-modal-body"
       >
         <!-- Backdrop -->
         <div class="error-modal-backdrop" @click="close"></div>
 
         <!-- Container -->
         <div class="error-modal-container">
-          <div class="error-modal-card">
+          <div ref="modalCardRef" class="error-modal-card">
             <!-- Close Button -->
             <button
               type="button"
               class="error-modal-close-btn"
-              aria-label="Đóng"
-              title="Đóng thông báo"
+              :aria-label="t('errorModal.closeButtonLabel')"
+              :title="t('errorModal.closeButtonTitle')"
               @click="close"
             >
               <span class="material-symbols-outlined">close</span>
@@ -131,26 +250,26 @@ onBeforeUnmount(() => {
 
             <!-- Error Tag / Code -->
             <div class="error-tag">
-              <span v-if="errorCode">MÃ LỖI: {{ errorCode }}</span>
-              <span v-else>THÔNG BÁO HỆ THỐNG</span>
+              <span v-if="displayErrorCode">{{ t('errorModal.errorCodePrefix') }}: {{ displayErrorCode }}</span>
+              <span v-else>{{ t('errorModal.systemNotice') }}</span>
             </div>
 
             <!-- Title -->
             <h2 id="error-modal-title" class="error-modal-title">
-              {{ title }}
+              {{ displayTitle }}
             </h2>
 
             <!-- Message Body -->
-            <div class="error-modal-body">
-              <p v-if="message" class="error-main-message">
-                {{ message }}
+            <div id="error-modal-body" class="error-modal-body">
+              <p v-if="displayMessage" class="error-main-message">
+                {{ displayMessage }}
               </p>
 
               <!-- Detailed Error List (e.g. Validation errors) -->
               <div v-if="formattedDetails.length > 0" class="error-details-box">
                 <div class="error-details-header">
                   <span class="material-symbols-outlined">info</span>
-                  <span>Chi tiết lỗi:</span>
+                  <span>{{ t('errorModal.detailsTitle') }}</span>
                 </div>
                 <ul class="error-details-list">
                   <li v-for="(detail, idx) in formattedDetails" :key="idx">
@@ -169,11 +288,11 @@ onBeforeUnmount(() => {
                 @click="handleRetry"
               >
                 <span class="material-symbols-outlined">refresh</span>
-                <span>{{ retryText }}</span>
+                <span>{{ displayRetryText }}</span>
               </button>
 
               <button type="button" class="btn-confirm-close" @click="close">
-                <span>{{ confirmText }}</span>
+                <span>{{ displayConfirmText }}</span>
               </button>
             </div>
           </div>

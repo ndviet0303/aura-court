@@ -15,7 +15,7 @@ class Venue extends Model
 
     public array $translatable = ['name'];
 
-    protected $appends = ['share_url'];
+    protected $appends = ['share_url', 'timezone'];
 
     protected function casts(): array
     {
@@ -60,6 +60,13 @@ class Venue extends Model
         }
         return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
     }
+    public function getTimezoneAttribute(): string
+    {
+        return $this->attributes['timezone']
+            ?? $this->organization?->timezone
+            ?? 'Asia/Ho_Chi_Minh';
+    }
+
 
     public function organization(): BelongsTo
     {

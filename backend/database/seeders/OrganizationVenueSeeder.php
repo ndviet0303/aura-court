@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
 use App\Models\Venue;
+use Illuminate\Database\Seeder;
 
 class OrganizationVenueSeeder extends Seeder
 {

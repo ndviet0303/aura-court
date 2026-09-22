@@ -229,7 +229,7 @@ export function useCourtSchedule() {
     }
   }
 
-  async function proceedToBooking() {
+  async function proceedToBooking(loyaltyPayload?: any) {
     if (!court.value || store.selectedSlots.length === 0) return
     if (!auth.user) {
       router.push({ name: 'login', query: { redirect: route.fullPath } })
@@ -239,7 +239,13 @@ export function useCourtSchedule() {
     checkoutLoading.value = true
     error.value = ''
     try {
-      const result = await store.createBooking(undefined, activeQuote.value?.quote_token)
+      const result = await store.createBooking(
+        undefined,
+        activeQuote.value?.quote_token,
+        loyaltyPayload?.loyalty_points,
+        loyaltyPayload?.loyalty_policy_version,
+        loyaltyPayload?.idempotency_key,
+      )
       if (result?.booking?.code) {
         router.push(`/payment/${result.booking.code}`)
       } else {

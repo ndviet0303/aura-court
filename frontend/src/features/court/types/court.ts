@@ -28,11 +28,12 @@ export type Venue = {
   address: string | null
   google_maps_url: string | null
   is_active: boolean
-  share_url: string
+  share_url?: string
   courts_count?: number
   sport_zones?: SportZone[]
   image_url?: string
   amenities?: string[]
+  timezone?: string
 }
 
 export type CourtBlock = {
@@ -76,6 +77,7 @@ export type Court = {
   reviews_count?: number
   reviews_avg_rating?: number | null
   amenities?: string[]
+  timezone?: string
 }
 
 export type CourtReview = {

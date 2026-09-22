@@ -181,7 +181,7 @@ export function useV2Reservations() {
       holdingReservation.value = false
     }
   }
-  async function checkoutReservation() {
+  async function checkoutReservation(loyaltyPayload?: any) {
     if (!activeQuote.value) return
     holdingReservation.value = true
     error.value = ''
@@ -190,6 +190,9 @@ export function useV2Reservations() {
     try {
       const res: any = await bookingApi.checkoutReservation({
         quote_token: activeQuote.value.quote_token,
+        loyalty_points: loyaltyPayload?.loyalty_points,
+        loyalty_policy_version: loyaltyPayload?.loyalty_policy_version,
+        idempotency_key: loyaltyPayload?.idempotency_key,
       })
       const code = res?.reservation?.code || res?.data?.reservation?.code || ''
       activeQuote.value = null

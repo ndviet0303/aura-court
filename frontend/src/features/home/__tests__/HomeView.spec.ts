@@ -59,7 +59,7 @@ describe('HomeView i18n & rendering', () => {
     expect(text).toContain('Sân thi đấu')
     expect(text).toContain('Ngày chơi')
     expect(text).toContain('Khung giờ')
-    expect(text).toContain('Khung giờ còn trống hôm nay')
+    expect(text).toContain('Lịch sân trống trực quan')
     expect(text).toContain('Trải nghiệm thể thao chuẩn quốc tế')
   })
 
@@ -91,7 +91,7 @@ describe('HomeView i18n & rendering', () => {
     expect(text).toContain('Sports Court')
     expect(text).toContain('Play Date')
     expect(text).toContain('Time Slot')
-    expect(text).toContain('Available Slots Today')
+    expect(text).toContain('Live Availability')
     expect(text).toContain('International Standard Sports Experience')
   })
 })

@@ -87,9 +87,18 @@ trait ResolvesV2Organization
             }
         }
 
-        abort_unless($organization, 400, 'Organization context required.');
-        abort_unless($user->isPlatformAdmin() || $organization->hasMember($user->id), 403, 'Unauthorized organization access.');
-
+        if (! $organization) {
+            abort(response()->json([
+                'message' => 'Organization context required.',
+                'code' => 'ORGANIZATION_MISMATCH',
+            ], 400));
+        }
+        if (! ($user->isPlatformAdmin() || $organization->hasMember($user->id))) {
+            abort(response()->json([
+                'message' => 'Unauthorized organization access.',
+                'code' => 'ORGANIZATION_ACCESS_DENIED',
+            ], 403));
+        }
         return $organization;
     }
 

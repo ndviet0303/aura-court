@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
+import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
 import type { Court, AvailabilitySlot } from '../../types/court'
-
 const { t, locale } = useI18n()
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
@@ -24,11 +24,16 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'checkout'): void
+  (e: 'checkout', payload?: any): void
   (e: 'removeSlot', slot: AvailabilitySlot): void
   (e: 'resendVerification'): void
   (e: 'clearError'): void
 }>()
+
+const loyaltyPayload = ref<any>(null)
+function handleLoyaltyChange(data: any) {
+  loyaltyPayload.value = data
+}
 
 const isUnverified = computed(() => isUnverifiedEmailError(props.error))
 
@@ -210,11 +215,19 @@ const durationHours = computed(() => {
         </div>
       </div>
 
+      <!-- Loyalty Point Selector before checkout button -->
+      <LoyaltyPointSelector
+        v-if="auth.user && selectedSlots.length > 0 && court"
+        :court-id="court.id"
+        :slots="selectedSlots.map((s) => s.startsAt)"
+        @change="handleLoyaltyChange"
+      />
+
       <button
         type="button"
         class="btn-checkout"
         :disabled="selectedSlots.length === 0 || loading"
-        @click="emit('checkout')"
+        @click="emit('checkout', loyaltyPayload)"
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>

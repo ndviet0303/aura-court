@@ -9,13 +9,20 @@ import type { AvailabilitySlot, Court } from '@/features/court/types/court'
 import { formatCurrency, formatTime } from '@/i18n'
 import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
 import { resolveCourtImage } from '@/lib/courtImage'
-
-const { t } = useI18n()
+import { getVenueLocalDate, formatSlotRange } from '../utils/homeAvailability'
+import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
+const { t, locale } = useI18n()
 const store = useBookingStore()
 const auth = useAuthStore()
 const router = useRouter()
-const date = ref(new Date().toISOString().slice(0, 10))
 const selected = ref<number | null>(null)
+const selectedCourtObj = computed(() => store.courts.find((c: Court) => c.id === selected.value) || null)
+const selectedTimezone = computed(() =>
+  selectedCourtObj.value?.timezone ||
+  selectedCourtObj.value?.venue?.timezone ||
+  'Asia/Ho_Chi_Minh'
+)
+const date = ref(getVenueLocalDate(new Date(), selectedTimezone.value))
 const timeFilter = ref('all')
 const sportTypeFilter = ref('all')
 const loading = ref(false)
@@ -38,12 +45,12 @@ async function selectSportCategory(sportId: string) {
   try {
     await store.loadCourts({ sport_type: sportId })
     selected.value = store.courts[0]?.id || null
+    date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
     await loadAvailability()
   } catch {
     /* store handles error */
   }
 }
-
 const courtOptions = computed(() =>
   store.courts.map((court: Court) => ({
     value: court.id,
@@ -62,14 +69,33 @@ const timeOptions = computed(() => [
 const total = computed(() => store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0))
 const image = (index: number) => resolveCourtImage(store.courts[index])
 const visibleSlots = computed(() => store.slots.filter((slot: AvailabilitySlot) => {
-  const hour = Number(new Date(slot.startsAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hour12: false }))
+  const hour = Number(new Date(slot.startsAt).toLocaleTimeString('en-US', {
+    timeZone: selectedTimezone.value,
+    hour: '2-digit',
+    hour12: false,
+  }))
   return timeFilter.value === 'morning' ? hour < 17 : timeFilter.value === 'evening' ? hour >= 17 : true
 }))
+const selectedCourtName = computed(() => selectedCourtObj.value?.name || (selected.value ? `Sân ${selected.value}` : ''))
+const availabilityHeading = computed(() => {
+  if (!selectedCourtName.value) {
+    return t('home.availability.fallbackTitle')
+  }
+  return t('home.availability.title', {
+    court: selectedCourtName.value,
+    date: date.value,
+  })
+})
+
+let localRequestId = 0
 
 async function loadAvailability() {
   if (selected.value) {
+    const reqId = ++localRequestId
+    store.selectedSlots = []
     try {
       await store.loadAvailability(selected.value, date.value)
+      if (reqId !== localRequestId) return
     } catch {
       /* store exposes the user-facing error */
     }
@@ -80,7 +106,13 @@ async function chooseCourt(courtId?: string | number) {
   if (courtId !== undefined && courtId !== null) {
     selected.value = Number(courtId)
   }
+  date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
   await loadAvailability()
+}
+
+const loyaltyPayload = ref<any>(null)
+function onLoyaltyChange(data: any) {
+  loyaltyPayload.value = data
 }
 
 async function submit() {
@@ -89,7 +121,13 @@ async function submit() {
   loading.value = true
   error.value = ''
   try {
-    const result = await store.createBooking()
+    const result = await store.createBooking(
+      undefined,
+      undefined,
+      loyaltyPayload.value?.loyalty_points,
+      loyaltyPayload.value?.loyalty_policy_version,
+      loyaltyPayload.value?.idempotency_key,
+    )
     router.push('/payment/' + result.booking.code)
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
@@ -111,6 +149,7 @@ onMounted(async () => {
   try {
     await store.loadCourts()
     selected.value = store.courts[0]?.id || null
+    date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
     await loadAvailability()
   } catch {
     /* store exposes the user-facing error */
@@ -209,13 +248,39 @@ onMounted(async () => {
     <div class="section-head">
       <div>
         <div class="eyebrow">{{ t('home.availability.eyebrow') }}</div>
-        <h2>{{ t('home.availability.title') }}</h2>
+        <h2 class="availability-title">{{ availabilityHeading }}</h2>
       </div>
       <RouterLink to="/courts" class="muted">
         {{ t('home.availability.viewAllCourts') }} <span class="material-symbols-outlined">arrow_forward</span>
       </RouterLink>
     </div>
     <p v-if="store.error" class="error">{{ store.error }}</p>
+    <!-- Beside-the-slots controls: selected court, play date & nearby court selector -->
+    <div class="availability-beside-bar">
+      <div class="availability-court-picker" role="radiogroup" :aria-label="t('home.availability.nearbyCourts')">
+        <span class="picker-label">{{ t('home.availability.nearbyCourts') }}:</span>
+        <div class="court-chips-row">
+          <button
+            v-for="c in store.courts"
+            :key="c.id"
+            type="button"
+            role="radio"
+            :aria-checked="selected === c.id"
+            class="court-chip"
+            :class="{ active: selected === c.id }"
+            @click="chooseCourt(c.id)"
+          >
+            <span class="material-symbols-outlined icon-16">sports_tennis</span>
+            <span>{{ c.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="availability-date-picker">
+        <span class="picker-label">{{ t('home.availability.playDateLabel') }}:</span>
+        <DatePicker v-model="date" @change="loadAvailability" />
+      </div>
+    </div>
 
     <!-- Time Slots Loading / Loaded States -->
     <div v-if="store.slotsLoading" class="slot-preview">
@@ -230,8 +295,8 @@ onMounted(async () => {
         :disabled="!slot.available"
         @click="store.toggle(slot)"
       >
-        {{ formatTime(slot.startsAt) }}
-        <small>{{ formatCurrency(slot.price) }}</small>
+        <span class="slot-range font-mono">{{ formatSlotRange(slot, locale, selectedTimezone) }}</span>
+        <small class="slot-price">{{ formatCurrency(slot.price) }}</small>
       </button>
     </div>
     <div v-else class="muted" style="margin: 16px 0 28px;">
@@ -318,6 +383,14 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Dock Loyalty Point Selector -->
+      <div v-if="auth.user && selected" class="dock-loyalty-container">
+        <LoyaltyPointSelector
+          :court-id="selected"
+          :slots="store.selectedSlots.map((s: AvailabilitySlot) => s.startsAt)"
+          @change="onLoyaltyChange"
+        />
+      </div>
       <!-- Dock Actions Right -->
       <div class="dock-actions">
         <button
@@ -344,4 +417,80 @@ onMounted(async () => {
   </Transition>
   <p v-if="error && !store.selectedSlots.length" class="error container">{{ error }}</p>
 </template>
+<style scoped>
+.availability-beside-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+}
+
+.availability-court-picker,
+.availability-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.picker-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.court-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.court-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--outline);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.court-chip:hover {
+  border-color: var(--primary, #0ea5e9);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.court-chip.active {
+  border-color: var(--primary, #0ea5e9);
+  background: var(--primary, #0ea5e9);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+.slot-range {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.slot-price {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+</style>
 

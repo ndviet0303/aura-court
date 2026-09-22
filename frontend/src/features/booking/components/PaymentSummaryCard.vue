@@ -141,6 +141,10 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
         <span>{{ $t('payment.discount') }}</span>
         <span>-{{ formatCurrency(booking.discount_amount) }}</span>
       </div>
+      <div v-if="booking?.loyalty_discount_amount && booking.loyalty_discount_amount > 0" class="breakdown-row discount">
+        <span>{{ $t('loyalty.discountAmount') || 'Giảm giá điểm' }} <span v-if="booking.loyalty_points_redeemed">({{ booking.loyalty_points_redeemed }} {{ $t('loyalty.points') || 'điểm' }})</span></span>
+        <span>-{{ formatCurrency(booking.loyalty_discount_amount) }}</span>
+      </div>
       <div class="breakdown-row total">
         <strong class="total-label">{{ $t('payment.totalCheckout') }}</strong>
         <strong class="total-amount">{{ formatCurrency(payment.amount) }}</strong>

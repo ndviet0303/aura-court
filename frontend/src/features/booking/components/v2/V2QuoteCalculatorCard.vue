@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DatePicker, SelectDropdown, type DropdownOption } from '@/shared/components'
+import LoyaltyPointSelector from '../LoyaltyPointSelector.vue'
 
 const { t } = useI18n()
 import type { Court } from '@/features/court/types/court'
@@ -27,9 +28,15 @@ const emit = defineEmits<{
   (e: 'update:selectedTimeSlot', value: string): void
   (e: 'calculate'): void
   (e: 'hold'): void
-  (e: 'checkout'): void
+  (e: 'checkout', loyaltyPayload?: any): void
+  (e: 'loyaltyChange', payload: any): void
 }>()
 
+const currentLoyaltyPayload = ref<any>(null)
+function onLoyaltyChange(data: any) {
+  currentLoyaltyPayload.value = data
+  emit('loyaltyChange', data)
+}
 const getLocalDateString = (offsetDays = 0): string => {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -212,6 +219,12 @@ function setDatePreset(date: string) {
           </div>
         </div>
 
+        <!-- Customer Loyalty Point Selector -->
+        <LoyaltyPointSelector
+          :quote-token="activeQuote.quote_token"
+          @change="onLoyaltyChange"
+        />
+
         <div class="quote-actions-row">
           <p class="quote-note">
             {{ t('v2Reservations.calculator.instantNote') }}
@@ -220,7 +233,7 @@ function setDatePreset(date: string) {
             <button
               class="btn btn-checkout-slot"
               :disabled="holding"
-              @click="emit('checkout')"
+              @click="emit('checkout', currentLoyaltyPayload)"
             >
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
                 {{ holding ? 'hourglass_top' : 'account_balance_wallet' }}

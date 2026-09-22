@@ -36,7 +36,8 @@ export const bookingApi = {
 
   previewCoupon: <T = unknown>(payload: { subtotal: number; code: string }) =>
     api.post<T>('/coupons/preview', payload),
-
+  previewLoyalty: (payload: import('../types/loyalty').LoyaltyPreviewPayload) =>
+    apiV2.post<import('../types/loyalty').LoyaltyPreviewResponse>('/loyalty/preview', payload),
 
   list: () => api.get<{ data: Booking[] }>('/bookings'),
 

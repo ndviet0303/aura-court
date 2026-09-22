@@ -142,5 +142,44 @@ class UserSeeder extends Seeder
                 );
             }
         });
+
+        // 6. Demo Scoped Owner & Cashier
+        $demoOwner = User::firstOrNew(['email' => 'owner@demo.auracourt.vn']);
+        $demoOwner->forceFill([
+            'name' => 'Chủ sân Demo',
+            'password' => Hash::make(env('SEED_DEMO_PASSWORD', 'Demo12345!')),
+            'role' => 'customer',
+            'phone' => '0902222333',
+            'play_level' => 'advanced',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => $now,
+        ])->save();
+
+        if ($org) {
+            OrganizationMember::updateOrCreate(
+                ['organization_id' => $org->id, 'user_id' => $demoOwner->id],
+                ['role' => 'organization_owner', 'status' => 'active', 'permissions' => ['*']]
+            );
+        }
+
+        $demoCashier = User::firstOrNew(['email' => 'cashier@demo.auracourt.vn']);
+        $demoCashier->forceFill([
+            'name' => 'Thu ngân Demo',
+            'password' => Hash::make(env('SEED_DEMO_PASSWORD', 'Demo12345!')),
+            'role' => 'customer',
+            'phone' => '0903333444',
+            'play_level' => 'intermediate',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => $now,
+        ])->save();
+
+        if ($org) {
+            OrganizationMember::updateOrCreate(
+                ['organization_id' => $org->id, 'user_id' => $demoCashier->id],
+                ['role' => 'cashier', 'status' => 'active', 'permissions' => ['pos.sell', 'pos.shift']]
+            );
+        }
     }
 }

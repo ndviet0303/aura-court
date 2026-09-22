@@ -81,6 +81,12 @@ describe('AdminStaffView', () => {
       }
       return { data: {} }
     })
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/venues') {
+        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
+      }
+      return { data: {} }
+    })
   })
 
   it('renders title, stats, and staff directory table correctly', async () => {

@@ -12,6 +12,26 @@ vi.mock('vue-router', () => ({
     template: '<a :href="typeof to === \'object\' ? to.path : to"><slot /></a>',
   },
 }))
+vi.mock('@/core/api/client', () => ({
+  api: {
+    get: vi.fn(),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
+  apiV2: {
+    get: vi.fn().mockResolvedValue({
+      organization_id: 1,
+      capabilities: { tenant_pos_and_wallet: true },
+      role: 'cashier',
+      is_platform_admin: false,
+    }),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
+  errorMessage: (_err: unknown, fallback: string) => fallback,
+}))
 
 vi.mock('../api/posApi', () => ({
   posApi: {

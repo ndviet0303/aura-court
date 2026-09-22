@@ -144,7 +144,9 @@ export function usePricingCalendarV2() {
         }
       }
 
-      if (venuesRes.status === 'fulfilled' && Array.isArray(venuesRes.value)) {
+      if (venuesRes.status === 'rejected') {
+        error.value = errorMessage(venuesRes.reason, 'Không thể tải danh sách cơ sở.')
+      } else if (venuesRes.status === 'fulfilled' && Array.isArray(venuesRes.value)) {
         venues.value = venuesRes.value
       }
 

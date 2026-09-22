@@ -47,6 +47,10 @@ export type Booking = {
   total_amount: number
   discount_amount?: number
   membership_discount_amount?: number
+  loyalty_discount_amount?: number
+  loyalty_points_redeemed?: number
+  loyalty_snapshot?: any
+  net_payable?: number
   payment_expires_at?: string
   court: Court
   slots: BookingSlot[]
@@ -87,6 +91,9 @@ export type CreateBookingPayload = {
   slots: string[]
   coupon_code?: string
   quote_token?: string
+  loyalty_points?: number
+  loyalty_policy_version?: number
+  idempotency_key?: string
 }
 
 export type CardDetails = {

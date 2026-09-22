@@ -75,7 +75,9 @@ describe('AdminVenuesView', () => {
       return []
     })
     vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') return mockVenues
+      if (url === '/admin/venues') {
+        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
+      }
       return []
     })
   })
@@ -177,5 +179,17 @@ describe('AdminVenuesView', () => {
 
     expect(wrapper.text()).toContain('Mã QR Cơ Sở: Aura Center')
     expect(wrapper.text()).toContain('Tải Mã QR (PNG)')
+  })
+
+  it('calls v1 /admin/venues endpoint and never the undefined v2 endpoint', async () => {
+    mount(AdminVenuesView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    expect(api.get).toHaveBeenCalledWith('/admin/venues')
+    expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
   })
 })

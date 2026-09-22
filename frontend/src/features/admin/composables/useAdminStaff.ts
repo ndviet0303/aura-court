@@ -149,7 +149,9 @@ export function useAdminStaff() {
       ])
 
       // Venues
-      if (venuesRes.status === 'fulfilled' && venuesRes.value) {
+      if (venuesRes.status === 'rejected') {
+        error.value = errorMessage(venuesRes.reason, 'Không thể tải danh sách cơ sở.')
+      } else if (venuesRes.value) {
         const rawVenues = Array.isArray(venuesRes.value) ? venuesRes.value : (venuesRes.value as any).data || []
         venuesList.value = rawVenues.map((v: any) => ({
           id: v.id,
@@ -158,7 +160,9 @@ export function useAdminStaff() {
       }
 
       // Members
-      if (membersRes.status === 'fulfilled') {
+      if (membersRes.status === 'rejected') {
+        error.value = errorMessage(membersRes.reason, 'Không thể tải danh sách nhân sự.')
+      } else if (membersRes.status === 'fulfilled') {
         const raw = (membersRes.value as any)?.members || (Array.isArray(membersRes.value) ? membersRes.value : [])
         staffList.value = raw.map((m: any) => {
           const venueFound = venuesList.value.find((v) => v.id === m.venue_id)

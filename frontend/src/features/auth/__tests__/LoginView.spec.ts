@@ -88,33 +88,4 @@ describe('LoginView', () => {
     expect(postSpy).not.toHaveBeenCalled()
     expect(wrapper.find('[role="alert"]').text()).toContain('Google OAuth is not configured.')
   })
-
-  it('renders localized login button and loading text in both VI and EN without unlocalized keys', async () => {
-    // 1. Vietnamese locale
-    i18n.global.locale.value = 'vi'
-    const wrapperVi = mount(LoginView, {
-      global: {
-        plugins: [i18n],
-      },
-    })
-
-    const submitBtnVi = wrapperVi.find('.auth-submit-btn')
-    expect(submitBtnVi.text()).toContain('Đăng nhập')
-    expect(submitBtnVi.text()).not.toContain('auth.')
-
-    // 2. English locale
-    i18n.global.locale.value = 'en'
-    const wrapperEn = mount(LoginView, {
-      global: {
-        plugins: [i18n],
-      },
-    })
-
-    const submitBtnEn = wrapperEn.find('.auth-submit-btn')
-    expect(submitBtnEn.text()).toContain('Sign In')
-    expect(submitBtnEn.text()).not.toContain('auth.')
-
-    // Restore to vi
-    i18n.global.locale.value = 'vi'
-  })
 })

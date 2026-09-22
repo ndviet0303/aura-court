@@ -20,11 +20,31 @@ class BookingService
         private readonly NotifyExpiringBookings $notifyExpiringBookingsAction,
     ) {}
 
-    public function create(int $userId, int $courtId, array $startsAt, ?string $couponCode = null): Booking
-    {
+    public function create(
+        int $userId,
+        int $courtId,
+        array $startsAt,
+        ?string $couponCode = null,
+        ?int $loyaltyPoints = null,
+        ?int $loyaltyPolicyVersion = null,
+        ?string $idempotencyKey = null
+    ): Booking {
         return $this->createBookingAction->execute(
-            new CreateBookingData($userId, $courtId, $startsAt, $couponCode)
+            new CreateBookingData(
+                $userId,
+                $courtId,
+                $startsAt,
+                $couponCode,
+                $loyaltyPoints,
+                $loyaltyPolicyVersion,
+                $idempotencyKey
+            )
         );
+    }
+
+    public function createFromData(CreateBookingData $data): Booking
+    {
+        return $this->createBookingAction->execute($data);
     }
 
     public function applyCoupon(Booking $booking, ?string $couponCode): Booking

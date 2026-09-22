@@ -140,10 +140,14 @@ export function useAdminSchedule() {
         adminApi.getAuditLogs<{ data: any[] }>(),
       ])
 
-      if (courtsRes.status === 'fulfilled' && courtsRes.value) {
+      if (courtsRes.status === 'rejected') {
+        error.value = errorMessage(courtsRes.reason, t('admin.schedule.loadError'))
+      } else if (courtsRes.value) {
         courts.value = courtsRes.value
       }
-      if (venuesRes.status === 'fulfilled' && venuesRes.value) {
+      if (venuesRes.status === 'rejected') {
+        error.value = errorMessage(venuesRes.reason, t('admin.schedule.loadError'))
+      } else if (venuesRes.value) {
         venues.value = venuesRes.value
       }
       if (logsRes.status === 'fulfilled' && logsRes.value) {

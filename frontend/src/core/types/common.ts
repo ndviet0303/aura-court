@@ -1,4 +1,4 @@
-export type UserRole = 'customer' | 'admin'
+export type UserRole = 'customer' | 'admin' | string
 
 export type User = {
   id: number
@@ -13,6 +13,18 @@ export type User = {
   password_set?: boolean
   social_provider?: string | null
   email_verified_at?: string | null
+  organizations?: Array<{
+    id?: number
+    organization_id?: number
+    name?: string
+    role?: string
+    slug?: string
+    is_active?: boolean
+    status?: string
+    venues?: Array<any>
+    [key: string]: any
+  }>
+  capabilities?: string[] | Record<string, any>
 }
 
 export type AppNotification = {

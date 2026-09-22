@@ -16,6 +16,7 @@ class Court extends Model
     use HasTranslations;
 
     public array $translatable = ['name', 'description'];
+    protected $appends = ['timezone'];
 
     protected static function booted(): void
     {
@@ -66,6 +67,13 @@ class Court extends Model
         }
         return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
     }
+    public function getTimezoneAttribute(): string
+    {
+        return $this->attributes['timezone']
+            ?? $this->venue?->timezone
+            ?? 'Asia/Ho_Chi_Minh';
+    }
+
 
     public function priceSlots(): HasMany
     {

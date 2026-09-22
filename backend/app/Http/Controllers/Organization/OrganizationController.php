@@ -48,6 +48,15 @@ class OrganizationController extends Controller
             $targetOrg = Organization::find((int) $request->input('organization_id'));
         }
 
+        $user = $request->user();
+        if ($targetOrg) {
+            if (! ($user && ($user->isPlatformAdmin() || $targetOrg->hasMember($user->id)))) {
+                abort(response()->json([
+                    'message' => 'Unauthorized organization access.',
+                    'code' => 'ORGANIZATION_ACCESS_DENIED',
+                ], 403));
+            }
+        }
         $orgId = $targetOrg?->id;
         $capabilities = $this->featureFlags->effectiveCapabilities($orgId);
 

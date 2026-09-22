@@ -121,8 +121,15 @@ const sportLabel = computed(() => {
         <span class="discount-label">{{ $t('payment.memberDiscount') }}:</span>
         <span class="discount-value font-mono">-{{ formatCurrency(booking.membership_discount_amount) }}</span>
       </div>
-    </div>
 
+      <div v-if="booking.loyalty_discount_amount && booking.loyalty_discount_amount > 0" class="discount-row">
+        <span class="discount-label">
+          {{ $t('loyalty.loyaltyDiscount') }}
+          <span v-if="booking.loyalty_points_redeemed">({{ booking.loyalty_points_redeemed }} {{ $t('loyalty.points') }})</span>:
+        </span>
+        <span class="discount-value font-mono">-{{ formatCurrency(booking.loyalty_discount_amount) }}</span>
+      </div>
+    </div>
     <!-- Card Bottom & Actions -->
     <div class="card-footer">
       <div class="total-section">

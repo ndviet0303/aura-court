@@ -35,6 +35,7 @@ use App\Http\Controllers\Social\CommunityFeedController;
 use App\Http\Controllers\Social\FriendshipController;
 use App\Http\Controllers\Social\SocialController;
 use App\Http\Controllers\Tournament\TournamentController;
+use App\Http\Controllers\Loyalty\LoyaltyController;
 use App\Http\Controllers\Wallet\WalletDepositController;
 use App\Http\Controllers\Webhook\ProviderWebhookController;
 use App\Http\Controllers\Webhook\SepayWebhookController;
@@ -247,7 +248,7 @@ Route::prefix('v1')->group(function () {
         Route::post('organizations/{organization}/members', [OrganizationController::class, 'addMember']);
         Route::patch('organizations/{organization}/members/{member}', [OrganizationController::class, 'updateMemberRole']);
         Route::delete('organizations/{organization}/members/{member}', [OrganizationController::class, 'removeMember']);
-
+        Route::get('organizations/{organization}/capabilities', [OrganizationController::class, 'capabilities']);
         Route::prefix('admin')->middleware(['admin', SimulateDemoMutations::class])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
             Route::post('venues', [AdminController::class, 'storeVenue']);
@@ -348,6 +349,8 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::post('reservations/checkout', [V2ReservationController::class, 'checkout']);
         Route::get('reservations/{reservation}', [V2ReservationController::class, 'show']);
         Route::post('reservations/{reservation}/confirm', [V2ReservationController::class, 'confirm']);
+        Route::post('loyalty/preview', [LoyaltyController::class, 'preview']);
+        Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem']);
 
         Route::middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier')->group(function () {
             Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
@@ -457,7 +460,6 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('memberships/plans', [PosController::class, 'publishMembershipPlan'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
             Route::post('memberships', [PosController::class, 'assignMembership'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
             Route::post('loyalty/rules', [PosController::class, 'publishLoyaltyRule'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('loyalty/redeem', [PosController::class, 'redeemPoints']);
             Route::get('wallet', [PosController::class, 'wallet']);
             Route::post('wallet/credit', [PosController::class, 'creditWallet'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
             Route::post('wallet/spend', [PosController::class, 'spendWallet']);

@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import { i18n } from '@/i18n'
 import { bookingApi } from '../api/bookingApi'
 import type { Booking, PaymentInfo } from '../types/booking'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
@@ -26,26 +27,48 @@ export const useBookingStore = defineStore('booking', () => {
       courts.value = await bookingApi.getCourts(params)
     } catch (cause) {
       courts.value = []
-      error.value = 'Không thể tải danh sách sân. Vui lòng thử lại.'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const t = (i18n.global as any).t || ((k: string) => k)
+      error.value = t('booking.courtsError') || 'Không thể tải danh sách sân. Vui lòng thử lại.'
       throw cause
     } finally {
       courtsLoading.value = false
     }
   }
 
+  let availabilityRequestId = 0
+  let activeAvailabilityContext = ''
+
   async function loadAvailability(courtId: number, date: string) {
+    const currentGeneration = ++availabilityRequestId
+    const requestContext = `${courtId}:${date}`
+    activeAvailabilityContext = requestContext
     selectedCourt.value = courtId
+    selectedSlots.value = []
     error.value = ''
     slotsLoading.value = true
+
     try {
-      slots.value = await bookingApi.getAvailability(courtId, date)
+      const res = await bookingApi.getAvailability(courtId, date)
+      // Guard at commit point: ONLY mutate slots if this generation is still active
+      if (currentGeneration !== availabilityRequestId || activeAvailabilityContext !== requestContext) {
+        return []
+      }
+      slots.value = res
+      return res
     } catch (cause) {
+      if (currentGeneration !== availabilityRequestId || activeAvailabilityContext !== requestContext) {
+        return []
+      }
       slots.value = []
-      error.value = 'Không thể tải lịch sân. Vui lòng thử lại.'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const t = (i18n.global as any).t || ((k: string) => k)
+      error.value = t('booking.availabilityError') || 'Không thể tải lịch sân. Vui lòng thử lại.'
       throw cause
     } finally {
-      slotsLoading.value = false
-      selectedSlots.value = []
+      if (currentGeneration === availabilityRequestId) {
+        slotsLoading.value = false
+      }
     }
   }
 
@@ -100,12 +123,21 @@ export const useBookingStore = defineStore('booking', () => {
     sessionStorage.removeItem(paymentStorageKey)
   }
 
-  async function createBooking(couponCode?: string, quoteToken?: string) {
+  async function createBooking(
+    couponCode?: string,
+    quoteToken?: string,
+    loyaltyPoints?: number,
+    loyaltyPolicyVersion?: number | null,
+    idempotencyKey?: string,
+  ) {
     const result = await bookingApi.create({
       court_id: selectedCourt.value,
       slots: selectedSlots.value.map((slot) => slot.startsAt),
       coupon_code: couponCode || undefined,
       quote_token: quoteToken || undefined,
+      loyalty_points: loyaltyPoints !== undefined && loyaltyPoints > 0 ? loyaltyPoints : undefined,
+      loyalty_policy_version: loyaltyPolicyVersion ?? undefined,
+      idempotency_key: idempotencyKey,
     })
     current.value = result.booking
     return result

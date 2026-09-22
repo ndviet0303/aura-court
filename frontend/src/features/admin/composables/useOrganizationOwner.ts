@@ -144,10 +144,9 @@ export function useOrganizationOwner() {
       }
 
       if (currentOrg.value.id) {
-        const [orgDetailRes, membersRes, venuesRes] = await Promise.allSettled([
+        const [orgDetailRes, membersRes] = await Promise.allSettled([
           adminApi.getOrganization<{ organization: Organization }>(currentOrg.value.id),
           adminApi.getOrgMembers<{ members: OrgMember[] }>(currentOrg.value.id),
-          adminApi.getVenues(),
         ])
 
         if (orgDetailRes.status === 'fulfilled' && orgDetailRes.value?.organization) {
@@ -165,8 +164,6 @@ export function useOrganizationOwner() {
         const orgVenuesList =
           orgDetailRes.status === 'fulfilled' && orgDetailRes.value?.organization?.venues
             ? orgDetailRes.value.organization.venues
-            : venuesRes.status === 'fulfilled' && Array.isArray(venuesRes.value)
-            ? venuesRes.value
             : []
 
         const matchedVenues = orgVenuesList.filter(

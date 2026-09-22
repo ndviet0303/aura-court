@@ -29,7 +29,7 @@ class BookingController extends Controller
     public function store(StoreBookingRequest $request)
     {
         $data = $request->toData();
-        $booking = $this->bookings->create($data->userId, $data->courtId, $data->slots, $data->couponCode);
+        $booking = $this->bookings->createFromData($data);
 
         return response()->json(['booking' => $booking], 201);
     }

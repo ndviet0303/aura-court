@@ -95,22 +95,52 @@ function sendTo(url: string, options: RequestInit): Promise<Response> {
 
 async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> {
   await runtimeConfigReady
-  let response = await sendTo(url, options)
+  let response: Response
+  try {
+    response = await sendTo(url, options)
+  } catch (cause: unknown) {
+    throw {
+      message: 'Lỗi kết nối mạng. Vui lòng kiểm tra lại đường truyền.',
+      code: 'NETWORK_ERROR',
+      status: 0,
+      cause,
+    } as ApiError
+  }
 
   // Laravel regenerates the CSRF token together with the session after login.
   // Refresh and retry once when a tab still holds the previous token. A 419 is
   // returned before the controller runs, so retrying cannot duplicate a write.
   if (response.status === 419) {
     await csrfCookie()
-    response = await sendTo(url, options)
+    try {
+      response = await sendTo(url, options)
+    } catch (cause: unknown) {
+      throw {
+        message: 'Lỗi kết nối mạng. Vui lòng kiểm tra lại đường truyền.',
+        code: 'NETWORK_ERROR',
+        status: 0,
+        cause,
+      } as ApiError
+    }
   }
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
+    let code = data?.code
+    if (!code) {
+      if (response.status === 401) code = 'UNAUTHORIZED'
+      else if (response.status === 403) code = 'FORBIDDEN'
+      else if (response.status === 404) code = 'NOT_FOUND'
+      else if (response.status === 409) code = 'RESOURCE_CONFLICT'
+      else if (response.status === 422) code = 'VALIDATION_ERROR'
+      else if (response.status >= 500) code = 'SERVER_ERROR'
+    }
+
     throw {
       message: data?.message || `Yêu cầu thất bại (${response.status})`,
       errors: data?.errors,
       status: response.status,
+      code,
       ...data,
     } as ApiError
   }

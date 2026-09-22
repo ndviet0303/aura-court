@@ -118,6 +118,41 @@ const navGroups: NavGroup[] = [
   },
 ]
 
+function isItemPermitted(item: NavItem): boolean {
+  if (!auth.user) return true
+  const userAny = auth.user as any
+  if (auth.user.role === 'admin' || userAny.capabilities?.is_platform_admin) {
+    return true
+  }
+  const activeOrgs = (userAny.organizations as Array<any> | undefined)?.filter((o: any) => o.status === 'active') || []
+  const isOwner =
+    activeOrgs.some((o: any) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
+    userAny.capabilities?.can_manage_venues === true
+  const isCashier = activeOrgs.some((o: any) => o.role === 'cashier' || o.role === 'staff')
+
+  if (item.path === '/admin/organization') {
+    return !!isOwner
+  }
+  if (item.path === '/admin/pos' || item.path === '/pos') {
+    return !!(isOwner || isCashier)
+  }
+  return false
+}
+
+const permittedNavGroups = computed(() => {
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(isItemPermitted),
+    }))
+    .filter((group) => group.items.length > 0)
+})
+
+const isDashboardPermitted = computed(() => {
+  if (!auth.user) return true
+  const userAny = auth.user as any
+  return auth.user.role === 'admin' || userAny.capabilities?.is_platform_admin === true
+})
 const expandedGroups = ref<Record<string, boolean>>({
   courts: true,
   pos: false,
@@ -179,13 +214,15 @@ const searchResults = computed<SearchResultItem[]>(() => {
   const results: SearchResultItem[] = []
 
   // Check dashboard item
-  const dashLabel = t(dashboardItem.labelKey).toLowerCase()
-  if (dashLabel.includes(query) || 'dashboard'.includes(query) || 'tổng quan'.includes(query)) {
-    results.push({ ...dashboardItem, groupTitleKey: 'admin.nav.overviewSection' })
+  if (isDashboardPermitted.value) {
+    const dashLabel = t(dashboardItem.labelKey).toLowerCase()
+    if (dashLabel.includes(query) || 'dashboard'.includes(query) || 'tổng quan'.includes(query)) {
+      results.push({ ...dashboardItem, groupTitleKey: 'admin.nav.overviewSection' })
+    }
   }
 
-  // Check all grouped items
-  for (const group of navGroups) {
+  // Check all permitted grouped items
+  for (const group of permittedNavGroups.value) {
     const groupTitle = t(group.titleKey).toLowerCase()
     for (const item of group.items) {
       const itemLabel = t(item.labelKey).toLowerCase()
@@ -313,23 +350,25 @@ const searchResults = computed<SearchResultItem[]>(() => {
         <!-- Standard Grouped Accordion Navigation View -->
         <template v-else>
           <!-- Standalone Dashboard / Analytics -->
-          <div class="nav-section-label">{{ t('admin.nav.overviewSection') }}</div>
-          <nav class="sidebar-nav mb-2" aria-label="Dashboard Navigation">
-            <RouterLink
-              :to="dashboardItem.path"
-              class="sidebar-nav-item"
-              :class="{ active: isItemActive(dashboardItem) }"
-              @click="closeMobileSidebar"
-            >
-              <span class="material-symbols-outlined nav-icon">{{ dashboardItem.icon }}</span>
-              <span class="nav-label font-bold">{{ t(dashboardItem.labelKey) }}</span>
-            </RouterLink>
-          </nav>
+          <template v-if="isDashboardPermitted">
+            <div class="nav-section-label">{{ t('admin.nav.overviewSection') }}</div>
+            <nav class="sidebar-nav mb-2" aria-label="Dashboard Navigation">
+              <RouterLink
+                :to="dashboardItem.path"
+                class="sidebar-nav-item"
+                :class="{ active: isItemActive(dashboardItem) }"
+                @click="closeMobileSidebar"
+              >
+                <span class="material-symbols-outlined nav-icon">{{ dashboardItem.icon }}</span>
+                <span class="nav-label font-bold">{{ t(dashboardItem.labelKey) }}</span>
+              </RouterLink>
+            </nav>
+          </template>
 
           <!-- Collapsible Groups -->
           <div class="accordion-groups-container">
             <div
-              v-for="group in navGroups"
+              v-for="group in permittedNavGroups"
               :key="group.id"
               class="nav-group-block"
               :class="{ 'is-group-open': expandedGroups[group.id], 'has-active-child': isGroupActive(group) }"

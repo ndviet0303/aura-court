@@ -22,7 +22,13 @@ class FeatureFlagService
 
     public function assertEnabled(string $flag, ?int $organizationId = null): void
     {
-        abort_unless($this->enabled($flag, $organizationId), 404, 'This capability is not enabled for the organization.');
+        if (! $this->enabled($flag, $organizationId)) {
+            abort(response()->json([
+                'message' => 'This capability is not enabled for the organization.',
+                'code' => 'CAPABILITY_DISABLED',
+                'capability' => $flag,
+            ], 404));
+        }
     }
 
     public function effectiveCapabilities(?int $organizationId = null): array

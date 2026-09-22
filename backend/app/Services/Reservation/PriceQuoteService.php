@@ -123,6 +123,48 @@ class PriceQuoteService
             'expires_at' => now()->addMinutes(15),
         ])->load(['court.venue', 'court.sportZone']);
     }
+    /**
+     * Authoritatively calculates exact slot subtotal for a court without creating any quote, reservation, or hold.
+     *
+     * @param array<int, mixed> $slots
+     */
+    public function calculateSubtotal(Court $court, array $slots): int
+    {
+        $court->loadMissing(['venue', 'sportZone']);
+        $duration = (int) ($court->sportZone?->slot_duration ?: 60);
+
+        if (empty($slots)) {
+            throw ValidationException::withMessages(['slots' => 'Danh sách slot không được để trống.']);
+        }
+
+        $resolvedSlots = $this->resolveSlots($slots, $duration);
+        $organizationId = (int) ($court->venue?->organization_id ?? 0);
+
+        $rules = PriceRule::query()
+            ->where('organization_id', $organizationId)
+            ->where('is_active', true)
+            ->where(function ($query) use ($court) {
+                $query->whereNull('court_id')->orWhere('court_id', $court->id);
+            })
+            ->where(function ($query) use ($court) {
+                $query->whereNull('sport_zone_id')->orWhere('sport_zone_id', $court->sport_zone_id);
+            })
+            ->where(function ($query) use ($court) {
+                $query->whereNull('venue_id')->orWhere('venue_id', $court->venue_id);
+            })
+            ->get();
+
+        $legacyRules = CourtPriceSlot::query()->where('court_id', $court->id)->where('is_active', true)->get();
+        $subtotal = 0;
+
+        foreach ($resolvedSlots as $time) {
+            [$price] = $this->priceFor($time, $court, $rules, $legacyRules, $duration);
+            $subtotal += $price;
+        }
+
+        return $subtotal;
+    }
+
 
     /** @return array{0:int,1:array<string,mixed>} */
     private function priceFor(Carbon $time, Court $court, Collection $rules, Collection $legacyRules, int $duration = 60): array
@@ -154,6 +196,15 @@ class PriceQuoteService
                     ]];
                 }
             }
+        }
+        $fallbackSlot = $legacyRules->first(fn ($slot) => empty($slot->starts_at)) ?? $legacyRules->first();
+        if ($fallbackSlot) {
+            return [(int) $fallbackSlot->price, [
+                'id' => 'legacy:'.$fallbackSlot->id,
+                'type' => 'base',
+                'version' => 1,
+                'price' => (int) $fallbackSlot->price,
+            ]];
         }
 
         throw ValidationException::withMessages(['slots' => "Slot {$time->format('d/m H:i')} chưa mở bán."]);

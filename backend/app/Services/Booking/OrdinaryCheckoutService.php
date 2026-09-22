@@ -27,6 +27,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\IdempotencyRecord;
+use App\Models\PointLedger;
+use App\Services\Loyalty\LoyaltyPolicyService;
 
 class OrdinaryCheckoutService
 {
@@ -42,8 +45,8 @@ class OrdinaryCheckoutService
         private readonly LegacyBookingBackfillService $backfill,
         private readonly PriceQuoteService $quotes,
         private readonly DurableNotificationServiceInterface $durableNotification,
+        private readonly LoyaltyPolicyService $loyaltyPolicyService,
     ) {}
-
     /**
      * Shared Ordinary V1 Wallet-Funded Checkout.
      * Preserves exact V1 response projection contracts while enforcing
@@ -86,12 +89,55 @@ class OrdinaryCheckoutService
 
         $eligibility = app(\App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility::class);
         $court = $eligibility->assertEligible($data->courtId, publicFacing: true);
-
         $userId = $data->userId;
         $couponCode = $data->couponCode;
+        $loyaltyPoints = $data->loyaltyPoints;
+        $loyaltyPolicyVersion = $data->loyaltyPolicyVersion;
+        $idempotencyKey = $data->idempotencyKey;
+
+        if ($loyaltyPoints !== null && $loyaltyPoints > 0 && empty($idempotencyKey)) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'Yêu cầu sử dụng điểm cần cung cấp khóa phân biệt thao tác (Idempotency-Key).',
+            ]);
+        }
+
+        $orgId = $court->venue?->organization_id;
+        $requestHash = null;
+        if (! empty($idempotencyKey)) {
+            $requestHash = hash('sha256', json_encode([
+                'court_id' => $court->id,
+                'slots' => $local->map(fn (Carbon $t) => $t->toIso8601String())->all(),
+                'coupon_code' => $couponCode,
+                'loyalty_points' => $loyaltyPoints,
+                'loyalty_policy_version' => $loyaltyPolicyVersion,
+            ]));
+
+            $existingRecord = IdempotencyRecord::query()
+                ->where('organization_id', $orgId)
+                ->where('user_id', $userId)
+                ->where('key', $idempotencyKey)
+                ->first();
+
+            if ($existingRecord) {
+                if (! hash_equals($existingRecord->request_hash, $requestHash)) {
+                    abort(409, 'Idempotency-Key was already used with different request content.');
+                }
+                if ($existingRecord->response_body) {
+                    $bookingId = $existingRecord->response_body['id'] ?? null;
+                    if ($bookingId) {
+                        $existingBooking = Booking::with(['user', 'court.venue', 'slots', 'coupon', 'payments'])->find($bookingId);
+                        if ($existingBooking) {
+                            return $existingBooking;
+                        }
+                    }
+                }
+            }
+        }
 
         try {
-            $booking = DB::transaction(function () use ($userId, $court, $local, $couponCode) {
+            $booking = DB::transaction(function () use (
+                $userId, $court, $local, $couponCode, $loyaltyPoints, $loyaltyPolicyVersion, $idempotencyKey, $requestHash, $orgId
+            ) {
                 $lockedVenue = \App\Models\Venue::query()
                     ->whereKey($court->venue_id)
                     ->lockForUpdate()
@@ -137,6 +183,9 @@ class OrdinaryCheckoutService
                     abort(409, 'Một hoặc nhiều slot vừa được người khác đặt.');
                 }
 
+                // Lock user for point and wallet balance serialization
+                $lockedUser = User::whereKey($userId)->lockForUpdate()->firstOrFail();
+
                 $resolved = $local->map(function (Carbon $time) use ($prices) {
                     $price = $prices->first(fn ($slot) => $slot->weekday === $time->dayOfWeekIso
                         && substr($slot->starts_at, 0, 5) === $time->format('H:i')
@@ -150,17 +199,72 @@ class OrdinaryCheckoutService
 
                 $subtotal = $resolved->sum(fn ($row) => $row[1]);
                 $discount = $this->discounts->reserve($userId, $subtotal, $couponCode);
-                $totalAmount = (int) $discount['total'];
+                $payableBeforeLoyalty = (int) $discount['total'];
 
-                // Get and validate wallet
-                $orgId = $court->venue?->organization_id;
+                // Process Loyalty Points
+                $loyaltySnapshot = null;
+                $loyaltyDiscount = 0;
+                $netPayable = $payableBeforeLoyalty;
+                $policy = null;
+                $ratio = null;
+                $currentPointBalance = 0;
+
+                if ($loyaltyPoints !== null && $loyaltyPoints > 0) {
+                    $policy = $this->loyaltyPolicyService->getActiveBasePolicy($orgId);
+                    if (! $policy) {
+                        throw ValidationException::withMessages([
+                            'loyalty_points' => 'Tổ chức này chưa cấu hình chính sách đổi điểm.',
+                        ]);
+                    }
+
+                    if ($loyaltyPolicyVersion !== null && (int) $policy->version !== (int) $loyaltyPolicyVersion) {
+                        throw ValidationException::withMessages([
+                            'loyalty_policy_version' => 'Chính sách đổi điểm đã thay đổi. Vui lòng tải lại xem trước.',
+                        ]);
+                    }
+
+                    $currentPointBalance = (int) PointLedger::query()
+                        ->where('organization_id', $orgId)
+                        ->where('user_id', $userId)
+                        ->sum('delta');
+
+                    if ($currentPointBalance < $loyaltyPoints) {
+                        throw ValidationException::withMessages([
+                            'loyalty_points' => 'Số dư điểm không đủ để thực hiện quy đổi.',
+                        ]);
+                    }
+
+                    $ratio = $this->loyaltyPolicyService->extractConversionRatio($policy);
+                    $discountCalc = $this->loyaltyPolicyService->calculateDiscount(
+                        $loyaltyPoints,
+                        $ratio['points_redeemed'],
+                        $ratio['reward_value_vnd'],
+                        $payableBeforeLoyalty,
+                        $currentPointBalance
+                    );
+
+                    $loyaltyDiscount = (int) $discountCalc['discount_vnd'];
+                    $netPayable = (int) $discountCalc['remaining_payable_vnd'];
+
+                    $loyaltySnapshot = [
+                        'rule_id' => $policy->id,
+                        'rule_version' => $policy->version,
+                        'points_redeemed' => $ratio['points_redeemed'],
+                        'reward_value_vnd' => $ratio['reward_value_vnd'],
+                        'points_spent' => $loyaltyPoints,
+                        'discount_vnd' => $loyaltyDiscount,
+                    ];
+                }
+
+                // Get and lock wallet
                 $wallet = $this->walletPayments->getOrCreateWallet($userId, $orgId);
+                $wallet = \App\Models\WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
 
-                if ((int) $wallet->balance < $totalAmount) {
+                if ($netPayable > 0 && (int) $wallet->balance < $netPayable) {
                     throw ValidationException::withMessages([
                         'wallet' => 'Số dư ví không đủ để thanh toán đặt sân. Vui lòng nạp thêm tiền vào ví.',
                         'balance' => 'Số dư hiện tại: ' . number_format((int) $wallet->balance, 0, ',', '.') . '₫',
-                        'shortfall' => 'Còn thiếu: ' . number_format($totalAmount - (int) $wallet->balance, 0, ',', '.') . '₫',
+                        'shortfall' => 'Còn thiếu: ' . number_format($netPayable - (int) $wallet->balance, 0, ',', '.') . '₫',
                     ]);
                 }
 
@@ -173,6 +277,16 @@ class OrdinaryCheckoutService
                 $policySnapshot = [
                     'policy_version' => 'v1',
                     'captured_at' => now()->toIso8601String(),
+                    'loyalty_snapshot' => $loyaltySnapshot,
+                ];
+
+                $metadata = [
+                    'venue_id' => $court->venue_id,
+                    'organization_id' => $orgId,
+                    'venue_name' => $lockedVenue->name,
+                    'loyalty_discount_amount' => $loyaltyDiscount,
+                    'loyalty_points_redeemed' => $loyaltyPoints ?? 0,
+                    'loyalty_snapshot' => $loyaltySnapshot,
                 ];
 
                 $booking = $this->bookings->create([
@@ -180,42 +294,76 @@ class OrdinaryCheckoutService
                     'user_id' => $userId,
                     'court_id' => $court->id,
                     'coupon_id' => $discount['coupon']?->id,
-                    'total_amount' => $totalAmount,
-                    'discount_amount' => $discount['discount'],
+                    'total_amount' => $netPayable,
+                    'discount_amount' => $discount['discount'] + $loyaltyDiscount,
                     'membership_discount_amount' => $discount['membership_discount'],
                     'status' => 'confirmed',
                     'payment_expires_at' => null,
                     'policy_snapshot' => $policySnapshot,
                     'price_snapshot' => $priceSnapshot,
-                    'metadata' => [
-                        'venue_id' => $court->venue_id,
+                    'metadata' => $metadata,
+                ]);
+
+                // Debit PointLedger if loyalty points used
+                if ($loyaltyPoints !== null && $loyaltyPoints > 0 && isset($policy)) {
+                    PointLedger::create([
                         'organization_id' => $orgId,
-                        'venue_name' => $lockedVenue->name,
-                    ],
-                ]);
+                        'user_id' => $userId,
+                        'loyalty_rule_id' => $policy->id,
+                        'delta' => -$loyaltyPoints,
+                        'balance_after' => $currentPointBalance - $loyaltyPoints,
+                        'source_type' => 'booking',
+                        'source_id' => $booking->id,
+                        'metadata' => [
+                            'booking_code' => $booking->code,
+                            'rule_version' => $policy->version,
+                            'points_spent' => $loyaltyPoints,
+                            'discount_vnd' => $loyaltyDiscount,
+                        ],
+                    ]);
+                }
 
-                // Debit wallet atomically
-                $walletTx = $this->walletPayments->debit(
-                    $wallet,
-                    $totalAmount,
-                    'booking_payment',
-                    $booking->id,
-                    $booking->code
-                );
+                // Debit wallet if netPayable > 0
+                if ($netPayable > 0) {
+                    $walletTx = $this->walletPayments->debit(
+                        $wallet,
+                        $netPayable,
+                        'booking_payment',
+                        $booking->id,
+                        $booking->code
+                    );
 
-                // Create payment record
-                $payment = $booking->payments()->create([
-                    'provider' => 'wallet',
-                    'external_transaction_id' => "wallet-txn-{$walletTx->id}",
-                    'amount' => $totalAmount,
-                    'transfer_code' => $booking->code,
-                    'status' => 'paid',
-                    'payload' => [
-                        'wallet_account_id' => $wallet->id,
-                        'wallet_transaction_id' => $walletTx->id,
-                    ],
-                    'received_at' => now(),
-                ]);
+                    $payment = $booking->payments()->create([
+                        'provider' => 'wallet',
+                        'external_transaction_id' => "wallet-txn-{$walletTx->id}",
+                        'amount' => $netPayable,
+                        'transfer_code' => $booking->code,
+                        'status' => 'paid',
+                        'payload' => [
+                            'wallet_account_id' => $wallet->id,
+                            'wallet_transaction_id' => $walletTx->id,
+                            'loyalty_discount' => $loyaltyDiscount,
+                        ],
+                        'received_at' => now(),
+                    ]);
+
+                    $this->financials->postWalletBookingPayment($booking->fresh(['court.venue']), $payment, $wallet->id);
+                } else {
+                    // Zero-payable (100% point-funded)
+                    $payment = $booking->payments()->create([
+                        'provider' => 'loyalty_points',
+                        'external_transaction_id' => "loyalty-zero-payable-{$booking->code}",
+                        'amount' => 0,
+                        'transfer_code' => $booking->code,
+                        'status' => 'paid',
+                        'payload' => [
+                            'fully_discounted' => true,
+                            'loyalty_points_spent' => $loyaltyPoints,
+                            'loyalty_discount' => $loyaltyDiscount,
+                        ],
+                        'received_at' => now(),
+                    ]);
+                }
 
                 $slotsData = [];
                 foreach ($resolved as [$time, $price]) {
@@ -229,11 +377,25 @@ class OrdinaryCheckoutService
                 }
                 $this->bookings->createSlots($booking, $slotsData);
 
-                // Post ledger journal
-                $this->financials->postWalletBookingPayment($booking->fresh(['court.venue']), $payment, $wallet->id);
-
                 // Ensure canonical V2 reservation identity mapping is synced
                 $this->backfill->backfillBooking($booking);
+
+                if (! empty($idempotencyKey)) {
+                    try {
+                        IdempotencyRecord::create([
+                            'organization_id' => $orgId,
+                            'user_id' => $userId,
+                            'key' => $idempotencyKey,
+                            'command' => 'POST /api/v1/bookings',
+                            'request_hash' => $requestHash,
+                            'response_status' => 201,
+                            'response_body' => ['id' => $booking->id, 'code' => $booking->code],
+                            'expires_at' => now()->addHours(24),
+                        ]);
+                    } catch (QueryException) {
+                        // Handled by concurrency catch
+                    }
+                }
 
                 return $booking->load(['user', 'court.venue', 'slots', 'coupon', 'payments']);
             });
@@ -282,13 +444,67 @@ class OrdinaryCheckoutService
                 if ($quote->expires_at?->isPast()) {
                     abort(409, 'Price quote has expired.');
                 }
-
                 $court = Court::query()->withoutGlobalScope('tenant_isolation')->findOrFail($quote->court_id);
-                $totalAmount = (int) $quote->total_amount;
+                $payableBeforeLoyalty = (int) $quote->total_amount;
 
-                // Validate wallet balance
+                // Lock user for point and wallet balance serialization
+                $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+
+                // Loyalty points handling
+                $loyaltyPoints = ! empty($data['loyalty_points']) ? (int) $data['loyalty_points'] : 0;
+                $loyaltyPolicyVersion = ! empty($data['loyalty_policy_version']) ? (int) $data['loyalty_policy_version'] : null;
+                $loyaltySnapshot = null;
+                $loyaltyDiscount = 0;
+                $netPayable = $payableBeforeLoyalty;
+                $policy = null;
+                $currentPointBalance = 0;
+
+                if ($loyaltyPoints > 0) {
+                    $policy = $this->loyaltyPolicyService->getActiveBasePolicy($organizationId);
+                    if (! $policy) {
+                        abort(422, 'Tổ chức này chưa cấu hình chính sách đổi điểm.');
+                    }
+
+                    if ($loyaltyPolicyVersion !== null && (int) $policy->version !== (int) $loyaltyPolicyVersion) {
+                        abort(422, 'Chính sách đổi điểm đã thay đổi. Vui lòng tải lại xem trước.');
+                    }
+
+                    $currentPointBalance = (int) PointLedger::query()
+                        ->where('organization_id', $organizationId)
+                        ->where('user_id', $user->id)
+                        ->sum('delta');
+
+                    if ($currentPointBalance < $loyaltyPoints) {
+                        abort(422, 'Số dư điểm không đủ để thực hiện quy đổi.');
+                    }
+
+                    $ratio = $this->loyaltyPolicyService->extractConversionRatio($policy);
+                    $discountCalc = $this->loyaltyPolicyService->calculateDiscount(
+                        $loyaltyPoints,
+                        $ratio['points_redeemed'],
+                        $ratio['reward_value_vnd'],
+                        $payableBeforeLoyalty,
+                        $currentPointBalance
+                    );
+
+                    $loyaltyDiscount = (int) $discountCalc['discount_vnd'];
+                    $netPayable = (int) $discountCalc['remaining_payable_vnd'];
+
+                    $loyaltySnapshot = [
+                        'rule_id' => $policy->id,
+                        'rule_version' => $policy->version,
+                        'points_redeemed' => $ratio['points_redeemed'],
+                        'reward_value_vnd' => $ratio['reward_value_vnd'],
+                        'points_spent' => $loyaltyPoints,
+                        'discount_vnd' => $loyaltyDiscount,
+                    ];
+                }
+
+                // Get and lock wallet
                 $wallet = $this->walletPayments->getOrCreateWallet($user->id, $organizationId);
-                if ((int) $wallet->balance < $totalAmount) {
+                $wallet = \App\Models\WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+
+                if ($netPayable > 0 && (int) $wallet->balance < $netPayable) {
                     abort(422, 'Số dư ví không đủ để thanh toán lịch đặt. Vui lòng nạp thêm tiền vào ví.');
                 }
 
@@ -332,6 +548,12 @@ class OrdinaryCheckoutService
                     $metadata['staff_actor_role'] = $actor->roleInOrganization($organizationId) ?? 'staff';
                 }
 
+                $metadata['loyalty_discount_amount'] = $loyaltyDiscount;
+                $metadata['loyalty_points_redeemed'] = $loyaltyPoints;
+                if ($loyaltySnapshot) {
+                    $metadata['loyalty_snapshot'] = $loyaltySnapshot;
+                }
+
                 $reservation = Reservation::create([
                     'organization_id' => $organizationId,
                     'user_id' => $user->id,
@@ -340,7 +562,7 @@ class OrdinaryCheckoutService
                     'code' => $this->uniqueReservationCode(),
                     'status' => 'confirmed',
                     'currency' => $quote->currency,
-                    'total_amount' => $totalAmount,
+                    'total_amount' => $netPayable,
                     'hold_expires_at' => null,
                     'confirmed_at' => now(),
                     'metadata' => $metadata,
@@ -371,14 +593,38 @@ class OrdinaryCheckoutService
                     ]);
                 }
 
-                // Debit wallet
-                $walletTx = $this->walletPayments->debit(
-                    $wallet,
-                    $totalAmount,
-                    'reservation_payment',
-                    $reservation->id,
-                    $reservation->code
-                );
+                // Debit PointLedger if points redeemed
+                if ($loyaltyPoints > 0 && isset($policy)) {
+                    PointLedger::create([
+                        'organization_id' => $organizationId,
+                        'user_id' => $user->id,
+                        'loyalty_rule_id' => $policy->id,
+                        'delta' => -$loyaltyPoints,
+                        'balance_after' => $currentPointBalance - $loyaltyPoints,
+                        'source_type' => 'reservation',
+                        'source_id' => $reservation->id,
+                        'metadata' => [
+                            'reservation_code' => $reservation->code,
+                            'rule_version' => $policy->version,
+                            'points_spent' => $loyaltyPoints,
+                            'discount_vnd' => $loyaltyDiscount,
+                        ],
+                    ]);
+                }
+
+                // Debit wallet if netPayable > 0
+                if ($netPayable > 0) {
+                    $walletTx = $this->walletPayments->debit(
+                        $wallet,
+                        $netPayable,
+                        'reservation_payment',
+                        $reservation->id,
+                        $reservation->code
+                    );
+
+                    // Post balanced financial posting
+                    $this->financials->postWalletReservationPayment($reservation, $netPayable, $wallet->id, $walletTx->id);
+                }
 
                 // Update quote to accepted
                 $quote->update([
@@ -390,12 +636,10 @@ class OrdinaryCheckoutService
                         'slot_snapshot' => $quote->slot_snapshot,
                         'subtotal' => $quote->subtotal,
                         'total_amount' => $quote->total_amount,
+                        'loyalty_snapshot' => $loyaltySnapshot,
+                        'net_payable' => $netPayable,
                     ],
                 ]);
-
-                // Post balanced financial posting
-                $this->financials->postWalletReservationPayment($reservation, $totalAmount, $wallet->id, $walletTx->id);
-
                 return $reservation->load(['court.venue', 'quote', 'slots', 'entitlements']);
             });
         } catch (QueryException $exception) {

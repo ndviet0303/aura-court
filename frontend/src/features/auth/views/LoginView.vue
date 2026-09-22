@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { api, errorMessage } from '@/lib/api'
+import { resolveAuthDestination } from '../utils/authDestination'
 
 import AuthBrandPanel from '../components/AuthBrandPanel.vue'
 import AuthTabs from '../components/AuthTabs.vue'
@@ -42,7 +43,18 @@ const error = ref('')
 const loading = ref(false)
 const socialLoading = ref<string | null>(null)
 
-onMounted(() => {
+onMounted(async () => {
+  if (auth.user) {
+    const currentUser = await auth.load(true)
+    if (currentUser) {
+      const redirectParam = typeof route.query.redirect === 'string' ? route.query.redirect : null
+      const dest = resolveAuthDestination(currentUser, redirectParam)
+      if (dest) {
+        router.replace(dest)
+        return
+      }
+    }
+  }
   if (route.query.mode === 'register' || route.path === '/register' || props.initialMode === 'register') {
     mode.value = 'register'
   } else {
@@ -81,15 +93,10 @@ function setMode(newMode: 'login' | 'register') {
 }
 
 function handlePostAuthRedirect(user: { onboarded?: boolean; role?: string } | null) {
-  if (user && !user.onboarded) {
-    router.push('/onboarding')
-    return
-  }
-  if (user?.role === 'admin') {
-    router.push('/admin/organization')
-  } else {
-    const redirectUrl = String(route.query.redirect || '/')
-    router.push(redirectUrl)
+  const redirectParam = typeof route.query.redirect === 'string' ? route.query.redirect : null
+  const dest = resolveAuthDestination(user, redirectParam)
+  if (dest) {
+    router.push(dest)
   }
 }
 

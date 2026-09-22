@@ -62,6 +62,12 @@ describe('AdminScheduleView', () => {
       }
       return []
     })
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/venues') {
+        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
+      }
+      return []
+    })
 
     vi.mocked(api.post).mockResolvedValue({
       id: 202,

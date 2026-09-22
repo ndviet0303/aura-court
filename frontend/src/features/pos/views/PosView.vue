@@ -18,9 +18,17 @@ import PosCustomerModal from '../components/PosCustomerModal.vue'
 import PosCustomItemModal from '../components/PosCustomItemModal.vue'
 import PosDraftsModal from '../components/PosDraftsModal.vue'
 import PosQrModal from '../components/PosQrModal.vue'
+import { AuraButton } from '@/shared/components'
 import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
 
-const { isPosEnabled, fetchCapabilities, loaded: capabilitiesLoaded } = useTenantCapabilities()
+const {
+  isPosEnabled,
+  isPosDisabled,
+  fetchFailed: capabilityFetchFailed,
+  error: capabilityError,
+  fetchCapabilities,
+  loaded: capabilitiesLoaded,
+} = useTenantCapabilities()
 const { t } = useI18n()
 const auth = useAuthStore()
 
@@ -29,13 +37,13 @@ const {
   selectedCategory,
   searchQuery,
   loading: productsLoading,
+  error: productsError,
   categories,
   filteredProducts,
   loadProducts,
   addCustomProduct,
   adjustProductStock,
 } = usePosProducts()
-
 const {
   cart,
   selectedCustomer,
@@ -254,8 +262,8 @@ function handleDeleteDraft(id: string) {
 
 async function handleCheckout() {
   if (cart.value.length === 0) return
-  if (capabilitiesLoaded.value && !isPosEnabled.value) {
-    showError(t('admin.pos.disabledNotice'))
+  if (!isPosEnabled.value) {
+    showError(t('admin.pos.disabledNotice') || 'Tính năng POS chưa được kích hoạt cho tổ chức này.')
     return
   }
   processingCheckout.value = true
@@ -477,17 +485,36 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(async () => {
-  window.addEventListener('keydown', handleKeydown)
-  await Promise.allSettled([loadProducts(), checkActiveShift(), fetchCapabilities()])
-  const [resList, custList] = await Promise.allSettled([
+async function initPosData() {
+  const userAny = auth.user as any
+  const activeOrgId = userAny?.capabilities?.active_organization_id || userAny?.organizations?.[0]?.organization_id || userAny?.organizations?.[0]?.id
+  await fetchCapabilities(activeOrgId)
+
+  if (capabilityFetchFailed.value) {
+    showError(capabilityError.value || 'Không thể xác thực quyền hạn tính năng POS.')
+    return
+  }
+
+  const [productsRes, shiftRes, resList, custList] = await Promise.allSettled([
+    loadProducts(),
+    isPosEnabled.value ? checkActiveShift() : Promise.resolve(null),
     posApi.getActiveReservations(),
     posApi.searchCustomers(),
   ])
+  if (productsRes.status === 'rejected') {
+    showError(productsError.value || 'Không thể tải danh mục sản phẩm POS.')
+  }
+  if (shiftRes.status === 'rejected') {
+    showError(shiftError.value || 'Không thể kiểm tra trạng thái ca làm việc.')
+  }
   if (resList.status === 'fulfilled') activeReservations.value = resList.value
   if (custList.status === 'fulfilled') customerDatabase.value = custList.value
-})
+}
 
+onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown)
+  await initPosData()
+})
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
@@ -503,7 +530,15 @@ onUnmounted(() => {
       @open-shift-modal="showShiftModal = true"
       @toggle-fullscreen="toggleFullscreen"
     />
-    <div v-if="capabilitiesLoaded && !isPosEnabled" class="pos-disabled-banner" role="alert">
+    <div v-if="capabilityFetchFailed" class="pos-disabled-banner pos-error-banner" role="alert">
+      <span class="material-symbols-outlined icon-24">cloud_off</span>
+      <div class="banner-text">
+        <strong>{{ t('admin.pos.capabilityFetchFailedTitle') || 'Lỗi kết nối quyền hạn' }}</strong>
+        <p>{{ capabilityError || t('admin.pos.capabilityFetchFailedDesc') || 'Không thể xác thực quyền hạn POS. Vui lòng thử lại.' }}</p>
+      </div>
+      <AuraButton variant="secondary" size="sm" @click="initPosData">{{ t('common.retry') || 'Thử lại' }}</AuraButton>
+    </div>
+    <div v-else-if="isPosDisabled" class="pos-disabled-banner" role="alert">
       <span class="material-symbols-outlined icon-24">lock</span>
       <div class="banner-text">
         <strong>{{ t('admin.pos.disabledTitle') }}</strong>
@@ -555,7 +590,7 @@ onUnmounted(() => {
           @update-quantity="updateQuantity"
           @update-rental-hours="updateRentalHours"
           @remove-from-cart="removeFromCart"
-          :disabled="capabilitiesLoaded && !isPosEnabled"
+          :disabled="!isPosEnabled"
           @clear-cart="clearCart"
           @checkout="handleCheckout"
           @open-customer-search-modal="showCustomerModal = true"

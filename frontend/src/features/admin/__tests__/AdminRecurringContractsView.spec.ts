@@ -105,7 +105,7 @@ describe('AdminRecurringContractsView', () => {
         return { data: sampleContracts }
       }
       if (url === '/admin/venues') {
-        return mockVenues
+        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
       }
       return []
     })

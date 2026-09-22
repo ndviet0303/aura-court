@@ -11,37 +11,42 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason', 'policy_snapshot', 'price_snapshot', 'metadata'])]
 class Booking extends Model
 {
+    protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed'];
     protected static function booted(): void
     {
         static::saved(function (Booking $booking): void {
-            $court = $booking->court ?? Court::find($booking->court_id);
-            if ($court && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
-                    venueId: (int) $court->venue_id,
-                    courtId: (int) $court->id,
-                    status: in_array($booking->status, ['cancelled', 'refunded'], true) ? 'available' : 'booked',
-                    metadata: [
-                        'booking_id' => $booking->id,
-                        'code' => $booking->code,
-                        'status' => $booking->status,
-                    ]
-                );
-            }
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($booking): void {
+                $court = $booking->court ?? Court::find($booking->court_id);
+                if ($court && $court->venue_id) {
+                    \App\Events\CourtStatusUpdated::dispatch(
+                        venueId: (int) $court->venue_id,
+                        courtId: (int) $court->id,
+                        status: in_array($booking->status, ['cancelled', 'refunded'], true) ? 'available' : 'booked',
+                        metadata: [
+                            'booking_id' => $booking->id,
+                            'code' => $booking->code,
+                            'status' => $booking->status,
+                        ]
+                    );
+                }
+            });
         });
 
         static::deleted(function (Booking $booking): void {
-            $court = $booking->court ?? Court::find($booking->court_id);
-            if ($court && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
-                    venueId: (int) $court->venue_id,
-                    courtId: (int) $court->id,
-                    status: 'available',
-                    metadata: [
-                        'booking_id' => $booking->id,
-                        'event' => 'deleted',
-                    ]
-                );
-            }
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($booking): void {
+                $court = $booking->court ?? Court::find($booking->court_id);
+                if ($court && $court->venue_id) {
+                    \App\Events\CourtStatusUpdated::dispatch(
+                        venueId: (int) $court->venue_id,
+                        courtId: (int) $court->id,
+                        status: 'available',
+                        metadata: [
+                            'booking_id' => $booking->id,
+                            'event' => 'deleted',
+                        ]
+                    );
+                }
+            });
         });
     }
 
@@ -60,6 +65,22 @@ class Booking extends Model
             'metadata' => 'array',
         ];
     }
+    public function getLoyaltyDiscountAmountAttribute(): int
+    {
+        return (int) ($this->metadata['loyalty_discount_amount']
+            ?? $this->metadata['loyalty_snapshot']['discount_vnd']
+            ?? $this->policy_snapshot['loyalty_snapshot']['discount_vnd']
+            ?? 0);
+    }
+
+    public function getLoyaltyPointsRedeemedAttribute(): int
+    {
+        return (int) ($this->metadata['loyalty_points_redeemed']
+            ?? $this->metadata['loyalty_snapshot']['points_spent']
+            ?? $this->policy_snapshot['loyalty_snapshot']['points_spent']
+            ?? 0);
+    }
+
 
     public function user(): BelongsTo
     {

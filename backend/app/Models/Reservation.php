@@ -12,38 +12,43 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Reservation extends Model
 {
     use BelongsToTenant;
+    protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed'];
 
     protected static function booted(): void
     {
         static::saved(function (Reservation $reservation): void {
-            $court = $reservation->court ?? Court::find($reservation->court_id);
-            if ($court && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
-                    venueId: (int) $court->venue_id,
-                    courtId: (int) $court->id,
-                    status: $reservation->status === 'cancelled' ? 'available' : 'booked',
-                    metadata: [
-                        'reservation_id' => $reservation->id,
-                        'code' => $reservation->code,
-                        'status' => $reservation->status,
-                    ]
-                );
-            }
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($reservation): void {
+                $court = $reservation->court ?? Court::find($reservation->court_id);
+                if ($court && $court->venue_id) {
+                    \App\Events\CourtStatusUpdated::dispatch(
+                        venueId: (int) $court->venue_id,
+                        courtId: (int) $court->id,
+                        status: $reservation->status === 'cancelled' ? 'available' : 'booked',
+                        metadata: [
+                            'reservation_id' => $reservation->id,
+                            'code' => $reservation->code,
+                            'status' => $reservation->status,
+                        ]
+                    );
+                }
+            });
         });
 
         static::deleted(function (Reservation $reservation): void {
-            $court = $reservation->court ?? Court::find($reservation->court_id);
-            if ($court && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
-                    venueId: (int) $court->venue_id,
-                    courtId: (int) $court->id,
-                    status: 'available',
-                    metadata: [
-                        'reservation_id' => $reservation->id,
-                        'event' => 'deleted',
-                    ]
-                );
-            }
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($reservation): void {
+                $court = $reservation->court ?? Court::find($reservation->court_id);
+                if ($court && $court->venue_id) {
+                    \App\Events\CourtStatusUpdated::dispatch(
+                        venueId: (int) $court->venue_id,
+                        courtId: (int) $court->id,
+                        status: 'available',
+                        metadata: [
+                            'reservation_id' => $reservation->id,
+                            'event' => 'deleted',
+                        ]
+                    );
+                }
+            });
         });
     }
 
@@ -57,6 +62,20 @@ class Reservation extends Model
             'metadata' => 'array',
         ];
     }
+    public function getLoyaltyDiscountAmountAttribute(): int
+    {
+        return (int) ($this->metadata['loyalty_discount_amount']
+            ?? $this->metadata['loyalty_snapshot']['discount_vnd']
+            ?? 0);
+    }
+
+    public function getLoyaltyPointsRedeemedAttribute(): int
+    {
+        return (int) ($this->metadata['loyalty_points_redeemed']
+            ?? $this->metadata['loyalty_snapshot']['points_spent']
+            ?? 0);
+    }
+
 
     public function user(): BelongsTo
     {
