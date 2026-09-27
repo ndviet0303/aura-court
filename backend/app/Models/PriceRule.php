@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['organization_id', 'venue_id', 'sport_zone_id', 'court_id', 'type', 'weekday', 'exception_date', 'starts_at', 'ends_at', 'price', 'version', 'priority', 'is_active', 'metadata'])]
+#[Fillable(['organization_id', 'venue_id', 'sport_zone_id', 'court_id', 'type', 'weekday', 'exception_date', 'starts_at', 'ends_at', 'price', 'version', 'priority', 'effective_from', 'effective_until', 'is_active', 'metadata'])]
 class PriceRule extends Model
 {
     use BelongsToTenant;
@@ -20,6 +20,8 @@ class PriceRule extends Model
             'price' => 'integer',
             'version' => 'integer',
             'priority' => 'integer',
+            'effective_from' => 'date',
+            'effective_until' => 'date',
             'is_active' => 'boolean',
             'metadata' => 'array',
         ];
@@ -40,4 +42,3 @@ class PriceRule extends Model
         return $this->belongsTo(Court::class);
     }
 }
-

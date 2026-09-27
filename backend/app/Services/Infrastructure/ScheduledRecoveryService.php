@@ -4,9 +4,12 @@ namespace App\Services\Infrastructure;
 
 use App\Models\Organization;
 use App\Models\OutboxMessage;
+use App\Models\OwnerPaymentReceipt;
 use App\Models\ProviderEvent;
+use App\Jobs\ProcessOwnerPaymentReceipt;
 use App\Services\Payment\ProviderEventHandler;
 use App\Services\Payment\ProviderWebhookService;
+use App\Services\Payment\OwnerPaymentAttemptService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -18,6 +21,7 @@ class ScheduledRecoveryService
         private readonly ProviderWebhookService $webhooks,
         private readonly TenantContext $tenantContext,
         private readonly ProviderEventHandler $eventHandler,
+        private readonly OwnerPaymentAttemptService $ownerPayments,
     ) {}
 
     /**
@@ -137,5 +141,39 @@ class ScheduledRecoveryService
         }
 
         return $recovered;
+    }
+
+    /** Re-dispatch due authenticated owner receipts that have not reached a durable outcome. */
+    public function recoverOwnerPaymentReceipts(int $batchSize = 50): int
+    {
+        $receipts = OwnerPaymentReceipt::query()
+            ->where('status', OwnerPaymentReceipt::STATUS_PENDING)
+            ->whereNull('processed_at')
+            ->where('processing_attempts', '<', 8)
+            ->where(function ($query) {
+                $query->whereNull('next_attempt_at')->orWhere('next_attempt_at', '<=', now());
+            })
+            ->orderBy('id')
+            ->limit(max(1, min(500, $batchSize)))
+            ->get();
+
+        $queued = 0;
+        foreach ($receipts as $receipt) {
+            try {
+                if (! $this->ownerPayments->claimReceiptForDispatch((int) $receipt->id)) {
+                    continue;
+                }
+
+                ProcessOwnerPaymentReceipt::dispatch((int) $receipt->id)->afterCommit();
+                $queued++;
+            } catch (\Throwable $exception) {
+                Log::warning('Owner payment receipt recovery dispatch failed.', [
+                    'receipt_id' => $receipt->id,
+                    'exception_class' => $exception::class,
+                ]);
+            }
+        }
+
+        return $queued;
     }
 }

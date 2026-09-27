@@ -261,6 +261,34 @@ class SocialDiscoveryAndReputationTest extends TestCase
 
     public function test_reputation_activity_and_dispute_lifecycle(): void
     {
+        $venue = \App\Models\Venue::create([
+            'organization_id' => $this->tenant->id,
+            'name' => 'Aura Stadium',
+            'slug' => 'aura-stadium-' . uniqid(),
+            'status' => 'active',
+        ]);
+        $court = \App\Models\Court::create([
+            'venue_id' => $venue->id,
+            'name' => 'Court 1',
+            'is_active' => true,
+        ]);
+        $res1 = \App\Models\Reservation::create([
+            'organization_id' => $this->tenant->id,
+            'user_id' => $this->playerA->id,
+            'court_id' => $court->id,
+            'code' => 'RES-A-101',
+            'status' => 'confirmed',
+            'total_amount' => 100000,
+        ]);
+        $res2 = \App\Models\Reservation::create([
+            'organization_id' => $this->tenant->id,
+            'user_id' => $this->playerA->id,
+            'court_id' => $court->id,
+            'code' => 'RES-A-102',
+            'status' => 'confirmed',
+            'total_amount' => 100000,
+        ]);
+
         // 1. Staff/Manager records attendance (+2 reputation)
         $recRes = $this->actingAs($this->moderator)
             ->withHeaders($this->headers('rep-rec-'))
@@ -268,7 +296,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
                 'user_id' => $this->playerA->id,
                 'type' => 'attendance',
                 'source_type' => 'reservation',
-                'source_id' => 101,
+                'source_id' => $res1->id,
             ]);
         $recRes->assertOk();
         // Baseline 60 + 2 = 62
@@ -281,7 +309,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
                 'user_id' => $this->playerA->id,
                 'type' => 'no_show',
                 'source_type' => 'reservation',
-                'source_id' => 102,
+                'source_id' => $res2->id,
             ]);
         $noShowRes->assertOk();
         // 60 + 2 - 15 = 47

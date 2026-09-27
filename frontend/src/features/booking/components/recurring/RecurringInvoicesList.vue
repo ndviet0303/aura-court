@@ -43,7 +43,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           Danh Sách Hóa Đơn Chu Kỳ Tháng
           <span v-if="invoices.length > 0" class="count-badge font-mono">{{ invoices.length }}</span>
         </h3>
-        <p class="invoices-sub">Quản lý hóa đơn định kỳ, đối soát lịch thi đấu và thanh toán qua QR VietQR.</p>
+        <p class="invoices-sub">Theo dõi nghĩa vụ từng kỳ và chỉ dùng hướng dẫn chuyển khoản được xác minh của chủ sân.</p>
       </div>
     </div>
 
@@ -65,6 +65,22 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           @click="filterStatus = 'pending'"
         >
           Chờ thanh toán ({{ invoices.filter(i => i.status === 'pending').length }})
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ active: filterStatus === 'guaranteed' }"
+          @click="filterStatus = 'guaranteed'"
+        >
+          Được bảo lãnh ({{ invoices.filter(i => i.status === 'guaranteed').length }})
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ active: filterStatus === 'zero_payable' }"
+          @click="filterStatus = 'zero_payable'"
+        >
+          Không cần thanh toán ({{ invoices.filter(i => i.status === 'zero_payable').length }})
         </button>
         <button
           type="button"
@@ -122,11 +138,11 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             class="status-pill"
             :class="{
               'status-paid': inv.status === 'paid',
-              'status-pending': inv.status === 'pending',
+              'status-pending': inv.status === 'pending' || inv.status === 'guaranteed' || inv.status === 'zero_payable',
               'status-overdue': inv.status === 'overdue'
             }"
           >
-            ● {{ inv.status === 'paid' ? 'Đã thanh toán' : inv.status === 'overdue' ? 'Quá hạn' : 'Chờ thanh toán' }}
+            ● {{ inv.status === 'paid' ? 'Đã thanh toán' : inv.status === 'zero_payable' ? 'Không cần thanh toán (0 ₫)' : inv.status === 'guaranteed' ? 'Được bảo lãnh (chưa thanh toán)' : inv.status === 'overdue' ? 'Quá hạn' : 'Chờ thanh toán' }}
           </span>
         </div>
 
@@ -147,7 +163,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
 
             <div class="inv-col">
               <span class="col-lbl">Hạn thanh toán</span>
-              <span class="col-val">{{ formatDate(inv.due_at) }}</span>
+              <span class="col-val">{{ inv.status === 'zero_payable' ? 'Không áp dụng' : formatDate(inv.due_at) }}</span>
             </div>
 
             <div class="inv-col">
@@ -164,7 +180,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             icon="payments"
             @click="openInvoiceDetail(inv)"
           >
-            <span>{{ inv.status === 'paid' ? 'Xem Chi Tiết Lịch Buổi' : 'Thanh Toán Ngay (VietQR)' }}</span>
+            <span>{{ inv.status === 'paid' ? 'Xem Chi Tiết Lịch Buổi' : 'Xem Trạng Thái Thanh Toán' }}</span>
           </AuraButton>
         </div>
       </div>

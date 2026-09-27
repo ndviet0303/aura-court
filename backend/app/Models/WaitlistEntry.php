@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ class WaitlistEntry extends Model
 {
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'notified_at' => 'datetime', 'claimed_at' => 'datetime'];
+        return ['starts_at' => UtcDateTime::class, 'ends_at' => UtcDateTime::class, 'notified_at' => UtcDateTime::class, 'claimed_at' => UtcDateTime::class];
     }
 
     public function user(): BelongsTo

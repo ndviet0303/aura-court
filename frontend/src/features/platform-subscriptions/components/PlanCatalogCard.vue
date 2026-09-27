@@ -17,6 +17,10 @@ const emit = defineEmits<{
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 }
+
+function cycleLabel(cycle: string): string {
+  return ({ monthly: 'tháng', yearly: 'năm', six_months: '6 tháng', twelve_months: '12 tháng' } as Record<string, string>)[cycle] || cycle
+}
 </script>
 
 <template>
@@ -43,16 +47,12 @@ function formatMoney(amount: number): string {
         <h3 class="text-lg font-bold text-gray-900 dark:text-white">
           {{ plan.name }}
         </h3>
-        <p v-if="plan.description" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {{ plan.description }}
-        </p>
-
         <div class="mt-4 flex items-baseline gap-1">
           <span class="text-2xl font-black text-gray-900 dark:text-white">
             {{ formatMoney(plan.price) }}
           </span>
           <span class="text-xs text-gray-500 dark:text-gray-400">
-            / {{ plan.billing_cycle === 'yearly' ? 'năm' : 'tháng' }}
+            / {{ cycleLabel(plan.billing_cycle) }}
           </span>
         </div>
       </div>
@@ -65,22 +65,23 @@ function formatMoney(amount: number): string {
         <ul class="text-xs space-y-1.5 text-gray-600 dark:text-gray-300">
           <li class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-emerald-600">domain</span>
-            <span>Tối đa <strong>{{ plan.max_venues }}</strong> cơ sở thể thao</span>
+            <span>Tối đa <strong>{{ plan.quotas.max_venues }}</strong> cơ sở thể thao</span>
           </li>
           <li class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-emerald-600">sports_tennis</span>
-            <span>Tối đa <strong>{{ plan.max_courts }}</strong> sân hoạt động</span>
+            <span>Tối đa <strong>{{ plan.quotas.max_courts }}</strong> sân hoạt động</span>
           </li>
           <li class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-emerald-600">badge</span>
-            <span>Tối đa <strong>{{ plan.max_staff }}</strong> nhân viên / quản trị viên</span>
+            <span>Tối đa <strong>{{ plan.quotas.max_staff }}</strong> nhân viên / quản trị viên</span>
           </li>
         </ul>
       </div>
 
       <!-- Terms and Transparency Disclosure -->
       <div class="pt-3 border-t border-gray-100 dark:border-gray-700 text-[11px] text-gray-500 dark:text-gray-400 space-y-1">
-        <p>Phiên bản điều khoản: <strong>v1.0</strong></p>
+        <p>Phiên bản điều khoản: <strong>{{ plan.terms.version }}</strong></p>
+        <p>{{ plan.terms.text }}</p>
         <p>Thuê bao dịch vụ cố định — <strong>0% hoa hồng nền tảng</strong> trên mọi lượt đặt sân và giải đấu.</p>
         <p>Phí xử lý giao dịch cổng thanh toán (nếu có) được tách biệt riêng theo thực tế đối tác.</p>
         <p>Tự động gia hạn mỗi kỳ; có thể hủy gia hạn bất kỳ lúc nào.</p>
@@ -90,13 +91,13 @@ function formatMoney(amount: number): string {
     <!-- Actions -->
     <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2">
       <button
-        v-if="trialEligible && plan.trial_period_days > 0"
+        v-if="trialEligible && plan.trial_enabled && plan.trial_days > 0"
         type="button"
         :disabled="activating || initiating"
         class="w-full py-2 px-4 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 disabled:opacity-50"
         @click="emit('selectTrial', plan)"
       >
-        Dùng thử {{ plan.trial_period_days }} ngày miễn phí
+        Dùng thử {{ plan.trial_days }} ngày miễn phí
       </button>
 
       <button

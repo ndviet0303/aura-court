@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\CashShift;
 use App\Models\Coupon;
 use App\Models\Journal;
-use App\Models\MembershipPlan;
+use App\Models\MembershipEntitlement;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosOrder;
@@ -272,7 +272,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'published_at' => now(),
         ]);
 
-        TenantMembership::create([
+        $membership = TenantMembership::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->customer->id,
             'plan_id' => $plan->id,
@@ -280,6 +280,14 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addYear(),
             'status' => 'active',
+        ]);
+        MembershipEntitlement::create([
+            'organization_id' => $this->tenant->id,
+            'membership_id' => $membership->id,
+            'benefit_code' => 'pos_discount_percent',
+            'benefit_value' => ['value' => 10, 'plan_version' => 1],
+            'starts_at' => $membership->starts_at,
+            'ends_at' => $membership->ends_at,
         ]);
 
         // 2. Quote verification: 2 items * 150,000 = 300,000 VND
@@ -320,6 +328,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
 
         // 4. Create active coupon code
         $coupon = Coupon::create([
+            'organization_id' => $this->tenant->id,
             'code' => 'COUPON50K',
             'discount_type' => 'fixed',
             'discount_value' => 50000,
@@ -344,5 +353,6 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
 
         $conflictRes->assertStatus(422)
             ->assertJsonValidationErrors('coupon_code');
+        $this->assertSame(0, (int) $coupon->fresh()->usage_count);
     }
 }

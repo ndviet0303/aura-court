@@ -12,7 +12,7 @@ class PosProduct extends Model
 {
     use BelongsToTenant;
 
-    protected $appends = ['category', 'unit', 'min_stock', 'supplier', 'tax_rate', 'is_rental'];
+    protected $appends = ['category', 'unit', 'min_stock', 'supplier', 'tax_rate', 'is_rental', 'is_service'];
     protected function casts(): array
     {
         return [
@@ -65,6 +65,28 @@ class PosProduct extends Model
     public function getIsRentalAttribute(): bool
     {
         return (bool) ($this->metadata['is_rental'] ?? ($this->category === 'rental'));
+    }
+
+    public function isTracked(): bool
+    {
+        if (isset($this->metadata['is_service']) && (bool) $this->metadata['is_service']) {
+            return false;
+        }
+        if (isset($this->metadata['type']) && $this->metadata['type'] === 'service') {
+            return false;
+        }
+        if (isset($this->metadata['track_stock']) && ! (bool) $this->metadata['track_stock']) {
+            return false;
+        }
+        if ($this->category === 'services') {
+            return false;
+        }
+        return true;
+    }
+
+    public function getIsServiceAttribute(): bool
+    {
+        return ! $this->isTracked();
     }
 }
 

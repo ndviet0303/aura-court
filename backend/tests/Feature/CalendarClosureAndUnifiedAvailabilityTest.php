@@ -31,6 +31,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
         $org = Organization::create([
             'name' => 'Aura Complex',
             'slug' => 'aura-complex-'.uniqid(),
+            'partner_status' => 'approved',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
 

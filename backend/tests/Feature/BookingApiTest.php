@@ -19,6 +19,7 @@ class BookingApiTest extends TestCase
     {
         $user = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân A', 'is_active' => true]);
         $date = now(config('app.timezone'))->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
@@ -45,6 +46,7 @@ class BookingApiTest extends TestCase
     {
         $user = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân No Balance', 'is_active' => true]);
         $date = now(config('app.timezone'))->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
@@ -73,6 +75,7 @@ class BookingApiTest extends TestCase
     {
         $user = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Refund Test', 'is_active' => true]);
         $date = now(config('app.timezone'))->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);

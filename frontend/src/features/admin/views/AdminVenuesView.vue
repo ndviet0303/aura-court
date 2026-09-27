@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import { useAdminVenues, type AdminVenueItem } from '../composables/useAdminVenues'
 import type { VenueForm } from '../types/admin'
+import type { VenueBookingPolicySettings } from '../types/admin'
 
 import VenueKpiBar from '../components/venues/VenueKpiBar.vue'
 import VenueCard from '../components/venues/VenueCard.vue'
 import VenueCardSkeleton from '../components/venues/VenueCardSkeleton.vue'
 import VenueFormModal from '../components/venues/VenueFormModal.vue'
 import VenueQrModal from '../components/venues/VenueQrModal.vue'
+import VenueReadinessModal from '../components/venues/VenueReadinessModal.vue'
 
 const { t } = useI18n()
+const showReadinessModal = ref(false)
+const selectedVenueForReadiness = ref<AdminVenueItem | null>(null)
 
 const {
   loading,
@@ -22,6 +26,9 @@ const {
   statusFilter,
   showVenueModal,
   editingVenue,
+  bookingPolicy,
+  loadingBookingPolicy,
+  savingBookingPolicy,
   showQrModal,
   selectedVenueForQr,
   filteredVenues,
@@ -31,17 +38,22 @@ const {
   mapsLinkedCount,
   loadData,
   saveVenue,
+  loadBookingPolicy,
+  saveBookingPolicy,
   toggleVenueActive,
 } = useAdminVenues()
 
 function handleStartCreate() {
   editingVenue.value = null
+  bookingPolicy.value = null
   showVenueModal.value = true
 }
 
 function handleStartEdit(venue: AdminVenueItem) {
   editingVenue.value = venue
+  bookingPolicy.value = null
   showVenueModal.value = true
+  void loadBookingPolicy(venue)
 }
 
 function handleShowQr(venue: AdminVenueItem) {
@@ -49,8 +61,17 @@ function handleShowQr(venue: AdminVenueItem) {
   showQrModal.value = true
 }
 
+function handleShowReadiness(venue: AdminVenueItem) {
+  selectedVenueForReadiness.value = venue
+  showReadinessModal.value = true
+}
+
 async function handleSaveVenue(payload: VenueForm) {
   await saveVenue(payload)
+}
+
+async function handleSaveBookingPolicy(settings: VenueBookingPolicySettings) {
+  await saveBookingPolicy(settings)
 }
 
 onMounted(() => {
@@ -158,6 +179,7 @@ onMounted(() => {
         @toggle-active="toggleVenueActive"
         @edit="handleStartEdit"
         @show-qr="handleShowQr"
+        @show-readiness="handleShowReadiness"
       />
     </div>
 
@@ -166,14 +188,27 @@ onMounted(() => {
       :show="showVenueModal"
       :venue="editingVenue"
       :saving="saving"
+      :booking-policy="bookingPolicy"
+      :loading-booking-policy="loadingBookingPolicy"
+      :saving-booking-policy="savingBookingPolicy"
       @close="showVenueModal = false"
       @save="handleSaveVenue"
+      @save-policy="handleSaveBookingPolicy"
     />
 
     <VenueQrModal
       :show="showQrModal"
       :venue="selectedVenueForQr"
       @close="showQrModal = false"
+    />
+
+    <VenueReadinessModal
+      :venue="selectedVenueForReadiness"
+      :organization-id="selectedVenueForReadiness?.organization_id || 0"
+      :is-open="showReadinessModal"
+      @close="showReadinessModal = false"
+      @submitted="loadData"
+      @status-changed="loadData"
     />
   </div>
 </template>

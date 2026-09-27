@@ -26,39 +26,45 @@ const documentRequirements = computed<DocRequirement[]>(() => {
   const type = props.application.business_type || 'individual'
   const list: DocRequirement[] = []
 
-  if (type === 'enterprise' || type === 'household') {
+  if (type === 'company') {
     list.push({
       type: 'business_license',
-      title: 'Giấy chứng nhận đăng ký kinh doanh / GPKD',
-      description: 'Bản chụp hoặc scan rõ nét mặt trước giấy phép đăng ký kinh doanh.',
+      title: 'Giấy phép kinh doanh',
+      description: 'Bản chụp hoặc scan giấy phép đăng ký doanh nghiệp.',
       required: true,
     })
   }
 
-  if (type === 'enterprise') {
+  if (type === 'household') {
     list.push({
-      type: 'tax_certificate',
-      title: 'Thông báo mã số thuế / Giấy chứng nhận đăng ký thuế',
-      description: 'Giấy chứng nhận đăng ký thuế hoặc tờ khai thuế gần nhất.',
-      required: false,
+      type: 'business_registration_certificate',
+      title: 'Giấy chứng nhận đăng ký hộ kinh doanh',
+      description: 'Bản chụp hoặc scan giấy đăng ký hộ kinh doanh.',
+      required: true,
     })
   }
 
   list.push(
     {
-      type: 'identity_front',
+      type: 'representative_id_front',
       title: 'CCCD / Hộ chiếu người đại diện (Mặt trước)',
       description: 'Ảnh chụp mặt trước rõ thông tin, không bị lóa hoặc mất góc.',
       required: true,
     },
     {
-      type: 'identity_back',
+      type: 'representative_id_back',
       title: 'CCCD / Hộ chiếu người đại diện (Mặt sau)',
       description: 'Ảnh chụp mặt sau rõ nét vân tay và thông tin cơ quan cấp.',
       required: true,
     },
     {
-      type: 'premises_proof',
+      type: 'bank_account_confirmation',
+      title: 'Xác nhận tài khoản ngân hàng',
+      description: 'Tài liệu xác minh chủ tài khoản và số tài khoản đã khai báo.',
+      required: true,
+    },
+    {
+      type: 'venue_operation_rights',
       title: 'Giấy tờ quyền sử dụng mặt bằng sân thể thao',
       description: 'Hợp đồng thuê mặt bằng, quyền sử dụng đất hoặc giấy phép xây dựng.',
       required: true,
@@ -128,7 +134,7 @@ function formatSize(bytes: number): string {
                 Đã tải lên
               </span>
               <p class="text-[11px] text-gray-500 dark:text-gray-400 max-w-[150px] truncate">
-                {{ getUploadedDoc(req.type)?.original_name }} ({{ formatSize(getUploadedDoc(req.type)?.file_size_bytes || 0) }})
+                {{ getUploadedDoc(req.type)?.file_name }} ({{ formatSize(getUploadedDoc(req.type)?.file_size || 0) }})
               </p>
             </div>
 

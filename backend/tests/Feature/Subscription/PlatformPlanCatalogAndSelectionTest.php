@@ -108,8 +108,33 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
             ->assertJsonPath('data.plan_version', 2)
             ->assertJsonPath('data.price', 4800000)
             ->assertJsonPath('data.billing_cycle', 'yearly')
+            ->assertJsonPath('data.billing_months', 12)
             ->assertJsonPath('data.accepted_terms_version', '2026.2')
             ->assertJsonPath('data.trial_available', true);
+    }
+
+    public function test_six_month_calendar_term_is_supported_and_returned_in_plan_snapshot(): void
+    {
+        $owner = User::factory()->create(['role' => 'customer']);
+        $org = Organization::create(['name' => 'Six Month Club', 'slug' => 'six-month-club', 'status' => 'active', 'partner_status' => 'approved']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
+        $plan = PlatformPlan::create([
+            'code' => 'SIX_MONTHS',
+            'name' => 'Six Month Plan',
+            'price' => 2800000,
+            'billing_cycle' => 'six_months',
+            'terms_version' => '2026.6',
+            'terms_text' => 'Six calendar months.',
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($owner);
+        $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+            'plan_id' => $plan->id,
+            'accepted_terms_version' => '2026.6',
+        ])->assertOk()
+            ->assertJsonPath('data.billing_cycle', 'six_months')
+            ->assertJsonPath('data.billing_months', 6);
     }
 
     public function test_selection_fails_with_missing_commercial_configuration(): void

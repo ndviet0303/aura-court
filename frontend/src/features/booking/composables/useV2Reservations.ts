@@ -40,6 +40,7 @@ export function useV2Reservations() {
 
   const selectedReservationForDetails = ref<V2Reservation | null>(null)
   const selectedReservationForQr = ref<V2Reservation | null>(null)
+  const selectedReservationForPayment = ref<V2Reservation | null>(null)
 
   const money = (value: number) => formatCurrency(value)
 
@@ -194,12 +195,19 @@ export function useV2Reservations() {
         loyalty_policy_version: loyaltyPayload?.loyalty_policy_version,
         idempotency_key: loyaltyPayload?.idempotency_key,
       })
-      const code = res?.reservation?.code || res?.data?.reservation?.code || ''
+      const reservation = res?.reservation || res?.data?.reservation
+      const code = reservation?.code || ''
       activeQuote.value = null
       clearInterval(quoteTimerInterval)
-      notice.value = t('v2Reservations.messages.checkoutSuccess', { code })
       await loadData()
-      activeTab.value = 'confirmed'
+      if (reservation?.status === 'held' && reservation?.payment_model === 'direct_owner_v1') {
+        notice.value = t('v2Reservations.messages.checkoutPending', { code })
+        activeTab.value = 'held'
+        openPayment(reservation)
+      } else {
+        notice.value = t('v2Reservations.messages.checkoutSuccess', { code })
+        activeTab.value = 'confirmed'
+      }
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('v2Reservations.messages.checkoutError'))
     } finally {
@@ -274,6 +282,14 @@ export function useV2Reservations() {
     selectedReservationForQr.value = null
   }
 
+  function openPayment(reservation: V2Reservation) {
+    selectedReservationForPayment.value = reservation
+  }
+
+  function closePayment() {
+    selectedReservationForPayment.value = null
+  }
+
   onMounted(() => {
     loadData()
   })
@@ -302,6 +318,7 @@ export function useV2Reservations() {
     error,
     selectedReservationForDetails,
     selectedReservationForQr,
+    selectedReservationForPayment,
     filteredReservations,
     totalCount,
     heldCount,
@@ -320,5 +337,7 @@ export function useV2Reservations() {
     closeDetails,
     openQr,
     closeQr,
+    openPayment,
+    closePayment,
   }
 }

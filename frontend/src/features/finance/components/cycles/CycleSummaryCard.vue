@@ -2,8 +2,9 @@
 import { AuraButton } from '@/shared/components'
 import type { MonthlyInvoiceData } from '../../types/finance'
 
-const props = defineProps<{
+defineProps<{
   invoice: MonthlyInvoiceData
+  paymentAvailable: boolean
 }>()
 
 const emit = defineEmits<{
@@ -77,14 +78,14 @@ function formatFrequency(freq?: string): string {
           class="invoice-status-badge"
           :class="{
             'status-paid': invoice.status === 'paid',
-            'status-pending': invoice.status === 'pending',
+            'status-pending': invoice.status === 'pending' || invoice.status === 'guaranteed' || invoice.status === 'zero_payable',
             'status-overdue': invoice.status === 'overdue'
           }"
         >
           <span class="material-symbols-outlined status-icon">
             {{ invoice.status === 'paid' ? 'check_circle' : invoice.status === 'overdue' ? 'error_outline' : 'hourglass_top' }}
           </span>
-          {{ invoice.status === 'paid' ? 'ĐÃ THANH TOÁN' : invoice.status === 'overdue' ? 'QUÁ HẠN THANH TOÁN' : 'CHỜ THANH TOÁN' }}
+          {{ invoice.status === 'paid' ? 'ĐÃ THANH TOÁN' : invoice.status === 'zero_payable' ? 'KHÔNG CẦN THANH TOÁN (0 ₫)' : invoice.status === 'guaranteed' ? 'ĐƯỢC BẢO LÃNH (CHƯA THANH TOÁN)' : invoice.status === 'overdue' ? 'QUÁ HẠN THANH TOÁN' : 'CHỜ THANH TOÁN' }}
         </span>
       </div>
     </div>
@@ -95,10 +96,10 @@ function formatFrequency(freq?: string): string {
         <span class="material-symbols-outlined court-sport-icon">sports_tennis</span>
       </div>
       <div class="court-meta">
-        <h2 class="court-title">{{ invoice.series?.court?.name || 'Sân Cố Định VIP 01' }}</h2>
+        <h2 class="court-title">{{ invoice.series?.court?.name || 'Chưa có thông tin sân' }}</h2>
         <p class="venue-sub">
           <span class="material-symbols-outlined loc-icon">location_on</span>
-          <span>{{ invoice.series?.court?.venue?.name || 'Aura Court Club' }}</span>
+          <span>{{ invoice.series?.court?.venue?.name || 'Chưa có thông tin cơ sở' }}</span>
           <span v-if="invoice.series?.court?.venue?.address" class="venue-addr"> · {{ invoice.series?.court?.venue?.address }}</span>
         </p>
       </div>
@@ -120,7 +121,7 @@ function formatFrequency(freq?: string): string {
           <strong class="val">{{ formatDate(invoice.period_start) }} ➔ {{ formatDate(invoice.period_end) }}</strong>
         </div>
 
-        <div class="o-item">
+        <div v-if="invoice.status !== 'zero_payable'" class="o-item">
           <span class="lbl">
             <span class="material-symbols-outlined o-icon">event_busy</span>
             Hạn chót đóng tiền:
@@ -148,10 +149,13 @@ function formatFrequency(freq?: string): string {
       </div>
 
       <!-- Actions -->
-      <div v-if="invoice.status !== 'paid'" class="pay-action-row">
+      <div v-if="invoice.status === 'zero_payable'" class="pay-action-row">
+        <p class="pay-hint">Kỳ này không phát sinh tiền phải chuyển. Lượt chơi được xác nhận mà không ghi nhận hóa đơn đã thanh toán.</p>
+      </div>
+      <div v-else-if="invoice.status !== 'paid'" class="pay-action-row">
         <p class="pay-hint">
           <span class="material-symbols-outlined hint-icon">verified_user</span>
-          Vui lòng hoàn tất thanh toán trước hạn để bảo lưu toàn bộ khung giờ đã xếp lịch.
+          {{ invoice.status === 'guaranteed' ? 'Lượt chơi được bảo lãnh; kỳ này chưa có bằng chứng chủ sân nhận tiền.' : 'Vui lòng hoàn tất thanh toán trước hạn để bảo lưu toàn bộ khung giờ đã xếp lịch.' }}
         </p>
         <AuraButton
           variant="primary"
@@ -160,7 +164,7 @@ function formatFrequency(freq?: string): string {
           class="btn-action-primary"
           @click="emit('openPay')"
         >
-          <span>Thanh Toán VietQR Ngay</span>
+          <span>{{ paymentAvailable ? 'Xem hướng dẫn VietQR' : 'Xem trạng thái kỳ thanh toán' }}</span>
         </AuraButton>
       </div>
 

@@ -98,6 +98,10 @@ class Organization extends Model
     {
         return $this->hasMany(OrganizationMember::class);
     }
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(OrganizationInvitation::class);
+    }
     public function customers(): HasMany
     {
         return $this->hasMany(TenantCustomer::class);

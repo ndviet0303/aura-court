@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePartnerRegistration } from '../composables/usePartnerRegistration'
 import ApplicationHistoryTimeline from '../components/ApplicationHistoryTimeline.vue'
@@ -15,15 +15,11 @@ const {
   error,
   fetchCurrent,
   fetchHistory,
-  supplement,
   isPendingReview,
   isSupplementationRequested,
   isApproved,
   isRejected,
 } = usePartnerRegistration()
-
-const supplementNotes = ref('')
-const supplementSuccess = ref(false)
 
 async function loadData() {
   const current = await fetchCurrent()
@@ -44,19 +40,6 @@ async function handleGoToDashboard() {
   router.push('/admin/organization')
 }
 
-async function handleSupplementSubmit() {
-  if (!supplementNotes.value.trim()) return
-  try {
-    const updated = await supplement({ notes: supplementNotes.value.trim() })
-    if (updated) {
-      supplementSuccess.value = true
-      supplementNotes.value = ''
-      await loadData()
-    }
-  } catch {
-    // Error handled in composable
-  }
-}
 </script>
 
 <template>
@@ -133,19 +116,13 @@ async function handleSupplementSubmit() {
           <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
             Nội dung giải trình / bổ sung hồ sơ:
           </label>
-          <textarea
-            v-model="supplementNotes"
-            rows="3"
-            class="w-full text-sm p-3 border rounded-lg bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700"
-            placeholder="Nhập phản hồi hoặc giải trình của bạn..."
-          ></textarea>
           <button
             type="button"
-            :disabled="submitting || !supplementNotes.trim()"
+            :disabled="submitting"
             class="px-5 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50"
-            @click="handleSupplementSubmit"
+            @click="router.push('/partner-registration')"
           >
-            {{ submitting ? 'Đang gửi bổ sung...' : 'Gửi bổ sung hồ sơ' }}
+            Chỉnh sửa và nộp lại hồ sơ
           </button>
         </div>
       </div>

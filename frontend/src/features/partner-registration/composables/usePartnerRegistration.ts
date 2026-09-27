@@ -4,10 +4,8 @@ import type {
   PartnerApplication,
   PartnerDocument,
   PartnerReviewHistory,
-  StartApplicationPayload,
   SaveDraftPayload,
   SubmitApplicationPayload,
-  SupplementApplicationPayload,
 } from '../types'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -22,8 +20,8 @@ export function usePartnerRegistration() {
   const fieldErrors = ref<Record<string, string[]>>({})
 
   const isDraft = computed(() => application.value?.status === 'draft')
-  const isPendingReview = computed(() => application.value?.status === 'pending_review')
-  const isSupplementationRequested = computed(() => application.value?.status === 'supplementation_requested')
+  const isPendingReview = computed(() => ['pending', 'pending_review'].includes(application.value?.status ?? ''))
+  const isSupplementationRequested = computed(() => ['revision_required', 'supplementation_requested'].includes(application.value?.status ?? ''))
   const isApproved = computed(() => application.value?.status === 'approved')
   const isRejected = computed(() => application.value?.status === 'rejected')
 
@@ -53,11 +51,11 @@ export function usePartnerRegistration() {
     }
   }
 
-  async function start(payload: StartApplicationPayload): Promise<PartnerApplication | null> {
+  async function start(): Promise<PartnerApplication | null> {
     submitting.value = true
     clearErrors()
     try {
-      const res = await partnerRegistrationApi.startApplication(payload)
+      const res = await partnerRegistrationApi.startApplication()
       application.value = res.data
       return res.data
     } catch (err) {
@@ -90,7 +88,7 @@ export function usePartnerRegistration() {
     clearErrors()
     try {
       const formData = new FormData()
-      formData.append('document', file)
+      formData.append('file', file)
       formData.append('document_type', documentType)
 
       const res = await partnerRegistrationApi.uploadDocument(application.value.id, formData)
@@ -99,6 +97,7 @@ export function usePartnerRegistration() {
         const docs = application.value.documents.filter((d) => d.id !== res.data.id)
         docs.push(res.data)
         application.value.documents = docs
+        if (res.data.application_version) application.value.version = res.data.application_version
       }
       return res.data
     } catch (err) {
@@ -115,22 +114,6 @@ export function usePartnerRegistration() {
     clearErrors()
     try {
       const res = await partnerRegistrationApi.submitApplication(application.value.id, payload)
-      application.value = res.data
-      return res.data
-    } catch (err) {
-      extractErrors(err)
-      throw err
-    } finally {
-      submitting.value = false
-    }
-  }
-
-  async function supplement(payload: SupplementApplicationPayload): Promise<PartnerApplication | null> {
-    if (!application.value) return null
-    submitting.value = true
-    clearErrors()
-    try {
-      const res = await partnerRegistrationApi.supplementApplication(application.value.id, payload)
       application.value = res.data
       return res.data
     } catch (err) {
@@ -173,7 +156,6 @@ export function usePartnerRegistration() {
     saveDraft,
     uploadDocument,
     submit,
-    supplement,
     fetchHistory,
   }
 }

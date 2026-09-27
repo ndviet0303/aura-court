@@ -35,6 +35,7 @@ describe('AdminVenuesView', () => {
   const mockVenues = [
     {
       id: 1,
+      organization_id: 2,
       name: 'Aura Center',
       slug: 'aura-center',
       address: '142 Wellness Blvd, Downtown',
@@ -191,5 +192,25 @@ describe('AdminVenuesView', () => {
 
     expect(api.get).toHaveBeenCalledWith('/admin/venues')
     expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
+  })
+
+  it('opens owner receiving connection readiness from the venue card', async () => {
+    const wrapper = mount(AdminVenuesView, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          RouterLink: { template: '<a :href="$attrs.to"><slot /></a>' },
+        },
+      },
+    })
+    await flushPromises()
+
+    const readinessButton = wrapper.findAll('.btn-action-sm').find((button) => button.text().includes('Điều kiện & Thanh toán'))
+    expect(readinessButton).toBeDefined()
+    await readinessButton?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="owner-receiving-connection-panel"]').exists()).toBe(true)
+    expect(api.get).toHaveBeenCalledWith('/partner/organizations/2/venues/1/receiving-connection')
   })
 })

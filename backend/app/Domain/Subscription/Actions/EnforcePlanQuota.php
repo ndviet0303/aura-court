@@ -60,6 +60,7 @@ class EnforcePlanQuota
                 case 'staff':
                     $currentStaff = $org->members()
                         ->whereIn('role', ['venue_manager', 'staff', 'cashier'])
+                        ->whereIn('status', ['active', 'invited'])
                         ->count();
                     $maxStaff = (int) ($plan->max_staff ?? 2);
                     if (($currentStaff + $additionalUnits) > $maxStaff) {

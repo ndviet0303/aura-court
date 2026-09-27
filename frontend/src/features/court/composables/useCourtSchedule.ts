@@ -50,6 +50,7 @@ export function useCourtSchedule() {
     }
     return store.courts[0] || null
   })
+  const directOwnerPayments = computed(() => court.value?.venue?.payment_model === 'direct_owner_v1')
 
   const venuesList = computed<Venue[]>(() => {
     const map = new Map<number, Venue>()
@@ -286,6 +287,7 @@ export function useCourtSchedule() {
     selectedVenueId,
     timeFilter,
     court,
+    directOwnerPayments,
     venuesList,
     filteredCourts,
     filteredSlots,

@@ -21,7 +21,6 @@ const emit = defineEmits<{
   (e: 'update:searchQuery', q: string): void
   (e: 'update:selectedVenueId', venueId: number | undefined): void
   (e: 'viewDetail', contract: RecurringContractItem): void
-  (e: 'openCreate'): void
 }>()
 
 const { t } = useI18n()
@@ -127,10 +126,6 @@ const venueOptions = computed<DropdownOption[]>(() => [
         <span class="material-symbols-outlined empty-icon">receipt_long</span>
         <h4 class="empty-title">{{ t('admin.contracts.noContractsFound') }}</h4>
         <p class="empty-desc">{{ t('admin.contracts.noContractsSub') }}</p>
-        <AuraButton variant="primary" class="mt-2" @click="emit('openCreate')">
-          <span class="material-symbols-outlined icon-18">add</span>
-          <span>{{ t('admin.contracts.createFirstContract') }}</span>
-        </AuraButton>
       </div>
 
       <!-- Table Body -->

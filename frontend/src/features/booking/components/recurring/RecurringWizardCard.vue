@@ -19,10 +19,17 @@ const props = defineProps<{
   weekdayButtons: WeekdayOption[]
   sessionDurationHours: number
   hourlyRate: number
-  previewSessions: Array<{ date: string; weekdayName: string; time: string }>
+  previewSessions: Array<{
+    date: string
+    weekdayName: string
+    time: string
+    conflict: boolean
+    conflictReason: string | null
+  }>
   estimatedSessionsCount: number
   estimatedTotalAmount: number
   submitting?: boolean
+  submitDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -245,7 +252,10 @@ function formatMoney(amount: number): string {
               v-for="(s, idx) in previewSessions.slice(0, 4)"
               :key="idx"
               class="session-chip"
+              :class="{ 'session-chip--conflict': s.conflict }"
+              :title="s.conflictReason || undefined"
             >
+              <span v-if="s.conflict" class="material-symbols-outlined chip-warn-icon">warning</span>
               {{ s.weekdayName }} {{ s.date.slice(5) }} ({{ s.time }})
             </span>
             <span v-if="previewSessions.length > 4" class="more-chip">
@@ -262,6 +272,7 @@ function formatMoney(amount: number): string {
         size="lg"
         icon="event_available"
         :loading="submitting"
+        :disabled="submitDisabled"
         class="submit-action-btn"
       >
         <span>Đặt Lịch Cố Định Ngay</span>
@@ -690,6 +701,18 @@ function formatMoney(amount: number): string {
   font-size: 11px;
   font-weight: 600;
   color: var(--ink);
+}
+
+.session-chip--conflict {
+  background: color-mix(in srgb, var(--danger, #e5484d) 12%, var(--surface));
+  border-color: var(--danger, #e5484d);
+  color: var(--danger, #e5484d);
+}
+
+.chip-warn-icon {
+  font-size: 12px;
+  vertical-align: -2px;
+  margin-right: 2px;
 }
 
 .more-chip {

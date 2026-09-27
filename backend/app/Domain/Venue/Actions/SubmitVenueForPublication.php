@@ -6,6 +6,8 @@ use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Models\VenuePublicationRevision;
+use App\Models\VenueOperatingSchedule;
+use App\Models\VenueScheduleException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -60,11 +62,19 @@ class SubmitVenueForPublication
 
             // Build configuration snapshot
             $venue->loadMissing(['courts.priceSlots']);
+            $hasOperatingSchedule = VenueOperatingSchedule::query()->where('venue_id', $venue->id)->exists();
             $snapshot = [
                 'venue' => [
                     'id' => $venue->id,
                     'name' => (string) $venue->name,
                     'address' => $venue->address,
+                    'city' => $venue->city,
+                    'district' => $venue->district,
+                    'ward' => $venue->ward,
+                    'phone' => $venue->phone,
+                    'email' => $venue->email,
+                    'description' => $venue->description,
+                    'images' => $venue->images ?? [],
                     'amenities' => $venue->amenities,
                     'google_maps_url' => $venue->google_maps_url,
                 ],
@@ -83,6 +93,18 @@ class SubmitVenueForPublication
                     'id' => $venue->organization_id,
                     'name' => $org->name,
                 ],
+                'operating_calendar' => $hasOperatingSchedule ? [
+                    'schedules' => VenueOperatingSchedule::query()
+                        ->where('venue_id', $venue->id)
+                        ->orderBy('scope_key')
+                        ->get(['court_id', 'scope_key', 'timezone', 'version', 'weekly_hours'])
+                        ->toArray(),
+                    'exceptions' => VenueScheduleException::query()
+                        ->where('venue_id', $venue->id)
+                        ->orderBy('exception_date')
+                        ->get(['court_id', 'scope_key', 'exception_date', 'name', 'type', 'intervals', 'timezone'])
+                        ->toArray(),
+                ] : null,
                 'submitted_at' => now()->toIso8601String(),
             ];
 

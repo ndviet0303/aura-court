@@ -9,20 +9,21 @@ import CycleOccurrencesTable from '../components/cycles/CycleOccurrencesTable.vu
 import CyclePaymentModal from '../components/cycles/CyclePaymentModal.vue'
 
 const route = useRoute()
-const invoiceId = route.params.id || '101'
+const invoiceId = route.params.id as string
 
 const {
   loading,
-  paying,
   notice,
   error,
   invoice,
   occurrences,
   showPaymentModal,
   loadInvoice,
-  payInvoice,
   printInvoice,
   copyInvoiceLink,
+  paymentAttempt,
+  refreshing,
+  refreshStatus,
 } = usePaymentCycleDetail(invoiceId as string)
 
 onMounted(() => {
@@ -70,7 +71,7 @@ onMounted(() => {
       </div>
       <div class="header-titles">
         <h1 class="page-title">Chi Tiết Kỳ Thanh Toán Hợp Đồng Đặt Sân</h1>
-        <p class="page-sub">Theo dõi bảng kê chi tiết các buổi chơi trong kỳ, đối soát lịch và thanh toán tự động qua VietQR.</p>
+        <p class="page-sub">Theo dõi bảng kê các buổi chơi và trạng thái thanh toán theo thông tin chủ sân đã xác minh.</p>
       </div>
     </header>
 
@@ -123,6 +124,7 @@ onMounted(() => {
       <!-- Summary Card -->
       <CycleSummaryCard
         :invoice="invoice"
+        :payment-available="!!paymentAttempt && paymentAttempt.status === 'pending'"
         @open-pay="showPaymentModal = true"
       />
 
@@ -137,9 +139,10 @@ onMounted(() => {
     <CyclePaymentModal
       :show="showPaymentModal"
       :invoice="invoice"
-      :paying="paying"
+      :payment-attempt="paymentAttempt"
+      :refreshing="refreshing"
       @close="showPaymentModal = false"
-      @confirm-pay="payInvoice"
+      @refresh="refreshStatus"
     />
   </main>
 </template>

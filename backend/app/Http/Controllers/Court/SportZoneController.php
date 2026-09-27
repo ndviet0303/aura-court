@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Court;
 
 use App\Http\Controllers\Controller;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\SportZone;
 use App\Models\Venue;
 use Illuminate\Http\Request;
@@ -14,12 +15,29 @@ class SportZoneController extends Controller
 {
     public function index(Request $request)
     {
-        $version = Cache::get('sport_zones_version', 1);
-        $cacheKey = "sport_zones:v{$version}:" . md5(json_encode($request->only(['venue_id', 'sport_type'])));
+        $user = $request->user();
+        $scopedVenueIds = null;
+        $isAdminRoute = $request->is('api/*/admin/sport-zones');
+        if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+            if ($request->filled('venue_id')) {
+                $requestedVenueId = (int) $request->query('venue_id');
+                abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue.');
+                $scopedVenueIds = [$requestedVenueId];
+            } else {
+                $scopedVenueIds = $authorizedVenueIds;
+            }
+        } elseif ($request->filled('venue_id')) {
+            $scopedVenueIds = [(int) $request->query('venue_id')];
+        }
 
-        $zones = Cache::remember($cacheKey, 300, function () use ($request) {
+        $version = Cache::get('sport_zones_version', 1);
+        $cacheKey = "sport_zones:v{$version}:" . md5(json_encode([$isAdminRoute, $scopedVenueIds, $request->only(['sport_type'])]));
+
+        $zones = Cache::remember($cacheKey, 300, function () use ($request, $scopedVenueIds, $isAdminRoute) {
             return SportZone::query()
-                ->when($request->query('venue_id'), fn ($q, $venueId) => $q->where('venue_id', $venueId))
+                ->when(! $isAdminRoute, fn ($q) => $q->where('is_active', true)->whereHas('venue', fn ($venue) => $venue->where('is_active', true)))
+                ->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))
                 ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
                 ->withCount('courts')
                 ->with(['venue'])
@@ -27,6 +45,13 @@ class SportZoneController extends Controller
                 ->get()
                 ->toArray();
         });
+
+        if (! $isAdminRoute) {
+            $eligibility = app(VerifyEffectiveBookingEligibility::class);
+            $zones = collect($zones)
+                ->filter(fn (array $zone) => $eligibility->evaluateVenue((int) $zone['venue_id'])['eligible'])
+                ->values();
+        }
 
         return response()->json($zones);
     }
@@ -43,6 +68,10 @@ class SportZoneController extends Controller
             'description.*' => 'string',
             'is_active' => 'boolean',
         ]);
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
+        }
 
         $zone = SportZone::create($data);
         Cache::increment('sport_zones_version');
@@ -50,13 +79,23 @@ class SportZoneController extends Controller
         return response()->json($zone->load('venue'), 201);
     }
 
-    public function show(SportZone $sportZone)
+    public function show(Request $request, SportZone $sportZone)
     {
+        if (! $request->is('api/*/admin/sport-zones/*')) {
+            abort_unless($sportZone->is_active, 404);
+            abort_unless(app(VerifyEffectiveBookingEligibility::class)->evaluateVenue($sportZone->venue_id)['eligible'], 404);
+        }
+
         return $sportZone->load(['venue', 'courts.priceSlots']);
     }
 
     public function update(Request $request, SportZone $sportZone)
     {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($sportZone->venue_id), 403, 'Unauthorized venue.');
+        }
+
         $data = $request->validate([
             'name' => 'sometimes|array',
             'name.*' => 'string|max:120',
@@ -75,6 +114,11 @@ class SportZoneController extends Controller
 
     public function destroy(SportZone $sportZone)
     {
+        $user = request()->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($sportZone->venue_id), 403, 'Unauthorized venue.');
+        }
+
         $sportZone->update(['is_active' => false]);
         Cache::increment('sport_zones_version');
 

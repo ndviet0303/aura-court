@@ -73,7 +73,7 @@ describe('Organization Owner & Scoped Access (Task 3.1 & 3.4)', () => {
   })
 
   describe('Route Guards: Owner vs Cashier vs Customer', () => {
-    it('allows organization_owner into /admin/organization and /pos, but denies /admin/venues', async () => {
+    it('allows organization_owner into operational screens (/admin/venues, /admin/manage, /admin/organization, /pos), but denies platform-admin /admin/payouts and /admin/kyc', async () => {
       const auth = useAuthStore()
       auth.user = {
         id: 10,
@@ -105,12 +105,18 @@ describe('Organization Owner & Scoped Access (Task 3.1 & 3.4)', () => {
       await router.push('/pos')
       expect(router.currentRoute.value.path).toBe('/admin/pos')
 
-      // 3. Owner CANNOT access platform-admin /admin/venues
+      // 3. Owner CAN access operational /admin/venues and /admin/manage
       await router.push('/admin/venues')
+      expect(router.currentRoute.value.path).toBe('/admin/venues')
+
+      await router.push('/admin/manage')
+      expect(router.currentRoute.value.path).toBe('/admin/manage')
+
+      // 4. Owner CANNOT access platform-admin only screens
+      await router.push('/admin/payouts')
       expect(router.currentRoute.value.path).toBe('/')
 
-      // 4. Owner CANNOT access platform-admin /admin/manage
-      await router.push('/admin/manage')
+      await router.push('/admin/kyc')
       expect(router.currentRoute.value.path).toBe('/')
     })
 

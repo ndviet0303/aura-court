@@ -14,7 +14,7 @@ class ListDisputeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'nullable|string|in:all,pending,investigating,awaiting_response,resolved,dismissed',
+            'status' => 'nullable|string|in:all,pending,investigating,awaiting_evidence,awaiting_response,resolved,dismissed,reopened,closed',
             'severity' => 'nullable|string|in:all,critical,high,medium,low',
             'dispute_type' => 'nullable|string',
             'search' => 'nullable|string|max:100',

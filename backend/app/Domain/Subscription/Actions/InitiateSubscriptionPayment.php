@@ -80,6 +80,13 @@ class InitiateSubscriptionPayment
                 ]);
             }
 
+            $billingMonths = $plan->billingMonths();
+            if ($billingMonths === null) {
+                throw ValidationException::withMessages([
+                    'plan' => 'Chu kỳ gói phải là 1, 6 hoặc 12 tháng theo lịch.',
+                ]);
+            }
+
             $referenceCode = 'SUB-PAY-'.date('Ymd').'-'.strtoupper(Str::random(8));
 
             // Create immutable pending payment attempt
@@ -95,6 +102,7 @@ class InitiateSubscriptionPayment
                     'plan_id' => $plan->id,
                     'plan_version' => (int) $plan->version,
                     'billing_cycle' => $plan->billing_cycle,
+                    'billing_months' => $billingMonths,
                     'accepted_terms_version' => $acceptedTermsVersion,
                     'actor_id' => $actorId,
                     'organization_name' => $org->name,
@@ -107,6 +115,10 @@ class InitiateSubscriptionPayment
             $updatedAttempt = $this->subRepo->updatePaymentAttempt($attempt, [
                 'provider' => $gatewayRes['provider'] ?? 'payos',
                 'provider_ref' => $gatewayRes['provider_ref'],
+                'metadata' => array_merge($attempt->metadata ?? [], [
+                    'checkout_url' => $gatewayRes['checkout_url'],
+                    'qr_code' => $gatewayRes['qr_code'] ?? null,
+                ]),
             ]);
 
             $this->notif->recordAudit(

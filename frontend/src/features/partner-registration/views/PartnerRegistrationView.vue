@@ -24,32 +24,24 @@ const {
 } = usePartnerRegistration()
 
 const currentStep = ref(1)
-const termsAccepted = ref(false)
-const privacyAccepted = ref(false)
-const consentError = ref('')
 
 onMounted(async () => {
   const current = await fetchCurrent()
   if (current) {
-    if (current.status !== 'draft') {
+    if (!['draft', 'revision_required', 'supplementation_requested'].includes(current.status)) {
       router.push('/partner/application-status')
     }
   }
 })
 
 async function handleStartApplication() {
-  consentError.value = ''
-  if (!termsAccepted.value || !privacyAccepted.value) {
-    consentError.value = 'Vui lòng đọc và đồng ý với điều khoản dịch vụ đối tác và chính sách dữ liệu.'
-    return
-  }
   try {
-    await start({ consent_terms: termsAccepted.value, consent_privacy: privacyAccepted.value, terms_version: 'v1.0' })
+    await start()
     currentStep.value = 1
   } catch {}
 }
-async function handleSaveDraft(payload: SaveDraftPayload) {
-  try { await saveDraft(payload) } catch {}
+async function handleSaveDraft(payload: SaveDraftPayload): Promise<boolean> {
+  try { return (await saveDraft(payload)) !== null } catch { return false }
 }
 async function handleUpload(payload: { file: File; documentType: string }) {
   try { await uploadDocument(payload.file, payload.documentType) } catch {}
@@ -90,43 +82,15 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
     <!-- Initial Consent Step (if no draft application yet) -->
     <div v-else-if="!application" class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 border border-gray-100 dark:border-gray-700">
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        1. Cam kết & Điều khoản Đối tác
+        Bắt đầu hồ sơ đối tác
       </h2>
       <div class="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300 mb-6 space-y-2 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
         <p>
-          Bằng việc đăng ký tài khoản đối tác, bạn cam kết cung cấp thông tin trung thực về pháp nhân/hộ kinh doanh và cơ sở sân bãi.
+          Hồ sơ của bạn sẽ được đội ngũ vận hành Aura Sports kiểm duyệt trước khi mở quyền quản lý và xuất bản cơ sở.
         </p>
         <p>
-          Hồ sơ của bạn sẽ được đội ngũ vận hành Aura Sports kiểm duyệt độc lập trước khi mở quyền quản lý kinh doanh và xuất bản sân bãi.
+          Bạn sẽ xem và xác nhận các điều khoản cần thiết trước khi nộp hồ sơ.
         </p>
-      </div>
-
-      <div class="space-y-3 mb-6">
-        <label class="flex items-start gap-3 cursor-pointer">
-          <input
-            v-model="termsAccepted"
-            type="checkbox"
-            class="mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-          />
-          <span class="text-sm text-gray-700 dark:text-gray-200">
-            Tôi đã đọc, hiểu và đồng ý với <strong>Quy chế Hoạt động Đối tác (phiên bản v1.0)</strong>.
-          </span>
-        </label>
-
-        <label class="flex items-start gap-3 cursor-pointer">
-          <input
-            v-model="privacyAccepted"
-            type="checkbox"
-            class="mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-          />
-          <span class="text-sm text-gray-700 dark:text-gray-200">
-            Tôi đồng ý với chính sách xử lý dữ liệu và xác minh định danh kinh doanh.
-          </span>
-        </label>
-      </div>
-
-      <div v-if="consentError" class="text-xs text-red-600 dark:text-red-400 mb-4">
-        {{ consentError }}
       </div>
 
       <button
@@ -147,7 +111,7 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
           <button type="button" class="text-xs font-semibold px-3 py-1 rounded-full" :class="currentStep === 2 ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" @click="currentStep = 2">2. Tài liệu xác thực</button>
           <button type="button" class="text-xs font-semibold px-3 py-1 rounded-full" :class="currentStep === 3 ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" @click="currentStep = 3">3. Rà soát & Nộp hồ sơ</button>
         </div>
-        <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Dự thảo #{{ application.id }}</span>
+        <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Hồ sơ #{{ application.id }}</span>
       </div>
 
       <!-- Step 1: Business Information -->
@@ -155,8 +119,9 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
         v-if="currentStep === 1"
         :application="application"
         :field-errors="fieldErrors"
+        :error="error"
         :saving="saving"
-        @save="handleSaveDraft"
+        :save="handleSaveDraft"
         @next="currentStep = 2"
       />
 

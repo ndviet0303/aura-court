@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
-use App\Models\Journal;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
@@ -23,12 +21,19 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenantA;
+
     private Organization $tenantB;
+
     private User $staffAlice;
+
     private User $cashierBob;
+
     private User $customerCharlie;
+
     private User $customerOtherTenant;
+
     private Venue $venueA;
+
     private Court $courtA;
 
     protected function setUp(): void
@@ -37,14 +42,15 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
 
         $this->tenantA = Organization::create([
             'name' => 'Aura Court Tenant A',
-            'slug' => 'aura-a-' . uniqid(),
+            'slug' => 'aura-a-'.uniqid(),
             'status' => 'active',
+            'partner_status' => 'approved',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
 
         $this->tenantB = Organization::create([
             'name' => 'Competitor Tenant B',
-            'slug' => 'comp-b-' . uniqid(),
+            'slug' => 'comp-b-'.uniqid(),
             'status' => 'active',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
@@ -90,7 +96,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
         $this->venueA = Venue::create([
             'organization_id' => $this->tenantA->id,
             'name' => 'Aura Complex District 1',
-            'slug' => 'aura-d1-' . uniqid(),
+            'slug' => 'aura-d1-'.uniqid(),
             'is_active' => true,
         ]);
 

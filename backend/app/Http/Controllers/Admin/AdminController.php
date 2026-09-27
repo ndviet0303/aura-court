@@ -13,12 +13,20 @@ use App\Domain\Admin\Actions\ManageCourtBlocks;
 use App\Domain\Admin\Actions\ManageCourtPrices;
 use App\Domain\Admin\Actions\ReviewPayment;
 use App\Domain\Admin\Actions\UpdateVenue;
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
+use App\Models\LegacyBookingMapping;
+use App\Models\LegacyBookingSlotMapping;
+use App\Models\OwnerRefundObligation;
+use App\Models\PlatformPaymentAttempt;
+use App\Models\PosOrder;
+use App\Models\Reservation;
+use App\Models\ReservationSlot;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Venue;
@@ -50,10 +58,36 @@ class AdminController extends Controller
     public function venues(Request $request)
     {
         $version = Cache::get('venues_version', 1);
+        $user = $request->user();
+        $isAdminRoute = $request->is('api/*/admin/venues');
+        if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->organizationMembers()->where('status', 'active')->whereIn('role', [
+                \App\Models\OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                \App\Models\OrganizationMember::ROLE_VENUE_MANAGER,
+                \App\Models\OrganizationMember::ROLE_STAFF,
+            ])->exists(), 403, 'Unauthorized venue management.');
+
+            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+            $venues = Venue::query()
+                ->whereIn('id', $authorizedVenueIds)
+                ->withCount(['courts' => fn ($query) => $query->where('is_active', true)])
+                ->with(['sportZones' => fn ($query) => $query->where('is_active', true)->withCount('courts')])
+                ->orderBy('id')
+                ->get();
+            return response()->json($venues);
+        }
+
         $cacheKey = "venues:v{$version}:" . ($request->query('sport_type') ?? 'all');
         $venues = Cache::remember($cacheKey, 300, function () use ($request) {
             return $this->venues->getActiveVenuesWithCourts($request->query('sport_type'))->toArray();
         });
+
+        if (! $isAdminRoute) {
+            $eligibility = app(VerifyEffectiveBookingEligibility::class);
+            $venues = collect($venues)
+                ->filter(fn (array $venue) => $eligibility->evaluateVenue((int) $venue['id'])['eligible'])
+                ->values();
+        }
 
         return response()->json($venues);
     }
@@ -61,6 +95,18 @@ class AdminController extends Controller
     public function storeVenue(Request $request)
     {
         $data = $this->validatedVenue($request);
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            $orgId = $request->input('organization_id')
+                ?? $user->organizations()->where('organizations.status', 'active')->first()?->id;
+            abort_unless($orgId && $user->hasRoleInOrganization($orgId, [\App\Models\OrganizationMember::ROLE_ORGANIZATION_OWNER, \App\Models\OrganizationMember::ROLE_VENUE_MANAGER]), 403, 'Unauthorized organization.');
+            $organization = \App\Models\Organization::find($orgId);
+            abort_unless($organization?->isApprovedPartner(), 403, 'Câu lạc bộ cần được phê duyệt đối tác trước khi tạo cơ sở.');
+            $data['organization_id'] = $orgId;
+            $data['status'] = 'draft';
+            $data['is_active'] = false;
+        }
+
         $venue = $this->createVenueAction->execute($data);
         Cache::increment('venues_version');
         $this->audits->record($request, 'venue.created', $venue);
@@ -70,7 +116,16 @@ class AdminController extends Controller
 
     public function updateVenue(Request $request, Venue $venue)
     {
-        if ($request->hasAny(['name', 'address', 'google_maps_url', 'amenities'])) {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
+        }
+
+        if ($request->boolean('is_active') && ! $venue->is_active && ! in_array($venue->status, ['published', 'active'], true)) {
+            abort(409, 'Cơ sở phải hoàn tất điều kiện và quy trình duyệt trước khi mở công khai.');
+        }
+
+        if ($request->hasAny(['name', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'amenities'])) {
             $data = $this->validatedVenue($request);
             $this->updateVenueAction->execute($venue, $data);
         }
@@ -85,6 +140,11 @@ class AdminController extends Controller
 
     public function destroyVenue(Venue $venue)
     {
+        $user = request()->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
+        }
+
         $this->updateVenueAction->execute($venue, ['is_active' => false]);
         Cache::increment('venues_version');
         $this->audits->record(request(), 'venue.deactivated', $venue);
@@ -96,6 +156,7 @@ class AdminController extends Controller
     {
         $venue = $this->venues->findBySlug($slug);
         abort_unless($venue, 404);
+        abort_unless(app(VerifyEffectiveBookingEligibility::class)->evaluateVenue($venue)['eligible'], 404);
 
         return $venue;
     }
@@ -112,7 +173,15 @@ class AdminController extends Controller
             'name' => ($isPatch ? 'sometimes|' : '').'required|array',
             'name.*' => 'string|max:120',
             'address' => ($isPatch ? 'sometimes|' : '').'required|string|max:255',
-            'google_maps_url' => ($isPatch ? 'sometimes|' : '').'required|url|max:2048',
+            'city' => 'sometimes|nullable|string|max:100',
+            'district' => 'sometimes|nullable|string|max:100',
+            'ward' => 'sometimes|nullable|string|max:100',
+            'phone' => 'sometimes|nullable|string|max:30',
+            'email' => 'sometimes|nullable|email|max:255',
+            'description' => 'sometimes|nullable|string|max:2000',
+            'images' => 'sometimes|nullable|array',
+            'images.*' => 'url|max:2048',
+            'google_maps_url' => ($isPatch ? 'sometimes|' : '').'nullable|url|max:2048',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',
             'is_active' => 'boolean',
@@ -148,14 +217,35 @@ class AdminController extends Controller
 
     public function bookings(Request $request)
     {
-        return $this->bookings->paginateAdminBookings([
+        $user = $request->user();
+        $filters = [
             'status' => $request->status,
             'date' => $request->date,
-        ], 30);
+        ];
+
+        if ($user && ! $user->isPlatformAdmin()) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+            if ($request->filled('venue_id')) {
+                $requestedVenueId = (int) $request->input('venue_id');
+                abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue.');
+                $filters['venue_id'] = $requestedVenueId;
+            } else {
+                $filters['venue_ids'] = $authorizedVenueIds;
+            }
+        } elseif ($request->filled('venue_id')) {
+            $filters['venue_id'] = (int) $request->input('venue_id');
+        }
+
+        return $this->bookings->paginateAdminBookings($filters, 30);
     }
 
     public function prices(Request $request, Court $court)
     {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         $data = $request->validate([
             'weekday' => 'required|integer|min:1|max:7',
             'starts_at' => 'required|date_format:H:i',
@@ -172,6 +262,11 @@ class AdminController extends Controller
 
     public function bulkPrices(Request $request, Court $court)
     {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         $data = $request->validate([
             'weekdays' => 'required|array|min:1',
             'weekdays.*' => 'integer|min:1|max:7',
@@ -181,7 +276,6 @@ class AdminController extends Controller
         ]);
 
         $result = $this->manageCourtPricesAction->bulkUpdate($court, $data);
-
         $this->audits->record($request, 'price.bulk_updated', null, [
             'court_id' => $court->id,
             'weekdays' => $data['weekdays'],
@@ -199,6 +293,11 @@ class AdminController extends Controller
 
     public function blocks(Request $request, Court $court)
     {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         $data = $request->validate([
             'starts_at' => 'required|date',
             'ends_at' => 'required|date|after:starts_at',
@@ -213,6 +312,11 @@ class AdminController extends Controller
 
     public function updatePrice(Request $request, Court $court, CourtPriceSlot $price)
     {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         $data = $request->validate([
             'weekday' => 'sometimes|integer|min:1|max:7',
             'starts_at' => 'sometimes|date_format:H:i',
@@ -229,6 +333,11 @@ class AdminController extends Controller
 
     public function destroyPrice(Court $court, CourtPriceSlot $price)
     {
+        $user = request()->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         $this->manageCourtPricesAction->deletePrice($court, $price);
         $this->audits->record(request(), 'price.deleted', $price, ['court_id' => $court->id]);
 
@@ -237,11 +346,21 @@ class AdminController extends Controller
 
     public function blocksIndex(Court $court)
     {
+        $user = request()->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         return $this->courtBlocks->paginateForCourt($court, 50);
     }
 
     public function destroyBlock(Court $court, CourtBlock $block)
     {
+        $user = request()->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
         $this->manageCourtBlocksAction->deleteBlock($court, $block);
         $this->audits->record(request(), 'court_block.deleted', $block, ['court_id' => $court->id]);
 
@@ -273,8 +392,14 @@ class AdminController extends Controller
 
     public function noShow(Request $request, Booking $booking)
     {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            $venueId = $booking->court?->venue_id;
+            abort_unless($venueId && $user->canManageVenue($venueId), 403, 'Unauthorized booking venue.');
+        }
+
         abort_unless($booking->status === 'confirmed', 409, 'Booking không ở trạng thái có thể đánh dấu no-show.');
-        abort_unless($booking->slots()->where('starts_at', '>', now())->doesntExist(), 409, 'Chưa kết thúc toàn bộ khung giờ.');
+        abort_unless($booking->slots()->where('starts_at', '>', now()->utc())->doesntExist(), 409, 'Chưa kết thúc toàn bộ khung giờ.');
         $this->bookings->updateStatus($booking, 'no_show');
         $this->audits->record($request, 'booking.no_show', $booking);
 
@@ -283,43 +408,59 @@ class AdminController extends Controller
 
     public function report(Request $request)
     {
-        $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
-        $from = $request->filled('from')
-            ? Carbon::parse($request->input('from'), $timezone)->startOfDay()
-            : now($timezone)->startOfMonth();
-        $to = $request->filled('to')
-            ? Carbon::parse($request->input('to'), $timezone)->endOfDay()
-            : now($timezone)->endOfMonth();
+        $data = $this->buildReportDataset($request);
 
-        $base = Booking::whereBetween('created_at', [$from, $to]);
+        $from = $data['from'];
+        $to = $data['to'];
+        $timezone = $data['timezone'];
+        $scopedVenueIds = $data['scoped_venue_ids'];
+        $canonicalBookings = $data['canonical_bookings'];
+
         $confirmedSlots = BookingSlot::query()
             ->where('status', 'confirmed')
-            ->whereBetween('starts_at', [$from, $to])
+            ->whereBetween('starts_at', [$from->copy()->utc(), $to->copy()->utc()])
+            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
             ->get();
+
+        $confirmedReservationSlots = ReservationSlot::query()
+            ->where('status', 'confirmed')
+            ->whereBetween('starts_at', [$from->copy()->utc(), $to->copy()->utc()])
+            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
+            ->get();
+
+        $mappedReservationSlotIds = LegacyBookingSlotMapping::pluck('reservation_slot_id')->all();
+        $unmappedReservationSlots = $confirmedReservationSlots->reject(fn ($s) => in_array($s->id, $mappedReservationSlotIds, true));
+        $allConfirmedSlots = $confirmedSlots->concat($unmappedReservationSlots);
 
         $capacity = 0;
         foreach (CarbonPeriod::create($from->copy()->startOfDay(), '1 day', $to->copy()->startOfDay()) as $day) {
             $capacity += CourtPriceSlot::query()
                 ->where('is_active', true)
                 ->where('weekday', $day->dayOfWeekIso)
+                ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
                 ->count();
         }
 
-        $byHour = $confirmedSlots
-            ->groupBy(fn (BookingSlot $slot) => $slot->starts_at->setTimezone($timezone)->format('H:00'))
+        $byHour = $allConfirmedSlots
+            ->groupBy(fn ($slot) => $slot->starts_at->setTimezone($timezone)->format('H:00'))
             ->map(fn ($items, $hour) => ['hour' => $hour, 'bookings' => $items->count()])
             ->values();
 
-        $byCourt = Booking::query()
-            ->where('status', 'confirmed')
-            ->whereBetween('created_at', [$from, $to])
-            ->select('court_id', DB::raw('count(*) as bookings'), DB::raw('sum(total_amount) as revenue'))
+        $byCourt = $canonicalBookings
             ->groupBy('court_id')
-            ->with('court:id,name')
-            ->get();
+            ->map(function ($items, $courtId) {
+                $court = $items->first()['court'] ?? ($courtId ? Court::find($courtId) : null);
+                return [
+                    'court_id' => (int) $courtId,
+                    'bookings' => $items->count(),
+                    'revenue' => (int) $items->sum('total_amount'),
+                    'court' => $court ? ['id' => $court->id, 'name' => $court->name] : null,
+                ];
+            })
+            ->values();
 
-        if ($byCourt->isEmpty() && $confirmedSlots->isNotEmpty()) {
-            $byCourt = $confirmedSlots
+        if ($byCourt->isEmpty() && $allConfirmedSlots->isNotEmpty()) {
+            $byCourt = $allConfirmedSlots
                 ->groupBy('court_id')
                 ->map(function ($slots, $courtId) {
                     $court = Court::find($courtId);
@@ -333,14 +474,37 @@ class AdminController extends Controller
                 ->values();
         }
 
+        $pendingRefunds = (int) Refund::where('status', 'pending')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
+            ->sum('amount');
+        $pendingRefunds += (int) OwnerRefundObligation::where('status', 'requested')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($scopedVenueIds !== null, function ($q) use ($scopedVenueIds) {
+                $q->where(function ($sub) use ($scopedVenueIds) {
+                    $sub->whereIn('venue_id', $scopedVenueIds)
+                        ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds))
+                        ->orWhereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
+                });
+            })
+            ->sum('amount');
+
+        $canonicalCount = $canonicalBookings->count();
+
         return [
             'from' => $from->toIso8601String(),
             'to' => $to->toIso8601String(),
-            'bookings' => (clone $base)->count(),
-            'confirmed' => (clone $base)->where('status', 'confirmed')->count(),
-            'revenue' => (int) (clone $base)->where('status', 'confirmed')->sum('total_amount'),
-            'pendingRefunds' => (int) Refund::where('status', 'pending')->whereBetween('created_at', [$from, $to])->sum('amount'),
-            'occupancyRate' => $capacity > 0 ? round($confirmedSlots->count() / $capacity * 100, 1) : 0,
+            'bookings' => $canonicalCount,
+            'confirmed' => $canonicalCount,
+            'revenue' => $data['owner_revenue'],
+            'owner_revenue' => $data['owner_revenue'],
+            'booking_revenue' => $data['booking_revenue'],
+            'pos_revenue' => $data['pos_revenue'],
+            'owner_refunds' => $data['owner_refunds'],
+            'net_owner_revenue' => $data['net_owner_revenue'],
+            'platform_fees' => $data['platform_fees'],
+            'pendingRefunds' => $pendingRefunds,
+            'occupancyRate' => $capacity > 0 ? round($allConfirmedSlots->count() / $capacity * 100, 1) : 0,
             'byHour' => $byHour,
             'byCourt' => $byCourt,
         ];
@@ -348,18 +512,368 @@ class AdminController extends Controller
 
     public function reportCsv(Request $request)
     {
-        $from = $request->date('from')?->startOfDay() ?? now()->startOfMonth();
-        $to = $request->date('to')?->endOfDay() ?? now()->endOfDay();
-        $rows = Booking::with(['user', 'court'])->whereBetween('created_at', [$from, $to])->latest()->get();
+        $data = $this->buildReportDataset($request);
 
-        return response()->streamDownload(function () use ($rows) {
+        $csvRows = collect();
+
+        // 1. Canonical bookings
+        foreach ($data['canonical_bookings'] as $cb) {
+            $court = $cb['court'];
+            $venueOrCourt = $court?->name ?: ($court?->venue?->name ?: 'N/A');
+            $customer = $cb['user']?->email ?: ($cb['user']?->name ?: 'N/A');
+
+            $csvRows->push([
+                'code' => (string) $cb['code'],
+                'source_type' => 'booking',
+                'customer' => $customer,
+                'venue_or_court' => $venueOrCourt,
+                'receiver_type' => 'owner',
+                'status' => (string) $cb['status'],
+                'gross_amount' => (int) $cb['total_amount'],
+                'refund_amount' => 0,
+                'net_amount' => (int) $cb['total_amount'],
+                'created_at' => $cb['created_at'] ? Carbon::parse($cb['created_at'])->toIso8601String() : null,
+            ]);
+        }
+
+        // 2. POS orders
+        foreach ($data['pos_orders'] as $pos) {
+            $code = $pos->payment_reference ?: (data_get($pos->metadata, 'code') ?: ('POS-' . $pos->id));
+            $customer = $pos->customer?->email ?: ($pos->customer?->name ?: (data_get($pos->metadata, 'customer_name') ?: 'Guest'));
+            $venueOrCourt = $pos->venue?->name ?: ($pos->shift?->venue?->name ?: ($pos->reservation?->court?->name ?: 'N/A'));
+
+            $csvRows->push([
+                'code' => (string) $code,
+                'source_type' => 'pos_order',
+                'customer' => $customer,
+                'venue_or_court' => $venueOrCourt,
+                'receiver_type' => 'owner',
+                'status' => (string) $pos->status,
+                'gross_amount' => (int) $pos->total_amount,
+                'refund_amount' => 0,
+                'net_amount' => (int) $pos->total_amount,
+                'created_at' => $pos->created_at?->toIso8601String(),
+            ]);
+        }
+
+        // 3. Owner refunds
+        foreach ($data['owner_refunds_collection'] as $ref) {
+            $code = $ref->reference_code ?: ('REF-' . $ref->id);
+            $customer = $ref->payer?->email ?: ($ref->payer?->name ?: 'N/A');
+            $venueOrCourt = $ref->venue?->name ?: ($ref->reservation?->court?->venue?->name ?: ($ref->reservation?->court?->name ?: ($ref->booking?->court?->name ?: 'N/A')));
+
+            $csvRows->push([
+                'code' => (string) $code,
+                'source_type' => 'owner_refund',
+                'customer' => $customer,
+                'venue_or_court' => $venueOrCourt,
+                'receiver_type' => 'owner',
+                'status' => (string) $ref->status,
+                'gross_amount' => 0,
+                'refund_amount' => (int) $ref->amount,
+                'net_amount' => -((int) $ref->amount),
+                'created_at' => $ref->created_at?->toIso8601String(),
+            ]);
+        }
+
+        // 4. Platform subscriptions (only if user is platform admin)
+        if ($data['is_platform_admin']) {
+            foreach ($data['platform_attempts'] as $pa) {
+                $code = $pa->reference_code ?: ('SUB-' . $pa->id);
+                $customer = $pa->organization?->name ?: ($pa->subscription?->organization?->name ?: 'Platform');
+
+                $csvRows->push([
+                    'code' => (string) $code,
+                    'source_type' => 'platform_subscription',
+                    'customer' => $customer,
+                    'venue_or_court' => 'Platform',
+                    'receiver_type' => 'platform',
+                    'status' => (string) $pa->status,
+                    'gross_amount' => (int) $pa->amount,
+                    'refund_amount' => 0,
+                    'net_amount' => (int) $pa->amount,
+                    'created_at' => $pa->created_at?->toIso8601String(),
+                ]);
+            }
+        }
+
+        $csvRows = $csvRows->sortByDesc('created_at')->values();
+
+        return response()->streamDownload(function () use ($csvRows) {
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['code', 'customer', 'court', 'status', 'amount', 'created_at']);
-            foreach ($rows as $booking) {
-                fputcsv($output, [$booking->code, $booking->user?->email, $booking->court?->name, $booking->status, $booking->total_amount, $booking->created_at?->toIso8601String()]);
+            fputcsv($output, ['code', 'source_type', 'customer', 'venue_or_court', 'receiver_type', 'status', 'gross_amount', 'refund_amount', 'net_amount', 'created_at']);
+            foreach ($csvRows as $row) {
+                fputcsv($output, [
+                    $row['code'],
+                    $row['source_type'],
+                    $row['customer'],
+                    $row['venue_or_court'],
+                    $row['receiver_type'],
+                    $row['status'],
+                    $row['gross_amount'],
+                    $row['refund_amount'],
+                    $row['net_amount'],
+                    $row['created_at'],
+                ]);
             }
             fclose($output);
         }, 'booking-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function buildReportDataset(Request $request): array
+    {
+        $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
+        $from = $request->filled('from')
+            ? Carbon::parse($request->input('from'), $timezone)->startOfDay()
+            : now($timezone)->startOfMonth();
+        $to = $request->filled('to')
+            ? Carbon::parse($request->input('to'), $timezone)->endOfDay()
+            : now($timezone)->endOfMonth();
+
+        $user = $request->user();
+        $scopedVenueIds = null;
+        if ($user && ! $user->isPlatformAdmin()) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+            if ($request->filled('venue_id')) {
+                $requestedVenueId = (int) $request->input('venue_id');
+                abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue report.');
+                $scopedVenueIds = [$requestedVenueId];
+            } else {
+                $scopedVenueIds = $authorizedVenueIds;
+            }
+        } elseif ($request->filled('venue_id')) {
+            $scopedVenueIds = [(int) $request->input('venue_id')];
+        }
+
+        // 1. Query V1 bookings and V2 reservations confirmed records
+        $v1Bookings = Booking::with(['court.venue', 'user'])
+            ->where('status', 'confirmed')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
+            ->get();
+
+        $v2Reservations = Reservation::with(['court.venue', 'user'])
+            ->where('status', 'confirmed')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
+            ->get();
+
+        // Load legacy mappings to link V1 and V2 records
+        $v1Ids = $v1Bookings->pluck('id')->filter()->all();
+        $v2Ids = $v2Reservations->pluck('id')->filter()->all();
+
+        $legacyMappings = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')
+            ->where(function ($q) use ($v1Ids, $v2Ids) {
+                $q->whereIn('legacy_booking_id', $v1Ids)
+                  ->orWhereIn('reservation_id', $v2Ids);
+            })
+            ->get();
+
+        $mappingByReservationId = [];
+        $mappingByLegacyBookingId = [];
+        $mappingByLegacyCode = [];
+
+        foreach ($legacyMappings as $m) {
+            if ($m->reservation_id && $m->legacy_booking_id) {
+                $mappingByReservationId[$m->reservation_id] = $m->legacy_booking_id;
+                $mappingByLegacyBookingId[$m->legacy_booking_id] = $m->reservation_id;
+            }
+            if ($m->legacy_code && $m->legacy_booking_id) {
+                $mappingByLegacyCode[$m->legacy_code] = $m->legacy_booking_id;
+            }
+        }
+
+        $v1ById = $v1Bookings->keyBy('id');
+        $v1ByCode = $v1Bookings->keyBy('code');
+
+        $mergedV1BookingIds = [];
+        $canonicalBookings = collect();
+
+        foreach ($v2Reservations as $res) {
+            $matchedBooking = null;
+
+            // 1. Authoritative check 1: $mappingByReservationId[$res->id] -> match to $v1ById[$legacyBookingId]
+            if (isset($mappingByReservationId[$res->id])) {
+                $legacyBookingId = $mappingByReservationId[$res->id];
+                if (isset($v1ById[$legacyBookingId])) {
+                    $matchedBooking = $v1ById[$legacyBookingId];
+                }
+            }
+
+            // 2. Authoritative check 2: $mappingByLegacyCode[$res->code] -> match to $v1ById[$legacyBookingId]
+            if (! $matchedBooking && isset($mappingByLegacyCode[$res->code])) {
+                $legacyBookingId = $mappingByLegacyCode[$res->code];
+                if (isset($v1ById[$legacyBookingId])) {
+                    $matchedBooking = $v1ById[$legacyBookingId];
+                }
+            }
+
+            // 3. Fallbacks: metadata booking_id or identical code
+            if (! $matchedBooking) {
+                $bId = data_get($res->metadata, 'booking_id') ?? data_get($res->metadata, 'legacy_booking_id');
+                if ($bId && isset($v1ById[$bId])) {
+                    $matchedBooking = $v1ById[$bId];
+                }
+            }
+
+            if (! $matchedBooking && isset($v1ByCode[$res->code])) {
+                $matchedBooking = $v1ByCode[$res->code];
+            }
+
+            if (! $matchedBooking) {
+                $matchedBooking = $v1Bookings->first(function ($b) use ($res) {
+                    return data_get($b->metadata, 'reservation_id') == $res->id
+                        || data_get($b->metadata, 'reservation_code') === $res->code;
+                });
+            }
+
+            if ($matchedBooking) {
+                $mergedV1BookingIds[$matchedBooking->id] = true;
+                $canonicalBookings->push([
+                    'id' => 'v2_' . $res->id,
+                    'code' => $res->code ?: $matchedBooking->code,
+                    'status' => 'confirmed',
+                    'total_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
+                    'court_id' => $res->court_id ?: $matchedBooking->court_id,
+                    'court' => $res->court ?: $matchedBooking->court,
+                    'user' => $res->user ?: $matchedBooking->user,
+                    'created_at' => $res->created_at ?: $matchedBooking->created_at,
+                    'source_type' => 'booking',
+                    'receiver_type' => 'owner',
+                    'gross_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
+                    'refund_amount' => 0,
+                    'net_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
+                ]);
+            } else {
+                $canonicalBookings->push([
+                    'id' => 'v2_' . $res->id,
+                    'code' => $res->code,
+                    'status' => $res->status,
+                    'total_amount' => (int) $res->total_amount,
+                    'court_id' => $res->court_id,
+                    'court' => $res->court,
+                    'user' => $res->user,
+                    'created_at' => $res->created_at,
+                    'source_type' => 'booking',
+                    'receiver_type' => 'owner',
+                    'gross_amount' => (int) $res->total_amount,
+                    'refund_amount' => 0,
+                    'net_amount' => (int) $res->total_amount,
+                ]);
+            }
+        }
+
+        foreach ($v1Bookings as $b) {
+            // 1. If in $mergedV1BookingIds, skip
+            if (isset($mergedV1BookingIds[$b->id])) {
+                continue;
+            }
+
+            // 2. If isset($mappingByLegacyBookingId[$b->id]) and $v2Reservations->contains('id', $mappingByLegacyBookingId[$b->id]), skip
+            if (isset($mappingByLegacyBookingId[$b->id]) && $v2Reservations->contains('id', $mappingByLegacyBookingId[$b->id])) {
+                continue;
+            }
+
+            // 3. Otherwise push as standalone canonical booking
+            $canonicalBookings->push([
+                'id' => 'v1_' . $b->id,
+                'code' => $b->code,
+                'status' => $b->status,
+                'total_amount' => (int) $b->total_amount,
+                'court_id' => $b->court_id,
+                'court' => $b->court,
+                'user' => $b->user,
+                'created_at' => $b->created_at,
+                'source_type' => 'booking',
+                'receiver_type' => 'owner',
+                'gross_amount' => (int) $b->total_amount,
+                'refund_amount' => 0,
+                'net_amount' => (int) $b->total_amount,
+            ]);
+        }
+
+        // 2. Query POS Orders (status in ['completed', 'paid'])
+        $posOrdersQuery = PosOrder::query()
+            ->with(['customer', 'cashier', 'venue', 'shift.venue', 'reservation.court.venue'])
+            ->whereIn('status', ['completed', 'paid'])
+            ->where(function ($q) use ($from, $to) {
+                $q->whereBetween('created_at', [$from, $to])
+                  ->orWhereBetween('completed_at', [$from, $to]);
+            });
+
+        if ($scopedVenueIds !== null) {
+            $posOrdersQuery->where(function ($q) use ($scopedVenueIds) {
+                $q->whereIn('venue_id', $scopedVenueIds)
+                  ->orWhereHas('shift', fn ($s) => $s->whereIn('venue_id', $scopedVenueIds))
+                  ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
+            });
+        }
+
+        $posOrders = $posOrdersQuery->get();
+
+        // 3. Query Owner Refund Obligations (status in ['approved', 'reported', 'owner_reported', 'acknowledged'])
+        $ownerRefundsQuery = OwnerRefundObligation::query()
+            ->with(['payer', 'reservation.court.venue', 'booking.court.venue', 'venue'])
+            ->whereIn('status', ['approved', 'reported', 'owner_reported', 'acknowledged'])
+            ->whereBetween('created_at', [$from, $to]);
+
+        if ($scopedVenueIds !== null) {
+            $ownerRefundsQuery->where(function ($q) use ($scopedVenueIds) {
+                $q->whereIn('venue_id', $scopedVenueIds)
+                  ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds))
+                  ->orWhereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
+            });
+        }
+
+        $ownerRefundsCollection = $ownerRefundsQuery->get();
+
+        // 4. Query Platform Subscriptions / Fees (only for platform admin)
+        $isPlatformAdmin = $user && $user->isPlatformAdmin();
+        $platformFees = 0;
+        $platformAttempts = collect();
+
+        if ($isPlatformAdmin) {
+            $platformAttemptsQuery = PlatformPaymentAttempt::query()
+                ->with(['organization', 'subscription.organization'])
+                ->where('status', 'succeeded')
+                ->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('created_at', [$from, $to])
+                      ->orWhereBetween('paid_at', [$from, $to]);
+                });
+
+            if ($scopedVenueIds !== null) {
+                $scopedOrgIds = Venue::whereIn('id', $scopedVenueIds)->pluck('organization_id')->filter()->unique()->all();
+                $platformAttemptsQuery->whereIn('organization_id', $scopedOrgIds);
+            }
+
+            $platformAttempts = $platformAttemptsQuery->get();
+            $platformFees = (int) $platformAttempts->sum('amount');
+        }
+
+        $bookingRevenue = (int) $canonicalBookings->sum('total_amount');
+        $posRevenue = (int) $posOrders->sum('total_amount');
+        $ownerRevenue = $bookingRevenue + $posRevenue;
+        $ownerRefunds = (int) $ownerRefundsCollection->sum('amount');
+        $netOwnerRevenue = $ownerRevenue - $ownerRefunds;
+
+        return [
+            'timezone' => $timezone,
+            'from' => $from,
+            'to' => $to,
+            'user' => $user,
+            'is_platform_admin' => $isPlatformAdmin,
+            'scoped_venue_ids' => $scopedVenueIds,
+            'canonical_bookings' => $canonicalBookings,
+            'pos_orders' => $posOrders,
+            'owner_refunds_collection' => $ownerRefundsCollection,
+            'platform_attempts' => $platformAttempts,
+            'booking_revenue' => $bookingRevenue,
+            'pos_revenue' => $posRevenue,
+            'owner_revenue' => $ownerRevenue,
+            'owner_refunds' => $ownerRefunds,
+            'net_owner_revenue' => $netOwnerRevenue,
+            'platform_fees' => $platformFees,
+        ];
     }
 
     public function upload(Request $request)

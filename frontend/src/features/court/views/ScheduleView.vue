@@ -15,6 +15,7 @@ const {
   selectedVenueId,
   timeFilter,
   court,
+  directOwnerPayments,
   venuesList,
   filteredCourts,
   filteredSlots,
@@ -129,6 +130,7 @@ onMounted(async () => {
         <ScheduleBookingSummary
           v-if="court"
           :court="court"
+          :direct-owner-payments="directOwnerPayments"
           :date="date"
           :selected-slots="store.selectedSlots"
           :total-price="totalPrice"

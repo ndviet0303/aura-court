@@ -3,18 +3,22 @@
 namespace Tests\Feature\Policy;
 
 use App\Models\Booking;
-use App\Models\Court;
 use App\Models\CourtPriceSlot;
-use App\Models\MembershipPlan;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
+use App\Models\ReceivingConnection;
+use App\Models\TenantMembershipPlan;
 use App\Models\User;
 use App\Models\Venue;
+use App\Models\VenueBookingPolicy;
+use App\Models\VenueOperatingSchedule;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -96,7 +100,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         $planRes2->assertJsonValidationErrors(['cancellation_fee_waived']);
 
         // 2. Membership plan update rejection
-        $existingPlan = \App\Models\TenantMembershipPlan::create([
+        $existingPlan = TenantMembershipPlan::create([
             'organization_id' => $org->id,
             'name' => 'Existing Plan',
             'version' => 1,
@@ -137,6 +141,47 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
             'is_active' => true,
         ]);
 
+        VenueBookingPolicy::create([
+            'venue_id' => $venue->id,
+            'version' => 1,
+            'created_by' => $owner->id,
+            'effective_at' => now(),
+            'settings' => [
+                'booking' => ['hold_ttl_minutes' => 15, 'max_days_ahead' => 60, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240, 'require_continuity' => true],
+            ],
+        ]);
+
+        $hours = [];
+        for ($day = 1; $day <= 7; $day++) {
+            $hours[(string) $day] = ['closed' => false, 'intervals' => [['start' => '06:00', 'end' => '22:00']]];
+        }
+        VenueOperatingSchedule::create([
+            'venue_id' => $venue->id,
+            'scope_key' => 'venue',
+            'timezone' => 'Asia/Ho_Chi_Minh',
+            'version' => 1,
+            'weekly_hours' => $hours,
+            'created_by' => $owner->id,
+        ]);
+
+        $receiver = new ReceivingConnection([
+            'organization_id' => $org->id,
+            'venue_id' => $venue->id,
+            'owner_user_id' => $owner->id,
+            'provider' => 'sepay',
+            'routing_id' => (string) Str::uuid(),
+            'bank_code' => 'MBBank',
+            'status' => ReceivingConnection::STATUS_VERIFIED,
+            'credential_version' => 1,
+            'owner_attested_at' => now(),
+            'verified_at' => now()->subMinute(),
+            'effective_from' => now()->subMinute(),
+        ]);
+        $receiver->setAccountDetails('Venue Owner', '0123456789');
+        $receiver->webhook_secret_ciphertext = Crypt::encryptString('test-webhook-secret');
+        $receiver->save();
+        $venue->forceFill(['current_receiving_connection_id' => $receiver->id])->save();
+
         Sanctum::actingAs($owner);
 
         $res = $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
@@ -164,9 +209,11 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         $wallet = $walletService->getOrCreateWallet($customer->id, $org->id);
         $walletService->credit($wallet, 500000, 'test_topup', 1, 'Top up');
 
-        $date = Carbon::now(config('app.timezone'))->setTime(20, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '20:00', 'ends_at' => '21:00', 'price' => 100000, 'is_active' => true]);
-
+        $baseDate = Carbon::parse('2026-10-05 14:00:00', config('app.timezone'));
+        Carbon::setTestNow($baseDate);
+        try {
+            $date = $baseDate->copy()->setTime(20, 0);
+            CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '20:00', 'ends_at' => '21:00', 'price' => 100000, 'is_active' => true]);
         // 1. Preserved historical booking with old snapshot
         $historicalBooking = Booking::create([
             'code' => 'BK-HIST-POLICY-01',
@@ -203,8 +250,8 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
 
         // New snapshot does not have cancellation_grace_hours
         $this->assertArrayNotHasKey('cancellation_grace_hours', $newBooking->policy_snapshot ?? []);
-
-        // 3. Continued check-in behavior
+        // 3. Continued check-in behavior (during arrival window)
+        Carbon::setTestNow($date);
         Sanctum::actingAs($staff);
         $checkInRes = $this->withHeaders([
             'X-Organization-ID' => (string) $org->id,
@@ -214,5 +261,8 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         ]);
         $checkInRes->assertCreated();
         $this->assertSame('checked_in', $checkInRes->json('attendance.status'));
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }

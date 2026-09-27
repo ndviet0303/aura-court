@@ -17,6 +17,9 @@ class AutoResolveReconciliationRequest extends FormRequest
             'run_id' => ['nullable', 'integer'],
             'scope' => ['nullable', 'string', 'in:safe_only,all'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'evidence_reference' => ['nullable', 'string', 'max:255'],
+            'correction_type' => ['nullable', 'string', 'max:100'],
+            'correction_details' => ['nullable', 'array'],
         ];
     }
 }

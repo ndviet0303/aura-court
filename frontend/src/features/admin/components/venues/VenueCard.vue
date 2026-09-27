@@ -11,6 +11,7 @@ const emit = defineEmits<{
   (e: 'toggleActive', venue: AdminVenueItem): void
   (e: 'edit', venue: AdminVenueItem): void
   (e: 'showQr', venue: AdminVenueItem): void
+  (e: 'showReadiness', venue: AdminVenueItem): void
 }>()
 
 const { t } = useI18n()
@@ -37,6 +38,7 @@ const { t } = useI18n()
         <input
           type="checkbox"
           :checked="venue.is_active"
+          :disabled="!!venue.status && !['published', 'active'].includes(venue.status)"
           @change="emit('toggleActive', venue)"
         />
         <span class="slider"></span>
@@ -66,6 +68,10 @@ const { t } = useI18n()
     </div>
 
     <div class="venue-card-actions">
+      <button type="button" class="btn-action-sm" @click="emit('showReadiness', venue)">
+        <span class="material-symbols-outlined icon-16">account_balance</span>
+        <span>{{ t('admin.venues.readinessBtn') }}</span>
+      </button>
       <button type="button" class="btn-action-sm" @click="emit('showQr', venue)">
         <span class="material-symbols-outlined icon-16">qr_code_2</span>
         <span>{{ t('admin.venues.qrBtn') }}</span>

@@ -213,6 +213,10 @@ function setDatePreset(date: string) {
             <span class="row-value font-mono token-text">#{{ activeQuote.quote_token.slice(0, 16) }}...</span>
           </div>
           <div class="quote-divider"></div>
+          <div v-if="activeQuote.benefit_snapshot?.membership_discount_amount" class="quote-row discount">
+            <span class="row-label">{{ t('v2Reservations.calculator.membershipDiscount') }}</span>
+            <span class="row-value font-mono">-{{ money(activeQuote.benefit_snapshot.membership_discount_amount) }}</span>
+          </div>
           <div class="quote-row total">
             <span class="total-label">{{ t('v2Reservations.calculator.totalCost') }}</span>
             <span class="total-value font-mono">{{ money(activeQuote.total_amount) }}</span>

@@ -2,25 +2,30 @@
 
 namespace App\Models;
 
+use App\Events\CourtStatusUpdated;
+use Carbon\Carbon;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
-#[Fillable(['organization_id', 'user_id', 'court_id', 'price_quote_id', 'code', 'status', 'currency', 'total_amount', 'hold_expires_at', 'confirmed_at', 'cancelled_at', 'metadata'])]
+#[Fillable(['organization_id', 'user_id', 'court_id', 'price_quote_id', 'code', 'status', 'currency', 'total_amount', 'hold_expires_at', 'confirmed_at', 'cancelled_at', 'metadata', 'payment_model'])]
 class Reservation extends Model
 {
     use BelongsToTenant;
+
     protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed'];
 
     protected static function booted(): void
     {
         static::saved(function (Reservation $reservation): void {
-            \Illuminate\Support\Facades\DB::afterCommit(function () use ($reservation): void {
+            DB::afterCommit(function () use ($reservation): void {
                 $court = $reservation->court ?? Court::find($reservation->court_id);
                 if ($court && $court->venue_id) {
-                    \App\Events\CourtStatusUpdated::dispatch(
+                    CourtStatusUpdated::dispatch(
                         venueId: (int) $court->venue_id,
                         courtId: (int) $court->id,
                         status: $reservation->status === 'cancelled' ? 'available' : 'booked',
@@ -35,10 +40,10 @@ class Reservation extends Model
         });
 
         static::deleted(function (Reservation $reservation): void {
-            \Illuminate\Support\Facades\DB::afterCommit(function () use ($reservation): void {
+            DB::afterCommit(function () use ($reservation): void {
                 $court = $reservation->court ?? Court::find($reservation->court_id);
                 if ($court && $court->venue_id) {
-                    \App\Events\CourtStatusUpdated::dispatch(
+                    CourtStatusUpdated::dispatch(
                         venueId: (int) $court->venue_id,
                         courtId: (int) $court->id,
                         status: 'available',
@@ -62,6 +67,7 @@ class Reservation extends Model
             'metadata' => 'array',
         ];
     }
+
     public function getLoyaltyDiscountAmountAttribute(): int
     {
         return (int) ($this->metadata['loyalty_discount_amount']
@@ -76,6 +82,23 @@ class Reservation extends Model
             ?? 0);
     }
 
+    public function getStartsAtAttribute(): ?Carbon
+    {
+        if (isset($this->attributes['starts_at'])) {
+            return Carbon::parse($this->attributes['starts_at']);
+        }
+
+        return $this->slots->sortBy('starts_at')->first()?->starts_at;
+    }
+
+    public function getEndsAtAttribute(): ?Carbon
+    {
+        if (isset($this->attributes['ends_at'])) {
+            return Carbon::parse($this->attributes['ends_at']);
+        }
+
+        return $this->slots->sortByDesc('ends_at')->first()?->ends_at;
+    }
 
     public function user(): BelongsTo
     {
@@ -107,23 +130,46 @@ class Reservation extends Model
         return $this->hasMany(LegacyBookingMapping::class);
     }
 
-    public function recurringOccurrence(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function recurringOccurrence(): HasOne
     {
         return $this->hasOne(RecurringOccurrence::class);
     }
 
-    public function splitGroup(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function splitGroup(): HasOne
     {
         return $this->hasOne(SplitGroup::class);
     }
 
-    public function attendance(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function attendance(): HasOne
     {
         return $this->hasOne(BookingAttendance::class);
     }
 
-    public function serviceTabs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function serviceTabs(): HasMany
     {
         return $this->hasMany(ServiceTab::class);
+    }
+
+    public function isDisputed(): bool
+    {
+        if ($this->status === 'disputed' || (bool) data_get($this->metadata, 'is_disputed', false)) {
+            return true;
+        }
+
+        $legacyBookingId = LegacyBookingMapping::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where('reservation_id', $this->id)
+            ->value('legacy_booking_id');
+
+        return DisputeCase::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where(function ($q) use ($legacyBookingId) {
+                $q->where('booking_id', $this->id);
+                if ($legacyBookingId) {
+                    $q->orWhere('booking_id', $legacyBookingId);
+                }
+            })
+            ->whereNotIn('status', ['resolved', 'dismissed'])
+            ->exists();
     }
 }

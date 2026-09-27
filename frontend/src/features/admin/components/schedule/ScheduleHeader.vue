@@ -4,17 +4,20 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 import { resolveLocalizedText } from '@/i18n'
-import type { Venue } from '@/features/court/types/court'
+import type { Court, Venue } from '@/features/court/types/court'
 
 const props = defineProps<{
   venues: Venue[]
+  courts: Court[]
   selectedVenueId: number | 'all'
+  selectedCalendarCourtId: number | 'venue'
   saving?: boolean
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:selectedVenueId', value: number | 'all'): void
+  (e: 'update:selectedCalendarCourtId', value: number | 'venue'): void
   (e: 'openAuditLogs'): void
   (e: 'saveSchedule'): void
   (e: 'refresh'): void
@@ -29,6 +32,13 @@ const venueOptions = computed<DropdownOption[]>(() => [
     label: resolveLocalizedText(v.name),
     icon: 'location_on',
   })),
+])
+
+const calendarCourtOptions = computed<DropdownOption[]>(() => [
+  { value: 'venue', label: t('admin.schedule.venueScheduleOption'), icon: 'domain' },
+  ...props.courts
+    .filter((court) => (court.venue_id || court.venue?.id) === props.selectedVenueId)
+    .map((court) => ({ value: court.id, label: resolveLocalizedText(court.name), icon: 'sports_tennis' })),
 ])
 </script>
 
@@ -51,6 +61,16 @@ const venueOptions = computed<DropdownOption[]>(() => [
           variant="bordered"
           aria-label="Venue Filter"
           @update:model-value="(val) => emit('update:selectedVenueId', val === 'all' ? 'all' : Number(val))"
+        />
+      </div>
+
+      <div v-if="typeof selectedVenueId === 'number' && calendarCourtOptions.length > 1" class="venue-filter-wrap">
+        <SelectDropdown
+          :model-value="selectedCalendarCourtId"
+          :options="calendarCourtOptions"
+          variant="bordered"
+          aria-label="Calendar scope"
+          @update:model-value="(val) => emit('update:selectedCalendarCourtId', val === 'venue' ? 'venue' : Number(val))"
         />
       </div>
 

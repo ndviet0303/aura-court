@@ -70,3 +70,19 @@ Sandbox execution was completed on 2026-08-22 against the PayOS & VietQR Enterpr
 1. **Feature-flagged Payouts**: Automated payouts are initially enabled only for the 5 selected pilot organizations.
 2. **Daily Reconciliation**: The automated 15-minute exception generator must run daily at 01:00 UTC+7 comparing internal ledger snapshots against bank statements.
 3. **Escalation Protocol**: Any single variance exceeding 100,000 VND immediately halts automated payouts for that tenant until investigated by the Head of Finance.
+
+---
+
+## 5. Addendum: Direct Owner Payments & Legacy Liability Governance (2026-09-27)
+
+### 5.1 Operator Cohort Approval Requirement
+- Real monetary transfers, live PSP webhook endpoints, and production activation rollout REQUIRE explicit, signed operator cohort approval from the Head of Finance and Marketplace Operations Lead.
+- Self-rollout or automated live activation is strictly prohibited.
+
+### 5.2 Manual-Only Bank Disbursements
+- Direct collection provider (SePay) does not support automated outbound disbursement APIs.
+- Automated bank disbursement remains strictly `manual_only`. Outbound disbursements require manual banking execution with encrypted proof reference and dual-party confirmation.
+
+### 5.3 Preservation of Legacy Liabilities
+- Historical wallet balances (1,999,500,000 VND across 9 accounts) and pre-cutover deposits are permanently preserved with **zero automated deduction** or unilateral write-off.
+- Legacy obligations are reconciled independently from direct-owner revenue.

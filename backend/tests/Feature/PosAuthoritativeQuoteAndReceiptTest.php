@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CashShift;
 use App\Models\Coupon;
 use App\Models\Journal;
+use App\Models\MembershipEntitlement;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosOrder;
@@ -104,7 +105,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
             'published_at' => now(),
         ]);
 
-        TenantMembership::create([
+        $membership = TenantMembership::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->customer->id,
             'plan_id' => $plan->id,
@@ -112,6 +113,14 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
             'status' => 'active',
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addMonth(),
+        ]);
+        MembershipEntitlement::create([
+            'organization_id' => $this->organization->id,
+            'membership_id' => $membership->id,
+            'benefit_code' => 'pos_discount_percent',
+            'benefit_value' => ['value' => 10, 'plan_version' => $plan->version],
+            'starts_at' => $membership->starts_at,
+            'ends_at' => $membership->ends_at,
         ]);
 
         $headers = [
@@ -186,7 +195,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
             'published_at' => now(),
         ]);
 
-        TenantMembership::create([
+        $membership = TenantMembership::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->customer->id,
             'plan_id' => $plan->id,
@@ -194,6 +203,14 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
             'status' => 'active',
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addMonth(),
+        ]);
+        MembershipEntitlement::create([
+            'organization_id' => $this->organization->id,
+            'membership_id' => $membership->id,
+            'benefit_code' => 'discount_percent',
+            'benefit_value' => ['value' => 10, 'plan_version' => $plan->version],
+            'starts_at' => $membership->starts_at,
+            'ends_at' => $membership->ends_at,
         ]);
 
         $headers = [

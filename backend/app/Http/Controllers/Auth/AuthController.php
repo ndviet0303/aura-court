@@ -58,6 +58,18 @@ class AuthController extends Controller
         if (! Auth::attempt($data, true)) {
             return response()->json(['message' => __('auth.failed')], 422);
         }
+        $user = Auth::user();
+        if ($user && $user->isRestricted()) {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.',
+                'error' => 'account_restricted',
+            ], 403);
+        }
         try {
             if ($request->hasSession()) {
                 $request->session()->regenerate();
@@ -242,6 +254,9 @@ class AuthController extends Controller
                 $user->email_verified_at = now();
                 $user->save();
             } else {
+                if ($user->isRestricted()) {
+                    return redirect("{$frontendUrl}/login?error=account_restricted&msg=" . urlencode('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'));
+                }
                 if ($avatar && (empty($user->avatar_url) || str_contains($user->avatar_url, 'athlete-'))) {
                     $user->avatar_url = $avatar;
                     $user->save();

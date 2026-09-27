@@ -2,16 +2,14 @@
 
 namespace Tests\Feature\Booking;
 
-use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Booking;
 use App\Models\Coupon;
-use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\PointLedger;
 use App\Models\PriceRule;
 use App\Models\Reservation;
-use App\Models\ReservationEntitlement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WaitlistEntry;
@@ -20,6 +18,7 @@ use App\Services\Booking\BookingService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\ReservationService;
 use Carbon\Carbon;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -78,6 +77,7 @@ class AutomaticUnpaidExpiryTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 100000, 'is_active' => true]);
 
         $coupon = Coupon::create([
+            'organization_id' => $org->id,
             'code' => 'COUPONEXP',
             'discount_type' => 'fixed',
             'discount_value' => 20000,
@@ -275,5 +275,82 @@ class AutomaticUnpaidExpiryTest extends TestCase
         $resService->release($heldReservation->fresh(), 'expired');
         $this->assertSame('expired', $heldReservation->fresh()->status);
         $this->assertSame($unpaidBalanceBefore, (int) $unpaidWallet->fresh()->balance);
+    }
+
+    public function test_scheduled_booking_expiry_closure_releases_v2_hold_and_benefits_exactly_once(): void
+    {
+        [$org, $venue, $court] = $this->setupTenant();
+        $user = User::factory()->create(['role' => 'customer']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
+
+        $startsAt = Carbon::now(config('app.timezone'))->addDays(3)->setTime(9, 0)->startOfHour();
+
+        $reservation = Reservation::create([
+            'organization_id' => $org->id,
+            'user_id' => $user->id,
+            'court_id' => $court->id,
+            'code' => 'RES-SCHED-EXP-01',
+            'status' => 'held',
+            'currency' => 'VND',
+            'total_amount' => 150000,
+            'hold_expires_at' => now()->subMinutes(5),
+        ]);
+        $slot = $reservation->slots()->create([
+            'organization_id' => $org->id,
+            'court_id' => $court->id,
+            'starts_at' => $startsAt,
+            'ends_at' => $startsAt->copy()->addHour(),
+            'unit_price' => 150000,
+            'status' => 'held',
+        ]);
+        $entitlement = $reservation->entitlements()->create([
+            'organization_id' => $org->id,
+            'user_id' => $user->id,
+            'court_id' => $court->id,
+            'reservation_slot_id' => $slot->id,
+            'starts_at' => $startsAt,
+            'ends_at' => $startsAt->copy()->addHour(),
+            'amount' => 150000,
+            'status' => 'held',
+        ]);
+
+        // Loyalty benefit held against the reservation at hold time.
+        PointLedger::create([
+            'organization_id' => $org->id,
+            'user_id' => $user->id,
+            'delta' => -500,
+            'balance_after' => 0,
+            'source_type' => 'reservation',
+            'source_id' => $reservation->id,
+        ]);
+
+        Notification::fake();
+
+        // Drive expiry through the registered scheduler closure, not a direct service call.
+        $this->runScheduledEvent('booking:expire-pending');
+
+        $this->assertSame('expired', $reservation->fresh()->status);
+        $this->assertSame('expired', $slot->fresh()->status);
+        $this->assertSame('expired', $entitlement->fresh()->status);
+
+        $releaseCount = fn (): int => PointLedger::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where('source_type', 'reservation_release')
+            ->where('source_id', $reservation->id)
+            ->count();
+        $this->assertSame(1, $releaseCount(), 'Reserved benefit must release exactly once.');
+
+        // Re-running the same scheduled closure is idempotent: no duplicate release, no state change.
+        $this->runScheduledEvent('booking:expire-pending');
+        $this->assertSame(1, $releaseCount(), 'Benefit release must remain exactly once on re-run.');
+        $this->assertSame('expired', $reservation->fresh()->status);
+    }
+
+    private function runScheduledEvent(string $name): void
+    {
+        $event = collect(app(Schedule::class)->events())
+            ->first(fn ($e) => ($e->description ?? null) === $name);
+        $this->assertNotNull($event, "Scheduled event {$name} must be registered.");
+        $event->run($this->app);
     }
 }

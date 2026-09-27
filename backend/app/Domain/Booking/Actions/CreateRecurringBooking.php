@@ -15,6 +15,10 @@ class CreateRecurringBooking
 
     public function execute(int $userId, int $courtId, array $startsAt, int $weeks): array
     {
+        $user = \App\Models\User::find($userId);
+        if ($user && ! $user->hasVerifiedEmail()) {
+            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+        }
         if ($weeks < 2 || $weeks > 12) {
             throw ValidationException::withMessages(['weeks' => 'Số tuần phải từ 2 đến 12.']);
         }

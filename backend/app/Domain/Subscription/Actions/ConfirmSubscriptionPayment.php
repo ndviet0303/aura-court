@@ -6,7 +6,10 @@ use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Models\PlatformPaymentAttempt;
+use App\Models\PlatformPlan;
+use App\Models\PlatformProviderReceipt;
 use App\Models\PlatformSubscription;
+use App\Services\Finance\FinancialPostingService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +19,7 @@ class ConfirmSubscriptionPayment
         private readonly PlatformSubscriptionRepositoryInterface $subRepo,
         private readonly PlatformPlanRepositoryInterface $planRepo,
         private readonly DurableNotificationServiceInterface $notif,
+        private readonly FinancialPostingService $financials,
     ) {}
 
     /**
@@ -33,79 +37,98 @@ class ConfirmSubscriptionPayment
         array $rawPayload = [],
         ?int $actorId = null
     ): array {
-        $attempt = $this->subRepo->findPaymentAttemptByReferenceWithLock($referenceCode);
-        if (! $attempt) {
-            abort(404, 'Yêu cầu thanh toán không tồn tại.');
-        }
+        return DB::transaction(function () use ($referenceCode, $providerTransactionId, $amount, $currency, $actorId): array {
+            $attempt = $this->subRepo->findPaymentAttemptByReferenceWithLock($referenceCode);
+            if (! $attempt) {
+                abort(404, 'Yêu cầu thanh toán không tồn tại.');
+            }
 
-        // 1. Idempotency Check: if already succeeded, acknowledge without extending term or duplicating records
-        if ($attempt->isSucceeded()) {
-            $sub = $attempt->subscription ?? $this->subRepo->findActiveForOrganization($attempt->organization_id);
+            // 1. Idempotency Check: if already succeeded, acknowledge without extending term or duplicating records
+            if ($attempt->isSucceeded()) {
+                $sub = $attempt->subscription ?? $this->subRepo->findActiveForOrganization($attempt->organization_id);
 
-            return [
-                'subscription' => $sub,
-                'attempt' => $attempt,
-                'is_duplicate' => true,
-            ];
-        }
+                return [
+                    'subscription' => $sub,
+                    'attempt' => $attempt,
+                    'is_duplicate' => true,
+                ];
+            }
 
-        if ($attempt->isFailed()) {
-            abort(409, 'Giao dịch thanh toán này đã bị đánh dấu thất bại trước đó.');
-        }
+            if ($attempt->isFailed()) {
+                abort(409, 'Giao dịch thanh toán này đã bị đánh dấu thất bại trước đó.');
+            }
 
-        // 2. Reference, amount, and currency mismatch validation
-        $amountMatches = (int) $amount === (int) $attempt->amount;
-        $currencyMatches = strtoupper(trim($currency)) === strtoupper(trim($attempt->currency));
-
-        if (! $amountMatches || ! $currencyMatches) {
-            $this->subRepo->updatePaymentAttempt($attempt, [
-                'status' => 'failed',
-                'failure_reason' => 'AMOUNT_OR_CURRENCY_MISMATCH',
-            ]);
-
-            $this->notif->recordAudit(
-                userId: $actorId,
-                action: 'subscription.payment.mismatch',
-                auditable: $attempt,
-                metadata: [
-                    'reference_code' => $referenceCode,
-                    'expected_amount' => $attempt->amount,
-                    'received_amount' => $amount,
-                    'expected_currency' => $attempt->currency,
-                    'received_currency' => $currency,
-                ]
+            $receipt = PlatformProviderReceipt::query()
+                ->where('payment_attempt_id', $attempt->id)
+                ->lockForUpdate()
+                ->first();
+            abort_unless(
+                $receipt !== null
+                    && $receipt->verified_at !== null
+                    && $receipt->provider === $attempt->provider
+                    && $receipt->provider_transaction_id === $providerTransactionId,
+                409,
+                'Thanh toán vẫn đang chờ bằng chứng giao dịch đã được xác minh.'
             );
 
-            abort(422, 'Dữ liệu giao dịch không khớp với số tiền hoặc loại tiền tệ của yêu cầu thanh toán.');
-        }
+            // 2. Reference, amount, and currency mismatch validation
+            $amountMatches = (int) $amount === (int) $attempt->amount
+                && (int) $receipt->amount === (int) $attempt->amount;
+            $currencyMatches = strtoupper(trim($currency)) === strtoupper(trim($attempt->currency))
+                && strtoupper(trim($receipt->currency)) === strtoupper(trim($attempt->currency));
 
-        return DB::transaction(function () use (
-            $attempt,
-            $referenceCode,
-            $providerTransactionId,
-            $amount,
-            $currency,
-            $rawPayload,
-            $actorId
-        ) {
-            // 3. Record immutable provider receipt
-            $this->subRepo->recordReceipt([
-                'payment_attempt_id' => $attempt->id,
-                'provider' => $attempt->provider,
-                'provider_transaction_id' => $providerTransactionId,
-                'amount' => $amount,
-                'currency' => $currency,
-                'raw_payload' => $rawPayload,
-                'verified_at' => now(),
-            ]);
+            if (! $amountMatches || ! $currencyMatches) {
+                $this->notif->recordAudit(
+                    userId: $actorId,
+                    action: 'subscription.payment.mismatch',
+                    auditable: $attempt,
+                    metadata: [
+                        'reference_code' => $referenceCode,
+                        'expected_amount' => $attempt->amount,
+                        'received_amount' => $amount,
+                        'expected_currency' => $attempt->currency,
+                        'received_currency' => $currency,
+                    ]
+                );
 
-            // 4. Provision / Activate PlatformSubscription
+                abort(422, 'Dữ liệu giao dịch không khớp với số tiền hoặc loại tiền tệ của yêu cầu thanh toán.');
+            }
+
+            // The receipt was persisted only by a signature-verified platform-provider event.
+            // 3. Provision / Activate PlatformSubscription
             $planId = (int) $attempt->metadata['plan_id'];
             $plan = $this->planRepo->findById($planId);
             $planVersion = (int) ($attempt->metadata['plan_version'] ?? $plan?->version ?? 1);
             $billingCycle = (string) ($attempt->metadata['billing_cycle'] ?? 'monthly');
+            $billingMonths = (int) ($attempt->metadata['billing_months'] ?? PlatformPlan::monthsForBillingCycle($billingCycle));
             $termsVersion = (string) ($attempt->metadata['accepted_terms_version'] ?? 'default');
-            $durationDays = $billingCycle === 'yearly' ? 365 : 30;
+            if ($billingMonths < 1) {
+                abort(422, 'Chu kỳ thanh toán không hợp lệ; không thể kích hoạt thuê bao.');
+            }
+
+            $org = $attempt->organization;
+            if ($org && $plan) {
+                $currentVenues = $org->venues()->count();
+                $maxVenues = (int) ($plan->max_venues ?? 1);
+                if ($currentVenues > $maxVenues) {
+                    abort(422, "Không thể chuyển sang gói {$plan->name}. Số lượng cơ sở hiện tại ({$currentVenues}) vượt quá giới hạn tối đa ({$maxVenues}) của gói này.");
+                }
+
+                $currentCourts = $org->courts()->count();
+                $maxCourts = (int) ($plan->max_courts ?? 4);
+                if ($currentCourts > $maxCourts) {
+                    abort(422, "Không thể chuyển sang gói {$plan->name}. Số lượng sân hiện tại ({$currentCourts}) vượt quá giới hạn tối đa ({$maxCourts}) của gói này.");
+                }
+
+                $currentStaff = $org->members()
+                    ->whereIn('role', ['venue_manager', 'staff', 'cashier'])
+                    ->whereIn('status', ['active', 'invited'])
+                    ->count();
+                $maxStaff = (int) ($plan->max_staff ?? 2);
+                if ($currentStaff > $maxStaff) {
+                    abort(422, "Không thể chuyển sang gói {$plan->name}. Số lượng nhân sự hiện tại ({$currentStaff}) vượt quá giới hạn tối đa ({$maxStaff}) của gói này.");
+                }
+            }
 
             $existingSub = $this->subRepo->findActiveForOrganizationWithLock($attempt->organization_id);
             if ($existingSub && $existingSub->isValid()) {
@@ -113,8 +136,13 @@ class ConfirmSubscriptionPayment
                 $baseDate = ($existingSub->ends_at && $existingSub->ends_at->isFuture())
                     ? $existingSub->ends_at->copy()
                     : now();
-                $startsAt = $existingSub->starts_at ?? now();
-                $endsAt = $baseDate->addDays($durationDays);
+                $startsAt = $existingSub->status === 'trial'
+                    ? $baseDate->copy()
+                    : ($existingSub->starts_at ?? $baseDate->copy());
+                $anchorDay = $existingSub->status === 'trial'
+                    ? $baseDate->day
+                    : ($existingSub->starts_at?->day ?? $baseDate->day);
+                $endsAt = $baseDate->copy()->addMonthsNoOverflow($billingMonths, $anchorDay);
 
                 $subscription = $this->subRepo->update($existingSub, [
                     'plan_id' => $planId,
@@ -131,7 +159,7 @@ class ConfirmSubscriptionPayment
                 ]);
             } else {
                 $startsAt = now();
-                $endsAt = now()->addDays($durationDays);
+                $endsAt = $startsAt->copy()->addMonthsNoOverflow($billingMonths, $startsAt->day);
 
                 $subscription = $this->subRepo->create([
                     'organization_id' => $attempt->organization_id,
@@ -155,6 +183,8 @@ class ConfirmSubscriptionPayment
                 'status' => 'succeeded',
                 'paid_at' => now(),
             ]);
+
+            $this->financials->postPlatformSubscriptionReceipt($receipt->fresh());
 
             Cache::increment('venues_version');
 

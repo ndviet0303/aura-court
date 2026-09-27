@@ -9,7 +9,7 @@ const sections = [
   { id: 'account', title: '2. Đăng ký & Bảo mật tài khoản', icon: 'person_shield' },
   { id: 'booking-rules', title: '3. Quy định Đặt sân & Giữ chỗ', icon: 'event_available' },
   { id: 'payment', title: '4. Thanh toán & Đối soát giao dịch', icon: 'payments' },
-  { id: 'refund-policy', title: '5. Chính sách Không hỗ trợ Hủy & Đổi lịch', icon: 'published_with_changes' },
+  { id: 'refund-policy', title: '5. Chính sách Hủy & Đổi lịch', icon: 'published_with_changes' },
   { id: 'court-rules', title: '6. Nội quy sân đấu & Trang phục', icon: 'sports_tennis' },
   { id: 'liability', title: '7. Trách nhiệm & Tài sản cá nhân', icon: 'health_and_safety' },
   { id: 'contact', title: '8. Liên hệ & Giải quyết khiếu nại', icon: 'support_agent' },
@@ -251,16 +251,16 @@ onUnmounted(() => {
               <div class="section-icon-box">
                 <span class="material-symbols-outlined">published_with_changes</span>
               </div>
-              <h2>5. Chính sách Không hỗ trợ Hủy &amp; Đổi lịch</h2>
+              <h2>5. Chính sách Hủy &amp; Đổi lịch</h2>
             </div>
             <div class="section-text">
               <p>
-                Aura Court áp dụng chính sách vận hành cố định: <strong>Toàn bộ các đơn đặt sân không hỗ trợ hủy hoặc đổi sân/giờ thi đấu</strong> sau khi đã hoàn tất thanh toán hoặc xác nhận giữ chỗ.
+                Aura Court hỗ trợ <strong>hủy hoặc đổi lịch đặt sân theo chính sách của từng cơ sở</strong>. Trước khi bạn xác nhận, hệ thống luôn hiển thị phí áp dụng, hạn chót và số tiền được hoàn (hoặc khoản chênh lệch cần thanh toán thêm) đã được tính sẵn theo chính sách.
               </p>
               <ul>
-                <li><strong>Không hỗ trợ hủy đơn:</strong> Người chơi không thể yêu cầu hủy đơn đặt sân đã xác nhận qua ứng dụng hoặc qua tổng đài hỗ trợ.</li>
-                <li><strong>Không hỗ trợ đổi lịch/giờ:</strong> Đơn đặt sân không hỗ trợ đổi sang khung giờ, ngày chơi hoặc sân đấu khác.</li>
-                <li><strong>Không hoàn tiền tự động:</strong> Do không hỗ trợ hủy hoặc đổi lịch, hệ thống không phát sinh các khoản hoàn tiền về ví hoặc ngân hàng từ hai thao tác này.</li>
+                <li><strong>Hủy đơn (toàn bộ hoặc một phần):</strong> Bạn có thể yêu cầu hủy toàn bộ hoặc từng khung giờ. Phí hủy và số tiền hoàn được xác định theo chính sách của cơ sở tại thời điểm đặt và hiển thị trước khi bạn xác nhận.</li>
+                <li><strong>Đổi lịch/giờ:</strong> Bạn có thể đổi sang khung giờ, ngày chơi hoặc sân đấu khác. Nếu lịch mới đắt hơn, chỗ mới sẽ được giữ cho đến khi khoản chênh lệch được xác minh; nếu rẻ hơn, phần chênh lệch được tạo thành yêu cầu hoàn tiền.</li>
+                <li><strong>Hoàn tiền theo quy trình:</strong> Khoản hoàn tiền chỉ được coi là hoàn tất khi bạn xác nhận đã nhận tiền. Báo cáo chuyển khoản của chủ sân hoặc trạng thái đang tranh chấp chưa phải là đã hoàn tất.</li>
                 <li><strong>Chuyển nhượng vé (P2P Resale):</strong> Trường hợp người chơi không thể tham gia thi đấu đúng giờ đã đặt, quý khách có thể chủ động đăng bán lại slot đặt sân trên Chợ Nhượng Vé Aura Court để tìm người mua lại theo quy định sàn.</li>
                 <li><strong>Sự cố bất khả kháng từ sân:</strong> Trường hợp sự cố kỹ thuật đột xuất từ phía cơ sở vận hành (mất điện lưới diện rộng, thiên tai ngập sân), ban quản trị sẽ chủ động liên hệ để xử lý bồi hoàn thỏa đáng.</li>
               </ul>

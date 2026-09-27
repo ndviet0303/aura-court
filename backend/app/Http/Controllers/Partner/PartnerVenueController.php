@@ -10,9 +10,9 @@ use App\Domain\Venue\Actions\TransitionVenueLifecycle;
 use App\Domain\Venue\Actions\UpdateDraftVenue;
 use App\Domain\Venue\DTOs\CreateDraftVenueData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Partner\CreateDraftVenueRequest;
 use App\Http\Requests\Partner\TransitionVenueLifecycleRequest;
 use App\Http\Requests\Partner\UpdateDraftVenueRequest;
+use App\Http\Requests\Venue\CreateDraftVenueRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

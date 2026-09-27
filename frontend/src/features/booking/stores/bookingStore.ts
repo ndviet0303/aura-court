@@ -118,6 +118,10 @@ export const useBookingStore = defineStore('booking', () => {
     return result
   }
 
+  async function createBookingPayment(code: string) {
+    return bookingApi.createBookingPayment(code)
+  }
+
   function clearPayment() {
     payment.value = null
     sessionStorage.removeItem(paymentStorageKey)
@@ -175,6 +179,7 @@ export const useBookingStore = defineStore('booking', () => {
     applyCoupon,
     restorePayment,
     loadPayment,
+    createBookingPayment,
     clearPayment,
     refreshPaymentStatus,
     fetchWalletBalance,

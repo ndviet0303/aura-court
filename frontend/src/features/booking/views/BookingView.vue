@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUserBookings } from '../composables/useUserBookings'
+import type { Booking } from '../types/booking'
 
 import BookingHistoryHero from '../components/history/BookingHistoryHero.vue'
 import BookingHistoryTabs from '../components/history/BookingHistoryTabs.vue'
 import UserBookingCard from '../components/history/UserBookingCard.vue'
 import BookingReviewModal from '../components/history/BookingReviewModal.vue'
 import BookingQrCheckInModal from '../components/history/BookingQrCheckInModal.vue'
+import BookingCancelModal from '../components/history/BookingCancelModal.vue'
+import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 
 const {
   bookings,
@@ -36,6 +39,19 @@ const {
   submitReview,
 } = useUserBookings()
 
+const cancelBooking = ref<Booking | null>(null)
+const rescheduleBooking = ref<Booking | null>(null)
+
+function openCancel(b: Booking) {
+  cancelBooking.value = b
+}
+function openReschedule(b: Booking) {
+  rescheduleBooking.value = b
+}
+function onChangeApplied() {
+  load()
+}
+
 onMounted(() => {
   load()
 })
@@ -59,10 +75,10 @@ onMounted(() => {
       <span>{{ error }}</span>
     </div>
 
-    <!-- Permanent Booking Policy Notice -->
+    <!-- Booking Policy Notice (policy-aware cancellation/reschedule) -->
     <div class="policy-notice">
       <span class="material-symbols-outlined alert-icon">info</span>
-      <span>{{ $t('payment.cancellationNotice') }} - {{ $t('payment.autoRefundNotice') }}</span>
+      <span>{{ $t('booking.policyNotice') }}</span>
     </div>
 
     <!-- Status Tabs & Quick Search Bar -->
@@ -111,6 +127,8 @@ onMounted(() => {
         :booking="b"
         @qr="openQr"
         @review="openReview"
+        @cancel="openCancel"
+        @reschedule="openReschedule"
       />
     </div>
 
@@ -133,6 +151,22 @@ onMounted(() => {
       @update:rating="reviewRating = $event"
       @update:body="reviewBody = $event"
       @submit="submitReview"
+    />
+
+    <!-- Cancellation / partial-cancel refund modal -->
+    <BookingCancelModal
+      :show="!!cancelBooking"
+      :booking="cancelBooking"
+      @close="cancelBooking = null"
+      @updated="onChangeApplied"
+    />
+
+    <!-- Reschedule modal -->
+    <BookingRescheduleModal
+      :show="!!rescheduleBooking"
+      :booking="rescheduleBooking"
+      @close="rescheduleBooking = null"
+      @updated="onChangeApplied"
     />
   </div>
 </template>

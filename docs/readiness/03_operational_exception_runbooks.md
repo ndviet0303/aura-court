@@ -69,11 +69,15 @@
 
 ---
 
-## 3. Runbook SOP-FIN-03: Outbound Payout Failures & Provider Stalls
+## 3. Runbook SOP-FIN-03: Outbound Payout Failures & Manual Disbursement Governance
+
+### Operational Scope & Governance
+- **Direct-Owner Architecture**: Post-cutover booking payments flow directly to verified owner accounts via VietQR; they do NOT enter platform wallet custody or generate platform payout obligations.
+- **Manual-Only Disbursement**: The collection provider (SePay) does NOT support automated outbound bank disbursement. All outbound disbursements and payouts remain strictly `manual_only`.
+- **Legacy Liability Preservation**: Historical tenant wallet balances and pre-cutover platform payables are strictly preserved with **zero automated deduction**. Outbound payouts apply exclusively to verified, reconciled pre-cutover obligations.
 
 ### Symptoms
-- Automated or manual payout batch transitions to `failed` or remains in `submitted` without terminal response for > 2 hours.
-
+- Manual payout batch transitions to `failed` or remains in `submitted` without external bank verification for > 2 hours.
 ### Step-by-Step Resolution
 1. **Identify Stuck Payouts**:
    ```sql

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Reservation;
 
-use App\Http\Controllers\Controller;
-
+use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\PriceRule;
 use App\Services\Infrastructure\IdempotencyService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class V2PriceRuleController extends Controller
 {
@@ -33,7 +35,9 @@ class V2PriceRuleController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($this->isOrganizationOperator($request, $organization), 403);
+        $this->assertActivePlatformEntitlement($request, $organization);
         $data = $this->validated($request);
+        $this->assertEffectiveRange($data);
 
         return $this->idempotency->run($request, function () use ($organization, $data) {
             $rule = PriceRule::create(array_merge($data, ['organization_id' => $organization->id, 'version' => 1]));
@@ -46,8 +50,10 @@ class V2PriceRuleController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($this->isOrganizationOperator($request, $organization), 403);
+        $this->assertActivePlatformEntitlement($request, $organization);
         $record = PriceRule::query()->where('organization_id', $organization->id)->whereKey($rule)->firstOrFail();
         $data = $this->validated($request, true);
+        $this->assertEffectiveRange($data, $record);
 
         return $this->idempotency->run($request, function () use ($record, $data) {
             $record->update(array_merge($data, ['version' => $record->version + 1]));
@@ -69,6 +75,28 @@ class V2PriceRuleController extends Controller
         });
     }
 
+    /**
+     * D29: activating or updating a pricing policy is "new business" and requires a
+     * valid platform subscription entitlement. Having the right role is not enough —
+     * an expired or missing plan is denied, and the response names the actual missing
+     * entitlement so the UI can explain it. Platform admins act on the owner's behalf.
+     */
+    private function assertActivePlatformEntitlement(Request $request, Organization $organization): void
+    {
+        if ($request->user()->isPlatformAdmin()) {
+            return;
+        }
+
+        $entitlement = app(EvaluatePlatformEntitlement::class)->execute((int) $organization->id);
+
+        if (! $entitlement['is_valid']) {
+            abort(response()->json([
+                'message' => 'An active platform subscription is required to manage pricing policy.',
+                'code' => $entitlement['reason'] ?? 'SUBSCRIPTION_REQUIRED',
+            ], 403));
+        }
+    }
+
     private function validated(Request $request, bool $partial = false): array
     {
         $prefix = $partial ? 'sometimes|' : '';
@@ -84,9 +112,26 @@ class V2PriceRuleController extends Controller
             'ends_at' => $prefix.'nullable|date_format:H:i|after:starts_at',
             'price' => $prefix.'required|integer|min:0',
             'priority' => $prefix.'nullable|integer|min:0|max:10000',
+            'effective_from' => $prefix.'nullable|date_format:Y-m-d',
+            'effective_until' => $prefix.'nullable|date_format:Y-m-d',
             'is_active' => $prefix.'boolean',
             'metadata' => $prefix.'nullable|array',
         ]);
     }
-}
 
+    private function assertEffectiveRange(array $data, ?PriceRule $existing = null): void
+    {
+        $from = array_key_exists('effective_from', $data)
+            ? $data['effective_from']
+            : $existing?->effective_from?->toDateString();
+        $until = array_key_exists('effective_until', $data)
+            ? $data['effective_until']
+            : $existing?->effective_until?->toDateString();
+
+        if ($from !== null && $until !== null && $until < $from) {
+            throw ValidationException::withMessages([
+                'effective_until' => 'The effective end date must be on or after the effective start date.',
+            ]);
+        }
+    }
+}

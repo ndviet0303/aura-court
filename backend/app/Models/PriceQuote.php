@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['organization_id', 'user_id', 'court_id', 'quote_token', 'status', 'currency', 'subtotal', 'total_amount', 'rule_version', 'slot_snapshot', 'applied_rule_ids', 'expires_at', 'accepted_at', 'accepted_snapshot'])]
+#[Fillable(['organization_id', 'user_id', 'court_id', 'quote_token', 'status', 'currency', 'subtotal', 'total_amount', 'rule_version', 'slot_snapshot', 'applied_rule_ids', 'expires_at', 'accepted_at', 'accepted_snapshot', 'benefit_snapshot'])]
 class PriceQuote extends Model
 {
     use BelongsToTenant;
@@ -24,6 +24,7 @@ class PriceQuote extends Model
             'expires_at' => 'datetime',
             'accepted_at' => 'datetime',
             'accepted_snapshot' => 'array',
+            'benefit_snapshot' => 'array',
         ];
     }
 

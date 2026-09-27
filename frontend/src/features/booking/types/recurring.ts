@@ -1,8 +1,8 @@
 import type { Court } from '@/features/court/types/court'
 
 export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly'
-export type RecurringStatus = 'draft' | 'confirmed' | 'active' | 'paused' | 'cancelled' | 'delinquent'
-export type InvoiceStatus = 'pending' | 'paid' | 'overdue'
+export type RecurringStatus = 'draft' | 'pending' | 'confirmed' | 'active' | 'paused' | 'cancelled' | 'delinquent'
+export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable'
 export type OccurrenceStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'released'
 
 export interface RecurringInvoice {
@@ -61,6 +61,38 @@ export interface CreateRecurringSeriesPayload {
   occurrences?: number
   coupon_code?: string
   weekdays?: number[]
+  accepted?: AcceptedPreview
+  accept_partial?: boolean
+}
+
+export interface RecurringSeriesPreviewOccurrence {
+  index: number
+  starts_at: string
+  ends_at: string
+  weekday: number
+  price: number
+  conflict: boolean
+  conflict_reason: string | null
+}
+
+export interface RecurringSeriesPreview {
+  frequency: RecurringFrequency
+  weekdays: number[]
+  count: number
+  currency: string
+  total_amount: number
+  occurrences: RecurringSeriesPreviewOccurrence[]
+  truncated_by: 'count' | 'until' | 'cap' | null
+}
+
+export interface RecurringSeriesPreviewPayload {
+  court_id: number
+  frequency: RecurringFrequency
+  weekdays: number[]
+  starts_at: string
+  ends_at?: string
+  until?: string
+  occurrences?: number
 }
 
 export interface WeekdayOption {
@@ -69,3 +101,32 @@ export interface WeekdayOption {
   name: string
   fullName: string
 }
+
+export interface AcceptedOccurrence {
+  starts_at: string
+  price: number
+}
+
+export interface AcceptedPreview {
+  total: number
+  occurrences: AcceptedOccurrence[]
+}
+
+export interface RecurringPartialConflictExcluded {
+  index: number
+  starts_at: string
+  ends_at: string
+  conflict_reason: string | null
+}
+
+export interface RecurringPartialConflict {
+  status: 'partial_conflict'
+  currency: string
+  held_count: number
+  revised_total: number
+  excluded: RecurringPartialConflictExcluded[]
+}
+
+export type CreateRecurringSeriesResult =
+  | { series: RecurringSeries }
+  | RecurringPartialConflict

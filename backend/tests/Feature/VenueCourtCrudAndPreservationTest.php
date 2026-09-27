@@ -68,7 +68,9 @@ class VenueCourtCrudAndPreservationTest extends TestCase
     public function test_sport_zone_crud_and_slot_duration_association(): void
     {
         $admin = $this->admin();
+        $org = Organization::create(['name' => 'Aura District 7 Org', 'slug' => 'aura-d7-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $venue = Venue::create([
+            'organization_id' => $org->id,
             'name' => 'Aura District 7',
             'slug' => 'aura-d7-'.uniqid(),
             'address' => 'Nguyen Van Linh, D7',
@@ -110,7 +112,9 @@ class VenueCourtCrudAndPreservationTest extends TestCase
     public function test_court_crud_amenities_and_public_detail_integration(): void
     {
         $admin = $this->admin();
+        $org = Organization::create(['name' => 'Aura Da Nang Org', 'slug' => 'aura-danang-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $venue = Venue::create([
+            'organization_id' => $org->id,
             'name' => 'Aura Da Nang',
             'slug' => 'aura-danang-'.uniqid(),
             'address' => 'Vo Nguyen Giap, Da Nang',
@@ -169,6 +173,83 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $refreshedRes = $this->getJson("/api/v1/courts/{$courtSlug}");
         $refreshedRes->assertOk()
             ->assertJsonPath('amenities', ['wifi', 'pro_shop', 'air_conditioning', 'led_lighting']);
+    }
+
+    public function test_court_surface_and_capacity_round_trip_without_mutating_existing_bookings(): void
+    {
+        $admin = $this->admin();
+        $owner = User::factory()->create();
+        $org = Organization::create(['name' => 'Specification Arena Org', 'slug' => 'spec-arena-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
+        $venue = Venue::create([
+            'organization_id' => $org->id,
+            'name' => 'Specification Arena',
+            'slug' => 'specification-arena-'.uniqid(),
+            'address' => '22 Court Street',
+            'is_active' => true,
+        ]);
+        SportZone::create([
+            'venue_id' => $venue->id,
+            'name' => 'Badminton Zone',
+            'sport_type' => 'badminton',
+            'slot_duration' => 60,
+            'is_active' => true,
+        ]);
+
+        $created = $this->actingAs($admin)->postJson('/api/v1/admin/courts', [
+            'name' => 'Court with specifications',
+            'venue_id' => $venue->id,
+            'surface_type' => 'synthetic',
+            'capacity' => 4,
+            'is_active' => true,
+        ])->assertCreated()
+            ->assertJsonPath('surface_type', 'synthetic')
+            ->assertJsonPath('capacity', 4);
+
+        $courtId = (int) $created->json('id');
+        $booking = Booking::create([
+            'code' => 'SPEC-'.strtoupper(uniqid()),
+            'user_id' => $owner->id,
+            'court_id' => $courtId,
+            'total_amount' => 220000,
+            'status' => 'confirmed',
+        ]);
+
+        $this->actingAs($admin)->patchJson("/api/v1/admin/courts/{$courtId}", [
+            'surface_type' => 'wood',
+            'capacity' => 6,
+        ])->assertOk()
+            ->assertJsonPath('surface_type', 'wood')
+            ->assertJsonPath('capacity', 6);
+
+        $this->getJson("/api/v1/courts/{$created->json('slug')}")
+            ->assertOk()
+            ->assertJsonPath('surface_type', 'wood')
+            ->assertJsonPath('capacity', 6);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'court_id' => $courtId,
+            'total_amount' => 220000,
+            'status' => 'confirmed',
+        ]);
+    }
+
+    public function test_court_surface_and_capacity_validation_rejects_unknown_or_impossible_values(): void
+    {
+        $admin = $this->admin();
+        $venue = Venue::create([
+            'name' => 'Validation Arena',
+            'slug' => 'validation-arena-'.uniqid(),
+            'address' => '23 Court Street',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->postJson('/api/v1/admin/courts', [
+            'name' => 'Invalid Court',
+            'venue_id' => $venue->id,
+            'surface_type' => 'liquid',
+            'capacity' => 0,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['surface_type', 'capacity']);
     }
 
     public function test_court_deactivation_preserves_historical_bookings_and_rejects_new_bookings(): void
@@ -272,11 +353,9 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $this->assertNotNull($adminCourt);
         $this->assertFalse($adminCourt['is_active']);
 
-        // 7. Public detail remains viewable (with is_active: false)
+        // 7. Public detail is hidden for a deactivated court (consistent with public list + new-booking rejection)
         $detailCheck = $this->getJson("/api/v1/courts/{$court->slug}");
-        $detailCheck->assertOk()
-            ->assertJsonPath('id', $court->id)
-            ->assertJsonPath('is_active', false);
+        $detailCheck->assertNotFound();
 
         // 8. New bookings and reservations on the deactivated court are rejected
         $newBookingAttempt = $this->actingAs($user)->postJson('/api/v1/bookings', [

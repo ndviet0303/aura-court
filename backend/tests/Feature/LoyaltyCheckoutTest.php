@@ -38,6 +38,7 @@ class LoyaltyCheckoutTest extends TestCase
             'name' => 'Loyalty Org ' . uniqid(),
             'slug' => 'loyalty-org-' . uniqid(),
             'status' => 'active',
+            'partner_status' => 'approved',
         ]);
 
         $user = User::factory()->create();
@@ -130,6 +131,7 @@ class LoyaltyCheckoutTest extends TestCase
 
     public function test_v1_atomic_points_and_wallet_checkout(): void
     {
+        $this->withoutExceptionHandling();
         [$org, $user, $court, $wallet] = $this->setupCheckoutEnv(2000, 500000);
         $date = now()->addDays(2)->setTime(10, 0);
 

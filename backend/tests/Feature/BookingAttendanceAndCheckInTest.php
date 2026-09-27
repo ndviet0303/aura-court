@@ -99,7 +99,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
     private function createTodayReservation(Organization $org, Court $court, User $user, string $status = 'confirmed'): Reservation
     {
         $tz = config('app.timezone');
-        $slotTime = Carbon::now($tz)->startOfHour();
+        $slotTime = Carbon::now($tz)->subMinutes(5)->second(0);
 
         $reservation = Reservation::create([
             'organization_id' => $org->id,
@@ -291,7 +291,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
                 && ($event->metadata['reservation_id'] ?? null) === $reservation->id;
         });
 
-        // 2. Check out -> court operational status transitions to available
+        // 2. Check out -> court operational status transitions to awaiting_inspection (Task 8.5 [D52])
         $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
             ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code])
@@ -299,8 +299,19 @@ class BookingAttendanceAndCheckInTest extends TestCase
 
         Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) use ($reservation) {
             return $event->courtId === $this->courtA->id
-                && $event->status === 'available'
+                && $event->status === 'awaiting_inspection'
                 && ($event->metadata['reservation_id'] ?? null) === $reservation->id;
+        });
+
+        // 3. Staff confirms court ready -> transitions to available
+        $this->actingAs($this->staffA)
+            ->withHeaders($this->headers($this->tenantA))
+            ->postJson("/api/v2/attendance/courts/{$this->courtA->id}/confirm-ready")
+            ->assertOk();
+
+        Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) {
+            return $event->courtId === $this->courtA->id
+                && $event->status === 'available';
         });
     }
 
@@ -329,18 +340,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
             'opened_by' => $this->staffA->id,
         ]);
 
-        // Checkout is blocked because of unpaid tab
-        $blocked = $this->actingAs($this->staffA)
-            ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code]);
-
-        $blocked->assertStatus(422);
-        $this->assertStringContainsString('50000 VND', $blocked->json('message'));
-
-        // Settle tab
-        $tab->update(['status' => ServiceTab::STATUS_SETTLED, 'settled_at' => now(), 'settled_by' => $this->staffA->id]);
-
-        // Checkout succeeds after tab is settled
+        // Checkout is NOT blocked by unpaid tab; succeeds and records unpaid receivable (Task 8.4 [D51])
         $checkout = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
             ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code]);
@@ -348,7 +348,15 @@ class BookingAttendanceAndCheckInTest extends TestCase
         $checkout->assertOk();
         $checkout->assertJsonPath('attendance.status', 'checked_out');
         $checkout->assertJsonPath('attendance.checked_out_by', $this->staffA->id);
+        $checkout->assertJsonPath('unpaid_receivable', 50000);
+        $this->assertSame(ServiceTab::STATUS_UNPAID, $tab->fresh()->status);
 
+        // Court transitions to awaiting_inspection (Task 8.5 [D52])
+        $this->assertSame('awaiting_inspection', \Illuminate\Support\Facades\Cache::get("court:{$this->courtA->id}:operational_status"));
+
+        // Tab can still be settled after checkout
+        $tab->update(['status' => ServiceTab::STATUS_SETTLED, 'settled_at' => now(), 'settled_by' => $this->staffA->id]);
+        $this->assertSame(ServiceTab::STATUS_SETTLED, $tab->fresh()->status);
         // Repeated checkout is idempotent
         $dupCheckout = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
@@ -360,7 +368,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
     public function test_legacy_mapped_booking_attendance_check_in(): void
     {
         $tz = config('app.timezone');
-        $todaySlot = Carbon::now($tz)->startOfHour();
+        $todaySlot = Carbon::now($tz)->subMinutes(5)->second(0);
 
         $legacyBooking = Booking::create([
             'code' => 'BK-LEGACY-' . uniqid(),

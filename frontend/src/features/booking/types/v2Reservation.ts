@@ -18,6 +18,13 @@ export type V2PriceQuote = {
   total_amount: number
   subtotal?: number
   discount_amount?: number
+  benefit_snapshot?: {
+    membership_id: number
+    plan_id: number
+    plan_version: number
+    membership_discount_amount: number
+    benefit_code: string
+  } | null
   expires_at: string
   slot_snapshot: V2PriceQuoteSlotSnapshot[]
 }
@@ -57,6 +64,7 @@ export type V2Reservation = {
   loyalty_points_redeemed?: number
   loyalty_snapshot?: any
   net_payable?: number
+  payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1' | string | null
 }
 
 export type V2PriceQuotePayload = {

@@ -8,38 +8,70 @@ fair-price resale while maintaining inventory and payer-level financial integrit
 ## Requirements
 
 ### Requirement: Long-running recurring reservations
-The platform SHALL support weekly and monthly series of up to 12 months or 104 occurrences. On confirmation it MUST reserve every occurrence's inventory, invoice each month, notify the payer at least seven days before the next invoice, and release only future occurrences when a payment becomes overdue.
+The platform SHALL support weekly, biweekly and monthly series bounded by published venue policy and at most 12 months/104 occurrences. Client/server SHALL agree on weekdays, recurrence dates, per-session duration and count. A server preview SHALL price/check every full interval and expose conflicts; all-or-nothing or partial acceptance SHALL follow published policy and require acceptance of the final occurrence/price list. Full-series or per-period payment SHALL be disclosed; only verified paid or explicitly policy-guaranteed occurrences SHALL confirm. Unpaid holds and overdue future periods SHALL release according to captured policy, preserving paid/history and allowing scoped occurrence changes.
 
 #### Scenario: Series is confirmed
-- **WHEN** a customer confirms a valid recurring series
-- **THEN** every occurrence within its stated horizon SHALL be reserved and associated with the series
+- **WHEN** a customer accepts a multi-weekday two-hour biweekly preview
+- **THEN** persisted dates, durations, prices and counts SHALL exactly match the accepted preview without truncating to twelve or reserving only one slot
+
+#### Scenario: Partial conflict
+- **WHEN** one occurrence is occupied under partial-acceptance policy
+- **THEN** the platform SHALL show the excluded occurrence and revised total for explicit acceptance before holding
+
+#### Scenario: All-or-nothing conflict
+- **WHEN** one occurrence conflicts under all-or-nothing policy
+- **THEN** no partial booking or payment allocation SHALL persist
+
+#### Scenario: Period payment
+- **WHEN** only one period has verified payment and no payment guarantee exists
+- **THEN** only that period SHALL confirm; later occurrences remain under disclosed hold/payment rules
 
 #### Scenario: Monthly invoice becomes overdue
-- **WHEN** an unpaid recurring invoice passes its due policy
-- **THEN** the platform SHALL release only the series occurrences after the overdue period and retain historical occurrences
+- **WHEN** an unpaid period becomes overdue
+- **THEN** only eligible unpaid future intervals SHALL release once, with notice and no corruption of completed sessions
 
 ### Requirement: Split payment collection and refund allocation
-The platform SHALL let a host divide a reservation amount into two through eight shares whose sum exactly equals the booking amount. Each share MUST have its own payment reference and 15-minute expiry; the reservation SHALL confirm only when paid shares equal the expected total, and refunds SHALL be allocated by the amount each payer actually paid.
+A host SHALL allocate the accepted booking total to two through eight real permitted participants using positive whole-VND shares with deterministic remainder allocation. Each share SHALL have a unique direct-owner payment reference and expiry no later than the inventory hold. Only verified receipts SHALL mark shares paid; host shortfall coverage SHALL itself require payment. Booking SHALL confirm once when verified allocations reach its exact payable total without an additional wallet debit. Expired groups SHALL release holds and retain owner-refund obligations for already received amounts. Refunds SHALL follow actual payer allocations.
 
 #### Scenario: All split shares are paid
-- **WHEN** paid split shares reach the exact expected total before expiry
-- **THEN** the platform SHALL confirm the reservation exactly once
+- **WHEN** the final verified share arrives before expiry
+- **THEN** one booking SHALL confirm without charging the host again
+
+#### Scenario: UI request failed
+- **WHEN** share payment/status request fails
+- **THEN** the UI SHALL show failure/pending, preserve real state and never mark a sample participant paid
 
 #### Scenario: Split group expires with an unpaid share
-- **WHEN** one or more split shares remain unpaid at expiry and the host does not cover the shortfall
-- **THEN** the platform SHALL release the held reservation according to the expiry policy
+- **WHEN** a group expires after two participants paid
+- **THEN** the hold SHALL release once and those paid allocations SHALL remain traceable refund obligations
+
+#### Scenario: Host covers shortfall
+- **WHEN** the host elects to cover unpaid shares
+- **THEN** a referenced payment obligation SHALL be created and coverage SHALL not complete until verified
 
 ### Requirement: Controlled marketplace transfer
-The platform SHALL permit listing only a confirmed reservation slot that has not started, begins at least two hours in the future, and is priced no higher than its original price. A buyer checkout MUST transfer the entitlement once only after buyer payment and seller refund are accepted; the seller refund MUST return to the original payment source less the configured marketplace fee, defaulting to five percent.
+Only the current holder of confirmed, unused, undisputed eligible court-time SHALL list a transfer under a published venue policy, with default minimum two hours before play and asking price no higher than original. One effective listing and one exclusive buyer attempt SHALL exist per entitlement. The new holder SHALL be valid and any payment obligations SHALL be independently verified before transfer. Baseline paid transfer SHALL collect directly to the verified venue owner and track owner-executed seller reimbursement under disclosed terms; free transfer SHALL require explicit acceptance without fabricated payment. Aura Court MUST NOT hold or pay between parties or accrue commission. The original court/time/booking price-policy snapshot SHALL remain, consideration recorded separately; holder/check-in access SHALL update atomically. Failed/late financial outcomes SHALL enter reconciliation before relisting.
 
 #### Scenario: Eligible slot sells
-- **WHEN** a buyer completes checkout for an eligible unsold listing
-- **THEN** the platform SHALL create one buyer entitlement, record the seller refund and marketplace fee, and mark the listing sold
+- **WHEN** verified buyer payment and required seller reimbursement evidence satisfy the published transfer policy
+- **THEN** one entitlement SHALL transfer, new check-in authority SHALL be issued, prior holder access revoked and original price preserved
 
-#### Scenario: Seller refund cannot be accepted
-- **WHEN** buyer collection succeeds but the seller refund cannot be accepted
-- **THEN** the platform SHALL compensate the buyer according to the payment policy and make the listing available only when no entitlement transfer occurred
+#### Scenario: Dispute or restricted buyer
+- **WHEN** a listing's booking becomes disputed or the buyer is restricted before commitment
+- **THEN** transfer SHALL fail without changing ownership and any received money SHALL enter owner obligation tracking
 
 #### Scenario: Two buyers race to purchase a listing
-- **WHEN** two buyers attempt checkout for the same eligible listing
-- **THEN** at most one buyer SHALL receive the entitlement and the other SHALL receive a conflict or compensated outcome
+- **WHEN** buyers concurrently accept the same listing
+- **THEN** at most one SHALL receive the entitlement; other receipts SHALL not be silently consumed
+
+#### Scenario: Client refund flag
+- **WHEN** a buyer submits a seller-refund-accepted flag without evidence
+- **THEN** the platform SHALL not treat it as fulfilled financial obligation
+
+#### Scenario: Historical fee
+- **WHEN** a completed historical transfer contains commission
+- **THEN** history SHALL remain unchanged while new transfers use zero platform fee
+
+#### Scenario: Seller refund cannot be accepted
+- **WHEN** buyer funds were received but required seller reimbursement cannot be evidenced
+- **THEN** the transfer SHALL remain unresolved, no new holder SHALL be issued, the owner SHALL have a traceable refund/resolution obligation and relisting SHALL wait until competing financial obligations are cleared

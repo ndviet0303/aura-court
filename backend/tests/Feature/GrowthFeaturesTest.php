@@ -6,12 +6,14 @@ use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
-use App\Models\Membership;
-use App\Models\MembershipPlan;
+use App\Models\MembershipEntitlement;
+use App\Models\TenantMembership;
+use App\Models\TenantMembershipPlan;
 use App\Models\User;
 use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
 use App\Services\Booking\BookingService;
+use App\Services\Booking\DiscountService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,16 +39,38 @@ class GrowthFeaturesTest extends TestCase
         $this->fundUserWallet($user, 500000);
         $venue = Venue::firstOrFail();
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Ưu Đãi', 'is_active' => true]);
-        $date = now()->addDays(2)->setTime(10, 0);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 200000, 'is_active' => true]);
-        $plan = MembershipPlan::create(['name' => 'Gold', 'discount_percent' => 10, 'is_active' => true]);
-        Membership::create(['user_id' => $user->id, 'membership_plan_id' => $plan->id, 'starts_at' => now()->subDay(), 'ends_at' => now()->addMonth(), 'status' => 'active']);
-        $coupon = Coupon::create(['code' => 'WELCOME10', 'discount_type' => 'percent', 'discount_value' => 10, 'usage_limit' => 5, 'is_active' => true]);
+        $plan = TenantMembershipPlan::create([
+            'organization_id' => $venue->organization_id,
+            'name' => 'Gold '.uniqid(),
+            'version' => 1,
+            'price' => 100000,
+            'benefits' => ['discount_percent' => 10],
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $membership = TenantMembership::create([
+            'organization_id' => $venue->organization_id,
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'plan_version' => $plan->version,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addMonth(),
+            'status' => 'active',
+        ]);
+        MembershipEntitlement::create([
+            'organization_id' => $venue->organization_id,
+            'membership_id' => $membership->id,
+            'benefit_code' => 'discount_percent',
+            'benefit_value' => ['value' => 10, 'plan_version' => $plan->version],
+            'starts_at' => $membership->starts_at,
+            'ends_at' => $membership->ends_at,
+        ]);
+        $coupon = Coupon::create(['organization_id' => $venue->organization_id, 'code' => 'WELCOME10', 'discount_type' => 'percent', 'discount_value' => 10, 'usage_limit' => 5, 'is_active' => true]);
 
-        $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()], 'welcome10');
+        $discount = app(DiscountService::class)->reserve($user->id, 200000, 'welcome10', (int) $venue->organization_id, (int) $venue->id, (int) $court->id);
 
-        $this->assertSame(160000, $booking->total_amount);
-        $this->assertSame(40000, $booking->discount_amount);
+        $this->assertSame(160000, $discount['total']);
+        $this->assertSame(40000, $discount['discount']);
         $this->assertDatabaseHas('coupons', ['id' => $coupon->id, 'usage_count' => 1]);
     }
 
@@ -56,10 +80,9 @@ class GrowthFeaturesTest extends TestCase
         $this->fundUserWallet($user, 500000);
         $venue = Venue::firstOrFail();
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Kiểm Tra Mã', 'is_active' => true]);
-        $date = now()->addDays(2)->setTime(10, 0);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 200000, 'is_active' => true]);
 
         Coupon::create([
+            'organization_id' => $venue->organization_id,
             'code' => 'EXPIRED_CODE',
             'discount_type' => 'percent',
             'discount_value' => 15,
@@ -69,7 +92,7 @@ class GrowthFeaturesTest extends TestCase
         ]);
 
         $this->expectException(ValidationException::class);
-        app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()], 'EXPIRED_CODE');
+        app(DiscountService::class)->resolveEligibleCoupon('EXPIRED_CODE', (int) $venue->organization_id, 200000, $user, (int) $venue->id, (int) $court->id);
     }
 
     public function test_expired_pending_hold_notifies_waitlist(): void

@@ -159,8 +159,30 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
         $orderId = $createRes->json('order.id');
         $order = PosOrder::findOrFail($orderId);
         $this->assertSame('pending_payment', $order->status);
+        // 1) Before seeding, assert that posting an unverified self-declared reference is rejected with 422
+        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+            'external_transaction_id' => 'UNVERIFIED-FAKE-REF',
+            'amount' => 80000,
+            'provider' => 'vietqr',
+        ], [
+            'X-Organization-Id' => $this->tenant->id,
+            'Idempotency-Key' => 'unverified-key-' . uniqid(),
+        ]);
+        $unverifiedRes->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Payment has not been verified by payment provider.']);
 
-        // Now confirm QR payment with verified transaction ID
+        // 2) Seed the verified payment record
+        \App\Models\Payment::create([
+            'booking_id' => null,
+            'provider' => 'vietqr',
+            'external_transaction_id' => 'MB-TXN-998877',
+            'amount' => 80000,
+            'transfer_code' => "POS {$order->payment_reference}",
+            'status' => 'paid',
+            'received_at' => now(),
+        ]);
+
+        // 3) Then the cashier confirms with verified transaction ID and it succeeds with 200
         $confirmRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'MB-TXN-998877',
             'amount' => 80000,

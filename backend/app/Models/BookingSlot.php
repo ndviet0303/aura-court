@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ class BookingSlot extends Model
 {
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'unit_price' => 'integer'];
+        return ['starts_at' => UtcDateTime::class, 'ends_at' => UtcDateTime::class, 'unit_price' => 'integer'];
     }
 
     public function booking(): BelongsTo

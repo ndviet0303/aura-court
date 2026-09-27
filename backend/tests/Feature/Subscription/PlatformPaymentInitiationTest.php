@@ -75,13 +75,20 @@ class PlatformPaymentInitiationTest extends TestCase
             'amount' => 1200000,
             'status' => 'pending',
         ]);
+        $attempt = PlatformPaymentAttempt::where('reference_code', $refCode)->firstOrFail();
+        $this->assertSame(1, $attempt->metadata['billing_months']);
 
         // 2. Entitlement is NOT yet granted before verification!
         $this->assertEquals(0, PlatformSubscription::where('organization_id', $org->id)->count());
 
         $currentRes = $this->getJson("/api/v1/partner/organizations/{$org->id}/subscription/current");
         $currentRes->assertStatus(200)
-            ->assertJsonPath('has_active_subscription', false);
+            ->assertJsonPath('has_active_subscription', false)
+            ->assertJsonPath('can_take_bookings', false)
+            ->assertJsonPath('payment_attempt.reference_code', $refCode)
+            ->assertJsonPath('payment_attempt.status', 'pending')
+            ->assertJsonStructure(['payment_attempt' => ['id', 'plan_id', 'checkout_url', 'qr_code']]);
+        $this->assertStringContainsString('SANDBOX-QR', $currentRes->json('payment_attempt.qr_code'));
     }
 
     public function test_non_owner_cannot_initiate_payment(): void
@@ -107,5 +114,54 @@ class PlatformPaymentInitiationTest extends TestCase
         ]);
 
         $res->assertStatus(403);
+    }
+
+    public function test_non_owner_cannot_read_an_organization_subscription(): void
+    {
+        $owner = User::factory()->create(['role' => 'customer']);
+        $stranger = User::factory()->create(['role' => 'customer']);
+        $org = Organization::create(['name' => 'Private Club', 'slug' => 'private-club', 'status' => 'active']);
+        OrganizationMember::create([
+            'organization_id' => $org->id,
+            'user_id' => $owner->id,
+            'role' => 'organization_owner',
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($stranger);
+        $this->getJson("/api/v1/partner/organizations/{$org->id}/subscription/current")
+            ->assertForbidden();
+    }
+
+    public function test_six_month_payment_attempt_snapshots_calendar_month_term(): void
+    {
+        $owner = User::factory()->create(['role' => 'customer']);
+        $org = Organization::create(['name' => 'Six Month Club', 'slug' => 'six-month-club', 'status' => 'active']);
+        OrganizationMember::create([
+            'organization_id' => $org->id,
+            'user_id' => $owner->id,
+            'role' => 'organization_owner',
+            'status' => 'active',
+        ]);
+        $plan = PlatformPlan::create([
+            'code' => 'SIX_MONTH_PAY',
+            'name' => 'Six Month Plan',
+            'price' => 2800000,
+            'currency' => 'VND',
+            'billing_cycle' => 'six_months',
+            'terms_version' => '2026.6',
+            'terms_text' => 'Six calendar months.',
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($owner);
+        $response = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/initiate-payment", [
+            'plan_id' => $plan->id,
+            'accepted_terms_version' => '2026.6',
+        ])->assertCreated();
+
+        $attempt = PlatformPaymentAttempt::where('reference_code', $response->json('data.reference_code'))->firstOrFail();
+        $this->assertSame('six_months', $attempt->metadata['billing_cycle']);
+        $this->assertSame(6, $attempt->metadata['billing_months']);
     }
 }

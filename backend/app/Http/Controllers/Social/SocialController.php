@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Social;
 use App\Http\Controllers\Controller;
 
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Resources\MatchPostResource;
 use App\Models\MatchInvitation;
 use App\Models\MatchPost;
 use App\Models\PlayerProfile;
@@ -49,12 +50,12 @@ class SocialController extends Controller
 
         $orgId = $explicitOrgId ? (int) $explicitOrgId : $organization?->id;
 
-        return response()->json(['matches' => $this->matches->discover($orgId, $request->all())]);
+        return response()->json(['matches' => MatchPostResource::collection($this->matches->discover($orgId, $request->all()))]);
     }
 
     public function show(Request $request, MatchPost $post)
     {
-        return response()->json(['match' => $this->matches->show($post, $request->user())]);
+        return response()->json(['match' => MatchPostResource::make($this->matches->show($post, $request->user()))]);
     }
 
 
@@ -63,14 +64,18 @@ class SocialController extends Controller
         $organization = $this->organization($request);
         $data = $request->validate([
             'court_id' => 'nullable|integer',
+            'reservation_id' => 'nullable|integer',
+            'entitlement_id' => 'nullable|integer',
             'is_owner_hosted' => 'nullable|boolean',
             'category' => 'nullable|string|max:64',
             'skill_levels' => 'nullable|array',
             'skill_levels.*' => 'string',
             'title' => 'required|string|max:180',
-            'visibility' => 'required|in:public,invite_only',
+            'visibility' => 'nullable|in:public,invite_only',
             'starts_at' => 'required|date',
             'ends_at' => 'required|date',
+            'registration_deadline' => 'nullable|date',
+            'approval_required' => 'nullable|boolean',
             'city' => 'nullable|string|max:120',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
@@ -80,7 +85,8 @@ class SocialController extends Controller
             'availability' => 'nullable|array',
             'metadata' => 'nullable|array',
         ]);
-        return $this->idempotency->run($request, fn () => response()->json(['match' => $this->matches->createPost($request->user(), $organization->id, $data)], 201));
+        $data['visibility'] = $data['visibility'] ?? 'public';
+        return $this->idempotency->run($request, fn () => response()->json(['match' => MatchPostResource::make($this->matches->createPost($request->user(), $organization->id, $data))], 201));
     }
 
     public function update(Request $request, MatchPost $post)
@@ -91,6 +97,7 @@ class SocialController extends Controller
             'visibility' => 'sometimes|in:public,invite_only',
             'starts_at' => 'sometimes|date',
             'ends_at' => 'sometimes|date',
+            'registration_deadline' => 'nullable|date',
             'required_participants' => 'sometimes|integer|min:1|max:100',
             'category' => 'sometimes|string|max:64',
             'skill_levels' => 'sometimes|array',
@@ -99,12 +106,12 @@ class SocialController extends Controller
             'metadata' => 'nullable|array',
         ]);
 
-        return $this->idempotency->run($request, fn () => response()->json(['match' => $this->matches->updatePost($post, $request->user(), $data)]));
+        return $this->idempotency->run($request, fn () => response()->json(['match' => MatchPostResource::make($this->matches->updatePost($post, $request->user(), $data))]));
     }
 
     public function endSession(Request $request, MatchPost $post)
     {
-        return $this->idempotency->run($request, fn () => response()->json(['match' => $this->matches->endSession($post, $request->user())]));
+        return $this->idempotency->run($request, fn () => response()->json(['match' => MatchPostResource::make($this->matches->endSession($post, $request->user()))]));
     }
 
     public function getBill(Request $request, MatchPost $post)
@@ -187,6 +194,45 @@ class SocialController extends Controller
 
         return $this->idempotency->run($request, fn () => response()->json(['participation' => $this->matches->join($post, $request->user())], 201));
     }
+    public function approveParticipant(Request $request, MatchPost $match)
+    {
+        $data = $request->validate(['user_id' => 'required|integer']);
+        return $this->idempotency->run($request, fn () => response()->json([
+            'participation' => $this->matches->approveParticipant($match, $request->user(), (int) $data['user_id']),
+            'message' => 'Participant approved.',
+        ]));
+    }
+
+    public function rejectParticipant(Request $request, MatchPost $match)
+    {
+        $data = $request->validate(['user_id' => 'required|integer']);
+        return $this->idempotency->run($request, fn () => response()->json([
+            'participation' => $this->matches->rejectParticipant($match, $request->user(), (int) $data['user_id']),
+            'message' => 'Participant rejected.',
+        ]));
+    }
+
+    public function closeRoster(Request $request, MatchPost $match)
+    {
+        return $this->idempotency->run($request, fn () => response()->json([
+            'match' => MatchPostResource::make($this->matches->closeRoster($match, $request->user())),
+            'message' => 'Roster closed.',
+        ]));
+    }
+
+    public function recordAttendance(Request $request, MatchPost $match)
+    {
+        $data = $request->validate([
+            'user_id' => 'required|integer',
+            'status' => 'required|in:present,late,absent,withdrawn',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+        return $this->idempotency->run($request, fn () => response()->json([
+            'participation' => $this->matches->recordAttendance($match, $request->user(), (int) $data['user_id'], $data['status'], $data['notes'] ?? null),
+            'message' => 'Attendance recorded.',
+        ]));
+    }
+
 
     public function respond(Request $request, MatchInvitation $invitation)
     {

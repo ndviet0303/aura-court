@@ -4,9 +4,11 @@ namespace Tests\Feature\Readiness;
 
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
+use App\Models\Organization;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\BookingService;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -22,7 +24,7 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
     {
         $court = Court::create(['name' => 'Center Court Stadium', 'is_active' => true]);
         $targetDate = now(config('app.timezone'))->addDays(5)->setTime(18, 0);
-        
+
         CourtPriceSlot::create([
             'court_id' => $court->id,
             'weekday' => $targetDate->dayOfWeekIso,
@@ -35,8 +37,9 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
         $users = User::factory()->count(100)->create();
         $isoSlot = $targetDate->toIso8601String();
 
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         foreach ($users as $user) {
             $w = $walletService->getOrCreateWallet($user->id, $venue->organization_id);
             $walletService->credit($w, 1000000, 'test_fund', 1, 'Fund');
@@ -72,7 +75,8 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
 
     public function test_read_peak_and_session_simulation_baseline(): void
     {
-        $venue = Venue::create(['name' => 'Aura Arena', 'slug' => 'aura-arena', 'address' => '123 Main St', 'is_active' => true]);
+        $organization = Organization::create(['name' => 'Aura Arena Org', 'slug' => 'aura-arena-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
+        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Aura Arena', 'slug' => 'aura-arena', 'address' => '123 Main St', 'is_active' => true]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Court 2', 'is_active' => true]);
         $user = User::factory()->create();
 
@@ -82,7 +86,7 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
             $response->assertOk();
         }
 
-        $availabilityResponse = $this->actingAs($user)->getJson("/api/v1/availability?court_id={$court->id}&date=" . now()->toDateString());
+        $availabilityResponse = $this->actingAs($user)->getJson("/api/v1/availability?court_id={$court->id}&date=".now()->toDateString());
         $availabilityResponse->assertOk();
     }
 }

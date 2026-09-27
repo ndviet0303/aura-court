@@ -6,36 +6,26 @@ import { useAdminContracts } from '../composables/useAdminContracts'
 import ContractsKpiBar from '../components/contracts/ContractsKpiBar.vue'
 import ContractsTable from '../components/contracts/ContractsTable.vue'
 import ContractDetailModal from '../components/contracts/ContractDetailModal.vue'
-import ContractCreateModal from '../components/contracts/ContractCreateModal.vue'
-import ContractInvoicePayModal from '../components/contracts/ContractInvoicePayModal.vue'
 
 const { t } = useI18n()
 
 const {
   loading,
-  saving,
   actionLoading,
   activeStatusTab,
   searchQuery,
   selectedVenueId,
   selectedContract,
-  selectedInvoiceForPay,
   showDetailModal,
-  showCreateModal,
-  showPayModal,
   notice,
   error,
   venues,
-  courts,
   stats,
   filteredContracts,
   loadData,
-  createContract,
   cancelContract,
-  payInvoice,
   exportExcel,
   openDetail,
-  openPayModal,
 } = useAdminContracts()
 </script>
 
@@ -59,10 +49,6 @@ const {
         <AuraButton variant="outline" @click="exportExcel">
           <span class="material-symbols-outlined icon-18">download</span>
           <span>{{ t('admin.contracts.exportExcel') }}</span>
-        </AuraButton>
-        <AuraButton variant="primary" class="btn-primary-pink" @click="showCreateModal = true">
-          <span class="material-symbols-outlined icon-18">post_add</span>
-          <span>{{ t('admin.contracts.createContract') }}</span>
         </AuraButton>
       </div>
     </header>
@@ -92,7 +78,6 @@ const {
       @update:search-query="searchQuery = $event"
       @update:selected-venue-id="selectedVenueId = $event"
       @view-detail="openDetail"
-      @open-create="showCreateModal = true"
     />
 
     <!-- Contract Detail Modal -->
@@ -101,28 +86,9 @@ const {
       :contract="selectedContract"
       :action-loading="actionLoading"
       @close="showDetailModal = false"
-      @pay-invoice="(inv) => selectedContract && openPayModal(selectedContract, inv)"
       @cancel-contract="(id) => cancelContract(id)"
     />
 
-    <!-- Create Contract Modal -->
-    <ContractCreateModal
-      :show="showCreateModal"
-      :venues="venues"
-      :courts="courts"
-      :saving="saving"
-      @close="showCreateModal = false"
-      @create="createContract"
-    />
-
-    <!-- Pay Invoice Confirmation Modal -->
-    <ContractInvoicePayModal
-      :show="showPayModal"
-      :target="selectedInvoiceForPay"
-      :loading="actionLoading"
-      @close="showPayModal = false"
-      @confirm="({ seriesId, invoiceId, reference }) => payInvoice(seriesId, invoiceId, reference)"
-    />
   </div>
 </template>
 

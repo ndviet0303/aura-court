@@ -14,6 +14,7 @@ class AdminMembershipTest extends TestCase
     use RefreshDatabase;
 
     private User $owner;
+
     private Organization $org;
 
     protected function setUp(): void
@@ -51,7 +52,6 @@ class AdminMembershipTest extends TestCase
                 'pointMultiplier' => 2.0,
                 'advanceBookingDays' => 14,
                 'freeWeekendHours' => 4,
-                'cancellationFeeWaived' => true,
                 'isPopular' => true,
                 'perks' => ['Giảm 20% đặt sân', 'Tích x2 điểm', 'Miễn phí hủy sân'],
             ]);

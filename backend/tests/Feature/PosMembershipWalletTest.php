@@ -12,6 +12,7 @@ use App\Models\PosProduct;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\POS\PosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -82,6 +83,7 @@ class PosMembershipWalletTest extends TestCase
         ]);
 
         Coupon::create([
+            'organization_id' => $organization->id,
             'code' => 'EXPIRED20',
             'discount_type' => 'percent',
             'discount_value' => 20,
@@ -114,6 +116,7 @@ class PosMembershipWalletTest extends TestCase
 
         // 10% coupon
         Coupon::create([
+            'organization_id' => $organization->id,
             'code' => 'POS10',
             'discount_type' => 'percent',
             'discount_value' => 10,
@@ -130,7 +133,7 @@ class PosMembershipWalletTest extends TestCase
             'benefits' => ['discount_percent' => 10],
             'status' => 'active',
         ]);
-        TenantMembership::create([
+        $membership = TenantMembership::create([
             'organization_id' => $organization->id,
             'user_id' => $customer->id,
             'plan_id' => $plan->id,
@@ -138,6 +141,14 @@ class PosMembershipWalletTest extends TestCase
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addMonth(),
             'status' => 'active',
+        ]);
+        MembershipEntitlement::create([
+            'organization_id' => $organization->id,
+            'membership_id' => $membership->id,
+            'benefit_code' => 'discount_percent',
+            'benefit_value' => ['value' => 10, 'plan_version' => $plan->version],
+            'starts_at' => $membership->starts_at,
+            'ends_at' => $membership->ends_at,
         ]);
         // 200k subtotal: 10% coupon (20k) + 10% membership (20k) = 40k discount -> 160k total
         $order = app(PosService::class)->completeOrder($cashier, $organization->id, [
@@ -150,6 +161,63 @@ class PosMembershipWalletTest extends TestCase
         $this->assertSame(200000, $order->subtotal);
         $this->assertSame(40000, $order->discount_amount);
         $this->assertSame(160000, $order->total_amount);
+    }
+
+    public function test_pos_coupon_scope_uses_authorized_venue_and_rejects_sibling_venue(): void
+    {
+        [$organization, $cashier] = $this->tenant();
+        $venue = Venue::create([
+            'organization_id' => $organization->id,
+            'name' => 'POS Coupon Venue',
+            'slug' => 'pos-coupon-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $otherVenue = Venue::create([
+            'organization_id' => $organization->id,
+            'name' => 'Other POS Venue',
+            'slug' => 'pos-coupon-other-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $product = PosProduct::create([
+            'organization_id' => $organization->id,
+            'sku' => 'VENUE-ITEM',
+            'name' => 'Venue Item',
+            'price' => 100000,
+            'cost' => 50000,
+            'stock_quantity' => 5,
+            'is_active' => true,
+        ]);
+        $coupon = Coupon::create([
+            'organization_id' => $organization->id,
+            'venue_id' => $venue->id,
+            'code' => 'VENUE10',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'is_active' => true,
+            'status' => Coupon::STATUS_ACTIVE,
+        ]);
+
+        $order = app(PosService::class)->completeOrder($cashier, $organization->id, [
+            'venue_id' => $venue->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'coupon_code' => 'VENUE10',
+            'payment_method' => 'cash',
+        ]);
+        $this->assertSame(90000, $order->total_amount);
+        $this->assertSame(1, (int) $coupon->fresh()->usage_count);
+
+        try {
+            app(PosService::class)->calculateQuote($organization->id, [
+                'venue_id' => $otherVenue->id,
+                'items' => [['product_id' => $product->id, 'quantity' => 1]],
+                'coupon_code' => 'VENUE10',
+            ], $cashier);
+            $this->fail('A venue-scoped coupon must not apply to a sibling venue.');
+        } catch (ValidationException) {
+            $this->assertSame(1, (int) $coupon->fresh()->usage_count);
+        }
     }
 
     public function test_membership_benefit_versioning_preserves_earned_entitlement_period(): void

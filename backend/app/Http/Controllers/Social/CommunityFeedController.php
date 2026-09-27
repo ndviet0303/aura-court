@@ -7,8 +7,10 @@ use App\Http\Controllers\Concerns\ResolvesV2Organization;
 use App\Models\FeedComment;
 use App\Models\FeedPost;
 use App\Models\FeedReport;
+use App\Models\ModerationRecord;
 use App\Models\OrganizationMember;
 use App\Services\Infrastructure\IdempotencyService;
+use App\Services\Infrastructure\OutboxService;
 use App\Services\Social\CommunityFeedService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +21,8 @@ class CommunityFeedController extends Controller
 
     public function __construct(
         private readonly CommunityFeedService $feed,
-        private readonly IdempotencyService $idempotency
+        private readonly IdempotencyService $idempotency,
+        private readonly OutboxService $outbox,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -217,6 +220,24 @@ class CommunityFeedController extends Controller
 
         $this->feed->hideContent($organization->id, $request->user(), FeedPost::class, $post->id, $data['reason']);
 
+        $this->outbox->enqueue([
+            'organization_id' => $organization->id,
+            'message_key' => "feed_post_hidden:{$post->id}:" . now()->timestamp . ':' . uniqid(),
+            'channel' => 'notification',
+            'event_type' => 'feed.post_hidden',
+            'aggregate_type' => FeedPost::class,
+            'aggregate_id' => $post->id,
+        ], [
+            'user_id' => $post->user_id,
+            'recipient_id' => $post->user_id,
+            'post_id' => $post->id,
+            'action' => 'hidden',
+            'reason' => $data['reason'],
+            'moderator_id' => $request->user()->id,
+            'title' => 'Bài viết bị ẩn',
+            'body' => 'Bài viết của bạn đã bị ẩn do vi phạm tiêu chuẩn cộng đồng.',
+        ]);
+
         return response()->json([
             'message' => 'Post hidden by moderation.',
             'post' => $post->fresh(),
@@ -233,6 +254,24 @@ class CommunityFeedController extends Controller
         ]);
 
         $this->feed->restoreContent($organization->id, $request->user(), FeedPost::class, $post->id, $data['reason']);
+
+        $this->outbox->enqueue([
+            'organization_id' => $organization->id,
+            'message_key' => "feed_post_restored:{$post->id}:" . now()->timestamp . ':' . uniqid(),
+            'channel' => 'notification',
+            'event_type' => 'feed.post_restored',
+            'aggregate_type' => FeedPost::class,
+            'aggregate_id' => $post->id,
+        ], [
+            'user_id' => $post->user_id,
+            'recipient_id' => $post->user_id,
+            'post_id' => $post->id,
+            'action' => 'restored',
+            'reason' => $data['reason'],
+            'moderator_id' => $request->user()->id,
+            'title' => 'Bài viết được khôi phục',
+            'body' => 'Bài viết của bạn đã được khôi phục.',
+        ]);
 
         return response()->json([
             'message' => 'Post restored by moderation.',
@@ -252,6 +291,24 @@ class CommunityFeedController extends Controller
 
         $this->feed->hideContent($organization->id, $request->user(), FeedComment::class, $comment->id, $data['reason']);
 
+        $this->outbox->enqueue([
+            'organization_id' => $organization->id,
+            'message_key' => "feed_comment_hidden:{$comment->id}:" . now()->timestamp . ':' . uniqid(),
+            'channel' => 'notification',
+            'event_type' => 'feed.comment_hidden',
+            'aggregate_type' => FeedComment::class,
+            'aggregate_id' => $comment->id,
+        ], [
+            'user_id' => $comment->user_id,
+            'recipient_id' => $comment->user_id,
+            'comment_id' => $comment->id,
+            'action' => 'hidden',
+            'reason' => $data['reason'],
+            'moderator_id' => $request->user()->id,
+            'title' => 'Bình luận bị ẩn',
+            'body' => 'Bình luận của bạn đã bị ẩn do vi phạm tiêu chuẩn cộng đồng.',
+        ]);
+
         return response()->json([
             'message' => 'Comment hidden by moderation.',
             'comment' => $comment->fresh(),
@@ -269,6 +326,24 @@ class CommunityFeedController extends Controller
         ]);
 
         $this->feed->restoreContent($organization->id, $request->user(), FeedComment::class, $comment->id, $data['reason']);
+
+        $this->outbox->enqueue([
+            'organization_id' => $organization->id,
+            'message_key' => "feed_comment_restored:{$comment->id}:" . now()->timestamp . ':' . uniqid(),
+            'channel' => 'notification',
+            'event_type' => 'feed.comment_restored',
+            'aggregate_type' => FeedComment::class,
+            'aggregate_id' => $comment->id,
+        ], [
+            'user_id' => $comment->user_id,
+            'recipient_id' => $comment->user_id,
+            'comment_id' => $comment->id,
+            'action' => 'restored',
+            'reason' => $data['reason'],
+            'moderator_id' => $request->user()->id,
+            'title' => 'Bình luận được khôi phục',
+            'body' => 'Bình luận của bạn đã được khôi phục.',
+        ]);
 
         return response()->json([
             'message' => 'Comment restored by moderation.',
@@ -298,5 +373,61 @@ class CommunityFeedController extends Controller
         $report->load(['reporter:id,name,email', 'reportable', 'reviewer:id,name,email']);
 
         return response()->json(['report' => $report]);
+    }
+
+    public function dismissReport(Request $request, FeedReport $report): JsonResponse
+    {
+        $organization = $this->organization($request);
+        abort_unless($report->organization_id === $organization->id, 404);
+
+        $data = $request->validate([
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
+        $user = $request->user();
+
+        $report->update([
+            'status' => FeedReport::STATUS_DISMISSED,
+            'action_taken' => 'dismiss',
+            'reviewed_by' => $user->id,
+            'reviewed_at' => now(),
+        ]);
+
+        ModerationRecord::create([
+            'organization_id' => $organization->id,
+            'actor_id' => $user->id,
+            'target_type' => $report->reportable_type,
+            'target_id' => $report->reportable_id,
+            'action' => 'keep',
+            'reason' => $data['reason'],
+            'metadata' => [
+                'reviewed_by' => $user->name,
+                'reviewed_at' => now()->toIso8601String(),
+                'report_id' => $report->id,
+            ],
+        ]);
+
+        $this->outbox->enqueue([
+            'organization_id' => $organization->id,
+            'message_key' => "feed_report_dismissed:{$report->id}:" . now()->timestamp . ':' . uniqid(),
+            'channel' => 'notification',
+            'event_type' => 'feed.report_dismissed',
+            'aggregate_type' => FeedReport::class,
+            'aggregate_id' => $report->id,
+        ], [
+            'user_id' => $report->reporter_id,
+            'recipient_id' => $report->reporter_id,
+            'report_id' => $report->id,
+            'action' => 'dismiss',
+            'reason' => $data['reason'],
+            'title' => 'Báo cáo đã được xem xét',
+            'body' => 'Báo cáo của bạn đã được xem xét và giữ lại nội dung.',
+            'message' => 'Báo cáo của bạn đã được xem xét và giữ lại nội dung.',
+        ]);
+
+        return response()->json([
+            'message' => 'Report dismissed successfully.',
+            'report' => $report->fresh(['reporter:id,name,email', 'reportable', 'reviewer:id,name,email']),
+        ]);
     }
 }

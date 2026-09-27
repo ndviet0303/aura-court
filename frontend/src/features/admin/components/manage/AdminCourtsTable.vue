@@ -140,6 +140,11 @@ const { t } = useI18n()
 
           <p class="court-desc">{{ resolveLocalizedText(court.description) || t('admin.manage.standardDesc') }}</p>
 
+          <div v-if="court.surface_type || court.capacity" class="court-specs">
+            <span v-if="court.surface_type" class="spec-badge">{{ t(`admin.manage.surface${court.surface_type.charAt(0).toUpperCase()}${court.surface_type.slice(1)}`) }}</span>
+            <span v-if="court.capacity" class="spec-badge">{{ t('admin.manage.courtCapacityValue', { count: court.capacity }) }}</span>
+          </div>
+
           <div class="court-stats-row">
             <span class="stat-badge">
               <span class="material-symbols-outlined icon-14">schedule</span>
@@ -378,6 +383,20 @@ const { t } = useI18n()
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.court-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spec-badge {
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .court-stats-row {

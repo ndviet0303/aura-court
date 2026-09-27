@@ -31,6 +31,7 @@ return [
     ],
 
     'sepay' => [
+        'api_v2_base_url' => env('SEPAY_API_V2_BASE_URL', 'https://userapi.sepay.vn/v2'),
         'bank' => env('SEPAY_BANK', 'VCB'),
         'account' => env('SEPAY_ACCOUNT'),
         'account_name' => env('SEPAY_ACCOUNT_NAME', 'AURA COURT'),
@@ -54,6 +55,7 @@ return [
         'client_id' => env('PAYOS_CLIENT_ID'),
         'api_key' => env('PAYOS_API_KEY'),
         'webhook_secret' => env('PAYOS_WEBHOOK_SECRET'),
+        'checksum_key' => env('PAYOS_CHECKSUM_KEY'),
         'timeout' => env('PAYOS_TIMEOUT', 10),
     ],
 

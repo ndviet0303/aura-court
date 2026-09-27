@@ -18,14 +18,21 @@ class ApplyBookingCoupon
         abort_if($booking->payment_expires_at?->isPast(), 422, 'Phiên thanh toán đã hết hạn.');
 
         return DB::transaction(function () use ($booking, $couponCode) {
-            $booking->loadMissing(['slots', 'coupon']);
+            $booking->loadMissing(['slots', 'coupon', 'court.venue']);
             $subtotal = (int) $booking->slots->sum('unit_price');
 
             if ($booking->coupon_id) {
                 $this->discounts->release($booking->coupon);
             }
 
-            $discount = $this->discounts->reserve($booking->user_id, $subtotal, $couponCode);
+            $discount = $this->discounts->reserve(
+                $booking->user_id,
+                $subtotal,
+                $couponCode,
+                (int) $booking->court->venue->organization_id,
+                (int) $booking->court->venue_id,
+                (int) $booking->court_id,
+            );
 
             $booking->update([
                 'coupon_id' => $discount['coupon']?->id,

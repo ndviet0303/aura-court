@@ -35,8 +35,13 @@ class OrdinaryWalletCheckoutTest extends TestCase
     /** @return array{0:Organization,1:User,2:Court} */
     private function tenant(): array
     {
-        $organization = Organization::create(['name' => 'V2 Tenant', 'slug' => 'v2-tenant-'.uniqid()]);
-        $user = User::factory()->create();
+        $organization = Organization::create([
+            'name' => 'V2 Tenant',
+            'slug' => 'v2-tenant-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
+        $user = User::factory()->create(['email_verified_at' => now()]);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
         $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'V2 Venue', 'slug' => 'v2-venue-'.uniqid(), 'is_active' => true]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'V2 Court', 'is_active' => true]);
@@ -46,11 +51,10 @@ class OrdinaryWalletCheckoutTest extends TestCase
 
     public function test_v1_ordinary_checkout_atomically_debits_wallet_and_syncs_v2_canonical_mapping(): void
     {
-        $user = User::factory()->create();
-        $venue = Venue::firstOrFail();
+        [$organization, $user, $court] = $this->tenant();
+        $venue = $court->venue;
         $wallet = $this->fundUserWallet($user, $venue->organization_id, 500000);
 
-        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân V1 Checkout', 'is_active' => true]);
         $date = Carbon::now()->addDays(2)->setTime(10, 0)->startOfHour();
         CourtPriceSlot::create([
             'court_id' => $court->id,
@@ -115,12 +119,11 @@ class OrdinaryWalletCheckoutTest extends TestCase
 
     public function test_v1_ordinary_checkout_fails_with_insufficient_wallet_balance(): void
     {
-        $user = User::factory()->create();
-        $venue = Venue::firstOrFail();
+        [$organization, $user, $court] = $this->tenant();
+        $venue = $court->venue;
         // Wallet has only 50k, but slot costs 120k
         $this->fundUserWallet($user, $venue->organization_id, 50000);
 
-        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân V1 Insufficient', 'is_active' => true]);
         $date = Carbon::now()->addDays(2)->setTime(10, 0)->startOfHour();
         CourtPriceSlot::create([
             'court_id' => $court->id,
@@ -576,4 +579,3 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $this->assertDatabaseCount('refunds', 0);
     }
 }
-

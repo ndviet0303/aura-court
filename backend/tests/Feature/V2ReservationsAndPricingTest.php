@@ -5,27 +5,33 @@ namespace Tests\Feature;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
+use App\Models\CourtPriceSlot;
 use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\PlatformPlan;
+use App\Models\PlatformSubscription;
 use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\SportZone;
+use App\Services\Booking\RecurringSeriesService;
+use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class V2ReservationsAndPricingTest extends TestCase
 {
     use RefreshDatabase;
+
     private function fundWallet(User $user, int $organizationId, int $amount = 1000000): void
     {
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $organizationId);
         $walletService->credit($wallet, $amount, 'test_topup', 1, 'Fund for test');
     }
-
 
     public function test_date_exception_precedes_peak_weekly_and_base_rules(): void
     {
@@ -45,6 +51,315 @@ class V2ReservationsAndPricingTest extends TestCase
         PriceRule::query()->where('type', 'date_exception')->update(['price' => 999999]);
 
         $this->assertDatabaseHas('price_quotes', ['id' => $quote['id'], 'total_amount' => 250000]);
+    }
+
+    public function test_effective_date_edges_priority_and_rule_version_are_deterministic(): void
+    {
+        [$organization, $user, $court] = $this->tenant();
+        $start = now(config('app.timezone'))->addDays(8)->setTime(18, 0, 0);
+        $from = $start->toDateString();
+        $until = $start->copy()->addDay()->toDateString();
+
+        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 100000]);
+        PriceRule::create([
+            'organization_id' => $organization->id,
+            'court_id' => $court->id,
+            'type' => 'peak',
+            'starts_at' => '18:00',
+            'ends_at' => '19:00',
+            'price' => 999000,
+            'priority' => 4,
+            'version' => 99,
+            'effective_from' => $from,
+            'effective_until' => $until,
+        ]);
+        PriceRule::create([
+            'organization_id' => $organization->id,
+            'court_id' => $court->id,
+            'type' => 'peak',
+            'starts_at' => '18:00',
+            'ends_at' => '19:00',
+            'price' => 180000,
+            'priority' => 6,
+            'version' => 1,
+            'effective_from' => $from,
+            'effective_until' => $until,
+        ]);
+        PriceRule::create([
+            'organization_id' => $organization->id,
+            'court_id' => $court->id,
+            'type' => 'peak',
+            'starts_at' => '18:00',
+            'ends_at' => '19:00',
+            'price' => 200000,
+            'priority' => 6,
+            'version' => 2,
+            'effective_from' => $from,
+            'effective_until' => $until,
+        ]);
+
+        $quote = function (Carbon $time, string $key) use ($organization, $user, $court) {
+            return $this->actingAs($user)->withHeaders([
+                'X-Organization-ID' => (string) $organization->id,
+                'Idempotency-Key' => $key,
+            ])->postJson('/api/v2/price-quotes', [
+                'court_id' => $court->id,
+                'slots' => [$time->toIso8601String()],
+            ]);
+        };
+
+        $quote($start->copy()->subDay(), 'effective-before')->assertCreated()->assertJsonPath('quote.total_amount', 100000);
+        $quote($start, 'effective-from-inclusive')->assertCreated()
+            ->assertJsonPath('quote.total_amount', 200000)
+            ->assertJsonPath('quote.slot_snapshot.0.rule.version', 2)
+            ->assertJsonPath('quote.slot_snapshot.0.rule.priority', 6)
+            ->assertJsonPath('quote.slot_snapshot.0.rule.effective_from', $from)
+            ->assertJsonPath('quote.slot_snapshot.0.rule.effective_until', $until);
+        $quote($start->copy()->addDay(), 'effective-until-inclusive')->assertCreated()->assertJsonPath('quote.total_amount', 200000);
+        $quote($start->copy()->addDays(2), 'effective-after')->assertCreated()->assertJsonPath('quote.total_amount', 100000);
+    }
+
+    public function test_price_rule_api_rejects_an_inverted_effective_date_range(): void
+    {
+        [$organization, $user] = $this->tenant();
+        OrganizationMember::query()
+            ->where('organization_id', $organization->id)
+            ->where('user_id', $user->id)
+            ->update(['role' => OrganizationMember::ROLE_ORGANIZATION_OWNER]);
+        $this->platformSubscription($organization);
+        $from = now()->addDays(10)->toDateString();
+        $until = Carbon::parse($from)->subDay()->toDateString();
+
+        $this->actingAs($user)->withHeader('X-Organization-ID', (string) $organization->id)
+            ->postJson('/api/v2/price-rules', [
+                'type' => 'base',
+                'price' => 100000,
+                'effective_from' => $from,
+                'effective_until' => $until,
+            ])->assertUnprocessable()->assertJsonValidationErrors(['effective_until']);
+
+        $validFrom = now()->addDays(10)->toDateString();
+        $validUntil = Carbon::parse($validFrom)->addDay()->toDateString();
+        $created = $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'effective-range-create',
+        ])->postJson('/api/v2/price-rules', [
+            'type' => 'base',
+            'price' => 100000,
+            'effective_from' => $validFrom,
+            'effective_until' => $validUntil,
+        ])->assertCreated();
+
+        $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'effective-range-update',
+        ])->patchJson('/api/v2/price-rules/'.$created->json('rule.id'), [
+            'effective_until' => Carbon::parse($validFrom)->subDay()->toDateString(),
+        ])->assertUnprocessable()->assertJsonValidationErrors(['effective_until']);
+    }
+
+    public function test_pricing_activation_is_blocked_when_platform_plan_entitlement_is_invalid(): void
+    {
+        [$organization, $user] = $this->tenant();
+        OrganizationMember::query()
+            ->where('organization_id', $organization->id)
+            ->where('user_id', $user->id)
+            ->update(['role' => OrganizationMember::ROLE_ORGANIZATION_OWNER]);
+
+        // D29: correct role, but no platform plan entitlement at all.
+        $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'no-plan-create',
+        ])->postJson('/api/v2/price-rules', ['type' => 'base', 'price' => 100000])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'NO_ACTIVE_SUBSCRIPTION');
+
+        // Correct role, but the plan has expired: activating new pricing is still denied.
+        $subscription = $this->platformSubscription($organization, 'active', now()->subDay());
+
+        $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'expired-plan-create',
+        ])->postJson('/api/v2/price-rules', ['type' => 'base', 'price' => 100000])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'SUBSCRIPTION_EXPIRED');
+
+        $this->assertDatabaseHas('platform_subscriptions', ['id' => $subscription->id, 'status' => 'expired']);
+        $this->assertDatabaseMissing('price_rules', ['organization_id' => $organization->id]);
+
+        // Renewing to a valid plan lets the same owner activate pricing again.
+        $this->platformSubscription($organization, 'active', now()->addMonth());
+
+        $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'valid-plan-create',
+        ])->postJson('/api/v2/price-rules', ['type' => 'base', 'price' => 100000])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('price_rules', ['organization_id' => $organization->id, 'type' => 'base', 'price' => 100000]);
+    }
+
+    public function test_unmatched_legacy_time_is_rejected_until_an_explicit_base_rule_exists(): void
+    {
+        [$organization, $user, $court] = $this->tenant();
+        $start = now(config('app.timezone'))->addDays(7)->setTime(10, 0, 0);
+        CourtPriceSlot::create([
+            'court_id' => $court->id,
+            'weekday' => $start->dayOfWeekIso,
+            'starts_at' => '08:00',
+            'ends_at' => '09:00',
+            'price' => 260000,
+            'is_active' => true,
+        ]);
+        CourtPriceSlot::create([
+            'court_id' => $court->id,
+            'weekday' => $start->dayOfWeekIso,
+            'starts_at' => '06:00',
+            'ends_at' => '22:00',
+            'price' => 500000,
+            'is_active' => true,
+        ]);
+
+        $availability = $this->getJson("/api/v1/availability?court_id={$court->id}&date={$start->toDateString()}")
+            ->assertOk();
+        $this->assertCount(1, $availability->json());
+        $this->assertSame(260000, (int) $availability->json('0.price'));
+
+        $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'unmatched-v2-no-fallback',
+        ])->postJson('/api/v2/price-quotes', [
+            'court_id' => $court->id,
+            'slots' => [$start->toIso8601String()],
+        ])->assertUnprocessable();
+
+        $this->actingAs($user)->withHeader('Idempotency-Key', 'unmatched-v1-no-fallback')
+            ->postJson('/api/v1/bookings', [
+                'court_id' => $court->id,
+                'slots' => [$start->toIso8601String()],
+            ])->assertUnprocessable();
+
+        PriceRule::create(['organization_id' => $organization->id, 'type' => 'base', 'price' => 120000]);
+        $this->fundWallet($user, $organization->id);
+
+        $this->actingAs($user)->withHeaders([
+            'X-Organization-ID' => (string) $organization->id,
+            'Idempotency-Key' => 'unmatched-v2-explicit-base',
+        ])->postJson('/api/v2/price-quotes', [
+            'court_id' => $court->id,
+            'slots' => [$start->toIso8601String()],
+        ])->assertCreated()->assertJsonPath('quote.total_amount', 120000);
+
+        $this->actingAs($user)->withHeader('Idempotency-Key', 'unmatched-v1-explicit-base')
+            ->postJson('/api/v1/bookings', [
+                'court_id' => $court->id,
+                'slots' => [$start->toIso8601String()],
+            ])->assertCreated()->assertJsonPath('booking.total_amount', 120000);
+    }
+
+    public function test_availability_v1_v2_and_recurring_share_holiday_peak_and_weekly_prices(): void
+    {
+        [$organization, $user, $availabilityCourt] = $this->tenant();
+        $venue = $availabilityCourt->venue;
+        $user->forceFill(['email_verified_at' => now()])->save();
+        config(['features.flags.direct_owner_payments' => false, 'features.pilot_organizations' => []]);
+
+        $courts = collect([$availabilityCourt]);
+        foreach (['V1', 'V2', 'Recurring'] as $name) {
+            $courts->push(Court::create([
+                'venue_id' => $venue->id,
+                'name' => "Pricing {$name}",
+                'is_active' => true,
+            ]));
+        }
+
+        $dates = [
+            now(config('app.timezone'))->addDays(4)->setTime(10, 0, 0),
+            now(config('app.timezone'))->addDays(5)->setTime(18, 0, 0),
+            now(config('app.timezone'))->addDays(6)->setTime(14, 0, 0),
+        ];
+        foreach ($courts as $court) {
+            foreach ($dates as $date) {
+                CourtPriceSlot::create([
+                    'court_id' => $court->id,
+                    'weekday' => $date->dayOfWeekIso,
+                    'starts_at' => $date->format('H:i'),
+                    'ends_at' => $date->copy()->addHour()->format('H:i'),
+                    'price' => 100000,
+                    'is_active' => true,
+                ]);
+            }
+        }
+
+        PriceRule::create(['organization_id' => $organization->id, 'venue_id' => $venue->id, 'type' => 'base', 'price' => 100000]);
+        foreach ($dates as $date) {
+            PriceRule::create([
+                'organization_id' => $organization->id,
+                'venue_id' => $venue->id,
+                'type' => 'weekly',
+                'weekday' => $date->dayOfWeekIso,
+                'starts_at' => $date->format('H:i'),
+                'ends_at' => $date->copy()->addHour()->format('H:i'),
+                'price' => 150000,
+            ]);
+        }
+        PriceRule::create([
+            'organization_id' => $organization->id,
+            'venue_id' => $venue->id,
+            'type' => 'peak',
+            'starts_at' => '18:00',
+            'ends_at' => '19:00',
+            'price' => 200000,
+        ]);
+        PriceRule::create([
+            'organization_id' => $organization->id,
+            'venue_id' => $venue->id,
+            'type' => 'date_exception',
+            'exception_date' => $dates[0]->toDateString(),
+            'price' => 250000,
+        ]);
+
+        $wallets = app(WalletPaymentService::class);
+        $wallet = $wallets->getOrCreateWallet($user->id, $organization->id);
+        $wallets->credit($wallet, 2000000, 'test_topup', 1, 'Shared pricing test');
+        $cases = [
+            ['date' => $dates[0], 'amount' => 250000],
+            ['date' => $dates[1], 'amount' => 200000],
+            ['date' => $dates[2], 'amount' => 150000],
+        ];
+
+        foreach ($cases as $index => $case) {
+            $date = $case['date'];
+            $startsAt = $date->toIso8601String();
+            $amount = $case['amount'];
+
+            $this->getJson("/api/v1/availability?court_id={$courts[0]->id}&date={$date->toDateString()}")
+                ->assertOk()
+                ->assertJsonPath('0.price', $amount);
+
+            $this->actingAs($user)->withHeader('Idempotency-Key', "shared-v1-{$index}")
+                ->postJson('/api/v1/bookings', [
+                    'court_id' => $courts[1]->id,
+                    'slots' => [$startsAt],
+                ])->assertCreated()->assertJsonPath('booking.total_amount', $amount);
+
+            $this->actingAs($user)->withHeaders([
+                'X-Organization-ID' => (string) $organization->id,
+                'Idempotency-Key' => "shared-v2-{$index}",
+            ])->postJson('/api/v2/price-quotes', [
+                'court_id' => $courts[2]->id,
+                'slots' => [$startsAt],
+            ])->assertCreated()->assertJsonPath('quote.total_amount', $amount);
+
+            $series = app(RecurringSeriesService::class)->createAndConfirm($user, $organization->id, [
+                'court_id' => $courts[3]->id,
+                'frequency' => 'weekly',
+                'starts_at' => $startsAt,
+                'ends_at' => $date->copy()->addHour()->toIso8601String(),
+                'occurrences' => 1,
+            ]);
+            $this->assertSame($amount, (int) $series->occurrences->first()->amount);
+        }
     }
 
     public function test_same_idempotency_key_replays_and_different_content_conflicts(): void
@@ -87,7 +402,14 @@ class V2ReservationsAndPricingTest extends TestCase
     {
         [$organization, $user, $court] = $this->tenant();
         $date = now(config('app.timezone'))->addDays(6)->setTime(13, 0);
-        $rule = PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 210000]);
+        $rule = PriceRule::create([
+            'organization_id' => $organization->id,
+            'court_id' => $court->id,
+            'type' => 'base',
+            'price' => 210000,
+            'effective_from' => now()->addDays(6)->toDateString(),
+            'effective_until' => now()->addDays(6)->toDateString(),
+        ]);
         $headers = ['X-Organization-ID' => (string) $organization->id];
         $this->fundWallet($user, $organization->id);
         $payload = ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]];
@@ -96,7 +418,7 @@ class V2ReservationsAndPricingTest extends TestCase
         $reservationCode = $hold->json('reservation.code');
         $this->actingAs($user)->withHeaders($headers + ['Idempotency-Key' => 'immutable-confirm'])->postJson("/api/v2/reservations/{$reservationCode}/confirm")->assertOk();
 
-        $rule->update(['price' => 999000]);
+        $rule->update(['price' => 999000, 'effective_until' => now()->addDays(5)->toDateString()]);
         $this->assertDatabaseHas('reservations', ['code' => $reservationCode, 'status' => 'confirmed', 'total_amount' => 210000]);
         $this->assertDatabaseHas('price_quotes', ['status' => 'accepted', 'total_amount' => 210000]);
     }
@@ -278,12 +600,36 @@ class V2ReservationsAndPricingTest extends TestCase
     /** @return array{0:Organization,1:User,2:Court} */
     private function tenant(): array
     {
-        $organization = Organization::create(['name' => 'V2 Tenant', 'slug' => 'v2-tenant-'.uniqid()]);
-        $user = User::factory()->create();
+        $organization = Organization::create([
+            'name' => 'V2 Tenant',
+            'slug' => 'v2-tenant-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
+        $user = User::factory()->create(['email_verified_at' => now()]);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
-        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'V2 Venue', 'slug' => 'v2-venue-'.uniqid(), 'is_active' => true]);
+        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'V2 Venue', 'slug' => 'v2-venue-'.uniqid(), 'status' => 'published', 'is_active' => true]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'V2 Court', 'is_active' => true]);
 
         return [$organization, $user, $court];
+    }
+
+    private function platformSubscription(Organization $organization, string $status = 'active', ?Carbon $endsAt = null): PlatformSubscription
+    {
+        $plan = PlatformPlan::create([
+            'code' => 'PLAN-'.Str::upper(Str::random(6)),
+            'name' => 'Pricing Plan',
+            'price' => 100000,
+            'billing_cycle' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        return PlatformSubscription::create([
+            'organization_id' => $organization->id,
+            'plan_id' => $plan->id,
+            'status' => $status,
+            'starts_at' => now()->subMonth(),
+            'ends_at' => $endsAt ?? now()->addMonth(),
+        ]);
     }
 }

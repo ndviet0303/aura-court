@@ -12,6 +12,8 @@ class PlatformProviderReceipt extends Model
 
     protected $table = 'platform_provider_receipts';
 
+    protected $hidden = ['raw_payload'];
+
     protected $fillable = [
         'payment_attempt_id',
         'provider',

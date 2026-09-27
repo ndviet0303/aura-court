@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useV2Reservations } from '../composables/useV2Reservations'
+import type { V2Reservation } from '../types/v2Reservation'
 
 const { t } = useI18n()
 
@@ -12,6 +14,9 @@ import V2ReservationTabs from '../components/v2/V2ReservationTabs.vue'
 import V2ReservationCard from '../components/v2/V2ReservationCard.vue'
 import V2ReservationDetailModal from '../components/v2/V2ReservationDetailModal.vue'
 import V2ReservationQrModal from '../components/v2/V2ReservationQrModal.vue'
+import V2ReservationPaymentModal from '../components/v2/V2ReservationPaymentModal.vue'
+import BookingCancelModal from '../components/history/BookingCancelModal.vue'
+import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 
 const {
   courts,
@@ -30,6 +35,7 @@ const {
   error,
   selectedReservationForDetails,
   selectedReservationForQr,
+  selectedReservationForPayment,
   filteredReservations,
   totalCount,
   heldCount,
@@ -48,11 +54,30 @@ const {
   closeDetails,
   openQr,
   closeQr,
+  openPayment,
+  closePayment,
 } = useV2Reservations()
 
 function scrollToCalculator() {
   const el = document.getElementById('quote-calculator-section')
   if (el) el.scrollIntoView({ behavior: 'smooth' })
+}
+
+const cancelReservation = ref<V2Reservation | null>(null)
+const rescheduleReservation = ref<V2Reservation | null>(null)
+
+function openCancel(reservation: V2Reservation) {
+  closeDetails()
+  cancelReservation.value = reservation
+}
+function openReschedule(reservation: V2Reservation) {
+  closeDetails()
+  rescheduleReservation.value = reservation
+}
+function onChangeApplied() {
+  cancelReservation.value = null
+  rescheduleReservation.value = null
+  loadData()
 }
 </script>
 
@@ -93,6 +118,7 @@ function scrollToCalculator() {
       :format-date="formatDate"
       :format-time-slot="formatTimeSlot"
       @confirm="confirmReservation"
+      @pay="openPayment"
       @details="openDetails"
     />
 
@@ -175,6 +201,7 @@ function scrollToCalculator() {
           :format-date="formatDate"
           :format-time-slot="formatTimeSlot"
           @confirm="confirmReservation"
+          @pay="openPayment"
           @qr="openQr"
           @details="openDetails"
         />
@@ -189,6 +216,8 @@ function scrollToCalculator() {
       :format-date="formatDate"
       :format-time-slot="formatTimeSlot"
       @close="closeDetails"
+      @cancel="openCancel"
+      @reschedule="openReschedule"
     />
 
     <!-- QR Pass Modal -->
@@ -198,6 +227,31 @@ function scrollToCalculator() {
       :format-date="formatDate"
       :format-time-slot="formatTimeSlot"
       @close="closeQr"
+    />
+
+    <V2ReservationPaymentModal
+      :show="!!selectedReservationForPayment"
+      :reservation="selectedReservationForPayment"
+      @close="closePayment"
+      @paid="loadData"
+    />
+
+    <!-- Cancellation / partial-cancel refund modal (v2 endpoints) -->
+    <BookingCancelModal
+      :show="!!cancelReservation"
+      :booking="cancelReservation"
+      :v2="true"
+      @close="cancelReservation = null"
+      @updated="onChangeApplied"
+    />
+
+    <!-- Reschedule modal (v2 endpoints) -->
+    <BookingRescheduleModal
+      :show="!!rescheduleReservation"
+      :booking="rescheduleReservation"
+      :v2="true"
+      @close="rescheduleReservation = null"
+      @updated="onChangeApplied"
     />
   </div>
 </template>

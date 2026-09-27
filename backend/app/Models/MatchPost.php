@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'status',
     'availability',
     'metadata',
+    'registration_deadline',
+    'reservation_id',
+    'entitlement_id',
+    'approval_required',
+    'roster_closed_at',
 ])]
 class MatchPost extends Model
 {
@@ -59,14 +65,17 @@ class MatchPost extends Model
     protected function casts(): array
     {
         return [
-            'starts_at' => 'datetime',
-            'ends_at' => 'datetime',
+            'starts_at' => UtcDateTime::class,
+            'ends_at' => UtcDateTime::class,
             'approximate_latitude' => 'float',
             'approximate_longitude' => 'float',
             'availability' => 'array',
             'metadata' => 'array',
             'is_owner_hosted' => 'boolean',
             'skill_levels' => 'array',
+            'approval_required' => 'boolean',
+            'registration_deadline' => UtcDateTime::class,
+            'roster_closed_at' => UtcDateTime::class,
         ];
     }
 
@@ -75,6 +84,8 @@ class MatchPost extends Model
     public function invitations(): HasMany { return $this->hasMany(MatchInvitation::class); }
     public function participations(): HasMany { return $this->hasMany(MatchParticipation::class); }
     public function bill(): HasOne { return $this->hasOne(MatchBill::class); }
+    public function reservation(): BelongsTo { return $this->belongsTo(Reservation::class, 'reservation_id'); }
+    public function entitlement(): BelongsTo { return $this->belongsTo(ReservationEntitlement::class, 'entitlement_id'); }
 
     public function isOwnerHosted(): bool
     {
@@ -84,5 +95,10 @@ class MatchPost extends Model
     public function hasEnded(): bool
     {
         return in_array($this->status, ['ended', 'completed'], true);
+    }
+
+    public function isRosterClosed(): bool
+    {
+        return ! is_null($this->roster_closed_at);
     }
 }

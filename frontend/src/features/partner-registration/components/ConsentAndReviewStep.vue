@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { PartnerApplication, SubmitApplicationPayload } from '../types'
+import type { PartnerApplication, PartnerConsentType, SubmitApplicationPayload } from '../types'
 
 const props = defineProps<{
   application: PartnerApplication
@@ -14,24 +14,26 @@ const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
-const consentPartner = ref(false)
-const consentData = ref(false)
+const acceptedConsents = ref<PartnerConsentType[]>([])
 const localError = ref('')
+const consentOptions: Array<{ type: PartnerConsentType; label: string }> = [
+  { type: 'cooperation_terms', label: 'Tôi đồng ý với quy chế hợp tác đối tác.' },
+  { type: 'platform_fee_policy', label: 'Tôi đã đọc và chấp nhận chính sách phí dịch vụ nền tảng.' },
+  { type: 'settlement_refund_terms', label: 'Tôi chấp nhận trách nhiệm thanh toán trực tiếp và xử lý hoàn tiền theo chính sách đã công bố.' },
+  { type: 'data_processing_agreement', label: 'Tôi đồng ý với thỏa thuận xử lý dữ liệu và xác minh thông tin.' },
+  { type: 'service_responsibility', label: 'Tôi hiểu trách nhiệm của mình khi sử dụng dịch vụ và cung cấp thông tin hồ sơ.' },
+]
 
 function handleSubmit() {
   localError.value = ''
-  if (!consentPartner.value || !consentData.value) {
+  if (acceptedConsents.value.length !== consentOptions.length) {
     localError.value = 'Vui lòng xác nhận toàn bộ cam kết và chính sách trước khi nộp hồ sơ.'
     return
   }
 
   const payload: SubmitApplicationPayload = {
-    contact_name: props.application.contact_name || '',
-    contact_phone: props.application.contact_phone || '',
-    contact_email: props.application.contact_email || '',
-    consent_partner: consentPartner.value,
-    consent_data: consentData.value,
-    terms_version: 'v1.0',
+    expected_version: props.application.version,
+    consents: consentOptions.map(({ type }) => ({ consent_type: type, terms_version: 'v1.0' })),
   }
   emit('submit', payload)
 }
@@ -60,7 +62,7 @@ function maskTaxCode(code?: string | null): string {
         <div>
           <span class="text-xs text-gray-500 dark:text-gray-400 block">Mô hình kinh doanh</span>
           <span class="font-medium text-gray-900 dark:text-white capitalize">
-            {{ application.business_type === 'enterprise' ? 'Doanh nghiệp' : application.business_type === 'household' ? 'Hộ kinh doanh' : 'Cá nhân' }}
+            {{ application.business_type === 'company' ? 'Doanh nghiệp' : application.business_type === 'household' ? 'Hộ kinh doanh' : 'Cá nhân' }}
           </span>
         </div>
         <div>
@@ -88,7 +90,7 @@ function maskTaxCode(code?: string | null): string {
         <ul class="text-xs space-y-1 text-gray-700 dark:text-gray-300">
           <li v-for="doc in application.documents" :key="doc.id" class="flex items-center gap-1.5">
             <span class="material-symbols-outlined text-sm text-emerald-600">check</span>
-            <span class="font-medium">{{ doc.original_name }}</span>
+            <span class="font-medium">{{ doc.file_name }}</span>
             <span class="text-gray-400">({{ doc.document_type }})</span>
           </li>
         </ul>
@@ -97,25 +99,15 @@ function maskTaxCode(code?: string | null): string {
 
     <!-- Versioned Consents -->
     <div class="space-y-3 border-t pt-4 dark:border-gray-700">
-      <label class="flex items-start gap-3 cursor-pointer">
+      <label v-for="consent in consentOptions" :key="consent.type" class="flex items-start gap-3 cursor-pointer">
         <input
-          v-model="consentPartner"
+          v-model="acceptedConsents"
           type="checkbox"
+          :value="consent.type"
           class="mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
         />
         <span class="text-sm text-gray-700 dark:text-gray-200">
-          Tôi cam kết mọi thông tin và chứng từ cung cấp là chính xác, hợp pháp và chịu hoàn toàn trách nhiệm trước pháp luật.
-        </span>
-      </label>
-
-      <label class="flex items-start gap-3 cursor-pointer">
-        <input
-          v-model="consentData"
-          type="checkbox"
-          class="mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-        />
-        <span class="text-sm text-gray-700 dark:text-gray-200">
-          Tôi đồng ý để Aura Sports xác thực và đối chiếu thông tin pháp nhân/sở hữu mặt bằng với cơ quan thẩm quyền hoặc đơn vị liên quan.
+          {{ consent.label }}
         </span>
       </label>
     </div>

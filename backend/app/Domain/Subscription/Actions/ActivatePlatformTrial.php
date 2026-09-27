@@ -71,6 +71,34 @@ class ActivatePlatformTrial
                 abort(409, 'Câu lạc bộ hiện đang có gói dịch vụ đang hoạt động.');
             }
 
+            // Quota compliance check for existing resources
+            $currentVenues = $org->venues()->count();
+            $maxVenues = (int) ($plan->max_venues ?? 1);
+            if ($currentVenues > $maxVenues) {
+                throw ValidationException::withMessages([
+                    'quota' => "Không thể kích hoạt gói {$plan->name}. Số lượng cơ sở hiện tại ({$currentVenues}) vượt quá giới hạn tối đa ({$maxVenues}) của gói này.",
+                ]);
+            }
+
+            $currentCourts = $org->courts()->count();
+            $maxCourts = (int) ($plan->max_courts ?? 4);
+            if ($currentCourts > $maxCourts) {
+                throw ValidationException::withMessages([
+                    'quota' => "Không thể kích hoạt gói {$plan->name}. Số lượng sân hiện tại ({$currentCourts}) vượt quá giới hạn tối đa ({$maxCourts}) của gói này.",
+                ]);
+            }
+
+            $currentStaff = $org->members()
+                ->whereIn('role', ['venue_manager', 'staff', 'cashier'])
+                ->whereIn('status', ['active', 'invited'])
+                ->count();
+            $maxStaff = (int) ($plan->max_staff ?? 2);
+            if ($currentStaff > $maxStaff) {
+                throw ValidationException::withMessages([
+                    'quota' => "Không thể kích hoạt gói {$plan->name}. Số lượng nhân sự hiện tại ({$currentStaff}) vượt quá giới hạn tối đa ({$maxStaff}) của gói này.",
+                ]);
+            }
+
             $trialDurationDays = (int) $plan->trial_days;
             $trialEnds = now()->addDays($trialDurationDays);
 

@@ -2,47 +2,62 @@
 
 ## Purpose
 
-Defines tenant-aware reservation and quote behaviour for the v2 API while preserving
-the existing v1 booking contract throughout a controlled migration period.
+Defines tenant-aware reservation and quote behaviour for V1 and V2 APIs with direct-owner payments, authoritative pricing, exclusive expiring holds, and policy-governed cancellations and reschedules while preserving historical bookings.
 
 ## Requirements
 
 ### Requirement: Versioned reservation API compatibility
-The platform SHALL expose new reservation functionality under `/api/v2` and SHALL continue serving the existing `/api/v1` booking interface during the declared migration period, except for the explicitly retired cancellation and rescheduling commands. A legacy booking MUST remain retrievable through its legacy interface even after its inventory and ownership are represented in the v2 domain. Booking creation in both API versions SHALL confirm the reservation immediately upon successful wallet balance deduction instead of entering a `pending_payment` state. POST `/api/v1/bookings/{code}/cancel`, `/api/v1/bookings/{code}/cancel-slots`, `/api/v1/bookings/{code}/reschedule` and `/api/v2/reservations/{reservation}/cancel` SHALL no longer be supported and SHALL return HTTP 404 for an otherwise valid authenticated request without executing a business mutation.
+V1 and V2 SHALL remain supported projections of one authoritative reservation/inventory identity during migration. New direct-owner checkout SHALL create a pending-payment booking with exclusive expiring holds and receiver-bound payment instructions; confirmation SHALL require verified payment, or a documented zero-payable outcome. The former cancellation/rescheduling retirement SHALL be superseded by policy-governed requests. Historical wallet bookings SHALL retain recorded amounts, payment model and terms; old idempotency records MUST NOT authorize a different new command.
 
 #### Scenario: Legacy client retrieves a historical booking
-- **WHEN** a client calls the supported `/api/v1` booking endpoint for a migrated booking
-- **THEN** the platform SHALL return the documented v1-compatible representation, including historical cancelled or refunded states
+- **WHEN** a client retrieves a migrated historical wallet booking
+- **THEN** the original code, status, financial references and ownership history SHALL remain readable
 
 #### Scenario: New client creates a reservation
-- **WHEN** an authorized client submits a valid reservation command to `/api/v2` with sufficient wallet balance
-- **THEN** the platform SHALL deduct the wallet balance, create a `confirmed` reservation, and return the v2 reservation representation without entering a pending payment state
+- **WHEN** an eligible client creates the same direct-payment booking through either supported version
+- **THEN** the result SHALL reference one pending obligation and inventory hold without debiting a wallet
 
-#### Scenario: New client creates a reservation with insufficient balance
-- **WHEN** an authorized client submits a valid reservation command to `/api/v2` with insufficient wallet balance
-- **THEN** the platform SHALL reject the reservation with a validation error indicating the shortfall amount, without creating any reservation or slot records
+#### Scenario: Insufficient payment
+- **WHEN** only partial or unverified funds are received
+- **THEN** the booking SHALL remain unconfirmed and unpaid inventory SHALL follow its captured expiry policy
 
 #### Scenario: Stale client invokes a retired command
-- **WHEN** an authenticated client posts an otherwise valid request to any retired cancellation or rescheduling URL, including a retry with a previously used idempotency key
-- **THEN** the platform SHALL return HTTP 404 without replaying a former success or changing booking, inventory or financial state
+- **WHEN** a stale old key is used against the new cancellation/change workflow
+- **THEN** the server SHALL reject incompatible replay or return only its original outcome, never mutate the new model by replaying an old response
+
+#### Scenario: New client creates a reservation with insufficient balance
+- **WHEN** a direct-cohort customer has insufficient legacy wallet balance but requests a valid direct-owner booking
+- **THEN** the server SHALL create the policy-bound pending direct payment without a wallet debit; confirmation SHALL still require verified owner payment or a legitimate zero-payable result
 
 ### Requirement: Immutable price quotes
-The platform SHALL calculate a price quote from active tenant and venue rules using this precedence: holiday or date exception, peak rule, weekly time rule, then base price. The accepted quote MUST snapshot the applied prices and rule version so later rule changes cannot change the checkout amount.
+The platform SHALL calculate quotes from effective-dated tenant/venue/court rules using holiday/date exception, peak, weekly then explicitly configured base precedence, with deterministic scope/priority tie-breaking. Prices and allowed coupon, membership and loyalty benefits SHALL snapshot versions and validity. A random unmatched slot price MUST NOT be a fallback. Later changes SHALL not alter an accepted booking. An expired quote SHALL be recalculated and accepted again before payment.
 
 #### Scenario: Exception overrides a weekly price
-- **WHEN** a requested slot matches both a date exception and a weekly time rule
-- **THEN** the returned quote SHALL use the date exception price
+- **WHEN** both a holiday exception and weekly rule match
+- **THEN** both API versions and displayed availability SHALL use the same exception amount
+
+#### Scenario: No applicable price
+- **WHEN** a requested open interval has no applicable rule or configured base
+- **THEN** it SHALL not be sold using the first unrelated price
 
 #### Scenario: Price rules change after quote acceptance
-- **WHEN** an administrator changes a pricing rule after checkout accepts a quote
-- **THEN** the reservation's recorded amount SHALL remain unchanged
+- **WHEN** a policy changes after quote acceptance
+- **THEN** the accepted snapshot SHALL remain stable; an expired unaccepted quote requires renewed consent
 
 ### Requirement: Active inventory exclusivity
-The platform SHALL permit no more than one active reservation entitlement for a court-time. It MUST return a valid conflict rather than create overlapping active inventory when simultaneous requests compete for the same court-time. Since reservations are confirmed atomically with wallet deduction, slots transition directly to `confirmed` without passing through a `held` intermediate state for new bookings.
+No overlapping active entitlement or exclusive hold SHALL exist for the same court-time across V1/V2 bookings, recurring occurrences, owner-hosted sessions and tournaments using that court. Interval duration, venue calendar, book-ahead horizon, continuity policy and final eligibility SHALL be checked atomically at allocation and replacement. Held and confirmed states SHALL both exclude competitors.
 
 #### Scenario: Concurrent reservation attempts
-- **WHEN** 100 requests simultaneously reserve the same available court-time
-- **THEN** exactly one request SHALL succeed and every other request SHALL receive a conflict response
+- **WHEN** 100 eligible requests target one available court-time
+- **THEN** exactly one hold SHALL succeed and 99 SHALL receive valid conflicts without financial side effects
+
+#### Scenario: Overlapping duration
+- **WHEN** different start times overlap a reserved interval or hosted session
+- **THEN** the later allocation SHALL fail, not merely compare identical start timestamps
+
+#### Scenario: Configured booking window
+- **WHEN** slots violate a venue's book-ahead or continuity rule
+- **THEN** all versions SHALL reject the selection consistently
 
 ### Requirement: Idempotent v2 business commands
 Every v2 command that creates or changes business state SHALL require an `Idempotency-Key`. Retrying the same key with the same authenticated principal and request content SHALL return the original result without repeating the state change; reuse with different content SHALL be rejected.
@@ -56,62 +71,81 @@ Every v2 command that creates or changes business state SHALL require an `Idempo
 - **THEN** the platform SHALL reject the request without applying either additional state change
 
 ### Requirement: Trigger real-time status hooks
-The platform SHALL trigger a court status change hook upon successful creation of a reservation or automatic expiry that releases held inventory, providing the updated state of the affected inventory. A rejected cancellation or rescheduling request SHALL NOT trigger a court status change hook.
+Committed hold, confirmation, expiry, cancellation, reschedule and operational readiness changes SHALL publish scoped inventory updates after commit. Rejected or rolled-back actions SHALL not publish success or released availability.
 
 #### Scenario: Successful reservation triggers hook
-- **WHEN** an authorized client successfully creates a v2 reservation
-- **THEN** the platform SHALL dispatch a status update hook for the reserved court-time
+- **WHEN** a reservation commits
+- **THEN** authorized viewers SHALL receive its actual court-time state
 
 #### Scenario: Unpaid inventory expires
-- **WHEN** an unpaid hold expires and releases its court-time
-- **THEN** the platform SHALL dispatch a status update hook for the released court-time after commit
+- **WHEN** an unpaid hold expires durably
+- **THEN** one committed release SHALL publish availability and notify eligible waitlisted users
 
 #### Scenario: Retired operation does not publish availability
-- **WHEN** a cancellation or rescheduling request is rejected
-- **THEN** no court status change event SHALL be emitted for that request
+- **WHEN** rescheduling fails because the replacement is occupied
+- **THEN** no replacement/release event SHALL be emitted
 
 ### Requirement: Authoritative ordinary checkout and promotion result
-Ordinary V1 and V2 checkout SHALL produce equivalent wallet-funded confirmed outcomes under the existing wallet specification. Server-calculated coupon and membership eligibility and permitted combination SHALL be reflected in the accepted price snapshot; frontend totals SHALL NOT authorize discounts. Legacy held records SHALL NOT be confirmed without a recorded valid payment. Specialized split and recurring invoice lifecycles retain their existing explicit rules.
+V1/V2 direct checkout SHALL share server-calculated prices, same-tenant coupons and versioned membership entitlements, permitted combination rules and loyalty conversion. A hold SHALL reserve scarce coupon uses and points without irrevocably spending them before successful payment. Confirmation SHALL atomically finalize allocation/discounts and consume reserved benefits once; expiry/cancellation SHALL release unconsumed reservations. Fully discounted bookings SHALL record legitimate zero payment rather than fabricated bank receipts. Point preview SHALL be read-only and reflect actual eligibility.
+
+#### Scenario: Prohibited combination
+- **WHEN** coupon/membership/points policy prohibits the requested combination
+- **THEN** preview/checkout SHALL reject or present a permitted choice consistently without consuming benefits
+
+#### Scenario: Pending payment expires
+- **WHEN** an unpaid booking reserved points and a coupon use
+- **THEN** expiry SHALL release them exactly once, including after retries
+
+#### Scenario: Loyalty covers total
+- **WHEN** accepted benefits make the amount payable zero
+- **THEN** booking SHALL confirm atomically with a zero-payable record and one point consumption without requesting bank transfer
+
+#### Scenario: Concurrent points
+- **WHEN** two holds compete for the same point balance
+- **THEN** only reservations within the available unexpired balance SHALL succeed
 
 #### Scenario: Tampered discount
-- **WHEN** a client submits an unearned discount
-- **THEN** checkout rejects or recalculates it without undercharging
+- **WHEN** a client supplies an unearned coupon/membership/point reduction or edited total
+- **THEN** the server SHALL reject or recalculate before acceptance without granting the benefit or consuming points
 
 #### Scenario: Legacy unpaid hold
-- **WHEN** an old client confirms a held ordinary reservation without funds
-- **THEN** confirmation fails without granting an active entitlement
+- **WHEN** a pre-cutover unpaid hold is submitted for confirmation
+- **THEN** it SHALL require payment evidence under its recorded model and SHALL not be silently converted or confirmed free
 
-### Requirement: Booking changes and released availability
-Booking history SHALL show authoritative status after reload. The platform SHALL NOT allow user-initiated cancellation of a whole V1 booking, individual V1 slots or a V2 reservation, or rescheduling of its court/date/time. This rule SHALL apply to existing and new bookings, legacy unpaid holds, all roles and all venue states; historical grace periods or membership benefits SHALL NOT enable retired commands. Rejected attempts MUST preserve booking totals, inventory, entitlements, coupon usage, balances and history, and MUST NOT create replacement bookings or waitlist notifications. Automatic unpaid-hold expiry SHALL remain available and release eligible inventory exactly once without refunding an unpaid booking. Released slots SHALL notify eligible waitlisted users without promising an automatic booking. Specialized recurring invoice overdue release, split-payment expiry and marketplace transfer contracts remain unchanged.
+### Requirement: Complete tenant promotion lifecycle
+Authorized owners or delegated pricing staff SHALL create, revise, activate, suspend and retire scoped campaigns/coupons with customer eligibility, effective dates, limits, minimum spend and combination rules. Updates SHALL require current business entitlement, preserve audit/version history and active earned membership terms. Customer booking SHALL apply the same organization-scoped membership catalog managed by that owner.
 
-#### Scenario: Whole or partial cancellation is unavailable
-- **WHEN** a customer, staff member or administrator attempts to cancel a booking, selected slots or reservation before or after its former grace period
-- **THEN** the operation SHALL fail without releasing inventory or changing any associated business or financial record
+#### Scenario: Foreign coupon
+- **WHEN** a customer uses another venue's restricted coupon or membership
+- **THEN** checkout SHALL refuse the benefit without changing usage counts
 
-#### Scenario: Rescheduling is unavailable at any price
-- **WHEN** a client requests a replacement court/time at a lower, equal or higher price
-- **THEN** the operation SHALL fail without changing the original booking, creating a replacement, or debiting or crediting a wallet
+#### Scenario: Campaign retired
+- **WHEN** a campaign or new membership sale is retired
+- **THEN** new benefits SHALL stop while previously earned unexpired membership entitlements remain honored
 
-#### Scenario: Reschedule conflict
-- **WHEN** a client requests rescheduling to an occupied replacement slot
-- **THEN** the retired command SHALL return HTTP 404 without attempting replacement allocation, and the original booking and balance SHALL remain unchanged
+#### Scenario: Expired business entitlement
+- **WHEN** a pricing administrator with an expired platform plan activates a new rule
+- **THEN** activation SHALL fail without changing live policy
 
-#### Scenario: Cancel retry
-- **WHEN** a client retries cancellation of a paid booking, including a booking already cancelled before retirement
-- **THEN** the retired command SHALL return HTTP 404 without releasing inventory, issuing a refund or changing historical state
+### Requirement: Policy-governed booking changes and released availability
+Customers SHALL request whole/partial cancellation and court/date/time changes; venue-authorized staff/owners SHALL review against the accepted policy. The server SHALL show deadline, fee, refund/extra-payment amount and replacement availability before commitment. Approved cancellation SHALL release eligible inventory once and create owner refund obligations for paid allocations. Rescheduling SHALL secure replacement, collect any verified difference and atomically swap inventory, retaining original reservation if replacement/payment fails. Suspended venues SHALL retain authorized obligation handling; legacy terms SHALL not be silently rewritten. Waitlist notices SHALL never promise automatic booking.
 
-#### Scenario: Suspended venue and historical policy do not restore cancellation
-- **WHEN** a booking at a suspended venue has a saved cancellation grace period
-- **THEN** the booking SHALL remain retrievable but its cancellation and rescheduling commands SHALL remain unavailable
+#### Scenario: Approved paid cancellation
+- **WHEN** an eligible paid cancellation is approved and retried
+- **THEN** inventory SHALL release once and one bounded owner-refund obligation SHALL be recorded without automated bank debit
 
-#### Scenario: Legacy unpaid hold is not manually cancelled
-- **WHEN** a client requests cancellation of an unexpired legacy unpaid hold
-- **THEN** the operation SHALL fail and the hold SHALL remain governed by its existing payment/expiry lifecycle
+#### Scenario: More expensive replacement
+- **WHEN** an accepted reschedule requires extra payment
+- **THEN** the original slot SHALL remain protected until verified difference and replacement commit; failure preserves original booking
 
-#### Scenario: Automatic expiry preserves paid bookings
-- **WHEN** expiry processing is retried for eligible unpaid holds alongside confirmed paid bookings
-- **THEN** only eligible unpaid inventory SHALL be released, without duplicate effects or changes to confirmed paid bookings
+#### Scenario: Cheaper or equal replacement
+- **WHEN** an approved replacement costs less or the same
+- **THEN** the swap SHALL preserve audit/history and create only the legitimate refund difference, if any
 
-#### Scenario: Waitlist release
-- **WHEN** a slot with waiting customers becomes available through a supported inventory-release lifecycle
-- **THEN** eligible customers SHALL receive a notification and must complete normal checkout
+#### Scenario: Expired unpaid hold
+- **WHEN** expiry processes paid and unpaid bookings together
+- **THEN** only eligible unpaid holds SHALL release, without refunding unpaid value
+
+#### Scenario: Legacy policy
+- **WHEN** a historical booking has older terms or no sufficient change terms
+- **THEN** it SHALL retain historical evidence and require an explicit supported resolution rather than fabricated consent

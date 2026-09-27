@@ -4,23 +4,128 @@ namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Models\DisputeCase;
+use App\Models\OrganizationMember;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class EloquentDisputeRepository implements DisputeRepositoryInterface
 {
-    public function findById(int $id): ?DisputeCase
+    public function userCanAccess(DisputeCase $dispute, User $user): bool
     {
-        return DisputeCase::query()
-            ->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator'])
-            ->find($id);
+        if ($user->isPlatformAdmin()) {
+            return true;
+        }
+
+        // 1. Party in the dispute
+        if ((int) $dispute->complainant_id === (int) $user->id || (int) $dispute->respondent_id === (int) $user->id) {
+            return true;
+        }
+        // 2. Assigned reviewer
+        if ($dispute->assigned_reviewer_id && (int) $dispute->assigned_reviewer_id === (int) $user->id) {
+            return true;
+        }
+
+        // 3. Organization owner or venue manager
+        if ($dispute->organization_id) {
+            if ($user->hasRoleInOrganization($dispute->organization_id, [OrganizationMember::ROLE_ORGANIZATION_OWNER])) {
+                return true;
+            }
+
+            if ($dispute->venue_id && $user->canManageVenue($dispute->venue_id)) {
+                return true;
+            }
+
+            if ($dispute->venue_id === null && $user->hasRoleInOrganization($dispute->organization_id, [OrganizationMember::ROLE_VENUE_MANAGER])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    public function findByCode(string $code): ?DisputeCase
+    public function applyUserScope($query, ?User $user, ?int $organizationId = null, ?int $venueId = null)
     {
-        return DisputeCase::query()
+        if (! $user) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        if ($user->isPlatformAdmin()) {
+            if ($organizationId) {
+                $query->where('organization_id', $organizationId);
+            }
+            if ($venueId) {
+                $query->where('venue_id', $venueId);
+            }
+
+            return $query;
+        }
+
+        $orgIds = $user->organizations()
+            ->where('organization_members.status', 'active')
+            ->whereIn('organization_members.role', [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER])
+            ->pluck('organizations.id')
+            ->toArray();
+
+        $managedVenueIds = [];
+        $isFullOrgOwner = false;
+        foreach ($user->organizationMembers()->where('status', 'active')->get() as $member) {
+            if ($member->role === OrganizationMember::ROLE_ORGANIZATION_OWNER) {
+                $isFullOrgOwner = true;
+            }
+            if (! empty($member->venue_ids)) {
+                $managedVenueIds = array_merge($managedVenueIds, $member->venue_ids);
+            }
+        }
+        $managedVenueIds = array_values(array_unique(array_filter($managedVenueIds)));
+
+        return $query->where(function ($q) use ($user, $orgIds, $managedVenueIds, $isFullOrgOwner, $organizationId, $venueId) {
+            // Party in dispute
+            $q->where('complainant_id', $user->id)
+                ->orWhere('respondent_id', $user->id)
+                ->orWhere('assigned_reviewer_id', $user->id);
+            // Organization owner / venue manager
+            if (! empty($orgIds)) {
+                $targetOrgs = $organizationId ? array_values(array_intersect($orgIds, [$organizationId])) : $orgIds;
+                if (! empty($targetOrgs)) {
+                    $q->orWhere(function ($subQ) use ($targetOrgs, $managedVenueIds, $isFullOrgOwner, $venueId) {
+                        $subQ->whereIn('organization_id', $targetOrgs);
+                        if ($venueId) {
+                            $subQ->where('venue_id', $venueId);
+                        } elseif (! $isFullOrgOwner && ! empty($managedVenueIds)) {
+                            $subQ->where(function ($vQ) use ($managedVenueIds) {
+                                $vQ->whereIn('venue_id', $managedVenueIds)
+                                    ->orWhereNull('venue_id');
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    public function findById(int $id, ?User $user = null): ?DisputeCase
+    {
+        $query = DisputeCase::query()
+            ->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator']);
+
+        if ($user) {
+            $this->applyUserScope($query, $user);
+        }
+
+        return $query->find($id);
+    }
+
+    public function findByCode(string $code, ?User $user = null): ?DisputeCase
+    {
+        $query = DisputeCase::query()
             ->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator'])
-            ->where('dispute_code', $code)
-            ->first();
+            ->where('dispute_code', $code);
+
+        if ($user) {
+            $this->applyUserScope($query, $user);
+        }
+
+        return $query->first();
     }
 
     public function paginate(
@@ -28,9 +133,18 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
         ?string $search = null,
         ?string $severity = null,
         ?string $disputeType = null,
-        int $perPage = 30
+        int $perPage = 30,
+        ?User $user = null,
+        ?int $organizationId = null,
+        ?int $venueId = null
     ): LengthAwarePaginator {
         $query = DisputeCase::query()->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator']);
+
+        if ($user) {
+            $this->applyUserScope($query, $user, $organizationId, $venueId);
+        } elseif ($organizationId) {
+            $query->where('organization_id', $organizationId);
+        }
 
         if ($status && $status !== 'all') {
             $query->where('status', $status);
@@ -60,13 +174,24 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
             ->paginate($perPage);
     }
 
-    public function getStats(): array
+    public function getStats(?User $user = null, ?int $organizationId = null): array
     {
-        $pending = DisputeCase::query()->where('status', 'pending')->count();
-        $investigating = DisputeCase::query()->where('status', 'investigating')->count();
-        $awaitingReply = DisputeCase::query()->where('status', 'awaiting_response')->count();
-        $resolved = DisputeCase::query()->where('status', 'resolved')->count();
-        $critical = DisputeCase::query()->where('severity', 'critical')->whereIn('status', ['pending', 'investigating'])->count();
+        $baseQuery = function () use ($user, $organizationId) {
+            $q = DisputeCase::query();
+            if ($user) {
+                $this->applyUserScope($q, $user, $organizationId);
+            } elseif ($organizationId) {
+                $q->where('organization_id', $organizationId);
+            }
+
+            return $q;
+        };
+
+        $pending = $baseQuery()->where('status', 'pending')->count();
+        $investigating = $baseQuery()->where('status', 'investigating')->count();
+        $awaitingReply = $baseQuery()->where('status', 'awaiting_response')->count();
+        $resolved = $baseQuery()->where('status', 'resolved')->count();
+        $critical = $baseQuery()->where('severity', 'critical')->whereIn('status', ['pending', 'investigating'])->count();
 
         return [
             'pending_count' => $pending,

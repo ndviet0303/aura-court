@@ -4,7 +4,6 @@ namespace App\Services\Loyalty;
 
 use App\Models\Court;
 use App\Models\LoyaltyRule;
-use App\Models\PointLedger;
 use App\Models\PriceQuote;
 use App\Models\User;
 use App\Services\Booking\DiscountService;
@@ -15,7 +14,8 @@ class LoyaltyPolicyService
 {
     public function __construct(
         private readonly DiscountService $discountService,
-        private readonly PriceQuoteService $priceQuoteService
+        private readonly PriceQuoteService $priceQuoteService,
+        private readonly LoyaltyPointService $loyaltyPointService
     ) {}
 
     /**
@@ -29,12 +29,12 @@ class LoyaltyPolicyService
             ->where('status', 'published')
             ->where(function ($q) {
                 $q->whereNull('metadata->is_multiplier_rule')
-                  ->orWhere('metadata->is_multiplier_rule', false);
+                    ->orWhere('metadata->is_multiplier_rule', false);
             })
             ->where('name', 'not like', '%Multiplier%')
             ->where(function ($q) {
                 $q->where('redeem_points_per_100_vnd', '>', 0)
-                  ->orWhereNotNull('metadata->points_redeemed');
+                    ->orWhereNotNull('metadata->points_redeemed');
             })
             ->orderByDesc('version')
             ->orderByDesc('id')
@@ -177,6 +177,8 @@ class LoyaltyPolicyService
     {
         $organizationId = null;
         $payableAmount = 0;
+        $venueId = null;
+        $courtId = null;
 
         // 1. Resolve organization and payable amount authoritatively
         if (! empty($params['quote_token'])) {
@@ -207,6 +209,8 @@ class LoyaltyPolicyService
             }
 
             $organizationId = (int) $quote->organization_id;
+            $courtId = (int) $quote->court_id;
+            $venueId = (int) Court::query()->whereKey($courtId)->value('venue_id');
             $payableAmount = (int) $quote->total_amount;
         } elseif (! empty($params['court_id'])) {
             $court = Court::query()->with(['venue.organization', 'sportZone'])->find($params['court_id']);
@@ -224,6 +228,8 @@ class LoyaltyPolicyService
             }
 
             $organizationId = (int) $court->venue->organization_id;
+            $venueId = (int) $court->venue_id;
+            $courtId = (int) $court->id;
 
             if (empty($params['slots']) || ! is_array($params['slots'])) {
                 throw ValidationException::withMessages([
@@ -236,7 +242,7 @@ class LoyaltyPolicyService
 
             $payableAmount = $subtotal;
             if (! empty($params['coupon_code'])) {
-                $discountResult = $this->discountService->preview($user, $subtotal, $params['coupon_code']);
+                $discountResult = $this->discountService->preview($user, $subtotal, $params['coupon_code'], $organizationId, $venueId, $courtId);
                 $payableAmount = (int) ($discountResult['total'] ?? $subtotal);
             }
         } else {
@@ -245,12 +251,8 @@ class LoyaltyPolicyService
             ]);
         }
 
-        // 2. Resolve user's point balance in that organization
-        $balance = (int) PointLedger::query()
-            ->where('organization_id', $organizationId)
-            ->where('user_id', $user->id)
-            ->sum('delta');
-        $balance = max(0, $balance);
+        // 2. Resolve user's spendable point balance (excludes expired lots)
+        $balance = $this->loyaltyPointService->availableBalance($organizationId, (int) $user->id);
 
         // 3. Resolve active base redemption policy
         $policy = $this->getActiveBasePolicy($organizationId);

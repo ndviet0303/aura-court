@@ -90,7 +90,7 @@ function goToWallet() {
       </div>
       <div class="trust-item">
         <span class="material-symbols-outlined trust-icon">policy</span>
-        <span>{{ $t('payment.autoRefundNotice') || 'Không hỗ trợ hủy hoặc đổi lịch sau khi xác nhận' }}</span>
+        <span>{{ $t('payment.autoRefundNotice') || 'Phí và số tiền hoàn được tính trước theo chính sách khi huỷ hoặc đổi lịch' }}</span>
       </div>
     </div>
   </div>

@@ -1,6 +1,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { useAuthStore } from '@/stores/auth'
 
 export interface StaffMember {
   id: number
@@ -66,8 +67,28 @@ export function useAdminStaff() {
   const staffList = ref<StaffMember[]>([])
   const auditLogs = ref<AuditLogItem[]>([])
   const venuesList = ref<VenueOption[]>([])
-  const currentOrgId = ref<number>(1)
+  const auth = useAuthStore()
+  function resolveInitialOrgId(): number {
+    const user = auth.user
+    if (!user) return 1
+    if (user.capabilities && typeof user.capabilities === 'object' && !Array.isArray(user.capabilities)) {
+      const activeOrgId = user.capabilities.active_organization_id
+      if (typeof activeOrgId === 'number') {
+        return activeOrgId
+      }
+    }
+    const firstOrgId = user.organizations?.[0]?.organization_id ?? user.organizations?.[0]?.id
+    if (typeof firstOrgId === 'number') {
+      return firstOrgId
+    }
+    return 1
+  }
+  const currentOrgId = ref<number>(resolveInitialOrgId())
 
+  async function switchOrganization(orgId: number) {
+    currentOrgId.value = orgId
+    await loadStaffData()
+  }
   function mapRoleLabel(role: string): StaffMember['role'] {
     switch (role) {
       case 'organization_owner':
@@ -155,7 +176,9 @@ export function useAdminStaff() {
         const rawVenues = Array.isArray(venuesRes.value) ? venuesRes.value : (venuesRes.value as any).data || []
         venuesList.value = rawVenues.map((v: any) => ({
           id: v.id,
-          name: v.name,
+          name: typeof v.name === 'object' && v.name !== null
+            ? ((v.name as Record<string, string>).vi || (v.name as Record<string, string>).en || 'Cơ sở')
+            : String(v.name || 'Cơ sở'),
         }))
       }
 
@@ -163,23 +186,29 @@ export function useAdminStaff() {
       if (membersRes.status === 'rejected') {
         error.value = errorMessage(membersRes.reason, 'Không thể tải danh sách nhân sự.')
       } else if (membersRes.status === 'fulfilled') {
-        const raw = (membersRes.value as any)?.members || (Array.isArray(membersRes.value) ? membersRes.value : [])
-        staffList.value = raw.map((m: any) => {
-          const venueFound = venuesList.value.find((v) => v.id === m.venue_id)
+        const raw = (membersRes.value as { members?: unknown[] })?.members || (Array.isArray(membersRes.value) ? membersRes.value : [])
+        staffList.value = raw.map((item: unknown) => {
+          const m = item as Record<string, unknown>
+          const perms = (m.permissions as Record<string, unknown> | null) || {}
+          const vId = Number(m.venue_id || perms.venue_id || (Array.isArray(perms.venue_ids) ? perms.venue_ids[0] : 0) || 0)
+          const venueFound = venuesList.value.find((v) => v.id === vId)
+          const userObj = m.user as Record<string, unknown> | null
+          const roleStr = String(m.role || 'staff')
+          const venueObj = m.venue as Record<string, unknown> | null
           return {
-            id: m.id,
-            userId: m.user_id || m.user?.id || 0,
-            name: m.user?.name || m.name || 'Nhân viên',
-            email: m.user?.email || m.email || '',
-            phone: m.user?.phone || m.phone || '—',
-            role: mapRoleLabel(m.role),
-            rawRole: m.role,
-            venueName: m.venue?.name || venueFound?.name || 'Tất cả cơ sở',
-            venueId: m.venue_id || 0,
-            status: m.status || 'active',
-            avatar: m.user?.avatar || m.user?.avatar_url,
-            lastActive: m.updated_at ? new Date(m.updated_at).toLocaleDateString('vi-VN') : '—',
-            permissionsCount: calculatePermCount(m.role),
+            id: Number(m.id) || 0,
+            userId: Number(m.user_id || userObj?.id || 0),
+            name: String(userObj?.name || m.name || 'Nhân viên'),
+            email: String(userObj?.email || m.email || ''),
+            phone: String(userObj?.phone || m.phone || '—'),
+            role: mapRoleLabel(roleStr),
+            rawRole: roleStr,
+            venueName: String(venueObj?.name || venueFound?.name || (vId ? `Cơ sở #${vId}` : 'Tất cả cơ sở')),
+            venueId: vId,
+            status: String(m.status || 'active'),
+            avatar: userObj?.avatar ? String(userObj.avatar) : (userObj?.avatar_url ? String(userObj.avatar_url) : undefined),
+            lastActive: m.updated_at ? new Date(String(m.updated_at)).toLocaleDateString('vi-VN') : '—',
+            permissionsCount: calculatePermCount(roleStr),
           }
         })
       }
@@ -293,15 +322,31 @@ export function useAdminStaff() {
     })
   })
 
-  async function inviteStaff(member: { name: string; email: string; phone?: string; role: StaffMember['role']; venueId?: number }) {
+  async function inviteStaff(member: {
+    name: string
+    email: string
+    phone?: string
+    role: StaffMember['role']
+    venueId?: number
+    venueIds?: number[]
+    permissions?: Record<string, unknown> | string[]
+  }) {
     saving.value = true
     error.value = ''
     try {
       const backendRole = mapRoleToBackend(member.role)
-      await adminApi.addOrgMember(currentOrgId.value, {
+      const payload = {
         email: member.email,
         role: backendRole,
-      })
+        venue_id: member.venueId,
+        venue_ids: member.venueIds || (member.venueId ? [member.venueId] : undefined),
+        permissions: member.permissions,
+      }
+      if (typeof adminApi.createOrgInvitation === 'function') {
+        await adminApi.createOrgInvitation(currentOrgId.value, payload)
+      } else {
+        await adminApi.addOrgMember(currentOrgId.value, payload)
+      }
       await loadStaffData()
       showInviteModal.value = false
       showNotice(`Đã gửi thư mời gia nhập tới ${member.email}!`)
@@ -318,7 +363,13 @@ export function useAdminStaff() {
     showEditModal.value = true
   }
 
-  async function updateMemberRole(memberId: number, payload: { role: string; status?: string }) {
+  async function updateMemberRole(memberId: number, payload: {
+    role: string
+    status?: string
+    venueId?: number
+    venueIds?: number[]
+    permissions?: Record<string, unknown>
+  }) {
     saving.value = true
     error.value = ''
     try {
@@ -326,6 +377,9 @@ export function useAdminStaff() {
       await adminApi.updateOrgMember(currentOrgId.value, memberId, {
         role: backendRole,
         status: payload.status,
+        venue_id: payload.venueId,
+        venue_ids: payload.venueIds || (payload.venueId ? [payload.venueId] : undefined),
+        permissions: payload.permissions,
       })
       await loadStaffData()
       showEditModal.value = false
@@ -369,6 +423,21 @@ export function useAdminStaff() {
     })
   }
 
+  async function revokeInvitation(invitationId: number) {
+    saving.value = true
+    error.value = ''
+    try {
+      await adminApi.revokeOrgInvitation(currentOrgId.value, invitationId)
+      await loadStaffData()
+      showNotice('Đã thu hồi lời mời thành công.')
+    } catch (e: unknown) {
+      error.value = errorMessage(e, 'Không thể thu hồi lời mời.')
+      throw e
+    } finally {
+      saving.value = false
+    }
+  }
+
   onMounted(() => {
     loadStaffData()
   })
@@ -394,6 +463,8 @@ export function useAdminStaff() {
     staffList,
     auditLogs,
     venuesList,
+    currentOrgId,
+    switchOrganization,
     stats,
     filteredStaff,
     filteredAuditLogs,
@@ -404,6 +475,7 @@ export function useAdminStaff() {
     updateMemberRole,
     openRemoveModal,
     removeMember,
+    revokeInvitation,
     toggleMemberStatus,
   }
 }

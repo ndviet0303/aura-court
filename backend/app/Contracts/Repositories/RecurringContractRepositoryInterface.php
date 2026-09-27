@@ -2,7 +2,6 @@
 
 namespace App\Contracts\Repositories;
 
-use App\Models\MonthlyInvoice;
 use App\Models\RecurringSeries;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -14,9 +13,6 @@ interface RecurringContractRepositoryInterface
 
     public function getStats(?int $venueId = null): array;
 
-    public function createContract(array $data): RecurringSeries;
-
     public function cancelContract(int $id, ?string $reason = null): RecurringSeries;
 
-    public function payInvoice(int $seriesId, int $invoiceId, string $paymentReference): MonthlyInvoice;
 }

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Subscription;
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Domain\Subscription\Actions\ActivatePlatformTrial;
 use App\Domain\Subscription\Actions\CancelSubscriptionRenewal;
-use App\Domain\Subscription\Actions\ConfirmSubscriptionPayment;
 use App\Domain\Subscription\Actions\InitiateSubscriptionPayment;
 use App\Domain\Subscription\Actions\RenewPlatformSubscription;
 use App\Domain\Subscription\Actions\SelectPlatformPlan;
@@ -16,6 +15,7 @@ use App\Http\Requests\Subscription\ConfirmSubscriptionPaymentRequest;
 use App\Http\Requests\Subscription\InitiateSubscriptionPaymentRequest;
 use App\Http\Requests\Subscription\SelectPlatformPlanRequest;
 use App\Http\Resources\Platform\PlatformSubscriptionResource;
+use App\Models\PlatformPaymentAttempt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,12 +26,33 @@ class PlatformSubscriptionController extends Controller
         int $organizationId,
         PlatformSubscriptionRepositoryInterface $subRepo
     ): JsonResponse {
+        $user = $request->user();
+        abort_unless($user->isOrganizationOwner($organizationId), 403, 'Chỉ chủ sở hữu câu lạc bộ mới có quyền xem thuê bao.');
+
+        $organization = $user->organizations()->whereKey($organizationId)->first();
+        abort_unless($organization, 404, 'Câu lạc bộ / tổ chức không tồn tại.');
+
         $sub = $subRepo->findActiveForOrganization($organizationId);
+        $hasUsedTrial = $subRepo->hasUsedTrial($organizationId);
+        $plan = $sub?->plan;
+        $paymentAttempt = $subRepo->findLatestPaymentAttemptForOrganization($organizationId);
+        $canTakeBookings = $sub !== null && $sub->isValid();
 
         return response()->json([
             'data' => $sub ? PlatformSubscriptionResource::make($sub) : null,
-            'has_active_subscription' => $sub !== null && $sub->isValid(),
-            'has_used_trial' => $subRepo->hasUsedTrial($organizationId),
+            'has_active_subscription' => $canTakeBookings,
+            'has_used_trial' => $hasUsedTrial,
+            'trial_eligible' => ! $hasUsedTrial && ! $canTakeBookings,
+            'can_take_bookings' => $canTakeBookings,
+            'payment_attempt' => $paymentAttempt ? $this->paymentAttemptData($paymentAttempt) : null,
+            'quotas' => [
+                'venues_count' => $organization->venues()->count(),
+                'max_venues' => (int) ($plan?->max_venues ?? 0),
+                'courts_count' => $organization->courts()->count(),
+                'max_courts' => (int) ($plan?->max_courts ?? 0),
+                'staff_count' => $organization->members()->whereIn('role', ['venue_manager', 'staff', 'cashier'])->where('status', 'active')->count(),
+                'max_staff' => (int) ($plan?->max_staff ?? 0),
+            ],
         ]);
     }
 
@@ -56,6 +77,7 @@ class PlatformSubscriptionController extends Controller
                 'price' => $snapshot['price'],
                 'currency' => $snapshot['currency'],
                 'billing_cycle' => $snapshot['billing_cycle'],
+                'billing_months' => $snapshot['billing_months'],
                 'accepted_terms_version' => $snapshot['accepted_terms_version'],
                 'trial_available' => $snapshot['trial_available'],
                 'trial_days' => $snapshot['trial_days'],
@@ -98,6 +120,10 @@ class PlatformSubscriptionController extends Controller
 
         return response()->json([
             'data' => [
+                'id' => $result['attempt']->id,
+                'organization_id' => $result['attempt']->organization_id,
+                'plan_id' => (int) ($result['attempt']->metadata['plan_id'] ?? 0),
+                'plan_version' => (int) ($result['attempt']->metadata['plan_version'] ?? 1),
                 'reference_code' => $result['attempt']->reference_code,
                 'amount' => $result['attempt']->amount,
                 'currency' => $result['attempt']->currency,
@@ -105,33 +131,31 @@ class PlatformSubscriptionController extends Controller
                 'provider' => $result['attempt']->provider,
                 'checkout_url' => $result['checkout_url'],
                 'qr_code' => $result['qr_code'],
+                'created_at' => $result['attempt']->created_at?->toIso8601String(),
             ],
-            'message' => 'Khởi tạo giao dịch thanh toán thành công. Vui lòng chuyển hướng sang cổng thanh toán.',
+            'message' => 'Đã tạo hướng dẫn thanh toán. Trạng thái sẽ cập nhật sau khi máy chủ xác minh giao dịch.',
         ], 201);
     }
 
     public function confirmPayment(
         ConfirmSubscriptionPaymentRequest $request,
-        ConfirmSubscriptionPayment $action
     ): JsonResponse {
-        $result = $action->execute(
-            referenceCode: (string) $request->validated('reference_code'),
-            providerTransactionId: (string) $request->validated('provider_transaction_id'),
-            amount: (int) $request->validated('amount'),
-            currency: (string) $request->validated('currency'),
-            rawPayload: $request->input('payload', []),
-            actorId: $request->user()?->id
-        );
+        $attempt = PlatformPaymentAttempt::query()
+            ->where('reference_code', (string) $request->validated('reference_code'))
+            ->with('subscription')
+            ->firstOrFail();
+        abort_unless($request->user()?->isOrganizationOwner((int) $attempt->organization_id), 403);
 
         return response()->json([
             'data' => [
-                'subscription' => PlatformSubscriptionResource::make($result['subscription']),
-                'reference_code' => $result['attempt']->reference_code,
-                'is_duplicate' => $result['is_duplicate'],
+                'subscription' => $attempt->subscription ? PlatformSubscriptionResource::make($attempt->subscription) : null,
+                'reference_code' => $attempt->reference_code,
+                'status' => $attempt->status,
+                'is_duplicate' => $attempt->isSucceeded(),
             ],
-            'message' => $result['is_duplicate']
-                ? 'Giao dịch đã được ghi nhận trước đó.'
-                : 'Thanh toán thành công. Gói dịch vụ đã được kích hoạt.',
+            'message' => $attempt->isSucceeded()
+                ? 'Giao dịch đã được máy chủ xác minh trước đó.'
+                : 'Thanh toán vẫn đang chờ bằng chứng đã được máy chủ xác minh.',
         ]);
     }
 
@@ -167,13 +191,40 @@ class PlatformSubscriptionController extends Controller
 
         return response()->json([
             'data' => [
+                'id' => $result['attempt']->id,
+                'organization_id' => $result['attempt']->organization_id,
+                'plan_id' => (int) ($result['attempt']->metadata['plan_id'] ?? 0),
+                'plan_version' => (int) ($result['attempt']->metadata['plan_version'] ?? 1),
                 'reference_code' => $result['attempt']->reference_code,
                 'amount' => $result['attempt']->amount,
                 'currency' => $result['attempt']->currency,
+                'status' => $result['attempt']->status,
+                'provider' => $result['attempt']->provider,
                 'checkout_url' => $result['checkout_url'],
                 'qr_code' => $result['qr_code'],
+                'created_at' => $result['attempt']->created_at?->toIso8601String(),
             ],
-            'message' => 'Khởi tạo yêu cầu gia hạn thành công. Vui lòng hoàn tất thanh toán.',
+            'message' => 'Đã tạo hướng dẫn gia hạn. Trạng thái sẽ cập nhật sau khi máy chủ xác minh giao dịch.',
         ], 201);
+    }
+
+    private function paymentAttemptData(PlatformPaymentAttempt $attempt): array
+    {
+        $metadata = (array) ($attempt->metadata ?? []);
+
+        return [
+            'id' => $attempt->id,
+            'organization_id' => $attempt->organization_id,
+            'plan_id' => (int) ($metadata['plan_id'] ?? 0),
+            'plan_version' => (int) ($metadata['plan_version'] ?? 1),
+            'reference_code' => $attempt->reference_code,
+            'amount' => (int) $attempt->amount,
+            'currency' => $attempt->currency,
+            'status' => $attempt->status,
+            'provider' => $attempt->provider,
+            'checkout_url' => $metadata['checkout_url'] ?? null,
+            'qr_code' => $metadata['qr_code'] ?? null,
+            'created_at' => $attempt->created_at?->toIso8601String(),
+        ];
     }
 }

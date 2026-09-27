@@ -3,6 +3,7 @@
 namespace App\Domain\Admin\Actions;
 
 use App\Contracts\Repositories\DisputeRepositoryInterface;
+use App\Models\User;
 
 class GetDisputeStats
 {
@@ -10,8 +11,11 @@ class GetDisputeStats
         private readonly DisputeRepositoryInterface $disputeRepository,
     ) {}
 
-    public function execute(): array
+    public function execute(?User $user = null, ?int $organizationId = null): array
     {
-        return $this->disputeRepository->getStats();
+        return $this->disputeRepository->getStats(
+            user: $user,
+            organizationId: $organizationId
+        );
     }
 }

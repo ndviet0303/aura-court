@@ -13,6 +13,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'confirm', reservation: V2Reservation): void
+  (e: 'pay', reservation: V2Reservation): void
   (e: 'details', reservation: V2Reservation): void
 }>()
 </script>
@@ -53,6 +54,15 @@ const emit = defineEmits<{
 
     <div class="banner-actions-col">
       <button
+        v-if="reservation.payment_model === 'direct_owner_v1'"
+        class="btn btn-primary btn-confirm-held"
+        @click="emit('pay', reservation)"
+      >
+        <span class="material-symbols-outlined">qr_code_2</span>
+        <span>{{ t('v2Reservations.payment.payByBank') }}</span>
+      </button>
+      <button
+        v-else
         class="btn btn-primary btn-confirm-held"
         :disabled="confirmingCode === reservation.code"
         @click="emit('confirm', reservation)"

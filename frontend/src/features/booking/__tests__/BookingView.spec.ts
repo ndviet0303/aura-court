@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import BookingView from '@/features/booking/views/BookingView.vue'
 import { bookingApi } from '@/features/booking/api/bookingApi'
 import { i18n } from '@/i18n'
+import type { Booking } from '@/features/booking/types/booking'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({
@@ -187,9 +188,9 @@ describe('BookingView (/booking)', () => {
     expect(wrapper.find('.qr-image').exists()).toBe(false)
   })
 
-  it('does not render cancellation or rescheduling controls and displays permanent booking policy notice', async () => {
+  it('renders policy-aware cancel and reschedule controls on confirmed bookings and shows the policy notice', async () => {
     vi.spyOn(bookingApi, 'list').mockResolvedValue({
-      data: mockBookings as any,
+      data: mockBookings as unknown as Booking[],
     })
 
     const wrapper = mount(BookingView, {
@@ -198,19 +199,20 @@ describe('BookingView (/booking)', () => {
 
     await flushPromises()
 
-    // 1. Danger/cancellation button does not exist anywhere on cards
-    expect(wrapper.find('.btn-card-danger').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('Huỷ Đơn')
-    expect(wrapper.text()).not.toContain('Đổi Lịch')
+    // 1. Confirmed booking card exposes cancel + reschedule controls
+    const confirmedCard = wrapper.findAll('.user-booking-card')[0]
+    expect(confirmedCard?.find('[data-testid="booking-cancel-btn"]').exists()).toBe(true)
+    expect(confirmedCard?.find('[data-testid="booking-reschedule-btn"]').exists()).toBe(true)
 
-    // 2. Clear booking policy notice is displayed
+    // 2. Policy notice is policy-aware, not an "unsupported" message
     const policyNotice = wrapper.find('.policy-notice')
     expect(policyNotice.exists()).toBe(true)
-    expect(policyNotice.text()).toContain('Đặt sân không hỗ trợ hủy hoặc đổi lịch')
-    expect(policyNotice.text()).toContain('Không hỗ trợ hủy hoặc đổi lịch sau khi xác nhận')
+    expect(policyNotice.text()).toContain('theo chính sách của sân')
+    expect(wrapper.text()).not.toContain('không hỗ trợ hủy')
 
-    // 3. Historical cancelled card shows status label properly without actions
+    // 3. Cancelled booking card offers no cancel/reschedule controls
     const cancelledCard = wrapper.findAll('.user-booking-card')[2]
+    expect(cancelledCard?.find('[data-testid="booking-cancel-btn"]').exists()).toBe(false)
     expect(cancelledCard?.text()).toContain('ĐÃ HỦY')
   })
 

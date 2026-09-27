@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   venuePublicationApi,
+  type OwnerReceivingConnection,
   type VenueReadinessChecklist,
 } from '../../api/venuePublicationApi'
+import OwnerReceivingConnectionPanel from './OwnerReceivingConnectionPanel.vue'
 
 const props = defineProps<{
   venue: any
@@ -17,11 +20,20 @@ const emit = defineEmits<{
   (e: 'statusChanged'): void
 }>()
 
+const { t } = useI18n()
 const loading = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 const readinessData = ref<VenueReadinessChecklist | null>(null)
+const receivingConnection = ref<OwnerReceivingConnection | null>(null)
+const receivingConnectionError = ref<string | null>(null)
+const receivingConnectionVerified = computed(() => readinessData.value?.checklist.receiving_connection_selected
+  ?? (receivingConnection.value?.status === 'verified' && receivingConnection.value.is_selected))
+const publicationReady = computed(() => Boolean(readinessData.value?.is_ready && receivingConnectionVerified.value))
+const missingRequirementCount = computed(() =>
+  (readinessData.value?.missing_items.length ?? 0) + (receivingConnectionVerified.value ? 0 : 1),
+)
 
 async function loadReadiness() {
   if (!props.venue?.id || !props.organizationId) return
@@ -36,6 +48,17 @@ async function loadReadiness() {
     readinessData.value = res.data
   } catch (err: any) {
     error.value = err.message || 'Không thể tải thông tin điều kiện xuất bản.'
+  }
+  try {
+    const connection = await venuePublicationApi.getReceivingConnection(
+      props.organizationId,
+      props.venue.id,
+    )
+    receivingConnection.value = connection.data
+    receivingConnectionError.value = null
+  } catch (err: any) {
+    receivingConnection.value = null
+    receivingConnectionError.value = err.message || 'Không thể tải kết nối nhận tiền.'
   } finally {
     loading.value = false
   }
@@ -53,6 +76,10 @@ watch(
 
 async function handleSubmitPublication() {
   if (!props.venue?.id || !props.organizationId) return
+  if (!publicationReady.value) {
+    error.value = t('admin.venues.receivingConnection.notVerifiedMissing')
+    return
+  }
   submitting.value = true
   error.value = null
   try {
@@ -68,6 +95,29 @@ async function handleSubmitPublication() {
   } finally {
     submitting.value = false
   }
+}
+
+async function handleReceivingConnectionUpdated(connection: OwnerReceivingConnection) {
+  receivingConnection.value = connection
+  receivingConnectionError.value = null
+  if (readinessData.value && connection.is_selected) {
+    const selected = connection.status === 'verified'
+    const missing = readinessData.value.missing_items.filter((item) => item.code !== 'RECEIVING_CONNECTION_REQUIRED')
+    if (!selected) {
+      missing.push({
+        code: 'RECEIVING_CONNECTION_REQUIRED',
+        message: t('admin.venues.receivingConnection.notSelectedMissing'),
+        field: 'receiving_connection',
+      })
+    }
+    readinessData.value = {
+      ...readinessData.value,
+      is_ready: missing.length === 0,
+      missing_items: missing,
+      checklist: { ...readinessData.value.checklist, receiving_connection_selected: selected },
+    }
+  }
+  emit('statusChanged')
 }
 
 async function handleToggleOperational(targetStatus: 'published' | 'temporarily_closed') {
@@ -138,18 +188,18 @@ async function handleToggleOperational(targetStatus: 'published' | 'temporarily_
           <!-- Readiness Overview -->
           <div
             class="p-4 rounded-lg flex items-center justify-between"
-            :class="readinessData.is_ready ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300' : 'bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-300'"
+            :class="publicationReady ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300' : 'bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-300'"
           >
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined">
-                {{ readinessData.is_ready ? 'check_circle' : 'warning' }}
+                {{ publicationReady ? 'check_circle' : 'warning' }}
               </span>
               <span class="text-sm font-semibold">
-                {{ readinessData.is_ready ? 'Đạt toàn bộ tiêu chuẩn xuất bản' : 'Chưa đủ điều kiện xuất bản' }}
+                {{ publicationReady ? 'Đạt toàn bộ tiêu chuẩn xuất bản' : 'Chưa đủ điều kiện xuất bản' }}
               </span>
             </div>
             <span class="text-xs">
-              {{ readinessData.missing_items.length }} điều kiện còn thiếu
+              {{ missingRequirementCount }} điều kiện còn thiếu
             </span>
           </div>
 
@@ -196,19 +246,48 @@ async function handleToggleOperational(targetStatus: 'published' | 'temporarily_
               </span>
               <span>Chính sách đặt/hủy hợp lệ</span>
             </div>
+
+            <div class="flex items-center gap-2 p-2.5 rounded border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
+              <span class="material-symbols-outlined text-sm" :class="readinessData.checklist.operating_calendar_configured ? 'text-emerald-600' : 'text-red-500'">
+                {{ readinessData.checklist.operating_calendar_configured ? 'check' : 'close' }}
+              </span>
+              <span>{{ $t('admin.venues.operatingCalendarConfigured') }}</span>
+            </div>
+
+            <div class="flex items-center gap-2 p-2.5 rounded border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
+              <span class="material-symbols-outlined text-sm" :class="receivingConnectionVerified ? 'text-emerald-600' : 'text-red-500'">
+                {{ receivingConnectionVerified ? 'check' : 'close' }}
+              </span>
+              <span>{{ $t('admin.venues.receivingConnection.readiness') }}</span>
+            </div>
           </div>
 
           <!-- Missing Details -->
-          <div v-if="readinessData.missing_items.length" class="space-y-1.5 border-t pt-3 dark:border-gray-700">
+          <div v-if="readinessData.missing_items.length || !receivingConnectionVerified" class="space-y-1.5 border-t pt-3 dark:border-gray-700">
             <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Nội dung cần khắc phục:</span>
             <ul class="text-xs space-y-1 text-red-600 dark:text-red-400">
               <li v-for="item in readinessData.missing_items" :key="item.code" class="flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-xs">arrow_right</span>
                 <span>{{ item.message }} ({{ item.code }})</span>
               </li>
+              <li v-if="!receivingConnectionVerified" class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-xs">arrow_right</span>
+                <span>{{ receivingConnection?.status === 'verified' ? $t('admin.venues.receivingConnection.notSelectedMissing') : $t('admin.venues.receivingConnection.notVerifiedMissing') }}</span>
+              </li>
             </ul>
           </div>
         </div>
+
+        <OwnerReceivingConnectionPanel
+          v-if="venue?.id && organizationId"
+          :organization-id="organizationId"
+          :venue-id="venue.id"
+          :connection="receivingConnection"
+          :loading="loading"
+          :load-error="receivingConnectionError"
+          @updated="handleReceivingConnectionUpdated"
+          @refresh="loadReadiness"
+        />
       </div>
 
       <!-- Footer Actions -->
@@ -248,7 +327,7 @@ async function handleToggleOperational(targetStatus: 'published' | 'temporarily_
           <button
             v-if="venue.status === 'draft' || venue.status === 'revision_required'"
             type="button"
-            :disabled="submitting || !readinessData?.is_ready"
+            :disabled="submitting || !publicationReady"
             class="px-5 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg disabled:opacity-50"
             @click="handleSubmitPublication"
           >

@@ -13,16 +13,52 @@ class EloquentPlatformPlanRepository implements PlatformPlanRepositoryInterface
         return PlatformPlan::query()->find($id);
     }
 
+    public function findByIdForUpdate(int $id): ?PlatformPlan
+    {
+        return PlatformPlan::query()->whereKey($id)->lockForUpdate()->first();
+    }
+
     public function findByCode(string $code): ?PlatformPlan
     {
-        return PlatformPlan::query()->where('code', $code)->first();
+        return PlatformPlan::query()
+            ->where('code', $code)
+            ->orderByDesc('is_active')
+            ->orderByDesc('version')
+            ->first();
+    }
+
+    public function findLatestByCodeForUpdate(string $code): ?PlatformPlan
+    {
+        return PlatformPlan::query()
+            ->where('code', $code)
+            ->orderByDesc('version')
+            ->lockForUpdate()
+            ->first();
+    }
+
+    public function listByCodeForUpdate(string $code): Collection
+    {
+        return PlatformPlan::query()
+            ->where('code', $code)
+            ->orderByDesc('version')
+            ->lockForUpdate()
+            ->get();
     }
 
     public function listActive(): Collection
     {
         return PlatformPlan::query()
+            ->where('status', 'published')
             ->where('is_active', true)
             ->orderBy('price', 'asc')
+            ->get();
+    }
+
+    public function listAll(): Collection
+    {
+        return PlatformPlan::query()
+            ->orderBy('code')
+            ->orderByDesc('version')
             ->get();
     }
 

@@ -168,7 +168,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // STEP 2: Customer has confirmed booking for today
         // =========================================================================
         $tz = config('app.timezone');
-        $todaySlot = Carbon::now($tz)->startOfHour();
+        $todaySlot = Carbon::now($tz)->subMinutes(5)->second(0);
 
         $reservation = Reservation::create([
             'organization_id' => $this->tenant->id,
@@ -239,17 +239,33 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         $this->assertSame(0, PosOrder::count());
 
         // =========================================================================
-        // STEP 5: Attempting Attendance Check-Out while tab is unpaid is BLOCKED
+        // STEP 5: Staff checks out attendance (SUCCEEDS even with unpaid tab - Task 8.4 [D51])
         // =========================================================================
-        $blockedCheckout = $this->actingAs($this->staff)
-            ->withHeaders($this->headers('blocked-checkout-'))
+        $checkoutRes = $this->actingAs($this->staff)
+            ->withHeaders($this->headers('checkout-unpaid-'))
             ->postJson('/api/v2/attendance/check-out', [
                 'code' => $reservation->code,
             ]);
 
-        $blockedCheckout->assertStatus(422);
-        $this->assertStringContainsString('120000 VND', $blockedCheckout->json('message'));
+        $checkoutRes->assertOk();
+        $this->assertSame('checked_out', $checkoutRes->json('attendance.status'));
+        $this->assertSame(120000, $checkoutRes->json('unpaid_receivable'));
 
+        // Tab remains unpaid
+        $this->assertSame('unpaid', ServiceTab::find($tabId)->status);
+
+        // Event CourtStatusUpdated was dispatched with awaiting_inspection (Task 8.5 [D52])
+        Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) {
+            return $event->courtId === $this->court->id && $event->status === 'awaiting_inspection';
+        });
+
+        // Staff court inspection step: Staff confirms court ready
+        $confirmRes = $this->actingAs($this->staff)
+            ->withHeaders($this->headers('confirm-ready-'))
+            ->postJson("/api/v2/attendance/courts/{$this->court->id}/confirm-ready");
+
+        $confirmRes->assertOk();
+        $this->assertSame('available', $confirmRes->json('status'));
         // =========================================================================
         // STEP 6: Cashier settles the tab with 150,000 VND cash (change = 30,000 VND)
         // =========================================================================
@@ -280,24 +296,16 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         ]);
 
         // =========================================================================
-        // STEP 7: Staff now checks out attendance (SUCCEEDS)
+        // STEP 7: Repeated check-out is idempotent (already checked out in STEP 5)
         // =========================================================================
         $checkoutRes = $this->actingAs($this->staff)
-            ->withHeaders($this->headers('checkout-ok-'))
+            ->withHeaders($this->headers('checkout-dup-'))
             ->postJson('/api/v2/attendance/check-out', [
                 'code' => $reservation->code,
-                'notes' => 'Khách đã thanh toán đầy đủ, trả sân sạch đẹp',
             ]);
 
         $checkoutRes->assertOk();
-        $checkoutRes->assertJsonPath('attendance.status', 'checked_out');
-        $checkoutRes->assertJsonPath('attendance.checked_out_by', $this->staff->id);
-
-        Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) use ($reservation) {
-            return $event->courtId === $this->court->id
-                && $event->status === 'available'
-                && ($event->metadata['reservation_id'] ?? null) === $reservation->id;
-        });
+        $this->assertTrue($checkoutRes->json('duplicate'));
 
         // =========================================================================
         // STEP 8: Active shift reflects cash sales and Cashier closes shift

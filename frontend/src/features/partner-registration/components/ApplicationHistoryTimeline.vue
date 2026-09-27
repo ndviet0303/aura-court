@@ -40,7 +40,7 @@ function formatDate(dateStr?: string): string {
           class="absolute w-2.5 h-2.5 rounded-full -left-1.5 border border-white dark:border-gray-900 mt-1.5"
           :class="{
             'bg-emerald-500': item.decision === 'approve',
-            'bg-amber-500': item.decision === 'supplement',
+            'bg-amber-500': item.decision === 'revision_required' || item.decision === 'supplement',
             'bg-red-500': item.decision === 'reject',
           }"
         ></div>
@@ -51,13 +51,13 @@ function formatDate(dateStr?: string): string {
               class="text-xs font-semibold px-2 py-0.5 rounded"
               :class="{
                 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': item.decision === 'approve',
-                'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': item.decision === 'supplement',
+                'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': item.decision === 'revision_required' || item.decision === 'supplement',
                 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': item.decision === 'reject',
               }"
             >
-              {{ item.decision === 'approve' ? 'Phê duyệt' : item.decision === 'supplement' ? 'Yêu cầu bổ sung' : 'Từ chối' }}
+              {{ item.decision === 'approve' ? 'Phê duyệt' : item.decision === 'revision_required' || item.decision === 'supplement' ? 'Yêu cầu bổ sung' : 'Từ chối' }}
             </span>
-            <time class="text-[11px] text-gray-400">{{ formatDate(item.reviewed_at) }}</time>
+            <time class="text-[11px] text-gray-400">{{ formatDate(item.created_at) }}</time>
           </div>
 
           <p v-if="item.reason" class="text-xs text-gray-700 dark:text-gray-300 mt-1">

@@ -8,15 +8,55 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
+use App\Models\ReceivingConnection;
 use App\Models\User;
 use App\Models\Venue;
+use App\Models\VenueBookingPolicy;
+use App\Models\VenueOperatingSchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class VenuePublicationReviewTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function addPolicy(Venue $venue, int $ownerId): void
+    {
+        VenueBookingPolicy::create([
+            'venue_id' => $venue->id,
+            'version' => 1,
+            'created_by' => $ownerId,
+            'effective_at' => now(),
+            'settings' => [
+                'booking' => ['hold_ttl_minutes' => 15, 'max_days_ahead' => 60, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240, 'require_continuity' => true],
+                'cancellation' => ['deadline_hours' => 24, 'fee_type' => 'none', 'fee_value' => 0, 'refund_due_hours' => 48],
+                'change' => ['deadline_hours' => 12, 'fee_type' => 'none', 'fee_value' => 0],
+                'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 10, 'no_show_after_minutes' => 30],
+                'recurring' => ['payment_policy' => 'per_period', 'conflict_policy' => 'all_or_nothing', 'overdue_release_hours' => 24],
+                'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false, 'seller_reimbursement_required' => true],
+                'ancillary_credit_policy' => 'refund',
+            ],
+        ]);
+    }
+
+    private function addOperatingSchedule(Venue $venue, int $ownerId): void
+    {
+        $hours = [];
+        for ($day = 1; $day <= 7; $day++) {
+            $hours[(string) $day] = ['closed' => false, 'intervals' => [['start' => '06:00', 'end' => '22:00']]];
+        }
+        VenueOperatingSchedule::create([
+            'venue_id' => $venue->id,
+            'scope_key' => 'venue',
+            'timezone' => 'Asia/Ho_Chi_Minh',
+            'version' => 1,
+            'weekly_hours' => $hours,
+            'created_by' => $ownerId,
+        ]);
+    }
 
     public function test_submit_incomplete_venue_fails_and_leaves_in_draft(): void
     {
@@ -79,6 +119,9 @@ class VenuePublicationReviewTest extends TestCase
             'price' => 100000,
             'is_active' => true,
         ]);
+        $this->addPolicy($venue, $owner->id);
+        $this->addOperatingSchedule($venue, $owner->id);
+        $this->selectVerifiedReceiver($venue, $owner);
 
         // 1. Owner submits venue for publication
         Sanctum::actingAs($owner);
@@ -150,6 +193,9 @@ class VenuePublicationReviewTest extends TestCase
             'price' => 100000,
             'is_active' => true,
         ]);
+        $this->addPolicy($venue, $owner->id);
+        $this->addOperatingSchedule($venue, $owner->id);
+        $this->selectVerifiedReceiver($venue, $owner);
 
         Sanctum::actingAs($owner);
         $submitRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
@@ -168,5 +214,26 @@ class VenuePublicationReviewTest extends TestCase
 
         $this->assertEquals('revision_required', $venue->fresh()->status);
         $this->assertFalse($venue->fresh()->is_active);
+    }
+
+    private function selectVerifiedReceiver(Venue $venue, User $owner): void
+    {
+        $connection = new ReceivingConnection([
+            'organization_id' => $venue->organization_id,
+            'venue_id' => $venue->id,
+            'owner_user_id' => $owner->id,
+            'provider' => 'sepay',
+            'routing_id' => (string) Str::uuid(),
+            'bank_code' => 'MBBank',
+            'status' => ReceivingConnection::STATUS_VERIFIED,
+            'credential_version' => 1,
+            'owner_attested_at' => now(),
+            'verified_at' => now(),
+            'effective_from' => now(),
+        ]);
+        $connection->setAccountDetails('Venue Owner', '0123456789');
+        $connection->webhook_secret_ciphertext = Crypt::encryptString('verified-test-secret');
+        $connection->save();
+        $venue->forceFill(['current_receiving_connection_id' => $connection->id])->save();
     }
 }

@@ -1,41 +1,49 @@
 <?php
 
 namespace App\Services\Booking;
+
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\BookingRepositoryInterface;
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
-use App\Contracts\Repositories\CourtPriceSlotRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Domain\Booking\DTOs\CreateBookingData;
+use App\Domain\Partner\Services\PartnerRolloutService;
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Court;
+use App\Models\IdempotencyRecord;
+use App\Models\Organization;
+use App\Models\PointLedger;
 use App\Models\PriceQuote;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
-use App\Notifications\AuraBookingNotification;
+use App\Models\Venue;
+use App\Models\VenueBookingPolicy;
+use App\Models\WalletAccount;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
+use App\Services\Loyalty\LoyaltyPointService;
+use App\Services\Loyalty\LoyaltyPolicyService;
+use App\Services\Payment\ReservationPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use App\Services\Reservation\PriceQuoteService;
+use App\Services\Reservation\SlotSelectionPolicy;
+use App\Services\Reservation\VenueOperatingCalendar;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Models\IdempotencyRecord;
-use App\Models\PointLedger;
-use App\Services\Loyalty\LoyaltyPolicyService;
 
 class OrdinaryCheckoutService
 {
     public function __construct(
         private readonly CourtRepositoryInterface $courts,
-        private readonly CourtPriceSlotRepositoryInterface $priceSlots,
         private readonly CourtBlockRepositoryInterface $courtBlocks,
         private readonly BookingRepositoryInterface $bookings,
         private readonly DiscountService $discounts,
@@ -44,9 +52,13 @@ class OrdinaryCheckoutService
         private readonly FinancialPostingService $financials,
         private readonly LegacyBookingBackfillService $backfill,
         private readonly PriceQuoteService $quotes,
+        private readonly VenueOperatingCalendar $operatingCalendar,
+        private readonly SlotSelectionPolicy $slotPolicy,
         private readonly DurableNotificationServiceInterface $durableNotification,
         private readonly LoyaltyPolicyService $loyaltyPolicyService,
+        private readonly LoyaltyPointService $loyaltyPointService,
     ) {}
+
     /**
      * Shared Ordinary V1 Wallet-Funded Checkout.
      * Preserves exact V1 response projection contracts while enforcing
@@ -59,7 +71,8 @@ class OrdinaryCheckoutService
             throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 12 slot.']);
         }
 
-        $zone = config('app.timezone');
+        $calendarCourt = Court::with('venue')->findOrFail($data->courtId);
+        $zone = $calendarCourt->venue?->timezone ?: config('app.timezone');
         $local = collect($startsAt)->map(function (string $value) use ($zone) {
             try {
                 $time = Carbon::parse($value)->setTimezone($zone);
@@ -81,15 +94,16 @@ class OrdinaryCheckoutService
             throw ValidationException::withMessages(['slots' => 'Không được chọn slot trùng nhau.']);
         }
 
-        for ($i = 1; $i < $local->count(); $i++) {
-            if (! $local[$i]->equalTo($local[$i - 1]->copy()->addHour())) {
-                throw ValidationException::withMessages(['slots' => 'Các slot phải liên tiếp trên cùng sân.']);
-            }
-        }
-
-        $eligibility = app(\App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility::class);
+        $eligibility = app(VerifyEffectiveBookingEligibility::class);
         $court = $eligibility->assertEligible($data->courtId, publicFacing: true);
         $userId = $data->userId;
+        $checkoutUser = User::find($userId);
+        if ($checkoutUser && $checkoutUser->isRestricted()) {
+            abort(403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
+        }
+        if ($checkoutUser && ! $checkoutUser->hasVerifiedEmail()) {
+            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+        }
         $couponCode = $data->couponCode;
         $loyaltyPoints = $data->loyaltyPoints;
         $loyaltyPolicyVersion = $data->loyaltyPolicyVersion;
@@ -138,67 +152,45 @@ class OrdinaryCheckoutService
             $booking = DB::transaction(function () use (
                 $userId, $court, $local, $couponCode, $loyaltyPoints, $loyaltyPolicyVersion, $idempotencyKey, $requestHash, $orgId
             ) {
-                $lockedVenue = \App\Models\Venue::query()
+                Court::query()->whereKey($court->id)->lockForUpdate()->first();
+                $lockedVenue = Venue::query()
                     ->whereKey($court->venue_id)
                     ->lockForUpdate()
                     ->first();
-                $rollout = app(\App\Domain\Partner\Services\PartnerRolloutService::class);
+                $directOwnerPayments = app(FeatureFlagService::class)
+                    ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
+                $bookingPolicySnapshot = null;
+                $holdExpiresAt = null;
+                if ($directOwnerPayments) {
+                    ['snapshot' => $bookingPolicySnapshot, 'expires_at' => $holdExpiresAt] = $this->captureBookingPolicy($lockedVenue);
+                }
+                $rollout = app(PartnerRolloutService::class);
                 $enforcePublication = $rollout->shouldEnforce($lockedVenue->organization_id, 'publication');
 
                 abort_unless($lockedVenue && $lockedVenue->is_active && ($enforcePublication ? $lockedVenue->isPublished() : true), 409, 'Cơ sở thể thao vừa thay đổi trạng thái hoặc ngừng hoạt động.');
 
-                $lockedOrg = \App\Models\Organization::query()
+                $lockedOrg = Organization::query()
                     ->whereKey($lockedVenue->organization_id)
                     ->lockForUpdate()
                     ->first();
                 abort_unless($lockedOrg && $lockedOrg->status === 'active' && ($enforcePublication ? $lockedOrg->isApprovedPartner() : true), 409, 'Câu lạc bộ vừa bị tạm ngừng hoạt động.');
 
-                $prices = $this->priceSlots->getActiveForCourt($court);
-                $hasBlock = $this->courtBlocks->hasOverlappingBlock(
+                $this->slotPolicy->assertAllowed(
                     $court,
-                    $local->first()->copy()->utc(),
-                    $local->last()->copy()->addHour()->utc()
+                    $local->map(fn (Carbon $time): array => [
+                        'start' => $time,
+                        'end' => $time->copy()->addHour(),
+                    ])->all(),
                 );
-                abort_if($hasBlock, 409, 'Sân đang bị khóa trong khoảng thời gian đã chọn.');
-
-                // Cross-check overlapping inventory in both V1 booking_slots and V2 reservation_entitlements
-                $startUtcList = $local->map(fn (Carbon $t) => $t->copy()->utc())->all();
-                $v1Conflict = BookingSlot::query()
-                    ->where('court_id', $court->id)
-                    ->whereIn('starts_at', $startUtcList)
-                    ->whereIn('status', ['held', 'confirmed'])
-                    ->lockForUpdate()
-                    ->exists();
-                if ($v1Conflict) {
-                    abort(409, 'Một hoặc nhiều slot vừa được người khác đặt.');
-                }
-
-                $v2Conflict = ReservationEntitlement::query()
-                    ->where('court_id', $court->id)
-                    ->whereIn('starts_at', $startUtcList)
-                    ->whereIn('status', ['held', 'active'])
-                    ->lockForUpdate()
-                    ->exists();
-                if ($v2Conflict) {
-                    abort(409, 'Một hoặc nhiều slot vừa được người khác đặt.');
-                }
 
                 // Lock user for point and wallet balance serialization
                 $lockedUser = User::whereKey($userId)->lockForUpdate()->firstOrFail();
 
-                $resolved = $local->map(function (Carbon $time) use ($prices) {
-                    $price = $prices->first(fn ($slot) => $slot->weekday === $time->dayOfWeekIso
-                        && substr($slot->starts_at, 0, 5) === $time->format('H:i')
-                        && substr($slot->ends_at, 0, 5) === $time->copy()->addHour()->format('H:i'));
-                    if (! $price) {
-                        throw ValidationException::withMessages(['slots' => "Slot {$time->format('H:i')} chưa mở bán."]);
-                    }
-
-                    return [$time, (int) $price->price];
-                });
+                $priceSnapshots = $this->quotes->priceSnapshots($court, $local->all(), 60);
+                $resolved = $local->map(fn (Carbon $time, int $index) => [$time, (int) $priceSnapshots[$index]['unit_price']]);
 
                 $subtotal = $resolved->sum(fn ($row) => $row[1]);
-                $discount = $this->discounts->reserve($userId, $subtotal, $couponCode);
+                $discount = $this->discounts->reserve($userId, $subtotal, $couponCode, $orgId, (int) $court->venue_id, (int) $court->id);
                 $payableBeforeLoyalty = (int) $discount['total'];
 
                 // Process Loyalty Points
@@ -228,7 +220,10 @@ class OrdinaryCheckoutService
                         ->where('user_id', $userId)
                         ->sum('delta');
 
-                    if ($currentPointBalance < $loyaltyPoints) {
+                    // Only unexpired lots are spendable; the raw running total above
+                    // is retained solely for the append-only balance_after column.
+                    $availablePoints = $this->loyaltyPointService->availableBalance($orgId, (int) $userId);
+                    if ($availablePoints < $loyaltyPoints) {
                         throw ValidationException::withMessages([
                             'loyalty_points' => 'Số dư điểm không đủ để thực hiện quy đổi.',
                         ]);
@@ -240,7 +235,7 @@ class OrdinaryCheckoutService
                         $ratio['points_redeemed'],
                         $ratio['reward_value_vnd'],
                         $payableBeforeLoyalty,
-                        $currentPointBalance
+                        $availablePoints
                     );
 
                     $loyaltyDiscount = (int) $discountCalc['discount_vnd'];
@@ -256,28 +251,55 @@ class OrdinaryCheckoutService
                     ];
                 }
 
-                // Get and lock wallet
-                $wallet = $this->walletPayments->getOrCreateWallet($userId, $orgId);
-                $wallet = \App\Models\WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+                // Direct-cohort holds reserve loyalty points at hold time: the negative
+                // PointLedger entry above blocks concurrent spend, is consumed on verified
+                // confirmation, and is released on expiry/cancellation. Partial redemption
+                // alongside a pending transfer is therefore supported.
 
-                if ($netPayable > 0 && (int) $wallet->balance < $netPayable) {
-                    throw ValidationException::withMessages([
-                        'wallet' => 'Số dư ví không đủ để thanh toán đặt sân. Vui lòng nạp thêm tiền vào ví.',
-                        'balance' => 'Số dư hiện tại: ' . number_format((int) $wallet->balance, 0, ',', '.') . '₫',
-                        'shortfall' => 'Còn thiếu: ' . number_format($netPayable - (int) $wallet->balance, 0, ',', '.') . '₫',
-                    ]);
+                // Legacy cohorts still use their wallet; direct cohorts never create or debit one.
+                $wallet = null;
+                if (! $directOwnerPayments) {
+                    $wallet = $this->walletPayments->getOrCreateWallet($userId, $orgId);
+                    $wallet = WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+
+                    if ($netPayable > 0 && (int) $wallet->balance < $netPayable) {
+                        throw ValidationException::withMessages([
+                            'wallet' => 'Số dư ví không đủ để thanh toán đặt sân. Vui lòng nạp thêm tiền vào ví.',
+                            'balance' => 'Số dư hiện tại: '.number_format((int) $wallet->balance, 0, ',', '.').'₫',
+                            'shortfall' => 'Còn thiếu: '.number_format($netPayable - (int) $wallet->balance, 0, ',', '.').'₫',
+                        ]);
+                    }
                 }
 
-                $priceSnapshot = $resolved->map(fn ($item) => [
+                $priceSnapshot = $resolved->map(fn ($item, int $index) => [
                     'starts_at' => $item[0]->toIso8601String(),
                     'ends_at' => $item[0]->copy()->addHour()->toIso8601String(),
                     'unit_price' => (int) $item[1],
+                    'rule' => $priceSnapshots[$index]['rule'],
                 ])->all();
 
                 $policySnapshot = [
                     'policy_version' => 'v1',
                     'captured_at' => now()->toIso8601String(),
+                    'membership_snapshot' => $discount['membership_snapshot'],
                     'loyalty_snapshot' => $loyaltySnapshot,
+                    'venue_booking_policy' => $bookingPolicySnapshot,
+                    'coupon_usage_snapshot' => $discount['coupon'] ? [
+                        'coupon_id' => (int) $discount['coupon']->id,
+                        'coupon_version' => (int) ($discount['coupon']->version ?? 1),
+                        'coupon_starts_at' => $discount['coupon']->starts_at?->toIso8601String(),
+                        'coupon_ends_at' => $discount['coupon']->ends_at?->toIso8601String(),
+                        'coupon_usage_limit' => $discount['coupon']->usage_limit,
+                        'campaign_id' => $discount['coupon']->promotion_campaign_id ? (int) $discount['coupon']->promotion_campaign_id : null,
+                        'campaign_version' => (int) ($discount['coupon']->campaign?->version ?? 1),
+                        'eligibility_group' => $discount['coupon']->campaign?->eligibility_group ?? $discount['coupon']->eligibility_group ?? Coupon::GROUP_ALL,
+                        'campaign_starts_at' => $discount['coupon']->campaign?->starts_at?->toIso8601String(),
+                        'campaign_ends_at' => $discount['coupon']->campaign?->ends_at?->toIso8601String(),
+                        'campaign_usage_limit' => $discount['coupon']->campaign?->usage_limit,
+                        'usage_count_reserved' => true,
+                        'release_on_full_cancellation' => true,
+                        'discount_amount' => (int) $discount['coupon_discount'],
+                    ] : null,
                 ];
 
                 $metadata = [
@@ -286,7 +308,12 @@ class OrdinaryCheckoutService
                     'venue_name' => $lockedVenue->name,
                     'loyalty_discount_amount' => $loyaltyDiscount,
                     'loyalty_points_redeemed' => $loyaltyPoints ?? 0,
+                    'membership_snapshot' => $discount['membership_snapshot'],
                     'loyalty_snapshot' => $loyaltySnapshot,
+                    'payment_model' => $directOwnerPayments ? 'direct_owner_v1' : 'legacy_wallet_v1',
+                    'booking_policy_snapshot' => $bookingPolicySnapshot,
+                    'coupon_usage_snapshot' => $policySnapshot['coupon_usage_snapshot'],
+                    'zero_payable' => $directOwnerPayments && $netPayable === 0,
                 ];
 
                 $booking = $this->bookings->create([
@@ -297,8 +324,9 @@ class OrdinaryCheckoutService
                     'total_amount' => $netPayable,
                     'discount_amount' => $discount['discount'] + $loyaltyDiscount,
                     'membership_discount_amount' => $discount['membership_discount'],
-                    'status' => 'confirmed',
-                    'payment_expires_at' => null,
+                    'status' => $directOwnerPayments && $netPayable > 0 ? 'pending_payment' : 'confirmed',
+                    'payment_model' => $directOwnerPayments ? 'direct_owner_v1' : 'legacy_wallet_v1',
+                    'payment_expires_at' => $directOwnerPayments && $netPayable > 0 ? $holdExpiresAt : null,
                     'policy_snapshot' => $policySnapshot,
                     'price_snapshot' => $priceSnapshot,
                     'metadata' => $metadata,
@@ -324,7 +352,7 @@ class OrdinaryCheckoutService
                 }
 
                 // Debit wallet if netPayable > 0
-                if ($netPayable > 0) {
+                if ($netPayable > 0 && ! $directOwnerPayments) {
                     $walletTx = $this->walletPayments->debit(
                         $wallet,
                         $netPayable,
@@ -348,16 +376,17 @@ class OrdinaryCheckoutService
                     ]);
 
                     $this->financials->postWalletBookingPayment($booking->fresh(['court.venue']), $payment, $wallet->id);
-                } else {
-                    // Zero-payable (100% point-funded)
+                } elseif ($netPayable === 0) {
+                    // A zero-payable booking is confirmed without inventing a bank receipt.
                     $payment = $booking->payments()->create([
-                        'provider' => 'loyalty_points',
-                        'external_transaction_id' => "loyalty-zero-payable-{$booking->code}",
+                        'provider' => $directOwnerPayments ? 'zero_payable' : 'loyalty_points',
+                        'external_transaction_id' => "zero-payable-{$booking->code}",
                         'amount' => 0,
                         'transfer_code' => $booking->code,
                         'status' => 'paid',
                         'payload' => [
                             'fully_discounted' => true,
+                            'payment_model' => $directOwnerPayments ? 'direct_owner_v1' : 'legacy_wallet_v1',
                             'loyalty_points_spent' => $loyaltyPoints,
                             'loyalty_discount' => $loyaltyDiscount,
                         ],
@@ -372,13 +401,17 @@ class OrdinaryCheckoutService
                         'starts_at' => $time->copy()->utc(),
                         'ends_at' => $time->copy()->addHour()->utc(),
                         'unit_price' => $price,
-                        'status' => 'confirmed',
+                        'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'confirmed',
                     ];
                 }
                 $this->bookings->createSlots($booking, $slotsData);
 
                 // Ensure canonical V2 reservation identity mapping is synced
-                $this->backfill->backfillBooking($booking);
+                $mapping = $this->backfill->backfillBooking($booking);
+                if ($directOwnerPayments && $netPayable > 0) {
+                    $reservation = Reservation::query()->withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
+                    app(ReservationPaymentService::class)->initiate($reservation, User::findOrFail($userId));
+                }
 
                 if (! empty($idempotencyKey)) {
                     try {
@@ -411,11 +444,14 @@ class OrdinaryCheckoutService
         }
 
         try {
+            $isPendingDirectPayment = $booking->payment_model === 'direct_owner_v1' && $booking->status === 'pending_payment';
             $this->durableNotification->notifyBooking(
                 $booking,
-                'payment_confirmed',
-                'Đặt sân thành công',
-                "Booking {$booking->code} tại {$booking->court->name} đã được thanh toán thành công qua số dư ví.",
+                $isPendingDirectPayment ? 'payment_pending' : 'payment_confirmed',
+                $isPendingDirectPayment ? 'Đặt sân đang chờ thanh toán' : 'Đặt sân thành công',
+                $isPendingDirectPayment
+                    ? "Booking {$booking->code} tại {$booking->court->name} đang chờ xác minh chuyển khoản."
+                    : "Booking {$booking->code} tại {$booking->court->name} đã được thanh toán thành công.",
                 '/booking',
             );
         } catch (\Throwable $secondaryException) {
@@ -437,6 +473,12 @@ class OrdinaryCheckoutService
     {
         try {
             return DB::transaction(function () use ($user, $organizationId, $data, $actor): Reservation {
+                if ($user->isRestricted()) {
+                    abort(403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
+                }
+                if ($actor === null && ! $user->hasVerifiedEmail()) {
+                    abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+                }
                 $quote = $this->resolveQuote($user->id, $organizationId, $data);
                 if ($quote->status !== 'open') {
                     abort(409, 'Price quote has already been accepted.');
@@ -444,7 +486,15 @@ class OrdinaryCheckoutService
                 if ($quote->expires_at?->isPast()) {
                     abort(409, 'Price quote has expired.');
                 }
-                $court = Court::query()->withoutGlobalScope('tenant_isolation')->findOrFail($quote->court_id);
+                $court = Court::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->court_id)->lockForUpdate()->firstOrFail();
+                $lockedVenue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
+                $directOwnerPayments = app(FeatureFlagService::class)
+                    ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
+                $bookingPolicySnapshot = null;
+                $holdExpiresAt = null;
+                if ($directOwnerPayments) {
+                    ['snapshot' => $bookingPolicySnapshot, 'expires_at' => $holdExpiresAt] = $this->captureBookingPolicy($lockedVenue);
+                }
                 $payableBeforeLoyalty = (int) $quote->total_amount;
 
                 // Lock user for point and wallet balance serialization
@@ -474,7 +524,10 @@ class OrdinaryCheckoutService
                         ->where('user_id', $user->id)
                         ->sum('delta');
 
-                    if ($currentPointBalance < $loyaltyPoints) {
+                    // Only unexpired lots are spendable; the raw running total above
+                    // is retained solely for the append-only balance_after column.
+                    $availablePoints = $this->loyaltyPointService->availableBalance($organizationId, (int) $user->id);
+                    if ($availablePoints < $loyaltyPoints) {
                         abort(422, 'Số dư điểm không đủ để thực hiện quy đổi.');
                     }
 
@@ -484,7 +537,7 @@ class OrdinaryCheckoutService
                         $ratio['points_redeemed'],
                         $ratio['reward_value_vnd'],
                         $payableBeforeLoyalty,
-                        $currentPointBalance
+                        $availablePoints
                     );
 
                     $loyaltyDiscount = (int) $discountCalc['discount_vnd'];
@@ -500,44 +553,32 @@ class OrdinaryCheckoutService
                     ];
                 }
 
-                // Get and lock wallet
-                $wallet = $this->walletPayments->getOrCreateWallet($user->id, $organizationId);
-                $wallet = \App\Models\WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+                // Direct-cohort holds reserve loyalty points at hold time: the negative
+                // PointLedger entry below blocks concurrent spend, is consumed on verified
+                // confirmation, and is released on expiry/cancellation. Partial redemption
+                // alongside a pending transfer is therefore supported.
 
-                if ($netPayable > 0 && (int) $wallet->balance < $netPayable) {
-                    abort(422, 'Số dư ví không đủ để thanh toán lịch đặt. Vui lòng nạp thêm tiền vào ví.');
+                // Get and lock wallet
+                $wallet = null;
+                if (! $directOwnerPayments) {
+                    $wallet = $this->walletPayments->getOrCreateWallet($user->id, $organizationId);
+                    $wallet = WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+
+                    if ($netPayable > 0 && (int) $wallet->balance < $netPayable) {
+                        abort(422, 'Số dư ví không đủ để thanh toán lịch đặt. Vui lòng nạp thêm tiền vào ví.');
+                    }
                 }
 
                 // Check court blocks
                 $slotSnapshots = (array) $quote->slot_snapshot;
                 if (! empty($slotSnapshots)) {
-                    $firstStart = Carbon::parse($slotSnapshots[0]['starts_at']);
-                    $lastEnd = Carbon::parse(end($slotSnapshots)['ends_at']);
-                    $hasBlock = $this->courtBlocks->hasOverlappingBlock($court, $firstStart, $lastEnd);
-                    abort_if($hasBlock, 409, 'Sân đang bị khóa trong khoảng thời gian đã chọn.');
-
-                    // Cross-check conflicting slots
-                    $startUtcList = array_map(fn ($s) => Carbon::parse($s['starts_at'])->toIso8601String(), $slotSnapshots);
-                    $v1Conflict = BookingSlot::query()
-                        ->where('court_id', $court->id)
-                        ->whereIn('starts_at', $startUtcList)
-                        ->whereIn('status', ['held', 'confirmed'])
-                        ->lockForUpdate()
-                        ->exists();
-                    if ($v1Conflict) {
-                        abort(409, 'The selected court-time is no longer available.');
-                    }
-
-                    $v2Conflict = ReservationSlot::query()
-                        ->where('court_id', $court->id)
-                        ->whereIn('starts_at', $startUtcList)
-                        ->whereIn('status', ['held', 'confirmed'])
-                        ->whereHas('reservation', fn ($r) => $r->whereIn('status', ['held', 'confirmed']))
-                        ->lockForUpdate()
-                        ->exists();
-                    if ($v2Conflict) {
-                        abort(409, 'The selected court-time is no longer available.');
-                    }
+                    $this->slotPolicy->assertAllowed(
+                        $court,
+                        collect($slotSnapshots)->map(fn (array $slotSnapshot): array => [
+                            'start' => $slotSnapshot['starts_at'],
+                            'end' => $slotSnapshot['ends_at'],
+                        ])->all(),
+                    );
                 }
 
                 $metadata = (array) ($data['metadata'] ?? []);
@@ -550,8 +591,17 @@ class OrdinaryCheckoutService
 
                 $metadata['loyalty_discount_amount'] = $loyaltyDiscount;
                 $metadata['loyalty_points_redeemed'] = $loyaltyPoints;
+                if ($quote->benefit_snapshot) {
+                    $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
+                }
                 if ($loyaltySnapshot) {
                     $metadata['loyalty_snapshot'] = $loyaltySnapshot;
+                }
+                if ($bookingPolicySnapshot !== null) {
+                    $metadata['booking_policy_snapshot'] = $bookingPolicySnapshot;
+                }
+                if ($directOwnerPayments && $netPayable === 0) {
+                    $metadata['zero_payable'] = true;
                 }
 
                 $reservation = Reservation::create([
@@ -560,12 +610,13 @@ class OrdinaryCheckoutService
                     'court_id' => $quote->court_id,
                     'price_quote_id' => $quote->id,
                     'code' => $this->uniqueReservationCode(),
-                    'status' => 'confirmed',
+                    'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'confirmed',
                     'currency' => $quote->currency,
                     'total_amount' => $netPayable,
-                    'hold_expires_at' => null,
-                    'confirmed_at' => now(),
+                    'hold_expires_at' => $directOwnerPayments && $netPayable > 0 ? $holdExpiresAt : null,
+                    'confirmed_at' => $directOwnerPayments && $netPayable > 0 ? null : now(),
                     'metadata' => $metadata,
+                    'payment_model' => $directOwnerPayments ? 'direct_owner_v1' : 'legacy_wallet_v1',
                 ]);
 
                 foreach ($slotSnapshots as $slotSnapshot) {
@@ -576,7 +627,7 @@ class OrdinaryCheckoutService
                         'starts_at' => $slotSnapshot['starts_at'],
                         'ends_at' => $slotSnapshot['ends_at'],
                         'unit_price' => $slotSnapshot['unit_price'],
-                        'status' => 'confirmed',
+                        'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'confirmed',
                         'snapshot' => $slotSnapshot,
                     ]);
 
@@ -589,7 +640,7 @@ class OrdinaryCheckoutService
                         'starts_at' => $slot->starts_at,
                         'ends_at' => $slot->ends_at,
                         'amount' => $slot->unit_price,
-                        'status' => 'active',
+                        'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'active',
                     ]);
                 }
 
@@ -613,7 +664,7 @@ class OrdinaryCheckoutService
                 }
 
                 // Debit wallet if netPayable > 0
-                if ($netPayable > 0) {
+                if ($netPayable > 0 && ! $directOwnerPayments) {
                     $walletTx = $this->walletPayments->debit(
                         $wallet,
                         $netPayable,
@@ -636,10 +687,16 @@ class OrdinaryCheckoutService
                         'slot_snapshot' => $quote->slot_snapshot,
                         'subtotal' => $quote->subtotal,
                         'total_amount' => $quote->total_amount,
+                        'benefit_snapshot' => $quote->benefit_snapshot,
                         'loyalty_snapshot' => $loyaltySnapshot,
                         'net_payable' => $netPayable,
                     ],
                 ]);
+
+                if ($directOwnerPayments && $netPayable > 0) {
+                    app(ReservationPaymentService::class)->initiate($reservation, $user);
+                }
+
                 return $reservation->load(['court.venue', 'quote', 'slots', 'entitlements']);
             });
         } catch (QueryException $exception) {
@@ -687,5 +744,26 @@ class OrdinaryCheckoutService
         } while (Reservation::query()->where('code', $code)->exists());
 
         return $code;
+    }
+
+    /**
+     * @return array{snapshot: array, expires_at: Carbon}
+     */
+    private function captureBookingPolicy(Venue $venue): array
+    {
+        $policy = $venue->currentBookingPolicy()->first();
+        abort_unless($policy instanceof VenueBookingPolicy, 409, 'A captured venue booking policy is required for direct payment.');
+        $settings = (array) $policy->settings;
+        $holdMinutes = (int) data_get($settings, 'booking.hold_ttl_minutes', 0);
+        abort_unless($holdMinutes >= 1 && $holdMinutes <= 1440, 409, 'The venue payment hold duration is invalid.');
+
+        return [
+            'snapshot' => [
+                'version' => (int) $policy->version,
+                'captured_at' => now()->toIso8601String(),
+                'settings' => $settings,
+            ],
+            'expires_at' => now()->addMinutes($holdMinutes),
+        ];
     }
 }

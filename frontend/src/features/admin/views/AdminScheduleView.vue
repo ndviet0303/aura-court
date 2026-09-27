@@ -18,8 +18,10 @@ const {
   notice,
   error,
   venues,
+  courts,
   auditLogs,
   selectedVenueFilter,
+  selectedScheduleCourtId,
   weeklySchedule,
   specialDates,
   showDowntimeModal,
@@ -57,10 +59,13 @@ onMounted(() => {
     <!-- Header Section -->
     <ScheduleHeader
       :venues="venues"
+      :courts="courts"
       :selected-venue-id="selectedVenueFilter"
+      :selected-calendar-court-id="selectedScheduleCourtId"
       :saving="saving"
       :loading="loading"
       @update:selected-venue-id="selectedVenueFilter = $event"
+      @update:selected-calendar-court-id="selectedScheduleCourtId = $event"
       @open-audit-logs="showAuditLogsModal = true"
       @save-schedule="saveWeeklySchedule(true)"
       @refresh="loadData"

@@ -17,6 +17,7 @@ const props = defineProps<{
   date: string
   selectedSlots: AvailabilitySlot[]
   totalPrice: number
+  directOwnerPayments?: boolean
   loading?: boolean
   error?: string
   notice?: string
@@ -190,7 +191,7 @@ const durationHours = computed(() => {
           <span>{{ $t('schedule.playDuration') }}</span>
           <strong>{{ $t('schedule.hours', { count: durationHours }) }}</strong>
         </div>
-        <div v-if="auth.user" class="breakdown-row wallet-status-row">
+        <div v-if="auth.user && !directOwnerPayments" class="breakdown-row wallet-status-row">
           <div class="wallet-status-left">
             <span class="material-symbols-outlined icon-14">account_balance_wallet</span>
             <span>{{ $t('payment.currentBalance') || 'Số dư ví' }}:</span>
@@ -231,7 +232,7 @@ const durationHours = computed(() => {
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>
-        <span>{{ loading ? $t('schedule.initializingBooking') : $t('schedule.confirmAndPayBtn') }}</span>
+        <span>{{ loading ? $t('schedule.initializingBooking') : directOwnerPayments ? $t('schedule.directOwnerPaymentBtn') : $t('schedule.confirmAndPayBtn') }}</span>
       </button>
     </div>
   </div>

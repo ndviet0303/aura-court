@@ -80,22 +80,6 @@ export interface FinanceExceptionItem {
   resolution_note?: string
 }
 
-export interface SplitGroup {
-  id: number
-  code: string
-  total_amount: number
-  status: 'pending' | 'partially_paid' | 'completed' | 'cancelled' | string
-  shares: SplitShare[]
-}
-
-export interface SplitShare {
-  id: number
-  user_id?: number
-  name: string
-  amount: number
-  status: 'pending' | 'paid' | string
-  paid_at?: string
-}
 
 export interface MonthlyInvoiceData {
   id: number | string
@@ -106,7 +90,7 @@ export interface MonthlyInvoiceData {
   period_end: string
   due_at: string
   amount: number
-  status: 'pending' | 'paid' | 'overdue'
+  status: 'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable'
   payment_reference?: string
   paid_at?: string
   series?: {

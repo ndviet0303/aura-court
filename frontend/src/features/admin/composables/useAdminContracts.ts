@@ -1,30 +1,24 @@
 import { ref, computed, onMounted } from 'vue'
 import { contractsApi } from '../api/contractsApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { RecurringContractItem, ContractStats, CreateContractPayload, ContractInvoice } from '../types/contract'
+import type { RecurringContractItem, ContractStats } from '../types/contract'
 
 export function useAdminContracts() {
   const loading = ref(false)
-  const saving = ref(false)
   const actionLoading = ref(false)
   const activeStatusTab = ref<string>('all')
   const searchQuery = ref('')
   const selectedVenueId = ref<number | undefined>(undefined)
 
   const selectedContract = ref<RecurringContractItem | null>(null)
-  const selectedInvoiceForPay = ref<{ contract: RecurringContractItem; invoice: ContractInvoice } | null>(null)
 
   const showDetailModal = ref(false)
-  const showCreateModal = ref(false)
-  const showPayModal = ref(false)
-  const showCancelModal = ref(false)
 
   const notice = ref('')
   const error = ref('')
 
   const contracts = ref<RecurringContractItem[]>([])
   const venues = ref<any[]>([])
-  const courts = ref<any[]>([])
 
   const rawStats = ref<ContractStats>({
     active_contracts: 0,
@@ -98,10 +92,9 @@ export function useAdminContracts() {
     loading.value = true
     error.value = ''
     try {
-      const [contractsRes, venuesRes, courtsRes] = await Promise.all([
+      const [contractsRes, venuesRes] = await Promise.all([
         contractsApi.list({ status: 'all' }),
         contractsApi.getVenues().catch(() => []),
-        contractsApi.getCourts().catch(() => []),
       ])
 
       const list = Array.isArray(contractsRes) ? contractsRes : contractsRes?.data || []
@@ -112,7 +105,6 @@ export function useAdminContracts() {
       }
 
       venues.value = Array.isArray(venuesRes) ? venuesRes : ((venuesRes as any)?.data || [])
-      courts.value = Array.isArray(courtsRes) ? courtsRes : ((courtsRes as any)?.data || [])
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách hợp đồng định kỳ.')
     } finally {
@@ -153,21 +145,6 @@ export function useAdminContracts() {
     })
   })
 
-  async function createContract(payload: CreateContractPayload) {
-    saving.value = true
-    error.value = ''
-    try {
-      const res = await contractsApi.create(payload)
-      showNotice(`Đã tạo thành công hợp đồng mới: ${res.metadata?.contract_code || 'CTR-2026'}`)
-      showCreateModal.value = false
-      await loadData()
-    } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể tạo hợp đồng mới.')
-      throw e
-    } finally {
-      saving.value = false
-    }
-  }
 
   async function cancelContract(contractId: number, reason?: string) {
     actionLoading.value = true
@@ -175,7 +152,6 @@ export function useAdminContracts() {
     try {
       await contractsApi.cancel(contractId, reason)
       showNotice('Đã chấm dứt hiệu lực hợp đồng.')
-      showCancelModal.value = false
       if (selectedContract.value && selectedContract.value.id === contractId) {
         selectedContract.value.status = 'cancelled'
       }
@@ -187,30 +163,6 @@ export function useAdminContracts() {
     }
   }
 
-  async function payInvoice(seriesId: number, invoiceId: number, reference?: string) {
-    actionLoading.value = true
-    error.value = ''
-    try {
-      const updatedInvoice = await contractsApi.payInvoice(seriesId, invoiceId, reference)
-      showNotice(`Đã xác nhận thu tiền thành công cho kỳ hoá đơn #${invoiceId}`)
-      showPayModal.value = false
-
-      // Update in-memory contract if open in detail modal
-      if (selectedContract.value && selectedContract.value.id === seriesId) {
-        const inv = selectedContract.value.invoices.find((i) => i.id === invoiceId)
-        if (inv) {
-          inv.status = 'paid'
-          inv.payment_reference = updatedInvoice.payment_reference
-          inv.paid_at = updatedInvoice.paid_at
-        }
-      }
-      await loadData()
-    } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể xác nhận thanh toán kỳ hoá đơn.')
-    } finally {
-      actionLoading.value = false
-    }
-  }
 
   function exportExcel() {
     window.open('/api/v1/admin/contracts.csv', '_blank')
@@ -229,10 +181,6 @@ export function useAdminContracts() {
     showDetailModal.value = true
   }
 
-  function openPayModal(contract: RecurringContractItem, invoice: ContractInvoice) {
-    selectedInvoiceForPay.value = { contract, invoice }
-    showPayModal.value = true
-  }
 
   onMounted(() => {
     loadData()
@@ -240,31 +188,22 @@ export function useAdminContracts() {
 
   return {
     loading,
-    saving,
     actionLoading,
     activeStatusTab,
     searchQuery,
     selectedVenueId,
     selectedContract,
-    selectedInvoiceForPay,
     showDetailModal,
-    showCreateModal,
-    showPayModal,
-    showCancelModal,
     notice,
     error,
     contracts,
     venues,
-    courts,
     stats,
     filteredContracts,
     loadData,
-    createContract,
     cancelContract,
-    payInvoice,
     exportExcel,
     showNotice,
     openDetail,
-    openPayModal,
   }
 }

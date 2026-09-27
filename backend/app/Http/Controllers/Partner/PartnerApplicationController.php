@@ -9,6 +9,7 @@ use App\Domain\Partner\Actions\SubmitPartnerApplication;
 use App\Domain\Partner\DTOs\SavePartnerApplicationData;
 use App\Domain\Partner\DTOs\StartPartnerApplicationData;
 use App\Domain\Partner\DTOs\SubmitPartnerApplicationData;
+use App\Domain\Partner\Rules\PartnerCompletenessPolicy;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Partner\SavePartnerApplicationRequest;
 use App\Http\Requests\Partner\StartPartnerApplicationRequest;
@@ -101,7 +102,15 @@ class PartnerApplicationController extends Controller
         }
 
         return response()->json([
-            'data' => $application->reviewHistories,
+            'data' => $application->reviewHistories->map(fn ($history) => [
+                'id' => $history->id,
+                'decision' => $history->decision,
+                'reason' => $history->reason,
+                'feedback_fields' => $history->feedback_fields,
+                'reapplication_allowed' => (bool) $history->reapplication_allowed,
+                'application_version' => (int) $history->application_version,
+                'created_at' => $history->created_at?->toIso8601String(),
+            ])->values(),
         ]);
     }
 }

@@ -8,7 +8,26 @@ class StorePriceSlotRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isAdmin() ?? false;
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+        if ($user->isPlatformAdmin()) {
+            return true;
+        }
+
+        $court = $this->route('court');
+        if ($court) {
+            return $user->canManageVenue($court->venue_id);
+        }
+
+        return $user->organizationMembers()
+            ->where('status', 'active')
+            ->whereIn('role', [
+                \App\Models\OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                \App\Models\OrganizationMember::ROLE_VENUE_MANAGER,
+            ])
+            ->exists();
     }
 
     public function rules(): array

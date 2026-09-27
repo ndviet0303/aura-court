@@ -1,7 +1,9 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { bookingApi } from '../api/bookingApi'
+import { idempotencyKey } from '@/core/api/client'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court } from '@/features/court/types/court'
+import type { ApiError } from '@/core/types/api'
 import type {
   RecurringSeries,
   RecurringInvoice,
@@ -9,9 +11,22 @@ import type {
   RecurringFrequency,
   WeekdayOption,
   CreateRecurringSeriesPayload,
+  RecurringSeriesPreview,
+  RecurringSeriesPreviewPayload,
+  RecurringPartialConflict,
+  AcceptedPreview,
 } from '../types/recurring'
 
 export type { RecurringSeries, RecurringInvoice, RecurringOccurrence, RecurringFrequency }
+
+export type SubmitOutcome =
+  | { kind: 'confirmed' }
+  | { kind: 'pending' }
+  | { kind: 'partial'; conflict: RecurringPartialConflict }
+  | { kind: 'drift' }
+  | { kind: 'conflict'; message: string }
+  | { kind: 'invalid'; reason: 'court' | 'weekdays' | 'preview' }
+  | { kind: 'error'; message: string }
 
 export function useRecurringBooking() {
   const courts = ref<Court[]>([])
@@ -42,6 +57,20 @@ export function useRecurringBooking() {
   const endTime = ref('20:00')
   const startDate = ref(formatIsoDate(defaultStart))
   const endDate = ref(formatIsoDate(defaultEnd))
+
+  // Explicit occurrence count is only set when the user picks a fixed number of
+  // sessions; left null the series is bounded by the date range (until/ends_at).
+  const explicitOccurrences = ref<number | null>(null)
+
+  // Server-side preview state (authoritative occurrence list + totals).
+  const preview = ref<RecurringSeriesPreview | null>(null)
+  const previewLoading = ref(false)
+  const previewError = ref('')
+
+  // Server-negotiated partial-conflict outcome: some occurrences are already booked and the
+  // venue policy allows keeping the remainder. Rendered so the user can accept the remaining
+  // sessions (re-submit with accept_partial) or change the schedule.
+  const partialConflict = ref<RecurringPartialConflict | null>(null)
 
   const weekdayButtons: WeekdayOption[] = [
     { id: 1, label: 'T2', name: 'Thứ 2', fullName: 'Thứ Hai' },
@@ -80,48 +109,126 @@ export function useRecurringBooking() {
     return 120000
   })
 
-  // Preview generated sessions between startDate and endDate
-  const previewSessions = computed(() => {
-    if (!startDate.value || !endDate.value || selectedWeekdays.value.length === 0) {
-      return []
-    }
-    const sessions: Array<{ date: string; weekdayName: string; time: string }> = []
-    const cur = new Date(startDate.value)
+  // Local fallback estimate of the number of sessions, used only until the
+  // server preview loads (or if it fails). It never drives the persisted series.
+  const localSessionCountEstimate = computed(() => {
+    const start = new Date(startDate.value)
     const end = new Date(endDate.value)
-    if (isNaN(cur.getTime()) || isNaN(end.getTime()) || cur > end) return []
-
-    // JS getDay(): 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    // Map our ISO weekday: 1 = Mon, ..., 7 = Sun
-    const jsToIsoDay = (d: number) => (d === 0 ? 7 : d)
-
-    let count = 0
-    let stepWeek = 1
-    if (frequency.value === 'biweekly') stepWeek = 2
-
-    const maxOccurrences = 104
-    while (cur <= end && count < maxOccurrences) {
-      const isoDay = jsToIsoDay(cur.getDay())
-      if (selectedWeekdays.value.includes(isoDay)) {
-        const foundDay = weekdayButtons.find((w) => w.id === isoDay)
-        const dateStr = cur.toISOString().slice(0, 10)
-        sessions.push({
-          date: dateStr,
-          weekdayName: foundDay?.label || `T${isoDay + 1}`,
-          time: `${startTime.value} - ${endTime.value}`,
-        })
-        count++
-      }
-      cur.setDate(cur.getDate() + 1)
+    if (
+      !startDate.value ||
+      !endDate.value ||
+      selectedWeekdays.value.length === 0 ||
+      isNaN(start.getTime()) ||
+      isNaN(end.getTime()) ||
+      start > end
+    ) {
+      return 0
     }
-    return sessions
+    if (frequency.value === 'monthly') {
+      const months =
+        (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1
+      return Math.max(0, months) * selectedWeekdays.value.length
+    }
+    let weekly = 0
+    const walker = new Date(start)
+    let guard = 0
+    while (walker <= end && guard < 4000) {
+      const jsDay = walker.getDay()
+      if (selectedWeekdays.value.includes(jsDay === 0 ? 7 : jsDay)) weekly++
+      walker.setDate(walker.getDate() + 1)
+      guard++
+    }
+    return frequency.value === 'biweekly' ? Math.ceil(weekly / 2) : weekly
   })
 
-  const estimatedSessionsCount = computed(() => {
-    return previewSessions.value.length
+  // Rendered from the server preview so monthly cadence and the platform cap are
+  // handled server-side; each entry carries its per-occurrence conflict flag.
+  // The server returns UTC instants; display them in the venue timezone to match
+  // the rest of the app (see useV2Reservations / court schedule formatters).
+  const previewSessions = computed(() => {
+    const occurrences = preview.value?.occurrences ?? []
+    return occurrences.map((o) => {
+      const day = weekdayButtons.find((w) => w.id === o.weekday)
+      const start = new Date(o.starts_at)
+      const end = new Date(o.ends_at)
+      const timeOptions: Intl.DateTimeFormatOptions = {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }
+      return {
+        date: start.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        weekdayName: day?.label ?? `T${o.weekday}`,
+        time: `${start.toLocaleTimeString('vi-VN', timeOptions)} - ${end.toLocaleTimeString('vi-VN', timeOptions)}`,
+        conflict: o.conflict,
+        conflictReason: o.conflict_reason,
+      }
+    })
   })
+
+  async function fetchPreview() {
+    if (!selectedCourtId.value || selectedWeekdays.value.length === 0 || !startDate.value) {
+      preview.value = null
+      previewError.value = ''
+      return
+    }
+    const payload: RecurringSeriesPreviewPayload = {
+      court_id: selectedCourtId.value,
+      frequency: frequency.value,
+      weekdays: [...selectedWeekdays.value],
+      starts_at: `${startDate.value} ${startTime.value}:00`,
+      ends_at: `${startDate.value} ${endTime.value}:00`,
+    }
+    if (endDate.value) {
+      payload.until = `${endDate.value} ${endTime.value}:00`
+    }
+    if (explicitOccurrences.value && explicitOccurrences.value > 0) {
+      payload.occurrences = explicitOccurrences.value
+    }
+    previewLoading.value = true
+    previewError.value = ''
+    try {
+      preview.value = await bookingApi.previewRecurringSeries(payload)
+    } catch (err: unknown) {
+      preview.value = null
+      previewError.value = errorMessage(err, 'Không thể tải bản xem trước lịch định kỳ.')
+    } finally {
+      previewLoading.value = false
+    }
+  }
+
+  let previewTimer: number | undefined
+  function schedulePreview() {
+    window.clearTimeout(previewTimer)
+    previewTimer = window.setTimeout(() => {
+      void fetchPreview()
+    }, 300)
+  }
+
+  watch(
+    () =>
+      [
+        selectedCourtId.value,
+        frequency.value,
+        selectedWeekdays.value.join(','),
+        startDate.value,
+        endDate.value,
+        startTime.value,
+        endTime.value,
+        explicitOccurrences.value ?? '',
+      ].join('|'),
+    schedulePreview,
+    { immediate: true },
+  )
+
+  const estimatedSessionsCount = computed(() =>
+    preview.value ? preview.value.count : localSessionCountEstimate.value,
+  )
 
   const estimatedTotalAmount = computed(() => {
-    return Math.round(estimatedSessionsCount.value * sessionDurationHours.value * hourlyRate.value)
+    if (preview.value) return preview.value.total_amount
+    return Math.round(localSessionCountEstimate.value * sessionDurationHours.value * hourlyRate.value)
   })
 
   // Aggregated all invoices from seriesList
@@ -190,14 +297,24 @@ export function useRecurringBooking() {
     }, 4000)
   }
 
-  async function submitSeries() {
+  function buildAccepted(source: RecurringSeriesPreview): AcceptedPreview {
+    return {
+      total: source.total_amount,
+      occurrences: source.occurrences.map((o) => ({ starts_at: o.starts_at, price: o.price })),
+    }
+  }
+
+  async function submitSeries(acceptPartial = false): Promise<SubmitOutcome> {
     if (!selectedCourtId.value) {
-      error.value = 'Vui lòng chọn sân thể thao.'
-      return
+      return { kind: 'invalid', reason: 'court' }
     }
     if (selectedWeekdays.value.length === 0) {
-      error.value = 'Vui lòng chọn ít nhất một ngày trong tuần.'
-      return
+      return { kind: 'invalid', reason: 'weekdays' }
+    }
+    // The persisted series must equal the accepted preview, so never submit without one.
+    const accepted = preview.value
+    if (!accepted || accepted.occurrences.length === 0) {
+      return { kind: 'invalid', reason: 'preview' }
     }
 
     submitting.value = true
@@ -206,22 +323,51 @@ export function useRecurringBooking() {
       const payload: CreateRecurringSeriesPayload = {
         court_id: selectedCourtId.value,
         frequency: frequency.value,
-        weekdays: selectedWeekdays.value,
+        weekdays: [...selectedWeekdays.value],
         starts_at: `${startDate.value} ${startTime.value}:00`,
-        ends_at: `${endDate.value} ${endTime.value}:00`,
+        ends_at: `${startDate.value} ${endTime.value}:00`,
         until: `${endDate.value} ${endTime.value}:00`,
-        occurrences: estimatedSessionsCount.value > 0 ? Math.min(estimatedSessionsCount.value, 12) : 12,
+        accepted: buildAccepted(accepted),
+        accept_partial: acceptPartial,
+      }
+      // Only pin an explicit occurrence count when the user chose one, so the
+      // persisted series matches the previewed list exactly (no local 12-cap).
+      if (explicitOccurrences.value && explicitOccurrences.value > 0) {
+        payload.occurrences = explicitOccurrences.value
       }
 
-      await bookingApi.createRecurringSeries(payload)
-      showNotice('Đã tạo thành công chuỗi đặt sân định kỳ!')
-      await loadData()
-      activeTab.value = 'series'
+      const result = await bookingApi.createRecurringSeries(payload, idempotencyKey())
+      if ('series' in result) {
+        partialConflict.value = null
+        await loadData()
+        activeTab.value = 'series'
+        return { kind: result.series.status === 'confirmed' ? 'confirmed' : 'pending' }
+      }
+
+      // Partial-conflict negotiation: surface the excluded sessions for explicit re-accept.
+      partialConflict.value = result
+      return { kind: 'partial', conflict: result }
     } catch (err: unknown) {
-      error.value = errorMessage(err, 'Không thể tạo lịch đặt sân định kỳ.')
+      const status = (err as ApiError)?.status
+      const message = errorMessage(err, 'Không thể tạo lịch đặt sân định kỳ.')
+      // A 409 means live inventory/pricing drifted from the preview (or an all-or-nothing
+      // conflict). Re-fetch the preview so the refreshed list/prices/conflict flags are shown.
+      if (status === 409) {
+        partialConflict.value = null
+        await fetchPreview()
+        return /xem tr/i.test(message)
+          ? { kind: 'drift' }
+          : { kind: 'conflict', message }
+      }
+      return { kind: 'error', message }
     } finally {
       submitting.value = false
     }
+  }
+
+  function dismissPartialConflict() {
+    partialConflict.value = null
+    void fetchPreview()
   }
 
   return {
@@ -247,6 +393,12 @@ export function useRecurringBooking() {
     previewSessions,
     estimatedSessionsCount,
     estimatedTotalAmount,
+    explicitOccurrences,
+    previewLoading,
+    previewError,
+    preview,
+    partialConflict,
+    dismissPartialConflict,
     toggleWeekday,
     loadData,
     showNotice,

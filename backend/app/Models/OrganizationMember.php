@@ -31,10 +31,42 @@ class OrganizationMember extends Model
         'permissions',
         'status',
     ];
-
     protected $casts = [
         'permissions' => 'array',
     ];
+
+    protected $appends = [
+        'venue_id',
+        'venue_ids',
+    ];
+
+    public function getVenueIdAttribute(): ?int
+    {
+        if (! is_array($this->permissions)) {
+            return null;
+        }
+
+        $id = $this->permissions['venue_id'] ?? ($this->permissions['venue_ids'][0] ?? null);
+
+        return is_numeric($id) ? (int) $id : null;
+    }
+
+    public function getVenueIdsAttribute(): array
+    {
+        if (! is_array($this->permissions)) {
+            return [];
+        }
+
+        if (isset($this->permissions['venue_ids']) && is_array($this->permissions['venue_ids'])) {
+            return array_values(array_map('intval', $this->permissions['venue_ids']));
+        }
+
+        if (isset($this->permissions['venue_id']) && is_numeric($this->permissions['venue_id'])) {
+            return [(int) $this->permissions['venue_id']];
+        }
+
+        return [];
+    }
 
     public function organization(): BelongsTo
     {

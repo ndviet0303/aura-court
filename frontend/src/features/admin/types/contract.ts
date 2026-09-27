@@ -17,7 +17,7 @@ export interface ContractInvoice {
   period_end: string
   due_at: string
   amount: number
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'guaranteed' | 'zero_payable'
   payment_reference?: string | null
   paid_at?: string | null
 }
@@ -63,17 +63,3 @@ export interface ContractsApiResponse {
   stats: ContractStats
 }
 
-export interface CreateContractPayload {
-  court_id: number
-  customer_name: string
-  phone: string
-  email?: string
-  weekday: string
-  time_slot: string
-  frequency?: 'weekly' | 'biweekly' | 'monthly'
-  starts_at: string
-  ends_at?: string
-  monthly_amount: number
-  deposit_amount?: number
-  notes?: string
-}

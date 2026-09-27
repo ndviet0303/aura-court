@@ -7,6 +7,8 @@ use App\Domain\Subscription\Actions\FailSubscriptionPayment;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
+use App\Models\PlatformPaymentAttempt;
+use App\Models\PlatformProviderReceipt;
 use App\Models\PlatformSubscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -155,6 +157,17 @@ class PlatformSubscriptionRenewalAndCancellationTest extends TestCase
 
         $renewRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/renew");
         $refCode = $renewRes->json('data.reference_code');
+
+        $attempt = PlatformPaymentAttempt::where('reference_code', $refCode)->firstOrFail();
+        PlatformProviderReceipt::create([
+            'payment_attempt_id' => $attempt->id,
+            'provider' => $attempt->provider,
+            'provider_transaction_id' => 'TXN-RENEW-SUCCESS-01',
+            'amount' => 500000,
+            'currency' => 'VND',
+            'raw_payload' => ['verified_fixture' => true],
+            'verified_at' => now(),
+        ]);
 
         // Confirm renewal payment
         $confirmAction = app(ConfirmSubscriptionPayment::class);

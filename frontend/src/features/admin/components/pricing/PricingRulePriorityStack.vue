@@ -273,6 +273,11 @@ function getTypeLabel(type: string): string {
               <span class="material-symbols-outlined icon-14">event</span>
               {{ rule.exception_date }}
             </span>
+            <span v-if="rule.effective_from || rule.effective_until" class="meta-item font-mono">
+              <span class="material-symbols-outlined icon-14">date_range</span>
+              {{ rule.effective_from?.slice(0, 10) || '…' }} – {{ rule.effective_until?.slice(0, 10) || '…' }}
+            </span>
+            <span class="meta-item">{{ t('admin.pricing.versionLabel', { version: rule.version }) }}</span>
 
             <!-- Price / Adjustment -->
             <span class="meta-item price-tag font-mono">

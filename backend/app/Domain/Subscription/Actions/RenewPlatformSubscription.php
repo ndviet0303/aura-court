@@ -65,6 +65,13 @@ class RenewPlatformSubscription
                 ]);
             }
 
+            $billingMonths = $plan->billingMonths();
+            if ($billingMonths === null) {
+                throw ValidationException::withMessages([
+                    'plan' => 'Chu kỳ gói phải là 1, 6 hoặc 12 tháng theo lịch.',
+                ]);
+            }
+
             $referenceCode = 'SUB-REN-'.date('Ymd').'-'.strtoupper(Str::random(8));
 
             $attempt = $this->subRepo->createPaymentAttempt([
@@ -79,6 +86,7 @@ class RenewPlatformSubscription
                     'plan_id' => $plan->id,
                     'plan_version' => (int) $plan->version,
                     'billing_cycle' => $plan->billing_cycle,
+                    'billing_months' => $billingMonths,
                     'accepted_terms_version' => (string) $plan->terms_version,
                     'actor_id' => $actorId,
                     'is_renewal' => true,
@@ -90,6 +98,10 @@ class RenewPlatformSubscription
             $updatedAttempt = $this->subRepo->updatePaymentAttempt($attempt, [
                 'provider' => $gatewayRes['provider'] ?? 'payos',
                 'provider_ref' => $gatewayRes['provider_ref'],
+                'metadata' => array_merge($attempt->metadata ?? [], [
+                    'checkout_url' => $gatewayRes['checkout_url'],
+                    'qr_code' => $gatewayRes['qr_code'] ?? null,
+                ]),
             ]);
 
             $this->notif->recordAudit(

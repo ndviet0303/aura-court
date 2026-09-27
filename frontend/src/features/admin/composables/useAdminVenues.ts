@@ -4,8 +4,10 @@ import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Venue, SportZone } from '@/features/court/types/court'
 import type { VenueForm } from '../types/admin'
+import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
 export interface AdminVenueItem extends Venue {
+  organization_id?: number
   courts_count?: number
 }
 
@@ -25,6 +27,9 @@ export function useAdminVenues() {
 
   const showVenueModal = ref(false)
   const editingVenue = ref<AdminVenueItem | null>(null)
+  const bookingPolicy = ref<VenueBookingPolicyVersion | null>(null)
+  const loadingBookingPolicy = ref(false)
+  const savingBookingPolicy = ref(false)
   const showQrModal = ref(false)
   const selectedVenueForQr = ref<AdminVenueItem | null>(null)
 
@@ -121,6 +126,38 @@ export function useAdminVenues() {
     }
   }
 
+  async function loadBookingPolicy(venue: AdminVenueItem) {
+    bookingPolicy.value = null
+    if (!venue.organization_id) return
+
+    loadingBookingPolicy.value = true
+    try {
+      const response = await adminApi.getVenueBookingPolicy(venue.organization_id, venue.id)
+      bookingPolicy.value = response.data
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể tải chính sách đặt sân.'))
+    } finally {
+      loadingBookingPolicy.value = false
+    }
+  }
+
+  async function saveBookingPolicy(settings: VenueBookingPolicySettings) {
+    const venue = editingVenue.value
+    if (!venue?.organization_id) throw new Error('Venue organization is unavailable.')
+
+    savingBookingPolicy.value = true
+    try {
+      const response = await adminApi.saveVenueBookingPolicy(venue.organization_id, venue.id, settings)
+      bookingPolicy.value = response.data
+      showNotice(t('admin.venues.bookingPolicySaved', { version: response.data.version }))
+    } catch (e) {
+      showError(errorMessage(e, 'Không thể lưu chính sách đặt sân.'))
+      throw e
+    } finally {
+      savingBookingPolicy.value = false
+    }
+  }
+
   async function toggleVenueActive(venue: AdminVenueItem) {
     const nextStatus = !venue.is_active
     try {
@@ -156,6 +193,9 @@ export function useAdminVenues() {
     sportZones,
     showVenueModal,
     editingVenue,
+    bookingPolicy,
+    loadingBookingPolicy,
+    savingBookingPolicy,
     showQrModal,
     selectedVenueForQr,
     filteredVenues,
@@ -167,6 +207,8 @@ export function useAdminVenues() {
     showNotice,
     showError,
     saveVenue,
+    loadBookingPolicy,
+    saveBookingPolicy,
     toggleVenueActive,
     deleteVenue,
   }

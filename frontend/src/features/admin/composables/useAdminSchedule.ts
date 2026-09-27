@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -23,6 +23,7 @@ export interface SpecialDateItem {
   name: string | { vi: string; en: string }
   type: 'holiday' | 'special_hours' | 'closed'
   hours?: string
+  court_id?: number | null
 }
 
 export interface MaintenanceBlock {
@@ -36,39 +37,9 @@ export interface MaintenanceBlock {
   status: 'upcoming' | 'ongoing' | 'ended'
 }
 
-const DEFAULT_WEEKLY_SCHEDULE: WeekdaySchedule[] = [
-  { id: 1, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '22:00' }] },
-  { id: 2, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '22:00' }] },
-  { id: 3, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '22:00' }] },
-  { id: 4, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '22:00' }] },
-  { id: 5, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '22:00' }] },
-  { id: 6, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '23:00' }] },
-  { id: 7, isOpen: true, shifts: [{ id: 1, start: '06:00', end: '23:00' }] },
-]
-
-const DEFAULT_SPECIAL_DATES: SpecialDateItem[] = [
-  {
-    id: 1,
-    date: '2026-09-02',
-    name: { vi: 'Quốc Khánh 2/9', en: 'National Day (Sep 2)' },
-    type: 'holiday',
-    hours: '08:00 - 20:00',
-  },
-  {
-    id: 2,
-    date: '2026-10-10',
-    name: { vi: 'Giải Đấu Mở Rộng Aura Open Cup', en: 'Aura Open Tournament' },
-    type: 'special_hours',
-    hours: '07:00 - 23:00',
-  },
-  {
-    id: 3,
-    date: '2026-12-25',
-    name: { vi: 'Lễ Giáng Sinh', en: 'Christmas Day' },
-    type: 'holiday',
-    hours: '08:00 - 22:00',
-  },
-]
+function emptyWeeklySchedule(): WeekdaySchedule[] {
+  return Array.from({ length: 7 }, (_, index) => ({ id: index + 1, isOpen: false, shifts: [] }))
+}
 
 export function useAdminSchedule() {
   const { t } = useI18n()
@@ -79,6 +50,7 @@ export function useAdminSchedule() {
 
   const courts = ref<Court[]>([])
   const venues = ref<Venue[]>([])
+  const selectedScheduleCourtId = ref<number | 'venue'>('venue')
   const auditLogs = ref<any[]>([])
   const selectedVenueFilter = ref<number | 'all'>('all')
 
@@ -88,30 +60,8 @@ export function useAdminSchedule() {
   const showUnlockConfirmModal = ref(false)
   const blockToUnlock = ref<MaintenanceBlock | null>(null)
 
-  // Initialize weekly schedule from localStorage or default
-  function loadSavedWeeklySchedule(): WeekdaySchedule[] {
-    try {
-      const saved = localStorage.getItem('aura_admin_weekly_schedule')
-      if (saved) return JSON.parse(saved)
-    } catch {
-      // ignore
-    }
-    return JSON.parse(JSON.stringify(DEFAULT_WEEKLY_SCHEDULE))
-  }
-
-  // Initialize special dates from localStorage or default
-  function loadSavedSpecialDates(): SpecialDateItem[] {
-    try {
-      const saved = localStorage.getItem('aura_admin_special_dates')
-      if (saved) return JSON.parse(saved)
-    } catch {
-      // ignore
-    }
-    return JSON.parse(JSON.stringify(DEFAULT_SPECIAL_DATES))
-  }
-
-  const weeklySchedule = ref<WeekdaySchedule[]>(loadSavedWeeklySchedule())
-  const specialDates = ref<SpecialDateItem[]>(loadSavedSpecialDates())
+  const weeklySchedule = ref<WeekdaySchedule[]>(emptyWeeklySchedule())
+  const specialDates = ref<SpecialDateItem[]>([])
   const maintenanceBlocks = ref<MaintenanceBlock[]>([])
 
   function showNotice(msg: string) {
@@ -128,6 +78,53 @@ export function useAdminSchedule() {
     if (now < start) return 'upcoming'
     if (now >= start && now <= end) return 'ongoing'
     return 'ended'
+  }
+
+  const selectedVenue = computed(() => selectedVenueFilter.value === 'all'
+    ? null
+    : venues.value.find((venue) => venue.id === selectedVenueFilter.value) || null)
+
+  async function loadCalendarSettings() {
+    const venue = selectedVenue.value
+    if (!venue?.organization_id) {
+      weeklySchedule.value = emptyWeeklySchedule()
+      specialDates.value = []
+      return
+    }
+
+    try {
+      const courtId = typeof selectedScheduleCourtId.value === 'number' ? selectedScheduleCourtId.value : undefined
+      const [scheduleResponse, exceptionResponse] = await Promise.all([
+        adminApi.getOperatingSchedule(venue.organization_id, venue.id, courtId),
+        adminApi.getScheduleExceptions(venue.organization_id, venue.id, courtId),
+      ])
+      const persisted = scheduleResponse.data?.weekly_hours
+      weeklySchedule.value = Array.from({ length: 7 }, (_, index) => {
+        const dayId = index + 1
+        const day = persisted?.[String(dayId)] ?? persisted?.[dayId]
+        return {
+          id: dayId,
+          isOpen: day ? !day.closed : false,
+          shifts: (day?.intervals || []).map((interval: any, intervalIndex: number) => ({
+            id: intervalIndex + 1,
+            start: interval.start,
+            end: interval.end,
+          })),
+        }
+      })
+      specialDates.value = (exceptionResponse.data || []).map((exception: any) => ({
+        id: exception.id,
+        date: String(exception.exception_date).slice(0, 10),
+        name: exception.name,
+        type: exception.type,
+        court_id: exception.court_id,
+        hours: (exception.intervals || []).map((interval: any) => `${interval.start} - ${interval.end}`).join(', ') || undefined,
+      }))
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.schedule.loadError'))
+      weeklySchedule.value = emptyWeeklySchedule()
+      specialDates.value = []
+    }
   }
 
   async function loadData() {
@@ -149,6 +146,9 @@ export function useAdminSchedule() {
         error.value = errorMessage(venuesRes.reason, t('admin.schedule.loadError'))
       } else if (venuesRes.value) {
         venues.value = venuesRes.value
+      }
+      if (selectedVenueFilter.value === 'all' && venues.value.length === 1) {
+        selectedVenueFilter.value = venues.value[0]?.id ?? 'all'
       }
       if (logsRes.status === 'fulfilled' && logsRes.value) {
         const rawLogs = (logsRes.value as any)?.data || logsRes.value
@@ -176,6 +176,7 @@ export function useAdminSchedule() {
         })
         maintenanceBlocks.value = allBlocks
       }
+      await loadCalendarSettings()
     } catch (e: unknown) {
       error.value = errorMessage(e, t('admin.schedule.loadError'))
     } finally {
@@ -227,15 +228,27 @@ export function useAdminSchedule() {
     saveWeeklySchedule(false)
   }
 
-  function saveWeeklySchedule(notify = true) {
+  async function saveWeeklySchedule(notify = true) {
     saving.value = true
     try {
-      localStorage.setItem('aura_admin_weekly_schedule', JSON.stringify(weeklySchedule.value))
+      const venue = selectedVenue.value
+      if (!venue?.organization_id) {
+        error.value = t('admin.schedule.selectVenueToSave')
+        return
+      }
+      await adminApi.saveOperatingSchedule(venue.organization_id, venue.id, {
+        ...(typeof selectedScheduleCourtId.value === 'number' ? { court_id: selectedScheduleCourtId.value } : {}),
+        timezone: venue.timezone || 'Asia/Ho_Chi_Minh',
+        weekly_hours: Object.fromEntries(weeklySchedule.value.map((day) => [String(day.id), {
+          closed: !day.isOpen,
+          intervals: day.isOpen ? day.shifts.map((shift) => ({ start: shift.start, end: shift.end })) : [],
+        }])),
+      })
       if (notify) {
         showNotice(t('admin.schedule.saveNotice'))
       }
-    } catch {
-      error.value = t('admin.schedule.saveError')
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.schedule.saveError'))
     } finally {
       saving.value = false
     }
@@ -299,30 +312,54 @@ export function useAdminSchedule() {
     }
   }
 
-  function addSpecialDate(item: { date: string; name: string; type: SpecialDateItem['type']; hours?: string }) {
-    const newItem: SpecialDateItem = {
-      id: Date.now(),
-      ...item,
+  async function addSpecialDate(item: { date: string; name: string; type: SpecialDateItem['type']; hours?: string }) {
+    const venue = selectedVenue.value
+    if (!venue?.organization_id) {
+      error.value = t('admin.schedule.selectVenueToSave')
+      return
     }
-    specialDates.value.unshift(newItem)
+    const intervals = item.hours?.split(',').map((range) => {
+      const match = range.trim().match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/)
+      return match ? { start: match[1], end: match[2] } : null
+    }) || []
+    if (item.hours && intervals.some((interval) => interval === null)) {
+      error.value = t('admin.schedule.invalidHours')
+      return
+    }
     try {
-      localStorage.setItem('aura_admin_special_dates', JSON.stringify(specialDates.value))
-    } catch {
-      // ignore
+      await adminApi.saveScheduleException(venue.organization_id, venue.id, {
+        ...(typeof selectedScheduleCourtId.value === 'number' ? { court_id: selectedScheduleCourtId.value } : {}),
+        exception_date: item.date,
+        name: item.name,
+        type: item.type,
+        timezone: venue.timezone || 'Asia/Ho_Chi_Minh',
+        intervals: intervals.filter(Boolean),
+      })
+      await loadCalendarSettings()
+      showSpecialDateModal.value = false
+      showNotice(t('admin.schedule.specialDateAdded', { name: item.name }))
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.schedule.loadError'))
     }
-    showSpecialDateModal.value = false
-    showNotice(t('admin.schedule.specialDateAdded', { name: item.name }))
   }
 
-  function deleteSpecialDate(id: number) {
-    specialDates.value = specialDates.value.filter((d) => d.id !== id)
+  async function deleteSpecialDate(id: number) {
+    const venue = selectedVenue.value
+    if (!venue?.organization_id) return
     try {
-      localStorage.setItem('aura_admin_special_dates', JSON.stringify(specialDates.value))
-    } catch {
-      // ignore
+      await adminApi.deleteScheduleException(venue.organization_id, venue.id, id)
+      specialDates.value = specialDates.value.filter((item) => item.id !== id)
+      showNotice(t('admin.schedule.specialDateDeleted'))
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('admin.schedule.loadError'))
     }
-    showNotice(t('admin.schedule.specialDateDeleted'))
   }
+
+  watch(selectedVenueFilter, () => {
+    selectedScheduleCourtId.value = 'venue'
+    void loadCalendarSettings()
+  })
+  watch(selectedScheduleCourtId, () => { void loadCalendarSettings() })
 
   // Filtered computed values
   const filteredCourts = computed(() => {
@@ -353,6 +390,8 @@ export function useAdminSchedule() {
     venues,
     auditLogs,
     selectedVenueFilter,
+    selectedScheduleCourtId,
+    selectedVenue,
     weeklySchedule,
     specialDates,
     maintenanceBlocks,

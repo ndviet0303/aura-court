@@ -130,12 +130,32 @@ function isItemPermitted(item: NavItem): boolean {
     userAny.capabilities?.can_manage_venues === true
   const isCashier = activeOrgs.some((o: any) => o.role === 'cashier' || o.role === 'staff')
 
-  if (item.path === '/admin/organization') {
+  // Courts group: manage, schedule, contracts, venues, pricing
+  if (item.path === '/admin/manage' || item.path === '/admin/contracts' || item.path === '/admin/venues' || item.path === '/admin/pricing') {
     return !!isOwner
   }
+  if (item.path === '/admin/schedule') {
+    return !!(isOwner || isCashier)
+  }
+  // POS group: retail, shifts, inventory, membership
   if (item.path === '/admin/pos' || item.path === '/pos') {
     return !!(isOwner || isCashier)
   }
+  if (item.path === '/admin/shifts' || item.path === '/admin/inventory') {
+    return !!(isOwner || isCashier)
+  }
+  if (item.path === '/admin/membership') {
+    return !!isOwner
+  }
+  // Tournaments
+  if (item.path === '/admin/tournaments') {
+    return !!(isOwner || isCashier)
+  }
+  // Organization profile & staff
+  if (item.path === '/admin/organization' || item.path === '/admin/staff') {
+    return !!isOwner
+  }
+  // Finance (payouts, reconciliation, exceptions) and KYC/disputes remain platform admin only
   return false
 }
 

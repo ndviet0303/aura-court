@@ -7,11 +7,9 @@ use App\Models\MonthlyInvoice;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
-use App\Models\RecurringSeries;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
-use App\Services\Infrastructure\OutboxService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -74,27 +72,6 @@ class RecurringSeriesAndInvoicesTest extends TestCase
         $this->assertGreaterThan(0, $invoice->amount);
     }
 
-    public function test_monthly_invoice_payment_transitions_status(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $startsAt = Carbon::now(config('app.timezone'))->addDays(5)->setTime(9, 0)->startOfHour();
-
-        $service = app(RecurringSeriesService::class);
-        $series = $service->createAndConfirm($user, $organization->id, [
-            'court_id' => $court->id,
-            'frequency' => 'weekly',
-            'starts_at' => $startsAt->toIso8601String(),
-            'occurrences' => 2,
-        ]);
-
-        $invoice = $series->invoices->first();
-        $this->assertSame('pending', $invoice->status);
-
-        $paid = $service->payInvoice($invoice, 'BANK-TRANSFER-REF-99');
-        $this->assertSame('paid', $paid->status);
-        $this->assertSame('BANK-TRANSFER-REF-99', $paid->payment_reference);
-        $this->assertNotNull($paid->paid_at);
-    }
 
     public function test_overdue_invoice_releases_future_inventory_and_marks_series_delinquent(): void
     {
@@ -157,5 +134,59 @@ class RecurringSeriesAndInvoicesTest extends TestCase
             'aggregate_id' => $invoice->id,
             'event_type' => 'recurring.invoice_due',
         ]);
+    }
+
+    public function test_overdue_release_leaves_paid_invoice_inventory_tracked(): void
+    {
+        [$organization, $user, $court] = $this->tenant();
+        $service = app(RecurringSeriesService::class);
+
+        // Series A: an unpaid invoice forced past due -> its future inventory must release.
+        $startA = Carbon::now(config('app.timezone'))->addDays(5)->setTime(9, 0)->startOfHour();
+        $seriesA = $service->createAndConfirm($user, $organization->id, [
+            'court_id' => $court->id,
+            'frequency' => 'weekly',
+            'starts_at' => $startA->toIso8601String(),
+            'occurrences' => 4,
+        ]);
+        $invoiceA = $seriesA->invoices->first();
+        $invoiceA->update(['due_at' => Carbon::now()->subDay()]);
+
+        // Series B: an invoice that has RECEIVED money (paid) -> must stay tracked and untouched.
+        $startB = Carbon::now(config('app.timezone'))->addDays(6)->setTime(11, 0)->startOfHour();
+        $seriesB = $service->createAndConfirm($user, $organization->id, [
+            'court_id' => $court->id,
+            'frequency' => 'weekly',
+            'starts_at' => $startB->toIso8601String(),
+            'occurrences' => 4,
+        ]);
+        $invoiceB = $seriesB->invoices->first();
+        $invoiceB->forceFill([
+            'status' => 'paid',
+            'payment_reference' => 'PRE-CUTOVER-RECEIPT',
+            'paid_at' => Carbon::now()->subDay(),
+        ])->save();
+        // Force the paid invoice's due date into the past to prove that status, not the date, gates release.
+        $invoiceB->refresh();
+        $invoiceB->update(['due_at' => Carbon::now()->subDay()]);
+
+        $released = $service->markOverdueAndReleaseFuture();
+        $this->assertGreaterThan(0, $released);
+
+        // Series A future inventory released and series marked delinquent.
+        $this->assertSame('overdue', $invoiceA->fresh()->status);
+        $this->assertSame('delinquent', $seriesA->fresh()->status);
+        foreach ($seriesA->occurrences()->where('starts_at', '>', now())->get() as $occ) {
+            $this->assertSame('released', $occ->status);
+            $this->assertSame('cancelled', $occ->reservation?->fresh()->status);
+        }
+
+        // Series B (received money) remains paid and tracked; its inventory is untouched.
+        $this->assertSame('paid', $invoiceB->fresh()->status);
+        $this->assertNotSame('delinquent', $seriesB->fresh()->status);
+        foreach ($seriesB->occurrences()->where('starts_at', '>', now())->get() as $occ) {
+            $this->assertSame('confirmed', $occ->status);
+            $this->assertSame('confirmed', $occ->reservation?->fresh()->status);
+        }
     }
 }

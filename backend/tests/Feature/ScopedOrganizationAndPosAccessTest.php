@@ -49,9 +49,13 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
             ->getJson("/api/v1/organizations/{$org->id}/members")
             ->assertOk();
 
-        // 3. Owner cannot access platform-admin venue routes
+        // 3. Owner can access their scoped venue routes, but cannot access platform-admin routes
         $this->actingAs($owner)
             ->getJson('/api/v1/admin/venues')
+            ->assertOk();
+
+        $this->actingAs($owner)
+            ->getJson('/api/v1/admin/kyc')
             ->assertStatus(403);
     }
 

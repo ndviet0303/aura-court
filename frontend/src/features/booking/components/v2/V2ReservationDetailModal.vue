@@ -13,6 +13,8 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'cancel', reservation: V2Reservation): void
+  (e: 'reschedule', reservation: V2Reservation): void
 }>()
 </script>
 
@@ -93,6 +95,10 @@ const emit = defineEmits<{
 
         <!-- Total Breakdown -->
         <div class="total-breakdown-card">
+          <div v-if="reservation.quote?.benefit_snapshot?.membership_discount_amount" class="breakdown-subline discount">
+            <span>{{ t('v2Reservations.calculator.membershipDiscount') }}</span>
+            <strong class="font-mono text-pink">-{{ money(reservation.quote.benefit_snapshot.membership_discount_amount) }}</strong>
+          </div>
           <div v-if="reservation.loyalty_discount_amount && reservation.loyalty_discount_amount > 0" class="loyalty-sub-breakdown">
             <div class="breakdown-subline">
               <span>{{ t('loyalty.pointsUsed') || 'Điểm đã dùng' }}:</span>
@@ -115,6 +121,24 @@ const emit = defineEmits<{
       </div>
 
       <div class="modal-footer">
+        <button
+          v-if="reservation && reservation.status === 'confirmed'"
+          class="btn btn-ghost"
+          type="button"
+          data-testid="v2-detail-reschedule"
+          @click="emit('reschedule', reservation)"
+        >
+          {{ t('booking.rescheduleBtn') }}
+        </button>
+        <button
+          v-if="reservation && reservation.status === 'confirmed'"
+          class="btn btn-ghost"
+          type="button"
+          data-testid="v2-detail-cancel"
+          @click="emit('cancel', reservation)"
+        >
+          {{ t('booking.cancelBtn') }}
+        </button>
         <button class="btn btn-primary" type="button" @click="emit('close')">
           {{ t('v2Reservations.modal.close') }}
         </button>
@@ -351,5 +375,6 @@ const emit = defineEmits<{
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 </style>

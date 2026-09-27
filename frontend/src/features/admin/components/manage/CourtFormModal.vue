@@ -153,6 +153,26 @@ async function handleFileUpload(event: Event) {
           </div>
 
           <div class="form-group">
+            <label class="form-label">{{ t('admin.manage.courtSurfaceLabel') }}</label>
+            <select v-model="courtForm.surface_type" class="form-input">
+              <option value="">{{ t('admin.manage.unspecified') }}</option>
+              <option value="wood">{{ t('admin.manage.surfaceWood') }}</option>
+              <option value="synthetic">{{ t('admin.manage.surfaceSynthetic') }}</option>
+              <option value="acrylic">{{ t('admin.manage.surfaceAcrylic') }}</option>
+              <option value="concrete">{{ t('admin.manage.surfaceConcrete') }}</option>
+              <option value="grass">{{ t('admin.manage.surfaceGrass') }}</option>
+              <option value="clay">{{ t('admin.manage.surfaceClay') }}</option>
+              <option value="hard">{{ t('admin.manage.surfaceHard') }}</option>
+              <option value="other">{{ t('admin.manage.surfaceOther') }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ t('admin.manage.courtCapacityLabel') }}</label>
+            <input v-model.number="courtForm.capacity" type="number" class="form-input" min="1" max="100" />
+          </div>
+
+          <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtStatusLabel') }}</label>
             <label class="toggle-check-label">
               <input v-model="courtForm.is_active" type="checkbox" />

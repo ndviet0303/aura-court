@@ -83,25 +83,25 @@ const router = createRouter({
       component: () => import('@/shared/layouts/admin/AdminLayout.vue'),
       meta: { auth: true },
       children: [
-        { path: '', name: 'admin', component: AdminView, meta: { admin: true, titleKey: 'seo.adminTitle', indexable: false } },
-        { path: 'manage', name: 'admin-manage', component: AdminManageView, meta: { admin: true, titleKey: 'seo.adminManageTitle', indexable: false } },
-        { path: 'schedule', name: 'admin-schedule', component: () => import('@/features/admin/views/AdminScheduleView.vue'), meta: { admin: true, titleKey: 'seo.adminScheduleTitle', indexable: false } },
-        { path: 'venues', name: 'admin-venues', component: AdminVenuesView, meta: { admin: true, titleKey: 'seo.adminVenuesTitle', indexable: false } },
-        { path: 'venues/publication-queue', name: 'admin-venue-publication-queue', component: () => import('@/features/admin/views/AdminPublicationQueueView.vue'), meta: { admin: true, titleKey: 'seo.adminVenuePublicationTitle', indexable: false } },
-        { path: 'pricing', name: 'admin-pricing', component: () => import('@/features/admin/views/V2PricingCalendarView.vue'), meta: { admin: true, titleKey: 'seo.adminPricingTitle', indexable: false } },
-        { path: 'contracts', name: 'admin-contracts', component: () => import('@/features/admin/views/AdminRecurringContractsView.vue'), meta: { admin: true, titleKey: 'seo.adminContractsTitle', indexable: false } },
+        { path: '', name: 'admin', component: AdminView, meta: { platformAdmin: true, titleKey: 'seo.adminTitle', indexable: false } },
+        { path: 'manage', name: 'admin-manage', component: AdminManageView, meta: { orgRoles: ['organization_owner', 'venue_manager'], titleKey: 'seo.adminManageTitle', indexable: false } },
+        { path: 'schedule', name: 'admin-schedule', component: () => import('@/features/admin/views/AdminScheduleView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager', 'staff'], titleKey: 'seo.adminScheduleTitle', indexable: false } },
+        { path: 'venues', name: 'admin-venues', component: AdminVenuesView, meta: { orgRoles: ['organization_owner', 'venue_manager'], titleKey: 'seo.adminVenuesTitle', indexable: false } },
+        { path: 'venues/publication-queue', name: 'admin-venue-publication-queue', component: () => import('@/features/admin/views/AdminPublicationQueueView.vue'), meta: { platformAdmin: true, titleKey: 'seo.adminVenuePublicationTitle', indexable: false } },
+        { path: 'pricing', name: 'admin-pricing', component: () => import('@/features/admin/views/V2PricingCalendarView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager'], titleKey: 'seo.adminPricingTitle', indexable: false } },
+        { path: 'contracts', name: 'admin-contracts', component: () => import('@/features/admin/views/AdminRecurringContractsView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager'], titleKey: 'seo.adminContractsTitle', indexable: false } },
         { path: 'organization', name: 'admin-organization', component: () => import('@/features/admin/views/OrganizationOwnerView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager'], titleKey: 'seo.adminOrgTitle', indexable: false } },
-        { path: 'staff', name: 'admin-staff', component: () => import('@/features/admin/views/AdminStaffView.vue'), meta: { admin: true, titleKey: 'seo.adminStaffTitle', indexable: false } },
-        { path: 'payouts', name: 'admin-payouts', component: () => import('@/features/finance/views/AdminPayoutsView.vue'), meta: { admin: true, titleKey: 'seo.adminPayoutsTitle', indexable: false } },
-        { path: 'tournaments', name: 'admin-tournaments', component: () => import('@/features/admin/views/AdminTournamentBracketView.vue'), meta: { admin: true, titleKey: 'seo.adminTournamentsTitle', indexable: false } },
+        { path: 'staff', name: 'admin-staff', component: () => import('@/features/admin/views/AdminStaffView.vue'), meta: { orgRoles: ['organization_owner'], titleKey: 'seo.adminStaffTitle', indexable: false } },
+        { path: 'payouts', name: 'admin-payouts', component: () => import('@/features/finance/views/AdminPayoutsView.vue'), meta: { platformAdmin: true, titleKey: 'seo.adminPayoutsTitle', indexable: false } },
+        { path: 'tournaments', name: 'admin-tournaments', component: () => import('@/features/admin/views/AdminTournamentBracketView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager', 'staff'], titleKey: 'seo.adminTournamentsTitle', indexable: false } },
         { path: 'pos', name: 'admin-pos', component: () => import('@/features/pos/views/PosView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager', 'cashier', 'staff'], titleKey: 'seo.adminPosTitle', indexable: false } },
-        { path: 'shifts', name: 'admin-shifts', component: () => import('@/features/admin/views/AdminShiftReconciliationView.vue'), meta: { admin: true, titleKey: 'seo.adminShiftsTitle', indexable: false } },
-        { path: 'inventory', name: 'admin-inventory', component: () => import('@/features/admin/views/AdminInventoryView.vue'), meta: { admin: true, titleKey: 'seo.adminInventoryTitle', indexable: false } },
-        { path: 'membership', name: 'admin-membership', component: () => import('@/features/admin/views/AdminMembershipView.vue'), meta: { admin: true, titleKey: 'seo.adminMembershipTitle', indexable: false } },
-        { path: 'financial-exceptions', name: 'admin-financial-exceptions', component: () => import('@/features/admin/views/AdminFinancialExceptionsView.vue'), meta: { admin: true, titleKey: 'seo.adminExceptionsTitle', indexable: false } },
-        { path: 'reconciliation', name: 'admin-reconciliation', component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'), meta: { admin: true, titleKey: 'seo.adminReconciliationTitle', indexable: false } },
-        { path: 'kyc', name: 'admin-kyc', component: () => import('@/features/admin/views/AdminKycVerificationView.vue'), meta: { admin: true, titleKey: 'seo.adminKycTitle', indexable: false } },
-        { path: 'disputes', name: 'admin-disputes', component: () => import('@/features/admin/views/AdminDisputeResolutionView.vue'), meta: { admin: true, titleKey: 'seo.adminDisputesTitle', indexable: false } },
+        { path: 'shifts', name: 'admin-shifts', component: () => import('@/features/admin/views/AdminShiftReconciliationView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager', 'cashier'], titleKey: 'seo.adminShiftsTitle', indexable: false } },
+        { path: 'inventory', name: 'admin-inventory', component: () => import('@/features/admin/views/AdminInventoryView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager', 'staff'], titleKey: 'seo.adminInventoryTitle', indexable: false } },
+        { path: 'membership', name: 'admin-membership', component: () => import('@/features/admin/views/AdminMembershipView.vue'), meta: { orgRoles: ['organization_owner', 'venue_manager'], titleKey: 'seo.adminMembershipTitle', indexable: false } },
+        { path: 'financial-exceptions', name: 'admin-financial-exceptions', component: () => import('@/features/admin/views/AdminFinancialExceptionsView.vue'), meta: { platformAdmin: true, titleKey: 'seo.adminExceptionsTitle', indexable: false } },
+        { path: 'reconciliation', name: 'admin-reconciliation', component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'), meta: { platformAdmin: true, titleKey: 'seo.adminReconciliationTitle', indexable: false } },
+        { path: 'kyc', name: 'admin-kyc', component: () => import('@/features/admin/views/AdminKycVerificationView.vue'), meta: { platformAdmin: true, titleKey: 'seo.adminKycTitle', indexable: false } },
+        { path: 'disputes', name: 'admin-disputes', component: () => import('@/features/admin/views/AdminDisputeResolutionView.vue'), meta: { platformAdmin: true, titleKey: 'seo.adminDisputesTitle', indexable: false } },
       ],
     },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true, titleKey: 'seo.profileTitle', descriptionKey: 'seo.profileDesc', indexable: false } },
@@ -138,14 +138,14 @@ router.beforeEach(async (to) => {
     // Direct entry to /admin root
     if (to.path === '/admin') {
       if (!isPlatformAdmin) {
-        if (isOwner) return { name: 'admin-organization' }
+        if (isOwner) return { name: 'admin-manage' }
         if (isCashier) return { name: 'admin-pos' }
         return { name: 'home' }
       }
     }
 
     // Platform-only routes require platform admin
-    if (to.meta.admin && !isPlatformAdmin) {
+    if ((to.meta.platformAdmin || to.meta.admin) && !isPlatformAdmin) {
       return { name: 'home' }
     }
 

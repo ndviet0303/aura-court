@@ -67,6 +67,7 @@ class BlockedCommandsInvariantsTest extends TestCase
         $this->fundUserWallet($user, $org->id, 1000000);
 
         $coupon = Coupon::create([
+            'organization_id' => $org->id,
             'code' => 'DISC20K',
             'discount_type' => 'fixed',
             'discount_value' => 20000,

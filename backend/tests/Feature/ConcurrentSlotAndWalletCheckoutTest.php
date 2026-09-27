@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
-use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -15,7 +14,6 @@ use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ConcurrentSlotAndWalletCheckoutTest extends TestCase
@@ -24,7 +22,7 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
 
     private function setupTenant(): array
     {
-        $organization = Organization::create(['name' => 'Org Concurrency', 'slug' => 'org-conc-'.uniqid()]);
+        $organization = Organization::create(['name' => 'Org Concurrency', 'slug' => 'org-conc-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Venue Conc', 'slug' => 'venue-conc-'.uniqid(), 'is_active' => true]);
         $court = $venue->courts()->create(['name' => 'Court Conc', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
@@ -147,6 +145,7 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $this->assertStringContainsString('insufficient wallet balance', $confirmResponse->json('message'));
         $this->assertSame('held', $reservation->fresh()->status);
     }
+
     public function test_v1_historical_api_compatibility_contracts(): void
     {
         [$organization, $venue, $court] = $this->setupTenant();
@@ -189,4 +188,3 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $this->assertDatabaseMissing('refunds', ['booking_id' => $createRes->json('booking.id')]);
     }
 }
-

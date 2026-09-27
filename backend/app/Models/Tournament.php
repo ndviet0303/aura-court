@@ -81,9 +81,35 @@ class Tournament extends Model
     {
         return $this->hasMany(TournamentEvent::class);
     }
+    public function grants(): HasMany
+    {
+        return $this->hasMany(TournamentGrant::class);
+    }
 
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function isAuthorizedOfficial(User $user, ?string $requiredRole = null): bool
+    {
+        if ($user->isPlatformAdmin()) {
+            return true;
+        }
+
+        if ($user->hasRoleInOrganization($this->organization_id, ['organization_owner', 'venue_manager', 'staff'])) {
+            return true;
+        }
+
+        return $this->grants()
+            ->active()
+            ->where('user_id', $user->id)
+            ->when($requiredRole, function ($q) use ($requiredRole) {
+                if ($requiredRole === 'official') {
+                    return $q->whereIn('role', ['organizer', 'official']);
+                }
+                return $q->where('role', $requiredRole);
+            })
+            ->exists();
     }
 }

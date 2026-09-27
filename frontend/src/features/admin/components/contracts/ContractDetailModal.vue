@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText, formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
-import type { RecurringContractItem, ContractInvoice } from '../../types/contract'
+import type { RecurringContractItem } from '../../types/contract'
 
 defineProps<{
   show: boolean
@@ -12,7 +12,6 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'payInvoice', invoice: ContractInvoice): void
   (e: 'cancelContract', contractId: number): void
 }>()
 
@@ -116,7 +115,7 @@ function formatDate(dateStr?: string | null): string {
                 <span class="period-sub font-mono">{{ formatDate(cycle.period_start) }} - {{ formatDate(cycle.period_end) }}</span>
               </div>
 
-              <span class="font-mono">{{ formatDate(cycle.due_at) }}</span>
+              <span class="font-mono">{{ cycle.status === 'zero_payable' ? '—' : formatDate(cycle.due_at) }}</span>
               <strong class="text-pink font-mono">{{ formatCurrency(cycle.amount) }}</strong>
 
               <div>
@@ -125,15 +124,19 @@ function formatDate(dateStr?: string | null): string {
                   :class="{
                     paid: cycle.status === 'paid',
                     overdue: cycle.status === 'overdue',
-                    pending: cycle.status === 'pending',
+                    pending: cycle.status === 'pending' || cycle.status === 'guaranteed' || cycle.status === 'zero_payable',
                   }"
                 >
                   ● {{
                     cycle.status === 'paid'
                       ? t('admin.contracts.statusPaid')
-                      : cycle.status === 'overdue'
-                        ? t('admin.contracts.statusOverdue')
-                        : t('admin.contracts.statusUnpaid')
+                      : cycle.status === 'zero_payable'
+                        ? t('admin.contracts.statusZeroPayable')
+                        : cycle.status === 'guaranteed'
+                          ? t('admin.contracts.statusGuaranteed')
+                          : cycle.status === 'overdue'
+                            ? t('admin.contracts.statusOverdue')
+                            : t('admin.contracts.statusUnpaid')
                   }}
                 </span>
               </div>
@@ -141,21 +144,12 @@ function formatDate(dateStr?: string | null): string {
               <span class="font-mono receipt-code">{{ cycle.payment_reference || '—' }}</span>
 
               <div class="action-cell">
-                <AuraButton
-                  v-if="cycle.status !== 'paid' && contract.status !== 'cancelled'"
-                  size="sm"
-                  variant="primary"
-                  :disabled="actionLoading"
-                  @click="emit('payInvoice', cycle)"
-                >
-                  <span class="material-symbols-outlined icon-14">payments</span>
-                  <span>{{ t('admin.contracts.markPaidBtn') }}</span>
-                </AuraButton>
-                <span v-else-if="cycle.status === 'paid'" class="paid-badge">
+                <span v-if="cycle.status === 'paid'" class="paid-badge">
                   <span class="material-symbols-outlined icon-14 text-green">check_circle</span>
                   <span>{{ formatDate(cycle.paid_at) }}</span>
                 </span>
-                <span v-else class="text-muted">—</span>
+                <span v-else-if="cycle.status === 'zero_payable'" class="text-muted">{{ t('admin.contracts.statusZeroPayable') }}</span>
+                <span v-else class="text-muted">{{ t('admin.contracts.awaitingVerifiedReceipt') }}</span>
               </div>
             </div>
           </div>

@@ -3,23 +3,21 @@ import type {
   PartnerApplication,
   PartnerDocument,
   PartnerReviewHistory,
-  StartApplicationPayload,
   SaveDraftPayload,
   SubmitApplicationPayload,
-  SupplementApplicationPayload,
 } from '../types'
 
 export const partnerRegistrationApi = {
   getCurrentApplication: async (): Promise<{ data: PartnerApplication | null }> => {
-    return api.get<{ data: PartnerApplication | null }>('/partner/applications/current')
+    return api.get<{ data: PartnerApplication | null }>('/partner/application/current')
   },
 
-  startApplication: async (payload: StartApplicationPayload): Promise<{ data: PartnerApplication; message: string }> => {
-    return api.post<{ data: PartnerApplication; message: string }>('/partner/applications/start', payload)
+  startApplication: async (): Promise<{ data: PartnerApplication; message: string }> => {
+    return api.post<{ data: PartnerApplication; message: string }>('/partner/application/start', {})
   },
 
   saveDraft: async (id: number, payload: SaveDraftPayload): Promise<{ data: PartnerApplication; message: string }> => {
-    return api.put<{ data: PartnerApplication; message: string }>(`/partner/applications/${id}/draft`, payload)
+    return api.put<{ data: PartnerApplication; message: string }>(`/partner/application/${id}`, payload)
   },
 
   uploadDocument: async (
@@ -27,7 +25,7 @@ export const partnerRegistrationApi = {
     formData: FormData
   ): Promise<{ data: PartnerDocument; message: string }> => {
     return api.post<{ data: PartnerDocument; message: string }>(
-      `/partner/applications/${id}/documents`,
+      `/partner/application/${id}/documents`,
       formData
     )
   },
@@ -37,22 +35,12 @@ export const partnerRegistrationApi = {
     payload: SubmitApplicationPayload
   ): Promise<{ data: PartnerApplication; message: string }> => {
     return api.post<{ data: PartnerApplication; message: string }>(
-      `/partner/applications/${id}/submit`,
-      payload
-    )
-  },
-
-  supplementApplication: async (
-    id: number,
-    payload: SupplementApplicationPayload
-  ): Promise<{ data: PartnerApplication; message: string }> => {
-    return api.post<{ data: PartnerApplication; message: string }>(
-      `/partner/applications/${id}/supplement`,
+      `/partner/application/${id}/submit`,
       payload
     )
   },
 
   getApplicationHistory: async (id: number): Promise<{ data: PartnerReviewHistory[] }> => {
-    return api.get<{ data: PartnerReviewHistory[] }>(`/partner/applications/${id}/history`)
+    return api.get<{ data: PartnerReviewHistory[] }>(`/partner/application/${id}/history`)
   },
 }

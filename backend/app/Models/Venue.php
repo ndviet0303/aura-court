@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['organization_id', 'name', 'slug', 'address', 'google_maps_url', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id'])]
+#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id', 'current_receiving_connection_id'])]
 class Venue extends Model
 {
     use HasTranslations;
@@ -24,20 +25,17 @@ class Venue extends Model
             'amenities' => 'array',
             'published_at' => 'datetime',
             'approved_public_snapshot' => 'array',
+            'images' => 'array',
         ];
     }
 
     public function getIsActiveAttribute(): bool
     {
-        if (isset($this->attributes['status']) && in_array($this->attributes['status'], ['temporarily_closed', 'suspended', 'rejected'], true)) {
-            return false;
+        if (isset($this->attributes['status'])) {
+            return in_array($this->attributes['status'], ['published', 'active'], true);
         }
 
-        if (isset($this->attributes['is_active'])) {
-            return (bool) $this->attributes['is_active'];
-        }
-
-        return in_array($this->attributes['status'] ?? 'draft', ['published', 'active'], true);
+        return (bool) ($this->attributes['is_active'] ?? false);
     }
 
     public function setIsActiveAttribute($value): void
@@ -45,7 +43,7 @@ class Venue extends Model
         $this->attributes['is_active'] = (bool) $value;
         if ($value && (!isset($this->attributes['status']) || $this->attributes['status'] === 'temporarily_closed')) {
             $this->attributes['status'] = 'published';
-        } elseif (!$value && ($this->attributes['status'] ?? null) === 'published') {
+        } elseif (! $value && in_array($this->attributes['status'] ?? null, ['published', 'active'], true)) {
             $this->attributes['status'] = 'temporarily_closed';
         }
     }
@@ -91,6 +89,21 @@ class Venue extends Model
     public function currentPublicationRevision(): BelongsTo
     {
         return $this->belongsTo(VenuePublicationRevision::class, 'current_publication_revision_id');
+    }
+
+    public function bookingPolicyVersions(): HasMany
+    {
+        return $this->hasMany(VenueBookingPolicy::class)->orderByDesc('version');
+    }
+
+    public function currentBookingPolicy(): HasOne
+    {
+        return $this->hasOne(VenueBookingPolicy::class)->latestOfMany('version');
+    }
+
+    public function currentReceivingConnection(): BelongsTo
+    {
+        return $this->belongsTo(ReceivingConnection::class, 'current_receiving_connection_id');
     }
 
     public function isPublished(): bool
@@ -146,6 +159,12 @@ class Venue extends Model
     public function toArray()
     {
         $attributes = parent::toArray();
+        $publicSnapshot = request()
+            && request()->is('api/*/venues', 'api/*/venues/*')
+            && $this->isPublished()
+            && is_array($this->approved_public_snapshot['venue'] ?? null)
+                ? $this->approved_public_snapshot['venue']
+                : null;
 
         if (request() && request()->is('api/*/admin/*')) {
             return $attributes;
@@ -163,7 +182,10 @@ class Venue extends Model
             }
         }
 
+        if ($publicSnapshot !== null) {
+            $attributes = array_merge($attributes, $publicSnapshot);
+        }
+
         return $attributes;
     }
 }
-

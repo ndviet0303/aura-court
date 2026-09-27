@@ -31,6 +31,14 @@ class EloquentPlatformSubscriptionRepository implements PlatformSubscriptionRepo
             ->first();
     }
 
+    public function findLatestPaymentAttemptForOrganization(int $organizationId): ?PlatformPaymentAttempt
+    {
+        return PlatformPaymentAttempt::query()
+            ->where('organization_id', $organizationId)
+            ->latest('id')
+            ->first();
+    }
+
     public function getExpiredActiveSubscriptions(\DateTimeInterface $now): Collection
     {
         return PlatformSubscription::query()
@@ -38,6 +46,7 @@ class EloquentPlatformSubscriptionRepository implements PlatformSubscriptionRepo
             ->whereNotNull('ends_at')
             ->where('ends_at', '<=', $now)
             ->with(['organization.members'])
+            ->lockForUpdate()
             ->get();
     }
 

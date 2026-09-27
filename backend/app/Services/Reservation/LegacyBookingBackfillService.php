@@ -172,7 +172,7 @@ class LegacyBookingBackfillService
     public function backfillBooking(Booking $booking): LegacyBookingMapping
     {
         $booking->loadMissing(['court.venue', 'slots']);
-        $mapping = LegacyBookingMapping::query()->where('legacy_booking_id', $booking->id)->first();
+        $mapping = LegacyBookingMapping::query()->withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->first();
         if ($mapping) {
             $this->assertMapping($booking, $mapping);
 
@@ -180,6 +180,19 @@ class LegacyBookingBackfillService
         }
 
         return $this->mapBooking($booking);
+    }
+
+    public function syncProjection(Booking $booking): void
+    {
+        $mapping = LegacyBookingMapping::query()->where('legacy_booking_id', $booking->id)->first();
+        if (! $mapping) {
+            return;
+        }
+
+        $mapping->forceFill([
+            'legacy_status' => $booking->status,
+            'source_checksum' => $this->bookingChecksum($booking),
+        ])->save();
     }
 
     public function validate(?int $organizationId = null): array
@@ -247,6 +260,17 @@ class LegacyBookingBackfillService
                 'total_amount' => $booking->total_amount,
                 'hold_expires_at' => $booking->payment_expires_at,
                 'confirmed_at' => $booking->status === 'confirmed' ? $booking->created_at : null,
+                'payment_model' => $booking->payment_model ?: 'legacy_wallet_v1',
+                'metadata' => array_filter([
+                    'legacy_booking_id' => $booking->id,
+                    'coupon_id' => $booking->coupon_id,
+                    'coupon_usage_released_at' => $booking->coupon_usage_released_at?->toIso8601String(),
+                    'coupon_usage_snapshot' => $booking->policy_snapshot['coupon_usage_snapshot'] ?? null,
+                    'loyalty_snapshot' => $booking->policy_snapshot['loyalty_snapshot'] ?? null,
+                    'loyalty_discount_amount' => $booking->loyalty_discount_amount,
+                    'loyalty_points_redeemed' => $booking->loyalty_points_redeemed,
+                    'booking_policy_snapshot' => $booking->policy_snapshot['venue_booking_policy'] ?? null,
+                ], fn ($value) => $value !== null),
             ]);
 
             $mapping = LegacyBookingMapping::create([

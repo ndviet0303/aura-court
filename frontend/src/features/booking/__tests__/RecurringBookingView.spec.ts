@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import RecurringBookingView from '../views/RecurringBookingView.vue'
 import { i18n } from '@/i18n'
 import { api, apiV2 } from '@/core/api/client'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -24,6 +25,7 @@ vi.mock('@/core/api/client', () => ({
     post: vi.fn(),
   },
   errorMessage: (_err: unknown, fallback: string) => fallback,
+  idempotencyKey: () => 'test-key',
 }))
 
 describe('RecurringBookingView', () => {
@@ -121,8 +123,26 @@ describe('RecurringBookingView', () => {
     expect(wrapper.vm).toBeDefined()
   })
 
-  it('submits recurring series creation', async () => {
-    vi.mocked(apiV2.post).mockResolvedValueOnce({ data: { id: 11 } })
+  it('submits the accepted preview snapshot when creating a series', async () => {
+    const preview = {
+      frequency: 'weekly',
+      weekdays: [1, 3, 5],
+      count: 2,
+      currency: 'VND',
+      total_amount: 480000,
+      truncated_by: null,
+      occurrences: [
+        { index: 1, starts_at: '2026-10-05T11:00:00Z', ends_at: '2026-10-05T13:00:00Z', weekday: 1, price: 240000, conflict: false, conflict_reason: null },
+        { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', weekday: 3, price: 240000, conflict: false, conflict_reason: null },
+      ],
+    }
+    vi.mocked(apiV2.post).mockImplementation(async (url: string) => {
+      if (url === '/recurring-series/preview') return preview
+      if (url === '/recurring-series') {
+        return { series: { id: 11, court_id: 1, frequency: 'weekly', starts_at: '', ends_at: '', status: 'pending', total_amount: 480000 } }
+      }
+      return {}
+    })
 
     const wrapper = mount(RecurringBookingView, {
       global: {
@@ -130,16 +150,84 @@ describe('RecurringBookingView', () => {
       },
     })
     await flushPromises()
-
-    const form = wrapper.find('form.wizard-form')
-    expect(form.exists()).toBe(true)
-
-    await form.trigger('submit.prevent')
+    // Let the debounced server preview resolve so an accepted snapshot exists to submit.
+    await sleep(350)
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith('/recurring-series', expect.objectContaining({
-      court_id: 1,
+    await wrapper.find('form.wizard-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(apiV2.post).toHaveBeenCalledWith(
+      '/recurring-series',
+      expect.objectContaining({
+        court_id: 1,
+        frequency: 'weekly',
+        accept_partial: false,
+        accepted: expect.objectContaining({
+          total: 480000,
+          occurrences: [
+            { starts_at: '2026-10-05T11:00:00Z', price: 240000 },
+            { starts_at: '2026-10-07T11:00:00Z', price: 240000 },
+          ],
+        }),
+      }),
+      { idempotencyKey: 'test-key' },
+    )
+  })
+
+  it('renders the partial-conflict panel and accepts the remaining sessions', async () => {
+    const preview = {
       frequency: 'weekly',
-    }))
+      weekdays: [1, 3, 5],
+      count: 2,
+      currency: 'VND',
+      total_amount: 480000,
+      truncated_by: null,
+      occurrences: [
+        { index: 1, starts_at: '2026-10-05T11:00:00Z', ends_at: '2026-10-05T13:00:00Z', weekday: 1, price: 240000, conflict: false, conflict_reason: null },
+        { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', weekday: 3, price: 240000, conflict: true, conflict_reason: 'Đã có người đặt' },
+      ],
+    }
+    vi.mocked(apiV2.post).mockImplementation(async (url: string, body?: unknown) => {
+      if (url === '/recurring-series/preview') return preview
+      if (url === '/recurring-series') {
+        if ((body as { accept_partial?: boolean })?.accept_partial) {
+          return { series: { id: 12, court_id: 1, frequency: 'weekly', starts_at: '', ends_at: '', status: 'pending', total_amount: 240000 } }
+        }
+        return {
+          status: 'partial_conflict',
+          currency: 'VND',
+          held_count: 1,
+          revised_total: 240000,
+          excluded: [
+            { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', conflict_reason: 'Đã có người đặt' },
+          ],
+        }
+      }
+      return {}
+    })
+
+    const wrapper = mount(RecurringBookingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    await sleep(350)
+    await flushPromises()
+
+    await wrapper.find('form.wizard-form').trigger('submit.prevent')
+    await flushPromises()
+
+    const panel = wrapper.find('[data-testid="recurring-partial-conflict"]')
+    expect(panel.exists()).toBe(true)
+    expect(panel.text()).toContain('Đã có người đặt')
+
+    await wrapper.find('[data-testid="recurring-accept-remaining"]').trigger('click')
+    await flushPromises()
+
+    expect(apiV2.post).toHaveBeenNthCalledWith(
+      3,
+      '/recurring-series',
+      expect.objectContaining({ accept_partial: true }),
+      { idempotencyKey: 'test-key' },
+    )
+    expect(wrapper.find('[data-testid="recurring-partial-conflict"]').exists()).toBe(false)
   })
 })

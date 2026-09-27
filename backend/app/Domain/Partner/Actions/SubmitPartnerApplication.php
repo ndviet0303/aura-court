@@ -4,6 +4,7 @@ namespace App\Domain\Partner\Actions;
 
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
+use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Domain\Partner\DTOs\SubmitPartnerApplicationData;
 use App\Domain\Partner\Rules\PartnerCompletenessPolicy;
 use App\Models\HostKyc;
@@ -22,6 +23,7 @@ class SubmitPartnerApplication
 
     public function __construct(
         private readonly HostKycRepositoryInterface $kycRepo,
+        private readonly UserRepositoryInterface $users,
         private readonly DurableNotificationServiceInterface $notif,
     ) {}
 
@@ -32,6 +34,13 @@ class SubmitPartnerApplication
 
             if (! $kyc || $kyc->user_id !== $data->userId) {
                 abort(403, 'Bạn không có quyền gửi duyệt hồ sơ này.');
+            }
+
+            $user = $this->users->findById($data->userId);
+            if (! $user || (! $user->hasVerifiedEmail() && ! $user->hasVerifiedPhone())) {
+                throw ValidationException::withMessages([
+                    'user' => 'Vui lòng xác thực email hoặc cung cấp bằng chứng xác thực số điện thoại trước khi nộp hồ sơ đối tác.',
+                ]);
             }
 
             if (! $kyc->isDraft() && ! $kyc->isRevisionRequired()) {

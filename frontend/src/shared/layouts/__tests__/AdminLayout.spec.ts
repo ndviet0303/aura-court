@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminLayout from '../admin/AdminLayout.vue'
+import type { User } from '@/features/auth/types/auth'
 import { useAuthStore } from '@/stores/auth'
 import { i18n, setAppLocale } from '@/i18n'
-
 const mockRoute = {
   path: '/admin',
   query: {},
@@ -117,5 +117,31 @@ describe('AdminLayout', () => {
     const viBtn = langBtns.find((b) => b.text() === 'VI')
     await viBtn!.trigger('click')
     expect(i18n.global.locale.value).toBe('vi')
+  })
+
+  it('renders operational groups for organization owner and hides finance platform-admin items', () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 5,
+      name: 'Club Owner',
+      email: 'owner@club.test',
+      role: 'customer',
+      email_verified_at: '2026-01-01',
+      organizations: [
+        {
+          organization_id: 1,
+          role: 'organization_owner',
+          status: 'active',
+        },
+      ],
+    } as unknown as User
+    const wrapper = createWrapper()
+    // Owner should see: courts, pos, tournaments, organization (4 groups)
+    // But NOT finance group (which has payouts, reconciliation, exceptions)
+    const groupHeaders = wrapper.findAll('.group-header-btn').map((b) => b.text())
+    expect(groupHeaders.length).toBe(4)
+    expect(wrapper.find('a[href="/admin/payouts"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/admin/kyc"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/admin/disputes"]').exists()).toBe(false)
   })
 })

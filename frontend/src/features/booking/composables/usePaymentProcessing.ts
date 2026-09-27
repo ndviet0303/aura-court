@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { tournamentApi } from '@/features/tournament/api/tournamentApi'
 import type { Booking } from '../types/booking'
+import type { ReservationPaymentAttempt } from '../api/bookingApi'
 import type { Court } from '@/features/court/types/court'
 import type { TournamentItem } from '@/features/tournament/types/tournament'
 
@@ -21,6 +22,11 @@ export function usePaymentProcessing() {
   const copyNotice = ref('')
   const showSuccessModal = ref(false)
   const walletBalance = ref(0)
+  const directPaymentAttempt = ref<ReservationPaymentAttempt | null>(null)
+  const directPaymentError = ref('')
+  const directPaymentLoading = ref(false)
+  const directPaymentRefreshing = ref(false)
+  let directPaymentPoller: ReturnType<typeof setInterval> | undefined
 
   // Tournament specific state
   const tournament = ref<TournamentItem | null>(null)
@@ -39,6 +45,7 @@ export function usePaymentProcessing() {
 
   const payment = computed(() => store.payment)
   const booking = computed<Booking | null>(() => store.current)
+  const isDirectOwnerPayment = computed(() => booking.value?.payment_model === 'direct_owner_v1')
 
   const isTournament = computed(() => {
     return !!tournament.value || store.payment?.type === 'tournament' || !!route.query.tournament_uuid || !!route.query.tournament_id || (typeof route.params.code === 'string' && route.params.code.startsWith('TRN-'))
@@ -113,6 +120,10 @@ export function usePaymentProcessing() {
   }
 
   async function handleWalletPay() {
+    if (isDirectOwnerPayment.value) {
+      await refreshDirectPaymentStatus()
+      return
+    }
     isPaying.value = true
     error.value = ''
     try {
@@ -178,12 +189,12 @@ export function usePaymentProcessing() {
     error.value = ''
 
     try {
-      await loadBalance()
       const tourneyUuid = (route.query.tournament_uuid || route.query.tournament_id) as string | undefined
       const codeParam = route.params.code as string | undefined
 
       // Check if tournament flow
       if (tourneyUuid || (codeParam && codeParam.startsWith('TRN-')) || route.query.type === 'tournament') {
+        await loadBalance()
         const identifier = tourneyUuid || (codeParam ? codeParam.replace(/^TRN-/, '').split('-')[0] : '')
         
         if (identifier) {
@@ -240,15 +251,25 @@ export function usePaymentProcessing() {
           const paymentData = await store.loadPayment(codeParam)
           if (paymentData.status === 'confirmed' || paymentData.booking?.status === 'confirmed') {
             status.value = 'confirmed'
+            showSuccessModal.value = true
+          } else if (paymentData.payment_model === 'direct_owner_v1') {
+            await createDirectPaymentAttempt(codeParam)
           } else {
+            await loadBalance()
             status.value = 'pending_payment'
           }
         } catch {
           store.restorePayment()
           status.value = 'pending_payment'
+          if (store.current?.payment_model === 'direct_owner_v1') {
+            await createDirectPaymentAttempt(codeParam)
+          } else {
+            await loadBalance()
+          }
         }
       } else {
         store.restorePayment()
+        await loadBalance()
       }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải thông tin thanh toán.')
@@ -261,7 +282,71 @@ export function usePaymentProcessing() {
     return initPaymentSession()
   }
 
-  function stopTimers() {}
+  async function createDirectPaymentAttempt(code: string) {
+    directPaymentLoading.value = true
+    directPaymentError.value = ''
+    try {
+      const response = await store.createBookingPayment(code)
+      directPaymentAttempt.value = response.payment_attempt
+      if (response.booking.status === 'confirmed' || response.payment_attempt.status === 'paid') {
+        status.value = 'confirmed'
+        showSuccessModal.value = true
+        stopDirectPaymentPolling()
+      } else if (response.payment_attempt.status === 'pending') {
+        startDirectPaymentPolling()
+      } else {
+        stopDirectPaymentPolling()
+      }
+    } catch (cause) {
+      directPaymentError.value = errorMessage(cause, 'Không thể tải thông tin thanh toán trực tiếp.')
+      stopDirectPaymentPolling()
+    } finally {
+      directPaymentLoading.value = false
+    }
+  }
+
+  async function refreshDirectPaymentStatus() {
+    const code = booking.value?.code || (route.params.code as string | undefined)
+    if (!code || directPaymentRefreshing.value) return
+    directPaymentRefreshing.value = true
+    directPaymentError.value = ''
+    try {
+      const response = await store.refreshPaymentStatus() as {
+        status: string
+        payment_attempt?: ReservationPaymentAttempt | null
+      } | null
+      if (response?.payment_attempt) {
+        directPaymentAttempt.value = response.payment_attempt
+      }
+      if (response?.status === 'confirmed' || response?.payment_attempt?.status === 'paid') {
+        status.value = 'confirmed'
+        showSuccessModal.value = true
+        stopDirectPaymentPolling()
+      } else if (response?.payment_attempt?.status === 'expired') {
+        stopDirectPaymentPolling()
+      }
+    } catch (cause) {
+      directPaymentError.value = errorMessage(cause, 'Không thể cập nhật trạng thái thanh toán.')
+    } finally {
+      directPaymentRefreshing.value = false
+    }
+  }
+
+  function startDirectPaymentPolling() {
+    stopDirectPaymentPolling()
+    directPaymentPoller = setInterval(() => {
+      void refreshDirectPaymentStatus()
+    }, 5000)
+  }
+
+  function stopDirectPaymentPolling() {
+    if (directPaymentPoller) clearInterval(directPaymentPoller)
+    directPaymentPoller = undefined
+  }
+
+  function stopTimers() {
+    stopDirectPaymentPolling()
+  }
 
   return {
     loading,
@@ -275,6 +360,11 @@ export function usePaymentProcessing() {
     playerDetails,
     walletBalance,
     paymentAmount,
+    directPaymentAttempt,
+    directPaymentError,
+    directPaymentLoading,
+    directPaymentRefreshing,
+    isDirectOwnerPayment,
     status,
     error,
     copyNotice,
@@ -285,6 +375,8 @@ export function usePaymentProcessing() {
     couponSuccess,
     applyCoupon,
     handleWalletPay,
+    refreshDirectPaymentStatus,
+    createDirectPaymentAttempt,
     copyToClipboard,
     startTimers,
     stopTimers,

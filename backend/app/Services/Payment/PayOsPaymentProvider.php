@@ -51,13 +51,32 @@ class PayOsPaymentProvider implements PaymentProviderInterface
 
     public function verifyWebhookSignature(string $payload, string $signature, array $headers = []): bool
     {
-        $secret = (string) config('services.payos.webhook_secret');
-        if ($secret === '' || $signature === '') {
+        $checksumKey = (string) (config('services.payos.checksum_key') ?: config('services.payos.webhook_secret'));
+        if ($checksumKey === '') {
             return false;
         }
 
-        $expected = hash_hmac('sha256', $payload, $secret);
-        return hash_equals($expected, trim($signature));
+        try {
+            $webhook = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return false;
+        }
+
+        $data = $webhook['data'] ?? null;
+        $bodySignature = strtolower((string) ($webhook['signature'] ?? ''));
+        if (! is_array($data) || preg_match('/^[a-f0-9]{64}$/', $bodySignature) !== 1) {
+            return false;
+        }
+
+        try {
+            $canonicalData = $this->webhookDataToQueryString($data);
+        } catch (\JsonException) {
+            return false;
+        }
+
+        $expected = hash_hmac('sha256', $canonicalData, $checksumKey);
+
+        return hash_equals($expected, $bodySignature);
     }
 
     public function parseWebhookEvent(string $payload, array $headers = []): WebhookEvent
@@ -65,7 +84,11 @@ class PayOsPaymentProvider implements PaymentProviderInterface
         $data = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
         $body = is_array($data['data'] ?? null) ? $data['data'] : $data;
         $eventId = (string) ($data['id'] ?? $data['eventId'] ?? $body['paymentLinkId'] ?? $body['reference'] ?? hash('sha256', $payload));
-        $status = strtoupper((string) ($body['status'] ?? $data['status'] ?? 'UNKNOWN'));
+        $status = strtoupper((string) ($body['status'] ?? $data['status'] ?? (
+            ($data['success'] ?? false) && (string) ($body['code'] ?? $data['code'] ?? '') === '00'
+                ? 'PAID'
+                : 'UNKNOWN'
+        )));
 
         return new WebhookEvent(
             provider: $this->name(),
@@ -177,6 +200,32 @@ class PayOsPaymentProvider implements PaymentProviderInterface
                 $exception,
             );
         });
+    }
+
+    private function webhookDataToQueryString(array $data): string
+    {
+        ksort($data, SORT_STRING);
+        $parts = [];
+
+        foreach ($data as $key => $value) {
+            if ($value === null || in_array($value, ['null', 'undefined'], true)) {
+                $value = '';
+            } elseif (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            } elseif (is_array($value)) {
+                foreach ($value as $index => $item) {
+                    if (is_array($item) && ! array_is_list($item)) {
+                        ksort($item, SORT_STRING);
+                        $value[$index] = $item;
+                    }
+                }
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            }
+
+            $parts[] = $key.'='.$value;
+        }
+
+        return implode('&', $parts);
     }
 
     private function numericReference(string $reference): int

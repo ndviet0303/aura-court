@@ -10,7 +10,7 @@ class EnsureAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Admin access required.');
+        abort_unless($request->user()?->isPlatformAdmin(), 403, 'Admin access required.');
 
         return $next($request);
 

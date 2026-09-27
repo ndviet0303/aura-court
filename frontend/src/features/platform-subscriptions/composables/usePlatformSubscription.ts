@@ -1,31 +1,22 @@
 import { computed, ref } from 'vue'
 import { platformSubscriptionApi } from '../api/platformSubscriptionApi'
-import type { PlatformPlan, PlatformSubscription, PaymentAttempt } from '../types'
+import type { PlatformPlan, PlatformSubscription, PaymentAttempt, SubscriptionQuotaUsage } from '../types'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export function usePlatformSubscription() {
   const plans = ref<PlatformPlan[]>([])
   const subscription = ref<PlatformSubscription | null>(null)
+  const paymentAttempt = ref<PaymentAttempt | null>(null)
   const trialEligible = ref(false)
   const canTakeBookings = ref(false)
-  const quotas = ref<{
-    venues_count: number
-    max_venues: number
-    courts_count: number
-    max_courts: number
-    staff_count: number
-    max_staff: number
-  } | null>(null)
-
+  const quotas = ref<SubscriptionQuotaUsage | null>(null)
   const loading = ref(false)
   const activating = ref(false)
   const initiating = ref(false)
   const error = ref<string | null>(null)
   const notice = ref<string | null>(null)
 
-  const hasActiveSubscription = computed(() => {
-    return subscription.value?.status === 'active' && canTakeBookings.value
-  })
+  const hasActiveSubscription = computed(() => subscription.value?.is_valid === true && canTakeBookings.value)
 
   function clearMessages() {
     error.value = null
@@ -35,11 +26,11 @@ export function usePlatformSubscription() {
   async function fetchPlans(): Promise<PlatformPlan[]> {
     clearMessages()
     try {
-      const res = await platformSubscriptionApi.getPlans()
-      plans.value = res.data || []
+      const response = await platformSubscriptionApi.getPlans()
+      plans.value = response.data || []
       return plans.value
-    } catch (err) {
-      error.value = errorMessage(err, 'Không thể tải danh sách gói dịch vụ.')
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Không thể tải danh sách gói dịch vụ.')
       return []
     }
   }
@@ -48,35 +39,43 @@ export function usePlatformSubscription() {
     loading.value = true
     clearMessages()
     try {
-      const res = await platformSubscriptionApi.getCurrentSubscription(organizationId)
-      subscription.value = res.data
-      trialEligible.value = Boolean(res.trial_eligible)
-      canTakeBookings.value = Boolean(res.can_take_bookings)
-      quotas.value = res.quotas || null
-      return res.data
-    } catch (err) {
-      error.value = errorMessage(err, 'Không thể tải thông tin gói dịch vụ hiện tại.')
+      const response = await platformSubscriptionApi.getCurrentSubscription(organizationId)
+      subscription.value = response.data
+      paymentAttempt.value = response.payment_attempt
+      trialEligible.value = response.trial_eligible
+      canTakeBookings.value = response.can_take_bookings
+      quotas.value = response.quotas
+      return response.data
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Không thể tải thông tin gói dịch vụ hiện tại.')
       return null
     } finally {
       loading.value = false
     }
   }
 
-  async function activateTrial(organizationId: number, planCode: string): Promise<PlatformSubscription | null> {
+  async function selectPlan(organizationId: number, plan: PlatformPlan) {
+    return platformSubscriptionApi.selectPlan(organizationId, {
+      plan_id: plan.id,
+      accepted_terms_version: plan.terms.version,
+    })
+  }
+
+  async function activateTrial(organizationId: number, plan: PlatformPlan): Promise<PlatformSubscription | null> {
     activating.value = true
     clearMessages()
     try {
-      const res = await platformSubscriptionApi.activateTrial(organizationId, {
-        plan_code: planCode,
-        terms_version: 'v1.0',
+      const selection = await selectPlan(organizationId, plan)
+      const response = await platformSubscriptionApi.activateTrial(organizationId, {
+        plan_id: selection.data.plan_id,
+        accepted_terms_version: selection.data.accepted_terms_version,
       })
-      subscription.value = res.data
-      notice.value = res.message || 'Kích hoạt dùng thử thành công.'
       await fetchCurrent(organizationId)
-      return res.data
-    } catch (err) {
-      error.value = errorMessage(err, 'Không thể kích hoạt dùng thử.')
-      throw err
+      notice.value = response.message || 'Kích hoạt dùng thử thành công.'
+      return response.data
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Không thể kích hoạt dùng thử.')
+      throw cause
     } finally {
       activating.value = false
     }
@@ -84,91 +83,81 @@ export function usePlatformSubscription() {
 
   async function initiatePayment(
     organizationId: number,
-    planCode: string
-  ): Promise<{ attempt: PaymentAttempt; checkoutUrl?: string; qrCodeUrl?: string } | null> {
+    plan: PlatformPlan,
+    returnUrl: string,
+    cancelUrl: string
+  ): Promise<PaymentAttempt | null> {
     initiating.value = true
     clearMessages()
     try {
-      const res = await platformSubscriptionApi.initiatePayment(organizationId, {
-        plan_code: planCode,
-        terms_version: 'v1.0',
+      const selection = await selectPlan(organizationId, plan)
+      const response = await platformSubscriptionApi.initiatePayment(organizationId, {
+        plan_id: selection.data.plan_id,
+        accepted_terms_version: selection.data.accepted_terms_version,
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
       })
-      return {
-        attempt: res.data,
-        checkoutUrl: res.checkout_url,
-        qrCodeUrl: res.qr_code_url,
-      }
-    } catch (err) {
-      error.value = errorMessage(err, 'Khởi tạo thanh toán thất bại.')
-      throw err
+      paymentAttempt.value = response.data
+      await fetchCurrent(organizationId)
+      notice.value = response.message || 'Đã tạo hướng dẫn thanh toán. Trạng thái sẽ cập nhật sau khi máy chủ xác minh.'
+      return paymentAttempt.value
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Khởi tạo thanh toán thất bại.')
+      throw cause
     } finally {
       initiating.value = false
     }
   }
 
-  /**
-   * Browser return handler: only refreshes persisted server state!
-   * Never fabricates client activation from URL query string.
-   */
-  async function confirmReturn(
-    organizationId: number,
-    attemptId?: number
-  ): Promise<boolean> {
-    loading.value = true
-    clearMessages()
-    try {
-      if (attemptId) {
-        try {
-          await platformSubscriptionApi.confirmPayment({
-            payment_attempt_id: attemptId,
-          })
-        } catch {
-          // If already confirmed or callback handled it, refresh will verify
-        }
-      }
-      const updated = await fetchCurrent(organizationId)
-      if (updated?.status === 'active') {
-        notice.value = 'Gói dịch vụ đã được kích hoạt thành công!'
-        return true
-      }
-      return false
-    } catch (err) {
-      error.value = errorMessage(err, 'Xác nhận trạng thái thanh toán thất bại.')
-      return false
-    } finally {
-      loading.value = false
+  async function confirmReturn(organizationId: number): Promise<boolean> {
+    const updated = await fetchCurrent(organizationId)
+    if (!updated && error.value) return false
+    if (updated?.status === 'active' && updated.is_valid && paymentAttempt.value?.status === 'succeeded') {
+      notice.value = 'Máy chủ đã xác nhận thanh toán và kích hoạt gói dịch vụ.'
+      return true
     }
+    notice.value = 'Thanh toán đang chờ máy chủ xác minh. Trạng thái hiện tại vẫn được giữ nguyên.'
+    return false
   }
 
   async function cancelAutoRenew(organizationId: number): Promise<boolean> {
     clearMessages()
     try {
-      const res = await platformSubscriptionApi.cancelRenewal(organizationId)
-      subscription.value = res.data
-      notice.value = res.message || 'Đã hủy tự động gia hạn.'
+      const response = await platformSubscriptionApi.cancelRenewal(organizationId)
+      await fetchCurrent(organizationId)
+      notice.value = response.message || 'Đã hủy tự động gia hạn.'
       return true
-    } catch (err) {
-      error.value = errorMessage(err, 'Không thể hủy tự động gia hạn.')
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Không thể hủy tự động gia hạn.')
       return false
     }
   }
 
-  async function renew(organizationId: number): Promise<boolean> {
+  async function renew(
+    organizationId: number,
+    returnUrl: string,
+    cancelUrl: string
+  ): Promise<PaymentAttempt | null> {
     clearMessages()
     try {
-      const res = await platformSubscriptionApi.renew(organizationId)
-      subscription.value = res.data
-      notice.value = res.message || 'Gia hạn gói dịch vụ thành công.'
-      return true
-    } catch (err) {
-      error.value = errorMessage(err, 'Gia hạn gói dịch vụ thất bại.')
-      return false
+      const response = await platformSubscriptionApi.renew(organizationId, {
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
+      })
+      paymentAttempt.value = response.data
+      await fetchCurrent(organizationId)
+      notice.value = response.message || 'Đã tạo hướng dẫn gia hạn. Trạng thái sẽ cập nhật sau khi máy chủ xác minh.'
+      return paymentAttempt.value
+    } catch (cause) {
+      error.value = errorMessage(cause, 'Không thể khởi tạo gia hạn.')
+      return null
     }
   }
 
   return {
     plans,
     subscription,
+    paymentAttempt,
     trialEligible,
     canTakeBookings,
     quotas,
@@ -180,6 +169,7 @@ export function usePlatformSubscription() {
     hasActiveSubscription,
     fetchPlans,
     fetchCurrent,
+    selectPlan,
     activateTrial,
     initiatePayment,
     confirmReturn,

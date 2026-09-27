@@ -18,6 +18,7 @@ const { t } = useI18n()
 // Courts and Main Operations Composable
 const {
   venues,
+  courts,
   sportZones,
   refunds,
   coupons,
@@ -44,6 +45,7 @@ const {
   venueFilterOptions,
   statusFilterOptions,
   load,
+  loadRefunds,
   toggleCourtStatus,
   openCreateCourtModal,
   openEditCourtModal,
@@ -53,6 +55,9 @@ const {
   deleteBlock,
   openCouponModal,
   createCoupon,
+  updateCoupon,
+  transitionCoupon,
+  transitionCampaign,
 } = useAdminManageCourts()
 
 // Pricing Matrix Composable
@@ -154,6 +159,8 @@ onMounted(() => {
       <AdminRefundsPanel
         :refunds="refunds"
         :loading="loading"
+        :reload="loadRefunds"
+        @changed="loadRefunds"
       />
     </div>
 
@@ -208,9 +215,14 @@ onMounted(() => {
     <CouponManagerModal
       :show="showCouponModal"
       :coupons="coupons"
+      :venues="venues"
+      :courts="courts"
       :saving="couponSaving"
       @close="showCouponModal = false"
       @create-coupon="createCoupon"
+      @update-coupon="updateCoupon"
+      @transition-coupon="transitionCoupon"
+      @transition-campaign="transitionCampaign"
     />
   </div>
 </template>

@@ -6,6 +6,9 @@ use App\Contracts\Payment\WebhookEvent;
 use App\Models\Booking;
 use App\Models\Journal;
 use App\Models\Payment;
+use App\Models\OwnerPaymentReceipt;
+use App\Models\OwnerRefundObligation;
+use App\Models\PlatformProviderReceipt;
 use App\Models\ProviderEvent;
 use App\Models\Reservation;
 use Illuminate\Database\QueryException;
@@ -68,6 +71,142 @@ class FinancialPostingService
             sourceId: $event instanceof ProviderEvent ? $event->id : null,
             metadata: $event instanceof ProviderEvent ? $event->payload : $event->data,
         );
+    }
+
+    public function postDirectOwnerReceipt(OwnerPaymentReceipt $receipt): Journal
+    {
+        if ($receipt->status !== 'allocated' || ! $receipt->payment_attempt_id) {
+            throw new \InvalidArgumentException('Only an allocated direct-owner receipt can be posted.');
+        }
+
+        $attempt = $receipt->attempt()->firstOrFail();
+        $allocation = $receipt->allocation()->firstOrFail();
+        if (
+            $attempt->status !== \App\Models\OwnerPaymentAttempt::STATUS_PAID
+            || (int) $attempt->receiving_connection_id !== (int) $receipt->receiving_connection_id
+            || (int) $attempt->organization_id !== (int) $receipt->organization_id
+            || (int) $attempt->venue_id !== (int) $receipt->venue_id
+            || (int) $allocation->payment_attempt_id !== (int) $attempt->id
+            || (int) $allocation->receiving_connection_id !== (int) $receipt->receiving_connection_id
+            || (int) $allocation->amount !== (int) $receipt->amount
+            || $allocation->currency !== $receipt->currency
+        ) {
+            throw new \InvalidArgumentException('Direct-owner receipt allocation does not match its payment attempt.');
+        }
+        $accounts = $this->ledger->systemAccounts((int) $receipt->organization_id);
+
+        return $this->postEntityJournal([
+            'organization_id' => $receipt->organization_id,
+            'ledger_entity' => 'owner',
+            'payment_model' => 'direct_owner_v1',
+            'event_type' => 'owner.direct_receipt',
+            'event_id' => "owner-receipt:{$receipt->id}",
+            'reference' => $attempt->reference,
+            'currency' => $receipt->currency,
+            'description' => 'Verified direct-owner receipt',
+            'metadata' => [
+                'provider' => $receipt->provider,
+                'receiving_connection_id' => $receipt->receiving_connection_id,
+                'receipt_id' => $receipt->id,
+                'purpose' => $attempt->purpose,
+                'purpose_id' => $attempt->purpose_id,
+                'commission' => 0,
+            ],
+        ], [
+            ['account_id' => $accounts['owner_bank_cash']->id, 'side' => 'debit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
+            ['account_id' => $accounts['owner_direct_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
+        ]);
+    }
+
+    public function postPlatformSubscriptionReceipt(PlatformProviderReceipt $receipt): Journal
+    {
+        if (! $receipt->verified_at || (int) $receipt->amount <= 0) {
+            throw new \InvalidArgumentException('Only a verified platform subscription receipt can be posted.');
+        }
+
+        $attempt = $receipt->paymentAttempt()->firstOrFail();
+        if (
+            $attempt->status !== 'succeeded'
+            || (int) $attempt->amount !== (int) $receipt->amount
+            || $attempt->currency !== $receipt->currency
+            || $attempt->provider !== $receipt->provider
+        ) {
+            throw new \InvalidArgumentException('Platform receipt does not match its verified payment attempt.');
+        }
+        $accounts = $this->ledger->systemAccounts((int) $attempt->organization_id);
+
+        return $this->postEntityJournal([
+            'organization_id' => $attempt->organization_id,
+            'ledger_entity' => 'platform',
+            'payment_model' => 'platform_subscription_v1',
+            'event_type' => 'platform.subscription_receipt',
+            'event_id' => "platform-subscription-receipt:{$receipt->id}",
+            'reference' => $attempt->reference_code,
+            'currency' => $receipt->currency,
+            'description' => 'Verified platform subscription receipt',
+            'metadata' => [
+                'provider' => $receipt->provider,
+                'payment_attempt_id' => $attempt->id,
+                'subscription_id' => $attempt->subscription_id,
+                'receipt_id' => $receipt->id,
+                'commission' => 0,
+            ],
+        ], [
+            ['account_id' => $accounts['platform_bank_cash']->id, 'side' => 'debit', 'amount' => (int) $receipt->amount, 'source_type' => PlatformProviderReceipt::class, 'source_id' => $receipt->id],
+            ['account_id' => $accounts['platform_subscription_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => PlatformProviderReceipt::class, 'source_id' => $receipt->id],
+        ]);
+    }
+
+    public function postDirectOwnerRefund(OwnerRefundObligation $refund): ?Journal
+    {
+        if ($refund->status !== OwnerRefundObligation::STATUS_ACKNOWLEDGED || (int) $refund->amount <= 0) {
+            return null;
+        }
+
+        $allocations = $refund->allocations()->with('paymentAllocation')->get();
+        $allocatedRefund = (int) $allocations->sum('amount');
+        if ($allocatedRefund !== (int) $refund->amount || $allocations->isEmpty()) {
+            throw new \InvalidArgumentException('Acknowledged refund does not match its original payer allocations.');
+        }
+
+        foreach ($allocations as $refundAllocation) {
+            $source = $refundAllocation->paymentAllocation;
+            if (
+                ! $source
+                || (int) $source->organization_id !== (int) $refund->organization_id
+                || (int) $source->venue_id !== (int) $refund->venue_id
+                || $source->currency !== $refund->currency
+                || (int) $refundAllocation->gross_amount > (int) $source->amount
+            ) {
+                throw new \InvalidArgumentException('Refund allocation does not match its original owner receipt.');
+            }
+        }
+
+        $accounts = $this->ledger->systemAccounts((int) $refund->organization_id);
+
+        return $this->postEntityJournal([
+            'organization_id' => $refund->organization_id,
+            'ledger_entity' => 'owner',
+            'payment_model' => 'direct_owner_v1',
+            'event_type' => 'owner.direct_refund_acknowledged',
+            'event_id' => 'owner-refund:'.$refund->id,
+            'reference' => $refund->paymentAttempt?->reference ?? $refund->reference_code,
+            'currency' => $refund->currency,
+            'description' => 'Owner refund acknowledged by the payer',
+            'metadata' => [
+                'refund_obligation_id' => $refund->id,
+                'refund_reference' => $refund->reference_code,
+                'payment_attempt_id' => $refund->payment_attempt_id,
+                'allocation_ids' => $allocations->pluck('owner_payment_allocation_id')->map(fn ($id) => (int) $id)->values()->all(),
+                'gross_amount' => (int) $refund->gross_amount,
+                'fee_amount' => (int) $refund->fee_amount,
+                'external_transfer_reference' => $refund->execution_reference,
+                'commission' => 0,
+            ],
+        ], [
+            ['account_id' => $accounts['owner_direct_revenue']->id, 'side' => 'debit', 'amount' => (int) $refund->amount, 'source_type' => OwnerRefundObligation::class, 'source_id' => $refund->id],
+            ['account_id' => $accounts['owner_bank_cash']->id, 'side' => 'credit', 'amount' => (int) $refund->amount, 'source_type' => OwnerRefundObligation::class, 'source_id' => $refund->id],
+        ]);
     }
 
     public function postRefund(int $organizationId, string $reference, int $amount, string $refundReference, array $metadata = []): Journal
@@ -409,5 +548,33 @@ class FinancialPostingService
             'description' => 'Gross payment collection',
             'metadata' => $metadata,
         ], $entries);
+    }
+
+    private function postEntityJournal(array $attributes, array $entries): Journal
+    {
+        $existing = Journal::query()
+            ->where('organization_id', $attributes['organization_id'])
+            ->where('event_type', $attributes['event_type'])
+            ->where('event_id', $attributes['event_id'])
+            ->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
+
+        try {
+            return $this->ledger->post($attributes, $entries);
+        } catch (QueryException $exception) {
+            $message = strtolower($exception->getMessage());
+            if (! str_contains($message, 'journals') || (! str_contains($message, 'unique') && ! str_contains($message, 'duplicate'))) {
+                throw $exception;
+            }
+
+            return Journal::query()
+                ->where('organization_id', $attributes['organization_id'])
+                ->where('event_type', $attributes['event_type'])
+                ->where('event_id', $attributes['event_id'])
+                ->firstOrFail()
+                ->load('entries');
+        }
     }
 }

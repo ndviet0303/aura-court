@@ -31,6 +31,8 @@ const sportZoneId = ref<number | ''>('')
 const courtId = ref<number | ''>('')
 const weekday = ref<number | null>(null)
 const exceptionDate = ref<string>(new Date().toISOString().slice(0, 10))
+const effectiveFrom = ref('')
+const effectiveUntil = ref('')
 const startsAt = ref<string>('17:00')
 const endsAt = ref<string>('21:00')
 const isAllDay = ref<boolean>(false)
@@ -103,6 +105,8 @@ watch(
       courtId.value = r.court_id || ''
       weekday.value = r.weekday || null
       exceptionDate.value = r.exception_date || new Date().toISOString().slice(0, 10)
+      effectiveFrom.value = r.effective_from?.slice(0, 10) || ''
+      effectiveUntil.value = r.effective_until?.slice(0, 10) || ''
       if (r.starts_at && r.ends_at) {
         startsAt.value = r.starts_at.slice(0, 5)
         endsAt.value = r.ends_at.slice(0, 5)
@@ -123,6 +127,8 @@ watch(
       courtId.value = ''
       weekday.value = null
       exceptionDate.value = new Date().toISOString().slice(0, 10)
+      effectiveFrom.value = ''
+      effectiveUntil.value = ''
       startsAt.value = '17:00'
       endsAt.value = '21:00'
       isAllDay.value = false
@@ -170,6 +176,8 @@ function handleSave() {
     court_id: courtId.value ? Number(courtId.value) : null,
     weekday: type.value === 'weekly' ? (weekday.value || 1) : null,
     exception_date: ['holiday', 'date_exception', 'special_event'].includes(type.value) ? exceptionDate.value : null,
+    effective_from: effectiveFrom.value || null,
+    effective_until: effectiveUntil.value || null,
     starts_at: isAllDay.value ? null : startsAt.value,
     ends_at: isAllDay.value ? null : endsAt.value,
     price: Math.round(price.value),
@@ -315,6 +323,21 @@ function handleSave() {
             </div>
           </div>
 
+          <div class="form-section">
+            <h4 class="section-heading">{{ t('admin.pricing.effectiveDatesHeading') }}</h4>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label class="form-label">{{ t('admin.pricing.effectiveFromLabel') }}</label>
+                <DatePicker v-model="effectiveFrom" data-testid="price-rule-effective-from" />
+              </div>
+              <div class="form-group flex-1">
+                <label class="form-label">{{ t('admin.pricing.effectiveUntilLabel') }}</label>
+                <DatePicker v-model="effectiveUntil" data-testid="price-rule-effective-until" />
+              </div>
+            </div>
+            <span class="field-hint">{{ t('admin.pricing.effectiveDatesHint') }}</span>
+          </div>
+
           <!-- Row 5: Price VND & Priority -->
           <div class="form-row">
             <div class="form-group flex-2">
@@ -339,8 +362,8 @@ function handleSave() {
               <input
                 v-model.number="priority"
                 type="number"
-                min="1"
-                max="100"
+                min="0"
+                max="10000"
                 class="form-input font-mono"
               />
               <span class="field-hint">{{ t('admin.pricing.priorityHint') }}</span>

@@ -40,6 +40,7 @@ export const posApi = {
     }>
     customer_id?: number | null
     reservation_id?: number | null
+    venue_id?: number | null
     coupon_code?: string
     discount_amount?: number
     payment_method?: 'cash' | 'qr' | 'wallet'
@@ -60,6 +61,7 @@ export const posApi = {
     }>
     customer_id?: number | null
     reservation_id?: number | null
+    venue_id?: number | null
     payment_method: 'cash' | 'qr' | 'wallet'
     payment_reference?: string
     discount_amount?: number

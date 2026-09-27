@@ -5,19 +5,34 @@ Provides an authoritative court catalog and operational calendar so customer ava
 ## Requirements
 
 ### Requirement: Catalog and operational calendar
-Authorized operators SHALL maintain venue, sport zone, court details, amenities, active state, weekly hours, dated exceptions and maintenance closures. Customer availability and booking validation SHALL use the same effective calendar.
+Authorized venue operators SHALL persist identity, address/location, contact details, description, image collection, amenities, sports, court surface/capacity and operational state. Weekly opening intervals, dated exceptions, holidays and maintenance SHALL be persisted by venue/court, timezone-aware and used identically by discovery, quote, booking, recurrence and community inventory. Changes conflicting with confirmed inventory SHALL be rejected with references until handled through an authorized change workflow.
 
 #### Scenario: Closed slot
-- **WHEN** an operator closes an unbooked court period
-- **THEN** the period is unavailable in search and a direct booking request is rejected
+- **WHEN** an operator closes a court period without existing obligations
+- **THEN** all clients and direct booking calls SHALL show/refuse the same closed interval after reload on another device
 
 #### Scenario: Existing bookings
-- **WHEN** a closure conflicts with confirmed bookings
-- **THEN** the operation is rejected with affected booking references instead of silently cancelling them
+- **WHEN** a proposed schedule change or closure overlaps confirmed bookings or sessions
+- **THEN** the change SHALL be rejected with affected references without silently cancelling them
 
 #### Scenario: Catalog persistence
-- **WHEN** an operator updates permitted court details
-- **THEN** a refreshed public court view reflects the saved details
+- **WHEN** an owner saves contact information, venue images or court surface/capacity
+- **THEN** permitted detail and publication review SHALL retain the same saved values
+
+### Requirement: Catalog and publication contract completeness
+Venue creation/update/readiness/review APIs SHALL resolve valid request handlers, preserve all supported fields, enforce organization ownership and version checks, and return documented structures consumed by the actual UI. Public venue, court and sport-zone list/detail/search/cache responses SHALL use the same publication/partner/subscription eligibility without exposing drafts or unreviewed edits. Rollout flags MUST NOT silently admit ineligible new tenants.
+
+#### Scenario: Known draft identifier
+- **WHEN** a guest requests a draft court or sport-zone detail by ID
+- **THEN** private content SHALL not be returned
+
+#### Scenario: Readiness and owner creation
+- **WHEN** an eligible owner creates a draft and evaluates readiness through the UI
+- **THEN** requests SHALL reach valid handlers and missing data SHALL be reported rather than an internal class-resolution error
+
+#### Scenario: Subscription expires
+- **WHEN** a previously cached public venue loses entitlement
+- **THEN** new public availability and booking SHALL be invalidated or re-evaluated without relying on the stale cache
 
 ### Requirement: Court lifecycle preservation
 Deactivating or removing a court SHALL preserve historical booking and financial references and SHALL prevent new reservations for that court.
@@ -26,20 +41,20 @@ Deactivating or removing a court SHALL preserve historical booking and financial
 - **WHEN** an operator deactivates a court with booking history
 - **THEN** history remains accessible and new reservations are rejected
 
-### Requirement: Draft venue readiness
-New partner venues SHALL start as nonpublic drafts. Before accepting publication submission, the platform MUST validate approved active partner status, required identity/contact/location/description/images, at least one active court, usable opening/booking windows, valid deterministic pricing, valid collection configuration and current plan/trial entitlement and quotas. Booking cancellation and rescheduling SHALL be unavailable platform-wide; readiness MUST NOT require a cancellation grace period or configurable change/refund policy. Missing requirements SHALL be returned as an actionable checklist. Optional staff and ancillary services MUST NOT block readiness.
+### Requirement: Report-aligned draft venue readiness
+New venues SHALL remain nonpublic drafts until identity/contact/location/description/images, at least one active court, usable calendar/booking windows, deterministic prices, verified owner collection connection, versioned change/cancellation/refund policy, approved active partner, valid subscription/trial and quotas are satisfied. The checklist SHALL expose missing requirements; optional employees and ancillary products SHALL not be mandatory.
 
 #### Scenario: Incomplete venue
-- **WHEN** an owner requests publication for a venue lacking prices or an active court
-- **THEN** submission SHALL be refused with the missing requirements and the venue SHALL remain nonpublic
+- **WHEN** a venue lacks a verified receiving connection or cancellation policy
+- **THEN** publication submission SHALL fail with actionable missing fields
 
 #### Scenario: Complete venue is submitted
-- **WHEN** an authorized owner submits a venue passing readiness
-- **THEN** it SHALL enter `pending_publication` with a recorded configuration version but SHALL NOT yet accept bookings
+- **WHEN** an authorized owner submits a complete current configuration
+- **THEN** a versioned pending_publication revision SHALL be recorded without prematurely publishing it
 
-#### Scenario: No configurable cancellation policy is needed
-- **WHEN** an otherwise complete venue has no cancellation grace period or has an obsolete stored value
-- **THEN** that obsolete configuration SHALL NOT block readiness or enable cancellation/rescheduling
+#### Scenario: No optional staff
+- **WHEN** a complete venue has no employees or POS products
+- **THEN** those omissions SHALL NOT block readiness
 
 ### Requirement: Independent publication review
 Only authorized platform reviewers SHALL approve venue publication or record correction/rejection with reasons and owner notification. Approval MUST recheck readiness and the reviewed version; partner approval alone SHALL NOT publish venues. Pending reviewed content SHALL be protected from concurrent modification. Material changes to approved identity/location/policies MUST be reviewed before replacing the public version.
@@ -67,17 +82,17 @@ Public discovery, detail, availability and all new-booking entry points SHALL us
 - **WHEN** an owner is suspended after a customer loaded available slots
 - **THEN** subsequent new-booking creation SHALL be refused even if the customer's screen still displays those slots
 
-### Requirement: Venue lifecycle and historical policy preservation
-The platform SHALL distinguish draft, pending publication, revision required, active, temporarily closed, suspended, closed and archived venues. Nonoperational venues MUST stop new bookings while preserving history and authorized handling of prior obligations. Restoring operations MUST recheck partner/publication/entitlement readiness. Bookings SHALL retain their captured price and policy snapshots without rewriting history. Retired booking cancellation and rescheduling commands SHALL remain unavailable even when an older snapshot describes them; other supported captured terms SHALL remain unchanged. Setup MUST NOT offer cancellation/rescheduling overrides or payment/refund behavior incompatible with platform contracts.
+### Requirement: Venue lifecycle and captured policy continuity
+The platform SHALL distinguish draft, pending publication, revision required, published/active, temporarily closed, suspended, closed and archived outcomes. Only approved current public versions SHALL be exposed. Suspension/closure/expiry SHALL block new business but preserve historical and future obligations. Restoration SHALL recheck readiness and require platform authority for suspension. Price and policy changes SHALL not rewrite existing booking snapshots; authorized changes SHALL use the captured policy and record explicit revisions.
 
 #### Scenario: Close a venue with outstanding bookings
-- **WHEN** an authorized actor closes or archives a venue with existing obligations
-- **THEN** new bookings SHALL stop without deleting or silently cancelling historical or future confirmed bookings
+- **WHEN** an operator closes a venue with confirmed bookings
+- **THEN** new business SHALL stop and authorized servicing, change requests and owner refund tracking SHALL remain available
 
 #### Scenario: Policy changes after booking
-- **WHEN** an operator changes supported policy configuration after a booking was created
-- **THEN** the booking SHALL retain its captured policy/price without acquiring new terms, except that retired cancellation/rescheduling commands SHALL no longer be available
+- **WHEN** the owner publishes a new cancellation policy
+- **THEN** existing bookings SHALL retain their accepted terms rather than silently inherit the new policy
 
-#### Scenario: Attempt to restore a removed benefit
-- **WHEN** an operator submits a cancellation grace period or cancellation-fee-waiver benefit through an old organization or membership form
-- **THEN** the platform SHALL reject the obsolete fields as validation errors without persisting an override or enabling cancellation/rescheduling
+#### Scenario: Restore suspended venue
+- **WHEN** an ordinary owner requests restoration of a platform-suspended venue
+- **THEN** the request SHALL be denied until a platform review and fresh eligibility checks succeed

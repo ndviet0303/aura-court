@@ -121,9 +121,13 @@ class TournamentController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($participant->organization_id === $organization->id, 404);
+        $data = $request->validate([
+            'status' => 'nullable|string|in:registered,checked_in,present,absent,withdrawn',
+            'checked_in' => 'nullable|boolean',
+        ]);
         $checkedIn = $request->has('checked_in') ? (bool) $request->input('checked_in') : null;
         return $this->idempotency->run($request, fn () => response()->json([
-            'participant' => $this->tournaments->checkIn($participant, $request->user(), $checkedIn)
+            'participant' => $this->tournaments->checkIn($participant, $request->user(), $data['status'] ?? null, $checkedIn)
         ]));
     }
 
@@ -134,11 +138,12 @@ class TournamentController extends Controller
         $data = $request->validate([
             'expected_version' => 'nullable|integer|min:0',
             'winner_id' => 'required|integer',
-            'score' => 'required|array'
+            'score' => 'required|array',
+            'reason' => 'nullable|string',
         ]);
         $expectedVersion = $data['expected_version'] ?? $tournament->version;
         return $this->idempotency->run($request, fn () => response()->json([
-            'fixture' => $this->tournaments->submitScore($tournament, $fixture, $request->user(), $expectedVersion, $data['score'], $data['winner_id'])
+            'fixture' => $this->tournaments->submitScore($tournament, $fixture, $request->user(), $expectedVersion, $data['score'], $data['winner_id'], $data['reason'] ?? null)
         ]));
     }
 
@@ -165,47 +170,18 @@ class TournamentController extends Controller
         $data = $request->validate([
             'user_id' => 'nullable|integer|exists:users,id',
             'seed' => 'nullable|integer|min:1|max:128',
+            'fee_waiver' => 'nullable|boolean',
+            'waiver_reason' => 'nullable|string|max:255',
         ]);
 
-        $userId = $data['user_id'] ?? $request->user()->id;
-        $participant = \App\Models\TournamentParticipant::create([
-            'organization_id' => $organization->id,
-            'tournament_id' => $tournament->id,
-            'user_id' => $userId,
-            'seed' => $data['seed'] ?? ($tournament->participants()->count() + 1),
-            'status' => 'registered',
-        ]);
+        return $this->idempotency->run($request, function () use ($tournament, $request, $data) {
+            $participant = $this->tournaments->addParticipant($tournament, $request->user(), $data);
 
-        \App\Models\TournamentStanding::firstOrCreate([
-            'organization_id' => $organization->id,
-            'tournament_id' => $tournament->id,
-            'participant_id' => $participant->id,
-        ]);
-
-        \Illuminate\Support\Facades\DB::afterCommit(function () use ($organization, $tournament, $participant, $userId) {
-            app(\App\Services\Infrastructure\OutboxService::class)->enqueue([
-                'organization_id' => $organization->id,
-                'message_key' => "tournament_participant:{$tournament->id}:{$participant->id}",
-                'channel' => 'notification',
-                'event_type' => 'tournament.participant_registered',
-                'aggregate_type' => \App\Models\Tournament::class,
-                'aggregate_id' => $tournament->id,
-            ], [
-                'user_id' => $userId,
-                'notification' => [
-                    'title' => 'Đăng ký giải đấu thành công',
-                    'body' => "Bạn đã được ghi danh tham gia giải đấu: {$tournament->name}",
-                    'type' => 'tournament_update',
-                    'source_id' => $tournament->id,
-                    'tournament_id' => $tournament->id,
-                ],
-            ]);
+            return response()->json([
+                'participant' => $participant->load('user'),
+                'tournament' => $tournament->fresh(['participants.user', 'fixtures.participantOne.user', 'fixtures.participantTwo.user', 'fixtures.winner.user', 'standings.participant.user']),
+            ], 201);
         });
-
-        return response()->json([
-            'participant' => $participant->load('user'),
-            'tournament' => $tournament->fresh(['participants.user', 'fixtures.participantOne.user', 'fixtures.participantTwo.user', 'fixtures.winner.user', 'standings.participant.user']),
-        ], 201);
     }
 
     public function register(Request $request, Tournament $tournament)
@@ -265,5 +241,83 @@ class TournamentController extends Controller
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
         return response()->json(['mode' => 'polling', 'tournament' => $tournament->load(['fixtures', 'standings.participant.user']), 'current_version' => $tournament->version]);
+    }
+
+    public function grants(Request $request, Tournament $tournament)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+
+        $grants = $tournament->grants()->active()->with(['user', 'grantedBy'])->get();
+        return response()->json(['grants' => $grants]);
+    }
+
+    public function createGrant(Request $request, Tournament $tournament)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+
+        $data = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'role' => 'required|string|in:organizer,official',
+        ]);
+
+        $grant = \App\Models\TournamentGrant::where('tournament_id', $tournament->id)
+            ->where('user_id', $data['user_id'])
+            ->where('role', $data['role'])
+            ->whereNull('revoked_at')
+            ->first();
+
+        if (! $grant) {
+            $grant = \App\Models\TournamentGrant::create([
+                'organization_id' => $tournament->organization_id,
+                'tournament_id' => $tournament->id,
+                'user_id' => $data['user_id'],
+                'role' => $data['role'],
+                'granted_by' => $request->user()->id,
+                'revoked_at' => null,
+            ]);
+        }
+
+        return response()->json(['grant' => $grant->load(['user', 'grantedBy'])], 201);
+    }
+
+    public function revokeGrant(Request $request, Tournament $tournament, mixed $grant)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+
+        if (! ($grant instanceof \App\Models\TournamentGrant)) {
+            $grant = \App\Models\TournamentGrant::findOrFail($grant);
+        }
+        abort_unless($grant->tournament_id === $tournament->id, 404);
+
+        $grant->update(['revoked_at' => now()]);
+
+        return response()->json(['message' => 'Grant revoked successfully', 'grant' => $grant]);
+    }
+
+    public function finalize(Request $request, Tournament $tournament)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+
+        return $this->idempotency->run($request, fn () => response()->json([
+            'tournament' => $this->tournaments->finalize($tournament, $request->user())
+        ]));
+    }
+
+    public function reopen(Request $request, Tournament $tournament)
+    {
+        $organization = $this->organization($request);
+        abort_unless($tournament->organization_id === $organization->id, 404);
+
+        $data = $request->validate([
+            'reason' => 'required|string|min:5',
+        ]);
+
+        return $this->idempotency->run($request, fn () => response()->json([
+            'tournament' => $this->tournaments->reopen($tournament, $request->user(), $data['reason'])
+        ]));
     }
 }

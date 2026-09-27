@@ -71,6 +71,10 @@ class LedgerService
             'reserve' => ['name' => 'Tenant reserve', 'type' => 'liability'],
             'customer_refunds' => ['name' => 'Customer refunds', 'type' => 'liability'],
             'wallet_liability' => ['name' => 'Tenant wallet liability', 'type' => 'liability'],
+            'owner_bank_cash' => ['name' => 'Owner bank cash (direct receipt)', 'type' => 'asset'],
+            'owner_direct_revenue' => ['name' => 'Owner direct revenue', 'type' => 'revenue'],
+            'platform_bank_cash' => ['name' => 'Platform bank cash', 'type' => 'asset'],
+            'platform_subscription_revenue' => ['name' => 'Platform subscription revenue', 'type' => 'revenue'],
         ];
         $accounts = [];
         foreach ($definitions as $code => $definition) {

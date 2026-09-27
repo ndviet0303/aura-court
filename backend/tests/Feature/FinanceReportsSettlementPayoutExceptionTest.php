@@ -118,6 +118,8 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $this->actingAs($this->owner)
             ->getJson('/api/v2/finance/settlements', $headers)
             ->assertStatus(404);
+
+        config(['features.flags.marketplace_payouts' => true]);
     }
 
     public function test_csv_exports_return_csv_content_and_headers(): void

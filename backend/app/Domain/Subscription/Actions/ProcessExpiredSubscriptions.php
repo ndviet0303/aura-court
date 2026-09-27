@@ -22,6 +22,10 @@ class ProcessExpiredSubscriptions
 
         foreach ($expiredSubscriptions as $sub) {
             DB::transaction(function () use ($sub, &$expiredCount) {
+                $sub = $this->subRepo->findByIdWithLock((int) $sub->id);
+                if (! $sub || ! in_array($sub->status, ['active', 'trial'], true)) {
+                    return; // A concurrent renewal or cancellation transitioned it before the sweep locked the row.
+                }
                 $sub->update(['status' => 'expired']);
                 $expiredCount++;
 

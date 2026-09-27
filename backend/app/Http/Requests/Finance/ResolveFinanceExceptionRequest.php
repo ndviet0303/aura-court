@@ -27,6 +27,7 @@ class ResolveFinanceExceptionRequest extends FormRequest
         return [
             'resolution' => ['required', 'string', 'min:5', 'max:2000'],
             'action_type' => ['nullable', 'string', 'max:100'],
+            'evidence_reference' => ['nullable', 'string', 'max:255'],
         ];
     }
 

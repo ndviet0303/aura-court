@@ -8,15 +8,19 @@ financial marketplace features are exposed to production tenants.
 ## Requirements
 
 ### Requirement: PSP and operating-model go-no-go gate
-The platform SHALL record a Phase 0 go-no-go decision before enabling automated payout, split collection, or marketplace resale. The approval evidence MUST verify a provider sandbox for collection, webhook verification, refund, beneficiary/KYC onboarding, payout submission, payout-status retrieval, and idempotent retries; it MUST also identify the accountable operating owner and exception process for payment and KYC events.
+Before enabling direct-owner collection, split payments, paid transfers or paid tournament registrations for a cohort, the platform SHALL record verified provider evidence for connection isolation, receiving-account control, authenticated callbacks, receipt matching, deduplication, late/unknown outcomes and owner-executed refund tracking. Subscription verification SHALL use its separate receiver. New direct flows MUST NOT require unsupported automatic bank refunds/payouts or pretend those capabilities exist. Legacy payouts SHALL retain their own provider/operating gate. Accountable operational owners and exception procedures SHALL be recorded.
 
 #### Scenario: All required PSP capabilities are verified
-- **WHEN** the provider sandbox and operating runbook demonstrate every required capability
-- **THEN** the readiness record SHALL be approved and finance-dependent phases may proceed
+- **WHEN** sandbox and isolated acceptance prove the required direct-money controls and owner refund procedure
+- **THEN** only the approved cohort/capabilities SHALL be enabled
 
 #### Scenario: A required PSP capability is unavailable
-- **WHEN** the provider cannot demonstrate a required capability or an accountable operating owner is absent
-- **THEN** the readiness record SHALL be rejected and the affected finance feature SHALL remain disabled
+- **WHEN** a required callback or receiving-account verification cannot be demonstrated
+- **THEN** that financial capability SHALL remain blocked with the missing evidence recorded
+
+#### Scenario: Unsupported automatic debit
+- **WHEN** a provider lacks automatic owner-bank refunds
+- **THEN** the system SHALL use truthful external owner-refund obligations, not fake successful automated refunds
 
 ### Requirement: Rehearsed data migration and rollback
 The platform SHALL provide a rehearsed migration plan that backfills each legacy venue into an organization and preserves legacy booking history and `/api/v1` responses. The plan MUST include counts/checksums, a defined dual-read or compatibility period, and a tested rollback path before pilot data is migrated.
@@ -52,15 +56,19 @@ The platform SHALL expose each phase to an explicitly approved pilot cohort thro
 - **THEN** the affected capability SHALL be disabled without removing historical records or changing settled ledger entries
 
 ### Requirement: Seven functional area acceptance evidence
-Completion SHALL require a traceable acceptance matrix for account/access, venue/court, pricing/promotion, booking, payment/finance, on-site operations and customer/community. Each area SHALL include persisted success after reload, invalid input, authorization/tenant isolation and relevant retry/conflict evidence. Provider-dependent capabilities SHALL retain existing go-no-go gates and SHALL NOT be declared operational without provider evidence.
+Completion SHALL require a persisted traceability matrix for all 126 FR requirements and D01–D71 audit findings across seven modules. Every finding SHALL be reproduced or explicitly corrected by evidence and mapped to a specification, implementation task and acceptance result. Each area SHALL cover real API success/reload, negative inputs, role/venue/tenant isolation, retries/races and monetary reconciliation where applicable. Provider-dependent flows SHALL not be marked operational using mocks. Undefined report NFR/data/UC details SHALL remain explicit unknowns and not be claimed complete.
 
 #### Scenario: Full acceptance
-- **WHEN** all seven areas pass against real test APIs and an isolated database
-- **THEN** the release records results, environment and links to tests
+- **WHEN** all seven modules and D01–D71 have implementation and evidence
+- **THEN** release SHALL record environment, source revision, tests, remaining operational gates and 126-FR coverage
+
+#### Scenario: Finding disproven
+- **WHEN** a previously static finding does not reproduce after baseline investigation
+- **THEN** its disposition SHALL cite contrary code/runtime evidence and retain the audit record instead of implementing a needless change
 
 #### Scenario: Mock-only flow
-- **WHEN** a required flow passes only with business API mocks or lacks provider evidence
-- **THEN** the area remains incomplete or explicitly blocked
+- **WHEN** a required payment journey passes only a fake-response UI test
+- **THEN** the feature SHALL remain incomplete for operational acceptance
 
 ### Requirement: Independent package rollout
 Each delivery package SHALL have independently reversible activation and recorded entry/exit evidence. Rollback SHALL preserve completed payments, attendance and historical records and SHALL NOT restore false-success paths.
@@ -68,3 +76,14 @@ Each delivery package SHALL have independently reversible activation and recorde
 #### Scenario: Package rollback
 - **WHEN** a POS integrity failure is found in pilot
 - **THEN** new affected operations are disabled without deleting committed receipts or journals
+
+### Requirement: Non-destructive direct-payment cutover
+Rollout SHALL inventory and reconcile wallet balances, pending deposits, bookings, entitlements, refunds, transfers, journals and payouts before changing each cohort. Historical records SHALL retain explicit payment-model identity and original references; no automatic conversion, deletion, retroactive terms or transfer of funds is authorized. Legacy liability disposition SHALL be reviewed by the accountable owner before cohort activation. Rollback SHALL stop new affected commands while preserving committed receipts, access to obligations and event recovery; it MUST NOT re-enable false-success or silently restore commission/custody for direct receipts.
+
+#### Scenario: Outstanding balance
+- **WHEN** a candidate cohort has unexplained wallet or pending payout liabilities
+- **THEN** activation SHALL be blocked until a recorded disposition and reconciliation exists
+
+#### Scenario: Rollback after direct receipt
+- **WHEN** an incident occurs after a direct owner payment was received
+- **THEN** new collection SHALL pause while receipt history, servicing/refund access and reconciliation remain available without reinterpreting the money as platform-held

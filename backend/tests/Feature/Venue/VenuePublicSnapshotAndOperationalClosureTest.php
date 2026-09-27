@@ -8,16 +8,55 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
+use App\Models\ReceivingConnection;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\VenuePublicationRevision;
+use App\Models\VenueBookingPolicy;
+use App\Models\VenueOperatingSchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function addPolicy(Venue $venue, int $ownerId): void
+    {
+        VenueBookingPolicy::create([
+            'venue_id' => $venue->id,
+            'version' => 1,
+            'created_by' => $ownerId,
+            'effective_at' => now(),
+            'settings' => [
+                'booking' => ['hold_ttl_minutes' => 15, 'max_days_ahead' => 60, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240, 'require_continuity' => true],
+                'cancellation' => ['deadline_hours' => 24, 'fee_type' => 'none', 'fee_value' => 0, 'refund_due_hours' => 48],
+                'change' => ['deadline_hours' => 12, 'fee_type' => 'none', 'fee_value' => 0],
+                'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 10, 'no_show_after_minutes' => 30],
+                'recurring' => ['payment_policy' => 'per_period', 'conflict_policy' => 'all_or_nothing', 'overdue_release_hours' => 24],
+                'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false, 'seller_reimbursement_required' => true],
+                'ancillary_credit_policy' => 'refund',
+            ],
+        ]);
+    }
+
+    private function addOperatingSchedule(Venue $venue, int $ownerId): void
+    {
+        $hours = [];
+        for ($day = 1; $day <= 7; $day++) {
+            $hours[(string) $day] = ['closed' => false, 'intervals' => [['start' => '06:00', 'end' => '22:00']]];
+        }
+        VenueOperatingSchedule::create([
+            'venue_id' => $venue->id,
+            'scope_key' => 'venue',
+            'timezone' => 'Asia/Ho_Chi_Minh',
+            'version' => 1,
+            'weekly_hours' => $hours,
+            'created_by' => $ownerId,
+        ]);
+    }
 
     public function test_public_snapshot_isolation_during_material_changes(): void
     {
@@ -44,6 +83,9 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
             'status' => 'draft',
             'is_active' => false,
         ]);
+        $this->addPolicy($venue, $owner->id);
+        $this->addOperatingSchedule($venue, $owner->id);
+        $this->selectVerifiedReceiver($venue, $owner);
 
         $court1 = Court::create(['venue_id' => $venue->id, 'name' => 'Court 1', 'slug' => 'court-1', 'is_active' => true]);
         CourtPriceSlot::create([
@@ -124,6 +166,9 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
             'status' => 'draft',
             'is_active' => false,
         ]);
+        $this->addPolicy($venue, $owner->id);
+        $this->addOperatingSchedule($venue, $owner->id);
+        $this->selectVerifiedReceiver($venue, $owner);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'San 1', 'slug' => 'san-1', 'is_active' => true]);
         CourtPriceSlot::create([
@@ -182,6 +227,9 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
             'status' => 'draft',
             'is_active' => false,
         ]);
+        $this->addPolicy($venue, $owner->id);
+        $this->addOperatingSchedule($venue, $owner->id);
+        $this->selectVerifiedReceiver($venue, $owner);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'San 1', 'slug' => 'san-1', 'is_active' => true]);
         CourtPriceSlot::create([
@@ -222,6 +270,27 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
             'is_active' => true,
         ]);
 
+        $plan = PlatformPlan::create(['code' => 'POPS', 'name' => 'Operational Plan', 'price' => 100000, 'billing_cycle' => 'monthly', 'is_active' => true]);
+        PlatformSubscription::create([
+            'organization_id' => $org->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addMonth(),
+        ]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Operational Court', 'slug' => 'operational-court', 'is_active' => true]);
+        CourtPriceSlot::create([
+            'court_id' => $court->id,
+            'weekday' => 1,
+            'starts_at' => '06:00',
+            'ends_at' => '22:00',
+            'price' => 100000,
+            'is_active' => true,
+        ]);
+        $this->addPolicy($venue, $owner->id);
+        $this->addOperatingSchedule($venue, $owner->id);
+        $this->selectVerifiedReceiver($venue, $owner);
+
         Sanctum::actingAs($owner);
 
         // Immediate temporary closure (e.g. rain/maintenance)
@@ -246,5 +315,26 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         $this->assertEquals('published', $fresh2->status);
         $this->assertTrue($fresh2->is_active);
         $this->assertNull($fresh2->status_reason);
+    }
+
+    private function selectVerifiedReceiver(Venue $venue, User $owner): void
+    {
+        $connection = new ReceivingConnection([
+            'organization_id' => $venue->organization_id,
+            'venue_id' => $venue->id,
+            'owner_user_id' => $owner->id,
+            'provider' => 'sepay',
+            'routing_id' => (string) Str::uuid(),
+            'bank_code' => 'MBBank',
+            'status' => ReceivingConnection::STATUS_VERIFIED,
+            'credential_version' => 1,
+            'owner_attested_at' => now(),
+            'verified_at' => now(),
+            'effective_from' => now(),
+        ]);
+        $connection->setAccountDetails('Venue Owner', '0123456789');
+        $connection->webhook_secret_ciphertext = Crypt::encryptString('verified-test-secret');
+        $connection->save();
+        $venue->forceFill(['current_receiving_connection_id' => $connection->id])->save();
     }
 }

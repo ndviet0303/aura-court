@@ -13,8 +13,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'cart_id',
     'customer_id',
     'cashier_id',
+    'cash_shift_id',
+    'venue_id',
+    'register_id',
     'reservation_id',
     'status',
+    'handover_status',
+    'handed_over_to_shift_id',
     'payment_method',
     'subtotal',
     'discount_amount',
@@ -66,6 +71,21 @@ class PosOrder extends Model
     public function cashier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(CashShift::class, 'cash_shift_id');
+    }
+
+    public function handedOverToShift(): BelongsTo
+    {
+        return $this->belongsTo(CashShift::class, 'handed_over_to_shift_id');
+    }
+
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class, 'venue_id');
     }
 
     public function reservation(): BelongsTo

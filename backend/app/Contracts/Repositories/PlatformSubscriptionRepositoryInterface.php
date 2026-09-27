@@ -12,6 +12,10 @@ interface PlatformSubscriptionRepositoryInterface
 
     public function findActiveForOrganizationWithLock(int $organizationId): ?PlatformSubscription;
 
+    public function hasUsedTrial(int $organizationId): bool;
+
+    public function findLatestPaymentAttemptForOrganization(int $organizationId): ?PlatformPaymentAttempt;
+
     public function getExpiredActiveSubscriptions(\DateTimeInterface $now): \Illuminate\Support\Collection;
 
 

@@ -26,11 +26,11 @@ class StartPartnerApplication
                 throw ValidationException::withMessages(['user' => 'Người dùng không tồn tại.']);
             }
 
-            // Check contact verification (email verified or phone present)
-            $isVerified = $user->hasVerifiedEmail() || ! empty($user->phone);
+            // Check contact verification (email verified or verified phone evidence)
+            $isVerified = $user->hasVerifiedEmail() || $user->hasVerifiedPhone();
             if (! $isVerified) {
                 throw ValidationException::withMessages([
-                    'user' => 'Vui lòng xác thực email hoặc số điện thoại trước khi đăng ký đối tác.',
+                    'user' => 'Vui lòng xác thực email hoặc cung cấp bằng chứng xác thực số điện thoại trước khi đăng ký đối tác.',
                 ]);
             }
 

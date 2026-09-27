@@ -7,8 +7,8 @@ use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\WaitlistEntry;
 use App\Notifications\AuraBookingNotification;
+use App\Services\Booking\BookingService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,6 +47,7 @@ class WaitlistLifecycleTest extends TestCase
         $owner = User::factory()->create();
         $waiter = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $this->fundUserWallet($owner, $venue->organization_id, 500000);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Occupied Waitlist', 'is_active' => true]);
@@ -85,6 +86,7 @@ class WaitlistLifecycleTest extends TestCase
         $owner = User::factory()->create();
         $waiter = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $this->fundUserWallet($owner, $venue->organization_id, 500000);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Leave Waitlist', 'is_active' => true]);
@@ -121,6 +123,7 @@ class WaitlistLifecycleTest extends TestCase
         $owner = User::factory()->create();
         $waiter = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $this->fundUserWallet($owner, $venue->organization_id, 500000);
         $this->fundUserWallet($waiter, $venue->organization_id, 500000);
 
@@ -178,7 +181,7 @@ class WaitlistLifecycleTest extends TestCase
         ])->assertCreated();
 
         // Expire pending booking -> releases held inventory and notifies waitlist
-        app(\App\Services\Booking\BookingService::class)->expirePending();
+        app(BookingService::class)->expirePending();
 
         // 4. Waitlist entry marked 'notified' and notification sent without automatic booking promises
         $this->assertDatabaseHas('waitlist_entries', [

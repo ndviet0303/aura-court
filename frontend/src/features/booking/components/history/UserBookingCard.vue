@@ -14,6 +14,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'review', booking: Booking): void
   (e: 'qr', booking: Booking): void
+  (e: 'cancel', booking: Booking): void
+  (e: 'reschedule', booking: Booking): void
 }>()
 
 function formatDate(iso: string): string {
@@ -150,7 +152,7 @@ const sportLabel = computed(() => {
 
         <!-- QR Check-in Pass -->
         <button
-          v-if="isConfirmed || isPendingPayment"
+          v-if="isConfirmed"
           type="button"
           class="btn-card-secondary"
           @click="emit('qr', booking)"
@@ -179,6 +181,29 @@ const sportLabel = computed(() => {
           <span>{{ booking.review ? `${$t('booking.reviewBtn')} (${booking.review.rating}★)` : $t('booking.reviewBtn') }}</span>
         </button>
 
+        <!-- Reschedule (if confirmed) -->
+        <button
+          v-if="isConfirmed"
+          type="button"
+          class="btn-card-secondary"
+          data-testid="booking-reschedule-btn"
+          @click="emit('reschedule', booking)"
+        >
+          <span class="material-symbols-outlined">edit_calendar</span>
+          <span>{{ $t('booking.rescheduleBtn') }}</span>
+        </button>
+
+        <!-- Cancel / refund (if confirmed) -->
+        <button
+          v-if="isConfirmed"
+          type="button"
+          class="btn-card-secondary"
+          data-testid="booking-cancel-btn"
+          @click="emit('cancel', booking)"
+        >
+          <span class="material-symbols-outlined">cancel</span>
+          <span>{{ $t('booking.cancelBtn') }}</span>
+        </button>
       </div>
     </div>
   </div>

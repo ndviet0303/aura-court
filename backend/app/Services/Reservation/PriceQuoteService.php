@@ -2,6 +2,8 @@
 
 namespace App\Services\Reservation;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Services\Booking\DiscountService;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
@@ -9,6 +11,7 @@ use App\Models\CourtPriceSlot;
 use App\Models\PriceQuote;
 use App\Models\PriceRule;
 use App\Models\ReservationSlot;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -16,6 +19,11 @@ use Illuminate\Validation\ValidationException;
 
 class PriceQuoteService
 {
+    public function __construct(
+        private readonly VenueOperatingCalendar $operatingCalendar,
+        private readonly DiscountService $discounts,
+    ) {}
+
     private const PRECEDENCE = [
         'date_exception' => 4,
         'holiday' => 4,
@@ -26,7 +34,7 @@ class PriceQuoteService
 
     public function create(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
     {
-        $eligibility = app(\App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility::class);
+        $eligibility = app(VerifyEffectiveBookingEligibility::class);
         $court = $eligibility->assertEligible($courtId, publicFacing: true);
         $court->loadMissing(['sportZone']);
 
@@ -35,7 +43,13 @@ class PriceQuoteService
         }
 
         $duration = (int) ($court->sportZone?->slot_duration ?: 60);
-        $resolvedSlots = $this->resolveSlots($slots, $duration);
+        $timezone = $court->venue?->timezone ?: config('app.timezone');
+        $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
+        foreach ($resolvedSlots as $time) {
+            if (! $this->operatingCalendar->isOpen($court, $time, $time->copy()->addMinutes($duration))) {
+                throw ValidationException::withMessages(['slots' => 'Khung giờ đã chọn nằm ngoài lịch hoạt động của sân.']);
+            }
+        }
 
         // Check for maintenance closures / court blocks
         $firstSlot = $resolvedSlots->first();
@@ -71,42 +85,21 @@ class PriceQuoteService
             abort(409, 'The selected court-time is no longer available.');
         }
 
-        $rules = PriceRule::query()
-            ->where('organization_id', $organizationId)
-            ->where('is_active', true)
-            ->where(function ($query) use ($court) {
-                $query->whereNull('court_id')->orWhere('court_id', $court->id);
-            })
-            ->where(function ($query) use ($court) {
-                $query->whereNull('sport_zone_id')->orWhere('sport_zone_id', $court->sport_zone_id);
-            })
-            ->where(function ($query) use ($court) {
-                $query->whereNull('venue_id')->orWhere('venue_id', $court->venue_id);
-            })
-            ->get();
-
-        $legacyRules = CourtPriceSlot::query()->where('court_id', $court->id)->where('is_active', true)->get();
-        $snapshot = [];
-        $appliedRuleIds = [];
-        $subtotal = 0;
-        $ruleVersion = 1;
-
-        foreach ($resolvedSlots as $time) {
-            [$price, $rule] = $this->priceFor($time, $court, $rules, $legacyRules, $duration);
-            $subtotal += $price;
-            $ruleVersion = max($ruleVersion, $rule['version'] ?? 1);
-            if (isset($rule['id'])) {
-                $appliedRuleIds[] = $rule['id'];
-            }
-
-            $snapshot[] = [
-                'court_id' => $court->id,
-                'starts_at' => $time->copy()->utc()->toIso8601String(),
-                'ends_at' => $time->copy()->addMinutes($duration)->utc()->toIso8601String(),
-                'unit_price' => $price,
-                'rule' => $rule,
-            ];
-        }
+        $snapshot = $this->priceSnapshots($court, $resolvedSlots->all(), $duration);
+        $subtotal = (int) collect($snapshot)->sum('unit_price');
+        $appliedRuleIds = collect($snapshot)->pluck('rule.id')->filter()->values()->all();
+        $ruleVersion = max([1, ...collect($snapshot)->map(fn (array $slot) => (int) ($slot['rule']['version'] ?? 1))->all()]);
+        $benefit = $this->discounts->preview(
+            User::findOrFail($userId),
+            $subtotal,
+            organizationId: $organizationId,
+            venueId: (int) $court->venue_id,
+            courtId: (int) $court->id,
+        );
+        $benefitSnapshot = $benefit['membership_snapshot'] ? [
+            ...$benefit['membership_snapshot'],
+            'membership_discount_amount' => (int) $benefit['membership_discount'],
+        ] : null;
 
         return PriceQuote::create([
             'organization_id' => $organizationId,
@@ -116,55 +109,81 @@ class PriceQuoteService
             'status' => 'open',
             'currency' => 'VND',
             'subtotal' => $subtotal,
-            'total_amount' => $subtotal,
+            'total_amount' => (int) $benefit['total'],
+            'benefit_snapshot' => $benefitSnapshot,
             'rule_version' => $ruleVersion,
             'slot_snapshot' => $snapshot,
             'applied_rule_ids' => array_values(array_unique($appliedRuleIds)),
             'expires_at' => now()->addMinutes(15),
         ])->load(['court.venue', 'court.sportZone']);
     }
+
     /**
      * Authoritatively calculates exact slot subtotal for a court without creating any quote, reservation, or hold.
      *
-     * @param array<int, mixed> $slots
+     * @param  array<int, mixed>  $slots
      */
     public function calculateSubtotal(Court $court, array $slots): int
     {
         $court->loadMissing(['venue', 'sportZone']);
         $duration = (int) ($court->sportZone?->slot_duration ?: 60);
+        $timezone = $court->venue?->timezone ?: config('app.timezone');
 
         if (empty($slots)) {
             throw ValidationException::withMessages(['slots' => 'Danh sách slot không được để trống.']);
         }
 
-        $resolvedSlots = $this->resolveSlots($slots, $duration);
-        $organizationId = (int) ($court->venue?->organization_id ?? 0);
+        $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
+        foreach ($resolvedSlots as $time) {
+            if (! $this->operatingCalendar->isOpen($court, $time, $time->copy()->addMinutes($duration))) {
+                throw ValidationException::withMessages(['slots' => 'Khung giờ đã chọn nằm ngoài lịch hoạt động của sân.']);
+            }
+        }
 
+        return (int) collect($this->priceSnapshots($court, $resolvedSlots->all(), $duration))->sum('unit_price');
+    }
+
+    /** @param array<int, mixed> $times
+     * @return array<int, array{court_id:int, starts_at:string, ends_at:string, unit_price:int, rule:array<string,mixed>}|null>
+     */
+    public function priceSnapshots(Court $court, array $times, ?int $duration = null, bool $skipUnpriced = false): array
+    {
+        $court->loadMissing(['venue', 'sportZone']);
+        $duration ??= (int) ($court->sportZone?->slot_duration ?: 60);
+        $timezone = $court->venue?->timezone ?: config('app.timezone');
+        $organizationId = (int) ($court->venue?->organization_id ?? 0);
         $rules = PriceRule::query()
             ->where('organization_id', $organizationId)
             ->where('is_active', true)
-            ->where(function ($query) use ($court) {
-                $query->whereNull('court_id')->orWhere('court_id', $court->id);
-            })
-            ->where(function ($query) use ($court) {
-                $query->whereNull('sport_zone_id')->orWhere('sport_zone_id', $court->sport_zone_id);
-            })
-            ->where(function ($query) use ($court) {
-                $query->whereNull('venue_id')->orWhere('venue_id', $court->venue_id);
-            })
+            ->where(fn ($query) => $query->whereNull('court_id')->orWhere('court_id', $court->id))
+            ->where(fn ($query) => $query->whereNull('sport_zone_id')->orWhere('sport_zone_id', $court->sport_zone_id))
+            ->where(fn ($query) => $query->whereNull('venue_id')->orWhere('venue_id', $court->venue_id))
             ->get();
-
         $legacyRules = CourtPriceSlot::query()->where('court_id', $court->id)->where('is_active', true)->get();
-        $subtotal = 0;
 
-        foreach ($resolvedSlots as $time) {
-            [$price] = $this->priceFor($time, $court, $rules, $legacyRules, $duration);
-            $subtotal += $price;
-        }
+        return collect($times)->map(function ($value) use ($court, $rules, $legacyRules, $duration, $timezone, $skipUnpriced): ?array {
+            $time = $value instanceof \DateTimeInterface
+                ? Carbon::instance($value)->setTimezone($timezone)
+                : Carbon::parse((string) $value, $timezone);
+            try {
+                [$price, $rule] = $this->priceFor($time, $court, $rules, $legacyRules, $duration);
+            } catch (ValidationException $exception) {
+                if ($skipUnpriced) {
+                    return null;
+                }
 
-        return $subtotal;
+                throw $exception;
+            }
+
+            return [
+                'court_id' => (int) $court->id,
+                'starts_at' => $time->copy()->utc()->toIso8601String(),
+                'ends_at' => $time->copy()->addMinutes($duration)->utc()->toIso8601String(),
+                'unit_price' => $price,
+                'rule' => $rule,
+            ];
+        })->values()->all();
     }
-
 
     /** @return array{0:int,1:array<string,mixed>} */
     private function priceFor(Carbon $time, Court $court, Collection $rules, Collection $legacyRules, int $duration = 60): array
@@ -179,6 +198,9 @@ class PriceQuoteService
                     'id' => $rule->id,
                     'type' => $rule->type,
                     'version' => $rule->version,
+                    'priority' => $rule->priority,
+                    'effective_from' => $rule->effective_from?->toDateString(),
+                    'effective_until' => $rule->effective_until?->toDateString(),
                     'price' => (int) $rule->price,
                 ]];
             }
@@ -192,26 +214,24 @@ class PriceQuoteService
                         'id' => 'legacy:'.$legacy->id,
                         'type' => 'weekly',
                         'version' => 1,
+                        'priority' => 0,
+                        'effective_from' => null,
+                        'effective_until' => null,
                         'price' => (int) $legacy->price,
                     ]];
                 }
             }
         }
-        $fallbackSlot = $legacyRules->first(fn ($slot) => empty($slot->starts_at)) ?? $legacyRules->first();
-        if ($fallbackSlot) {
-            return [(int) $fallbackSlot->price, [
-                'id' => 'legacy:'.$fallbackSlot->id,
-                'type' => 'base',
-                'version' => 1,
-                'price' => (int) $fallbackSlot->price,
-            ]];
-        }
-
         throw ValidationException::withMessages(['slots' => "Slot {$time->format('d/m H:i')} chưa mở bán."]);
     }
 
     private function matches(PriceRule $rule, Carbon $time, int $duration = 60): bool
     {
+        $date = $time->toDateString();
+        if (($rule->effective_from && $date < $rule->effective_from->toDateString())
+            || ($rule->effective_until && $date > $rule->effective_until->toDateString())) {
+            return false;
+        }
         if (in_array($rule->type, ['date_exception', 'holiday'], true)
             && $rule->exception_date?->toDateString() !== $time->toDateString()) {
             return false;
@@ -248,14 +268,14 @@ class PriceQuoteService
     }
 
     /** @return Collection<int,Carbon> */
-    private function resolveSlots(array $slots, int $duration = 60): Collection
+    private function resolveSlots(array $slots, int $duration = 60, ?string $zone = null): Collection
     {
         if (count($slots) < 1 || count($slots) > 24) {
             throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 24 slot.']);
         }
 
-        $zone = config('app.timezone');
-        $local = collect($slots)->map(function (mixed $value) use ($zone, $duration): Carbon {
+        $zone ??= config('app.timezone');
+        $local = collect($slots)->map(function (mixed $value) use ($zone): Carbon {
             $value = is_array($value) ? ($value['starts_at'] ?? null) : $value;
             try {
                 $time = Carbon::parse((string) $value)->setTimezone($zone);
@@ -280,4 +300,3 @@ class PriceQuoteService
         return $local;
     }
 }
-

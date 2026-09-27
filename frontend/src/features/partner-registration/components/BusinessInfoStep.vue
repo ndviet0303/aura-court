@@ -1,226 +1,154 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import type { BusinessType, PartnerApplication, SaveDraftPayload } from '../types'
+
+type TextFieldKey =
+  | 'business_name'
+  | 'legal_name'
+  | 'tax_code'
+  | 'representative_name'
+  | 'id_card_number'
+  | 'bank_name'
+  | 'bank_code'
+  | 'bank_account_number'
+  | 'bank_account_holder'
+  | 'contact_name'
+  | 'contact_phone'
+  | 'contact_email'
+  | 'address_line'
+  | 'ward'
+  | 'district'
+  | 'city'
+  | 'postal_code'
+  | 'lighting_spec'
 
 const props = defineProps<{
   application: PartnerApplication
   fieldErrors: Record<string, string[]>
+  error?: string | null
   saving: boolean
+  save: (payload: SaveDraftPayload) => Promise<boolean>
 }>()
 
-const emit = defineEmits<{
-  (e: 'save', payload: SaveDraftPayload): void
-  (e: 'next'): void
-}>()
+const emit = defineEmits<{ (e: 'next'): void }>()
 
-const businessType = ref<BusinessType>(props.application.business_type || 'individual')
-const businessName = ref(props.application.business_name || '')
-const taxCode = ref(props.application.tax_code || '')
-const contactName = ref(props.application.contact_name || '')
-const contactPhone = ref(props.application.contact_phone || '')
-const contactEmail = ref(props.application.contact_email || '')
+const fields: Array<{ key: TextFieldKey; label: string; required?: boolean; type?: string }> = [
+  { key: 'business_name', label: 'Tên cơ sở / thương hiệu', required: true },
+  { key: 'legal_name', label: 'Tên pháp lý', required: true },
+  { key: 'tax_code', label: 'Mã số thuế' },
+  { key: 'representative_name', label: 'Người đại diện', required: true },
+  { key: 'id_card_number', label: 'Số CCCD / giấy tờ định danh', required: true },
+  { key: 'bank_name', label: 'Ngân hàng nhận tiền', required: true },
+  { key: 'bank_code', label: 'Mã ngân hàng', required: true },
+  { key: 'bank_account_number', label: 'Số tài khoản', required: true },
+  { key: 'bank_account_holder', label: 'Chủ tài khoản', required: true },
+  { key: 'contact_name', label: 'Tên liên hệ', required: true },
+  { key: 'contact_phone', label: 'Số điện thoại liên hệ', required: true, type: 'tel' },
+  { key: 'contact_email', label: 'Email liên hệ', required: true, type: 'email' },
+  { key: 'address_line', label: 'Địa chỉ', required: true },
+  { key: 'ward', label: 'Phường / xã' },
+  { key: 'district', label: 'Quận / huyện' },
+  { key: 'city', label: 'Tỉnh / thành phố', required: true },
+  { key: 'postal_code', label: 'Mã bưu chính' },
+  { key: 'lighting_spec', label: 'Thông tin chiếu sáng' },
+]
+
+const values = reactive<Record<TextFieldKey, string>>({
+  business_name: '', legal_name: '', tax_code: '', representative_name: '', id_card_number: '',
+  bank_name: '', bank_code: '', bank_account_number: '', bank_account_holder: '', contact_name: '',
+  contact_phone: '', contact_email: '', address_line: '', ward: '', district: '', city: '',
+  postal_code: '', lighting_spec: '',
+})
+const businessType = ref<BusinessType>('individual')
+const sportsInput = ref('')
+const courtScaleInput = ref('')
 const saveSuccess = ref(false)
 
-watch(
-  () => props.application,
-  (app) => {
-    if (app) {
-      if (app.business_type) businessType.value = app.business_type
-      if (app.business_name) businessName.value = app.business_name
-      if (app.tax_code) taxCode.value = app.tax_code
-      if (app.contact_name) contactName.value = app.contact_name
-      if (app.contact_phone) contactPhone.value = app.contact_phone
-      if (app.contact_email) contactEmail.value = app.contact_email
-    }
-  },
-  { deep: true }
-)
+function loadApplication(app: PartnerApplication) {
+  businessType.value = app.business_type || 'individual'
+  for (const field of fields) values[field.key] = app[field.key] || ''
+  sportsInput.value = (app.sports || []).join(', ')
+  courtScaleInput.value = app.court_scale ? String(app.court_scale) : ''
+}
+
+watch(() => props.application, loadApplication, { deep: true, immediate: true })
 
 function buildPayload(): SaveDraftPayload {
   return {
+    ...values,
     business_type: businessType.value,
-    business_name: businessName.value.trim() || undefined,
-    tax_code: taxCode.value.trim() || undefined,
-    contact_name: contactName.value.trim() || undefined,
-    contact_phone: contactPhone.value.trim() || undefined,
-    contact_email: contactEmail.value.trim() || undefined,
+    sports: sportsInput.value.split(',').map((sport) => sport.trim()).filter(Boolean),
+    court_scale: courtScaleInput.value ? Number(courtScaleInput.value) : undefined,
+    expected_version: props.application.version,
   }
 }
 
-function handleSave() {
-  saveSuccess.value = false
-  emit('save', buildPayload())
+async function handleSave() {
+  saveSuccess.value = await props.save(buildPayload())
 }
 
-function handleNext() {
-  handleSave()
-  emit('next')
+async function handleNext() {
+  if (await props.save(buildPayload())) emit('next')
 }
 </script>
 
 <template>
   <div class="business-info-step space-y-6">
     <div>
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-        1. Hình thức và Thông tin Kinh doanh
-      </h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-        Chọn mô hình hoạt động và cung cấp thông tin pháp nhân hoặc chủ hộ kinh doanh.
-      </p>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white">1. Thông tin cơ sở và người đại diện</h3>
+      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Thông tin được lưu trong hồ sơ để vận hành xác minh.</p>
     </div>
 
-    <!-- Business Type Selector -->
+    <p v-if="error" class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/20 dark:text-red-400" role="alert">
+      {{ error }}
+    </p>
+
     <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Mô hình kinh doanh <span class="text-red-500">*</span>
-      </label>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <label
-          class="flex flex-col p-3 border rounded-lg cursor-pointer transition-colors"
-          :class="businessType === 'individual' ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
-        >
-          <div class="flex items-center gap-2">
-            <input v-model="businessType" type="radio" value="individual" class="text-emerald-600" />
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">Cá nhân</span>
-          </div>
-          <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Chủ sân cá nhân cho thuê sân tự do.</span>
-        </label>
-
-        <label
-          class="flex flex-col p-3 border rounded-lg cursor-pointer transition-colors"
-          :class="businessType === 'household' ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
-        >
-          <div class="flex items-center gap-2">
-            <input v-model="businessType" type="radio" value="household" class="text-emerald-600" />
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">Hộ kinh doanh</span>
-          </div>
-          <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Có giấy phép đăng ký hộ kinh doanh cá thể.</span>
-        </label>
-
-        <label
-          class="flex flex-col p-3 border rounded-lg cursor-pointer transition-colors"
-          :class="businessType === 'enterprise' ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
-        >
-          <div class="flex items-center gap-2">
-            <input v-model="businessType" type="radio" value="enterprise" class="text-emerald-600" />
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">Doanh nghiệp</span>
-          </div>
-          <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Công ty TNHH, Cổ phần, Doanh nghiệp tư nhân.</span>
-        </label>
+      <span class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Mô hình kinh doanh</span>
+      <div class="flex flex-wrap gap-4 text-sm text-gray-800 dark:text-gray-200">
+        <label><input v-model="businessType" type="radio" value="individual" /> Cá nhân</label>
+        <label><input v-model="businessType" type="radio" value="household" /> Hộ kinh doanh</label>
+        <label><input v-model="businessType" type="radio" value="company" /> Doanh nghiệp</label>
       </div>
-      <p v-if="fieldErrors.business_type" class="text-xs text-red-600 dark:text-red-400 mt-1">
-        {{ fieldErrors.business_type[0] }}
-      </p>
+      <p v-if="fieldErrors.business_type" class="mt-1 text-xs text-red-600">{{ fieldErrors.business_type[0] }}</p>
     </div>
 
-    <!-- Business Name & Tax Code -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-        <label for="businessName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Tên doanh nghiệp / Tên sân thương hiệu <span class="text-red-500">*</span>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div v-for="field in fields" :key="field.key">
+        <label :for="field.key" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+          {{ field.label }}<span v-if="field.required" class="text-red-500"> *</span>
         </label>
         <input
-          id="businessName"
-          v-model="businessName"
-          type="text"
-          placeholder="Ví dụ: Công ty TNHH Thể Thao ABC"
-          class="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-emerald-500 focus:border-emerald-500"
+          :id="field.key"
+          v-model="values[field.key]"
+          :type="field.type || 'text'"
+          autocomplete="off"
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
         />
-        <p v-if="fieldErrors.business_name" class="text-xs text-red-600 dark:text-red-400 mt-1">
-          {{ fieldErrors.business_name[0] }}
+        <p v-if="fieldErrors[field.key]" class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ fieldErrors[field.key]?.[0] }}
         </p>
       </div>
-
       <div>
-        <label for="taxCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Mã số thuế {{ businessType !== 'individual' ? '*' : '(nếu có)' }}
-        </label>
-        <input
-          id="taxCode"
-          v-model="taxCode"
-          type="text"
-          placeholder="Ví dụ: 0101234567"
-          class="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-emerald-500 focus:border-emerald-500"
-        />
-        <p v-if="fieldErrors.tax_code" class="text-xs text-red-600 dark:text-red-400 mt-1">
-          {{ fieldErrors.tax_code[0] }}
-        </p>
+        <label for="sports" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Môn thể thao *</label>
+        <input id="sports" v-model="sportsInput" type="text" placeholder="Cầu lông, pickleball" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
+        <p v-if="fieldErrors.sports" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ fieldErrors.sports[0] }}</p>
+      </div>
+      <div>
+        <label for="courtScale" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Số sân dự kiến</label>
+        <input id="courtScale" v-model="courtScaleInput" type="number" min="1" max="100" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
+        <p v-if="fieldErrors.court_scale" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ fieldErrors.court_scale[0] }}</p>
       </div>
     </div>
 
-    <!-- Contact Details -->
-    <div class="border-t pt-4 dark:border-gray-700">
-      <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-        Thông tin người đại diện liên hệ
-      </h4>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label for="contactName" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Họ và tên <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="contactName"
-            v-model="contactName"
-            type="text"
-            placeholder="Nguyễn Văn A"
-            class="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
-          />
-          <p v-if="fieldErrors.contact_name" class="text-xs text-red-600 dark:text-red-400 mt-1">
-            {{ fieldErrors.contact_name[0] }}
-          </p>
-        </div>
-
-        <div>
-          <label for="contactPhone" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Số điện thoại liên hệ <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="contactPhone"
-            v-model="contactPhone"
-            type="tel"
-            placeholder="0987654321"
-            class="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
-          />
-          <p v-if="fieldErrors.contact_phone" class="text-xs text-red-600 dark:text-red-400 mt-1">
-            {{ fieldErrors.contact_phone[0] }}
-          </p>
-        </div>
-
-        <div>
-          <label for="contactEmail" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email nhận thông báo <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="contactEmail"
-            v-model="contactEmail"
-            type="email"
-            placeholder="partner@example.com"
-            class="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
-          />
-          <p v-if="fieldErrors.contact_email" class="text-xs text-red-600 dark:text-red-400 mt-1">
-            {{ fieldErrors.contact_email[0] }}
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Actions -->
     <div class="flex items-center justify-between border-t pt-4 dark:border-gray-700">
-      <button
-        type="button"
-        :disabled="saving"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-gray-200 disabled:opacity-50"
-        @click="handleSave"
-      >
-        {{ saving ? 'Đang lưu...' : 'Lưu bản nháp' }}
-      </button>
-
-      <button
-        type="button"
-        :disabled="saving"
-        class="px-6 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg disabled:opacity-50"
-        @click="handleNext"
-      >
+      <div>
+        <button type="button" :disabled="saving" class="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200" @click="handleSave">
+          {{ saving ? 'Đang lưu...' : 'Lưu bản nháp' }}
+        </button>
+        <span v-if="saveSuccess" class="ml-2 text-xs text-emerald-700">Đã lưu</span>
+      </div>
+      <button type="button" :disabled="saving" class="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white disabled:opacity-50" @click="handleNext">
         Tiếp tục: Tải tài liệu
       </button>
     </div>

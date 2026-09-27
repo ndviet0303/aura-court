@@ -1,96 +1,125 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { financeApi } from '../api/financeApi'
+import GroupSplitBillView from '../views/GroupSplitBillView.vue'
 import { useGroupSplitBill } from '../composables/useGroupSplitBill'
+import type { SplitGroup } from '../types/split'
+import { i18n, setAppLocale } from '@/i18n'
 
-describe('useGroupSplitBill', () => {
-  let split: ReturnType<typeof useGroupSplitBill>
+vi.mock('../api/financeApi', () => ({
+  financeApi: { getSplitGroup: vi.fn() },
+}))
 
+const persistedGroup: SplitGroup = {
+  id: 71,
+  reservation_id: 204,
+  expected_amount: 175000,
+  paid_amount: 85000,
+  status: 'pending',
+  expires_at: '2026-09-27T12:00:00Z',
+  reservation: { id: 204, code: 'RSV-204', total_amount: 175000, status: 'held' },
+  shares: [
+    { id: 501, share_number: 1, amount: 85000, paid_amount: 85000, status: 'paid', paid_at: '2026-09-26T10:00:00Z', payment_reference: 'CLIENT-REF' },
+    { id: 502, share_number: 2, amount: 90000, paid_amount: 0, status: 'pending', paid_at: null, payment_reference: null },
+  ],
+}
+
+async function renderSplit(path: string) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/split-bill/:code?', component: GroupSplitBillView },
+      { path: '/booking', component: { template: '<div>Bookings</div>' } },
+    ],
+  })
+  await router.push(path)
+  await router.isReady()
+  const wrapper = mount(GroupSplitBillView, { global: { plugins: [i18n, router] } })
+  await flushPromises()
+  return wrapper
+}
+
+describe('GroupSplitBillView', () => {
   beforeEach(() => {
-    split = useGroupSplitBill()
+    vi.clearAllMocks()
+    setAppLocale('vi')
   })
 
-  it('initializes with default booking and calculates equal split correctly', () => {
-    expect(split.bookingInfo.value.bookingCode).toBe('ORD18')
-    expect(split.members.value.length).toBe(4)
-    expect(split.items.value.length).toBe(3)
-    expect(split.totalBill.value).toBe(600000)
+  it('shows a real group and shares but never treats client-reference paid rows as verified receipts', async () => {
+    vi.mocked(financeApi.getSplitGroup).mockResolvedValue({ split: persistedGroup })
+    const wrapper = await renderSplit('/split-bill/71')
 
-    split.calculateSplits()
-    expect(split.members.value[0]?.amount).toBe(150000)
-    expect(split.members.value[1]?.amount).toBe(150000)
-    expect(split.members.value[2]?.amount).toBe(150000)
-    expect(split.members.value[3]?.amount).toBe(150000)
-    expect(split.allocatedTotal.value).toBe(600000)
-    expect(split.allocationDiff.value).toBe(0)
+    expect(financeApi.getSplitGroup).toHaveBeenCalledWith(71)
+    expect(wrapper.get('[data-testid="split-group-id"]').text()).toBe('71')
+    expect(wrapper.text()).toContain('RSV-204')
+    expect(wrapper.text()).toContain('175.000')
+    expect(wrapper.findAll('[data-testid="split-share"]')).toHaveLength(2)
+    expect(wrapper.get('[data-testid="split-evidence-warning"]').text()).toContain('Chưa có biên nhận')
+    expect(wrapper.get('[data-testid="split-share"]').text()).toContain('Đang chờ biên nhận xác minh')
+    expect(wrapper.text()).not.toContain('Đã thanh toán')
+    expect(wrapper.find('img[src*="vietqr"]').exists()).toBe(false)
+    wrapper.unmount()
   })
 
-  it('calculates itemized split when items are assigned to specific members', () => {
-    split.splitMode.value = 'itemized'
-    // Assign drinks (item-2, 80k) only to member 1 and member 2
-    if (split.items.value[1]) split.items.value[1].assignedMemberIds = [1, 2]
-    // Assign shuttlecocks (item-3, 120k) only to member 3 and member 4
-    if (split.items.value[2]) split.items.value[2].assignedMemberIds = [3, 4]
+  it('keeps the last server snapshot marked stale when refresh fails and reloads the actual new state', async () => {
+    vi.mocked(financeApi.getSplitGroup)
+      .mockResolvedValueOnce({ split: persistedGroup })
+      .mockRejectedValueOnce(new Error('Service unavailable'))
+      .mockResolvedValueOnce({
+        split: { ...persistedGroup, status: 'expired', shares: [{ ...persistedGroup.shares[0]!, status: 'expired' }, persistedGroup.shares[1]!] },
+      })
+    const wrapper = await renderSplit('/split-bill/71')
 
-    split.calculateSplits()
+    await wrapper.get('[data-testid="split-refresh"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="split-stale"]').text()).toContain('có thể đã thay đổi')
+    expect(wrapper.get('[data-testid="split-group-id"]').text()).toBe('71')
+    expect(wrapper.text()).not.toContain('Đã thanh toán')
 
-    expect(split.members.value[0]?.amount).toBe(140000)
-    expect(split.members.value[1]?.amount).toBe(140000)
-    expect(split.members.value[2]?.amount).toBe(160000)
-    expect(split.members.value[3]?.amount).toBe(160000)
-    expect(split.allocatedTotal.value).toBe(600000)
+    await wrapper.get('[data-testid="split-refresh"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="split-stale"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="split-server-state"]').text()).toBe('expired')
+    expect(wrapper.get('[data-testid="split-share"]').text()).toContain('đã hết hạn')
+    wrapper.unmount()
   })
 
-  it('calculates time-based split according to playing minutes', () => {
-    split.splitMode.value = 'time'
-    if (split.members.value[0]) split.members.value[0].timeMinutes = 120
-    if (split.members.value[1]) split.members.value[1].timeMinutes = 120
-    if (split.members.value[2]) split.members.value[2].timeMinutes = 120
-    if (split.members.value[3]) split.members.value[3].timeMinutes = 60
+  it('shows a truthful error and no sample members when the scoped API fails or returns no group', async () => {
+    vi.mocked(financeApi.getSplitGroup).mockRejectedValueOnce(new Error('Not found'))
+      .mockResolvedValueOnce({ split: undefined } as unknown as { split: SplitGroup })
+    const wrapper = await renderSplit('/split-bill/71')
 
-    split.calculateSplits()
-
-    const m1Amount = split.members.value[0]?.amount ?? 0
-    const m4Amount = split.members.value[3]?.amount ?? 0
-    expect(m1Amount).toBeGreaterThan(m4Amount)
+    expect(wrapper.get('[data-testid="split-error"]').text()).toContain('Not found')
+    expect(wrapper.findAll('[data-testid="split-share"]')).toHaveLength(0)
+    expect(wrapper.find('[data-testid="split-group"]').exists()).toBe(false)
+    await wrapper.vm.$router?.push('/split-bill/72')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="split-error"]').text()).toContain('không trả về nhóm')
+    expect(wrapper.find('[data-testid="split-group"]').exists()).toBe(false)
+    wrapper.unmount()
   })
 
-  it('allows adding a member and recalculates splits', () => {
-    split.addMember('Trần Văn Bình', '0933 111 222')
-    expect(split.members.value.length).toBe(5)
-    expect(split.members.value[4]?.name).toBe('Trần Văn Bình')
-
-    // 600k chia 5 = 120k mỗi người
-    expect(split.members.value[0]?.amount).toBe(120000)
-    expect(split.members.value[4]?.amount).toBe(120000)
+  it('does not reinterpret a booking code as a group ID or invent a payment QR', async () => {
+    const wrapper = await renderSplit('/split-bill/RSV-204')
+    expect(financeApi.getSplitGroup).not.toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="split-error"]').text()).toContain('mã đặt sân')
+    expect(wrapper.find('[data-testid="split-group"]').exists()).toBe(false)
+    expect(wrapper.find('img').exists()).toBe(false)
+    wrapper.unmount()
   })
 
-  it('allows adding and removing service items', () => {
-    split.addServiceItem('Khăn lau Aura', 'service', 2, 25000)
-    expect(split.items.value.length).toBe(4)
-    expect(split.totalBill.value).toBe(650000)
+  it('does not show a previous group after the route changes during a request', async () => {
+    vi.mocked(financeApi.getSplitGroup)
+      .mockImplementationOnce(() => Promise.resolve().then(() => ({ split: persistedGroup })))
+      .mockResolvedValueOnce({ split: { ...persistedGroup, id: 72 } })
 
-    const addedItem = split.items.value[3]
-    if (addedItem) {
-      split.removeServiceItem(addedItem.id)
-    }
-    expect(split.items.value.length).toBe(3)
-    expect(split.totalBill.value).toBe(600000)
-  })
+    const split = useGroupSplitBill()
+    const previous = split.loadSplitGroup('71')
+    const current = split.loadSplitGroup('72')
+    await Promise.all([previous, current])
 
-  it('marks member as paid and handles shortfall cover by host', async () => {
-    expect(split.totalPaid.value).toBe(300000)
-    expect(split.remainingAmount.value).toBe(300000)
-    expect(split.isFullyPaid.value).toBe(false)
-
-    // Mark member 3 as paid
-    await split.markAsPaid(3)
-    expect(split.members.value[2]?.paid).toBe(true)
-    expect(split.totalPaid.value).toBe(450000)
-    expect(split.remainingAmount.value).toBe(150000)
-
-    // Host covers shortfall
-    await split.coverShortfall()
-    expect(split.members.value[3]?.paid).toBe(true)
-    expect(split.isFullyPaid.value).toBe(true)
-    expect(split.remainingAmount.value).toBe(0)
+    expect(split.group.value?.id).toBe(72)
+    expect(split.error.value).toBe('')
   })
 })

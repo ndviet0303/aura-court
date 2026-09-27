@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason', 'policy_snapshot', 'price_snapshot', 'metadata'])]
+#[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_model', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason', 'policy_snapshot', 'price_snapshot', 'metadata'])]
 class Booking extends Model
 {
     protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed'];

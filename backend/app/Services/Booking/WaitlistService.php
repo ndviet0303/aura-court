@@ -24,13 +24,12 @@ class WaitlistService
 
         $court = Court::query()->whereKey($courtId)->where('is_active', true)->firstOrFail();
         $startUtc = $start->copy()->utc();
-        $startDbValues = array_values(array_unique([$startUtc->format('Y-m-d H:i:s'), $start->format('Y-m-d H:i:s')]));
         $v1Occupied = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])
-            ->whereHas('slots', fn ($query) => $query->whereIn('starts_at', $startDbValues)->whereIn('status', ['held', 'confirmed']))
+            ->whereHas('slots', fn ($query) => $query->where('starts_at', $startUtc)->whereIn('status', ['held', 'confirmed']))
             ->exists();
         $v2Occupied = \App\Models\ReservationSlot::query()
             ->where('court_id', $court->id)
-            ->whereIn('starts_at', $startDbValues)
+            ->where('starts_at', $startUtc)
             ->whereIn('status', ['held', 'confirmed'])
             ->exists();
         if (! $v1Occupied && ! $v2Occupied) {
@@ -55,9 +54,9 @@ class WaitlistService
 
     public function notifyForSlot(int $courtId, Carbon $startsAt): int
     {
-        $startDbValues = array_values(array_unique([$startsAt->format('Y-m-d H:i:s'), $startsAt->copy()->utc()->format('Y-m-d H:i:s')]));
+        $startsAtUtc = $startsAt->copy()->utc();
         $entries = WaitlistEntry::query()->with('user')->where('court_id', $courtId)
-            ->whereIn('starts_at', $startDbValues)
+            ->where('starts_at', $startsAtUtc)
             ->where('status', 'waiting')->get();
         foreach ($entries as $entry) {
             $entry->update(['status' => 'notified', 'notified_at' => now()]);

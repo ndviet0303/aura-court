@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'amenities', 'is_active'])]
+#[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'is_active'])]
 class Court extends Model
 {
     use HasTranslations;
@@ -51,6 +51,7 @@ class Court extends Model
         return [
             'is_active' => 'boolean',
             'amenities' => 'array',
+            'capacity' => 'integer',
         ];
     }
 

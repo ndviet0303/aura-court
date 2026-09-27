@@ -7,15 +7,19 @@ Enable facility owners to host badminton sessions for individual drop-in players
 ## Requirements
 
 ### Requirement: Facility-owner hosted sessions
-The platform SHALL let the owner of a facility open a badminton session for a court belonging to that facility. A session MUST include its court, scheduled start and end, positive player capacity, category (`giao lưu` or `đánh vãng lai`), and one or more accepted skill labels. Only the hosting owner with current authority over the facility SHALL manage the session and its bill. Opening a session MUST NOT imply a paid booking or bypass existing court-inventory protections.
+A facility owner SHALL open and manage a badminton session on their own court with start/end, capacity, category and accepted skill labels. The event SHALL obtain an authoritative court-time allocation that excludes subsequent booking/recurrence/tournament allocations; the same inventory checks SHALL protect both directions. Only the hosting owner with current venue authority SHALL manage the session and its post-session bill. Owner hosting SHALL not imply a paid booking or add the host as a participant. Customer-hosted events using their own entitlements SHALL use the separate generic activity contract.
 
 #### Scenario: Owner opens a session
-- **WHEN** a facility owner submits valid session details for their own court
-- **THEN** the platform SHALL persist a discoverable session identifying the facility and owner as host without automatically adding the owner as a player
+- **WHEN** a valid owner opens an available court-time session
+- **THEN** one exclusive allocation SHALL be recorded without a payment claim or automatic host participation
+
+#### Scenario: Later booking
+- **WHEN** a customer tries to book overlapping time after session publication
+- **THEN** booking SHALL fail with a conflict
 
 #### Scenario: Unauthorized management
-- **WHEN** a customer, staff member without ownership, or owner of another facility attempts to create or manage a session for that court
-- **THEN** the platform SHALL reject the operation without changing session or bill data
+- **WHEN** an unrelated customer/staff/owner tries to manage this owner's drop-in bill
+- **THEN** the action SHALL be denied without affecting separately authorized customer-hosted activities
 
 ### Requirement: Drop-in discovery by skill and category
 The platform SHALL let individual players find sessions by location or court, scheduled time, category, and accepted skill labels `newbie`, `Y`, `TBY`, `TB`, and `K`. These labels SHALL be specific to this badminton session flow and MUST NOT reinterpret existing generic player skill scores. A team or club membership SHALL NOT be required to find or join a session. A skill filter SHALL match sessions that explicitly accept that label.
@@ -100,12 +104,12 @@ The host SHALL be able to save and revise draft cost inputs after ending the ses
 - **THEN** the finalized bill SHALL retain its originally confirmed rates and amounts
 
 ### Requirement: Preserve existing booking and payment behavior
-This flow SHALL be separate from advance split-payment booking confirmation and existing generic matches. It SHALL NOT introduce deposits, automatic payment collection, wallet deductions, QR payment confirmation, debt tracking, refunds or host shortfall guarantees. Any pre-session per-person estimate SHALL be explicitly identified as an estimate rather than the final amount. Existing booking confirmation, split expiry, refund and retail contracts SHALL remain unchanged.
+Post-session court/shuttlecock equal-share bills SHALL remain informational and separate from advance booking split-payment confirmation and generic activities. Finalizing such a bill MUST NOT create deposits, payment receipts, wallet movements, automatic collections, debt balances or host shortfall guarantees. Estimates SHALL be labelled. This separation SHALL preserve the new direct-owner booking, policy-governed refund and POS contracts rather than reinstate old wallet-only or no-cancellation behavior.
 
 #### Scenario: Existing advance split booking
-- **WHEN** a user follows the existing advance split-payment booking flow
-- **THEN** its existing confirmation and expiry rules SHALL remain in force without using post-session headcount or shuttlecock costs
+- **WHEN** a user follows advance split collection
+- **THEN** verified share obligations SHALL use the direct-owner payment contract, not a post-session approximate headcount bill
 
 #### Scenario: Final bill is not payment
-- **WHEN** the host finalizes a drop-in session bill
-- **THEN** the platform SHALL record the bill without marking it paid, debiting wallets or creating payment-provider transactions
+- **WHEN** the host finalizes actual court/shuttlecock costs
+- **THEN** the bill SHALL persist without marking funds collected or adding ancillary purchases

@@ -7,6 +7,7 @@ import { usePaymentProcessing } from '../composables/usePaymentProcessing'
 
 import WalletPayButton from '../components/WalletPayButton.vue'
 import PaymentSummaryCard from '../components/PaymentSummaryCard.vue'
+import OwnerPaymentInstructionsPanel from '../components/OwnerPaymentInstructionsPanel.vue'
 
 const router = useRouter()
 const store = useBookingStore()
@@ -22,6 +23,12 @@ const {
   playerDetails,
   walletBalance,
   paymentAmount,
+  directPaymentAttempt,
+  directPaymentError,
+  directPaymentLoading,
+  directPaymentRefreshing,
+  isDirectOwnerPayment,
+  status,
   error,
   showSuccessModal,
   couponCode,
@@ -30,6 +37,8 @@ const {
   couponSuccess,
   applyCoupon,
   handleWalletPay,
+  refreshDirectPaymentStatus,
+  createDirectPaymentAttempt,
   startTimers,
   stopTimers,
 } = usePaymentProcessing()
@@ -50,6 +59,11 @@ function handleDoneTournament() {
   } else {
     router.push('/tournaments')
   }
+}
+
+function retryDirectPayment() {
+  const code = booking.value?.code
+  if (code) void createDirectPaymentAttempt(code)
 }
 </script>
 
@@ -142,7 +156,18 @@ function handleDoneTournament() {
           </div>
 
           <!-- Wallet Pay Button / Component -->
+          <OwnerPaymentInstructionsPanel
+            v-if="isDirectOwnerPayment"
+            :attempt="directPaymentAttempt"
+            :reservation-status="booking?.status || status"
+            :loading="directPaymentLoading"
+            :refreshing="directPaymentRefreshing"
+            :error="directPaymentError"
+            @refresh="refreshDirectPaymentStatus"
+            @retry="retryDirectPayment"
+          />
           <WalletPayButton
+            v-else
             :amount="paymentAmount"
             :wallet-balance="walletBalance"
             :loading="loading"
@@ -158,6 +183,7 @@ function handleDoneTournament() {
             :payment="payment || { code: booking?.code || '', amount: booking?.total_amount || 0, type: 'booking', bank: '', accountNumber: '', qrUrl: '', expiresAt: '' }"
             :booking="booking"
             :court="court"
+            :direct-owner-payment="isDirectOwnerPayment"
             :coupon-code="couponCode"
             :coupon-loading="couponLoading"
             :coupon-error="couponError"

@@ -3,22 +3,35 @@ import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
+import VenueBookingPolicyForm from './VenueBookingPolicyForm.vue'
+import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../../types/admin'
 
 const props = defineProps<{
   show: boolean
   venue: AdminVenueItem | null
   saving?: boolean
+  bookingPolicy?: VenueBookingPolicyVersion | null
+  loadingBookingPolicy?: boolean
+  savingBookingPolicy?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', payload: any): void
+  (e: 'save-policy', settings: VenueBookingPolicySettings): void
 }>()
 
 const { t } = useI18n()
 
 const name = ref('')
 const address = ref('')
+const city = ref('')
+const district = ref('')
+const ward = ref('')
+const phone = ref('')
+const email = ref('')
+const description = ref('')
+const imagesText = ref('')
 const googleMapsUrl = ref('')
 const isActive = ref(true)
 const validationError = ref('')
@@ -30,11 +43,25 @@ watch(
     if (v) {
       name.value = typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
       address.value = typeof v.address === 'string' ? v.address : (v.address as any)?.vi || (v.address as any)?.en || ''
+      city.value = v.city || ''
+      district.value = v.district || ''
+      ward.value = v.ward || ''
+      phone.value = v.phone || ''
+      email.value = v.email || ''
+      description.value = v.description || ''
+      imagesText.value = (v.images || []).join('\n')
       googleMapsUrl.value = v.google_maps_url || ''
       isActive.value = v.is_active
     } else {
       name.value = ''
       address.value = ''
+      city.value = ''
+      district.value = ''
+      ward.value = ''
+      phone.value = ''
+      email.value = ''
+      description.value = ''
+      imagesText.value = ''
       googleMapsUrl.value = ''
       isActive.value = true
     }
@@ -67,6 +94,13 @@ function handleSave() {
   emit('save', {
     name: trimmedName,
     address: trimmedAddress || undefined,
+    city: city.value.trim() || undefined,
+    district: district.value.trim() || undefined,
+    ward: ward.value.trim() || undefined,
+    phone: phone.value.trim() || undefined,
+    email: email.value.trim() || undefined,
+    description: description.value.trim() || undefined,
+    images: imagesText.value.split(/\r?\n/).map((image) => image.trim()).filter(Boolean),
     google_maps_url: trimmedMaps || undefined,
     is_active: isActive.value,
   })
@@ -107,6 +141,27 @@ function handleSave() {
           />
         </div>
 
+        <div class="form-group address-parts">
+          <label class="form-label">{{ t('admin.venues.cityLabel') }}<input v-model="city" type="text" class="form-input" /></label>
+          <label class="form-label">{{ t('admin.venues.districtLabel') }}<input v-model="district" type="text" class="form-input" /></label>
+          <label class="form-label">{{ t('admin.venues.wardLabel') }}<input v-model="ward" type="text" class="form-input" /></label>
+        </div>
+
+        <div class="form-group contact-parts">
+          <label class="form-label">{{ t('admin.venues.phoneLabel') }}<input v-model="phone" type="tel" class="form-input" /></label>
+          <label class="form-label">{{ t('admin.venues.emailLabel') }}<input v-model="email" type="email" class="form-input" /></label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ t('admin.venues.descriptionLabel') }}</label>
+          <textarea v-model="description" class="form-input" rows="3" maxlength="2000" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ t('admin.venues.imagesLabel') }}</label>
+          <textarea v-model="imagesText" class="form-input" rows="3" :placeholder="t('admin.venues.imagesHint')" />
+        </div>
+
         <div class="form-group">
           <label class="form-label">
             {{ t('admin.venues.fullAddressLabel') }}
@@ -133,7 +188,7 @@ function handleSave() {
         </div>
 
         <!-- Custom Status Toggle Card -->
-        <div class="form-group">
+        <div v-if="venue?.status === 'published' || venue?.status === 'active'" class="form-group">
           <label class="form-label">{{ t('admin.venues.operationalStatusLabel') }}</label>
           <div class="status-toggle-card" :class="{ 'is-active': isActive }" @click="isActive = !isActive">
             <div class="toggle-card-left">
@@ -153,6 +208,14 @@ function handleSave() {
             </div>
           </div>
         </div>
+
+        <VenueBookingPolicyForm
+          :policy="bookingPolicy ?? null"
+          :loading="loadingBookingPolicy ?? false"
+          :saving="savingBookingPolicy ?? false"
+          :can-configure="!!venue"
+          @save="emit('save-policy', $event)"
+        />
       </div>
 
       <!-- Modal Footer -->
@@ -196,6 +259,7 @@ function handleSave() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-height: 90vh;
   animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -261,6 +325,7 @@ function handleSave() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .form-error-banner {
@@ -279,6 +344,12 @@ function handleSave() {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.address-parts, .contact-parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
 }
 
 .form-label {

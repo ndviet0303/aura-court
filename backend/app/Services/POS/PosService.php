@@ -2,23 +2,34 @@
 
 namespace App\Services\POS;
 
-use App\Services\Finance\FinancialPostingService;
-use App\Services\Reservation\LegacyBookingBackfillService;
-
 use App\Models\CashShift;
 use App\Models\Coupon;
 use App\Models\LoyaltyRule;
 use App\Models\MembershipEntitlement;
+use App\Models\OrganizationMember;
+use App\Models\OwnerPaymentReceipt;
+use App\Models\Payment;
 use App\Models\PointLedger;
 use App\Models\PosOrder;
+use App\Models\PosOrderItem;
+use App\Models\PosPayment;
 use App\Models\PosProduct;
+use App\Models\Reservation;
+use App\Models\ServiceTabItem;
 use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
+use App\Models\TenantCustomer;
 use App\Models\User;
+use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
+use App\Services\Booking\DiscountService;
+use App\Services\Finance\FinancialPostingService;
+use App\Services\Loyalty\LoyaltyPointService;
+use App\Services\Reservation\LegacyBookingBackfillService;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -27,16 +38,28 @@ class PosService
     public function __construct(
         private readonly FinancialPostingService $financials,
         private readonly LegacyBookingBackfillService $backfill,
+        private readonly DiscountService $discounts,
+        private readonly LoyaltyPointService $loyaltyPoints,
     ) {}
 
     public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
     {
         $metadata = $data['metadata'] ?? [];
-        if (isset($data['category'])) $metadata['category'] = $data['category'];
-        if (isset($data['unit'])) $metadata['unit'] = $data['unit'];
-        if (isset($data['min_stock'])) $metadata['min_stock'] = (int) $data['min_stock'];
-        if (isset($data['supplier'])) $metadata['supplier'] = $data['supplier'];
-        if (isset($data['tax_rate'])) $metadata['tax_rate'] = (int) $data['tax_rate'];
+        if (isset($data['category'])) {
+            $metadata['category'] = $data['category'];
+        }
+        if (isset($data['unit'])) {
+            $metadata['unit'] = $data['unit'];
+        }
+        if (isset($data['min_stock'])) {
+            $metadata['min_stock'] = (int) $data['min_stock'];
+        }
+        if (isset($data['supplier'])) {
+            $metadata['supplier'] = $data['supplier'];
+        }
+        if (isset($data['tax_rate'])) {
+            $metadata['tax_rate'] = (int) $data['tax_rate'];
+        }
 
         $initialStock = (int) ($data['stock_quantity'] ?? 0);
 
@@ -81,11 +104,21 @@ class PosService
     public function updateProduct(PosProduct $product, array $data): PosProduct
     {
         $metadata = $product->metadata ?? [];
-        if (isset($data['category'])) $metadata['category'] = $data['category'];
-        if (isset($data['unit'])) $metadata['unit'] = $data['unit'];
-        if (isset($data['min_stock'])) $metadata['min_stock'] = (int) $data['min_stock'];
-        if (isset($data['supplier'])) $metadata['supplier'] = $data['supplier'];
-        if (isset($data['tax_rate'])) $metadata['tax_rate'] = (int) $data['tax_rate'];
+        if (isset($data['category'])) {
+            $metadata['category'] = $data['category'];
+        }
+        if (isset($data['unit'])) {
+            $metadata['unit'] = $data['unit'];
+        }
+        if (isset($data['min_stock'])) {
+            $metadata['min_stock'] = (int) $data['min_stock'];
+        }
+        if (isset($data['supplier'])) {
+            $metadata['supplier'] = $data['supplier'];
+        }
+        if (isset($data['tax_rate'])) {
+            $metadata['tax_rate'] = (int) $data['tax_rate'];
+        }
         if (isset($data['metadata']) && is_array($data['metadata'])) {
             $metadata = array_merge($metadata, $data['metadata']);
         }
@@ -139,6 +172,7 @@ class PosService
             return $fresh;
         });
     }
+
     public function calculateQuote(int $organizationId, array $data, ?User $cashier = null): array
     {
         $items = $data['items'] ?? [];
@@ -188,21 +222,12 @@ class PosService
 
         // Discounts
         $couponDiscount = 0;
+        $coupon = null;
         $couponCode = trim((string) ($data['coupon_code'] ?? ''));
         if ($couponCode !== '') {
-            $coupon = Coupon::query()->where('code', strtoupper($couponCode))->first();
-            if (! $coupon || ! $coupon->is_active) {
-                throw ValidationException::withMessages(['coupon_code' => 'Mã giảm giá không hợp lệ.']);
-            }
-            if ($coupon->starts_at?->isFuture() || $coupon->ends_at?->isPast()) {
-                throw ValidationException::withMessages(['coupon_code' => 'Mã giảm giá chưa có hiệu lực hoặc đã hết hạn.']);
-            }
-            if ($coupon->usage_limit !== null && $coupon->usage_count >= $coupon->usage_limit) {
-                throw ValidationException::withMessages(['coupon_code' => 'Mã giảm giá đã hết lượt sử dụng.']);
-            }
-            if ($subtotal < $coupon->min_spend) {
-                throw ValidationException::withMessages(['coupon_code' => 'Đơn tối thiểu để dùng mã là '.number_format($coupon->min_spend, 0, ',', '.').'₫.']);
-            }
+            $couponCustomer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
+            [$couponVenueId, $couponCourtId] = $this->couponLocationContext($organizationId, $data, $cashier, $reservationId);
+            $coupon = $this->discounts->resolveEligibleCoupon($couponCode, $organizationId, $subtotal, $couponCustomer, $couponVenueId, $couponCourtId);
 
             $couponDiscount = $coupon->discount_type === 'percent'
                 ? (int) floor($subtotal * min(100, $coupon->discount_value) / 100)
@@ -213,38 +238,50 @@ class PosService
         }
 
         $membershipDiscount = 0;
+        $membershipSnapshot = null;
         if (! empty($data['customer_id'])) {
+            $now = now();
             $membership = TenantMembership::query()
                 ->where('organization_id', $organizationId)
                 ->where('user_id', (int) $data['customer_id'])
                 ->where('status', 'active')
-                ->where('ends_at', '>', now())
-                ->with(['plan', 'entitlements'])
+                ->where('starts_at', '<=', $now)
+                ->where('ends_at', '>=', $now)
+                ->whereHas('plan', fn ($query) => $query->where('organization_id', $organizationId))
+                ->with(['entitlements' => fn ($query) => $query
+                    ->where('organization_id', $organizationId)
+                    ->where('starts_at', '<=', $now)
+                    ->where('ends_at', '>=', $now)])
                 ->latest('ends_at')
                 ->first();
 
-            $entitlementDiscount = null;
-            if ($membership?->entitlements) {
-                $ent = $membership->entitlements->first(fn ($e) => in_array($e->benefit_code, ['discount_percent', 'court_discount_percent', 'pos_discount_percent']));
-                if ($ent) {
-                    $val = $ent->benefit_value;
-                    $entitlementDiscount = is_numeric($val) ? (int) $val : ($val['percent'] ?? $val['discount_percent'] ?? null);
-                }
-            }
-
-            $membershipPercent = $entitlementDiscount !== null
-                ? (int) $entitlementDiscount
-                : (int) ($membership?->plan?->benefits['pos_discount_percent'] ?? $membership?->plan?->benefits['discount_percent'] ?? $membership?->plan?->benefits['court_discount_percent'] ?? 0);
+            $entitlements = $membership?->entitlements ?? collect();
+            $entitlement = $entitlements->firstWhere('benefit_code', 'pos_discount_percent')
+                ?? $entitlements->firstWhere('benefit_code', 'discount_percent')
+                ?? $entitlements->firstWhere('benefit_code', 'court_discount_percent');
+            $value = $entitlement?->benefit_value;
+            $membershipPercent = $entitlement
+                ? (is_numeric($value) ? (int) $value : (int) ($value['percent'] ?? $value['discount_percent'] ?? $value['value'] ?? 0))
+                : 0;
             if ($membershipPercent > 0) {
-                // Membership discount SHALL be applied once
+                $membershipPercent = min(100, $membershipPercent);
                 $membershipDiscount = intdiv($subtotal * $membershipPercent, 100);
+                $membershipSnapshot = [
+                    'membership_id' => (int) $membership->id,
+                    'organization_id' => (int) $membership->organization_id,
+                    'plan_id' => (int) $membership->plan_id,
+                    'plan_version' => (int) $membership->plan_version,
+                    'entitlement_id' => (int) $entitlement->id,
+                    'benefit_code' => $entitlement->benefit_code,
+                    'benefit_value' => $value,
+                    'starts_at' => $entitlement->starts_at?->toIso8601String(),
+                    'ends_at' => $entitlement->ends_at?->toIso8601String(),
+                    'discount_amount' => $membershipDiscount,
+                ];
             }
         }
 
-        $cannotCombine = ! empty($coupon) && (! ($coupon->can_combine_with_membership ?? true) || ($coupon->metadata['can_combine_with_membership'] ?? true) === false);
-        if ($couponDiscount > 0 && $membershipDiscount > 0 && $cannotCombine) {
-            throw ValidationException::withMessages(['coupon_code' => 'Mã giảm giá không thể kết hợp cùng ưu đãi hội viên trên cùng một đơn hàng.']);
-        }
+        $this->discounts->assertCombinationAllowed($coupon, $couponDiscount, $membershipDiscount);
 
         $discount = min($subtotal, $couponDiscount + $membershipDiscount);
         $submittedDiscount = (int) ($data['discount_amount'] ?? 0);
@@ -299,6 +336,11 @@ class PosService
         return [
             'items' => $calculatedItems,
             'subtotal' => $subtotal,
+            'coupon_id' => $coupon?->id,
+            'promotion_campaign_id' => $coupon?->promotion_campaign_id,
+            'coupon_discount_amount' => $couponDiscount,
+            'membership_discount_amount' => $membershipDiscount,
+            'membership_snapshot' => $membershipSnapshot,
             'discount_amount' => $discount,
             'taxable_amount' => $taxableAmount,
             'tax_amount' => $taxTotal,
@@ -334,17 +376,18 @@ class PosService
     {
         abort_if((bool) ($data['offline'] ?? false), 409, 'Offline POS drafts cannot finalize payment or inventory.');
         $method = (string) ($data['payment_method'] ?? '');
-        abort_unless(in_array($method, ['cash', 'qr', 'wallet'], true), 422, 'Unsupported POS payment method.');
+        abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'mixed'], true), 422, 'Unsupported POS payment method.');
 
         if ($method === 'qr') {
             abort_unless($this->isQrProviderAvailable($organizationId), 422, 'QR payment provider verification is unavailable.');
         }
 
+        $activeShift = CashShift::where('organization_id', $organizationId)
+            ->where('cashier_id', $cashier->id)
+            ->where('status', 'open')
+            ->first();
+
         if (! empty($data['require_shift'])) {
-            $activeShift = CashShift::where('organization_id', $organizationId)
-                ->where('cashier_id', $cashier->id)
-                ->where('status', 'open')
-                ->first();
             abort_unless($activeShift !== null, 409, 'Cashier does not have an active open shift.');
         }
 
@@ -353,7 +396,7 @@ class PosService
             $reservationId = $this->backfill->resolveCanonicalReservationId((int) $data['reservation_id'], $organizationId);
         }
 
-        return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId): PosOrder {
+        return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift): PosOrder {
             $quote = $this->calculateQuote($organizationId, $data, $cashier);
 
             $subtotal = $quote['subtotal'];
@@ -365,7 +408,45 @@ class PosService
             $changeDue = $quote['change_due'];
             $vatBreakdown = $quote['vat_breakdown'];
 
-            // Stock lock and check
+            // Mixed tender validation (Task 8.1)
+            $tenders = [];
+            if ($method === 'mixed') {
+                $reservation = $reservationId ? Reservation::find($reservationId) : null;
+                $venue = null;
+                if (! empty($data['venue_id'])) {
+                    $venue = Venue::find((int) $data['venue_id']);
+                } elseif ($reservation && $reservation->court?->venue) {
+                    $venue = $reservation->court->venue;
+                } elseif ($activeShift && $activeShift->venue_id) {
+                    $venue = $activeShift->venue;
+                }
+                $allowMixed = false;
+                if ($venue) {
+                    $allowMixed = (bool) data_get($venue->currentBookingPolicy?->settings, 'pos.allow_mixed_tender', false);
+                }
+                if (! $allowMixed && ! empty($data['allow_mixed_tender'])) {
+                    $allowMixed = true;
+                }
+                abort_unless($allowMixed, 422, 'Mixed tender is not allowed by venue policy.');
+
+                $tenders = (array) ($data['tenders'] ?? []);
+                abort_if(empty($tenders), 422, 'Tender allocations are required for mixed payment.');
+
+                $tenderSum = 0;
+                foreach ($tenders as $tender) {
+                    $tMethod = $tender['method'] ?? '';
+                    $tAmount = (int) ($tender['amount'] ?? 0);
+                    abort_unless(in_array($tMethod, ['cash', 'qr', 'wallet'], true), 422, "Unsupported tender method: {$tMethod}");
+                    abort_unless($tAmount > 0, 422, 'Tender amount must be positive.');
+                    if ($tMethod === 'qr') {
+                        abort_unless($this->isQrProviderAvailable($organizationId), 422, 'QR payment provider verification is unavailable.');
+                    }
+                    $tenderSum += $tAmount;
+                }
+                abort_unless($tenderSum === $grandTotal, 422, "Total tender allocations ({$tenderSum}) must equal order total ({$grandTotal}).");
+            }
+
+            // Stock lock and check (Task 8.11 / D58)
             foreach ($quote['items'] as $item) {
                 $product = PosProduct::query()
                     ->where('organization_id', $organizationId)
@@ -373,28 +454,41 @@ class PosService
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                $reserved = (int) \App\Models\ServiceTabItem::query()
+                if (! $product->isTracked()) {
+                    continue;
+                }
+
+                $reservedTabs = (int) ServiceTabItem::query()
                     ->where('product_id', $product->id)
-                    ->where('status', \App\Models\ServiceTabItem::STATUS_RESERVED)
+                    ->where('status', ServiceTabItem::STATUS_RESERVED)
                     ->sum('quantity');
-                $available = max(0, (int) $product->stock_quantity - $reserved);
-                $tabMsg = $reserved > 0 ? " ({$reserved} reserved by active tabs)." : ".";
+
+                $reservedQr = (int) PosOrderItem::query()
+                    ->where('product_id', $product->id)
+                    ->whereHas('order', fn ($q) => $q->where('status', 'pending_payment'))
+                    ->sum('quantity');
+
+                $totalReserved = $reservedTabs + $reservedQr;
+                $available = max(0, (int) $product->stock_quantity - $totalReserved);
+                $tabMsg = $totalReserved > 0 ? " ({$totalReserved} reserved by pending orders/tabs)." : '.';
                 abort_unless($available >= $item['quantity'], 409, "Insufficient stock for {$product->sku}{$tabMsg}");
             }
 
             $couponCode = trim((string) ($data['coupon_code'] ?? ''));
             if ($couponCode !== '') {
-                $coupon = Coupon::query()->where('code', strtoupper($couponCode))->first();
-                $coupon?->increment('usage_count');
+                $customer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
+                [$couponVenueId, $couponCourtId] = $this->couponLocationContext($organizationId, $data, $cashier, $reservationId);
+                $reservedCoupon = $this->discounts->reserveCouponUse($couponCode, $organizationId, $subtotal, $customer, $couponVenueId, $couponCourtId);
+                $this->discounts->assertCombinationAllowed($reservedCoupon, $quote['coupon_discount_amount'], $quote['membership_discount_amount']);
             }
 
-            $orderCode = $data['payment_reference'] ?? "POS-{$cashier->id}-" . strtoupper(uniqid());
+            $orderCode = $data['payment_reference'] ?? "POS-{$cashier->id}-".strtoupper(uniqid());
             $customer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
-            $reservation = $reservationId ? \App\Models\Reservation::find($reservationId) : null;
+            $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
-            $isPendingQr = ($method === 'qr');
+            $hasQrTender = ($method === 'qr') || ($method === 'mixed' && collect($tenders)->contains(fn ($t) => ($t['method'] ?? '') === 'qr'));
+            $isPendingQr = $hasQrTender;
             $orderStatus = $isPendingQr ? 'pending_payment' : 'completed';
-            $paymentStatus = $isPendingQr ? 'pending' : 'paid';
 
             $receipt = [
                 'order_code' => $orderCode,
@@ -414,12 +508,14 @@ class PosService
                 ], $quote['items']),
                 'subtotal' => $subtotal,
                 'discount_amount' => $discount,
+                'membership_discount_amount' => $quote['membership_discount_amount'],
                 'taxable_amount' => $quote['taxable_amount'],
                 'tax_amount' => $taxAmount,
                 'vat_breakdown' => $vatBreakdown,
                 'rounding_amount' => $roundingAmount,
                 'grand_total' => $grandTotal,
                 'payment_method' => $method,
+                'tenders' => $tenders,
                 'cash_tendered' => $cashTendered,
                 'change_due' => $changeDue,
                 'status' => $orderStatus,
@@ -427,13 +523,14 @@ class PosService
             ];
 
             if ($isPendingQr) {
+                $qrAmount = $method === 'mixed' ? (int) collect($tenders)->firstWhere('method', 'qr')['amount'] : $grandTotal;
                 $receipt['qr_data'] = [
                     'bank' => config('services.sepay.bank', 'MBBank'),
                     'account' => config('services.sepay.account', '0901234567'),
                     'account_name' => config('services.sepay.account_name', 'AURA COURT SYSTEM'),
-                    'amount' => $grandTotal,
+                    'amount' => $qrAmount,
                     'memo' => $orderCode,
-                    'qr_url' => 'https://img.vietqr.io/image/' . config('services.sepay.bank', 'MBBank') . '-' . config('services.sepay.account', '0901234567') . '-compact2.png?amount=' . $grandTotal . '&addInfo=' . urlencode($orderCode) . '&accountName=' . urlencode(config('services.sepay.account_name', 'AURA COURT SYSTEM')),
+                    'qr_url' => 'https://img.vietqr.io/image/'.config('services.sepay.bank', 'MBBank').'-'.config('services.sepay.account', '0901234567').'-compact2.png?amount='.$qrAmount.'&addInfo='.urlencode($orderCode).'&accountName='.urlencode(config('services.sepay.account_name', 'AURA COURT SYSTEM')),
                 ];
             }
 
@@ -442,6 +539,9 @@ class PosService
                 'cart_id' => $data['cart_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
                 'cashier_id' => $cashier->id,
+                'cash_shift_id' => $activeShift?->id,
+                'venue_id' => $data['venue_id'] ?? $activeShift?->venue_id ?? $reservation?->court?->venue_id ?? null,
+                'register_id' => $data['register_id'] ?? $activeShift?->register_id ?? null,
                 'reservation_id' => $reservationId,
                 'status' => $orderStatus,
                 'payment_method' => $method,
@@ -457,6 +557,13 @@ class PosService
                 'metadata' => [
                     'vat_breakdown' => $vatBreakdown,
                     'receipt' => $receipt,
+                    'expires_at' => $isPendingQr ? now()->addMinutes(15)->toIso8601String() : null,
+                    'coupon_usage' => $quote['coupon_id'] ? [
+                        'coupon_id' => (int) $quote['coupon_id'],
+                        'promotion_campaign_id' => $quote['promotion_campaign_id'] ? (int) $quote['promotion_campaign_id'] : null,
+                        'status' => $isPendingQr ? 'reserved' : 'consumed',
+                    ] : null,
+                    'membership_snapshot' => $quote['membership_snapshot'],
                 ],
             ]);
 
@@ -467,8 +574,19 @@ class PosService
 
             foreach ($quote['items'] as $item) {
                 $product = $item['product'];
-                if (! $isPendingQr) {
+                if (! $isPendingQr && $product->isTracked()) {
                     $product->decrement('stock_quantity', $item['quantity']);
+
+                    StockMovement::create([
+                        'organization_id' => $organizationId,
+                        'product_id' => $product->id,
+                        'type' => 'sale',
+                        'quantity_delta' => -$item['quantity'],
+                        'unit_cost' => $product->cost,
+                        'reference_type' => PosOrder::class,
+                        'reference_id' => $order->id,
+                        'created_by' => $cashier->id,
+                    ]);
                 }
 
                 $order->items()->create([
@@ -487,39 +605,53 @@ class PosService
                         'vat_rate' => $item['vat_rate'],
                     ],
                 ]);
-
-                if (! $isPendingQr) {
-                    StockMovement::create([
-                        'organization_id' => $organizationId,
-                        'product_id' => $product->id,
-                        'type' => 'sale',
-                        'quantity_delta' => -$item['quantity'],
-                        'unit_cost' => $product->cost,
-                        'reference_type' => PosOrder::class,
-                        'reference_id' => $order->id,
-                        'created_by' => $cashier->id,
-                    ]);
-                }
             }
 
-            $order->payments()->create([
-                'organization_id' => $organizationId,
-                'method' => $method,
-                'amount' => $grandTotal,
-                'status' => $paymentStatus,
-                'provider_reference' => $orderCode,
-                'metadata' => [
-                    'cash_tendered' => $cashTendered,
-                    'change_due' => $changeDue,
-                    'qr_data' => $isPendingQr ? ($receipt['qr_data'] ?? null) : null,
-                ],
-            ]);
+            if ($method === 'mixed') {
+                foreach ($tenders as $tender) {
+                    $tMethod = $tender['method'];
+                    $tAmount = (int) $tender['amount'];
+                    $tStatus = ($tMethod === 'qr') ? 'pending' : 'paid';
+
+                    $order->payments()->create([
+                        'organization_id' => $organizationId,
+                        'method' => $tMethod,
+                        'amount' => $tAmount,
+                        'status' => $tStatus,
+                        'provider_reference' => $orderCode,
+                        'metadata' => [
+                            'cash_tendered' => $tMethod === 'cash' ? ($tender['cash_tendered'] ?? $tAmount) : null,
+                            'change_due' => $tMethod === 'cash' ? ($tender['change_due'] ?? 0) : null,
+                            'qr_data' => $tMethod === 'qr' ? ($receipt['qr_data'] ?? null) : null,
+                        ],
+                    ]);
+
+                    if ($tMethod === 'wallet') {
+                        abort_unless(! empty($data['customer_id']), 422, 'Customer is required for wallet payment.');
+                        $this->spendWallet($organizationId, (int) $data['customer_id'], $tAmount, "pos:{$order->id}:mixed");
+                    }
+                }
+            } else {
+                $paymentStatus = $isPendingQr ? 'pending' : 'paid';
+                $order->payments()->create([
+                    'organization_id' => $organizationId,
+                    'method' => $method,
+                    'amount' => $grandTotal,
+                    'status' => $paymentStatus,
+                    'provider_reference' => $orderCode,
+                    'metadata' => [
+                        'cash_tendered' => $cashTendered,
+                        'change_due' => $changeDue,
+                        'qr_data' => $isPendingQr ? ($receipt['qr_data'] ?? null) : null,
+                    ],
+                ]);
+            }
 
             if (! $isPendingQr && $method !== 'wallet') {
                 $this->financials->postPosSale($organizationId, $order->id, $grandTotal, $method, $order->payment_reference);
             }
 
-            if (! $isPendingQr && LoyaltyRule::where('organization_id', $organizationId)->where('status', 'published')->exists() && $order->customer_id) {
+            if (! $isPendingQr && $order->customer_id && $this->loyaltyPoints->getActiveBaseEarnRule($organizationId) !== null) {
                 $this->awardPoints($organizationId, $order->customer_id, $grandTotal, PosOrder::class, $order->id);
             }
 
@@ -529,42 +661,90 @@ class PosService
 
     public function confirmQrPayment(PosOrder $order, array $verificationData = []): PosOrder
     {
-        abort_unless($order->payment_method === 'qr', 422, 'Only QR orders can be confirmed via QR verification.');
+        abort_unless(in_array($order->payment_method, ['qr', 'mixed'], true), 422, 'Only orders with QR payment can be confirmed via QR verification.');
         abort_unless($order->status === 'pending_payment', 409, 'Order is not awaiting payment.');
 
-        return DB::transaction(function () use ($order, $verificationData): PosOrder {
+        // Amount verification
+        $qrPayment = $order->payments()->where('method', 'qr')->where('status', 'pending')->first();
+        $expectedAmount = $qrPayment ? (int) $qrPayment->amount : (int) $order->total_amount;
+        if (isset($verificationData['amount']) && (int) $verificationData['amount'] < $expectedAmount) {
+            abort(422, 'Payment amount is less than expected amount.');
+        }
+
+        // Provenance verification (Task 8.7 / D54)
+        $externalRef = trim((string) ($verificationData['external_transaction_id'] ?? $verificationData['provider_reference'] ?? ''));
+        $isWebhook = ($verificationData['source'] ?? null) === 'vietqr_webhook';
+
+        if (! $isWebhook) {
+            if ($externalRef === '') {
+                abort(422, 'Payment has not been verified by payment provider.');
+            }
+
+            $hasVerifiedReceipt = OwnerPaymentReceipt::query()
+                ->where('organization_id', $order->organization_id)
+                ->where(function ($q) use ($order, $externalRef) {
+                    $q->where('purpose_id', (string) $order->id)
+                        ->orWhere('payment_code', $order->payment_reference);
+                    if ($externalRef !== '') {
+                        $q->orWhere('reference_code', $externalRef);
+                    }
+                })
+                ->where('status', OwnerPaymentReceipt::STATUS_ALLOCATED)
+                ->exists();
+
+            $hasWebhookPayment = Payment::query()
+                ->where('status', 'paid')
+                ->where(function ($q) use ($order, $externalRef) {
+                    $q->where('external_transaction_id', $externalRef);
+                    if (! empty($order->payment_reference)) {
+                        $q->orWhere('external_transaction_id', $order->payment_reference);
+                        if ($externalRef === $order->payment_reference) {
+                            $q->orWhere('transfer_code', 'like', "%{$order->payment_reference}%");
+                        }
+                    }
+                })
+                ->exists();
+
+            if (! $hasVerifiedReceipt && ! $hasWebhookPayment) {
+                abort(422, 'Payment has not been verified by payment provider.');
+            }
+        }
+
+        return DB::transaction(function () use ($order, $verificationData, $externalRef): PosOrder {
             $order = PosOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
             abort_unless($order->status === 'pending_payment', 409, 'Order is not awaiting payment.');
 
             $order->load(['items.product', 'payments']);
 
-            // Verify and decrement stock atomically
+            // Verify and decrement stock atomically for tracked products
             foreach ($order->items as $item) {
                 $product = PosProduct::where('organization_id', $order->organization_id)
                     ->whereKey($item->product_id)
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                abort_unless($product->stock_quantity >= $item->quantity, 409, "Insufficient stock for {$product->sku}.");
-                $product->decrement('stock_quantity', $item->quantity);
+                if ($product->isTracked()) {
+                    abort_unless($product->stock_quantity >= $item->quantity, 409, "Insufficient stock for {$product->sku}.");
+                    $product->decrement('stock_quantity', $item->quantity);
 
-                StockMovement::create([
-                    'organization_id' => $order->organization_id,
-                    'product_id' => $product->id,
-                    'type' => 'sale',
-                    'quantity_delta' => -$item['quantity'],
-                    'unit_cost' => $product->cost,
-                    'reference_type' => PosOrder::class,
-                    'reference_id' => $order->id,
-                    'created_by' => $order->cashier_id,
-                ]);
+                    StockMovement::create([
+                        'organization_id' => $order->organization_id,
+                        'product_id' => $product->id,
+                        'type' => 'sale',
+                        'quantity_delta' => -$item['quantity'],
+                        'unit_cost' => $product->cost,
+                        'reference_type' => PosOrder::class,
+                        'reference_id' => $order->id,
+                        'created_by' => $order->cashier_id,
+                    ]);
+                }
             }
 
-            $externalRef = $verificationData['external_transaction_id'] ?? $verificationData['provider_reference'] ?? $order->payment_reference;
+            $finalRef = $externalRef !== '' ? $externalRef : $order->payment_reference;
 
             $order->payments()->where('method', 'qr')->update([
                 'status' => 'paid',
-                'provider_reference' => $externalRef,
+                'provider_reference' => $finalRef,
             ]);
 
             $meta = $order->metadata ?? [];
@@ -572,6 +752,17 @@ class PosService
                 $meta['receipt']['status'] = 'completed';
                 $meta['receipt']['is_paid'] = true;
                 $meta['receipt']['verified_at'] = now()->toIso8601String();
+            }
+            if (($meta['coupon_usage']['status'] ?? null) === 'reserved') {
+                $meta['coupon_usage']['status'] = 'consumed';
+                $meta['coupon_usage']['consumed_at'] = now()->toIso8601String();
+            }
+
+            // Late payment confirmation check: If the shift was closed, record note in metadata
+            $shift = $order->shift;
+            if ($shift && $shift->status === 'closed') {
+                $meta['late_payment_after_shift_close'] = true;
+                $meta['original_closed_shift_id'] = $shift->id;
             }
 
             $order->update([
@@ -584,11 +775,11 @@ class PosService
                 $order->organization_id,
                 $order->id,
                 $order->total_amount,
-                'qr',
+                $order->payment_method,
                 $order->payment_reference
             );
 
-            if (LoyaltyRule::where('organization_id', $order->organization_id)->where('status', 'published')->exists() && $order->customer_id) {
+            if ($order->customer_id && $this->loyaltyPoints->getActiveBaseEarnRule($order->organization_id) !== null) {
                 $this->awardPoints($order->organization_id, $order->customer_id, $order->total_amount, PosOrder::class, $order->id);
             }
 
@@ -615,6 +806,11 @@ class PosService
                 $meta['receipt']['cancelled_at'] = now()->toIso8601String();
                 $meta['receipt']['cancel_reason'] = $reason;
             }
+            if (($meta['coupon_usage']['status'] ?? null) === 'reserved') {
+                $this->discounts->release(Coupon::query()->find((int) $meta['coupon_usage']['coupon_id']));
+                $meta['coupon_usage']['status'] = 'released';
+                $meta['coupon_usage']['released_at'] = now()->toIso8601String();
+            }
 
             $order->update([
                 'status' => 'cancelled',
@@ -625,66 +821,430 @@ class PosService
         });
     }
 
-    public function openShift(User $cashier, int $organizationId, int $openingCash): CashShift
+    public function openShift(User $cashier, int $organizationId, int $openingCash, ?int $venueId = null, ?string $registerId = null): CashShift
     {
         abort_unless($openingCash >= 0, 422);
-        abort_if(CashShift::where('organization_id', $organizationId)->where('cashier_id', $cashier->id)->where('status', 'open')->exists(), 409, 'Cashier already has an open shift.');
-        return CashShift::create(['organization_id' => $organizationId, 'cashier_id' => $cashier->id, 'opening_cash' => $openingCash, 'opened_at' => now(), 'status' => 'open']);
+        $query = CashShift::where('organization_id', $organizationId)
+            ->where('cashier_id', $cashier->id)
+            ->where('status', 'open');
+        if ($registerId !== null) {
+            $query->where('register_id', $registerId);
+        }
+        abort_if($query->exists(), 409, 'Cashier already has an open shift.');
+
+        return CashShift::create([
+            'organization_id' => $organizationId,
+            'venue_id' => $venueId,
+            'register_id' => $registerId,
+            'cashier_id' => $cashier->id,
+            'opening_cash' => $openingCash,
+            'opened_at' => now(),
+            'status' => 'open',
+            'cash_movements' => [],
+        ]);
     }
 
-    public function closeShift(CashShift $shift, User $cashier, int $declaredCash, ?string $note = null): CashShift
-    {
-        return DB::transaction(function () use ($shift, $cashier, $declaredCash, $note): CashShift {
+    public function closeShift(
+        CashShift $shift,
+        User $cashier,
+        int $declaredCash,
+        ?string $note = null,
+        ?string $pendingDisposition = null,
+        ?int $handoverToShiftId = null
+    ): CashShift {
+        return DB::transaction(function () use ($shift, $cashier, $declaredCash, $note, $pendingDisposition, $handoverToShiftId): CashShift {
             $shift = CashShift::query()->whereKey($shift->id)->lockForUpdate()->firstOrFail();
             abort_unless($shift->cashier_id === $cashier->id && $shift->status === 'open', 409);
-            $cashSales = PosOrder::where('organization_id', $shift->organization_id)->where('cashier_id', $cashier->id)->where('payment_method', 'cash')->where('status', 'completed')->whereBetween('completed_at', [$shift->opened_at, now()])->sum('total_amount');
-            $expected = $shift->opening_cash + $cashSales;
+
+            // Task 8.9 [D56]: Check for unresolved pending orders
+            $pendingOrders = PosOrder::where('cash_shift_id', $shift->id)
+                ->where('status', 'pending_payment')
+                ->get();
+
+            if ($pendingOrders->isNotEmpty()) {
+                abort_unless(
+                    in_array($pendingDisposition, ['cancel', 'handover'], true),
+                    409,
+                    "Cannot close shift with {$pendingOrders->count()} pending order(s) without disposition ('cancel' or 'handover')."
+                );
+
+                if ($pendingDisposition === 'cancel') {
+                    foreach ($pendingOrders as $pendingOrder) {
+                        $this->cancelPendingQr($pendingOrder, 'Cancelled upon shift close');
+                    }
+                } elseif ($pendingDisposition === 'handover') {
+                    foreach ($pendingOrders as $pendingOrder) {
+                        $pendingOrder->update([
+                            'handover_status' => 'handed_over',
+                            'handed_over_to_shift_id' => $handoverToShiftId,
+                        ]);
+                    }
+                }
+            }
+
+            // Task 8.8 [D55] & Task 8.10 [D57]: Calculate expected cash strictly by shift orders & cash movements
+            $cashSales = (int) PosOrder::where('cash_shift_id', $shift->id)
+                ->where('status', 'completed')
+                ->where('payment_method', 'cash')
+                ->sum('total_amount');
+
+            $mixedCashSales = (int) PosPayment::whereHas('order', function ($q) use ($shift) {
+                $q->where('cash_shift_id', $shift->id)
+                    ->where('status', 'completed')
+                    ->where('payment_method', 'mixed');
+            })
+                ->where('method', 'cash')
+                ->where('status', 'paid')
+                ->sum('amount');
+
+            // Fallback for legacy orders without cash_shift_id
+            if ($cashSales === 0 && $mixedCashSales === 0) {
+                $cashSales = (int) PosOrder::where('organization_id', $shift->organization_id)
+                    ->where('cashier_id', $cashier->id)
+                    ->where('payment_method', 'cash')
+                    ->where('status', 'completed')
+                    ->whereBetween('completed_at', [$shift->opened_at, now()])
+                    ->whereNull('cash_shift_id')
+                    ->sum('total_amount');
+            }
+
+            $movements = (array) ($shift->cash_movements ?? []);
+            $cashInflows = 0;
+            $cashOutflows = 0;
+            $cashRefunds = 0;
+            foreach ($movements as $m) {
+                $mType = $m['type'] ?? '';
+                $mAmt = (int) ($m['amount'] ?? 0);
+                if ($mType === 'cash_in') {
+                    $cashInflows += $mAmt;
+                } elseif ($mType === 'cash_out') {
+                    $cashOutflows += $mAmt;
+                } elseif ($mType === 'refund') {
+                    $cashRefunds += $mAmt;
+                }
+            }
+
+            $expected = (int) $shift->opening_cash + $cashSales + $mixedCashSales + $cashInflows - $cashOutflows - $cashRefunds;
             $variance = $declaredCash - $expected;
-            $shift->update(['expected_cash' => $expected, 'declared_cash' => $declaredCash, 'variance' => $variance, 'status' => 'closed', 'closed_at' => now()]);
-            ShiftReconciliation::create(['organization_id' => $shift->organization_id, 'cash_shift_id' => $shift->id, 'variance' => $variance, 'status' => $variance === 0 ? 'matched' : 'exception', 'note' => $note]);
+
+            $shift->update([
+                'expected_cash' => $expected,
+                'declared_cash' => $declaredCash,
+                'variance' => $variance,
+                'status' => 'closed',
+                'closed_at' => now(),
+            ]);
+
+            ShiftReconciliation::create([
+                'organization_id' => $shift->organization_id,
+                'cash_shift_id' => $shift->id,
+                'variance' => $variance,
+                'status' => $variance === 0 ? 'matched' : 'exception',
+                'note' => $note,
+            ]);
+
             return $shift->fresh('reconciliation');
         });
+    }
+
+    public function recordCashMovement(CashShift $shift, User $cashier, string $type, int $amount, string $reason): CashShift
+    {
+        abort_unless(in_array($type, ['cash_in', 'cash_out'], true), 422, 'Invalid cash movement type.');
+        abort_unless($amount > 0, 422, 'Amount must be positive.');
+
+        return DB::transaction(function () use ($shift, $cashier, $type, $amount, $reason): CashShift {
+            $shift = CashShift::whereKey($shift->id)->lockForUpdate()->firstOrFail();
+            abort_unless($shift->status === 'open', 409, 'Cannot record cash movement on a closed shift.');
+
+            $movements = (array) ($shift->cash_movements ?? []);
+            $movements[] = [
+                'id' => uniqid('cm_'),
+                'type' => $type,
+                'amount' => $amount,
+                'reason' => $reason,
+                'cashier_id' => $cashier->id,
+                'cashier_name' => $cashier->name,
+                'created_at' => now()->toIso8601String(),
+            ];
+            $shift->update(['cash_movements' => $movements]);
+
+            return $shift->fresh();
+        });
+    }
+
+    public function refundOrder(
+        PosOrder $order,
+        User $cashier,
+        array $items = [],
+        string $reason = 'Customer return',
+        string $refundMethod = 'cash'
+    ): PosOrder {
+        abort_unless($order->status === 'completed', 409, 'Only completed orders can be refunded.');
+        abort_unless(in_array($refundMethod, ['cash', 'original_method', 'wallet'], true), 422, 'Unsupported refund method.');
+
+        return DB::transaction(function () use ($order, $cashier, $items, $reason, $refundMethod): PosOrder {
+            $order = PosOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            abort_unless($order->status === 'completed', 409, 'Only completed orders can be refunded.');
+
+            $order->load(['items.product', 'payments']);
+
+            $refundAmount = 0;
+            $refundedItems = [];
+
+            if (empty($items)) {
+                $refundAmount = $order->total_amount;
+                foreach ($order->items as $item) {
+                    $product = $item->product;
+                    if ($product && $product->isTracked()) {
+                        $product->increment('stock_quantity', $item->quantity);
+                        StockMovement::create([
+                            'organization_id' => $order->organization_id,
+                            'product_id' => $product->id,
+                            'type' => 'return',
+                            'quantity_delta' => $item->quantity,
+                            'unit_cost' => $product->cost,
+                            'reference_type' => PosOrder::class,
+                            'reference_id' => $order->id,
+                            'created_by' => $cashier->id,
+                            'metadata' => ['reason' => $reason],
+                        ]);
+                    }
+                    $refundedItems[] = [
+                        'product_id' => $item->product_id,
+                        'name' => $item->name,
+                        'quantity' => $item->quantity,
+                        'amount' => $item->line_total,
+                    ];
+                }
+            } else {
+                foreach ($items as $reqItem) {
+                    $productId = (int) ($reqItem['product_id'] ?? 0);
+                    $qty = (int) ($reqItem['quantity'] ?? 1);
+                    $restock = (bool) ($reqItem['restock'] ?? true);
+
+                    $orderItem = $order->items->firstWhere('product_id', $productId);
+                    abort_unless($orderItem !== null, 422, "Product ID {$productId} was not part of this order.");
+                    abort_unless($qty > 0 && $qty <= $orderItem->quantity, 422, "Invalid refund quantity for {$orderItem->name}.");
+
+                    $lineRefund = (int) round(($orderItem->line_total / $orderItem->quantity) * $qty);
+                    $refundAmount += $lineRefund;
+
+                    $product = $orderItem->product;
+                    if ($restock && $product && $product->isTracked()) {
+                        $product->increment('stock_quantity', $qty);
+                        StockMovement::create([
+                            'organization_id' => $order->organization_id,
+                            'product_id' => $product->id,
+                            'type' => 'return',
+                            'quantity_delta' => $qty,
+                            'unit_cost' => $product->cost,
+                            'reference_type' => PosOrder::class,
+                            'reference_id' => $order->id,
+                            'created_by' => $cashier->id,
+                            'metadata' => ['reason' => $reason],
+                        ]);
+                    }
+
+                    $refundedItems[] = [
+                        'product_id' => $productId,
+                        'name' => $orderItem->name,
+                        'quantity' => $qty,
+                        'amount' => $lineRefund,
+                    ];
+                }
+            }
+
+            $refundAmount = min($refundAmount, $order->total_amount);
+
+            $meta = $order->metadata ?? [];
+            $refunds = (array) ($meta['refunds'] ?? []);
+            $refundRecord = [
+                'id' => uniqid('ref_'),
+                'amount' => $refundAmount,
+                'method' => $refundMethod,
+                'reason' => $reason,
+                'items' => $refundedItems,
+                'cashier_id' => $cashier->id,
+                'cashier_name' => $cashier->name,
+                'refunded_at' => now()->toIso8601String(),
+            ];
+            $refunds[] = $refundRecord;
+            $meta['refunds'] = $refunds;
+
+            if ($refundMethod === 'cash') {
+                $activeShift = CashShift::where('organization_id', $order->organization_id)
+                    ->where('cashier_id', $cashier->id)
+                    ->where('status', 'open')
+                    ->first();
+                if ($activeShift) {
+                    $movements = (array) ($activeShift->cash_movements ?? []);
+                    $movements[] = [
+                        'id' => uniqid('cm_'),
+                        'type' => 'refund',
+                        'amount' => $refundAmount,
+                        'reason' => "Refund for Order {$order->payment_reference}: {$reason}",
+                        'cashier_id' => $cashier->id,
+                        'order_id' => $order->id,
+                        'created_at' => now()->toIso8601String(),
+                    ];
+                    $activeShift->update(['cash_movements' => $movements]);
+                }
+            }
+
+            $order->update([
+                'status' => $refundAmount >= $order->total_amount ? 'refunded' : 'completed',
+                'metadata' => $meta,
+            ]);
+
+            $this->financials->postRefund(
+                $order->organization_id,
+                $order->payment_reference ?? "POS-{$order->id}",
+                $refundAmount,
+                $refundRecord['id'],
+                ['order_id' => $order->id, 'reason' => $reason]
+            );
+
+            return $order->fresh(['items', 'payments']);
+        });
+    }
+
+    public function releaseExpiredPendingOrders(int $organizationId): int
+    {
+        $now = now();
+        $orders = PosOrder::where('organization_id', $organizationId)
+            ->where('status', 'pending_payment')
+            ->get();
+
+        $count = 0;
+        foreach ($orders as $order) {
+            $isExpired = false;
+            if ($order->created_at && $order->created_at->lt($now->copy()->subMinutes(15))) {
+                $isExpired = true;
+            }
+            $expiresAt = data_get($order->metadata, 'expires_at');
+            if ($expiresAt && \Carbon\Carbon::parse($expiresAt)->lt($now)) {
+                $isExpired = true;
+            }
+
+            if ($isExpired) {
+                $this->cancelPendingQr($order, 'Expired automatically due to pending payment TTL');
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     public function publishPlan(int $organizationId, array $data): TenantMembershipPlan
     {
         $version = (int) TenantMembershipPlan::where('organization_id', $organizationId)->where('name', $data['name'])->max('version') + 1;
+
         return TenantMembershipPlan::create(['organization_id' => $organizationId, 'name' => $data['name'], 'version' => $version, 'price' => $data['price'], 'benefits' => $data['benefits'], 'status' => 'published', 'published_at' => now()]);
     }
 
     public function assignMembership(int $organizationId, int $userId, TenantMembershipPlan $plan, int $months = 1): TenantMembership
     {
         return DB::transaction(function () use ($organizationId, $userId, $plan, $months): TenantMembership {
-            $membership = TenantMembership::create(['organization_id' => $organizationId, 'user_id' => $userId, 'plan_id' => $plan->id, 'plan_version' => $plan->version, 'status' => 'active', 'starts_at' => now(), 'ends_at' => now()->addMonths($months)]);
-            foreach ($plan->benefits as $code => $value) MembershipEntitlement::create(['organization_id' => $organizationId, 'membership_id' => $membership->id, 'benefit_code' => $code, 'benefit_value' => ['value' => $value, 'plan_version' => $plan->version], 'starts_at' => $membership->starts_at, 'ends_at' => $membership->ends_at]);
+            $plan = TenantMembershipPlan::query()
+                ->where('organization_id', $organizationId)
+                ->whereKey($plan->id)
+                ->whereIn('status', ['active', 'published'])
+                ->lockForUpdate()
+                ->firstOrFail();
+            $customerBelongsToOrganization = OrganizationMember::query()
+                ->where('organization_id', $organizationId)
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first() !== null
+                || TenantCustomer::query()
+                    ->where('organization_id', $organizationId)
+                    ->where('user_id', $userId)
+                    ->lockForUpdate()
+                    ->first() !== null;
+            abort_unless($customerBelongsToOrganization, 422, 'Customer does not belong to this organization.');
+
+            $membership = TenantMembership::create([
+                'organization_id' => $organizationId,
+                'user_id' => $userId,
+                'plan_id' => $plan->id,
+                'plan_version' => $plan->version,
+                'status' => 'active',
+                'starts_at' => now(),
+                'ends_at' => now()->addMonths($months),
+            ]);
+            foreach ($plan->benefits as $code => $value) {
+                MembershipEntitlement::create([
+                    'organization_id' => $organizationId,
+                    'membership_id' => $membership->id,
+                    'benefit_code' => $code,
+                    'benefit_value' => ['value' => $value, 'plan_version' => $plan->version],
+                    'starts_at' => $membership->starts_at,
+                    'ends_at' => $membership->ends_at,
+                ]);
+            }
+
             return $membership->fresh('entitlements');
         });
     }
 
     public function awardPoints(int $organizationId, int $userId, int $amountVnd, string $sourceType, int $sourceId): PointLedger
     {
-        $rule = LoyaltyRule::where('organization_id', $organizationId)->where('status', 'published')->latest('version')->firstOrFail();
-        $points = intdiv($amountVnd * $rule->earn_points_per_100_vnd, 100);
-        return $this->writePoints($organizationId, $userId, $rule->id, $points, $sourceType, $sourceId);
+        // Earn under the disclosed base rule times the active member multiplier
+        // (applied once), with the rule's forward-dated (book-ahead) expiry.
+        $earn = $this->loyaltyPoints->resolveEarnPoints($organizationId, $userId, $amountVnd);
+
+        return $this->writePoints(
+            $organizationId,
+            $userId,
+            $earn['rule']->id,
+            $earn['points'],
+            $sourceType,
+            $sourceId,
+            $earn['expires_at'],
+            [
+                'base_points' => $earn['base_points'],
+                'earn_multiplier' => $earn['multiplier'],
+                'rule_version' => (int) $earn['rule']->version,
+            ],
+        );
     }
 
     public function redeemPoints(int $organizationId, int $userId, int $points, string $sourceType, int $sourceId): PointLedger
     {
         abort_unless($points > 0, 422);
-        $current = (int) PointLedger::where('organization_id', $organizationId)->where('user_id', $userId)->sum('delta');
-        abort_unless($current >= $points, 409, 'Insufficient loyalty points.');
-        $rule = LoyaltyRule::where('organization_id', $organizationId)->where('status', 'published')->latest('version')->firstOrFail();
-        return $this->writePoints($organizationId, $userId, $rule->id, -$points, $sourceType, $sourceId);
+
+        return DB::transaction(function () use ($organizationId, $userId, $points, $sourceType, $sourceId): PointLedger {
+            User::query()->whereKey($userId)->lockForUpdate()->first();
+            // Only unexpired lots are spendable; retries/concurrent spend cannot overdraw.
+            $available = $this->loyaltyPoints->availableBalance($organizationId, $userId);
+            abort_unless($available >= $points, 409, 'Insufficient loyalty points.');
+            $rule = LoyaltyRule::where('organization_id', $organizationId)->where('status', 'published')->latest('version')->firstOrFail();
+
+            return $this->writePoints($organizationId, $userId, $rule->id, -$points, $sourceType, $sourceId);
+        });
     }
 
     public function benefits(int $organizationId, int $userId)
     {
-        return MembershipEntitlement::query()->where('organization_id', $organizationId)->whereHas('membership', fn ($query) => $query->where('user_id', $userId)->where('status', 'active')->where('ends_at', '>', now()))->where('ends_at', '>', now())->get();
+        $now = now();
+
+        return MembershipEntitlement::query()->where('organization_id', $organizationId)
+            ->where('starts_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->whereHas('membership', fn ($query) => $query
+                ->where('organization_id', $organizationId)
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->where('starts_at', '<=', $now)
+                ->where('ends_at', '>=', $now))
+            ->get();
     }
 
     public function spendWallet(int $organizationId, int $userId, int $amount, string $reference): WalletTransaction
     {
         abort_unless($amount > 0, 422);
+
         return DB::transaction(function () use ($organizationId, $userId, $amount, $reference): WalletTransaction {
             $wallet = WalletAccount::firstOrCreate(['organization_id' => $organizationId, 'user_id' => $userId, 'currency' => 'VND'], ['balance' => 0, 'status' => 'active']);
             $wallet = WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
@@ -692,6 +1252,7 @@ class PosService
             $wallet->decrement('balance', $amount);
             $transaction = WalletTransaction::create(['organization_id' => $organizationId, 'wallet_account_id' => $wallet->id, 'type' => 'debit', 'amount' => $amount, 'balance_after' => $wallet->balance, 'source_type' => 'wallet_spend', 'source_id' => abs(crc32($reference)), 'reference' => $reference]);
             $this->financials->postWalletSpend($organizationId, $wallet->id, $amount, $reference);
+
             return $transaction;
         });
     }
@@ -699,23 +1260,84 @@ class PosService
     public function creditWallet(int $organizationId, int $userId, int $amount, string $sourceType, int $sourceId, string $reference): WalletTransaction
     {
         abort_unless($amount > 0, 422);
+
         return DB::transaction(function () use ($organizationId, $userId, $amount, $sourceType, $sourceId, $reference): WalletTransaction {
             $wallet = WalletAccount::firstOrCreate(['organization_id' => $organizationId, 'user_id' => $userId, 'currency' => 'VND'], ['balance' => 0, 'status' => 'active']);
             $wallet = WalletAccount::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
             $wallet->increment('balance', $amount);
             $transaction = WalletTransaction::create(['organization_id' => $organizationId, 'wallet_account_id' => $wallet->id, 'type' => 'credit', 'amount' => $amount, 'balance_after' => $wallet->balance, 'source_type' => $sourceType, 'source_id' => $sourceId, 'reference' => $reference]);
             $this->financials->postWalletCredit($organizationId, $wallet->id, $amount, $reference);
+
             return $transaction;
         });
     }
 
-    private function writePoints(int $organizationId, int $userId, int $ruleId, int $delta, string $sourceType, int $sourceId): PointLedger
+    private function writePoints(int $organizationId, int $userId, int $ruleId, int $delta, string $sourceType, int $sourceId, ?CarbonInterface $expiresAt = null, array $metadata = []): PointLedger
     {
-        return DB::transaction(function () use ($organizationId, $userId, $ruleId, $delta, $sourceType, $sourceId): PointLedger {
+        return DB::transaction(function () use ($organizationId, $userId, $ruleId, $delta, $sourceType, $sourceId, $expiresAt, $metadata): PointLedger {
             User::query()->whereKey($userId)->lockForUpdate()->first();
             $balance = (int) PointLedger::where('organization_id', $organizationId)->where('user_id', $userId)->sum('delta');
             abort_unless($balance + $delta >= 0, 409, 'Loyalty points cannot become negative.');
-            return PointLedger::create(['organization_id' => $organizationId, 'user_id' => $userId, 'loyalty_rule_id' => $ruleId, 'delta' => $delta, 'balance_after' => $balance + $delta, 'source_type' => $sourceType, 'source_id' => $sourceId]);
+
+            return PointLedger::create([
+                'organization_id' => $organizationId,
+                'user_id' => $userId,
+                'loyalty_rule_id' => $ruleId,
+                'delta' => $delta,
+                'balance_after' => $balance + $delta,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'expires_at' => $expiresAt,
+                'metadata' => $metadata !== [] ? $metadata : null,
+            ]);
         });
+    }
+
+    /** @return array{0: ?int, 1: ?int} */
+    private function couponLocationContext(int $organizationId, array $data, ?User $cashier, ?int $reservationId): array
+    {
+        $venueId = null;
+        $courtId = null;
+
+        if ($reservationId !== null) {
+            $reservation = Reservation::query()->with('court.venue')
+                ->where('organization_id', $organizationId)
+                ->whereKey($reservationId)
+                ->firstOrFail();
+            $courtId = $reservation->court_id ? (int) $reservation->court_id : null;
+            $venueId = $reservation->court?->venue_id ? (int) $reservation->court->venue_id : null;
+            abort_unless($venueId !== null, 404, 'Reservation venue not found.');
+            if (! empty($data['venue_id']) && (int) $data['venue_id'] !== $venueId) {
+                throw ValidationException::withMessages(['venue_id' => 'The selected venue does not match the reservation.']);
+            }
+        } elseif (! empty($data['venue_id'])) {
+            $venueId = (int) $data['venue_id'];
+        }
+
+        if ($venueId === null) {
+            return [null, null];
+        }
+
+        $venue = Venue::query()->where('organization_id', $organizationId)->whereKey($venueId)->firstOrFail();
+        if (! $cashier?->isPlatformAdmin()) {
+            $member = $cashier?->organizationMembers()
+                ->where('organization_id', $organizationId)
+                ->where('status', 'active')
+                ->first();
+            abort_unless($member && in_array($member->role, [
+                OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                OrganizationMember::ROLE_VENUE_MANAGER,
+                OrganizationMember::ROLE_STAFF,
+                OrganizationMember::ROLE_CASHIER,
+            ], true), 403);
+
+            if ($member->role !== OrganizationMember::ROLE_ORGANIZATION_OWNER) {
+                $permissions = (array) $member->permissions;
+                $assignedVenueIds = $permissions['venue_ids'] ?? (isset($permissions['venue_id']) ? [$permissions['venue_id']] : null);
+                abort_unless($assignedVenueIds === null || in_array((int) $venue->id, array_map('intval', $assignedVenueIds), true), 403);
+            }
+        }
+
+        return [$venueId, $courtId];
     }
 }

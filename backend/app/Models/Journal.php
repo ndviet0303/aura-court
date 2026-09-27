@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['organization_id', 'event_type', 'event_id', 'reference', 'currency', 'total_debit', 'total_credit', 'description', 'metadata', 'posted_at'])]
+#[Fillable(['organization_id', 'event_type', 'event_id', 'reference', 'currency', 'ledger_entity', 'payment_model', 'total_debit', 'total_credit', 'description', 'metadata', 'posted_at'])]
 class Journal extends Model
 {
     use BelongsToTenant;

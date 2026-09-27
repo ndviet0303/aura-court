@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\ResolvesV2Organization;
 use App\Models\CashShift;
 use App\Models\LoyaltyRule;
 use App\Models\PosOrder;
+use App\Models\PosPayment;
 use App\Models\PosProduct;
 use App\Models\StockMovement;
 use App\Models\TenantMembershipPlan;
@@ -214,6 +215,7 @@ class PosController extends Controller
             'items.*.vat_rate' => 'nullable|numeric|min:0|max:1',
             'customer_id' => 'nullable|integer',
             'reservation_id' => 'nullable|integer',
+            'venue_id' => 'nullable|integer',
             'coupon_code' => 'nullable|string|max:50',
             'discount_amount' => 'nullable|integer|min:0',
             'payment_method' => 'nullable|in:cash,qr,wallet',
@@ -236,7 +238,15 @@ class PosController extends Controller
             'items.*.vat_rate' => 'nullable|numeric|min:0|max:1',
             'customer_id' => 'nullable|integer',
             'reservation_id' => 'nullable|integer',
-            'payment_method' => 'required|in:cash,qr,wallet',
+            'venue_id' => 'nullable|integer',
+            'register_id' => 'nullable|string|max:80',
+            'payment_method' => 'required|in:cash,qr,wallet,mixed',
+            'allow_mixed_tender' => 'nullable|boolean',
+            'tenders' => 'nullable|array',
+            'tenders.*.method' => 'required_with:tenders|in:cash,qr,wallet',
+            'tenders.*.amount' => 'required_with:tenders|integer|min:1',
+            'tenders.*.cash_tendered' => 'nullable|integer|min:0',
+            'tenders.*.change_due' => 'nullable|integer|min:0',
             'payment_reference' => 'nullable|string|max:160',
             'discount_amount' => 'nullable|integer|min:0',
             'coupon_code' => 'nullable|string|max:50',
@@ -307,19 +317,154 @@ class PosController extends Controller
         });
     }
 
+    public function printReceipt(Request $request, PosOrder $order)
+    {
+        $organization = $this->organization($request);
+        abort_unless($order->organization_id === $organization->id, 404);
+
+        $order->load(['items', 'payments', 'customer:id,name,email,phone', 'cashier:id,name']);
+        $receipt = $order->receipt ?? [];
+
+        $isPaid = $order->status === 'completed' && ((bool) ($receipt['is_paid'] ?? false));
+        if (! $isPaid) {
+            $receipt['is_paid'] = false;
+            $receipt['status'] = 'unpaid_draft';
+            $receipt['warning'] = 'UNPAID DRAFT RECEIPT - NOT A VALID TAX INVOICE';
+        }
+
+        return response()->json([
+            'order' => $order,
+            'receipt' => $receipt,
+            'printable' => $isPaid,
+            'printed_at' => now()->toIso8601String(),
+        ]);
+    }
+
+    public function sendReceipt(Request $request, PosOrder $order)
+    {
+        $organization = $this->organization($request);
+        abort_unless($order->organization_id === $organization->id, 404);
+
+        $data = $request->validate([
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $recipient = $data['email'] ?? $data['phone'] ?? $order->customer?->email ?? $order->customer?->phone;
+        abort_unless(! empty($recipient), 422, 'Recipient email or phone is required.');
+
+        $receipt = $order->receipt ?? [];
+        $isPaid = $order->status === 'completed' && ((bool) ($receipt['is_paid'] ?? false));
+        if (! $isPaid) {
+            $receipt['is_paid'] = false;
+            $receipt['status'] = 'unpaid_draft';
+            $receipt['warning'] = 'UNPAID DRAFT RECEIPT - NOT A VALID TAX INVOICE';
+        }
+
+        return response()->json([
+            'sent' => true,
+            'recipient' => $recipient,
+            'order_id' => $order->id,
+            'receipt' => $receipt,
+            'sent_at' => now()->toIso8601String(),
+        ]);
+    }
+
+    public function refundOrder(Request $request, PosOrder $order)
+    {
+        $organization = $this->organization($request);
+        abort_unless($order->organization_id === $organization->id, 404);
+
+        $data = $request->validate([
+            'items' => 'nullable|array',
+            'items.*.product_id' => 'required_with:items|integer',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.restock' => 'nullable|boolean',
+            'reason' => 'nullable|string|max:500',
+            'refund_method' => 'nullable|in:cash,original_method,wallet',
+        ]);
+
+        return $this->idempotency->run($request, function () use ($order, $request, $data) {
+            $refunded = $this->pos->refundOrder(
+                $order,
+                $request->user(),
+                $data['items'] ?? [],
+                $data['reason'] ?? 'Customer return',
+                $data['refund_method'] ?? 'cash'
+            );
+
+            return response()->json([
+                'order' => $refunded,
+                'receipt' => $refunded->receipt,
+            ]);
+        });
+    }
+
     public function openShift(Request $request)
     {
         $organization = $this->organization($request);
-        $data = $request->validate(['opening_cash' => 'required|integer|min:0']);
-        return $this->idempotency->run($request, fn () => response()->json(['shift' => $this->pos->openShift($request->user(), $organization->id, $data['opening_cash'])], 201));
+        $data = $request->validate([
+            'opening_cash' => 'required|integer|min:0',
+            'venue_id' => 'nullable|integer',
+            'register_id' => 'nullable|string|max:80',
+        ]);
+        return $this->idempotency->run($request, fn () => response()->json([
+            'shift' => $this->pos->openShift(
+                $request->user(),
+                $organization->id,
+                $data['opening_cash'],
+                $data['venue_id'] ?? null,
+                $data['register_id'] ?? null
+            ),
+        ], 201));
     }
 
     public function closeShift(Request $request, CashShift $shift)
     {
         $organization = $this->organization($request);
         abort_unless($shift->organization_id === $organization->id, 404);
-        $data = $request->validate(['declared_cash' => 'required|integer|min:0', 'note' => 'nullable|string|max:2000']);
-        return $this->idempotency->run($request, fn () => response()->json(['shift' => $this->pos->closeShift($shift, $request->user(), $data['declared_cash'], $data['note'] ?? null)]));
+        $data = $request->validate([
+            'declared_cash' => 'required|integer|min:0',
+            'note' => 'nullable|string|max:2000',
+            'pending_disposition' => 'nullable|string|in:cancel,handover',
+            'handover_to_shift_id' => 'nullable|integer',
+        ]);
+        return $this->idempotency->run($request, fn () => response()->json([
+            'shift' => $this->pos->closeShift(
+                $shift,
+                $request->user(),
+                $data['declared_cash'],
+                $data['note'] ?? null,
+                $data['pending_disposition'] ?? null,
+                $data['handover_to_shift_id'] ?? null
+            ),
+        ]));
+    }
+
+    public function recordCashMovement(Request $request, CashShift $shift)
+    {
+        $organization = $this->organization($request);
+        abort_unless($shift->organization_id === $organization->id, 404);
+
+        $data = $request->validate([
+            'type' => 'required|in:cash_in,cash_out',
+            'amount' => 'required|integer|min:1',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        return $this->idempotency->run($request, function () use ($shift, $request, $data) {
+            $updatedShift = $this->pos->recordCashMovement(
+                $shift,
+                $request->user(),
+                $data['type'],
+                $data['amount'],
+                $data['reason']
+            );
+
+            return response()->json([
+                'shift' => $updatedShift,
+            ]);
+        });
     }
 
     public function shifts(Request $request)
@@ -336,25 +481,55 @@ class PosController extends Controller
         $shifts = $query->paginate((int) ($request->get('per_page', 50)));
 
         $shifts->getCollection()->transform(function ($shift) {
-            $endTime = $shift->closed_at ?: now();
-            $orders = PosOrder::where('organization_id', $shift->organization_id)
-                ->where('cashier_id', $shift->cashier_id)
+            $orders = PosOrder::where('cash_shift_id', $shift->id)
                 ->where('status', 'completed')
-                ->whereBetween('created_at', [$shift->opened_at, $endTime])
                 ->get();
 
+            if ($orders->isEmpty()) {
+                $endTime = $shift->closed_at ?: now();
+                $orders = PosOrder::where('organization_id', $shift->organization_id)
+                    ->where('cashier_id', $shift->cashier_id)
+                    ->where('status', 'completed')
+                    ->whereBetween('created_at', [$shift->opened_at, $endTime])
+                    ->whereNull('cash_shift_id')
+                    ->get();
+            }
+
             $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
+            $mixedCash = (int) PosPayment::whereHas('order', function ($q) use ($shift) {
+                $q->where('cash_shift_id', $shift->id)
+                    ->where('status', 'completed')
+                    ->where('payment_method', 'mixed');
+            })->where('method', 'cash')->where('status', 'paid')->sum('amount');
+            $cashSales += $mixedCash;
+
             $qrSales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
             $walletSales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
             $totalSales = (int) $orders->sum('total_amount');
+
+            $movements = (array) ($shift->cash_movements ?? []);
+            $cashInflows = 0;
+            $cashOutflows = 0;
+            $cashRefunds = 0;
+            foreach ($movements as $m) {
+                $mType = $m['type'] ?? '';
+                $mAmt = (int) ($m['amount'] ?? 0);
+                if ($mType === 'cash_in') {
+                    $cashInflows += $mAmt;
+                } elseif ($mType === 'cash_out') {
+                    $cashOutflows += $mAmt;
+                } elseif ($mType === 'refund') {
+                    $cashRefunds += $mAmt;
+                }
+            }
 
             $shift->cash_sales = $cashSales;
             $shift->qr_sales = $qrSales;
             $shift->wallet_sales = $walletSales;
             $shift->total_sales = $totalSales;
             $shift->orders_count = $orders->count();
-            if ($shift->expected_cash == 0 && $shift->status === 'open') {
-                $shift->expected_cash = $shift->opening_cash + $cashSales;
+            if ($shift->status === 'open') {
+                $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
             }
             return $shift;
         });
@@ -372,7 +547,7 @@ class PosController extends Controller
             ->latest('opened_at')
             ->first();
 
-        if (!$shift) {
+        if (! $shift) {
             $shift = CashShift::where('organization_id', $organization->id)
                 ->where('status', 'open')
                 ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
@@ -381,23 +556,53 @@ class PosController extends Controller
         }
 
         if ($shift) {
-            $orders = PosOrder::where('organization_id', $shift->organization_id)
-                ->where('cashier_id', $shift->cashier_id)
+            $orders = PosOrder::where('cash_shift_id', $shift->id)
                 ->where('status', 'completed')
-                ->where('created_at', '>=', $shift->opened_at)
                 ->get();
 
+            if ($orders->isEmpty()) {
+                $orders = PosOrder::where('organization_id', $shift->organization_id)
+                    ->where('cashier_id', $shift->cashier_id)
+                    ->where('status', 'completed')
+                    ->where('created_at', '>=', $shift->opened_at)
+                    ->whereNull('cash_shift_id')
+                    ->get();
+            }
+
             $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
+            $mixedCash = (int) PosPayment::whereHas('order', function ($q) use ($shift) {
+                $q->where('cash_shift_id', $shift->id)
+                    ->where('status', 'completed')
+                    ->where('payment_method', 'mixed');
+            })->where('method', 'cash')->where('status', 'paid')->sum('amount');
+            $cashSales += $mixedCash;
+
             $qrSales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
             $walletSales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
             $totalSales = (int) $orders->sum('total_amount');
+
+            $movements = (array) ($shift->cash_movements ?? []);
+            $cashInflows = 0;
+            $cashOutflows = 0;
+            $cashRefunds = 0;
+            foreach ($movements as $m) {
+                $mType = $m['type'] ?? '';
+                $mAmt = (int) ($m['amount'] ?? 0);
+                if ($mType === 'cash_in') {
+                    $cashInflows += $mAmt;
+                } elseif ($mType === 'cash_out') {
+                    $cashOutflows += $mAmt;
+                } elseif ($mType === 'refund') {
+                    $cashRefunds += $mAmt;
+                }
+            }
 
             $shift->cash_sales = $cashSales;
             $shift->qr_sales = $qrSales;
             $shift->wallet_sales = $walletSales;
             $shift->total_sales = $totalSales;
             $shift->orders_count = $orders->count();
-            $shift->expected_cash = $shift->opening_cash + $cashSales;
+            $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
         }
 
         return response()->json(['shift' => $shift]);
@@ -430,7 +635,10 @@ class PosController extends Controller
     public function membershipPlans(Request $request)
     {
         $organization = $this->organization($request);
-        return TenantMembershipPlan::where('organization_id', $organization->id)->latest('published_at')->get();
+        return TenantMembershipPlan::where('organization_id', $organization->id)
+            ->whereIn('status', ['active', 'published'])
+            ->latest('published_at')
+            ->get();
     }
 
     public function publishMembershipPlan(Request $request)

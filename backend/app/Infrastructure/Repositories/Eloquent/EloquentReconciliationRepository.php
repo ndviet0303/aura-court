@@ -175,21 +175,30 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
             ->take(10)
             ->get();
 
-        // Synthesize AI diagnosis if mismatch exists
+        // Synthesize diagnosis from real run mismatch details (D47: no fake auto-offsetting)
         $hasMismatch = $run->mismatch_amount > 0 || $run->status === 'mismatch';
+        $mismatches = is_array($run->details) && isset($run->details['mismatches']) ? $run->details['mismatches'] : [];
+        $mismatchCount = count($mismatches);
+
+        $rootCause = $hasMismatch
+            ? ($mismatchCount > 0
+                ? "Phát hiện {$mismatchCount} sai lệch giao dịch giữa các nguồn và sổ cái/provider với tổng giá trị chênh lệch {$run->mismatch_amount} VND."
+                : "Phát hiện sai lệch {$run->mismatch_amount} VND giữa các nguồn giao dịch và sổ cái.")
+            : 'Tất cả các dòng tiền giữa Sổ cái Aura, Cổng PSP và Tài khoản Quyết toán đều khớp 100%.';
+
+        $recommendedAction = $hasMismatch
+            ? 'Yêu cầu đối chiếu chứng từ điều chỉnh (evidence reference) và kích hoạt đối soát lại (auditable rerun). Tuyệt đối không tự động bù trừ khi chưa có bằng chứng xác minh.'
+            : 'Không yêu cầu can thiệp thủ công.';
+
         $aiDiagnosis = [
             'has_issue' => $hasMismatch,
             'severity' => $hasMismatch ? 'high' : 'info',
-            'root_cause' => $hasMismatch
-                ? 'Phát hiện độ trễ Webhook ngân hàng Napas247 & chênh lệch làm tròn phí thanh toán đối tác.'
-                : 'Tất cả các dòng tiền giữa Sổ cái Aura, Cổng PSP và Tài khoản Quyết toán đều khớp 100%.',
-            'recommended_action' => $hasMismatch
-                ? 'Thực hiện bù trừ tự động (Auto-reconciliation) hoặc gửi yêu cầu tra soát tới cổng thanh toán.'
-                : 'Không yêu cầu can thiệp thủ công.',
+            'root_cause' => $rootCause,
+            'recommended_action' => $recommendedAction,
             'confidence_score' => 99.4,
+            'mismatches_count' => $mismatchCount,
             'analyzed_at' => now()->toIso8601String(),
         ];
-
         return [
             'run' => $run,
             'provider_events' => $providerEvents,

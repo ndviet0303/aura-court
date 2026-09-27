@@ -5,6 +5,7 @@ namespace App\Domain\Venue\Actions;
 use App\Domain\Partner\Services\PartnerRolloutService;
 use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Models\Court;
+use App\Models\Venue;
 use Illuminate\Validation\ValidationException;
 
 class VerifyEffectiveBookingEligibility
@@ -27,8 +28,7 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        $venue = $courtModel->venue;
-        if (! $venue) {
+        if (! $courtModel->venue) {
             return [
                 'eligible' => false,
                 'reason' => 'VENUE_NOT_OPERATIONAL',
@@ -37,17 +37,42 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        $org = $venue->organization;
+        $venueEligibility = $this->evaluateVenue($courtModel->venue);
+        if (! $venueEligibility['eligible']) {
+            return $venueEligibility + [
+                'court' => $courtModel,
+                'is_nonpublic' => ! $courtModel->venue->isPublished() || ! $courtModel->venue->is_active,
+            ];
+        }
+
+        return $venueEligibility + ['court' => $courtModel];
+    }
+
+    public function evaluateVenue(Venue|int $venue): array
+    {
+        $venueModel = $venue instanceof Venue
+            ? $venue->loadMissing('organization')
+            : Venue::with('organization')->find($venue);
+        if (! $venueModel) {
+            return [
+                'eligible' => false,
+                'reason' => 'VENUE_NOT_OPERATIONAL',
+                'message' => 'Cơ sở thể thao không tồn tại.',
+                'is_nonpublic' => true,
+            ];
+        }
+
+        $org = $venueModel->organization;
         $rollout = app(PartnerRolloutService::class);
         $enforcePublication = $org ? $rollout->shouldEnforce($org, 'publication') : false;
         $enforceSubscription = $org ? $rollout->shouldEnforce($org, 'subscription') : false;
 
-        $isPublished = $enforcePublication ? $venue->isPublished() : true;
-        if (! $venue->is_active || ! $isPublished) {
+        if (! $venueModel->is_active || ! $venueModel->isPublished()) {
             return [
+                'eligible' => false,
                 'reason' => 'VENUE_NOT_OPERATIONAL',
                 'message' => 'Cơ sở thể thao chưa được xuất bản hoặc đang tạm ngừng hoạt động.',
-                'is_nonpublic' => $venue ? ($venue->isDraft() || $venue->isPendingPublication() || $venue->isRevisionRequired()) : true,
+                'is_nonpublic' => true,
             ];
         }
 
@@ -67,7 +92,7 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        if ($enforcePublication && ! $org->isApprovedPartner()) {
+        if (($enforcePublication || $venueModel->isPublished()) && ! $org->isApprovedPartner()) {
             return [
                 'eligible' => false,
                 'reason' => 'PARTNER_NOT_ELIGIBLE',
@@ -86,13 +111,12 @@ class VerifyEffectiveBookingEligibility
             }
         } else {
             $entitlement = $this->entitlementEvaluator->execute($org->id);
-            $rollout->recordShadowComparison($venue, 'booking_eligibility', true, (bool) ($entitlement['can_take_bookings'] ?? false));
+            $rollout->recordShadowComparison($venueModel, 'booking_eligibility', true, (bool) ($entitlement['can_take_bookings'] ?? false));
         }
 
         return [
             'eligible' => true,
-            'court' => $courtModel,
-            'venue' => $venue,
+            'venue' => $venueModel,
             'organization' => $org,
         ];
     }

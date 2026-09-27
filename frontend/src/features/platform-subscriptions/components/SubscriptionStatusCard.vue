@@ -43,7 +43,7 @@ function formatDate(dateStr?: string | null): string {
           Gói Đăng ký Hoạt động
         </span>
         <h2 class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
-          {{ subscription.plan?.name || `Gói #${subscription.plan_id}` }}
+          {{ subscription.plan_name || `Gói #${subscription.plan_id}` }}
         </h2>
       </div>
 
@@ -51,12 +51,12 @@ function formatDate(dateStr?: string | null): string {
         <span
           class="px-3 py-1 text-xs font-semibold rounded-full"
           :class="{
-            'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300': subscription.status === 'active' && canTakeBookings,
-            'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300': subscription.status === 'expired' || !canTakeBookings,
+            'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300': subscription.is_valid && canTakeBookings,
+            'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300': !subscription.is_valid || !canTakeBookings,
             'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300': subscription.status === 'cancelled',
           }"
         >
-          {{ subscription.status === 'active' && canTakeBookings ? 'Đang kích hoạt' : 'Hết hạn / Ngừng nhận đặt' }}
+          {{ subscription.is_trial && canTakeBookings ? 'Dùng thử đang kích hoạt' : subscription.is_valid && canTakeBookings ? 'Đang kích hoạt' : 'Hết hạn / Ngừng nhận đặt' }}
         </span>
 
         <span

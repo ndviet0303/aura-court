@@ -105,13 +105,27 @@ const timeSlots = [
 // Compute the price and active rule for a specific day and slot
 function getSlotPricing(day: { weekday: number; isoDate: string; isWeekend: boolean }, slot: typeof timeSlots[0]) {
   const court = activeCourt.value
-  const activeRules = props.rules.filter((r) => r.is_active)
+  const venueId = court?.venue_id || court?.venue?.id
+  const activeRules = props.rules.filter((rule) => {
+    if (!rule.is_active) return false
+    if (rule.effective_from && day.isoDate < rule.effective_from.slice(0, 10)) return false
+    if (rule.effective_until && day.isoDate > rule.effective_until.slice(0, 10)) return false
+    if (rule.court_id && rule.court_id !== court?.id) return false
+    if (rule.sport_zone_id && rule.sport_zone_id !== court?.sport_zone_id) return false
+    if (rule.venue_id && rule.venue_id !== venueId) return false
+    return true
+  })
   const baseCourtPrice = 120000
+  const compareRules = (a: PriceRuleItem, b: PriceRuleItem) => {
+    const scopeRank = (rule: PriceRuleItem) =>
+      rule.court_id ? 4 : rule.sport_zone_id ? 3 : rule.venue_id ? 2 : 1
+    return scopeRank(b) - scopeRank(a) || b.priority - a.priority || b.version - a.version || b.id - a.id
+  }
 
   // 1. Check Date Exception / Holiday rules matching ISO date
   const holidayRule = activeRules
     .filter((r) => (r.type === 'holiday' || r.type === 'date_exception' || r.type === 'special_event') && r.exception_date === day.isoDate)
-    .sort((a, b) => b.priority - a.priority)[0]
+    .sort(compareRules)[0]
 
   if (holidayRule) {
     return {
@@ -132,7 +146,7 @@ function getSlotPricing(day: { weekday: number; isoDate: string; isWeekend: bool
       }
       return false
     })
-    .sort((a, b) => b.priority - a.priority)[0]
+    .sort(compareRules)[0]
 
   if (peakRule) {
     return {
@@ -154,7 +168,7 @@ function getSlotPricing(day: { weekday: number; isoDate: string; isWeekend: bool
       }
       return true
     })
-    .sort((a, b) => b.priority - a.priority)[0]
+    .sort(compareRules)[0]
 
   if (weekdayRule) {
     return {

@@ -2,80 +2,62 @@
 
 ## Purpose
 
-Enables users to pay for bookings and tournament fees by deducting from their wallet balance without generating wallet credits or debits from retired booking cancellation or rescheduling.
+Preserves immutable historical wallet balances, deposits, and legacy transaction records without automatic conversion or deductions, while ensuring new bookings, tournaments, and booking changes follow recipient-bound verified collection and owner-executed obligations.
 
 ## Requirements
 
-### Requirement: Pay booking from wallet balance
-The platform SHALL allow a user to pay for a booking by deducting the booking's total amount from their wallet balance in a single atomic operation. Upon successful deduction, the booking SHALL transition to `confirmed` status and all held slots SHALL transition to `confirmed`. The wallet transaction SHALL be immutable, referencing the booking as its source.
-
-#### Scenario: Sufficient balance pays for booking
-- **WHEN** a user confirms payment for a booking with total amount 200,000 VND and their wallet balance is 500,000 VND
-- **THEN** the platform SHALL deduct 200,000 VND from the wallet, confirm the booking and its slots, and record an immutable wallet transaction with `balance_after` of 300,000 VND
-
-#### Scenario: Insufficient balance rejects payment
-- **WHEN** a user attempts to pay for a booking with total amount 200,000 VND and their wallet balance is 100,000 VND
-- **THEN** the platform SHALL reject the payment without modifying the wallet balance or booking status, and SHALL return the current balance and the shortfall amount
-
-#### Scenario: Concurrent wallet payments
-- **WHEN** two payments attempt to deduct from the same wallet simultaneously and only one can be satisfied by the available balance
-- **THEN** exactly one SHALL succeed and the other SHALL receive an insufficient-balance rejection, with no negative balance possible
-
-### Requirement: Pay tournament fee from wallet balance
-The platform SHALL allow a user to pay tournament entry fees by deducting from their wallet balance. The deduction SHALL follow the same atomic, immutable transaction rules as booking payments.
-
-#### Scenario: Tournament fee paid from wallet
-- **WHEN** a user confirms tournament registration with an entry fee of 300,000 VND and wallet balance of 400,000 VND
-- **THEN** the platform SHALL deduct 300,000 VND, confirm the tournament registration, and record an immutable wallet transaction referencing the tournament as its source
-
-### Requirement: No wallet movement from retired booking changes
-The platform SHALL NOT create wallet credits, price-difference debits, refund requests or replacement payment records from attempted booking cancellation, partial cancellation or rescheduling. Retiring these operations SHALL NOT delete, reverse or recompute historical wallet transactions or balances. Existing deposit, booking payment, tournament payment and unrelated authorized compensation behavior SHALL remain unchanged.
-
-#### Scenario: Cancel or reschedule attempt leaves wallet untouched
-- **WHEN** a client attempts a retired cancellation or rescheduling command, including repeated attempts
-- **THEN** the wallet balance and transaction history SHALL remain unchanged and no refund request SHALL be created
-
-#### Scenario: Historical refund remains visible
-- **WHEN** a user reloads wallet history containing a cancellation or rescheduling refund issued before retirement
-- **THEN** the original amount, transaction reference and recorded balance SHALL remain available without issuing or reversing a credit
-
-#### Scenario: Unpaid hold expires
-- **WHEN** an unpaid booking expires automatically
-- **THEN** expiry SHALL release eligible inventory without crediting a wallet
-
-### Requirement: Wallet is the sole booking payment method
-The platform SHALL NOT accept QR bank transfer or card payments as direct booking payment methods. The only path to pay for a booking or tournament fee SHALL be through wallet balance deduction. Wallet deposit (adding funds to the wallet) remains available via the existing deposit flow.
-
-#### Scenario: No QR or card payment option at checkout
-- **WHEN** a user views the booking payment screen
-- **THEN** the platform SHALL display only the wallet balance and a pay-from-wallet action, with no QR code or card form
-
-#### Scenario: Insufficient balance shows top-up guidance
-- **WHEN** a user's wallet balance is less than the booking total
-- **THEN** the platform SHALL display the shortfall amount and provide a link to the wallet deposit page
-
 ### Requirement: Persisted tournament registration checkout
-Tournament registration SHALL verify eligibility and capacity, calculate the entry fee on the server and atomically persist the participant and wallet debit for paid entry. Free entry SHALL persist registration without a debit. Retry SHALL return the same registration and receipt; local counters or redirects SHALL NOT constitute registration.
+Tournament registration SHALL verify eligibility, deadlines, capacity and published fees server-side. Paid direct entry SHALL reserve capacity for a bounded interval and confirm one participant only from a verified receipt; free entry SHALL persist without debit or invented receipt. Retries SHALL return existing results; all administrative admission paths SHALL enforce capacity and fee or record an explicitly authorized fee waiver.
 
 #### Scenario: Paid registration
-- **WHEN** an eligible player pays a published fee with sufficient funds
-- **THEN** one persisted participant, wallet transaction and balanced financial posting exist
+- **WHEN** a matching receipt is verified before the registration deadline
+- **THEN** one participant and recipient-scoped financial event SHALL persist
 
 #### Scenario: Last place race
-- **WHEN** two players attempt to buy the final place
-- **THEN** one registers and only that player's wallet is debited
+- **WHEN** two players compete for one place
+- **THEN** at most one confirmed or exclusive pending place SHALL exist and excess receipts enter reconciliation
 
 #### Scenario: Insufficient funds
-- **WHEN** a player cannot cover the entry fee
-- **THEN** no confirmed participant or debit is created
+- **WHEN** only a client success claim exists
+- **THEN** no paid participant SHALL be confirmed
 
 ### Requirement: Verified wallet deposit journey
-The platform SHALL expose deposit initiation, pending/status and completed history for the selected tenant wallet. Only a verified provider outcome SHALL credit the wallet; redirects, QR display and duplicate events SHALL NOT create credit.
+Historical tenant wallet deposits and balances SHALL remain readable and reconcile to source receipts. New pooled-platform top-ups SHALL be disabled for a cohort before direct-owner cutover. In-flight verified legacy deposits SHALL be processed or held in an explicit reconciliation queue, never discarded. Unknown redirect status SHALL not grant credit; no automated wallet-to-owner transfer SHALL be introduced.
 
 #### Scenario: Duplicate confirmation
-- **WHEN** a verified deposit event is delivered twice
-- **THEN** the wallet receives exactly one credit and the UI reports the persisted result
+- **WHEN** a verified pre-cutover deposit event repeats
+- **THEN** exactly one original credit SHALL remain
+
+#### Scenario: New pooled deposit
+- **WHEN** a cutover-cohort user attempts to create a new platform-collected top-up
+- **THEN** the operation SHALL be unavailable with direct-payment guidance
 
 #### Scenario: Unverified return
-- **WHEN** a customer returns from a provider without verified collection
-- **THEN** the deposit remains pending or failed without credit
+- **WHEN** a browser claims a legacy deposit succeeded without receipt
+- **THEN** no wallet credit SHALL be granted
+
+### Requirement: Legacy wallet conservation during booking changes
+For historical wallet records, the platform SHALL preserve original journals/balances and reject unauthorized replay of retired operations. Restored direct-owner booking changes SHALL create owner-executed obligations, not wallet credits/debits. Independently authorized legacy compensation SHALL reference original allocations, never retroactively recalculate or convert direct receipts.
+
+#### Scenario: Direct cancellation
+- **WHEN** a post-cutover direct booking is cancelled
+- **THEN** no wallet entry SHALL be created
+
+#### Scenario: Historical refund viewed
+- **WHEN** old wallet history includes a refund or pending legacy obligation
+- **THEN** it SHALL remain accurately visible without automatic repayment or deletion
+
+#### Scenario: Unpaid expiry
+- **WHEN** an unpaid direct hold expires
+- **THEN** inventory SHALL release without wallet movement
+
+### Requirement: Legacy tournament wallet payment history
+Recorded legacy wallet tournament payments SHALL remain immutable and replay-safe. New tournament registrations in a direct-owner cohort SHALL use the declared verified recipient's collection flow rather than creating new platform wallet custody. Any continued legacy closed-loop spend SHALL be explicitly restricted to its existing issuer and reconciled obligations.
+
+#### Scenario: Old tournament receipt
+- **WHEN** a historical wallet registration is read or retried
+- **THEN** its original amount/reference SHALL remain and no new debit SHALL occur
+
+#### Scenario: Direct tournament entry
+- **WHEN** a new paid direct-owner tournament registration is initiated
+- **THEN** it SHALL remain pending until verified recipient-bound payment and available capacity commit

@@ -23,6 +23,8 @@ export interface PriceRuleItem {
   type: PriceRuleType
   weekday?: number | null // 1 = Mon, 7 = Sun
   exception_date?: string | null // YYYY-MM-DD
+  effective_from?: string | null // Inclusive YYYY-MM-DD
+  effective_until?: string | null // Inclusive YYYY-MM-DD
   starts_at?: string | null // HH:mm
   ends_at?: string | null // HH:mm
   price: number // VND
@@ -48,6 +50,8 @@ export interface PriceRuleFormPayload {
   type: PriceRuleType
   weekday?: number | null
   exception_date?: string | null
+  effective_from?: string | null
+  effective_until?: string | null
   starts_at?: string | null
   ends_at?: string | null
   price: number
@@ -65,6 +69,9 @@ export interface PriceQuoteSlotItem {
     id: number | string
     type: string
     version: number
+    priority?: number
+    effective_from?: string | null
+    effective_until?: string | null
     price: number
   }
 }

@@ -23,9 +23,19 @@ export type SportZone = {
 
 export type Venue = {
   id: number
+  organization_id?: number
+  payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1'
+  status?: string
   name: string
   slug: string
   address: string | null
+  city?: string | null
+  district?: string | null
+  ward?: string | null
+  phone?: string | null
+  email?: string | null
+  description?: string | null
+  images?: string[]
   google_maps_url: string | null
   is_active: boolean
   share_url?: string
@@ -77,6 +87,8 @@ export type Court = {
   reviews_count?: number
   reviews_avg_rating?: number | null
   amenities?: string[]
+  surface_type?: 'wood' | 'synthetic' | 'acrylic' | 'concrete' | 'grass' | 'clay' | 'hard' | 'other' | null
+  capacity?: number | null
   timezone?: string
 }
 

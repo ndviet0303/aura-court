@@ -49,6 +49,8 @@ class EloquentBookingRepository implements BookingRepositoryInterface
         return Booking::with(['user', 'court', 'slots', 'refunds'])
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('slots', fn ($s) => $s->whereDate('starts_at', $date)))
+            ->when($filters['venue_id'] ?? null, fn ($q, $vId) => $q->whereHas('court', fn ($c) => $c->where('venue_id', (int) $vId)))
+            ->when($filters['venue_ids'] ?? null, fn ($q, $vIds) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', (array) $vIds)))
             ->latest()
             ->paginate($perPage);
     }

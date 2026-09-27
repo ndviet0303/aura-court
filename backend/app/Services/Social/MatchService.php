@@ -12,6 +12,8 @@ use App\Models\MatchParticipation;
 use App\Models\MatchPost;
 use App\Models\OrganizationMember;
 use App\Models\PlayerProfile;
+use App\Models\Reservation;
+use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Services\Infrastructure\OutboxService;
@@ -39,7 +41,23 @@ class MatchService
 
     public function createPost(User $creator, int $organizationId, array $data): MatchPost
     {
-        $isOwnerHosted = ! empty($data['is_owner_hosted']) || ! empty($data['court_id']);
+        $startsAt = Carbon::parse($data['starts_at'])->utc();
+        $endsAt = Carbon::parse($data['ends_at'])->utc();
+        abort_unless($startsAt->lt($endsAt), 422, 'Thời gian bắt đầu phải trước thời gian kết thúc.');
+        abort_unless($startsAt->gt(now()->utc()), 422, 'Thời gian bắt đầu phải ở tương lai.');
+
+        $regDeadline = ! empty($data['registration_deadline']) ? Carbon::parse($data['registration_deadline'])->utc() : null;
+        if ($regDeadline) {
+            abort_unless($regDeadline->lte($startsAt), 422, 'Hạn đăng ký phải trước hoặc bằng thời gian bắt đầu.');
+        }
+
+        if (isset($data['min_skill']) && isset($data['max_skill']) && $data['min_skill'] !== null && $data['max_skill'] !== null) {
+            abort_unless((int) $data['min_skill'] <= (int) $data['max_skill'], 422, 'Trình độ tối thiểu phải nhỏ hơn hoặc bằng trình độ tối đa.');
+        }
+
+        $isOwnerHosted = (! empty($data['is_owner_hosted']) || ! empty($data['court_id']))
+            && empty($data['reservation_id'])
+            && empty($data['entitlement_id']);
 
         if ($isOwnerHosted) {
             $courtId = $data['court_id'] ?? null;
@@ -62,10 +80,6 @@ class MatchService
             $diff = array_diff($skillLevels, MatchPost::VALID_SKILL_LABELS);
             abort_unless(empty($diff), 422, 'Nhãn trình độ không hợp lệ.');
 
-            $startsAt = Carbon::parse($data['starts_at']);
-            $endsAt = Carbon::parse($data['ends_at']);
-            abort_unless($startsAt->lt($endsAt), 422, 'Thời gian bắt đầu phải trước thời gian kết thúc.');
-
             $this->checkCourtAvailability($court, $startsAt, $endsAt);
 
             $requiredParticipants = (int) $data['required_participants'];
@@ -82,6 +96,8 @@ class MatchService
                 'skill_levels' => array_values(array_unique($skillLevels)),
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
+                'registration_deadline' => $regDeadline,
+                'approval_required' => ! empty($data['approval_required']),
                 'city' => $data['city'] ?? $court->venue->address ?? null,
                 'approximate_latitude' => isset($data['latitude']) ? round((float) $data['latitude'], 2) : null,
                 'approximate_longitude' => isset($data['longitude']) ? round((float) $data['longitude'], 2) : null,
@@ -102,13 +118,84 @@ class MatchService
             return $post->fresh(['court.venue', 'participations']);
         }
 
+        $reservationId = $data['reservation_id'] ?? null;
+        $entitlementId = $data['entitlement_id'] ?? null;
+        $courtId = null;
+
+        if ($reservationId || $entitlementId) {
+            $reservation = null;
+            $entitlement = null;
+
+            if ($entitlementId) {
+                $entitlement = ReservationEntitlement::with(['reservation.court.venue', 'court.venue'])->findOrFail($entitlementId);
+                abort_unless($entitlement->user_id === $creator->id, 403, 'Customer does not hold this entitlement.');
+                abort_unless(in_array($entitlement->status, ['active', 'confirmed'], true), 422, 'Entitlement is not active.');
+                abort_unless($entitlement->organization_id === $organizationId, 422, 'Entitlement does not belong to this organization.');
+
+                $reservation = $entitlement->reservation;
+                abort_unless($reservation && $reservation->status === 'confirmed', 422, 'Entitlement reservation is not confirmed.');
+                $reservationId = $reservation->id;
+            }
+
+            if ($reservationId && ! $reservation) {
+                $reservation = Reservation::with(['court.venue', 'slots', 'entitlements'])->findOrFail($reservationId);
+                abort_unless($reservation->user_id === $creator->id, 403, 'Customer is not the owner of this reservation.');
+                abort_unless($reservation->status === 'confirmed', 422, 'Reservation is not confirmed.');
+                abort_unless($reservation->organization_id === $organizationId, 422, 'Reservation does not belong to this organization.');
+
+                if (! $entitlementId) {
+                    $entitlement = $reservation->entitlements()->where('user_id', $creator->id)->whereIn('status', ['active', 'confirmed'])->first();
+                    $entitlementId = $entitlement?->id;
+                }
+            }
+
+            $court = $entitlement?->court ?? $reservation->court;
+            abort_unless($court, 422, 'Reservation has no associated court.');
+            abort_unless($court->venue && $court->venue->organization_id === $organizationId, 422, 'Reservation court does not belong to this organization.');
+
+            $courtId = $court->id;
+
+            $rStarts = $entitlement?->starts_at ?? $reservation->starts_at;
+            $rEnds = $entitlement?->ends_at ?? $reservation->ends_at;
+            abort_unless($rStarts && $rEnds, 422, 'Reservation has no valid time bounds.');
+
+            $rStartsUtc = Carbon::parse($rStarts)->utc();
+            $rEndsUtc = Carbon::parse($rEnds)->utc();
+
+            abort_unless(
+                $startsAt->gte($rStartsUtc) && $endsAt->lte($rEndsUtc),
+                422,
+                'Activity time window must be within reservation/entitlement time window.'
+            );
+
+            // Prevent double allocation: verify no other active MatchPost is bound to this reservation/entitlement.
+            $alreadyBound = MatchPost::query()
+                ->where(function ($query) use ($reservationId, $entitlementId) {
+                    if ($reservationId) {
+                        $query->where('reservation_id', $reservationId);
+                    }
+                    if ($entitlementId) {
+                        $query->orWhere('entitlement_id', $entitlementId);
+                    }
+                })
+                ->whereNotIn('status', ['cancelled', 'ended', 'completed'])
+                ->exists();
+
+            abort_if($alreadyBound, 409, 'Another active activity is already bound to this reservation/entitlement.');
+        }
+
         $post = MatchPost::create([
             'organization_id' => $organizationId,
             'creator_id' => $creator->id,
+            'court_id' => $courtId,
+            'reservation_id' => $reservationId,
+            'entitlement_id' => $entitlementId,
             'title' => $data['title'],
             'visibility' => $data['visibility'] ?? 'public',
-            'starts_at' => $data['starts_at'],
-            'ends_at' => $data['ends_at'],
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'registration_deadline' => $regDeadline,
+            'approval_required' => ! empty($data['approval_required']),
             'city' => $data['city'] ?? null,
             'approximate_latitude' => isset($data['latitude']) ? round((float) $data['latitude'], 2) : null,
             'approximate_longitude' => isset($data['longitude']) ? round((float) $data['longitude'], 2) : null,
@@ -119,8 +206,16 @@ class MatchService
             'availability' => $data['availability'] ?? [],
             'metadata' => $data['metadata'] ?? [],
         ]);
-        MatchParticipation::create(['organization_id' => $organizationId, 'match_post_id' => $post->id, 'user_id' => $creator->id, 'status' => 'joined', 'joined_at' => now()]);
-        return $post->fresh(['participations']);
+
+        MatchParticipation::create([
+            'organization_id' => $organizationId,
+            'match_post_id' => $post->id,
+            'user_id' => $creator->id,
+            'status' => 'joined',
+            'joined_at' => now(),
+        ]);
+
+        return $post->fresh(['participations', 'court.venue']);
     }
 
     public function discover(?int $organizationId = null, array $filters = [])
@@ -153,14 +248,17 @@ class MatchService
         }
 
         if (isset($filters['date']) && $filters['date'] !== '') {
-            $query->whereDate('starts_at', $filters['date']);
+            $parsedDate = Carbon::parse($filters['date'], config('app.timezone', 'Asia/Ho_Chi_Minh'));
+            $startOfDayUtc = $parsedDate->copy()->startOfDay()->utc();
+            $endOfDayUtc = $parsedDate->copy()->endOfDay()->utc();
+            $query->whereBetween('starts_at', [$startOfDayUtc, $endOfDayUtc]);
         }
 
         // Allow open matches that haven't ended yet, or active matches from today onwards
         $query->where(function ($q) {
-            $q->where('ends_at', '>=', now())
-              ->orWhere('starts_at', '>=', now()->subHours(12))
-              ->orWhereDate('starts_at', '>=', now()->toDateString());
+            $q->where('ends_at', '>=', now()->utc())
+              ->orWhere('starts_at', '>=', now()->utc()->subHours(12))
+              ->orWhere('starts_at', '>=', now()->startOfDay()->utc());
         });
 
         $posts = $query->get();
@@ -326,8 +424,70 @@ class MatchService
         if ($post->visibility === 'invite_only') {
             abort_unless($post->creator_id === $user->id || $post->invitations()->where('invitee_id', $user->id)->where('status', 'accepted')->exists(), 404);
         }
+
+        if ($post->registration_deadline && now()->utc()->gt($post->registration_deadline->copy()->utc())) {
+            abort(422, 'Registration deadline has passed.');
+        }
+
+        if ($post->isRosterClosed()) {
+            abort(422, 'Roster is closed.');
+        }
+
+        $profile = PlayerProfile::query()
+            ->where('organization_id', $post->organization_id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($profile && $profile->skill_level !== null) {
+            if ($post->min_skill !== null && $profile->skill_level < $post->min_skill) {
+                abort(422, 'Player skill level does not meet activity requirements.');
+            }
+            if ($post->max_skill !== null && $profile->skill_level > $post->max_skill) {
+                abort(422, 'Player skill level does not meet activity requirements.');
+            }
+        }
+
         return DB::transaction(function () use ($post, $user): MatchParticipation {
             $post = MatchPost::query()->whereKey($post->id)->lockForUpdate()->firstOrFail();
+
+            if ($post->registration_deadline && now()->utc()->gt($post->registration_deadline->copy()->utc())) {
+                abort(422, 'Registration deadline has passed.');
+            }
+
+            if ($post->isRosterClosed()) {
+                abort(422, 'Roster is closed.');
+            }
+
+            if ($post->approval_required) {
+                abort_unless($post->status === 'open' && $post->joined_count < $post->required_participants, 409, 'Match is full.');
+
+                $existing = MatchParticipation::query()
+                    ->where('match_post_id', $post->id)
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if ($existing) {
+                    if (in_array($existing->status, [MatchParticipation::STATUS_JOINED, MatchParticipation::STATUS_PENDING_APPROVAL], true)) {
+                        return $existing;
+                    }
+
+                    $existing->update([
+                        'status' => MatchParticipation::STATUS_PENDING_APPROVAL,
+                        'joined_at' => now(),
+                    ]);
+
+                    return $existing->fresh();
+                }
+
+                return MatchParticipation::create([
+                    'organization_id' => $post->organization_id,
+                    'match_post_id' => $post->id,
+                    'user_id' => $user->id,
+                    'status' => MatchParticipation::STATUS_PENDING_APPROVAL,
+                    'joined_at' => now(),
+                ]);
+            }
+
             abort_unless($post->status === 'open' && $post->joined_count < $post->required_participants, 409, 'Match is full.');
             $participation = MatchParticipation::firstOrCreate(['match_post_id' => $post->id, 'user_id' => $user->id], ['organization_id' => $post->organization_id, 'status' => 'joined', 'joined_at' => now()]);
             if ($participation->wasRecentlyCreated) {
@@ -338,6 +498,149 @@ class MatchService
             }
             return $participation->fresh();
         });
+    }
+
+    public function joinMatch(MatchPost $post, User $user): MatchParticipation
+    {
+        return $this->join($post, $user);
+    }
+
+    public function approveParticipant(MatchPost $match, User $organizer, int $userId): MatchParticipation
+    {
+        $this->assertCanManageMatch($match, $organizer);
+
+        return DB::transaction(function () use ($match, $userId): MatchParticipation {
+            $match = MatchPost::query()->whereKey($match->id)->lockForUpdate()->firstOrFail();
+            abort_unless($match->joined_count < $match->required_participants, 409, 'Match is full.');
+
+            $participation = MatchParticipation::query()
+                ->where('match_post_id', $match->id)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                $participation->status === MatchParticipation::STATUS_PENDING_APPROVAL,
+                422,
+                'Participant is not pending approval.'
+            );
+
+            $participation->update(['status' => MatchParticipation::STATUS_JOINED]);
+            $match->increment('joined_count');
+
+            if ($match->joined_count >= $match->required_participants) {
+                $match->update(['status' => 'full']);
+            }
+
+            return $participation->fresh();
+        });
+    }
+
+    public function rejectParticipant(MatchPost $match, User $organizer, int $userId): MatchParticipation
+    {
+        $this->assertCanManageMatch($match, $organizer);
+
+        return DB::transaction(function () use ($match, $userId): MatchParticipation {
+            $participation = MatchParticipation::query()
+                ->where('match_post_id', $match->id)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $participation->update(['status' => MatchParticipation::STATUS_REJECTED]);
+
+            return $participation->fresh();
+        });
+    }
+
+    public function closeRoster(MatchPost $match, User $organizer): MatchPost
+    {
+        $this->assertCanManageMatch($match, $organizer);
+
+        $match->update(['roster_closed_at' => now()->utc()]);
+
+        return $match->fresh();
+    }
+
+    public function recordAttendance(MatchPost $match, User $operator, int $userId, string $status, ?string $notes = null): MatchParticipation
+    {
+        abort_unless(
+            in_array($status, MatchParticipation::VALID_ATTENDANCE_STATUSES, true),
+            422,
+            'Invalid attendance status.'
+        );
+
+        $this->assertCanRecordAttendance($match, $operator);
+
+        return DB::transaction(function () use ($match, $operator, $userId, $status, $notes): MatchParticipation {
+            $match = MatchPost::query()->whereKey($match->id)->lockForUpdate()->firstOrFail();
+
+            $participation = MatchParticipation::query()
+                ->where('match_post_id', $match->id)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $wasJoined = $participation->status === MatchParticipation::STATUS_JOINED;
+
+            $updateData = [
+                'attendance_status' => $status,
+                'attendance_recorded_by' => $operator->id,
+                'attendance_recorded_at' => now(),
+                'attendance_notes' => $notes,
+            ];
+
+            if ($status === MatchParticipation::ATTENDANCE_WITHDRAWN) {
+                $updateData['status'] = MatchParticipation::STATUS_WITHDRAWN;
+                if ($wasJoined && $match->joined_count > 0) {
+                    $match->decrement('joined_count');
+                    if ($match->status === 'full' && $match->joined_count < $match->required_participants) {
+                        $match->update(['status' => 'open']);
+                    }
+                }
+            } elseif ($status === MatchParticipation::ATTENDANCE_PRESENT || $status === MatchParticipation::ATTENDANCE_LATE) {
+                $updateData['verified_at'] = now();
+            }
+
+            $participation->update($updateData);
+
+            return $participation->fresh();
+        });
+    }
+
+    public function assertCanManageMatch(MatchPost $post, User $user): void
+    {
+        if ($post->creator_id === $user->id) {
+            return;
+        }
+
+        $canManage = $user->hasRoleInOrganization(
+            $post->organization_id,
+            [
+                OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                OrganizationMember::ROLE_VENUE_MANAGER,
+            ]
+        );
+
+        abort_unless($canManage, 403, 'Unauthorized to manage this match.');
+    }
+
+    public function assertCanRecordAttendance(MatchPost $post, User $user): void
+    {
+        if ($post->creator_id === $user->id) {
+            return;
+        }
+
+        $canRecord = $user->hasRoleInOrganization(
+            $post->organization_id,
+            [
+                OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                OrganizationMember::ROLE_VENUE_MANAGER,
+                OrganizationMember::ROLE_STAFF,
+            ]
+        );
+
+        abort_unless($canRecord, 403, 'Unauthorized to record attendance.');
     }
 
     public function respond(MatchInvitation $invitation, User $user, string $status): MatchInvitation
@@ -391,9 +694,9 @@ class MatchService
                 'Bạn không phải chủ cơ sở của sân này.'
             );
 
-            $startsAt = isset($data['starts_at']) ? Carbon::parse($data['starts_at']) : $post->starts_at;
-            $endsAt = isset($data['ends_at']) ? Carbon::parse($data['ends_at']) : $post->ends_at;
-            abort_unless($startsAt->lt($endsAt), 422, 'Thời gian bắt đầu phải trước thời gian kết thúc.');
+            $startsAt = isset($data['starts_at']) ? Carbon::parse($data['starts_at'])->utc() : $post->starts_at?->copy()->utc();
+            $endsAt = isset($data['ends_at']) ? Carbon::parse($data['ends_at'])->utc() : $post->ends_at?->copy()->utc();
+            abort_unless($startsAt && $endsAt && $startsAt->lt($endsAt), 422, 'Thời gian bắt đầu phải trước thời gian kết thúc.');
 
             $this->checkCourtAvailability($court, $startsAt, $endsAt, $post->id);
 
@@ -420,9 +723,22 @@ class MatchService
                 abort_unless($req > 0, 422, 'Số lượng người chơi phải lớn hơn 0.');
                 $updates['required_participants'] = $req;
             }
+            if (isset($data['registration_deadline'])) {
+                $updates['registration_deadline'] = ! empty($data['registration_deadline']) ? Carbon::parse($data['registration_deadline'])->utc() : null;
+            }
 
             $post->update($updates);
             return $post->fresh(['court.venue', 'participations', 'bill']);
+        }
+
+        if (isset($data['starts_at'])) {
+            $data['starts_at'] = Carbon::parse($data['starts_at'])->utc();
+        }
+        if (isset($data['ends_at'])) {
+            $data['ends_at'] = Carbon::parse($data['ends_at'])->utc();
+        }
+        if (isset($data['registration_deadline'])) {
+            $data['registration_deadline'] = ! empty($data['registration_deadline']) ? Carbon::parse($data['registration_deadline'])->utc() : null;
         }
 
         $post->update($data);
@@ -655,25 +971,28 @@ class MatchService
 
     public function checkCourtAvailability(Court $court, Carbon $startsAt, Carbon $endsAt, ?int $ignorePostId = null): void
     {
+        $startsAtUtc = $startsAt->copy()->utc();
+        $endsAtUtc = $endsAt->copy()->utc();
+
         $blockExists = CourtBlock::query()
             ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endsAt->utc())
-            ->where('ends_at', '>', $startsAt->utc())
+            ->where('starts_at', '<', $endsAtUtc)
+            ->where('ends_at', '>', $startsAtUtc)
             ->exists();
         abort_if($blockExists, 409, 'Sân đang có lịch bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
 
         $bookingExists = BookingSlot::query()
             ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endsAt->utc())
-            ->where('ends_at', '>', $startsAt->utc())
+            ->where('starts_at', '<', $endsAtUtc)
+            ->where('ends_at', '>', $startsAtUtc)
             ->whereHas('booking', fn ($b) => $b->whereIn('status', ['confirmed', 'pending_payment']))
             ->exists();
         abort_if($bookingExists, 409, 'Sân đã có lịch đặt trước trong khoảng thời gian đã chọn.');
 
         $reservationExists = ReservationSlot::query()
             ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endsAt->utc())
-            ->where('ends_at', '>', $startsAt->utc())
+            ->where('starts_at', '<', $endsAtUtc)
+            ->where('ends_at', '>', $startsAtUtc)
             ->whereHas('reservation', fn ($r) => $r->whereIn('status', ['held', 'confirmed']))
             ->exists();
         abort_if($reservationExists, 409, 'Sân đã được giữ chỗ trong khoảng thời gian đã chọn.');
@@ -682,8 +1001,8 @@ class MatchService
             ->where('court_id', $court->id)
             ->whereNotIn('status', ['cancelled'])
             ->when($ignorePostId, fn ($q) => $q->where('id', '!=', $ignorePostId))
-            ->where('starts_at', '<', $endsAt)
-            ->where('ends_at', '>', $startsAt)
+            ->where('starts_at', '<', $endsAtUtc)
+            ->where('ends_at', '>', $startsAtUtc)
             ->exists();
         abort_if($sessionExists, 409, 'Sân đã có buổi giao lưu khác trong khoảng thời gian đã chọn.');
     }
@@ -692,14 +1011,16 @@ class MatchService
     {
         abort_unless($post->creator_id === $user->id, 403, 'Chỉ người mở buổi mới có quyền quản lý.');
 
-        $court = $post->court ?? ($post->court_id ? Court::with('venue')->find($post->court_id) : null);
-        $orgId = $court?->venue?->organization_id ?? $post->organization_id;
+        if ($post->isOwnerHosted()) {
+            $court = $post->court ?? ($post->court_id ? Court::with('venue')->find($post->court_id) : null);
+            $orgId = $court?->venue?->organization_id ?? $post->organization_id;
 
-        abort_unless(
-            $user->hasRoleInOrganization($orgId, OrganizationMember::ROLE_ORGANIZATION_OWNER),
-            403,
-            'Bạn không còn là chủ cơ sở của sân này.'
-        );
+            abort_unless(
+                $user->hasRoleInOrganization($orgId, OrganizationMember::ROLE_ORGANIZATION_OWNER),
+                403,
+                'Bạn không còn là chủ cơ sở của sân này.'
+            );
+        }
     }
 
     public function assertNoAuxiliaryCharges(array $data): void
@@ -718,13 +1039,14 @@ class MatchService
 
     public function getDefaultRates(Court $court, ?Carbon $time = null): array
     {
-        $time = $time ?? now();
+        $timezone = $court->venue?->timezone ?? config('app.timezone', 'Asia/Ho_Chi_Minh');
+        $localTime = ($time ? $time->copy() : now())->setTimezone($timezone);
         $priceSlot = CourtPriceSlot::query()
             ->where('court_id', $court->id)
             ->where('is_active', true)
-            ->where('weekday', $time->dayOfWeekIso)
-            ->where('starts_at', '<=', $time->format('H:i'))
-            ->where('ends_at', '>', $time->format('H:i'))
+            ->where('weekday', $localTime->dayOfWeekIso)
+            ->where('starts_at', '<=', $localTime->format('H:i'))
+            ->where('ends_at', '>', $localTime->format('H:i'))
             ->first();
 
         return [

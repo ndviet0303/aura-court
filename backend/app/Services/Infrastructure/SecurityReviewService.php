@@ -9,7 +9,7 @@ class SecurityReviewService
     public function run(): array
     {
         $checks = [];
-        $patterns = ['APP_KEY=', 'DB_PASSWORD=', 'PAYOS_API_KEY=', 'PAYOS_WEBHOOK_SECRET=', 'SEPAY_HMAC_SECRET='];
+        $patterns = ['APP_KEY=', 'DB_PASSWORD=', 'PAYOS_API_KEY=', 'PAYOS_WEBHOOK_SECRET=', 'PAYOS_CHECKSUM_KEY=', 'SEPAY_HMAC_SECRET='];
         foreach ($patterns as $pattern) {
             $process = new Process(['rg', '--hidden', '--glob', '!.env', '--glob', '!vendor/**', '--glob', '!node_modules/**', $pattern, base_path('../')]);
             $process->run();

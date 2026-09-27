@@ -17,6 +17,7 @@ vi.mock('@/core/api/client', () => ({
   api: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
   },
   apiV2: {
@@ -53,10 +54,12 @@ describe('AdminScheduleView', () => {
       }
       if (url === '/admin/venues') {
         return [
-          { id: 1, name: 'Aura Downtown' },
-          { id: 2, name: 'Aura Westside' },
+          { id: 1, organization_id: 10, timezone: 'Asia/Ho_Chi_Minh', name: 'Aura Downtown' },
+          { id: 2, organization_id: 20, timezone: 'Asia/Ho_Chi_Minh', name: 'Aura Westside' },
         ]
       }
+      if (url.includes('/operating-schedule')) return { data: null }
+      if (url.includes('/schedule-exceptions')) return { data: [] }
       if (url === '/admin/audit-logs') {
         return { data: [{ id: 1, action: 'Cập nhật lịch hoạt động', user: { name: 'Admin' }, created_at: new Date().toISOString() }] }
       }
@@ -78,6 +81,7 @@ describe('AdminScheduleView', () => {
     })
 
     vi.mocked(api.delete).mockResolvedValue({ message: 'Đã mở khóa lịch sân.' })
+    vi.mocked(api.put).mockResolvedValue({ data: null })
   })
 
   it('renders standard weekly schedule, special dates and maintenance panel', async () => {
@@ -95,7 +99,7 @@ describe('AdminScheduleView', () => {
     expect(wrapper.find('.maintenance-card').exists()).toBe(true)
   })
 
-  it('allows adding and removing shifts to a weekday', async () => {
+  it('starts without fabricated hours and allows adding shifts to a configured weekday', async () => {
     const wrapper = mount(AdminScheduleView, {
       global: {
         plugins: [i18n],
@@ -103,11 +107,14 @@ describe('AdminScheduleView', () => {
     })
     await flushPromises()
 
-    const firstDay = wrapper.findAll('.day-row-container')[0]
+    const firstDay = wrapper.findAll('.day-row-container')[0]!
     expect(firstDay).toBeDefined()
     if (firstDay) {
-      expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
+      expect(firstDay.findAll('.shift-time-chip').length).toBe(0)
+      await firstDay.find('.day-toggle-btn').trigger('click')
       const addShiftBtn = firstDay.find('.btn-add-shift-link')
+      await addShiftBtn.trigger('click')
+      expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
       await addShiftBtn.trigger('click')
       expect(firstDay.findAll('.shift-time-chip').length).toBe(2)
 
@@ -115,6 +122,46 @@ describe('AdminScheduleView', () => {
       await removeShiftBtn.trigger('click')
       expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
     }
+  })
+
+  it('saves weekly hours to the venue API and reloads the persisted schedule', async () => {
+    let persisted: any = null
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/courts') return []
+      if (url === '/admin/venues') return [{ id: 1, organization_id: 10, timezone: 'Asia/Ho_Chi_Minh', name: 'Aura Downtown' }]
+      if (url === '/admin/audit-logs') return { data: [] }
+      if (url.includes('/operating-schedule')) return { data: persisted }
+      if (url.includes('/schedule-exceptions')) return { data: [] }
+      return []
+    })
+    vi.mocked(api.put).mockImplementation(async (url: string, payload: any) => {
+      if (url.includes('/operating-schedule')) {
+        persisted = { id: 1, version: 1, timezone: payload.timezone, weekly_hours: payload.weekly_hours }
+      }
+      return { data: persisted }
+    })
+
+    const wrapper = mount(AdminScheduleView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    const firstDay = wrapper.findAll('.day-row-container')[0]!
+    await firstDay.find('.day-toggle-btn').trigger('click')
+    await firstDay.find('.btn-add-shift-link').trigger('click')
+    const saveButton = wrapper.findAll('button').find((button) => button.text().includes('Lưu Cấu Hình Lịch'))
+    await saveButton?.trigger('click')
+    await flushPromises()
+
+    expect(api.put).toHaveBeenCalledWith('/partner/organizations/10/venues/1/operating-schedule', expect.objectContaining({
+      timezone: 'Asia/Ho_Chi_Minh',
+      weekly_hours: expect.objectContaining({
+        '1': { closed: false, intervals: [{ start: '17:00', end: '22:00' }] },
+      }),
+    }))
+
+    const reloaded = mount(AdminScheduleView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    const reloadedFirstDay = reloaded.findAll('.day-row-container')[0]!
+    expect(reloadedFirstDay.text()).toContain('Mở cửa')
+    expect(reloadedFirstDay.findAll('.shift-time-chip')).toHaveLength(1)
   })
 
   it('opens and closes the Schedule Downtime modal', async () => {

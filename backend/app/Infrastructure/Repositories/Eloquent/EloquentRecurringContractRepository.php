@@ -3,15 +3,11 @@
 namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
-use App\Models\Court;
-use App\Models\MonthlyInvoice;
 use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class EloquentRecurringContractRepository implements RecurringContractRepositoryInterface
 {
@@ -119,110 +115,6 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
         ];
     }
 
-    public function createContract(array $data): RecurringSeries
-    {
-        return DB::transaction(function () use ($data) {
-            // Find or create user
-            $user = null;
-            if (! empty($data['user_id'])) {
-                $user = User::find($data['user_id']);
-            }
-
-            if (! $user && ! empty($data['phone'])) {
-                $user = User::where('phone', $data['phone'])->first();
-            }
-
-            if (! $user) {
-                $user = User::create([
-                    'name' => $data['customer_name'] ?? 'Khách hàng HĐ',
-                    'phone' => $data['phone'] ?? null,
-                    'email' => ! empty($data['email']) ? $data['email'] : 'customer_'.time().'_'.Str::random(4).'@auracontrol.vn',
-                    'password' => bcrypt(Str::random(16)),
-                    'role' => 'customer',
-                ]);
-            }
-
-            $court = Court::with('venue')->findOrFail((int) $data['court_id']);
-            $organizationId = $court->venue?->organization_id ?: 1;
-
-            $frequency = $data['frequency'] ?? 'weekly';
-            $startsAt = Carbon::parse($data['starts_at'])->setTimezone(config('app.timezone', 'Asia/Ho_Chi_Minh'))->setSecond(0);
-            $endsAt = ! empty($data['ends_at']) ? Carbon::parse($data['ends_at'])->setTimezone(config('app.timezone', 'Asia/Ho_Chi_Minh'))->setSecond(0) : $startsAt->copy()->addMonths(6);
-
-            $monthlyAmount = (int) ($data['monthly_amount'] ?? 4800000);
-            $depositAmount = (int) ($data['deposit_amount'] ?? 5000000);
-
-            // Compute occurrences count (e.g. 4 slots per month * months)
-            $monthsCount = max(1, $startsAt->diffInMonths($endsAt) ?: 6);
-            $totalAmount = $monthlyAmount * $monthsCount;
-
-            $series = RecurringSeries::create([
-                'organization_id' => $organizationId,
-                'user_id' => $user->id,
-                'court_id' => $court->id,
-                'frequency' => $frequency,
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
-                'occurrence_count' => $monthsCount * 4,
-                'max_occurrences' => 104,
-                'status' => 'confirmed',
-                'total_amount' => $totalAmount,
-                'next_invoice_due_at' => $startsAt->copy()->subDays(7),
-                'metadata' => [
-                    'customer_name' => $data['customer_name'] ?? $user->name,
-                    'phone' => $data['phone'] ?? $user->phone,
-                    'deposit_amount' => $depositAmount,
-                    'monthly_amount' => $monthlyAmount,
-                    'weekday' => $data['weekday'] ?? 'Thứ 2, 4, 6',
-                    'time_slot' => $data['time_slot'] ?? '18:00 - 20:00',
-                    'contract_code' => 'CTR-'.date('Y').'-'.str_pad((string) (RecurringSeries::count() + 1), 4, '0', STR_PAD_LEFT),
-                    'notes' => $data['notes'] ?? null,
-                ],
-            ]);
-
-            // Create occurrences (weekly slots)
-            $currentDate = $startsAt->copy();
-            $seq = 1;
-            $occurrenceAmount = (int) round($monthlyAmount / 4);
-
-            while ($currentDate->lte($endsAt) && $seq <= 52) {
-                RecurringOccurrence::create([
-                    'organization_id' => $organizationId,
-                    'recurring_series_id' => $series->id,
-                    'sequence' => $seq,
-                    'starts_at' => $currentDate->copy(),
-                    'ends_at' => $currentDate->copy()->addHours(2),
-                    'amount' => $occurrenceAmount,
-                    'status' => 'confirmed',
-                ]);
-
-                $currentDate->addWeek();
-                $seq++;
-            }
-
-            // Create monthly invoices
-            for ($m = 0; $m < $monthsCount; $m++) {
-                $periodStart = $startsAt->copy()->addMonths($m)->startOfMonth();
-                $periodEnd = $periodStart->copy()->endOfMonth();
-                $dueAt = $periodStart->copy()->subDays(7);
-
-                MonthlyInvoice::create([
-                    'organization_id' => $organizationId,
-                    'recurring_series_id' => $series->id,
-                    'period_start' => $periodStart,
-                    'period_end' => $periodEnd,
-                    'due_at' => $dueAt,
-                    'amount' => $monthlyAmount,
-                    'status' => $m === 0 ? 'paid' : ($m === 1 ? 'pending' : 'pending'),
-                    'payment_reference' => $m === 0 ? 'AUTO-DEP-'.strtoupper(Str::random(6)) : null,
-                    'paid_at' => $m === 0 ? now() : null,
-                    'uuid' => (string) Str::uuid(),
-                ]);
-            }
-
-            return $series->fresh(['court.venue', 'user', 'invoices', 'occurrences']);
-        });
-    }
 
     public function cancelContract(int $id, ?string $reason = null): RecurringSeries
     {
@@ -246,20 +138,4 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
         });
     }
 
-    public function payInvoice(int $seriesId, int $invoiceId, string $paymentReference): MonthlyInvoice
-    {
-        return DB::transaction(function () use ($seriesId, $invoiceId, $paymentReference) {
-            $invoice = MonthlyInvoice::withoutGlobalScope('tenant_isolation')
-                ->where('recurring_series_id', $seriesId)
-                ->findOrFail($invoiceId);
-
-            $invoice->update([
-                'status' => 'paid',
-                'payment_reference' => $paymentReference,
-                'paid_at' => now(),
-            ]);
-
-            return $invoice->fresh();
-        });
-    }
 }

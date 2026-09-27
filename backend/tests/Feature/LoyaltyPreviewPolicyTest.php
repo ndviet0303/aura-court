@@ -4,17 +4,20 @@ namespace Tests\Feature;
 
 use App\Models\Coupon;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\LoyaltyRule;
+use App\Models\MembershipEntitlement;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
 use App\Models\PriceQuote;
+use App\Models\PriceRule;
 use App\Models\SportZone;
+use App\Models\TenantMembership;
+use App\Models\TenantMembershipPlan;
 use App\Models\User;
 use App\Models\Venue;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class LoyaltyPreviewPolicyTest extends TestCase
@@ -25,8 +28,8 @@ class LoyaltyPreviewPolicyTest extends TestCase
     private function setupTenant(int $userPoints = 2000): array
     {
         $org = Organization::create([
-            'name' => 'Loyalty Tenant ' . uniqid(),
-            'slug' => 'loyalty-tenant-' . uniqid(),
+            'name' => 'Loyalty Tenant '.uniqid(),
+            'slug' => 'loyalty-tenant-'.uniqid(),
         ]);
 
         $user = User::factory()->create();
@@ -40,7 +43,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Loyalty Venue',
-            'slug' => 'loyalty-venue-' . uniqid(),
+            'slug' => 'loyalty-venue-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -60,7 +63,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         ]);
 
         // Base price rule for 200,000 VND
-        \App\Models\PriceRule::create([
+        PriceRule::create([
             'organization_id' => $org->id,
             'court_id' => $court->id,
             'type' => 'base',
@@ -308,6 +311,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         // Create coupon for 50,000 VND off
         $coupon = Coupon::create([
+            'organization_id' => $org->id,
             'code' => 'SAVE50K',
             'discount_type' => 'fixed',
             'discount_value' => 50000,
@@ -338,6 +342,43 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $res->assertJsonPath('max_usable_points', 2000);
 
         // Coupon is NOT consumed
+        $this->assertSame(0, $coupon->fresh()->usage_count);
+
+        $plan = TenantMembershipPlan::create([
+            'organization_id' => $org->id,
+            'name' => 'Loyalty member '.uniqid(),
+            'version' => 1,
+            'price' => 100000,
+            'benefits' => ['discount_percent' => 10],
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $membership = TenantMembership::create([
+            'organization_id' => $org->id,
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'plan_version' => $plan->version,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addMonth(),
+            'status' => 'active',
+        ]);
+        MembershipEntitlement::create([
+            'organization_id' => $org->id,
+            'membership_id' => $membership->id,
+            'benefit_code' => 'discount_percent',
+            'benefit_value' => ['value' => 10, 'plan_version' => $plan->version],
+            'starts_at' => $membership->starts_at,
+            'ends_at' => $membership->ends_at,
+        ]);
+        $coupon->update(['can_combine_with_membership' => false]);
+
+        $combined = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+            'court_id' => $court->id,
+            'slots' => [$futureTime],
+            'coupon_code' => 'SAVE50K',
+            'points' => 100,
+        ]);
+        $combined->assertUnprocessable()->assertJsonValidationErrors(['coupon_code']);
         $this->assertSame(0, $coupon->fresh()->usage_count);
     }
 
@@ -370,7 +411,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'organization_id' => $org->id,
             'user_id' => $otherUser->id,
             'court_id' => $court->id,
-            'quote_token' => (string) \Illuminate\Support\Str::uuid(),
+            'quote_token' => (string) Str::uuid(),
             'status' => 'open',
             'subtotal' => 200000,
             'total_amount' => 200000,
@@ -390,7 +431,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'organization_id' => $org->id,
             'user_id' => $user->id,
             'court_id' => $court->id,
-            'quote_token' => (string) \Illuminate\Support\Str::uuid(),
+            'quote_token' => (string) Str::uuid(),
             'status' => 'open',
             'subtotal' => 200000,
             'total_amount' => 200000,
@@ -411,7 +452,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'organization_id' => $org->id,
             'user_id' => $user->id,
             'court_id' => $court->id,
-            'quote_token' => (string) \Illuminate\Support\Str::uuid(),
+            'quote_token' => (string) Str::uuid(),
             'status' => 'open',
             'subtotal' => 200000,
             'total_amount' => 200000,

@@ -26,7 +26,7 @@ class CreateDraftVenueRequest extends FormRequest
             'amenities' => ['nullable', 'array'],
             'amenities.*' => ['string', 'max:50'],
             'images' => ['nullable', 'array'],
-            'images.*' => ['string', 'max:2048'],
+            'images.*' => ['url', 'max:2048'],
         ];
     }
 }

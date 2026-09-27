@@ -15,7 +15,7 @@ class ArbitrateDisputeRequest extends FormRequest
     {
         return [
             'decision' => 'required|string|in:resolve_and_refund,resolve,dismiss,investigate_further',
-            'refund_method' => 'nullable|string|in:wallet,payos_bank,partial_wallet,none',
+            'refund_method' => 'nullable|string|in:wallet,payos_bank,owner_direct,partial_wallet,none',
             'refund_amount' => 'nullable|integer|min:0',
             'compensation_type' => 'nullable|string',
             'compensation_value' => 'nullable|string|max:255',

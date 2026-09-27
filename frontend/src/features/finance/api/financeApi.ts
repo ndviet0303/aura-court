@@ -1,5 +1,6 @@
 import { api, apiV2 } from '@/core/api/client'
-import type { SettlementRecord, PayoutRecord, BeneficiaryAccount, FinanceExceptionItem, SplitGroup } from '../types/finance'
+import type { SettlementRecord, PayoutRecord, BeneficiaryAccount, FinanceExceptionItem } from '../types/finance'
+import type { SplitGroup } from '../types/split'
 
 export const financeApi = {
   getBeneficiaries: () => apiV2.get<BeneficiaryAccount[]>('/finance/beneficiaries'),
@@ -45,11 +46,7 @@ export const financeApi = {
   resolveException: (id: number | string, payload: { note: string }) =>
     apiV2.post(`/finance/exceptions/${id}/resolve`, payload),
 
-  getSplitGroup: (splitId: number | string) => apiV2.get<SplitGroup>(`/split-groups/${splitId}`),
-
-  paySplitShare: (shareId: number | string, payload: any) => apiV2.post(`/split-shares/${shareId}/pay`, payload),
-
-  coverSplitShortfall: (splitId: number | string) => apiV2.post(`/split-groups/${splitId}/cover-shortfall`),
+  getSplitGroup: (splitId: number) => apiV2.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
 
   getInvoice: <T = unknown>(id: number | string) =>
     apiV2.get<T>(`/monthly-invoices/${id}`),
@@ -57,8 +54,6 @@ export const financeApi = {
   getRecurringSeries: <T = unknown>() =>
     apiV2.get<T>('/recurring-series'),
 
-  payInvoice: <T = unknown>(id: number | string, payload: any) =>
-    apiV2.post<T>(`/monthly-invoices/${id}/pay`, payload),
 
   createReservationSplit: <T = unknown>(reservationId: number | string, payload: any) =>
     apiV2.post<T>(`/reservations/${reservationId}/split`, payload),

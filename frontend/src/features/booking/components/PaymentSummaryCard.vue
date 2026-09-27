@@ -16,6 +16,7 @@ const props = defineProps<{
   couponLoading?: boolean
   couponError?: string
   couponSuccess?: string
+  directOwnerPayment?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -108,7 +109,7 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
     </div>
 
     <!-- Coupon Input Block -->
-    <div class="summary-coupon-block">
+    <div v-if="!directOwnerPayment" class="summary-coupon-block">
       <div class="coupon-input-group">
         <input
           :value="couponCode"

@@ -134,3 +134,29 @@ If an issue is encountered, a package can be disabled immediately for a specific
 ### 5.3 Production Activation Governance
 **Production Activation Constraint**:
 No package or pilot capability shall be activated globally across production without a separate, explicit user instruction. All changes in this phase remain strictly scoped to approved pilot cohorts and test/staging environments.
+
+---
+
+## 6. Activation Readiness & Operational Governance (Direct Owner Payments & Legacy Liabilities)
+
+### 6.1 Operator Cohort Approval Gate
+- **Mandatory Human Sign-off**: Real monetary transfers, live provider webhook activation, and rollout to production cohorts MUST NOT proceed automatically.
+- **Approval Requirements**: Each candidate operator cohort requires explicit, written approval from authorized operating owners (Head of Finance, Marketplace Operations Lead) confirming:
+  1. The operator has attested account authority and verified receiving connection credentials (`ReceivingConnection` status `verified`).
+  2. Baseline data migration, legacy inventory verification, and mapping checksums are confirmed healthy.
+  3. Pricing rules, court operating calendars, and cancellation/refund policies have been reviewed and accepted by the operator.
+- **Prohibition of Self-Rollout**: Engineering, automated scripts, and test runners SHALL NOT initiate real fund movements, live merchant credential deployments, or unsolicited tenant activation without recorded operator sign-off.
+
+### 6.2 Manual-Only Bank Disbursements
+- **Inbound-Only Provider Capability**: Direct owner collection provider (SePay) functions exclusively as an inbound bank transaction notification gateway and does NOT provide an automated outbound disbursement API.
+- **Disbursement Enforcement**: Automated bank disbursement remains strictly `manual_only`.
+- **Proof & Dual-Confirmation Workflow**: Any platform payout, partner compensation, or owner-executed refund requires:
+  1. Manual external banking transfer executed by the authorized operator or venue owner.
+  2. Recording of external bank transaction reference and encrypted transfer proof (`STATUS_OWNER_REPORTED`).
+  3. Explicit acknowledgement and verification by the receiving party or platform auditor (`STATUS_ACKNOWLEDGED`).
+- **Zero Unverified Disbursement**: System status transitions to `paid` or `settled` are strictly rejected without cryptographic evidence or verified provider receipt.
+
+### 6.3 Preservation of Legacy Liabilities (Zero Automated Deductions)
+- **Absolute Liability Conservation**: All historical wallet balances (9 accounts, 1,999,500,000 VND), pre-cutover deposits (4 transactions, 2,000,500,000 VND), and legacy bookings (74 bookings) are strictly conserved as immutable ledger records.
+- **Zero Automated Deductions**: Under no circumstances shall the platform perform automated balance deductions, unilateral write-offs, or forced balance conversions against historical user wallets.
+- **Independent Reconciliation**: Pre-cutover wallet liabilities and platform-held obligations are segregated and reconciled independently from post-cutover direct-owner revenue streams. Any legacy balance disposition requires an explicit, separate operational decision approved by the Head of Finance.

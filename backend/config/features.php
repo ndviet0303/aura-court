@@ -10,6 +10,7 @@ return [
         'marketplace_slot_resale' => env('FEATURE_MARKETPLACE_SLOT_RESALE', false),
         'social_matchmaking_tournaments' => env('FEATURE_SOCIAL_TOURNAMENTS', false),
         'tenant_pos_and_wallet' => env('FEATURE_TENANT_POS_WALLET', false),
+        'direct_owner_payments' => env('FEATURE_DIRECT_OWNER_PAYMENTS', false),
     ],
     'pilot_only' => [
         'marketplace_payouts',
@@ -17,5 +18,6 @@ return [
         'marketplace_slot_resale',
         'social_matchmaking_tournaments',
         'tenant_pos_and_wallet',
+        'direct_owner_payments',
     ],
 ];

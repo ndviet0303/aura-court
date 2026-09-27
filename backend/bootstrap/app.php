@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountNotRestricted;
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureOrganizationAdminOrStaff;
 use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\EnsureTournamentRole;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,7 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([__DIR__.'/../app/Console/Commands'])
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['admin' => EnsureAdmin::class, 'feature' => EnsureFeatureEnabled::class]);
+        $middleware->alias([
+            'admin' => EnsureAdmin::class,
+            'venue_admin' => EnsureOrganizationAdminOrStaff::class,
+            'feature' => EnsureFeatureEnabled::class,
+            'not_restricted' => EnsureAccountNotRestricted::class,
+            'tournament_role' => EnsureTournamentRole::class,
+        ]);
         $middleware->append(SetLocale::class);
         $middleware->statefulApi();
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/login');

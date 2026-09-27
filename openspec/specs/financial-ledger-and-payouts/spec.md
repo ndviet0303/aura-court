@@ -2,51 +2,62 @@
 
 ## Purpose
 
-Provides auditable money movement, provider integration, and settlement controls for
-tenant operations without mutable balances or duplicate external payment effects.
+Provides auditable money movement, direct-owner accounting, provider integration, reconciliation, and legacy settlement controls without mutable balances, unauthorized deductions, or duplicate external payment effects.
 
 ## Requirements
 
 ### Requirement: Immutable balanced ledger
-Every financial business event SHALL produce an immutable journal whose debit and credit totals balance. The ledger MUST represent gross collection, provider fee, platform commission, tenant payable, refund, reserve, and wallet liability where applicable; balances and settlement amounts MUST be derived from journal entries rather than updated directly. Wallet payment and supported wallet compensation events SHALL each produce their own balanced journal entries against the `wallet_liability` account. Retired booking cancellation and rescheduling operations SHALL NOT produce new reversal or price-difference journals. Previously posted payment/refund journals and settlement inputs MUST remain unchanged and reportable.
+Financial events SHALL retain immutable balanced accounting within the correct receiving entity and model version. Direct owner receipts SHALL represent the owner's revenue/receivables, not Aura Court cash, wallet liability, tenant payable or platform commission. Subscription revenue SHALL be separate platform income. Legacy wallet, commission, reserve, settlement and compensation entries SHALL remain unchanged and reportable. Adjustments SHALL reference original events; historical values MUST NOT be recomputed from new policy.
 
 #### Scenario: Reservation payment is accepted
-- **WHEN** a reservation payment is confirmed via wallet balance deduction
-- **THEN** the platform SHALL create a balanced immutable journal debiting `wallet_liability` and crediting the associated collection and liability accounts
+- **WHEN** a new direct booking receipt is accepted
+- **THEN** one owner-scoped balanced event SHALL be recorded without platform custody/payable entries
 
 #### Scenario: Refund is processed
-- **WHEN** a separately authorized compensation outside retired booking cancellation/rescheduling credits a wallet
-- **THEN** the platform SHALL create compensating balanced entries crediting `wallet_liability` and debiting the appropriate reversal accounts, without modifying the original payment journal
+- **WHEN** verified external owner refund evidence is accepted
+- **THEN** one compensating owner-scoped event SHALL reference original paid allocations without changing source entries
+
+#### Scenario: Historical replay
+- **WHEN** an already posted legacy event is retried
+- **THEN** only its original monetary result SHALL be returned
 
 #### Scenario: Retired command does not create a journal
-- **WHEN** cancellation, partial cancellation, rescheduling or legacy cancellation-refund approval is attempted
-- **THEN** no new financial journal SHALL be posted and existing journals SHALL remain unchanged
+- **WHEN** a stale unsupported legacy command is rejected rather than an authorized new-policy request
+- **THEN** no financial journal SHALL be created and all original records SHALL remain unchanged
 
 #### Scenario: Historical cancellation refund remains in reports
-- **WHEN** settlement or financial reporting includes a refund posted before retirement
-- **THEN** it SHALL retain the original journal and amount rather than dropping or reversing the historical refund
+- **WHEN** a report includes a cancellation refund recorded before cutover
+- **THEN** the original amount, allocation, model and journal SHALL remain visible without new-rate recomputation
 
 ### Requirement: Provider operations and webhook de-duplication
-The platform SHALL use a provider-neutral payment interface for wallet deposit collection, verified webhooks, beneficiary onboarding, payout submission, and payout-status retrieval. Provider event identifiers MUST be unique, and replaying a verified event MUST NOT create another charge, refund, journal, or payout operation. Ordinary booking payments SHALL remain internal wallet balance operations. Cancellation/rescheduling SHALL NOT initiate wallet or external-provider refunds; separately supported refund/compensation contracts SHALL remain unchanged.
+Provider integration SHALL verify recipient-bound direct-owner collection, separate subscription receipts and legacy obligations. Provider-event identities SHALL be unique within validated connection context; identical replay SHALL never duplicate charge allocation, refund recognition, journal or legacy payout. Browser/client claims SHALL not authorize monetary transitions. Failed delivery SHALL preserve raw evidence safely for bounded recovery and unresolved exceptions.
 
 #### Scenario: Provider webhook is replayed
-- **WHEN** the platform receives a verified wallet deposit event with an already-recorded provider event identifier
-- **THEN** it SHALL acknowledge the duplicate without repeating financial effects
+- **WHEN** one authenticated transfer event is delivered concurrently twice
+- **THEN** one receipt allocation and financial outcome SHALL result
 
 #### Scenario: Provider status is unavailable
-- **WHEN** a payout status cannot be obtained from the provider within the retry policy
-- **THEN** the payout SHALL remain unresolved and be visible in the finance exception process
+- **WHEN** independent verification is unavailable
+- **THEN** status SHALL remain pending verification or reconciliation without marking paid/refunded
+
+#### Scenario: Legacy refund callback
+- **WHEN** a callback concerns a recorded pre-cutover compensation
+- **THEN** it SHALL be routed to that model without being reinterpreted as a new owner receipt
 
 ### Requirement: Settlement and payout lifecycle
-The platform SHALL derive tenant settlement from an immutable snapshot and make funds eligible no earlier than D+2. Payouts MUST follow `draft → approved → submitted → paid|failed|reversed`, enforce the configured minimum threshold of 500,000 VND, use an idempotent provider request, and prohibit edits to the ledger during exception handling.
+Settlement/payout SHALL remain limited to reconciled pre-cutover platform-held obligations. New direct-owner revenue MUST NOT generate platform payout eligibility. Legacy payouts SHALL retain immutable snapshots, D+2 eligibility, 500000 VND configured minimum, idempotent submission and draft/approved/submitted/paid/failed/reversed evidence until settled. This change SHALL not submit real payouts or erase unresolved liabilities automatically.
+
+#### Scenario: Direct booking period
+- **WHEN** all period revenue was paid directly to owners
+- **THEN** no platform settlement payable or payout SHALL be created
 
 #### Scenario: Eligible weekly payout is approved
-- **WHEN** a tenant's settled payable exceeds 500,000 VND and D+2 eligibility is met
-- **THEN** the platform SHALL create a payout in `draft` state for approval and record its settlement snapshot
+- **WHEN** authorized finance handles a verified historical payable meeting thresholds
+- **THEN** its existing payout lifecycle SHALL remain available and audited
 
 #### Scenario: Submitted payout fails
-- **WHEN** the provider reports a submitted payout as failed
-- **THEN** the platform SHALL transition it to `failed`, preserve the source ledger, and create an exception for follow-up
+- **WHEN** a submitted historical payout fails
+- **THEN** history SHALL remain and an exception SHALL track resolution
 
 ### Requirement: After-commit external delivery
 The platform SHALL publish notifications, realtime events, and provider side effects only after the transaction that created their source business event commits. Failed delivery MUST be retried without duplicating the committed business or financial state.
@@ -60,12 +71,20 @@ The platform SHALL publish notifications, realtime events, and provider side eff
 - **THEN** the platform SHALL retry it and preserve one logical business outcome
 
 ### Requirement: Reconciliation and financial exceptions
-The platform SHALL reconcile provider activity, journals, settlements, and payouts at least daily. A non-zero mismatch MUST create a traceable exception within 15 minutes and SHALL not be silently corrected by altering ledger entries.
+At least daily and upon monetary anomalies, the platform SHALL reconcile receipts and obligations at transaction and receiving-entity level across booking versions, recurring invoices, split allocations, transfers, POS, refunds, subscriptions and legacy wallet/payouts. Nonzero mismatch SHALL create a traceable exception within 15 minutes of detection. Resolution SHALL require evidence or an authorized compensating event followed by rerun; it MUST NOT zero differences or claim correction solely by updating status. Reports/exports SHALL filter authorized organization/venue/period and distinguish owner revenue, platform fees, provider fees and legacy history without double-counting mapped V1/V2 records.
+
+#### Scenario: Mixed revenue report
+- **WHEN** a period contains V1/V2 aliases, POS receipts, owner refunds and subscription fees
+- **THEN** authorized reports SHALL count canonical events once and keep receiver/purpose totals separate
+
+#### Scenario: Auto-resolution without evidence
+- **WHEN** an operator requests automatic resolution while source totals disagree
+- **THEN** the mismatch SHALL remain open and no matched result SHALL be fabricated
 
 #### Scenario: Reconciliation matches
-- **WHEN** daily provider and ledger totals reconcile
-- **THEN** the platform SHALL record a successful reconciliation result
+- **WHEN** a verified correction explains the variance
+- **THEN** an auditable rerun SHALL establish matched or remaining difference without rewriting history
 
 #### Scenario: Reconciliation detects a mismatch
-- **WHEN** reconciliation finds a non-zero variance
-- **THEN** the platform SHALL create a finance exception within 15 minutes with links to the affected records
+- **WHEN** transaction-level or receiver-level reconciliation detects nonzero variance
+- **THEN** a linked finance exception SHALL be recorded within 15 minutes of detection and SHALL remain open until evidence and rerun establish resolution
