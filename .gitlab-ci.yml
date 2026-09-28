@@ -43,14 +43,14 @@ build_and_deploy:
     - apk add --no-cache nodejs npm curl jq
     - mkdir -p .docker/cache
   script:
-    - echo "=== Step 1: Frontend Check (Type-check, Unit tests, Build) ==="
+    - 'echo "=== Step 1: Frontend Check (Type-check, Unit tests, Build) ==="'
     - cd frontend
     - npm ci
     - npm run type-check
     - npm run test:unit -- --run
     - npm run build
     - cd ..
-    - echo "=== Step 2: Building and Pushing Docker Images ==="
+    - 'echo "=== Step 2: Building and Pushing Docker Images ==="'
     - echo "$DEPLOY_PASSWORD" | docker login -u "$DEPLOY_USERNAME" --password-stdin "$DOCKER_REGISTRY"
     - |
       docker build \
