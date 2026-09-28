@@ -1,7 +1,5 @@
 stages:
-  - test
-  - build
-  - deploy
+  - pipeline
 
 default:
   tags:
@@ -9,7 +7,6 @@ default:
 
 workflow:
   rules:
-    # Prefer merge-request pipelines when a branch already has an MR.
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
       when: never
@@ -17,9 +14,72 @@ workflow:
     - when: never
 
 variables:
-  API_IMAGE_NAME: "$CI_REGISTRY_IMAGE/api"
-  SERVER_IMAGE_NAME: "$CI_REGISTRY_IMAGE/server"
+  DOCKER_REGISTRY: "$CI_REGISTRY"
+  BASE_IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH"
+  API_IMAGE_NAME: "$BASE_IMAGE_NAME/api"
+  SERVER_IMAGE_NAME: "$BASE_IMAGE_NAME/server"
+  DOCKER_TAG: "latest"
+  DOCKER_PLATFORM: "linux/amd64"
+  DOCKER_BUILDKIT: "1"
+  DOCKER_HOST: "unix:///var/run/docker.sock"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+  BACKEND_PATH: "backend/"
 
-include:
-  - local: .gitlab/ci/backend.gitlab-ci.yml
-  - local: .gitlab/ci/frontend.gitlab-ci.yml
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .docker/cache
+
+build_and_deploy:
+  image: docker:latest
+  stage: pipeline
+  timeout: 10m
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
+      when: manual
+  before_script:
+    - apk add --no-cache nodejs npm curl jq
+    - mkdir -p .docker/cache
+  script:
+    - echo "=== Step 1: Frontend Check (Type-check, Unit tests, Build) ==="
+    - cd frontend
+    - npm ci
+    - npm run type-check
+    - npm run test:unit -- --run
+    - npm run build
+    - cd ..
+    - echo "=== Step 2: Building and Pushing Docker Images ==="
+    - echo "$DEPLOY_PASSWORD" | docker login -u "$DEPLOY_USERNAME" --password-stdin "$DOCKER_REGISTRY"
+    - |
+      docker build \
+        --platform="$DOCKER_PLATFORM" \
+        -f "$BACKEND_PATH/Dockerfile" \
+        --cache-from="$API_IMAGE_NAME:$DOCKER_TAG" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -t "$API_IMAGE_NAME:$DOCKER_TAG" \
+        -t "$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        "$BACKEND_PATH"
+    - docker push "$API_IMAGE_NAME:$DOCKER_TAG"
+    - docker push "$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - |
+      docker build \
+        --platform="$DOCKER_PLATFORM" \
+        --build-arg API_IMAGE="$API_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        --cache-from="$SERVER_IMAGE_NAME:$DOCKER_TAG" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -f devops/build/booking.prod.Dockerfile \
+        -t "$SERVER_IMAGE_NAME:$DOCKER_TAG" \
+        -t "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA" \
+        .
+    - docker push "$SERVER_IMAGE_NAME:$DOCKER_TAG"
+    - docker push "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - |
+      if [ -n "${PORTAINER_WEBHOOK_URLS:-}" ] && [ "$CI_PIPELINE_SOURCE" != "merge_request_event" ]; then
+        echo "=== Step 3: Deploying booking images to Portainer ==="
+        for item in $(echo "$PORTAINER_WEBHOOK_URLS" | jq -r '.[]'); do
+          echo "Processing Portainer webhook: $item"
+          curl -fsS --connect-timeout 10 --max-time 30 -X POST "$item" || echo "Warning: Portainer webhook endpoint returned error, deployment may require manual trigger once server is reachable."
+        done
+      fi
