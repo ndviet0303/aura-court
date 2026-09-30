@@ -130,7 +130,7 @@ async function submit() {
   z-index: 0;
 }
 
-html.dark:not([data-ui-version="v2"]) .aura-glow-bg {
+html.dark .aura-glow-bg {
   background: radial-gradient(circle, rgba(107, 45, 63, 0.4) 0%, rgba(223, 186, 114, 0.15) 50%, transparent 70%);
 }
 
@@ -149,7 +149,7 @@ html.dark:not([data-ui-version="v2"]) .aura-glow-bg {
   box-shadow: 0 20px 50px -15px rgba(107, 45, 63, 0.08);
 }
 
-html.dark:not([data-ui-version="v2"]) .auth-card-single {
+html.dark .auth-card-single {
   background: #1e181c;
   border-color: #382f35;
   box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.6);
@@ -174,7 +174,7 @@ html.dark:not([data-ui-version="v2"]) .auth-card-single {
   box-shadow: 0 4px 14px rgba(107, 45, 63, 0.12);
 }
 
-html.dark:not([data-ui-version="v2"]) .icon-circle {
+html.dark .icon-circle {
   background: rgba(107, 45, 63, 0.35);
   color: #dfba72;
   border-color: rgba(223, 186, 114, 0.25);
@@ -226,7 +226,7 @@ html.dark:not([data-ui-version="v2"]) .icon-circle {
   animation: shake 0.4s ease;
 }
 
-html.dark:not([data-ui-version="v2"]) .error-banner {
+html.dark .error-banner {
   background: rgba(255, 218, 214, 0.12);
   border-color: rgba(255, 218, 214, 0.25);
   color: #ffb4ab;
@@ -238,7 +238,7 @@ html.dark:not([data-ui-version="v2"]) .error-banner {
   color: #0e6b50;
 }
 
-html.dark:not([data-ui-version="v2"]) .success-banner {
+html.dark .success-banner {
   background: rgba(16, 185, 129, 0.15);
   color: #34d399;
 }
@@ -316,7 +316,7 @@ html.dark:not([data-ui-version="v2"]) .success-banner {
   transition: all 0.2s ease;
 }
 
-html.dark:not([data-ui-version="v2"]) .custom-input {
+html.dark .custom-input {
   background: #251f23;
   border-color: #3d343a;
   color: #ffffff;
@@ -327,7 +327,7 @@ html.dark:not([data-ui-version="v2"]) .custom-input {
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
-html.dark:not([data-ui-version="v2"]) .custom-input:focus {
+html.dark .custom-input:focus {
   border-color: #dfba72;
   box-shadow: 0 0 0 3px rgba(223, 186, 114, 0.2);
 }
@@ -395,7 +395,7 @@ html.dark:not([data-ui-version="v2"]) .custom-input:focus {
   transition: opacity 0.15s ease;
 }
 
-html.dark:not([data-ui-version="v2"]) .back-link {
+html.dark .back-link {
   color: #dfba72;
 }
 

@@ -241,7 +241,7 @@ function formatDate(dateStr?: string): string {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .court-reviews-section {
+:global(html.dark) .court-reviews-section {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -276,7 +276,7 @@ function formatDate(dateStr?: string): string {
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .icon-24 {
+:global(html.dark) .icon-24 {
   color: #e58e9f;
 }
 
@@ -298,7 +298,7 @@ function formatDate(dateStr?: string): string {
   font-weight: 700;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .verified-badge {
+:global(html.dark) .verified-badge {
   background: rgba(74, 222, 128, 0.15);
   color: #4ade80;
 }
@@ -337,7 +337,7 @@ function formatDate(dateStr?: string): string {
   align-items: center;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .rating-dashboard-card {
+:global(html.dark) .rating-dashboard-card {
   background: #231c20;
   border-color: #382d33;
 }
@@ -357,7 +357,7 @@ function formatDate(dateStr?: string): string {
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .big-score {
+:global(html.dark) .big-score {
   color: #e58e9f;
 }
 
@@ -428,7 +428,7 @@ function formatDate(dateStr?: string): string {
   padding-left: 20px;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .criteria-col {
+:global(html.dark) .criteria-col {
   border-color: #382d33;
 }
 
@@ -473,7 +473,7 @@ function formatDate(dateStr?: string): string {
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.25);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .filter-pill.active {
+:global(html.dark) .filter-pill.active {
   background: #e58e9f;
   color: #1c0a10;
   border-color: #e58e9f;
@@ -526,7 +526,7 @@ function formatDate(dateStr?: string): string {
   border: 1px solid var(--outline);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .review-item-card {
+:global(html.dark) .review-item-card {
   background: #231c20;
   border-color: #382d33;
 }
@@ -558,7 +558,7 @@ function formatDate(dateStr?: string): string {
   font-weight: 800;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .author-avatar {
+:global(html.dark) .author-avatar {
   background: linear-gradient(145deg, #e58e9f 0%, #8c3b4e 100%);
   color: #1c0a10;
 }
@@ -591,7 +591,7 @@ function formatDate(dateStr?: string): string {
   font-weight: 600;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .verified-player {
+:global(html.dark) .verified-player {
   color: #4ade80;
 }
 
@@ -624,7 +624,7 @@ function formatDate(dateStr?: string): string {
   line-height: 1.5;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .review-content {
+:global(html.dark) .review-content {
   color: #e8e2e5;
 }
 

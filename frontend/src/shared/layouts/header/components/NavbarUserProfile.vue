@@ -4,8 +4,6 @@ import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import { useThemeStore } from '@/stores/theme'
-import { useAppearanceStore } from '@/features/appearance'
-import { AuraUiVersionSwitch } from '@/shared/components'
 import { getCurrentLocale, setAppLocale, formatCurrency, type AppLocale } from '@/i18n'
 import { applySeo } from '@/lib/seo'
 import { getAvatarUrl } from '@/lib/avatar'
@@ -13,7 +11,6 @@ import { getAvatarUrl } from '@/lib/avatar'
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
 const themeStore = useThemeStore()
-const appearanceStore = useAppearanceStore()
 const route = useRoute()
 const currentLocale = ref<AppLocale>(getCurrentLocale())
 
@@ -23,7 +20,7 @@ const emit = defineEmits<{
 
 const isDropdownOpen = ref(false)
 const dropdownRoot = ref<HTMLElement | null>(null)
-const triggerButton = ref<HTMLButtonElement | null>(null)
+
 const userName = computed(() => {
   if (auth.user?.name) return auth.user.name
   return auth.user ? 'Thành viên' : 'Khách'
@@ -79,7 +76,6 @@ function handleOutsideClick(event: MouseEvent) {
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && isDropdownOpen.value) {
     closeDropdown()
-    triggerButton.value?.focus()
   }
 }
 
@@ -108,7 +104,6 @@ onBeforeUnmount(() => {
   <!-- Authenticated User Dropdown -->
   <div v-if="auth.user" ref="dropdownRoot" class="user-dropdown-wrapper">
     <button
-      ref="triggerButton"
       type="button"
       class="user-dropdown-trigger"
       :class="{ 'is-active': isDropdownOpen }"
@@ -235,19 +230,6 @@ onBeforeUnmount(() => {
               </button>
             </div>
           </div>
-          <!-- Erabook UI Version Row -->
-          <div class="pref-row">
-            <div class="pref-label">
-              <span class="material-symbols-outlined pref-icon">layers</span>
-              <span>{{ $t('nav.erabookV2') }}</span>
-            </div>
-            <AuraUiVersionSwitch
-              role="menuitemcheckbox"
-              :show-label="false"
-              :model-value="appearanceStore.isV2"
-              @update:model-value="appearanceStore.setUiVersion($event ? 'v2' : 'v1')"
-            />
-          </div>
 
           <!-- Language Row -->
           <div class="pref-row">
@@ -292,7 +274,6 @@ onBeforeUnmount(() => {
   <!-- Guest State (Login / Register Trigger + Quick Preferences) -->
   <div v-else ref="dropdownRoot" class="user-dropdown-wrapper">
     <button
-      ref="triggerButton"
       type="button"
       class="user-dropdown-trigger guest-trigger"
       :class="{ 'is-active': isDropdownOpen }"
@@ -359,19 +340,6 @@ onBeforeUnmount(() => {
                 <span>{{ $t('nav.darkMode') }}</span>
               </button>
             </div>
-          </div>
-          <!-- Erabook UI Version Row -->
-          <div class="pref-row">
-            <div class="pref-label">
-              <span class="material-symbols-outlined pref-icon">layers</span>
-              <span>{{ $t('nav.erabookV2') }}</span>
-            </div>
-            <AuraUiVersionSwitch
-              role="menuitemcheckbox"
-              :show-label="false"
-              :model-value="appearanceStore.isV2"
-              @update:model-value="appearanceStore.setUiVersion($event ? 'v2' : 'v1')"
-            />
           </div>
 
           <!-- Language Row -->

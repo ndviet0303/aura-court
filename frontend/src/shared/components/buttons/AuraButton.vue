@@ -204,56 +204,20 @@ const buttonClasses = computed(() => [
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
-:global(html.dark:not([data-ui-version="v2"]) .aura-btn--primary) {
+:global(html.dark .aura-btn--primary) {
   background-color: var(--primary, #E58E9F);
   color: var(--on-primary, #1c0a10);
   font-weight: 800;
   box-shadow: 0 4px 18px rgba(229, 142, 159, 0.35);
 }
 
-:global(html.dark:not([data-ui-version="v2"]) .aura-btn--primary:hover:not(:disabled)) {
+:global(html.dark .aura-btn--primary:hover:not(:disabled)) {
   background-color: #f0a3b2;
   color: #1c0a10;
   box-shadow: 0 6px 24px rgba(229, 142, 159, 0.5);
   transform: translateY(-1px);
 }
 
-/* V2 Presentation Scoped Button Styling */
-:global(html[data-ui-version="v2"] .aura-btn) {
-  border-radius: 9999px;
-  font-family: var(--font-family-base, inherit);
-  font-weight: 600;
-}
-
-:global(html[data-ui-version="v2"] .aura-btn:focus-visible) {
-  outline: 2px solid var(--primary, #F89300) !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 0 0 4px rgba(248, 147, 0, 0.35) !important;
-  border-color: var(--primary, #F89300) !important;
-}
-
-:global(html[data-ui-version="v2"] .aura-btn--primary) {
-  background-color: var(--primary, #F89300) !important;
-  color: var(--on-primary, #212121) !important;
-  box-shadow: var(--shadow-primary-btn, 0 8px 24px rgba(248, 147, 0, 0.25));
-}
-
-:global(html[data-ui-version="v2"] .aura-btn--primary:hover:not(:disabled)) {
-  background-color: var(--primary-hover, #E08500) !important;
-  color: var(--on-primary, #212121) !important;
-  transform: translateY(-1px);
-}
-
-:global(html[data-ui-version="v2"].dark .aura-btn--primary) {
-  background-color: var(--primary, #F89300) !important;
-  color: var(--on-primary, #181A20) !important;
-  box-shadow: var(--shadow-primary-btn, 0 8px 24px rgba(248, 147, 0, 0.35));
-}
-:global(html[data-ui-version="v2"].dark .aura-btn--primary:hover:not(:disabled)) {
-  background-color: var(--primary-hover, #FFA726) !important;
-  color: var(--on-primary, #181A20) !important;
-  transform: translateY(-1px);
-}
 /* 1b. Accent / Gold Variant (VIP Action & High Contrast) */
 .aura-btn--accent,
 .aura-btn--gold {

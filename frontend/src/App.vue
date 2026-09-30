@@ -75,14 +75,6 @@ const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
   transform-origin: left center;
 }
 
-:global(html[data-ui-version="v2"] .route-progress-bar) {
-  background: rgba(248, 147, 0, 0.2);
-}
-
-:global(html[data-ui-version="v2"] .progress-glow) {
-  background: linear-gradient(90deg, #FEF4E6 0%, #F89300 40%, #FFC107 70%, #FFF9E6 100%);
-}
-
 @keyframes route-progress-sweep {
   0% {
     transform: translateX(-100%) scaleX(0.2);

@@ -167,7 +167,7 @@ function getCourtTypeTag(c: Court): string {
   transition: all 0.2s ease;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .venue-pill-btn {
+:global(html.dark) .venue-pill-btn {
   background: #1e191c;
   border-color: #382d33;
 }
@@ -184,7 +184,7 @@ function getCourtTypeTag(c: Court): string {
   box-shadow: 0 4px 12px rgba(107, 45, 63, 0.25);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .venue-pill-btn.active {
+:global(html.dark) .venue-pill-btn.active {
   background: #e58e9f;
   color: #1c0a10;
   border-color: #e58e9f;
@@ -243,7 +243,7 @@ function getCourtTypeTag(c: Court): string {
   transition: all 0.2s ease;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .scroll-step-btn {
+:global(html.dark) .scroll-step-btn {
   background: #231c20;
   border-color: #382d33;
 }
@@ -254,7 +254,7 @@ function getCourtTypeTag(c: Court): string {
   border-color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .scroll-step-btn:hover {
+:global(html.dark) .scroll-step-btn:hover {
   background: rgba(229, 142, 159, 0.2);
   color: #e58e9f;
 }
@@ -290,7 +290,7 @@ function getCourtTypeTag(c: Court): string {
   text-align: left;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .court-card-btn {
+:global(html.dark) .court-card-btn {
   background: #1e191c;
   border-color: #382d33;
 }
@@ -301,7 +301,7 @@ function getCourtTypeTag(c: Court): string {
   transform: translateY(-2px);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .court-card-btn:hover:not(.active) {
+:global(html.dark) .court-card-btn:hover:not(.active) {
   background: #282126;
   border-color: #d8b46e;
 }
@@ -313,7 +313,7 @@ function getCourtTypeTag(c: Court): string {
   transform: translateY(-2px);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .court-card-btn.active {
+:global(html.dark) .court-card-btn.active {
   border-color: #e58e9f;
   background: linear-gradient(145deg, #321922 0%, #201016 100%);
   box-shadow: 0 6px 24px rgba(229, 142, 159, 0.25);
@@ -344,7 +344,7 @@ function getCourtTypeTag(c: Court): string {
   border-color: transparent;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .court-card-btn.active .c-type-badge {
+:global(html.dark) .court-card-btn.active .c-type-badge {
   background: #e58e9f;
   color: #1c0a10;
 }
@@ -354,7 +354,7 @@ function getCourtTypeTag(c: Court): string {
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .active-check {
+:global(html.dark) .active-check {
   color: #e58e9f;
 }
 
@@ -368,7 +368,7 @@ function getCourtTypeTag(c: Court): string {
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .court-card-btn.active .c-name {
+:global(html.dark) .court-card-btn.active .c-name {
   color: #f7a8b8;
 }
 

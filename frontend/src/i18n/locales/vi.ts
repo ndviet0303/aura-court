@@ -142,10 +142,6 @@ export default {
     lightMode: 'Sáng',
     darkMode: 'Tối',
     adminSystem: 'Quản trị hệ thống',
-    erabookV2: 'Giao diện Erabook V2',
-    uiVersion: 'Phiên bản giao diện',
-    uiVersionV1: 'Premium Club V1',
-    uiVersionV2: 'Erabook V2',
     history: 'Lịch sử đặt sân',
   },
   home: {

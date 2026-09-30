@@ -155,7 +155,7 @@ const emit = defineEmits<{
   color: var(--ink);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .estimate-box {
+:global(html.dark) .estimate-box {
   border-color: rgba(229, 142, 159, 0.25);
 }
 
@@ -186,11 +186,11 @@ const emit = defineEmits<{
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.28);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-book-now {
+:global(html.dark) .btn-book-now {
   box-shadow: 0 4px 16px rgba(229, 142, 159, 0.25);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-book-now:hover {
+:global(html.dark) .btn-book-now:hover {
   box-shadow: 0 6px 20px rgba(229, 142, 159, 0.35);
 }
 

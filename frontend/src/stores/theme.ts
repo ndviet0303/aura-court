@@ -8,13 +8,9 @@ const STORAGE_KEY = 'aura_theme'
 export const useThemeStore = defineStore('theme', () => {
   const getInitialTheme = (): ThemeMode => {
     if (typeof window === 'undefined') return 'light'
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null
-      if (saved === 'dark' || saved === 'light') return saved
-      return 'light'
-    } catch {
-      return 'light'
-    }
+    const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null
+    if (saved === 'dark' || saved === 'light') return saved
+    return 'light'
   }
 
   const theme = ref<ThemeMode>(getInitialTheme())
@@ -32,14 +28,11 @@ export const useThemeStore = defineStore('theme', () => {
     // Clear any leftover inline color-scheme on <html> — it breaks position:fixed
     // for Teleported elements in Chromium/Edge. color-scheme is now set via CSS on #app.
     root.style.removeProperty('color-scheme')
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, newTheme)
-      }
-    } catch {
-      // Storage write error (QuotaExceededError / SecurityError)
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, newTheme)
     }
   }
+
   function toggleTheme() {
     theme.value = theme.value === 'dark' ? 'light' : 'dark'
   }
@@ -58,12 +51,8 @@ export const useThemeStore = defineStore('theme', () => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     if (mediaQuery && typeof mediaQuery.addEventListener === 'function') {
       mediaQuery.addEventListener('change', (e) => {
-        try {
-          if (!localStorage.getItem(STORAGE_KEY)) {
-            theme.value = e.matches ? 'dark' : 'light'
-          }
-        } catch {
-          // Safe fallback
+        if (!localStorage.getItem(STORAGE_KEY)) {
+          theme.value = e.matches ? 'dark' : 'light'
         }
       })
     }

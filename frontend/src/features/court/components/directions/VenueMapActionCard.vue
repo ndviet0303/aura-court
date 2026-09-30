@@ -115,7 +115,7 @@ const encodedAddress = computed(() => {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .map-action-card {
+:global(html.dark) .map-action-card {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -150,7 +150,7 @@ const encodedAddress = computed(() => {
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .icon-22 {
+:global(html.dark) .icon-22 {
   color: #e58e9f;
 }
 
@@ -188,13 +188,13 @@ const encodedAddress = computed(() => {
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-primary-map {
+:global(html.dark) .btn-primary-map {
   background: linear-gradient(145deg, #e58e9f 0%, #c46d80 100%);
   color: #1c0a10;
   box-shadow: 0 4px 16px rgba(229, 142, 159, 0.3);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-primary-map:hover {
+:global(html.dark) .btn-primary-map:hover {
   background: linear-gradient(145deg, #f0a3b2 0%, #d87d90 100%);
   box-shadow: 0 6px 24px rgba(229, 142, 159, 0.45);
 }
@@ -214,7 +214,7 @@ const encodedAddress = computed(() => {
   transition: all 0.2s ease;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-secondary-action {
+:global(html.dark) .btn-secondary-action {
   background: #231c20;
   border-color: #382d33;
   color: #e8e2e5;
@@ -232,7 +232,7 @@ const encodedAddress = computed(() => {
   border-color: rgba(46, 125, 50, 0.3);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-secondary-action.copied {
+:global(html.dark) .btn-secondary-action.copied {
   background: rgba(46, 125, 50, 0.25);
   color: #4ade80;
   border-color: rgba(74, 222, 128, 0.35);
@@ -261,7 +261,7 @@ const encodedAddress = computed(() => {
   border: 1px solid var(--outline, #dcd3c5);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .address-highlight-box {
+:global(html.dark) .address-highlight-box {
   background: #231c20;
   border-color: #3d3137;
 }
@@ -278,7 +278,7 @@ const encodedAddress = computed(() => {
   flex-shrink: 0;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .pin-icon-wrap {
+:global(html.dark) .pin-icon-wrap {
   background: rgba(229, 142, 159, 0.2);
   color: #e58e9f;
 }
@@ -308,7 +308,7 @@ const encodedAddress = computed(() => {
   color: var(--ink, #1c1618);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .venue-brand-name {
+:global(html.dark) .venue-brand-name {
   color: #faf7f3;
 }
 
@@ -324,7 +324,7 @@ const encodedAddress = computed(() => {
   color: var(--accent, #c9a15a);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .verified-tag {
+:global(html.dark) .verified-tag {
   color: #d8b46e;
 }
 
@@ -339,7 +339,7 @@ const encodedAddress = computed(() => {
   line-height: 1.4;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .venue-full-address {
+:global(html.dark) .venue-full-address {
   color: #c4b9be;
 }
 
@@ -358,7 +358,7 @@ const encodedAddress = computed(() => {
   transition: all 0.15s ease;
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-quick-copy {
+:global(html.dark) .btn-quick-copy {
   background: #1a1518;
   border-color: #382d33;
   color: #c4b9be;

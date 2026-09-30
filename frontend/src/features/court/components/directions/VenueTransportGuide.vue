@@ -88,7 +88,7 @@ defineProps<{
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .transport-guide-card {
+:global(html.dark) .transport-guide-card {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -109,7 +109,7 @@ defineProps<{
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .icon-20 {
+:global(html.dark) .icon-20 {
   color: #e58e9f;
 }
 
@@ -129,7 +129,7 @@ defineProps<{
   background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .transport-item {
+:global(html.dark) .transport-item {
   background: #231c20;
   border-color: #382d33;
 }
@@ -159,7 +159,7 @@ defineProps<{
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .mode-icon-wrap.transit {
+:global(html.dark) .mode-icon-wrap.transit {
   background: rgba(229, 142, 159, 0.15);
   color: #e58e9f;
 }
@@ -200,7 +200,7 @@ defineProps<{
   border: 1px solid rgba(107, 45, 63, 0.15);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .contact-support-banner {
+:global(html.dark) .contact-support-banner {
   background: linear-gradient(145deg, #2b171f 0%, #1c0e14 100%);
   border-color: rgba(229, 142, 159, 0.25);
 }
@@ -216,7 +216,7 @@ defineProps<{
   color: var(--primary);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .cs-icon {
+:global(html.dark) .cs-icon {
   color: #e58e9f;
 }
 
@@ -257,7 +257,7 @@ defineProps<{
   transform: translateY(-1px);
 }
 
-:global(html.dark:not([data-ui-version="v2"])) .btn-hotline {
+:global(html.dark) .btn-hotline {
   background: #e58e9f;
   color: #1c0a10;
 }
