@@ -18,3 +18,6 @@ export { default as DemoWarningModal } from './feedback/DemoWarningModal.vue'
 // Controls & Toggles
 export { default as LanguageSwitcher } from './controls/LanguageSwitcher.vue'
 export { default as ThemeToggle } from './controls/ThemeToggle.vue'
+
+// Icons (Iconly SVG Suite)
+export * from './icons'
