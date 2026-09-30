@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:42671",
+  "type": "COMPONENT",
+  "id": "2128:42671",
+  "name": "Iconly/Regular/Bold/Graph",
+  "parentId": "2128:32742",
+  "hierarchy": [
+    {
+      "id": "2128:32742",
+      "name": "Regular | Bold"
+    },
+    {
+      "id": "2128:42671",
+      "name": "Iconly/Regular/Bold/Graph"
+    }
+  ],
+  "bounds": {
+    "x": 404,
+    "y": 361,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 404,
+    "y": 361,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bold/graph--2128-42671.svg",
+  "sha256": "1f0e4cfb5e96fca0829a38f88b6ad7f694e30dd5c943987f7636047e48f27c16",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

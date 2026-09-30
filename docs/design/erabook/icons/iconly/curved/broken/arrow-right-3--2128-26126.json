@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:26126",
+  "type": "COMPONENT",
+  "id": "2128:26126",
+  "name": "Iconly/Curved/Broken/Arrow - Right 3",
+  "parentId": "2128:25868",
+  "hierarchy": [
+    {
+      "id": "2128:25868",
+      "name": "Curved | Broken"
+    },
+    {
+      "id": "2128:26126",
+      "name": "Iconly/Curved/Broken/Arrow - Right 3"
+    }
+  ],
+  "bounds": {
+    "x": 1660,
+    "y": 10781.000122,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1660,
+    "y": 10781.000122,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/broken/arrow-right-3--2128-26126.svg",
+  "sha256": "4af10c4ec0cc72e9fc64e3df236205baa292b55b168c6ba368dd79d4df4934dc",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

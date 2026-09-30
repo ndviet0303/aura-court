@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:43432",
+  "type": "COMPONENT",
+  "id": "2128:43432",
+  "name": "Iconly/Regular/Bulk/Ticket Star",
+  "parentId": "2128:31446",
+  "hierarchy": [
+    {
+      "id": "2128:31446",
+      "name": "Regular | Bulk"
+    },
+    {
+      "id": "2128:43432",
+      "name": "Iconly/Regular/Bulk/Ticket Star"
+    }
+  ],
+  "bounds": {
+    "x": 796,
+    "y": 1049,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 796,
+    "y": 1049,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bulk/ticket-star--2128-43432.svg",
+  "sha256": "22bb32f46b68e29dfea3dd2170d48101bf8521e5e5d710c309b5b71026b39b6b",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

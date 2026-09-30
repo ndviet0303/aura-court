@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29338",
+  "type": "COMPONENT",
+  "id": "2128:29338",
+  "name": "Iconly/Sharp/Outline/Calendar",
+  "parentId": "2128:28965",
+  "hierarchy": [
+    {
+      "id": "2128:28965",
+      "name": "Sharp | Light (Outline)"
+    },
+    {
+      "id": "2128:29338",
+      "name": "Iconly/Sharp/Outline/Calendar"
+    }
+  ],
+  "bounds": {
+    "x": 348.25,
+    "y": 6230.534668,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 348.25,
+    "y": 6230.534668,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 10,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/outline/calendar--2128-29338.svg",
+  "sha256": "6503a224aa90e30152bce3734bda552e19f552ab1d98b1d5c3775cc0c715233e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

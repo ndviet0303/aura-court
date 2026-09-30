@@ -1,0 +1,65 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:1737",
+  "type": "COMPONENT",
+  "id": "442:1737",
+  "name": "Status=Info, Component=Alert",
+  "parentId": "442:1739",
+  "hierarchy": [
+    {
+      "id": "442:3270",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3273",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3276",
+      "name": "Alert"
+    },
+    {
+      "id": "442:1739",
+      "name": "Alert"
+    },
+    {
+      "id": "442:1737",
+      "name": "Status=Info, Component=Alert"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 2944,
+    "width": 382,
+    "height": 34
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 2944,
+    "width": 382,
+    "height": 34
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 34
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Status": "Info",
+    "Component": "Alert"
+  },
+  "svg": "components/alert/status-info-component-alert--442-1737.svg",
+  "sha256": "c156486a35f8cc738c64e487645e89c3b5df5e9e262ea4e4d9383ba63f66e23b",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:26002",
+  "type": "COMPONENT",
+  "id": "2128:26002",
+  "name": "Iconly/Curved/Broken/Arrow - Up",
+  "parentId": "2128:25868",
+  "hierarchy": [
+    {
+      "id": "2128:25868",
+      "name": "Curved | Broken"
+    },
+    {
+      "id": "2128:26002",
+      "name": "Iconly/Curved/Broken/Arrow - Up"
+    }
+  ],
+  "bounds": {
+    "x": 1548,
+    "y": 10837.000122,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1548,
+    "y": 10837.000122,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/broken/arrow-up--2128-26002.svg",
+  "sha256": "15fc91226b5d9091f1026e054cb8f0bf430127974f0cd4be25a201d7e37809fc",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

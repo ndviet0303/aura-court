@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:33434",
+  "type": "COMPONENT",
+  "id": "2128:33434",
+  "name": "Iconly/Sharp/Bold/Lock",
+  "parentId": "2128:33371",
+  "hierarchy": [
+    {
+      "id": "2128:33371",
+      "name": "Sharp | Bold"
+    },
+    {
+      "id": "2128:33434",
+      "name": "Iconly/Sharp/Bold/Lock"
+    }
+  ],
+  "bounds": {
+    "x": 1244.25,
+    "y": 4319.604004,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1244.25,
+    "y": 4319.604004,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bold/lock--2128-33434.svg",
+  "sha256": "2a57fa5b139f285fd8889f68dcf7fc30b38d035c11093ad77dd19edc76c2e247",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

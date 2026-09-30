@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29623",
+  "type": "COMPONENT",
+  "id": "2128:29623",
+  "name": "Iconly/Curved/Light/3 User",
+  "parentId": "2128:29462",
+  "hierarchy": [
+    {
+      "id": "2128:29462",
+      "name": "Curved | Light (Border)"
+    },
+    {
+      "id": "2128:29623",
+      "name": "Iconly/Curved/Light/3 User"
+    }
+  ],
+  "bounds": {
+    "x": 1078,
+    "y": 9573,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1078,
+    "y": 9573,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 6,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/light/3-user--2128-29623.svg",
+  "sha256": "511f259568414d7c9edfb0fa71ba506e22d189816845fa85300d9d0ef10fea4a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

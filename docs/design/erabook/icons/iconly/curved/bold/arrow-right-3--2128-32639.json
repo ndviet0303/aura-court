@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32639",
+  "type": "COMPONENT",
+  "id": "2128:32639",
+  "name": "Iconly/Curved/Bold/Arrow - Right 3",
+  "parentId": "2128:32538",
+  "hierarchy": [
+    {
+      "id": "2128:32538",
+      "name": "Curved | Bold"
+    },
+    {
+      "id": "2128:32639",
+      "name": "Iconly/Curved/Bold/Arrow - Right 3"
+    }
+  ],
+  "bounds": {
+    "x": 1660.25,
+    "y": 8253,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1660.25,
+    "y": 8253,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bold/arrow-right-3--2128-32639.svg",
+  "sha256": "887492017989bcd6609050f78db426f486d1bbc8058a2cf506fcf8de04ab597a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27366",
+  "type": "COMPONENT",
+  "id": "2128:27366",
+  "name": "Iconly/Sharp/Broken/Camera",
+  "parentId": "2128:27035",
+  "hierarchy": [
+    {
+      "id": "2128:27035",
+      "name": "Sharp | Broken"
+    },
+    {
+      "id": "2128:27366",
+      "name": "Iconly/Sharp/Broken/Camera"
+    }
+  ],
+  "bounds": {
+    "x": 852.25,
+    "y": 6961,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 852.25,
+    "y": 6961,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/broken/camera--2128-27366.svg",
+  "sha256": "ee0844f7cedf0638614e460f8fe8d5c8949cd0fdfe5fc73e97c397395bf18310",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

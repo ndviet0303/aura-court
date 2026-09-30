@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44068",
+  "type": "COMPONENT",
+  "id": "2128:44068",
+  "name": "Iconly/Regular/Light/Graph",
+  "parentId": "2128:29962",
+  "hierarchy": [
+    {
+      "id": "2128:29962",
+      "name": "Regular | Light (Border)"
+    },
+    {
+      "id": "2128:44068",
+      "name": "Iconly/Regular/Light/Graph"
+    }
+  ],
+  "bounds": {
+    "x": 404,
+    "y": 1625,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 404,
+    "y": 1625,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/light/graph--2128-44068.svg",
+  "sha256": "9fd43157e72eacb5d0529929b214cdc48bd8c1b7a3bb7838964514b1af3d0a2c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

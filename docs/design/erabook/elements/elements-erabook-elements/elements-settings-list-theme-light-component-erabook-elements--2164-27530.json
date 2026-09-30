@@ -1,0 +1,58 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2164:27530",
+  "type": "COMPONENT",
+  "id": "2164:27530",
+  "name": "Elements=Settings List, Theme=Light, Component=Erabook Elements",
+  "parentId": "2138:28054",
+  "hierarchy": [
+    {
+      "id": "2063:197208",
+      "name": "Erabook Elements"
+    },
+    {
+      "id": "2138:28054",
+      "name": "Elements/Erabook Elements"
+    },
+    {
+      "id": "2164:27530",
+      "name": "Elements=Settings List, Theme=Light, Component=Erabook Elements"
+    }
+  ],
+  "bounds": {
+    "x": 162,
+    "y": 3542,
+    "width": 382,
+    "height": 32
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 162,
+    "y": 3542,
+    "width": 382,
+    "height": 32
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 32
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Elements": "Settings List",
+    "Theme": "Light",
+    "Component": "Erabook Elements"
+  },
+  "svg": "elements/elements-erabook-elements/elements-settings-list-theme-light-component-erabook-elements--2164-27530.svg",
+  "sha256": "7a3b3e6688e443c03d50054ec9463e10a1a6e65b5b22cedb5ac3cd0076448d0c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

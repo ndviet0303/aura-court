@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44080",
+  "type": "COMPONENT",
+  "id": "2128:44080",
+  "name": "Iconly/Regular/Light/Call Missed",
+  "parentId": "2128:29962",
+  "hierarchy": [
+    {
+      "id": "2128:29962",
+      "name": "Regular | Light (Border)"
+    },
+    {
+      "id": "2128:44080",
+      "name": "Iconly/Regular/Light/Call Missed"
+    }
+  ],
+  "bounds": {
+    "x": 1132,
+    "y": 1793,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1132,
+    "y": 1793,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/light/call-missed--2128-44080.svg",
+  "sha256": "86e80e0f532bef5c54333abc6abb2cb1119025149bdb3e69cdea7bba9508c7e1",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

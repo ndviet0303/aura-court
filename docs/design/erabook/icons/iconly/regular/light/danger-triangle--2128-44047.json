@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44047",
+  "type": "COMPONENT",
+  "id": "2128:44047",
+  "name": "Iconly/Regular/Light/Danger Triangle",
+  "parentId": "2128:29962",
+  "hierarchy": [
+    {
+      "id": "2128:29962",
+      "name": "Regular | Light (Border)"
+    },
+    {
+      "id": "2128:44047",
+      "name": "Iconly/Regular/Light/Danger Triangle"
+    }
+  ],
+  "bounds": {
+    "x": 1188,
+    "y": 1681,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1188,
+    "y": 1681,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/light/danger-triangle--2128-44047.svg",
+  "sha256": "5c156bb7d9cdfe9c90c65702349895e3861368ae118194184fb8fbb37fdb3040",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

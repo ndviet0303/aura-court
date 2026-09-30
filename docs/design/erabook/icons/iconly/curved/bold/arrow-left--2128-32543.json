@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32543",
+  "type": "COMPONENT",
+  "id": "2128:32543",
+  "name": "Iconly/Curved/Bold/Arrow - Left",
+  "parentId": "2128:32538",
+  "hierarchy": [
+    {
+      "id": "2128:32538",
+      "name": "Curved | Bold"
+    },
+    {
+      "id": "2128:32543",
+      "name": "Iconly/Curved/Bold/Arrow - Left"
+    }
+  ],
+  "bounds": {
+    "x": 1548.25,
+    "y": 8365,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1548.25,
+    "y": 8365,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bold/arrow-left--2128-32543.svg",
+  "sha256": "ef2ed7df1163cfce4a5701df28501f531dab02c8cad486ca9d968c838ea3b55e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

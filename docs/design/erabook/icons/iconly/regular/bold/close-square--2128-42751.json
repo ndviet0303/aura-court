@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:42751",
+  "type": "COMPONENT",
+  "id": "2128:42751",
+  "name": "Iconly/Regular/Bold/Close Square",
+  "parentId": "2128:32742",
+  "hierarchy": [
+    {
+      "id": "2128:32742",
+      "name": "Regular | Bold"
+    },
+    {
+      "id": "2128:42751",
+      "name": "Iconly/Regular/Bold/Close Square"
+    }
+  ],
+  "bounds": {
+    "x": 1244,
+    "y": 417,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1244,
+    "y": 417,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bold/close-square--2128-42751.svg",
+  "sha256": "282e0566e0c06534b538bc097df09c9ce0cd39bd580cabda2153a371246e7fb6",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44951",
+  "type": "COMPONENT",
+  "id": "2128:44951",
+  "name": "Iconly/Regular/Outline/More Circle",
+  "parentId": "2128:28055",
+  "hierarchy": [
+    {
+      "id": "2128:28055",
+      "name": "Regular | Light (Outline)"
+    },
+    {
+      "id": "2128:44951",
+      "name": "Iconly/Regular/Outline/More Circle"
+    }
+  ],
+  "bounds": {
+    "x": 852,
+    "y": 2313,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 852,
+    "y": 2313,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/outline/more-circle--2128-44951.svg",
+  "sha256": "b1f7e76471c4997415c5e62e1df0175766509b8ff783dcd748ff61eca63bd2d1",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

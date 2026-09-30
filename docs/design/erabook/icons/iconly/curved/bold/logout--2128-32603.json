@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32603",
+  "type": "COMPONENT",
+  "id": "2128:32603",
+  "name": "Iconly/Curved/Bold/Logout",
+  "parentId": "2128:32538",
+  "hierarchy": [
+    {
+      "id": "2128:32538",
+      "name": "Curved | Bold"
+    },
+    {
+      "id": "2128:32603",
+      "name": "Iconly/Curved/Bold/Logout"
+    }
+  ],
+  "bounds": {
+    "x": 1188.25,
+    "y": 8309,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1188.25,
+    "y": 8309,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bold/logout--2128-32603.svg",
+  "sha256": "3d186e7141d6a237f422f5c7e901b83c88729d1491ddfe703f3defb3d0835b8b",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

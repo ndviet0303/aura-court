@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:43479",
+  "type": "COMPONENT",
+  "id": "2128:43479",
+  "name": "Iconly/Regular/Bulk/Delete",
+  "parentId": "2128:31446",
+  "hierarchy": [
+    {
+      "id": "2128:31446",
+      "name": "Regular | Bulk"
+    },
+    {
+      "id": "2128:43479",
+      "name": "Iconly/Regular/Bulk/Delete"
+    }
+  ],
+  "bounds": {
+    "x": 348,
+    "y": 1161,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 348,
+    "y": 1161,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bulk/delete--2128-43479.svg",
+  "sha256": "2787a56b9b63e43922f9d51c2121b48e7b524330af02527564548c374b8a8bac",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

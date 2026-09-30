@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:46319",
+  "type": "COMPONENT",
+  "id": "2128:46319",
+  "name": "Iconly/Regular/Two-tone/Star",
+  "parentId": "2128:24782",
+  "hierarchy": [
+    {
+      "id": "2128:24782",
+      "name": "Regular | Two Tone"
+    },
+    {
+      "id": "2128:46319",
+      "name": "Iconly/Regular/Two-tone/Star"
+    }
+  ],
+  "bounds": {
+    "x": 740,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 740,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/two-tone/star--2128-46319.svg",
+  "sha256": "e1b115ff0307c2bf662c62f137637b8d2a512a1e5ae59bf1da174363a972b715",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

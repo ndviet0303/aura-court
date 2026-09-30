@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32585",
+  "type": "COMPONENT",
+  "id": "2128:32585",
+  "name": "Iconly/Curved/Bold/Voice 3",
+  "parentId": "2128:32538",
+  "hierarchy": [
+    {
+      "id": "2128:32538",
+      "name": "Curved | Bold"
+    },
+    {
+      "id": "2128:32585",
+      "name": "Iconly/Curved/Bold/Voice 3"
+    }
+  ],
+  "bounds": {
+    "x": 292.25,
+    "y": 8363.604004,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 292.25,
+    "y": 8363.604004,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bold/voice-3--2128-32585.svg",
+  "sha256": "38a8e4ab136dbad1afc5915f65c396a97fee8032d8e58b86f7eadc22ddcc94d1",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

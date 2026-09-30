@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27849",
+  "type": "COMPONENT",
+  "id": "2128:27849",
+  "name": "Iconly/Curved/Outline/Arrow - Right 2",
+  "parentId": "2128:27689",
+  "hierarchy": [
+    {
+      "id": "2128:27689",
+      "name": "Curved | Light (Outline)"
+    },
+    {
+      "id": "2128:27849",
+      "name": "Iconly/Curved/Outline/Arrow - Right 2"
+    }
+  ],
+  "bounds": {
+    "x": 1604,
+    "y": 10149,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1604,
+    "y": 10149,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/outline/arrow-right-2--2128-27849.svg",
+  "sha256": "a59be0cd814f62be4422f51de7ecb37f9a8bb685b0d886802873e66b7d0a3af7",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

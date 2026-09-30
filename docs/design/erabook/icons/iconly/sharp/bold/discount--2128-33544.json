@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:33544",
+  "type": "COMPONENT",
+  "id": "2128:33544",
+  "name": "Iconly/Sharp/Bold/Discount",
+  "parentId": "2128:33371",
+  "hierarchy": [
+    {
+      "id": "2128:33371",
+      "name": "Sharp | Bold"
+    },
+    {
+      "id": "2128:33544",
+      "name": "Iconly/Sharp/Bold/Discount"
+    }
+  ],
+  "bounds": {
+    "x": 964.25,
+    "y": 4208.534668,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 964.25,
+    "y": 4208.534668,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bold/discount--2128-33544.svg",
+  "sha256": "5d639463ddfed4fd479700c2b869ddf12c8cb87dd81fe09e2bbba20613d367bd",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

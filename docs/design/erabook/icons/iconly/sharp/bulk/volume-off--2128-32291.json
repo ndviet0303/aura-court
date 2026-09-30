@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32291",
+  "type": "COMPONENT",
+  "id": "2128:32291",
+  "name": "Iconly/Sharp/Bulk/Volume Off",
+  "parentId": "2128:32019",
+  "hierarchy": [
+    {
+      "id": "2128:32019",
+      "name": "Sharp | Bulk"
+    },
+    {
+      "id": "2128:32291",
+      "name": "Iconly/Sharp/Bulk/Volume Off"
+    }
+  ],
+  "bounds": {
+    "x": 684.25,
+    "y": 4939,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 684.25,
+    "y": 4939,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bulk/volume-off--2128-32291.svg",
+  "sha256": "b4b5f79959e0d7cf9cfc11d658db8224f1a030d41a284f90c82dcfa77dbab4c9",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

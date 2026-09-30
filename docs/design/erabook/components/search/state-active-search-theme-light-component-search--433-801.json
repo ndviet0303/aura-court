@@ -1,0 +1,66 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "433:801",
+  "type": "COMPONENT",
+  "id": "433:801",
+  "name": "State=Active Search, Theme=Light, Component=Search",
+  "parentId": "250:2247",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3286",
+      "name": "Search"
+    },
+    {
+      "id": "250:2247",
+      "name": "Search"
+    },
+    {
+      "id": "433:801",
+      "name": "State=Active Search, Theme=Light, Component=Search"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 4685,
+    "width": 382,
+    "height": 56
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 4685,
+    "width": 382,
+    "height": 56
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 56
+  },
+  "selectedElements": 9,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "State": "Active Search",
+    "Theme": "Light",
+    "Component": "Search"
+  },
+  "svg": "components/search/state-active-search-theme-light-component-search--433-801.svg",
+  "sha256": "82c07556838e56ea1635126bedef8a0849891f0245f58e2d4731db06a23cb1b6",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:46320",
+  "type": "COMPONENT",
+  "id": "2128:46320",
+  "name": "Iconly/Regular/Two-tone/Send",
+  "parentId": "2128:24782",
+  "hierarchy": [
+    {
+      "id": "2128:24782",
+      "name": "Regular | Two Tone"
+    },
+    {
+      "id": "2128:46320",
+      "name": "Iconly/Regular/Two-tone/Send"
+    }
+  ],
+  "bounds": {
+    "x": 1132,
+    "y": 3521,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1132,
+    "y": 3521,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/two-tone/send--2128-46320.svg",
+  "sha256": "eefdf128eeaa0e49f908c67d1a82e2887a3f462fc397b4684a9bf513ae616fb9",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

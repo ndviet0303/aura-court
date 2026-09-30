@@ -1,0 +1,66 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:1602",
+  "type": "COMPONENT",
+  "id": "442:1602",
+  "name": "Type=Button, Type 2=Secondary, Type 3=Rounded, Style=Icon, State=Active, Theme=Dark, Component=Button",
+  "parentId": "215:1354",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3251",
+      "name": "Button"
+    },
+    {
+      "id": "215:1354",
+      "name": "Button"
+    },
+    {
+      "id": "442:1602",
+      "name": "Type=Button, Type 2=Secondary, Type 3=Rounded, Style=Icon, State=Active, Theme=Dark, Component=Button"
+    }
+  ],
+  "bounds": {
+    "x": 552,
+    "y": 1837,
+    "width": 382,
+    "height": 58
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 552,
+    "y": 1837,
+    "width": 382,
+    "height": 58
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 58
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Button",
+    "Type 2": "Secondary",
+    "Type 3": "Rounded",
+    "Style": "Icon",
+    "State": "Active",
+    "Theme": "Dark",
+    "Component": "Button"
+  },
+  "svg": "components/button/type-button-type-2-secondary-type-3-rounded-style-icon-state-active-theme-dark-component-button--442-1602.svg",
+  "sha256": "c2a51338bfc15ff6f90259c46fac985894e8673452d1bf12c7239fcc0a8a29ea",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

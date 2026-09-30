@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29693",
+  "type": "COMPONENT",
+  "id": "2128:29693",
+  "name": "Iconly/Curved/Light/Location",
+  "parentId": "2128:29462",
+  "hierarchy": [
+    {
+      "id": "2128:29462",
+      "name": "Curved | Light (Border)"
+    },
+    {
+      "id": "2128:29693",
+      "name": "Iconly/Curved/Light/Location"
+    }
+  ],
+  "bounds": {
+    "x": 294,
+    "y": 9573,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 294,
+    "y": 9573,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/light/location--2128-29693.svg",
+  "sha256": "054b4da4443623b2b67ef801c6dbe7f41153d42fe1f686df3d56f1614c93036f",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

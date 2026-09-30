@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27621",
+  "type": "COMPONENT",
+  "id": "2128:27621",
+  "name": "Iconly/Sharp/Broken/Paper Fail",
+  "parentId": "2128:27035",
+  "hierarchy": [
+    {
+      "id": "2128:27035",
+      "name": "Sharp | Broken"
+    },
+    {
+      "id": "2128:27621",
+      "name": "Iconly/Sharp/Broken/Paper Fail"
+    }
+  ],
+  "bounds": {
+    "x": 964.25,
+    "y": 6849,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 964.25,
+    "y": 6849,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/broken/paper-fail--2128-27621.svg",
+  "sha256": "6a66fb77635cb34c626a9216916b9988e2f72a9119c1bf5d4451df7307dd633a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

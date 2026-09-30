@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29180",
+  "type": "COMPONENT",
+  "id": "2128:29180",
+  "name": "Iconly/Sharp/Outline/Download",
+  "parentId": "2128:28965",
+  "hierarchy": [
+    {
+      "id": "2128:28965",
+      "name": "Sharp | Light (Outline)"
+    },
+    {
+      "id": "2128:29180",
+      "name": "Iconly/Sharp/Outline/Download"
+    }
+  ],
+  "bounds": {
+    "x": 1244.25,
+    "y": 6287,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1244.25,
+    "y": 6287,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/outline/download--2128-29180.svg",
+  "sha256": "fba4831d2e42187b968d8f3e7f0a44fd22b3f6c2c04a86c1b3334ff6d489341e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

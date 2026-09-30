@@ -1,0 +1,61 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1228:18824",
+  "type": "COMPONENT",
+  "id": "1228:18824",
+  "name": "Active Menu=Light Discover, Component=Bottom Bars",
+  "parentId": "1228:18718",
+  "hierarchy": [
+    {
+      "id": "1457:22821",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1248:88830",
+      "name": "Bottom Bars"
+    },
+    {
+      "id": "1228:18718",
+      "name": "Bottom Bars"
+    },
+    {
+      "id": "1228:18824",
+      "name": "Active Menu=Light Discover, Component=Bottom Bars"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 341,
+    "width": 430,
+    "height": 90
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 341,
+    "width": 430,
+    "height": 90
+  },
+  "renderSize": {
+    "width": 430,
+    "height": 90
+  },
+  "selectedElements": 23,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Active Menu": "Light Discover",
+    "Component": "Bottom Bars"
+  },
+  "svg": "elements/bottom-bars/active-menu-light-discover-component-bottom-bars--1228-18824.svg",
+  "sha256": "b12f001736375385c1f7bc1bdad49a7cd0624ef1f73ce4259b57e1cb88fc2ab5",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

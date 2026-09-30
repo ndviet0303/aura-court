@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:43473",
+  "type": "COMPONENT",
+  "id": "2128:43473",
+  "name": "Iconly/Regular/Bulk/Play",
+  "parentId": "2128:31446",
+  "hierarchy": [
+    {
+      "id": "2128:31446",
+      "name": "Regular | Bulk"
+    },
+    {
+      "id": "2128:43473",
+      "name": "Iconly/Regular/Bulk/Play"
+    }
+  ],
+  "bounds": {
+    "x": 516,
+    "y": 1161,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 516,
+    "y": 1161,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bulk/play--2128-43473.svg",
+  "sha256": "b6f235b18b95d3c7a1d72ef9a291f04c7144de3c6f9edaf90176daba1f89881e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:45714",
+  "type": "COMPONENT",
+  "id": "2128:45714",
+  "name": "Iconly/Regular/Broken/Bag 3",
+  "parentId": "2128:26398",
+  "hierarchy": [
+    {
+      "id": "2128:26398",
+      "name": "Regular | Broken"
+    },
+    {
+      "id": "2128:45714",
+      "name": "Iconly/Regular/Broken/Bag 3"
+    }
+  ],
+  "bounds": {
+    "x": 740,
+    "y": 2945,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 740,
+    "y": 2945,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/broken/bag-3--2128-45714.svg",
+  "sha256": "06865e80a7a607eb705bc6ad2139f27f4e0ef637692c4bd84961a4beb276a34e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

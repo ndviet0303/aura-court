@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32438",
+  "type": "COMPONENT",
+  "id": "2128:32438",
+  "name": "Iconly/Sharp/Bulk/Arrow - Down 2",
+  "parentId": "2128:32019",
+  "hierarchy": [
+    {
+      "id": "2128:32019",
+      "name": "Sharp | Bulk"
+    },
+    {
+      "id": "2128:32438",
+      "name": "Iconly/Sharp/Bulk/Arrow - Down 2"
+    }
+  ],
+  "bounds": {
+    "x": 1604.25,
+    "y": 4827,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1604.25,
+    "y": 4827,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bulk/arrow-down-2--2128-32438.svg",
+  "sha256": "c7713afcb489ea2cd8590260d95c8c127cc2f60ac054d088e92dbe07fe60280f",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:46298",
+  "type": "COMPONENT",
+  "id": "2128:46298",
+  "name": "Iconly/Regular/Two-tone/Discovery",
+  "parentId": "2128:24782",
+  "hierarchy": [
+    {
+      "id": "2128:24782",
+      "name": "Regular | Two Tone"
+    },
+    {
+      "id": "2128:46298",
+      "name": "Iconly/Regular/Two-tone/Discovery"
+    }
+  ],
+  "bounds": {
+    "x": 236,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 236,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/two-tone/discovery--2128-46298.svg",
+  "sha256": "b07ab3f72a4a4a64c3d3d75f356c0849f9d4caf4059305924572b6fde8457868",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

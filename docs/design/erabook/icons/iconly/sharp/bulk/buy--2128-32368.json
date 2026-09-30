@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32368",
+  "type": "COMPONENT",
+  "id": "2128:32368",
+  "name": "Iconly/Sharp/Bulk/Buy",
+  "parentId": "2128:32019",
+  "hierarchy": [
+    {
+      "id": "2128:32019",
+      "name": "Sharp | Bulk"
+    },
+    {
+      "id": "2128:32368",
+      "name": "Iconly/Sharp/Bulk/Buy"
+    }
+  ],
+  "bounds": {
+    "x": 1020.25,
+    "y": 4882.534668,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1020.25,
+    "y": 4882.534668,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bulk/buy--2128-32368.svg",
+  "sha256": "9a75dba7456fd6311513779024ea0b21030b949988749df7066a3c54b00bd93c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

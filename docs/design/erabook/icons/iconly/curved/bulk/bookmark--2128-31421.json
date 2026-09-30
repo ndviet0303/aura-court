@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:31421",
+  "type": "COMPONENT",
+  "id": "2128:31421",
+  "name": "Iconly/Curved/Bulk/Bookmark",
+  "parentId": "2128:31023",
+  "hierarchy": [
+    {
+      "id": "2128:31023",
+      "name": "Curved | Bulk"
+    },
+    {
+      "id": "2128:31421",
+      "name": "Iconly/Curved/Bulk/Bookmark"
+    }
+  ],
+  "bounds": {
+    "x": 460.25,
+    "y": 8829,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 460.25,
+    "y": 8829,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bulk/bookmark--2128-31421.svg",
+  "sha256": "334f008b20b829aaaac3889a73d4d60aef8430c734ec531d4a91901784a644c3",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

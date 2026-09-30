@@ -1,0 +1,57 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1943:35418",
+  "type": "COMPONENT",
+  "id": "1943:35418",
+  "name": "Type=American Express, Theme=Light",
+  "parentId": "1233:23962",
+  "hierarchy": [
+    {
+      "id": "1953:213396",
+      "name": "Payment Methods"
+    },
+    {
+      "id": "1233:23962",
+      "name": "Elements/Payment Methods"
+    },
+    {
+      "id": "1943:35418",
+      "name": "Type=American Express, Theme=Light"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 4945,
+    "width": 382,
+    "height": 60
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 4945,
+    "width": 382,
+    "height": 60
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 60
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "American Express",
+    "Theme": "Light"
+  },
+  "svg": "elements/elements-payment-methods/type-american-express-theme-light--1943-35418.svg",
+  "sha256": "63483895bec56f2c02600b0cd8e93e096a14050250d7126863d986f5633300c1",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

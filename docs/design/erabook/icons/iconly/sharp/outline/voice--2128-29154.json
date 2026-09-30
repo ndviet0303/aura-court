@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29154",
+  "type": "COMPONENT",
+  "id": "2128:29154",
+  "name": "Iconly/Sharp/Outline/Voice",
+  "parentId": "2128:28965",
+  "hierarchy": [
+    {
+      "id": "2128:28965",
+      "name": "Sharp | Light (Outline)"
+    },
+    {
+      "id": "2128:29154",
+      "name": "Iconly/Sharp/Outline/Voice"
+    }
+  ],
+  "bounds": {
+    "x": 236.25,
+    "y": 6341.604004,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 236.25,
+    "y": 6341.604004,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 5,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/outline/voice--2128-29154.svg",
+  "sha256": "452670252251c76915afb03d4b83b6ede40cbd9a2a4c22914c72eeadead5a120",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

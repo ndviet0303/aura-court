@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:43466",
+  "type": "COMPONENT",
+  "id": "2128:43466",
+  "name": "Iconly/Regular/Bulk/Arrow - Up",
+  "parentId": "2128:31446",
+  "hierarchy": [
+    {
+      "id": "2128:31446",
+      "name": "Regular | Bulk"
+    },
+    {
+      "id": "2128:43466",
+      "name": "Iconly/Regular/Bulk/Arrow - Up"
+    }
+  ],
+  "bounds": {
+    "x": 1548,
+    "y": 1105,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1548,
+    "y": 1105,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bulk/arrow-up--2128-43466.svg",
+  "sha256": "5247a359db80506985ffb6c7c6aa30491a107b9d75acbaef2c90266b3cb2c585",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

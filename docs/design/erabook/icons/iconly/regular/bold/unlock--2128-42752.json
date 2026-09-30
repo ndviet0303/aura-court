@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:42752",
+  "type": "COMPONENT",
+  "id": "2128:42752",
+  "name": "Iconly/Regular/Bold/Unlock",
+  "parentId": "2128:32742",
+  "hierarchy": [
+    {
+      "id": "2128:32742",
+      "name": "Regular | Bold"
+    },
+    {
+      "id": "2128:42752",
+      "name": "Iconly/Regular/Bold/Unlock"
+    }
+  ],
+  "bounds": {
+    "x": 1300,
+    "y": 529,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1300,
+    "y": 529,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bold/unlock--2128-42752.svg",
+  "sha256": "2b7345fa6919cd26e4cd36a3400cb4fd499e49b9d65eb15f9786e09d3160736a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

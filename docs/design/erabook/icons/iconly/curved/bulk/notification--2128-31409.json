@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:31409",
+  "type": "COMPONENT",
+  "id": "2128:31409",
+  "name": "Iconly/Curved/Bulk/Notification",
+  "parentId": "2128:31023",
+  "hierarchy": [
+    {
+      "id": "2128:31023",
+      "name": "Curved | Bulk"
+    },
+    {
+      "id": "2128:31409",
+      "name": "Iconly/Curved/Bulk/Notification"
+    }
+  ],
+  "bounds": {
+    "x": 628.25,
+    "y": 8829,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 628.25,
+    "y": 8829,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bulk/notification--2128-31409.svg",
+  "sha256": "42d6a1dc3ce1c5240aedc4587385a3c3bd93129751f84f6ac8e1b36fee376d2c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

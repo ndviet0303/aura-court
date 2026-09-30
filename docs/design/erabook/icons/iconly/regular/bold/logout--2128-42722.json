@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:42722",
+  "type": "COMPONENT",
+  "id": "2128:42722",
+  "name": "Iconly/Regular/Bold/Logout",
+  "parentId": "2128:32742",
+  "hierarchy": [
+    {
+      "id": "2128:32742",
+      "name": "Regular | Bold"
+    },
+    {
+      "id": "2128:42722",
+      "name": "Iconly/Regular/Bold/Logout"
+    }
+  ],
+  "bounds": {
+    "x": 1188,
+    "y": 473,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1188,
+    "y": 473,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/bold/logout--2128-42722.svg",
+  "sha256": "f8369d2bafe91f32ea80898ef55ba046611037b4a27664dbc6a6e09eaa2b6c5d",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

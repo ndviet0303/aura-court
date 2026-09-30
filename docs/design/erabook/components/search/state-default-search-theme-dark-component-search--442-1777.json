@@ -1,0 +1,66 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:1777",
+  "type": "COMPONENT",
+  "id": "442:1777",
+  "name": "State=Default Search, Theme=Dark, Component=Search",
+  "parentId": "250:2247",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3286",
+      "name": "Search"
+    },
+    {
+      "id": "250:2247",
+      "name": "Search"
+    },
+    {
+      "id": "442:1777",
+      "name": "State=Default Search, Theme=Dark, Component=Search"
+    }
+  ],
+  "bounds": {
+    "x": 552,
+    "y": 4613,
+    "width": 382,
+    "height": 56
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 552,
+    "y": 4613,
+    "width": 382,
+    "height": 56
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 56
+  },
+  "selectedElements": 8,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "State": "Default Search",
+    "Theme": "Dark",
+    "Component": "Search"
+  },
+  "svg": "components/search/state-default-search-theme-dark-component-search--442-1777.svg",
+  "sha256": "f45cba6225301714b4dbab6d7f68236a776a5a6d71f7a8765c19f6f1a75ee3b8",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

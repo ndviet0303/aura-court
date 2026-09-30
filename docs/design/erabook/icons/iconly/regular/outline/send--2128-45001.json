@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:45001",
+  "type": "COMPONENT",
+  "id": "2128:45001",
+  "name": "Iconly/Regular/Outline/Send",
+  "parentId": "2128:28055",
+  "hierarchy": [
+    {
+      "id": "2128:28055",
+      "name": "Regular | Light (Outline)"
+    },
+    {
+      "id": "2128:45001",
+      "name": "Iconly/Regular/Outline/Send"
+    }
+  ],
+  "bounds": {
+    "x": 1132,
+    "y": 2257,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1132,
+    "y": 2257,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/outline/send--2128-45001.svg",
+  "sha256": "3de5f39369f29f64c2c1632101f4bc418bd73bd6049bff9390ffa23bdb94e332",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

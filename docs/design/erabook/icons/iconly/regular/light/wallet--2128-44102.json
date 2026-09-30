@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44102",
+  "type": "COMPONENT",
+  "id": "2128:44102",
+  "name": "Iconly/Regular/Light/Wallet",
+  "parentId": "2128:29962",
+  "hierarchy": [
+    {
+      "id": "2128:29962",
+      "name": "Regular | Light (Border)"
+    },
+    {
+      "id": "2128:44102",
+      "name": "Iconly/Regular/Light/Wallet"
+    }
+  ],
+  "bounds": {
+    "x": 348,
+    "y": 1625,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 348,
+    "y": 1625,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/light/wallet--2128-44102.svg",
+  "sha256": "febfde13c1a393a9cedbd49df4595f86ccaa2569731338e193adbfb71d392803",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

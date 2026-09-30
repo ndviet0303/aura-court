@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27487",
+  "type": "COMPONENT",
+  "id": "2128:27487",
+  "name": "Iconly/Sharp/Broken/More Circle",
+  "parentId": "2128:27035",
+  "hierarchy": [
+    {
+      "id": "2128:27035",
+      "name": "Sharp | Broken"
+    },
+    {
+      "id": "2128:27487",
+      "name": "Iconly/Sharp/Broken/More Circle"
+    }
+  ],
+  "bounds": {
+    "x": 852.25,
+    "y": 6904.534668,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 852.25,
+    "y": 6904.534668,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/broken/more-circle--2128-27487.svg",
+  "sha256": "3174ca262c92e50fd32a2cae12aa8da75fb4cc36943aab2698218fd445e4ddb1",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29735",
+  "type": "COMPONENT",
+  "id": "2128:29735",
+  "name": "Iconly/Curved/Light/Danger Square",
+  "parentId": "2128:29462",
+  "hierarchy": [
+    {
+      "id": "2128:29462",
+      "name": "Curved | Light (Border)"
+    },
+    {
+      "id": "2128:29735",
+      "name": "Iconly/Curved/Light/Danger Square"
+    }
+  ],
+  "bounds": {
+    "x": 1134,
+    "y": 9517,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1134,
+    "y": 9517,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/light/danger-square--2128-29735.svg",
+  "sha256": "2faf41c3f14b968bc2b024f0237a6431671ae74fc9960ab10fbdc09b001547af",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27500",
+  "type": "COMPONENT",
+  "id": "2128:27500",
+  "name": "Iconly/Sharp/Broken/Bag 2",
+  "parentId": "2128:27035",
+  "hierarchy": [
+    {
+      "id": "2128:27035",
+      "name": "Sharp | Broken"
+    },
+    {
+      "id": "2128:27500",
+      "name": "Iconly/Sharp/Broken/Bag 2"
+    }
+  ],
+  "bounds": {
+    "x": 684.25,
+    "y": 6904.534668,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 684.25,
+    "y": 6904.534668,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/broken/bag-2--2128-27500.svg",
+  "sha256": "ac7378feec9c4917777a0fefafad1b76c39c58d979e8ded61f382df0a64afd34",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

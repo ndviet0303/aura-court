@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:30720",
+  "type": "COMPONENT",
+  "id": "2128:30720",
+  "name": "Iconly/Sharp/Light/Arrow - Up",
+  "parentId": "2128:30518",
+  "hierarchy": [
+    {
+      "id": "2128:30518",
+      "name": "Sharp | Light (Border)"
+    },
+    {
+      "id": "2128:30720",
+      "name": "Iconly/Sharp/Light/Arrow - Up"
+    }
+  ],
+  "bounds": {
+    "x": 1548.25,
+    "y": 5613,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1548.25,
+    "y": 5613,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/light/arrow-up--2128-30720.svg",
+  "sha256": "be113d15793c26f65ddfc05555aac07093b59be4a99c5610e8d2e8b784f0e1eb",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

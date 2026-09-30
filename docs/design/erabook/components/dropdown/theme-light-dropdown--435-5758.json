@@ -1,0 +1,64 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "435:5758",
+  "type": "COMPONENT",
+  "id": "435:5758",
+  "name": "Theme=Light Dropdown",
+  "parentId": "435:5759",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3292",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1953:213394",
+      "name": "Dropdown"
+    },
+    {
+      "id": "435:5759",
+      "name": "Dropdown"
+    },
+    {
+      "id": "435:5758",
+      "name": "Theme=Light Dropdown"
+    }
+  ],
+  "bounds": {
+    "x": 1048,
+    "y": 5643,
+    "width": 148,
+    "height": 476
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1048,
+    "y": 5643,
+    "width": 148,
+    "height": 476
+  },
+  "renderSize": {
+    "width": 148,
+    "height": 476
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Theme": "Light Dropdown"
+  },
+  "svg": "components/dropdown/theme-light-dropdown--435-5758.svg",
+  "sha256": "c1b91f98401ba431084d9a11ef8cbcb9da0c08b17fa0c8b341ae5c69ae4e3518",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

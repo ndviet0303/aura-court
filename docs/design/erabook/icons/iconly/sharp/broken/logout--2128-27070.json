@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27070",
+  "type": "COMPONENT",
+  "id": "2128:27070",
+  "name": "Iconly/Sharp/Broken/Logout",
+  "parentId": "2128:27035",
+  "hierarchy": [
+    {
+      "id": "2128:27035",
+      "name": "Sharp | Broken"
+    },
+    {
+      "id": "2128:27070",
+      "name": "Iconly/Sharp/Broken/Logout"
+    }
+  ],
+  "bounds": {
+    "x": 1188.25,
+    "y": 7071.138672,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1188.25,
+    "y": 7071.138672,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 5,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/broken/logout--2128-27070.svg",
+  "sha256": "4d452ad82b2a40019dc5a7463a82f999ca16cdf79e0cf813165441d973bd432b",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

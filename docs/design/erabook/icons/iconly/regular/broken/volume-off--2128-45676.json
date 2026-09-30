@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:45676",
+  "type": "COMPONENT",
+  "id": "2128:45676",
+  "name": "Iconly/Regular/Broken/Volume Off",
+  "parentId": "2128:26398",
+  "hierarchy": [
+    {
+      "id": "2128:26398",
+      "name": "Regular | Broken"
+    },
+    {
+      "id": "2128:45676",
+      "name": "Iconly/Regular/Broken/Volume Off"
+    }
+  ],
+  "bounds": {
+    "x": 684,
+    "y": 3001,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 684,
+    "y": 3001,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/broken/volume-off--2128-45676.svg",
+  "sha256": "d31c393a55f6677a4b40abd7580685e6ec71487ce5690442bd2b793c8c146d17",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

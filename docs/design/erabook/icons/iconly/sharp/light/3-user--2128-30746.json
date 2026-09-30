@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:30746",
+  "type": "COMPONENT",
+  "id": "2128:30746",
+  "name": "Iconly/Sharp/Light/3 User",
+  "parentId": "2128:30518",
+  "hierarchy": [
+    {
+      "id": "2128:30518",
+      "name": "Sharp | Light (Border)"
+    },
+    {
+      "id": "2128:30746",
+      "name": "Iconly/Sharp/Light/3 User"
+    }
+  ],
+  "bounds": {
+    "x": 1076.25,
+    "y": 5613,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1076.25,
+    "y": 5613,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 6,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/light/3-user--2128-30746.svg",
+  "sha256": "73f7af65f9fdc25e82219777d97d9e6789b650916a533121fedc0c720a484c38",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

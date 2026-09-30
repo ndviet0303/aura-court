@@ -1,0 +1,86 @@
+{
+  "status": "partial",
+  "source": "https://www.figma.com/design/LwmUj9WEuCOARHRu2xnu0X/Erabook?node-id=3-2",
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "pageId": "3:2",
+  "pageName": "🎨 Design System",
+  "capturedOn": "2026-09-29",
+  "observed": {
+    "nodes": 13595,
+    "components": 2258,
+    "componentSets": 27,
+    "paintStyles": 72,
+    "textStyles": 44,
+    "effectStyles": 6,
+    "gridStyles": 1,
+    "variables": 0,
+    "collections": 0
+  },
+  "saved": {
+    "componentCatalog": 2258,
+    "paintStyles": 72,
+    "textStyles": 44,
+    "effectStyles": 6,
+    "gridStyles": 0,
+    "sectionPreviews": 4,
+    "manualSvgExports": 4,
+    "individualIcons": 1950,
+    "individualComponents": 189,
+    "individualElements": 119,
+    "individualMetadata": 2258
+  },
+  "individualAssets": {
+    "index": "assets-index.json",
+    "verification": "asset-verification.json",
+    "preview": "assets-preview.png",
+    "format": "Standalone SVG and adjacent JSON; derived from manual SVG geometry and existing MCP hierarchy, not a native MCP export",
+    "nominalBoundsExceptions": { "1132:36982": "Live avatar: 54x66 render bounds preserve badge and ring", "435:5270": "Zero-height divider rendered at 1px", "435:5269": "Zero-height divider rendered at 1px" },
+    "verificationLimit": "Backdrop foreignObject blur omitted from pixel comparison; retained in output SVG"
+  },
+  "manualSvgExports": [
+    { "path": "svg/Content.svg", "section": "iconography", "width": 1968, "height": 11828 },
+    { "path": "svg/Content (1).svg", "section": "colors", "width": 1700, "height": 4984 },
+    { "path": "svg/Content (2).svg", "section": "components", "width": 1715, "height": 6283 },
+    { "path": "svg/Content (3).svg", "section": "elements", "width": 2070, "height": 5533 }
+  ],
+  "manualSvgNotes": "Original filenames and bytes preserved. Section mapping based on dimensions and existing MCP metadata. Text is outlined; Figma Auto Layout and variant semantics are not preserved by SVG.",
+  "recommendedImplementationFont": {
+    "family": "Be Vietnam Pro",
+    "weights": [400, 500, 600, 700],
+    "applied": false
+  },
+  "missing": [
+    "Grid style details (1)",
+    "Font metadata absent from 26 returned text styles; not inferred",
+    "Per-layer fills, typography, layout and component property definitions beyond metadata",
+    "Separate original source image files (required images are embedded in individual SVGs)",
+    "Typography and My Profile section previews"
+  ],
+  "blocker": "Figma MCP Starter plan tool-call limit",
+  "sections": [
+    {
+      "name": "colors",
+      "id": "430:2166"
+    },
+    {
+      "name": "typography",
+      "id": "430:2167"
+    },
+    {
+      "name": "iconography",
+      "id": "430:2959"
+    },
+    {
+      "name": "components",
+      "id": "432:3907"
+    },
+    {
+      "name": "elements",
+      "id": "560:15288"
+    },
+    {
+      "name": "profile",
+      "id": "1140:18595"
+    }
+  ]
+}

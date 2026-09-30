@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27978",
+  "type": "COMPONENT",
+  "id": "2128:27978",
+  "name": "Iconly/Curved/Outline/Paper Upload",
+  "parentId": "2128:27689",
+  "hierarchy": [
+    {
+      "id": "2128:27689",
+      "name": "Curved | Light (Outline)"
+    },
+    {
+      "id": "2128:27978",
+      "name": "Iconly/Curved/Outline/Paper Upload"
+    }
+  ],
+  "bounds": {
+    "x": 1078,
+    "y": 10093,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1078,
+    "y": 10093,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/outline/paper-upload--2128-27978.svg",
+  "sha256": "0f5bedba75b44d8361605c9acd8b8c6c0aa94506da19c7d30bd22fc4771d36ac",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2243",
+  "type": "COMPONENT",
+  "id": "442:2243",
+  "name": "Style=Borderless, State=Success, Theme=Default, Component=Tag",
+  "parentId": "442:2259",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3288",
+      "name": "Tag"
+    },
+    {
+      "id": "442:2259",
+      "name": "Tag"
+    },
+    {
+      "id": "442:2243",
+      "name": "Style=Borderless, State=Success, Theme=Default, Component=Tag"
+    }
+  ],
+  "bounds": {
+    "x": 564,
+    "y": 5703,
+    "width": 75,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 564,
+    "y": 5703,
+    "width": 75,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 75,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Style": "Borderless",
+    "State": "Success",
+    "Theme": "Default",
+    "Component": "Tag"
+  },
+  "svg": "components/tag/style-borderless-state-success-theme-default-component-tag--442-2243.svg",
+  "sha256": "a8c9a0cd8824554fa9a718fa7f55598b83e04739c418c61a5ba799d161abe666",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

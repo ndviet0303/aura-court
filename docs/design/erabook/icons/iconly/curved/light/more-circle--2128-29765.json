@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29765",
+  "type": "COMPONENT",
+  "id": "2128:29765",
+  "name": "Iconly/Curved/Light/More Circle",
+  "parentId": "2128:29462",
+  "hierarchy": [
+    {
+      "id": "2128:29462",
+      "name": "Curved | Light (Border)"
+    },
+    {
+      "id": "2128:29765",
+      "name": "Iconly/Curved/Light/More Circle"
+    }
+  ],
+  "bounds": {
+    "x": 854,
+    "y": 9517,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 854,
+    "y": 9517,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/light/more-circle--2128-29765.svg",
+  "sha256": "73444c422e09f8d20fe54fb69415061f250cd965c33939ffce8a0d31ed7a8da4",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

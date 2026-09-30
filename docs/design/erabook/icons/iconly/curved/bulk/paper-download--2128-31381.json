@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:31381",
+  "type": "COMPONENT",
+  "id": "2128:31381",
+  "name": "Iconly/Curved/Bulk/Paper Download",
+  "parentId": "2128:31023",
+  "hierarchy": [
+    {
+      "id": "2128:31023",
+      "name": "Curved | Bulk"
+    },
+    {
+      "id": "2128:31381",
+      "name": "Iconly/Curved/Bulk/Paper Download"
+    }
+  ],
+  "bounds": {
+    "x": 1020.25,
+    "y": 8829,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1020.25,
+    "y": 8829,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bulk/paper-download--2128-31381.svg",
+  "sha256": "d95742a30556b9344a9319473318b8c56afcf577563af45fdb38d832b2efc16d",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

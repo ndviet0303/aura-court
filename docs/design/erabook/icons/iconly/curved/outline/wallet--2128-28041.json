@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:28041",
+  "type": "COMPONENT",
+  "id": "2128:28041",
+  "name": "Iconly/Curved/Outline/Wallet",
+  "parentId": "2128:27689",
+  "hierarchy": [
+    {
+      "id": "2128:27689",
+      "name": "Curved | Light (Outline)"
+    },
+    {
+      "id": "2128:28041",
+      "name": "Iconly/Curved/Outline/Wallet"
+    }
+  ],
+  "bounds": {
+    "x": 350,
+    "y": 10093,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 350,
+    "y": 10093,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/outline/wallet--2128-28041.svg",
+  "sha256": "a86ffeb70d6ac0eb1a52d9706f59de51c65826ed94d1b7db2ee1f81a12266a40",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

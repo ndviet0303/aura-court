@@ -1,0 +1,58 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2138:28047",
+  "type": "COMPONENT",
+  "id": "2138:28047",
+  "name": "Elements=Purchased, Theme=Dark, Component=Erabook Elements",
+  "parentId": "2138:28054",
+  "hierarchy": [
+    {
+      "id": "2063:197208",
+      "name": "Erabook Elements"
+    },
+    {
+      "id": "2138:28054",
+      "name": "Elements/Erabook Elements"
+    },
+    {
+      "id": "2138:28047",
+      "name": "Elements=Purchased, Theme=Dark, Component=Erabook Elements"
+    }
+  ],
+  "bounds": {
+    "x": 566,
+    "y": 1953,
+    "width": 382,
+    "height": 138
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 566,
+    "y": 1953,
+    "width": 382,
+    "height": 138
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 138
+  },
+  "selectedElements": 10,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Elements": "Purchased",
+    "Theme": "Dark",
+    "Component": "Erabook Elements"
+  },
+  "svg": "elements/elements-erabook-elements/elements-purchased-theme-dark-component-erabook-elements--2138-28047.svg",
+  "sha256": "2a8c5dff813f222a8f62945dbd348452808947300e1db4dc75326e363f0e8f78",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1930:20583",
+  "type": "COMPONENT",
+  "id": "1930:20583",
+  "name": "State=Filled, Theme=Light, Component=Input 2",
+  "parentId": "1930:20586",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1953:213380",
+      "name": "Input 2"
+    },
+    {
+      "id": "1930:20586",
+      "name": "Input 2"
+    },
+    {
+      "id": "1930:20583",
+      "name": "State=Filled, Theme=Light, Component=Input 2"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 4350,
+    "width": 382,
+    "height": 79
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 4350,
+    "width": 382,
+    "height": 79
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 79
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "State": "Filled",
+    "Theme": "Light",
+    "Component": "Input 2"
+  },
+  "svg": "components/input-2/state-filled-theme-light-component-input-2--1930-20583.svg",
+  "sha256": "34c4fc942924078152419183cc835833384a101b33636ddc702e266482f4cd24",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

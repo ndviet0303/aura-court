@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:30960",
+  "type": "COMPONENT",
+  "id": "2128:30960",
+  "name": "Iconly/Sharp/Light/Paper Download",
+  "parentId": "2128:30518",
+  "hierarchy": [
+    {
+      "id": "2128:30518",
+      "name": "Sharp | Light (Border)"
+    },
+    {
+      "id": "2128:30960",
+      "name": "Iconly/Sharp/Light/Paper Download"
+    }
+  ],
+  "bounds": {
+    "x": 1020.25,
+    "y": 5501,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1020.25,
+    "y": 5501,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/light/paper-download--2128-30960.svg",
+  "sha256": "8781a5e262a46d226b80c80aa291e1ed99a8afb7d643a3f6b36c66b18331df44",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

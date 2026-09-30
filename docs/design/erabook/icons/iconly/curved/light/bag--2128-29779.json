@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:29779",
+  "type": "COMPONENT",
+  "id": "2128:29779",
+  "name": "Iconly/Curved/Light/Bag",
+  "parentId": "2128:29462",
+  "hierarchy": [
+    {
+      "id": "2128:29462",
+      "name": "Curved | Light (Border)"
+    },
+    {
+      "id": "2128:29779",
+      "name": "Iconly/Curved/Light/Bag"
+    }
+  ],
+  "bounds": {
+    "x": 686,
+    "y": 9517,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 686,
+    "y": 9517,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/light/bag--2128-29779.svg",
+  "sha256": "f902a7f6c3928403eac18ed01a050ad7f9479500fc585d89132c27cbfcf8da4a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

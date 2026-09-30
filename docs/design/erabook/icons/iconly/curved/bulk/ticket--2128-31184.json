@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:31184",
+  "type": "COMPONENT",
+  "id": "2128:31184",
+  "name": "Iconly/Curved/Bulk/Ticket",
+  "parentId": "2128:31023",
+  "hierarchy": [
+    {
+      "id": "2128:31023",
+      "name": "Curved | Bulk"
+    },
+    {
+      "id": "2128:31184",
+      "name": "Iconly/Curved/Bulk/Ticket"
+    }
+  ],
+  "bounds": {
+    "x": 796.25,
+    "y": 8941,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 796.25,
+    "y": 8941,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bulk/ticket--2128-31184.svg",
+  "sha256": "4177273529b5925dc924cd48aeb2f709673b0b2b7fd76225aee23ddb4769ed8a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

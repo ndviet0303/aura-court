@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:25442",
+  "type": "COMPONENT",
+  "id": "2128:25442",
+  "name": "Iconly/Sharp/Two-tone/Card",
+  "parentId": "2128:25354",
+  "hierarchy": [
+    {
+      "id": "2128:25354",
+      "name": "Sharp | Two Tone"
+    },
+    {
+      "id": "2128:25442",
+      "name": "Iconly/Sharp/Two-tone/Card"
+    }
+  ],
+  "bounds": {
+    "x": 404.25,
+    "y": 7745.138672,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 404.25,
+    "y": 7745.138672,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/two-tone/card--2128-25442.svg",
+  "sha256": "1a42de117c2f8a1672a631104a160e509dfcc9fdffe4c729d67e03df38ef79d0",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

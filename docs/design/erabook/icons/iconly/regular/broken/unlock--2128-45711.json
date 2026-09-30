@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:45711",
+  "type": "COMPONENT",
+  "id": "2128:45711",
+  "name": "Iconly/Regular/Broken/Unlock",
+  "parentId": "2128:26398",
+  "hierarchy": [
+    {
+      "id": "2128:26398",
+      "name": "Regular | Broken"
+    },
+    {
+      "id": "2128:45711",
+      "name": "Iconly/Regular/Broken/Unlock"
+    }
+  ],
+  "bounds": {
+    "x": 1300,
+    "y": 3057,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1300,
+    "y": 3057,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/broken/unlock--2128-45711.svg",
+  "sha256": "42b7234da4928a3478f1b1cc195632065f5de3b9e36a098a18ffcd035620b8ad",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2473",
+  "type": "COMPONENT",
+  "id": "442:2473",
+  "name": "Style=None, Theme=Default, State=Checked, Component=Checkbox",
+  "parentId": "442:2470",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:883",
+      "name": "Auto Layout Vertical"
+    },
+    {
+      "id": "442:3260",
+      "name": "Checkbox"
+    },
+    {
+      "id": "442:2470",
+      "name": "Checkbox"
+    },
+    {
+      "id": "442:2473",
+      "name": "Style=None, Theme=Default, State=Checked, Component=Checkbox"
+    }
+  ],
+  "bounds": {
+    "x": 1026,
+    "y": 1752,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1026,
+    "y": 1752,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Style": "None",
+    "Theme": "Default",
+    "State": "Checked",
+    "Component": "Checkbox"
+  },
+  "svg": "components/checkbox/style-none-theme-default-state-checked-component-checkbox--442-2473.svg",
+  "sha256": "0e0d9771c52b23549b44ab5f0d4264338933425537d7ffcb9182cc05e8116192",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

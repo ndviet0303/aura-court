@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:28972",
+  "type": "COMPONENT",
+  "id": "2128:28972",
+  "name": "Iconly/Sharp/Outline/Star 3",
+  "parentId": "2128:28965",
+  "hierarchy": [
+    {
+      "id": "2128:28965",
+      "name": "Sharp | Light (Outline)"
+    },
+    {
+      "id": "2128:28972",
+      "name": "Iconly/Sharp/Outline/Star 3"
+    }
+  ],
+  "bounds": {
+    "x": 1492.25,
+    "y": 6399,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1492.25,
+    "y": 6399,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/outline/star-3--2128-28972.svg",
+  "sha256": "c5393020227690efe1c3cf318347cabca52c3285895aa581d2f713ea82d6d958",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

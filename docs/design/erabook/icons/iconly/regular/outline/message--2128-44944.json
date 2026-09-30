@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44944",
+  "type": "COMPONENT",
+  "id": "2128:44944",
+  "name": "Iconly/Regular/Outline/Message",
+  "parentId": "2128:28055",
+  "hierarchy": [
+    {
+      "id": "2128:28055",
+      "name": "Regular | Light (Outline)"
+    },
+    {
+      "id": "2128:44944",
+      "name": "Iconly/Regular/Outline/Message"
+    }
+  ],
+  "bounds": {
+    "x": 404,
+    "y": 2313,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 404,
+    "y": 2313,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/outline/message--2128-44944.svg",
+  "sha256": "549b42e0f6753a31813fda885b2d5549db5fac39e1f6d4c5e07d0263a9c1f907",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

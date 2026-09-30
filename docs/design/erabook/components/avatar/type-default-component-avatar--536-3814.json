@@ -1,0 +1,65 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "536:3814",
+  "type": "COMPONENT",
+  "id": "536:3814",
+  "name": "Type=Default, Component=Avatar",
+  "parentId": "281:3040",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:883",
+      "name": "Auto Layout Vertical"
+    },
+    {
+      "id": "433:884",
+      "name": "Avatar"
+    },
+    {
+      "id": "281:3040",
+      "name": "Avatar"
+    },
+    {
+      "id": "536:3814",
+      "name": "Type=Default, Component=Avatar"
+    }
+  ],
+  "bounds": {
+    "x": 1022,
+    "y": 1477,
+    "width": 48,
+    "height": 48
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1022,
+    "y": 1477,
+    "width": 48,
+    "height": 48
+  },
+  "renderSize": {
+    "width": 48,
+    "height": 48
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Default",
+    "Component": "Avatar"
+  },
+  "svg": "components/avatar/type-default-component-avatar--536-3814.svg",
+  "sha256": "f5e30f463eefd6b57115e86062d58162642c6027bc8aa2862d1eeed8c492650f",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

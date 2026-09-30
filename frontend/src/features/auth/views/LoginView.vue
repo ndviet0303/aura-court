@@ -272,7 +272,7 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
   z-index: 0;
 }
 
-html.dark .aura-glow-bg {
+html.dark:not([data-ui-version="v2"]) .aura-glow-bg {
   background: radial-gradient(circle, rgba(120, 85, 94, 0.4) 0%, rgba(255, 209, 220, 0.05) 50%, transparent 70%);
 }
 
@@ -296,7 +296,7 @@ html.dark .aura-glow-bg {
   transition: all 0.3s ease;
 }
 
-html.dark .auth-split-card {
+html.dark:not([data-ui-version="v2"]) .auth-split-card {
   box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -343,7 +343,7 @@ html.dark .auth-split-card {
   animation: shake 0.4s ease;
 }
 
-html.dark .error-banner {
+html.dark:not([data-ui-version="v2"]) .error-banner {
   background: rgba(186, 26, 26, 0.15);
   border-color: rgba(186, 26, 26, 0.35);
   color: #ffb4ab;
@@ -406,7 +406,7 @@ html.dark .error-banner {
   transition: opacity 0.15s ease;
 }
 
-html.dark .switch-action-btn {
+html.dark:not([data-ui-version="v2"]) .switch-action-btn {
   color: #dfba72;
 }
 

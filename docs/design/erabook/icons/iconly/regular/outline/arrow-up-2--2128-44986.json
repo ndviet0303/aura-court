@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:44986",
+  "type": "COMPONENT",
+  "id": "2128:44986",
+  "name": "Iconly/Regular/Outline/Arrow - Up 2",
+  "parentId": "2128:28055",
+  "hierarchy": [
+    {
+      "id": "2128:28055",
+      "name": "Regular | Light (Outline)"
+    },
+    {
+      "id": "2128:44986",
+      "name": "Iconly/Regular/Outline/Arrow - Up 2"
+    }
+  ],
+  "bounds": {
+    "x": 1604,
+    "y": 2369,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1604,
+    "y": 2369,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/outline/arrow-up-2--2128-44986.svg",
+  "sha256": "7139d3728c590b43c9766b46851e79216b39985b83fee68189ccb1f5a5554dbc",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

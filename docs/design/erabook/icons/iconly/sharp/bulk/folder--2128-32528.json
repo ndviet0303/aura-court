@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:32528",
+  "type": "COMPONENT",
+  "id": "2128:32528",
+  "name": "Iconly/Sharp/Bulk/Folder",
+  "parentId": "2128:32019",
+  "hierarchy": [
+    {
+      "id": "2128:32019",
+      "name": "Sharp | Bulk"
+    },
+    {
+      "id": "2128:32528",
+      "name": "Iconly/Sharp/Bulk/Folder"
+    }
+  ],
+  "bounds": {
+    "x": 292.25,
+    "y": 4827,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 292.25,
+    "y": 4827,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bulk/folder--2128-32528.svg",
+  "sha256": "c893361c56137e27cf3bab7bc29a26c964d15063e5729777015ff3a7ff5c6bc5",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

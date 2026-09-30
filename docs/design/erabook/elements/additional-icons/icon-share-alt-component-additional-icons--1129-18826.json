@@ -1,0 +1,57 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1129:18826",
+  "type": "COMPONENT",
+  "id": "1129:18826",
+  "name": "Icon=share-alt, Component=Additional Icons",
+  "parentId": "1129:18865",
+  "hierarchy": [
+    {
+      "id": "1953:213398",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18865",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18826",
+      "name": "Icon=share-alt, Component=Additional Icons"
+    }
+  ],
+  "bounds": {
+    "x": 628,
+    "y": 3813,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 628,
+    "y": 3813,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Icon": "share-alt",
+    "Component": "Additional Icons"
+  },
+  "svg": "elements/additional-icons/icon-share-alt-component-additional-icons--1129-18826.svg",
+  "sha256": "db9b7857edde3b2b5b29ae0fe7a49a7149636832f53a3c5f0fd6c241002fa5cc",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

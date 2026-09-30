@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:24723",
+  "type": "COMPONENT",
+  "id": "2128:24723",
+  "name": "Iconly/Curved/Two-tone/Paper Plus",
+  "parentId": "2128:24285",
+  "hierarchy": [
+    {
+      "id": "2128:24285",
+      "name": "Curved | Two Tone"
+    },
+    {
+      "id": "2128:24723",
+      "name": "Iconly/Curved/Two-tone/Paper Plus"
+    }
+  ],
+  "bounds": {
+    "x": 854,
+    "y": 11357,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 854,
+    "y": 11357,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/two-tone/paper-plus--2128-24723.svg",
+  "sha256": "ac81cd90cdb3d64231a5ad4c4e3e7b00a59e70a171ebba85a2f660c27ff15354",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

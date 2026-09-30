@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:25385",
+  "type": "COMPONENT",
+  "id": "2128:25385",
+  "name": "Iconly/Sharp/Two-tone/Login",
+  "parentId": "2128:25354",
+  "hierarchy": [
+    {
+      "id": "2128:25354",
+      "name": "Sharp | Two Tone"
+    },
+    {
+      "id": "2128:25385",
+      "name": "Iconly/Sharp/Two-tone/Login"
+    }
+  ],
+  "bounds": {
+    "x": 1132.25,
+    "y": 7745.138672,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1132.25,
+    "y": 7745.138672,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/two-tone/login--2128-25385.svg",
+  "sha256": "8acdbc9ad7207f6e05b141fec61a44e6acd6f19af398cdc6de5e092ae6b6a640",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -70,7 +70,7 @@ function getCourtPrice(c: Court): number {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark) .venue-courts-section {
+:global(html.dark:not([data-ui-version="v2"])) .venue-courts-section {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -97,7 +97,7 @@ function getCourtPrice(c: Court): number {
   color: var(--primary);
 }
 
-:global(html.dark) .icon-20 {
+:global(html.dark:not([data-ui-version="v2"])) .icon-20 {
   color: #e58e9f;
 }
 
@@ -110,7 +110,7 @@ function getCourtPrice(c: Court): number {
   color: var(--primary);
 }
 
-:global(html.dark) .court-count-badge {
+:global(html.dark:not([data-ui-version="v2"])) .court-count-badge {
   background: rgba(229, 142, 159, 0.15);
   color: #e58e9f;
 }
@@ -133,7 +133,7 @@ function getCourtPrice(c: Court): number {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:global(html.dark) .court-item-card {
+:global(html.dark:not([data-ui-version="v2"])) .court-item-card {
   background: #231c20;
   border-color: #382d33;
 }
@@ -144,7 +144,7 @@ function getCourtPrice(c: Court): number {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
-:global(html.dark) .court-item-card:hover {
+:global(html.dark:not([data-ui-version="v2"])) .court-item-card:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
   border-color: #d8b46e;
 }
@@ -162,7 +162,7 @@ function getCourtPrice(c: Court): number {
   color: var(--accent);
 }
 
-:global(html.dark) .sport-zone-tag {
+:global(html.dark:not([data-ui-version="v2"])) .sport-zone-tag {
   color: #d8b46e;
 }
 
@@ -182,7 +182,7 @@ function getCourtPrice(c: Court): number {
   border-top: 1px solid var(--outline);
 }
 
-:global(html.dark) .card-price-row {
+:global(html.dark:not([data-ui-version="v2"])) .card-price-row {
   border-color: #30262c;
 }
 
@@ -192,7 +192,7 @@ function getCourtPrice(c: Court): number {
   font-weight: 800;
 }
 
-:global(html.dark) .price-val {
+:global(html.dark:not([data-ui-version="v2"])) .price-val {
   color: #e58e9f;
 }
 
@@ -223,7 +223,7 @@ function getCourtPrice(c: Court): number {
   transform: translateY(-1px);
 }
 
-:global(html.dark) .btn-schedule-action {
+:global(html.dark:not([data-ui-version="v2"])) .btn-schedule-action {
   background: #e58e9f;
   color: #1c0a10;
 }
@@ -243,7 +243,7 @@ function getCourtPrice(c: Court): number {
   transition: all 0.2s ease;
 }
 
-:global(html.dark) .btn-detail-action {
+:global(html.dark:not([data-ui-version="v2"])) .btn-detail-action {
   background: #1a1518;
   border-color: #382d33;
   color: #e8e2e5;

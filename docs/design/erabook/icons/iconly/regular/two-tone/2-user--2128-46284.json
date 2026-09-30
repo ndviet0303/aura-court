@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:46284",
+  "type": "COMPONENT",
+  "id": "2128:46284",
+  "name": "Iconly/Regular/Two-tone/2 User",
+  "parentId": "2128:24782",
+  "hierarchy": [
+    {
+      "id": "2128:24782",
+      "name": "Regular | Two Tone"
+    },
+    {
+      "id": "2128:46284",
+      "name": "Iconly/Regular/Two-tone/2 User"
+    }
+  ],
+  "bounds": {
+    "x": 1020,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1020,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/two-tone/2-user--2128-46284.svg",
+  "sha256": "b6c837e6ea4edf9c328abc65223518186a6de1102e5401dcd773a701a27a5409",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

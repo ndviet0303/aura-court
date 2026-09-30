@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "433:1099",
+  "type": "COMPONENT",
+  "id": "433:1099",
+  "name": "Style=Text, Theme=Light, State=Unselected, Component=Radio",
+  "parentId": "433:1101",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:883",
+      "name": "Auto Layout Vertical"
+    },
+    {
+      "id": "442:3262",
+      "name": "Radio"
+    },
+    {
+      "id": "433:1101",
+      "name": "Radio"
+    },
+    {
+      "id": "433:1099",
+      "name": "Style=Text, Theme=Light, State=Unselected, Component=Radio"
+    }
+  ],
+  "bounds": {
+    "x": 1074,
+    "y": 1962,
+    "width": 133,
+    "height": 25
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1074,
+    "y": 1962,
+    "width": 133,
+    "height": 25
+  },
+  "renderSize": {
+    "width": 133,
+    "height": 25
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Style": "Text",
+    "Theme": "Light",
+    "State": "Unselected",
+    "Component": "Radio"
+  },
+  "svg": "components/radio/style-text-theme-light-state-unselected-component-radio--433-1099.svg",
+  "sha256": "6f57ff82f2fb948caf4babe4e6a94a42886b11959bf532c0d2d1ca0ef47ba673",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

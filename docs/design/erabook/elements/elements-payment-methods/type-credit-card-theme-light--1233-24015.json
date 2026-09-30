@@ -1,0 +1,57 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1233:24015",
+  "type": "COMPONENT",
+  "id": "1233:24015",
+  "name": "Type=Credit Card, Theme=Light",
+  "parentId": "1233:23962",
+  "hierarchy": [
+    {
+      "id": "1953:213396",
+      "name": "Payment Methods"
+    },
+    {
+      "id": "1233:23962",
+      "name": "Elements/Payment Methods"
+    },
+    {
+      "id": "1233:24015",
+      "name": "Type=Credit Card, Theme=Light"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 4777,
+    "width": 382,
+    "height": 60
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 4777,
+    "width": 382,
+    "height": 60
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 60
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Credit Card",
+    "Theme": "Light"
+  },
+  "svg": "elements/elements-payment-methods/type-credit-card-theme-light--1233-24015.svg",
+  "sha256": "8e96d526d1e536053087aabe3af2e18fd8e646119f4d24a1249598b5ce5ffb28",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

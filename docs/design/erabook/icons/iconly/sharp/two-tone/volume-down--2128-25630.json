@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:25630",
+  "type": "COMPONENT",
+  "id": "2128:25630",
+  "name": "Iconly/Sharp/Two-tone/Volume Down",
+  "parentId": "2128:25354",
+  "hierarchy": [
+    {
+      "id": "2128:25354",
+      "name": "Sharp | Two Tone"
+    },
+    {
+      "id": "2128:25630",
+      "name": "Iconly/Sharp/Two-tone/Volume Down"
+    }
+  ],
+  "bounds": {
+    "x": 628.25,
+    "y": 7635,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 628.25,
+    "y": 7635,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/two-tone/volume-down--2128-25630.svg",
+  "sha256": "19c96e840e4cb05086520eebe44bb39a2acf7a5fe57e425d10c2144f708705a6",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:45647",
+  "type": "COMPONENT",
+  "id": "2128:45647",
+  "name": "Iconly/Regular/Broken/Arrow - Down 3",
+  "parentId": "2128:26398",
+  "hierarchy": [
+    {
+      "id": "2128:26398",
+      "name": "Regular | Broken"
+    },
+    {
+      "id": "2128:45647",
+      "name": "Iconly/Regular/Broken/Arrow - Down 3"
+    }
+  ],
+  "bounds": {
+    "x": 1660,
+    "y": 2889,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1660,
+    "y": 2889,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/broken/arrow-down-3--2128-45647.svg",
+  "sha256": "180dbb7a6e6b3f5b2bca54467bcda0adf7e7f68b5c549cb1ddde3bfc812cb68a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

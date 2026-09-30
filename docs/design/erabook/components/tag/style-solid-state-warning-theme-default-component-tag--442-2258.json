@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2258",
+  "type": "COMPONENT",
+  "id": "442:2258",
+  "name": "Style=Solid, State=Warning, Theme=Default, Component=Tag",
+  "parentId": "442:2259",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3288",
+      "name": "Tag"
+    },
+    {
+      "id": "442:2259",
+      "name": "Tag"
+    },
+    {
+      "id": "442:2258",
+      "name": "Style=Solid, State=Warning, Theme=Default, Component=Tag"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 5759,
+    "width": 75,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 5759,
+    "width": 75,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 75,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Style": "Solid",
+    "State": "Warning",
+    "Theme": "Default",
+    "Component": "Tag"
+  },
+  "svg": "components/tag/style-solid-state-warning-theme-default-component-tag--442-2258.svg",
+  "sha256": "c1084b9fe850146ea62b9446c26de59d07c0e9add905bd4c093b1f135387344b",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

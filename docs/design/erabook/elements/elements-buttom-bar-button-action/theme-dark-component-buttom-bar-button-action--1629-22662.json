@@ -1,0 +1,68 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1629:22662",
+  "type": "COMPONENT",
+  "id": "1629:22662",
+  "name": "Theme=Dark, Component=Buttom Bar Button Action",
+  "parentId": "1629:22664",
+  "hierarchy": [
+    {
+      "id": "1644:48346",
+      "name": "Buttom Bar Button Action"
+    },
+    {
+      "id": "1629:22664",
+      "name": "Elements/Buttom Bar Button Action"
+    },
+    {
+      "id": "1629:22662",
+      "name": "Theme=Dark, Component=Buttom Bar Button Action"
+    }
+  ],
+  "bounds": {
+    "x": 614,
+    "y": 4040,
+    "width": 430,
+    "height": 282
+  },
+  "warnings": [
+    {
+      "tag": "path",
+      "reason": "geometry crosses nominal component bounds",
+      "bounds": {
+        "x": 614,
+        "y": 4039,
+        "width": 430,
+        "height": 2
+      }
+    }
+  ],
+  "renderBounds": {
+    "x": 614,
+    "y": 4040,
+    "width": 430,
+    "height": 282
+  },
+  "renderSize": {
+    "width": 430,
+    "height": 282
+  },
+  "selectedElements": 8,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Theme": "Dark",
+    "Component": "Buttom Bar Button Action"
+  },
+  "svg": "elements/elements-buttom-bar-button-action/theme-dark-component-buttom-bar-button-action--1629-22662.svg",
+  "sha256": "de6a54b4480ad4007f4d190d7fdcc28e67d84f23f991e32623389f194d1dcdac",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

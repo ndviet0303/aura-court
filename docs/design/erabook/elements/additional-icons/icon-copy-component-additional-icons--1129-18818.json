@@ -1,0 +1,57 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1129:18818",
+  "type": "COMPONENT",
+  "id": "1129:18818",
+  "name": "Icon=copy, Component=Additional Icons",
+  "parentId": "1129:18865",
+  "hierarchy": [
+    {
+      "id": "1953:213398",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18865",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18818",
+      "name": "Icon=copy, Component=Additional Icons"
+    }
+  ],
+  "bounds": {
+    "x": 952,
+    "y": 3813,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 952,
+    "y": 3813,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Icon": "copy",
+    "Component": "Additional Icons"
+  },
+  "svg": "elements/additional-icons/icon-copy-component-additional-icons--1129-18818.svg",
+  "sha256": "8cfcc7c5e66c122c08c6c1ff7d10de0ff38c0a77407366e2366a23691b223e79",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

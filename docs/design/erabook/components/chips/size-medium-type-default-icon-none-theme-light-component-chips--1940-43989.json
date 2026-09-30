@@ -1,0 +1,68 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1940:43989",
+  "type": "COMPONENT",
+  "id": "1940:43989",
+  "name": "Size=Medium, Type=Default, Icon=None, Theme=Light, Component=Chips",
+  "parentId": "433:2346",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1953:213392",
+      "name": "Chips"
+    },
+    {
+      "id": "433:2346",
+      "name": "Chips"
+    },
+    {
+      "id": "1940:43989",
+      "name": "Size=Medium, Type=Default, Icon=None, Theme=Light, Component=Chips"
+    }
+  ],
+  "bounds": {
+    "x": 692,
+    "y": 4993,
+    "width": 83,
+    "height": 38
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 692,
+    "y": 4993,
+    "width": 83,
+    "height": 38
+  },
+  "renderSize": {
+    "width": 83,
+    "height": 38
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Size": "Medium",
+    "Type": "Default",
+    "Icon": "None",
+    "Theme": "Light",
+    "Component": "Chips"
+  },
+  "svg": "components/chips/size-medium-type-default-icon-none-theme-light-component-chips--1940-43989.svg",
+  "sha256": "aa3b865912077a23520344c0da595ead512853222c9d638186bea7eba842166f",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

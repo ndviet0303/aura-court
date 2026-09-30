@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:46349",
+  "type": "COMPONENT",
+  "id": "2128:46349",
+  "name": "Iconly/Regular/Two-tone/Camera",
+  "parentId": "2128:24782",
+  "hierarchy": [
+    {
+      "id": "2128:24782",
+      "name": "Regular | Two Tone"
+    },
+    {
+      "id": "2128:46349",
+      "name": "Iconly/Regular/Two-tone/Camera"
+    }
+  ],
+  "bounds": {
+    "x": 852,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 852,
+    "y": 3633,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/regular/two-tone/camera--2128-46349.svg",
+  "sha256": "380c961a8a0864ebd876350590da934a9b9666db2b8f3be727ba957403cd6339",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

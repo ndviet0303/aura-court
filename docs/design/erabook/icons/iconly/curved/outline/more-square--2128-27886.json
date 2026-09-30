@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27886",
+  "type": "COMPONENT",
+  "id": "2128:27886",
+  "name": "Iconly/Curved/Outline/More Square",
+  "parentId": "2128:27689",
+  "hierarchy": [
+    {
+      "id": "2128:27689",
+      "name": "Curved | Light (Outline)"
+    },
+    {
+      "id": "2128:27886",
+      "name": "Iconly/Curved/Outline/More Square"
+    }
+  ],
+  "bounds": {
+    "x": 910,
+    "y": 10149,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 910,
+    "y": 10149,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/outline/more-square--2128-27886.svg",
+  "sha256": "af072d69783a966e8ac75cdac3a76db95078f40eb08fcc4ec3ed047b4e050e8a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

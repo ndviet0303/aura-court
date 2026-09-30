@@ -1,0 +1,65 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "124:168",
+  "type": "COMPONENT",
+  "id": "124:168",
+  "name": "Type=Full Navbar, Component=Top Bar",
+  "parentId": "124:169",
+  "hierarchy": [
+    {
+      "id": "433:893",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3278",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:887",
+      "name": "Top Bars"
+    },
+    {
+      "id": "124:169",
+      "name": "Status Bar"
+    },
+    {
+      "id": "124:168",
+      "name": "Type=Full Navbar, Component=Top Bar"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 3469,
+    "width": 430,
+    "height": 165
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 3469,
+    "width": 430,
+    "height": 165
+  },
+  "renderSize": {
+    "width": 430,
+    "height": 165
+  },
+  "selectedElements": 23,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Full Navbar",
+    "Component": "Top Bar"
+  },
+  "svg": "components/status-bar/type-full-navbar-component-top-bar--124-168.svg",
+  "sha256": "f6efd5e0c35c42b4507d293b80b82188c49241a1c8f24eeea6d955634ff2040c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

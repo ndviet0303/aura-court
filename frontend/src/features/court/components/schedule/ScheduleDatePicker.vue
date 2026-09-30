@@ -189,7 +189,7 @@ function onNativeDateChange(event: Event) {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark) .schedule-date-picker-card {
+:global(html.dark:not([data-ui-version="v2"])) .schedule-date-picker-card {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -220,7 +220,7 @@ function onNativeDateChange(event: Event) {
   color: var(--primary);
 }
 
-:global(html.dark) .cal-icon-wrap {
+:global(html.dark:not([data-ui-version="v2"])) .cal-icon-wrap {
   background: rgba(229, 142, 159, 0.15);
   color: #e58e9f;
 }
@@ -276,7 +276,7 @@ function onNativeDateChange(event: Event) {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:global(html.dark) .btn-nav-action {
+:global(html.dark:not([data-ui-version="v2"])) .btn-nav-action {
   background: #231c20;
   border-color: #3d3137;
   color: #faf7f3;
@@ -300,7 +300,7 @@ function onNativeDateChange(event: Event) {
   border-color: transparent;
 }
 
-:global(html.dark) .btn-today {
+:global(html.dark:not([data-ui-version="v2"])) .btn-today {
   background: rgba(229, 142, 159, 0.15);
   color: #e58e9f;
   border-color: rgba(229, 142, 159, 0.3);
@@ -313,7 +313,7 @@ function onNativeDateChange(event: Event) {
   background: var(--primary);
 }
 
-:global(html.dark) .today-dot {
+:global(html.dark:not([data-ui-version="v2"])) .today-dot {
   background: #e58e9f;
 }
 
@@ -360,7 +360,7 @@ function onNativeDateChange(event: Event) {
   transition: all 0.2s ease;
 }
 
-:global(html.dark) .scroll-step-btn {
+:global(html.dark:not([data-ui-version="v2"])) .scroll-step-btn {
   background: #231c20;
   border-color: #382d33;
 }
@@ -371,7 +371,7 @@ function onNativeDateChange(event: Event) {
   border-color: var(--primary);
 }
 
-:global(html.dark) .scroll-step-btn:hover {
+:global(html.dark:not([data-ui-version="v2"])) .scroll-step-btn:hover {
   background: rgba(229, 142, 159, 0.2);
   color: #e58e9f;
 }
@@ -407,7 +407,7 @@ function onNativeDateChange(event: Event) {
   flex-shrink: 0;
 }
 
-:global(html.dark) .date-card-btn {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn {
   background: #231c20;
   border-color: #382d33;
   color: #e8e2e5;
@@ -419,7 +419,7 @@ function onNativeDateChange(event: Event) {
   transform: translateY(-2px);
 }
 
-:global(html.dark) .date-card-btn:hover:not(.active) {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn:hover:not(.active) {
   background: #2c2329;
   border-color: #d8b46e;
 }
@@ -505,28 +505,28 @@ function onNativeDateChange(event: Event) {
 }
 
 /* Dark Mode Active State */
-:global(html.dark) .date-card-btn.active {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn.active {
   background: linear-gradient(145deg, #3d1b26 0%, #29121a 100%) !important;
   border: 1px solid #e58e9f !important;
   color: #ffffff !important;
   box-shadow: 0 6px 24px rgba(229, 142, 159, 0.25), inset 0 0 16px rgba(229, 142, 159, 0.1) !important;
 }
 
-:global(html.dark) .date-card-btn.active .day-name {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn.active .day-name {
   color: #e58e9f;
   font-weight: 800;
 }
 
-:global(html.dark) .date-card-btn.active .day-num {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn.active .day-num {
   color: #ffffff;
   text-shadow: 0 0 12px rgba(229, 142, 159, 0.4);
 }
 
-:global(html.dark) .date-card-btn.active .month-sub {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn.active .month-sub {
   color: #d8b46e;
 }
 
-:global(html.dark) .date-card-btn.active .tag-today {
+:global(html.dark:not([data-ui-version="v2"])) .date-card-btn.active .tag-today {
   background: #d8b46e;
   color: #1c1202;
 }

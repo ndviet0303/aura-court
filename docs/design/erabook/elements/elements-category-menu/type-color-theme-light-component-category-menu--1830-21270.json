@@ -1,0 +1,62 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1830:21270",
+  "type": "COMPONENT",
+  "id": "1830:21270",
+  "name": "Type=Color, Theme=Light, Component=Category Menu",
+  "parentId": "1830:21259",
+  "hierarchy": [
+    {
+      "id": "1851:20221",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1851:20195",
+      "name": "Category Menu"
+    },
+    {
+      "id": "1830:21259",
+      "name": "Elements/Category Menu"
+    },
+    {
+      "id": "1830:21270",
+      "name": "Type=Color, Theme=Light, Component=Category Menu"
+    }
+  ],
+  "bounds": {
+    "x": 1723,
+    "y": 935,
+    "width": 60,
+    "height": 94
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1723,
+    "y": 935,
+    "width": 60,
+    "height": 94
+  },
+  "renderSize": {
+    "width": 60,
+    "height": 94
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Color",
+    "Theme": "Light",
+    "Component": "Category Menu"
+  },
+  "svg": "elements/elements-category-menu/type-color-theme-light-component-category-menu--1830-21270.svg",
+  "sha256": "f82876e80d4a8a63b4e3013fb4477c58c916b7157928d3124bb1916acc584641",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

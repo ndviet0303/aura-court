@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:27734",
+  "type": "COMPONENT",
+  "id": "2128:27734",
+  "name": "Iconly/Curved/Outline/Shield Fail",
+  "parentId": "2128:27689",
+  "hierarchy": [
+    {
+      "id": "2128:27689",
+      "name": "Curved | Light (Outline)"
+    },
+    {
+      "id": "2128:27734",
+      "name": "Iconly/Curved/Outline/Shield Fail"
+    }
+  ],
+  "bounds": {
+    "x": 630,
+    "y": 10261,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 630,
+    "y": 10261,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/outline/shield-fail--2128-27734.svg",
+  "sha256": "cf1747d942a0b67630928f7caa04acd287ed04fbd0d3eaa5b5c70c924b00b6e7",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

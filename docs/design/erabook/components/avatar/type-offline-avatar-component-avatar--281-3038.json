@@ -1,0 +1,65 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "281:3038",
+  "type": "COMPONENT",
+  "id": "281:3038",
+  "name": "Type=Offline Avatar, Component=Avatar",
+  "parentId": "281:3040",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:883",
+      "name": "Auto Layout Vertical"
+    },
+    {
+      "id": "433:884",
+      "name": "Avatar"
+    },
+    {
+      "id": "281:3040",
+      "name": "Avatar"
+    },
+    {
+      "id": "281:3038",
+      "name": "Type=Offline Avatar, Component=Avatar"
+    }
+  ],
+  "bounds": {
+    "x": 1142,
+    "y": 1477,
+    "width": 48,
+    "height": 48
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1142,
+    "y": 1477,
+    "width": 48,
+    "height": 48
+  },
+  "renderSize": {
+    "width": 48,
+    "height": 48
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Offline Avatar",
+    "Component": "Avatar"
+  },
+  "svg": "components/avatar/type-offline-avatar-component-avatar--281-3038.svg",
+  "sha256": "3592c8d08745cce87418c0a310d5d12cec2cb3419d38ef679556ac3260958fd2",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

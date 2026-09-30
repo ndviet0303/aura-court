@@ -250,7 +250,7 @@ const durationHours = computed(() => {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark) .schedule-summary-card {
+:global(html.dark:not([data-ui-version="v2"])) .schedule-summary-card {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -264,7 +264,7 @@ const durationHours = computed(() => {
   border-bottom: 1px solid var(--outline);
 }
 
-:global(html.dark) .summary-hdr {
+:global(html.dark:not([data-ui-version="v2"])) .summary-hdr {
   border-color: #2e242a;
 }
 
@@ -289,7 +289,7 @@ const durationHours = computed(() => {
   color: var(--primary);
 }
 
-:global(html.dark) .title-icon {
+:global(html.dark:not([data-ui-version="v2"])) .title-icon {
   color: #e58e9f;
 }
 
@@ -302,7 +302,7 @@ const durationHours = computed(() => {
   color: var(--primary);
 }
 
-:global(html.dark) .badge-count {
+:global(html.dark:not([data-ui-version="v2"])) .badge-count {
   background: rgba(229, 142, 159, 0.15);
   color: #e58e9f;
   border: 1px solid rgba(229, 142, 159, 0.25);
@@ -320,7 +320,7 @@ const durationHours = computed(() => {
   font-weight: 800;
 }
 
-:global(html.dark) .court-name {
+:global(html.dark:not([data-ui-version="v2"])) .court-name {
   color: #f7a8b8;
 }
 
@@ -342,7 +342,7 @@ const durationHours = computed(() => {
   text-decoration: underline;
 }
 
-:global(html.dark) .venue-info-link:hover {
+:global(html.dark:not([data-ui-version="v2"])) .venue-info-link:hover {
   color: #e58e9f;
 }
 
@@ -382,7 +382,7 @@ const durationHours = computed(() => {
   color: var(--accent);
 }
 
-:global(html.dark) .duration-badge {
+:global(html.dark:not([data-ui-version="v2"])) .duration-badge {
   color: #d8b46e;
 }
 
@@ -399,7 +399,7 @@ const durationHours = computed(() => {
   text-align: center;
 }
 
-:global(html.dark) .no-slots-hint {
+:global(html.dark:not([data-ui-version="v2"])) .no-slots-hint {
   background: rgba(255, 255, 255, 0.02);
   border-color: #382d33;
 }
@@ -436,7 +436,7 @@ const durationHours = computed(() => {
   background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
 }
 
-:global(html.dark) .slot-summary-item {
+:global(html.dark:not([data-ui-version="v2"])) .slot-summary-item {
   background: #231c20;
   border-color: #382d33;
 }
@@ -517,7 +517,7 @@ const durationHours = computed(() => {
   color: var(--accent);
 }
 
-:global(html.dark) .perk-icon {
+:global(html.dark:not([data-ui-version="v2"])) .perk-icon {
   color: #d8b46e;
 }
 
@@ -529,7 +529,7 @@ const durationHours = computed(() => {
   border-top: 1px solid var(--outline);
 }
 
-:global(html.dark) .summary-footer {
+:global(html.dark:not([data-ui-version="v2"])) .summary-footer {
   border-color: #2e242a;
 }
 
@@ -554,7 +554,7 @@ const durationHours = computed(() => {
   border: 1px dashed rgba(219, 39, 119, 0.2);
 }
 
-:global(html.dark) .wallet-status-row {
+:global(html.dark:not([data-ui-version="v2"])) .wallet-status-row {
   background: rgba(236, 72, 153, 0.08);
   border-color: rgba(236, 72, 153, 0.25);
 }
@@ -612,7 +612,7 @@ const durationHours = computed(() => {
   color: var(--primary);
 }
 
-:global(html.dark) .total-num {
+:global(html.dark:not([data-ui-version="v2"])) .total-num {
   color: #f7a8b8;
 }
 
@@ -645,13 +645,13 @@ const durationHours = computed(() => {
   box-shadow: none;
 }
 
-:global(html.dark) .btn-checkout {
+:global(html.dark:not([data-ui-version="v2"])) .btn-checkout {
   background: linear-gradient(145deg, #e58e9f 0%, #c46d80 100%);
   color: #1c0a10;
   box-shadow: 0 4px 20px rgba(229, 142, 159, 0.35);
 }
 
-:global(html.dark) .btn-checkout:hover:not(:disabled) {
+:global(html.dark:not([data-ui-version="v2"])) .btn-checkout:hover:not(:disabled) {
   background: linear-gradient(145deg, #f0a3b2 0%, #d87d90 100%);
   box-shadow: 0 6px 26px rgba(229, 142, 159, 0.5);
 }

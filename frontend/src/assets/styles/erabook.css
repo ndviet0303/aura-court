@@ -1,0 +1,1176 @@
+/* ==========================================================================
+   Erabook V2 Design System - Theme Tokens & Presentation Layer
+   Scoped strictly under [data-ui-version="v2"]
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   V2 Light Mode Theme Tokens
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] {
+  /* Brand Typography */
+  --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Surfaces & Backgrounds */
+  --bg: #FFFFFF;
+  --background: #FFFFFF;
+  --surface: #FAFAFA;
+  --surface-subtle: #F5F5F5;
+  --surface-card: #FFFFFF;
+  --soft: #F5F5F5;
+  --card-bg: #FFFFFF;
+  --input-bg: #FAFAFA;
+  --topbar-bg: rgba(255, 255, 255, 0.96);
+
+  /* Typography / Ink Colors */
+  --ink: #212121;
+  --foreground: #212121;
+  --muted: #757575;
+  --on-surface: #212121;
+  --on-surface-variant: #616161;
+
+  /* Primary Brand (Erabook Orange #F89300) */
+  --primary: #F89300;
+  --primary-hover: #E08500;
+  --primary-container: #FEF4E6;
+  --on-primary: #212121;
+  --on-primary-container: #C67600;
+
+  /* Secondary / Accent (Erabook Amber #FFC107) */
+  --secondary: #FFC107;
+  --secondary-hover: #FFCD39;
+  --accent: #FFC107;
+  --accent-hover: #FFCD39;
+  --accent-container: #FFF9E6;
+  --on-accent: #212121;
+  --on-accent-container: #8C6B00;
+
+  /* Borders & Outlines */
+  --outline: #EEEEEE;
+  --border: #EEEEEE;
+  --border-focus: #F89300;
+  --outline-variant: #E0E0E0;
+
+  /* Legacy Aliases compatibility */
+  --pink: #FFC107;
+  --pink-dark: #F89300;
+  --pink-light: #FEF4E6;
+
+  /* Status Colors */
+  --color-success: #12D18E;
+  --success-bg: #EDFAF4;
+  --success-text: #0E9F6E;
+  --color-warning: #FACC15;
+  --warning-bg: #FEF9E7;
+  --warning-text: #B45309;
+  --color-error: #F75555;
+  --error-bg: #FEEFEF;
+  --error-text: #E02424;
+  --color-info: #F89300;
+  --color-disabled: #D8D8D8;
+
+  /* Live / Navigation Tokens */
+  --live-bg: rgba(248, 147, 0, 0.15);
+  --live-text: #E08500;
+  --live-border: #F89300;
+  --nav-active-bg: #F89300;
+  --nav-active-text: #FFFFFF;
+
+  /* Surface Scale */
+  --surface-bright: #FFFFFF;
+  --surface-container: #F5F5F5;
+  --surface-container-high: #EEEEEE;
+  --surface-container-low: #FAFAFA;
+  --surface-container-lowest: #FFFFFF;
+  --surface-low: #FAFAFA;
+
+  /* Erabook Radii & Shadows */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 4px 60px rgba(4, 6, 15, 0.05);
+  --shadow-primary-btn: 0 8px 24px rgba(248, 147, 0, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Dark Mode Theme Tokens
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"].dark,
+html[data-ui-version="v2"][data-theme="dark"] {
+  /* Surfaces & Backgrounds */
+  --bg: #181A20;
+  --background: #181A20;
+  --surface: #1F222A;
+  --surface-subtle: #262A34;
+  --surface-card: #1F222A;
+  --soft: #262A34;
+  --card-bg: #1F222A;
+  --input-bg: #1F222A;
+  --topbar-bg: rgba(24, 26, 32, 0.96);
+
+  /* Typography / Ink Colors */
+  --ink: #FFFFFF;
+  --foreground: #FFFFFF;
+  --muted: #9E9E9E;
+  --on-surface: #FFFFFF;
+  --on-surface-variant: #BDBDBD;
+
+  /* Primary Brand (Erabook Orange) */
+  --primary: #F89300;
+  --primary-hover: #FFA726;
+  --primary-container: rgba(248, 147, 0, 0.16);
+  --on-primary: #181A20;
+  --on-primary-container: #FFB74D;
+
+  /* Secondary / Accent (Erabook Amber) */
+  --secondary: #FFC107;
+  --secondary-hover: #FFCD39;
+  --accent: #FFC107;
+  --accent-hover: #FFCD39;
+  --accent-container: rgba(255, 193, 7, 0.16);
+  --on-accent: #181A20;
+  --on-accent-container: #FFE082;
+
+  /* Borders & Outlines */
+  --outline: #35383F;
+  --border: #35383F;
+  --border-focus: #F89300;
+  --outline-variant: #424242;
+
+  /* Legacy Aliases compatibility in Dark Mode */
+  --pink: #FFC107;
+  --pink-dark: #F89300;
+  --pink-light: rgba(248, 147, 0, 0.2);
+
+  /* Status Colors in Dark Mode */
+  --color-success: #12D18E;
+  --success-bg: rgba(18, 209, 142, 0.15);
+  --success-text: #34D399;
+  --color-warning: #FACC15;
+  --warning-bg: rgba(250, 204, 21, 0.15);
+  --warning-text: #FDE047;
+  --color-error: #F75555;
+  --error-bg: rgba(247, 85, 85, 0.15);
+  --error-text: #F87171;
+  --color-info: #F89300;
+  --color-disabled: #424242;
+
+  /* Live / Navigation Tokens */
+  --live-bg: rgba(248, 147, 0, 0.2);
+  --live-text: #FFB74D;
+  --live-border: #F89300;
+  --nav-active-bg: #F89300;
+  --nav-active-text: #181A20;
+
+  /* Surface Scale Dark */
+  --surface-bright: #262A34;
+  --surface-container: #1F222A;
+  --surface-container-high: #2A2E38;
+  --surface-container-low: #181A20;
+  --surface-container-lowest: #121418;
+  --surface-low: #181A20;
+
+  /* Shadows Dark */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 4px 60px rgba(0, 0, 0, 0.5);
+  --shadow-primary-btn: 0 8px 24px rgba(248, 147, 0, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Global Component Style Refinements
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] body {
+  font-family: var(--font-family-base);
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+/* Ensure Material Symbols icon font is never overridden by V2 typography */
+html[data-ui-version="v2"] .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+}
+
+/* V2 High-Contrast Buttons */
+html[data-ui-version="v2"] .btn-primary,
+html[data-ui-version="v2"] button.btn-primary {
+  background: var(--primary) !important;
+  color: var(--on-primary) !important;
+  border-radius: 9999px;
+  box-shadow: var(--shadow-primary-btn);
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html[data-ui-version="v2"] .btn-primary:hover,
+html[data-ui-version="v2"] button.btn-primary:hover {
+  background: var(--primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+html[data-ui-version="v2"].dark .btn-primary,
+html[data-ui-version="v2"].dark button.btn-primary {
+  background: var(--primary) !important;
+  color: var(--on-primary) !important;
+  box-shadow: var(--shadow-primary-btn);
+}
+
+html[data-ui-version="v2"].dark .btn-primary:hover,
+html[data-ui-version="v2"].dark button.btn-primary:hover {
+  background: var(--primary-hover) !important;
+  color: var(--on-primary) !important;
+}
+
+html[data-ui-version="v2"] .btn-accent,
+html[data-ui-version="v2"] button.btn-accent {
+  background: var(--secondary) !important;
+  color: #212121 !important;
+  border-radius: 9999px;
+}
+
+html[data-ui-version="v2"] .btn:focus-visible,
+html[data-ui-version="v2"] button:focus-visible,
+html[data-ui-version="v2"] .btn-primary:focus-visible,
+html[data-ui-version="v2"] button.btn-primary:focus-visible,
+html[data-ui-version="v2"] .btn-accent:focus-visible,
+html[data-ui-version="v2"] button.btn-accent:focus-visible {
+  outline: 2px solid var(--primary, #F89300) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(248, 147, 0, 0.35) !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Form Controls, Inputs, Selects & DatePickers
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .form-input,
+html[data-ui-version="v2"] .form-textarea,
+html[data-ui-version="v2"] input.input-field,
+html[data-ui-version="v2"] select.input-field,
+html[data-ui-version="v2"] .select-dropdown__trigger {
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border);
+  background-color: var(--input-bg);
+  color: var(--ink);
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html[data-ui-version="v2"] .form-input:focus,
+html[data-ui-version="v2"] .form-textarea:focus,
+html[data-ui-version="v2"] input.input-field:focus,
+html[data-ui-version="v2"] select.input-field:focus,
+html[data-ui-version="v2"] .select-dropdown__trigger:focus,
+html[data-ui-version="v2"] .select-dropdown__trigger[aria-expanded="true"] {
+  border-color: var(--primary, #F89300);
+  box-shadow: 0 0 0 3px rgba(248, 147, 0, 0.2);
+  outline: none;
+}
+
+html[data-ui-version="v2"] .form-input:disabled,
+html[data-ui-version="v2"] .form-textarea:disabled,
+html[data-ui-version="v2"] input.input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--surface-subtle);
+}
+
+html[data-ui-version="v2"] .form-input.has-error,
+html[data-ui-version="v2"] .form-input:invalid,
+html[data-ui-version="v2"] .is-error {
+  border-color: var(--color-error, #F75555) !important;
+}
+
+html[data-ui-version="v2"] .form-input.has-error:focus,
+html[data-ui-version="v2"] .is-error:focus {
+  box-shadow: 0 0 0 3px rgba(247, 85, 85, 0.2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Cards, Panels & Surfaces
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .card,
+html[data-ui-version="v2"] .panel,
+html[data-ui-version="v2"] .court-card,
+html[data-ui-version="v2"] .feature-card,
+html[data-ui-version="v2"] .dashboard-card {
+  border-radius: var(--radius-lg, 16px);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html[data-ui-version="v2"] .card:hover,
+html[data-ui-version="v2"] .court-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Tables & Data Grids
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] table,
+html[data-ui-version="v2"] .table,
+html[data-ui-version="v2"] .admin-table,
+html[data-ui-version="v2"] .data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: inherit;
+}
+
+html[data-ui-version="v2"] table th,
+html[data-ui-version="v2"] .table th,
+html[data-ui-version="v2"] .admin-table th {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  background-color: var(--surface);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+html[data-ui-version="v2"] table td,
+html[data-ui-version="v2"] .table td,
+html[data-ui-version="v2"] .admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-size: 13.5px;
+  transition: background-color 0.15s ease;
+}
+
+html[data-ui-version="v2"] table tbody tr:hover td,
+html[data-ui-version="v2"] .table tbody tr:hover td,
+html[data-ui-version="v2"] .admin-table tbody tr:hover td {
+  background-color: rgba(248, 147, 0, 0.04);
+}
+
+html[data-ui-version="v2"].dark table tbody tr:hover td,
+html[data-ui-version="v2"].dark .table tbody tr:hover td,
+html[data-ui-version="v2"].dark .admin-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Modals, Dialogs & Overlays
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+html[data-ui-version="v2"] .modal-card,
+html[data-ui-version="v2"] .error-modal-card,
+html[data-ui-version="v2"] .dialog-card {
+  border-radius: var(--radius-xl, 24px);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Skeletons & Feedback States
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .skeleton,
+html[data-ui-version="v2"] .skeleton-box,
+html[data-ui-version="v2"] .skeleton-card {
+  border-radius: var(--radius-sm, 8px);
+  background-color: var(--surface-subtle);
+}
+
+html[data-ui-version="v2"] .empty-state {
+  color: var(--muted);
+  padding: 48px 24px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Admin Shell & Site Footer
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .admin-sidebar {
+  background-color: var(--surface-card);
+  border-right-color: var(--border);
+}
+
+html[data-ui-version="v2"] .sidebar-header,
+html[data-ui-version="v2"] .sidebar-footer {
+  border-color: var(--border);
+}
+
+html[data-ui-version="v2"] .sidebar-nav-item.active,
+html[data-ui-version="v2"] .sidebar-subnav-item.active {
+  background-color: var(--primary) !important;
+  color: var(--on-primary) !important;
+  font-weight: 700;
+}
+
+html[data-ui-version="v2"] .active-indicator-dot {
+  background-color: var(--primary) !important;
+  box-shadow: 0 0 6px rgba(248, 147, 0, 0.7) !important;
+}
+
+html[data-ui-version="v2"] .site-footer {
+  background-color: var(--surface-card);
+  border-top-color: var(--border);
+}
+
+/* V2 Admin Shell Dark Adaptation (Clean Erabook Palette) */
+html[data-ui-version="v2"].dark .brand-icon-box {
+  background: var(--surface-subtle);
+  color: var(--primary);
+}
+
+html[data-ui-version="v2"].dark .brand-title {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+html[data-ui-version="v2"].dark .brand-subtitle {
+  color: var(--muted);
+}
+
+html[data-ui-version="v2"].dark .sidebar-nav-item {
+  color: var(--ink-secondary);
+}
+
+html[data-ui-version="v2"].dark .sidebar-nav-item:hover,
+html[data-ui-version="v2"].dark .sidebar-subnav-item:hover {
+  background: rgba(248, 147, 0, 0.08);
+  color: var(--ink);
+}
+
+html[data-ui-version="v2"].dark .sidebar-nav-item.active,
+html[data-ui-version="v2"].dark .sidebar-subnav-item.active {
+  background: var(--primary) !important;
+  color: #181A20 !important;
+  font-weight: 700;
+}
+
+html[data-ui-version="v2"].dark .active-indicator-dot {
+  background: var(--primary) !important;
+  box-shadow: 0 0 6px rgba(248, 147, 0, 0.7) !important;
+}
+
+html[data-ui-version="v2"].dark .group-header-btn.is-active-parent,
+html[data-ui-version="v2"].dark .group-header-btn.is-active-parent .group-icon {
+  color: var(--primary);
+}
+
+html[data-ui-version="v2"].dark .user-role {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"].dark .user-avatar-circle {
+  background: var(--surface-subtle);
+  color: var(--primary);
+}
+
+html[data-ui-version="v2"].dark .admin-sidebar,
+html[data-ui-version="v2"].dark .mobile-admin-bar {
+  background: var(--surface-card);
+  border-color: var(--border);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 2: Discovery, Home, About & Courts List Adaptation
+   -------------------------------------------------------------------------- */
+/* Home Hero & Mosaic */
+html[data-ui-version="v2"] .hero h1 em {
+  color: var(--primary, #F89300);
+  background: linear-gradient(135deg, #F89300 0%, #FFA726 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html[data-ui-version="v2"] .hero:after {
+  border-color: rgba(248, 147, 0, 0.15);
+}
+
+html[data-ui-version="v2"] .sport-category-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-subtle, #FEF4E6);
+  color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+html[data-ui-version="v2"] .sport-category-btn.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-primary-btn);
+  font-weight: 700;
+}
+
+html[data-ui-version="v2"].dark .sport-category-btn.active {
+  background: var(--primary) !important;
+  color: #181A20 !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .search-strip {
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-version="v2"] .search-action {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: var(--radius-md, 12px);
+  transition: all 0.2s ease;
+}
+
+html[data-ui-version="v2"] .search-action:hover {
+  background: var(--primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+html[data-ui-version="v2"].dark .search-action {
+  color: #181A20 !important;
+}
+
+/* Court Cards in Grid & List */
+html[data-ui-version="v2"] .court-card-item {
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+html[data-ui-version="v2"] .court-card-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+html[data-ui-version="v2"] .court-card-item .sport-tag {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(248, 147, 0, 0.4);
+}
+
+html[data-ui-version="v2"] .court-card-item .tag-icon {
+  color: var(--primary);
+}
+
+html[data-ui-version="v2"] .empty-state-card {
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-version="v2"] .btn-reset-empty {
+  border-radius: 9999px;
+  background: var(--primary-subtle);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+html[data-ui-version="v2"] .btn-reset-empty:hover {
+  background: var(--primary);
+  color: #212121;
+}
+
+html[data-ui-version="v2"].dark .btn-reset-empty:hover {
+  color: #181A20;
+}
+
+/* About View V2 */
+html[data-ui-version="v2"] .aura-glow-bg {
+  background: radial-gradient(circle at center, rgba(248, 147, 0, 0.12) 0%, rgba(254, 244, 230, 0.08) 45%, transparent 70%);
+}
+
+html[data-ui-version="v2"].dark .aura-glow-bg {
+  background: radial-gradient(circle at center, rgba(248, 147, 0, 0.15) 0%, rgba(24, 26, 32, 0.25) 50%, transparent 75%);
+}
+
+html[data-ui-version="v2"] .brand-badge,
+html[data-ui-version="v2"] .section-badge {
+  background: var(--primary-subtle, #FEF4E6);
+  color: var(--primary, #F89300);
+  border: 1px solid rgba(248, 147, 0, 0.25);
+}
+
+html[data-ui-version="v2"].dark .brand-badge,
+html[data-ui-version="v2"].dark .section-badge {
+  background: rgba(248, 147, 0, 0.12);
+  color: #FFA726;
+  border-color: rgba(248, 147, 0, 0.35);
+}
+
+html[data-ui-version="v2"] .stats-ribbon,
+html[data-ui-version="v2"] .pillar-card,
+html[data-ui-version="v2"] .sport-card,
+html[data-ui-version="v2"] .value-card {
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-version="v2"] .stat-num {
+  color: var(--primary, #F89300);
+}
+
+html[data-ui-version="v2"] .pillar-icon-box {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border-radius: var(--radius-md, 12px);
+}
+
+html[data-ui-version="v2"].dark .pillar-icon-box {
+  background: rgba(248, 147, 0, 0.12);
+  color: #FFA726;
+  border: 1px solid rgba(248, 147, 0, 0.3);
+}
+
+html[data-ui-version="v2"] .value-num {
+  background: linear-gradient(135deg, #F89300 0%, #FFA726 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html[data-ui-version="v2"] .cta-box {
+  background: linear-gradient(135deg, #241400 0%, #3D2200 60%, #1A0E00 100%);
+  border-radius: var(--radius-xl, 24px);
+  border: 1px solid rgba(248, 147, 0, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 2: Court Detail & Venue Directions Adaptation
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .sticky-booking-card,
+html[data-ui-version="v2"] .court-hero-card,
+html[data-ui-version="v2"] .court-specs-section,
+html[data-ui-version="v2"] .court-amenities-section,
+html[data-ui-version="v2"] .court-reviews-section,
+html[data-ui-version="v2"] .hero-main-card,
+html[data-ui-version="v2"] .map-action-card,
+html[data-ui-version="v2"] .transport-guide-card,
+html[data-ui-version="v2"] .venue-courts-section {
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-version="v2"] .sticky-booking-card .price-num,
+html[data-ui-version="v2"] .sticky-booking-card .estimate-amount {
+  color: var(--primary, #F89300) !important;
+}
+
+html[data-ui-version="v2"] .duration-btn {
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  transition: all 0.2s ease;
+}
+
+html[data-ui-version="v2"] .duration-btn.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-primary-btn);
+  font-weight: 700;
+}
+
+html[data-ui-version="v2"].dark .duration-btn.active {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .btn-book-now,
+html[data-ui-version="v2"] .btn-primary-map,
+html[data-ui-version="v2"] .btn-map-action {
+  border-radius: 9999px;
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border: none;
+  font-weight: 700;
+  box-shadow: var(--shadow-primary-btn);
+  transition: all 0.2s ease;
+}
+
+html[data-ui-version="v2"] .btn-book-now:hover,
+html[data-ui-version="v2"] .btn-primary-map:hover,
+html[data-ui-version="v2"] .btn-map-action:hover {
+  background: var(--primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+html[data-ui-version="v2"].dark .btn-book-now,
+html[data-ui-version="v2"].dark .btn-primary-map,
+html[data-ui-version="v2"].dark .btn-map-action {
+  color: #181A20 !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 2: Schedule & Slots Grid Adaptation
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .schedule-date-picker-card,
+html[data-ui-version="v2"] .court-selector-container,
+html[data-ui-version="v2"] .schedule-slots-section,
+html[data-ui-version="v2"] .schedule-summary-card {
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-version="v2"] .date-card-btn.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"].dark .date-card-btn.active {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .court-card-btn.active {
+  border-color: var(--primary) !important;
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+}
+
+html[data-ui-version="v2"] .court-card-btn.active .c-name {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .court-card-btn.active .c-type-badge {
+  background: var(--primary) !important;
+  color: #212121 !important;
+}
+
+html[data-ui-version="v2"] .slot-cell-btn.is-selected {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"].dark .slot-cell-btn.is-selected {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .slot-cell-btn.is-selected .selected-tag {
+  background: #212121 !important;
+  color: #ffffff !important;
+}
+
+html[data-ui-version="v2"] .slot-cell-btn.is-available:hover {
+  border-color: var(--primary) !important;
+  transform: translateY(-2px);
+}
+
+html[data-ui-version="v2"] .filter-tab-btn.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"].dark .filter-tab-btn.active {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .btn-checkout {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"] .btn-checkout:hover:not(:disabled) {
+  background: var(--primary-hover) !important;
+}
+
+html[data-ui-version="v2"].dark .btn-checkout {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .total-num,
+html[data-ui-version="v2"] .schedule-summary-card .court-name {
+  color: var(--primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 3: Auth & Account (Login, Register, Onboarding, Forgot/Reset Pwd)
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .auth-split-card,
+html[data-ui-version="v2"] .auth-card-single,
+html[data-ui-version="v2"] .onboarding-card {
+  border-radius: var(--radius-xl, 24px);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-version="v2"] .auth-page-wrapper .form-panel {
+  background: var(--surface-card);
+}
+
+html[data-ui-version="v2"] .auth-submit-btn {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"] .auth-submit-btn:hover:not(:disabled) {
+  background: var(--primary-hover) !important;
+}
+
+html[data-ui-version="v2"].dark .auth-submit-btn {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .switch-action-btn,
+html[data-ui-version="v2"] .back-link {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .welcome-chip {
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .role-card.active,
+html[data-ui-version="v2"] .play-level-card.active {
+  border-color: var(--primary) !important;
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+}
+
+html[data-ui-version="v2"] .custom-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(248, 147, 0, 0.2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 3: Legal Views (Terms & Privacy) & Not Found
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .legal-page-wrapper .sidebar-sticky-card,
+html[data-ui-version="v2"] .legal-page-wrapper .content-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl, 24px) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-ui-version="v2"] .legal-badge {
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .nav-link-btn.active {
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+  color: var(--primary) !important;
+  font-weight: 700 !important;
+}
+
+html[data-ui-version="v2"] .doc-tab.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+}
+
+html[data-ui-version="v2"].dark .doc-tab.active {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .doc-switcher {
+  background: var(--surface-subtle) !important;
+  border: 1px solid var(--border) !important;
+}
+
+html[data-ui-version="v2"] .definition-box {
+  background: var(--surface-subtle) !important;
+  border-left-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .step-num {
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.12)) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .section-icon-box {
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .flow-step,
+html[data-ui-version="v2"] .rule-box,
+html[data-ui-version="v2"] .data-card,
+html[data-ui-version="v2"] .pillar-item,
+html[data-ui-version="v2"] .right-item,
+html[data-ui-version="v2"] .c-item {
+  background: var(--surface-subtle) !important;
+  border: 1px solid var(--border) !important;
+}
+
+html[data-ui-version="v2"] .page-shell.not-found .eyebrow {
+  color: var(--primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 3: Profile & Notifications Adaptation
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .athlete-hero-card,
+html[data-ui-version="v2"] .profile-tab-card,
+html[data-ui-version="v2"] .empty-state-card,
+html[data-ui-version="v2"] .notification-item-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-ui-version="v2"] .tab-item-btn.is-active,
+html[data-ui-version="v2"] .sport-chip-btn.is-active,
+html[data-ui-version="v2"] .filter-pill-btn.is-active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"].dark .tab-item-btn.is-active,
+html[data-ui-version="v2"].dark .sport-chip-btn.is-active,
+html[data-ui-version="v2"].dark .filter-pill-btn.is-active {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .level-card.is-selected {
+  border-color: var(--primary) !important;
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+}
+
+html[data-ui-version="v2"] .level-card.is-selected .level-check,
+html[data-ui-version="v2"] .category-eyebrow,
+html[data-ui-version="v2"] .title-icon,
+html[data-ui-version="v2"] .role-badge {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .notification-item-card.is-unread {
+  border-left-color: var(--primary) !important;
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.04)) !important;
+}
+
+html[data-ui-version="v2"] .btn-cta-explore,
+html[data-ui-version="v2"] .tier-cta-btn {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"].dark .btn-cta-explore,
+html[data-ui-version="v2"].dark .tier-cta-btn {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .notif-action-btn:hover {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"].dark .notif-action-btn:hover {
+  color: #181A20 !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 3: Wallet & Booking History Adaptation
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .balance-card,
+html[data-ui-version="v2"] .wallet-card,
+html[data-ui-version="v2"] .table-card-wrapper,
+html[data-ui-version="v2"] .user-booking-card,
+html[data-ui-version="v2"] .booking-history-hero {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-ui-version="v2"] .balance-val,
+html[data-ui-version="v2"] .total-val {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .p-tab.active,
+html[data-ui-version="v2"] .b-tab.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"].dark .p-tab.active,
+html[data-ui-version="v2"].dark .b-tab.active {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .btn-action-primary {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"].dark .btn-action-primary {
+  color: #181A20 !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 3: Payment, Recurring, Split Bill & Resale Adaptation
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .payment-summary-card,
+html[data-ui-version="v2"] .instructions-card,
+html[data-ui-version="v2"] .recurring-hero-card,
+html[data-ui-version="v2"] .split-bill-card,
+html[data-ui-version="v2"] .resale-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-ui-version="v2"] .payment-amount-val,
+html[data-ui-version="v2"] .countdown-pill,
+html[data-ui-version="v2"] .resale-price {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .btn-pay,
+html[data-ui-version="v2"] .btn-confirm-payment {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"].dark .btn-pay,
+html[data-ui-version="v2"].dark .btn-confirm-payment {
+  color: #181A20 !important;
+}
+
+html[data-ui-version="v2"] .method-option.selected {
+  border-color: var(--primary) !important;
+  background: var(--primary-subtle, rgba(248, 147, 0, 0.08)) !important;
+}
+
+html[data-ui-version="v2"] .tab-btn.active,
+html[data-ui-version="v2"] .cycle-tab.active {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"].dark .tab-btn.active,
+html[data-ui-version="v2"].dark .cycle-tab.active {
+  color: #181A20 !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 4: Community, Tournaments & Partners Adaptation
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .tournaments-hero-banner,
+html[data-ui-version="v2"] .matchmaking-hero-banner {
+  background: linear-gradient(135deg, rgba(248, 147, 0, 0.12) 0%, rgba(248, 147, 0, 0.04) 50%, rgba(255, 179, 71, 0.08) 100%) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+}
+
+html[data-ui-version="v2"].dark .tournaments-hero-banner,
+html[data-ui-version="v2"].dark .matchmaking-hero-banner {
+  background: linear-gradient(135deg, rgba(248, 147, 0, 0.16) 0%, rgba(26, 29, 38, 0.8) 50%, rgba(248, 147, 0, 0.06) 100%) !important;
+  border: 1px solid var(--border) !important;
+}
+
+html[data-ui-version="v2"] .tournament-card,
+html[data-ui-version="v2"] .match-card,
+html[data-ui-version="v2"] .plan-catalog-card,
+html[data-ui-version="v2"] .subscription-status-card,
+html[data-ui-version="v2"] .total-summary-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-ui-version="v2"] .total-val,
+html[data-ui-version="v2"] .share-price {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .winner-ico,
+html[data-ui-version="v2"] .stat-ico.gold {
+  color: var(--primary) !important;
+}
+
+html[data-ui-version="v2"] .partner-registration-view,
+html[data-ui-version="v2"] .partner-status-view {
+  font-family: var(--font-family) !important;
+}
+
+/* --------------------------------------------------------------------------
+   V2 Wave 4: Admin & Operations (Tasks 8.1 - 8.9)
+   -------------------------------------------------------------------------- */
+html[data-ui-version="v2"] .admin-dashboard-view,
+html[data-ui-version="v2"] .admin-manage-page,
+html[data-ui-version="v2"] .admin-schedule-view,
+html[data-ui-version="v2"] .admin-pricing-view,
+html[data-ui-version="v2"] .admin-venues-view,
+html[data-ui-version="v2"] .admin-publication-queue-view,
+html[data-ui-version="v2"] .organization-owner-view,
+html[data-ui-version="v2"] .admin-staff-view,
+html[data-ui-version="v2"] .admin-contracts-view,
+html[data-ui-version="v2"] .admin-tournament-view,
+html[data-ui-version="v2"] .admin-membership-view,
+html[data-ui-version="v2"] .admin-shifts-view,
+html[data-ui-version="v2"] .admin-inventory-view,
+html[data-ui-version="v2"] .admin-payouts-view,
+html[data-ui-version="v2"] .financial-exceptions-view,
+html[data-ui-version="v2"] .financial-reconciliation-view,
+html[data-ui-version="v2"] .kyc-verification-view,
+html[data-ui-version="v2"] .dispute-resolution-view,
+html[data-ui-version="v2"] .pos-layout-wrapper {
+  font-family: var(--font-family) !important;
+}
+
+html[data-ui-version="v2"] .dashboard-kpi-card,
+html[data-ui-version="v2"] .manage-kpi-card,
+html[data-ui-version="v2"] .admin-card,
+html[data-ui-version="v2"] .pos-cart-container,
+html[data-ui-version="v2"] .pos-product-item {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg, 16px) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-ui-version="v2"] .btn-admin-primary,
+html[data-ui-version="v2"] .btn-checkout-primary {
+  background: var(--primary) !important;
+  color: #212121 !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-primary-btn) !important;
+}
+
+html[data-ui-version="v2"].dark .btn-admin-primary,
+html[data-ui-version="v2"].dark .btn-checkout-primary {
+  color: #181A20 !important;
+}

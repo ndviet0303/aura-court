@@ -1,0 +1,69 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2157:22182",
+  "type": "COMPONENT",
+  "id": "2157:22182",
+  "name": "Elements=Read Bottom Bar, Theme=Light, Component=Erabook Elements",
+  "parentId": "2138:28054",
+  "hierarchy": [
+    {
+      "id": "2063:197208",
+      "name": "Erabook Elements"
+    },
+    {
+      "id": "2138:28054",
+      "name": "Elements/Erabook Elements"
+    },
+    {
+      "id": "2157:22182",
+      "name": "Elements=Read Bottom Bar, Theme=Light, Component=Erabook Elements"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 3358,
+    "width": 430,
+    "height": 80
+  },
+  "warnings": [
+    {
+      "tag": "path",
+      "reason": "geometry crosses nominal component bounds",
+      "bounds": {
+        "x": 160,
+        "y": 3357,
+        "width": 430,
+        "height": 2
+      }
+    }
+  ],
+  "renderBounds": {
+    "x": 160,
+    "y": 3358,
+    "width": 430,
+    "height": 80
+  },
+  "renderSize": {
+    "width": 430,
+    "height": 80
+  },
+  "selectedElements": 18,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Elements": "Read Bottom Bar",
+    "Theme": "Light",
+    "Component": "Erabook Elements"
+  },
+  "svg": "elements/elements-erabook-elements/elements-read-bottom-bar-theme-light-component-erabook-elements--2157-22182.svg",
+  "sha256": "971ec2293b2117a02f82adc9b65024a5242b6f1e8505fe986afa500e820d572d",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

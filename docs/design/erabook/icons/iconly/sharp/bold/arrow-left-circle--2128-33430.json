@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:33430",
+  "type": "COMPONENT",
+  "id": "2128:33430",
+  "name": "Iconly/Sharp/Bold/Arrow - Left Circle",
+  "parentId": "2128:33371",
+  "hierarchy": [
+    {
+      "id": "2128:33371",
+      "name": "Sharp | Bold"
+    },
+    {
+      "id": "2128:33430",
+      "name": "Iconly/Sharp/Bold/Arrow - Left Circle"
+    }
+  ],
+  "bounds": {
+    "x": 1436.25,
+    "y": 4321,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1436.25,
+    "y": 4321,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/bold/arrow-left-circle--2128-33430.svg",
+  "sha256": "278d8615ae2e7016b1a8e2af7fa5b3ed1cc91c126b807d64f35b8af4000a811d",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

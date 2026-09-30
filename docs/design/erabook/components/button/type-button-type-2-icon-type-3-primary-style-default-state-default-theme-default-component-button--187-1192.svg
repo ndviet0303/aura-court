@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="58" height="58" viewBox="0 0 58 58" fill="none" overflow="hidden" role="img" aria-labelledby="asset-title"><title id="asset-title">Type=Button, Type 2=Icon, Type 3=Primary, Style=Default, State=Default, Theme=Default, Component=Button</title><defs><filter xmlns="http://www.w3.org/2000/svg" id="filter0_d_432_3910" x="386" y="2256" width="106" height="106" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="4" dy="8"/>
+<feGaussianBlur stdDeviation="12"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.972549 0 0 0 0 0.576471 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_432_3910"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_432_3910" result="shape"/>
+</filter>
+<clipPath xmlns="http://www.w3.org/2000/svg" id="clip0_432_3910">
+<rect x="140" y="1461" width="806" height="884" rx="5" fill="white"/>
+</clipPath></defs><g transform="translate(-406 -2272)"><g xmlns="http://www.w3.org/2000/svg" clip-path="url(#clip0_432_3910)"><g filter="url(#filter0_d_432_3910)"><rect x="406" y="2272" width="58" height="58" rx="29" fill="#F89300"/><path d="M442 2300H436V2294C436 2293.73 435.895 2293.48 435.707 2293.29C435.52 2293.11 435.265 2293 435 2293C434.735 2293 434.48 2293.11 434.293 2293.29C434.105 2293.48 434 2293.73 434 2294V2300H428C427.735 2300 427.48 2300.11 427.293 2300.29C427.105 2300.48 427 2300.73 427 2301C427 2301.27 427.105 2301.52 427.293 2301.71C427.48 2301.89 427.735 2302 428 2302H434V2308C434 2308.27 434.105 2308.52 434.293 2308.71C434.48 2308.89 434.735 2309 435 2309C435.265 2309 435.52 2308.89 435.707 2308.71C435.895 2308.52 436 2308.27 436 2308V2302H442C442.265 2302 442.52 2301.89 442.707 2301.71C442.895 2301.52 443 2301.27 443 2301C443 2300.73 442.895 2300.48 442.707 2300.29C442.52 2300.11 442.265 2300 442 2300Z" fill="white"/></g></g></g></svg>

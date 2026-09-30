@@ -1,0 +1,58 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2146:28996",
+  "type": "COMPONENT",
+  "id": "2146:28996",
+  "name": "Elements=Notification, Theme=Dark, Component=Erabook Elements",
+  "parentId": "2138:28054",
+  "hierarchy": [
+    {
+      "id": "2063:197208",
+      "name": "Erabook Elements"
+    },
+    {
+      "id": "2138:28054",
+      "name": "Elements/Erabook Elements"
+    },
+    {
+      "id": "2146:28996",
+      "name": "Elements=Notification, Theme=Dark, Component=Erabook Elements"
+    }
+  ],
+  "bounds": {
+    "x": 566,
+    "y": 2277,
+    "width": 382,
+    "height": 88
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 566,
+    "y": 2277,
+    "width": 382,
+    "height": 88
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 88
+  },
+  "selectedElements": 9,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Elements": "Notification",
+    "Theme": "Dark",
+    "Component": "Erabook Elements"
+  },
+  "svg": "elements/elements-erabook-elements/elements-notification-theme-dark-component-erabook-elements--2146-28996.svg",
+  "sha256": "924fe3fec4f87ad0bff688293f9675cd3d1ec530b6aa4389106df67139dd19c6",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

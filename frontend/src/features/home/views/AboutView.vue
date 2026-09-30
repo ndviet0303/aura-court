@@ -339,7 +339,7 @@ function scrollToPillars() {
   z-index: 0;
 }
 
-:global(html.dark .aura-glow-bg) {
+:global(html.dark:not([data-ui-version="v2"]) .aura-glow-bg) {
   background: radial-gradient(circle at center, rgba(216, 180, 110, 0.15) 0%, rgba(68, 26, 38, 0.25) 50%, transparent 75%);
 }
 
@@ -366,8 +366,8 @@ function scrollToPillars() {
   border: 1px solid rgba(107, 45, 63, 0.15);
 }
 
-:global(html.dark .brand-badge),
-:global(html.dark .section-badge) {
+:global(html.dark:not([data-ui-version="v2"]) .brand-badge),
+:global(html.dark:not([data-ui-version="v2"]) .section-badge) {
   background: rgba(68, 26, 38, 0.85);
   color: #E58E9F;
   border-color: rgba(229, 142, 159, 0.3);
@@ -425,7 +425,7 @@ function scrollToPillars() {
   box-shadow: var(--shadow-sm, 0 4px 16px rgba(107, 45, 63, 0.06));
 }
 
-:global(html.dark .stats-ribbon) {
+:global(html.dark:not([data-ui-version="v2"]) .stats-ribbon) {
   background: #1e191c;
   border-color: #382f35;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -448,7 +448,7 @@ function scrollToPillars() {
   font-family: monospace, ui-monospace, sans-serif;
 }
 
-:global(html.dark .stat-num) {
+:global(html.dark:not([data-ui-version="v2"]) .stat-num) {
   color: #D8B46E;
   text-shadow: 0 0 16px rgba(216, 180, 110, 0.35);
 }
@@ -552,7 +552,7 @@ function scrollToPillars() {
   box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
 }
 
-:global(html.dark .image-card) {
+:global(html.dark:not([data-ui-version="v2"]) .image-card) {
   border-color: #382f35;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
@@ -611,7 +611,7 @@ function scrollToPillars() {
   border-bottom: 1px solid var(--border, #e1e3e4);
 }
 
-:global(html.dark .pillars-section) {
+:global(html.dark:not([data-ui-version="v2"]) .pillars-section) {
   background: rgba(30, 25, 28, 0.4);
   border-color: #382f35;
 }
@@ -632,7 +632,7 @@ function scrollToPillars() {
   flex-direction: column;
 }
 
-:global(html.dark .pillar-card) {
+:global(html.dark:not([data-ui-version="v2"]) .pillar-card) {
   background: #1e191c;
   border-color: #382f35;
 }
@@ -655,7 +655,7 @@ function scrollToPillars() {
   margin-bottom: 20px;
 }
 
-:global(html.dark .pillar-icon-box) {
+:global(html.dark:not([data-ui-version="v2"]) .pillar-icon-box) {
   background: #3B1822;
   color: #D8B46E;
   border: 1px solid rgba(216, 180, 110, 0.3);
@@ -699,7 +699,7 @@ function scrollToPillars() {
   transition: all 0.3s ease;
 }
 
-:global(html.dark .sport-card) {
+:global(html.dark:not([data-ui-version="v2"])) .sport-card {
   background: #1e191c;
   border-color: #382f35;
 }
@@ -758,7 +758,7 @@ function scrollToPillars() {
   background: var(--surface-subtle, rgba(247, 243, 237, 0.4));
 }
 
-:global(html.dark .values-section) {
+:global(html.dark:not([data-ui-version="v2"])) .values-section {
   background: rgba(24, 20, 22, 0.5);
 }
 
@@ -776,25 +776,12 @@ function scrollToPillars() {
   position: relative;
 }
 
-:global(html.dark .value-card) {
+:global(html.dark:not([data-ui-version="v2"])) .value-card {
   background: #1e191c;
   border-color: #382f35;
 }
 
-.value-num {
-  font-size: 30px;
-  font-weight: 900;
-  font-family: monospace, ui-monospace, sans-serif;
-  margin-bottom: 14px;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  display: inline-block;
-  background: linear-gradient(135deg, #a67324 0%, #6B2D3F 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-:global(html.dark .value-num) {
+:global(html.dark:not([data-ui-version="v2"])) .value-num {
   background: linear-gradient(135deg, #ffe094 0%, #dfba72 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -832,7 +819,7 @@ function scrollToPillars() {
   border: 1px solid rgba(201, 161, 90, 0.3);
 }
 
-:global(html.dark .cta-box) {
+:global(html.dark:not([data-ui-version="v2"])) .cta-box {
   background: linear-gradient(135deg, #3B1822 0%, #240F16 60%, #15090D 100%);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   border-color: rgba(216, 180, 110, 0.35);

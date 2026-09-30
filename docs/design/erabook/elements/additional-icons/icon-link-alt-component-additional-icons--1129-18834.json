@@ -1,0 +1,57 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1129:18834",
+  "type": "COMPONENT",
+  "id": "1129:18834",
+  "name": "Icon=link-alt, Component=Additional Icons",
+  "parentId": "1129:18865",
+  "hierarchy": [
+    {
+      "id": "1953:213398",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18865",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18834",
+      "name": "Icon=link-alt, Component=Additional Icons"
+    }
+  ],
+  "bounds": {
+    "x": 268,
+    "y": 3813,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 268,
+    "y": 3813,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Icon": "link-alt",
+    "Component": "Additional Icons"
+  },
+  "svg": "elements/additional-icons/icon-link-alt-component-additional-icons--1129-18834.svg",
+  "sha256": "d443f72626a62d528cd91c98710ad169ef5a6194a79ca09e8eb4678c46b20265",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:25957",
+  "type": "COMPONENT",
+  "id": "2128:25957",
+  "name": "Iconly/Curved/Broken/Play",
+  "parentId": "2128:25868",
+  "hierarchy": [
+    {
+      "id": "2128:25868",
+      "name": "Curved | Broken"
+    },
+    {
+      "id": "2128:25957",
+      "name": "Iconly/Curved/Broken/Play"
+    }
+  ],
+  "bounds": {
+    "x": 518,
+    "y": 10893.000122,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 518,
+    "y": 10893.000122,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/broken/play--2128-25957.svg",
+  "sha256": "a87cc98b66c1399e2e40f2453e0a3f2da0d8ee73d40b72da7b07756c7a8a691e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2042",
+  "type": "COMPONENT",
+  "id": "442:2042",
+  "name": "State=Active, Style=Icon, Theme=Default, Component=Horizontal Tab",
+  "parentId": "442:2048",
+  "hierarchy": [
+    {
+      "id": "442:3270",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3273",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3274",
+      "name": "Horizontal Tab"
+    },
+    {
+      "id": "442:2048",
+      "name": "Horizontal Tab"
+    },
+    {
+      "id": "442:2042",
+      "name": "State=Active, Style=Icon, Theme=Default, Component=Horizontal Tab"
+    }
+  ],
+  "bounds": {
+    "x": 352,
+    "y": 2670,
+    "width": 200,
+    "height": 41
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 352,
+    "y": 2670,
+    "width": 200,
+    "height": 41
+  },
+  "renderSize": {
+    "width": 200,
+    "height": 41
+  },
+  "selectedElements": 8,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "State": "Active",
+    "Style": "Icon",
+    "Theme": "Default",
+    "Component": "Horizontal Tab"
+  },
+  "svg": "components/horizontal-tab/state-active-style-icon-theme-default-component-horizontal-tab--442-2042.svg",
+  "sha256": "2b28789122ae105f03a2e78232a9ccd3763b4b1c35097042a2806aa6d145f392",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

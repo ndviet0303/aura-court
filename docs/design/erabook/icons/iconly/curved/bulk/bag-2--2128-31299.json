@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:31299",
+  "type": "COMPONENT",
+  "id": "2128:31299",
+  "name": "Iconly/Curved/Bulk/Bag 2",
+  "parentId": "2128:31023",
+  "hierarchy": [
+    {
+      "id": "2128:31023",
+      "name": "Curved | Bulk"
+    },
+    {
+      "id": "2128:31299",
+      "name": "Iconly/Curved/Bulk/Bag 2"
+    }
+  ],
+  "bounds": {
+    "x": 684.25,
+    "y": 8884.534668,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 684.25,
+    "y": 8884.534668,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bulk/bag-2--2128-31299.svg",
+  "sha256": "333bdf83d523b1a3c2b41a1e0789300b9d095ff0b8413705f1ffbec9fefe5341",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

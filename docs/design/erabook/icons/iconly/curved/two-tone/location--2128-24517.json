@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:24517",
+  "type": "COMPONENT",
+  "id": "2128:24517",
+  "name": "Iconly/Curved/Two-tone/Location",
+  "parentId": "2128:24285",
+  "hierarchy": [
+    {
+      "id": "2128:24285",
+      "name": "Curved | Two Tone"
+    },
+    {
+      "id": "2128:24517",
+      "name": "Iconly/Curved/Two-tone/Location"
+    }
+  ],
+  "bounds": {
+    "x": 294,
+    "y": 11469,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 294,
+    "y": 11469,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/two-tone/location--2128-24517.svg",
+  "sha256": "03f0582f4a83c0f99f84d0f58e50785f50c1f70684e11699b7947f46c527ea9a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

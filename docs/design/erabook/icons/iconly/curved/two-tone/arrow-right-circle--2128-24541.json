@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:24541",
+  "type": "COMPONENT",
+  "id": "2128:24541",
+  "name": "Iconly/Curved/Two-tone/Arrow - Right Circle",
+  "parentId": "2128:24285",
+  "hierarchy": [
+    {
+      "id": "2128:24285",
+      "name": "Curved | Two Tone"
+    },
+    {
+      "id": "2128:24541",
+      "name": "Iconly/Curved/Two-tone/Arrow - Right Circle"
+    }
+  ],
+  "bounds": {
+    "x": 1436,
+    "y": 11413,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1436,
+    "y": 11413,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/two-tone/arrow-right-circle--2128-24541.svg",
+  "sha256": "a514d0cba74a13ed1418f880b97caef30d5222a1f14aa5d9ba27650dcf1e4b18",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

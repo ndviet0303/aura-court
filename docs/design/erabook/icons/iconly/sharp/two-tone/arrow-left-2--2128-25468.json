@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:25468",
+  "type": "COMPONENT",
+  "id": "2128:25468",
+  "name": "Iconly/Sharp/Two-tone/Arrow - Left 2",
+  "parentId": "2128:25354",
+  "hierarchy": [
+    {
+      "id": "2128:25354",
+      "name": "Sharp | Two Tone"
+    },
+    {
+      "id": "2128:25468",
+      "name": "Iconly/Sharp/Two-tone/Arrow - Left 2"
+    }
+  ],
+  "bounds": {
+    "x": 1604.25,
+    "y": 7691,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1604.25,
+    "y": 7691,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/sharp/two-tone/arrow-left-2--2128-25468.svg",
+  "sha256": "29d125bf65c49da4eb01f0d15f5bd2a7198e5151e244db8028bd6a73e0310f2e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

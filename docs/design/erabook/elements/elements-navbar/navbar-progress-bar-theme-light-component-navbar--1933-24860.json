@@ -1,0 +1,62 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1933:24860",
+  "type": "COMPONENT",
+  "id": "1933:24860",
+  "name": "Navbar=Progress Bar, Theme=Light, Component=Navbar",
+  "parentId": "563:47592",
+  "hierarchy": [
+    {
+      "id": "1851:20221",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1644:48374",
+      "name": "Navbar"
+    },
+    {
+      "id": "563:47592",
+      "name": "Elements/Navbar"
+    },
+    {
+      "id": "1933:24860",
+      "name": "Navbar=Progress Bar, Theme=Light, Component=Navbar"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 1071,
+    "width": 382,
+    "height": 48
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 1071,
+    "width": 382,
+    "height": 48
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 48
+  },
+  "selectedElements": 21,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Navbar": "Progress Bar",
+    "Theme": "Light",
+    "Component": "Navbar"
+  },
+  "svg": "elements/elements-navbar/navbar-progress-bar-theme-light-component-navbar--1933-24860.svg",
+  "sha256": "417a6ab2454396cd1feb33c55ec413896f1de13c38f70adde52b70f9059268a4",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

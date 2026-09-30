@@ -1120,19 +1120,36 @@ function handleCourtChange(val: string | number) {
   gap: 8px;
   padding: 12px 18px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--primary, #10b981) 0%, #059669 100%);
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
   border: none;
   color: #ffffff;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 14px rgba(4, 120, 87, 0.3);
   transition: all 0.2s ease;
+}
+
+:global(html[data-ui-version="v2"]) .checkout-submit-btn {
+  background: var(--primary, #F89300);
+  color: var(--on-primary, #212121) !important;
+  box-shadow: 0 4px 14px rgba(248, 147, 0, 0.3);
+}
+
+:global(html[data-ui-version="v2"].dark) .checkout-submit-btn {
+  background: var(--primary, #F89300);
+  color: #181A20 !important;
+  box-shadow: 0 4px 14px rgba(248, 147, 0, 0.3);
 }
 
 .checkout-submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 6px 20px rgba(4, 120, 87, 0.4);
+}
+
+:global(html[data-ui-version="v2"]) .checkout-submit-btn:hover:not(:disabled) {
+  background: var(--primary-hover, #E08500);
+  box-shadow: 0 6px 20px rgba(248, 147, 0, 0.4);
 }
 
 .checkout-submit-btn:disabled {

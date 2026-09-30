@@ -172,7 +172,7 @@ function handleImageError(event: Event) {
   transform: translateY(-1px);
 }
 
-:global(html.dark) .rating-display-link {
+:global(html.dark:not([data-ui-version="v2"])) .rating-display-link {
   background: #231c20;
   border-color: #382d33;
 }
@@ -200,7 +200,7 @@ function handleImageError(event: Event) {
   border: 1px solid var(--outline);
 }
 
-:global(html.dark) .addr-directions-row {
+:global(html.dark:not([data-ui-version="v2"])) .addr-directions-row {
   background: #231c20;
   border-color: #382d33;
 }
@@ -234,7 +234,7 @@ function handleImageError(event: Event) {
   box-shadow: 0 4px 12px rgba(107, 45, 63, 0.3);
 }
 
-:global(html.dark) .btn-directions-pill {
+:global(html.dark:not([data-ui-version="v2"])) .btn-directions-pill {
   background: #e58e9f;
   color: #1c0a10;
 }

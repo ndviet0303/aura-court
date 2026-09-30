@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2244",
+  "type": "COMPONENT",
+  "id": "442:2244",
+  "name": "Style=Inverted, State=Warning, Theme=Dark, Component=Tag",
+  "parentId": "442:2259",
+  "hierarchy": [
+    {
+      "id": "442:3283",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3285",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3288",
+      "name": "Tag"
+    },
+    {
+      "id": "442:2259",
+      "name": "Tag"
+    },
+    {
+      "id": "442:2244",
+      "name": "Style=Inverted, State=Warning, Theme=Dark, Component=Tag"
+    }
+  ],
+  "bounds": {
+    "x": 255,
+    "y": 5803,
+    "width": 75,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 255,
+    "y": 5803,
+    "width": 75,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 75,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Style": "Inverted",
+    "State": "Warning",
+    "Theme": "Dark",
+    "Component": "Tag"
+  },
+  "svg": "components/tag/style-inverted-state-warning-theme-dark-component-tag--442-2244.svg",
+  "sha256": "ed31ecce6b97ae66211024d3d78b15bd3ab421a2839e834a6f2f72557272bc61",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

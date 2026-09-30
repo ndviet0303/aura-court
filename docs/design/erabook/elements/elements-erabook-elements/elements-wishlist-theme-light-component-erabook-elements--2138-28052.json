@@ -1,0 +1,58 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2138:28052",
+  "type": "COMPONENT",
+  "id": "2138:28052",
+  "name": "Elements=Wishlist, Theme=Light, Component=Erabook Elements",
+  "parentId": "2138:28054",
+  "hierarchy": [
+    {
+      "id": "2063:197208",
+      "name": "Erabook Elements"
+    },
+    {
+      "id": "2138:28054",
+      "name": "Elements/Erabook Elements"
+    },
+    {
+      "id": "2138:28052",
+      "name": "Elements=Wishlist, Theme=Light, Component=Erabook Elements"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 2115,
+    "width": 382,
+    "height": 138
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 2115,
+    "width": 382,
+    "height": 138
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 138
+  },
+  "selectedElements": 7,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Elements": "Wishlist",
+    "Theme": "Light",
+    "Component": "Erabook Elements"
+  },
+  "svg": "elements/elements-erabook-elements/elements-wishlist-theme-light-component-erabook-elements--2138-28052.svg",
+  "sha256": "dcfdf1a262c9e92565753c7659fed15f7fad4bef2cfb947fa8dd58ec98d1c1ad",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

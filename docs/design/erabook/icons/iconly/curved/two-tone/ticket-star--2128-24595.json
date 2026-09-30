@@ -1,0 +1,50 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:24595",
+  "type": "COMPONENT",
+  "id": "2128:24595",
+  "name": "Iconly/Curved/Two-tone/Ticket Star",
+  "parentId": "2128:24285",
+  "hierarchy": [
+    {
+      "id": "2128:24285",
+      "name": "Curved | Two Tone"
+    },
+    {
+      "id": "2128:24595",
+      "name": "Iconly/Curved/Two-tone/Ticket Star"
+    }
+  ],
+  "bounds": {
+    "x": 798,
+    "y": 11413,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 798,
+    "y": 11413,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/two-tone/ticket-star--2128-24595.svg",
+  "sha256": "ba99af386c8721be27e8c5f6fe84f84d852f36820e1560e95fa28f406dd18fce",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

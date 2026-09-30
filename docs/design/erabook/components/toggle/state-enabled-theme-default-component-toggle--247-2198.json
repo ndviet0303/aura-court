@@ -1,0 +1,66 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "247:2198",
+  "type": "COMPONENT",
+  "id": "247:2198",
+  "name": "State=Enabled, Theme=Default, Component=Toggle",
+  "parentId": "247:2200",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:883",
+      "name": "Auto Layout Vertical"
+    },
+    {
+      "id": "442:3264",
+      "name": "Toggle"
+    },
+    {
+      "id": "247:2200",
+      "name": "Toggle"
+    },
+    {
+      "id": "247:2198",
+      "name": "State=Enabled, Theme=Default, Component=Toggle"
+    }
+  ],
+  "bounds": {
+    "x": 1134,
+    "y": 2209,
+    "width": 44,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1134,
+    "y": 2209,
+    "width": 44,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 44,
+    "height": 24
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "State": "Enabled",
+    "Theme": "Default",
+    "Component": "Toggle"
+  },
+  "svg": "components/toggle/state-enabled-theme-default-component-toggle--247-2198.svg",
+  "sha256": "2bbfd28788a2201b2256194fde1679e9be7a874eafd2b5790440481ecae26403",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

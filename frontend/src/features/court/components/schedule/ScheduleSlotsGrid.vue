@@ -192,7 +192,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark) .schedule-slots-section {
+:global(html.dark:not([data-ui-version="v2"])) .schedule-slots-section {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -223,7 +223,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   color: var(--primary);
 }
 
-:global(html.dark) .header-icon-wrap {
+:global(html.dark:not([data-ui-version="v2"])) .header-icon-wrap {
   background: rgba(229, 142, 159, 0.15);
   color: #e58e9f;
 }
@@ -279,7 +279,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:global(html.dark) .btn-quick {
+:global(html.dark:not([data-ui-version="v2"])) .btn-quick {
   background: #231c20;
   border-color: #382d33;
   color: #faf7f3;
@@ -301,7 +301,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   background: var(--error-bg, #ffebee);
 }
 
-:global(html.dark) .btn-clear {
+:global(html.dark:not([data-ui-version="v2"])) .btn-clear {
   color: #f87171;
   border-color: rgba(248, 113, 113, 0.3);
 }
@@ -334,7 +334,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   transition: all 0.2s ease;
 }
 
-:global(html.dark) .filter-tab-btn {
+:global(html.dark:not([data-ui-version="v2"])) .filter-tab-btn {
   background: #231c20;
   border-color: #382d33;
 }
@@ -352,7 +352,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   box-shadow: 0 2px 10px rgba(107, 45, 63, 0.15);
 }
 
-:global(html.dark) .filter-tab-btn.active {
+:global(html.dark:not([data-ui-version="v2"])) .filter-tab-btn.active {
   background: #341a24;
   color: #f7a8b8;
   border-color: #e58e9f;
@@ -375,7 +375,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   border: 1px solid var(--outline);
 }
 
-:global(html.dark) .section-legend {
+:global(html.dark:not([data-ui-version="v2"])) .section-legend {
   background: #151113;
   border-color: #2b2227;
 }
@@ -397,7 +397,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   border: 1px solid var(--outline);
 }
 
-:global(html.dark) .box-legend.available {
+:global(html.dark:not([data-ui-version="v2"])) .box-legend.available {
   background: #231c20;
   border-color: #4a3d45;
 }
@@ -411,7 +411,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   border: 1px solid #ff9800;
 }
 
-:global(html.dark) .box-legend.peak {
+:global(html.dark:not([data-ui-version="v2"])) .box-legend.peak {
   background: #3d2407;
   border-color: #fb923c;
 }
@@ -421,7 +421,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-:global(html.dark) .box-legend.occupied {
+:global(html.dark:not([data-ui-version="v2"])) .box-legend.occupied {
   background: rgba(255, 255, 255, 0.04);
   border-color: #2a2226;
 }
@@ -448,7 +448,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:global(html.dark) .slot-cell-btn {
+:global(html.dark:not([data-ui-version="v2"])) .slot-cell-btn {
   background: #231c20;
   border-color: #382d33;
 }
@@ -485,7 +485,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   opacity: 0.45;
 }
 
-:global(html.dark) .slot-cell-btn.is-occupied {
+:global(html.dark:not([data-ui-version="v2"])) .slot-cell-btn.is-occupied {
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -509,7 +509,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   color: #d97706;
 }
 
-:global(html.dark) .peak-tag {
+:global(html.dark:not([data-ui-version="v2"])) .peak-tag {
   background: #3d2407;
   color: #fbbf24;
 }
@@ -538,7 +538,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   color: var(--muted);
 }
 
-:global(html.dark) .occupied-tag {
+:global(html.dark:not([data-ui-version="v2"])) .occupied-tag {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -588,7 +588,7 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
   background: var(--surface-subtle, rgba(0, 0, 0, 0.05));
 }
 
-:global(html.dark) .slot-skeleton-item {
+:global(html.dark:not([data-ui-version="v2"])) .slot-skeleton-item {
   background: rgba(255, 255, 255, 0.03);
 }
 

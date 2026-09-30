@@ -1,0 +1,66 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "433:759",
+  "type": "COMPONENT",
+  "id": "433:759",
+  "name": "Type=Login, Type 2=Social, Type 3=Facebook, Style=Default, State=Default, Theme=Light, Component=Button",
+  "parentId": "215:1354",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "442:3251",
+      "name": "Button"
+    },
+    {
+      "id": "215:1354",
+      "name": "Button"
+    },
+    {
+      "id": "433:759",
+      "name": "Type=Login, Type 2=Social, Type 3=Facebook, Style=Default, State=Default, Theme=Light, Component=Button"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 2197,
+    "width": 382,
+    "height": 60
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 2197,
+    "width": 382,
+    "height": 60
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 60
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Login",
+    "Type 2": "Social",
+    "Type 3": "Facebook",
+    "Style": "Default",
+    "State": "Default",
+    "Theme": "Light",
+    "Component": "Button"
+  },
+  "svg": "components/button/type-login-type-2-social-type-3-facebook-style-default-state-default-theme-light-component-button--433-759.svg",
+  "sha256": "e52e9c8217bc48d4dedcc5d909f3c0da0703a69a94bec216a1d6326742e7069c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

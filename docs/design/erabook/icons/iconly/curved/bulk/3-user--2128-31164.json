@@ -1,0 +1,71 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "2128:31164",
+  "type": "COMPONENT",
+  "id": "2128:31164",
+  "name": "Iconly/Curved/Bulk/3 User",
+  "parentId": "2128:31023",
+  "hierarchy": [
+    {
+      "id": "2128:31023",
+      "name": "Curved | Bulk"
+    },
+    {
+      "id": "2128:31164",
+      "name": "Iconly/Curved/Bulk/3 User"
+    }
+  ],
+  "bounds": {
+    "x": 1076.25,
+    "y": 8941,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [
+    {
+      "tag": "path",
+      "reason": "geometry crosses nominal component bounds",
+      "bounds": {
+        "x": 1091.6199951171875,
+        "y": 8953.3095703125,
+        "width": 8.8499755859375,
+        "height": 6.2607421875
+      }
+    },
+    {
+      "tag": "path",
+      "reason": "geometry crosses nominal component bounds",
+      "bounds": {
+        "x": 1076.0400390625,
+        "y": 8953.3095703125,
+        "width": 8.8399658203125,
+        "height": 6.2607421875
+      }
+    }
+  ],
+  "renderBounds": {
+    "x": 1076.25,
+    "y": 8941,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content.svg",
+    "contentNodeId": "430:2962",
+    "sha256": "1dee730533a256c86d598a24bbc4f0cf34c6bbe615b67675d80aece69344e98a",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {},
+  "svg": "icons/iconly/curved/bulk/3-user--2128-31164.svg",
+  "sha256": "f0793d4e572bd2beaf5cb3438ddab2d18d848d6fb03404bf51260f64b00943fd",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

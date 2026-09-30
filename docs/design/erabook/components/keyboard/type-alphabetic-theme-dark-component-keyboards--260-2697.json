@@ -1,0 +1,62 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "260:2697",
+  "type": "COMPONENT",
+  "id": "260:2697",
+  "name": "Type=Alphabetic, Theme=Dark, Component=Keyboards",
+  "parentId": "260:2698",
+  "hierarchy": [
+    {
+      "id": "433:893",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:891",
+      "name": "Keyboards"
+    },
+    {
+      "id": "260:2698",
+      "name": "Keyboard"
+    },
+    {
+      "id": "260:2697",
+      "name": "Type=Alphabetic, Theme=Dark, Component=Keyboards"
+    }
+  ],
+  "bounds": {
+    "x": 1131,
+    "y": 3277,
+    "width": 430,
+    "height": 291
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1131,
+    "y": 3277,
+    "width": 430,
+    "height": 291
+  },
+  "renderSize": {
+    "width": 430,
+    "height": 291
+  },
+  "selectedElements": 65,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Alphabetic",
+    "Theme": "Dark",
+    "Component": "Keyboards"
+  },
+  "svg": "components/keyboard/type-alphabetic-theme-dark-component-keyboards--260-2697.svg",
+  "sha256": "893470c7108b04837a22e39475b8a3945187def527168b7750b44c8704479c1e",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

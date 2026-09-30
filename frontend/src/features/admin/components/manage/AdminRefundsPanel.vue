@@ -511,7 +511,7 @@ function submitReport(id: number) {
 }
 
 .btn-approve {
-  background: #059669;
+  background: #047857;
   color: #fff;
 }
 

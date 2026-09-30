@@ -1,0 +1,60 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "137:615",
+  "type": "COMPONENT",
+  "id": "137:615",
+  "name": "Status=Default, Type=Phone, State=Default Input, Theme=Light, Component=Input Field",
+  "parentId": "250:2199",
+  "hierarchy": [
+    {
+      "id": "442:3249",
+      "name": "Input Field"
+    },
+    {
+      "id": "250:2199",
+      "name": "Input"
+    },
+    {
+      "id": "137:615",
+      "name": "Status=Default, Type=Phone, State=Default Input, Theme=Light, Component=Input Field"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 599,
+    "width": 382,
+    "height": 56
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 599,
+    "width": 382,
+    "height": 56
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 56
+  },
+  "selectedElements": 4,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Status": "Default",
+    "Type": "Phone",
+    "State": "Default Input",
+    "Theme": "Light",
+    "Component": "Input Field"
+  },
+  "svg": "components/input/status-default-type-phone-state-default-input-theme-light-component-input-field--137-615.svg",
+  "sha256": "8cd512bdd2777767dee2346e8e064983c42667c908c60e2bf91ffa79367a8c89",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

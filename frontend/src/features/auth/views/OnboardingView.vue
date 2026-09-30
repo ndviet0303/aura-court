@@ -316,7 +316,7 @@ async function handleComplete() {
   z-index: 0;
 }
 
-html.dark .aura-glow-bg {
+html.dark:not([data-ui-version="v2"]) .aura-glow-bg {
   background: radial-gradient(circle, rgba(107, 45, 63, 0.45) 0%, rgba(223, 186, 114, 0.15) 50%, transparent 70%);
 }
 
@@ -335,7 +335,7 @@ html.dark .aura-glow-bg {
   box-shadow: 0 20px 50px -15px rgba(107, 45, 63, 0.08);
 }
 
-html.dark .onboarding-card {
+html.dark:not([data-ui-version="v2"]) .onboarding-card {
   background: #1e181c;
   border-color: #382f35;
   box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.6);
@@ -361,7 +361,7 @@ html.dark .onboarding-card {
   margin-bottom: 14px;
 }
 
-html.dark .welcome-chip {
+html.dark:not([data-ui-version="v2"]) .welcome-chip {
   background: rgba(223, 186, 114, 0.18);
   color: #dfba72;
   border-color: rgba(223, 186, 114, 0.35);
@@ -397,7 +397,7 @@ html.dark .welcome-chip {
   font-size: 13.5px;
 }
 
-html.dark .error-banner {
+html.dark:not([data-ui-version="v2"]) .error-banner {
   background: rgba(255, 218, 214, 0.12);
   border-color: rgba(255, 218, 214, 0.25);
   color: #ffb4ab;
@@ -434,7 +434,7 @@ html.dark .error-banner {
   transform: translateY(-2px);
 }
 
-html.dark .role-card:hover {
+html.dark:not([data-ui-version="v2"]) .role-card:hover {
   border-color: #dfba72;
 }
 
@@ -444,7 +444,7 @@ html.dark .role-card:hover {
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.15);
 }
 
-html.dark .role-card.active {
+html.dark:not([data-ui-version="v2"]) .role-card.active {
   border-color: #dfba72;
   background: #251f23;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
@@ -469,7 +469,7 @@ html.dark .role-card.active {
   color: #6B2D3F;
 }
 
-html.dark .role-icon-box {
+html.dark:not([data-ui-version="v2"]) .role-icon-box {
   color: #dfba72;
   background: #201a1e;
   border-color: #382f35;
@@ -480,7 +480,7 @@ html.dark .role-icon-box {
   color: #16a34a;
 }
 
-html.dark .check-badge {
+html.dark:not([data-ui-version="v2"]) .check-badge {
   color: #4ade80;
 }
 
@@ -520,7 +520,7 @@ html.dark .check-badge {
   color: #6B2D3F;
 }
 
-html.dark .form-section-title .material-symbols-outlined {
+html.dark:not([data-ui-version="v2"]) .form-section-title .material-symbols-outlined {
   color: #dfba72;
 }
 
@@ -567,7 +567,7 @@ html.dark .form-section-title .material-symbols-outlined {
   transition: all 0.2s ease;
 }
 
-html.dark .custom-input {
+html.dark:not([data-ui-version="v2"]) .custom-input {
   background: #251f23;
   border-color: #382f35;
   color: #ffffff;
@@ -578,7 +578,7 @@ html.dark .custom-input {
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
-html.dark .custom-input:focus {
+html.dark:not([data-ui-version="v2"]) .custom-input:focus {
   border-color: #dfba72;
   box-shadow: 0 0 0 3px rgba(223, 186, 114, 0.2);
 }
@@ -612,7 +612,7 @@ html.dark .custom-input:focus {
   border-color: #6B2D3F;
 }
 
-html.dark .play-level-card:hover {
+html.dark:not([data-ui-version="v2"]) .play-level-card:hover {
   border-color: #dfba72;
 }
 
@@ -622,7 +622,7 @@ html.dark .play-level-card:hover {
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
 }
 
-html.dark .play-level-card.active {
+html.dark:not([data-ui-version="v2"]) .play-level-card.active {
   border-color: #dfba72;
   background: #251f23;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -655,7 +655,7 @@ html.dark .play-level-card.active {
   line-height: 1.5;
 }
 
-html.dark .owner-tip-box {
+html.dark:not([data-ui-version="v2"]) .owner-tip-box {
   background: rgba(223, 186, 114, 0.12);
   border-color: rgba(223, 186, 114, 0.25);
   color: #dfba72;

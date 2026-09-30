@@ -1,0 +1,60 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2775",
+  "type": "COMPONENT",
+  "id": "442:2775",
+  "name": "Status=Default, Type=Default, State=Default Input, Theme=Dark, Component=Input Field",
+  "parentId": "250:2199",
+  "hierarchy": [
+    {
+      "id": "442:3249",
+      "name": "Input Field"
+    },
+    {
+      "id": "250:2199",
+      "name": "Input"
+    },
+    {
+      "id": "442:2775",
+      "name": "Status=Default, Type=Default, State=Default Input, Theme=Dark, Component=Input Field"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 788,
+    "width": 382,
+    "height": 56
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 788,
+    "width": 382,
+    "height": 56
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 56
+  },
+  "selectedElements": 2,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Status": "Default",
+    "Type": "Default",
+    "State": "Default Input",
+    "Theme": "Dark",
+    "Component": "Input Field"
+  },
+  "svg": "components/input/status-default-type-default-state-default-input-theme-dark-component-input-field--442-2775.svg",
+  "sha256": "a26af5c5c4889ebed1bd77c4de6b6c4e1ca1e9bb8801e0396fbb333709c935f4",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

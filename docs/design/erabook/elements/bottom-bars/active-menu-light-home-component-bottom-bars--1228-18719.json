@@ -1,0 +1,61 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1228:18719",
+  "type": "COMPONENT",
+  "id": "1228:18719",
+  "name": "Active Menu=Light Home, Component=Bottom Bars",
+  "parentId": "1228:18718",
+  "hierarchy": [
+    {
+      "id": "1457:22821",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1248:88830",
+      "name": "Bottom Bars"
+    },
+    {
+      "id": "1228:18718",
+      "name": "Bottom Bars"
+    },
+    {
+      "id": "1228:18719",
+      "name": "Active Menu=Light Home, Component=Bottom Bars"
+    }
+  ],
+  "bounds": {
+    "x": 156,
+    "y": 239,
+    "width": 430,
+    "height": 90
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 156,
+    "y": 239,
+    "width": 430,
+    "height": 90
+  },
+  "renderSize": {
+    "width": 430,
+    "height": 90
+  },
+  "selectedElements": 24,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Active Menu": "Light Home",
+    "Component": "Bottom Bars"
+  },
+  "svg": "elements/bottom-bars/active-menu-light-home-component-bottom-bars--1228-18719.svg",
+  "sha256": "13498344f80504bdc671100562198c838be037b21e8f8de5bde700e919d0fb41",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

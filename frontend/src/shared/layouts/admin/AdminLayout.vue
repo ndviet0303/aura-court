@@ -590,7 +590,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   flex-shrink: 0;
 }
 
-:global(html.dark) .brand-icon-box {
+:global(html.dark:not([data-ui-version="v2"])) .brand-icon-box {
   background: #53333e;
   color: #f8b4c4;
 }
@@ -610,7 +610,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   white-space: nowrap;
 }
 
-:global(html.dark) .brand-title {
+:global(html.dark:not([data-ui-version="v2"])) .brand-title {
   color: #f8b4c4;
   text-shadow: 0 0 10px rgba(248, 180, 196, 0.35);
 }
@@ -624,7 +624,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   text-overflow: ellipsis;
 }
 
-:global(html.dark) .brand-subtitle {
+:global(html.dark:not([data-ui-version="v2"])) .brand-subtitle {
   color: #a0a6b1;
 }
 
@@ -640,7 +640,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   flex-shrink: 0;
 }
 
-:global(html.dark) .lang-pill-group {
+:global(html.dark:not([data-ui-version="v2"])) .lang-pill-group {
   background: #252830;
   border-color: #3b3f4a;
 }
@@ -668,7 +668,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   box-shadow: 0 1px 4px rgba(107, 45, 63, 0.3);
 }
 
-:global(html.dark) .lang-pill-btn.active {
+:global(html.dark:not([data-ui-version="v2"])) .lang-pill-btn.active {
   background: var(--primary, #E58E9F);
   color: #1c0a10;
   font-weight: 800;
@@ -698,7 +698,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   transition: all 0.15s ease;
 }
 
-:global(html.dark) .search-input-wrap {
+:global(html.dark:not([data-ui-version="v2"])) .search-input-wrap {
   background: #252830;
   border-color: #383c48;
 }
@@ -709,7 +709,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   box-shadow: 0 0 0 2px rgba(107, 45, 63, 0.15);
 }
 
-:global(html.dark) .search-input-wrap:focus-within {
+:global(html.dark:not([data-ui-version="v2"])) .search-input-wrap:focus-within {
   background: #1e2026;
   border-color: #E58E9F;
   box-shadow: 0 0 0 2px rgba(229, 142, 159, 0.2);
@@ -733,7 +733,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   min-width: 0;
 }
 
-:global(html.dark) .search-input {
+:global(html.dark:not([data-ui-version="v2"])) .search-input {
   color: #f3f4f6;
 }
 
@@ -785,7 +785,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   padding: 8px 10px 4px;
 }
 
-:global(html.dark) .nav-section-label {
+:global(html.dark:not([data-ui-version="v2"])) .nav-section-label {
   color: #8b92a1;
 }
 
@@ -821,16 +821,16 @@ const searchResults = computed<SearchResultItem[]>(() => {
   box-shadow: 0 3px 12px rgba(107, 45, 63, 0.22);
 }
 
-:global(html.dark) .sidebar-nav-item {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-nav-item {
   color: #cbd5e1;
 }
 
-:global(html.dark) .sidebar-nav-item:hover {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-nav-item:hover {
   background: #282b34;
   color: #ffffff;
 }
 
-:global(html.dark) .sidebar-nav-item.active {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-nav-item.active {
   background: var(--primary, #E58E9F);
   color: #1c0a10;
   font-weight: 800;
@@ -865,7 +865,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   color: rgba(255, 255, 255, 0.85);
 }
 
-:global(html.dark) .sidebar-nav-item.active .search-parent-badge {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-nav-item.active .search-parent-badge {
   color: rgba(28, 10, 16, 0.8);
 }
 
@@ -919,11 +919,11 @@ const searchResults = computed<SearchResultItem[]>(() => {
   color: var(--ink, #0f172a);
 }
 
-:global(html.dark) .group-header-btn {
+:global(html.dark:not([data-ui-version="v2"])) .group-header-btn {
   color: #e2e8f0;
 }
 
-:global(html.dark) .group-header-btn:hover {
+:global(html.dark:not([data-ui-version="v2"])) .group-header-btn:hover {
   background: #282b34;
   color: #ffffff;
 }
@@ -933,7 +933,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   font-weight: 750;
 }
 
-:global(html.dark) .group-header-btn.is-active-parent {
+:global(html.dark:not([data-ui-version="v2"])) .group-header-btn.is-active-parent {
   color: #f8b4c4;
 }
 
@@ -954,11 +954,11 @@ const searchResults = computed<SearchResultItem[]>(() => {
   color: var(--primary, #6B2D3F);
 }
 
-:global(html.dark) .group-icon {
+:global(html.dark:not([data-ui-version="v2"])) .group-icon {
   color: #94a3b8;
 }
 
-:global(html.dark) .group-header-btn.is-active-parent .group-icon {
+:global(html.dark:not([data-ui-version="v2"])) .group-header-btn.is-active-parent .group-icon {
   color: #f8b4c4;
 }
 
@@ -985,7 +985,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   box-shadow: 0 0 6px rgba(107, 45, 63, 0.6);
 }
 
-:global(html.dark) .active-indicator-dot {
+:global(html.dark:not([data-ui-version="v2"])) .active-indicator-dot {
   background: #E58E9F;
   box-shadow: 0 0 6px rgba(229, 142, 159, 0.7);
 }
@@ -1024,7 +1024,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   border-left: 1.5px solid var(--border, #e2e8f0);
 }
 
-:global(html.dark) .group-subnav {
+:global(html.dark:not([data-ui-version="v2"])) .group-subnav {
   border-left-color: #353945;
 }
 
@@ -1047,11 +1047,11 @@ const searchResults = computed<SearchResultItem[]>(() => {
   color: var(--ink, #0f172a);
 }
 
-:global(html.dark) .sidebar-subnav-item {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-subnav-item {
   color: #cbd5e1;
 }
 
-:global(html.dark) .sidebar-subnav-item:hover {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-subnav-item:hover {
   background: #262932;
   color: #ffffff;
 }
@@ -1063,7 +1063,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.22);
 }
 
-:global(html.dark) .sidebar-subnav-item.active {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-subnav-item.active {
   background: var(--primary, #E58E9F);
   color: #1c0a10;
   font-weight: 800;
@@ -1100,7 +1100,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   background: var(--surface-subtle, #f8f9fa);
 }
 
-:global(html.dark) .sidebar-footer {
+:global(html.dark:not([data-ui-version="v2"])) .sidebar-footer {
   background: #18191d;
   border-color: var(--border, #353942);
 }
@@ -1123,11 +1123,11 @@ const searchResults = computed<SearchResultItem[]>(() => {
   color: var(--ink, #0f172a);
 }
 
-:global(html.dark) .btn-back-home {
+:global(html.dark:not([data-ui-version="v2"])) .btn-back-home {
   color: #94a3b8;
 }
 
-:global(html.dark) .btn-back-home:hover {
+:global(html.dark:not([data-ui-version="v2"])) .btn-back-home:hover {
   background: #252830;
   color: #ffffff;
 }
@@ -1153,7 +1153,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   flex-shrink: 0;
 }
 
-:global(html.dark) .user-avatar-circle {
+:global(html.dark:not([data-ui-version="v2"])) .user-avatar-circle {
   background: #36141d;
   color: var(--primary, #E58E9F);
 }
@@ -1173,7 +1173,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   text-overflow: ellipsis;
 }
 
-:global(html.dark) .user-name {
+:global(html.dark:not([data-ui-version="v2"])) .user-name {
   color: #ffffff;
 }
 
@@ -1182,12 +1182,12 @@ const searchResults = computed<SearchResultItem[]>(() => {
   color: var(--muted, #64748b);
 }
 
-:global(html.dark) .user-role {
+:global(html.dark:not([data-ui-version="v2"])) .user-role {
   color: #f8b4c4 !important;
   font-weight: 600;
 }
 
-:global(html.dark) .admin-sidebar {
+:global(html.dark:not([data-ui-version="v2"])) .admin-sidebar {
   background: #1e2025;
   border-color: #353942;
 }
@@ -1210,7 +1210,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   align-items: center;
 }
 
-:global(html.dark) .mobile-admin-bar {
+:global(html.dark:not([data-ui-version="v2"])) .mobile-admin-bar {
   background: #1e2025;
   border-color: #353942;
 }
@@ -1227,7 +1227,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   cursor: pointer;
 }
 
-:global(html.dark) .btn-toggle-menu {
+:global(html.dark:not([data-ui-version="v2"])) .btn-toggle-menu {
   background: #252830;
   border-color: #3b3f4a;
   color: #f1f5f9;

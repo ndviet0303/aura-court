@@ -277,7 +277,7 @@ async function submit() {
   z-index: 0;
 }
 
-html.dark .aura-glow-bg {
+html.dark:not([data-ui-version="v2"]) .aura-glow-bg {
   background: radial-gradient(circle, rgba(223, 186, 114, 0.18) 0%, rgba(107, 45, 63, 0.25) 50%, transparent 70%);
 }
 
@@ -298,7 +298,7 @@ html.dark .aura-glow-bg {
   box-shadow: 0 20px 50px -15px rgba(107, 45, 63, 0.08);
 }
 
-html.dark .auth-card-single {
+html.dark:not([data-ui-version="v2"]) .auth-card-single {
   background: #1e191c;
   border-color: #382f35;
   box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.6);
@@ -323,7 +323,7 @@ html.dark .auth-card-single {
   box-shadow: 0 4px 14px rgba(107, 45, 63, 0.12);
 }
 
-html.dark .icon-circle {
+html.dark:not([data-ui-version="v2"]) .icon-circle {
   background: linear-gradient(135deg, rgba(223, 186, 114, 0.15) 0%, rgba(107, 45, 63, 0.3) 100%);
   color: #dfba72;
   border-color: rgba(223, 186, 114, 0.3);
@@ -368,7 +368,7 @@ html.dark .icon-circle {
   margin-bottom: 20px;
 }
 
-html.dark .account-pill-card {
+html.dark:not([data-ui-version="v2"]) .account-pill-card {
   background: rgba(223, 186, 114, 0.06);
   border-color: rgba(223, 186, 114, 0.2);
 }
@@ -386,7 +386,7 @@ html.dark .account-pill-card {
   flex-shrink: 0;
 }
 
-html.dark .pill-avatar {
+html.dark:not([data-ui-version="v2"]) .pill-avatar {
   background: #2a2226;
   border-color: #3d3137;
   color: #dfba72;
@@ -430,7 +430,7 @@ html.dark .pill-avatar {
   flex-shrink: 0;
 }
 
-html.dark .pill-badge {
+html.dark:not([data-ui-version="v2"]) .pill-badge {
   color: #4ade80;
 }
 
@@ -451,7 +451,7 @@ html.dark .pill-badge {
   gap: 12px;
 }
 
-html.dark .missing-params-box {
+html.dark:not([data-ui-version="v2"]) .missing-params-box {
   background: rgba(186, 26, 26, 0.1);
   border-color: rgba(255, 180, 171, 0.25);
 }
@@ -502,7 +502,7 @@ html.dark .missing-params-box {
   color: #6B2D3F;
 }
 
-html.dark .manual-toggle-btn:hover {
+html.dark:not([data-ui-version="v2"]) .manual-toggle-btn:hover {
   color: #dfba72;
 }
 
@@ -524,7 +524,7 @@ html.dark .manual-toggle-btn:hover {
   animation: shake 0.4s ease;
 }
 
-html.dark .error-banner {
+html.dark:not([data-ui-version="v2"]) .error-banner {
   background: rgba(255, 218, 214, 0.12);
   border-color: rgba(255, 218, 214, 0.25);
   color: #ffb4ab;
@@ -603,7 +603,7 @@ html.dark .error-banner {
   transition: all 0.2s ease;
 }
 
-html.dark .custom-input {
+html.dark:not([data-ui-version="v2"]) .custom-input {
   background: #251f23;
   border-color: #3d343a;
   color: #ffffff;
@@ -618,7 +618,7 @@ html.dark .custom-input {
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
-html.dark .custom-input:focus {
+html.dark:not([data-ui-version="v2"]) .custom-input:focus {
   border-color: #dfba72;
   box-shadow: 0 0 0 3px rgba(223, 186, 114, 0.2);
 }
@@ -654,7 +654,7 @@ html.dark .custom-input:focus {
   color: #16a34a;
 }
 
-html.dark .match-status.match-ok {
+html.dark:not([data-ui-version="v2"]) .match-status.match-ok {
   color: #4ade80;
 }
 
@@ -719,7 +719,7 @@ html.dark .match-status.match-ok {
   border-top: 1px solid var(--border, #e5dfd7);
 }
 
-html.dark .auth-card-footer {
+html.dark:not([data-ui-version="v2"]) .auth-card-footer {
   border-color: #382f35;
 }
 
@@ -734,7 +734,7 @@ html.dark .auth-card-footer {
   transition: opacity 0.15s ease;
 }
 
-html.dark .back-link {
+html.dark:not([data-ui-version="v2"]) .back-link {
   color: #dfba72;
 }
 

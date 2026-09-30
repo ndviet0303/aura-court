@@ -1,0 +1,62 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "536:3840",
+  "type": "COMPONENT",
+  "id": "536:3840",
+  "name": "Type=Default List, Theme=Light, Component=Account List",
+  "parentId": "544:5164",
+  "hierarchy": [
+    {
+      "id": "1457:22821",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "560:15440",
+      "name": "Account List"
+    },
+    {
+      "id": "544:5164",
+      "name": "Elements/Account List"
+    },
+    {
+      "id": "536:3840",
+      "name": "Type=Default List, Theme=Light, Component=Account List"
+    }
+  ],
+  "bounds": {
+    "x": 1124,
+    "y": 243,
+    "width": 382,
+    "height": 60
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1124,
+    "y": 243,
+    "width": 382,
+    "height": 60
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 60
+  },
+  "selectedElements": 5,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Type": "Default List",
+    "Theme": "Light",
+    "Component": "Account List"
+  },
+  "svg": "elements/elements-account-list/type-default-list-theme-light-component-account-list--536-3840.svg",
+  "sha256": "67615101c5cedff4abd5f906d8f684767b2c246d6b58183a37c447611f44567a",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -142,6 +142,10 @@ export default {
     lightMode: 'Light',
     darkMode: 'Dark',
     adminSystem: 'System Admin',
+    erabookV2: 'Erabook V2 UI',
+    uiVersion: 'UI Presentation',
+    uiVersionV1: 'Premium Club V1',
+    uiVersionV2: 'Erabook V2',
     history: 'Booking History',
   },
   home: {

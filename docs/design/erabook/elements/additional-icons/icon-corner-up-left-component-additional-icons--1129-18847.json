@@ -1,0 +1,57 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "1129:18847",
+  "type": "COMPONENT",
+  "id": "1129:18847",
+  "name": "Icon=corner-up-left, Component=Additional Icons",
+  "parentId": "1129:18865",
+  "hierarchy": [
+    {
+      "id": "1953:213398",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18865",
+      "name": "Additional Icons"
+    },
+    {
+      "id": "1129:18847",
+      "name": "Icon=corner-up-left, Component=Additional Icons"
+    }
+  ],
+  "bounds": {
+    "x": 916,
+    "y": 3777,
+    "width": 24,
+    "height": 24
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 916,
+    "y": 3777,
+    "width": 24,
+    "height": 24
+  },
+  "renderSize": {
+    "width": 24,
+    "height": 24
+  },
+  "selectedElements": 1,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Icon": "corner-up-left",
+    "Component": "Additional Icons"
+  },
+  "svg": "elements/additional-icons/icon-corner-up-left-component-additional-icons--1129-18847.svg",
+  "sha256": "d3d1045a59904d8a95c97262f5f8defe6841205a5423ac69b1f91b2e3c846367",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "563:47593",
+  "type": "COMPONENT",
+  "id": "563:47593",
+  "name": "Navbar=Default, Theme=Dark, Component=Navbar",
+  "parentId": "563:47592",
+  "hierarchy": [
+    {
+      "id": "1851:20221",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "1644:48374",
+      "name": "Navbar"
+    },
+    {
+      "id": "563:47592",
+      "name": "Elements/Navbar"
+    },
+    {
+      "id": "563:47593",
+      "name": "Navbar=Default, Theme=Dark, Component=Navbar"
+    }
+  ],
+  "bounds": {
+    "x": 160,
+    "y": 1003,
+    "width": 382,
+    "height": 48
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 160,
+    "y": 1003,
+    "width": 382,
+    "height": 48
+  },
+  "renderSize": {
+    "width": 382,
+    "height": 48
+  },
+  "selectedElements": 5,
+  "source": {
+    "svg": "svg/Content (3).svg",
+    "contentNodeId": "560:15291",
+    "sha256": "88c5b32a03b85d2df59262fb71784585a30dbce8c9eaf643f4b537784e3ed704",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Navbar": "Default",
+    "Theme": "Dark",
+    "Component": "Navbar"
+  },
+  "svg": "elements/elements-navbar/navbar-default-theme-dark-component-navbar--563-47593.svg",
+  "sha256": "3524232aa651773e79c554990d5835c836835072df08f05ef356cda3e181d70c",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

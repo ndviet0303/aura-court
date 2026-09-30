@@ -1,0 +1,67 @@
+{
+  "fileKey": "LwmUj9WEuCOARHRu2xnu0X",
+  "nodeId": "442:2466",
+  "type": "COMPONENT",
+  "id": "442:2466",
+  "name": "Style=Text, Theme=Dark, State=Checked, Component=Checkbox",
+  "parentId": "442:2470",
+  "hierarchy": [
+    {
+      "id": "442:3253",
+      "name": "Auto Layout"
+    },
+    {
+      "id": "433:883",
+      "name": "Auto Layout Vertical"
+    },
+    {
+      "id": "442:3260",
+      "name": "Checkbox"
+    },
+    {
+      "id": "442:2470",
+      "name": "Checkbox"
+    },
+    {
+      "id": "442:2466",
+      "name": "Style=Text, Theme=Dark, State=Checked, Component=Checkbox"
+    }
+  ],
+  "bounds": {
+    "x": 1230,
+    "y": 1752,
+    "width": 113,
+    "height": 25
+  },
+  "warnings": [],
+  "renderBounds": {
+    "x": 1230,
+    "y": 1752,
+    "width": 113,
+    "height": 25
+  },
+  "renderSize": {
+    "width": 113,
+    "height": 25
+  },
+  "selectedElements": 3,
+  "source": {
+    "svg": "svg/Content (2).svg",
+    "contentNodeId": "432:3910",
+    "sha256": "e95e1db390db28be342003b2a829709326333d0d37943f00a4b8d56176829d87",
+    "mapping": "MCP hierarchy coordinates + SVG geometry"
+  },
+  "variantsFromName": {
+    "Style": "Text",
+    "Theme": "Dark",
+    "State": "Checked",
+    "Component": "Checkbox"
+  },
+  "svg": "components/checkbox/style-text-theme-dark-state-checked-component-checkbox--442-2466.svg",
+  "sha256": "c33b203f9789da19bf6a09557113bf3abb1227a4c7edb6a3781b775a3b351ea5",
+  "limitations": [
+    "Outlined text; no editable typography",
+    "Not native Figma component properties or Auto Layout",
+    "Viewport uses nominal bounds; effects outside the frame are clipped"
+  ]
+}

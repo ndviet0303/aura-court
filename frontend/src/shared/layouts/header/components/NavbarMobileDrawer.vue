@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import { ThemeToggle, LanguageSwitcher } from '@/shared/components'
+import { ThemeToggle, LanguageSwitcher, AuraUiVersionSwitch } from '@/shared/components'
+import { useAppearanceStore } from '@/features/appearance'
 import NavbarBrand from './NavbarBrand.vue'
 
 import NavbarDrawerUserCard from './NavbarDrawerUserCard.vue'
@@ -16,6 +17,8 @@ const emit = defineEmits<{
   (e: 'update:open', val: boolean): void
   (e: 'logout'): void
 }>()
+
+const appearanceStore = useAppearanceStore()
 
 function close() {
   emit('update:open', false)
@@ -82,6 +85,15 @@ watch(
             <div class="drawer-util-item">
               <span class="util-text">{{ $t('nav.theme') }}</span>
               <ThemeToggle />
+            </div>
+            <div class="drawer-util-divider"></div>
+            <div class="drawer-util-item">
+              <span class="util-text">{{ $t('nav.erabookV2') }}</span>
+              <AuraUiVersionSwitch
+                :show-label="false"
+                :model-value="appearanceStore.isV2"
+                @update:model-value="appearanceStore.setUiVersion($event ? 'v2' : 'v1')"
+              />
             </div>
             <div class="drawer-util-divider"></div>
             <div class="drawer-util-item">

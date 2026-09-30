@@ -107,7 +107,7 @@ defineProps<{
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
 }
 
-:global(html.dark) .hero-main-card {
+:global(html.dark:not([data-ui-version="v2"])) .hero-main-card {
   background: #1a1518;
   border-color: #382d33;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -134,7 +134,7 @@ defineProps<{
   color: var(--accent);
 }
 
-:global(html.dark) .brand-eyebrow {
+:global(html.dark:not([data-ui-version="v2"])) .brand-eyebrow {
   color: #d8b46e;
 }
 
@@ -188,7 +188,7 @@ defineProps<{
   color: var(--primary);
 }
 
-:global(html.dark) .icon-18 {
+:global(html.dark:not([data-ui-version="v2"])) .icon-18 {
   color: #e58e9f;
 }
 
@@ -212,7 +212,7 @@ defineProps<{
   color: var(--muted);
 }
 
-:global(html.dark) .amenity-pill {
+:global(html.dark:not([data-ui-version="v2"])) .amenity-pill {
   background: #231c20;
   border-color: #382d33;
   color: #c4b9be;
@@ -223,7 +223,7 @@ defineProps<{
   color: var(--primary);
 }
 
-:global(html.dark) .icon-14 {
+:global(html.dark:not([data-ui-version="v2"])) .icon-14 {
   color: #e58e9f;
 }
 </style>
