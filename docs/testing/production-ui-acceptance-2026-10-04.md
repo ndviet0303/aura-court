@@ -73,6 +73,8 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 
 - The complete three-part production reschedule scenario passed on fresh fixtures after awaiting the paid indicator (1/1, 1.4 minutes). Remove the same refresh-button race from the initial payment/security journeys because terminal-receipt waiting can let automatic UI polling remove that button before a click.
 
+- Keep the legacy-balance preservation fixture and wallet navigation in its explicit run-owned organization as well; do not seed its 500,000 VND historical balance into the production default tenant.
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.

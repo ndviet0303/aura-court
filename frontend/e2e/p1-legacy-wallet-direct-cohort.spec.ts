@@ -76,7 +76,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    await page.goto(`/wallet?organization_id=${org1Id}`,  { waitUntil: 'domcontentloaded' })
+    await page.goto(`/wallet?organization_id=${org1Id}`, { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('networkidle')
 
     await expect(page.locator('.wallet-view-page')).toBeVisible({ timeout: 10000 })
@@ -125,11 +125,10 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       use Illuminate\\Support\\Str;
 
       $user = User::where('email', '${customer.email}')->firstOrFail();
-      \\Illuminate\\Support\\Facades\\Cache::forget('default_org_id');
 
-      $defaultWallet = app(\\App\\Services\\Payment\\WalletPaymentService::class)->getOrCreateWallet($user->id);
+      $defaultWallet = app(\\App\\Services\\Payment\\WalletPaymentService::class)->getOrCreateWallet($user->id, ${org1Id});
       $defaultWallet->update(['balance' => 500000]);
-      WalletAccount::where('user_id', $user->id)->update(['balance' => 500000]);
+      WalletAccount::where('user_id', $user->id)->where('organization_id', ${org1Id})->update(['balance' => 500000]);
 
       $ref = 'TXN-LEGACY-' . Str::upper(Str::random(6));
       $txn = WalletTransaction::create([
@@ -169,7 +168,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
+    await page.goto(`/wallet?organization_id=${org1Id}`, { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('networkidle')
 
     // 3. Verify balance displayed on card (500.000 ₫)
