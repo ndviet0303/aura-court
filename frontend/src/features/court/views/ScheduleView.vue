@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import { useCourtSchedule } from '../composables/useCourtSchedule'
 
 import ScheduleDatePicker from '../components/schedule/ScheduleDatePicker.vue'
@@ -38,18 +37,7 @@ const {
   quickSelectAvailableHours,
   proceedToBooking,
   resendVerificationEmail,
-  fetchAvailability,
 } = useCourtSchedule()
-
-onMounted(async () => {
-  const route = useRoute()
-  const key = String(route.params.slug || route.params.id || '')
-  const hasTargetCourt = key ? store.courts.some((c) => c.slug === key || String(c.id) === key) : store.courts.length > 0
-  if (!hasTargetCourt) {
-    await store.loadCourts()
-  }
-  await fetchAvailability()
-})
 </script>
 
 <template>

@@ -1,19 +1,28 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import ScheduleView from '@/features/court/views/ScheduleView.vue'
 import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
+import { courtApi } from '../api/courtApi'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+
+const mockRoute = vi.hoisted(() => ({
+  params: { slug: 'san-1-tham-bwf-cau-giay' },
+  query: {},
+  fullPath: '/courts/san-1-tham-bwf-cau-giay/schedule',
+}))
+
+vi.mock('../api/courtApi', () => ({ courtApi: { getBySlug: vi.fn() } }))
+vi.mock('@/features/booking/api/bookingApi', () => ({
+  bookingApi: { getAvailability: vi.fn(), getCourts: vi.fn(), create: vi.fn() },
+}))
 
 const mockPush = vi.fn()
 const mockReplace = vi.fn()
 
 vi.mock('vue-router', () => ({
-  useRoute: () => ({
-    params: { slug: 'san-1-tham-bwf-cau-giay' },
-    query: {},
-    fullPath: '/courts/san-1-tham-bwf-cau-giay/schedule',
-  }),
+  useRoute: () => mockRoute,
   useRouter: () => ({
     push: mockPush,
     replace: mockReplace,
@@ -28,6 +37,10 @@ describe('ScheduleView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    mockRoute.params.slug = 'san-1-tham-bwf-cau-giay'
+    vi.mocked(courtApi.getBySlug).mockResolvedValue(mockCourt)
+    vi.mocked(bookingApi.getAvailability).mockResolvedValue(mockSlots)
+    vi.mocked(bookingApi.getCourts).mockResolvedValue([mockCourt])
   })
 
   const mockCourt = {
@@ -72,6 +85,8 @@ describe('ScheduleView', () => {
       },
     })
 
+    await flushPromises()
+
     expect(wrapper.find('.page-title').text()).toContain('Lịch Đặt Sân Theo Ngày')
     expect(wrapper.find('.live-pill').text()).toContain('Cập nhật trực tiếp')
     expect(wrapper.find('.schedule-date-picker-card').exists()).toBe(true)
@@ -91,6 +106,8 @@ describe('ScheduleView', () => {
         plugins: [i18n],
       },
     })
+
+    await flushPromises()
 
     // Click quick select 1h button
     const quickBtn = wrapper.findAll('.btn-quick')[0]
@@ -119,6 +136,8 @@ describe('ScheduleView', () => {
       },
     })
 
+    await flushPromises()
+
     const filterBtns = wrapper.findAll('.filter-tab-btn')
     expect(filterBtns.length).toBe(5)
 
@@ -126,4 +145,51 @@ describe('ScheduleView', () => {
     await filterBtns[4]?.trigger('click')
     expect(filterBtns[4]?.classes()).toContain('active')
   })
+
+  it('loads the requested court when it is missing from the cached list', async () => {
+    const store = useBookingStore()
+    store.courts = [mockCourt]
+    mockRoute.params.slug = '243'
+    const requestedCourt = {
+      ...mockCourt,
+      id: 243,
+      name: 'Sân mới được công bố',
+      slug: 'san-moi',
+      venue: { ...mockCourt.venue, id: 73, payment_model: 'direct_owner_v1' as const },
+    }
+    vi.mocked(courtApi.getBySlug).mockResolvedValue(requestedCourt)
+
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.find('.court-name').text()).toBe(requestedCourt.name)
+    expect(store.selectedCourt).toBe(243)
+    expect(bookingApi.getAvailability).toHaveBeenCalledTimes(1)
+    expect(bookingApi.getAvailability).toHaveBeenCalledWith(243, expect.any(String))
+    expect(bookingApi.getCourts).not.toHaveBeenCalled()
+  })
+
+  it('shows an error and clears stale booking selection when the requested court is unavailable', async () => {
+    const store = useBookingStore()
+    store.courts = [mockCourt]
+    store.selectedCourt = mockCourt.id
+    store.slots = mockSlots
+    store.selectedSlots = [mockSlots[0]!]
+    mockRoute.params.slug = 'missing-court'
+    vi.mocked(courtApi.getBySlug).mockRejectedValue(new Error('Không tìm thấy sân được yêu cầu.'))
+
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.find('.alert-pill-error').text()).toContain('Không tìm thấy sân được yêu cầu.')
+    expect(wrapper.find('.schedule-summary-card').exists()).toBe(false)
+    expect(store.selectedCourt).toBeNull()
+    expect(store.selectedSlots).toEqual([])
+    expect(store.slots).toEqual([])
+    expect(bookingApi.getAvailability).not.toHaveBeenCalled()
+    await wrapper.findAll('.btn-quick')[0]!.trigger('click')
+    expect(store.selectedSlots).toEqual([])
+    expect(bookingApi.create).not.toHaveBeenCalled()
+  })
+
 })

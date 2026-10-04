@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
@@ -7,6 +7,7 @@ import { bookingApi } from '@/features/booking/api/bookingApi'
 import type { V2PriceQuote } from '@/features/booking/types/v2Reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
+import { courtApi } from '../api/courtApi'
 
 export type ScheduleTimeFilter = 'all' | 'morning' | 'afternoon' | 'evening' | 'peak'
 
@@ -38,18 +39,9 @@ export function useCourtSchedule() {
   const quoteLoading = ref(false)
   const activeQuote = ref<V2PriceQuote | null>(null)
 
-  const court = computed<Court | null>(() => {
-    const key = slugOrId.value
-    if (selectedCourtId.value) {
-      const foundById = store.courts.find((c: Court) => c.id === selectedCourtId.value)
-      if (foundById) return foundById
-    }
-    if (key) {
-      const foundByKey = store.courts.find((c: Court) => c.slug === key || String(c.id) === key)
-      if (foundByKey) return foundByKey
-    }
-    return store.courts[0] || null
-  })
+  const court = computed<Court | null>(() =>
+    store.courts.find((c: Court) => c.id === selectedCourtId.value) || null
+  )
   const directOwnerPayments = computed(() => court.value?.venue?.payment_model === 'direct_owner_v1')
 
   const venuesList = computed<Venue[]>(() => {
@@ -132,6 +124,7 @@ export function useCourtSchedule() {
     if (!court.value) return
     loading.value = true
     error.value = ''
+    store.slots = []
     try {
       await store.loadAvailability(court.value.id, date.value)
     } catch (cause) {
@@ -143,25 +136,32 @@ export function useCourtSchedule() {
 
   async function init() {
     loading.value = true
+    error.value = ''
+    selectedCourtId.value = null
+    selectedVenueId.value = null
+    store.selectedCourt = null
+    store.selectedSlots = []
+    store.slots = []
     try {
       if (store.courts.length === 0) {
         await store.loadCourts()
       }
       const key = slugOrId.value
       if (key) {
-        const found = store.courts.find((c: Court) => c.slug === key || String(c.id) === key)
-        if (found) {
-          selectedCourtId.value = found.id
-          if (found.venue?.id) {
-            selectedVenueId.value = found.venue.id
-          }
-        }
-      } else if (store.courts.length > 0 && store.courts[0]) {
+        // The cached list may omit a newly published court or contain stale eligibility.
+        const requestedCourt = await courtApi.getBySlug(key)
+        const index = store.courts.findIndex((c: Court) => c.id === requestedCourt.id)
+        if (index >= 0) store.courts[index] = requestedCourt
+        else store.courts.push(requestedCourt)
+        selectedCourtId.value = requestedCourt.id
+        selectedVenueId.value = requestedCourt.venue?.id || requestedCourt.venue_id || null
+      } else if (store.courts[0]) {
         selectedCourtId.value = store.courts[0].id
+        selectedVenueId.value = store.courts[0].venue?.id || store.courts[0].venue_id || null
       }
       await fetchAvailability()
     } catch (cause) {
-      error.value = errorMessage(cause, 'Không thể khởi tạo danh sách sân.')
+      error.value = errorMessage(cause, 'Không thể tải sân được yêu cầu.')
     } finally {
       loading.value = false
     }
@@ -207,7 +207,7 @@ export function useCourtSchedule() {
   }
 
   function toggleSlot(slot: AvailabilitySlot) {
-    if (!slot.available) return
+    if (loading.value || !court.value || !slot.available) return
     store.toggle(slot)
   }
 
@@ -220,6 +220,7 @@ export function useCourtSchedule() {
   }
 
   function quickSelectAvailableHours(count: number = 1) {
+    if (loading.value || !court.value) return
     clearSelectedSlots()
     const available = filteredSlots.value.filter((s) => s.available)
     for (let i = 0; i < Math.min(count, available.length); i++) {
@@ -231,7 +232,7 @@ export function useCourtSchedule() {
   }
 
   async function proceedToBooking(loyaltyPayload?: any) {
-    if (!court.value || store.selectedSlots.length === 0) return
+    if (loading.value || !court.value || store.selectedCourt !== court.value.id || store.selectedSlots.length === 0) return
     if (!auth.user) {
       router.push({ name: 'login', query: { redirect: route.fullPath } })
       return
