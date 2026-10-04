@@ -88,16 +88,17 @@ watch(() => props.show, (val) => {
             v-model="name"
             type="text"
             class="form-input"
+            data-testid="invite-name-input"
             :placeholder="t('admin.staff.fullNamePlaceholder')"
           />
         </div>
-
         <div class="form-group">
           <label class="form-label">{{ t('admin.staff.workEmailLabel') }} <span class="required">*</span></label>
           <input
             v-model="email"
             type="email"
             class="form-input font-mono"
+            data-testid="invite-email-input"
             placeholder="nhanvien@auracourt.vn"
           />
         </div>
@@ -108,6 +109,7 @@ watch(() => props.show, (val) => {
             v-model="phone"
             type="tel"
             class="form-input font-mono"
+            data-testid="invite-phone-input"
             placeholder="0901 234 567"
           />
         </div>
@@ -118,6 +120,7 @@ watch(() => props.show, (val) => {
             v-model="role"
             :options="roleOptions"
             variant="bordered"
+            data-testid="invite-role-select"
           />
         </div>
 
@@ -127,10 +130,10 @@ watch(() => props.show, (val) => {
             v-model="venueId"
             :options="venueOptions"
             variant="bordered"
+            data-testid="invite-venue-select"
           />
         </div>
       </div>
-
       <!-- Modal Footer -->
       <div class="modal-footer">
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
@@ -139,6 +142,7 @@ watch(() => props.show, (val) => {
         <AuraButton
           variant="primary"
           class="btn-send-invite"
+          data-testid="send-invite-btn"
           :disabled="!name.trim() || !email.trim() || saving"
           @click="handleSend"
         >

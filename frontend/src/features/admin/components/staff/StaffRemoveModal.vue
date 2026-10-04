@@ -55,6 +55,7 @@ function handleConfirm() {
         </AuraButton>
         <AuraButton
           variant="danger"
+          data-testid="confirm-remove-btn"
           :disabled="saving"
           @click="handleConfirm"
         >

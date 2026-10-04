@@ -129,6 +129,7 @@ function getRoleLabel(role: string): string {
           type="button"
           variant="primary"
           class="btn-primary-cta"
+          data-testid="invite-staff-btn"
           @click="emit('openInviteModal')"
         >
           <span class="material-symbols-outlined icon-18">person_add</span>
@@ -242,6 +243,7 @@ function getRoleLabel(role: string): string {
             <AuraButton
               size="sm"
               variant="secondary"
+              data-testid="edit-staff-btn"
               :title="t('admin.staff.editStaff')"
               @click="emit('editMember', member)"
             >
@@ -251,6 +253,7 @@ function getRoleLabel(role: string): string {
             <AuraButton
               size="sm"
               variant="secondary"
+              data-testid="toggle-status-btn"
               :title="member.status === 'active' ? t('admin.staff.lockStaff') : t('admin.staff.unlockStaff')"
               @click="emit('toggleStatus', member)"
             >
@@ -262,6 +265,7 @@ function getRoleLabel(role: string): string {
             <AuraButton
               size="sm"
               variant="danger"
+              data-testid="remove-staff-btn"
               :disabled="member.role === 'Owner' || member.rawRole === 'organization_owner'"
               :title="t('admin.staff.removeStaff')"
               @click="emit('removeMember', member)"

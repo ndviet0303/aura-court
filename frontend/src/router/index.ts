@@ -135,6 +135,12 @@ router.beforeEach(async (to) => {
       activeOrgs.some((o: any) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
       userAny.capabilities?.can_manage_venues === true
     const isCashier = activeOrgs.some((o: any) => o.role === 'cashier' || o.role === 'staff')
+    // Access guard for all /admin routes: pure customers without staff/owner roles are redirected to home
+    const isAdminRoute = to.matched.some((record) => record.path === '/admin' || record.path.startsWith('/admin/'))
+    if (isAdminRoute && !isPlatformAdmin && !isOwner && !isCashier) {
+      return { name: 'home' }
+    }
+
     // Direct entry to /admin root
     if (to.path === '/admin') {
       if (!isPlatformAdmin) {
@@ -143,7 +149,6 @@ router.beforeEach(async (to) => {
         return { name: 'home' }
       }
     }
-
     // Platform-only routes require platform admin
     if ((to.meta.platformAdmin || to.meta.admin) && !isPlatformAdmin) {
       return { name: 'home' }

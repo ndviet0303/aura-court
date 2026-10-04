@@ -1,5 +1,7 @@
 stages:
-  - pipeline
+  - validate
+  - test-e2e
+  - build
 
 default:
   tags:
@@ -31,27 +33,127 @@ cache:
   paths:
     - .docker/cache
 
-build_and_deploy:
-  image: docker:latest
-  stage: pipeline
-  timeout: 10m
+frontend_check:
+  stage: validate
+  image: node:22-alpine
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
-      when: manual
-  before_script:
-    - apk add --no-cache nodejs npm curl jq icu-data-full
-    - mkdir -p .docker/cache
+    - if: '$CI_PIPELINE_SOURCE == "web"'
   script:
-    - 'echo "=== Step 1: Frontend Check (Type-check, Unit tests, Build) ==="'
+    - "echo \"=== Step 1: Frontend Check (Type-check, Unit tests, Build) ===\""
     - cd frontend
     - npm ci
     - npm run type-check
     - npm run test:unit -- --run
     - npm run build
-    - cd ..
-    - 'echo "=== Step 2: Building and Pushing Docker Images ==="'
-    - echo "$DEPLOY_PASSWORD" | docker login -u "$DEPLOY_USERNAME" --password-stdin "$DOCKER_REGISTRY"
+e2e_p0_gate:
+  stage: test-e2e
+  image: mcr.microsoft.com/playwright:v1.62.1-noble
+  timeout: 15m
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - "echo \"=== Step 2: Mandatory P0 Browser Acceptance Gate ===\""
+    - bash ./scripts/ci/setup-e2e-runtime.sh
+    - cd frontend
+    - npm ci
+    - npx playwright test --project p0
+    - npm run test:e2e:sanitize-artifacts
+    - npm run test:e2e:verify-p0-gate
+  artifacts:
+    when: always
+    access: developer
+    expire_in: 7 days
+    reports:
+      junit: frontend/test-results/junit.xml
+    paths:
+      - frontend/playwright-report/
+      - frontend/test-results/
+    exclude:
+      - frontend/auth-states/**
+      - '**/*.auth.json'
+      - '**/manifest.json'
+
+e2e_regression_scheduled:
+  stage: test-e2e
+  image: mcr.microsoft.com/playwright:v1.62.1-noble
+  timeout: 30m
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+  script:
+    - "echo \"=== Scheduled Full Regression Suite (Non-deployable) ===\""
+    - bash ./scripts/ci/setup-e2e-runtime.sh
+    - cd frontend
+    - npm ci
+    - npx playwright test
+    - npm run test:e2e:sanitize-artifacts
+  artifacts:
+    when: always
+    access: developer
+    expire_in: 7 days
+    reports:
+      junit: frontend/test-results/junit.xml
+    paths:
+      - frontend/playwright-report/
+      - frontend/test-results/
+    exclude:
+      - frontend/auth-states/**
+      - '**/*.auth.json'
+      - '**/manifest.json'
+
+e2e_smoke_cross_browser:
+  stage: test-e2e
+  image: mcr.microsoft.com/playwright:v1.62.1-noble
+  timeout: 20m
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+  script:
+    - "echo \"=== Secondary Browser & Mobile Smoke Gate (Non-deployable) ===\""
+    - bash ./scripts/ci/setup-e2e-runtime.sh
+    - cd frontend
+    - npm ci
+    - npx playwright test --project smoke-chromium --project smoke-firefox --project smoke-webkit --project smoke-mobile
+    - npm run test:e2e:sanitize-artifacts
+  artifacts:
+    when: always
+    access: developer
+    expire_in: 7 days
+    reports:
+      junit: frontend/test-results/junit.xml
+    paths:
+      - frontend/playwright-report/
+      - frontend/test-results/
+    exclude:
+      - frontend/auth-states/**
+      - '**/*.auth.json'
+      - '**/manifest.json'
+build_and_deploy:
+  stage: build
+  image: docker:latest
+  timeout: 10m
+  needs:
+    - frontend_check
+    - e2e_p0_gate
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
+      when: manual
+  before_script:
+    - apk add --no-cache curl jq
+    - mkdir -p .docker/cache
+  script:
+    - "echo \"=== Step 3: Building and Pushing Docker Images ===\""
+    - "echo \"${DEPLOY_PASSWORD:-$CI_REGISTRY_PASSWORD}\" | docker login -u \"${DEPLOY_USERNAME:-$CI_REGISTRY_USER}\" --password-stdin \"$DOCKER_REGISTRY\""
     - |
       docker build \
         --platform="$DOCKER_PLATFORM" \
@@ -77,9 +179,9 @@ build_and_deploy:
     - docker push "$SERVER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
     - |
       if [ -n "${PORTAINER_WEBHOOK_URLS:-}" ] && [ "$CI_PIPELINE_SOURCE" != "merge_request_event" ]; then
-        echo "=== Step 3: Deploying booking images to Portainer ==="
+        echo "=== Step 4: Deploying booking images to Portainer ==="
         for item in $(echo "$PORTAINER_WEBHOOK_URLS" | jq -r '.[]'); do
-          echo "Processing Portainer webhook: $item"
+          echo "Triggering configured Portainer deployment"
           curl -fsS --connect-timeout 10 --max-time 30 -X POST "$item" || echo "Warning: Portainer webhook endpoint returned error, deployment may require manual trigger once server is reachable."
         done
       fi

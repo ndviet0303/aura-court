@@ -93,11 +93,11 @@ async function handleConfirmRemove(memberId: number) {
     </header>
 
     <!-- Feedback Alerts -->
-    <div v-if="notice" class="alert-pill alert-success">
+    <div v-if="notice" class="alert-pill alert-success" data-testid="staff-notice">
       <span class="material-symbols-outlined icon-16">check_circle</span>
       <span>{{ notice }}</span>
     </div>
-    <div v-if="error" class="alert-pill alert-error">
+    <div v-if="error" class="alert-pill alert-error" data-testid="staff-error">
       <span class="material-symbols-outlined icon-16">error</span>
       <span>{{ error }}</span>
     </div>

@@ -79,8 +79,8 @@ describe('PaymentView direct owner checkout', () => {
     const wrapper = mount(PaymentView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.find('[data-testid=\"owner-payment-instructions\"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid=\"owner-payment-qr\"]').attributes('src')).toContain('ACDIRECT31')
+    expect(wrapper.find('[data-testid="owner-payment-instructions"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="owner-payment-qr"]').attributes('src')).toContain('ACDIRECT31')
     expect(wrapper.find('.wallet-pay-card').exists()).toBe(false)
     expect(wrapper.find('.summary-coupon-block').exists()).toBe(false)
     expect(wrapper.text()).toContain('0123456789')

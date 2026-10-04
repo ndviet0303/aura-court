@@ -14,7 +14,7 @@ class FeatureFlagService
             return true;
         }
         $pilotOrganizations = config('features.pilot_organizations', []);
-        if ($organizationId === null) {
+        if ($organizationId === null || in_array('*', $pilotOrganizations, true)) {
             return true;
         }
         return in_array((string) $organizationId, $pilotOrganizations, true);

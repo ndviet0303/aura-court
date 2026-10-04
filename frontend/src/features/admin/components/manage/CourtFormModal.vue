@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import type { CourtForm } from '../../composables/useAdminManageCourts'
@@ -104,10 +104,24 @@ async function handleFileUpload(event: Event) {
     if (fileInput.value) fileInput.value.value = ''
   }
 }
+
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.show) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
-  <div v-if="show" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="show" class="modal-backdrop" role="dialog" aria-modal="true" @click.self="emit('close')">
     <div class="modal-card modal-lg">
       <div class="modal-header">
         <div class="title-with-icon">

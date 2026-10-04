@@ -86,6 +86,7 @@ function handleSave() {
             v-model="selectedRole"
             :options="roleOptions"
             variant="bordered"
+            data-testid="edit-role-select"
           />
         </div>
 
@@ -95,16 +96,17 @@ function handleSave() {
             v-model="selectedStatus"
             :options="statusOptions"
             variant="bordered"
+            data-testid="edit-status-select"
           />
         </div>
       </div>
-
       <div class="modal-footer">
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.cancel') }}
         </AuraButton>
         <AuraButton
           variant="primary"
+          data-testid="confirm-edit-role-btn"
           :disabled="saving"
           @click="handleSave"
         >

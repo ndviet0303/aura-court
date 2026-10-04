@@ -20,11 +20,12 @@ class ExpirePendingBookings
         private readonly WaitlistService $waitlists,
     ) {}
 
-    public function execute(int $limit = 200): int
+    public function execute(int $limit = 200, ?array $organizationIds = null): int
     {
-        $result = DB::transaction(function () use ($limit) {
+        $result = DB::transaction(function () use ($limit, $organizationIds) {
             $bookingCandidates = Booking::query()
                 ->where('status', 'pending_payment')
+                ->when($organizationIds !== null, fn ($query) => $query->whereHas('court.venue', fn ($venues) => $venues->whereIn('organization_id', $organizationIds)))
                 ->where('payment_expires_at', '<', now())
                 ->orderBy('id')
                 ->limit($limit)
@@ -94,6 +95,7 @@ class ExpirePendingBookings
             $reservationCandidates = Reservation::query()
                 ->withoutGlobalScope('tenant_isolation')
                 ->where('status', 'held')
+                ->when($organizationIds !== null, fn ($query) => $query->whereIn('organization_id', $organizationIds))
                 ->whereNotNull('hold_expires_at')
                 ->where('hold_expires_at', '<', now())
                 ->orderBy('id')

@@ -52,6 +52,7 @@ const buttonClasses = computed(() => [
     :class="buttonClasses"
     :tabindex="disabled ? -1 : 0"
     :aria-disabled="disabled || loading"
+    v-bind="$attrs"
   >
     <span v-if="loading" class="material-symbols-outlined aura-btn__spinner">sync</span>
     <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{ icon }}</span>
@@ -70,6 +71,7 @@ const buttonClasses = computed(() => [
     :rel="target === '_blank' ? 'noopener noreferrer' : undefined"
     :class="buttonClasses"
     :aria-disabled="disabled || loading"
+    v-bind="$attrs"
   >
     <span v-if="loading" class="material-symbols-outlined aura-btn__spinner">sync</span>
     <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{ icon }}</span>
@@ -86,6 +88,7 @@ const buttonClasses = computed(() => [
     :type="type"
     :disabled="disabled || loading"
     :class="buttonClasses"
+    v-bind="$attrs"
   >
     <span v-if="loading" class="material-symbols-outlined aura-btn__spinner">sync</span>
     <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{ icon }}</span>

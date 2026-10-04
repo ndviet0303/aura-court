@@ -48,4 +48,19 @@ describe('AuraButton.vue', () => {
     expect(btn.attributes('disabled')).toBeDefined()
     expect(btn.find('.aura-btn__spinner').text()).toBe('sync')
   })
+
+  it('forwards data-testid and custom attributes to button element', () => {
+    const wrapper = mount(AuraButton, {
+      attrs: {
+        'data-testid': 'invite-staff-btn',
+        'aria-label': 'Mời nhân viên',
+      },
+      slots: {
+        default: 'Mời',
+      },
+    })
+    const btn = wrapper.find('button')
+    expect(btn.attributes('data-testid')).toBe('invite-staff-btn')
+    expect(btn.attributes('aria-label')).toBe('Mời nhân viên')
+  })
 })
