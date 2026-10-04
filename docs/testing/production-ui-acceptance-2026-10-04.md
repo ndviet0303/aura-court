@@ -46,6 +46,12 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 - The AMD64 CI preflight ran under CPU emulation on this ARM64 host. Its three-actor authorization scenario reached the final navigation but exhausted the 60-second deadline. Verify the unchanged test under native ARM64 Linux, matching the actual runner, rather than widen timeouts for emulation.
 - Activate the authorized flags for the two dedicated production test organizations (73 and 74). The partner-provisioning case checks tenant management and then removes only its new synthetic organization; it does not require broad activation for existing business tenants. Preserve marketplace payouts as false.
 
+- GitLab commit cb02f5d8 was pushed to main as authorized. Pipeline 2911026861 completed successfully: 382 frontend unit tests, frontend build, 28 P0 browser executions with zero failures/skips/flaky cases, and backend image build/publication. Portainer deployment callback returned successfully in the pipeline.
+- The UI viewer automatically runs global setup when a new browser connects. Repeated diagnostic viewers triggered fixture reseeding and slow artifact cleanup before listing. Keep one visible controlled browser connected during the full production run.
+
+- Production frontend index matches the successful pipeline build (index-Db5w5kC8.js); the unchanged hash observed after pushing was not evidence of a stale frontend.
+- The authorized Portainer callbacks returned HTTP 204, but authenticated production capability reads still show five flags disabled for test organization 73. The deployed stack has not consumed the new flag query parameters. Supply explicit runtime defaults in the server image from the deployment pipeline, restricted to organizations 73 and 74; Portainer remains able to override them and payouts remain false. A public non-secret build revision file will distinguish an old running image from a configuration override. Changing feature-service defaults or bypassing capability middleware would alter application behavior beyond deployment configuration.
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.

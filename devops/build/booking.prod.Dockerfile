@@ -8,6 +8,23 @@ COPY --from=api /app /app/booking-api
 COPY devops/configs/booking.prod.Caddyfile /etc/frankenphp/Caddyfile
 COPY devops/configs/php.ini-production "$PHP_INI_DIR/php.ini"
 
+# Runtime defaults supplied by the deployment pipeline; Portainer can override them.
+ARG APP_REVISION=unknown
+ARG FEATURE_DIRECT_OWNER_PAYMENTS=false
+ARG FEATURE_TENANT_POS_WALLET=false
+ARG FEATURE_SOCIAL_TOURNAMENTS=false
+ARG FEATURE_MARKETPLACE_SPLIT_PAYMENTS=false
+ARG FEATURE_MARKETPLACE_SLOT_RESALE=false
+ARG PILOT_ORGANIZATION_IDS=
+ENV FEATURE_DIRECT_OWNER_PAYMENTS=${FEATURE_DIRECT_OWNER_PAYMENTS} \
+    FEATURE_TENANT_POS_WALLET=${FEATURE_TENANT_POS_WALLET} \
+    FEATURE_SOCIAL_TOURNAMENTS=${FEATURE_SOCIAL_TOURNAMENTS} \
+    FEATURE_MARKETPLACE_SPLIT_PAYMENTS=${FEATURE_MARKETPLACE_SPLIT_PAYMENTS} \
+    FEATURE_MARKETPLACE_SLOT_RESALE=${FEATURE_MARKETPLACE_SLOT_RESALE} \
+    FEATURE_MARKETPLACE_PAYOUTS=false \
+    PILOT_ORGANIZATION_IDS=${PILOT_ORGANIZATION_IDS}
+RUN printf '{"revision":"%s"}\n' "$APP_REVISION" > /app/booking-api/public/build-info.json
+
 ENV APP_ENV=production \
     APP_DEBUG=false \
     APP_URL=https://api.example.com \
