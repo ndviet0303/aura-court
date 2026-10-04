@@ -184,6 +184,10 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     const card1 = dateCards.nth(1)
     const card2 = dateCards.nth(2)
 
+    // Resolve the requested court and finish initial availability before delaying date changes.
+    // Otherwise the first intercepted request could be initialization for date2.
+    await expect(page.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 20000 })
+
     const { promise: date1Promise, resolve: resolveDate1Response } = Promise.withResolvers<void>()
     let date1Intercepted = false
 
@@ -213,6 +217,8 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
 
     // Click card1 (starts slow request date1)
     await card1.click()
+
+    await expect.poll(() => date1Intercepted).toBe(true)
 
     // Immediately click card2 (starts fast request date2)
     await card2.click()

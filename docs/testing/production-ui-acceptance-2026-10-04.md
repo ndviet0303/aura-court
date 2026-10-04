@@ -58,6 +58,10 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 - Resolve explicit schedule routes through the existing uncached court-detail endpoint, merge the resolved court into the selector list, and load availability only for that court. A missing/ineligible target displays an error and clears prior slots/selection. Remove the view's duplicate mount initialization, which could overwrite the resolved list. Considered cache eviction and test interception; rejected because neither corrects the real fallback behavior.
 - Schedule regression verification: 5/5 unit tests passed, including cached-list omission and unavailable target with stale selection; frontend type checking passed. The production attempt above is not full acceptance.
 
+- Schedule deployment pipeline 2911112744 passed frontend validation (384 unit tests) but its P0 gate stopped at 27/28. Trace timing proves the delayed-response scenario installed its interception before court initialization: both date clicks happened before `/courts/18` resolved, so the only request was initialization for date2 and was incorrectly held as date1. Wait for initial real slots and the first intercepted date request before issuing date2; retain all late-response and sentinel-price assertions.
+
+- The delayed-response scenario passed both domain and priority executions locally after the readiness repair (2/2).
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.
