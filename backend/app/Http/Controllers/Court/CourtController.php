@@ -18,7 +18,7 @@ class CourtController extends Controller
     public function index(Request $request)
     {
         // Database cache counters must exist before mutations can increment them.
-        Cache::add('courts_version', 1);
+        Cache::add('courts_version', 1, now()->addYears(10));
         $version = Cache::get('courts_version', 1);
         $cacheKey = "courts:v{$version}:" . md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
 
