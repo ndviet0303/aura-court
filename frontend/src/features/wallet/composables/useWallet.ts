@@ -24,7 +24,7 @@ export interface ActiveDeposit {
   }
 }
 
-export function useWallet() {
+export function useWallet(organizationId?: number) {
   const auth = useAuthStore()
   const bookingStore = useBookingStore()
 
@@ -123,14 +123,18 @@ export function useWallet() {
     loading.value = true
     error.value = ''
     try {
-      const res = await walletApi.getWallet()
+      if (organizationId !== undefined && (!Number.isSafeInteger(organizationId) || organizationId <= 0)) {
+        throw new Error('Không tìm thấy tổ chức cho ví được chọn.')
+      }
+      const res = await walletApi.getWallet(organizationId)
       const userName = auth.user?.name || 'AURA MEMBER'
       const realBal = typeof res?.balance === 'number' ? res.balance : 0
       const realPts = typeof res?.points === 'number' ? res.points : Math.floor(realBal / 1000)
 
       wallets.value = [
         {
-          id: res?.id || 'wallet-main',
+          id: res.id,
+          organization_id: res.organization_id,
           venue_id: 1,
           venue_name: 'Ví Hội Viên Hệ Thống Aura Court',
           card_number: `AUR-9902-${String(auth.user?.id || 1).padStart(4, '0')}`,
@@ -205,8 +209,11 @@ export function useWallet() {
       processing.value = true
       error.value = ''
       try {
+        const selectedWallet = wallets.value.find((wallet) => wallet.id === depositTargetWalletId.value)
+        if (!selectedWallet) throw new Error('Vui lòng chọn ví trước khi nạp tiền.')
         const initRes = await walletApi.initiateDeposit({
           amount: depositAmount.value,
+          organization_id: selectedWallet.organization_id,
           provider: 'sepay',
         })
         activeDeposit.value = initRes

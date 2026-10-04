@@ -2,6 +2,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useWallet } from '../composables/useWallet'
 import { walletApi } from '../api/walletApi'
+import { mount, flushPromises } from '@vue/test-utils'
+import WalletView from '../views/WalletView.vue'
+import { i18n } from '@/i18n'
+
+vi.mock('vue-router', () => ({ useRoute: () => ({ query: { organization_id: '73' } }) }))
 
 vi.mock('../api/walletApi', () => ({
   walletApi: {
@@ -34,6 +39,7 @@ describe('Wallet Deposit and Balance Management', () => {
   it('populates actual tenant balance from authoritative server response', async () => {
     vi.mocked(walletApi.getWallet).mockResolvedValueOnce({
       id: 'wallet-org-1',
+      organization_id: 1,
       balance: 750000,
       currency: 'VND',
       points: 750,
@@ -62,6 +68,7 @@ describe('Wallet Deposit and Balance Management', () => {
   it('initiates deposit via server API and exposes server transfer info', async () => {
     vi.mocked(walletApi.getWallet).mockResolvedValueOnce({
       id: 'wallet-org-1',
+      organization_id: 1,
       balance: 100000,
       currency: 'VND',
       points: 100,
@@ -96,6 +103,7 @@ describe('Wallet Deposit and Balance Management', () => {
 
     expect(walletApi.initiateDeposit).toHaveBeenCalledWith({
       amount: 500000,
+      organization_id: 1,
       provider: 'sepay',
     })
     expect(wallet.depositStep.value).toBe('sepay_pay')
@@ -106,6 +114,7 @@ describe('Wallet Deposit and Balance Management', () => {
   it('keeps pending status and does not falsely credit balance on unverified confirmation', async () => {
     vi.mocked(walletApi.getWallet).mockResolvedValue({
       id: 'wallet-org-1',
+      organization_id: 1,
       balance: 200000,
       currency: 'VND',
       points: 200,
@@ -160,6 +169,7 @@ describe('Wallet Deposit and Balance Management', () => {
     vi.mocked(walletApi.getWallet)
       .mockResolvedValueOnce({
         id: 'wallet-org-1',
+      organization_id: 1,
         balance: 200000,
         currency: 'VND',
         points: 200,
@@ -167,6 +177,7 @@ describe('Wallet Deposit and Balance Management', () => {
       })
       .mockResolvedValueOnce({
         id: 'wallet-org-1',
+      organization_id: 1,
         balance: 500000,
         currency: 'VND',
         points: 500,
@@ -216,4 +227,26 @@ describe('Wallet Deposit and Balance Management', () => {
     expect(wallet.totalBalance.value).toBe(500000)
     expect(wallet.notice.value).toContain('Nạp tiền thành công')
   })
+
+  it('keeps the wallet selected by the route when submitting a blocked direct-cohort deposit', async () => {
+    vi.mocked(walletApi.getWallet).mockResolvedValue({
+      id: 'wallet-org-73', organization_id: 73, balance: 500000, currency: 'VND', points: 0, transactions: [],
+    })
+    vi.mocked(walletApi.initiateDeposit).mockRejectedValue({
+      status: 409, code: 'DIRECT_OWNER_PAYMENTS_ENABLED', message: 'Thanh toán trực tiếp cho chủ sân.',
+    })
+
+    const wrapper = mount(WalletView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    expect(walletApi.getWallet).toHaveBeenCalledWith(73)
+    await wrapper.find('.wallet-header .btn-primary').trigger('click')
+    await wrapper.find('.modal-backdrop button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(walletApi.initiateDeposit).toHaveBeenCalledWith({ amount: 200000, organization_id: 73, provider: 'sepay' })
+    expect(wrapper.text()).toContain('Thanh toán trực tiếp cho chủ sân.')
+    expect(wrapper.text()).toContain('500.000')
+    wrapper.unmount()
+  })
+
 })

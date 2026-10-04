@@ -68,7 +68,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     expect(errBody.code).toBe('DIRECT_OWNER_PAYMENTS_ENABLED')
     expect(errBody.message).toContain('Pooled wallet top-ups are disabled for this direct-payment cohort')
 
-    // 3. UI Check: Visit /wallet, open deposit modal, try to proceed -> displays error
+    // 3. UI Check: Select the same tenant wallet, then attempt its prohibited top-up.
     await page.context().clearCookies()
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
@@ -76,7 +76,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
+    await page.goto(`/wallet?organization_id=${org1Id}`,  { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('networkidle')
 
     await expect(page.locator('.wallet-view-page')).toBeVisible({ timeout: 10000 })

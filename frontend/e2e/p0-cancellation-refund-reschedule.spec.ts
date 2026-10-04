@@ -432,11 +432,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(initialWebhookRes.statusCode).toBe(200)
 
     // Refresh payment status if on owner payment page
-    const refreshBtn = page.locator('[data-testid="owner-payment-refresh"]')
-    if (await refreshBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await refreshBtn.click()
-      await page.waitForTimeout(500)
-    }
+    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
     // Navigate to /bookings
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('.user-booking-card', { hasText: initialBookingCode })).toBeVisible({ timeout: 20000 })
@@ -665,11 +661,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     })
 
     // Refresh if on owner payment page
-    const timeoutRefreshBtn = page.locator('[data-testid="owner-payment-refresh"]')
-    if (await timeoutRefreshBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await timeoutRefreshBtn.click()
-      await page.waitForTimeout(500)
-    }
+    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
 
     // Go to /bookings, find the booking card, click reschedule
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
@@ -809,11 +801,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(expWebhookRes.statusCode).toBe(200)
 
     // Refresh payment status if on owner payment page
-    const expRefreshBtn = page.locator('[data-testid="owner-payment-refresh"]')
-    if (await expRefreshBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expRefreshBtn.click()
-      await page.waitForTimeout(500)
-    }
+    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
 
     // Navigate to /bookings and find the 180,000 VND booking
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
@@ -1091,13 +1079,19 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       reservation_code: string
     }
 
+    const webhookTransactionId = `TXN-IDEMP-${Date.now()}`
+    const webhookTransactionDate = formatVietnamDate(new Date(Date.now() + 5000))
+    const webhookTimestamp = Math.floor(Date.now() / 1000)
+
     const initialWebhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: 'whsec_e2e_1a_' + manifest.runId,
       accountNumber: paymentInfo.account_number || '0901000005',
       amount: paymentInfo.attempt_amount,
       code: paymentInfo.attempt_reference,
-      transactionDate: formatVietnamDate(new Date()),
+      transactionId: webhookTransactionId,
+      transactionDate: webhookTransactionDate,
+      timestamp: webhookTimestamp,
     })
     expect(initialWebhookRes.statusCode).toBe(200)
 
@@ -1109,7 +1103,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       accountNumber: paymentInfo.account_number || '0901000005',
       amount: paymentInfo.attempt_amount,
       code: paymentInfo.attempt_reference,
-      transactionDate: formatVietnamDate(new Date()),
+      transactionId: webhookTransactionId,
+      transactionDate: webhookTransactionDate,
+      timestamp: webhookTimestamp,
     })
     expect(duplicateWebhookRes.statusCode).toBe(200)
 

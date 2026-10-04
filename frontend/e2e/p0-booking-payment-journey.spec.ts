@@ -132,11 +132,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
     expect(webhookRes.statusCode).toBe(200)
 
-    const refreshBtn = page.locator('[data-testid="owner-payment-refresh"]')
-    await expect(refreshBtn).toBeVisible({ timeout: 10000 })
-    const refreshResponsePromise = page.waitForResponse((r) => r.url().includes('payment-status') || r.url().includes('payment'))
-    await refreshBtn.click()
-    await refreshResponsePromise
     // Status transitions to paid
     const paidBadge = page.locator('[data-testid="owner-payment-paid"]')
     await expect(paidBadge).toBeVisible({ timeout: 15000 })
@@ -414,8 +409,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
     expect(res2.statusCode).toBe(200)
 
-    // Refresh UI: transitions to paid
-    await refreshBtn.click()
+    // Automatic payment polling observes the verified receipt.
     await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
 
     // 11. Verify authoritative state: exactly 1 allocated receipt and 1 allocation for this booking

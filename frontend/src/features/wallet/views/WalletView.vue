@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import { useWallet, type VenueWallet } from '../composables/useWallet'
 
 import WalletTotalBalanceCard from '../components/WalletTotalBalanceCard.vue'
@@ -6,6 +7,9 @@ import VenueWalletsList from '../components/VenueWalletsList.vue'
 import WalletTransactionsTable from '../components/WalletTransactionsTable.vue'
 import WalletDepositModal from '../components/WalletDepositModal.vue'
 import WalletPayQrModal from '../components/WalletPayQrModal.vue'
+
+const route = useRoute()
+const organizationId = route.query.organization_id === undefined ? undefined : Number(route.query.organization_id)
 
 const {
   loading,
@@ -39,7 +43,7 @@ const {
   proceedToPaymentStep,
   confirmDeposit,
   copyToClipboard,
-} = useWallet()
+} = useWallet(organizationId)
 
 function scrollToHistory() {
   const el = document.getElementById('wallet-history-section')

@@ -62,6 +62,17 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 
 - The delayed-response scenario passed both domain and priority executions locally after the readiness repair (2/2).
 
+- Commit acf36d0743f83714d09faa5eac9fb691c66e04c8 passed pipeline 2911124764: frontend validation, all 28 P0 executions (zero failed/skipped/flaky) and image deployment. Production `/build-info.json` confirms the exact revision; the frontend bundle `index-BTIQO1p_.js` contains the explicit schedule-target repair. A fresh all-projects production UI run is retained under `/private/tmp/booking-prod-acceptance-v3`.
+
+- The second all-projects production UI attempt was stopped after 69/342 executions: 66 passed and 3 failed. It is not acceptance. All five booking/payment scenarios that failed in the earlier attempt passed after explicit route resolution.
+- Production owner webhooks acknowledge receipt ingestion before the queue allocates payment. Fresh diagnostic attempts produced allocated receipts roughly three seconds after acknowledgement, after the tests had read pending state or rendered a pending booking card. Wait for the real receipt's terminal processing state, scoped to the run-owned connection/event; do not force status or change production queue behavior. Preserve the same provider event, transaction date and signature timestamp on the idempotent redelivery test.
+- The direct-cohort deposit API correctly returned 409 for test organization 73, but the generic wallet UI posted without organization context and created a pending deposit in the default legacy organization. The existing wallet read endpoint supports an organization query and returns its authoritative ID. Carry that selection through the wallet route/read and deposit payload, and make the cohort test select the same wallet. Do not activate features for existing legacy tenants. Wallet regression verification: 6/6 unit tests passed.
+
+- Fresh production payment/POS verification after terminal-receipt waiting: 4/6 passed. Idempotent checkout/webhook/reschedule and cash POS passed. Reschedule test waited on a refresh button that was removed when automatic polling observed payment; await the authoritative paid indicator instead. POS QR correctly rejected the local testing HMAC with HTTP 401. Production uses its configured legacy provider key; no credential or authentication override has been applied.
+- Automatic approval review rejected using the production HMAC to sign POS test callbacks because that credential use needs specific authorization. The concrete proposed scope is fresh POS orders only: reference returned by the test checkout, organization 73/74, cashier among this run's generated actors, and creation after the run manifest timestamp. No existing financial record replay or real transfer is required. Continue independent repairs while this authorization is pending.
+
+- The complete three-part production reschedule scenario passed on fresh fixtures after awaiting the paid indicator (1/1, 1.4 minutes). Remove the same refresh-button race from the initial payment/security journeys because terminal-receipt waiting can let automatic UI polling remove that button before a click.
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.

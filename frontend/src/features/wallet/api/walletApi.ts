@@ -2,14 +2,15 @@ import { api } from '@/core/api/client'
 import type { VenueWallet, SpendWalletPayload } from '../types/wallet'
 
 export const walletApi = {
-  getWallet: () =>
+  getWallet: (organizationId?: number) =>
     api.get<{
       id: string
+      organization_id: number
       balance: number
       currency: string
       points: number
       transactions: any[]
-    }>('/wallet'),
+    }>('/wallet', { params: organizationId === undefined ? undefined : { organization_id: organizationId } }),
 
   getBalance: () =>
     api.get<{ balance: number; currency: string }>('/wallet/balance'),

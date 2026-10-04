@@ -12,6 +12,7 @@ export type CardDetails = {
 
 export interface VenueWallet {
   id: string
+  organization_id: number
   venue_id: number
   venue_name: string
   card_number: string

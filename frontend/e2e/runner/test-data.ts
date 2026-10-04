@@ -544,6 +544,7 @@ export async function sendSyntheticPaymentWebhook(
     : (isPos ? signatureHash : `sha256=${signatureHash}`)
 
   const headers: Record<string, string> = {
+    Accept: 'application/json',
     'Content-Type': 'application/json',
     'X-SePay-Timestamp': timestamp,
     'X-SePay-Signature': signature,
@@ -554,13 +555,41 @@ export async function sendSyntheticPaymentWebhook(
     method: 'POST',
     headers,
     body: rawBody,
+    redirect: 'manual',
   })
 
-  let body: unknown = null
+  const responseText = await response.text()
+  let body: unknown = responseText
   try {
-    body = await response.json()
-  } catch {
-    body = await response.text()
+    body = JSON.parse(responseText)
+  } catch {}
+
+  if (!isPos && response.ok) {
+    // Production acknowledges receipt ingestion before its queue allocates payment.
+    // Wait for the real terminal receipt; never process it or change its status here.
+    const lookup = Buffer.from(JSON.stringify({
+      routingId: options.routingId,
+      eventId: JSON.parse(rawBody).id,
+      organizationIds: Object.values(manifest.fixtures?.organizations || {}).flatMap((org) => org ? [org.id] : []),
+    })).toString('base64')
+    const deadline = Date.now() + 15000
+    let processed = false
+    while (Date.now() < deadline) {
+      const result = JSON.parse(executeGuardedBackendPhp(manifest, `
+        $lookup = json_decode(base64_decode('${lookup}'), true);
+        $connection = \\App\\Models\\ReceivingConnection::where('routing_id', $lookup['routingId'])
+          ->whereIn('organization_id', $lookup['organizationIds'])->firstOrFail();
+        $receipt = \\App\\Models\\OwnerPaymentReceipt::where('receiving_connection_id', $connection->id)
+          ->where('provider_event_id', (string) $lookup['eventId'])->first();
+        echo json_encode(['processed' => $receipt && $receipt->processed_at !== null]);
+      `)) as { processed: boolean }
+      if (result.processed) {
+        processed = true
+        break
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300))
+    }
+    if (!processed) throw new Error('Payment webhook was acknowledged but its test receipt was not processed within 15 seconds.')
   }
 
   return {
