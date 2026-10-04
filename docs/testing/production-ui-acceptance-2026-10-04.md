@@ -91,6 +91,16 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 
 - Fresh production finance fixture verification passed 22/22 executions, covering both domain and priority projects for all dispute and revenue cases. No failures/skips.
 
+- Commit 849b21d64e9396d8a10f32253ce4e57bb408311b passed pipeline 2911280651 (385 frontend tests, 28/28 P0 cases, build/deploy). Production build-info matches. A new visible UI run with all 342 executions is retained under `/private/tmp/booking-prod-acceptance-v4`; its source/runtime revision evidence is recorded there.
+
+- The new full UI run exposed a password-reset fixture race: the real forgot-password request and the CLI token helper both delete/insert the same dedicated email before the UI request has completed, producing a duplicate primary key. Await the actual POST response before creating the test token; retain bad-token, successful reset, rejected old password and persistent new-password login assertions. The current full run continues to collect remaining failures and cannot establish acceptance for the changed test.
+
+- Password-reset readiness repair passed both production domain/priority executions (2/2), using a temporary config with global setup/teardown disabled and the active manifest. Each case creates a new dedicated account; no shared tenant fixture reseeding occurred during the full UI run.
+
+- Full-run priority cash POS selected an older same-name product that inventory scenarios had repriced to 10,000 VND; the expected 15,000 VND fixture was present but the first substring match selected another ID. Give cash/QR products invocation-specific names and search/select the returned fixture name in every checkout within that scenario. Keep price, VAT, change, persisted-order and inventory assertions unchanged.
+
+- Cash POS fixture selection repair passed both production domain/priority executions (2/2); price, VAT/change, stock and persisted cash-shift assertions stayed intact. The focused selection ran after the full-run P0 POS section had completed, without reseeding shared tenant fixtures.
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.

@@ -74,7 +74,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 1. Arrange a dedicated POS product with known stock for deterministic testing
     const stockItem = arrangePosStock(manifest, {
       testKey: '5_1_cash',
-      name: 'Nước Khoáng Lavie 500ml',
+      name: `Nước Khoáng Lavie 500ml ${Date.now()}`,
       price: 15000,
       cost: 7000,
       stockQuantity: 40,
@@ -118,15 +118,15 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     // 5. Select product and verify quote in cart
     await expect(page.locator('.catalog-search-input')).toBeVisible({ timeout: 10000 })
-    await page.locator('.catalog-search-input').fill('Lavie')
+    await page.locator('.catalog-search-input').fill(stockItem.name)
     await page.waitForTimeout(300)
 
-    const productCard = page.locator('.product-card', { hasText: 'Nước Khoáng Lavie 500ml' }).first()
+    const productCard = page.locator('.product-card', { hasText: stockItem.name })
     await expect(productCard).toBeVisible({ timeout: 15000 })
     await productCard.click()
 
     // Verify cart item and line total (15,000 VND + 8% VAT = 16,200 VND)
-    const cartItem = page.locator('.cart-item-row', { hasText: 'Nước Khoáng Lavie' })
+    const cartItem = page.locator('.cart-item-row', { hasText: stockItem.name })
     await expect(cartItem).toBeVisible({ timeout: 10000 })
     await expect(page.locator('.grand-total-val')).toContainText('16.200')
 
@@ -156,7 +156,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     const receiptModal = page.locator('.receipt-printable')
     await expect(receiptModal).toBeVisible({ timeout: 15000 })
     await expect(receiptModal).toContainText('AURA COURT SYSTEM')
-    await expect(receiptModal).toContainText('Nước Khoáng Lavie')
+    await expect(receiptModal).toContainText(stockItem.name)
 
     // Close receipt modal
     await page.locator('.modal-close-btn').click()
@@ -233,7 +233,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 1. Arrange a dedicated product with 25 in stock
     const stockItem = arrangePosStock(manifest, {
       testKey: '5_2_qr',
-      name: 'Vợt Cầu Lông Yonex Carbon',
+      name: `Vợt Cầu Lông Yonex Carbon ${Date.now()}`,
       price: 200000,
       cost: 120000,
       stockQuantity: 25,
@@ -262,9 +262,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     }
 
     // 3. Search and add product to cart
-    await page.locator('.catalog-search-input').fill('Carbon')
+    await page.locator('.catalog-search-input').fill(stockItem.name)
     await page.waitForTimeout(300)
-    const productCard = page.locator('.product-card', { hasText: 'Vợt Cầu Lông Yonex Carbon' }).first()
+    const productCard = page.locator('.product-card', { hasText: stockItem.name })
     await expect(productCard).toBeVisible({ timeout: 15000 })
     await productCard.click()
 
@@ -404,7 +404,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     if (await clearBtn.isVisible()) {
       await clearBtn.click()
     }
-    await page.locator('.product-card', { hasText: 'Vợt Cầu Lông Yonex Carbon' }).first().click()
+    await page.locator('.product-card', { hasText: stockItem.name }).click()
     await page.locator('.pay-method-btn', { hasText: 'VietQR' }).click()
     const cancelOrderResponsePromise = page.waitForResponse(
       (res) => res.url().includes('/v2/pos/orders') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
@@ -456,7 +456,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     if (await clearBtn.isVisible()) {
       await clearBtn.click()
     }
-    await page.locator('.product-card', { hasText: 'Vợt Cầu Lông Yonex Carbon' }).first().click()
+    await page.locator('.product-card', { hasText: stockItem.name }).click()
     await page.locator('.pay-method-btn', { hasText: 'VietQR' }).click()
     const expOrderResponsePromise = page.waitForResponse(
       (res) => res.url().includes('/v2/pos/orders') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),

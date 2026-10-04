@@ -352,9 +352,14 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     await page.goto('/forgot-password', { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('networkidle')
     await page.locator('input[type="email"], input[name="email"]').fill(resetEmail)
+    const forgotResponse = page.waitForResponse(response =>
+      response.url().endsWith('/auth/forgot-password') && response.request().method() === 'POST',
+    )
     await page.locator('button[type="submit"]').click()
+    expect((await forgotResponse).status()).toBe(200)
+    await expect(page.locator('.success-banner[role="status"]')).toBeVisible()
 
-    // 2. Retrieve generated reset token from database
+    // 2. Create a run-owned token after the real forgot-password request has finished.
     const tokenScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
