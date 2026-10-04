@@ -365,11 +365,28 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
-    // Arrange two dedicated courts with different price tiers:
-    // Court Cheap: 100,000 VND
-    // Court Expensive: 180,000 VND
+    // Warm the real catalog before adding fixtures: the scenario must work with an existing cache.
+    expect((await page.request.get(`${manifest.backend.url}/api/v1/courts`)).ok()).toBe(true)
     const courtCheap = arrangeCourt(manifest, { testKey: '4_7_cheap', venueId: venue1A.id, price: 100000 })
     const courtExpensive = arrangeCourt(manifest, { testKey: '4_7_expensive', venueId: venue1A.id, price: 180000 })
+
+    // CLI fixtures have isolated cache storage. Publish only these new courts through the owner API
+    // so the deployed catalog invalidation runs before the customer's reschedule journey.
+    const owner = getActorCredentials(manifest, 'owner1')
+    await page.goto('/login', { waitUntil: 'domcontentloaded' })
+    await withE2EApi(page, async ({ authApi, api }) => {
+      await authApi.login({ email: owner.email, password: owner.password })
+      for (const court of [courtCheap, courtExpensive]) {
+        expect(court.organization_id).toBe(orgId)
+        const published = await api.put<{ id: number; is_active: boolean }>(`/admin/courts/${court.court_id}`, { is_active: true })
+        expect(published.id).toBe(court.court_id)
+        expect(published.is_active).toBe(true)
+      }
+      const catalog = await api.get<Array<{ id: number }>>('/courts')
+      expect(catalog.map(court => court.id)).toEqual(expect.arrayContaining([courtCheap.court_id, courtExpensive.court_id]))
+    })
+    await withE2EApi(page, async ({ authApi }) => { await authApi.logout() })
+
     // 1. Authenticate customer
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)

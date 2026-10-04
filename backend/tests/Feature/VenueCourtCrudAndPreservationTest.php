@@ -13,6 +13,7 @@ use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class VenueCourtCrudAndPreservationTest extends TestCase
@@ -173,6 +174,40 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $refreshedRes = $this->getJson("/api/v1/courts/{$courtSlug}");
         $refreshedRes->assertOk()
             ->assertJsonPath('amenities', ['wifi', 'pro_shop', 'air_conditioning', 'led_lighting']);
+    }
+
+    public function test_warm_database_court_catalog_reflects_the_first_court_update(): void
+    {
+        config(['cache.default' => 'database', 'cache.prefix' => 'court-catalog-regression-']);
+        Cache::forget('courts_version');
+        $admin = $this->admin();
+        $org = Organization::create([
+            'name' => 'Catalog Org',
+            'slug' => 'catalog-org-'.uniqid(),
+            'status' => 'active',
+            'partner_status' => 'approved',
+        ]);
+        $venue = Venue::create([
+            'organization_id' => $org->id,
+            'name' => 'Catalog Venue',
+            'slug' => 'catalog-venue-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $court = Court::create([
+            'venue_id' => $venue->id,
+            'name' => 'Original Court',
+            'slug' => 'catalog-court-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $url = '/api/v1/courts?venue_id='.$venue->id;
+        $this->getJson($url)->assertOk()->assertJsonPath('0.name', 'Original Court');
+
+        $this->actingAs($admin)->patchJson('/api/v1/admin/courts/'.$court->id, [
+            'name' => 'Updated Court',
+        ])->assertOk();
+
+        $this->getJson($url)->assertOk()->assertJsonPath('0.name', 'Updated Court');
     }
 
     public function test_court_surface_and_capacity_round_trip_without_mutating_existing_bookings(): void

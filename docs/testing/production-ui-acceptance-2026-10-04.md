@@ -75,6 +75,16 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 
 - Keep the legacy-balance preservation fixture and wallet navigation in its explicit run-owned organization as well; do not seed its 500,000 VND historical balance into the production default tenant.
 
+- Production payment/wallet selection after the paid-indicator and issuer fixes: 14/15 passed. The remaining reschedule failure omitted its new expensive court from the cached public list. Trace responses for both `/courts` requests were identical and excluded the newly arranged court, while uncached court detail was correct.
+- Warm the actual public court catalog before arranging the two reschedule fixtures, then publish only those new run-owned courts through the authenticated owner update endpoint. This invokes the deployed cache invalidation before the customer journey and verifies both IDs appear in the real catalog. Considered waiting for the five-minute TTL or accessing shared Redis; chose the existing scoped owner API to keep fixture setup correct without broad eviction or extra production credentials.
+- Commit 464538442cd31ff137d65e3c2739164aaa4e7fc2 passed pipeline 2911208210, including 28/28 P0 cases and deployment; the public runtime revision matches.
+
+- A focused verification omitted the tenant selection and seeded fresh test organizations outside the enabled pilot scope; four checks failed and do not count as acceptance. Persist `E2E_PROD_ORGANIZATION_IDS=73,74` in the ignored local backend configuration so the requested npm production command selects the authorized test tenants consistently.
+
+- The scoped owner update still returned a stale real catalog. Read-only inspection found production catalog entries under `laravel-cache-courts:v1:*` in the database cache, with no `courts_version` counter. Laravel database cache increments return false for a missing counter. Initialize the counter atomically when building the catalog, before any subsequent mutation increments it. Add a regression that warms the database-backed catalog, updates one court through the real API, and verifies its new name in the list. The production reschedule scenario retains its cache warm-up and scoped publishing checks.
+
+- Database catalog regression: 1/1 passed, 5 assertions, on a new disposable PostgreSQL database. Removing counter initialization reproduces the stale-name failure; source was restored. Frontend type checking passed.
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.
