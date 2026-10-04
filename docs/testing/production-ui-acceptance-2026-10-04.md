@@ -85,6 +85,12 @@ Run `npm run test:e2e:ui:prod`, select every project, and stop only after the fu
 
 - Database catalog regression: 1/1 passed, 5 assertions, on a new disposable PostgreSQL database. Removing counter initialization reproduces the stale-name failure; source was restored. Frontend type checking passed.
 
+- Broader production checks exposed dispute fixture selection of the oldest venue in reused organization 73. That prior venue no longer has current test courts. Use the exact venue/court IDs from the current run manifest, retaining organization and venue query constraints; remove the unused fallback organization IDs. The actual intake, authorization, evidence and financial-obligation assertions remain.
+
+- Later-domain production selection completed 69/69 executions: 63 passed and 6 failed (POS QR signature, four dispute fixtures, one revenue fixture). The revenue failure has the same oldest-venue selector; use current manifest IDs in owner/foreign report setup and remove fallback tenant creation. This selection is diagnostic, not full acceptance.
+
+- Fresh production finance fixture verification passed 22/22 executions, covering both domain and priority projects for all dispute and revenue cases. No failures/skips.
+
 ## Completion evidence still required
 
 A fresh full production run with all projects selected, 342 passing executions, zero failures/skips/flaky results, and its retained report. Keep the production UI open for review.

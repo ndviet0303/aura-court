@@ -29,8 +29,12 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
   const admin = getActorCredentials(manifest, 'admin')
   const org1 = manifest.fixtures?.organizations.org1
   const org2 = manifest.fixtures?.organizations.org2
-  const org1Id = org1?.id || 2
-  const org2Id = org2?.id || 3
+  const org1Id = org1?.id
+  const org2Id = org2?.id
+  const venue1Id = org1?.venue1A?.id
+  const court1Id = org1?.venue1A?.courts[0]
+  const venue2Id = org2?.venue2?.id
+  if (!org1Id || !org2Id || !venue1Id || !court1Id || !venue2Id) throw new Error('Revenue fixtures require the current organizations, venues and court.')
 
   test('9.6.1: Hai dòng tiền độc lập & Phân bổ doanh thu chuẩn xác (FR-PAY-14, FR-PAY-15, FR-PAY-16)', async () => {
     const reportScript = `
@@ -51,8 +55,8 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
 
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
       $adminUser = User::where('email', '${admin.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
-      $court = Court::where('venue_id', $venue->id)->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
+      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
 
       // 1. Confirmed booking: 300,000 VND
       Booking::create([
@@ -159,17 +163,7 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       use App\\Models\\Venue;
 
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
-      $venueBeta = Venue::where('organization_id', ${org2Id})->first();
-
-      if (!$venueBeta) {
-        $venueBeta = Venue::create([
-          'organization_id' => ${org2Id},
-          'name' => 'Foreign Venue Beta',
-          'slug' => 'foreign-venue-beta-' . uniqid(),
-          'status' => 'published',
-          'is_active' => true,
-        ]);
-      }
+      $venueBeta = Venue::where('organization_id', ${org2Id})->findOrFail(${venue2Id});
 
       // Owner of Org 1 attempts to query unauthorized venue Beta
       $req = Illuminate\\Http\\Request::create('/api/v1/admin/reports', 'GET', [
@@ -224,7 +218,7 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       use App\\Models\\Venue;
 
       $adminUser = User::where('email', '${admin.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
 
       // Ensure test data exists independently for both owner and platform attribution
       $ownerAttempt = App\\Models\\OwnerPaymentAttempt::where('venue_id', $venue->id)->where('status', 'paid')->first();

@@ -29,8 +29,10 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
   const customer1 = getActorCredentials(manifest, 'customer')
   const customer2 = getActorCredentials(manifest, 'customer2')
   const admin = getActorCredentials(manifest, 'admin')
-  const org1Id = manifest.fixtures?.organizations.org1.id || 2
-  const org2Id = manifest.fixtures?.organizations.org2.id || 3
+  const org1Id = manifest.fixtures?.organizations.org1.id
+  const venue1Id = manifest.fixtures?.organizations.org1.venue1A?.id
+  const court1Id = manifest.fixtures?.organizations.org1.venue1A?.courts[0]
+  if (!org1Id || !venue1Id || !court1Id) throw new Error('Current dispute fixtures require an organization, venue and court.')
   test('9.5.1: Tiếp nhận khiếu nại, tự động phân loại & Chống trùng lặp (FR-COM-17, FR-COM-18)', async () => {
     const intakeScript = `
       require "vendor/autoload.php";
@@ -46,8 +48,8 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       use Carbon\\Carbon;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
-      $court = Court::where('venue_id', $venue->id)->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
+      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
 
       $booking = Booking::create([
         'code' => 'BK-DSP-' . strtoupper(uniqid()),
@@ -127,8 +129,8 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
       $stranger = User::where('email', '${customer2.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
-      $court = Court::where('venue_id', $venue->id)->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
+      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
 
       $booking = Booking::create([
         'code' => 'BK-SEC-' . strtoupper(uniqid()),
@@ -193,8 +195,8 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       use Carbon\\Carbon;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
-      $court = Court::where('venue_id', $venue->id)->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
+      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
 
       $booking = Booking::create([
         'code' => 'BK-EVD-' . strtoupper(uniqid()),
@@ -272,8 +274,8 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       use Carbon\\Carbon;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
-      $court = Court::where('venue_id', $venue->id)->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
+      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
       $admin = User::where('email', '${admin.email}')->firstOrFail();
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
 
@@ -359,7 +361,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       use Carbon\\Carbon;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
       $admin = User::where('email', '${admin.email}')->firstOrFail();
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
 
@@ -471,7 +473,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       use App\\Models\\Venue;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->firstOrFail();
+      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
 
       $code = 'DSP-UI-' . strtoupper(uniqid());
       $dispute = DisputeCase::create([
