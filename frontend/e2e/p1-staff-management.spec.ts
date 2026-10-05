@@ -7,7 +7,12 @@ import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
 test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn mức quota @p1', () => {
+  let temporaryOrganizationIds: number[] = []
+  let temporaryPlanIds: number[] = []
+
   test.beforeEach(async ({ page }) => {
+    temporaryOrganizationIds = []
+    temporaryPlanIds = []
     const manifest = getTestManifest()
     const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
@@ -32,6 +37,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       LARAVEL_STORAGE_PATH: manifest.storagePath,
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
+    const owner = getActorCredentials(manifest, 'owner1')
     const cleanupScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
@@ -41,6 +47,23 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       use App\\Models\\User;
       use App\\Models\\OrganizationMember;
       use App\\Models\\OrganizationInvitation;
+      use App\\Models\\Organization;
+      use App\\Models\\PlatformPlan;
+      use Illuminate\\Support\\Facades\\DB;
+
+      $organizationIds = json_decode('${JSON.stringify(temporaryOrganizationIds)}', true);
+      $planIds = json_decode('${JSON.stringify(temporaryPlanIds)}', true);
+      $ownedOrganizations = Organization::whereIn('id', $organizationIds)
+        ->where('settings->e2e_staff_run_id', '${manifest.runId}')
+        ->whereHas('members.user', fn($q) => $q->where('email', '${owner.email}'))
+        ->pluck('id')->all();
+      if (count($ownedOrganizations) !== count($organizationIds)) {
+        throw new RuntimeException('Staff cleanup refused an unowned organization.');
+      }
+      DB::table('venues')->whereIn('organization_id', $ownedOrganizations)->delete();
+      Organization::whereIn('id', $ownedOrganizations)->delete();
+      PlatformPlan::whereIn('id', $planIds)
+        ->where('code', 'like', 'plan-quota-staff-${manifest.runId}-%')->delete();
 
       $testUsers = User::where('email', 'like', '%@staff-${manifest.runId.replaceAll('_', '-')}.auracourt.test')->get();
       foreach ($testUsers as $tu) {
@@ -50,13 +73,11 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       }
       OrganizationInvitation::where('email', 'like', '%@staff-${manifest.runId.replaceAll('_', '-')}.auracourt.test')->delete();
     `
-    try {
-      execFileSync('php', ['-r', cleanupScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      })
-    } catch {}
+    execFileSync('php', ['-r', cleanupScript], {
+      cwd: backendDir,
+      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+      encoding: 'utf-8',
+    })
   })
 
   test('7.6.1: Danh bạ nhân viên, điều hướng tab, chỉ số KPI & gửi lời mời qua modal', async ({ page }) => {
@@ -628,6 +649,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       $testOrg = Organization::create([
         'name' => 'Single Owner Org ' . Str::random(6),
         'slug' => 'single-owner-org-' . Str::lower(Str::random(6)),
+        'settings' => ['e2e_staff_run_id' => '${manifest.runId}'],
         'partner_status' => 'approved',
       ]);
       $ownerMember = OrganizationMember::create([
@@ -643,6 +665,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     })) as { org_id: number; member_id: number }
+    temporaryOrganizationIds.push(arrangedSingle.org_id)
 
     // 3. Attempt direct API demotion of the only active owner -> MUST fail with 422
     const demoteAttempt = await withE2EApi(page, async ({ api }, { testOrgId, memberId }) => {
@@ -697,27 +720,6 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     expect(deleteAttempt.success).toBe(false)
     expect(deleteAttempt.status).toBe(422)
     expect(deleteAttempt.message).toContain('Cannot remove the last active organization owner.')
-
-    // Clean up testOrg
-    const cleanupScript = `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
-      $kernel->bootstrap();
-
-      use App\\Models\\Organization;
-      use App\\Models\\OrganizationMember;
-
-      OrganizationMember::where('organization_id', ${arrangedSingle.org_id})->delete();
-      Organization::where('id', ${arrangedSingle.org_id})->delete();
-    `
-    try {
-      execFileSync('php', ['-r', cleanupScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      })
-    } catch {}
   })
 
   test('7.6.6: Thực thi hạn mức số lượng nhân viên theo gói subscription', async ({ page }) => {
@@ -753,7 +755,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
 
       $plan = PlatformPlan::create([
-        'code' => 'plan-quota-staff-' . Str::random(8),
+        'code' => 'plan-quota-staff-${manifest.runId}-' . Str::random(8),
         'name' => 'Single Staff Quota Plan',
         'version' => 1,
         'price' => 200000,
@@ -770,6 +772,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       $org = Organization::create([
         'name' => 'CLB Giới Hạn Quota Staff ' . Str::random(6),
         'slug' => 'clb-quota-staff-' . Str::random(6),
+        'settings' => ['e2e_staff_run_id' => '${manifest.runId}'],
         'status' => 'active',
         'partner_status' => 'approved',
       ]);
@@ -816,6 +819,8 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     })) as { org_id: number; plan_id: number }
+    temporaryOrganizationIds.push(arranged.org_id)
+    temporaryPlanIds.push(arranged.plan_id)
 
     // 2. Log in as owner
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -882,6 +887,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       $org2 = Organization::create([
         'name' => 'Tổ Chức Thứ Hai Đổi Bối Cảnh ' . Str::random(6),
         'slug' => 'to-chuc-thu-hai-' . Str::random(6),
+        'settings' => ['e2e_staff_run_id' => '${manifest.runId}'],
         'status' => 'active',
         'partner_status' => 'approved',
       ]);
@@ -910,6 +916,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     })) as { org_id: number; venue_id: number }
+    temporaryOrganizationIds.push(arrangedSwitch.org_id)
 
     // 2. Log in as owner
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
