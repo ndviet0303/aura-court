@@ -47,7 +47,7 @@ frontend_check:
     - cd frontend
     - npm ci
     - npm run type-check
-    - npm run test:unit -- --run
+    - npm run test:unit -- --run --maxWorkers=1
     - npm run build
 e2e_p0_gate:
   stage: test-e2e
