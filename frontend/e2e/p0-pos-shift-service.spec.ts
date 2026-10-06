@@ -336,6 +336,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       accountNumber: '0987654321',
       amount: totalAmount,
       code: paymentRef,
+      posOrderId: Number(orderId),
     })
     expect(webhookRes.ok, `Webhook failed with status ${webhookRes.statusCode}: ${JSON.stringify(webhookRes.body)}`).toBe(true)
     // 9. Close QR modal as payment has completed via verified webhook

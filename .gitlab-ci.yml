@@ -61,6 +61,7 @@ e2e_p0_gate:
     - bash ./scripts/ci/setup-e2e-runtime.sh
     - cd frontend
     - npm ci
+    - node --experimental-strip-types --test e2e/runner/test-data.spec.ts
     - npx playwright test --project p0
     - npm run test:e2e:sanitize-artifacts
     - npm run test:e2e:verify-p0-gate

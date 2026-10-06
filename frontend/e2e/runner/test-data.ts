@@ -488,6 +488,7 @@ export interface SyntheticWebhookOptions {
   transactionId?: string
   timestamp?: number
   tamperSignature?: boolean
+  posOrderId?: number
 }
 
 export interface SyntheticWebhookResponse {
@@ -511,8 +512,96 @@ export function formatVietnamDate(date: Date = new Date()): string {
   return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}:${map.second}`
 }
 
+/** Authenticates only fresh QR checkouts in the explicitly authorized production test tenants. */
+function sendProductionPosWebhook(
+  manifest: RunManifest,
+  options: SyntheticWebhookOptions,
+  rawBody: string
+): SyntheticWebhookResponse {
+  const organizationIds = Object.values(manifest.fixtures?.organizations || {})
+    .flatMap(org => org ? [org.id] : [])
+  const cashier = manifest.fixtures?.users.cashier
+  if (manifest.backend.url.replace(/\/$/, '') !== 'https://court-api.ziet.dev'
+    || !/^prod_e2e_[0-9]+_[a-f0-9]{8}$/.test(manifest.runId)
+    || manifest.fixtures?.run_id !== manifest.runId
+    || organizationIds.length !== 2 || new Set(organizationIds).size !== 2
+    || organizationIds.some(id => ![73, 74].includes(id))
+    || !cashier?.id || cashier.email !== `cashier_${manifest.runId}@auracourt.test`
+    || !Number.isFinite(Date.parse(manifest.createdAt))
+    || !Number.isSafeInteger(options.posOrderId) || Number(options.posOrderId) <= 0
+    || !Number.isSafeInteger(options.amount) || options.amount <= 0
+    || !/^POS-[0-9]+-[A-Z0-9_-]+$/.test(options.code)) {
+    throw new Error('Production POS signing requires a fresh checkout ID, current synthetic cashier and authorized test tenants 73/74.')
+  }
+  const scope = Buffer.from(JSON.stringify({
+    runId: manifest.runId, createdAt: manifest.createdAt, organizationIds,
+    cashierId: cashier.id, cashierEmail: cashier.email,
+    orderId: options.posOrderId, rawBody, tamperSignature: !!options.tamperSignature,
+  })).toString('base64')
+  const result = executeGuardedBackendPhp(manifest, `
+    $scope = json_decode(base64_decode('${scope}'), true, 512, JSON_THROW_ON_ERROR);
+    $event = json_decode($scope['rawBody'], true, 512, JSON_THROW_ON_ERROR);
+    $order = \\App\\Models\\PosOrder::whereKey($scope['orderId'])
+      ->whereIn('organization_id', $scope['organizationIds'])
+      ->where('cashier_id', $scope['cashierId'])
+      ->where('payment_reference', $event['code'])->first();
+    $organization = $order ? \\App\\Models\\Organization::find($order->organization_id) : null;
+    $cashier = \\App\\Models\\User::whereKey($scope['cashierId'])
+      ->where('email', $scope['cashierEmail'])->first();
+    if (!$order || !$cashier
+      || ($organization?->settings['e2e_run_id'] ?? '') !== $scope['runId']
+      || $order->created_at->lt(\\Carbon\\CarbonImmutable::parse($scope['createdAt']))
+      || $order->status !== 'pending_payment' || $order->payment_method !== 'qr'
+      || $event['transferType'] !== 'in' || $event['currency'] !== 'VND'
+      || $event['referenceCode'] !== $order->payment_reference
+      || (int) $event['transferAmount'] !== (int) $order->total_amount) {
+      fwrite(STDERR, "Production POS callback is outside the current run's fresh QR checkout scope.\\n");
+      exit(1);
+    }
+    // Read credentials only after ownership checks; keep them inside PHP and return no headers.
+    try {
+      $config = \\Dotenv\\Dotenv::parse(file_get_contents(base_path('.env')));
+    } catch (\\Throwable $e) {
+      fwrite(STDERR, "Production POS signing configuration could not be read.\\n");
+      exit(1);
+    }
+    $headers = ['Accept: application/json', 'Content-Type: application/json'];
+    $secret = (string) ($config['SEPAY_HMAC_SECRET'] ?? '');
+    $apiKey = (string) ($config['SEPAY_API_KEY'] ?? '');
+    if ($scope['tamperSignature']) {
+      $headers[] = 'X-SePay-Signature: sha256='.str_repeat('0', 64);
+    } elseif ($secret !== '') {
+      $headers[] = 'X-SePay-Signature: '.hash_hmac('sha256', $scope['rawBody'], $secret);
+    } elseif ($apiKey !== '') {
+      // The deployed endpoint also supports its existing Apikey authentication contract.
+      $headers[] = 'Authorization: Apikey '.$apiKey;
+    } else {
+      fwrite(STDERR, "Production POS webhook credential is not configured.\\n");
+      exit(1);
+    }
+    $client = curl_init('https://court-api.ziet.dev/api/v1/webhooks/sepay');
+    curl_setopt_array($client, [
+      CURLOPT_POST => true, CURLOPT_POSTFIELDS => $scope['rawBody'],
+      CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_FOLLOWLOCATION => false, CURLOPT_TIMEOUT => 20, CURLOPT_PROXY => '',
+    ]);
+    $body = curl_exec($client);
+    $status = (int) curl_getinfo($client, CURLINFO_RESPONSE_CODE);
+    if ($body === false) {
+      fwrite(STDERR, "Production POS webhook request failed.\\n");
+      exit(1);
+    }
+    curl_close($client);
+    echo json_encode([
+      'statusCode' => $status, 'ok' => $status >= 200 && $status < 300,
+      'body' => json_decode($body, true) ?? $body,
+    ], JSON_THROW_ON_ERROR);
+  `)
+  return JSON.parse(result) as SyntheticWebhookResponse
+}
+
 /**
- * Sends an HMAC-SHA256 authenticated synthetic payment webhook through the real isolated endpoint.
+ * Sends an authenticated synthetic payment webhook through the real endpoint.
  */
 export async function sendSyntheticPaymentWebhook(
   manifest: RunManifest,
@@ -530,12 +619,14 @@ export async function sendSyntheticPaymentWebhook(
     currency: options.currency || 'VND',
   })
   const isPos = options.code?.startsWith('POS-') || !options.routingId
+  if (isPos && manifest.runId.startsWith('prod_e2e_')) {
+    return sendProductionPosWebhook(manifest, options, rawBody)
+  }
   const webhookUrl = isPos
     ? `${manifest.backend.url}/api/v1/webhooks/sepay`
     : `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${options.routingId}`
   const secret = isPos ? 'test_sepay_hmac_secret_e2e' : options.secret
-  const signatureHash = crypto
-    .createHmac('sha256', secret)
+  const signatureHash = crypto.createHmac('sha256', secret)
     .update(isPos ? rawBody : `${timestamp}.${rawBody}`)
     .digest('hex')
 
