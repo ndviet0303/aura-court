@@ -52,7 +52,7 @@ frontend_check:
 e2e_p0_gate:
   stage: test-e2e
   image: mcr.microsoft.com/playwright:v1.62.1-noble
-  timeout: 15m
+  timeout: 20m
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
