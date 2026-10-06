@@ -85,7 +85,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/recurring-booking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.wizard-title')).toContainText('Tạo Lịch Định Kỳ Mới')
 
     // 3. Query server-side preview via API client with authenticated session
@@ -254,7 +253,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/recurring-booking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Preview 3-week series on Tuesday 14:00 - 16:00
     const nextTuesdayDate = arranged.conflict_date
@@ -431,7 +429,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/recurring-booking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Preview 4-week series on Wednesday (Week 1, Week 2 [conflicted], Week 3, Week 4)
     const preview = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate }) => {

@@ -64,7 +64,6 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/venues', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Find venue card and open readiness modal
     const venueCard = page.locator('.venue-admin-card', { hasText: created.slug })
@@ -131,7 +130,6 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/venues', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Open readiness modal
     const venueCard = page.locator('.venue-admin-card', { hasText: created.slug })
@@ -284,7 +282,6 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/venues', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Open readiness modal
     const venueCard = page.locator('.venue-admin-card', { hasText: arranged.venue_slug })

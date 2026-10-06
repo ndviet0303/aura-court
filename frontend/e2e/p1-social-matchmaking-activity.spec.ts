@@ -43,7 +43,6 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 2. Navigate to /matchmaking and switch to Tab 6: Bạn bè & Kết nối
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Customer 1 sends friend request to Customer 2 via authenticated API caller
     const sendRequestResult = await withE2EApi(page, async ({ apiV2 }, addresseeId) => {
@@ -96,7 +95,6 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 6. Reload page: confirms bidirectional friendship persistence after reload
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const reloadedCust1Friends = await withE2EApi(page, async ({ apiV2 }) => {
       return await apiV2.get('/social/friends')
@@ -129,7 +127,6 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 2. Navigate to /matchmaking/create
     await page.goto('/matchmaking/create', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const uniqueTitle = `Kèo Cầu Lông Đôi Nam Nữ - E2E Run ${Date.now()}`
     const futureDate = new Date()
@@ -165,7 +162,6 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 4. Navigate to /matchmaking and verify activity appears in the list
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const matchCard = page.locator('.match-card', { hasText: uniqueTitle })
     await expect(matchCard).toBeVisible({ timeout: 15000 })
@@ -174,7 +170,6 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 5. Reload confirms persistence in Postgres
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.match-card', { hasText: uniqueTitle })).toBeVisible({ timeout: 15000 })
   })
 
@@ -216,31 +211,23 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 3. Open /matchmaking
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 4. Search for the distinct title using the search input
     const searchInput = page.locator('input[placeholder*="Tìm"], input[type="search"]').first()
-    if (await searchInput.isVisible()) {
-      await searchInput.fill(distinctTitle)
-      await page.waitForTimeout(500)
-      await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({ timeout: 10000 })
+    await expect(searchInput).toBeVisible({ timeout: 15000 })
+    await searchInput.fill(distinctTitle)
+    await page.waitForTimeout(500)
+    await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({ timeout: 10000 })
 
-      // 5. Search for non-existent activity -> empty state
-      await searchInput.fill('XYZNonExistentActivity999999')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.empty-matches-box')).toBeVisible({ timeout: 10000 })
+    // 5. Search for non-existent activity -> empty state
+    await searchInput.fill('XYZNonExistentActivity999999')
+    await page.waitForTimeout(500)
+    await expect(page.locator('.empty-matches-box')).toBeVisible({ timeout: 10000 })
 
-      // 6. Clear search -> match card returns
-      await searchInput.fill('')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({ timeout: 10000 })
-    } else {
-      // If search input uses filter composable directly:
-      const matches = await withE2EApi(page, async ({ apiV2 }, query) => {
-        return await apiV2.get('/social/matches', { params: { q: query } })
-      }, distinctTitle)
-      expect((matches as any)?.matches?.length || (matches as any)?.data?.length).toBeGreaterThan(0)
-    }
+    // 6. Clear search -> match card returns
+    await searchInput.fill('')
+    await page.waitForTimeout(500)
+    await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({ timeout: 10000 })
   })
 
   test('9.1.4: Mời thi đấu, tham gia hoạt động & Giới hạn số lượng người chơi (FR-COM-05, FR-COM-06)', async ({ page }) => {

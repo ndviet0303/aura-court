@@ -77,7 +77,6 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto(`/wallet?organization_id=${org1Id}`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     await expect(page.locator('.wallet-view-page')).toBeVisible({ timeout: 10000 })
     // Click deposit button to open modal
@@ -169,14 +168,12 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto(`/wallet?organization_id=${org1Id}`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Verify balance displayed on card (500.000 ₫)
     await expect(page.locator('.wallet-total-card, .wallet-view-page')).toContainText('500.000')
 
     // 4. Reload page: balance remains strictly 500,000 VND (no auto-conversion or depletion)
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.wallet-total-card, .wallet-view-page')).toContainText('500.000')
   })
 

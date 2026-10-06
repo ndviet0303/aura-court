@@ -51,7 +51,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await targetCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     // 4. Select an available slot on the chosen date
     const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
@@ -231,7 +230,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await targetCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     // 3. Select available slot
     const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
@@ -507,8 +505,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       await dateCard2.click()
       await expect(dateCard1).toHaveClass(/active/, { timeout: 10000 })
       await expect(dateCard2).toHaveClass(/active/, { timeout: 10000 })
-      await page1.waitForLoadState('networkidle').catch(() => {})
-      await page2.waitForLoadState('networkidle').catch(() => {})
       // 5. Locate an available slot and select it in context 1
       const slotBtn1 = page1.locator('.slots-grid .slot-cell-btn.is-available').first()
       await expect(slotBtn1).toBeVisible({ timeout: 25000 })
@@ -591,7 +587,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await targetCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
     // 3. Select an available slot and checkout
     const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
     await expect(availableSlot).toBeVisible({ timeout: 25000 })
@@ -925,7 +920,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await targetCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     // 8. Select an available slot (100,000 VND)
     const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()

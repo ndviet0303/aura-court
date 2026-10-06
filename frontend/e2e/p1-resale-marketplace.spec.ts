@@ -225,7 +225,6 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/resale', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 4. Assert /resale surface renders marketplace hero and the listed price
     await expect(page.locator('.resale-marketplace-view')).toBeVisible({ timeout: 10000 })

@@ -48,7 +48,6 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await targetDateCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetDateCard.click()
     await expect(targetDateCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     // 2. Select an available slot on tomorrow
     const slotList = page.locator('.slots-grid .slot-cell-btn.is-available')
@@ -62,7 +61,6 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await dayAfterTomorrow.waitFor({ state: 'visible', timeout: 15000 })
     await dayAfterTomorrow.click()
     await expect(dayAfterTomorrow).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Stale selection MUST be discarded on date switch
     await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({ timeout: 10000 })
@@ -70,19 +68,20 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
 
     // 4. Select a slot on the new date
     const newSlotList = page.locator('.slots-grid .slot-cell-btn.is-available').first()
-    if (await newSlotList.isVisible()) {
-      await newSlotList.click()
-      await expect(summaryCard.locator('.badge-count')).toContainText(/1/, { timeout: 10000 })
-      // Switch court via court selector
-      const otherCourtBtn = page.locator('.court-picker-chips .court-chip:not(.active), .court-selector button:not(.active)').first()
-      if (await otherCourtBtn.isVisible()) {
-        await otherCourtBtn.click()
+    await expect(newSlotList).toBeVisible({ timeout: 25000 })
+    await newSlotList.click()
+    await expect(summaryCard.locator('.badge-count')).toContainText(/1/, { timeout: 10000 })
+    // Switch court via court selector
+    const otherCourtBtn = page.locator('.court-selector-container .court-card-btn:not(.active)').first()
+    await expect(otherCourtBtn).toBeVisible({ timeout: 10000 })
+    const otherCourtName = await otherCourtBtn.locator('.c-name').innerText()
+    await otherCourtBtn.click()
+    await expect(page.locator('.court-card-btn.active .c-name')).toHaveText(otherCourtName)
+    await expect(page.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 20000 })
 
-        // Stale selection MUST be discarded on court switch
-        await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({ timeout: 10000 })
-        await expect(page.locator('.slots-grid .slot-cell-btn.is-selected')).toHaveCount(0)
-      }
-    }
+    // Stale selection MUST be discarded on court switch
+    await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.slots-grid .slot-cell-btn.is-selected')).toHaveCount(0)
   })
 
   test('3.4.3: Sân A kín lịch KHÔNG khóa Sân B (cách ly tồn kho độc lập)', async ({ page }) => {
@@ -162,7 +161,6 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await futureDateBtn.waitFor({ state: 'visible', timeout: 15000 })
     await futureDateBtn.click()
     await expect(futureDateBtn).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     const slotList = page.locator('.slots-grid .slot-cell-btn.is-available')
     await expect(slotList.first()).toBeVisible({ timeout: 20000 })

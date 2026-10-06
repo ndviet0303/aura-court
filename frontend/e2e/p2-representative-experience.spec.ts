@@ -14,7 +14,6 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
 
   test('10.2.1: Chuyển đổi ngôn ngữ (Tiếng Việt <-> Tiếng Anh) trên các màn hình đại diện', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 1. Initial language is Vietnamese
     await expect(page.locator('html')).toHaveAttribute('lang', 'vi')
@@ -28,7 +27,6 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
       window.dispatchEvent(new Event('storage'))
     })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Verify English text and lang attribute
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
@@ -40,7 +38,6 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
       window.dispatchEvent(new Event('storage'))
     })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'vi')
     await expect(page.locator('.form-title')).toContainText(/Đăng nhập/i)
@@ -48,7 +45,7 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
 
   test('10.2.2: Chuyển đổi giao diện Sáng <-> Tối (Light <-> Dark Mode)', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.hero').first()).toBeVisible({ timeout: 10000 })
 
     // Switch to Dark Mode
     await page.evaluate(() => {
@@ -87,7 +84,6 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
   test('10.2.3: Trợ năng bàn phím trên Modal: Giữ focus trong modal, đóng bằng Escape & Khôi phục focus', async ({ page }) => {
     // 1. Owner logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await page.fill('input[type="email"], input[name="email"]', owner.email)
     await page.fill('input[type="password"], input[name="password"]', owner.password)
     await page.click('button[type="submit"]')
@@ -95,7 +91,6 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
 
     // 2. Navigate to /admin/manage
     await page.goto('/admin/manage', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Unconditionally find and click "Thêm sân" or "Tạo mã" modal button
     const openModalBtn = page.locator('button:has-text("Thêm sân"), button:has-text("Tạo mã"), button.btn-add').first()
@@ -119,7 +114,8 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
 
     // Representative View 1: /login
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.form-title')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('input[type="email"]')).toBeVisible()
 
     const loginOverflow = await page.evaluate(() => {
       return document.body.scrollWidth > window.innerWidth
@@ -128,7 +124,9 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
 
     // Representative View 2: /tournaments
     await page.goto('/tournaments', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.tournaments-view-page')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.hero-stat-card .stat-val').first()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.tournament-card, .empty-tournaments-state').first()).toBeVisible()
 
     const tournamentsOverflow = await page.evaluate(() => {
       return document.body.scrollWidth > window.innerWidth

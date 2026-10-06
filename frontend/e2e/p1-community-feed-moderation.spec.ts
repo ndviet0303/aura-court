@@ -30,7 +30,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
 
     // 2. Navigate to /matchmaking and switch to Tab 5: Bảng tin cộng đồng (feed)
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const feedTab = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(feedTab).toBeVisible({ timeout: 10000 })
@@ -54,7 +53,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
 
     // 5. Reload page: confirms durable persistence from Postgres database
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const reloadedFeedTab = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(reloadedFeedTab).toBeVisible({ timeout: 10000 })
@@ -98,7 +96,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
 
     // 4. Open /matchmaking feed tab and verify post displays comment
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const feedTab = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(feedTab).toBeVisible({ timeout: 10000 })
@@ -110,7 +107,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
 
     // 5. Reload confirms comment persistence in Postgres
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     const feedTabAfter = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(feedTabAfter).toBeVisible({ timeout: 10000 })
     await feedTabAfter.click()
@@ -229,7 +225,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const postContent = `Bài viết có dấu hiệu quảng cáo spam - ${Date.now()}`
     const postRes = await withE2EApi(page, async ({ apiV2 }, content) => {
@@ -245,7 +240,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     const reportRes = await withE2EApi(page, async ({ apiV2 }, pid) => {
       return await apiV2.post(('post') === 'post' ? '/social/feed/' + (pid) + '/report' : '/social/feed/comments/' + (pid) + '/report', { reason: 'Spam liên tục và vi phạm quy định cộng đồng' })
     }, postId)
@@ -367,7 +361,6 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     const feedTab = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(feedTab).toBeVisible({ timeout: 10000 })
     await feedTab.click()

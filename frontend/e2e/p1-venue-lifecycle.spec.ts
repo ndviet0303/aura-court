@@ -441,7 +441,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     expect(dupSubmitBlocked).toBe(true)
 
     // 4. Log out and log in as Platform Admin
-    await page.waitForLoadState('networkidle')
     await withE2EApi(page, async ({ api }) => {
       try {
         await api.post('/auth/logout')
@@ -451,7 +450,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     await page.context().clearCookies()
 
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle').catch(() => {})
     await page.locator('input[type="email"], input[name="email"]').fill(admin.email)
     await page.locator('input[type="password"], input[name="password"]').fill(admin.password)
     await page.locator('button[type="submit"]').click()
@@ -459,7 +457,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
 
     // 5. Navigate to Admin Publication Queue UI
     await page.goto('/admin/venues/publication-queue', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 6. Admin approves publication revision
     const approveRes = await withE2EApi(page, async ({ api }, { revId }) => {
@@ -646,7 +643,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     expect(excDenied).toBe(true)
 
     // 4. Authorized owner attempts to submit an unready draft venue: MUST fail closed with 422
-    await page.waitForLoadState('networkidle').catch(() => {})
     await withE2EApi(page, async ({ api }) => {
       try {
         await api.post('/auth/logout')
@@ -657,7 +653,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
 
     const owner = getActorCredentials(manifest, 'owner1')
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle').catch(() => {})
     await page.locator('input[type="email"], input[name="email"]').fill(owner.email)
     await page.locator('input[type="password"], input[name="password"]').fill(owner.password)
     await page.locator('button[type="submit"]').click()

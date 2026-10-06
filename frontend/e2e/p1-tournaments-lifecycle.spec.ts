@@ -477,7 +477,6 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
     // 2. Customer navigates to /tournaments
     await page.context().clearCookies()
     await page.goto('/tournaments', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Verify tournament card appears in the list
     const card = page.locator('.tournament-card', { hasText: tourneyData.tourney_name })
@@ -486,7 +485,6 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
 
     // 4. Open /tournaments/:id/bracket
     await page.goto(`/tournaments/${tourneyData.tourney_id}/bracket`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 5. Verify bracket header and matches render correctly
     await expect(page.locator('.bracket-header-view, .tournament-bracket-view')).toBeVisible({ timeout: 15000 })
@@ -494,7 +492,6 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
 
     // 6. Reload confirms durable persistence from Postgres database
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('text=' + tourneyData.tourney_name).first()).toBeVisible({ timeout: 15000 })
   })
 })

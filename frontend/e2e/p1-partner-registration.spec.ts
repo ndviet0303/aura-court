@@ -66,7 +66,6 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
 
     // 4. Verify draft persistence across reload
     await page.goto('/partner-registration', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const currentRes = await api.get('/partner/application/current') as { data: { id: number; business_name: string; status: string } }
     expect(currentRes.data?.id).toBe(appId)
@@ -252,7 +251,6 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
 
     // 7. Verify applicant views revision request in history and status
     await page.goto('/partner/application-status', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const historyRes = await api.get(`/partner/application/${appId}/history`) as { data: Array<{ action: string; reason: string; notes?: string }> }
 
@@ -409,7 +407,6 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
 
     // 5. New owner can access tenant operational route /admin/manage
     await page.goto('/admin/manage', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page).not.toHaveURL(/\/login/)
     await expect(page).toHaveURL(/.*admin\/manage/)
 

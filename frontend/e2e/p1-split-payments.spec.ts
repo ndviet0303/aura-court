@@ -195,7 +195,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto(`/split-bill/${validated.group_id}`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 4. Verify UI displays split group details
     await expect(page.locator('[data-testid="split-group"]')).toBeVisible({ timeout: 10000 })

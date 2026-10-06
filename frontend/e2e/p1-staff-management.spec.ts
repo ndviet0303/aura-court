@@ -94,7 +94,6 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/staff', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 2. Verify header & KPI stats
     await expect(page.locator('.page-title')).toContainText('Nhân sự & Phân quyền')
@@ -493,7 +492,6 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/staff', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 2. Locate cashier member row
     const staffRow = page.locator('.table-grid-row', { hasText: cashier.email }).first()
@@ -614,7 +612,6 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/staff', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 2. In UI: verify remove button for owner is disabled
     const ownerRow = page.locator('.table-grid-row', { hasText: owner.email }).first()

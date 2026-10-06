@@ -13,7 +13,6 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
 
   test('10.3.1: Điều hướng trang chủ và khám phá sân công khai (Smoke)', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Verify main landmarks
     await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 10000 })
@@ -23,25 +22,21 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
   test('10.3.2: Trang pháp lý: Điều khoản dịch vụ & Chính sách bảo mật (SUP-08)', async ({ page }) => {
     // 1. Terms of Service (/terms)
     await page.goto('/terms', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('h1, h2, .page-title').first()).toBeVisible({ timeout: 10000 })
 
     // 2. Privacy Policy (/privacy)
     await page.goto('/privacy', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('h1, h2, .page-title').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('10.3.3: Trang giới thiệu: Về chúng tôi, Tầm nhìn & Liên hệ (/about) (SUP-08)', async ({ page }) => {
     await page.goto('/about', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('h1, h2, .about-title, .page-title').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('10.3.4: Đường dẫn tùy biến 404 & Điều hướng về trang chủ (SUP-08)', async ({ page }) => {
     // Navigate to a guaranteed non-existent URL
     await page.goto('/non-existent-page-url-xyz-404', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Verify 404 page elements
     const notFoundSection = page.locator('.not-found, .page-shell.not-found, [class*="not-found"]').first()
@@ -53,14 +48,14 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
 
     // Click return home and verify navigation
     await backHomeBtn.click()
-    await page.waitForLoadState('networkidle')
+    await expect(page).toHaveURL(/\/$/, { timeout: 10000 })
+    await expect(page.locator('.hero').first()).toBeVisible({ timeout: 10000 })
     expect(page.url()).not.toContain('non-existent')
   })
 
   test('10.3.5: Trang chỉ đường tới cơ sở & Thao tác bản đồ GPS / Maps (SUP-07)', async ({ page }) => {
     // Navigate to directions page for the seeded venue
     await page.goto(`/courts/${venueSlug}/directions`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Verify venue directions content layout has loaded
     const directionsContent = page.locator('.directions-content-layout')

@@ -119,7 +119,6 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/pricing', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Verify page title and priority stack
     await expect(page.locator('.page-title')).toContainText('Thiết Lập Ma Trận Giá Linh Hoạt')
@@ -340,7 +339,6 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/pricing', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.page-title')).toContainText('Thiết Lập Ma Trận Giá Linh Hoạt')
     await expect(page.locator('.priority-stack-container, .rule-card').first()).toBeVisible({ timeout: 10000 })
   })
@@ -775,7 +773,6 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/admin/membership', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 3. Verify page title and nav tabs
     await expect(page.locator('.page-title')).toContainText('Quản lý Gói hội viên & Điểm thưởng')

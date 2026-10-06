@@ -14,7 +14,6 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
   test('10.1.1: Giả lập sự cố mạng / mất kết nối (Giữ nguyên dữ liệu nhập & Focus)', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     const emailInput = page.locator('input[type="email"], input[name="email"]')
     const passwordInput = page.locator('input[type="password"], input[name="password"]')
@@ -52,7 +51,6 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
   test('10.1.2: Phiên làm việc hết hạn / Chặn bắt lỗi 401 Unauthorized', async ({ page }) => {
     // 1. Log in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await page.fill('input[type="email"], input[name="email"]', customer.email)
     await page.fill('input[type="password"], input[name="password"]', customer.password)
     await page.click('button[type="submit"]')
@@ -60,7 +58,6 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
     // 2. Navigate to profile
     await page.goto('/profile', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Inject 401 session expiration on profile mutation and track invocation
     let profileMutationAttempted = false
@@ -78,25 +75,24 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
     })
 
     // Trigger update
-    const nameInput = page.locator('input[name="name"], input#name').first()
-    if (await nameInput.isVisible()) {
-      await nameInput.fill('Updated Name Under Expired Session')
-      const saveBtn = page.locator('button:has-text("Lưu"), button[type="submit"]').first()
-      if (await saveBtn.isVisible()) {
-        await saveBtn.click()
-        await expect.poll(() => profileMutationAttempted).toBe(true)
-      }
-    }
+    const nameInput = page.locator('#profile-name')
+    await expect(nameInput).toBeVisible({ timeout: 15000 })
+    await expect(nameInput).not.toHaveValue('')
+    await nameInput.fill('Updated Name Under Expired Session')
+    const saveBtn = page.locator('.profile-edit-form button[type="submit"]')
+    await expect(saveBtn).toBeEnabled()
+    await saveBtn.click()
+    await expect.poll(() => profileMutationAttempted).toBe(true)
 
     // Assert: Truthful feedback or prompt; NO false success notification
-    const successToast = page.locator('.toast-success, .alert-success:has-text("thành công")')
+    await expect(page.locator('.alert-pill-error')).toContainText(/hết hạn|đăng nhập/i)
+    const successToast = page.locator('.toast-success, .alert-success:has-text("thành công"), .alert-pill-success')
     await expect(successToast).toHaveCount(0)
   })
 
   test('10.1.3: Quyền bị thu hồi đột ngột / Giả lập lỗi 403 Forbidden', async ({ page }) => {
     // 1. Log in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await page.fill('input[type="email"], input[name="email"]', customer.email)
     await page.fill('input[type="password"], input[name="password"]', customer.password)
     await page.click('button[type="submit"]')
@@ -115,16 +111,15 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
     // Try navigating to admin route
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Assert: Customer is denied without revealing admin data, and redirected or shown error
-    const pageUrl = page.url()
-    expect(pageUrl).not.toContain('/admin/organization')
+    await expect(page).toHaveURL(/\/$/, { timeout: 15000 })
+    await expect(page.locator('.hero').first()).toBeVisible({ timeout: 10000 })
+    expect(page.url()).not.toContain('/admin/organization')
   })
 
   test('10.1.4: Lỗi máy chủ 500 Internal Server Error & Chống thông báo thành công giả', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Inject 500 Internal Server Error and track invocation
     let login500Attempted = false
@@ -171,7 +166,6 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
     })
 
     await page.goto('/tournaments', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // Assert: Request was invoked
     await expect.poll(() => tournamentsAttempted).toBe(true)

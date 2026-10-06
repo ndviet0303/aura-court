@@ -684,7 +684,7 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto('/notifications', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.notifications-feed')).toBeVisible({ timeout: 15000 })
 
     // 3. Mark notification as read via API
     const markReadScript = `
@@ -723,7 +723,7 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
 
     // 4. Reload page and assert persistence
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.notifications-feed')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('body')).toBeVisible()
   })
 })

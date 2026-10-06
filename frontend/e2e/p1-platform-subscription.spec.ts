@@ -471,12 +471,10 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     expect(nonAdminDenied).toBe(true)
 
     // 3. Log out customer, log in as Platform Admin
-    await page.waitForLoadState('networkidle').catch(() => {})
     await withE2EApi(page, async ({ authApi }) => authApi.logout())
     await page.context().clearCookies()
 
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle').catch(() => {})
     await page.locator('input[type="email"], input[name="email"]').fill(admin.email)
     await page.locator('input[type="password"], input[name="password"]').fill(admin.password)
     await page.locator('button[type="submit"]').click()

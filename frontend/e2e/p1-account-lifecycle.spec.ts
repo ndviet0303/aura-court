@@ -26,7 +26,6 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 1. Visit /register
     await page.goto('/register', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 2. Fill registration form
     const nameInput = page.locator('input[name="name"], input[placeholder*="tên" i], input[placeholder*="name" i]').first()
@@ -49,7 +48,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 4. Reload page to prove persistence across refresh
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.user-dropdown-trigger .user-name')).toHaveText(regName, { timeout: 15000 })
 
     // 5. Authoritative check: user exists, role is customer, email_verified_at is null
     const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
@@ -350,7 +349,6 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 1. Visit /forgot-password and submit email
     await page.goto('/forgot-password', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await page.locator('input[type="email"], input[name="email"]').fill(resetEmail)
     const forgotResponse = page.waitForResponse(response =>
       response.url().endsWith('/auth/forgot-password') && response.request().method() === 'POST',
@@ -384,7 +382,6 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 3. Negative test: Bad token rejected on reset
     await page.goto(`/reset-password?token=invalid_token_12345&email=${encodeURIComponent(resetEmail)}`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     const pwdInputs = page.locator('input[type="password"]')
     await pwdInputs.first().fill(newPassword)
     await pwdInputs.nth(1).fill(newPassword)
@@ -394,7 +391,6 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 4. Positive test: Valid token resets password successfully
     await page.goto(`/reset-password?token=${token}&email=${encodeURIComponent(resetEmail)}`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     const validPwdInputs = page.locator('input[type="password"]')
     await validPwdInputs.first().fill(newPassword)
     await validPwdInputs.nth(1).fill(newPassword)
@@ -417,7 +413,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // Reload confirms active session with new password
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.user-dropdown-trigger')).toBeVisible({ timeout: 15000 })
     await expect(page).not.toHaveURL(/\/login/)
   })
 
@@ -434,7 +430,6 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 2. Navigate to /profile
     await page.goto('/profile', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('h1, h2').filter({ hasText: /hồ sơ|profile/i }).first()).toBeVisible({ timeout: 15000 })
 
     // 3. Update profile via UI or API
@@ -466,7 +461,8 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 4. Reload page to verify persistence in UI
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('#profile-name')).toHaveValue(updatedName, { timeout: 15000 })
+    await expect(page.locator('#profile-phone')).toHaveValue(updatedPhone)
 
     // 5. Authoritative verification: user record persisted
     const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
@@ -564,7 +560,6 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     }
     // Visiting login with account_restricted query displays locked alert
     await page.goto('/login?error=account_restricted&msg=' + encodeURIComponent('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'), { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('text=/khóa|hạn chế|restricted/i').first()).toBeVisible({ timeout: 10000 })
   })
 })

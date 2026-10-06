@@ -511,7 +511,6 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
 
     // 2. Admin logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await page.fill('input[type="email"], input[name="email"]', admin.email)
     await page.fill('input[type="password"], input[name="password"]', admin.password)
     await page.click('button[type="submit"]')
@@ -519,7 +518,6 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
 
     // 3. Navigate to /admin/disputes
     await page.goto('/admin/disputes', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 4. Verify admin dispute resolution view elements
     const pageTitle = page.locator('h1.page-title')
@@ -530,7 +528,6 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
 
     // 5. Reload persistence
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.dispute-resolution-view')).toBeVisible({ timeout: 10000 })
     await expect(pageTitle).toBeVisible({ timeout: 10000 })
   })

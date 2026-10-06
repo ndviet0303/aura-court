@@ -78,7 +78,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await targetCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     const availableSlots = page.locator('.slots-grid .slot-cell-btn.is-available')
     await expect(availableSlots.first()).toBeVisible({ timeout: 25000 })
@@ -403,7 +402,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await targetCard.waitFor({ state: 'visible', timeout: 15000 })
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
     await expect(availableSlot).toBeVisible({ timeout: 25000 })
@@ -562,7 +560,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // Close modal and reload /bookings
     await rescheduleModal.locator('.btn-ghost, .modal-close-btn').first().click()
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Verify UI and DB:
     // Original booking is cancelled / rescheduled_to replacementCode1
@@ -634,7 +631,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await timeoutTargetCard.waitFor({ state: 'visible', timeout: 15000 })
     await timeoutTargetCard.click()
     await expect(timeoutTargetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     const timeoutSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
     await expect(timeoutSlot).toBeVisible({ timeout: 25000 })
@@ -773,7 +769,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await expTargetCard.waitFor({ state: 'visible', timeout: 15000 })
     await expTargetCard.click()
     await expect(expTargetCard).toHaveClass(/active/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
 
     const expAvailableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
     await expect(expAvailableSlot).toBeVisible({ timeout: 25000 })
@@ -936,7 +931,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // Close modal and reload page: original booking card flipped to cancelled
     await rescheduleModal.locator('.btn-ghost, .modal-close-btn').first().click()
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(page.locator('.user-booking-card', { hasText: expBookingCode })).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.user-booking-card', { hasText: expBookingCode }).locator('.status-chip')).toContainText(/(Đã hủy|Cancelled)/i)
   })

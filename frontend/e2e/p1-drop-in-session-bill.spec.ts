@@ -344,7 +344,6 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
 
     // 3. Navigate to /social/sessions/:id/bill
     await page.goto(`/social/sessions/${sessionData.match_id}/bill`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
 
     // 4. Verify Finalized State & Transparency Numbers
     await expect(page.locator('.badge-finalized')).toBeVisible({ timeout: 15000 })
@@ -358,7 +357,6 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
 
     // 5. Reload confirms persistence from Postgres
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.badge-finalized')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.total-val')).toContainText('500.000')
     await expect(page.locator('.share-price')).toContainText('125.000')

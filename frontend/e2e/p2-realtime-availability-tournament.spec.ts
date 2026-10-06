@@ -36,21 +36,21 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     try {
       // 3. Both sessions navigate to the court schedule
       await pageA.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-      await pageA.waitForLoadState('networkidle')
       await pageB.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-      await pageB.waitForLoadState('networkidle')
 
       await expect(pageA.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 15000 })
       await expect(pageB.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 15000 })
+      await expect(pageA.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 15000 })
+      await expect(pageB.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 15000 })
       // 4. In Session A, select tomorrow's date card
       const dateCardsA = pageA.locator('.date-carousel .date-card-btn')
       await dateCardsA.nth(1).click()
-      await pageA.waitForLoadState('networkidle')
+      await expect(pageA.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 10000 })
 
       // In Session B, select the same tomorrow's date card
       const dateCardsB = pageB.locator('.date-carousel .date-card-btn')
       await dateCardsB.nth(1).click()
-      await pageB.waitForLoadState('networkidle')
+      await expect(pageB.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 10000 })
 
       // 5. Identify the first available slot in Session A
       const slotButtonA = pageA.locator('.slot-cell-btn.is-available').first()
@@ -67,6 +67,7 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       // 6. Mutate state: Hold this slot in the backend test database (simulating Session A or concurrent hold)
       const targetDate = await pageA.locator('input.hidden-native-input').inputValue()
       expect(targetDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      await expect(pageB.locator('input.hidden-native-input')).toHaveValue(targetDate)
       const tz = 'Asia/Ho_Chi_Minh'
       const holdScript = `
         require __DIR__ . '/vendor/autoload.php';
@@ -134,7 +135,6 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       // 8. Session B UI Verification: observe mutated slot update via refetch
       const dateCardsBAfter = pageB.locator('.date-carousel .date-card-btn')
       await dateCardsBAfter.nth(1).click()
-      await pageB.waitForLoadState('networkidle')
 
       const slotBtnAfter = pageB.locator('.slot-cell-btn').filter({ has: pageB.locator('.s-time', { hasText: fullTimeText }) }).first()
       await expect(slotBtnAfter).toBeVisible({ timeout: 15000 })
@@ -225,7 +225,6 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     try {
       // 3. Spectator visits the bracket page
       await pageSpectator.goto(`/tournaments/${tourneyId}/bracket`, { waitUntil: 'domcontentloaded' })
-      await pageSpectator.waitForLoadState('networkidle')
 
       // Verify the bracket view is rendered
       await expect(pageSpectator.locator('.tournament-bracket-view, .bracket-main-body').first()).toBeVisible({ timeout: 15000 })
@@ -273,7 +272,6 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
 
       // Spectator refetches bracket and observes finals match score live
       await pageSpectator.reload({ waitUntil: 'domcontentloaded' })
-      await pageSpectator.waitForLoadState('networkidle')
       await expect(finalsNode.locator('.p-score').first()).toHaveText('21')
     } finally {
       await contextSpectator.close()
@@ -323,7 +321,6 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
 
     // 4. Verify on client UI: Schedule page renders formatted date in Vietnamese
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle')
     await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 15000 })
 
     const activeDatePill = page.locator('.date-carousel .date-card-btn.active').first()
