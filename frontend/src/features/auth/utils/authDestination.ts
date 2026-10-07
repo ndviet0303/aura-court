@@ -159,5 +159,15 @@ function getDefaultDestination(user: MinimalUser): string {
   if (hasPosAccess) {
     return '/pos'
   }
+  if (userCaps?.has_partner_application === true) {
+    const status = userCaps?.partner_application_status
+    if (status === 'submitted' || status === 'in_review') {
+      return '/partner/application-status'
+    }
+    return '/partner-registration'
+  }
+  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') {
+    return '/partner-registration'
+  }
   return '/'
 }

@@ -181,6 +181,42 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       expect(resolveAuthDestination(customer, '/onboarding')).toBe('/')
       expect(resolveAuthDestination(admin, '/onboarding')).toBe('/admin/organization')
     })
+
+    it('routes users with partner application or partner intent to partner setup', () => {
+      const applicantDraft = {
+        role: 'customer',
+        onboarded: true,
+        capabilities: {
+          has_partner_application: true,
+          partner_application_status: 'draft',
+        },
+      }
+      const applicantSubmitted = {
+        role: 'customer',
+        onboarded: true,
+        capabilities: {
+          has_partner_application: true,
+          partner_application_status: 'submitted',
+        },
+      }
+      const applicantInReview = {
+        role: 'customer',
+        onboarded: true,
+        capabilities: {
+          has_partner_application: true,
+          partner_application_status: 'in_review',
+        },
+      }
+
+      expect(resolveAuthDestination(applicantDraft)).toBe('/partner-registration')
+      expect(resolveAuthDestination(applicantSubmitted)).toBe('/partner/application-status')
+      expect(resolveAuthDestination(applicantInReview)).toBe('/partner/application-status')
+
+      localStorage.setItem('aura_partner_intent', 'court_owner')
+      const customerWithIntent = { role: 'customer', onboarded: true }
+      expect(resolveAuthDestination(customerWithIntent)).toBe('/partner-registration')
+      localStorage.removeItem('aura_partner_intent')
+    })
   })
 
   describe('Router beforeEach Guard Integration', () => {

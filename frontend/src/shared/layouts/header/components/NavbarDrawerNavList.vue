@@ -49,6 +49,36 @@ const communityItems = [
   { to: '/matchmaking', icon: 'sports_tennis', key: 'nav.matchmaking' },
   { to: '/matchmaking/create', icon: 'add_circle', key: 'nav.createMatch' },
 ]
+
+const isOwner = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  return (
+    userAny.role === 'organization_owner' ||
+    userAny.role === 'venue_manager' ||
+    userAny.capabilities?.can_manage_venues === true ||
+    (Array.isArray(userAny.organizations) &&
+      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+  )
+})
+
+const hasPartnerIntentOrApp = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  if (isOwner.value) return false
+  if (userAny.capabilities?.has_partner_application === true) return true
+  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  return false
+})
+
+const partnerRoute = computed(() => {
+  const userAny = auth.user as any
+  const status = userAny?.capabilities?.partner_application_status
+  if (status === 'submitted' || status === 'in_review') {
+    return '/partner/application-status'
+  }
+  return '/partner-registration'
+})
 </script>
 
 <template>
@@ -135,6 +165,7 @@ const communityItems = [
       </RouterLink>
 
       <!-- Admin Link -->
+      <!-- Admin / Org / Partner Link -->
       <RouterLink
         v-if="auth.user?.role === 'admin'"
         to="/admin"
@@ -147,6 +178,34 @@ const communityItems = [
           <span class="row-label">{{ $t('nav.admin') }}</span>
         </div>
         <span class="drawer-admin-tag">ADMIN</span>
+      </RouterLink>
+
+      <RouterLink
+        v-else-if="isOwner"
+        to="/admin/organization"
+        class="drawer-nav-row admin-row"
+        :class="{ active: route.path.startsWith('/admin') }"
+        @click="emit('navigate')"
+      >
+        <div class="nav-row-main">
+          <span class="material-symbols-outlined row-icon">domain</span>
+          <span class="row-label">{{ $t('nav.organization') }}</span>
+        </div>
+        <span class="drawer-admin-tag">CHỦ SÂN</span>
+      </RouterLink>
+
+      <RouterLink
+        v-else-if="hasPartnerIntentOrApp"
+        :to="partnerRoute"
+        class="drawer-nav-row admin-row"
+        :class="{ active: route.path.startsWith('/partner') }"
+        @click="emit('navigate')"
+      >
+        <div class="nav-row-main">
+          <span class="material-symbols-outlined row-icon">storefront</span>
+          <span class="row-label">{{ (auth.user as any)?.capabilities?.partner_application_status === 'submitted' || (auth.user as any)?.capabilities?.partner_application_status === 'in_review' ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}</span>
+        </div>
+        <span class="drawer-admin-tag">{{ (auth.user as any)?.capabilities?.partner_application_status === 'submitted' || (auth.user as any)?.capabilities?.partner_application_status === 'in_review' ? 'CHỜ DUYỆT' : 'ĐỐI TÁC' }}</span>
       </RouterLink>
     </nav>
   </div>

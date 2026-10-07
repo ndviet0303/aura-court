@@ -1,21 +1,82 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
+
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const accountType = ref<'customer' | 'court_owner'>('customer')
-const phone = ref('')
-const playLevel = ref('intermediate')
-const organizationName = ref('')
-const venueAddress = ref('')
-const courtsCount = ref<number>(4)
+const DRAFT_KEY = 'aura_onboarding_draft'
+
+function getInitialState() {
+  let initialType: 'customer' | 'court_owner' = 'customer'
+  let initialPhone = ''
+  let initialLevel = 'intermediate'
+  let initialOrgName = ''
+  let initialAddress = ''
+  let initialCourts = 4
+
+  if (typeof window !== 'undefined') {
+    try {
+      const storedType = (route.query.type as string) || localStorage.getItem('aura_onboarding_account_type')
+      if (storedType === 'court_owner' || storedType === 'customer') {
+        initialType = storedType
+      }
+      const rawDraft = localStorage.getItem(DRAFT_KEY)
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft)
+        if (draft.accountType === 'court_owner' || draft.accountType === 'customer') {
+          initialType = draft.accountType
+        }
+        if (draft.phone) initialPhone = draft.phone
+        if (draft.playLevel) initialLevel = draft.playLevel
+        if (draft.organizationName) initialOrgName = draft.organizationName
+        if (draft.venueAddress) initialAddress = draft.venueAddress
+        if (draft.courtsCount) initialCourts = Number(draft.courtsCount) || 4
+      }
+    } catch {}
+  }
+
+  return { initialType, initialPhone, initialLevel, initialOrgName, initialAddress, initialCourts }
+}
+
+const initial = getInitialState()
+const accountType = ref<'customer' | 'court_owner'>(initial.initialType)
+const phone = ref(initial.initialPhone)
+const playLevel = ref(initial.initialLevel)
+const organizationName = ref(initial.initialOrgName)
+const venueAddress = ref(initial.initialAddress)
+const courtsCount = ref<number>(initial.initialCourts)
 
 const loading = ref(false)
 const error = ref('')
+
+function persistDraft() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem('aura_onboarding_account_type', accountType.value)
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      accountType: accountType.value,
+      phone: phone.value,
+      playLevel: playLevel.value,
+      organizationName: organizationName.value,
+      venueAddress: venueAddress.value,
+      courtsCount: courtsCount.value,
+    }))
+  } catch {}
+}
+
+function clearDraft() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(DRAFT_KEY)
+    localStorage.removeItem('aura_onboarding_account_type')
+  } catch {}
+}
+
+watch([accountType, phone, playLevel, organizationName, venueAddress, courtsCount], persistDraft, { deep: true })
 
 onMounted(async () => {
   if (!auth.loaded) {
@@ -29,6 +90,8 @@ onMounted(async () => {
   if (auth.user.onboarded) {
     if (auth.user.role === 'admin') {
       router.replace('/admin/organization')
+    } else if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') {
+      router.replace('/partner-registration')
     } else {
       router.replace(String(route.query.redirect || '/'))
     }
@@ -66,6 +129,13 @@ async function handleComplete() {
       venue_address: isOwner.value ? venueAddress.value.trim() : undefined,
       courts_count: isOwner.value ? courtsCount.value : undefined,
     })
+
+    if (isOwner.value && typeof window !== 'undefined') {
+      localStorage.setItem('aura_partner_intent', 'court_owner')
+    } else if (typeof window !== 'undefined') {
+      localStorage.removeItem('aura_partner_intent')
+    }
+    clearDraft()
 
     if (updatedUser.role === 'admin') {
       router.push('/admin/organization')

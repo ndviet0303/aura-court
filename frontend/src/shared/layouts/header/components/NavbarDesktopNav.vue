@@ -60,6 +60,36 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleOutsideClick)
   document.removeEventListener('keydown', handleEscape)
 })
+
+const isOwner = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  return (
+    userAny.role === 'organization_owner' ||
+    userAny.role === 'venue_manager' ||
+    userAny.capabilities?.can_manage_venues === true ||
+    (Array.isArray(userAny.organizations) &&
+      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+  )
+})
+
+const hasPartnerIntentOrApp = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  if (isOwner.value) return false
+  if (userAny.capabilities?.has_partner_application === true) return true
+  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  return false
+})
+
+const partnerRoute = computed(() => {
+  const userAny = auth.user as any
+  const status = userAny?.capabilities?.partner_application_status
+  if (status === 'submitted' || status === 'in_review') {
+    return '/partner/application-status'
+  }
+  return '/partner-registration'
+})
 </script>
 
 <template>
@@ -150,6 +180,7 @@ onBeforeUnmount(() => {
     </RouterLink>
 
     <!-- Admin Link -->
+    <!-- Admin / Org / Partner Link -->
     <RouterLink
       v-if="auth.user?.role === 'admin'"
       to="/admin"
@@ -157,6 +188,24 @@ onBeforeUnmount(() => {
       :class="{ active: (route?.path || '').startsWith('/admin') }"
     >
       {{ $t('nav.admin') }}
+    </RouterLink>
+
+    <RouterLink
+      v-else-if="isOwner"
+      to="/admin/organization"
+      class="nav-pill-link"
+      :class="{ active: (route?.path || '').startsWith('/admin') }"
+    >
+      {{ $t('nav.organization') }}
+    </RouterLink>
+
+    <RouterLink
+      v-else-if="hasPartnerIntentOrApp"
+      :to="partnerRoute"
+      class="nav-pill-link"
+      :class="{ active: (route?.path || '').startsWith('/partner') }"
+    >
+      {{ (auth.user as any)?.capabilities?.partner_application_status === 'submitted' || (auth.user as any)?.capabilities?.partner_application_status === 'in_review' ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}
     </RouterLink>
   </nav>
 </template>

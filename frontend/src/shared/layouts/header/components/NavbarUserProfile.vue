@@ -34,12 +34,51 @@ const defaultAvatarUrl = computed(() => {
   return getAvatarUrl(auth.user?.name, auth.user?.avatar_url)
 })
 
+const isOwner = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  return (
+    userAny.role === 'organization_owner' ||
+    userAny.role === 'venue_manager' ||
+    userAny.capabilities?.can_manage_venues === true ||
+    (Array.isArray(userAny.organizations) &&
+      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+  )
+})
+
+const hasPartnerIntentOrApp = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  if (isOwner.value) return false
+  if (userAny.capabilities?.has_partner_application === true) return true
+  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  return false
+})
+
+const partnerStatus = computed(() => {
+  const userAny = auth.user as any
+  return userAny?.capabilities?.partner_application_status || ''
+})
+
+const partnerRoute = computed(() => {
+  if (partnerStatus.value === 'submitted' || partnerStatus.value === 'in_review') {
+    return '/partner/application-status'
+  }
+  return '/partner-registration'
+})
+
 const userRoleBadge = computed(() => {
   if (auth.user?.role === 'admin') return 'ADMIN'
+  if (isOwner.value) return 'CHỦ SÂN'
+  if (hasPartnerIntentOrApp.value) {
+    if (partnerStatus.value === 'submitted' || partnerStatus.value === 'in_review') {
+      return 'CHỜ DUYỆT'
+    }
+    return 'ĐỐI TÁC'
+  }
   if (auth.user) return 'PRO MEMBER'
   return 'GUEST'
 })
-
 const displayedBalance = computed(() => {
   if (typeof bookingStore.walletBalance === 'number' && bookingStore.walletBalance > 0) {
     return bookingStore.walletBalance
@@ -192,10 +231,29 @@ onBeforeUnmount(() => {
             <span class="material-symbols-outlined item-ico">admin_panel_settings</span>
             <span class="item-label">{{ $t('nav.adminSystem') }}</span>
           </RouterLink>
+
+          <RouterLink
+            v-else-if="isOwner"
+            to="/admin/organization"
+            class="dropdown-item admin-item"
+            @click="closeDropdown"
+          >
+            <span class="material-symbols-outlined item-ico">domain</span>
+            <span class="item-label">{{ $t('nav.organization') }}</span>
+          </RouterLink>
+
+          <RouterLink
+            v-else-if="hasPartnerIntentOrApp"
+            :to="partnerRoute"
+            class="dropdown-item admin-item"
+            @click="closeDropdown"
+          >
+            <span class="material-symbols-outlined item-ico">storefront</span>
+            <span class="item-label">{{ partnerStatus === 'submitted' || partnerStatus === 'in_review' ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}</span>
+          </RouterLink>
         </div>
 
         <div class="dropdown-divider"></div>
-
         <!-- Preferences (Theme & Language) -->
         <div class="dropdown-preferences">
           <!-- Theme Row -->

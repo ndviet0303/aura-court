@@ -120,6 +120,7 @@ Route::prefix('v1')->group(function () {
 
             $ownerMemberships = $memberships->filter(fn ($m) => in_array($m->role, ['organization_owner', 'venue_manager']));
             $primaryOrg = $ownerMemberships->first()?->organization;
+            $latestKyc = \App\Models\HostKyc::where('user_id', $user->id)->latest()->first();
 
             return response()->json(array_merge($user->toArray(), [
                 'wallet_balance' => $wallet->balance,
@@ -134,7 +135,9 @@ Route::prefix('v1')->group(function () {
                     'is_platform_admin' => $user->isPlatformAdmin(),
                     'can_manage_venues' => $ownerMemberships->isNotEmpty(),
                     'active_organization_id' => $primaryOrg?->id,
-                    'partner_status' => $primaryOrg?->partner_status,
+                    'partner_status' => $primaryOrg?->partner_status ?? $latestKyc?->status,
+                    'has_partner_application' => $latestKyc !== null,
+                    'partner_application_status' => $latestKyc?->status,
                 ],
             ]));
         });

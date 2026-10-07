@@ -41,6 +41,12 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
 
         Sanctum::actingAs($applicant);
 
+        // auth/me exposes partner application status
+        $this->getJson('/api/v1/auth/me')
+            ->assertStatus(200)
+            ->assertJsonPath('capabilities.has_partner_application', true)
+            ->assertJsonPath('capabilities.partner_application_status', 'pending');
+
         // Cannot access platform admin
         $this->getJson('/api/v1/admin/partner/applications')
             ->assertStatus(403);
@@ -49,7 +55,6 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
         $this->getJson('/api/v2/attendance/SOME_CODE')
             ->assertStatus(400); // Organization context required
     }
-
     public function test_approved_owner_has_customer_role_and_scoped_owner_capabilities(): void
     {
         $ownerUser = User::factory()->create([

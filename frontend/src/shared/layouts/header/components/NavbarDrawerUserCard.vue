@@ -20,8 +20,41 @@ const defaultAvatarUrl = computed(() => {
   return getAvatarUrl(auth.user?.name, auth.user?.avatar_url)
 })
 
+const isOwner = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  return (
+    userAny.role === 'organization_owner' ||
+    userAny.role === 'venue_manager' ||
+    userAny.capabilities?.can_manage_venues === true ||
+    (Array.isArray(userAny.organizations) &&
+      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+  )
+})
+
+const hasPartnerIntentOrApp = computed(() => {
+  const userAny = auth.user as any
+  if (!userAny) return false
+  if (isOwner.value) return false
+  if (userAny.capabilities?.has_partner_application === true) return true
+  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  return false
+})
+
+const partnerStatus = computed(() => {
+  const userAny = auth.user as any
+  return userAny?.capabilities?.partner_application_status || ''
+})
+
 const userRoleBadge = computed(() => {
   if (auth.user?.role === 'admin') return 'ADMIN'
+  if (isOwner.value) return 'CHỦ SÂN'
+  if (hasPartnerIntentOrApp.value) {
+    if (partnerStatus.value === 'submitted' || partnerStatus.value === 'in_review') {
+      return 'CHỜ DUYỆT'
+    }
+    return 'ĐỐI TÁC'
+  }
   if (auth.user) return 'PRO MEMBER'
   return 'GUEST'
 })
