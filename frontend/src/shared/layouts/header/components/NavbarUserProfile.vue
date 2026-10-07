@@ -89,9 +89,6 @@ watch(() => route.path, closeDropdown)
 onMounted(() => {
   document.addEventListener('click', handleOutsideClick)
   document.addEventListener('keydown', handleKeydown)
-  if (auth.user) {
-    bookingStore.fetchWalletBalance().catch(() => {})
-  }
 })
 
 onBeforeUnmount(() => {

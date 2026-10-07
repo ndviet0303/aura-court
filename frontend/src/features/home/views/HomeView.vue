@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -40,13 +40,61 @@ const sportCategories = [
   { id: 'table_tennis', name: 'Bóng bàn', icon: 'table_restaurant' },
 ]
 
+function getCourtIcon(court: Court): string {
+  const sport = (court.sport_zone?.sport_type || '').toLowerCase()
+  if (sport === 'football_5v5' || sport === 'football_7v7' || sport === 'football') return 'sports_soccer'
+  if (sport === 'basketball') return 'sports_basketball'
+  if (sport === 'volleyball') return 'sports_volleyball'
+  if (sport === 'table_tennis') return 'table_restaurant'
+  if (sport === 'tennis' || sport === 'pickleball' || sport === 'badminton') return 'sports_tennis'
+
+  const name = (court.name || '').toLowerCase()
+  if (name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
+  if (name.includes('bóng rổ') || name.includes('basketball') || name.includes('nba')) return 'sports_basketball'
+  if (name.includes('bóng chuyền') || name.includes('volleyball')) return 'sports_volleyball'
+  if (name.includes('bóng bàn') || name.includes('table tennis') || name.includes('stiga')) return 'table_restaurant'
+  return 'sports_tennis'
+}
+
+const courtsChipsScrollRef = ref<HTMLElement | null>(null)
+const canScrollLeft = ref(false)
+const canScrollRight = ref(false)
+
+function updateScrollState() {
+  if (!courtsChipsScrollRef.value) return
+  const el = courtsChipsScrollRef.value
+  canScrollLeft.value = el.scrollLeft > 4
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 4
+}
+
+function scrollCourts(direction: 'left' | 'right') {
+  if (!courtsChipsScrollRef.value) return
+  const offset = direction === 'left' ? -260 : 260
+  if (typeof courtsChipsScrollRef.value.scrollBy === 'function') {
+    courtsChipsScrollRef.value.scrollBy({ left: offset, behavior: 'smooth' })
+  }
+  setTimeout(updateScrollState, 320)
+}
+
+function scrollToSelectedChip() {
+  nextTick(() => {
+    if (!courtsChipsScrollRef.value) return
+    const activeChip = courtsChipsScrollRef.value.querySelector('.court-chip.active') as HTMLElement | null
+    if (activeChip && typeof activeChip.scrollIntoView === 'function') {
+      activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+    updateScrollState()
+  })
+}
+
 async function selectSportCategory(sportId: string) {
   sportTypeFilter.value = sportId
   try {
-    await store.loadCourts({ sport_type: sportId })
+    await store.loadCourts({ sport_type: sportId === 'all' ? undefined : sportId })
     selected.value = store.courts[0]?.id || null
     date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
     await loadAvailability()
+    scrollToSelectedChip()
   } catch {
     /* store handles error */
   }
@@ -108,6 +156,7 @@ async function chooseCourt(courtId?: string | number) {
   }
   date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
   await loadAvailability()
+  scrollToSelectedChip()
 }
 
 const loyaltyPayload = ref<any>(null)
@@ -151,6 +200,7 @@ onMounted(async () => {
     selected.value = store.courts[0]?.id || null
     date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
     await loadAvailability()
+    scrollToSelectedChip()
   } catch {
     /* store exposes the user-facing error */
   }
@@ -257,9 +307,36 @@ onMounted(async () => {
     <p v-if="store.error" class="error">{{ store.error }}</p>
     <!-- Beside-the-slots controls: selected court, play date & nearby court selector -->
     <div class="availability-beside-bar">
-      <div class="availability-court-picker" role="radiogroup" :aria-label="t('home.availability.nearbyCourts')">
-        <span class="picker-label">{{ t('home.availability.nearbyCourts') }}:</span>
-        <div class="court-chips-row">
+      <div class="availability-bar-top">
+        <div class="availability-bar-heading">
+          <span class="material-symbols-outlined icon-18">stadium</span>
+          <span class="picker-label">{{ t('home.availability.nearbyCourts') }}:</span>
+          <span v-if="store.courts.length" class="courts-count-pill">{{ store.courts.length }} sân</span>
+        </div>
+        <div class="availability-date-picker">
+          <span class="picker-label">{{ t('home.availability.playDateLabel') }}:</span>
+          <DatePicker v-model="date" @change="loadAvailability" />
+        </div>
+      </div>
+
+      <div class="court-carousel-row" role="radiogroup" :aria-label="t('home.availability.nearbyCourts')">
+        <button
+          v-if="store.courts.length > 2"
+          type="button"
+          class="carousel-nav-btn left"
+          :class="{ disabled: !canScrollLeft }"
+          :disabled="!canScrollLeft"
+          aria-label="Cuộn sang trái"
+          @click="scrollCourts('left')"
+        >
+          <span class="material-symbols-outlined icon-14">arrow_back_ios_new</span>
+        </button>
+
+        <div
+          ref="courtsChipsScrollRef"
+          class="court-chips-row"
+          @scroll="updateScrollState"
+        >
           <button
             v-for="c in store.courts"
             :key="c.id"
@@ -270,15 +347,23 @@ onMounted(async () => {
             :class="{ active: selected === c.id }"
             @click="chooseCourt(c.id)"
           >
-            <span class="material-symbols-outlined icon-16">sports_tennis</span>
-            <span>{{ c.name }}</span>
+            <span class="material-symbols-outlined icon-16">{{ getCourtIcon(c) }}</span>
+            <span class="court-chip-name">{{ c.name }}</span>
+            <span v-if="c.sport_zone?.name" class="court-chip-zone">{{ c.sport_zone.name }}</span>
           </button>
         </div>
-      </div>
 
-      <div class="availability-date-picker">
-        <span class="picker-label">{{ t('home.availability.playDateLabel') }}:</span>
-        <DatePicker v-model="date" @change="loadAvailability" />
+        <button
+          v-if="store.courts.length > 2"
+          type="button"
+          class="carousel-nav-btn right"
+          :class="{ disabled: !canScrollRight }"
+          :disabled="!canScrollRight"
+          aria-label="Cuộn sang phải"
+          @click="scrollCourts('right')"
+        >
+          <span class="material-symbols-outlined icon-14">arrow_forward_ios</span>
+        </button>
       </div>
     </div>
 
@@ -420,23 +505,33 @@ onMounted(async () => {
 <style scoped>
 .availability-beside-bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   margin: 14px 0 20px;
   padding: 14px 18px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--surface);
   border: 1px solid var(--outline);
 }
 
-.availability-court-picker,
+.availability-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.availability-bar-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .availability-date-picker {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .picker-label {
@@ -446,37 +541,169 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+.courts-count-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--muted);
+  border: 1px solid var(--outline);
+}
+
+.court-carousel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  position: relative;
+}
+
+.carousel-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.carousel-nav-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: var(--soft);
+}
+
+.carousel-nav-btn:disabled,
+.carousel-nav-btn.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .court-chips-row {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px;
+  width: 100%;
+  scroll-behavior: smooth;
+}
+
+.court-chips-row::-webkit-scrollbar {
+  display: none;
 }
 
 .court-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 7px 14px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   border: 1px solid var(--outline);
-  background: transparent;
+  background: var(--surface);
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.court-chip:hover {
-  border-color: var(--primary, #0ea5e9);
-  background: rgba(14, 165, 233, 0.08);
+.court-chip:hover:not(.active) {
+  border-color: var(--accent);
+  background: var(--soft);
+  transform: translateY(-1px);
 }
 
 .court-chip.active {
-  border-color: var(--primary, #0ea5e9);
-  background: var(--primary, #0ea5e9);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 2px 10px rgba(107, 45, 63, 0.25);
+}
+
+:global(html.dark) .court-chips-row .court-chip {
+  background: #1e191c;
+  border-color: #382d33;
+  color: var(--ink);
+}
+
+:global(html.dark) .court-chips-row .court-chip:hover:not(.active) {
+  background: #282126;
+  border-color: #d8b46e;
+}
+
+:global(html.dark) .court-chips-row .court-chip.active {
+  background: #e58e9f;
+  color: #1c0a10;
+  border-color: #e58e9f;
+  box-shadow: 0 4px 14px rgba(229, 142, 159, 0.3);
+}
+
+:global(html.dark) .carousel-nav-btn {
+  background: #231c20;
+  border-color: #382d33;
+  color: #a89fa4;
+}
+
+:global(html.dark) .carousel-nav-btn:hover:not(:disabled) {
+  background: #30292e;
+  border-color: #d8b46e;
+  color: #faf7f3;
+}
+
+.court-chip-name {
+  white-space: nowrap;
+}
+
+.court-chip-zone {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-subtle);
+  color: var(--muted);
+  border: 1px solid var(--outline);
+}
+
+.court-chip.active .court-chip-zone {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  border-color: transparent;
+}
+
+:global(html.dark) .court-chip.active .court-chip-zone {
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  border-color: transparent;
+}
+
+@media (max-width: 640px) {
+  .availability-beside-bar {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .availability-bar-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .availability-date-picker {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .slot-range {

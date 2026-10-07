@@ -95,16 +95,24 @@ export const useBookingStore = defineStore('booking', () => {
     return payment.value
   }
 
+  let inFlightWalletBalance: Promise<number> | null = null
+
   async function fetchWalletBalance() {
-    try {
-      const res = await bookingApi.getWalletBalance()
-      if (typeof res?.balance === 'number') {
-        walletBalance.value = res.balance
+    if (inFlightWalletBalance) return inFlightWalletBalance
+    inFlightWalletBalance = (async () => {
+      try {
+        const res = await bookingApi.getWalletBalance()
+        if (typeof res?.balance === 'number') {
+          walletBalance.value = res.balance
+        }
+        return walletBalance.value
+      } catch {
+        return walletBalance.value
+      } finally {
+        inFlightWalletBalance = null
       }
-      return walletBalance.value
-    } catch {
-      return walletBalance.value
-    }
+    })()
+    return inFlightWalletBalance
   }
 
   async function loadPayment(code: string) {

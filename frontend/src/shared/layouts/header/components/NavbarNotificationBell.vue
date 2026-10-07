@@ -7,28 +7,31 @@ import { notificationApi } from '@/features/notification/api/notificationApi'
 const auth = useAuthStore()
 const route = useRoute()
 const unreadCount = ref(0)
+let inFlightUnread: Promise<void> | null = null
 
 async function fetchUnread() {
   if (!auth.user) {
     unreadCount.value = 0
     return
   }
-  try {
-    const res = await notificationApi.list()
-    unreadCount.value = res.unread || 0
-  } catch {
-    // Non-blocking fallback
-  }
+  if (inFlightUnread) return inFlightUnread
+  inFlightUnread = (async () => {
+    try {
+      const res = await notificationApi.list()
+      unreadCount.value = res.unread || 0
+    } catch {
+      // Non-blocking fallback
+    } finally {
+      inFlightUnread = null
+    }
+  })()
+  return inFlightUnread
 }
 
 // Refetch when route changes or user logs in
 watch(() => [route.path, auth.user], () => {
   fetchUnread()
 }, { immediate: true })
-
-onMounted(() => {
-  fetchUnread()
-})
 </script>
 
 <template>
