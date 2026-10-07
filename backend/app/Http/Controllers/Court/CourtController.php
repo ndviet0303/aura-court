@@ -19,9 +19,10 @@ class CourtController extends Controller
     {
         // Database cache counters must exist before mutations can increment them.
         Cache::add('courts_version', 1, now()->addYears(10));
-        $version = Cache::get('courts_version', 1);
-        $cacheKey = "courts:v{$version}:" . md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
-
+        Cache::add('venues_version', 1, now()->addYears(10));
+        $courtsVersion = Cache::get('courts_version', 1);
+        $venuesVersion = Cache::get('venues_version', 1);
+        $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:" . md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
             $courtsQuery = Court::where('is_active', true)
                 ->whereHas('venue', fn ($query) => $query->where('is_active', true))
