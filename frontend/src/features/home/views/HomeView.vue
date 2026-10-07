@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -59,6 +59,53 @@ function getCourtIcon(court: Court): string {
 const courtsChipsScrollRef = ref<HTMLElement | null>(null)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
+const selectedVenueId = ref<number | null>(null)
+const courtSearchQuery = ref('')
+
+const venues = computed(() => {
+  const map = new Map<number, { id: number; name: string; count: number }>()
+  for (const c of store.courts) {
+    const vId = c.venue?.id ?? c.venue_id ?? 0
+    const vName = c.venue?.name || 'Aura Court'
+    if (!map.has(vId)) {
+      map.set(vId, { id: vId, name: vName, count: 0 })
+    }
+    map.get(vId)!.count++
+  }
+  return Array.from(map.values())
+})
+
+const filteredCourts = computed(() => {
+  return store.courts.filter((c: Court) => {
+    if (selectedVenueId.value !== null) {
+      const vId = c.venue?.id ?? c.venue_id ?? 0
+      if (vId !== selectedVenueId.value) return false
+    }
+    if (courtSearchQuery.value.trim()) {
+      const q = courtSearchQuery.value.trim().toLowerCase()
+      const matchName = (c.name || '').toLowerCase().includes(q)
+      const matchVenue = (c.venue?.name || '').toLowerCase().includes(q)
+      const matchZone = (c.sport_zone?.name || '').toLowerCase().includes(q)
+      if (!matchName && !matchVenue && !matchZone) return false
+    }
+    return true
+  })
+})
+
+function selectVenue(venueId: number | null) {
+  selectedVenueId.value = venueId
+  const first = filteredCourts.value[0]
+  if (first && !filteredCourts.value.some((c: Court) => c.id === selected.value)) {
+    chooseCourt(first.id)
+  }
+  scrollToSelectedChip()
+}
+
+function resetFilters() {
+  selectedVenueId.value = null
+  courtSearchQuery.value = ''
+  scrollToSelectedChip()
+}
 
 function updateScrollState() {
   if (!courtsChipsScrollRef.value) return
@@ -87,8 +134,50 @@ function scrollToSelectedChip() {
   })
 }
 
+// Lazy loading for court grid
+const gridDisplayLimit = ref(6)
+const displayedCourts = computed(() => store.courts.slice(0, gridDisplayLimit.value))
+const hasMoreCourts = computed(() => gridDisplayLimit.value < store.courts.length)
+
+function loadMoreCourts() {
+  if (gridDisplayLimit.value < store.courts.length) {
+    gridDisplayLimit.value = Math.min(gridDisplayLimit.value + 6, store.courts.length)
+  }
+}
+
+const gridSentinelRef = ref<HTMLElement | null>(null)
+let gridObserver: IntersectionObserver | null = null
+
+function setupGridObserver() {
+  if (typeof IntersectionObserver === 'undefined') return
+  if (gridObserver) gridObserver.disconnect()
+  gridObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        loadMoreCourts()
+      }
+    },
+    { rootMargin: '300px 0px' }
+  )
+  if (gridSentinelRef.value) {
+    gridObserver.observe(gridSentinelRef.value)
+  }
+}
+
+watch(gridSentinelRef, (el) => {
+  if (el) setupGridObserver()
+})
+
+onBeforeUnmount(() => {
+  if (gridObserver) {
+    gridObserver.disconnect()
+    gridObserver = null
+  }
+})
+
 async function selectSportCategory(sportId: string) {
   sportTypeFilter.value = sportId
+  gridDisplayLimit.value = 6
   try {
     await store.loadCourts({ sport_type: sportId === 'all' ? undefined : sportId })
     selected.value = store.courts[0]?.id || null
@@ -307,21 +396,78 @@ onMounted(async () => {
     <p v-if="store.error" class="error">{{ store.error }}</p>
     <!-- Beside-the-slots controls: selected court, play date & nearby court selector -->
     <div class="availability-beside-bar">
+      <!-- Top Bar: Title & Count, Quick Search & DatePicker -->
       <div class="availability-bar-top">
         <div class="availability-bar-heading">
           <span class="material-symbols-outlined icon-18">stadium</span>
           <span class="picker-label">{{ t('home.availability.nearbyCourts') }}:</span>
-          <span v-if="store.courts.length" class="courts-count-pill">{{ store.courts.length }} sân</span>
+          <span v-if="filteredCourts.length" class="courts-count-pill">{{ filteredCourts.length }} / {{ store.courts.length }} sân</span>
         </div>
-        <div class="availability-date-picker">
-          <span class="picker-label">{{ t('home.availability.playDateLabel') }}:</span>
-          <DatePicker v-model="date" @change="loadAvailability" />
+
+        <div class="availability-top-actions">
+          <!-- Quick Search -->
+          <div class="availability-search-box">
+            <span class="material-symbols-outlined icon-16 search-icon">search</span>
+            <input
+              v-model="courtSearchQuery"
+              type="text"
+              class="court-search-input"
+              placeholder="Tìm tên sân..."
+              aria-label="Tìm tên sân"
+            />
+            <button
+              v-if="courtSearchQuery"
+              type="button"
+              class="search-clear-btn"
+              aria-label="Xóa tìm kiếm"
+              @click="courtSearchQuery = ''"
+            >
+              ×
+            </button>
+          </div>
+
+          <!-- Date Picker -->
+          <div class="availability-date-picker">
+            <span class="picker-label">{{ t('home.availability.playDateLabel') }}:</span>
+            <DatePicker v-model="date" @change="loadAvailability" />
+          </div>
         </div>
       </div>
 
+      <!-- Venue Filter Pills (Shown when multiple venues exist) -->
+      <div v-if="venues.length > 1" class="venue-pills-row" role="tablist" aria-label="Lọc theo cơ sở">
+        <span class="venue-filter-lbl">
+          <span class="material-symbols-outlined icon-14">apartment</span>
+          <span>Cơ sở:</span>
+        </span>
+        <div class="venue-pills-scroll">
+          <button
+            type="button"
+            role="tab"
+            class="venue-pill-btn"
+            :class="{ active: selectedVenueId === null }"
+            @click="selectVenue(null)"
+          >
+            Tất cả cơ sở ({{ store.courts.length }})
+          </button>
+          <button
+            v-for="v in venues"
+            :key="v.id"
+            type="button"
+            role="tab"
+            class="venue-pill-btn"
+            :class="{ active: selectedVenueId === v.id }"
+            @click="selectVenue(v.id)"
+          >
+            {{ v.name }} ({{ v.count }})
+          </button>
+        </div>
+      </div>
+
+      <!-- Court Carousel -->
       <div class="court-carousel-row" role="radiogroup" :aria-label="t('home.availability.nearbyCourts')">
         <button
-          v-if="store.courts.length > 2"
+          v-if="filteredCourts.length > 2"
           type="button"
           class="carousel-nav-btn left"
           :class="{ disabled: !canScrollLeft }"
@@ -333,12 +479,13 @@ onMounted(async () => {
         </button>
 
         <div
+          v-if="filteredCourts.length"
           ref="courtsChipsScrollRef"
           class="court-chips-row"
           @scroll="updateScrollState"
         >
           <button
-            v-for="c in store.courts"
+            v-for="c in filteredCourts"
             :key="c.id"
             type="button"
             role="radio"
@@ -349,12 +496,17 @@ onMounted(async () => {
           >
             <span class="material-symbols-outlined icon-16">{{ getCourtIcon(c) }}</span>
             <span class="court-chip-name">{{ c.name }}</span>
-            <span v-if="c.sport_zone?.name" class="court-chip-zone">{{ c.sport_zone.name }}</span>
+            <span v-if="c.venue?.name && selectedVenueId === null" class="court-chip-venue">{{ c.venue.name }}</span>
           </button>
         </div>
 
+        <div v-else class="no-filtered-courts">
+          <span>Không tìm thấy sân phù hợp.</span>
+          <button type="button" class="btn-reset-filters" @click="resetFilters">Xem tất cả sân</button>
+        </div>
+
         <button
-          v-if="store.courts.length > 2"
+          v-if="filteredCourts.length > 2"
           type="button"
           class="carousel-nav-btn right"
           :class="{ disabled: !canScrollRight }"
@@ -392,27 +544,47 @@ onMounted(async () => {
     <div v-if="store.courtsLoading && !store.courts.length" class="court-grid">
       <SkeletonLoader type="court-card" :count="3" />
     </div>
-    <div v-else class="court-grid">
-      <RouterLink
-        v-for="(court, index) in store.courts"
-        :key="court.id"
-        :to="`/courts/${court.slug || court.id}`"
-        class="court-card"
-      >
-        <div class="court-card-image">
-          <img :src="image(index)" :alt="court.name" />
-          <span class="tag">
-            {{ t('courts.from') }} {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }}{{ t('common.perHour') }}
-          </span>
-        </div>
-        <div class="court-info">
-          <h3>{{ court.name }}</h3>
-          <p class="muted">
-            <span class="material-symbols-outlined">location_on</span>
-            {{ court.description || t('courts.defaultLocation') }}
-          </p>
-        </div>
-      </RouterLink>
+    <div v-else class="court-grid-container">
+      <div class="court-grid">
+        <RouterLink
+          v-for="(court, index) in displayedCourts"
+          :key="court.id"
+          :to="`/courts/${court.slug || court.id}`"
+          class="court-card"
+        >
+          <div class="court-card-image">
+            <img
+              :src="image(index)"
+              :alt="court.name"
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="tag">
+              {{ t('courts.from') }} {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }}{{ t('common.perHour') }}
+            </span>
+          </div>
+          <div class="court-info">
+            <h3>{{ court.name }}</h3>
+            <p class="muted">
+              <span class="material-symbols-outlined">location_on</span>
+              {{ court.description || t('courts.defaultLocation') }}
+            </p>
+          </div>
+        </RouterLink>
+      </div>
+
+      <!-- Lazy Loading Sentinel & Load More Action -->
+      <div v-if="hasMoreCourts" class="lazy-load-action-bar">
+        <div ref="gridSentinelRef" class="lazy-sentinel"></div>
+        <button
+          type="button"
+          class="btn-load-more-courts"
+          @click="loadMoreCourts"
+        >
+          <span class="material-symbols-outlined icon-18">expand_more</span>
+          <span>Xem thêm sân thi đấu ({{ displayedCourts.length }} / {{ store.courts.length }})</span>
+        </button>
+      </div>
     </div>
   </section>
 
@@ -522,23 +694,214 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.availability-bar-heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.availability-date-picker {
+.availability-top-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
-.picker-label {
-  font-size: 13px;
-  font-weight: 600;
+.availability-search-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
+  transition: border-color 0.2s ease;
+}
+
+.availability-search-box:focus-within {
+  border-color: var(--primary);
+}
+
+.search-icon {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.court-search-input {
+  border: none;
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+  width: 130px;
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+
+.venue-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--outline);
+}
+
+.venue-filter-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
+}
+
+.venue-pills-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.venue-pills-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.venue-pill-btn {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.venue-pill-btn:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.venue-pill-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+:global(html.dark) .venue-pill-btn {
+  background: #231c20;
+  border-color: #382d33;
+  color: var(--muted);
+}
+
+:global(html.dark) .venue-pill-btn.active {
+  background: #e58e9f;
+  border-color: #e58e9f;
+  color: #1c0a10;
+}
+
+.no-filtered-courts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  width: 100%;
+}
+
+.btn-reset-filters {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.court-chip-venue {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-subtle);
+  color: var(--muted);
+  border: 1px solid var(--outline);
+}
+
+.court-chip.active .court-chip-venue {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  border-color: transparent;
+}
+
+:global(html.dark) .court-chip.active .court-chip-venue {
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  border-color: transparent;
+}
+
+.lazy-load-action-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.lazy-sentinel {
+  width: 100%;
+  height: 1px;
+  pointer-events: none;
+}
+
+.btn-load-more-courts {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-load-more-courts:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--surface-subtle);
+  transform: translateY(-2px);
+}
+
+:global(html.dark) .btn-load-more-courts {
+  background: #1e191c;
+  border-color: #382d33;
+  color: var(--ink);
+}
+
+:global(html.dark) .btn-load-more-courts:hover {
+  background: #282126;
+  border-color: #e58e9f;
+  color: #e58e9f;
+}
+
+.court-grid-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .courts-count-pill {
