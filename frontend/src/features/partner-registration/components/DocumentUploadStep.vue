@@ -95,58 +95,54 @@ function formatSize(bytes: number): string {
 </script>
 
 <template>
-  <div class="document-upload-step space-y-6">
-    <div>
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+  <div class="document-upload-step">
+    <div class="step-head">
+      <h3 class="step-title">
         2. Tải lên Hồ sơ Xác thực (Private Documents)
       </h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-        Các tài liệu được lưu trữ trên vùng nhớ riêng tư an toàn, chỉ phục vụ mục đích kiểm duyệt định danh.
+      <p class="step-sub">
+        Các tài liệu được lưu trữ trên vùng nhớ riêng tư an toàn, chỉ phục vụ mục đích kiểm duyệt định danh của đội ngũ Aura Sports.
       </p>
     </div>
 
     <!-- Documents List -->
-    <div class="space-y-4">
+    <div class="documents-list">
       <div
         v-for="req in documentRequirements"
         :key="req.type"
-        class="border rounded-lg p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+        class="doc-card"
       >
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">
-                {{ req.title }}
-              </span>
-              <span v-if="req.required" class="text-xs text-red-500 font-medium">* Bắt buộc</span>
-              <span v-else class="text-xs text-gray-400">Không bắt buộc</span>
+        <div class="doc-main-row">
+          <div class="doc-info-col">
+            <div class="doc-title-row">
+              <span class="doc-title">{{ req.title }}</span>
+              <span v-if="req.required" class="req-badge">* Bắt buộc</span>
+              <span v-else class="opt-badge">Không bắt buộc</span>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ req.description }}
-            </p>
+            <p class="doc-desc">{{ req.description }}</p>
           </div>
 
           <!-- Upload Status / Action -->
-          <div class="flex items-center gap-3">
-            <div v-if="getUploadedDoc(req.type)" class="text-right">
-              <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                <span class="material-symbols-outlined text-sm">check_circle</span>
-                Đã tải lên
+          <div class="doc-actions-col">
+            <div v-if="getUploadedDoc(req.type)" class="uploaded-box">
+              <span class="uploaded-pill">
+                <span class="material-symbols-outlined icon-16">check_circle</span>
+                <span>Đã tải lên</span>
               </span>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400 max-w-[150px] truncate">
+              <p class="uploaded-file-meta">
                 {{ getUploadedDoc(req.type)?.file_name }} ({{ formatSize(getUploadedDoc(req.type)?.file_size || 0) }})
               </p>
             </div>
 
             <label
-              class="px-3 py-1.5 text-xs font-medium rounded-lg border cursor-pointer inline-flex items-center gap-1.5 transition-colors"
-              :class="uploading ? 'opacity-50 pointer-events-none' : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200'"
+              class="btn-upload-file"
+              :class="{ 'is-uploading': uploading }"
             >
-              <span class="material-symbols-outlined text-sm">upload_file</span>
-              {{ getUploadedDoc(req.type) ? 'Tải lại' : 'Tải lên' }}
+              <span class="material-symbols-outlined icon-16">upload_file</span>
+              <span>{{ getUploadedDoc(req.type) ? 'Tải lại' : 'Tải lên' }}</span>
               <input
                 type="file"
-                class="hidden"
+                class="hidden-file-input"
                 accept=".pdf,.png,.jpg,.jpeg"
                 @change="handleFileChange($event, req.type)"
               />
@@ -154,30 +150,34 @@ function formatSize(bytes: number): string {
           </div>
         </div>
 
-        <p v-if="fieldErrors?.[req.type]?.length" class="text-xs text-red-600 dark:text-red-400 mt-2">
+        <p v-if="fieldErrors?.[req.type]?.length" class="field-error-msg">
           {{ fieldErrors?.[req.type]?.[0] }}
         </p>
       </div>
     </div>
 
     <!-- Navigation Buttons -->
-    <div class="flex items-center justify-between border-t pt-4 dark:border-gray-700">
+    <div class="step-footer">
       <button
         type="button"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-gray-200"
+        class="btn-back-step"
         @click="emit('back')"
       >
-        Quay lại
+        <span class="material-symbols-outlined icon-16">arrow_back</span>
+        <span>Quay lại</span>
       </button>
 
       <button
         type="button"
         :disabled="uploading"
-        class="px-6 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg disabled:opacity-50"
+        class="btn-next-step"
         @click="emit('next')"
       >
-        Tiếp tục: Thỏa thuận & Gửi duyệt
+        <span>Tiếp tục: Thỏa thuận & Gửi duyệt</span>
+        <span class="material-symbols-outlined icon-18">arrow_forward</span>
       </button>
     </div>
   </div>
 </template>
+
+<style src="../styles/partner-registration.css"></style>

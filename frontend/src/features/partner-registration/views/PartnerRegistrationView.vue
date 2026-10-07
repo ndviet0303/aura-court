@@ -55,97 +55,170 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
 </script>
 
 <template>
-  <div class="partner-registration-view py-8 px-4 max-w-4xl mx-auto">
-    <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-        Đăng ký Trở thành Đối tác Cho thuê Sân
-      </h1>
-      <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-        Quy trình xét duyệt minh bạch, an toàn dành cho các chủ câu lạc bộ và cơ sở thể thao.
-      </p>
-    </div>
+  <div class="partner-page-wrapper">
+    <div class="aura-glow-bg" aria-hidden="true"></div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center items-center py-12" data-testid="loading-spinner">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-    </div>
-
-    <!-- Error Alert -->
-    <div
-      v-else-if="error && !application"
-      class="p-4 mb-6 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400"
-      role="alert"
-    >
-      {{ error }}
-    </div>
-
-    <!-- Initial Consent Step (if no draft application yet) -->
-    <div v-else-if="!application" class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 border border-gray-100 dark:border-gray-700">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Bắt đầu hồ sơ đối tác
-      </h2>
-      <div class="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300 mb-6 space-y-2 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
-        <p>
-          Hồ sơ của bạn sẽ được đội ngũ vận hành Aura Sports kiểm duyệt trước khi mở quyền quản lý và xuất bản cơ sở.
-        </p>
-        <p>
-          Bạn sẽ xem và xác nhận các điều khoản cần thiết trước khi nộp hồ sơ.
-        </p>
+    <div class="partner-container">
+      <!-- Loading State -->
+      <div v-if="loading" class="partner-card loading-card" data-testid="loading-spinner">
+        <div class="spinner-ring"></div>
+        <p class="loading-text">Đang tải hồ sơ đối tác...</p>
       </div>
 
-      <button
-        type="button"
-        class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700"
-        @click="handleStartApplication"
-      >
-        Bắt đầu Hồ sơ Đăng ký
-      </button>
-    </div>
+      <!-- Error Alert -->
+      <div v-else-if="error && !application" class="error-banner" role="alert">
+        <span class="material-symbols-outlined error-icon">error</span>
+        <span class="error-text">{{ error }}</span>
+      </div>
 
-    <!-- Application in Draft: Step-by-step Wizard -->
-    <div v-else class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 border border-gray-100 dark:border-gray-700 space-y-6">
-      <!-- Steps Progress Bar -->
-      <div class="flex items-center justify-between border-b pb-4 dark:border-gray-700">
-        <div class="flex items-center gap-2 sm:gap-4">
-          <button type="button" class="text-xs font-semibold px-3 py-1 rounded-full" :class="currentStep === 1 ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" @click="currentStep = 1">1. Thông tin kinh doanh</button>
-          <button type="button" class="text-xs font-semibold px-3 py-1 rounded-full" :class="currentStep === 2 ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" @click="currentStep = 2">2. Tài liệu xác thực</button>
-          <button type="button" class="text-xs font-semibold px-3 py-1 rounded-full" :class="currentStep === 3 ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" @click="currentStep = 3">3. Rà soát & Nộp hồ sơ</button>
+      <!-- Initial Consent Step (if no draft application yet) -->
+      <div v-else-if="!application" class="partner-card welcome-card">
+        <div class="partner-header text-center">
+          <div class="partner-chip">
+            <span class="material-symbols-outlined icon-16">handshake</span>
+            <span>AURA PARTNER NETWORK</span>
+          </div>
+          <h1 class="partner-title">Đăng ký Trở thành Đối tác Cho thuê Sân</h1>
+          <p class="partner-subtitle">
+            Quy trình xét duyệt minh bạch, an toàn dành cho các chủ câu lạc bộ và cơ sở thể thao trên toàn quốc.
+          </p>
         </div>
-        <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Hồ sơ #{{ application.id }}</span>
+
+        <div class="partner-benefits-grid">
+          <div class="benefit-card">
+            <div class="benefit-icon-box">
+              <span class="material-symbols-outlined">bolt</span>
+            </div>
+            <h4>Vận hành Tự động</h4>
+            <p>Bảng giá linh hoạt theo giờ, theo ngày và hệ thống lịch đặt realtime chống trùng sân.</p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon-box">
+              <span class="material-symbols-outlined">payments</span>
+            </div>
+            <h4>Thanh toán Minh bạch</h4>
+            <p>Hỗ trợ QR Code thanh toán trực tiếp về tài khoản chủ sân, đối soát minh bạch 24/7.</p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon-box">
+              <span class="material-symbols-outlined">groups</span>
+            </div>
+            <h4>Hàng ngàn Khách hàng</h4>
+            <p>Kết nối ngay với cộng đồng người chơi thể thao năng động trên nền tảng Aura Sports.</p>
+          </div>
+        </div>
+
+        <div class="consent-info-box">
+          <div class="info-head">
+            <span class="material-symbols-outlined info-icon">verified_user</span>
+            <div class="info-text-wrap">
+              <h4>Bắt đầu hồ sơ đối tác</h4>
+              <p>
+                Hồ sơ của bạn sẽ được đội ngũ vận hành Aura Sports kiểm duyệt trước khi mở quyền quản lý và xuất bản cơ sở. Bạn sẽ xem và xác nhận các điều khoản cần thiết trước khi nộp hồ sơ.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-footer">
+          <button
+            type="button"
+            class="btn-start-action"
+            @click="handleStartApplication"
+          >
+            <span>Bắt đầu Hồ sơ Đăng ký</span>
+            <span class="material-symbols-outlined icon-18">arrow_forward</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Step 1: Business Information -->
-      <BusinessInfoStep
-        v-if="currentStep === 1"
-        :application="application"
-        :field-errors="fieldErrors"
-        :error="error"
-        :saving="saving"
-        :save="handleSaveDraft"
-        @next="currentStep = 2"
-      />
+      <!-- Application in Draft: Step-by-step Wizard -->
+      <div v-else class="partner-card wizard-card">
+        <div class="wizard-header">
+          <div>
+            <div class="partner-chip">
+              <span class="material-symbols-outlined icon-16">edit_document</span>
+              <span>HỒ SƠ ĐỐI TÁC</span>
+            </div>
+            <h1 class="wizard-title">Đăng ký Trở thành Đối tác Cho thuê Sân</h1>
+          </div>
+          <span class="app-code-badge">Hồ sơ #{{ application.id }}</span>
+        </div>
 
-      <!-- Step 2: Document Upload -->
-      <DocumentUploadStep
-        v-else-if="currentStep === 2"
-        :application="application"
-        :uploading="uploading"
-        :field-errors="fieldErrors"
-        @upload="handleUpload"
-        @back="currentStep = 1"
-        @next="currentStep = 3"
-      />
+        <!-- Steps Progress Bar -->
+        <div class="wizard-stepper">
+          <button
+            type="button"
+            class="step-pill"
+            :class="{ active: currentStep === 1, completed: currentStep > 1 }"
+            @click="currentStep = 1"
+          >
+            <span class="step-num">1</span>
+            <span class="step-lbl">1. Thông tin kinh doanh</span>
+          </button>
 
-      <!-- Step 3: Consent and Review -->
-      <ConsentAndReviewStep
-        v-else-if="currentStep === 3"
-        :application="application"
-        :submitting="submitting"
-        :error="error"
-        :field-errors="fieldErrors"
-        @submit="handleSubmit"
-        @back="currentStep = 2"
-      />
+          <span class="step-sep material-symbols-outlined">chevron_right</span>
+
+          <button
+            type="button"
+            class="step-pill"
+            :class="{ active: currentStep === 2, completed: currentStep > 2 }"
+            @click="currentStep = 2"
+          >
+            <span class="step-num">2</span>
+            <span class="step-lbl">2. Tài liệu xác thực</span>
+          </button>
+
+          <span class="step-sep material-symbols-outlined">chevron_right</span>
+
+          <button
+            type="button"
+            class="step-pill"
+            :class="{ active: currentStep === 3, completed: currentStep > 3 }"
+            @click="currentStep = 3"
+          >
+            <span class="step-num">3</span>
+            <span class="step-lbl">3. Rà soát & Nộp hồ sơ</span>
+          </button>
+        </div>
+
+        <!-- Step 1: Business Information -->
+        <BusinessInfoStep
+          v-if="currentStep === 1"
+          :application="application"
+          :field-errors="fieldErrors"
+          :error="error"
+          :saving="saving"
+          :save="handleSaveDraft"
+          @next="currentStep = 2"
+        />
+
+        <!-- Step 2: Document Upload -->
+        <DocumentUploadStep
+          v-else-if="currentStep === 2"
+          :application="application"
+          :uploading="uploading"
+          :field-errors="fieldErrors"
+          @upload="handleUpload"
+          @back="currentStep = 1"
+          @next="currentStep = 3"
+        />
+
+        <!-- Step 3: Consent and Review -->
+        <ConsentAndReviewStep
+          v-else-if="currentStep === 3"
+          :application="application"
+          :submitting="submitting"
+          :error="error"
+          :field-errors="fieldErrors"
+          @submit="handleSubmit"
+          @back="currentStep = 2"
+        />
+      </div>
     </div>
   </div>
 </template>
+
+<style src="../styles/partner-registration.css"></style>

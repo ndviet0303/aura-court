@@ -24,49 +24,49 @@ function formatDate(dateStr?: string): string {
 </script>
 
 <template>
-  <div class="application-history-timeline space-y-4">
-    <h4 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-      <span class="material-symbols-outlined text-base text-gray-500">history</span>
-      Lịch sử Thẩm định & Cập nhật
+  <div class="application-history-timeline">
+    <h4 class="timeline-title">
+      <span class="material-symbols-outlined icon-18">history</span>
+      <span>Lịch sử Thẩm định & Cập nhật</span>
     </h4>
 
-    <div v-if="!history.length" class="text-xs text-gray-500 dark:text-gray-400 italic">
+    <div v-if="!history.length" class="empty-timeline-text">
       Chưa có ghi nhận thẩm định nào từ đội ngũ vận hành.
     </div>
 
-    <ol v-else class="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-4">
-      <li v-for="item in history" :key="item.id" class="ml-4">
+    <ol v-else class="timeline-list">
+      <li v-for="item in history" :key="item.id" class="timeline-item">
         <div
-          class="absolute w-2.5 h-2.5 rounded-full -left-1.5 border border-white dark:border-gray-900 mt-1.5"
+          class="timeline-dot"
           :class="{
-            'bg-emerald-500': item.decision === 'approve',
-            'bg-amber-500': item.decision === 'revision_required' || item.decision === 'supplement',
-            'bg-red-500': item.decision === 'reject',
+            'dot-approve': item.decision === 'approve',
+            'dot-supplement': item.decision === 'revision_required' || item.decision === 'supplement',
+            'dot-reject': item.decision === 'reject',
           }"
         ></div>
 
-        <div class="p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm space-y-1">
-          <div class="flex items-center justify-between gap-2">
+        <div class="timeline-card">
+          <div class="timeline-card-header">
             <span
-              class="text-xs font-semibold px-2 py-0.5 rounded"
+              class="decision-badge"
               :class="{
-                'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': item.decision === 'approve',
-                'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': item.decision === 'revision_required' || item.decision === 'supplement',
-                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': item.decision === 'reject',
+                'badge-approve': item.decision === 'approve',
+                'badge-supplement': item.decision === 'revision_required' || item.decision === 'supplement',
+                'badge-reject': item.decision === 'reject',
               }"
             >
               {{ item.decision === 'approve' ? 'Phê duyệt' : item.decision === 'revision_required' || item.decision === 'supplement' ? 'Yêu cầu bổ sung' : 'Từ chối' }}
             </span>
-            <time class="text-[11px] text-gray-400">{{ formatDate(item.created_at) }}</time>
+            <time class="timeline-time">{{ formatDate(item.created_at) }}</time>
           </div>
 
-          <p v-if="item.reason" class="text-xs text-gray-700 dark:text-gray-300 mt-1">
+          <p v-if="item.reason" class="timeline-reason">
             {{ item.reason }}
           </p>
 
-          <div v-if="item.feedback_fields && Object.keys(item.feedback_fields).length > 0" class="mt-2 text-[11px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded">
-            <span class="font-medium text-gray-600 dark:text-gray-400 block mb-0.5">Trường thông tin cần lưu ý:</span>
-            <ul class="list-disc list-inside space-y-0.5 text-gray-500 dark:text-gray-400">
+          <div v-if="item.feedback_fields && Object.keys(item.feedback_fields).length > 0" class="timeline-feedback-box">
+            <span class="feedback-heading">Trường thông tin cần lưu ý:</span>
+            <ul class="feedback-fields-list">
               <li v-for="(msg, field) in item.feedback_fields" :key="field">
                 <strong>{{ field }}:</strong> {{ msg }}
               </li>
@@ -77,3 +77,5 @@ function formatDate(dateStr?: string): string {
     </ol>
   </div>
 </template>
+
+<style src="../styles/partner-registration.css"></style>

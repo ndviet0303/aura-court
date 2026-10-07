@@ -93,64 +93,87 @@ async function handleNext() {
 </script>
 
 <template>
-  <div class="business-info-step space-y-6">
-    <div>
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white">1. Thông tin cơ sở và người đại diện</h3>
-      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Thông tin được lưu trong hồ sơ để vận hành xác minh.</p>
+  <div class="business-info-step">
+    <div class="step-head">
+      <h3 class="step-title">1. Thông tin cơ sở và người đại diện</h3>
+      <p class="step-sub">Thông tin được lưu trong hồ sơ để vận hành xác minh và thiết lập tài khoản đối tác.</p>
     </div>
 
-    <p v-if="error" class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/20 dark:text-red-400" role="alert">
-      {{ error }}
+    <p v-if="error" class="error-banner" role="alert">
+      <span class="material-symbols-outlined icon-16">error</span>
+      <span>{{ error }}</span>
     </p>
 
-    <div>
-      <span class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Mô hình kinh doanh</span>
-      <div class="flex flex-wrap gap-4 text-sm text-gray-800 dark:text-gray-200">
-        <label><input v-model="businessType" type="radio" value="individual" /> Cá nhân</label>
-        <label><input v-model="businessType" type="radio" value="household" /> Hộ kinh doanh</label>
-        <label><input v-model="businessType" type="radio" value="company" /> Doanh nghiệp</label>
+    <div class="business-type-group">
+      <label class="field-label">Mô hình kinh doanh *</label>
+      <div class="business-type-options">
+        <label class="radio-pill" :class="{ selected: businessType === 'individual' }">
+          <input v-model="businessType" type="radio" value="individual" />
+          <span class="radio-dot"></span>
+          <span>Cá nhân</span>
+        </label>
+        <label class="radio-pill" :class="{ selected: businessType === 'household' }">
+          <input v-model="businessType" type="radio" value="household" />
+          <span class="radio-dot"></span>
+          <span>Hộ kinh doanh</span>
+        </label>
+        <label class="radio-pill" :class="{ selected: businessType === 'company' }">
+          <input v-model="businessType" type="radio" value="company" />
+          <span class="radio-dot"></span>
+          <span>Doanh nghiệp</span>
+        </label>
       </div>
-      <p v-if="fieldErrors.business_type" class="mt-1 text-xs text-red-600">{{ fieldErrors.business_type[0] }}</p>
+      <p v-if="fieldErrors.business_type" class="field-error-msg">{{ fieldErrors.business_type[0] }}</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div v-for="field in fields" :key="field.key">
-        <label :for="field.key" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-          {{ field.label }}<span v-if="field.required" class="text-red-500"> *</span>
+    <div class="form-grid">
+      <div v-for="field in fields" :key="field.key" class="form-field-item">
+        <label :for="field.key" class="field-label">
+          {{ field.label }}<span v-if="field.required" class="req-star"> *</span>
         </label>
         <input
           :id="field.key"
           v-model="values[field.key]"
           :type="field.type || 'text'"
           autocomplete="off"
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          class="form-input"
         />
-        <p v-if="fieldErrors[field.key]" class="mt-1 text-xs text-red-600 dark:text-red-400">
+        <p v-if="fieldErrors[field.key]" class="field-error-msg">
           {{ fieldErrors[field.key]?.[0] }}
         </p>
       </div>
-      <div>
-        <label for="sports" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Môn thể thao *</label>
-        <input id="sports" v-model="sportsInput" type="text" placeholder="Cầu lông, pickleball" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
-        <p v-if="fieldErrors.sports" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ fieldErrors.sports[0] }}</p>
+
+      <div class="form-field-item">
+        <label for="sports" class="field-label">Môn thể thao<span class="req-star"> *</span></label>
+        <input id="sports" v-model="sportsInput" type="text" placeholder="Cầu lông, pickleball..." class="form-input" />
+        <p v-if="fieldErrors.sports" class="field-error-msg">{{ fieldErrors.sports[0] }}</p>
       </div>
-      <div>
-        <label for="courtScale" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Số sân dự kiến</label>
-        <input id="courtScale" v-model="courtScaleInput" type="number" min="1" max="100" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
-        <p v-if="fieldErrors.court_scale" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ fieldErrors.court_scale[0] }}</p>
+
+      <div class="form-field-item">
+        <label for="courtScale" class="field-label">Số sân dự kiến</label>
+        <input id="courtScale" v-model="courtScaleInput" type="number" min="1" max="100" class="form-input" />
+        <p v-if="fieldErrors.court_scale" class="field-error-msg">{{ fieldErrors.court_scale[0] }}</p>
       </div>
     </div>
 
-    <div class="flex items-center justify-between border-t pt-4 dark:border-gray-700">
-      <div>
-        <button type="button" :disabled="saving" class="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200" @click="handleSave">
-          {{ saving ? 'Đang lưu...' : 'Lưu bản nháp' }}
+    <div class="step-footer">
+      <div class="draft-actions">
+        <button type="button" :disabled="saving" class="btn-save-draft" @click="handleSave">
+          <span v-if="saving" class="material-symbols-outlined icon-16 spin">sync</span>
+          <span>{{ saving ? 'Đang lưu...' : 'Lưu bản nháp' }}</span>
         </button>
-        <span v-if="saveSuccess" class="ml-2 text-xs text-emerald-700">Đã lưu</span>
+        <span v-if="saveSuccess" class="saved-indicator">
+          <span class="material-symbols-outlined icon-14">check</span>
+          <span>Đã lưu</span>
+        </span>
       </div>
-      <button type="button" :disabled="saving" class="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white disabled:opacity-50" @click="handleNext">
-        Tiếp tục: Tải tài liệu
+
+      <button type="button" :disabled="saving" class="btn-next-step" @click="handleNext">
+        <span>Tiếp tục: Tải tài liệu</span>
+        <span class="material-symbols-outlined icon-18">arrow_forward</span>
       </button>
     </div>
   </div>
 </template>
+
+<style src="../styles/partner-registration.css"></style>

@@ -62,8 +62,9 @@ onMounted(async () => {
   }
 
   if (route.query.error) {
-    if (route.query.msg) {
-      error.value = `${t('auth.loginFailedPrefix')} ${decodeURIComponent(String(route.query.msg))}`
+    const rawMsg = route.query.msg ? decodeURIComponent(String(route.query.msg)) : ''
+    if (rawMsg && !rawMsg.includes('SQLSTATE') && !rawMsg.includes('Connection:') && !rawMsg.includes('SQL:')) {
+      error.value = `${t('auth.loginFailedPrefix')} ${rawMsg}`
     } else {
       error.value = t('auth.socialLoginFailed')
     }

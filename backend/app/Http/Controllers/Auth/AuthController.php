@@ -8,12 +8,7 @@ use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
-use App\Models\Court;
-use App\Models\CourtPriceSlot;
-use App\Models\Organization;
-use App\Models\OrganizationMember;
 use App\Models\User;
-use App\Models\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -133,40 +128,22 @@ class AuthController extends Controller
     public function changePassword(Request $request)
     {
         $user = $request->user();
-
         if (! $user->password_set) {
-            $data = $request->validate([
-                'password' => ['required', 'string', 'min:8', 'confirmed'],
-            ]);
-            $user->update([
-                'password' => $data['password'],
-                'password_set' => true,
-            ]);
-
+            $data = $request->validate(['password' => ['required', 'string', 'min:8', 'confirmed']]);
+            $user->update(['password' => $data['password'], 'password_set' => true]);
             return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
         }
-
         $data = $request->validate([
             'current_password' => ['required', 'current_password:web'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
         $user->update(['password' => $data['password']]);
-
         return ['message' => 'Mật khẩu đã được cập nhật.', 'user' => $user->fresh()];
     }
 
     public function setPassword(Request $request)
     {
-        $user = $request->user();
-        $data = $request->validate([
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-        $user->update([
-            'password' => $data['password'],
-            'password_set' => true,
-        ]);
-
-        return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
+        return $this->changePassword($request);
     }
 
     protected function resolveOAuthRedirectUri(Request $request, string $provider): string
@@ -235,31 +212,27 @@ class AuthController extends Controller
             $socialUser = $driver->redirectUrl($redirectUri)->stateless()->user();
 
             $email = $socialUser->getEmail() ?: ($socialUser->getId() . '@facebook.auracourt.vn');
-            $name = $socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete');
+            $name = Str::limit($socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete'), 255, '');
             $avatar = $socialUser->getAvatar();
+            if ($avatar && strlen($avatar) > 2048) {
+                $avatar = Str::limit($avatar, 2048, '');
+            }
 
             $user = User::where('email', $email)->first();
 
             if (! $user) {
-                $user = User::create([
-                    'name' => $name,
-                    'email' => $email,
-                    'password' => Hash::make(Str::random(32)),
-                    'role' => 'customer',
-                    'avatar_url' => $avatar,
-                    'onboarded' => false,
-                    'password_set' => false,
-                    'social_provider' => $provider,
-                ]);
-                $user->email_verified_at = now();
-                $user->save();
+                $user = $this->createOAuthUser($name, $email, $provider, $avatar);
             } else {
                 if ($user->isRestricted()) {
                     return redirect("{$frontendUrl}/login?error=account_restricted&msg=" . urlencode('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'));
                 }
                 if ($avatar && (empty($user->avatar_url) || str_contains($user->avatar_url, 'athlete-'))) {
-                    $user->avatar_url = $avatar;
-                    $user->save();
+                    try {
+                        $user->avatar_url = $avatar;
+                        $user->save();
+                    } catch (\Throwable) {
+                        // Prevent legacy schema avatar length from breaking login
+                    }
                 }
             }
 
@@ -282,8 +255,30 @@ class AuthController extends Controller
                 'provider' => $provider,
                 'trace' => $e->getTraceAsString(),
             ]);
-            return redirect("{$frontendUrl}/login?error=oauth_failed&msg=" . urlencode($e->getMessage()));
+            $userMessage = config('app.debug') ? $e->getMessage() : 'Đăng nhập mạng xã hội thất bại. Vui lòng thử lại sau.';
+            return redirect("{$frontendUrl}/login?error=oauth_failed&msg=" . urlencode($userMessage));
         }
+    }
+    private function createOAuthUser(string $name, string $email, string $provider, ?string $avatar): User
+    {
+        $payload = [
+            'name' => $name, 'email' => $email, 'password' => Hash::make(Str::random(32)),
+            'role' => 'customer', 'avatar_url' => $avatar, 'onboarded' => false,
+            'password_set' => false, 'social_provider' => $provider,
+        ];
+        try {
+            $user = User::create($payload);
+        } catch (\Illuminate\Database\QueryException $qe) {
+            if (str_contains($qe->getMessage(), '22001') || str_contains($qe->getMessage(), 'avatar_url')) {
+                $payload['avatar_url'] = null;
+                $user = User::create($payload);
+            } else {
+                throw $qe;
+            }
+        }
+        $user->email_verified_at = now();
+        $user->save();
+        return $user;
     }
 
     public function onboarding(

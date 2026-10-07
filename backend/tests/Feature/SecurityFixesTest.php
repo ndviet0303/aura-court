@@ -67,6 +67,37 @@ class SecurityFixesTest extends TestCase
         $this->assertNotNull($user->email_verified_at);
     }
 
+    public function test_oauth_login_succeeds_even_when_avatar_url_exceeds_255_chars(): void
+    {
+        config([
+            'services.google.redirect' => 'http://localhost/api/v1/auth/google/callback',
+            'app.frontend_url' => 'http://localhost:5173',
+        ]);
+
+        $longAvatar = 'https://lh3.googleusercontent.com/a/' . str_repeat('ACg8ocK-UjWd8GVQUF8pU6T3urOWLuZOcZJVAMi9JQCJZJ3f4pBTkFBr-gcD2ZUCfGMGBQ-kCXtbZqzF2l5wwJARs42Wy3i', 5) . '=s96-c';
+
+        $provider = Mockery::mock(AbstractProvider::class);
+        $provider->shouldReceive('redirectUrl')
+            ->once()
+            ->with('http://localhost/api/v1/auth/google/callback')
+            ->andReturnSelf();
+        $provider->shouldReceive('stateless')->once()->andReturnSelf();
+        $provider->shouldReceive('user')->once()->andReturn(SocialiteUser::fake([
+            'id' => 'provider-long-avatar-123',
+            'email' => 'long_avatar@example.com',
+            'name' => 'Long Avatar User',
+            'avatar' => $longAvatar,
+        ]));
+        Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
+
+        $this->get('/api/v1/auth/google/callback')
+            ->assertRedirect('http://localhost:5173/onboarding');
+
+        $user = User::where('email', 'long_avatar@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame('google', $user->social_provider);
+    }
+
     public function test_authenticated_users_cannot_credit_their_own_wallet(): void
     {
         $user = User::factory()->create();

@@ -43,126 +43,152 @@ async function handleGoToDashboard() {
 </script>
 
 <template>
-  <div class="partner-status-view py-8 px-4 max-w-3xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Trạng thái Hồ sơ Đối tác
-        </h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          Theo dõi tiến trình thẩm định và kết quả xét duyệt hồ sơ đối tác.
-        </p>
-      </div>
+  <div class="partner-page-wrapper">
+    <div class="aura-glow-bg" aria-hidden="true"></div>
 
-      <button
-        type="button"
-        :disabled="loading"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-        @click="loadData"
-      >
-        <span class="material-symbols-outlined text-sm" :class="{ 'animate-spin': loading }">refresh</span>
-        Làm mới
-      </button>
-    </div>
+    <div class="partner-container">
+      <div class="partner-card status-card">
+        <div class="status-top-bar">
+          <div>
+            <div class="partner-chip">
+              <span class="material-symbols-outlined icon-16">shield_person</span>
+              <span>TIẾN TRÌNH THẨM ĐỊNH</span>
+            </div>
+            <h1 class="status-main-title">Trạng thái Hồ sơ Đối tác</h1>
+            <p class="status-main-sub">Theo dõi tiến trình thẩm định và kết quả xét duyệt hồ sơ đối tác.</p>
+          </div>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="p-3 text-xs text-red-700 bg-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400">
-      {{ error }}
-    </div>
-
-    <!-- Application Status Box -->
-    <div v-if="application" class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 border border-gray-100 dark:border-gray-700 space-y-6">
-      <div class="flex items-center justify-between border-b pb-4 dark:border-gray-700">
-        <div>
-          <span class="text-xs font-semibold text-gray-400 uppercase">Hồ sơ #{{ application.id }}</span>
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
-            {{ application.business_name || 'Hồ sơ đăng ký đối tác' }}
-          </h2>
-        </div>
-        <span
-          class="px-3 py-1 text-xs font-semibold rounded-full"
-          :class="{
-            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': isPendingReview,
-            'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': isSupplementationRequested,
-            'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': isApproved,
-            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': isRejected,
-          }"
-        >
-          {{ isPendingReview ? 'Chờ thẩm định' : isSupplementationRequested ? 'Cần bổ sung' : isApproved ? 'Đã duyệt' : 'Từ chối' }}
-        </span>
-      </div>
-
-      <!-- State: Pending Review (Pending edit prevention notice) -->
-      <div v-if="isPendingReview" class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg text-sm text-blue-900 dark:text-blue-300 space-y-2">
-        <p class="font-semibold flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-base">lock</span>
-          Hồ sơ đang trong quá trình thẩm định
-        </p>
-        <p class="text-xs">
-          Hồ sơ của bạn đã được khóa để chuyên viên xem xét. Bạn sẽ không thể chỉnh sửa thông tin cho đến khi có phản hồi chính thức.
-        </p>
-      </div>
-
-      <!-- State: Supplementation Requested -->
-      <div v-else-if="isSupplementationRequested" class="space-y-4">
-        <div class="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg text-sm text-amber-900 dark:text-amber-300">
-          <p class="font-semibold">Chuyên viên yêu cầu bổ sung thông tin:</p>
-          <p class="text-xs mt-1">
-            {{ history[0]?.reason || 'Vui lòng bổ sung hoặc làm rõ thông tin theo yêu cầu.' }}
-          </p>
-        </div>
-
-        <div class="space-y-3 border-t pt-4 dark:border-gray-700">
-          <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-            Nội dung giải trình / bổ sung hồ sơ:
-          </label>
           <button
             type="button"
-            :disabled="submitting"
-            class="px-5 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50"
-            @click="router.push('/partner-registration')"
+            :disabled="loading"
+            class="btn-refresh-status"
+            @click="loadData"
           >
-            Chỉnh sửa và nộp lại hồ sơ
+            <span class="material-symbols-outlined icon-16" :class="{ 'spin': loading }">refresh</span>
+            <span>Làm mới</span>
           </button>
         </div>
-      </div>
 
-      <!-- State: Approved -->
-      <div v-else-if="isApproved" class="space-y-4">
-        <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg text-sm text-emerald-900 dark:text-emerald-300">
-          <p class="font-semibold">Hồ sơ đã được phê duyệt thành công!</p>
-          <p class="text-xs mt-1">
-            Bạn đã được cấp quyền quản trị câu lạc bộ. Vui lòng tiếp tục vào khu vực quản lý.
-          </p>
+        <!-- Error Alert -->
+        <div v-if="error" class="error-banner" role="alert">
+          <span class="material-symbols-outlined icon-16">error</span>
+          <span>{{ error }}</span>
         </div>
-        <button
-          type="button"
-          class="px-5 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg"
-          @click="handleGoToDashboard"
-        >
-          Truy cập Quản lý Câu lạc bộ
-        </button>
-      </div>
 
-      <!-- State: Rejected -->
-      <div v-else-if="isRejected" class="space-y-4">
-        <div class="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg text-sm text-red-900 dark:text-red-300">
-          <p class="font-semibold">Hồ sơ không được phê duyệt.</p>
-          <p class="text-xs mt-1">Lý do: {{ history[0]?.reason || 'Chưa đáp ứng tiêu chuẩn.' }}</p>
+        <!-- Application Status Box -->
+        <div v-if="application" class="application-details-box">
+          <div class="app-summary-header">
+            <div>
+              <span class="app-id-tag">Hồ sơ #{{ application.id }}</span>
+              <h2 class="app-business-name">
+                {{ application.business_name || 'Hồ sơ đăng ký đối tác' }}
+              </h2>
+            </div>
+            <span
+              class="status-pill"
+              :class="{
+                'status-pending': isPendingReview,
+                'status-supplement': isSupplementationRequested,
+                'status-approved': isApproved,
+                'status-rejected': isRejected,
+              }"
+            >
+              {{ isPendingReview ? 'Chờ thẩm định' : isSupplementationRequested ? 'Cần bổ sung' : isApproved ? 'Đã duyệt' : 'Từ chối' }}
+            </span>
+          </div>
+
+          <!-- State: Pending Review (Pending edit prevention notice) -->
+          <div v-if="isPendingReview" class="notice-box notice-pending">
+            <p class="notice-title">
+              <span class="material-symbols-outlined icon-18">lock</span>
+              <span>Hồ sơ đang trong quá trình thẩm định</span>
+            </p>
+            <p class="notice-desc">
+              Hồ sơ của bạn đã được khóa để chuyên viên xem xét. Bạn sẽ không thể chỉnh sửa thông tin cho đến khi có phản hồi chính thức.
+            </p>
+          </div>
+
+          <!-- State: Supplementation Requested -->
+          <div v-else-if="isSupplementationRequested" class="action-state-box">
+            <div class="notice-box notice-warning">
+              <p class="notice-title">
+                <span class="material-symbols-outlined icon-18">warning</span>
+                <span>Chuyên viên yêu cầu bổ sung thông tin:</span>
+              </p>
+              <p class="notice-desc">
+                {{ history[0]?.reason || 'Vui lòng bổ sung hoặc làm rõ thông tin theo yêu cầu.' }}
+              </p>
+            </div>
+
+            <div class="action-row">
+              <button
+                type="button"
+                :disabled="submitting"
+                class="btn-action-primary bg-amber bg-amber-600"
+                @click="router.push('/partner-registration')"
+              >
+                <span class="material-symbols-outlined icon-16">edit</span>
+                <span>Chỉnh sửa và nộp lại hồ sơ</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- State: Approved -->
+          <div v-else-if="isApproved" class="action-state-box">
+            <div class="notice-box notice-success">
+              <p class="notice-title">
+                <span class="material-symbols-outlined icon-18">verified</span>
+                <span>Hồ sơ đã được phê duyệt thành công!</span>
+              </p>
+              <p class="notice-desc">
+                Bạn đã được cấp quyền quản trị câu lạc bộ. Vui lòng tiếp tục vào khu vực quản lý.
+              </p>
+            </div>
+
+            <div class="action-row">
+              <button
+                type="button"
+                class="btn-action-primary bg-green bg-emerald-600"
+                @click="handleGoToDashboard"
+              >
+                <span class="material-symbols-outlined icon-16">dashboard</span>
+                <span>Truy cập Quản lý Câu lạc bộ</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- State: Rejected -->
+          <div v-else-if="isRejected" class="action-state-box">
+            <div class="notice-box notice-danger">
+              <p class="notice-title">
+                <span class="material-symbols-outlined icon-18">cancel</span>
+                <span>Hồ sơ không được phê duyệt.</span>
+              </p>
+              <p class="notice-desc">
+                Lý do: {{ history[0]?.reason || 'Chưa đáp ứng tiêu chuẩn.' }}
+              </p>
+            </div>
+
+            <div class="action-row">
+              <button
+                type="button"
+                class="btn-action-secondary"
+                @click="router.push('/partner-registration')"
+              >
+                <span class="material-symbols-outlined icon-16">add</span>
+                <span>Bắt đầu hồ sơ mới</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Review History Timeline -->
+          <div class="timeline-wrapper">
+            <ApplicationHistoryTimeline :history="history" :created-date="application.created_at" />
+          </div>
         </div>
-        <button
-          type="button"
-          class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-          @click="router.push('/partner-registration')"
-        >
-          Bắt đầu hồ sơ mới
-        </button>
-      </div>
-
-      <!-- Review History Timeline -->
-      <div class="border-t pt-6 dark:border-gray-700">
-        <ApplicationHistoryTimeline :history="history" :created-date="application.created_at" />
       </div>
     </div>
   </div>
 </template>
+
+<style src="../styles/partner-registration.css"></style>
