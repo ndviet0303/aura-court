@@ -82,7 +82,7 @@ export function useAdminPricingMatrix() {
     })
   )
 
-  function openPriceModal(court: Court) {
+  async function openPriceModal(court: Court) {
     selectedCourtForPrice.value = court
     selectedWeekdayTab.value = 1
     bulkPrice.value = 100000
@@ -93,6 +93,16 @@ export function useAdminPricingMatrix() {
     priceError.value = ''
     priceNotice.value = ''
     showPriceModal.value = true
+
+    if (!court.price_slots || court.price_slots.length === 0) {
+      try {
+        const slots = await adminApi.getCourtPrices(court.id)
+        court.price_slots = slots || []
+        court.price_slots_count = court.price_slots.length
+      } catch (cause: unknown) {
+        priceError.value = errorMessage(cause, t('admin.manage.loadDataError'))
+      }
+    }
   }
 
   async function applyBulkPricing(onReload?: () => Promise<void>) {
@@ -122,6 +132,13 @@ export function useAdminPricingMatrix() {
 
       const count = targetDays.length * (bulkEndHour.value - bulkStartHour.value)
       priceNotice.value = res?.message || t('admin.manage.bulkPricingSuccess', { count })
+      try {
+        const freshSlots = await adminApi.getCourtPrices(court.id)
+        court.price_slots = freshSlots || []
+        court.price_slots_count = court.price_slots.length
+      } catch {
+        // ignore background refresh error
+      }
       if (onReload) await onReload()
     } catch (cause: unknown) {
       priceError.value = errorMessage(cause, t('admin.manage.bulkPricingError'))
@@ -135,6 +152,10 @@ export function useAdminPricingMatrix() {
     try {
       await adminApi.deletePrice(selectedCourtForPrice.value.id, slotId)
       priceNotice.value = t('admin.manage.deleteSlotSuccess')
+      if (selectedCourtForPrice.value.price_slots) {
+        selectedCourtForPrice.value.price_slots = selectedCourtForPrice.value.price_slots.filter((s) => s.id !== slotId)
+        selectedCourtForPrice.value.price_slots_count = selectedCourtForPrice.value.price_slots.length
+      }
       if (onReload) await onReload()
     } catch (cause: unknown) {
       priceError.value = errorMessage(cause, t('admin.manage.deleteSlotError'))

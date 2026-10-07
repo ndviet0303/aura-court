@@ -345,6 +345,16 @@ const durationHours = computed(() => {
 :global(html.dark) .venue-info-link:hover {
   color: #e58e9f;
 }
+:global(html.dark) .venue-info span,
+:global(html.dark) .venue-info-link span,
+:global(html.dark) .date-info span {
+  color: #ded7ce;
+}
+:global(html.dark) .venue-info .icon-14,
+:global(html.dark) .venue-info-link .icon-14,
+:global(html.dark) .date-info .icon-14 {
+  color: var(--accent, #c9a15a);
+}
 
 .icon-10 {
   font-size: 10px;

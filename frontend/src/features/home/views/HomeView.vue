@@ -110,6 +110,14 @@ function resetFilters() {
   scrollToSelectedChip()
 }
 
+function formatVenueTabName(name: string): string {
+  return name.replace(/^Aura\s+(Court|Arena|Sports\s+Complex|Multi-Sport|Sports\s+Center)\s+/i, '').trim() || name
+}
+
+function formatCourtChipName(name: string): string {
+  return name.replace(/\s*\([^)]*\)/g, '').trim() || name
+}
+
 function updateScrollState() {
   if (!courtsChipsScrollRef.value) return
   const el = courtsChipsScrollRef.value
@@ -409,18 +417,38 @@ onMounted(async () => {
       </RouterLink>
     </div>
     <p v-if="store.error" class="error">{{ store.error }}</p>
-    <!-- Beside-the-slots controls: selected court, play date & nearby court selector -->
+    <!-- Clean Beside-the-slots controls: venue tabs, quick search, date & court selector -->
     <div class="availability-beside-bar">
-      <!-- Top Bar: Title & Count, Quick Search & DatePicker -->
-      <div class="availability-bar-top">
-        <div class="availability-bar-heading">
-          <span class="material-symbols-outlined icon-18">stadium</span>
-          <span class="picker-label">{{ t('home.availability.nearbyCourts') }}:</span>
-          <span v-if="filteredCourts.length" class="courts-count-pill">{{ filteredCourts.length }} / {{ store.courts.length }} sân</span>
+      <!-- Clean Control Header: Venue tabs on left, Date & Quick search on right -->
+      <div class="availability-bar-header">
+        <!-- Venue tabs (Clean pills) -->
+        <div v-if="venues.length > 1" class="venue-tabs-scroll" role="tablist" aria-label="Cơ sở">
+          <button
+            type="button"
+            role="tab"
+            class="venue-tab-pill"
+            :class="{ active: selectedVenueId === null }"
+            @click="selectVenue(null)"
+          >
+            Tất cả
+            <span class="tab-badge">{{ store.courts.length }}</span>
+          </button>
+          <button
+            v-for="v in venues"
+            :key="v.id"
+            type="button"
+            role="tab"
+            class="venue-tab-pill"
+            :class="{ active: selectedVenueId === v.id }"
+            @click="selectVenue(v.id)"
+          >
+            {{ formatVenueTabName(v.name) }}
+            <span class="tab-badge">{{ v.count }}</span>
+          </button>
         </div>
 
-        <div class="availability-top-actions">
-          <!-- Quick Search -->
+        <!-- Quick actions: Search + DatePicker -->
+        <div class="availability-quick-actions">
           <div class="availability-search-box">
             <span class="material-symbols-outlined icon-16 search-icon">search</span>
             <input
@@ -441,45 +469,13 @@ onMounted(async () => {
             </button>
           </div>
 
-          <!-- Date Picker -->
-          <div class="availability-date-picker">
-            <span class="picker-label">{{ t('home.availability.playDateLabel') }}:</span>
+          <div class="availability-date-wrapper">
             <DatePicker v-model="date" @change="loadAvailability" />
           </div>
         </div>
       </div>
 
-      <!-- Venue Filter Pills (Shown when multiple venues exist) -->
-      <div v-if="venues.length > 1" class="venue-pills-row" role="tablist" aria-label="Lọc theo cơ sở">
-        <span class="venue-filter-lbl">
-          <span class="material-symbols-outlined icon-14">apartment</span>
-          <span>Cơ sở:</span>
-        </span>
-        <div class="venue-pills-scroll">
-          <button
-            type="button"
-            role="tab"
-            class="venue-pill-btn"
-            :class="{ active: selectedVenueId === null }"
-            @click="selectVenue(null)"
-          >
-            Tất cả cơ sở ({{ store.courts.length }})
-          </button>
-          <button
-            v-for="v in venues"
-            :key="v.id"
-            type="button"
-            role="tab"
-            class="venue-pill-btn"
-            :class="{ active: selectedVenueId === v.id }"
-            @click="selectVenue(v.id)"
-          >
-            {{ v.name }} ({{ v.count }})
-          </button>
-        </div>
-      </div>
-
-      <!-- Court Carousel -->
+      <!-- Court Selection Carousel (Compact, elegant, no redundant venue badges) -->
       <div class="court-carousel-row" role="radiogroup" :aria-label="t('home.availability.nearbyCourts')">
         <button
           v-if="filteredCourts.length > 2"
@@ -507,11 +503,11 @@ onMounted(async () => {
             :aria-checked="selected === c.id"
             class="court-chip"
             :class="{ active: selected === c.id }"
+            :title="c.name"
             @click="chooseCourt(c.id)"
           >
-            <span class="material-symbols-outlined icon-16">{{ getCourtIcon(c) }}</span>
-            <span class="court-chip-name">{{ c.name }}</span>
-            <span v-if="c.venue?.name && selectedVenueId === null" class="court-chip-venue">{{ c.venue.name }}</span>
+            <span class="material-symbols-outlined icon-16 court-icon">{{ getCourtIcon(c) }}</span>
+            <span class="court-chip-name">{{ formatCourtChipName(c.name) }}</span>
           </button>
         </div>
 
@@ -694,14 +690,14 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin: 14px 0 20px;
-  padding: 14px 18px;
+  margin: 12px 0 20px;
+  padding: 12px 16px;
   border-radius: 16px;
   background: var(--surface);
   border: 1px solid var(--outline);
 }
 
-.availability-bar-top {
+.availability-bar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -709,18 +705,78 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.availability-top-actions {
+.venue-tabs-scroll {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-width: 0;
+}
+
+.venue-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.venue-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.venue-tab-pill:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.venue-tab-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+:global(html.dark) .venue-tab-pill {
+  background: #231c20;
+  border-color: #382d33;
+  color: var(--muted);
+}
+
+:global(html.dark) .venue-tab-pill.active {
+  background: #e58e9f;
+  border-color: #e58e9f;
+  color: #1c0a10;
+}
+
+.tab-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.availability-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .availability-search-box {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: var(--surface-subtle);
   border: 1px solid var(--outline);
@@ -732,17 +788,17 @@ onMounted(async () => {
 }
 
 .search-icon {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--muted);
 }
 
 .court-search-input {
   border: none;
   background: transparent;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink);
   outline: none;
-  width: 130px;
+  width: 110px;
 }
 
 .search-clear-btn {
@@ -750,77 +806,14 @@ onMounted(async () => {
   border: none;
   color: var(--muted);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
   padding: 0;
 }
 
-.venue-pills-row {
+.availability-date-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--outline);
-}
-
-.venue-filter-lbl {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.venue-pills-scroll {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  width: 100%;
-}
-
-.venue-pills-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.venue-pill-btn {
-  padding: 4px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--outline);
-  background: var(--surface-subtle);
-  color: var(--muted);
-  font-size: 11.5px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.venue-pill-btn:hover:not(.active) {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-
-.venue-pill-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--on-primary);
-}
-
-:global(html.dark) .venue-pill-btn {
-  background: #231c20;
-  border-color: #382d33;
-  color: var(--muted);
-}
-
-:global(html.dark) .venue-pill-btn.active {
-  background: #e58e9f;
-  border-color: #e58e9f;
-  color: #1c0a10;
 }
 
 .no-filtered-courts {
@@ -843,29 +836,6 @@ onMounted(async () => {
   font-weight: 600;
   cursor: pointer;
 }
-
-.court-chip-venue {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--surface-subtle);
-  color: var(--muted);
-  border: 1px solid var(--outline);
-}
-
-.court-chip.active .court-chip-venue {
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  border-color: transparent;
-}
-
-:global(html.dark) .court-chip.active .court-chip-venue {
-  background: rgba(0, 0, 0, 0.2);
-  color: inherit;
-  border-color: transparent;
-}
-
 .lazy-load-action-bar {
   display: flex;
   flex-direction: column;
@@ -917,16 +887,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   width: 100%;
-}
-
-.courts-count-pill {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--surface-subtle);
-  color: var(--muted);
-  border: 1px solid var(--outline);
 }
 
 .court-carousel-row {
@@ -1070,17 +1030,17 @@ onMounted(async () => {
 
 @media (max-width: 640px) {
   .availability-beside-bar {
-    padding: 12px 14px;
+    padding: 10px 12px;
     gap: 10px;
   }
-  .availability-bar-top {
+  .availability-bar-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 8px;
   }
-  .availability-date-picker {
-    width: 100%;
+  .availability-quick-actions {
     justify-content: space-between;
+    width: 100%;
   }
 }
 

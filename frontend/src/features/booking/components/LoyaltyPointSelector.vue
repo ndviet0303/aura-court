@@ -212,11 +212,12 @@ onMounted(() => {
 
 <style scoped>
 .loyalty-point-selector {
-  border: 1px solid var(--color-border, #e2e8f0);
+  border: 1px solid var(--outline, #e2e8f0);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   margin: 0.75rem 0;
-  background: var(--color-bg-secondary, #f8fafc);
+  background: var(--surface-subtle, #f8fafc);
+  color: var(--ink, #0f172a);
 }
 
 .loyalty-header {
@@ -232,7 +233,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.375rem;
   font-weight: 600;
-  color: var(--color-text-primary, #0f172a);
+  color: var(--ink, #0f172a);
 }
 
 .loyalty-icon {
@@ -242,8 +243,9 @@ onMounted(() => {
 
 .loyalty-balance-badge {
   font-size: 0.75rem;
-  color: var(--color-text-muted, #64748b);
-  background: #f1f5f9;
+  color: var(--muted, #64748b);
+  background: var(--surface, #f1f5f9);
+  border: 1px solid var(--outline, #e2e8f0);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
 }
@@ -259,16 +261,16 @@ onMounted(() => {
   padding: 0.5rem;
   border-radius: 0.375rem;
   font-size: 0.8125rem;
-  color: var(--color-text-muted, #64748b);
+  color: var(--muted, #64748b);
 }
 
 .loyalty-info-box.no-policy {
-  background: #f8fafc;
+  background: var(--surface, #f8fafc);
 }
 
 .info-icon {
   font-size: 1rem;
-  color: #94a3b8;
+  color: var(--muted, #94a3b8);
 }
 
 .loyalty-input-row {
@@ -280,11 +282,11 @@ onMounted(() => {
 .loyalty-input {
   flex: 1;
   padding: 0.375rem 0.625rem;
-  border: 1px solid var(--color-border, #cbd5e1);
+  border: 1px solid var(--outline, #cbd5e1);
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  background: #fff;
-  color: var(--color-text-primary, #0f172a);
+  background: var(--surface, #fff);
+  color: var(--ink, #0f172a);
 }
 
 .quick-buttons {
@@ -296,32 +298,32 @@ onMounted(() => {
   padding: 0.375rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--outline, #cbd5e1);
+  background: var(--surface, #fff);
   border-radius: 0.25rem;
   cursor: pointer;
-  color: #334155;
+  color: var(--ink, #334155);
   transition: all 0.15s ease;
 }
 
 .btn-quick:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: var(--surface-subtle, #f1f5f9);
+  border-color: var(--pink-dark, #db2777);
 }
 
 .btn-quick.clear {
   color: #ef4444;
-  border-color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .btn-quick.clear:hover:not(:disabled) {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .loyalty-breakdown {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px dashed #cbd5e1;
+  border-top: 1px dashed var(--outline, #cbd5e1);
   font-size: 0.8125rem;
   display: flex;
   flex-direction: column;
@@ -340,7 +342,7 @@ onMounted(() => {
 }
 
 .breakdown-row.remaining .remaining-value {
-  color: var(--color-text-primary, #0f172a);
+  color: var(--ink, #0f172a);
 }
 
 .loyalty-error {

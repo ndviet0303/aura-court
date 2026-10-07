@@ -83,6 +83,7 @@ export type Court = {
   image_url?: string
   is_active?: boolean
   price_slots?: PriceSlot[]
+  price_slots_count?: number
   blocks?: CourtBlock[]
   reviews_count?: number
   reviews_avg_rating?: number | null

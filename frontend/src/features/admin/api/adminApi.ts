@@ -34,7 +34,8 @@ export const adminApi = {
   deleteSportZone: (id: number) => api.delete(`/admin/sport-zones/${id}`),
 
   // Courts
-  getCourts: () => api.get<Court[]>('/admin/courts'),
+  getCourts: (venueId?: number) =>
+    api.get<Court[]>(venueId ? `/admin/courts?venue_id=${venueId}` : '/admin/courts'),
   createCourt: (payload: CourtForm) => api.post<Court>('/admin/courts', payload),
   updateCourt: (id: number, payload: Partial<CourtForm>) => api.patch<Court>(`/admin/courts/${id}`, payload),
   deleteCourt: (id: number) => api.delete(`/admin/courts/${id}`),
@@ -44,6 +45,7 @@ export const adminApi = {
     api.post<{ url: string; filename: string }>('/admin/upload', formData),
 
   // Price slots
+  getCourtPrices: (courtId: number) => api.get<PriceSlot[]>(`/admin/courts/${courtId}/prices`),
   createPrice: (courtId: number, payload: PriceForm) => api.post(`/admin/courts/${courtId}/prices`, payload),
   bulkCreatePrices: <T = { message: string; slots?: PriceSlot[] }>(courtId: number, payload: any) =>
     api.post<T>(`/admin/courts/${courtId}/prices/bulk`, payload),

@@ -61,7 +61,7 @@ class Venue extends Model
     public function getTimezoneAttribute(): string
     {
         return $this->attributes['timezone']
-            ?? $this->organization?->timezone
+            ?? ($this->relationLoaded('organization') ? $this->organization?->timezone : null)
             ?? 'Asia/Ho_Chi_Minh';
     }
 

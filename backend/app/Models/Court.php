@@ -71,7 +71,7 @@ class Court extends Model
     public function getTimezoneAttribute(): string
     {
         return $this->attributes['timezone']
-            ?? $this->venue?->timezone
+            ?? ($this->relationLoaded('venue') ? $this->venue?->timezone : null)
             ?? 'Asia/Ho_Chi_Minh';
     }
 

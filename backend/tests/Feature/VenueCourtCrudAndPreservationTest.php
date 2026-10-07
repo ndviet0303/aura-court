@@ -408,4 +408,45 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ]);
         $newQuoteAttempt->assertNotFound();
     }
+    public function test_admin_can_fetch_court_prices_and_listing_has_price_slots_count(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $venue = Venue::create([
+            'name' => ['vi' => 'Cụm Sân Test Giá', 'en' => 'Test Venue'],
+            'slug' => 'test-venue-'.uniqid(),
+            'address' => '123 Test St',
+            'is_active' => true,
+        ]);
+        $court = Court::create([
+            'name' => 'Sân Giá Test',
+            'venue_id' => $venue->id,
+            'is_active' => true,
+        ]);
+
+        \App\Models\CourtPriceSlot::create([
+            'court_id' => $court->id,
+            'weekday' => 1,
+            'starts_at' => '08:00',
+            'ends_at' => '09:00',
+            'price' => 120000,
+            'is_active' => true,
+        ]);
+
+        // 1. Admin courts list contains price_slots_count
+        $listRes = $this->actingAs($admin)->getJson('/api/v1/admin/courts');
+        $listRes->assertOk();
+        $courtData = collect($listRes->json())->firstWhere('id', $court->id);
+        $this->assertNotNull($courtData);
+        $this->assertEquals(1, $courtData['price_slots_count']);
+
+        // 2. Admin can fetch single court prices on demand
+        $pricesRes = $this->actingAs($admin)->getJson("/api/v1/admin/courts/{$court->id}/prices");
+        $pricesRes->assertOk();
+        $pricesRes->assertJsonCount(1);
+        $pricesRes->assertJsonFragment([
+            'court_id' => $court->id,
+            'weekday' => 1,
+            'price' => 120000,
+        ]);
+    }
 }

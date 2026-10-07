@@ -362,6 +362,7 @@ Route::prefix('v1')->group(function () {
                 Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
                 Route::get('bookings', [AdminController::class, 'bookings']);
                 Route::patch('bookings/{booking}/no-show', [AdminController::class, 'noShow']);
+                Route::get('courts/{court}/prices', [AdminController::class, 'pricesIndex']);
                 Route::post('courts/{court}/prices', [AdminController::class, 'prices']);
                 Route::post('courts/{court}/prices/bulk', [AdminController::class, 'bulkPrices']);
                 Route::patch('courts/{court}/prices/{price}', [AdminController::class, 'updatePrice']);

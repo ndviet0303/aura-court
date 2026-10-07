@@ -239,6 +239,16 @@ class AdminController extends Controller
         return $this->bookings->paginateAdminBookings($filters, 30);
     }
 
+    public function pricesIndex(Request $request, Court $court)
+    {
+        $user = $request->user();
+        if ($user && ! $user->isPlatformAdmin()) {
+            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        }
+
+        return response()->json($court->priceSlots()->orderBy('weekday')->orderBy('starts_at')->get());
+    }
+
     public function prices(Request $request, Court $court)
     {
         $user = $request->user();

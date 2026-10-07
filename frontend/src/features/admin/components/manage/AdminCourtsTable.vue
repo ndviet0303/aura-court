@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import type { Court, Venue } from '@/features/court/types/court'
 import { AuraButton, SelectDropdown } from '@/shared/components'
 
-defineProps<{
+const props = defineProps<{
   courts: Court[]
   venues: Venue[]
   selectedVenueFilter: number | 'all'
@@ -27,6 +28,34 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const PAGE_SIZE = 24
+const currentPage = ref(1)
+
+const totalCourts = computed(() => props.courts.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCourts.value / PAGE_SIZE)))
+
+watch(
+  () => [props.courts, props.searchQuery, props.selectedVenueFilter, props.statusFilter],
+  () => {
+    currentPage.value = 1
+  }
+)
+
+const paginatedCourts = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return props.courts.slice(start, start + PAGE_SIZE)
+})
+
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    const el = document.querySelector('.courts-filter-toolbar')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }
+}
 </script>
 
 <template>
@@ -101,7 +130,7 @@ const { t } = useI18n()
     <!-- Real Courts Cards Grid -->
     <div v-else class="courts-admin-grid">
       <div
-        v-for="court in courts"
+        v-for="court in paginatedCourts"
         :key="court.id"
         class="court-admin-card"
         :class="{ inactive: court.is_active === false }"
@@ -148,7 +177,7 @@ const { t } = useI18n()
           <div class="court-stats-row">
             <span class="stat-badge">
               <span class="material-symbols-outlined icon-14">schedule</span>
-              <span>{{ t('admin.manage.priceSlotsCount', { count: court.price_slots?.length || 0 }) }}</span>
+              <span>{{ t('admin.manage.priceSlotsCount', { count: court.price_slots_count ?? court.price_slots?.length ?? 0 }) }}</span>
             </span>
             <span class="stat-badge text-yellow">
               <span class="material-symbols-outlined icon-14">build</span>
@@ -194,6 +223,55 @@ const { t } = useI18n()
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Pagination Navigation Controls -->
+    <div v-if="!loading && totalCourts > PAGE_SIZE" class="courts-pagination-bar">
+      <div class="pagination-info">
+        {{
+          t('admin.manage.showingCourts', {
+            from: (currentPage - 1) * PAGE_SIZE + 1,
+            to: Math.min(currentPage * PAGE_SIZE, totalCourts),
+            total: totalCourts,
+          })
+        }}
+      </div>
+
+      <div class="pagination-controls">
+        <button
+          type="button"
+          class="btn-page"
+          :disabled="currentPage === 1"
+          @click="goToPage(currentPage - 1)"
+        >
+          <span class="material-symbols-outlined icon-16">chevron_left</span>
+          <span>{{ t('admin.manage.prevPage') }}</span>
+        </button>
+
+        <div class="page-pills-list">
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            type="button"
+            class="page-pill-btn"
+            :class="{ active: p === currentPage }"
+            v-show="p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2"
+            @click="goToPage(p)"
+          >
+            {{ p }}
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="btn-page"
+          :disabled="currentPage === totalPages"
+          @click="goToPage(currentPage + 1)"
+        >
+          <span>{{ t('admin.manage.nextPage') }}</span>
+          <span class="material-symbols-outlined icon-16">chevron_right</span>
+        </button>
       </div>
     </div>
   </div>
@@ -561,4 +639,88 @@ const { t } = useI18n()
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+/* Pagination Styling */
+.courts-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  margin-top: 8px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--outline);
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+}
+
+.btn-page:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-pills-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-pill-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.page-pill-btn:hover {
+  border-color: var(--pink-dark, #db2777);
+  color: var(--pink-dark, #db2777);
+}
+
+.page-pill-btn.active {
+  background: var(--pink-dark, #db2777);
+  border-color: var(--pink-dark, #db2777);
+  color: #fff;
+}
+
 </style>

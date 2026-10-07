@@ -109,12 +109,22 @@ class CourtController extends Controller
             $scopedVenueIds = [(int) $request->query('venue_id')];
         }
 
-        return Court::with(['priceSlots', 'venue', 'sportZone', 'blocks' => fn ($query) => $query->latest('starts_at')])
+        $query = Court::with([
+            'venue',
+            'sportZone',
+            'blocks' => fn ($query) => $query->latest('starts_at'),
+        ])
+            ->withCount('priceSlots')
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))
             ->when($request->query('sport_zone_id'), fn ($q, $zoneId) => $q->where('sport_zone_id', $zoneId))
             ->when($request->query('sport_type'), fn ($q, $sportType) => $q->whereHas('sportZone', fn ($z) => $z->where('sport_type', $sportType)))
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        if ($request->boolean('include_prices') || ($scopedVenueIds !== null && count($scopedVenueIds) === 1)) {
+            $query->with(['priceSlots' => fn ($q) => $q->select(['id', 'court_id', 'weekday', 'starts_at', 'ends_at', 'price'])]);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
