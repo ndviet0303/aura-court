@@ -132,6 +132,7 @@ class UserSeeder extends Seeder
                 'name' => sprintf('Khách hàng %02d', $number),
                 'password' => Hash::make('Demo12345!'),
                 'role' => 'customer',
+                'onboarded' => true,
                 'email_verified_at' => $now->copy()->subDays($number),
             ])->save();
 
@@ -181,5 +182,33 @@ class UserSeeder extends Seeder
                 ['role' => 'cashier', 'status' => 'active', 'permissions' => ['pos.sell', 'pos.shift']]
             );
         }
+
+        // 7. Demo Unverified Customer
+        $unverifiedUser = User::firstOrNew(['email' => 'unverified@demo.auracourt.vn']);
+        $unverifiedUser->forceFill([
+            'name' => 'Khách hàng Chưa xác thực',
+            'password' => Hash::make(env('SEED_DEMO_PASSWORD', 'Demo12345!')),
+            'role' => 'customer',
+            'phone' => '0904444555',
+            'play_level' => 'beginner',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => null,
+            'status' => 'active',
+        ])->save();
+
+        // 8. Demo Restricted / Suspended Customer
+        $restrictedUser = User::firstOrNew(['email' => 'restricted@demo.auracourt.vn']);
+        $restrictedUser->forceFill([
+            'name' => 'Khách hàng Bị khóa',
+            'password' => Hash::make(env('SEED_DEMO_PASSWORD', 'Demo12345!')),
+            'role' => 'customer',
+            'phone' => '0905555666',
+            'play_level' => 'beginner',
+            'onboarded' => true,
+            'password_set' => true,
+            'email_verified_at' => $now,
+            'status' => 'suspended',
+        ])->save();
     }
 }
