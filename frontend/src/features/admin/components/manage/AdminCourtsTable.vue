@@ -71,22 +71,35 @@ function goToPage(page: number) {
           :placeholder="t('admin.manage.searchCourtPlaceholder')"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-search-btn"
+          :title="t('common.clear') || 'Xoá'"
+          @click="emit('update:searchQuery', '')"
+        >
+          <span class="material-symbols-outlined icon-14">close</span>
+        </button>
       </div>
 
       <div class="filter-dropdowns-group">
-        <SelectDropdown
-          :model-value="selectedVenueFilter"
-          :options="venueFilterOptions"
-          @update:model-value="emit('update:selectedVenueFilter', $event === 'all' ? 'all' : Number($event))"
-        />
+        <div class="filter-dropdown-wrap venue-filter-wrap">
+          <SelectDropdown
+            :model-value="selectedVenueFilter"
+            :options="venueFilterOptions"
+            @update:model-value="emit('update:selectedVenueFilter', $event === 'all' ? 'all' : Number($event))"
+          />
+        </div>
 
-        <SelectDropdown
-          :model-value="statusFilter"
-          :options="statusFilterOptions"
-          @update:model-value="emit('update:statusFilter', $event as 'all' | 'active' | 'inactive')"
-        />
+        <div class="filter-dropdown-wrap status-filter-wrap">
+          <SelectDropdown
+            :model-value="statusFilter"
+            :options="statusFilterOptions"
+            @update:model-value="emit('update:statusFilter', $event as 'all' | 'active' | 'inactive')"
+          />
+        </div>
 
-        <AuraButton variant="primary" @click="emit('createCourt')">
+        <AuraButton variant="primary" class="add-court-btn" @click="emit('createCourt')">
           <span class="material-symbols-outlined icon-18">add</span>
           <span>{{ t('admin.manage.addNewCourt') }}</span>
         </AuraButton>
@@ -286,16 +299,22 @@ function goToPage(page: number) {
 
 .courts-filter-toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
 }
 
 .search-input-wrap {
   position: relative;
-  flex: 1;
-  min-width: 260px;
+  flex: 1 1 260px;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
 }
 
 .search-ico {
@@ -305,16 +324,59 @@ function goToPage(page: number) {
   transform: translateY(-50%);
   font-size: 18px;
   color: var(--muted);
+  pointer-events: none;
 }
 
 .court-search-input {
   width: 100%;
-  padding: 10px 14px 10px 38px;
+  height: 40px;
+  padding: 0 34px 0 38px;
   border-radius: 10px;
   border: 1px solid var(--outline);
-  background: var(--surface);
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
   color: var(--ink);
   font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.court-search-input:focus {
+  border-color: var(--primary, #6B2D3F);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
+}
+
+:global(html.dark) .court-search-input {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(html.dark) .court-search-input:focus {
+  border-color: var(--accent, #c9a15a);
+  box-shadow: 0 0 0 3px rgba(201, 161, 90, 0.15);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.15s;
+}
+
+.clear-search-btn:hover {
+  color: var(--ink);
+  background: var(--surface-subtle);
 }
 
 .filter-dropdowns-group {
@@ -322,6 +384,68 @@ function goToPage(page: number) {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.filter-dropdown-wrap {
+  position: relative;
+}
+
+.venue-filter-wrap {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.status-filter-wrap {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.filter-dropdown-wrap :deep(.custom-dropdown-trigger) {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 12px;
+  transition: all 0.2s ease;
+}
+
+.filter-dropdown-wrap :deep(.custom-dropdown.open .custom-dropdown-trigger),
+.filter-dropdown-wrap :deep(.custom-dropdown-trigger:hover) {
+  border-color: var(--primary, #6B2D3F);
+  background: var(--surface);
+}
+
+:global(html.dark) .filter-dropdown-wrap :deep(.custom-dropdown-trigger) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(html.dark) .filter-dropdown-wrap :deep(.custom-dropdown.open .custom-dropdown-trigger),
+:global(html.dark) .filter-dropdown-wrap :deep(.custom-dropdown-trigger:hover) {
+  border-color: var(--accent, #c9a15a);
+}
+
+.add-court-btn {
+  height: 40px !important;
+  border-radius: 10px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+:global(html.dark) .add-court-btn {
+  background-color: var(--primary, #6B2D3F) !important;
+  color: #FAF7F3 !important;
+  border: 1px solid rgba(201, 161, 90, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.4) !important;
+}
+
+:global(html.dark) .add-court-btn:hover {
+  background-color: #8B3A52 !important;
+  border-color: var(--accent, #c9a15a) !important;
 }
 
 .empty-courts-state {
@@ -343,7 +467,7 @@ function goToPage(page: number) {
 
 .courts-admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
 }
 
@@ -354,12 +478,24 @@ function goToPage(page: number) {
   border: 1px solid var(--outline);
   background: var(--surface);
   overflow: hidden;
-  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .court-admin-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px);
+  border-color: var(--border);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07);
+}
+
+:global(html.dark) .court-admin-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global(html.dark) .court-admin-card:hover {
+  border-color: var(--accent, #c9a15a);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
 .court-admin-card.inactive {
@@ -397,35 +533,44 @@ function goToPage(page: number) {
   position: absolute;
   top: 10px;
   left: 10px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
   font-size: 11px;
   font-weight: 700;
+  backdrop-filter: blur(8px);
 }
 
 .chip-active {
-  background: #10b981;
+  background: rgba(16, 185, 129, 0.9);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .chip-inactive {
-  background: #ef4444;
+  background: rgba(239, 68, 68, 0.9);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .zone-chip {
   position: absolute;
   top: 10px;
   right: 10px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
   color: #fff;
   font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .court-card-body {
-  padding: 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -441,13 +586,14 @@ function goToPage(page: number) {
 .court-name {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .venue-name {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -456,7 +602,7 @@ function goToPage(page: number) {
   margin: 0;
   font-size: 12px;
   color: var(--muted);
-  line-height: 1.4;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -487,15 +633,19 @@ function goToPage(page: number) {
 .stat-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.03));
   border: 1px solid var(--outline);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.text-yellow {
-  color: #f59e0b;
+:global(html.dark) .stat-badge {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .court-actions-footer {
@@ -503,33 +653,44 @@ function goToPage(page: number) {
   gap: 6px;
   padding-top: 12px;
   border-top: 1px solid var(--outline);
+  margin-top: auto;
 }
 
 .btn-court-action {
   flex: 1;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 6px 8px;
+  padding: 0 8px;
   border-radius: 8px;
   border: 1px solid var(--outline);
-  background: var(--surface);
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
   color: var(--ink);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .btn-court-action:hover {
-  border-color: var(--pink-dark, #db2777);
-  color: var(--pink-dark, #db2777);
+  border-color: var(--primary, #6B2D3F);
+  color: var(--primary, #6B2D3F);
+  background: var(--surface);
 }
 
-.btn-toggle {
-  flex: 0 0 34px;
+:global(html.dark) .btn-court-action {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ded7ce;
+}
+
+:global(html.dark) .btn-court-action:hover {
+  border-color: var(--accent, #c9a15a);
+  color: var(--accent, #c9a15a);
+  background: rgba(201, 161, 90, 0.1);
 }
 
 .icon-14 {

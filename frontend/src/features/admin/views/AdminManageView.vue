@@ -118,7 +118,8 @@ onMounted(() => {
         @click="activeTab = 'courts'"
       >
         <span class="material-symbols-outlined icon-18">grid_view</span>
-        <span>{{ t('admin.manage.tabCourts') }} ({{ totalCourtsCount }})</span>
+        <span>{{ t('admin.manage.tabCourts') }}</span>
+        <span class="tab-count-badge">{{ totalCourtsCount }}</span>
       </button>
 
       <button
@@ -128,7 +129,8 @@ onMounted(() => {
         @click="activeTab = 'refunds'"
       >
         <span class="material-symbols-outlined icon-18">history</span>
-        <span>{{ t('admin.manage.tabRefunds') }} ({{ refunds.length }})</span>
+        <span>{{ t('admin.manage.tabRefunds') }}</span>
+        <span class="tab-count-badge">{{ refunds.length }}</span>
       </button>
     </div>
 
@@ -239,38 +241,67 @@ onMounted(() => {
 }
 
 .manage-subtabs-row {
-  display: flex;
-  gap: 8px;
-  border-bottom: 1px solid var(--outline);
-  padding-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  width: fit-content;
 }
 
 .subtab-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.subtab-btn:hover {
-  border-color: var(--pink-dark, #db2777);
-  color: var(--pink-dark, #db2777);
+.subtab-btn:hover:not(.active) {
+  color: var(--ink);
+  background: var(--surface-subtle);
 }
 
 .subtab-btn.active {
-  background: var(--pink-dark, #db2777);
-  color: #fff;
-  border-color: var(--pink-dark, #db2777);
+  background: var(--primary, #6B2D3F);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(107, 45, 63, 0.25);
 }
 
+:global(html.dark) .subtab-btn.active {
+  background: #6B2D3F;
+  color: #FAF7F3;
+  border-color: rgba(201, 161, 90, 0.3);
+  box-shadow: 0 2px 12px rgba(107, 45, 63, 0.45);
+}
+
+.tab-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--muted);
+}
+
+.subtab-btn.active .tab-count-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+:global(html.dark) .subtab-btn.active .tab-count-badge {
+  background: rgba(250, 247, 243, 0.15);
+  color: #FAF7F3;
+}
 .alert-pill {
   padding: 8px 16px;
   border-radius: 8px;

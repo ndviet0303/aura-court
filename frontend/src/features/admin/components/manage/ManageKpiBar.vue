@@ -15,37 +15,43 @@ const { t } = useI18n()
   <div class="manage-kpi-bar">
     <template v-if="loading">
       <div v-for="i in 3" :key="i" class="kpi-card skeleton-card">
-        <div class="kpi-top-row">
-          <div class="skeleton-item skeleton-icon"></div>
+        <div class="skeleton-icon-box skeleton-item"></div>
+        <div class="kpi-content">
           <div class="skeleton-item skeleton-lbl"></div>
+          <div class="skeleton-item skeleton-val"></div>
         </div>
-        <div class="skeleton-item skeleton-val"></div>
       </div>
     </template>
 
     <template v-else>
-      <div class="kpi-card">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon">sports_tennis</span>
+      <div class="kpi-card kpi-total">
+        <div class="kpi-icon-box total-icon-box">
+          <span class="material-symbols-outlined icon-22">sports_tennis</span>
+        </div>
+        <div class="kpi-content">
           <span class="kpi-lbl">{{ t('admin.manage.totalCourts') }}</span>
+          <strong class="kpi-num">{{ totalCourtsCount }}</strong>
         </div>
-        <strong class="kpi-num">{{ totalCourtsCount }}</strong>
       </div>
 
-      <div class="kpi-card text-green">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-green">check_circle</span>
+      <div class="kpi-card kpi-active">
+        <div class="kpi-icon-box active-icon-box">
+          <span class="material-symbols-outlined icon-22">check_circle</span>
+        </div>
+        <div class="kpi-content">
           <span class="kpi-lbl">{{ t('admin.manage.activeCourts') }}</span>
+          <strong class="kpi-num text-green">{{ activeCourtsCount }}</strong>
         </div>
-        <strong class="kpi-num">{{ activeCourtsCount }}</strong>
       </div>
 
-      <div class="kpi-card text-yellow">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-yellow">build</span>
-          <span class="kpi-lbl">{{ t('admin.manage.maintenanceBlocks') }}</span>
+      <div class="kpi-card kpi-maintenance">
+        <div class="kpi-icon-box maintenance-icon-box">
+          <span class="material-symbols-outlined icon-22">build</span>
         </div>
-        <strong class="kpi-num">{{ totalBlocksCount }}</strong>
+        <div class="kpi-content">
+          <span class="kpi-lbl">{{ t('admin.manage.maintenanceBlocks') }}</span>
+          <strong class="kpi-num text-yellow">{{ totalBlocksCount }}</strong>
+        </div>
       </div>
     </template>
   </div>
@@ -60,23 +66,75 @@ const { t } = useI18n()
 
 .kpi-card {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px 20px;
-  border-radius: 14px;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 16px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.kpi-top-row {
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  border-color: var(--border);
+}
+
+:global(html.dark) .kpi-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global(html.dark) .kpi-card:hover {
+  border-color: var(--accent, #c9a15a);
+}
+
+.kpi-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.kpi-icon {
-  font-size: 18px;
-  color: var(--muted);
+.total-icon-box {
+  background: rgba(107, 45, 63, 0.08);
+  color: var(--primary, #6B2D3F);
+}
+
+:global(html.dark) .total-icon-box {
+  background: rgba(201, 161, 90, 0.12);
+  color: var(--accent, #c9a15a);
+}
+
+.active-icon-box {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+:global(html.dark) .active-icon-box {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.maintenance-icon-box {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+:global(html.dark) .maintenance-icon-box {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .kpi-lbl {
@@ -84,18 +142,32 @@ const { t } = useI18n()
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .kpi-num {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
 }
 
 .text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-pink { color: var(--pink-dark, #db2777); }
+:global(html.dark) .text-green { color: #34d399; }
 
+.text-yellow { color: #f59e0b; }
+:global(html.dark) .text-yellow { color: #fbbf24; }
+
+.icon-22 {
+  font-size: 22px;
+}
+
+.skeleton-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
 /* Shimmer animation */
 .skeleton-card {
   pointer-events: none;
