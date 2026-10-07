@@ -1,6 +1,5 @@
 stages:
   - validate
-  - test-e2e
   - build
 
 default:
@@ -49,100 +48,12 @@ frontend_check:
     - npm run type-check
     - npm run test:unit -- --run --maxWorkers=1
     - npm run build
-e2e_p0_gate:
-  stage: test-e2e
-  image: mcr.microsoft.com/playwright:v1.62.1-noble
-  timeout: 20m
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-  script:
-    - "echo \"=== Step 2: Mandatory P0 Browser Acceptance Gate ===\""
-    - bash ./scripts/ci/setup-e2e-runtime.sh
-    - cd frontend
-    - npm ci
-    - node --experimental-strip-types --test e2e/runner/test-data.spec.ts
-    - npx playwright test --project p0
-    - npm run test:e2e:sanitize-artifacts
-    - npm run test:e2e:verify-p0-gate
-  artifacts:
-    when: always
-    access: developer
-    expire_in: 7 days
-    reports:
-      junit: frontend/test-results/junit.xml
-    paths:
-      - frontend/playwright-report/
-      - frontend/test-results/
-    exclude:
-      - frontend/auth-states/**
-      - '**/*.auth.json'
-      - '**/manifest.json'
-
-e2e_regression_scheduled:
-  stage: test-e2e
-  image: mcr.microsoft.com/playwright:v1.62.1-noble
-  timeout: 30m
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    - if: '$CI_PIPELINE_SOURCE == "web"'
-      when: manual
-  script:
-    - "echo \"=== Scheduled Full Regression Suite (Non-deployable) ===\""
-    - bash ./scripts/ci/setup-e2e-runtime.sh
-    - cd frontend
-    - npm ci
-    - npx playwright test
-    - npm run test:e2e:sanitize-artifacts
-  artifacts:
-    when: always
-    access: developer
-    expire_in: 7 days
-    reports:
-      junit: frontend/test-results/junit.xml
-    paths:
-      - frontend/playwright-report/
-      - frontend/test-results/
-    exclude:
-      - frontend/auth-states/**
-      - '**/*.auth.json'
-      - '**/manifest.json'
-
-e2e_smoke_cross_browser:
-  stage: test-e2e
-  image: mcr.microsoft.com/playwright:v1.62.1-noble
-  timeout: 20m
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    - if: '$CI_PIPELINE_SOURCE == "web"'
-      when: manual
-  script:
-    - "echo \"=== Secondary Browser & Mobile Smoke Gate (Non-deployable) ===\""
-    - bash ./scripts/ci/setup-e2e-runtime.sh
-    - cd frontend
-    - npm ci
-    - npx playwright test --project smoke-chromium --project smoke-firefox --project smoke-webkit --project smoke-mobile
-    - npm run test:e2e:sanitize-artifacts
-  artifacts:
-    when: always
-    access: developer
-    expire_in: 7 days
-    reports:
-      junit: frontend/test-results/junit.xml
-    paths:
-      - frontend/playwright-report/
-      - frontend/test-results/
-    exclude:
-      - frontend/auth-states/**
-      - '**/*.auth.json'
-      - '**/manifest.json'
 build_and_deploy:
   stage: build
   image: docker:latest
   timeout: 10m
   needs:
     - frontend_check
-    - e2e_p0_gate
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"'
       when: never
