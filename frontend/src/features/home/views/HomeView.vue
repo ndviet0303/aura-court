@@ -92,15 +92,18 @@ const filteredCourts = computed(() => {
   })
 })
 
-function selectVenue(venueId: number | null) {
-  selectedVenueId.value = venueId
-  const first = filteredCourts.value[0]
-  if (first && !filteredCourts.value.some((c: Court) => c.id === selected.value)) {
+function selectVenue(venueId: number | null | string) {
+  selectedVenueId.value =
+    venueId !== null && venueId !== '' && venueId !== 'all' && venueId !== undefined
+      ? Number(venueId)
+      : null
+  const targetCourts = filteredCourts.value
+  const first = targetCourts[0]
+  if (first && !targetCourts.some((c: Court) => c.id === selected.value)) {
     chooseCourt(first.id)
   }
   scrollToSelectedChip()
 }
-
 function resetFilters() {
   selectedVenueId.value = null
   courtSearchQuery.value = ''
@@ -188,14 +191,26 @@ async function selectSportCategory(sportId: string) {
     /* store handles error */
   }
 }
-const courtOptions = computed(() =>
-  store.courts.map((court: Court) => ({
-    value: court.id,
-    label: court.name
-      ? `${court.name}${court.sport_zone?.name ? ` (${court.sport_zone.name})` : ''}`
-      : `Sân ${court.id}`,
-  }))
-)
+const venueOptions = computed(() => {
+  const allLabel = `${t('home.search.allVenues') || 'Tất cả cơ sở'} (${store.courts.length} sân)`
+  const opts: { value: string | number; label: string }[] = [
+    { value: 'all', label: allLabel },
+  ]
+  for (const v of venues.value) {
+    opts.push({
+      value: v.id,
+      label: `${v.name} (${v.count} sân)`,
+    })
+  }
+  return opts
+})
+
+const selectedVenueValue = computed<string | number>({
+  get: () => (selectedVenueId.value === null ? 'all' : selectedVenueId.value),
+  set: (val) => {
+    selectVenue(val)
+  },
+})
 
 const timeOptions = computed(() => [
   { value: 'all', label: t('home.search.allSlots') },
@@ -351,11 +366,11 @@ onMounted(async () => {
         <div class="search-field">
           <label>{{ t('home.search.court') }}</label>
           <SelectDropdown
-            v-model="selected"
-            :options="courtOptions"
+            v-model="selectedVenueValue"
+            :options="venueOptions"
             :placeholder="t('home.search.court')"
             :aria-label="t('home.search.court')"
-            @change="chooseCourt"
+            @change="selectVenue"
           />
         </div>
         <div class="search-field">

@@ -23,7 +23,7 @@ class CourtController extends Controller
         $cacheKey = "courts:v{$version}:" . md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
 
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
-            return Court::where('is_active', true)
+            $courtsQuery = Court::where('is_active', true)
                 ->whereHas('venue', fn ($query) => $query->where('is_active', true))
                 ->when($request->query('sport_type'), function ($q, $sportType) {
                     $q->whereHas('sportZone', fn ($zone) => $zone->where('sport_type', $sportType)->where('is_active', true));
@@ -34,27 +34,41 @@ class CourtController extends Controller
                 ->when($request->query('sport_zone_id'), function ($q, $zoneId) {
                     $q->where('sport_zone_id', $zoneId);
                 })
-                ->with(['priceSlots', 'venue', 'sportZone'])
+                ->with([
+                    'priceSlots' => fn ($q) => $q->select(['id', 'court_id', 'price', 'weekday', 'starts_at', 'ends_at'])->where('is_active', true),
+                    'venue.organization',
+                    'sportZone',
+                ])
                 ->withCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
                 ->withAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating')
                 ->orderBy('id')
-                ->get()
-                ->toArray();
+                ->get();
+
+            $eligibility = app(VerifyEffectiveBookingEligibility::class);
+            $features = app(\App\Services\Infrastructure\FeatureFlagService::class);
+            $venueEligibilityCache = [];
+            $filteredCourts = [];
+
+            foreach ($courtsQuery as $court) {
+                $venueId = (int) $court->venue_id;
+                if (! isset($venueEligibilityCache[$venueId])) {
+                    $venueEligibilityCache[$venueId] = $court->venue
+                        ? $eligibility->evaluateVenue($court->venue)['eligible']
+                        : false;
+                }
+
+                if ($venueEligibilityCache[$venueId] && $court->is_active) {
+                    $courtArray = $court->toArray();
+                    $organizationId = (int) ($courtArray['venue']['organization_id'] ?? 0);
+                    $courtArray['venue']['payment_model'] = $features->enabled('direct_owner_payments', $organizationId)
+                        ? 'direct_owner_v1'
+                        : 'legacy_wallet_v1';
+                    $filteredCourts[] = $courtArray;
+                }
+            }
+
+            return $filteredCourts;
         });
-
-        $eligibility = app(VerifyEffectiveBookingEligibility::class);
-        $features = app(\App\Services\Infrastructure\FeatureFlagService::class);
-        $courts = collect($courts)
-            ->filter(fn (array $court) => $eligibility->execute((int) $court['id'])['eligible'])
-            ->map(function (array $court) use ($features): array {
-                $organizationId = (int) ($court['venue']['organization_id'] ?? 0);
-                $court['venue']['payment_model'] = $features->enabled('direct_owner_payments', $organizationId)
-                    ? 'direct_owner_v1'
-                    : 'legacy_wallet_v1';
-
-                return $court;
-            })
-            ->values();
 
         return response()->json($courts);
     }

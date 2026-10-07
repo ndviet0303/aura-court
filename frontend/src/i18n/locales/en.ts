@@ -158,7 +158,8 @@ export default {
     openBadge: 'Open Daily',
     hoursOpen: 'Open Daily',
     search: {
-      court: 'Sports Court',
+      court: 'Facility / Sports Court',
+      allVenues: 'All Facilities',
       date: 'Play Date',
       timeSlot: 'Time Slot',
       allSlots: 'All Time Slots',

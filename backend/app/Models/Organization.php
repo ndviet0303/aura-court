@@ -39,6 +39,13 @@ class Organization extends Model
         'timezone',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::increment('courts_version');
+            \Illuminate\Support\Facades\Cache::increment('venues_version');
+        });
+    }
     public function getSupportEmailAttribute(): ?string
     {
         return $this->settings['support_email'] ?? null;

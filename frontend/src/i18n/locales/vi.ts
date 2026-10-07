@@ -158,7 +158,8 @@ export default {
     openBadge: 'Mở cửa',
     hoursOpen: 'Mở cửa',
     search: {
-      court: 'Sân thi đấu',
+      court: 'Cơ sở & Sân thi đấu',
+      allVenues: 'Tất cả cơ sở',
       date: 'Ngày chơi',
       timeSlot: 'Khung giờ',
       allSlots: 'Tất cả khung giờ',

@@ -10,10 +10,20 @@ use Illuminate\Validation\ValidationException;
 
 class VerifyEffectiveBookingEligibility
 {
+    private array $entitlementCache = [];
+
     public function __construct(
         private readonly EvaluatePlatformEntitlement $entitlementEvaluator,
     ) {}
 
+    public function getEntitlement(int $orgId): array
+    {
+        if (! isset($this->entitlementCache[$orgId])) {
+            $this->entitlementCache[$orgId] = $this->entitlementEvaluator->execute($orgId);
+        }
+
+        return $this->entitlementCache[$orgId];
+    }
     public function execute(Court|int $court): array
     {
         $courtModel = $court instanceof Court
@@ -101,7 +111,7 @@ class VerifyEffectiveBookingEligibility
         }
 
         if ($enforceSubscription) {
-            $entitlement = $this->entitlementEvaluator->execute($org->id);
+            $entitlement = $this->getEntitlement($org->id);
             if (! $entitlement['can_take_bookings']) {
                 return [
                     'eligible' => false,
@@ -109,8 +119,8 @@ class VerifyEffectiveBookingEligibility
                     'message' => 'Gói dịch vụ nền tảng của câu lạc bộ đã hết hạn hoặc chưa kích hoạt. Không thể nhận lịch đặt mới.',
                 ];
             }
-        } else {
-            $entitlement = $this->entitlementEvaluator->execute($org->id);
+        } elseif (config('partner.shadow_mode', false)) {
+            $entitlement = $this->getEntitlement($org->id);
             $rollout->recordShadowComparison($venueModel, 'booking_eligibility', true, (bool) ($entitlement['can_take_bookings'] ?? false));
         }
 
