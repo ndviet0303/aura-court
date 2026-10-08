@@ -25,7 +25,17 @@ const {
 
 const currentStep = ref(1)
 
+function goToStep(step: number) {
+  currentStep.value = step
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
 onMounted(async () => {
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
   const current = await fetchCurrent()
   if (current) {
     if (!['draft', 'revision_required', 'supplementation_requested'].includes(current.status)) {
@@ -33,7 +43,6 @@ onMounted(async () => {
     }
   }
 })
-
 async function handleStartApplication() {
   try {
     await start()
@@ -153,7 +162,7 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
             type="button"
             class="step-pill"
             :class="{ active: currentStep === 1, completed: currentStep > 1 }"
-            @click="currentStep = 1"
+            @click="goToStep(1)"
           >
             <span class="step-num">1</span>
             <span class="step-lbl">1. Thông tin kinh doanh</span>
@@ -165,7 +174,7 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
             type="button"
             class="step-pill"
             :class="{ active: currentStep === 2, completed: currentStep > 2 }"
-            @click="currentStep = 2"
+            @click="goToStep(2)"
           >
             <span class="step-num">2</span>
             <span class="step-lbl">2. Tài liệu xác thực</span>
@@ -177,7 +186,7 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
             type="button"
             class="step-pill"
             :class="{ active: currentStep === 3, completed: currentStep > 3 }"
-            @click="currentStep = 3"
+            @click="goToStep(3)"
           >
             <span class="step-num">3</span>
             <span class="step-lbl">3. Rà soát & Nộp hồ sơ</span>
@@ -192,7 +201,7 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
           :error="error"
           :saving="saving"
           :save="handleSaveDraft"
-          @next="currentStep = 2"
+          @next="goToStep(2)"
         />
 
         <!-- Step 2: Document Upload -->
@@ -202,8 +211,8 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
           :uploading="uploading"
           :field-errors="fieldErrors"
           @upload="handleUpload"
-          @back="currentStep = 1"
-          @next="currentStep = 3"
+          @back="goToStep(1)"
+          @next="goToStep(3)"
         />
 
         <!-- Step 3: Consent and Review -->
@@ -214,7 +223,7 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
           :error="error"
           :field-errors="fieldErrors"
           @submit="handleSubmit"
-          @back="currentStep = 2"
+          @back="goToStep(2)"
         />
       </div>
     </div>

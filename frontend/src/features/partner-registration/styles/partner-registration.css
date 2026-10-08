@@ -5,10 +5,11 @@
 .partner-page-wrapper {
   position: relative;
   min-height: calc(100vh - 78px);
-  padding: 40px 16px 80px;
+  padding: 32px 20px 80px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  scroll-margin-top: 86px;
 }
 
 .aura-glow-bg {
@@ -937,12 +938,191 @@ html.dark .radio-pill.selected .radio-dot {
   box-shadow: inset 0 0 0 2px #1e181c;
 }
 
+/* Form Section Cards */
+.form-section-card {
+  background: var(--surface-subtle);
+  border: 1px solid var(--outline);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.dark .form-section-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.form-section-card:focus-within {
+  border-color: rgba(201, 161, 90, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+html.dark .form-section-card:focus-within {
+  border-color: rgba(223, 186, 114, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.section-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(107, 45, 63, 0.08);
+  color: var(--primary, #6B2D3F);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+html.dark .section-icon-box {
+  background: rgba(201, 161, 90, 0.15);
+  color: var(--accent, #dfba72);
+}
+
+.section-title-wrap {
+  flex: 1;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 2px;
+}
+
+.section-subtitle {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+/* Quick Select Pills (Sports) */
+.sports-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+.sport-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sport-chip-btn:hover {
+  border-color: var(--primary, #6B2D3F);
+}
+
+html.dark .sport-chip-btn {
+  background: #241d22;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .sport-chip-btn:hover {
+  border-color: var(--accent, #dfba72);
+}
+
+.sport-chip-btn.selected {
+  background: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6B2D3F);
+  color: #fff;
+}
+
+html.dark .sport-chip-btn.selected {
+  background: var(--accent, #dfba72);
+  border-color: var(--accent, #dfba72);
+  color: #1c1202;
+  font-weight: 700;
+}
+
+/* Bank Select Dropdown */
+.form-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-select:focus {
+  border-color: var(--primary, #6B2D3F);
+  box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
+}
+
+html.dark .form-select {
+  background: #241d22;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1ede8;
+}
+
+html.dark .form-select:focus {
+  border-color: var(--accent, #c9a15a);
+  box-shadow: 0 0 0 3px rgba(201, 161, 90, 0.15);
+}
+
+html.dark .form-select option {
+  background: #1e181c;
+  color: #f1ede8;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
+@media (max-width: 640px) {
+  .partner-page-wrapper {
+    padding: 20px 12px 60px;
+  }
+
+  .partner-card {
+    padding: 24px 16px;
+    border-radius: 20px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .form-section-card {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+}
 .form-field-item {
   display: flex;
   flex-direction: column;

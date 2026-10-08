@@ -97,6 +97,42 @@ describe('BusinessInfoStep', () => {
 
     expect(wrapper.text()).toContain('Mã số thuế không hợp lệ.')
   })
+
+  it('renders 5 grouped sections and handles bank select and sports chips', async () => {
+    const save = vi.fn().mockResolvedValue(true)
+    const wrapper = mount(BusinessInfoStep, {
+      props: {
+        application: baseMockApp,
+        fieldErrors: {},
+        saving: false,
+        save,
+      },
+    })
+
+    // 5 section cards
+    const sections = wrapper.findAll('.form-section-card')
+    expect(sections.length).toBe(5)
+    expect(wrapper.text()).toContain('1. Thông tin Cơ sở & Quy mô Sân')
+    expect(wrapper.text()).toContain('2. Địa chỉ & Vị trí Cụm sân')
+    expect(wrapper.text()).toContain('3. Người đại diện & Pháp lý')
+    expect(wrapper.text()).toContain('4. Tài khoản Ngân hàng nhận tiền (VietQR)')
+    expect(wrapper.text()).toContain('5. Người liên hệ vận hành')
+
+    // Bank select dropdown
+    const bankSelect = wrapper.find<HTMLSelectElement>('select#bank_select')
+    expect(bankSelect.exists()).toBe(true)
+    await bankSelect.setValue('MB')
+    expect((wrapper.find<HTMLInputElement>('input#bank_code').element as HTMLInputElement).value).toBe('MB')
+    expect((wrapper.find<HTMLInputElement>('input#bank_name').element as HTMLInputElement).value).toContain('MBBank')
+
+    // Sports chip click
+    const chips = wrapper.findAll('.sport-chip-btn')
+    expect(chips.length).toBeGreaterThan(0)
+    const pickleballChip = chips.find((c) => c.text().includes('Pickleball'))
+    expect(pickleballChip).toBeDefined()
+    await pickleballChip!.trigger('click')
+    expect((wrapper.find<HTMLInputElement>('input#sports').element as HTMLInputElement).value).toContain('Pickleball')
+  })
 })
 
 describe('DocumentUploadStep', () => {
