@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { PartnerApplication, PartnerDocumentType } from '../types'
 
 const props = defineProps<{
@@ -20,6 +20,7 @@ interface DocRequirement {
   title: string
   description: string
   required: boolean
+  icon: string
 }
 
 const documentRequirements = computed<DocRequirement[]>(() => {
@@ -30,8 +31,9 @@ const documentRequirements = computed<DocRequirement[]>(() => {
     list.push({
       type: 'business_license',
       title: 'Giấy phép kinh doanh',
-      description: 'Bản chụp hoặc scan giấy phép đăng ký doanh nghiệp.',
+      description: 'Bản chụp hoặc scan giấy phép đăng ký doanh nghiệp còn hiệu lực.',
       required: true,
+      icon: 'domain',
     })
   }
 
@@ -39,8 +41,9 @@ const documentRequirements = computed<DocRequirement[]>(() => {
     list.push({
       type: 'business_registration_certificate',
       title: 'Giấy chứng nhận đăng ký hộ kinh doanh',
-      description: 'Bản chụp hoặc scan giấy đăng ký hộ kinh doanh.',
+      description: 'Bản chụp hoặc scan giấy chứng nhận đăng ký hộ kinh doanh cá thể.',
       required: true,
+      icon: 'description',
     })
   }
 
@@ -50,24 +53,28 @@ const documentRequirements = computed<DocRequirement[]>(() => {
       title: 'CCCD / Hộ chiếu người đại diện (Mặt trước)',
       description: 'Ảnh chụp mặt trước rõ thông tin, không bị lóa hoặc mất góc.',
       required: true,
+      icon: 'badge',
     },
     {
       type: 'representative_id_back',
       title: 'CCCD / Hộ chiếu người đại diện (Mặt sau)',
       description: 'Ảnh chụp mặt sau rõ nét vân tay và thông tin cơ quan cấp.',
       required: true,
+      icon: 'fingerprint',
     },
     {
       type: 'bank_account_confirmation',
       title: 'Xác nhận tài khoản ngân hàng',
-      description: 'Tài liệu xác minh chủ tài khoản và số tài khoản đã khai báo.',
+      description: 'Ảnh chụp thông tin tài khoản trên app ngân hàng hoặc sao kê ngân hàng.',
       required: true,
+      icon: 'account_balance',
     },
     {
       type: 'venue_operation_rights',
       title: 'Giấy tờ quyền sử dụng mặt bằng sân thể thao',
-      description: 'Hợp đồng thuê mặt bằng, quyền sử dụng đất hoặc giấy phép xây dựng.',
+      description: 'Hợp đồng thuê mặt bằng, quyền sử dụng đất hoặc giấy phép xây dựng sân.',
       required: true,
+      icon: 'stadium',
     }
   )
 
@@ -97,12 +104,8 @@ function formatSize(bytes: number): string {
 <template>
   <div class="document-upload-step">
     <div class="step-head">
-      <h3 class="step-title">
-        2. Tải lên Hồ sơ Xác thực (Private Documents)
-      </h3>
-      <p class="step-sub">
-        Các tài liệu được lưu trữ trên vùng nhớ riêng tư an toàn, chỉ phục vụ mục đích kiểm duyệt định danh của đội ngũ Aura Sports.
-      </p>
+      <h3 class="step-title">Bước 2: Tải lên Hồ sơ Xác thực (Private Documents)</h3>
+      <p class="step-sub">Các tài liệu được lưu trữ trên vùng nhớ riêng tư an toàn, chỉ phục vụ mục đích kiểm duyệt định danh của đội ngũ Aura Sports.</p>
     </div>
 
     <!-- Documents List -->
@@ -111,34 +114,42 @@ function formatSize(bytes: number): string {
         v-for="req in documentRequirements"
         :key="req.type"
         class="doc-card"
+        :class="{ 'is-uploaded': Boolean(getUploadedDoc(req.type)) }"
       >
         <div class="doc-main-row">
-          <div class="doc-info-col">
-            <div class="doc-title-row">
-              <span class="doc-title">{{ req.title }}</span>
-              <span v-if="req.required" class="req-badge">* Bắt buộc</span>
-              <span v-else class="opt-badge">Không bắt buộc</span>
+          <div class="doc-left-wrap">
+            <div class="section-icon-box" :class="{ 'is-completed': Boolean(getUploadedDoc(req.type)) }">
+              <span class="material-symbols-outlined">{{ getUploadedDoc(req.type) ? 'check_circle' : req.icon }}</span>
             </div>
-            <p class="doc-desc">{{ req.description }}</p>
+            <div class="doc-info-col">
+              <div class="doc-title-row">
+                <span class="doc-title">{{ req.title }}</span>
+                <span v-if="req.required" class="req-badge">* Bắt buộc</span>
+                <span v-else class="opt-badge">Không bắt buộc</span>
+              </div>
+              <p class="doc-desc">{{ req.description }}</p>
+              <span class="doc-formats-hint">Định dạng hỗ trợ: PDF, PNG, JPG, JPEG (Tối đa 10MB)</span>
+            </div>
           </div>
 
           <!-- Upload Status / Action -->
           <div class="doc-actions-col">
             <div v-if="getUploadedDoc(req.type)" class="uploaded-box">
               <span class="uploaded-pill">
-                <span class="material-symbols-outlined icon-16">check_circle</span>
+                <span class="material-symbols-outlined icon-16 text-green">task_alt</span>
                 <span>Đã tải lên</span>
               </span>
-              <p class="uploaded-file-meta">
-                {{ getUploadedDoc(req.type)?.file_name }} ({{ formatSize(getUploadedDoc(req.type)?.file_size || 0) }})
-              </p>
+              <div class="file-meta-col">
+                <span class="file-name-text">{{ getUploadedDoc(req.type)?.file_name }}</span>
+                <span class="file-size-text">{{ formatSize(getUploadedDoc(req.type)?.file_size || 0) }}</span>
+              </div>
             </div>
 
             <label
-              class="btn-upload-file"
-              :class="{ 'is-uploading': uploading }"
+              class="upload-btn-label"
+              :class="{ 'uploading-disabled': uploading, 'is-reupload': Boolean(getUploadedDoc(req.type)) }"
             >
-              <span class="material-symbols-outlined icon-16">upload_file</span>
+              <span class="material-symbols-outlined icon-16">{{ getUploadedDoc(req.type) ? 'sync' : 'cloud_upload' }}</span>
               <span>{{ getUploadedDoc(req.type) ? 'Tải lại' : 'Tải lên' }}</span>
               <input
                 type="file"

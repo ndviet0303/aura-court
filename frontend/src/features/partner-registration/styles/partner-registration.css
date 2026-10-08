@@ -1217,27 +1217,45 @@ html.dark .form-input:focus {
 }
 
 .doc-card {
-  padding: 20px 22px;
-  border-radius: 16px;
+  padding: 22px 24px;
+  border-radius: 20px;
   border: 1px solid var(--outline);
-  background: var(--surface);
+  background: var(--surface-subtle);
   display: flex;
   flex-direction: column;
   gap: 14px;
   transition: all 0.2s ease;
 }
 
+.doc-card.is-uploaded {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.02);
+}
+
 html.dark .doc-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
   border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .doc-card.is-uploaded {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.04);
 }
 
 .doc-main-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 20px;
   flex-wrap: wrap;
+}
+
+.doc-left-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 280px;
 }
 
 .doc-info-col {
@@ -1281,11 +1299,17 @@ html.dark .doc-card {
 
 .doc-desc {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.45;
 }
 
+.doc-formats-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  opacity: 0.75;
+  margin-top: 4px;
+}
 .doc-actions-col {
   display: flex;
   align-items: center;
@@ -1342,21 +1366,50 @@ html.dark .doc-card {
 .upload-btn-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface-subtle);
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 600;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 161, 90, 0.45);
+  background: var(--primary, #6B2D3F);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(107, 45, 63, 0.2);
 }
 
 .upload-btn-label:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(107, 45, 63, 0.3);
+}
+
+html.dark .upload-btn-label {
+  background: var(--accent, #dfba72);
+  border-color: rgba(223, 186, 114, 0.5);
+  color: #1c1202;
+  box-shadow: 0 4px 16px rgba(223, 186, 114, 0.25);
+}
+
+html.dark .upload-btn-label:hover {
+  background: #ecd29b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(223, 186, 114, 0.4);
+}
+
+.upload-btn-label.is-reupload {
   background: var(--surface);
-  border-color: var(--border);
+  color: var(--ink);
+  border-color: var(--outline);
+  box-shadow: none;
+}
+
+html.dark .upload-btn-label.is-reupload {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #dfba72;
+  box-shadow: none;
 }
 
 .upload-btn-label.uploading-disabled {
@@ -1364,6 +1417,24 @@ html.dark .doc-card {
   cursor: not-allowed;
 }
 
+.hidden-file-input {
+  display: none !important;
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.uploaded-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 2px;
+}
 /* Consent & Review Step Styles */
 .consent-and-review-step {
   display: flex;
@@ -1458,6 +1529,15 @@ html.dark .consent-card:hover {
   border-color: var(--accent, #c9a15a);
 }
 
+.consent-card.is-checked {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.04);
+}
+
+html.dark .consent-card.is-checked {
+  border-color: rgba(223, 186, 114, 0.45);
+  background: rgba(223, 186, 114, 0.06);
+}
 .consent-checkbox {
   margin-top: 3px;
   width: 16px;
