@@ -14,12 +14,21 @@ const props = withDefaults(
   {
     saving: false,
     venues: () => [],
-  }
+  },
 )
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'invite', member: { name: string; email: string; phone: string; role: StaffMember['role']; venueId?: number }): void
+  (
+    e: 'invite',
+    member: {
+      name: string
+      email: string
+      phone: string
+      role: StaffMember['role']
+      venueId?: number
+    },
+  ): void
 }>()
 
 const { t } = useI18n()
@@ -39,7 +48,9 @@ const roleOptions = computed<DropdownOption[]>(() => [
 ])
 
 const venueOptions = computed<DropdownOption[]>(() => {
-  const list: DropdownOption[] = [{ value: 'all', label: t('admin.staff.allVenuesOption'), icon: 'domain' }]
+  const list: DropdownOption[] = [
+    { value: 'all', label: t('admin.staff.allVenuesOption'), icon: 'domain' },
+  ]
   props.venues.forEach((v) => {
     list.push({ value: v.id, label: v.name, icon: 'location_on' })
   })
@@ -57,15 +68,18 @@ function handleSend() {
   })
 }
 
-watch(() => props.show, (val) => {
-  if (val) {
-    name.value = ''
-    email.value = ''
-    phone.value = ''
-    role.value = 'Receptionist'
-    venueId.value = 'all'
-  }
-})
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      name.value = ''
+      email.value = ''
+      phone.value = ''
+      role.value = 'Receptionist'
+      venueId.value = 'all'
+    }
+  },
+)
 </script>
 
 <template>
@@ -83,7 +97,9 @@ watch(() => props.show, (val) => {
       <!-- Modal Body -->
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">{{ t('admin.staff.fullNameLabel') }} <span class="required">*</span></label>
+          <label class="form-label"
+            >{{ t('admin.staff.fullNameLabel') }} <span class="required">*</span></label
+          >
           <input
             v-model="name"
             type="text"
@@ -93,7 +109,9 @@ watch(() => props.show, (val) => {
           />
         </div>
         <div class="form-group">
-          <label class="form-label">{{ t('admin.staff.workEmailLabel') }} <span class="required">*</span></label>
+          <label class="form-label"
+            >{{ t('admin.staff.workEmailLabel') }} <span class="required">*</span></label
+          >
           <input
             v-model="email"
             type="email"
@@ -250,7 +268,9 @@ watch(() => props.show, (val) => {
   font-size: 13.5px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .form-input:focus {
@@ -287,7 +307,7 @@ watch(() => props.show, (val) => {
 
 :global(html.dark) .form-input {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 </style>

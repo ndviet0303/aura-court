@@ -30,37 +30,91 @@ function fixture(): { manifest: RunManifest; options: SyntheticWebhookOptions } 
   manifest.fixtures!.organizations.org1.id = 73
   manifest.fixtures!.organizations.org2.id = 74
   manifest.fixtures!.users.cashier.email = `cashier_${manifest.runId}@auracourt.test`
-  return { manifest, options: {
-    routingId: 'synthetic', secret: 'synthetic', accountNumber: 'TEST',
-    amount: 220000, code: 'POS-6-NEWCHECKOUT', posOrderId: 123,
-  } }
+  return {
+    manifest,
+    options: {
+      routingId: 'synthetic',
+      secret: 'synthetic',
+      accountNumber: 'TEST',
+      amount: 220000,
+      code: 'POS-6-NEWCHECKOUT',
+      posOrderId: 123,
+    },
+  }
 }
 
 const unsafeScopes: Array<[string, (m: RunManifest, o: SyntheticWebhookOptions) => void]> = [
-  ['foreign callback origin', m => { m.backend.url = 'https://other.example' }],
-  ['business tenant', m => { m.fixtures!.organizations.org1.id = 75 }],
-  ['missing checkout ID', (_m, o) => { delete o.posOrderId }],
-  ['old fixture namespace', m => { m.fixtures!.run_id = 'old-run' }],
-  ['non-generated cashier', m => { m.fixtures!.users.cashier.email = 'cashier@example.com' }],
-  ['invalid creation time', m => { m.createdAt = 'invalid' }],
-  ['invalid amount', (_m, o) => { o.amount = 0 }],
-  ['invalid POS reference', (_m, o) => { o.code = 'POS-invalid' }],
+  [
+    'foreign callback origin',
+    (m) => {
+      m.backend.url = 'https://other.example'
+    },
+  ],
+  [
+    'business tenant',
+    (m) => {
+      m.fixtures!.organizations.org1.id = 75
+    },
+  ],
+  [
+    'missing checkout ID',
+    (_m, o) => {
+      delete o.posOrderId
+    },
+  ],
+  [
+    'old fixture namespace',
+    (m) => {
+      m.fixtures!.run_id = 'old-run'
+    },
+  ],
+  [
+    'non-generated cashier',
+    (m) => {
+      m.fixtures!.users.cashier.email = 'cashier@example.com'
+    },
+  ],
+  [
+    'invalid creation time',
+    (m) => {
+      m.createdAt = 'invalid'
+    },
+  ],
+  [
+    'invalid amount',
+    (_m, o) => {
+      o.amount = 0
+    },
+  ],
+  [
+    'invalid POS reference',
+    (_m, o) => {
+      o.code = 'POS-invalid'
+    },
+  ],
 ]
 for (const [name, alter] of unsafeScopes) {
   test(`production POS rejects ${name} before credential access`, async () => {
     const { manifest, options } = fixture()
     alter(manifest, options)
     const callsBefore = phpCalls
-    await assert.rejects(sendSyntheticPaymentWebhook(manifest, options), /Production POS signing requires/)
+    await assert.rejects(
+      sendSyntheticPaymentWebhook(manifest, options),
+      /Production POS signing requires/,
+    )
     assert.equal(phpCalls, callsBefore)
   })
 }
 
 test('guarded POS PHP has valid syntax without executing or reading credentials', async () => {
   const { manifest, options } = fixture()
-  await assert.rejects(sendSyntheticPaymentWebhook(manifest, options), /Credential access is disabled/)
+  await assert.rejects(
+    sendSyntheticPaymentWebhook(manifest, options),
+    /Credential access is disabled/,
+  )
   const output = originalExec('php', ['-l'], {
-    input: `<?php\n${capturedPhp}\n`, encoding: 'utf8',
+    input: `<?php\n${capturedPhp}\n`,
+    encoding: 'utf8',
   })
   assert.match(output, /No syntax errors detected/)
 })

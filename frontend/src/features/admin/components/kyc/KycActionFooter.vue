@@ -44,31 +44,19 @@ const reasonOptions = computed(() => [
 
     <div class="footer-actions">
       <!-- Request Supplement -->
-      <AuraButton
-        variant="outline"
-        :disabled="isSubmitting"
-        @click="emit('requestSupplement')"
-      >
+      <AuraButton variant="outline" :disabled="isSubmitting" @click="emit('requestSupplement')">
         <span class="material-symbols-outlined icon-18">edit_note</span>
         <span>{{ t('admin.kyc.btnSupplement') }}</span>
       </AuraButton>
 
       <!-- Reject -->
-      <AuraButton
-        variant="danger"
-        :disabled="isSubmitting"
-        @click="emit('reject')"
-      >
+      <AuraButton variant="danger" :disabled="isSubmitting" @click="emit('reject')">
         <span class="material-symbols-outlined icon-18">block</span>
         <span>{{ t('admin.kyc.btnReject') }}</span>
       </AuraButton>
 
       <!-- Approve & Activate -->
-      <AuraButton
-        variant="primary"
-        :disabled="isSubmitting || isApproved"
-        @click="emit('approve')"
-      >
+      <AuraButton variant="primary" :disabled="isSubmitting || isApproved" @click="emit('approve')">
         <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': isSubmitting }">
           {{ isSubmitting ? 'sync' : 'verified' }}
         </span>
@@ -118,4 +106,3 @@ const reasonOptions = computed(() => [
   }
 }
 </style>
-

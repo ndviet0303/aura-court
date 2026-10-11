@@ -28,7 +28,10 @@ const isOwner = computed(() => {
     userAny.role === 'venue_manager' ||
     userAny.capabilities?.can_manage_venues === true ||
     (Array.isArray(userAny.organizations) &&
-      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+      userAny.organizations.some(
+        (o: any) =>
+          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+      ))
   )
 })
 
@@ -37,7 +40,11 @@ const hasPartnerIntentOrApp = computed(() => {
   if (!userAny) return false
   if (isOwner.value) return false
   if (userAny.capabilities?.has_partner_application === true) return true
-  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  if (
+    typeof window !== 'undefined' &&
+    localStorage.getItem('aura_partner_intent') === 'court_owner'
+  )
+    return true
   return false
 })
 
@@ -113,7 +120,7 @@ const userRoleBadge = computed(() => {
 <style scoped>
 .drawer-user-section {
   padding: 14px 18px;
-  background: var(--surface-subtle, #FAF7F3);
+  background: var(--surface-subtle, #faf7f3);
   border-bottom: 1px solid var(--outline, #ebdccb);
   flex-shrink: 0;
 }
@@ -176,7 +183,7 @@ const userRoleBadge = computed(() => {
   padding: 2px 7px;
   border-radius: 4px;
   background: rgba(107, 45, 63, 0.08);
-  color: #6B2D3F;
+  color: #6b2d3f;
   border: 1px solid rgba(107, 45, 63, 0.18);
   text-transform: uppercase;
 }
@@ -211,9 +218,9 @@ html.dark .drawer-shortcut-btn {
 }
 
 .drawer-shortcut-btn:hover {
-  background: #FAF7F3;
-  color: #6B2D3F;
-  border-color: #6B2D3F;
+  background: #faf7f3;
+  color: #6b2d3f;
+  border-color: #6b2d3f;
 }
 
 html.dark .drawer-shortcut-btn:hover {
@@ -256,7 +263,7 @@ html.dark .drawer-shortcut-btn.logout:hover {
   height: 38px;
   border-radius: 10px;
   background: rgba(107, 45, 63, 0.08);
-  color: #6B2D3F;
+  color: #6b2d3f;
   border: 1px solid rgba(107, 45, 63, 0.15);
   display: grid;
   place-items: center;
@@ -288,7 +295,7 @@ html.dark .drawer-shortcut-btn.logout:hover {
   gap: 6px;
   padding: 8px 14px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
@@ -324,14 +331,14 @@ html.dark .drawer-badge {
 }
 
 html.dark .drawer-login-cta {
-  background: linear-gradient(135deg, #6B2D3F 0%, #4A1D2B 100%) !important;
+  background: linear-gradient(135deg, #6b2d3f 0%, #4a1d2b 100%) !important;
   color: #ffffff !important;
   border: 1px solid rgba(223, 186, 114, 0.3) !important;
   box-shadow: 0 3px 12px rgba(107, 45, 63, 0.45) !important;
 }
 
 html.dark .drawer-login-cta:hover {
-  background: linear-gradient(135deg, #7D3549 0%, #52212F 100%) !important;
+  background: linear-gradient(135deg, #7d3549 0%, #52212f 100%) !important;
   color: #ffffff !important;
 }
 </style>

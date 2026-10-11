@@ -3,7 +3,16 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'glass' | 'accent' | 'gold'
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'outline'
+    | 'ghost'
+    | 'danger'
+    | 'success'
+    | 'glass'
+    | 'accent'
+    | 'gold'
   size?: 'sm' | 'md' | 'lg' | 'pill'
   type?: 'button' | 'submit' | 'reset'
   to?: string | object
@@ -55,13 +64,19 @@ const buttonClasses = computed(() => [
     v-bind="$attrs"
   >
     <span v-if="loading" class="material-symbols-outlined aura-btn__spinner">sync</span>
-    <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{ icon }}</span>
+    <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{
+      icon
+    }}</span>
 
     <span class="aura-btn__content">
       <slot />
     </span>
 
-    <span v-if="!loading && iconRight" class="material-symbols-outlined aura-btn__icon aura-btn__icon--right">{{ iconRight }}</span>
+    <span
+      v-if="!loading && iconRight"
+      class="material-symbols-outlined aura-btn__icon aura-btn__icon--right"
+      >{{ iconRight }}</span
+    >
   </RouterLink>
 
   <a
@@ -74,13 +89,19 @@ const buttonClasses = computed(() => [
     v-bind="$attrs"
   >
     <span v-if="loading" class="material-symbols-outlined aura-btn__spinner">sync</span>
-    <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{ icon }}</span>
+    <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{
+      icon
+    }}</span>
 
     <span class="aura-btn__content">
       <slot />
     </span>
 
-    <span v-if="!loading && iconRight" class="material-symbols-outlined aura-btn__icon aura-btn__icon--right">{{ iconRight }}</span>
+    <span
+      v-if="!loading && iconRight"
+      class="material-symbols-outlined aura-btn__icon aura-btn__icon--right"
+      >{{ iconRight }}</span
+    >
   </a>
 
   <button
@@ -91,13 +112,19 @@ const buttonClasses = computed(() => [
     v-bind="$attrs"
   >
     <span v-if="loading" class="material-symbols-outlined aura-btn__spinner">sync</span>
-    <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{ icon }}</span>
+    <span v-else-if="icon" class="material-symbols-outlined aura-btn__icon aura-btn__icon--left">{{
+      icon
+    }}</span>
 
     <span class="aura-btn__content">
       <slot />
     </span>
 
-    <span v-if="!loading && iconRight" class="material-symbols-outlined aura-btn__icon aura-btn__icon--right">{{ iconRight }}</span>
+    <span
+      v-if="!loading && iconRight"
+      class="material-symbols-outlined aura-btn__icon aura-btn__icon--right"
+      >{{ iconRight }}</span
+    >
   </button>
 </template>
 
@@ -189,14 +216,18 @@ const buttonClasses = computed(() => [
 }
 
 @keyframes aura-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ================= VARIANTS ================= */
 /* 1. Primary Variant (Deep Burgundy Velvet) */
 .aura-btn--primary {
-  background-color: var(--primary, #6B2D3F);
+  background-color: var(--primary, #6b2d3f);
   color: var(--on-primary, #ffffff);
   box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
 }
@@ -208,7 +239,7 @@ const buttonClasses = computed(() => [
 }
 
 :global(html.dark .aura-btn--primary) {
-  background-color: var(--primary, #E58E9F);
+  background-color: var(--primary, #e58e9f);
   color: var(--on-primary, #1c0a10);
   font-weight: 800;
   box-shadow: 0 4px 18px rgba(229, 142, 159, 0.35);
@@ -224,8 +255,8 @@ const buttonClasses = computed(() => [
 /* 1b. Accent / Gold Variant (VIP Action & High Contrast) */
 .aura-btn--accent,
 .aura-btn--gold {
-  background-color: var(--accent, #C9A15A);
-  color: var(--on-accent, #2A1704);
+  background-color: var(--accent, #c9a15a);
+  color: var(--on-accent, #2a1704);
   font-weight: 750;
   border: 1px solid rgba(201, 161, 90, 0.4);
   box-shadow: var(--shadow-gold, 0 4px 16px rgba(201, 161, 90, 0.28));
@@ -234,14 +265,14 @@ const buttonClasses = computed(() => [
 .aura-btn--accent:hover:not(:disabled),
 .aura-btn--gold:hover:not(:disabled) {
   background-color: var(--accent-hover, #b88e45);
-  color: var(--on-accent, #2A1704);
+  color: var(--on-accent, #2a1704);
   box-shadow: 0 6px 22px rgba(201, 161, 90, 0.42);
   transform: translateY(-1px);
 }
 
 :global(html.dark .aura-btn--accent),
 :global(html.dark .aura-btn--gold) {
-  background-color: var(--accent, #D8B46E);
+  background-color: var(--accent, #d8b46e);
   color: var(--on-accent, #1c1202);
   font-weight: 800;
   box-shadow: 0 4px 18px rgba(216, 180, 110, 0.35);
@@ -270,7 +301,7 @@ const buttonClasses = computed(() => [
 :global(html.dark .aura-btn--secondary) {
   background-color: var(--surface-container, #262024);
   border-color: var(--border, #382f35);
-  color: var(--on-surface, #FAF7F3);
+  color: var(--on-surface, #faf7f3);
 }
 
 :global(html.dark .aura-btn--secondary:hover:not(:disabled)) {
@@ -280,18 +311,18 @@ const buttonClasses = computed(() => [
 /* 3. Outline Variant */
 .aura-btn--outline {
   background-color: transparent;
-  color: var(--primary, #6B2D3F);
-  border-color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
+  border-color: var(--primary, #6b2d3f);
 }
 
 .aura-btn--outline:hover:not(:disabled) {
-  background-color: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background-color: var(--primary-container, #f8e8ec);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark .aura-btn--outline) {
-  color: var(--primary, #E58E9F);
-  border-color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
+  border-color: var(--primary, #e58e9f);
 }
 
 :global(html.dark .aura-btn--outline:hover:not(:disabled)) {

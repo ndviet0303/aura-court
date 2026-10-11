@@ -1,5 +1,10 @@
 import { api, apiV2 } from '@/core/api/client'
-import type { SettlementRecord, PayoutRecord, BeneficiaryAccount, FinanceExceptionItem } from '../types/finance'
+import type {
+  SettlementRecord,
+  PayoutRecord,
+  BeneficiaryAccount,
+  FinanceExceptionItem,
+} from '../types/finance'
 import type { SplitGroup } from '../types/split'
 
 export const financeApi = {
@@ -11,7 +16,11 @@ export const financeApi = {
     account_holder?: string
     tax_id?: string
     provider?: string
-  }) => apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>('/finance/beneficiaries', payload),
+  }) =>
+    apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>(
+      '/finance/beneficiaries',
+      payload,
+    ),
 
   // Alias for backward compatibility
   createBeneficiary: (payload: {
@@ -20,12 +29,20 @@ export const financeApi = {
     account_holder?: string
     tax_id?: string
     provider?: string
-  }) => apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>('/finance/beneficiaries', payload),
+  }) =>
+    apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>(
+      '/finance/beneficiaries',
+      payload,
+    ),
 
-  getSettlements: () => apiV2.get<{ data: SettlementRecord[] } | SettlementRecord[]>('/finance/settlements'),
+  getSettlements: () =>
+    apiV2.get<{ data: SettlementRecord[] } | SettlementRecord[]>('/finance/settlements'),
 
   snapshotSettlement: (payload: { period_start: string; period_end: string }) =>
-    apiV2.post<{ settlement: SettlementRecord } | SettlementRecord>('/finance/settlements/snapshot', payload),
+    apiV2.post<{ settlement: SettlementRecord } | SettlementRecord>(
+      '/finance/settlements/snapshot',
+      payload,
+    ),
 
   getPayouts: () => apiV2.get<{ data: PayoutRecord[] } | PayoutRecord[]>('/finance/payouts'),
 
@@ -48,12 +65,9 @@ export const financeApi = {
 
   getSplitGroup: (splitId: number) => apiV2.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
 
-  getInvoice: <T = unknown>(id: number | string) =>
-    apiV2.get<T>(`/monthly-invoices/${id}`),
+  getInvoice: <T = unknown>(id: number | string) => apiV2.get<T>(`/monthly-invoices/${id}`),
 
-  getRecurringSeries: <T = unknown>() =>
-    apiV2.get<T>('/recurring-series'),
-
+  getRecurringSeries: <T = unknown>() => apiV2.get<T>('/recurring-series'),
 
   createReservationSplit: <T = unknown>(reservationId: number | string, payload: any) =>
     apiV2.post<T>(`/reservations/${reservationId}/split`, payload),

@@ -68,7 +68,6 @@ const {
       </div>
     </header>
 
-
     <!-- Feedback Notice Alerts -->
     <transition name="fade">
       <div v-if="notice" class="alert-pill-success" role="status">
@@ -85,8 +84,10 @@ const {
     </transition>
 
     <!-- Circuit Leaderboard (when API data exists) -->
-    <CircuitLeaderboardCard v-if="circuitLeaderboard && circuitLeaderboard.length > 0" :leaderboard="circuitLeaderboard" />
-
+    <CircuitLeaderboardCard
+      v-if="circuitLeaderboard && circuitLeaderboard.length > 0"
+      :leaderboard="circuitLeaderboard"
+    />
 
     <!-- Filters Toolbar -->
     <TournamentFilters
@@ -179,13 +180,23 @@ const {
   gap: 24px;
   padding: 36px 32px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(107, 45, 63, 0.18) 0%, rgba(236, 72, 153, 0.12) 50%, rgba(201, 161, 90, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(107, 45, 63, 0.18) 0%,
+    rgba(236, 72, 153, 0.12) 50%,
+    rgba(201, 161, 90, 0.08) 100%
+  );
   border: 1px solid var(--outline);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 
 :global(html.dark .tournaments-hero-banner) {
-  background: linear-gradient(135deg, rgba(229, 142, 159, 0.12) 0%, rgba(107, 45, 63, 0.25) 50%, rgba(201, 161, 90, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(229, 142, 159, 0.12) 0%,
+    rgba(107, 45, 63, 0.25) 50%,
+    rgba(201, 161, 90, 0.05) 100%
+  );
 }
 
 .hero-content {
@@ -272,7 +283,8 @@ const {
   color: var(--ink);
 }
 
-.alert-pill-success, .alert-pill-error {
+.alert-pill-success,
+.alert-pill-error {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -391,4 +403,3 @@ const {
   }
 }
 </style>
-

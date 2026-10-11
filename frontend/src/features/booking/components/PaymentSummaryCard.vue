@@ -40,7 +40,9 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
         <span class="material-symbols-outlined summary-icon">
           {{ isTournament ? 'emoji_events' : 'receipt_long' }}
         </span>
-        <span>{{ isTournament ? $t('payment.tournamentSummaryTitle') : $t('payment.courtSummaryTitle') }}</span>
+        <span>{{
+          isTournament ? $t('payment.tournamentSummaryTitle') : $t('payment.courtSummaryTitle')
+        }}</span>
       </h3>
       <div v-if="countdownFormatted" class="countdown-tag">
         <span class="material-symbols-outlined timer-icon">timer</span>
@@ -61,10 +63,16 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
       </div>
 
       <div class="tourney-info-block">
-        <h4 class="tourney-heading">{{ tournament?.name || payment.title || 'Giải Đấu Aura Circuit' }}</h4>
+        <h4 class="tourney-heading">
+          {{ tournament?.name || payment.title || 'Giải Đấu Aura Circuit' }}
+        </h4>
         <div class="meta-row">
           <span class="material-symbols-outlined mini-ico">location_on</span>
-          <span>{{ tournament?.venue || 'Aura Sport Complex' }} ({{ tournament?.city || 'TP. Hồ Chí Minh' }})</span>
+          <span
+            >{{ tournament?.venue || 'Aura Sport Complex' }} ({{
+              tournament?.city || 'TP. Hồ Chí Minh'
+            }})</span
+          >
         </div>
         <div class="meta-row">
           <span class="material-symbols-outlined mini-ico">calendar_month</span>
@@ -115,7 +123,9 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
           :value="couponCode"
           type="text"
           class="coupon-text-input"
-          :placeholder="isTournament ? 'Nhập mã ưu đãi giải (Vd: AURA2026)...' : $t('payment.couponPlaceholder')"
+          :placeholder="
+            isTournament ? 'Nhập mã ưu đãi giải (Vd: AURA2026)...' : $t('payment.couponPlaceholder')
+          "
           @input="emit('update:couponCode', ($event.target as HTMLInputElement).value)"
         />
         <button
@@ -142,8 +152,16 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
         <span>{{ $t('payment.discount') }}</span>
         <span>-{{ formatCurrency(booking.discount_amount) }}</span>
       </div>
-      <div v-if="booking?.loyalty_discount_amount && booking.loyalty_discount_amount > 0" class="breakdown-row discount">
-        <span>{{ $t('loyalty.discountAmount') || 'Giảm giá điểm' }} <span v-if="booking.loyalty_points_redeemed">({{ booking.loyalty_points_redeemed }} {{ $t('loyalty.points') || 'điểm' }})</span></span>
+      <div
+        v-if="booking?.loyalty_discount_amount && booking.loyalty_discount_amount > 0"
+        class="breakdown-row discount"
+      >
+        <span
+          >{{ $t('loyalty.discountAmount') || 'Giảm giá điểm' }}
+          <span v-if="booking.loyalty_points_redeemed"
+            >({{ booking.loyalty_points_redeemed }} {{ $t('loyalty.points') || 'điểm' }})</span
+          ></span
+        >
         <span>-{{ formatCurrency(booking.loyalty_discount_amount) }}</span>
       </div>
       <div class="breakdown-row total">

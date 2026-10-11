@@ -47,7 +47,9 @@ function handleResolve() {
         <div class="header-main">
           <div class="title-row">
             <h3 class="drawer-title">{{ t('admin.reconciliation.drawerTitle') }}</h3>
-            <span class="txn-badge">{{ item?.txnCode || item?.details?.txnCode || `REC-${item?.id}` }}</span>
+            <span class="txn-badge">{{
+              item?.txnCode || item?.details?.txnCode || `REC-${item?.id}`
+            }}</span>
           </div>
           <p class="drawer-sub">
             {{ t('admin.reconciliation.drawerSub') }}
@@ -82,7 +84,11 @@ function handleResolve() {
             <div class="banner-stat">
               <span class="stat-label">{{ t('admin.reconciliation.reconStatusLabel') }}</span>
               <span class="stat-value font-bold">
-                {{ item?.status === 'mismatch' ? t('admin.reconciliation.statMismatch') : t('admin.reconciliation.statMatched') }}
+                {{
+                  item?.status === 'mismatch'
+                    ? t('admin.reconciliation.statMismatch')
+                    : t('admin.reconciliation.statMatched')
+                }}
               </span>
             </div>
             <div class="banner-stat">
@@ -105,7 +111,9 @@ function handleResolve() {
               <div class="col-content">
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelRecordedAmount') }}</span>
-                  <span class="row-val font-bold font-mono">{{ formatCurrency(item?.journal_total) }}</span>
+                  <span class="row-val font-bold font-mono">{{
+                    formatCurrency(item?.journal_total)
+                  }}</span>
                 </div>
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelBookingTime') }}</span>
@@ -113,11 +121,15 @@ function handleResolve() {
                 </div>
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelCourtVenue') }}</span>
-                  <span class="row-val">{{ item?.details?.court || 'Aura Court Q7 - Sân VIP 1' }}</span>
+                  <span class="row-val">{{
+                    item?.details?.court || 'Aura Court Q7 - Sân VIP 1'
+                  }}</span>
                 </div>
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelCustomer') }}</span>
-                  <span class="row-val">{{ item?.details?.customer || 'Trần Minh Quang (UID-8821)' }}</span>
+                  <span class="row-val">{{
+                    item?.details?.customer || 'Trần Minh Quang (UID-8821)'
+                  }}</span>
                 </div>
                 <div class="info-tag tag-success">{{ t('admin.reconciliation.tagLedgerOk') }}</div>
               </div>
@@ -132,7 +144,9 @@ function handleResolve() {
               <div class="col-content">
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelPspAmount') }}</span>
-                  <span class="row-val font-bold font-mono">{{ formatCurrency(item?.provider_total) }}</span>
+                  <span class="row-val font-bold font-mono">{{
+                    formatCurrency(item?.provider_total)
+                  }}</span>
                 </div>
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelPspRef') }}</span>
@@ -140,10 +154,14 @@ function handleResolve() {
                 </div>
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelPartnerChannel') }}</span>
-                  <span class="row-val">{{ item?.channel || item?.details?.channel || 'VietQR Pro (MBBank)' }}</span>
+                  <span class="row-val">{{
+                    item?.channel || item?.details?.channel || 'VietQR Pro (MBBank)'
+                  }}</span>
                 </div>
                 <div class="info-row">
-                  <span class="row-label">{{ t('admin.reconciliation.labelWebhookVerified') }}</span>
+                  <span class="row-label">{{
+                    t('admin.reconciliation.labelWebhookVerified')
+                  }}</span>
                   <span class="row-val">06:42:16 (120ms)</span>
                 </div>
                 <div class="info-tag tag-success">{{ t('admin.reconciliation.tagPspOk') }}</div>
@@ -159,7 +177,12 @@ function handleResolve() {
               <div class="col-content">
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelBankActual') }}</span>
-                  <span class="row-val font-bold font-mono" :class="{ 'text-error': item?.settlement_total === 0 || item?.status === 'mismatch' }">
+                  <span
+                    class="row-val font-bold font-mono"
+                    :class="{
+                      'text-error': item?.settlement_total === 0 || item?.status === 'mismatch',
+                    }"
+                  >
                     {{ formatCurrency(item?.settlement_total) }}
                   </span>
                 </div>
@@ -168,23 +191,30 @@ function handleResolve() {
                   <span class="row-val font-mono">038899281928 (MB)</span>
                 </div>
                 <div class="info-row">
-                  <span class="row-label">{{ t('admin.reconciliation.labelStatementPeriod') }}</span>
+                  <span class="row-label">{{
+                    t('admin.reconciliation.labelStatementPeriod')
+                  }}</span>
                   <span class="row-val">Batch T+0 (07:00)</span>
                 </div>
                 <div class="info-row">
                   <span class="row-label">{{ t('admin.reconciliation.labelStatementMatch') }}</span>
                   <span class="row-val text-error font-medium" v-if="item?.mismatch_amount">
-                    {{ t('admin.reconciliation.statementUncredited', { amount: formatCurrency(item.mismatch_amount) }) }}
+                    {{
+                      t('admin.reconciliation.statementUncredited', {
+                        amount: formatCurrency(item.mismatch_amount),
+                      })
+                    }}
                   </span>
                   <span class="row-val text-success" v-else>
                     {{ t('admin.reconciliation.statementCredited') }}
                   </span>
                 </div>
-                <div
-                  class="info-tag"
-                  :class="item?.mismatch_amount ? 'tag-error' : 'tag-success'"
-                >
-                  {{ item?.mismatch_amount ? t('admin.reconciliation.tagBankDelay') : t('admin.reconciliation.tagBankSettled') }}
+                <div class="info-tag" :class="item?.mismatch_amount ? 'tag-error' : 'tag-success'">
+                  {{
+                    item?.mismatch_amount
+                      ? t('admin.reconciliation.tagBankDelay')
+                      : t('admin.reconciliation.tagBankSettled')
+                  }}
                 </div>
               </div>
             </div>
@@ -197,16 +227,26 @@ function handleResolve() {
                 <span class="material-symbols-outlined ai-icon">troubleshoot</span>
                 <span class="ai-title">{{ t('admin.reconciliation.diagCardTitle') }}</span>
               </div>
-              <span class="confidence-badge">{{ t('admin.reconciliation.confidenceLabel', { score: '99.4' }) }}</span>
+              <span class="confidence-badge">{{
+                t('admin.reconciliation.confidenceLabel', { score: '99.4' })
+              }}</span>
             </div>
             <div class="ai-body">
               <p class="diagnosis-text">
-                {{ item?.status === 'mismatch' ? t('admin.reconciliation.diagDefaultText') : t('admin.reconciliation.diagSuccessText') }}
+                {{
+                  item?.status === 'mismatch'
+                    ? t('admin.reconciliation.diagDefaultText')
+                    : t('admin.reconciliation.diagSuccessText')
+                }}
               </p>
               <div class="recommendation-box">
                 <span class="rec-title">💡 {{ t('admin.reconciliation.diagRecTitle') }}</span>
                 <span class="rec-desc">
-                  {{ item?.status === 'mismatch' ? t('admin.reconciliation.diagRecMismatch') : t('admin.reconciliation.diagRecMatched') }}
+                  {{
+                    item?.status === 'mismatch'
+                      ? t('admin.reconciliation.diagRecMismatch')
+                      : t('admin.reconciliation.diagRecMatched')
+                  }}
                 </span>
               </div>
             </div>
@@ -239,7 +279,11 @@ function handleResolve() {
             @click="handleResolve"
           >
             <span class="material-symbols-outlined">rule</span>
-            {{ isSigning ? t('admin.reconciliation.btnSigning') : t('admin.reconciliation.btnSignResolve') }}
+            {{
+              isSigning
+                ? t('admin.reconciliation.btnSigning')
+                : t('admin.reconciliation.btnSignResolve')
+            }}
           </button>
         </div>
       </div>
@@ -270,8 +314,12 @@ function handleResolve() {
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .drawer-header {
@@ -633,15 +681,31 @@ function handleResolve() {
   animation: shimmer 1.5s infinite;
 }
 
-.font-mono { font-family: monospace; }
-.font-bold { font-weight: 700; }
-.font-medium { font-weight: 500; }
-.text-error { color: #ba1a1a; }
-.text-success { color: #059669; }
+.font-mono {
+  font-family: monospace;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-medium {
+  font-weight: 500;
+}
+.text-error {
+  color: #ba1a1a;
+}
+.text-success {
+  color: #059669;
+}
 
 @keyframes shimmer {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 </style>

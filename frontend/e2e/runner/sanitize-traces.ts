@@ -24,10 +24,13 @@ const SECRET_PATTERNS: Array<[RegExp, string | ((match: string) => string)]> = [
   [/(whsec_[a-zA-Z0-9_-]{6,})/g, '[REDACTED_WEBHOOK_SECRET]'],
   [/(test_sepay_[a-zA-Z0-9_-]{4,})/g, '[REDACTED_SECRET]'],
   [/(test_payos_[a-zA-Z0-9_-]{4,})/g, '[REDACTED_SECRET]'],
-  [/([a-f0-9]{32,64})/g, (match: string) => {
-    // Only redact long hex tokens that look like signatures/hashes in credential contexts
-    return match.length === 64 ? match.substring(0, 8) + '...[REDACTED_HEX]' : match
-  }],
+  [
+    /([a-f0-9]{32,64})/g,
+    (match: string) => {
+      // Only redact long hex tokens that look like signatures/hashes in credential contexts
+      return match.length === 64 ? match.substring(0, 8) + '...[REDACTED_HEX]' : match
+    },
+  ],
 ]
 
 export function sanitizeText(content: string): string {
@@ -55,7 +58,10 @@ export function sanitizeZipArchive(zipPath: string): boolean {
   }
 }
 
-export function sanitizeDirectory(dirPath: string): { filesScanned: number; filesSanitized: number } {
+export function sanitizeDirectory(dirPath: string): {
+  filesScanned: number
+  filesSanitized: number
+} {
   let scanned = 0
   let sanitized = 0
 
@@ -73,7 +79,9 @@ export function sanitizeDirectory(dirPath: string): { filesScanned: number; file
         scanned++
         if (entry.name.endsWith('.zip')) {
           if (sanitizeZipArchive(fullPath)) sanitized++
-        } else if (['.html', '.xml', '.json', '.txt', '.log'].some((ext) => entry.name.endsWith(ext))) {
+        } else if (
+          ['.html', '.xml', '.json', '.txt', '.log'].some((ext) => entry.name.endsWith(ext))
+        ) {
           try {
             const content = fs.readFileSync(fullPath, 'utf-8')
             const cleaned = sanitizeText(content)
@@ -103,7 +111,9 @@ export function sanitizeAllTestArtifacts(rootDir: string = process.cwd()): void 
     if (fs.existsSync(dir)) {
       const result = sanitizeDirectory(dir)
       if (result.filesSanitized > 0) {
-        console.log(`[SanitizeArtifacts] Sanitized ${result.filesSanitized}/${result.filesScanned} files in ${dir}`)
+        console.log(
+          `[SanitizeArtifacts] Sanitized ${result.filesSanitized}/${result.filesScanned} files in ${dir}`,
+        )
       }
     }
   }

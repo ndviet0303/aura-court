@@ -191,9 +191,7 @@ onMounted(() => {
               <span>{{ req.requester?.email }}</span>
             </div>
             <div class="req-actions">
-              <button type="button" class="btn-accept" @click="handleAccept(req.id)">
-                Đồng ý
-              </button>
+              <button type="button" class="btn-accept" @click="handleAccept(req.id)">Đồng ý</button>
               <button type="button" class="btn-decline" @click="handleDecline(req.id)">
                 Từ chối
               </button>

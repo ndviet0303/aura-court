@@ -72,4 +72,3 @@ export interface ManualOverridePayload {
   proofFileName?: string
   signatureData?: string
 }
-

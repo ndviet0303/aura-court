@@ -16,11 +16,14 @@ const store = useBookingStore()
 const auth = useAuthStore()
 const router = useRouter()
 const selected = ref<number | null>(null)
-const selectedCourtObj = computed(() => store.courts.find((c: Court) => c.id === selected.value) || null)
-const selectedTimezone = computed(() =>
-  selectedCourtObj.value?.timezone ||
-  selectedCourtObj.value?.venue?.timezone ||
-  'Asia/Ho_Chi_Minh'
+const selectedCourtObj = computed(
+  () => store.courts.find((c: Court) => c.id === selected.value) || null,
+)
+const selectedTimezone = computed(
+  () =>
+    selectedCourtObj.value?.timezone ||
+    selectedCourtObj.value?.venue?.timezone ||
+    'Asia/Ho_Chi_Minh',
 )
 const date = ref(getVenueLocalDate(new Date(), selectedTimezone.value))
 const timeFilter = ref('all')
@@ -42,7 +45,8 @@ const sportCategories = [
 
 function getCourtIcon(court: Court): string {
   const sport = (court.sport_zone?.sport_type || '').toLowerCase()
-  if (sport === 'football_5v5' || sport === 'football_7v7' || sport === 'football') return 'sports_soccer'
+  if (sport === 'football_5v5' || sport === 'football_7v7' || sport === 'football')
+    return 'sports_soccer'
   if (sport === 'basketball') return 'sports_basketball'
   if (sport === 'volleyball') return 'sports_volleyball'
   if (sport === 'table_tennis') return 'table_restaurant'
@@ -50,9 +54,11 @@ function getCourtIcon(court: Court): string {
 
   const name = (court.name || '').toLowerCase()
   if (name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
-  if (name.includes('bóng rổ') || name.includes('basketball') || name.includes('nba')) return 'sports_basketball'
+  if (name.includes('bóng rổ') || name.includes('basketball') || name.includes('nba'))
+    return 'sports_basketball'
   if (name.includes('bóng chuyền') || name.includes('volleyball')) return 'sports_volleyball'
-  if (name.includes('bóng bàn') || name.includes('table tennis') || name.includes('stiga')) return 'table_restaurant'
+  if (name.includes('bóng bàn') || name.includes('table tennis') || name.includes('stiga'))
+    return 'table_restaurant'
   return 'sports_tennis'
 }
 
@@ -111,7 +117,11 @@ function resetFilters() {
 }
 
 function formatVenueTabName(name: string): string {
-  return name.replace(/^Aura\s+(Court|Arena|Sports\s+Complex|Multi-Sport|Sports\s+Center)\s+/i, '').trim() || name
+  return (
+    name
+      .replace(/^Aura\s+(Court|Arena|Sports\s+Complex|Multi-Sport|Sports\s+Center)\s+/i, '')
+      .trim() || name
+  )
 }
 
 function formatCourtChipName(name: string): string {
@@ -137,7 +147,9 @@ function scrollCourts(direction: 'left' | 'right') {
 function scrollToSelectedChip() {
   nextTick(() => {
     if (!courtsChipsScrollRef.value) return
-    const activeChip = courtsChipsScrollRef.value.querySelector('.court-chip.active') as HTMLElement | null
+    const activeChip = courtsChipsScrollRef.value.querySelector(
+      '.court-chip.active',
+    ) as HTMLElement | null
     if (activeChip && typeof activeChip.scrollIntoView === 'function') {
       activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     }
@@ -168,7 +180,7 @@ function setupGridObserver() {
         loadMoreCourts()
       }
     },
-    { rootMargin: '300px 0px' }
+    { rootMargin: '300px 0px' },
   )
   if (gridSentinelRef.value) {
     gridObserver.observe(gridSentinelRef.value)
@@ -201,9 +213,7 @@ async function selectSportCategory(sportId: string) {
 }
 const venueOptions = computed(() => {
   const allLabel = `${t('home.search.allVenues') || 'Tất cả cơ sở'} (${store.courts.length} sân)`
-  const opts: { value: string | number; label: string }[] = [
-    { value: 'all', label: allLabel },
-  ]
+  const opts: { value: string | number; label: string }[] = [{ value: 'all', label: allLabel }]
   for (const v of venues.value) {
     opts.push({
       value: v.id,
@@ -226,17 +236,29 @@ const timeOptions = computed(() => [
   { value: 'evening', label: t('home.search.evening') },
 ])
 
-const total = computed(() => store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0))
+const total = computed(() =>
+  store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0),
+)
 const image = (index: number) => resolveCourtImage(store.courts[index])
-const visibleSlots = computed(() => store.slots.filter((slot: AvailabilitySlot) => {
-  const hour = Number(new Date(slot.startsAt).toLocaleTimeString('en-US', {
-    timeZone: selectedTimezone.value,
-    hour: '2-digit',
-    hour12: false,
-  }))
-  return timeFilter.value === 'morning' ? hour < 17 : timeFilter.value === 'evening' ? hour >= 17 : true
-}))
-const selectedCourtName = computed(() => selectedCourtObj.value?.name || (selected.value ? `Sân ${selected.value}` : ''))
+const visibleSlots = computed(() =>
+  store.slots.filter((slot: AvailabilitySlot) => {
+    const hour = Number(
+      new Date(slot.startsAt).toLocaleTimeString('en-US', {
+        timeZone: selectedTimezone.value,
+        hour: '2-digit',
+        hour12: false,
+      }),
+    )
+    return timeFilter.value === 'morning'
+      ? hour < 17
+      : timeFilter.value === 'evening'
+        ? hour >= 17
+        : true
+  }),
+)
+const selectedCourtName = computed(
+  () => selectedCourtObj.value?.name || (selected.value ? `Sân ${selected.value}` : ''),
+)
 const availabilityHeading = computed(() => {
   if (!selectedCourtName.value) {
     return t('home.availability.fallbackTitle')
@@ -323,7 +345,9 @@ onMounted(async () => {
   <section class="hero">
     <div>
       <div class="eyebrow">{{ t('home.eyebrow') }}</div>
-      <h1>{{ t('home.heroTitle') }} <em>{{ t('home.heroTitleEmphasis') }}</em></h1>
+      <h1>
+        {{ t('home.heroTitle') }} <em>{{ t('home.heroTitleEmphasis') }}</em>
+      </h1>
       <p>{{ t('home.heroSubtitle') }}</p>
       <div class="actions">
         <RouterLink to="/courts" class="btn">
@@ -335,11 +359,11 @@ onMounted(async () => {
     <div class="hero-mosaic">
       <div>
         <img class="short" src="/aura/court-1.jpg" alt="Aura Court" />
-        <img class="tall" src="/aura/court-2.jpg" alt="Aura Court Floor" style="margin-top:12px" />
+        <img class="tall" src="/aura/court-2.jpg" alt="Aura Court Floor" style="margin-top: 12px" />
       </div>
       <div>
         <img class="tall" src="/aura/court-3.jpg" alt="Badminton Player" />
-        <div class="access-card" style="margin-top:12px">
+        <div class="access-card" style="margin-top: 12px">
           <div>
             <strong>{{ t('home.open247') }}</strong>
             <span>{{ t('home.openBadge') }}</span>
@@ -413,7 +437,8 @@ onMounted(async () => {
         <h2 class="availability-title">{{ availabilityHeading }}</h2>
       </div>
       <RouterLink to="/courts" class="muted">
-        {{ t('home.availability.viewAllCourts') }} <span class="material-symbols-outlined">arrow_forward</span>
+        {{ t('home.availability.viewAllCourts') }}
+        <span class="material-symbols-outlined">arrow_forward</span>
       </RouterLink>
     </div>
     <p v-if="store.error" class="error">{{ store.error }}</p>
@@ -476,7 +501,11 @@ onMounted(async () => {
       </div>
 
       <!-- Court Selection Carousel (Compact, elegant, no redundant venue badges) -->
-      <div class="court-carousel-row" role="radiogroup" :aria-label="t('home.availability.nearbyCourts')">
+      <div
+        class="court-carousel-row"
+        role="radiogroup"
+        :aria-label="t('home.availability.nearbyCourts')"
+      >
         <button
           v-if="filteredCourts.length > 2"
           type="button"
@@ -513,7 +542,9 @@ onMounted(async () => {
 
         <div v-else class="no-filtered-courts">
           <span>Không tìm thấy sân phù hợp.</span>
-          <button type="button" class="btn-reset-filters" @click="resetFilters">Xem tất cả sân</button>
+          <button type="button" class="btn-reset-filters" @click="resetFilters">
+            Xem tất cả sân
+          </button>
         </div>
 
         <button
@@ -539,15 +570,22 @@ onMounted(async () => {
         v-for="slot in visibleSlots"
         :key="slot.startsAt"
         class="slot"
-        :class="{ selected: store.selectedSlots.some((item: AvailabilitySlot) => item.startsAt === slot.startsAt), unavailable: !slot.available }"
+        :class="{
+          selected: store.selectedSlots.some(
+            (item: AvailabilitySlot) => item.startsAt === slot.startsAt,
+          ),
+          unavailable: !slot.available,
+        }"
         :disabled="!slot.available"
         @click="store.toggle(slot)"
       >
-        <span class="slot-range font-mono">{{ formatSlotRange(slot, locale, selectedTimezone) }}</span>
+        <span class="slot-range font-mono">{{
+          formatSlotRange(slot, locale, selectedTimezone)
+        }}</span>
         <small class="slot-price">{{ formatCurrency(slot.price) }}</small>
       </button>
     </div>
-    <div v-else class="muted" style="margin: 16px 0 28px;">
+    <div v-else class="muted" style="margin: 16px 0 28px">
       {{ t('home.availability.noSlots') }}
     </div>
 
@@ -564,14 +602,10 @@ onMounted(async () => {
           class="court-card"
         >
           <div class="court-card-image">
-            <img
-              :src="image(index)"
-              :alt="court.name"
-              loading="lazy"
-              decoding="async"
-            />
+            <img :src="image(index)" :alt="court.name" loading="lazy" decoding="async" />
             <span class="tag">
-              {{ t('courts.from') }} {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }}{{ t('common.perHour') }}
+              {{ t('courts.from') }} {{ formatCurrency(court.price_slots?.[0]?.price || 120000)
+              }}{{ t('common.perHour') }}
             </span>
           </div>
           <div class="court-info">
@@ -587,19 +621,17 @@ onMounted(async () => {
       <!-- Lazy Loading Sentinel & Load More Action -->
       <div v-if="hasMoreCourts" class="lazy-load-action-bar">
         <div ref="gridSentinelRef" class="lazy-sentinel"></div>
-        <button
-          type="button"
-          class="btn-load-more-courts"
-          @click="loadMoreCourts"
-        >
+        <button type="button" class="btn-load-more-courts" @click="loadMoreCourts">
           <span class="material-symbols-outlined icon-18">expand_more</span>
-          <span>Xem thêm sân thi đấu ({{ displayedCourts.length }} / {{ store.courts.length }})</span>
+          <span
+            >Xem thêm sân thi đấu ({{ displayedCourts.length }} / {{ store.courts.length }})</span
+          >
         </button>
       </div>
     </div>
   </section>
 
-  <section class="section" style="padding-top:10px" id="features">
+  <section class="section" style="padding-top: 10px" id="features">
     <div class="section-head">
       <div>
         <div class="eyebrow">{{ t('home.features.eyebrow') }}</div>
@@ -630,13 +662,25 @@ onMounted(async () => {
       v-if="store.selectedSlots.length"
       class="floating-booking"
       role="region"
-      :aria-label="t('home.floating.summary', { count: store.selectedSlots.length, total: formatCurrency(total) })"
+      :aria-label="
+        t('home.floating.summary', {
+          count: store.selectedSlots.length,
+          total: formatCurrency(total),
+        })
+      "
     >
       <!-- Floating Inline Error Notification if booking creation fails -->
       <div v-if="error" class="floating-dock-error" role="alert">
         <span class="material-symbols-outlined icon-18">error</span>
         <span>{{ error }}</span>
-        <button type="button" class="btn-dock-close-err" aria-label="Đóng thông báo" @click="error = ''">×</button>
+        <button
+          type="button"
+          class="btn-dock-close-err"
+          aria-label="Đóng thông báo"
+          @click="error = ''"
+        >
+          ×
+        </button>
       </div>
 
       <!-- Dock Summary Left -->
@@ -670,12 +714,10 @@ onMounted(async () => {
         >
           <span class="material-symbols-outlined icon-18">close</span>
         </button>
-        <button
-          class="btn btn-floating-proceed"
-          :disabled="loading"
-          @click="submit"
-        >
-          <span v-if="loading" class="material-symbols-outlined spin-icon icon-18">progress_activity</span>
+        <button class="btn btn-floating-proceed" :disabled="loading" @click="submit">
+          <span v-if="loading" class="material-symbols-outlined spin-icon icon-18"
+            >progress_activity</span
+          >
           <span v-else class="material-symbols-outlined icon-18">payments</span>
           <span>{{ loading ? t('home.floating.processing') : t('home.floating.proceed') }}</span>
           <span v-if="!loading" class="material-symbols-outlined icon-18">arrow_forward</span>
@@ -1058,4 +1100,3 @@ onMounted(async () => {
   color: var(--muted);
 }
 </style>
-

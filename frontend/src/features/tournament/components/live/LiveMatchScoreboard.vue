@@ -18,11 +18,9 @@ defineProps<{
         <span v-else-if="match.status === 'completed'" class="completed-badge">
           🏆 ĐÃ KẾT THÚC
         </span>
-        <span v-else class="scheduled-badge">
-          SẮP DIỄN RA
-        </span>
+        <span v-else class="scheduled-badge"> SẮP DIỄN RA </span>
 
-        <strong class="tourney-name">{{ match.tournament_name }}</strong> · 
+        <strong class="tourney-name">{{ match.tournament_name }}</strong> ·
         <span class="round-name">{{ match.round_label }}</span>
       </div>
 
@@ -50,7 +48,11 @@ defineProps<{
       >
         <div class="avatar-wrap">
           <img :src="match.player1.avatar" :alt="match.player1.name" class="p-avatar" />
-          <span v-if="match.serving_player === 1 && match.status === 'live'" class="shuttle-badge" title="Đang cầm giao cầu">
+          <span
+            v-if="match.serving_player === 1 && match.status === 'live'"
+            class="shuttle-badge"
+            title="Đang cầm giao cầu"
+          >
             <span class="material-symbols-outlined shuttle-ico">sports_tennis</span>
           </span>
           <span v-if="match.winner === 1" class="winner-trophy-badge" title="Chiến thắng">
@@ -60,7 +62,9 @@ defineProps<{
         <div class="p-info">
           <span class="p-seed">{{ match.player1.seed }} · {{ match.player1.club }}</span>
           <h3 class="p-name">{{ match.player1.name }}</h3>
-          <span v-if="match.player1.sets_won > 0" class="sets-won-tag">Thắng {{ match.player1.sets_won }} Set</span>
+          <span v-if="match.player1.sets_won > 0" class="sets-won-tag"
+            >Thắng {{ match.player1.sets_won }} Set</span
+          >
         </div>
         <div class="p-big-score font-mono">{{ match.player1.current_score }}</div>
       </div>
@@ -68,7 +72,7 @@ defineProps<{
       <!-- Set Indicator & History -->
       <div class="set-indicator-col">
         <span class="set-lbl">SET {{ match.current_set }}</span>
-        
+
         <div class="sets-history-chips">
           <div
             v-for="s in match.sets_history"
@@ -98,11 +102,17 @@ defineProps<{
         <div class="p-info text-right">
           <span class="p-seed">{{ match.player2.seed }} · {{ match.player2.club }}</span>
           <h3 class="p-name">{{ match.player2.name }}</h3>
-          <span v-if="match.player2.sets_won > 0" class="sets-won-tag">Thắng {{ match.player2.sets_won }} Set</span>
+          <span v-if="match.player2.sets_won > 0" class="sets-won-tag"
+            >Thắng {{ match.player2.sets_won }} Set</span
+          >
         </div>
         <div class="avatar-wrap">
           <img :src="match.player2.avatar" :alt="match.player2.name" class="p-avatar" />
-          <span v-if="match.serving_player === 2 && match.status === 'live'" class="shuttle-badge" title="Đang cầm giao cầu">
+          <span
+            v-if="match.serving_player === 2 && match.status === 'live'"
+            class="shuttle-badge"
+            title="Đang cầm giao cầu"
+          >
             <span class="material-symbols-outlined shuttle-ico">sports_tennis</span>
           </span>
           <span v-if="match.winner === 2" class="winner-trophy-badge" title="Chiến thắng">
@@ -173,8 +183,15 @@ defineProps<{
 }
 
 @keyframes pulse-border {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.75; transform: scale(1.02); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.02);
+  }
 }
 
 .live-badge {
@@ -222,9 +239,18 @@ defineProps<{
 }
 
 @keyframes pulse-live {
-  0% { transform: scale(0.9); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.5; }
-  100% { transform: scale(0.9); opacity: 1; }
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
 }
 
 .court-badge {

@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import NavbarSkeleton from '@/shared/layouts/header/NavbarSkeleton.vue'
 
-
 interface Props {
-  type?: 'text' | 'title' | 'avatar' | 'card' | 'court-card' | 'court-detail' | 'slot' | 'rect' | 'navbar'
+  type?:
+    | 'text'
+    | 'title'
+    | 'avatar'
+    | 'card'
+    | 'court-card'
+    | 'court-detail'
+    | 'slot'
+    | 'rect'
+    | 'navbar'
   width?: string
   height?: string
   rounded?: string
@@ -24,11 +32,7 @@ withDefaults(defineProps<Props>(), {
     <!-- Single / Repeated Elements -->
     <template v-for="i in count" :key="i">
       <!-- Slot Skeleton (Khung giờ trống) -->
-      <div
-        v-if="type === 'slot'"
-        class="skeleton-slot"
-        :style="{ '--slot-index': i }"
-      >
+      <div v-if="type === 'slot'" class="skeleton-slot" :style="{ '--slot-index': i }">
         <div class="skeleton-item skeleton-slot-time"></div>
         <div class="skeleton-item skeleton-slot-price"></div>
       </div>

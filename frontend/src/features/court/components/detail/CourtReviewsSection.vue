@@ -101,7 +101,11 @@ function formatDate(dateStr?: string): string {
             <span v-for="i in 5" :key="i" class="material-symbols-outlined star-icon">star</span>
           </div>
           <span class="total-reviews-lbl">
-            {{ totalReviewsCount > 0 ? `${totalReviewsCount} lượt đánh giá từ DB` : 'Chưa có lượt đánh giá' }}
+            {{
+              totalReviewsCount > 0
+                ? `${totalReviewsCount} lượt đánh giá từ DB`
+                : 'Chưa có lượt đánh giá'
+            }}
           </span>
         </div>
 
@@ -182,17 +186,14 @@ function formatDate(dateStr?: string): string {
         <span class="material-symbols-outlined empty-icon">rate_review</span>
         <strong class="empty-title">Chưa có đánh giá nào cho sân này</strong>
         <p class="empty-sub">
-          Đánh giá được kích hoạt tự động sau khi bạn hoàn tất lượt thi đấu tại sân. Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét!
+          Đánh giá được kích hoạt tự động sau khi bạn hoàn tất lượt thi đấu tại sân. Hãy là người
+          đầu tiên trải nghiệm và chia sẻ nhận xét!
         </p>
       </div>
 
       <!-- Real Reviews List from Database -->
       <div v-else class="reviews-list">
-        <article
-          v-for="rev in filteredReviews"
-          :key="rev.id"
-          class="review-item-card"
-        >
+        <article v-for="rev in filteredReviews" :key="rev.id" class="review-item-card">
           <div class="review-top-row">
             <div class="author-info">
               <div class="author-avatar">
@@ -322,8 +323,12 @@ function formatDate(dateStr?: string): string {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .rating-dashboard-card {
@@ -369,7 +374,11 @@ function formatDate(dateStr?: string): string {
 .star-icon {
   font-family: 'Material Symbols Outlined', sans-serif;
   font-size: 18px;
-  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24 !important;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 600,
+    'GRAD' 0,
+    'opsz' 24 !important;
   color: var(--accent, #c9a15a);
 }
 
@@ -607,12 +616,20 @@ function formatDate(dateStr?: string): string {
 .item-star {
   font-family: 'Material Symbols Outlined', sans-serif;
   font-size: 16px;
-  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24 !important;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 600,
+    'GRAD' 0,
+    'opsz' 24 !important;
   color: var(--accent, #c9a15a);
 }
 
 .star-inactive {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24 !important;
   color: var(--outline);
   opacity: 0.35;
 }

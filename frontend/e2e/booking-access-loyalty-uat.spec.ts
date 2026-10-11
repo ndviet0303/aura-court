@@ -9,19 +9,25 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     })
   })
 
-  test('Journey 1: Điều hướng & chuyển hướng khách vãng lai trên /login và /register', async ({ page }) => {
+  test('Journey 1: Điều hướng & chuyển hướng khách vãng lai trên /login và /register', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
     // 1.1 Unauthenticated access to /login displays login form
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: /Đăng nhập|Login/i })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: /Đăng nhập|Login/i })).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible()
     await expect(page.locator('input[type="password"], input[name="password"]')).toBeVisible()
 
     // 1.2 Unauthenticated access to /register displays register mode
     await page.goto('/register', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('input[name="password_confirmation"], input[id="register-password-confirm"]')).toBeVisible({ timeout: 15000 })
+    await expect(
+      page.locator('input[name="password_confirmation"], input[id="register-password-confirm"]'),
+    ).toBeVisible({ timeout: 15000 })
 
     // 1.3 Unauthenticated access to protected route /wallet redirects to /login?redirect=/wallet
     await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
@@ -34,7 +40,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
 
     // 1.5 Successfully redirected to /wallet destination
     await expect(page).toHaveURL(/.*wallet/, { timeout: 20000 })
-    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     // 1.6 Authenticated visitor visiting /login or /register is automatically redirected away
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -44,7 +52,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     await expect(page).not.toHaveURL(/\/register$/, { timeout: 15000 })
   })
 
-  test('Journey 2: Phân quyền quản trị / POS cho chủ sân và thu ngân, chặn truy cập admin nền tảng', async ({ browser }) => {
+  test('Journey 2: Phân quyền quản trị / POS cho chủ sân và thu ngân, chặn truy cập admin nền tảng', async ({
+    browser,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -75,7 +85,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     // Accessing POS view as owner is permitted
     await ownerPage.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
     await expect(ownerPage).toHaveURL(/.*admin\/pos/, { timeout: 15000 })
-    await expect(ownerPage.locator('.pos-layout-wrapper, .pos-container').first()).toBeVisible({ timeout: 15000 })
+    await expect(ownerPage.locator('.pos-layout-wrapper, .pos-container').first()).toBeVisible({
+      timeout: 15000,
+    })
 
     // Task 3.1: True platform-only routes (payouts, kyc) are denied to owner and redirect to home
     await ownerPage.goto('/admin/payouts', { waitUntil: 'domcontentloaded' })
@@ -95,7 +107,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
 
     await cashierPage.goto('/login', { waitUntil: 'domcontentloaded' })
     await cashierPage.locator('input[type="email"], input[name="email"]').fill(cashier.email)
-    await cashierPage.locator('input[type="password"], input[name="password"]').fill(cashier.password)
+    await cashierPage
+      .locator('input[type="password"], input[name="password"]')
+      .fill(cashier.password)
     await cashierPage.locator('button[type="submit"].auth-submit-btn').click()
     await expect(cashierPage).not.toHaveURL(/.*login/, { timeout: 20000 })
 
@@ -106,7 +120,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     // Accessing /admin/pos as cashier is permitted
     await cashierPage.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
     await expect(cashierPage).toHaveURL(/.*admin\/pos/, { timeout: 15000 })
-    await expect(cashierPage.locator('.pos-layout-wrapper, .pos-container').first()).toBeVisible({ timeout: 15000 })
+    await expect(cashierPage.locator('.pos-layout-wrapper, .pos-container').first()).toBeVisible({
+      timeout: 15000,
+    })
 
     // Management routes are denied to cashier (redirect to home)
     await cashierPage.goto('/admin/manage', { waitUntil: 'domcontentloaded' })
@@ -124,7 +140,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     await cashierContext.close()
   })
 
-  test('Journey 3: Lịch khả dụng theo sân: chọn sân, hiển thị slot rõ ràng, đổi sân', async ({ page }) => {
+  test('Journey 3: Lịch khả dụng theo sân: chọn sân, hiển thị slot rõ ràng, đổi sân', async ({
+    page,
+  }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     const availabilitySection = page.locator('#availability, .availability-container').first()
@@ -146,7 +164,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     await expect(slotList.first()).toBeVisible({ timeout: 25000 })
   })
 
-  test('Journey 4: Xem trước tiêu điểm tích lũy, số dư và tính số tiền giảm trừ', async ({ page }) => {
+  test('Journey 4: Xem trước tiêu điểm tích lũy, số dư và tính số tiền giảm trừ', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
@@ -166,7 +186,9 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     const availabilitySection = page.locator('#availability, .availability-container').first()
     await expect(availabilitySection).toBeVisible({ timeout: 25000 })
 
-    const availableSlot = availabilitySection.locator('.slot:not(:disabled), .time-slot:not(.booked)').first()
+    const availableSlot = availabilitySection
+      .locator('.slot:not(:disabled), .time-slot:not(.booked)')
+      .first()
     if (await availableSlot.isVisible()) {
       await availableSlot.click()
 

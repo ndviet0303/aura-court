@@ -7,10 +7,24 @@ import BusinessBankSection from './BusinessBankSection.vue'
 import type { BusinessType, PartnerApplication, SaveDraftPayload } from '../types'
 
 type TextFieldKey =
-  | 'business_name' | 'legal_name' | 'tax_code' | 'representative_name' | 'id_card_number'
-  | 'bank_name' | 'bank_code' | 'bank_account_number' | 'bank_account_holder'
-  | 'contact_name' | 'contact_phone' | 'contact_email' | 'address_line'
-  | 'ward' | 'district' | 'city' | 'postal_code' | 'lighting_spec'
+  | 'business_name'
+  | 'legal_name'
+  | 'tax_code'
+  | 'representative_name'
+  | 'id_card_number'
+  | 'bank_name'
+  | 'bank_code'
+  | 'bank_account_number'
+  | 'bank_account_holder'
+  | 'contact_name'
+  | 'contact_phone'
+  | 'contact_email'
+  | 'address_line'
+  | 'ward'
+  | 'district'
+  | 'city'
+  | 'postal_code'
+  | 'lighting_spec'
 
 const props = defineProps<{
   application: PartnerApplication
@@ -25,10 +39,24 @@ const emit = defineEmits<{ (e: 'next'): void }>()
 const POPULAR_SPORTS = ['Cầu lông', 'Pickleball', 'Tennis', 'Bóng bàn', 'Bóng rổ', 'Bóng đá mini']
 
 const values = reactive<Record<TextFieldKey, string>>({
-  business_name: '', legal_name: '', tax_code: '', representative_name: '', id_card_number: '',
-  bank_name: '', bank_code: '', bank_account_number: '', bank_account_holder: '', contact_name: '',
-  contact_phone: '', contact_email: '', address_line: '', ward: '', district: '', city: '',
-  postal_code: '', lighting_spec: '',
+  business_name: '',
+  legal_name: '',
+  tax_code: '',
+  representative_name: '',
+  id_card_number: '',
+  bank_name: '',
+  bank_code: '',
+  bank_account_number: '',
+  bank_account_holder: '',
+  contact_name: '',
+  contact_phone: '',
+  contact_email: '',
+  address_line: '',
+  ward: '',
+  district: '',
+  city: '',
+  postal_code: '',
+  lighting_spec: '',
 })
 
 const businessType = ref<BusinessType>('individual')
@@ -91,7 +119,12 @@ function onBankChange(e: Event) {
   }
 }
 
-const currentSports = computed(() => sportsInput.value.split(',').map((s) => s.trim()).filter(Boolean))
+const currentSports = computed(() =>
+  sportsInput.value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+)
 
 function toggleSport(sport: string) {
   const list = [...currentSports.value]
@@ -109,21 +142,30 @@ function buildPayload(): SaveDraftPayload {
   return {
     ...values,
     business_type: businessType.value,
-    sports: sportsInput.value.split(',').map((s) => s.trim()).filter(Boolean),
+    sports: sportsInput.value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
     court_scale: courtScaleInput.value ? Number(courtScaleInput.value) : undefined,
     expected_version: props.application.version,
   }
 }
 
-async function handleSave() { saveSuccess.value = await props.save(buildPayload()) }
-async function handleNext() { if (await props.save(buildPayload())) emit('next') }
+async function handleSave() {
+  saveSuccess.value = await props.save(buildPayload())
+}
+async function handleNext() {
+  if (await props.save(buildPayload())) emit('next')
+}
 </script>
 
 <template>
   <div class="business-info-step">
     <div class="step-head">
       <h3 class="step-title">Bước 1: Thông tin Cơ sở & Người đại diện</h3>
-      <p class="step-sub">Vui lòng hoàn tất 5 mục bên dưới để đội ngũ Aura xác minh và mở cổng vận hành cụm sân.</p>
+      <p class="step-sub">
+        Vui lòng hoàn tất 5 mục bên dưới để đội ngũ Aura xác minh và mở cổng vận hành cụm sân.
+      </p>
     </div>
 
     <p v-if="error" class="error-banner" role="alert">
@@ -137,49 +179,111 @@ async function handleNext() { if (await props.save(buildPayload())) emit('next')
         <div class="section-icon-box"><span class="material-symbols-outlined">stadium</span></div>
         <div class="section-title-wrap">
           <h4 class="section-title">1. Thông tin Cơ sở & Quy mô Sân</h4>
-          <p class="section-subtitle">Tên hiển thị công khai trên ứng dụng và môn thể thao phục vụ</p>
+          <p class="section-subtitle">
+            Tên hiển thị công khai trên ứng dụng và môn thể thao phục vụ
+          </p>
         </div>
       </div>
       <div class="business-type-group">
         <label class="field-label">Mô hình kinh doanh <span class="req-star">*</span></label>
         <div class="business-type-options">
           <label class="radio-pill" :class="{ selected: businessType === 'individual' }">
-            <input v-model="businessType" type="radio" value="individual" /><span class="radio-dot"></span><span>Cá nhân</span>
+            <input v-model="businessType" type="radio" value="individual" /><span
+              class="radio-dot"
+            ></span
+            ><span>Cá nhân</span>
           </label>
           <label class="radio-pill" :class="{ selected: businessType === 'household' }">
-            <input v-model="businessType" type="radio" value="household" /><span class="radio-dot"></span><span>Hộ kinh doanh</span>
+            <input v-model="businessType" type="radio" value="household" /><span
+              class="radio-dot"
+            ></span
+            ><span>Hộ kinh doanh</span>
           </label>
           <label class="radio-pill" :class="{ selected: businessType === 'company' }">
-            <input v-model="businessType" type="radio" value="company" /><span class="radio-dot"></span><span>Doanh nghiệp</span>
+            <input v-model="businessType" type="radio" value="company" /><span
+              class="radio-dot"
+            ></span
+            ><span>Doanh nghiệp</span>
           </label>
         </div>
-        <p v-if="fieldErrors.business_type" class="field-error-msg">{{ fieldErrors.business_type[0] }}</p>
+        <p v-if="fieldErrors.business_type" class="field-error-msg">
+          {{ fieldErrors.business_type[0] }}
+        </p>
       </div>
       <div class="form-grid">
         <div class="form-field-item form-grid-full">
-          <label for="business_name" class="field-label">Tên cơ sở / thương hiệu cụm sân <span class="req-star">*</span></label>
-          <input id="business_name" v-model="values.business_name" type="text" placeholder="Ví dụ: CLB Cầu Lông Aura Arena..." autocomplete="organization" class="form-input" />
-          <p v-if="fieldErrors.business_name" class="field-error-msg">{{ fieldErrors.business_name[0] }}</p>
+          <label for="business_name" class="field-label"
+            >Tên cơ sở / thương hiệu cụm sân <span class="req-star">*</span></label
+          >
+          <input
+            id="business_name"
+            v-model="values.business_name"
+            type="text"
+            placeholder="Ví dụ: CLB Cầu Lông Aura Arena..."
+            autocomplete="organization"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.business_name" class="field-error-msg">
+            {{ fieldErrors.business_name[0] }}
+          </p>
         </div>
         <div class="form-field-item form-grid-full">
-          <label for="sports" class="field-label">Môn thể thao hoạt động <span class="req-star">*</span></label>
+          <label for="sports" class="field-label"
+            >Môn thể thao hoạt động <span class="req-star">*</span></label
+          >
           <div class="sports-chips-row">
-            <span v-for="s in POPULAR_SPORTS" :key="s" role="button" tabindex="0" class="sport-chip-btn" :class="{ selected: isSportSelected(s) }" @click="toggleSport(s)" @keydown.enter.prevent="toggleSport(s)">
-              <span class="material-symbols-outlined icon-14">{{ isSportSelected(s) ? 'check' : 'add' }}</span><span>{{ s }}</span>
+            <span
+              v-for="s in POPULAR_SPORTS"
+              :key="s"
+              role="button"
+              tabindex="0"
+              class="sport-chip-btn"
+              :class="{ selected: isSportSelected(s) }"
+              @click="toggleSport(s)"
+              @keydown.enter.prevent="toggleSport(s)"
+            >
+              <span class="material-symbols-outlined icon-14">{{
+                isSportSelected(s) ? 'check' : 'add'
+              }}</span
+              ><span>{{ s }}</span>
             </span>
           </div>
-          <input id="sports" v-model="sportsInput" type="text" placeholder="Cầu lông, pickleball, tennis..." class="form-input" />
+          <input
+            id="sports"
+            v-model="sportsInput"
+            type="text"
+            placeholder="Cầu lông, pickleball, tennis..."
+            class="form-input"
+          />
           <p v-if="fieldErrors.sports" class="field-error-msg">{{ fieldErrors.sports[0] }}</p>
         </div>
         <div class="form-field-item">
           <label for="courtScale" class="field-label">Số sân dự kiến hoạt động</label>
-          <input id="courtScale" v-model="courtScaleInput" type="number" min="1" max="100" placeholder="Ví dụ: 4" class="form-input" />
-          <p v-if="fieldErrors.court_scale" class="field-error-msg">{{ fieldErrors.court_scale[0] }}</p>
+          <input
+            id="courtScale"
+            v-model="courtScaleInput"
+            type="number"
+            min="1"
+            max="100"
+            placeholder="Ví dụ: 4"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.court_scale" class="field-error-msg">
+            {{ fieldErrors.court_scale[0] }}
+          </p>
         </div>
         <div class="form-field-item">
           <label for="lighting_spec" class="field-label">Thông tin chiếu sáng & tiện ích</label>
-          <input id="lighting_spec" v-model="values.lighting_spec" type="text" placeholder="Đèn LED chống chói 300 Lux, máy lạnh..." class="form-input" />
-          <p v-if="fieldErrors.lighting_spec" class="field-error-msg">{{ fieldErrors.lighting_spec[0] }}</p>
+          <input
+            id="lighting_spec"
+            v-model="values.lighting_spec"
+            type="text"
+            placeholder="Đèn LED chống chói 300 Lux, máy lạnh..."
+            class="form-input"
+          />
+          <p v-if="fieldErrors.lighting_spec" class="field-error-msg">
+            {{ fieldErrors.lighting_spec[0] }}
+          </p>
         </div>
       </div>
     </div>
@@ -193,28 +297,67 @@ async function handleNext() { if (await props.save(buildPayload())) emit('next')
         <div class="section-icon-box"><span class="material-symbols-outlined">badge</span></div>
         <div class="section-title-wrap">
           <h4 class="section-title">3. Người đại diện & Pháp lý</h4>
-          <p class="section-subtitle">Thông tin định danh để bảo đảm tính pháp lý và an toàn giao dịch</p>
+          <p class="section-subtitle">
+            Thông tin định danh để bảo đảm tính pháp lý và an toàn giao dịch
+          </p>
         </div>
       </div>
       <div class="form-grid">
         <div class="form-field-item">
-          <label for="representative_name" class="field-label">Họ và tên người đại diện <span class="req-star">*</span></label>
-          <input id="representative_name" v-model="values.representative_name" type="text" placeholder="Nguyễn Văn A" autocomplete="name" class="form-input" />
-          <p v-if="fieldErrors.representative_name" class="field-error-msg">{{ fieldErrors.representative_name[0] }}</p>
+          <label for="representative_name" class="field-label"
+            >Họ và tên người đại diện <span class="req-star">*</span></label
+          >
+          <input
+            id="representative_name"
+            v-model="values.representative_name"
+            type="text"
+            placeholder="Nguyễn Văn A"
+            autocomplete="name"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.representative_name" class="field-error-msg">
+            {{ fieldErrors.representative_name[0] }}
+          </p>
         </div>
         <div class="form-field-item">
-          <label for="id_card_number" class="field-label">Số CCCD / giấy tờ định danh <span class="req-star">*</span></label>
-          <input id="id_card_number" v-model="values.id_card_number" type="text" placeholder="Số thẻ căn cước 12 số" class="form-input" />
-          <p v-if="fieldErrors.id_card_number" class="field-error-msg">{{ fieldErrors.id_card_number[0] }}</p>
+          <label for="id_card_number" class="field-label"
+            >Số CCCD / giấy tờ định danh <span class="req-star">*</span></label
+          >
+          <input
+            id="id_card_number"
+            v-model="values.id_card_number"
+            type="text"
+            placeholder="Số thẻ căn cước 12 số"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.id_card_number" class="field-error-msg">
+            {{ fieldErrors.id_card_number[0] }}
+          </p>
         </div>
         <div class="form-field-item">
-          <label for="legal_name" class="field-label">Tên pháp lý đăng ký kinh doanh <span class="req-star">*</span></label>
-          <input id="legal_name" v-model="values.legal_name" type="text" placeholder="Tên cá nhân hoặc Cty TNHH..." class="form-input" />
-          <p v-if="fieldErrors.legal_name" class="field-error-msg">{{ fieldErrors.legal_name[0] }}</p>
+          <label for="legal_name" class="field-label"
+            >Tên pháp lý đăng ký kinh doanh <span class="req-star">*</span></label
+          >
+          <input
+            id="legal_name"
+            v-model="values.legal_name"
+            type="text"
+            placeholder="Tên cá nhân hoặc Cty TNHH..."
+            class="form-input"
+          />
+          <p v-if="fieldErrors.legal_name" class="field-error-msg">
+            {{ fieldErrors.legal_name[0] }}
+          </p>
         </div>
         <div class="form-field-item">
           <label for="tax_code" class="field-label">Mã số thuế</label>
-          <input id="tax_code" v-model="values.tax_code" type="text" placeholder="Mã số thuế (nếu có)" class="form-input" />
+          <input
+            id="tax_code"
+            v-model="values.tax_code"
+            type="text"
+            placeholder="Mã số thuế (nếu có)"
+            class="form-input"
+          />
           <p v-if="fieldErrors.tax_code" class="field-error-msg">{{ fieldErrors.tax_code[0] }}</p>
         </div>
       </div>
@@ -231,27 +374,64 @@ async function handleNext() { if (await props.save(buildPayload())) emit('next')
     <!-- SECTION 5: Người liên hệ vận hành -->
     <div class="form-section-card">
       <div class="form-section-header">
-        <div class="section-icon-box"><span class="material-symbols-outlined">contact_phone</span></div>
+        <div class="section-icon-box">
+          <span class="material-symbols-outlined">contact_phone</span>
+        </div>
         <div class="section-title-wrap">
           <h4 class="section-title">5. Người liên hệ vận hành</h4>
-          <p class="section-subtitle">Kênh liên lạc trực tiếp khi cần hỗ trợ khách hàng hoặc thông báo khẩn cấp</p>
+          <p class="section-subtitle">
+            Kênh liên lạc trực tiếp khi cần hỗ trợ khách hàng hoặc thông báo khẩn cấp
+          </p>
         </div>
       </div>
       <div class="form-grid">
         <div class="form-field-item form-grid-full">
-          <label for="contact_name" class="field-label">Tên người liên hệ <span class="req-star">*</span></label>
-          <input id="contact_name" v-model="values.contact_name" type="text" placeholder="Họ và tên người phụ trách" autocomplete="name" class="form-input" />
-          <p v-if="fieldErrors.contact_name" class="field-error-msg">{{ fieldErrors.contact_name[0] }}</p>
+          <label for="contact_name" class="field-label"
+            >Tên người liên hệ <span class="req-star">*</span></label
+          >
+          <input
+            id="contact_name"
+            v-model="values.contact_name"
+            type="text"
+            placeholder="Họ và tên người phụ trách"
+            autocomplete="name"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.contact_name" class="field-error-msg">
+            {{ fieldErrors.contact_name[0] }}
+          </p>
         </div>
         <div class="form-field-item">
-          <label for="contact_phone" class="field-label">Số điện thoại hotline <span class="req-star">*</span></label>
-          <input id="contact_phone" v-model="values.contact_phone" type="tel" placeholder="0987654321" autocomplete="tel" class="form-input" />
-          <p v-if="fieldErrors.contact_phone" class="field-error-msg">{{ fieldErrors.contact_phone[0] }}</p>
+          <label for="contact_phone" class="field-label"
+            >Số điện thoại hotline <span class="req-star">*</span></label
+          >
+          <input
+            id="contact_phone"
+            v-model="values.contact_phone"
+            type="tel"
+            placeholder="0987654321"
+            autocomplete="tel"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.contact_phone" class="field-error-msg">
+            {{ fieldErrors.contact_phone[0] }}
+          </p>
         </div>
         <div class="form-field-item">
-          <label for="contact_email" class="field-label">Email liên hệ <span class="req-star">*</span></label>
-          <input id="contact_email" v-model="values.contact_email" type="email" placeholder="hotline@sanclb.vn" autocomplete="email" class="form-input" />
-          <p v-if="fieldErrors.contact_email" class="field-error-msg">{{ fieldErrors.contact_email[0] }}</p>
+          <label for="contact_email" class="field-label"
+            >Email liên hệ <span class="req-star">*</span></label
+          >
+          <input
+            id="contact_email"
+            v-model="values.contact_email"
+            type="email"
+            placeholder="hotline@sanclb.vn"
+            autocomplete="email"
+            class="form-input"
+          />
+          <p v-if="fieldErrors.contact_email" class="field-error-msg">
+            {{ fieldErrors.contact_email[0] }}
+          </p>
         </div>
       </div>
     </div>

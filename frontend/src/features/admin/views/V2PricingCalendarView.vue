@@ -61,7 +61,12 @@ function handleStartEdit(rule: PriceRuleItem) {
   showRuleModal.value = true
 }
 
-function handleCreateForSlot(payload: { weekday: number; starts_at: string; ends_at: string; court_id?: number }) {
+function handleCreateForSlot(payload: {
+  weekday: number
+  starts_at: string
+  ends_at: string
+  court_id?: number
+}) {
   editingRule.value = {
     id: 0,
     name: '',
@@ -109,7 +114,9 @@ onMounted(() => {
 
       <div class="header-actions">
         <AuraButton variant="secondary" :disabled="loading" @click="loadData">
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }"
+            >refresh</span
+          >
           <span>{{ t('admin.pricing.refreshBtn') }}</span>
         </AuraButton>
         <AuraButton variant="secondary" @click="showPresetsModal = true">
@@ -225,7 +232,9 @@ onMounted(() => {
       :quote-result="quoteResult"
       :quote-error="quoteError"
       @close="showSimulatorModal = false"
-      @simulate="simulateQuote($event.courtId, $event.dateStr, $event.startTime, $event.durationHours)"
+      @simulate="
+        simulateQuote($event.courtId, $event.dateStr, $event.startTime, $event.durationHours)
+      "
     />
 
     <PricingPresetsModal
@@ -372,10 +381,18 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 </style>

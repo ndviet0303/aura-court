@@ -71,7 +71,11 @@ export function useAdminStaff() {
   function resolveInitialOrgId(): number {
     const user = auth.user
     if (!user) return 1
-    if (user.capabilities && typeof user.capabilities === 'object' && !Array.isArray(user.capabilities)) {
+    if (
+      user.capabilities &&
+      typeof user.capabilities === 'object' &&
+      !Array.isArray(user.capabilities)
+    ) {
       const activeOrgId = user.capabilities.active_organization_id
       if (typeof activeOrgId === 'number') {
         return activeOrgId
@@ -173,12 +177,17 @@ export function useAdminStaff() {
       if (venuesRes.status === 'rejected') {
         error.value = errorMessage(venuesRes.reason, 'Không thể tải danh sách cơ sở.')
       } else if (venuesRes.value) {
-        const rawVenues = Array.isArray(venuesRes.value) ? venuesRes.value : (venuesRes.value as any).data || []
+        const rawVenues = Array.isArray(venuesRes.value)
+          ? venuesRes.value
+          : (venuesRes.value as any).data || []
         venuesList.value = rawVenues.map((v: any) => ({
           id: v.id,
-          name: typeof v.name === 'object' && v.name !== null
-            ? ((v.name as Record<string, string>).vi || (v.name as Record<string, string>).en || 'Cơ sở')
-            : String(v.name || 'Cơ sở'),
+          name:
+            typeof v.name === 'object' && v.name !== null
+              ? (v.name as Record<string, string>).vi ||
+                (v.name as Record<string, string>).en ||
+                'Cơ sở'
+              : String(v.name || 'Cơ sở'),
         }))
       }
 
@@ -186,11 +195,18 @@ export function useAdminStaff() {
       if (membersRes.status === 'rejected') {
         error.value = errorMessage(membersRes.reason, 'Không thể tải danh sách nhân sự.')
       } else if (membersRes.status === 'fulfilled') {
-        const raw = (membersRes.value as { members?: unknown[] })?.members || (Array.isArray(membersRes.value) ? membersRes.value : [])
+        const raw =
+          (membersRes.value as { members?: unknown[] })?.members ||
+          (Array.isArray(membersRes.value) ? membersRes.value : [])
         staffList.value = raw.map((item: unknown) => {
           const m = item as Record<string, unknown>
           const perms = (m.permissions as Record<string, unknown> | null) || {}
-          const vId = Number(m.venue_id || perms.venue_id || (Array.isArray(perms.venue_ids) ? perms.venue_ids[0] : 0) || 0)
+          const vId = Number(
+            m.venue_id ||
+              perms.venue_id ||
+              (Array.isArray(perms.venue_ids) ? perms.venue_ids[0] : 0) ||
+              0,
+          )
           const venueFound = venuesList.value.find((v) => v.id === vId)
           const userObj = m.user as Record<string, unknown> | null
           const roleStr = String(m.role || 'staff')
@@ -203,11 +219,19 @@ export function useAdminStaff() {
             phone: String(userObj?.phone || m.phone || '—'),
             role: mapRoleLabel(roleStr),
             rawRole: roleStr,
-            venueName: String(venueObj?.name || venueFound?.name || (vId ? `Cơ sở #${vId}` : 'Tất cả cơ sở')),
+            venueName: String(
+              venueObj?.name || venueFound?.name || (vId ? `Cơ sở #${vId}` : 'Tất cả cơ sở'),
+            ),
             venueId: vId,
             status: String(m.status || 'active'),
-            avatar: userObj?.avatar ? String(userObj.avatar) : (userObj?.avatar_url ? String(userObj.avatar_url) : undefined),
-            lastActive: m.updated_at ? new Date(String(m.updated_at)).toLocaleDateString('vi-VN') : '—',
+            avatar: userObj?.avatar
+              ? String(userObj.avatar)
+              : userObj?.avatar_url
+                ? String(userObj.avatar_url)
+                : undefined,
+            lastActive: m.updated_at
+              ? new Date(String(m.updated_at)).toLocaleDateString('vi-VN')
+              : '—',
             permissionsCount: calculatePermCount(roleStr),
           }
         })
@@ -215,7 +239,8 @@ export function useAdminStaff() {
 
       // Audit Logs
       if (logsRes.status === 'fulfilled') {
-        const rawLogs = (logsRes.value as any)?.data || (Array.isArray(logsRes.value) ? logsRes.value : [])
+        const rawLogs =
+          (logsRes.value as any)?.data || (Array.isArray(logsRes.value) ? logsRes.value : [])
         const list = Array.isArray(rawLogs) ? rawLogs : []
         auditLogs.value = list.map((log: any): AuditLogItem => ({
           id: Number(log.id) || 0,
@@ -224,11 +249,16 @@ export function useAdminStaff() {
           action: String(log.action || log.description || 'Hoạt động hệ thống'),
           target: String(log.target || log.resource || log.auditable_type || '—'),
           timestamp: log.created_at ? new Date(log.created_at).toLocaleString('vi-VN') : '—',
-          rawDate: log.created_at ? (new Date(log.created_at).toISOString().split('T')[0] ?? '') : '',
+          rawDate: log.created_at
+            ? (new Date(log.created_at).toISOString().split('T')[0] ?? '')
+            : '',
           ip: String(log.ip || log.ip_address || '127.0.0.1'),
-          status: (log.status === 'warning' || log.status === 'danger' || log.status === 'success')
-            ? log.status
-            : (log.action?.includes('delete') || log.action?.includes('khoá') ? 'warning' : 'success'),
+          status:
+            log.status === 'warning' || log.status === 'danger' || log.status === 'success'
+              ? log.status
+              : log.action?.includes('delete') || log.action?.includes('khoá')
+                ? 'warning'
+                : 'success',
         }))
       }
     } catch (e: unknown) {
@@ -243,7 +273,8 @@ export function useAdminStaff() {
     return {
       totalStaff: list.length,
       activeManagers: list.filter((s) => s.role === 'Manager' || s.role === 'Owner').length,
-      receptionistsOnline: list.filter((s) => s.role === 'Receptionist' || s.role === 'Staff').length,
+      receptionistsOnline: list.filter((s) => s.role === 'Receptionist' || s.role === 'Staff')
+        .length,
       systemRoles: 5,
     }
   })
@@ -300,10 +331,34 @@ export function useAdminStaff() {
       // Action Filter
       if (auditActionFilter.value !== 'all') {
         const act = log.action.toLowerCase()
-        if (auditActionFilter.value === 'auth' && !act.includes('login') && !act.includes('đăng nhập') && !act.includes('xác thực')) return false
-        if (auditActionFilter.value === 'pricing' && !act.includes('giá') && !act.includes('price') && !act.includes('sân')) return false
-        if (auditActionFilter.value === 'payment' && !act.includes('tiền') && !act.includes('thanh toán') && !act.includes('hoàn')) return false
-        if (auditActionFilter.value === 'staff' && !act.includes('nhân') && !act.includes('quyền') && !act.includes('member')) return false
+        if (
+          auditActionFilter.value === 'auth' &&
+          !act.includes('login') &&
+          !act.includes('đăng nhập') &&
+          !act.includes('xác thực')
+        )
+          return false
+        if (
+          auditActionFilter.value === 'pricing' &&
+          !act.includes('giá') &&
+          !act.includes('price') &&
+          !act.includes('sân')
+        )
+          return false
+        if (
+          auditActionFilter.value === 'payment' &&
+          !act.includes('tiền') &&
+          !act.includes('thanh toán') &&
+          !act.includes('hoàn')
+        )
+          return false
+        if (
+          auditActionFilter.value === 'staff' &&
+          !act.includes('nhân') &&
+          !act.includes('quyền') &&
+          !act.includes('member')
+        )
+          return false
       }
 
       // Search Query
@@ -363,13 +418,16 @@ export function useAdminStaff() {
     showEditModal.value = true
   }
 
-  async function updateMemberRole(memberId: number, payload: {
-    role: string
-    status?: string
-    venueId?: number
-    venueIds?: number[]
-    permissions?: Record<string, unknown>
-  }) {
+  async function updateMemberRole(
+    memberId: number,
+    payload: {
+      role: string
+      status?: string
+      venueId?: number
+      venueIds?: number[]
+      permissions?: Record<string, unknown>
+    },
+  ) {
     saving.value = true
     error.value = ''
     try {

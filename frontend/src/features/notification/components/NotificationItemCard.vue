@@ -24,16 +24,9 @@ function handleClick() {
 </script>
 
 <template>
-  <article
-    class="notification-item-card"
-    :class="{ 'is-unread': isUnread }"
-    @click="handleClick"
-  >
+  <article class="notification-item-card" :class="{ 'is-unread': isUnread }" @click="handleClick">
     <!-- Event Icon Badge -->
-    <div
-      class="notif-icon-box"
-      :style="{ color: meta.color, backgroundColor: `${meta.color}15` }"
-    >
+    <div class="notif-icon-box" :style="{ color: meta.color, backgroundColor: `${meta.color}15` }">
       <span class="material-symbols-outlined">{{ meta.icon }}</span>
     </div>
 
@@ -42,7 +35,11 @@ function handleClick() {
       <div class="notif-top-meta">
         <span
           class="category-badge font-mono"
-          :style="{ color: meta.color, borderColor: `${meta.color}35`, backgroundColor: `${meta.color}10` }"
+          :style="{
+            color: meta.color,
+            borderColor: `${meta.color}35`,
+            backgroundColor: `${meta.color}10`,
+          }"
         >
           {{ meta.badgeText }}
         </span>
@@ -52,11 +49,17 @@ function handleClick() {
             <span class="material-symbols-outlined time-ico">schedule</span>
             {{ formatDateTime(notification.created_at) }}
           </time>
-          <span v-if="isUnread" class="unread-dot" :title="$t('notifications.filters.unread')"></span>
+          <span
+            v-if="isUnread"
+            class="unread-dot"
+            :title="$t('notifications.filters.unread')"
+          ></span>
         </div>
       </div>
 
-      <h3 class="notif-title">{{ notification.data?.title || $t('notifications.categories.system') }}</h3>
+      <h3 class="notif-title">
+        {{ notification.data?.title || $t('notifications.categories.system') }}
+      </h3>
       <p class="notif-body-text">{{ notification.data?.body }}</p>
 
       <!-- Action Link if Present -->
@@ -98,7 +101,7 @@ html.dark .notification-item-card {
 }
 
 .notification-item-card:hover {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
@@ -215,7 +218,7 @@ html.dark .notif-title {
   border-radius: 8px;
   background: var(--surface-container, rgba(0, 0, 0, 0.04));
   border: 1px solid var(--outline, #e2dad0);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
@@ -229,9 +232,9 @@ html.dark .notif-action-btn {
 }
 
 .notif-action-btn:hover {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
 }
 
 html.dark .notif-action-btn:hover {

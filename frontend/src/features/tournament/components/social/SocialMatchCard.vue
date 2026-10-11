@@ -20,7 +20,9 @@ const emit = defineEmits<{
         </div>
         <div>
           <h4 class="match-title">{{ match.title }}</h4>
-          <span class="host-name">Chủ phòng: <strong>{{ match.host_name }}</strong></span>
+          <span class="host-name"
+            >Chủ phòng: <strong>{{ match.host_name }}</strong></span
+          >
         </div>
       </div>
       <span class="slots-pill">
@@ -65,7 +67,11 @@ const emit = defineEmits<{
         :disabled="match.joined_count >= match.required_participants"
         @click="emit('join', match)"
       >
-        {{ match.joined_count >= match.required_participants ? 'Đã đủ thành viên' : 'Tham Gia Kèo Này' }}
+        {{
+          match.joined_count >= match.required_participants
+            ? 'Đã đủ thành viên'
+            : 'Tham Gia Kèo Này'
+        }}
       </AuraButton>
     </div>
   </div>
@@ -81,7 +87,9 @@ const emit = defineEmits<{
   border: 1px solid var(--outline);
   background: var(--surface);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .social-match-card:hover {
@@ -204,4 +212,3 @@ const emit = defineEmits<{
   padding-top: 8px;
 }
 </style>
-

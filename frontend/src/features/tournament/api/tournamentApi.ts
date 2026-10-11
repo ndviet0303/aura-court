@@ -9,12 +9,12 @@ function mapRawTournament(t: any): TournamentItem {
   const prizePool = settings.prize_pool || t.prize_pool || '15.000.000 ₫'
   const venue = t.venue?.name || t.venue || 'Aura Sport Arena'
   const city = t.venue?.city || t.city || 'Hồ Chí Minh'
-  
+
   let formattedDates = t.dates
   if (!formattedDates) {
     if (t.starts_at) {
       const date = new Date(t.starts_at)
-      formattedDates = `${date.toLocaleDateString('vi-VN')} - ${(date.getDate() + 2)}/${date.getMonth() + 1}/${date.getFullYear()}`
+      formattedDates = `${date.toLocaleDateString('vi-VN')} - ${date.getDate() + 2}/${date.getMonth() + 1}/${date.getFullYear()}`
     } else {
       formattedDates = 'Tháng 09/2026'
     }
@@ -39,7 +39,13 @@ function mapRawTournament(t: any): TournamentItem {
     uuid: t.uuid,
     name: t.name || 'Giải Đấu Aura Circuit 2026',
     slug: t.slug || `tournament-${t.id}`,
-    category: t.category || (sport === 'pickleball' ? 'Pickleball Đôi Open' : sport === 'badminton' ? 'Cầu Lông Đơn Nam Nâng Cao' : 'Tennis Open'),
+    category:
+      t.category ||
+      (sport === 'pickleball'
+        ? 'Pickleball Đôi Open'
+        : sport === 'badminton'
+          ? 'Cầu Lông Đơn Nam Nâng Cao'
+          : 'Tennis Open'),
     sport,
     format: t.format || 'single_elimination',
     status: t.status || 'open',
@@ -52,18 +58,52 @@ function mapRawTournament(t: any): TournamentItem {
     max_slots: maxSlots,
     entry_fee: settings.entry_fee || t.entry_fee || '300.000 ₫ / VĐV',
     image_url: imageUrl,
-    description: t.description || `Giải đấu chính thức thuộc hệ thống Aura Circuit 2026, tích lũy điểm thưởng và tranh cúp vô địch Master Cup.`,
+    description:
+      t.description ||
+      `Giải đấu chính thức thuộc hệ thống Aura Circuit 2026, tích lũy điểm thưởng và tranh cúp vô địch Master Cup.`,
     version: t.version || 1,
     current_match: t.current_match,
     winner_team: t.winner_team,
     fixtures: (t.fixtures || []).map((f: any) => {
-      const p1 = f.participant_one || (f.participant_one_id ? t.participants?.find((p: any) => p.id === f.participant_one_id) : null) || f.player1
-      const p2 = f.participant_two || (f.participant_two_id ? t.participants?.find((p: any) => p.id === f.participant_two_id) : null) || f.player2
-      const p1Name = p1?.user?.name || p1?.name || (f.participant_one_id ? `VĐV #${f.participant_one_id}` : 'TBD')
-      const p2Name = p2?.user?.name || p2?.name || (f.participant_two_id ? `VĐV #${f.participant_two_id}` : 'TBD')
-      
-      const p1Sets = Array.isArray(f.score?.sets) ? f.score.sets.map((s: any) => s.p1) : (Array.isArray(f.player1_sets) ? f.player1_sets : (f.score?.p1 !== undefined ? [f.score.p1] : (f.player1_score !== undefined ? [f.player1_score] : [])))
-      const p2Sets = Array.isArray(f.score?.sets) ? f.score.sets.map((s: any) => s.p2) : (Array.isArray(f.player2_sets) ? f.player2_sets : (f.score?.p2 !== undefined ? [f.score.p2] : (f.player2_score !== undefined ? [f.player2_score] : [])))
+      const p1 =
+        f.participant_one ||
+        (f.participant_one_id
+          ? t.participants?.find((p: any) => p.id === f.participant_one_id)
+          : null) ||
+        f.player1
+      const p2 =
+        f.participant_two ||
+        (f.participant_two_id
+          ? t.participants?.find((p: any) => p.id === f.participant_two_id)
+          : null) ||
+        f.player2
+      const p1Name =
+        p1?.user?.name ||
+        p1?.name ||
+        (f.participant_one_id ? `VĐV #${f.participant_one_id}` : 'TBD')
+      const p2Name =
+        p2?.user?.name ||
+        p2?.name ||
+        (f.participant_two_id ? `VĐV #${f.participant_two_id}` : 'TBD')
+
+      const p1Sets = Array.isArray(f.score?.sets)
+        ? f.score.sets.map((s: any) => s.p1)
+        : Array.isArray(f.player1_sets)
+          ? f.player1_sets
+          : f.score?.p1 !== undefined
+            ? [f.score.p1]
+            : f.player1_score !== undefined
+              ? [f.player1_score]
+              : []
+      const p2Sets = Array.isArray(f.score?.sets)
+        ? f.score.sets.map((s: any) => s.p2)
+        : Array.isArray(f.player2_sets)
+          ? f.player2_sets
+          : f.score?.p2 !== undefined
+            ? [f.score.p2]
+            : f.player2_score !== undefined
+              ? [f.player2_score]
+              : []
 
       return {
         id: f.id,
@@ -109,14 +149,21 @@ function mapRawTournament(t: any): TournamentItem {
       qr_code: p.qr_code || `ATH-${p.id}`,
       status: p.status || (p.checked_in ? 'checked_in' : 'pending'),
       checked_in: !!p.checked_in_at || p.status === 'checked_in' || !!p.checked_in,
-      avatar: p.user?.avatar_url || p.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80`,
+      avatar:
+        p.user?.avatar_url ||
+        p.avatar ||
+        `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80`,
     })),
     standings: t.standings || [],
   }
 }
 
 export const tournamentApi = {
-  async list<T = TournamentItem[]>(params?: { sport?: string; status?: string; search?: string }): Promise<T> {
+  async list<T = TournamentItem[]>(params?: {
+    sport?: string
+    status?: string
+    search?: string
+  }): Promise<T> {
     const res = await apiV2.get<any>('/tournaments', { params })
     const rawList = Array.isArray(res) ? res : res?.data || []
     return rawList.map(mapRawTournament) as unknown as T
@@ -140,15 +187,18 @@ export const tournamentApi = {
     apiV2.post(`/tournaments/${tournamentId}/fixtures/${fixtureId}/score`, scorePayload),
 
   register: (tournamentId: number | string, payload?: any) =>
-    apiV2.post<{ participant: any; receipt: any; already_registered: boolean; message: string }>(`/tournaments/${tournamentId}/register`, payload),
+    apiV2.post<{ participant: any; receipt: any; already_registered: boolean; message: string }>(
+      `/tournaments/${tournamentId}/register`,
+      payload,
+    ),
 
   getRegistration: (tournamentId: number | string) =>
-    apiV2.get<{ registered: boolean; participant?: any; receipt?: any }>(`/tournaments/${tournamentId}/registration`),
+    apiV2.get<{ registered: boolean; participant?: any; receipt?: any }>(
+      `/tournaments/${tournamentId}/registration`,
+    ),
 
   getEvents: (tournamentId: number | string) =>
     apiV2.get<any[]>(`/tournaments/${tournamentId}/events`),
 
-  poll: (tournamentId: number | string) =>
-    apiV2.get<any>(`/tournaments/${tournamentId}/poll`),
+  poll: (tournamentId: number | string) => apiV2.get<any>(`/tournaments/${tournamentId}/poll`),
 }
-

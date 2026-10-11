@@ -24,7 +24,9 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined header-icon">qr_code_2</span>
           <div>
             <h3 class="modal-title">{{ t('v2Reservations.modal.qrTitle') }}</h3>
-            <span class="modal-subtitle font-mono">{{ t('v2Reservations.modal.reservationCode', { code: reservation.code }) }}</span>
+            <span class="modal-subtitle font-mono">{{
+              t('v2Reservations.modal.reservationCode', { code: reservation.code })
+            }}</span>
           </div>
         </div>
         <button class="modal-close-btn" type="button" @click="emit('close')">
@@ -53,13 +55,11 @@ const emit = defineEmits<{
         </div>
 
         <div class="schedule-summary-box">
-          <div
-            v-for="(slot, idx) in reservation.slots"
-            :key="idx"
-            class="slot-line"
-          >
+          <div v-for="(slot, idx) in reservation.slots" :key="idx" class="slot-line">
             <span class="material-symbols-outlined icon">schedule</span>
-            <span class="font-mono font-bold">{{ formatTimeSlot(slot.starts_at, slot.ends_at) }}</span>
+            <span class="font-mono font-bold">{{
+              formatTimeSlot(slot.starts_at, slot.ends_at)
+            }}</span>
             <span class="date-text">({{ formatDate(slot.starts_at) }})</span>
           </div>
         </div>
@@ -119,7 +119,7 @@ const emit = defineEmits<{
 
 .header-icon {
   font-size: 24px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .modal-title {

@@ -12,7 +12,9 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
     })
   })
 
-  test('8.4.1: Danh mục sản phẩm CRUD, thiết lập nhóm/đơn vị tính/thuế và tính duy nhất của SKU/mã vạch theo tenant', async ({ page }) => {
+  test('8.4.1: Danh mục sản phẩm CRUD, thiết lập nhóm/đơn vị tính/thuế và tính duy nhất của SKU/mã vạch theo tenant', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const org1 = manifest.fixtures?.organizations.org1
@@ -121,11 +123,13 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
       ]);
     `
 
-    const crudResult = JSON.parse(execFileSync('php', ['-r', crudScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const crudResult = JSON.parse(
+      execFileSync('php', ['-r', crudScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       product1_id: number
       product1_name: string
       product1_price: number
@@ -230,11 +234,13 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
       ]);
     `
 
-    const adjustResult = JSON.parse(execFileSync('php', ['-r', adjustScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const adjustResult = JSON.parse(
+      execFileSync('php', ['-r', adjustScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       stock_after_in: number
       stock_after_out: number
       overflow_rejected: boolean
@@ -351,11 +357,13 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
       ]);
     `
 
-    const lastItemResult = JSON.parse(execFileSync('php', ['-r', lastItemScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const lastItemResult = JSON.parse(
+      execFileSync('php', ['-r', lastItemScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       order1_id: number
       order1_total: number
       stock_after_first: number
@@ -470,11 +478,13 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
       ]);
     `
 
-    const returnResult = JSON.parse(execFileSync('php', ['-r', returnScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const returnResult = JSON.parse(
+      execFileSync('php', ['-r', returnScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       order_id: number
       stock_after_sale: number
       stock_after_return: number
@@ -493,7 +503,9 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
     expect(returnResult.has_return_journal).toBe(true)
   })
 
-  test('8.4.5: Tạo hóa đơn xác thực, định dạng in ấn, gửi email/SMS và duy trì sau khi F5', async ({ page }) => {
+  test('8.4.5: Tạo hóa đơn xác thực, định dạng in ấn, gửi email/SMS và duy trì sau khi F5', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const cashier = getActorCredentials(manifest, 'cashier1')
     const customer = getActorCredentials(manifest, 'customer')
@@ -576,11 +588,13 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       order_id: number
       total_amount: number
       cash_tendered: number
@@ -595,12 +609,15 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
     expect(arranged.change_due).toBe(8400)
 
     // 2. Test Receipt Print formatting endpoint via authenticated API call
-    const printRes = await page.request.post(`${manifest.backend.url}/api/v2/pos/orders/${arranged.order_id}/receipt/print`, {
-      headers: {
-        Authorization: `Bearer ${arranged.token}`,
-        'X-Organization-Id': String(org1Id),
+    const printRes = await page.request.post(
+      `${manifest.backend.url}/api/v2/pos/orders/${arranged.order_id}/receipt/print`,
+      {
+        headers: {
+          Authorization: `Bearer ${arranged.token}`,
+          'X-Organization-Id': String(org1Id),
+        },
       },
-    })
+    )
     expect(printRes.ok()).toBe(true)
     const printData = await printRes.json()
 
@@ -612,16 +629,19 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
     expect(printData.receipt.tax_amount).toBe(1600)
 
     // 3. Test Receipt Send endpoint (email dispatch)
-    const sendRes = await page.request.post(`${manifest.backend.url}/api/v2/pos/orders/${arranged.order_id}/receipt/send`, {
-      headers: {
-        Authorization: `Bearer ${arranged.token}`,
-        'X-Organization-Id': String(org1Id),
-        'Content-Type': 'application/json',
+    const sendRes = await page.request.post(
+      `${manifest.backend.url}/api/v2/pos/orders/${arranged.order_id}/receipt/send`,
+      {
+        headers: {
+          Authorization: `Bearer ${arranged.token}`,
+          'X-Organization-Id': String(org1Id),
+          'Content-Type': 'application/json',
+        },
+        data: {
+          email: arranged.customer_email,
+        },
       },
-      data: {
-        email: arranged.customer_email,
-      },
-    })
+    )
     expect(sendRes.ok()).toBe(true)
     const sendData = await sendRes.json()
 
@@ -651,11 +671,13 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
       ]);
     `
 
-    const reloadResult = JSON.parse(execFileSync('php', ['-r', reloadScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const reloadResult = JSON.parse(
+      execFileSync('php', ['-r', reloadScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       id: number
       status: string
       subtotal: number

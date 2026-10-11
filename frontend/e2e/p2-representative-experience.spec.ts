@@ -12,7 +12,9 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
   const manifest = getTestManifest()
   const owner = getActorCredentials(manifest, 'owner1')
 
-  test('10.2.1: Chuyển đổi ngôn ngữ (Tiếng Việt <-> Tiếng Anh) trên các màn hình đại diện', async ({ page }) => {
+  test('10.2.1: Chuyển đổi ngôn ngữ (Tiếng Việt <-> Tiếng Anh) trên các màn hình đại diện', async ({
+    page,
+  }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
 
     // 1. Initial language is Vietnamese
@@ -81,7 +83,9 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   })
 
-  test('10.2.3: Trợ năng bàn phím trên Modal: Giữ focus trong modal, đóng bằng Escape & Khôi phục focus', async ({ page }) => {
+  test('10.2.3: Trợ năng bàn phím trên Modal: Giữ focus trong modal, đóng bằng Escape & Khôi phục focus', async ({
+    page,
+  }) => {
     // 1. Owner logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.fill('input[type="email"], input[name="email"]', owner.email)
@@ -93,7 +97,9 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
     await page.goto('/admin/manage', { waitUntil: 'domcontentloaded' })
 
     // 3. Unconditionally find and click "Thêm sân" or "Tạo mã" modal button
-    const openModalBtn = page.locator('button:has-text("Thêm sân"), button:has-text("Tạo mã"), button.btn-add').first()
+    const openModalBtn = page
+      .locator('button:has-text("Thêm sân"), button:has-text("Tạo mã"), button.btn-add')
+      .first()
     await expect(openModalBtn).toBeVisible({ timeout: 15000 })
     await openModalBtn.click()
 
@@ -108,7 +114,9 @@ test.describe('P2: Trải nghiệm đại diện - Đa ngôn ngữ, Giao diện,
     await expect(modal).not.toBeVisible({ timeout: 10000 })
   })
 
-  test('10.2.4: Màn hình di động (375x667): Màn hình đại diện hiển thị chuẩn & Không tràn ngang', async ({ page }) => {
+  test('10.2.4: Màn hình di động (375x667): Màn hình đại diện hiển thị chuẩn & Không tràn ngang', async ({
+    page,
+  }) => {
     // Set iPhone-like mobile viewport
     await page.setViewportSize({ width: 375, height: 667 })
 

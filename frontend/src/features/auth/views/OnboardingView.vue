@@ -20,7 +20,8 @@ function getInitialState() {
 
   if (typeof window !== 'undefined') {
     try {
-      const storedType = (route.query.type as string) || localStorage.getItem('aura_onboarding_account_type')
+      const storedType =
+        (route.query.type as string) || localStorage.getItem('aura_onboarding_account_type')
       if (storedType === 'court_owner' || storedType === 'customer') {
         initialType = storedType
       }
@@ -57,14 +58,17 @@ function persistDraft() {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem('aura_onboarding_account_type', accountType.value)
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      accountType: accountType.value,
-      phone: phone.value,
-      playLevel: playLevel.value,
-      organizationName: organizationName.value,
-      venueAddress: venueAddress.value,
-      courtsCount: courtsCount.value,
-    }))
+    localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        accountType: accountType.value,
+        phone: phone.value,
+        playLevel: playLevel.value,
+        organizationName: organizationName.value,
+        venueAddress: venueAddress.value,
+        courtsCount: courtsCount.value,
+      }),
+    )
   } catch {}
 }
 
@@ -76,7 +80,9 @@ function clearDraft() {
   } catch {}
 }
 
-watch([accountType, phone, playLevel, organizationName, venueAddress, courtsCount], persistDraft, { deep: true })
+watch([accountType, phone, playLevel, organizationName, venueAddress, courtsCount], persistDraft, {
+  deep: true,
+})
 
 onMounted(async () => {
   if (!auth.loaded) {
@@ -90,7 +96,10 @@ onMounted(async () => {
   if (auth.user.onboarded) {
     if (auth.user.role === 'admin') {
       router.replace('/admin/organization')
-    } else if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') {
+    } else if (
+      typeof window !== 'undefined' &&
+      localStorage.getItem('aura_partner_intent') === 'court_owner'
+    ) {
       router.replace('/partner-registration')
     } else {
       router.replace(String(route.query.redirect || '/'))
@@ -99,10 +108,26 @@ onMounted(async () => {
 })
 
 const playLevels = [
-  { value: 'beginner', label: 'Mới bắt đầu', desc: 'Mới làm quen với các bộ môn, chơi giải trí rèn luyện sức khỏe' },
-  { value: 'intermediate', label: 'Phong trào', desc: 'Nắm vững luật và kỹ thuật cơ bản, chơi thể thao đều đặn' },
-  { value: 'advanced', label: 'Bán chuyên', desc: 'Kỹ thuật tốt, thể lực cao, thường xuyên thi đấu giao lưu' },
-  { value: 'pro', label: 'Chuyên nghiệp', desc: 'Thi đấu các giải phong trào và giải đấu chuyên nghiệp' },
+  {
+    value: 'beginner',
+    label: 'Mới bắt đầu',
+    desc: 'Mới làm quen với các bộ môn, chơi giải trí rèn luyện sức khỏe',
+  },
+  {
+    value: 'intermediate',
+    label: 'Phong trào',
+    desc: 'Nắm vững luật và kỹ thuật cơ bản, chơi thể thao đều đặn',
+  },
+  {
+    value: 'advanced',
+    label: 'Bán chuyên',
+    desc: 'Kỹ thuật tốt, thể lực cao, thường xuyên thi đấu giao lưu',
+  },
+  {
+    value: 'pro',
+    label: 'Chuyên nghiệp',
+    desc: 'Thi đấu các giải phong trào và giải đấu chuyên nghiệp',
+  },
 ]
 
 const isOwner = computed(() => accountType.value === 'court_owner')
@@ -159,7 +184,6 @@ async function handleComplete() {
 
     <div class="container onboarding-container">
       <div class="onboarding-card">
-        
         <!-- Header -->
         <div class="onboarding-header">
           <div class="welcome-chip">
@@ -197,10 +221,14 @@ async function handleComplete() {
               <div class="role-icon-box">
                 <span class="material-symbols-outlined">sports_tennis</span>
               </div>
-              <span v-if="accountType === 'customer'" class="material-symbols-outlined check-badge">check_circle</span>
+              <span v-if="accountType === 'customer'" class="material-symbols-outlined check-badge"
+                >check_circle</span
+              >
             </div>
             <h3 class="role-title">Khách hàng / Người chơi</h3>
-            <p class="role-desc">Đặt sân tức thì, tìm bạn đánh giao lưu, tham gia giải đấu và tích điểm hội viên.</p>
+            <p class="role-desc">
+              Đặt sân tức thì, tìm bạn đánh giao lưu, tham gia giải đấu và tích điểm hội viên.
+            </p>
           </div>
 
           <!-- Court Owner Option -->
@@ -213,16 +241,21 @@ async function handleComplete() {
               <div class="role-icon-box">
                 <span class="material-symbols-outlined">domain</span>
               </div>
-              <span v-if="accountType === 'court_owner'" class="material-symbols-outlined check-badge">check_circle</span>
+              <span
+                v-if="accountType === 'court_owner'"
+                class="material-symbols-outlined check-badge"
+                >check_circle</span
+              >
             </div>
             <h3 class="role-title">Chủ sân / Quản lý cụm sân</h3>
-            <p class="role-desc">Tự động hóa lịch đặt sân, cấu hình biểu giá động, POS thu ngân và báo cáo doanh thu.</p>
+            <p class="role-desc">
+              Tự động hóa lịch đặt sân, cấu hình biểu giá động, POS thu ngân và báo cáo doanh thu.
+            </p>
           </div>
         </div>
 
         <!-- Role Specific Form Fields -->
         <form class="onboarding-form" @submit.prevent="handleComplete">
-          
           <!-- CUSTOMER FORM FIELDS -->
           <template v-if="accountType === 'customer'">
             <div class="form-section-title">
@@ -232,7 +265,9 @@ async function handleComplete() {
 
             <!-- Phone Number -->
             <div class="input-group">
-              <label for="c-phone" class="input-label">Số điện thoại liên hệ (nhận mã đặt sân)</label>
+              <label for="c-phone" class="input-label"
+                >Số điện thoại liên hệ (nhận mã đặt sân)</label
+              >
               <div class="input-wrapper">
                 <span class="material-symbols-outlined input-icon">call</span>
                 <input
@@ -272,7 +307,9 @@ async function handleComplete() {
 
             <!-- Club Name -->
             <div class="input-group">
-              <label for="o-name" class="input-label">Tên cụm sân / CLB thể thao <span class="required">*</span></label>
+              <label for="o-name" class="input-label"
+                >Tên cụm sân / CLB thể thao <span class="required">*</span></label
+              >
               <div class="input-wrapper">
                 <span class="material-symbols-outlined input-icon">domain</span>
                 <input
@@ -289,7 +326,9 @@ async function handleComplete() {
             <!-- Hotline & Courts Count -->
             <div class="form-row-2">
               <div class="input-group flex-1">
-                <label for="o-phone" class="input-label">Số điện thoại hotline/kinh doanh <span class="required">*</span></label>
+                <label for="o-phone" class="input-label"
+                  >Số điện thoại hotline/kinh doanh <span class="required">*</span></label
+                >
                 <div class="input-wrapper">
                   <span class="material-symbols-outlined input-icon">call</span>
                   <input
@@ -337,16 +376,15 @@ async function handleComplete() {
 
             <div class="owner-tip-box">
               <span class="material-symbols-outlined">info</span>
-              <span>Sau khi hoàn tất, hệ thống sẽ tự động cấu hình tổ chức và chuyển bạn đến trang quản trị để thiết lập bảng giá và phân quyền.</span>
+              <span
+                >Sau khi hoàn tất, hệ thống sẽ tự động cấu hình tổ chức và chuyển bạn đến trang quản
+                trị để thiết lập bảng giá và phân quyền.</span
+              >
             </div>
           </template>
 
           <!-- Submit Button -->
-          <button
-            type="submit"
-            class="complete-btn"
-            :disabled="loading"
-          >
+          <button type="submit" class="complete-btn" :disabled="loading">
             <span v-if="loading" class="spinner"></span>
             <span v-else class="material-symbols-outlined">
               {{ isOwner ? 'store' : 'sports_tennis' }}
@@ -356,7 +394,6 @@ async function handleComplete() {
             </span>
           </button>
         </form>
-
       </div>
     </div>
   </div>
@@ -380,14 +417,24 @@ async function handleComplete() {
   width: 900px;
   max-width: 90vw;
   height: 500px;
-  background: radial-gradient(circle, rgba(201, 161, 90, 0.2) 0%, rgba(107, 45, 63, 0.1) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(201, 161, 90, 0.2) 0%,
+    rgba(107, 45, 63, 0.1) 50%,
+    transparent 70%
+  );
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 html.dark .aura-glow-bg {
-  background: radial-gradient(circle, rgba(107, 45, 63, 0.45) 0%, rgba(223, 186, 114, 0.15) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(107, 45, 63, 0.45) 0%,
+    rgba(223, 186, 114, 0.15) 50%,
+    transparent 70%
+  );
 }
 
 .onboarding-container {
@@ -500,7 +547,7 @@ html.dark .error-banner {
 }
 
 .role-card:hover {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   transform: translateY(-2px);
 }
 
@@ -509,7 +556,7 @@ html.dark .role-card:hover {
 }
 
 .role-card.active {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   background: var(--surface);
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.15);
 }
@@ -536,7 +583,7 @@ html.dark .role-card.active {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .role-icon-box {
@@ -587,7 +634,7 @@ html.dark .check-badge {
 }
 
 .form-section-title .material-symbols-outlined {
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .form-section-title .material-symbols-outlined {
@@ -644,7 +691,7 @@ html.dark .custom-input {
 }
 
 .custom-input:focus {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
@@ -679,7 +726,7 @@ html.dark .custom-input:focus {
 }
 
 .play-level-card:hover {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
 }
 
 html.dark .play-level-card:hover {
@@ -687,7 +734,7 @@ html.dark .play-level-card:hover {
 }
 
 .play-level-card.active {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   background: var(--surface);
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.12);
 }
@@ -741,7 +788,7 @@ html.dark .owner-tip-box {
 .complete-btn {
   margin-top: 12px;
   height: 52px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   border: none;
   border-radius: 14px;
@@ -777,7 +824,9 @@ html.dark .owner-tip-box {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {

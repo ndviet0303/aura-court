@@ -85,7 +85,9 @@ describe('ErrorModal (Tasks 4.1, 4.2, 4.4)', () => {
     // Initial Vietnamese state
     expect(document.body.textContent).toContain('Đã có lỗi xảy ra')
     expect(document.body.textContent).toContain('MÃ LỖI: CAPABILITY_DISABLED')
-    expect(document.body.textContent).toContain('Tính năng này chưa được kích hoạt cho tổ chức được chọn.')
+    expect(document.body.textContent).toContain(
+      'Tính năng này chưa được kích hoạt cho tổ chức được chọn.',
+    )
     expect(document.body.textContent).toContain('Đã hiểu')
     expect(document.body.textContent).toContain('Thử lại')
 
@@ -96,14 +98,17 @@ describe('ErrorModal (Tasks 4.1, 4.2, 4.4)', () => {
     // Dynamically re-rendered in English without reopening
     expect(document.body.textContent).toContain('An error occurred')
     expect(document.body.textContent).toContain('ERROR CODE: CAPABILITY_DISABLED')
-    expect(document.body.textContent).toContain('This feature is not enabled for the selected organization.')
+    expect(document.body.textContent).toContain(
+      'This feature is not enabled for the selected organization.',
+    )
     expect(document.body.textContent).toContain('Understood')
     expect(document.body.textContent).toContain('Retry')
   })
 
   it('sanitizes raw infrastructure errors and never leaks database or stack details', () => {
     const rawDbError = {
-      message: 'SQLSTATE[42000]: Syntax error or access violation: 1064 at /var/www/vendor/laravel/src/Connection.php:456',
+      message:
+        'SQLSTATE[42000]: Syntax error or access violation: 1064 at /var/www/vendor/laravel/src/Connection.php:456',
       status: 500,
     }
 
@@ -210,7 +215,11 @@ describe('ErrorModal (Tasks 4.1, 4.2, 4.4)', () => {
     expect(document.activeElement).toBe(closeBtn)
 
     // Shift+Tab from first element wraps to last element (confirm button)
-    const shiftTabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })
+    const shiftTabEvent = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      bubbles: true,
+    })
     document.dispatchEvent(shiftTabEvent)
     expect(document.activeElement).toBe(confirmBtn)
   })

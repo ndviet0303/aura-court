@@ -42,38 +42,77 @@ const emit = defineEmits<{
 <template>
   <div class="form-section-card">
     <div class="form-section-header">
-      <div class="section-icon-box"><span class="material-symbols-outlined">account_balance</span></div>
+      <div class="section-icon-box">
+        <span class="material-symbols-outlined">account_balance</span>
+      </div>
       <div class="section-title-wrap">
         <h4 class="section-title">4. Tài khoản Ngân hàng nhận tiền (VietQR)</h4>
-        <p class="section-subtitle">Doanh thu khách đặt sân sẽ được đối soát và chuyển trực tiếp về tài khoản này</p>
+        <p class="section-subtitle">
+          Doanh thu khách đặt sân sẽ được đối soát và chuyển trực tiếp về tài khoản này
+        </p>
       </div>
     </div>
     <div class="form-grid">
       <div class="form-field-item form-grid-full">
-        <label for="bank_select" class="field-label">Chọn ngân hàng nhận tiền <span class="req-star">*</span></label>
-        <select id="bank_select" :value="selectedBankCode" class="form-select" @change="emit('bankChange', $event)">
+        <label for="bank_select" class="field-label"
+          >Chọn ngân hàng nhận tiền <span class="req-star">*</span></label
+        >
+        <select
+          id="bank_select"
+          :value="selectedBankCode"
+          class="form-select"
+          @change="emit('bankChange', $event)"
+        >
           <option value="" disabled>-- Chọn ngân hàng thụ hưởng --</option>
           <option v-for="b in POPULAR_BANKS" :key="b.code" :value="b.code">{{ b.name }}</option>
           <option value="OTHER">Ngân hàng khác (Tự nhập thủ công)</option>
         </select>
       </div>
       <div class="form-field-item">
-        <label for="bank_name" class="field-label">Tên ngân hàng <span class="req-star">*</span></label>
-        <input id="bank_name" v-model="values.bank_name" type="text" placeholder="Ví dụ: MBBank" class="form-input" />
+        <label for="bank_name" class="field-label"
+          >Tên ngân hàng <span class="req-star">*</span></label
+        >
+        <input
+          id="bank_name"
+          v-model="values.bank_name"
+          type="text"
+          placeholder="Ví dụ: MBBank"
+          class="form-input"
+        />
         <p v-if="fieldErrors.bank_name" class="field-error-msg">{{ fieldErrors.bank_name[0] }}</p>
       </div>
       <div class="form-field-item">
-        <label for="bank_code" class="field-label">Mã ngân hàng (Bank Code) <span class="req-star">*</span></label>
-        <input id="bank_code" v-model="values.bank_code" type="text" placeholder="MB, VCB, TCB..." class="form-input" />
+        <label for="bank_code" class="field-label"
+          >Mã ngân hàng (Bank Code) <span class="req-star">*</span></label
+        >
+        <input
+          id="bank_code"
+          v-model="values.bank_code"
+          type="text"
+          placeholder="MB, VCB, TCB..."
+          class="form-input"
+        />
         <p v-if="fieldErrors.bank_code" class="field-error-msg">{{ fieldErrors.bank_code[0] }}</p>
       </div>
       <div class="form-field-item">
-        <label for="bank_account_number" class="field-label">Số tài khoản ngân hàng <span class="req-star">*</span></label>
-        <input id="bank_account_number" v-model="values.bank_account_number" type="text" placeholder="Nhập số tài khoản nhận tiền" class="form-input" />
-        <p v-if="fieldErrors.bank_account_number" class="field-error-msg">{{ fieldErrors.bank_account_number[0] }}</p>
+        <label for="bank_account_number" class="field-label"
+          >Số tài khoản ngân hàng <span class="req-star">*</span></label
+        >
+        <input
+          id="bank_account_number"
+          v-model="values.bank_account_number"
+          type="text"
+          placeholder="Nhập số tài khoản nhận tiền"
+          class="form-input"
+        />
+        <p v-if="fieldErrors.bank_account_number" class="field-error-msg">
+          {{ fieldErrors.bank_account_number[0] }}
+        </p>
       </div>
       <div class="form-field-item">
-        <label for="bank_account_holder" class="field-label">Tên chủ tài khoản (in hoa không dấu) <span class="req-star">*</span></label>
+        <label for="bank_account_holder" class="field-label"
+          >Tên chủ tài khoản (in hoa không dấu) <span class="req-star">*</span></label
+        >
         <input
           id="bank_account_holder"
           v-model="values.bank_account_holder"
@@ -82,7 +121,9 @@ const emit = defineEmits<{
           class="form-input"
           @input="values.bank_account_holder = values.bank_account_holder.toUpperCase()"
         />
-        <p v-if="fieldErrors.bank_account_holder" class="field-error-msg">{{ fieldErrors.bank_account_holder[0] }}</p>
+        <p v-if="fieldErrors.bank_account_holder" class="field-error-msg">
+          {{ fieldErrors.bank_account_holder[0] }}
+        </p>
       </div>
     </div>
   </div>

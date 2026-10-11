@@ -32,7 +32,7 @@ watch(
     if (typeof document !== 'undefined') {
       document.body.style.overflow = isOpen ? 'hidden' : ''
     }
-  }
+  },
 )
 </script>
 
@@ -40,12 +40,7 @@ watch(
   <Teleport to="body">
     <!-- Backdrop -->
     <Transition name="drawer-fade">
-      <div
-        v-if="open"
-        class="mobile-drawer-backdrop"
-        @click="close"
-        aria-hidden="true"
-      ></div>
+      <div v-if="open" class="mobile-drawer-backdrop" @click="close" aria-hidden="true"></div>
     </Transition>
 
     <!-- Slide-over Panel -->
@@ -153,7 +148,7 @@ html.dark .drawer-header {
   height: 36px;
   border-radius: 50%;
   border: 1px solid var(--outline, #ebdccb);
-  background: var(--surface-subtle, #FAF7F3);
+  background: var(--surface-subtle, #faf7f3);
   color: var(--ink, #1c1618);
   cursor: pointer;
   display: grid;
@@ -163,9 +158,9 @@ html.dark .drawer-header {
 }
 
 .drawer-close-btn:hover {
-  background: #FAF7F3;
-  color: #6B2D3F;
-  border-color: #6B2D3F;
+  background: #faf7f3;
+  color: #6b2d3f;
+  border-color: #6b2d3f;
   transform: rotate(90deg);
 }
 
@@ -185,7 +180,7 @@ html.dark .drawer-close-btn:hover {
 .drawer-footer {
   padding: 14px 18px;
   border-top: 1px solid var(--outline, #ebdccb);
-  background: var(--surface-subtle, #FAF7F3);
+  background: var(--surface-subtle, #faf7f3);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;

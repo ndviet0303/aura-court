@@ -48,7 +48,7 @@ const {
       :active-tab="activeTab"
       :active-listings-count="listings.length"
       :my-listings-count="myListings.length"
-      :eligible-slots-count="userSlots.filter(s => s.eligible).length"
+      :eligible-slots-count="userSlots.filter((s) => s.eligible).length"
       :loading="loading"
       @update:active-tab="activeTab = $event"
       @refresh="refreshAll"
@@ -181,7 +181,9 @@ const {
             <div class="slot-card-body">
               <div class="slot-card-head">
                 <strong class="slot-court-name">{{ slot.courtName }}</strong>
-                <span class="slot-paid-badge font-mono">{{ formatCurrency(slot.originalPrice) }}</span>
+                <span class="slot-paid-badge font-mono">{{
+                  formatCurrency(slot.originalPrice)
+                }}</span>
               </div>
 
               <div class="slot-card-meta">
@@ -453,7 +455,7 @@ const {
 }
 
 .user-slot-card:hover:not(.disabled) {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
@@ -495,17 +497,17 @@ const {
 }
 
 .meta-item.highlight {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 700;
 }
 
 :global(html.dark) .meta-item.highlight {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .icon-14 {
   font-size: 14px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .ineligible-text {
@@ -517,10 +519,12 @@ const {
   color: #ef4444;
 }
 
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.3s ease;
 }
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>

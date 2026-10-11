@@ -92,7 +92,9 @@ function retryDirectPayment() {
     <div v-else-if="!payment && !booking" class="empty-payment-panel">
       <span class="material-symbols-outlined empty-icon">account_balance_wallet</span>
       <h2>{{ $t('payment.noSessionTitle') || 'Không có phiên thanh toán nào' }}</h2>
-      <p>{{ $t('payment.noSessionDesc') || 'Vui lòng chọn sân và khung giờ để bắt đầu đặt lịch.' }}</p>
+      <p>
+        {{ $t('payment.noSessionDesc') || 'Vui lòng chọn sân và khung giờ để bắt đầu đặt lịch.' }}
+      </p>
       <div class="empty-actions">
         <AuraButton to="/courts" variant="primary" size="md" icon="sports_tennis">
           {{ $t('payment.selectCourtCta') }}
@@ -108,18 +110,26 @@ function retryDirectPayment() {
       <!-- Stepper Header -->
       <div class="checkout-stepper">
         <div class="stepper-step completed">
-          <span class="step-circle"><span class="material-symbols-outlined step-check-icon">check</span></span>
-          <span class="step-text">{{ isTournament ? $t('payment.stepRegisterAthlete') : $t('payment.stepSelectCourt') }}</span>
+          <span class="step-circle"
+            ><span class="material-symbols-outlined step-check-icon">check</span></span
+          >
+          <span class="step-text">{{
+            isTournament ? $t('payment.stepRegisterAthlete') : $t('payment.stepSelectCourt')
+          }}</span>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step active">
           <span class="step-circle">2</span>
-          <span class="step-text">{{ isTournament ? $t('payment.stepTournamentFee') : $t('payment.stepPayment') }}</span>
+          <span class="step-text">{{
+            isTournament ? $t('payment.stepTournamentFee') : $t('payment.stepPayment')
+          }}</span>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step" :class="{ completed: showSuccessModal }">
           <span class="step-circle">{{ showSuccessModal ? '✓' : '3' }}</span>
-          <span class="step-text">{{ isTournament ? $t('payment.stepConfirmTournament') : $t('payment.stepConfirmBooking') }}</span>
+          <span class="step-text">{{
+            isTournament ? $t('payment.stepConfirmTournament') : $t('payment.stepConfirmBooking')
+          }}</span>
         </div>
       </div>
 
@@ -132,11 +142,15 @@ function retryDirectPayment() {
               <span class="material-symbols-outlined panel-icon">
                 {{ isTournament ? 'sports_handball' : 'person' }}
               </span>
-              <span>{{ isTournament ? $t('payment.athleteInfo') : $t('payment.customerInfo') }}</span>
+              <span>{{
+                isTournament ? $t('payment.athleteInfo') : $t('payment.customerInfo')
+              }}</span>
             </h3>
             <div class="player-info-grid">
               <div class="info-item">
-                <span class="info-label">{{ isTournament ? $t('payment.athleteFullName') : $t('payment.fullName') }}</span>
+                <span class="info-label">{{
+                  isTournament ? $t('payment.athleteFullName') : $t('payment.fullName')
+                }}</span>
                 <strong class="info-val">{{ playerDetails.name }}</strong>
               </div>
               <div class="info-item">
@@ -185,7 +199,17 @@ function retryDirectPayment() {
           <!-- Summary Card -->
           <PaymentSummaryCard
             v-if="payment || booking"
-            :payment="payment || { code: booking?.code || '', amount: booking?.total_amount || 0, type: 'booking', bank: '', accountNumber: '', qrUrl: '', expiresAt: '' }"
+            :payment="
+              payment || {
+                code: booking?.code || '',
+                amount: booking?.total_amount || 0,
+                type: 'booking',
+                bank: '',
+                accountNumber: '',
+                qrUrl: '',
+                expiresAt: '',
+              }
+            "
             :booking="booking"
             :court="court"
             :direct-owner-payment="isDirectOwnerPayment"
@@ -207,14 +231,21 @@ function retryDirectPayment() {
           <span class="material-symbols-outlined success-icon">
             {{ isTournament ? 'emoji_events' : 'verified' }}
           </span>
-          <h3>{{ isTournament ? $t('payment.tournamentSuccessTitle') : $t('payment.successTitle') }}</h3>
+          <h3>
+            {{ isTournament ? $t('payment.tournamentSuccessTitle') : $t('payment.successTitle') }}
+          </h3>
           <p>
             {{ $t('payment.txCodeConfirmed', { code: booking?.code || payment?.code }) }}
           </p>
 
           <div class="success-actions">
             <template v-if="isTournament">
-              <AuraButton variant="primary" size="md" icon="account_tree" @click="handleDoneTournament">
+              <AuraButton
+                variant="primary"
+                size="md"
+                icon="account_tree"
+                @click="handleDoneTournament"
+              >
                 {{ $t('payment.viewBracketCta') }}
               </AuraButton>
               <AuraButton to="/tournaments" variant="ghost" size="sm" @click="store.clearPayment()">
@@ -222,7 +253,12 @@ function retryDirectPayment() {
               </AuraButton>
             </template>
             <template v-else>
-              <AuraButton variant="primary" size="md" icon="calendar_month" @click="handleViewSchedule">
+              <AuraButton
+                variant="primary"
+                size="md"
+                icon="calendar_month"
+                @click="handleViewSchedule"
+              >
                 {{ $t('payment.viewScheduleCta') }}
               </AuraButton>
             </template>

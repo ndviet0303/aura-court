@@ -93,7 +93,9 @@ onMounted(() => {
 
       <div class="header-actions">
         <AuraButton variant="secondary" :disabled="loading" @click="loadData">
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }"
+            >refresh</span
+          >
           <span>{{ t('admin.venues.refreshBtn') }}</span>
         </AuraButton>
         <AuraButton variant="primary" @click="handleStartCreate">
@@ -132,12 +134,7 @@ onMounted(() => {
           class="venues-search-input"
           :placeholder="t('admin.venues.searchPlaceholder')"
         />
-        <button
-          v-if="searchQuery"
-          type="button"
-          class="clear-search-btn"
-          @click="searchQuery = ''"
-        >
+        <button v-if="searchQuery" type="button" class="clear-search-btn" @click="searchQuery = ''">
           ✕
         </button>
       </div>
@@ -196,11 +193,7 @@ onMounted(() => {
       @save-policy="handleSaveBookingPolicy"
     />
 
-    <VenueQrModal
-      :show="showQrModal"
-      :venue="selectedVenueForQr"
-      @close="showQrModal = false"
-    />
+    <VenueQrModal :show="showQrModal" :venue="selectedVenueForQr" @close="showQrModal = false" />
 
     <VenueReadinessModal
       :venue="selectedVenueForReadiness"
@@ -410,11 +403,21 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
-.mt-4 { margin-top: 16px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
+.mt-4 {
+  margin-top: 16px;
+}
 </style>

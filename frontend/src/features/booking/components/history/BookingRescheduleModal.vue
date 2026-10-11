@@ -175,7 +175,12 @@ watch(
 </script>
 
 <template>
-  <div v-if="show && booking" class="modal-backdrop" @click.self="emit('close')" data-testid="reschedule-modal">
+  <div
+    v-if="show && booking"
+    class="modal-backdrop"
+    @click.self="emit('close')"
+    data-testid="reschedule-modal"
+  >
     <div class="modal-card">
       <div class="modal-header">
         <div>
@@ -197,7 +202,11 @@ watch(
             {{ t('v2Reservations.reschedule.replacementCodeLabel') }}:
             <strong class="font-mono">{{ result.replacement.code }}</strong>
           </p>
-          <div v-if="result.payment_attempt" class="notice-warn" data-testid="reschedule-result-held">
+          <div
+            v-if="result.payment_attempt"
+            class="notice-warn"
+            data-testid="reschedule-result-held"
+          >
             <strong>{{ t('v2Reservations.reschedule.resultHeldTitle') }}</strong>
             <p>{{ t('v2Reservations.reschedule.resultHeldDesc') }}</p>
           </div>
@@ -212,21 +221,46 @@ watch(
         <!-- Picker + preview -->
         <template v-else>
           <div class="form-row">
-            <label class="form-label" for="reschedule-court">{{ t('v2Reservations.reschedule.courtLabel') }}</label>
-            <select id="reschedule-court" v-model.number="courtId" class="form-input" data-testid="reschedule-court">
-              <option :value="null" disabled>{{ t('v2Reservations.reschedule.courtPlaceholder') }}</option>
+            <label class="form-label" for="reschedule-court">{{
+              t('v2Reservations.reschedule.courtLabel')
+            }}</label>
+            <select
+              id="reschedule-court"
+              v-model.number="courtId"
+              class="form-input"
+              data-testid="reschedule-court"
+            >
+              <option :value="null" disabled>
+                {{ t('v2Reservations.reschedule.courtPlaceholder') }}
+              </option>
               <option v-for="c in courts" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
           </div>
 
           <div class="form-grid">
             <div class="form-row">
-              <label class="form-label" for="reschedule-date">{{ t('v2Reservations.reschedule.dateLabel') }}</label>
-              <input id="reschedule-date" v-model="date" type="date" class="form-input" data-testid="reschedule-date" />
+              <label class="form-label" for="reschedule-date">{{
+                t('v2Reservations.reschedule.dateLabel')
+              }}</label>
+              <input
+                id="reschedule-date"
+                v-model="date"
+                type="date"
+                class="form-input"
+                data-testid="reschedule-date"
+              />
             </div>
             <div class="form-row">
-              <label class="form-label" for="reschedule-time">{{ t('v2Reservations.reschedule.timeLabel') }}</label>
-              <input id="reschedule-time" v-model="time" type="time" class="form-input" data-testid="reschedule-time" />
+              <label class="form-label" for="reschedule-time">{{
+                t('v2Reservations.reschedule.timeLabel')
+              }}</label>
+              <input
+                id="reschedule-time"
+                v-model="time"
+                type="time"
+                class="form-input"
+                data-testid="reschedule-time"
+              />
             </div>
           </div>
 
@@ -237,14 +271,20 @@ watch(
             data-testid="reschedule-preview-btn"
             @click="runPreview"
           >
-            {{ previewing ? t('v2Reservations.reschedule.previewing') : t('v2Reservations.reschedule.previewBtn') }}
+            {{
+              previewing
+                ? t('v2Reservations.reschedule.previewing')
+                : t('v2Reservations.reschedule.previewBtn')
+            }}
           </button>
 
           <!-- Captured policy calculation -->
           <div v-if="preview" class="preview-box" data-testid="reschedule-preview">
             <div class="preview-row">
               <span>{{ t('v2Reservations.reschedule.deadlineLabel') }}</span>
-              <span class="font-mono" data-testid="reschedule-deadline">{{ preview.deadline_at }}</span>
+              <span class="font-mono" data-testid="reschedule-deadline">{{
+                preview.deadline_at
+              }}</span>
             </div>
             <div class="preview-row">
               <span>{{ t('v2Reservations.reschedule.originalPaidLabel') }}</span>
@@ -256,25 +296,39 @@ watch(
             </div>
             <div class="preview-row">
               <span>{{ t('v2Reservations.reschedule.changeFeeLabel') }}</span>
-              <span class="font-mono" data-testid="reschedule-change-fee">{{ formatCurrency(preview.change_fee_amount) }}</span>
+              <span class="font-mono" data-testid="reschedule-change-fee">{{
+                formatCurrency(preview.change_fee_amount)
+              }}</span>
             </div>
 
             <!-- Three policy cases -->
-            <div v-if="previewCase === 'extra'" class="case-box case-warn" data-testid="reschedule-case-extra">
+            <div
+              v-if="previewCase === 'extra'"
+              class="case-box case-warn"
+              data-testid="reschedule-case-extra"
+            >
               <strong>{{ t('v2Reservations.reschedule.caseExtraTitle') }}</strong>
               <p>{{ t('v2Reservations.reschedule.caseExtraDesc') }}</p>
               <div class="preview-row emphasis">
                 <span>{{ t('v2Reservations.reschedule.extraPaymentLabel') }}</span>
-                <span class="font-mono" data-testid="reschedule-extra-amount">{{ formatCurrency(preview.extra_payment_amount) }}</span>
+                <span class="font-mono" data-testid="reschedule-extra-amount">{{
+                  formatCurrency(preview.extra_payment_amount)
+                }}</span>
               </div>
             </div>
 
-            <div v-else-if="previewCase === 'refund'" class="case-box case-ok" data-testid="reschedule-case-refund">
+            <div
+              v-else-if="previewCase === 'refund'"
+              class="case-box case-ok"
+              data-testid="reschedule-case-refund"
+            >
               <strong>{{ t('v2Reservations.reschedule.caseRefundTitle') }}</strong>
               <p>{{ t('v2Reservations.reschedule.caseRefundDesc') }}</p>
               <div class="preview-row emphasis">
                 <span>{{ t('v2Reservations.reschedule.refundDifferenceLabel') }}</span>
-                <span class="font-mono" data-testid="reschedule-refund-amount">{{ formatCurrency(preview.refund_amount) }}</span>
+                <span class="font-mono" data-testid="reschedule-refund-amount">{{
+                  formatCurrency(preview.refund_amount)
+                }}</span>
               </div>
             </div>
 
@@ -316,7 +370,9 @@ watch(
 
       <div class="modal-footer">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
-          {{ result ? t('v2Reservations.reschedule.close') : t('v2Reservations.reschedule.cancel') }}
+          {{
+            result ? t('v2Reservations.reschedule.close') : t('v2Reservations.reschedule.cancel')
+          }}
         </button>
         <button
           v-if="!result"
@@ -326,7 +382,11 @@ watch(
           data-testid="reschedule-submit-btn"
           @click="submit"
         >
-          {{ submitting ? t('v2Reservations.reschedule.submitting') : t('v2Reservations.reschedule.submitBtn') }}
+          {{
+            submitting
+              ? t('v2Reservations.reschedule.submitting')
+              : t('v2Reservations.reschedule.submitBtn')
+          }}
         </button>
       </div>
     </div>

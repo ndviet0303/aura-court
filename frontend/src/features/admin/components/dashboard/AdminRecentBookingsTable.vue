@@ -240,13 +240,15 @@ function getStatusLabel(status?: string): string {
   border-bottom: 0;
 }
 
-.user-col, .court-col {
+.user-col,
+.court-col {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.email-sub, .slot-sub {
+.email-sub,
+.slot-sub {
   font-size: 11px;
   color: var(--muted);
 }
@@ -270,12 +272,14 @@ function getStatusLabel(status?: string): string {
   color: #10b981;
 }
 
-.status-pill.pending, .status-pill.pending_payment {
+.status-pill.pending,
+.status-pill.pending_payment {
   background: rgba(245, 158, 11, 0.12);
   color: #f59e0b;
 }
 
-.status-pill.cancelled, .status-pill.expired {
+.status-pill.cancelled,
+.status-pill.expired {
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
@@ -374,7 +378,11 @@ function getStatusLabel(status?: string): string {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>

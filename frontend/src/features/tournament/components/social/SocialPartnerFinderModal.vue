@@ -59,9 +59,7 @@ onMounted(() => {
               <span class="p-city">📍 {{ p.city }}</span>
             </div>
 
-            <button class="btn-connect">
-              💬 Nhắn Tin
-            </button>
+            <button class="btn-connect">💬 Nhắn Tin</button>
           </div>
         </div>
 

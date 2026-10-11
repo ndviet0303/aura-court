@@ -52,9 +52,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
         created_at: '2026-09-09T08:00:00.000Z',
         user: { name: 'Alice Tester' },
         reactions_counts: { like: 3 },
-        comments: [
-          { id: 101, user_id: 2, content: 'Tuyệt vời quá!', user: { name: 'Bob' } },
-        ],
+        comments: [{ id: 101, user_id: 2, content: 'Tuyệt vời quá!', user: { name: 'Bob' } }],
       },
       {
         id: 11,
@@ -121,9 +119,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
     } as any)
 
     vi.mocked(socialApi.getFriendRequests).mockResolvedValue({
-      incoming: [
-        { id: 60, requester: { id: 3, name: 'Charlie', email: 'charlie@test.vn' } },
-      ],
+      incoming: [{ id: 60, requester: { id: 3, name: 'Charlie', email: 'charlie@test.vn' } }],
       outgoing: [],
     } as any)
 
@@ -207,7 +203,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
     expect(socialApi.hideFeedItem).toHaveBeenCalledWith(
       'post',
       11,
-      'Vi phạm chính sách thương mại và spam'
+      'Vi phạm chính sách thương mại và spam',
     )
   })
 })

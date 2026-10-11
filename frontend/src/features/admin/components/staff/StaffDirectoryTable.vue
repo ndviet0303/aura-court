@@ -22,7 +22,7 @@ const props = withDefaults(
     selectedStatusFilter: 'all',
     selectedVenueFilter: 'all',
     loading: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -185,11 +185,7 @@ function getRoleLabel(role: string): string {
       </div>
 
       <div class="table-body-rows">
-        <div
-          v-for="member in staff"
-          :key="member.id"
-          class="table-grid-row"
-        >
+        <div v-for="member in staff" :key="member.id" class="table-grid-row">
           <!-- Member Avatar + Name & Email -->
           <div class="member-col">
             <div class="avatar-box">
@@ -224,7 +220,9 @@ function getRoleLabel(role: string): string {
           <div class="perms-col">
             <span class="perms-badge">
               <span class="material-symbols-outlined icon-14">verified</span>
-              <span>{{ t('admin.staff.permissionsCount', { count: member.permissionsCount }) }}</span>
+              <span>{{
+                t('admin.staff.permissionsCount', { count: member.permissionsCount })
+              }}</span>
             </span>
           </div>
 
@@ -232,9 +230,22 @@ function getRoleLabel(role: string): string {
           <div class="status-col">
             <span
               class="status-indicator"
-              :class="member.status === 'active' ? 'active' : member.status === 'suspended' ? 'suspended' : 'invited'"
+              :class="
+                member.status === 'active'
+                  ? 'active'
+                  : member.status === 'suspended'
+                    ? 'suspended'
+                    : 'invited'
+              "
             >
-              ● {{ member.status === 'active' ? t('admin.staff.statusActive') : member.status === 'suspended' ? t('admin.staff.statusSuspended') : t('admin.staff.statusInvited') }}
+              ●
+              {{
+                member.status === 'active'
+                  ? t('admin.staff.statusActive')
+                  : member.status === 'suspended'
+                    ? t('admin.staff.statusSuspended')
+                    : t('admin.staff.statusInvited')
+              }}
             </span>
           </div>
 
@@ -254,7 +265,11 @@ function getRoleLabel(role: string): string {
               size="sm"
               variant="secondary"
               data-testid="toggle-status-btn"
-              :title="member.status === 'active' ? t('admin.staff.lockStaff') : t('admin.staff.unlockStaff')"
+              :title="
+                member.status === 'active'
+                  ? t('admin.staff.lockStaff')
+                  : t('admin.staff.unlockStaff')
+              "
               @click="emit('toggleStatus', member)"
             >
               <span class="material-symbols-outlined icon-16">
@@ -320,7 +335,9 @@ function getRoleLabel(role: string): string {
   font-size: 13.5px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .header-search-input:focus {
@@ -535,9 +552,15 @@ function getRoleLabel(role: string): string {
   font-weight: 700;
 }
 
-.status-indicator.active { color: #10b981; }
-.status-indicator.suspended { color: #ef4444; }
-.status-indicator.invited { color: #f59e0b; }
+.status-indicator.active {
+  color: #10b981;
+}
+.status-indicator.suspended {
+  color: #ef4444;
+}
+.status-indicator.invited {
+  color: #f59e0b;
+}
 
 .actions-col {
   display: flex;
@@ -549,9 +572,15 @@ function getRoleLabel(role: string): string {
   text-align: right;
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 .empty-staff-state {
   display: flex;
@@ -596,7 +625,7 @@ function getRoleLabel(role: string): string {
 
 :global(html.dark) .header-search-input {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 
@@ -615,12 +644,12 @@ function getRoleLabel(role: string): string {
 }
 
 :global(html.dark) .member-name {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .perms-badge {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .role-owner,

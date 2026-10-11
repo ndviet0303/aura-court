@@ -35,11 +35,17 @@ function formatDate(dateStr?: string | null): string {
 </script>
 
 <template>
-  <div class="subscription-status-card bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+  <div
+    class="subscription-status-card bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-6 space-y-6"
+  >
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 dark:border-gray-700">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 dark:border-gray-700"
+    >
       <div>
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+        <span
+          class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
+        >
           Gói Đăng ký Hoạt động
         </span>
         <h2 class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
@@ -51,12 +57,21 @@ function formatDate(dateStr?: string | null): string {
         <span
           class="px-3 py-1 text-xs font-semibold rounded-full"
           :class="{
-            'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300': subscription.is_valid && canTakeBookings,
-            'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300': !subscription.is_valid || !canTakeBookings,
-            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300': subscription.status === 'cancelled',
+            'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300':
+              subscription.is_valid && canTakeBookings,
+            'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300':
+              !subscription.is_valid || !canTakeBookings,
+            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300':
+              subscription.status === 'cancelled',
           }"
         >
-          {{ subscription.is_trial && canTakeBookings ? 'Dùng thử đang kích hoạt' : subscription.is_valid && canTakeBookings ? 'Đang kích hoạt' : 'Hết hạn / Ngừng nhận đặt' }}
+          {{
+            subscription.is_trial && canTakeBookings
+              ? 'Dùng thử đang kích hoạt'
+              : subscription.is_valid && canTakeBookings
+                ? 'Đang kích hoạt'
+                : 'Hết hạn / Ngừng nhận đặt'
+          }}
         </span>
 
         <span
@@ -70,21 +85,27 @@ function formatDate(dateStr?: string | null): string {
 
     <!-- Cycle Details -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-      <div class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
+      <div
+        class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700"
+      >
         <span class="text-gray-500 dark:text-gray-400 block">Ngày bắt đầu</span>
         <strong class="text-gray-900 dark:text-white text-sm mt-0.5 block">
           {{ formatDate(subscription.starts_at) }}
         </strong>
       </div>
 
-      <div class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
+      <div
+        class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700"
+      >
         <span class="text-gray-500 dark:text-gray-400 block">Hết hạn kỳ hiện tại</span>
         <strong class="text-gray-900 dark:text-white text-sm mt-0.5 block">
           {{ formatDate(subscription.ends_at) }}
         </strong>
       </div>
 
-      <div class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
+      <div
+        class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700"
+      >
         <span class="text-gray-500 dark:text-gray-400 block">Tự động gia hạn</span>
         <strong class="text-gray-900 dark:text-white text-sm mt-0.5 block">
           {{ subscription.auto_renew ? 'Bật (Tự động)' : 'Tắt' }}
@@ -100,38 +121,54 @@ function formatDate(dateStr?: string | null): string {
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <!-- Venues -->
-        <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div
+          class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
           <div class="flex items-center justify-between text-xs mb-1.5">
             <span class="text-gray-500 dark:text-gray-400">Cơ sở thể thao</span>
-            <strong class="text-gray-900 dark:text-white">{{ quotas.venues_count }} / {{ quotas.max_venues }}</strong>
+            <strong class="text-gray-900 dark:text-white"
+              >{{ quotas.venues_count }} / {{ quotas.max_venues }}</strong
+            >
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
             <div
               class="bg-emerald-600 h-1.5 rounded-full"
-              :style="{ width: `${Math.min(100, (quotas.venues_count / quotas.max_venues) * 100)}%` }"
+              :style="{
+                width: `${Math.min(100, (quotas.venues_count / quotas.max_venues) * 100)}%`,
+              }"
             ></div>
           </div>
         </div>
 
         <!-- Courts -->
-        <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div
+          class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
           <div class="flex items-center justify-between text-xs mb-1.5">
             <span class="text-gray-500 dark:text-gray-400">Sân hoạt động</span>
-            <strong class="text-gray-900 dark:text-white">{{ quotas.courts_count }} / {{ quotas.max_courts }}</strong>
+            <strong class="text-gray-900 dark:text-white"
+              >{{ quotas.courts_count }} / {{ quotas.max_courts }}</strong
+            >
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
             <div
               class="bg-emerald-600 h-1.5 rounded-full"
-              :style="{ width: `${Math.min(100, (quotas.courts_count / quotas.max_courts) * 100)}%` }"
+              :style="{
+                width: `${Math.min(100, (quotas.courts_count / quotas.max_courts) * 100)}%`,
+              }"
             ></div>
           </div>
         </div>
 
         <!-- Staff -->
-        <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div
+          class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
           <div class="flex items-center justify-between text-xs mb-1.5">
             <span class="text-gray-500 dark:text-gray-400">Nhân viên / QTV</span>
-            <strong class="text-gray-900 dark:text-white">{{ quotas.staff_count }} / {{ quotas.max_staff }}</strong>
+            <strong class="text-gray-900 dark:text-white"
+              >{{ quotas.staff_count }} / {{ quotas.max_staff }}</strong
+            >
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
             <div

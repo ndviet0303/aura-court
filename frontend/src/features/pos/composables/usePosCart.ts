@@ -22,7 +22,10 @@ export function usePosCart() {
   }
   const discountPercent = computed(() => {
     if (selectedCustomer.value && selectedCustomer.value.discount_rate > 0) {
-      return Math.max(customDiscountPercent.value, Math.round(selectedCustomer.value.discount_rate * 100))
+      return Math.max(
+        customDiscountPercent.value,
+        Math.round(selectedCustomer.value.discount_rate * 100),
+      )
     }
     return customDiscountPercent.value
   })
@@ -45,7 +48,7 @@ export function usePosCart() {
 
   // Per-item VAT breakdown calculation
   const vatBreakdown = computed<VatBreakdown[]>(() => {
-    const ratio = subtotal.value > 0 ? (1 - discountPercent.value / 100) : 1
+    const ratio = subtotal.value > 0 ? 1 - discountPercent.value / 100 : 1
     const map: Record<number, number> = {}
 
     cart.value.forEach((item) => {
@@ -90,7 +93,9 @@ export function usePosCart() {
     const round200 = Math.ceil(tot / 200000) * 200000
     const round500 = Math.ceil(tot / 500000) * 500000
     const set = new Set([exact, round20, round50, round100, round200, round500])
-    return Array.from(set).filter((v) => v >= tot).slice(0, 5)
+    return Array.from(set)
+      .filter((v) => v >= tot)
+      .slice(0, 5)
   })
 
   const cashChange = computed(() => {
@@ -100,7 +105,7 @@ export function usePosCart() {
 
   function getItemDefaultVat(product: Product): number {
     if (typeof product.vat_rate === 'number') return product.vat_rate
-    if (product.category === 'equipment' || product.category === 'membership') return 0.10
+    if (product.category === 'equipment' || product.category === 'membership') return 0.1
     if (product.category === 'drinks' || product.category === 'nutrition') return 0.08
     if (product.category === 'rental' || product.category === 'services') return 0.08
     return 0.08
@@ -110,7 +115,10 @@ export function usePosCart() {
     resetCheckoutKey()
     const itemVat = vatRate !== undefined ? vatRate : getItemDefaultVat(product)
     const existingIndex = cart.value.findIndex(
-      (item) => item.product.id === product.id && (item.rental_hours || 1) === (rentalHours || 1) && (item.vat_rate ?? getItemDefaultVat(item.product)) === itemVat
+      (item) =>
+        item.product.id === product.id &&
+        (item.rental_hours || 1) === (rentalHours || 1) &&
+        (item.vat_rate ?? getItemDefaultVat(item.product)) === itemVat,
     )
 
     if (existingIndex >= 0 && cart.value[existingIndex]) {

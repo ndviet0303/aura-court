@@ -46,14 +46,13 @@ const emit = defineEmits<{
     <!-- Estimate Summary -->
     <div class="estimate-box">
       <span>{{ $t('courtDetail.estimatedTotal', { duration: selectedDuration }) }}:</span>
-      <strong class="estimate-amount text-pink font-mono">{{ formatCurrency(estimatedTotal) }}</strong>
+      <strong class="estimate-amount text-pink font-mono">{{
+        formatCurrency(estimatedTotal)
+      }}</strong>
     </div>
 
     <!-- Book CTA -->
-    <RouterLink
-      :to="`/courts/${court.slug || court.id}/schedule`"
-      class="btn-book-now"
-    >
+    <RouterLink :to="`/courts/${court.slug || court.id}/schedule`" class="btn-book-now">
       {{ $t('courtDetail.confirmAndBook') }}
     </RouterLink>
   </div>

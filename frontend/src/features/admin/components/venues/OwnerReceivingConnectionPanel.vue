@@ -36,9 +36,11 @@ const hmacSecret = ref('')
 const apiToken = ref('')
 const providerAccountId = ref('')
 const evidence = ref<ReceivingConnectionEvidenceItem[]>([])
-const onboardingSteps = computed(() => locale.value.startsWith('vi')
-  ? (props.connection?.onboarding?.instructions_vi ?? [])
-  : (props.connection?.onboarding?.instructions_en ?? []))
+const onboardingSteps = computed(() =>
+  locale.value.startsWith('vi')
+    ? (props.connection?.onboarding?.instructions_vi ?? [])
+    : (props.connection?.onboarding?.instructions_en ?? []),
+)
 
 watch(
   () => props.connection?.id,
@@ -89,7 +91,8 @@ async function createConnection() {
 }
 
 async function selectConnection() {
-  if (!props.connection || props.connection.status !== 'verified' || props.connection.is_selected) return
+  if (!props.connection || props.connection.status !== 'verified' || props.connection.is_selected)
+    return
   selecting.value = true
   error.value = ''
   notice.value = ''
@@ -177,28 +180,45 @@ async function syncTransactions() {
 </script>
 
 <template>
-  <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900/40" data-testid="owner-receiving-connection-panel">
+  <section
+    class="space-y-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900/40"
+    data-testid="owner-receiving-connection-panel"
+  >
     <div class="flex items-start justify-between gap-3">
       <div>
-      <h4 class="text-sm font-bold text-gray-900 dark:text-white">
-        {{ t('admin.venues.receivingConnection.title') }}
-      </h4>
-      <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
-        {{ t('admin.venues.receivingConnection.description') }}
-      </p>
+        <h4 class="text-sm font-bold text-gray-900 dark:text-white">
+          {{ t('admin.venues.receivingConnection.title') }}
+        </h4>
+        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+          {{ t('admin.venues.receivingConnection.description') }}
+        </p>
       </div>
-      <button type="button" class="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-300" data-testid="refresh-receiving-connection" @click="emit('refresh')">
+      <button
+        type="button"
+        class="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-300"
+        data-testid="refresh-receiving-connection"
+        @click="emit('refresh')"
+      >
         {{ t('admin.venues.receivingConnection.refreshStatus') }}
       </button>
     </div>
 
-    <div v-if="loadError" class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
+    <div
+      v-if="loadError"
+      class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300"
+    >
       {{ loadError }}
     </div>
-    <div v-if="error" class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
+    <div
+      v-if="error"
+      class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300"
+    >
       {{ error }}
     </div>
-    <div v-if="notice" class="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+    <div
+      v-if="notice"
+      class="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+    >
       {{ notice }}
     </div>
 
@@ -206,32 +226,79 @@ async function syncTransactions() {
       {{ t('admin.venues.receivingConnection.loading') }}
     </div>
 
-    <form v-if="(!connection || addingConnection) && !loading && !loadError" class="space-y-3" data-testid="receiving-connection-create" @submit.prevent="createConnection">
+    <form
+      v-if="(!connection || addingConnection) && !loading && !loadError"
+      class="space-y-3"
+      data-testid="receiving-connection-create"
+      @submit.prevent="createConnection"
+    >
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label class="space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
           <span>{{ t('admin.venues.receivingConnection.bankCode') }}</span>
-          <input v-model="bankCode" required maxlength="32" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" autocomplete="off" data-testid="receiving-bank-code" />
+          <input
+            v-model="bankCode"
+            required
+            maxlength="32"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            autocomplete="off"
+            data-testid="receiving-bank-code"
+          />
         </label>
         <label class="space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
           <span>{{ t('admin.venues.receivingConnection.accountName') }}</span>
-          <input v-model="accountName" required maxlength="160" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" autocomplete="off" data-testid="receiving-account-name" />
+          <input
+            v-model="accountName"
+            required
+            maxlength="160"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            autocomplete="off"
+            data-testid="receiving-account-name"
+          />
         </label>
       </div>
       <label class="block space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
         <span>{{ t('admin.venues.receivingConnection.accountNumber') }}</span>
-        <input v-model="accountNumber" required inputmode="numeric" maxlength="34" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" autocomplete="off" data-testid="receiving-account-number" />
+        <input
+          v-model="accountNumber"
+          required
+          inputmode="numeric"
+          maxlength="34"
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+          autocomplete="off"
+          data-testid="receiving-account-number"
+        />
       </label>
       <label class="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-        <input v-model="legalOwnerConfirmed" type="checkbox" required class="mt-0.5 rounded border-gray-300" data-testid="receiving-legal-owner-confirmed" />
+        <input
+          v-model="legalOwnerConfirmed"
+          type="checkbox"
+          required
+          class="mt-0.5 rounded border-gray-300"
+          data-testid="receiving-legal-owner-confirmed"
+        />
         <span>{{ t('admin.venues.receivingConnection.legalOwnerAttestation') }}</span>
       </label>
       <p class="text-[11px] text-gray-500 dark:text-gray-400">
         {{ t('admin.venues.receivingConnection.noBankPassword') }}
       </p>
-      <button type="submit" :disabled="saving || !legalOwnerConfirmed" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50" data-testid="save-receiving-connection">
-        {{ saving ? t('admin.venues.receivingConnection.saving') : t('admin.venues.receivingConnection.saveAccount') }}
+      <button
+        type="submit"
+        :disabled="saving || !legalOwnerConfirmed"
+        class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+        data-testid="save-receiving-connection"
+      >
+        {{
+          saving
+            ? t('admin.venues.receivingConnection.saving')
+            : t('admin.venues.receivingConnection.saveAccount')
+        }}
       </button>
-      <button v-if="connection" type="button" class="ml-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-300" @click="addingConnection = false">
+      <button
+        v-if="connection"
+        type="button"
+        class="ml-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-300"
+        @click="addingConnection = false"
+      >
         {{ t('admin.venues.receivingConnection.cancelAddAccount') }}
       </button>
     </form>
@@ -242,19 +309,34 @@ async function syncTransactions() {
       </button>
     </div>
 
-    <div v-if="connection && !addingConnection && !loading && !loadError" class="space-y-4" data-testid="receiving-connection-configured">
-      <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
+    <div
+      v-if="connection && !addingConnection && !loading && !loadError"
+      class="space-y-4"
+      data-testid="receiving-connection-configured"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
+      >
         <div>
           <p class="text-xs font-semibold text-gray-900 dark:text-white">
-            {{ connection.bank_code }} · {{ connection.account_name }} · {{ connection.account_number_masked }}
+            {{ connection.bank_code }} · {{ connection.account_name }} ·
+            {{ connection.account_number_masked }}
           </p>
           <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-            {{ t('admin.venues.receivingConnection.credentialVersion', { version: connection.credential_version }) }}
+            {{
+              t('admin.venues.receivingConnection.credentialVersion', {
+                version: connection.credential_version,
+              })
+            }}
           </p>
         </div>
         <span
           class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-          :class="connection.status === 'verified' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'"
+          :class="
+            connection.status === 'verified'
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+              : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+          "
           data-testid="receiving-connection-status"
         >
           {{ t(`admin.venues.receivingConnection.status.${connection.status}`) }}
@@ -262,16 +344,40 @@ async function syncTransactions() {
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <span v-if="connection.is_selected" class="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" data-testid="selected-receiver-badge">
+        <span
+          v-if="connection.is_selected"
+          class="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+          data-testid="selected-receiver-badge"
+        >
           {{ t('admin.venues.receivingConnection.selected') }}
         </span>
-        <button v-else-if="connection.status === 'verified'" type="button" :disabled="selecting" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50" data-testid="select-receiving-connection" @click="selectConnection">
-          {{ selecting ? t('admin.venues.receivingConnection.selecting') : t('admin.venues.receivingConnection.select') }}
+        <button
+          v-else-if="connection.status === 'verified'"
+          type="button"
+          :disabled="selecting"
+          class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          data-testid="select-receiving-connection"
+          @click="selectConnection"
+        >
+          {{
+            selecting
+              ? t('admin.venues.receivingConnection.selecting')
+              : t('admin.venues.receivingConnection.select')
+          }}
         </button>
-        <span v-else class="text-[11px] text-amber-700 dark:text-amber-300" data-testid="receiver-selection-required">
+        <span
+          v-else
+          class="text-[11px] text-amber-700 dark:text-amber-300"
+          data-testid="receiver-selection-required"
+        >
           {{ t('admin.venues.receivingConnection.verifyBeforeSelecting') }}
         </span>
-        <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-300" data-testid="add-receiving-connection" @click="addingConnection = true">
+        <button
+          type="button"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-300"
+          data-testid="add-receiving-connection"
+          @click="addingConnection = true"
+        >
           {{ t('admin.venues.receivingConnection.addAnotherAccount') }}
         </button>
       </div>
@@ -280,7 +386,11 @@ async function syncTransactions() {
         <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">
           {{ t('admin.venues.receivingConnection.sepaySetup') }}
         </p>
-        <code class="block break-all rounded bg-gray-100 p-2 text-[11px] text-gray-700 dark:bg-gray-800 dark:text-gray-300" data-testid="sepay-webhook-url">{{ connection.webhook_url }}</code>
+        <code
+          class="block break-all rounded bg-gray-100 p-2 text-[11px] text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+          data-testid="sepay-webhook-url"
+          >{{ connection.webhook_url }}</code
+        >
         <ol class="list-inside list-decimal space-y-1 text-[11px] text-gray-600 dark:text-gray-400">
           <li v-for="(instruction, index) in onboardingSteps" :key="index">{{ instruction }}</li>
         </ol>
@@ -289,12 +399,30 @@ async function syncTransactions() {
       <div class="space-y-2">
         <label class="block space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
           <span>{{ t('admin.venues.receivingConnection.hmacSecret') }}</span>
-          <input v-model="hmacSecret" type="password" autocomplete="new-password" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" data-testid="hmac-secret-input" />
+          <input
+            v-model="hmacSecret"
+            type="password"
+            autocomplete="new-password"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            data-testid="hmac-secret-input"
+          />
         </label>
-        <button type="button" :disabled="saving || hmacSecret.length < 32" class="rounded-lg border border-emerald-600 px-3 py-2 text-xs font-semibold text-emerald-700 disabled:opacity-50 dark:text-emerald-300" data-testid="save-hmac-secret" @click="rotateHmacSecret">
-          {{ saving ? t('admin.venues.receivingConnection.saving') : t('admin.venues.receivingConnection.saveHmacSecret') }}
+        <button
+          type="button"
+          :disabled="saving || hmacSecret.length < 32"
+          class="rounded-lg border border-emerald-600 px-3 py-2 text-xs font-semibold text-emerald-700 disabled:opacity-50 dark:text-emerald-300"
+          data-testid="save-hmac-secret"
+          @click="rotateHmacSecret"
+        >
+          {{
+            saving
+              ? t('admin.venues.receivingConnection.saving')
+              : t('admin.venues.receivingConnection.saveHmacSecret')
+          }}
         </button>
-        <p class="text-[11px] text-gray-500 dark:text-gray-400">{{ t('admin.venues.receivingConnection.secretNeverShown') }}</p>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400">
+          {{ t('admin.venues.receivingConnection.secretNeverShown') }}
+        </p>
       </div>
 
       <details class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
@@ -307,25 +435,64 @@ async function syncTransactions() {
           </p>
           <label class="block space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
             <span>{{ t('admin.venues.receivingConnection.providerAccountId') }}</span>
-            <input v-model="providerAccountId" :placeholder="connection.provider_account_id || ''" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" autocomplete="off" />
+            <input
+              v-model="providerAccountId"
+              :placeholder="connection.provider_account_id || ''"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+              autocomplete="off"
+            />
           </label>
           <label class="block space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
             <span>{{ t('admin.venues.receivingConnection.apiToken') }}</span>
-            <input v-model="apiToken" type="password" autocomplete="new-password" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800" data-testid="sepay-api-token-input" />
+            <input
+              v-model="apiToken"
+              type="password"
+              autocomplete="new-password"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+              data-testid="sepay-api-token-input"
+            />
           </label>
-          <button type="button" :disabled="saving || apiToken.length !== 64 || !providerAccountId" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300" data-testid="save-sepay-api-token" @click="rotateApiToken">
+          <button
+            type="button"
+            :disabled="saving || apiToken.length !== 64 || !providerAccountId"
+            class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300"
+            data-testid="save-sepay-api-token"
+            @click="rotateApiToken"
+          >
             {{ t('admin.venues.receivingConnection.saveApiToken') }}
           </button>
-          <button v-if="connection.query_api_configured && connection.status === 'verified'" type="button" :disabled="syncing" class="ml-2 rounded-lg bg-gray-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 dark:bg-gray-200 dark:text-gray-900" data-testid="sync-sepay-transactions" @click="syncTransactions">
-            {{ syncing ? t('admin.venues.receivingConnection.syncing') : t('admin.venues.receivingConnection.syncTransactions') }}
+          <button
+            v-if="connection.query_api_configured && connection.status === 'verified'"
+            type="button"
+            :disabled="syncing"
+            class="ml-2 rounded-lg bg-gray-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 dark:bg-gray-200 dark:text-gray-900"
+            data-testid="sync-sepay-transactions"
+            @click="syncTransactions"
+          >
+            {{
+              syncing
+                ? t('admin.venues.receivingConnection.syncing')
+                : t('admin.venues.receivingConnection.syncTransactions')
+            }}
           </button>
         </div>
       </details>
 
       <div v-if="evidence.length" class="space-y-2">
-        <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ t('admin.venues.receivingConnection.evidenceTitle') }}</p>
-        <div v-for="event in evidence" :key="event.id" class="flex justify-between rounded bg-gray-50 px-3 py-2 text-[11px] dark:bg-gray-800">
-          <span>{{ event.event_type }} · {{ t('admin.venues.receivingConnection.version', { version: event.credential_version }) }}</span>
+        <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">
+          {{ t('admin.venues.receivingConnection.evidenceTitle') }}
+        </p>
+        <div
+          v-for="event in evidence"
+          :key="event.id"
+          class="flex justify-between rounded bg-gray-50 px-3 py-2 text-[11px] dark:bg-gray-800"
+        >
+          <span
+            >{{ event.event_type }} ·
+            {{
+              t('admin.venues.receivingConnection.version', { version: event.credential_version })
+            }}</span
+          >
           <time>{{ event.created_at ? new Date(event.created_at).toLocaleString() : '' }}</time>
         </div>
       </div>

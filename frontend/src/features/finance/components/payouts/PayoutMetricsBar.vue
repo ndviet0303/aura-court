@@ -58,7 +58,8 @@ function formatMoney(amount: number): string {
         <strong class="m-val text-red">-{{ formatMoney(fee) }}</strong>
         <span class="m-sub text-muted">
           <template v-if="commission && commission > 0">
-            {{ t('admin.payouts.providerFee') }}: {{ formatMoney(providerFee || 0) }} | {{ t('admin.payouts.historicalCommission') }}: {{ formatMoney(commission) }}
+            {{ t('admin.payouts.providerFee') }}: {{ formatMoney(providerFee || 0) }} |
+            {{ t('admin.payouts.historicalCommission') }}: {{ formatMoney(commission) }}
           </template>
           <template v-else>
             {{ t('admin.payouts.feesSub') }}
@@ -125,7 +126,9 @@ function formatMoney(amount: number): string {
   border: 1px solid var(--outline);
   background: var(--surface);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
@@ -272,8 +275,12 @@ function formatMoney(amount: number): string {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 1100px) {

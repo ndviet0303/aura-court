@@ -1,5 +1,10 @@
 import { ref, computed, onMounted } from 'vue'
-import type { InventoryProduct, StockMovement, ProductFormPayload, StockActionPayload } from '../types/inventory'
+import type {
+  InventoryProduct,
+  StockMovement,
+  ProductFormPayload,
+  StockActionPayload,
+} from '../types/inventory'
 import { inventoryApi } from '../api/inventoryApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -51,7 +56,8 @@ export function useAdminInventory() {
     return products.value.filter((p) => {
       if (!p.is_active) return false
       if (categoryFilter.value !== 'all' && p.category !== categoryFilter.value) return false
-      if (stockFilter.value === 'low' && (p.stock_quantity > p.min_stock || p.stock_quantity === 0)) return false
+      if (stockFilter.value === 'low' && (p.stock_quantity > p.min_stock || p.stock_quantity === 0))
+        return false
       if (stockFilter.value === 'out' && p.stock_quantity > 0) return false
 
       if (searchQuery.value) {
@@ -76,7 +82,10 @@ export function useAdminInventory() {
         if (!['in', 'out', 'adjust'].includes(type) && m.type !== type) return false
       }
 
-      if (movementProductFilter.value !== 'all' && m.product_id !== Number(movementProductFilter.value)) {
+      if (
+        movementProductFilter.value !== 'all' &&
+        m.product_id !== Number(movementProductFilter.value)
+      ) {
         return false
       }
 
@@ -107,8 +116,13 @@ export function useAdminInventory() {
   const kpis = computed(() => {
     const activeProducts = products.value.filter((p) => p.is_active)
     const totalItems = activeProducts.reduce((sum, p) => sum + (p.stock_quantity || 0), 0)
-    const totalValue = activeProducts.reduce((sum, p) => sum + ((p.stock_quantity || 0) * (p.cost || 0)), 0)
-    const lowStockCount = activeProducts.filter((p) => (p.stock_quantity || 0) <= (p.min_stock || 10) && (p.stock_quantity || 0) > 0).length
+    const totalValue = activeProducts.reduce(
+      (sum, p) => sum + (p.stock_quantity || 0) * (p.cost || 0),
+      0,
+    )
+    const lowStockCount = activeProducts.filter(
+      (p) => (p.stock_quantity || 0) <= (p.min_stock || 10) && (p.stock_quantity || 0) > 0,
+    ).length
     const outOfStockCount = activeProducts.filter((p) => (p.stock_quantity || 0) === 0).length
     return { totalItems, totalValue, lowStockCount, outOfStockCount }
   })
@@ -208,7 +222,11 @@ export function useAdminInventory() {
     }
   }
 
-  async function handleStockAction(payload: { quantity: number; note?: string; unitCost?: number }) {
+  async function handleStockAction(payload: {
+    quantity: number
+    note?: string
+    unitCost?: number
+  }) {
     if (!selectedProductForAction.value) return
     const p = selectedProductForAction.value
     saving.value = true
@@ -237,7 +255,12 @@ export function useAdminInventory() {
       }
 
       showStockActionModal.value = false
-      const actionName = stockActionType.value === 'in' ? 'nhập kho' : stockActionType.value === 'out' ? 'xuất kho' : 'kiểm kê điều chỉnh'
+      const actionName =
+        stockActionType.value === 'in'
+          ? 'nhập kho'
+          : stockActionType.value === 'out'
+            ? 'xuất kho'
+            : 'kiểm kê điều chỉnh'
       showNotice(`Đã thực hiện ${actionName} cho "${p.name}" thành công!`)
     } catch (e: unknown) {
       showError(errorMessage(e, 'Không thể thực hiện thao tác kho hàng.'))

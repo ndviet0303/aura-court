@@ -15,14 +15,18 @@ import {
 } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 
-
 function getCustomerWalletBalance(manifest: ReturnType<typeof getTestManifest>): number {
   const orgId = manifest.fixtures?.organizations.org1.id
   const userId = manifest.fixtures?.users.customer.id
   if (!orgId || !userId) throw new Error('Wallet balance assertion requires current test actors.')
-  return Number(executeGuardedBackendPhp(manifest, `
+  return Number(
+    executeGuardedBackendPhp(
+      manifest,
+      `
     echo (int) (\\App\\Models\\WalletAccount::where('organization_id', ${orgId})->where('user_id', ${userId})->sum('balance'));
-  `))
+  `,
+    ),
+  )
 }
 
 test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch chơi @p0', () => {
@@ -32,7 +36,10 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     })
   })
 
-  test('4.6: Yêu cầu hủy và báo giá hoàn tiền -> Chủ sân báo chuyển khoản -> Người nhận xác nhận không sinh credit ví ảo', async ({ page, browser }) => {
+  test('4.6: Yêu cầu hủy và báo giá hoàn tiền -> Chủ sân báo chuyển khoản -> Người nhận xác nhận không sinh credit ví ảo', async ({
+    page,
+    browser,
+  }) => {
     test.setTimeout(90000)
     const manifest = getTestManifest()
     const initialWalletBalance = getCustomerWalletBalance(manifest)
@@ -54,12 +61,16 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
     // 1. Arrange dedicated court for refund test
-    const court = arrangeCourt(manifest, { testKey: '4_6_refund', venueId: venue1A.id, price: 100000 })
+    const court = arrangeCourt(manifest, {
+      testKey: '4_6_refund',
+      venueId: venue1A.id,
+      price: 100000,
+    })
     const courtId = court.court_id
 
     // 2. Authenticate customer
@@ -71,7 +82,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     // 3. Navigate to schedule and book an available slot
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const targetCard = dateCards.nth(4)
@@ -88,8 +101,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
 
     const paymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
     await checkoutBtn.click()
 
@@ -172,9 +188,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(details.wallet_balance).toBe(initialWalletBalance) // Direct-owner checkout preserves existing wallet balance
 
     // 5. Customer requests Refund Quote via API
-    const quoteJson = await withE2EApi(page, async ({ api }, { reservationCode, slotId }) => {
-      return await api.get(`/bookings/${reservationCode}/refund-quote?slot_ids[]=${slotId}`)
-    }, { reservationCode: details.reservation_code, slotId: details.slot_id }) as {
+    const quoteJson = (await withE2EApi(
+      page,
+      async ({ api }, { reservationCode, slotId }) => {
+        return await api.get(`/bookings/${reservationCode}/refund-quote?slot_ids[]=${slotId}`)
+      },
+      { reservationCode: details.reservation_code, slotId: details.slot_id },
+    )) as {
       data: {
         reservation_code: string
         calculation: {
@@ -190,21 +210,27 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(quoteJson.data.calculation.gross_amount).toBe(100000)
     expect(quoteJson.data.calculation.refund_amount).toBeLessThanOrEqual(100000)
     expect(quoteJson.data.calculation.refund_amount).toBeGreaterThan(0)
-    expect(quoteJson.data.calculation.fee_amount).toBe(quoteJson.data.calculation.gross_amount - quoteJson.data.calculation.refund_amount)
+    expect(quoteJson.data.calculation.fee_amount).toBe(
+      quoteJson.data.calculation.gross_amount - quoteJson.data.calculation.refund_amount,
+    )
     // 6. Customer submits Refund Request
     const idempotencyKey = `ref_req_${Date.now()}`
-    const refundRequestJson = await withE2EApi(page, async ({ api }, { reservationCode, slotId, key }) => {
-      return await api.post(`/bookings/${reservationCode}/refund-requests`, {
-        slot_ids: [slotId],
-        reason: 'Khách hàng yêu cầu hủy lịch bận đột xuất',
-        idempotency_key: key,
-        recipient: {
-          bank_code: 'MBBank',
-          account_name: 'Customer Test',
-          account_number: '0987654321',
-        },
-      })
-    }, { reservationCode: details.reservation_code, slotId: details.slot_id, key: idempotencyKey }) as {
+    const refundRequestJson = (await withE2EApi(
+      page,
+      async ({ api }, { reservationCode, slotId, key }) => {
+        return await api.post(`/bookings/${reservationCode}/refund-requests`, {
+          slot_ids: [slotId],
+          reason: 'Khách hàng yêu cầu hủy lịch bận đột xuất',
+          idempotency_key: key,
+          recipient: {
+            bank_code: 'MBBank',
+            account_name: 'Customer Test',
+            account_number: '0987654321',
+          },
+        })
+      },
+      { reservationCode: details.reservation_code, slotId: details.slot_id, key: idempotencyKey },
+    )) as {
       data: {
         id: number
         status: string
@@ -235,11 +261,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'obligation_status' => $obligation->status,
       ]);
     `
-    const postReqWallet = JSON.parse(execFileSync('php', ['-r', checkWalletScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { wallet_balance: number; obligation_status: string }
+    const postReqWallet = JSON.parse(
+      execFileSync('php', ['-r', checkWalletScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { wallet_balance: number; obligation_status: string }
     expect(postReqWallet.wallet_balance).toBe(initialWalletBalance)
     expect(postReqWallet.obligation_status).toBe('requested')
 
@@ -249,35 +277,57 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     try {
       // Authenticate owner via app authApi
       await ownerPage.goto('/login', { waitUntil: 'domcontentloaded' })
-      await withE2EApi(ownerPage, async ({ authApi }, { email, password }) => {
-        await authApi.login({ email, password })
-      }, { email: owner.email, password: owner.password })
+      await withE2EApi(
+        ownerPage,
+        async ({ authApi }, { email, password }) => {
+          await authApi.login({ email, password })
+        },
+        { email: owner.email, password: owner.password },
+      )
 
       // Owner approves request via API
-      const approveJson = await withE2EApi(ownerPage, async ({ apiV2 }, { id, organizationId }) => {
-        try {
-          return await apiV2.post(`/refund-requests/${id}/approve`, {}, {
-            headers: {
-              'X-Organization-ID': String(organizationId),
-            },
-          })
-        } catch (err: any) {
-          throw new Error(`Owner approve failed: ${err.status} ${JSON.stringify(err.response?.data || err.data || err.message)}`)
-        }
-      }, { id: refundId, organizationId: orgId }) as { data: { status: string } }
+      const approveJson = (await withE2EApi(
+        ownerPage,
+        async ({ apiV2 }, { id, organizationId }) => {
+          try {
+            return await apiV2.post(
+              `/refund-requests/${id}/approve`,
+              {},
+              {
+                headers: {
+                  'X-Organization-ID': String(organizationId),
+                },
+              },
+            )
+          } catch (err: any) {
+            throw new Error(
+              `Owner approve failed: ${err.status} ${JSON.stringify(err.response?.data || err.data || err.message)}`,
+            )
+          }
+        },
+        { id: refundId, organizationId: orgId },
+      )) as { data: { status: string } }
       expect(approveJson.data.status).toBe('approved')
 
       // 8. Owner reports bank transfer execution
-      const reportJson = await withE2EApi(ownerPage, async ({ apiV2 }, { id, organizationId }) => {
-        return await apiV2.post(`/refund-requests/${id}/report-execution`, {
-          transfer_reference: 'MB-REF-46890123',
-          evidence: 'Chuyển khoản ngân hàng MBBank số giao dịch 46890123',
-        }, {
-          headers: {
-            'X-Organization-ID': String(organizationId),
-          },
-        })
-      }, { id: refundId, organizationId: orgId }) as { data: { status: string; execution_reference: string } }
+      const reportJson = (await withE2EApi(
+        ownerPage,
+        async ({ apiV2 }, { id, organizationId }) => {
+          return await apiV2.post(
+            `/refund-requests/${id}/report-execution`,
+            {
+              transfer_reference: 'MB-REF-46890123',
+              evidence: 'Chuyển khoản ngân hàng MBBank số giao dịch 46890123',
+            },
+            {
+              headers: {
+                'X-Organization-ID': String(organizationId),
+              },
+            },
+          )
+        },
+        { id: refundId, organizationId: orgId },
+      )) as { data: { status: string; execution_reference: string } }
       expect(reportJson.data.status).toBe('owner_reported')
       expect(reportJson.data.execution_reference).toBe('MB-REF-46890123')
     } finally {
@@ -285,12 +335,16 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     }
 
     // 9. Customer acknowledges receipt of the refund
-    const ackRes = await withE2EApi(page, async ({ apiV2 }, { id }) => {
-      return await apiV2.post(`/refund-requests/${id}/acknowledge`, {
-        accepted: true,
-        note: 'Đã nhận đủ tiền hoàn qua tài khoản MBBank',
-      })
-    }, { id: refundId }) as { data: { status: string } }
+    const ackRes = (await withE2EApi(
+      page,
+      async ({ apiV2 }, { id }) => {
+        return await apiV2.post(`/refund-requests/${id}/acknowledge`, {
+          accepted: true,
+          note: 'Đã nhận đủ tiền hoàn qua tài khoản MBBank',
+        })
+      },
+      { id: refundId },
+    )) as { data: { status: string } }
     expect(ackRes.data.status).toBe('acknowledged')
 
     // 10. Final Authoritative Verification
@@ -318,11 +372,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'execution_reference' => $obligation->execution_reference,
       ]);
     `
-    const finalState = JSON.parse(execFileSync('php', ['-r', finalCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const finalState = JSON.parse(
+      execFileSync('php', ['-r', finalCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       final_status: string
       wallet_balance: number
       slot1_status: string
@@ -339,7 +395,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(finalState.execution_reference).toBe('MB-REF-46890123')
   })
 
-  test('4.7: Đổi lịch sang giá cao hơn thu chênh lệch; timeout giữ chỗ cũ; đổi sang giá thấp tạo nghĩa vụ hoàn tiền', async ({ page }) => {
+  test('4.7: Đổi lịch sang giá cao hơn thu chênh lệch; timeout giữ chỗ cũ; đổi sang giá thấp tạo nghĩa vụ hoàn tiền', async ({
+    page,
+  }) => {
     test.setTimeout(120000)
     const manifest = getTestManifest()
     const initialWalletBalance = getCustomerWalletBalance(manifest)
@@ -360,14 +418,22 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
     // Warm the real catalog before adding fixtures: the scenario must work with an existing cache.
     expect((await page.request.get(`${manifest.backend.url}/api/v1/courts`)).ok()).toBe(true)
-    const courtCheap = arrangeCourt(manifest, { testKey: '4_7_cheap', venueId: venue1A.id, price: 100000 })
-    const courtExpensive = arrangeCourt(manifest, { testKey: '4_7_expensive', venueId: venue1A.id, price: 180000 })
+    const courtCheap = arrangeCourt(manifest, {
+      testKey: '4_7_cheap',
+      venueId: venue1A.id,
+      price: 100000,
+    })
+    const courtExpensive = arrangeCourt(manifest, {
+      testKey: '4_7_expensive',
+      venueId: venue1A.id,
+      price: 180000,
+    })
 
     // CLI fixtures have isolated cache storage. Publish only these new courts through the owner API
     // so the deployed catalog invalidation runs before the customer's reschedule journey.
@@ -377,14 +443,21 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       await authApi.login({ email: owner.email, password: owner.password })
       for (const court of [courtCheap, courtExpensive]) {
         expect(court.organization_id).toBe(orgId)
-        const published = await api.put<{ id: number; is_active: boolean }>(`/admin/courts/${court.court_id}`, { is_active: true })
+        const published = await api.put<{ id: number; is_active: boolean }>(
+          `/admin/courts/${court.court_id}`,
+          { is_active: true },
+        )
         expect(published.id).toBe(court.court_id)
         expect(published.is_active).toBe(true)
       }
       const catalog = await api.get<Array<{ id: number }>>('/courts')
-      expect(catalog.map(court => court.id)).toEqual(expect.arrayContaining([courtCheap.court_id, courtExpensive.court_id]))
+      expect(catalog.map((court) => court.id)).toEqual(
+        expect.arrayContaining([courtCheap.court_id, courtExpensive.court_id]),
+      )
     })
-    await withE2EApi(page, async ({ authApi }) => { await authApi.logout() })
+    await withE2EApi(page, async ({ authApi }) => {
+      await authApi.logout()
+    })
 
     // 1. Authenticate customer
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -395,7 +468,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     // 2. Book an initial slot on Court Cheap (100,000 VND)
     await page.goto(`/courts/${courtCheap.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const targetCard = dateCards.nth(4)
@@ -411,8 +486,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
 
     const paymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
     await checkoutBtn.click()
 
@@ -435,7 +513,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(initialBookingCode).toBeTruthy()
 
     // Confirm initial booking via webhook
-    const receiverAccountNumber = paymentBody.payment_attempt?.receiver?.account_number || '0901000005'
+    const receiverAccountNumber =
+      paymentBody.payment_attempt?.receiver?.account_number || '0901000005'
     const initialWebhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: 'whsec_e2e_1a_' + manifest.runId,
@@ -450,7 +529,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
     // Navigate to /bookings
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.user-booking-card', { hasText: initialBookingCode })).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.user-booking-card', { hasText: initialBookingCode })).toBeVisible({
+      timeout: 20000,
+    })
     const bookingCard = page.locator('.user-booking-card', { hasText: initialBookingCode })
 
     // =========================================================================
@@ -462,8 +543,14 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     const rescheduleModal = page.locator('[data-testid="reschedule-modal"]')
     // Select Court Expensive
-    await expect(rescheduleModal.locator(`[data-testid="reschedule-court"] option[value="${courtExpensive.court_id}"]`)).toBeAttached({ timeout: 15000 })
-    await rescheduleModal.locator('[data-testid="reschedule-court"]').selectOption(String(courtExpensive.court_id))
+    await expect(
+      rescheduleModal.locator(
+        `[data-testid="reschedule-court"] option[value="${courtExpensive.court_id}"]`,
+      ),
+    ).toBeAttached({ timeout: 15000 })
+    await rescheduleModal
+      .locator('[data-testid="reschedule-court"]')
+      .selectOption(String(courtExpensive.court_id))
     // Set future date and time
     const futureDate = getFuturePlayDate(5).dateString
     await rescheduleModal.locator('[data-testid="reschedule-date"]').fill(futureDate)
@@ -471,21 +558,31 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     // Click preview
     await rescheduleModal.locator('[data-testid="reschedule-preview-btn"]').click()
-    await expect(rescheduleModal.locator('[data-testid="reschedule-preview"]')).toBeVisible({ timeout: 15000 })
+    await expect(rescheduleModal.locator('[data-testid="reschedule-preview"]')).toBeVisible({
+      timeout: 15000,
+    })
 
     // Verify preview case extra
     await expect(rescheduleModal.locator('[data-testid="reschedule-case-extra"]')).toBeVisible()
-    await expect(rescheduleModal.locator('[data-testid="reschedule-case-refund"]')).not.toBeVisible()
-    const extraText = await rescheduleModal.locator('[data-testid="reschedule-extra-amount"]').textContent()
+    await expect(
+      rescheduleModal.locator('[data-testid="reschedule-case-refund"]'),
+    ).not.toBeVisible()
+    const extraText = await rescheduleModal
+      .locator('[data-testid="reschedule-extra-amount"]')
+      .textContent()
     expect(extraText).toContain('80')
 
     // Submit reschedule request
     await rescheduleModal.locator('[data-testid="reschedule-submit-btn"]').click()
 
     // Assert result is held with payment attempt
-    await expect(rescheduleModal.locator('[data-testid="reschedule-result"]')).toBeVisible({ timeout: 20000 })
+    await expect(rescheduleModal.locator('[data-testid="reschedule-result"]')).toBeVisible({
+      timeout: 20000,
+    })
     await expect(rescheduleModal.locator('[data-testid="reschedule-result-held"]')).toBeVisible()
-    const replacementCodeText = await rescheduleModal.locator('[data-testid="reschedule-result"] strong.font-mono').textContent()
+    const replacementCodeText = await rescheduleModal
+      .locator('[data-testid="reschedule-result"] strong.font-mono')
+      .textContent()
     const replacementCode1 = replacementCodeText?.trim() || ''
     expect(replacementCode1).toBeTruthy()
 
@@ -527,11 +624,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'account_number' => $attempt->receivingConnection?->accountNumber(),
       ]);
     `
-    const preState = JSON.parse(execFileSync('php', ['-r', preCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const preState = JSON.parse(
+      execFileSync('php', ['-r', preCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       original_status: string
       replacement_status: string
       attempt_status: string
@@ -602,11 +701,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'attempt_status' => $attempt?->status,
       ]);
     `
-    const postState = JSON.parse(execFileSync('php', ['-r', postCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const postState = JSON.parse(
+      execFileSync('php', ['-r', postCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       original_status: string
       original_slot_status: string
       rescheduled_to: string
@@ -625,7 +726,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // =========================================================================
     // Book a slot on Court Cheap
     await page.goto(`/courts/${courtCheap.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
     const timeoutDateCards = page.locator('.date-carousel .date-card-btn')
     const timeoutTargetCard = timeoutDateCards.nth(5)
     await timeoutTargetCard.waitFor({ state: 'visible', timeout: 15000 })
@@ -640,8 +743,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await expect(timeoutCheckoutBtn).toBeEnabled({ timeout: 10000 })
 
     const timeoutPaymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
     await timeoutCheckoutBtn.click()
 
@@ -663,7 +769,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(timeoutInitialBookingCode).toBeTruthy()
 
     // Confirm booking via webhook
-    const timeoutReceiverAccountNumber = timeoutPaymentBody.payment_attempt?.receiver?.account_number || '0901000005'
+    const timeoutReceiverAccountNumber =
+      timeoutPaymentBody.payment_attempt?.receiver?.account_number || '0901000005'
     await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: 'whsec_e2e_1a_' + manifest.runId,
@@ -678,26 +785,48 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     // Go to /bookings, find the booking card, click reschedule
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.user-booking-card', { hasText: timeoutInitialBookingCode })).toBeVisible({ timeout: 20000 })
-    const timeoutBookingCard = page.locator('.user-booking-card', { hasText: timeoutInitialBookingCode })
+    await expect(
+      page.locator('.user-booking-card', { hasText: timeoutInitialBookingCode }),
+    ).toBeVisible({ timeout: 20000 })
+    const timeoutBookingCard = page.locator('.user-booking-card', {
+      hasText: timeoutInitialBookingCode,
+    })
     await timeoutBookingCard.locator('[data-testid="booking-reschedule-btn"]').click()
 
     await expect(rescheduleModal).toBeVisible({ timeout: 10000 })
-    await expect(rescheduleModal.locator(`[data-testid="reschedule-court"] option[value="${courtExpensive.court_id}"]`)).toBeAttached({ timeout: 15000 })
-    await rescheduleModal.locator('[data-testid="reschedule-court"]').selectOption(String(courtExpensive.court_id))
+    await expect(
+      rescheduleModal.locator(
+        `[data-testid="reschedule-court"] option[value="${courtExpensive.court_id}"]`,
+      ),
+    ).toBeAttached({ timeout: 15000 })
+    await rescheduleModal
+      .locator('[data-testid="reschedule-court"]')
+      .selectOption(String(courtExpensive.court_id))
     const timeoutReschedDate = getFuturePlayDate(6).dateString
     await rescheduleModal.locator('[data-testid="reschedule-date"]').fill(timeoutReschedDate)
     await rescheduleModal.locator('[data-testid="reschedule-time"]').fill('11:00')
     await rescheduleModal.locator('[data-testid="reschedule-preview-btn"]').click()
-    await expect(rescheduleModal.locator('[data-testid="reschedule-preview"]')).toBeVisible({ timeout: 15000 })
+    await expect(rescheduleModal.locator('[data-testid="reschedule-preview"]')).toBeVisible({
+      timeout: 15000,
+    })
 
     await rescheduleModal.locator('[data-testid="reschedule-submit-btn"]').click()
-    await expect(rescheduleModal.locator('[data-testid="reschedule-result"]')).toBeVisible({ timeout: 20000 })
-    const timeoutReplacementCode = (await rescheduleModal.locator('[data-testid="reschedule-result"] strong.font-mono').textContent())?.trim() || ''
+    await expect(rescheduleModal.locator('[data-testid="reschedule-result"]')).toBeVisible({
+      timeout: 20000,
+    })
+    const timeoutReplacementCode =
+      (
+        await rescheduleModal
+          .locator('[data-testid="reschedule-result"] strong.font-mono')
+          .textContent()
+      )?.trim() || ''
     expect(timeoutReplacementCode).toBeTruthy()
 
     // Do NOT pay! Fast-forward hold expiry using real CLI e2e:expire-holds
-    const expireResult = expireHolds(manifest, { reservationCode: timeoutReplacementCode, minutes: 30 })
+    const expireResult = expireHolds(manifest, {
+      reservationCode: timeoutReplacementCode,
+      minutes: 30,
+    })
     expect(expireResult.status).toBe('success')
 
     // Authoritative DB check:
@@ -736,11 +865,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'timed_out_slot_status' => $timedOutBooking->slots()->first()?->status,
       ]);
     `
-    const timeoutState = JSON.parse(execFileSync('php', ['-r', timeoutCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const timeoutState = JSON.parse(
+      execFileSync('php', ['-r', timeoutCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       confirmed_booking_status: string
       confirmed_slot_status: string
       timed_out_status: string
@@ -755,14 +886,24 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // Close modal and reload page: booking remains confirmed
     await rescheduleModal.locator('.btn-ghost, .modal-close-btn').first().click()
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.user-booking-card', { hasText: timeoutInitialBookingCode })).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('.user-booking-card', { hasText: timeoutInitialBookingCode }).locator('.status-chip')).toContainText(/(Đã xác nhận|Confirmed)/i)
+    await expect(
+      page.locator('.user-booking-card', { hasText: timeoutInitialBookingCode }),
+    ).toBeVisible({ timeout: 15000 })
+    await expect(
+      page
+        .locator('.user-booking-card', { hasText: timeoutInitialBookingCode })
+        .locator('.status-chip'),
+    ).toContainText(/(Đã xác nhận|Confirmed)/i)
     // =========================================================================
     // PART C: Cheaper reschedule (180k -> 100k) creates refund obligation
     // =========================================================================
     // Book a fresh 180,000 VND booking on Court Expensive
-    await page.goto(`/courts/${courtExpensive.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await page.goto(`/courts/${courtExpensive.court_id}/schedule`, {
+      waitUntil: 'domcontentloaded',
+    })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const expDateCards = page.locator('.date-carousel .date-card-btn')
     const expTargetCard = expDateCards.nth(4)
@@ -778,8 +919,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await expect(expCheckoutBtn).toBeEnabled({ timeout: 10000 })
 
     const expPaymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
     await expCheckoutBtn.click()
 
@@ -801,7 +945,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(expBookingCode).toBeTruthy()
 
     // Confirm initial 180k booking via webhook
-    const expReceiverAccountNumber = expPaymentBody.payment_attempt?.receiver?.account_number || '0901000005'
+    const expReceiverAccountNumber =
+      expPaymentBody.payment_attempt?.receiver?.account_number || '0901000005'
     const expWebhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: 'whsec_e2e_1a_' + manifest.runId,
@@ -817,26 +962,38 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     // Navigate to /bookings and find the 180,000 VND booking
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.user-booking-card', { hasText: expBookingCode })).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.user-booking-card', { hasText: expBookingCode })).toBeVisible({
+      timeout: 20000,
+    })
     const expBookingCard = page.locator('.user-booking-card', { hasText: expBookingCode })
 
     await expBookingCard.locator('[data-testid="booking-reschedule-btn"]').click()
     await expect(rescheduleModal).toBeVisible({ timeout: 10000 })
 
     // Select Court Cheap (100,000 VND)
-    await expect(rescheduleModal.locator(`[data-testid="reschedule-court"] option[value="${courtCheap.court_id}"]`)).toBeAttached({ timeout: 15000 })
-    await rescheduleModal.locator('[data-testid="reschedule-court"]').selectOption(String(courtCheap.court_id))
+    await expect(
+      rescheduleModal.locator(
+        `[data-testid="reschedule-court"] option[value="${courtCheap.court_id}"]`,
+      ),
+    ).toBeAttached({ timeout: 15000 })
+    await rescheduleModal
+      .locator('[data-testid="reschedule-court"]')
+      .selectOption(String(courtCheap.court_id))
     const cheapDate = getFuturePlayDate(7).dateString
     await rescheduleModal.locator('[data-testid="reschedule-date"]').fill(cheapDate)
     await rescheduleModal.locator('[data-testid="reschedule-time"]').fill('14:00')
 
     await rescheduleModal.locator('[data-testid="reschedule-preview-btn"]').click()
-    await expect(rescheduleModal.locator('[data-testid="reschedule-preview"]')).toBeVisible({ timeout: 15000 })
+    await expect(rescheduleModal.locator('[data-testid="reschedule-preview"]')).toBeVisible({
+      timeout: 15000,
+    })
 
     // Verify refund case preview (180,000 VND -> 100,000 VND = 80,000 VND refund)
     await expect(rescheduleModal.locator('[data-testid="reschedule-case-refund"]')).toBeVisible()
     await expect(rescheduleModal.locator('[data-testid="reschedule-case-extra"]')).not.toBeVisible()
-    const refundDiffText = await rescheduleModal.locator('[data-testid="reschedule-refund-amount"]').textContent()
+    const refundDiffText = await rescheduleModal
+      .locator('[data-testid="reschedule-refund-amount"]')
+      .textContent()
     expect(refundDiffText).toContain('80')
 
     // Fill recipient details
@@ -848,10 +1005,17 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await rescheduleModal.locator('[data-testid="reschedule-submit-btn"]').click()
 
     // Assert swapped immediately and refund created
-    await expect(rescheduleModal.locator('[data-testid="reschedule-result"]')).toBeVisible({ timeout: 20000 })
+    await expect(rescheduleModal.locator('[data-testid="reschedule-result"]')).toBeVisible({
+      timeout: 20000,
+    })
     await expect(rescheduleModal.locator('[data-testid="reschedule-result-swapped"]')).toBeVisible()
     await expect(rescheduleModal.locator('[data-testid="reschedule-result-refund"]')).toBeVisible()
-    const cheaperReplacementCode = (await rescheduleModal.locator('[data-testid="reschedule-result"] strong.font-mono').textContent())?.trim() || ''
+    const cheaperReplacementCode =
+      (
+        await rescheduleModal
+          .locator('[data-testid="reschedule-result"] strong.font-mono')
+          .textContent()
+      )?.trim() || ''
     expect(cheaperReplacementCode).toBeTruthy()
 
     // Authoritative DB check:
@@ -902,11 +1066,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'wallet_balance' => $wallet ? (int) $wallet->balance : 0,
       ]);
     `
-    const refundState = JSON.parse(execFileSync('php', ['-r', refundCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const refundState = JSON.parse(
+      execFileSync('php', ['-r', refundCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       old_status: string
       old_slot_status: string
       new_status: string
@@ -931,11 +1097,17 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // Close modal and reload page: original booking card flipped to cancelled
     await rescheduleModal.locator('.btn-ghost, .modal-close-btn').first().click()
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.user-booking-card', { hasText: expBookingCode })).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('.user-booking-card', { hasText: expBookingCode }).locator('.status-chip')).toContainText(/(Đã hủy|Cancelled)/i)
+    await expect(page.locator('.user-booking-card', { hasText: expBookingCode })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(
+      page.locator('.user-booking-card', { hasText: expBookingCode }).locator('.status-chip'),
+    ).toContainText(/(Đã hủy|Cancelled)/i)
   })
 
-  test('4.8: Thử lại idempotent khi mất kết nối trả kết quả cũ không tạo đặt sân, biên nhận hay quyền lợi trùng', async ({ page }) => {
+  test('4.8: Thử lại idempotent khi mất kết nối trả kết quả cũ không tạo đặt sân, biên nhận hay quyền lợi trùng', async ({
+    page,
+  }) => {
     test.setTimeout(120000)
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
@@ -955,12 +1127,16 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
     // Arrange dedicated court and initial loyalty points for the customer
-    const court = arrangeCourt(manifest, { testKey: '4_8_idemp', venueId: venue1A.id, price: 100000 })
+    const court = arrangeCourt(manifest, {
+      testKey: '4_8_idemp',
+      venueId: venue1A.id,
+      price: 100000,
+    })
     grantLoyaltyPoints(manifest, {
       userId: manifest.fixtures?.users.customer.id,
       organizationId: orgId,
@@ -979,17 +1155,25 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const checkoutKey = `idemp_checkout_${Date.now()}`
     const futureSlot = getFuturePlayDate(4, 15, 0)
 
-    const firstCheckoutRes = await withE2EApi(page, async ({ api }, { courtId, slotTime, key }) => {
-      return await api.post('/bookings', {
-        court_id: courtId,
-        slots: [slotTime],
-        loyalty_points: 50,
-      }, {
-        headers: {
-          'Idempotency-Key': key,
-        },
-      })
-    }, { courtId: court.court_id, slotTime: futureSlot.slotTime, key: checkoutKey }) as {
+    const firstCheckoutRes = (await withE2EApi(
+      page,
+      async ({ api }, { courtId, slotTime, key }) => {
+        return await api.post(
+          '/bookings',
+          {
+            court_id: courtId,
+            slots: [slotTime],
+            loyalty_points: 50,
+          },
+          {
+            headers: {
+              'Idempotency-Key': key,
+            },
+          },
+        )
+      },
+      { courtId: court.court_id, slotTime: futureSlot.slotTime, key: checkoutKey },
+    )) as {
       booking: { id: number; code: string; status: string }
     }
 
@@ -999,17 +1183,25 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(firstBookingCode).toBeTruthy()
 
     // Client lost response or experienced timeout, retries with the EXACT same key & payload
-    const retryCheckoutRes = await withE2EApi(page, async ({ api }, { courtId, slotTime, key }) => {
-      return await api.post('/bookings', {
-        court_id: courtId,
-        slots: [slotTime],
-        loyalty_points: 50,
-      }, {
-        headers: {
-          'Idempotency-Key': key,
-        },
-      })
-    }, { courtId: court.court_id, slotTime: futureSlot.slotTime, key: checkoutKey }) as {
+    const retryCheckoutRes = (await withE2EApi(
+      page,
+      async ({ api }, { courtId, slotTime, key }) => {
+        return await api.post(
+          '/bookings',
+          {
+            court_id: courtId,
+            slots: [slotTime],
+            loyalty_points: 50,
+          },
+          {
+            headers: {
+              'Idempotency-Key': key,
+            },
+          },
+        )
+      },
+      { courtId: court.court_id, slotTime: futureSlot.slotTime, key: checkoutKey },
+    )) as {
       booking: { id: number; code: string; status: string }
     }
 
@@ -1043,11 +1235,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'points_debited' => abs((int) $debitPoints),
       ]);
     `
-    const checkoutIdempState = JSON.parse(execFileSync('php', ['-r', checkoutIdempCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const checkoutIdempState = JSON.parse(
+      execFileSync('php', ['-r', checkoutIdempCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       booking_count: number
       idemp_record_count: number
       points_debited: number
@@ -1079,11 +1273,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'reservation_code' => $reservation->code,
       ]);
     `
-    const paymentInfo = JSON.parse(execFileSync('php', ['-r', paymentCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const paymentInfo = JSON.parse(
+      execFileSync('php', ['-r', paymentCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       attempt_amount: number
       attempt_reference: string
       account_number: string
@@ -1138,11 +1334,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'allocation_count' => $allocations,
       ]);
     `
-    const webhookIdempState = JSON.parse(execFileSync('php', ['-r', webhookIdempCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const webhookIdempState = JSON.parse(
+      execFileSync('php', ['-r', webhookIdempCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       attempt_status: string
       allocation_count: number
     }
@@ -1150,17 +1348,30 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(webhookIdempState.allocation_count).toBe(1) // No duplicate allocation!
 
     // 3. COMMITTED RESCHEDULE RETRY (Reschedule request retry with same key)
-    const reschedCourt = arrangeCourt(manifest, { testKey: '4_8_resched', venueId: venue1A.id, price: 100000 })
+    const reschedCourt = arrangeCourt(manifest, {
+      testKey: '4_8_resched',
+      venueId: venue1A.id,
+      price: 100000,
+    })
     const reschedKey = `idemp_resched_${Date.now()}`
     const reschedSlot = getFuturePlayDate(5, 16, 0)
 
-    const firstReschedRes = await withE2EApi(page, async ({ api }, { bookingCode, courtId, slotTime, key }) => {
-      return await api.post(`/bookings/${bookingCode}/reschedule-requests`, {
-        court_id: courtId,
-        slots: [slotTime],
-        idempotency_key: key,
-      })
-    }, { bookingCode: firstBookingCode, courtId: reschedCourt.court_id, slotTime: reschedSlot.slotTime, key: reschedKey }) as {
+    const firstReschedRes = (await withE2EApi(
+      page,
+      async ({ api }, { bookingCode, courtId, slotTime, key }) => {
+        return await api.post(`/bookings/${bookingCode}/reschedule-requests`, {
+          court_id: courtId,
+          slots: [slotTime],
+          idempotency_key: key,
+        })
+      },
+      {
+        bookingCode: firstBookingCode,
+        courtId: reschedCourt.court_id,
+        slotTime: reschedSlot.slotTime,
+        key: reschedKey,
+      },
+    )) as {
       data: {
         status: string
         replacement: { code: string; status: string }
@@ -1171,13 +1382,22 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const firstReplacementCode = firstReschedRes.data.replacement.code
 
     // Client retries the exact same reschedule request (simulating network timeout)
-    const retryReschedRes = await withE2EApi(page, async ({ api }, { bookingCode, courtId, slotTime, key }) => {
-      return await api.post(`/bookings/${bookingCode}/reschedule-requests`, {
-        court_id: courtId,
-        slots: [slotTime],
-        idempotency_key: key,
-      })
-    }, { bookingCode: firstBookingCode, courtId: reschedCourt.court_id, slotTime: reschedSlot.slotTime, key: reschedKey }) as {
+    const retryReschedRes = (await withE2EApi(
+      page,
+      async ({ api }, { bookingCode, courtId, slotTime, key }) => {
+        return await api.post(`/bookings/${bookingCode}/reschedule-requests`, {
+          court_id: courtId,
+          slots: [slotTime],
+          idempotency_key: key,
+        })
+      },
+      {
+        bookingCode: firstBookingCode,
+        courtId: reschedCourt.court_id,
+        slotTime: reschedSlot.slotTime,
+        key: reschedKey,
+      },
+    )) as {
       data: {
         status: string
         replacement: { code: string; status: string }
@@ -1202,34 +1422,53 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
       echo json_encode(['replacement_count' => $count]);
     `
-    const reschedIdempState = JSON.parse(execFileSync('php', ['-r', reschedIdempCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { replacement_count: number }
+    const reschedIdempState = JSON.parse(
+      execFileSync('php', ['-r', reschedIdempCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { replacement_count: number }
 
     expect(reschedIdempState.replacement_count).toBe(1) // No duplicate replacement reservation!
 
     // 4. COMMITTED REFUND REQUEST RETRY (Refund request retry with same key)
     // Book a slot to perform refund request
-    const refundCourt = arrangeCourt(manifest, { testKey: '4_8_refund', venueId: venue1A.id, price: 100000 })
+    const refundCourt = arrangeCourt(manifest, {
+      testKey: '4_8_refund',
+      venueId: venue1A.id,
+      price: 100000,
+    })
     const refundSlot = getFuturePlayDate(6, 17, 0)
     const refundCheckoutKey = `idemp_ref_chk_${Date.now()}`
 
-    const refundBookingRes = await withE2EApi(page, async ({ api }, { courtId, slotTime, key }) => {
-      return await api.post('/bookings', {
-        court_id: courtId,
-        slots: [slotTime],
-      }, {
-        headers: { 'Idempotency-Key': key },
-      })
-    }, { courtId: refundCourt.court_id, slotTime: refundSlot.slotTime, key: refundCheckoutKey }) as {
+    const refundBookingRes = (await withE2EApi(
+      page,
+      async ({ api }, { courtId, slotTime, key }) => {
+        return await api.post(
+          '/bookings',
+          {
+            court_id: courtId,
+            slots: [slotTime],
+          },
+          {
+            headers: { 'Idempotency-Key': key },
+          },
+        )
+      },
+      { courtId: refundCourt.court_id, slotTime: refundSlot.slotTime, key: refundCheckoutKey },
+    )) as {
       booking: { code: string }
     }
     const refundBookingCode = refundBookingRes.booking.code
 
     // Confirm booking
-    const refundPayInfo = JSON.parse(execFileSync('php', ['-r', `
+    const refundPayInfo = JSON.parse(
+      execFileSync(
+        'php',
+        [
+          '-r',
+          `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -1247,7 +1486,15 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         'reservation_code' => $mapping->reservation->code,
         'slot_id' => $mapping->reservation->slots()->first()?->id,
       ]);
-    `], { cwd: backendDir, env: { ...getCanonicalBackendEnv(manifest), ...backendEnv }, encoding: 'utf-8' })) as {
+    `,
+        ],
+        {
+          cwd: backendDir,
+          env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+          encoding: 'utf-8',
+        },
+      ),
+    ) as {
       amount: number
       reference: string
       account_number: string
@@ -1266,22 +1513,32 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     // Now customer requests refund with idempotency key
     const refundReqKey = `idemp_refund_${Date.now()}`
-    const firstRefundReq = await withE2EApi(page, async ({ api }, { bookingCode, slotId, key }) => {
-      try {
-        return await api.post(`/bookings/${bookingCode}/refund-requests`, {
-          slot_ids: [slotId],
-          reason: 'Thay đổi kế hoạch đột xuất',
-          idempotency_key: key,
-          recipient: {
-            bank_code: 'MBBANK',
-            account_name: 'NGUYEN VAN A',
-            account_number: '0901000001',
-          },
-        })
-      } catch (err: any) {
-        throw new Error(`Refund request failed: ${err.status} ${JSON.stringify(err.response?.data || err.data || err.message)}`)
-      }
-    }, { bookingCode: refundPayInfo.reservation_code, slotId: refundPayInfo.slot_id, key: refundReqKey }) as {
+    const firstRefundReq = (await withE2EApi(
+      page,
+      async ({ api }, { bookingCode, slotId, key }) => {
+        try {
+          return await api.post(`/bookings/${bookingCode}/refund-requests`, {
+            slot_ids: [slotId],
+            reason: 'Thay đổi kế hoạch đột xuất',
+            idempotency_key: key,
+            recipient: {
+              bank_code: 'MBBANK',
+              account_name: 'NGUYEN VAN A',
+              account_number: '0901000001',
+            },
+          })
+        } catch (err: any) {
+          throw new Error(
+            `Refund request failed: ${err.status} ${JSON.stringify(err.response?.data || err.data || err.message)}`,
+          )
+        }
+      },
+      {
+        bookingCode: refundPayInfo.reservation_code,
+        slotId: refundPayInfo.slot_id,
+        key: refundReqKey,
+      },
+    )) as {
       data: {
         id: number
         reference_code: string
@@ -1295,18 +1552,26 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const firstRefundRef = firstRefundReq.data.reference_code
 
     // Client retries the exact same refund request with the same idempotency key
-    const retryRefundReq = await withE2EApi(page, async ({ api }, { bookingCode, slotId, key }) => {
-      return await api.post(`/bookings/${bookingCode}/refund-requests`, {
-        slot_ids: [slotId],
-        reason: 'Thay đổi kế hoạch đột xuất',
-        idempotency_key: key,
-        recipient: {
-          bank_code: 'MBBANK',
-          account_name: 'NGUYEN VAN A',
-          account_number: '0901000001',
-        },
-      })
-    }, { bookingCode: refundPayInfo.reservation_code, slotId: refundPayInfo.slot_id, key: refundReqKey }) as {
+    const retryRefundReq = (await withE2EApi(
+      page,
+      async ({ api }, { bookingCode, slotId, key }) => {
+        return await api.post(`/bookings/${bookingCode}/refund-requests`, {
+          slot_ids: [slotId],
+          reason: 'Thay đổi kế hoạch đột xuất',
+          idempotency_key: key,
+          recipient: {
+            bank_code: 'MBBANK',
+            account_name: 'NGUYEN VAN A',
+            account_number: '0901000001',
+          },
+        })
+      },
+      {
+        bookingCode: refundPayInfo.reservation_code,
+        slotId: refundPayInfo.slot_id,
+        key: refundReqKey,
+      },
+    )) as {
       data: {
         id: number
         reference_code: string
@@ -1334,11 +1599,13 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
       echo json_encode(['obligation_count' => $count]);
     `
-    const refundIdempState = JSON.parse(execFileSync('php', ['-r', refundIdempCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { obligation_count: number }
+    const refundIdempState = JSON.parse(
+      execFileSync('php', ['-r', refundIdempCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { obligation_count: number }
 
     expect(refundIdempState.obligation_count).toBe(1) // No duplicate refund obligation!
   })

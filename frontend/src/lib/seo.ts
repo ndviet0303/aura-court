@@ -49,7 +49,11 @@ export function applySeo(route?: RouteLocationNormalizedLoaded): void {
   if (typeof document !== 'undefined') {
     document.title = title
     setMeta('name', 'description', description)
-    setMeta('name', 'robots', indexable ? 'index, follow, max-image-preview:large' : 'noindex, nofollow')
+    setMeta(
+      'name',
+      'robots',
+      indexable ? 'index, follow, max-image-preview:large' : 'noindex, nofollow',
+    )
     setMeta('property', 'og:title', title)
     setMeta('property', 'og:description', description)
     setMeta('property', 'og:url', canonical)

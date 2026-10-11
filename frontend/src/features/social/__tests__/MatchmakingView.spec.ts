@@ -145,7 +145,9 @@ describe('MatchmakingView', () => {
     })
     await flushPromises()
 
-    const joinBtn = wrapper.findAll('.match-card button').find((b) => b.text().includes('Tham Gia Kèo Này'))
+    const joinBtn = wrapper
+      .findAll('.match-card button')
+      .find((b) => b.text().includes('Tham Gia Kèo Này'))
     expect(joinBtn).toBeDefined()
     await joinBtn?.trigger('click')
     await flushPromises()
@@ -155,7 +157,9 @@ describe('MatchmakingView', () => {
     expect(wrapper.find('.modal-title').text()).toContain('Tham Gia Kèo Giao Lưu')
 
     // Confirm join
-    const confirmBtn = wrapper.findAll('.modal-footer button').find((b) => b.text().includes('Xác Nhận Tham Gia'))
+    const confirmBtn = wrapper
+      .findAll('.modal-footer button')
+      .find((b) => b.text().includes('Xác Nhận Tham Gia'))
     expect(confirmBtn).toBeDefined()
     await confirmBtn?.trigger('click')
     await flushPromises()

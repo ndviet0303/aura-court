@@ -41,8 +41,12 @@ watch(
   (v) => {
     validationError.value = ''
     if (v) {
-      name.value = typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
-      address.value = typeof v.address === 'string' ? v.address : (v.address as any)?.vi || (v.address as any)?.en || ''
+      name.value =
+        typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
+      address.value =
+        typeof v.address === 'string'
+          ? v.address
+          : (v.address as any)?.vi || (v.address as any)?.en || ''
       city.value = v.city || ''
       district.value = v.district || ''
       ward.value = v.ward || ''
@@ -66,13 +70,16 @@ watch(
       isActive.value = true
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const isValidMapsUrl = computed(() => {
   const url = googleMapsUrl.value.trim()
   if (!url) return false
-  return url.startsWith('https://') && (url.includes('google.com') || url.includes('goo.gl') || url.includes('maps'))
+  return (
+    url.startsWith('https://') &&
+    (url.includes('google.com') || url.includes('goo.gl') || url.includes('maps'))
+  )
 })
 
 function handleSave() {
@@ -100,7 +107,10 @@ function handleSave() {
     phone: phone.value.trim() || undefined,
     email: email.value.trim() || undefined,
     description: description.value.trim() || undefined,
-    images: imagesText.value.split(/\r?\n/).map((image) => image.trim()).filter(Boolean),
+    images: imagesText.value
+      .split(/\r?\n/)
+      .map((image) => image.trim())
+      .filter(Boolean),
     google_maps_url: trimmedMaps || undefined,
     is_active: isActive.value,
   })
@@ -113,9 +123,13 @@ function handleSave() {
       <!-- Modal Header -->
       <div class="modal-header">
         <div class="title-with-icon">
-          <span class="material-symbols-outlined card-title-icon">{{ venue ? 'edit' : 'add_business' }}</span>
+          <span class="material-symbols-outlined card-title-icon">{{
+            venue ? 'edit' : 'add_business'
+          }}</span>
           <h3 class="modal-title">
-            {{ venue ? t('admin.venues.editVenueModalTitle') : t('admin.venues.addVenueModalTitle') }}
+            {{
+              venue ? t('admin.venues.editVenueModalTitle') : t('admin.venues.addVenueModalTitle')
+            }}
           </h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
@@ -142,14 +156,26 @@ function handleSave() {
         </div>
 
         <div class="form-group address-parts">
-          <label class="form-label">{{ t('admin.venues.cityLabel') }}<input v-model="city" type="text" class="form-input" /></label>
-          <label class="form-label">{{ t('admin.venues.districtLabel') }}<input v-model="district" type="text" class="form-input" /></label>
-          <label class="form-label">{{ t('admin.venues.wardLabel') }}<input v-model="ward" type="text" class="form-input" /></label>
+          <label class="form-label"
+            >{{ t('admin.venues.cityLabel') }}<input v-model="city" type="text" class="form-input"
+          /></label>
+          <label class="form-label"
+            >{{ t('admin.venues.districtLabel')
+            }}<input v-model="district" type="text" class="form-input"
+          /></label>
+          <label class="form-label"
+            >{{ t('admin.venues.wardLabel') }}<input v-model="ward" type="text" class="form-input"
+          /></label>
         </div>
 
         <div class="form-group contact-parts">
-          <label class="form-label">{{ t('admin.venues.phoneLabel') }}<input v-model="phone" type="tel" class="form-input" /></label>
-          <label class="form-label">{{ t('admin.venues.emailLabel') }}<input v-model="email" type="email" class="form-input" /></label>
+          <label class="form-label"
+            >{{ t('admin.venues.phoneLabel') }}<input v-model="phone" type="tel" class="form-input"
+          /></label>
+          <label class="form-label"
+            >{{ t('admin.venues.emailLabel')
+            }}<input v-model="email" type="email" class="form-input"
+          /></label>
         </div>
 
         <div class="form-group">
@@ -159,7 +185,12 @@ function handleSave() {
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.venues.imagesLabel') }}</label>
-          <textarea v-model="imagesText" class="form-input" rows="3" :placeholder="t('admin.venues.imagesHint')" />
+          <textarea
+            v-model="imagesText"
+            class="form-input"
+            rows="3"
+            :placeholder="t('admin.venues.imagesHint')"
+          />
         </div>
 
         <div class="form-group">
@@ -190,13 +221,22 @@ function handleSave() {
         <!-- Custom Status Toggle Card -->
         <div v-if="venue?.status === 'published' || venue?.status === 'active'" class="form-group">
           <label class="form-label">{{ t('admin.venues.operationalStatusLabel') }}</label>
-          <div class="status-toggle-card" :class="{ 'is-active': isActive }" @click="isActive = !isActive">
+          <div
+            class="status-toggle-card"
+            :class="{ 'is-active': isActive }"
+            @click="isActive = !isActive"
+          >
             <div class="toggle-card-left">
-              <span class="material-symbols-outlined status-card-icon" :class="isActive ? 'text-green' : 'text-muted'">
+              <span
+                class="material-symbols-outlined status-card-icon"
+                :class="isActive ? 'text-green' : 'text-muted'"
+              >
                 {{ isActive ? 'check_circle' : 'pause_circle' }}
               </span>
               <div class="toggle-card-info">
-                <strong class="toggle-card-title">{{ t('admin.venues.operatingOpenCheckbox') }}</strong>
+                <strong class="toggle-card-title">{{
+                  t('admin.venues.operatingOpenCheckbox')
+                }}</strong>
                 <span class="toggle-card-desc">
                   {{ isActive ? t('admin.venues.statusActive') : t('admin.venues.statusInactive') }}
                 </span>
@@ -346,7 +386,8 @@ function handleSave() {
   gap: 6px;
 }
 
-.address-parts, .contact-parts {
+.address-parts,
+.contact-parts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 10px;
@@ -372,7 +413,9 @@ function handleSave() {
   font-size: 13px;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
@@ -454,7 +497,10 @@ function handleSave() {
 
 .slider {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: #cbd5e1;
   transition: 0.2s;
   border-radius: 24px;
@@ -462,7 +508,7 @@ function handleSave() {
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 18px;
   width: 18px;
   left: 3px;
@@ -470,7 +516,7 @@ function handleSave() {
   background-color: white;
   transition: 0.2s;
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 input:checked + .slider {
@@ -491,8 +537,16 @@ input:checked + .slider:before {
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
 }
 
-.text-green { color: #10b981; }
-.text-muted { color: var(--muted); }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.text-green {
+  color: #10b981;
+}
+.text-muted {
+  color: var(--muted);
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 </style>

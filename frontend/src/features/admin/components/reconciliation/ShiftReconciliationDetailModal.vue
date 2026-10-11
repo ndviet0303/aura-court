@@ -33,11 +33,12 @@ watch(
   () => props.shift,
   (newShift) => {
     if (newShift) {
-      auditStatus.value = newShift.reconciliation_status || (newShift.variance === 0 ? 'matched' : 'exception')
+      auditStatus.value =
+        newShift.reconciliation_status || (newShift.variance === 0 ? 'matched' : 'exception')
       managerNote.value = newShift.review_note || ''
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleSave() {
@@ -58,7 +59,9 @@ function handleSave() {
           <span class="material-symbols-outlined card-title-icon">receipt_long</span>
           <div>
             <h3 class="modal-title">{{ t('admin.shifts.reviewModalTitle') }}</h3>
-            <span class="modal-sub-code font-mono">{{ shift.code }} · {{ resolveLocalizedText(shift.venue_name) }}</span>
+            <span class="modal-sub-code font-mono"
+              >{{ shift.code }} · {{ resolveLocalizedText(shift.venue_name) }}</span
+            >
           </div>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
@@ -73,11 +76,19 @@ function handleSave() {
           </div>
           <div class="meta-item">
             <span class="meta-lbl">{{ t('admin.shifts.openedAtLabel') }}</span>
-            <span class="meta-val font-mono">{{ shift.opened_at ? formatDateTime(shift.opened_at) : 'N/A' }}</span>
+            <span class="meta-val font-mono">{{
+              shift.opened_at ? formatDateTime(shift.opened_at) : 'N/A'
+            }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-lbl">{{ t('admin.shifts.closedAtLabel') }}</span>
-            <span class="meta-val font-mono">{{ shift.closed_at ? formatDateTime(shift.closed_at) : (shift.status === 'open' ? t('admin.shifts.statusLive') : 'N/A') }}</span>
+            <span class="meta-val font-mono">{{
+              shift.closed_at
+                ? formatDateTime(shift.closed_at)
+                : shift.status === 'open'
+                  ? t('admin.shifts.statusLive')
+                  : 'N/A'
+            }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-lbl">{{ t('admin.shifts.hdrReconciliationStatus') }}</span>
@@ -86,8 +97,8 @@ function handleSave() {
                 shift.reconciliation_status === 'matched'
                   ? t('admin.shifts.statusMatched')
                   : shift.reconciliation_status === 'approved'
-                  ? t('admin.shifts.statusApproved')
-                  : t('admin.shifts.statusException')
+                    ? t('admin.shifts.statusApproved')
+                    : t('admin.shifts.statusException')
               }}
             </span>
           </div>
@@ -107,19 +118,27 @@ function handleSave() {
             </div>
             <div class="metric-row">
               <span class="metric-key">{{ t('admin.shifts.cashSales') }}</span>
-              <strong class="metric-val text-green font-mono">+{{ formatCurrency(shift.cash_sales) }}</strong>
+              <strong class="metric-val text-green font-mono"
+                >+{{ formatCurrency(shift.cash_sales) }}</strong
+              >
             </div>
             <div class="metric-row">
               <span class="metric-key">{{ t('admin.shifts.qrSales') }}</span>
-              <strong class="metric-val text-blue font-mono">+{{ formatCurrency(shift.qr_sales) }}</strong>
+              <strong class="metric-val text-blue font-mono"
+                >+{{ formatCurrency(shift.qr_sales) }}</strong
+              >
             </div>
             <div class="metric-row">
               <span class="metric-key">{{ t('admin.shifts.walletSales') }}</span>
-              <strong class="metric-val text-blue font-mono">+{{ formatCurrency(shift.wallet_sales) }}</strong>
+              <strong class="metric-val text-blue font-mono"
+                >+{{ formatCurrency(shift.wallet_sales) }}</strong
+              >
             </div>
             <div class="metric-row total-row">
               <span class="metric-key">{{ t('admin.shifts.totalSalesLabel') }}</span>
-              <strong class="metric-val text-pink font-mono">{{ formatCurrency(shift.total_sales) }}</strong>
+              <strong class="metric-val text-pink font-mono">{{
+                formatCurrency(shift.total_sales)
+              }}</strong>
             </div>
           </div>
         </div>
@@ -138,17 +157,30 @@ function handleSave() {
             </div>
             <div class="audit-box">
               <span class="audit-lbl">{{ t('admin.shifts.calculatedExpected') }}</span>
-              <strong class="audit-val font-mono text-ink">{{ formatCurrency(shift.expected_cash) }}</strong>
+              <strong class="audit-val font-mono text-ink">{{
+                formatCurrency(shift.expected_cash)
+              }}</strong>
             </div>
             <div class="audit-box">
               <span class="audit-lbl">{{ t('admin.shifts.declaredByCashier') }}</span>
-              <strong class="audit-val font-mono text-ink">{{ formatCurrency(shift.declared_cash) }}</strong>
+              <strong class="audit-val font-mono text-ink">{{
+                formatCurrency(shift.declared_cash)
+              }}</strong>
             </div>
-            <div class="audit-box highlight-audit" :class="{ 'has-variance': shift.variance !== 0 }">
+            <div
+              class="audit-box highlight-audit"
+              :class="{ 'has-variance': shift.variance !== 0 }"
+            >
               <span class="audit-lbl">{{ t('admin.shifts.finalDiscrepancy') }}</span>
               <strong
                 class="audit-val font-mono"
-                :class="shift.variance === 0 ? 'text-green' : shift.variance < 0 ? 'text-red' : 'text-yellow'"
+                :class="
+                  shift.variance === 0
+                    ? 'text-green'
+                    : shift.variance < 0
+                      ? 'text-red'
+                      : 'text-yellow'
+                "
               >
                 {{ shift.variance > 0 ? '+' : '' }}{{ formatCurrency(shift.variance) }}
               </strong>
@@ -198,7 +230,10 @@ function handleSave() {
 
             <div v-if="shift.reviewed_by" class="reviewed-stamp">
               <span class="material-symbols-outlined icon-14 text-green">verified</span>
-              <span>Đã duyệt bởi <strong>{{ shift.reviewed_by }}</strong> vào lúc {{ shift.reviewed_at ? formatDateTime(shift.reviewed_at) : '' }}</span>
+              <span
+                >Đã duyệt bởi <strong>{{ shift.reviewed_by }}</strong> vào lúc
+                {{ shift.reviewed_at ? formatDateTime(shift.reviewed_at) : '' }}</span
+              >
             </div>
           </div>
         </div>
@@ -208,15 +243,8 @@ function handleSave() {
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.close') }}
         </AuraButton>
-        <AuraButton
-          variant="primary"
-          :disabled="saving"
-          @click="handleSave"
-        >
-          <span
-            class="material-symbols-outlined icon-16"
-            :class="{ 'spin-icon': saving }"
-          >
+        <AuraButton variant="primary" :disabled="saving" @click="handleSave">
+          <span class="material-symbols-outlined icon-16" :class="{ 'spin-icon': saving }">
             save
           </span>
           <span>{{ t('admin.shifts.saveAuditDecision') }}</span>
@@ -493,17 +521,30 @@ function handleSave() {
   color: #8b5cf6;
 }
 
-.status-exception, .status-rejected {
+.status-exception,
+.status-rejected {
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
-.text-ink { color: var(--ink); }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-green {
+  color: #10b981;
+}
+.text-blue {
+  color: #3b82f6;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
+.text-ink {
+  color: var(--ink);
+}
 
 .modal-footer {
   display: flex;
@@ -513,16 +554,24 @@ function handleSave() {
   border-top: 1px solid var(--outline);
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 :global(html.dark) .modal-card {
@@ -537,7 +586,8 @@ function handleSave() {
 }
 
 @media (max-width: 640px) {
-  .shift-meta-banner, .audit-grid {
+  .shift-meta-banner,
+  .audit-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }

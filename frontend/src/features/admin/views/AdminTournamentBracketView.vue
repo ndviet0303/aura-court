@@ -3,7 +3,12 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FixtureMatch } from '../types/tournamentAdmin'
 import { useTournamentBracketAdmin } from '../composables/useTournamentBracketAdmin'
-import { AuraButton, SelectDropdown, SkeletonLoader, type DropdownOption } from '@/shared/components'
+import {
+  AuraButton,
+  SelectDropdown,
+  SkeletonLoader,
+  type DropdownOption,
+} from '@/shared/components'
 
 import TournamentSetupWizard from '../components/tournament/TournamentSetupWizard.vue'
 import TournamentBracketTree from '../components/tournament/TournamentBracketTree.vue'
@@ -127,7 +132,9 @@ async function handleCreateTournament(payload: any) {
 
           <!-- Action Buttons -->
           <AuraButton variant="secondary" :disabled="loading" @click="loadTournaments">
-            <span class="material-symbols-outlined icon-18" :class="{ spin: loading }">refresh</span>
+            <span class="material-symbols-outlined icon-18" :class="{ spin: loading }"
+              >refresh</span
+            >
             <span>{{ t('admin.tournaments.refreshBtn') }}</span>
           </AuraButton>
 
@@ -168,7 +175,9 @@ async function handleCreateTournament(payload: any) {
       >
         <span class="material-symbols-outlined icon-18">checklist</span>
         <span>{{ t('admin.tournaments.tabCheckIn') }}</span>
-        <span v-if="participants.length > 0" class="tab-badge font-mono">{{ checkInMetrics.checkedInCount }}/{{ checkInMetrics.total }}</span>
+        <span v-if="participants.length > 0" class="tab-badge font-mono"
+          >{{ checkInMetrics.checkedInCount }}/{{ checkInMetrics.total }}</span
+        >
       </button>
 
       <button
@@ -337,7 +346,8 @@ async function handleCreateTournament(payload: any) {
   font-weight: 700;
 }
 
-.t-venue, .t-dates {
+.t-venue,
+.t-dates {
   display: inline-flex;
   align-items: center;
   gap: 4px;

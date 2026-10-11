@@ -48,7 +48,9 @@ const liveLogs = computed(() => [
           <span class="material-symbols-outlined header-icon">monitoring</span>
           <h3 class="card-title">{{ t('admin.reconciliation.analyticsTrendTitle') }}</h3>
         </div>
-        <span class="rate-badge">{{ t('admin.reconciliation.matchRateAccuracy', { rate: matchRate }) }}</span>
+        <span class="rate-badge">{{
+          t('admin.reconciliation.matchRateAccuracy', { rate: matchRate })
+        }}</span>
       </div>
 
       <!-- Trend Visualization -->
@@ -63,11 +65,7 @@ const liveLogs = computed(() => [
         </template>
         <template v-else>
           <div class="bars-wrapper">
-            <div
-              v-for="(point, idx) in healthTrend"
-              :key="idx"
-              class="bar-column"
-            >
+            <div v-for="(point, idx) in healthTrend" :key="idx" class="bar-column">
               <div class="bar-track">
                 <div
                   class="bar-fill"
@@ -122,14 +120,12 @@ const liveLogs = computed(() => [
           </div>
         </template>
         <template v-else>
-          <div
-            v-for="(log, idx) in liveLogs"
-            :key="idx"
-            class="stream-item"
-          >
+          <div v-for="(log, idx) in liveLogs" :key="idx" class="stream-item">
             <div class="stream-icon-box" :class="`icon-${log.type}`">
               <span class="material-symbols-outlined text-[16px]">
-                {{ log.type === 'sync' ? 'sync' : log.type === 'auto_resolve' ? 'rule' : 'warning' }}
+                {{
+                  log.type === 'sync' ? 'sync' : log.type === 'auto_resolve' ? 'rule' : 'warning'
+                }}
               </span>
             </div>
             <div class="stream-details">
@@ -224,8 +220,15 @@ const liveLogs = computed(() => [
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
 }
 
 .chart-container {
@@ -427,8 +430,14 @@ const liveLogs = computed(() => [
 }
 
 @keyframes shimmer {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 </style>

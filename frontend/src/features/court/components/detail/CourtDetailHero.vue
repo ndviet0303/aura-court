@@ -44,10 +44,16 @@ function handleImageError(event: Event) {
         <h1 class="court-title">
           {{ court.name }} · <span class="venue-name">{{ court.venue?.name }}</span>
         </h1>
-        <a href="#reviews-section" class="rating-display rating-display-link" :title="$t('courtDetail.reviewsCount', { count: court.reviews_count || 42 })">
+        <a
+          href="#reviews-section"
+          class="rating-display rating-display-link"
+          :title="$t('courtDetail.reviewsCount', { count: court.reviews_count || 42 })"
+        >
           <span class="material-symbols-outlined icon-star">star</span>
           <strong>{{ Number(court.reviews_avg_rating || 4.8).toFixed(1) }}</strong>
-          <span class="reviews-count">({{ $t('courtDetail.reviewsCount', { count: court.reviews_count || 42 }) }})</span>
+          <span class="reviews-count"
+            >({{ $t('courtDetail.reviewsCount', { count: court.reviews_count || 42 }) }})</span
+          >
           <span class="material-symbols-outlined icon-12">expand_more</span>
         </a>
       </div>
@@ -179,7 +185,11 @@ function handleImageError(event: Event) {
 
 .icon-star {
   font-size: 18px;
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   color: var(--accent);
 }
 

@@ -76,11 +76,13 @@ describe('BusinessInfoStep', () => {
     const saveBtn = wrapper.find('button[type="button"]')
     await saveBtn.trigger('click')
 
-    expect(save).toHaveBeenCalledWith(expect.objectContaining({
-      business_name: 'CLB The Thao Hoang Gia',
-      business_type: 'company',
-      expected_version: 1,
-    }))
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        business_name: 'CLB The Thao Hoang Gia',
+        business_type: 'company',
+        expected_version: 1,
+      }),
+    )
   })
 
   it('renders field errors inline', () => {
@@ -122,8 +124,12 @@ describe('BusinessInfoStep', () => {
     const bankSelect = wrapper.find<HTMLSelectElement>('select#bank_select')
     expect(bankSelect.exists()).toBe(true)
     await bankSelect.setValue('MB')
-    expect((wrapper.find<HTMLInputElement>('input#bank_code').element as HTMLInputElement).value).toBe('MB')
-    expect((wrapper.find<HTMLInputElement>('input#bank_name').element as HTMLInputElement).value).toContain('MBBank')
+    expect(
+      (wrapper.find<HTMLInputElement>('input#bank_code').element as HTMLInputElement).value,
+    ).toBe('MB')
+    expect(
+      (wrapper.find<HTMLInputElement>('input#bank_name').element as HTMLInputElement).value,
+    ).toContain('MBBank')
 
     // Sports chip click
     const chips = wrapper.findAll('.sport-chip-btn')
@@ -131,7 +137,9 @@ describe('BusinessInfoStep', () => {
     const pickleballChip = chips.find((c) => c.text().includes('Pickleball'))
     expect(pickleballChip).toBeDefined()
     await pickleballChip!.trigger('click')
-    expect((wrapper.find<HTMLInputElement>('input#sports').element as HTMLInputElement).value).toContain('Pickleball')
+    expect(
+      (wrapper.find<HTMLInputElement>('input#sports').element as HTMLInputElement).value,
+    ).toContain('Pickleball')
   })
 })
 

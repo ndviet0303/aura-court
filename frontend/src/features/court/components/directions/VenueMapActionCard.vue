@@ -31,11 +31,7 @@ const encodedAddress = computed(() => {
       </div>
 
       <div class="action-buttons-group">
-        <button
-          type="button"
-          class="btn-primary-map"
-          @click="emit('openMaps')"
-        >
+        <button type="button" class="btn-primary-map" @click="emit('openMaps')">
           <span class="material-symbols-outlined icon-18">directions</span>
           <span>{{ $t('directions.openGoogleMaps') }}</span>
         </button>

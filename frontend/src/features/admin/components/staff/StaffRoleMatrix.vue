@@ -20,14 +20,78 @@ interface PermissionRow {
 }
 
 const permissionsMatrix: PermissionRow[] = [
-  { moduleKey: 'courtManagement', actionKey: 'courtManagementDesc', owner: true, manager: true, receptionist: false, tech: true, staff: false },
-  { moduleKey: 'pricingRules', actionKey: 'pricingRulesDesc', owner: true, manager: true, receptionist: false, tech: false, staff: false },
-  { moduleKey: 'posAndCashier', actionKey: 'posAndCashierDesc', owner: true, manager: true, receptionist: true, tech: false, staff: true },
-  { moduleKey: 'refundProcessing', actionKey: 'refundProcessingDesc', owner: true, manager: true, receptionist: false, tech: false, staff: false },
-  { moduleKey: 'maintenanceSchedule', actionKey: 'maintenanceScheduleDesc', owner: true, manager: true, receptionist: true, tech: true, staff: false },
-  { moduleKey: 'tournamentManagement', actionKey: 'tournamentManagementDesc', owner: true, manager: true, receptionist: true, tech: false, staff: true },
-  { moduleKey: 'financialReports', actionKey: 'financialReportsDesc', owner: true, manager: true, receptionist: false, tech: false, staff: false },
-  { moduleKey: 'staffAndRoles', actionKey: 'staffAndRolesDesc', owner: true, manager: false, receptionist: false, tech: false, staff: false },
+  {
+    moduleKey: 'courtManagement',
+    actionKey: 'courtManagementDesc',
+    owner: true,
+    manager: true,
+    receptionist: false,
+    tech: true,
+    staff: false,
+  },
+  {
+    moduleKey: 'pricingRules',
+    actionKey: 'pricingRulesDesc',
+    owner: true,
+    manager: true,
+    receptionist: false,
+    tech: false,
+    staff: false,
+  },
+  {
+    moduleKey: 'posAndCashier',
+    actionKey: 'posAndCashierDesc',
+    owner: true,
+    manager: true,
+    receptionist: true,
+    tech: false,
+    staff: true,
+  },
+  {
+    moduleKey: 'refundProcessing',
+    actionKey: 'refundProcessingDesc',
+    owner: true,
+    manager: true,
+    receptionist: false,
+    tech: false,
+    staff: false,
+  },
+  {
+    moduleKey: 'maintenanceSchedule',
+    actionKey: 'maintenanceScheduleDesc',
+    owner: true,
+    manager: true,
+    receptionist: true,
+    tech: true,
+    staff: false,
+  },
+  {
+    moduleKey: 'tournamentManagement',
+    actionKey: 'tournamentManagementDesc',
+    owner: true,
+    manager: true,
+    receptionist: true,
+    tech: false,
+    staff: true,
+  },
+  {
+    moduleKey: 'financialReports',
+    actionKey: 'financialReportsDesc',
+    owner: true,
+    manager: true,
+    receptionist: false,
+    tech: false,
+    staff: false,
+  },
+  {
+    moduleKey: 'staffAndRoles',
+    actionKey: 'staffAndRolesDesc',
+    owner: true,
+    manager: false,
+    receptionist: false,
+    tech: false,
+    staff: false,
+  },
 ]
 </script>
 
@@ -63,11 +127,7 @@ const permissionsMatrix: PermissionRow[] = [
       </div>
 
       <div class="matrix-body-rows">
-        <div
-          v-for="(row, idx) in permissionsMatrix"
-          :key="idx"
-          class="matrix-row"
-        >
+        <div v-for="(row, idx) in permissionsMatrix" :key="idx" class="matrix-row">
           <div class="module-action-info">
             <strong class="module-title">{{ t(`admin.staff.matrix.${row.moduleKey}`) }}</strong>
             <span class="action-desc">{{ t(`admin.staff.matrix.${row.actionKey}`) }}</span>
@@ -82,7 +142,9 @@ const permissionsMatrix: PermissionRow[] = [
             <span v-else class="perm-no">—</span>
           </div>
           <div class="check-col">
-            <span v-if="row.receptionist" class="material-symbols-outlined perm-yes">check_circle</span>
+            <span v-if="row.receptionist" class="material-symbols-outlined perm-yes"
+              >check_circle</span
+            >
             <span v-else class="perm-no">—</span>
           </div>
           <div class="check-col">
@@ -249,7 +311,7 @@ const permissionsMatrix: PermissionRow[] = [
 }
 
 :global(html.dark) .module-title {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 @media (max-width: 900px) {

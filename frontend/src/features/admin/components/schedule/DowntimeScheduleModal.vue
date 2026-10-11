@@ -14,7 +14,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', payload: { court_id: number; starts_at: string; ends_at: string; reason: string }): void
+  (
+    e: 'submit',
+    payload: { court_id: number; starts_at: string; ends_at: string; reason: string },
+  ): void
 }>()
 
 const { t } = useI18n()
@@ -37,7 +40,7 @@ const courtOptions = computed<DropdownOption[]>(() =>
     value: c.id,
     label: resolveLocalizedText(c.name),
     icon: 'sports_tennis',
-  }))
+  })),
 )
 
 watch(
@@ -47,7 +50,7 @@ watch(
       courtId.value = newCourts[0].id
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleSubmit() {
@@ -69,7 +72,9 @@ function handleSubmit() {
           <span class="material-symbols-outlined card-title-icon">build</span>
           <h3 class="modal-title modal-title-text">{{ t('admin.schedule.downtimeModalTitle') }}</h3>
         </div>
-        <button type="button" class="modal-close-btn btn-modal-close" @click="emit('close')">✕</button>
+        <button type="button" class="modal-close-btn btn-modal-close" @click="emit('close')">
+          ✕
+        </button>
       </div>
 
       <div class="modal-body">

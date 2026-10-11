@@ -54,7 +54,9 @@ const { t } = useI18n()
         <span class="material-symbols-outlined icon-18">badge</span>
         <span v-if="activeShift">
           {{ t('admin.pos.shiftNumber', { id: activeShift.id }) }}
-          <span v-if="activeShift.cashier?.name" class="cashier-name">({{ activeShift.cashier.name }})</span>
+          <span v-if="activeShift.cashier?.name" class="cashier-name"
+            >({{ activeShift.cashier.name }})</span
+          >
         </span>
         <span v-else>{{ t('admin.pos.openShift') }}</span>
       </button>
@@ -68,7 +70,9 @@ const { t } = useI18n()
         <span class="material-symbols-outlined icon-18">
           {{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}
         </span>
-        <span class="btn-text">{{ isFullscreen ? t('admin.pos.minimize') : t('admin.pos.fullscreen') }}</span>
+        <span class="btn-text">{{
+          isFullscreen ? t('admin.pos.minimize') : t('admin.pos.fullscreen')
+        }}</span>
       </button>
     </div>
   </header>

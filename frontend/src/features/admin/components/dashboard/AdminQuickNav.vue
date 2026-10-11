@@ -13,15 +13,55 @@ interface QuickNavItem {
 }
 
 const navItems: QuickNavItem[] = [
-  { id: 'manage', labelKey: 'admin.dashboard.quickNavManage', path: '/admin/manage', icon: 'grid_view' },
+  {
+    id: 'manage',
+    labelKey: 'admin.dashboard.quickNavManage',
+    path: '/admin/manage',
+    icon: 'grid_view',
+  },
   { id: 'staff', labelKey: 'admin.dashboard.quickNavStaff', path: '/admin/staff', icon: 'badge' },
-  { id: 'shifts', labelKey: 'admin.dashboard.quickNavShifts', path: '/admin/shifts', icon: 'receipt_long' },
-  { id: 'contracts', labelKey: 'admin.dashboard.quickNavContracts', path: '/admin/contracts', icon: 'contract' },
-  { id: 'pricing', labelKey: 'admin.dashboard.quickNavPricing', path: '/admin/pricing', icon: 'price_change' },
-  { id: 'venues', labelKey: 'admin.dashboard.quickNavVenues', path: '/admin/venues', icon: 'location_on' },
-  { id: 'payouts', labelKey: 'admin.dashboard.quickNavPayouts', path: '/admin/payouts', icon: 'account_balance_wallet' },
-  { id: 'schedule', labelKey: 'admin.dashboard.quickNavSchedule', path: '/admin/schedule', icon: 'schedule' },
-  { id: 'tournaments', labelKey: 'admin.dashboard.quickNavTournaments', path: '/admin/tournaments', icon: 'account_tree' },
+  {
+    id: 'shifts',
+    labelKey: 'admin.dashboard.quickNavShifts',
+    path: '/admin/shifts',
+    icon: 'receipt_long',
+  },
+  {
+    id: 'contracts',
+    labelKey: 'admin.dashboard.quickNavContracts',
+    path: '/admin/contracts',
+    icon: 'contract',
+  },
+  {
+    id: 'pricing',
+    labelKey: 'admin.dashboard.quickNavPricing',
+    path: '/admin/pricing',
+    icon: 'price_change',
+  },
+  {
+    id: 'venues',
+    labelKey: 'admin.dashboard.quickNavVenues',
+    path: '/admin/venues',
+    icon: 'location_on',
+  },
+  {
+    id: 'payouts',
+    labelKey: 'admin.dashboard.quickNavPayouts',
+    path: '/admin/payouts',
+    icon: 'account_balance_wallet',
+  },
+  {
+    id: 'schedule',
+    labelKey: 'admin.dashboard.quickNavSchedule',
+    path: '/admin/schedule',
+    icon: 'schedule',
+  },
+  {
+    id: 'tournaments',
+    labelKey: 'admin.dashboard.quickNavTournaments',
+    path: '/admin/tournaments',
+    icon: 'account_tree',
+  },
 ]
 </script>
 
@@ -32,12 +72,7 @@ const navItems: QuickNavItem[] = [
       <h3 class="title">{{ t('admin.dashboard.quickNavTitle') }}</h3>
     </div>
     <div class="nav-grid">
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.id"
-        :to="item.path"
-        class="nav-card-item"
-      >
+      <RouterLink v-for="item in navItems" :key="item.id" :to="item.path" class="nav-card-item">
         <span class="material-symbols-outlined n-icon">{{ item.icon }}</span>
         <strong class="n-name">{{ t(item.labelKey) }}</strong>
         <span class="material-symbols-outlined n-arrow">arrow_forward</span>

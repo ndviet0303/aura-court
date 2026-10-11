@@ -31,7 +31,9 @@ export function useLoyaltyPreview() {
    * Fetches authoritative loyalty preview from backend.
    * Guarded against stale in-flight responses.
    */
-  async function fetchPreview(params: LoyaltyPreviewPayload): Promise<LoyaltyPreviewResponse | null> {
+  async function fetchPreview(
+    params: LoyaltyPreviewPayload,
+  ): Promise<LoyaltyPreviewResponse | null> {
     const requestId = ++latestRequestId
     loading.value = true
     error.value = null
@@ -78,14 +80,19 @@ export function useLoyaltyPreview() {
       clearPoints()
       return 0
     }
-    const calculated = Math.min(maxUsablePoints.value, Math.floor((maxUsablePoints.value * percentage) / 100))
+    const calculated = Math.min(
+      maxUsablePoints.value,
+      Math.floor((maxUsablePoints.value * percentage) / 100),
+    )
     pointsSelected.value = calculated
     return calculated
   }
 
   const hasPoints = computed(() => balance.value > 0)
   const hasPolicy = computed(() => !noPolicy.value && policy.value !== null)
-  const isAvailable = computed(() => hasPoints.value && hasPolicy.value && maxUsablePoints.value > 0)
+  const isAvailable = computed(
+    () => hasPoints.value && hasPolicy.value && maxUsablePoints.value > 0,
+  )
 
   return {
     organizationId,

@@ -31,9 +31,9 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Fetch platform plans catalog
-    const catalogRes = await withE2EApi(page, async ({ api }) => {
+    const catalogRes = (await withE2EApi(page, async ({ api }) => {
       return await api.get('/platform/plans')
-    }) as {
+    })) as {
       data: Array<{
         id: number
         name: string
@@ -44,19 +44,25 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     }
 
     expect(catalogRes.data?.length).toBeGreaterThan(0)
-    const selectedPlan = catalogRes.data.find((plan) => plan.id === manifest.fixtures?.platform_plan?.id)
+    const selectedPlan = catalogRes.data.find(
+      (plan) => plan.id === manifest.fixtures?.platform_plan?.id,
+    )
     if (!selectedPlan) throw new Error('Run-owned platform plan missing from the published catalog')
     expect(selectedPlan.id).toBeDefined()
     expect(selectedPlan.quotas.max_venues).toBeGreaterThan(0)
     expect(selectedPlan.quotas.max_courts).toBeGreaterThan(0)
 
     // 3. Owner selects plan
-    const selectRes = await withE2EApi(page, async ({ api }, { orgId, planId, termsVersion }) => {
-      return await api.post(`/partner/organizations/${orgId}/subscription/select-plan`, {
-        plan_id: planId,
-        accepted_terms_version: termsVersion,
-      })
-    }, { orgId, planId: selectedPlan.id, termsVersion: selectedPlan.terms.version }) as {
+    const selectRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, planId, termsVersion }) => {
+        return await api.post(`/partner/organizations/${orgId}/subscription/select-plan`, {
+          plan_id: planId,
+          accepted_terms_version: termsVersion,
+        })
+      },
+      { orgId, planId: selectedPlan.id, termsVersion: selectedPlan.terms.version },
+    )) as {
       data: { plan_id: number; plan_name: string }
     }
 
@@ -130,11 +136,13 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
         'terms_version' => (string) $plan->terms_version,
       ]);
     `
-    const trialFixture = JSON.parse(execFileSync('php', ['-r', setupScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { email: string; org_id: number; plan_id: number; terms_version: string }
+    const trialFixture = JSON.parse(
+      execFileSync('php', ['-r', setupScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { email: string; org_id: number; plan_id: number; terms_version: string }
 
     // 1. Log in as trial owner
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -144,12 +152,20 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Activate trial with matching terms version
-    const trialRes = await withE2EApi(page, async ({ api }, { orgId, planId, termsVersion }) => {
-      return await api.post(`/partner/organizations/${orgId}/subscription/activate-trial`, {
-        plan_id: planId,
-        accepted_terms_version: termsVersion,
-      })
-    }, { orgId: trialFixture.org_id, planId: trialFixture.plan_id, termsVersion: trialFixture.terms_version }) as {
+    const trialRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, planId, termsVersion }) => {
+        return await api.post(`/partner/organizations/${orgId}/subscription/activate-trial`, {
+          plan_id: planId,
+          accepted_terms_version: termsVersion,
+        })
+      },
+      {
+        orgId: trialFixture.org_id,
+        planId: trialFixture.plan_id,
+        termsVersion: trialFixture.terms_version,
+      },
+    )) as {
       data: { status: string; is_trial: boolean }
     }
 
@@ -157,9 +173,13 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     expect(trialRes.data.is_trial).toBe(true)
 
     // 3. Inspect current subscription and quotas
-    const currentRes = await withE2EApi(page, async ({ api }, { orgId }) => {
-      return await api.get(`/partner/organizations/${orgId}/subscription/current`)
-    }, { orgId: trialFixture.org_id }) as {
+    const currentRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId }) => {
+        return await api.get(`/partner/organizations/${orgId}/subscription/current`)
+      },
+      { orgId: trialFixture.org_id },
+    )) as {
       has_active_subscription: boolean
       can_take_bookings: boolean
       quotas: { venues_count: number; max_venues: number; courts_count: number; max_courts: number }
@@ -173,19 +193,29 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     // 4. Negative test: Second trial activation on same organization is rejected
     let secondTrialFailed = false
     try {
-      await withE2EApi(page, async ({ api }, { orgId, planId, termsVersion }) => {
-        await api.post(`/partner/organizations/${orgId}/subscription/activate-trial`, {
-          plan_id: planId,
-          accepted_terms_version: termsVersion,
-        })
-      }, { orgId: trialFixture.org_id, planId: trialFixture.plan_id, termsVersion: trialFixture.terms_version })
+      await withE2EApi(
+        page,
+        async ({ api }, { orgId, planId, termsVersion }) => {
+          await api.post(`/partner/organizations/${orgId}/subscription/activate-trial`, {
+            plan_id: planId,
+            accepted_terms_version: termsVersion,
+          })
+        },
+        {
+          orgId: trialFixture.org_id,
+          planId: trialFixture.plan_id,
+          termsVersion: trialFixture.terms_version,
+        },
+      )
     } catch {
       secondTrialFailed = true
     }
     expect(secondTrialFailed).toBe(true)
   })
 
-  test('7.3.3: Bắt đầu thanh toán & Bảo mật: Biên nhận đặt sân của chủ sân KHÔNG kích hoạt gói nền tảng', async ({ page }) => {
+  test('7.3.3: Bắt đầu thanh toán & Bảo mật: Biên nhận đặt sân của chủ sân KHÔNG kích hoạt gói nền tảng', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -199,20 +229,30 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // Fetch plan from catalog with valid terms
-    const catalogRes = await withE2EApi(page, async ({ api }) => {
+    const catalogRes = (await withE2EApi(page, async ({ api }) => {
       return await api.get('/platform/plans')
-    }) as { data: Array<{ id: number; name: string; terms: { version: string } }> }
-    const plan = catalogRes.data.find(item => item.id === manifest.fixtures?.platform_plan?.id)
+    })) as { data: Array<{ id: number; name: string; terms: { version: string } }> }
+    const plan = catalogRes.data.find((item) => item.id === manifest.fixtures?.platform_plan?.id)
     if (!plan?.id) throw new Error('Plan missing from catalog')
 
     // 2. Initiate platform fee payment
-    const initiateRes = await withE2EApi(page, async ({ api }, { orgId, planId, termsVersion }) => {
-      return await api.post(`/partner/organizations/${orgId}/subscription/initiate-payment`, {
-        plan_id: planId,
-        accepted_terms_version: termsVersion,
-      })
-    }, { orgId, planId: plan.id, termsVersion: plan.terms.version }) as {
-      data: { id: number; reference_code: string; amount: number; currency?: string; status: string }
+    const initiateRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, planId, termsVersion }) => {
+        return await api.post(`/partner/organizations/${orgId}/subscription/initiate-payment`, {
+          plan_id: planId,
+          accepted_terms_version: termsVersion,
+        })
+      },
+      { orgId, planId: plan.id, termsVersion: plan.terms.version },
+    )) as {
+      data: {
+        id: number
+        reference_code: string
+        amount: number
+        currency?: string
+        status: string
+      }
     }
 
     expect(initiateRes.data?.reference_code).toBeDefined()
@@ -248,11 +288,13 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
         'is_succeeded' => $attempt->isSucceeded(),
       ]);
     `
-    const preCheck = JSON.parse(execFileSync('php', ['-r', ownerReceiptScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { status: string; is_succeeded: boolean }
+    const preCheck = JSON.parse(
+      execFileSync('php', ['-r', ownerReceiptScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { status: string; is_succeeded: boolean }
 
     expect(preCheck.status).toBe('pending')
     expect(preCheck.is_succeeded).toBe(false)
@@ -320,24 +362,30 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
         'sub_status' => $sub ? $sub->status : null,
       ]);
     `
-    const confirmResult = JSON.parse(execFileSync('php', ['-r', confirmScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { attempt_status: string; sub_status: string }
+    const confirmResult = JSON.parse(
+      execFileSync('php', ['-r', confirmScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { attempt_status: string; sub_status: string }
 
     expect(confirmResult.attempt_status).toBe('succeeded')
     expect(confirmResult.sub_status).toBe('active')
 
     // 5. Query confirm-payment endpoint via client: reports succeeded
-    const clientConfirmRes = await withE2EApi(page, async ({ api }, { orgId, ref, amount }) => {
-      return await api.post(`/partner/organizations/${orgId}/subscription/confirm-payment`, {
-        reference_code: ref,
-        provider_transaction_id: 'TXN_CLIENT_CHECK',
-        amount,
-        currency: 'VND',
-      })
-    }, { orgId, ref: platformRef, amount: initiateRes.data.amount }) as { data: { status: string; is_duplicate: boolean } }
+    const clientConfirmRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, ref, amount }) => {
+        return await api.post(`/partner/organizations/${orgId}/subscription/confirm-payment`, {
+          reference_code: ref,
+          provider_transaction_id: 'TXN_CLIENT_CHECK',
+          amount,
+          currency: 'VND',
+        })
+      },
+      { orgId, ref: platformRef, amount: initiateRes.data.amount },
+    )) as { data: { status: string; is_duplicate: boolean } }
 
     expect(clientConfirmRes.data.status).toBe('succeeded')
     expect(clientConfirmRes.data.is_duplicate).toBe(true)
@@ -357,11 +405,15 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Cancel auto-renewal
-    const cancelRes = await withE2EApi(page, async ({ api }, { orgId }) => {
-      return await api.post(`/partner/organizations/${orgId}/subscription/cancel-renewal`, {
-        reason: 'Không còn nhu cầu gia hạn tự động',
-      })
-    }, { orgId }) as { data: { auto_renew: boolean; status: string } }
+    const cancelRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId }) => {
+        return await api.post(`/partner/organizations/${orgId}/subscription/cancel-renewal`, {
+          reason: 'Không còn nhu cầu gia hạn tự động',
+        })
+      },
+      { orgId },
+    )) as { data: { auto_renew: boolean; status: string } }
 
     expect(cancelRes.data.auto_renew).toBe(false)
     expect(cancelRes.data.status).toBe('active') // remains active until end of period
@@ -407,9 +459,13 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     expect(expiredStatus).toBe('expired')
 
     // 4. Verify current subscription reports cannot take bookings
-    const currentRes = await withE2EApi(page, async ({ api }, { orgId }) => {
-      return await api.get(`/partner/organizations/${orgId}/subscription/current`)
-    }, { orgId }) as { has_active_subscription: boolean; can_take_bookings: boolean }
+    const currentRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId }) => {
+        return await api.get(`/partner/organizations/${orgId}/subscription/current`)
+      },
+      { orgId },
+    )) as { has_active_subscription: boolean; can_take_bookings: boolean }
 
     expect(currentRes.has_active_subscription).toBe(false)
     expect(currentRes.can_take_bookings).toBe(false)
@@ -437,7 +493,9 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     })
   })
 
-  test('7.3.5: Quản trị gói nền tảng (chỉ qua API) & Từ chối người dùng không phải admin', async ({ page }) => {
+  test('7.3.5: Quản trị gói nền tảng (chỉ qua API) & Từ chối người dùng không phải admin', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const admin = getActorCredentials(manifest, 'admin')
     const customer = getActorCredentials(manifest, 'customer')
@@ -483,31 +541,39 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
     // 4. Platform Admin lists and creates platform plan via API
     // Note: Admin platform plan CRUD is an API-only operation as documented in task 7.3
     const uniquePlanCode = `plan_enterprise_${Date.now()}`
-    const createPlanRes = await withE2EApi(page, async ({ api }, { code }) => {
-      return await api.post('/admin/platform-plans', {
-        name: 'Gói Doanh Nghiệp Mở Rộng',
-        code,
-        price: 2500000,
-        currency: 'VND',
-        billing_cycle: 'monthly',
-        terms_version: 'v1.0',
-        terms_text: 'Điều khoản sử dụng gói dịch vụ doanh nghiệp mở rộng.',
-        max_venues: 10,
-        max_staff: 30,
-        trial_days: 14,
-        features: ['custom_branding', 'priority_support', 'unlimited_shifts'],
-      })
-    }, { code: uniquePlanCode }) as { data: { id: number; name: string; is_active: boolean } }
+    const createPlanRes = (await withE2EApi(
+      page,
+      async ({ api }, { code }) => {
+        return await api.post('/admin/platform-plans', {
+          name: 'Gói Doanh Nghiệp Mở Rộng',
+          code,
+          price: 2500000,
+          currency: 'VND',
+          billing_cycle: 'monthly',
+          terms_version: 'v1.0',
+          terms_text: 'Điều khoản sử dụng gói dịch vụ doanh nghiệp mở rộng.',
+          max_venues: 10,
+          max_staff: 30,
+          trial_days: 14,
+          features: ['custom_branding', 'priority_support', 'unlimited_shifts'],
+        })
+      },
+      { code: uniquePlanCode },
+    )) as { data: { id: number; name: string; is_active: boolean } }
 
     expect(createPlanRes.data?.id).toBeDefined()
     expect(createPlanRes.data?.name).toBe('Gói Doanh Nghiệp Mở Rộng')
 
     // 5. Admin publishes plan
-    const publishRes = await withE2EApi(page, async ({ api }, { id }) => {
-      return await api.post(`/admin/platform-plans/${id}/publish`, {
-        expected_version: 1,
-      })
-    }, { id: createPlanRes.data.id }) as { data: { is_active: boolean } }
+    const publishRes = (await withE2EApi(
+      page,
+      async ({ api }, { id }) => {
+        return await api.post(`/admin/platform-plans/${id}/publish`, {
+          expected_version: 1,
+        })
+      },
+      { id: createPlanRes.data.id },
+    )) as { data: { is_active: boolean } }
     expect(publishRes.data?.is_active).toBe(true)
   })
 })

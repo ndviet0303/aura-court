@@ -25,7 +25,9 @@ const { t } = useI18n()
         <SkeletonLoader height="14px" width="40%" class="mt-1" />
       </div>
       <template v-else>
-        <strong class="kpi-value">{{ t('admin.contracts.activeContractsCount', { count: stats.active_contracts }) }}</strong>
+        <strong class="kpi-value">{{
+          t('admin.contracts.activeContractsCount', { count: stats.active_contracts })
+        }}</strong>
         <span class="kpi-trend text-green">{{ t('admin.contracts.activeTrend') }}</span>
       </template>
     </div>
@@ -57,7 +59,9 @@ const { t } = useI18n()
         <SkeletonLoader height="14px" width="45%" class="mt-1" />
       </div>
       <template v-else>
-        <strong class="kpi-value text-yellow">{{ t('admin.contracts.overdueCount', { count: stats.overdue_cycles }) }}</strong>
+        <strong class="kpi-value text-yellow">{{
+          t('admin.contracts.overdueCount', { count: stats.overdue_cycles })
+        }}</strong>
         <span class="kpi-trend text-red">{{ t('admin.contracts.overdueWarning') }}</span>
       </template>
     </div>
@@ -95,7 +99,9 @@ const { t } = useI18n()
   border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .kpi-card:hover {
@@ -131,10 +137,18 @@ const { t } = useI18n()
   color: var(--muted);
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
 
 .kpi-skeleton-wrap {
   display: flex;

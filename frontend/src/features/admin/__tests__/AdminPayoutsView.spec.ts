@@ -118,7 +118,12 @@ describe('AdminPayoutsView', () => {
     vi.mocked(apiV2.get).mockImplementation(mockGet)
 
     const mockPost = async (url: string, payload: any) => {
-      if (url.includes('/finance/payouts') && !url.includes('/approve') && !url.includes('/submit') && !url.includes('/status')) {
+      if (
+        url.includes('/finance/payouts') &&
+        !url.includes('/approve') &&
+        !url.includes('/submit') &&
+        !url.includes('/status')
+      ) {
         return {
           payout: {
             id: 3,

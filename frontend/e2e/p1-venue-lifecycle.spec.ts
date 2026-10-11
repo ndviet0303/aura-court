@@ -1,4 +1,9 @@
-import { arrangeCourt, executeGuardedBackendPhp, getCanonicalBackendEnv, getFuturePlayDate } from './runner/test-data.ts'
+import {
+  arrangeCourt,
+  executeGuardedBackendPhp,
+  getCanonicalBackendEnv,
+  getFuturePlayDate,
+} from './runner/test-data.ts'
 import { withE2EApi } from './runner/with-api.ts'
 import { test, expect } from '@playwright/test'
 import { getTestManifest } from './runner/test-data.ts'
@@ -19,7 +24,9 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     })
   })
 
-  test('7.4.1: Tạo nháp cơ sở, cập nhật thông tin giới thiệu, hình ảnh và tiện ích', async ({ page }) => {
+  test('7.4.1: Tạo nháp cơ sở, cập nhật thông tin giới thiệu, hình ảnh và tiện ích', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -34,16 +41,20 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
 
     // 2. Create draft venue via partner API
     const uniqueSlug = `venue-draft-${Date.now()}`
-    const draftVenueRes = await withE2EApi(page, async ({ api }, { orgId, slug }) => {
-      return await api.post(`/partner/organizations/${orgId}/venues`, {
-        name: `Sân Cầu Lông Thử Nghiệm ${slug}`,
-        address: '789 Đường Thể Thao Mới, Phường 1, Quận 3',
-        city: 'Hồ Chí Minh',
-        district: 'Quận 3',
-        phone: '0901234567',
-        description: 'Bản nháp cơ sở thể thao để kiểm tra quy trình xuất bản.',
-      })
-    }, { orgId, slug: uniqueSlug }) as { data: { id: number; name: string; status: string; is_active: boolean } }
+    const draftVenueRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, slug }) => {
+        return await api.post(`/partner/organizations/${orgId}/venues`, {
+          name: `Sân Cầu Lông Thử Nghiệm ${slug}`,
+          address: '789 Đường Thể Thao Mới, Phường 1, Quận 3',
+          city: 'Hồ Chí Minh',
+          district: 'Quận 3',
+          phone: '0901234567',
+          description: 'Bản nháp cơ sở thể thao để kiểm tra quy trình xuất bản.',
+        })
+      },
+      { orgId, slug: uniqueSlug },
+    )) as { data: { id: number; name: string; status: string; is_active: boolean } }
 
     expect(draftVenueRes.data?.id).toBeDefined()
     expect(draftVenueRes.data?.status).toBe('draft')
@@ -51,23 +62,31 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     const venueId = draftVenueRes.data.id
 
     // 3. Update profile with amenities, images, and map url
-    const updateRes = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      return await api.put(`/partner/organizations/${orgId}/venues/${venueId}`, {
-        name: 'Sân Cầu Lông Thử Nghiệm Hoàn Thiện',
-        address: '789 Đường Thể Thao Mới, Phường 1, Quận 3, TP.HCM',
-        description: 'Mô tả cập nhật đầy đủ tiện ích và hình ảnh thực tế.',
-        amenities: ['wifi', 'parking', 'shower', 'canteen'],
-        images: ['https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=1200&q=80'],
-        google_maps_url: 'https://maps.google.com/?q=10.7769,106.7009',
-      })
-    }, { orgId, venueId }) as { data: { id: number; amenities: string[]; images: string[] } }
+    const updateRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        return await api.put(`/partner/organizations/${orgId}/venues/${venueId}`, {
+          name: 'Sân Cầu Lông Thử Nghiệm Hoàn Thiện',
+          address: '789 Đường Thể Thao Mới, Phường 1, Quận 3, TP.HCM',
+          description: 'Mô tả cập nhật đầy đủ tiện ích và hình ảnh thực tế.',
+          amenities: ['wifi', 'parking', 'shower', 'canteen'],
+          images: [
+            'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=1200&q=80',
+          ],
+          google_maps_url: 'https://maps.google.com/?q=10.7769,106.7009',
+        })
+      },
+      { orgId, venueId },
+    )) as { data: { id: number; amenities: string[]; images: string[] } }
 
     expect(updateRes.data.amenities).toContain('wifi')
     expect(updateRes.data.amenities).toContain('parking')
     expect(updateRes.data.images.length).toBeGreaterThan(0)
   })
 
-  test('7.4.2: Đánh giá điều kiện sẵn sàng, thiết lập sân, giá, chính sách & tài khoản nhận tiền', async ({ page }) => {
+  test('7.4.2: Đánh giá điều kiện sẵn sàng, thiết lập sân, giá, chính sách & tài khoản nhận tiền', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -82,22 +101,30 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
 
     // 2. Create draft venue
     const uniqueSlug = `readiness-${Date.now()}`
-    const draftVenueRes = await withE2EApi(page, async ({ api }, { orgId, slug }) => {
-      return await api.post(`/partner/organizations/${orgId}/venues`, {
-        name: `Sân Đủ Điều Kiện ${slug}`,
-        address: '100 Đường Cộng Hòa, Phường 4, Quận Tân Bình',
-        city: 'Hồ Chí Minh',
-        district: 'Quận Tân Bình',
-        phone: '0901112233',
-      })
-    }, { orgId, slug: uniqueSlug }) as { data: { id: number } }
+    const draftVenueRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, slug }) => {
+        return await api.post(`/partner/organizations/${orgId}/venues`, {
+          name: `Sân Đủ Điều Kiện ${slug}`,
+          address: '100 Đường Cộng Hòa, Phường 4, Quận Tân Bình',
+          city: 'Hồ Chí Minh',
+          district: 'Quận Tân Bình',
+          phone: '0901112233',
+        })
+      },
+      { orgId, slug: uniqueSlug },
+    )) as { data: { id: number } }
 
     const venueId = draftVenueRes.data.id
 
     // 3. Check readiness initially: MUST fail with missing items
-    const initialReadiness = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      return await api.get(`/partner/organizations/${orgId}/venues/${venueId}/readiness`)
-    }, { orgId, venueId }) as {
+    const initialReadiness = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        return await api.get(`/partner/organizations/${orgId}/venues/${venueId}/readiness`)
+      },
+      { orgId, venueId },
+    )) as {
       data: {
         is_ready: boolean
         missing_items: Array<{ code: string; message: string }>
@@ -106,69 +133,86 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     }
 
     expect(initialReadiness.data.is_ready).toBe(false)
-    expect(initialReadiness.data.missing_items.some(i => i.code === 'NO_ACTIVE_COURTS')).toBe(true)
-    expect(initialReadiness.data.missing_items.some(i => i.code === 'BOOKING_POLICY_REQUIRED')).toBe(true)
-    expect(initialReadiness.data.missing_items.some(i => i.code === 'OPERATING_CALENDAR_REQUIRED')).toBe(true)
+    expect(initialReadiness.data.missing_items.some((i) => i.code === 'NO_ACTIVE_COURTS')).toBe(
+      true,
+    )
+    expect(
+      initialReadiness.data.missing_items.some((i) => i.code === 'BOOKING_POLICY_REQUIRED'),
+    ).toBe(true)
+    expect(
+      initialReadiness.data.missing_items.some((i) => i.code === 'OPERATING_CALENDAR_REQUIRED'),
+    ).toBe(true)
 
     // 4. Configure Booking Policy
-    const policyRes = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      return await api.put(`/partner/organizations/${orgId}/venues/${venueId}/booking-policy`, {
-        settings: {
-          booking: {
-            hold_ttl_minutes: 15,
-            max_days_ahead: 30,
-            min_duration_minutes: 60,
-            max_duration_minutes: 180,
-            require_continuity: true,
+    const policyRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        return await api.put(`/partner/organizations/${orgId}/venues/${venueId}/booking-policy`, {
+          settings: {
+            booking: {
+              hold_ttl_minutes: 15,
+              max_days_ahead: 30,
+              min_duration_minutes: 60,
+              max_duration_minutes: 180,
+              require_continuity: true,
+            },
+            cancellation: {
+              deadline_hours: 12,
+              fee_type: 'none',
+              fee_value: 0,
+              refund_due_hours: 24,
+            },
+            change: {
+              deadline_hours: 6,
+              fee_type: 'none',
+              fee_value: 0,
+            },
+            arrival: {
+              early_minutes: 15,
+              late_grace_minutes: 15,
+              no_show_after_minutes: 30,
+            },
+            recurring: {
+              payment_policy: 'full_series',
+              conflict_policy: 'all_or_nothing',
+              overdue_release_hours: 24,
+              guarantee_confirm: true,
+            },
+            transfer: {
+              cutoff_hours: 2,
+              max_consideration_percent: 100,
+              free_transfer_allowed: true,
+              seller_reimbursement_required: false,
+            },
+            ancillary_credit_policy: 'refund',
           },
-          cancellation: {
-            deadline_hours: 12,
-            fee_type: 'none',
-            fee_value: 0,
-            refund_due_hours: 24,
-          },
-          change: {
-            deadline_hours: 6,
-            fee_type: 'none',
-            fee_value: 0,
-          },
-          arrival: {
-            early_minutes: 15,
-            late_grace_minutes: 15,
-            no_show_after_minutes: 30,
-          },
-          recurring: {
-            payment_policy: 'full_series',
-            conflict_policy: 'all_or_nothing',
-            overdue_release_hours: 24,
-            guarantee_confirm: true,
-          },
-          transfer: {
-            cutoff_hours: 2,
-            max_consideration_percent: 100,
-            free_transfer_allowed: true,
-            seller_reimbursement_required: false,
-          },
-          ancillary_credit_policy: 'refund',
-        },
-      })
-    }, { orgId, venueId }) as { data: any }
+        })
+      },
+      { orgId, venueId },
+    )) as { data: any }
     expect(policyRes.data).toBeDefined()
 
     // 5. Configure Operating Schedule (Daily 06:00 to 22:00)
-    const scheduleRes = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      const weeklyHours: Record<string, any> = {}
-      for (let day = 1; day <= 7; day++) {
-        weeklyHours[String(day)] = {
-          closed: false,
-          intervals: [{ start: '06:00', end: '22:00' }],
+    const scheduleRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        const weeklyHours: Record<string, any> = {}
+        for (let day = 1; day <= 7; day++) {
+          weeklyHours[String(day)] = {
+            closed: false,
+            intervals: [{ start: '06:00', end: '22:00' }],
+          }
         }
-      }
-      return await api.put(`/partner/organizations/${orgId}/venues/${venueId}/operating-schedule`, {
-        timezone: 'Asia/Ho_Chi_Minh',
-        weekly_hours: weeklyHours,
-      })
-    }, { orgId, venueId }) as { data: any }
+        return await api.put(
+          `/partner/organizations/${orgId}/venues/${venueId}/operating-schedule`,
+          {
+            timezone: 'Asia/Ho_Chi_Minh',
+            weekly_hours: weeklyHours,
+          },
+        )
+      },
+      { orgId, venueId },
+    )) as { data: any }
     expect(scheduleRes.data).toBeDefined()
 
     // 6. Seed active court with prices and verified receiving connection for this venue
@@ -239,18 +283,24 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       ]);
     `
 
-    const seedRes = JSON.parse(execFileSync('php', ['-r', seedCourtScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { court_id: number; rc_id: number }
+    const seedRes = JSON.parse(
+      execFileSync('php', ['-r', seedCourtScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { court_id: number; rc_id: number }
 
     expect(seedRes.court_id).toBeGreaterThan(0)
 
     // 7. Re-evaluate readiness: MUST now be is_ready: true
-    const completeReadiness = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      return await api.get(`/partner/organizations/${orgId}/venues/${venueId}/readiness`)
-    }, { orgId, venueId }) as {
+    const completeReadiness = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        return await api.get(`/partner/organizations/${orgId}/venues/${venueId}/readiness`)
+      },
+      { orgId, venueId },
+    )) as {
       data: {
         is_ready: boolean
         missing_items: any[]
@@ -266,7 +316,9 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     expect(completeReadiness.data.checklist.operating_calendar_configured).toBe(true)
   })
 
-  test('7.4.3: Gửi duyệt công khai, chống gửi lặp & Admin xét duyệt đưa lên công khai', async ({ page }) => {
+  test('7.4.3: Gửi duyệt công khai, chống gửi lặp & Admin xét duyệt đưa lên công khai', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const admin = getActorCredentials(manifest, 'admin')
@@ -404,11 +456,13 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeVenueScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { venue_id: number; venue_slug: string }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeVenueScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { venue_id: number; venue_slug: string }
 
     const venueId = arranged.venue_id
     const venueSlug = arranged.venue_slug
@@ -420,23 +474,34 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    const submitRes = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      return await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
-    }, { orgId, venueId }) as { data: { id: number; revision_number: number; status: string } }
+    const submitRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        return await api.post(
+          `/partner/organizations/${orgId}/venues/${venueId}/submit-publication`,
+          {},
+        )
+      },
+      { orgId, venueId },
+    )) as { data: { id: number; revision_number: number; status: string } }
 
     expect(submitRes.data?.id).toBeDefined()
     expect(submitRes.data?.status).toBe('pending')
     const revisionId = submitRes.data.id
 
     // 3. Duplicate submit guard: MUST return 409 Conflict
-    const dupSubmitBlocked = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      try {
-        await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
-        return false
-      } catch (err: any) {
-        return err.status === 409 || err.response?.status === 409
-      }
-    }, { orgId, venueId })
+    const dupSubmitBlocked = await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        try {
+          await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
+          return false
+        } catch (err: any) {
+          return err.status === 409 || err.response?.status === 409
+        }
+      },
+      { orgId, venueId },
+    )
 
     expect(dupSubmitBlocked).toBe(true)
 
@@ -445,7 +510,10 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       try {
         await api.post('/auth/logout')
       } catch {}
-      await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() })
+      await page.evaluate(() => {
+        localStorage.clear()
+        sessionStorage.clear()
+      })
     })
     await page.context().clearCookies()
 
@@ -459,19 +527,27 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     await page.goto('/admin/venues/publication-queue', { waitUntil: 'domcontentloaded' })
 
     // 6. Admin approves publication revision
-    const approveRes = await withE2EApi(page, async ({ api }, { revId }) => {
-      return await api.post(`/admin/venues/revisions/${revId}/review`, {
-        decision: 'approve',
-        reason: 'Cơ sở đáp ứng đầy đủ tiêu chuẩn kiểm định cơ sở vật chất và an toàn.',
-      })
-    }, { revId: revisionId }) as { data: { status: string } }
+    const approveRes = (await withE2EApi(
+      page,
+      async ({ api }, { revId }) => {
+        return await api.post(`/admin/venues/revisions/${revId}/review`, {
+          decision: 'approve',
+          reason: 'Cơ sở đáp ứng đầy đủ tiêu chuẩn kiểm định cơ sở vật chất và an toàn.',
+        })
+      },
+      { revId: revisionId },
+    )) as { data: { status: string } }
 
     expect(approveRes.data?.status).toBe('approved')
 
     // 7. Verify venue is now public and accessible
-    const publicVenueRes = await withE2EApi(page, async ({ api }, { slug }) => {
-      return await api.get(`/venues/${slug}`)
-    }, { slug: venueSlug }) as any
+    const publicVenueRes = (await withE2EApi(
+      page,
+      async ({ api }, { slug }) => {
+        return await api.get(`/venues/${slug}`)
+      },
+      { slug: venueSlug },
+    )) as any
 
     const resolvedId = publicVenueRes?.data?.id ?? publicVenueRes?.id
     const resolvedActive = publicVenueRes?.data?.is_active ?? publicVenueRes?.is_active
@@ -479,9 +555,13 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     expect(resolvedActive).toBe(true)
 
     // 8. Re-fetch publication revision from history to verify retained audit trail
-    const historyRevision = await withE2EApi(page, async ({ api }, { revId }) => {
-      return await api.get(`/admin/venues/revisions/${revId}`)
-    }, { revId: revisionId }) as {
+    const historyRevision = (await withE2EApi(
+      page,
+      async ({ api }, { revId }) => {
+        return await api.get(`/admin/venues/revisions/${revId}`)
+      },
+      { revId: revisionId },
+    )) as {
       data: {
         id: number
         venue_id: number
@@ -505,14 +585,19 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     expect(historyRevision.data?.configuration_snapshot?.courts?.length).toBeGreaterThan(0)
   })
 
-  test('7.4.4: Lịch ngoại lệ (bảo trì / ngày nghỉ / đóng cửa) và mất & phục hồi trạng thái khả dụng', async ({ page }) => {
+  test('7.4.4: Lịch ngoại lệ (bảo trì / ngày nghỉ / đóng cửa) và mất & phục hồi trạng thái khả dụng', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
     const venue = manifest.fixtures?.organizations.org1?.venue1A
     if (!orgId || !venue?.id) throw new Error('Fixture missing from manifest')
     // A venue-wide closure needs its own venue: earlier scenarios reserve sibling courts.
-    const venueId = Number(executeGuardedBackendPhp(manifest, `
+    const venueId = Number(
+      executeGuardedBackendPhp(
+        manifest,
+        `
       $source = App\\Models\\Venue::where('organization_id', ${orgId})->findOrFail(${venue.id});
       $venue = $source->replicate(['slug', 'current_receiving_connection_id']);
       $venue->slug = 'schedule-exception-' . Illuminate\\Support\\Str::uuid();
@@ -522,7 +607,9 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       $schedule->venue_id = $venue->id;
       $schedule->save();
       echo $venue->id;
-    `))
+    `,
+      ),
+    )
     const courtId = arrangeCourt(manifest, { testKey: 'schedule_exception', venueId }).court_id
     // 1. Clear previous session and log in as owner
     await page.context().clearCookies()
@@ -534,72 +621,105 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
 
     const targetDateStr = getFuturePlayDate(12).dateString
     // 2. Query availability before exception: court has slots available
-    const initialAvail = await withE2EApi(page, async ({ api }, { courtId, date }) => {
-      return await api.get(`/availability`, {
-        params: {
-          court_id: courtId,
-          date,
-        },
-      })
-    }, { courtId, date: targetDateStr }) as Array<{ startsAt: string; endsAt: string; price: number; available: boolean }>
+    const initialAvail = (await withE2EApi(
+      page,
+      async ({ api }, { courtId, date }) => {
+        return await api.get(`/availability`, {
+          params: {
+            court_id: courtId,
+            date,
+          },
+        })
+      },
+      { courtId, date: targetDateStr },
+    )) as Array<{ startsAt: string; endsAt: string; price: number; available: boolean }>
 
     expect(initialAvail?.length).toBeGreaterThan(0)
-    const initialOpenSlots = initialAvail.filter(s => s.available).length
+    const initialOpenSlots = initialAvail.filter((s) => s.available).length
     expect(initialOpenSlots).toBeGreaterThan(0)
     // 3. Add schedule exception: Full day closure (Bảo trì cơ sở vật chất)
-    const createExceptionRes = await withE2EApi(page, async ({ api }, { orgId, venueId, date }) => {
-      try {
-        return await api.put(`/partner/organizations/${orgId}/venues/${venueId}/schedule-exceptions`, {
-          exception_date: date,
-          name: 'Bảo trì hệ thống chiếu sáng và thảm sàn',
-          type: 'closed',
-          timezone: 'Asia/Ho_Chi_Minh',
-        })
-      } catch (err: any) {
-        return { __error: true, error: err.response?.data || err.message || String(err), status: err.response?.status }
-      }
-    }, { orgId, venueId, date: targetDateStr }) as any
+    const createExceptionRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId, date }) => {
+        try {
+          return await api.put(
+            `/partner/organizations/${orgId}/venues/${venueId}/schedule-exceptions`,
+            {
+              exception_date: date,
+              name: 'Bảo trì hệ thống chiếu sáng và thảm sàn',
+              type: 'closed',
+              timezone: 'Asia/Ho_Chi_Minh',
+            },
+          )
+        } catch (err: any) {
+          return {
+            __error: true,
+            error: err.response?.data || err.message || String(err),
+            status: err.response?.status,
+          }
+        }
+      },
+      { orgId, venueId, date: targetDateStr },
+    )) as any
 
     if (createExceptionRes.__error) {
-      throw new Error(`Schedule exception failed with status ${createExceptionRes.status}: ${JSON.stringify(createExceptionRes.error)}`)
+      throw new Error(
+        `Schedule exception failed with status ${createExceptionRes.status}: ${JSON.stringify(createExceptionRes.error)}`,
+      )
     }
     expect(createExceptionRes.data?.id).toBeDefined()
     const exceptionId = createExceptionRes.data.id
 
     // 4. Query availability during exception: ALL slots MUST be closed/lost!
-    const closedAvail = await withE2EApi(page, async ({ api }, { courtId, date }) => {
-      return await api.get(`/availability`, {
-        params: {
-          court_id: courtId,
-          date,
-        },
-      })
-    }, { courtId, date: targetDateStr }) as Array<{ startsAt: string; endsAt: string; price: number; available: boolean }>
+    const closedAvail = (await withE2EApi(
+      page,
+      async ({ api }, { courtId, date }) => {
+        return await api.get(`/availability`, {
+          params: {
+            court_id: courtId,
+            date,
+          },
+        })
+      },
+      { courtId, date: targetDateStr },
+    )) as Array<{ startsAt: string; endsAt: string; price: number; available: boolean }>
 
-    const closedOpenSlots = closedAvail.filter(s => s.available).length
+    const closedOpenSlots = closedAvail.filter((s) => s.available).length
     expect(closedOpenSlots).toBe(0)
     // 5. Delete schedule exception: restoration of operational availability
-    const deleteRes = await withE2EApi(page, async ({ api }, { orgId, venueId, excId }) => {
-      return await api.delete(`/partner/organizations/${orgId}/venues/${venueId}/schedule-exceptions/${excId}`)
-    }, { orgId, venueId, excId: exceptionId }) as { message: string }
+    const deleteRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId, excId }) => {
+        return await api.delete(
+          `/partner/organizations/${orgId}/venues/${venueId}/schedule-exceptions/${excId}`,
+        )
+      },
+      { orgId, venueId, excId: exceptionId },
+    )) as { message: string }
 
     expect(deleteRes.message).toBeDefined()
 
     // 6. Query availability after exception removal: slots are restored!
-    const restoredAvail = await withE2EApi(page, async ({ api }, { courtId, date }) => {
-      return await api.get(`/availability`, {
-        params: {
-          court_id: courtId,
-          date,
-        },
-      })
-    }, { courtId, date: targetDateStr }) as Array<{ startsAt: string; endsAt: string; price: number; available: boolean }>
+    const restoredAvail = (await withE2EApi(
+      page,
+      async ({ api }, { courtId, date }) => {
+        return await api.get(`/availability`, {
+          params: {
+            court_id: courtId,
+            date,
+          },
+        })
+      },
+      { courtId, date: targetDateStr },
+    )) as Array<{ startsAt: string; endsAt: string; price: number; available: boolean }>
 
-    const restoredOpenSlots = restoredAvail.filter(s => s.available).length
+    const restoredOpenSlots = restoredAvail.filter((s) => s.available).length
     expect(restoredOpenSlots).toBe(initialOpenSlots)
   })
 
-  test('7.4.5: Bảo mật: Người không có quyền bị từ chối gửi duyệt và cơ sở chưa sẵn sàng bị chặn', async ({ page }) => {
+  test('7.4.5: Bảo mật: Người không có quyền bị từ chối gửi duyệt và cơ sở chưa sẵn sàng bị chặn', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -608,37 +728,50 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
     // 1. Clear previous session cookies and log in as regular customer (non-manager, non-owner)
     await page.context().clearCookies()
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() }).catch(() => {})
+    await page
+      .evaluate(() => {
+        localStorage.clear()
+        sessionStorage.clear()
+      })
+      .catch(() => {})
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
     await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
     // 2. Customer attempts to submit publication: 403 Forbidden
-    const customerDenied = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      try {
-        await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
-        return false
-      } catch (err: any) {
-        return err.status === 403 || err.response?.status === 403
-      }
-    }, { orgId, venueId })
+    const customerDenied = await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        try {
+          await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
+          return false
+        } catch (err: any) {
+          return err.status === 403 || err.response?.status === 403
+        }
+      },
+      { orgId, venueId },
+    )
 
     expect(customerDenied).toBe(true)
 
     // 3. Customer attempts to modify schedule exceptions: 403 Forbidden
-    const excDenied = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      try {
-        await api.put(`/partner/organizations/${orgId}/venues/${venueId}/schedule-exceptions`, {
-          exception_date: '2026-10-15',
-          name: 'Unauthorized closure',
-          type: 'closed',
-          timezone: 'Asia/Ho_Chi_Minh',
-        })
-        return false
-      } catch (err: any) {
-        return err.status === 403 || err.response?.status === 403
-      }
-    }, { orgId, venueId })
+    const excDenied = await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        try {
+          await api.put(`/partner/organizations/${orgId}/venues/${venueId}/schedule-exceptions`, {
+            exception_date: '2026-10-15',
+            name: 'Unauthorized closure',
+            type: 'closed',
+            timezone: 'Asia/Ho_Chi_Minh',
+          })
+          return false
+        } catch (err: any) {
+          return err.status === 403 || err.response?.status === 403
+        }
+      },
+      { orgId, venueId },
+    )
 
     expect(excDenied).toBe(true)
 
@@ -647,7 +780,10 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       try {
         await api.post('/auth/logout')
       } catch {}
-      await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() })
+      await page.evaluate(() => {
+        localStorage.clear()
+        sessionStorage.clear()
+      })
     })
     await page.context().clearCookies()
 
@@ -660,28 +796,41 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
 
     // Create an unready draft venue (name and address only, missing courts, pricing, policies, schedule)
     const unreadySlug = `unready-draft-${Date.now()}`
-    const unreadyDraftRes = await withE2EApi(page, async ({ api }, { orgId, slug }) => {
-      return await api.post(`/partner/organizations/${orgId}/venues`, {
-        name: `Sân Chưa Đủ Điều Kiện ${slug}`,
-        address: '123 Đường Chưa Hoàn Thiện, Quận 7',
-      })
-    }, { orgId, slug: unreadySlug }) as { data: { id: number; status: string } }
+    const unreadyDraftRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, slug }) => {
+        return await api.post(`/partner/organizations/${orgId}/venues`, {
+          name: `Sân Chưa Đủ Điều Kiện ${slug}`,
+          address: '123 Đường Chưa Hoàn Thiện, Quận 7',
+        })
+      },
+      { orgId, slug: unreadySlug },
+    )) as { data: { id: number; status: string } }
 
     const unreadyVenueId = unreadyDraftRes.data.id
 
     // Attempt publication submit on unready venue:
-    const unreadySubmitResult = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      try {
-        await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
-        return { blocked: false, status: 200, missing: [] }
-      } catch (err: any) {
-        return {
-          blocked: true,
-          status: err.status || err.response?.status,
-          missing: err.response?.data?.errors?.missing_items || err.response?.data?.missing_items || err.errors?.missing_items || err.missing_items || [],
+    const unreadySubmitResult = await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        try {
+          await api.post(`/partner/organizations/${orgId}/venues/${venueId}/submit-publication`, {})
+          return { blocked: false, status: 200, missing: [] }
+        } catch (err: any) {
+          return {
+            blocked: true,
+            status: err.status || err.response?.status,
+            missing:
+              err.response?.data?.errors?.missing_items ||
+              err.response?.data?.missing_items ||
+              err.errors?.missing_items ||
+              err.missing_items ||
+              [],
+          }
         }
-      }
-    }, { orgId, venueId: unreadyVenueId })
+      },
+      { orgId, venueId: unreadyVenueId },
+    )
 
     expect(unreadySubmitResult.blocked).toBe(true)
     expect(unreadySubmitResult.status).toBe(422)

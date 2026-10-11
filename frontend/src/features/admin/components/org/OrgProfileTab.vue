@@ -44,7 +44,7 @@ watch(
     timezone.value = o.timezone || 'Asia/Ho_Chi_Minh'
     currency.value = o.currency || 'VND'
   },
-  { deep: true }
+  { deep: true },
 )
 
 function handleSave() {
@@ -128,12 +128,7 @@ function handleSave() {
         <!-- Hotline -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.org.phoneLabel') }}</label>
-          <input
-            v-model="phone"
-            type="tel"
-            class="form-input font-mono"
-            placeholder="1900 6868"
-          />
+          <input v-model="phone" type="tel" class="form-input font-mono" placeholder="1900 6868" />
         </div>
 
         <!-- Address -->
@@ -150,21 +145,13 @@ function handleSave() {
         <!-- Timezone Dropdown -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.org.timezoneLabel') }}</label>
-          <SelectDropdown
-            v-model="timezone"
-            :options="timezoneOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="timezone" :options="timezoneOptions" variant="bordered" />
         </div>
 
         <!-- Currency Dropdown -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.org.currencyLabel') }}</label>
-          <SelectDropdown
-            v-model="currency"
-            :options="currencyOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="currency" :options="currencyOptions" variant="bordered" />
         </div>
 
         <!-- Logo URL & Preview -->
@@ -224,15 +211,8 @@ function handleSave() {
 
       <!-- Action Footer -->
       <div class="form-actions">
-        <AuraButton
-          type="submit"
-          variant="primary"
-          :disabled="saving"
-        >
-          <span
-            class="material-symbols-outlined icon-18"
-            :class="{ 'spin-icon': saving }"
-          >
+        <AuraButton type="submit" variant="primary" :disabled="saving">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': saving }">
             {{ saving ? 'sync' : 'save' }}
           </span>
           <span>{{ t('admin.org.saveOrgBtn') }}</span>
@@ -333,7 +313,9 @@ function handleSave() {
   font-size: 13.5px;
   font-family: inherit;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-input:focus {
@@ -402,20 +384,20 @@ function handleSave() {
 
 :global(html.dark) .color-chip-card {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 
 :global(html.dark) .color-chip-card:hover {
   background: var(--soft, #30292e);
   color: #ffffff;
-  border-color: var(--pink-dark, #E58E9F);
+  border-color: var(--pink-dark, #e58e9f);
 }
 
 :global(html.dark) .color-chip-card.active {
   background: rgba(229, 142, 159, 0.18);
-  color: var(--pink-dark, #E58E9F);
-  border-color: var(--pink-dark, #E58E9F);
+  color: var(--pink-dark, #e58e9f);
+  border-color: var(--pink-dark, #e58e9f);
 }
 
 .color-circle {
@@ -485,12 +467,12 @@ function handleSave() {
 
 :global(html.dark) .form-input {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 
 :global(html.dark) .form-input:focus {
-  border-color: var(--pink-dark, #E58E9F);
+  border-color: var(--pink-dark, #e58e9f);
   box-shadow: 0 0 0 3px rgba(229, 142, 159, 0.2);
 }
 
@@ -507,7 +489,7 @@ function handleSave() {
 }
 
 :global(html.dark) .tab-title {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .tab-sub {
@@ -515,7 +497,7 @@ function handleSave() {
 }
 
 :global(html.dark) .form-label {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 .icon-18 {

@@ -41,7 +41,13 @@ describe('AdminScheduleView', () => {
             name: 'Sân 01 - Tiêu Chuẩn',
             venue: { id: 1, name: 'Aura Downtown' },
             blocks: [
-              { id: 101, court_id: 1, starts_at: '2026-10-12T08:00', ends_at: '2026-10-14T17:00', reason: 'Court 4 Resurfacing' },
+              {
+                id: 101,
+                court_id: 1,
+                starts_at: '2026-10-12T08:00',
+                ends_at: '2026-10-14T17:00',
+                reason: 'Court 4 Resurfacing',
+              },
             ],
           },
           {
@@ -61,7 +67,16 @@ describe('AdminScheduleView', () => {
       if (url.includes('/operating-schedule')) return { data: null }
       if (url.includes('/schedule-exceptions')) return { data: [] }
       if (url === '/admin/audit-logs') {
-        return { data: [{ id: 1, action: 'Cập nhật lịch hoạt động', user: { name: 'Admin' }, created_at: new Date().toISOString() }] }
+        return {
+          data: [
+            {
+              id: 1,
+              action: 'Cập nhật lịch hoạt động',
+              user: { name: 'Admin' },
+              created_at: new Date().toISOString(),
+            },
+          ],
+        }
       }
       return []
     })
@@ -128,7 +143,8 @@ describe('AdminScheduleView', () => {
     let persisted: any = null
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/admin/courts') return []
-      if (url === '/admin/venues') return [{ id: 1, organization_id: 10, timezone: 'Asia/Ho_Chi_Minh', name: 'Aura Downtown' }]
+      if (url === '/admin/venues')
+        return [{ id: 1, organization_id: 10, timezone: 'Asia/Ho_Chi_Minh', name: 'Aura Downtown' }]
       if (url === '/admin/audit-logs') return { data: [] }
       if (url.includes('/operating-schedule')) return { data: persisted }
       if (url.includes('/schedule-exceptions')) return { data: [] }
@@ -136,7 +152,12 @@ describe('AdminScheduleView', () => {
     })
     vi.mocked(api.put).mockImplementation(async (url: string, payload: any) => {
       if (url.includes('/operating-schedule')) {
-        persisted = { id: 1, version: 1, timezone: payload.timezone, weekly_hours: payload.weekly_hours }
+        persisted = {
+          id: 1,
+          version: 1,
+          timezone: payload.timezone,
+          weekly_hours: payload.weekly_hours,
+        }
       }
       return { data: persisted }
     })
@@ -146,16 +167,21 @@ describe('AdminScheduleView', () => {
     const firstDay = wrapper.findAll('.day-row-container')[0]!
     await firstDay.find('.day-toggle-btn').trigger('click')
     await firstDay.find('.btn-add-shift-link').trigger('click')
-    const saveButton = wrapper.findAll('button').find((button) => button.text().includes('Lưu Cấu Hình Lịch'))
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Lưu Cấu Hình Lịch'))
     await saveButton?.trigger('click')
     await flushPromises()
 
-    expect(api.put).toHaveBeenCalledWith('/partner/organizations/10/venues/1/operating-schedule', expect.objectContaining({
-      timezone: 'Asia/Ho_Chi_Minh',
-      weekly_hours: expect.objectContaining({
-        '1': { closed: false, intervals: [{ start: '17:00', end: '22:00' }] },
+    expect(api.put).toHaveBeenCalledWith(
+      '/partner/organizations/10/venues/1/operating-schedule',
+      expect.objectContaining({
+        timezone: 'Asia/Ho_Chi_Minh',
+        weekly_hours: expect.objectContaining({
+          '1': { closed: false, intervals: [{ start: '17:00', end: '22:00' }] },
+        }),
       }),
-    }))
+    )
 
     const reloaded = mount(AdminScheduleView, { global: { plugins: [i18n] } })
     await flushPromises()

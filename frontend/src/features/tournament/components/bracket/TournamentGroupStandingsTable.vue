@@ -15,7 +15,9 @@ defineProps<{
         </div>
         <div>
           <h3 class="title">Bảng Xếp Hạng Vòng Bảng (Group Stage Leaderboard)</h3>
-          <span class="sub">Top 2 vận động viên / cặp đôi dẫn đầu sẽ giành vé vào vòng Knockout Tứ Kết.</span>
+          <span class="sub"
+            >Top 2 vận động viên / cặp đôi dẫn đầu sẽ giành vé vào vòng Knockout Tứ Kết.</span
+          >
         </div>
       </div>
     </div>
@@ -70,7 +72,6 @@ defineProps<{
     </div>
   </div>
 </template>
-
 
 <style scoped>
 .standings-card {
@@ -262,5 +263,3 @@ defineProps<{
   max-width: 400px;
 }
 </style>
-
-

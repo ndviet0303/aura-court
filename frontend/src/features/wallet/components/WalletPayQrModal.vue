@@ -107,7 +107,7 @@ function formatMoney(amount: number): string {
 
 .header-icon {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .qr-modal-body {
@@ -125,20 +125,20 @@ function formatMoney(amount: number): string {
   padding: 4px 12px;
   border-radius: 999px;
   background: var(--accent-container, rgba(201, 161, 90, 0.1));
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   font-size: 12px;
   font-weight: 700;
   border: 1px solid rgba(201, 161, 90, 0.3);
 }
 
 :global(html.dark) .qr-club-badge {
-  color: var(--accent, #D8B46E);
+  color: var(--accent, #d8b46e);
   background: rgba(216, 180, 110, 0.15);
 }
 
 .badge-icon {
   font-size: 15px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .qr-sub {
@@ -210,7 +210,7 @@ function formatMoney(amount: number): string {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -248,11 +248,11 @@ function formatMoney(amount: number): string {
 }
 
 .text-primary {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .text-primary {
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
 .btn-refresh-qr {

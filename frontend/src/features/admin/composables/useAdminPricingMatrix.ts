@@ -58,28 +58,28 @@ export function useAdminPricingMatrix() {
     activeWeekdaySlots.value.filter((s) => {
       const h = parseInt(s.starts_at.slice(0, 2), 10)
       return h >= 6 && h < 12
-    })
+    }),
   )
 
   const afternoonSlots = computed(() =>
     activeWeekdaySlots.value.filter((s) => {
       const h = parseInt(s.starts_at.slice(0, 2), 10)
       return h >= 12 && h < 17
-    })
+    }),
   )
 
   const peakSlots = computed(() =>
     activeWeekdaySlots.value.filter((s) => {
       const h = parseInt(s.starts_at.slice(0, 2), 10)
       return h >= 17 && h < 22
-    })
+    }),
   )
 
   const nightSlots = computed(() =>
     activeWeekdaySlots.value.filter((s) => {
       const h = parseInt(s.starts_at.slice(0, 2), 10)
       return h >= 22 || h < 6
-    })
+    }),
   )
 
   async function openPriceModal(court: Court) {
@@ -114,7 +114,8 @@ export function useAdminPricingMatrix() {
       const court = selectedCourtForPrice.value
       let targetDays: number[] = []
       if (bulkScope.value === 'current') {
-        targetDays = selectedWeekdayTab.value === 0 ? [1, 2, 3, 4, 5, 6, 7] : [selectedWeekdayTab.value]
+        targetDays =
+          selectedWeekdayTab.value === 0 ? [1, 2, 3, 4, 5, 6, 7] : [selectedWeekdayTab.value]
       } else if (bulkScope.value === 'weekdays') {
         targetDays = [1, 2, 3, 4, 5]
       } else if (bulkScope.value === 'weekends') {
@@ -123,12 +124,15 @@ export function useAdminPricingMatrix() {
         targetDays = [1, 2, 3, 4, 5, 6, 7]
       }
 
-      const res = await adminApi.bulkCreatePrices<{ message: string; slots?: PriceSlot[] }>(court.id, {
-        weekdays: targetDays,
-        start_hour: bulkStartHour.value,
-        end_hour: bulkEndHour.value,
-        price: bulkPrice.value,
-      })
+      const res = await adminApi.bulkCreatePrices<{ message: string; slots?: PriceSlot[] }>(
+        court.id,
+        {
+          weekdays: targetDays,
+          start_hour: bulkStartHour.value,
+          end_hour: bulkEndHour.value,
+          price: bulkPrice.value,
+        },
+      )
 
       const count = targetDays.length * (bulkEndHour.value - bulkStartHour.value)
       priceNotice.value = res?.message || t('admin.manage.bulkPricingSuccess', { count })
@@ -153,8 +157,11 @@ export function useAdminPricingMatrix() {
       await adminApi.deletePrice(selectedCourtForPrice.value.id, slotId)
       priceNotice.value = t('admin.manage.deleteSlotSuccess')
       if (selectedCourtForPrice.value.price_slots) {
-        selectedCourtForPrice.value.price_slots = selectedCourtForPrice.value.price_slots.filter((s) => s.id !== slotId)
-        selectedCourtForPrice.value.price_slots_count = selectedCourtForPrice.value.price_slots.length
+        selectedCourtForPrice.value.price_slots = selectedCourtForPrice.value.price_slots.filter(
+          (s) => s.id !== slotId,
+        )
+        selectedCourtForPrice.value.price_slots_count =
+          selectedCourtForPrice.value.price_slots.length
       }
       if (onReload) await onReload()
     } catch (cause: unknown) {

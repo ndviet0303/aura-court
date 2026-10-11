@@ -9,7 +9,8 @@ import WalletDepositModal from '../components/WalletDepositModal.vue'
 import WalletPayQrModal from '../components/WalletPayQrModal.vue'
 
 const route = useRoute()
-const organizationId = route.query.organization_id === undefined ? undefined : Number(route.query.organization_id)
+const organizationId =
+  route.query.organization_id === undefined ? undefined : Number(route.query.organization_id)
 
 const {
   loading,
@@ -69,7 +70,12 @@ function scrollToHistory() {
       </div>
 
       <div class="header-actions">
-        <button class="btn btn-outline btn-refresh" :disabled="loading" :title="$t('wallet.refreshBalance')" @click="loadWalletData">
+        <button
+          class="btn btn-outline btn-refresh"
+          :disabled="loading"
+          :title="$t('wallet.refreshBalance')"
+          @click="loadWalletData"
+        >
           <span class="material-symbols-outlined" :class="{ spinning: loading }">refresh</span>
           <span>{{ $t('wallet.refresh') }}</span>
         </button>
@@ -106,11 +112,7 @@ function scrollToHistory() {
     />
 
     <!-- Individual Venue Passes & Wallets List -->
-    <VenueWalletsList
-      :wallets="wallets"
-      @deposit="openDepositModal"
-      @qr="openQrModal"
-    />
+    <VenueWalletsList :wallets="wallets" @deposit="openDepositModal" @qr="openQrModal" />
 
     <!-- Transaction History Table -->
     <div id="wallet-history-section">
@@ -135,7 +137,8 @@ function scrollToHistory() {
         <div class="trust-content">
           <h4 class="trust-title">Nạp Tiền Tức Thì 24/7</h4>
           <p class="trust-desc">
-            Kết nối trực tiếp hệ thống VietQR Napas247, số dư tự động cộng vào ví chỉ sau 3 giây, kể cả ngày nghỉ và lễ Tết.
+            Kết nối trực tiếp hệ thống VietQR Napas247, số dư tự động cộng vào ví chỉ sau 3 giây, kể
+            cả ngày nghỉ và lễ Tết.
           </p>
         </div>
       </div>
@@ -147,7 +150,8 @@ function scrollToHistory() {
         <div class="trust-content">
           <h4 class="trust-title">Bảo Mật Chuẩn Ngân Hàng</h4>
           <p class="trust-desc">
-            Toàn bộ giao dịch được mã hóa 256-bit SSL và định danh khách hàng an toàn theo tiêu chuẩn bảo mật PCI-DSS.
+            Toàn bộ giao dịch được mã hóa 256-bit SSL và định danh khách hàng an toàn theo tiêu
+            chuẩn bảo mật PCI-DSS.
           </p>
         </div>
       </div>
@@ -159,7 +163,8 @@ function scrollToHistory() {
         <div class="trust-content">
           <h4 class="trust-title">Hoàn Tiền 100% Tự Động</h4>
           <p class="trust-desc">
-            Khi huỷ lịch đặt sân hợp lệ theo quy định trước giờ thi đấu, tiền được hoàn trả 100% về ví trong vòng 1 giây.
+            Khi huỷ lịch đặt sân hợp lệ theo quy định trước giờ thi đấu, tiền được hoàn trả 100% về
+            ví trong vòng 1 giây.
           </p>
         </div>
       </div>
@@ -235,7 +240,7 @@ function scrollToHistory() {
   gap: 6px;
   font-size: 11.5px;
   font-weight: 800;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   letter-spacing: 0.08em;
 }
 
@@ -326,7 +331,7 @@ function scrollToHistory() {
   height: 42px;
   border-radius: 12px;
   background: var(--surface-subtle, #f7f3ed);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   border: 1px solid var(--border);
   font-size: 20px;
   flex-shrink: 0;
@@ -368,7 +373,9 @@ function scrollToHistory() {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 .fade-enter-from,

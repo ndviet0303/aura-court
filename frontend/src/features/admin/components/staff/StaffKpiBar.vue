@@ -105,7 +105,9 @@ const { t } = useI18n()
   border: 1px solid var(--outline);
   background: var(--surface);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .stat-card:hover {
@@ -152,11 +154,21 @@ const { t } = useI18n()
   font-size: 14px;
 }
 
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-purple { color: #8b5cf6; }
-.text-muted-sub { color: var(--muted); }
+.text-green {
+  color: #10b981;
+}
+.text-blue {
+  color: #3b82f6;
+}
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-purple {
+  color: #8b5cf6;
+}
+.text-muted-sub {
+  color: var(--muted);
+}
 
 :global(html.dark) .stat-card {
   background: var(--surface, #1e191c);

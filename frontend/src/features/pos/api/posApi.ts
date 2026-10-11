@@ -21,11 +21,11 @@ export const posApi = {
 
   adjustStock: async (
     productId: number,
-    payload: { quantity_delta: number; type?: 'receipt' | 'adjustment' }
+    payload: { quantity_delta: number; type?: 'receipt' | 'adjustment' },
   ): Promise<Product> => {
     const res = await apiV2.post<{ product: Product } | Product>(
       `/pos/products/${productId}/stock`,
-      payload
+      payload,
     )
     return (res as any)?.product || res
   },
@@ -51,27 +51,34 @@ export const posApi = {
     return (res as any)?.quote || res
   },
 
-  completeOrder: async (payload: {
-    items: Array<{
-      product_id: number
-      quantity: number
-      rental_duration_hours?: number
-      rental_hours?: number
-      vat_rate?: number
-    }>
-    customer_id?: number | null
-    reservation_id?: number | null
-    venue_id?: number | null
-    payment_method: 'cash' | 'qr' | 'wallet'
-    payment_reference?: string
-    discount_amount?: number
-    coupon_code?: string
-    cash_tendered?: number
-    rounding_amount?: number
-    offline?: boolean
-  }, idempotencyKey?: string) => {
+  completeOrder: async (
+    payload: {
+      items: Array<{
+        product_id: number
+        quantity: number
+        rental_duration_hours?: number
+        rental_hours?: number
+        vat_rate?: number
+      }>
+      customer_id?: number | null
+      reservation_id?: number | null
+      venue_id?: number | null
+      payment_method: 'cash' | 'qr' | 'wallet'
+      payment_reference?: string
+      discount_amount?: number
+      coupon_code?: string
+      cash_tendered?: number
+      rounding_amount?: number
+      offline?: boolean
+    },
+    idempotencyKey?: string,
+  ) => {
     const config = idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined
-    const res = await apiV2.post<{ order: any; receipt?: any } | any>('/pos/orders', payload, config)
+    const res = await apiV2.post<{ order: any; receipt?: any } | any>(
+      '/pos/orders',
+      payload,
+      config,
+    )
     return res
   },
 
@@ -86,21 +93,18 @@ export const posApi = {
       amount?: number
       provider?: string
       notes?: string
-    } = {}
+    } = {},
   ) => {
     return await apiV2.post<{ order: any; receipt: any }>(
       `/pos/orders/${orderId}/confirm-qr`,
-      payload
+      payload,
     )
   },
 
-  cancelQrPayment: async (
-    orderId: number | string,
-    payload: { reason?: string } = {}
-  ) => {
+  cancelQrPayment: async (orderId: number | string, payload: { reason?: string } = {}) => {
     return await apiV2.post<{ order: any; receipt: any }>(
       `/pos/orders/${orderId}/cancel-qr`,
-      payload
+      payload,
     )
   },
   getShifts: async (): Promise<PosShift[]> => {
@@ -120,22 +124,22 @@ export const posApi = {
 
   closeShift: async (
     shiftId: number,
-    payload: { declared_cash: number; note?: string }
+    payload: { declared_cash: number; note?: string },
   ): Promise<PosShift> => {
     const res = await apiV2.post<{ shift: PosShift } | PosShift>(
       `/pos/shifts/${shiftId}/close`,
-      payload
+      payload,
     )
     return (res as any)?.shift || res
   },
 
   reviewShift: async (
     shiftId: number,
-    payload: { status: string; note?: string }
+    payload: { status: string; note?: string },
   ): Promise<PosShift> => {
     const res = await apiV2.post<{ shift: PosShift } | PosShift>(
       `/pos/shifts/${shiftId}/review`,
-      payload
+      payload,
     )
     return (res as any)?.shift || res
   },
@@ -152,7 +156,9 @@ export const posApi = {
   },
 
   removeItemFromTab: async (reservationId: number | string, itemId: number) => {
-    return apiV2.delete<{ tab: any; message: string }>(`/service-tabs/${reservationId}/items/${itemId}`)
+    return apiV2.delete<{ tab: any; message: string }>(
+      `/service-tabs/${reservationId}/items/${itemId}`,
+    )
   },
 
   settleTab: async (
@@ -161,11 +167,11 @@ export const posApi = {
       payment_method: 'cash' | 'wallet' | 'qr'
       cash_tendered?: number
       customer_id?: number
-    }
+    },
   ) => {
     return apiV2.post<{ tab: any; order: any; receipt: any; message: string }>(
       `/service-tabs/${tabId}/settle`,
-      payload
+      payload,
     )
   },
 

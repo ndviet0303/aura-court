@@ -56,7 +56,11 @@ async function handleCloseShiftSubmit(payload: { declaredCash: number; note?: st
   await closeCurrentShift(payload.declaredCash, payload.note)
 }
 
-async function handleSaveReviewDecision(payload: { shiftId: number; status: string; note?: string }) {
+async function handleSaveReviewDecision(payload: {
+  shiftId: number
+  status: string
+  note?: string
+}) {
   await reviewShiftReconciliation(payload.shiftId, payload.status, payload.note)
 }
 </script>

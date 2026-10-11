@@ -21,20 +21,23 @@ const emit = defineEmits<{
       </div>
 
       <div class="modal-body">
-        <p>Bạn sắp tham gia kèo: <strong>{{ match.title }}</strong></p>
+        <p>
+          Bạn sắp tham gia kèo: <strong>{{ match.title }}</strong>
+        </p>
         <div class="match-mini-info">
           <span>📍 {{ match.venue_name }}</span>
           <span>⏰ {{ match.starts_at }}</span>
           <span>👤 Chủ phòng: {{ match.host_name }}</span>
         </div>
-        <p class="terms-note">Vui lòng có mặt đúng giờ và thanh toán phần tiền sân của mình trực tiếp tại quầy hoặc qua chia bill.</p>
+        <p class="terms-note">
+          Vui lòng có mặt đúng giờ và thanh toán phần tiền sân của mình trực tiếp tại quầy hoặc qua
+          chia bill.
+        </p>
       </div>
 
       <div class="modal-footer">
         <button class="btn-cancel" @click="emit('close')">Huỷ</button>
-        <button class="btn-primary" @click="emit('confirm', match)">
-          Xác Nhận Tham Gia
-        </button>
+        <button class="btn-primary" @click="emit('confirm', match)">Xác Nhận Tham Gia</button>
       </div>
     </div>
   </div>
@@ -72,11 +75,13 @@ const emit = defineEmits<{
   padding: 8px 20px;
   border-radius: 8px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.15s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
 }
 
 .btn-primary:hover {

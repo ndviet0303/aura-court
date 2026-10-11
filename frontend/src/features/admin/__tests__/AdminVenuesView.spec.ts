@@ -205,7 +205,9 @@ describe('AdminVenuesView', () => {
     })
     await flushPromises()
 
-    const readinessButton = wrapper.findAll('.btn-action-sm').find((button) => button.text().includes('Điều kiện & Thanh toán'))
+    const readinessButton = wrapper
+      .findAll('.btn-action-sm')
+      .find((button) => button.text().includes('Điều kiện & Thanh toán'))
     expect(readinessButton).toBeDefined()
     await readinessButton?.trigger('click')
     await flushPromises()

@@ -1,6 +1,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { TournamentItem, CircuitLeaderboardItem, TournamentRegistrationPayload } from '../types/tournament'
+import type {
+  TournamentItem,
+  CircuitLeaderboardItem,
+  TournamentRegistrationPayload,
+} from '../types/tournament'
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
@@ -30,7 +34,7 @@ export function useTournamentsList() {
     const list = tournaments.value
     const openCount = list.filter((t) => t.status === 'open' || t.status === 'upcoming').length
     const ongoingCount = list.filter((t) => t.status === 'ongoing').length
-    
+
     // Compute total prize pool from list
     let totalPrize = 0
     list.forEach((t) => {
@@ -40,9 +44,7 @@ export function useTournamentsList() {
       }
     })
 
-    const formattedPrize = totalPrize > 0
-      ? `${totalPrize.toLocaleString('vi-VN')} ₫`
-      : '0 ₫'
+    const formattedPrize = totalPrize > 0 ? `${totalPrize.toLocaleString('vi-VN')} ₫` : '0 ₫'
 
     return {
       total: list.length,
@@ -86,9 +88,13 @@ export function useTournamentsList() {
         const authUserId = auth.user?.id
         if (authUserId) {
           const fromServer = res
-            .filter((t) => t.participants?.some((p: any) => p.user_id === authUserId || p.id === authUserId))
+            .filter((t) =>
+              t.participants?.some((p: any) => p.user_id === authUserId || p.id === authUserId),
+            )
             .map((t) => t.id)
-          registeredTournamentIds.value = Array.from(new Set([...registeredTournamentIds.value, ...fromServer]))
+          registeredTournamentIds.value = Array.from(
+            new Set([...registeredTournamentIds.value, ...fromServer]),
+          )
         }
       } else {
         tournaments.value = []

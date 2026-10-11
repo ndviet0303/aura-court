@@ -25,7 +25,7 @@ watch(
       zoomLevel.value = 1
       rotationAngle.value = 0
     }
-  }
+  },
 )
 
 function zoomIn() {
@@ -119,11 +119,7 @@ function resetTransform() {
 
           <!-- Footer Metadata Banner -->
           <div v-if="inspectData.docMeta" class="modal-footer-meta">
-            <div
-              v-for="(val, key) in inspectData.docMeta"
-              :key="key"
-              class="meta-pill"
-            >
+            <div v-for="(val, key) in inspectData.docMeta" :key="key" class="meta-pill">
               <span class="meta-key">{{ key }}:</span>
               <span class="meta-val">{{ val }}</span>
             </div>

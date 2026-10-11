@@ -43,7 +43,9 @@ function formatMoney(amount: number): string {
           </div>
           <div class="stat-pill highlight-gold">
             <span class="material-symbols-outlined pill-icon">stars</span>
-            <span>{{ $t('wallet.accumulatedPoints', { points: totalPoints.toLocaleString() }) }}</span>
+            <span>{{
+              $t('wallet.accumulatedPoints', { points: totalPoints.toLocaleString() })
+            }}</span>
           </div>
         </div>
       </div>
@@ -99,7 +101,9 @@ function formatMoney(amount: number): string {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: var(--shadow-sm, 0 4px 20px rgba(107, 45, 63, 0.04));
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .total-balance-card:hover {
@@ -129,7 +133,7 @@ function formatMoney(amount: number): string {
   padding: 4px 12px;
   border-radius: 999px;
   background: var(--primary-container, rgba(107, 45, 63, 0.08));
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-size: 11.5px;
   font-weight: 700;
   width: fit-content;
@@ -138,7 +142,7 @@ function formatMoney(amount: number): string {
 
 :global(html.dark) .pass-badge {
   background: rgba(229, 142, 159, 0.12);
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
   border-color: rgba(229, 142, 159, 0.25);
 }
 
@@ -187,12 +191,12 @@ function formatMoney(amount: number): string {
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   line-height: 1.15;
 }
 
 :global(html.dark) .balance-val {
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
 .sub-stats-row {
@@ -221,17 +225,17 @@ function formatMoney(amount: number): string {
 .stat-pill.highlight-gold {
   background: var(--accent-container, rgba(201, 161, 90, 0.1));
   border-color: rgba(201, 161, 90, 0.3);
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
 }
 
 :global(html.dark) .stat-pill.highlight-gold {
-  color: var(--accent, #D8B46E);
+  color: var(--accent, #d8b46e);
   background: rgba(216, 180, 110, 0.12);
 }
 
 .pill-icon {
   font-size: 15px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .balance-actions {
@@ -274,7 +278,7 @@ function formatMoney(amount: number): string {
   height: 36px;
   border-radius: 10px;
   background: var(--surface);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   border: 1px solid var(--border);
   font-size: 18px;
   flex-shrink: 0;

@@ -38,13 +38,16 @@ watch(
           : 'Chấp thuận hoàn 100% giá trị đặt sân cho nguyên đơn do lỗi hệ thống và thao tác của cơ sở.'
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleSubmit() {
   const goodwillMap = {
     voucher_20: locale.value === 'en' ? '20% Discount Voucher' : 'Voucher giảm 20% đơn tiếp theo',
-    reputation_points: locale.value === 'en' ? '+500 Aura Club Reputation Points' : '500 Điểm Danh Vọng Aura Rewards',
+    reputation_points:
+      locale.value === 'en'
+        ? '+500 Aura Club Reputation Points'
+        : '500 Điểm Danh Vọng Aura Rewards',
     none: locale.value === 'en' ? 'None' : 'Không bồi thường thêm',
   }
 
@@ -78,11 +81,7 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <!-- Backdrop -->
-    <div
-      v-if="show"
-      class="drawer-backdrop"
-      @click="emit('close')"
-    ></div>
+    <div v-if="show" class="drawer-backdrop" @click="emit('close')"></div>
 
     <!-- Slide-over Panel -->
     <div
@@ -96,7 +95,12 @@ onBeforeUnmount(() => {
         <div>
           <h3 class="drawer-title">{{ t('admin.disputes.drawerTitle') }}</h3>
           <p class="drawer-sub">
-            {{ t('admin.disputes.drawerSubtitle', { code: item?.disputeCode, facility: item?.facility.name }) }}
+            {{
+              t('admin.disputes.drawerSubtitle', {
+                code: item?.disputeCode,
+                facility: item?.facility.name,
+              })
+            }}
           </p>
         </div>
         <button type="button" class="btn-close" @click="emit('close')">
@@ -105,13 +109,14 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Drawer Body -->
-      <div class="drawer-body" style="scrollbar-width: none;">
+      <div class="drawer-body" style="scrollbar-width: none">
         <!-- Financial Context -->
         <div class="context-card">
           <div class="context-row">
             <span class="context-lbl">{{ t('admin.disputes.totalDisputedLabel') }}</span>
             <span class="context-val text-primary font-bold">
-              {{ (item?.amountDisputed || 0).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN') }} ₫
+              {{ (item?.amountDisputed || 0).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN') }}
+              ₫
             </span>
           </div>
           <div class="context-row">
@@ -148,7 +153,10 @@ onBeforeUnmount(() => {
               </div>
             </label>
 
-            <label class="radio-card" :class="{ selected: selectedGoodwill === 'reputation_points' }">
+            <label
+              class="radio-card"
+              :class="{ selected: selectedGoodwill === 'reputation_points' }"
+            >
               <input
                 v-model="selectedGoodwill"
                 type="radio"
@@ -162,12 +170,7 @@ onBeforeUnmount(() => {
             </label>
 
             <label class="radio-card" :class="{ selected: selectedGoodwill === 'none' }">
-              <input
-                v-model="selectedGoodwill"
-                type="radio"
-                value="none"
-                class="radio-input"
-              />
+              <input v-model="selectedGoodwill" type="radio" value="none" class="radio-input" />
               <div class="radio-text">
                 <span class="radio-title">{{ t('admin.disputes.goodwillNoneTitle') }}</span>
                 <span class="radio-desc">{{ t('admin.disputes.goodwillNoneDesc') }}</span>
@@ -203,29 +206,25 @@ onBeforeUnmount(() => {
           <span class="material-symbols-outlined sig-icon">verified_user</span>
           <div class="sig-details">
             <span class="sig-title">{{ t('admin.disputes.signatureTitle') }}</span>
-            <span class="sig-hash">{{ t('admin.disputes.signatureHash', { hash: '8f9a2c...b109e4' }) }}</span>
+            <span class="sig-hash">{{
+              t('admin.disputes.signatureHash', { hash: '8f9a2c...b109e4' })
+            }}</span>
           </div>
         </div>
       </div>
 
       <!-- Drawer Footer -->
       <div class="drawer-footer">
-        <button
-          type="button"
-          class="btn-cancel"
-          :disabled="isSubmitting"
-          @click="emit('close')"
-        >
+        <button type="button" class="btn-cancel" :disabled="isSubmitting" @click="emit('close')">
           {{ t('admin.disputes.btnCancel') }}
         </button>
-        <button
-          type="button"
-          class="btn-submit"
-          :disabled="isSubmitting"
-          @click="handleSubmit"
-        >
+        <button type="button" class="btn-submit" :disabled="isSubmitting" @click="handleSubmit">
           <span class="material-symbols-outlined icon-18">check_circle</span>
-          <span>{{ isSubmitting ? t('admin.disputes.btnSubmitting') : t('admin.disputes.btnSubmitArbitration') }}</span>
+          <span>{{
+            isSubmitting
+              ? t('admin.disputes.btnSubmitting')
+              : t('admin.disputes.btnSubmitArbitration')
+          }}</span>
         </button>
       </div>
     </div>
@@ -508,7 +507,11 @@ button:disabled {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

@@ -478,7 +478,7 @@ function onNativeDateChange(event: Event) {
 
 /* Active State: Luxury Club Styling */
 .date-card-btn.active {
-  background: linear-gradient(145deg, #6B2D3F 0%, #4a1c29 100%) !important;
+  background: linear-gradient(145deg, #6b2d3f 0%, #4a1c29 100%) !important;
   border-color: #8c3b53 !important;
   color: #ffffff !important;
   box-shadow: 0 6px 20px rgba(107, 45, 63, 0.35) !important;
@@ -509,7 +509,9 @@ function onNativeDateChange(event: Event) {
   background: linear-gradient(145deg, #3d1b26 0%, #29121a 100%) !important;
   border: 1px solid #e58e9f !important;
   color: #ffffff !important;
-  box-shadow: 0 6px 24px rgba(229, 142, 159, 0.25), inset 0 0 16px rgba(229, 142, 159, 0.1) !important;
+  box-shadow:
+    0 6px 24px rgba(229, 142, 159, 0.25),
+    inset 0 0 16px rgba(229, 142, 159, 0.1) !important;
 }
 
 :global(html.dark) .date-card-btn.active .day-name {

@@ -287,7 +287,9 @@ const isFiltered = computed(() => {
   color: var(--ink);
   font-size: 13.5px;
   font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input:focus {
@@ -324,4 +326,3 @@ const isFiltered = computed(() => {
   min-width: 190px;
 }
 </style>
-

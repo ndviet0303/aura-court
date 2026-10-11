@@ -13,7 +13,9 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     })
   })
 
-  test('9.1.1: Vòng đời kết bạn & Phản hồi lời mời: gửi yêu cầu, chấp nhận, kết nối hai chiều (FR-COM-05, SUP-03)', async ({ page }) => {
+  test('9.1.1: Vòng đời kết bạn & Phản hồi lời mời: gửi yêu cầu, chấp nhận, kết nối hai chiều (FR-COM-05, SUP-03)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -45,9 +47,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
 
     // 3. Customer 1 sends friend request to Customer 2 via authenticated API caller
-    const sendRequestResult = await withE2EApi(page, async ({ apiV2 }, addresseeId) => {
-      return await apiV2.post('/social/friends/requests', { addressee_id: addresseeId })
-    }, customer2.id)
+    const sendRequestResult = await withE2EApi(
+      page,
+      async ({ apiV2 }, addresseeId) => {
+        return await apiV2.post('/social/friends/requests', { addressee_id: addresseeId })
+      },
+      customer2.id,
+    )
 
     expect(sendRequestResult).toBeDefined()
     expect((sendRequestResult as any)?.friendship?.status).toBe('pending')
@@ -76,11 +82,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       ]);
     `
 
-    const acceptResult = JSON.parse(execFileSync('php', ['-r', acceptScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { status: string; updated_at: string }
+    const acceptResult = JSON.parse(
+      execFileSync('php', ['-r', acceptScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { status: string; updated_at: string }
 
     expect(acceptResult.status).toBe('accepted')
     expect(acceptResult.updated_at).toBeTruthy()
@@ -90,7 +98,9 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       return await apiV2.get('/social/friends')
     })
 
-    const foundCust2 = (cust1Friends as any)?.friends?.some((f: any) => f.id === customer2.id || f.friend?.id === customer2.id)
+    const foundCust2 = (cust1Friends as any)?.friends?.some(
+      (f: any) => f.id === customer2.id || f.friend?.id === customer2.id,
+    )
     expect(foundCust2).toBe(true)
 
     // 6. Reload page: confirms bidirectional friendship persistence after reload
@@ -99,17 +109,25 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     const reloadedCust1Friends = await withE2EApi(page, async ({ apiV2 }) => {
       return await apiV2.get('/social/friends')
     })
-    const persistedCust2 = (reloadedCust1Friends as any)?.friends?.some((f: any) => f.id === customer2.id || f.friend?.id === customer2.id)
+    const persistedCust2 = (reloadedCust1Friends as any)?.friends?.some(
+      (f: any) => f.id === customer2.id || f.friend?.id === customer2.id,
+    )
     expect(persistedCust2).toBe(true)
 
     // 7. Cleanup / Remove friend
-    const removeRes = await withE2EApi(page, async ({ apiV2 }, fid) => {
-      return await apiV2.delete('/social/friends/' + (fid))
-    }, friendshipId)
+    const removeRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, fid) => {
+        return await apiV2.delete('/social/friends/' + fid)
+      },
+      friendshipId,
+    )
     expect(removeRes).toBeDefined()
   })
 
-  test('9.1.2: Tạo & công bố hoạt động: gắn booking sân, hạn đăng ký, sức chứa, giới hạn trình độ (FR-COM-02, FR-COM-03)', async ({ page }) => {
+  test('9.1.2: Tạo & công bố hoạt động: gắn booking sân, hạn đăng ký, sức chứa, giới hạn trình độ (FR-COM-02, FR-COM-03)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -134,23 +152,27 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     const futureDateStr = futureDate.toISOString().split('T')[0]
 
     // 3. Create and publish activity via socialApi with full validation
-    const createResult = await withE2EApi(page, async ({ apiV2 }, { title, date, orgId, venueId }) => {
-      return await apiV2.post('/social/matches', {
-        title,
-        sport_type: 'badminton',
-        category: 'giao lưu',
-        starts_at: `${date} 18:00:00`,
-        ends_at: `${date} 20:00:00`,
-        registration_deadline: `${date} 17:00:00`,
-        required_participants: 4,
-        min_skill: 2,
-        max_skill: 4,
-        cost_per_person: 60000,
-        split_bill_mode: 'Chia đều tiền sân & cầu',
-        description: 'Trận cầu giao lưu phong trào kiểm tra hệ thống E2E',
-        visibility: 'public',
-      })
-    }, { title: uniqueTitle, date: futureDateStr, orgId: org1Id, venueId: venue1Id })
+    const createResult = await withE2EApi(
+      page,
+      async ({ apiV2 }, { title, date, orgId, venueId }) => {
+        return await apiV2.post('/social/matches', {
+          title,
+          sport_type: 'badminton',
+          category: 'giao lưu',
+          starts_at: `${date} 18:00:00`,
+          ends_at: `${date} 20:00:00`,
+          registration_deadline: `${date} 17:00:00`,
+          required_participants: 4,
+          min_skill: 2,
+          max_skill: 4,
+          cost_per_person: 60000,
+          split_bill_mode: 'Chia đều tiền sân & cầu',
+          description: 'Trận cầu giao lưu phong trào kiểm tra hệ thống E2E',
+          visibility: 'public',
+        })
+      },
+      { title: uniqueTitle, date: futureDateStr, orgId: org1Id, venueId: venue1Id },
+    )
 
     expect(createResult).toBeDefined()
     const match = (createResult as any)?.match || (createResult as any)?.data
@@ -170,10 +192,14 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     // 5. Reload confirms persistence in Postgres
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.match-card', { hasText: uniqueTitle })).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.match-card', { hasText: uniqueTitle })).toBeVisible({
+      timeout: 15000,
+    })
   })
 
-  test('9.1.3: Tìm kiếm & bộ lọc hoạt động: lọc theo từ khóa, môn thể thao, trình độ phù hợp (FR-COM-04)', async ({ page }) => {
+  test('9.1.3: Tìm kiếm & bộ lọc hoạt động: lọc theo từ khóa, môn thể thao, trình độ phù hợp (FR-COM-04)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -194,20 +220,24 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     futureDate.setDate(futureDate.getDate() + 4)
     const futureDateStr = futureDate.toISOString().split('T')[0]
 
-    await withE2EApi(page, async ({ apiV2 }, { title, date }) => {
-      return await apiV2.post('/social/matches', {
-        title,
-        sport_type: 'pickleball',
-        category: 'giao lưu',
-        starts_at: `${date} 09:00:00`,
-        ends_at: `${date} 11:00:00`,
-        required_participants: 4,
-        min_skill: 1,
-        max_skill: 5,
-        cost_per_person: 50000,
-        visibility: 'public',
-      })
-    }, { title: distinctTitle, date: futureDateStr })
+    await withE2EApi(
+      page,
+      async ({ apiV2 }, { title, date }) => {
+        return await apiV2.post('/social/matches', {
+          title,
+          sport_type: 'pickleball',
+          category: 'giao lưu',
+          starts_at: `${date} 09:00:00`,
+          ends_at: `${date} 11:00:00`,
+          required_participants: 4,
+          min_skill: 1,
+          max_skill: 5,
+          cost_per_person: 50000,
+          visibility: 'public',
+        })
+      },
+      { title: distinctTitle, date: futureDateStr },
+    )
 
     // 3. Open /matchmaking
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
@@ -217,7 +247,9 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     await expect(searchInput).toBeVisible({ timeout: 15000 })
     await searchInput.fill(distinctTitle)
     await page.waitForTimeout(500)
-    await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({
+      timeout: 10000,
+    })
 
     // 5. Search for non-existent activity -> empty state
     await searchInput.fill('XYZNonExistentActivity999999')
@@ -227,10 +259,14 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     // 6. Clear search -> match card returns
     await searchInput.fill('')
     await page.waitForTimeout(500)
-    await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.match-card', { hasText: distinctTitle })).toBeVisible({
+      timeout: 10000,
+    })
   })
 
-  test('9.1.4: Mời thi đấu, tham gia hoạt động & Giới hạn số lượng người chơi (FR-COM-05, FR-COM-06)', async ({ page }) => {
+  test('9.1.4: Mời thi đấu, tham gia hoạt động & Giới hạn số lượng người chơi (FR-COM-05, FR-COM-06)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -285,11 +321,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       ]);
     `
 
-    const arrangedMatch = JSON.parse(execFileSync('php', ['-r', matchArrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { match_id: number; title: string; capacity: number; joined_count: number }
+    const arrangedMatch = JSON.parse(
+      execFileSync('php', ['-r', matchArrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { match_id: number; title: string; capacity: number; joined_count: number }
 
     expect(arrangedMatch.capacity).toBe(3)
     expect(arrangedMatch.joined_count).toBe(1)
@@ -322,11 +360,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       ]);
     `
 
-    const inviteResult = JSON.parse(execFileSync('php', ['-r', inviteScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { invitation_status: string; joined_count: number }
+    const inviteResult = JSON.parse(
+      execFileSync('php', ['-r', inviteScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { invitation_status: string; joined_count: number }
 
     expect(inviteResult.invitation_status).toBe('accepted')
     expect(inviteResult.joined_count).toBe(2)
@@ -363,11 +403,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       ]);
     `
 
-    const fillResult = JSON.parse(execFileSync('php', ['-r', fillScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { joined_count: number; is_full: boolean; p3_id: number }
+    const fillResult = JSON.parse(
+      execFileSync('php', ['-r', fillScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { joined_count: number; is_full: boolean; p3_id: number }
 
     expect(fillResult.joined_count).toBe(3)
     expect(fillResult.is_full).toBe(true)
@@ -403,16 +445,20 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       }
     `
 
-    const overCapacityResult = JSON.parse(execFileSync('php', ['-r', overCapacityScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { rejected: boolean; error?: string }
+    const overCapacityResult = JSON.parse(
+      execFileSync('php', ['-r', overCapacityScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { rejected: boolean; error?: string }
 
     expect(overCapacityResult.rejected).toBe(true)
   })
 
-  test('9.1.5: Chốt danh sách, điểm danh có mặt/vắng mặt & Cập nhật điểm uy tín (FR-COM-07, FR-COM-08, FR-COM-16)', async ({ page }) => {
+  test('9.1.5: Chốt danh sách, điểm danh có mặt/vắng mặt & Cập nhật điểm uy tín (FR-COM-07, FR-COM-08, FR-COM-16)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -500,11 +546,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       ]);
     `
 
-    const rosterResult = JSON.parse(execFileSync('php', ['-r', rosterScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const rosterResult = JSON.parse(
+      execFileSync('php', ['-r', rosterScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       roster_closed: boolean
       player2_attendance: string
       player2_verified: boolean
@@ -583,11 +631,13 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
       ]);
     `
 
-    const noShowResult = JSON.parse(execFileSync('php', ['-r', noShowScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { initial_score: number; final_score: number; delta: number }
+    const noShowResult = JSON.parse(
+      execFileSync('php', ['-r', noShowScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { initial_score: number; final_score: number; delta: number }
 
     expect(noShowResult.final_score).toBe(45)
     expect(noShowResult.delta).toBe(-15)

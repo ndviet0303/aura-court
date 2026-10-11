@@ -73,28 +73,28 @@ export function verifyTestGate(options: GateVerificationOptions = {}): {
   // 1. Minimum test threshold check (zero-selection / missing suite protection)
   if (totalTests < minExpected) {
     violations.push(
-      `TEST_COUNT_INSUFFICIENT: Expected at least ${minExpected} tests, found ${totalTests}. Zero-selection or missing tests detected!`
+      `TEST_COUNT_INSUFFICIENT: Expected at least ${minExpected} tests, found ${totalTests}. Zero-selection or missing tests detected!`,
     )
   }
 
   // 2. Failure and error check
   if (effectiveFailures > 0 || effectiveErrors > 0) {
     violations.push(
-      `TEST_FAILURES_DETECTED: Found ${effectiveFailures} failure(s) and ${effectiveErrors} error(s).`
+      `TEST_FAILURES_DETECTED: Found ${effectiveFailures} failure(s) and ${effectiveErrors} error(s).`,
     )
   }
 
   // 3. Skipped check
   if (!allowSkipped && effectiveSkipped > 0) {
     violations.push(
-      `TEST_SKIPPED_FORBIDDEN: Found ${effectiveSkipped} skipped test(s). Skipped tests are forbidden in critical gates!`
+      `TEST_SKIPPED_FORBIDDEN: Found ${effectiveSkipped} skipped test(s). Skipped tests are forbidden in critical gates!`,
     )
   }
 
   // 4. Flaky test check
   if (flaky > 0) {
     violations.push(
-      `FLAKY_RETRY_DETECTED: Found ${flaky} flaky test(s) that required retries. Retry-only success is forbidden in critical gates!`
+      `FLAKY_RETRY_DETECTED: Found ${flaky} flaky test(s) that required retries. Retry-only success is forbidden in critical gates!`,
     )
   }
 
@@ -117,7 +117,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const reportArg = process.argv.find((a) => a.startsWith('--junit='))
   const junitPath = reportArg ? reportArg.split('=')[1] : undefined
 
-  console.log(`[CI Gate Verifier] Verifying gate against ${junitPath || 'test-results/junit.xml'} (minTests: ${minTests})...`)
+  console.log(
+    `[CI Gate Verifier] Verifying gate against ${junitPath || 'test-results/junit.xml'} (minTests: ${minTests})...`,
+  )
   const result = verifyTestGate({ minTests, allowSkipped: allowSkipArg, junitPath })
 
   if (!result.passed) {
@@ -128,7 +130,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1)
   } else {
     console.log(
-      `\n✅ Gate verification PASSED: ${result.totalTests} tests executed with 0 failures, 0 skipped, 0 flaky.`
+      `\n✅ Gate verification PASSED: ${result.totalTests} tests executed with 0 failures, 0 skipped, 0 flaky.`,
     )
     process.exit(0)
   }

@@ -170,7 +170,7 @@ const hasActiveFilters = computed(() => {
 
 .search-input:focus {
   outline: none;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   background: var(--surface);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
 }
@@ -210,7 +210,7 @@ const hasActiveFilters = computed(() => {
 }
 
 .btn-reset-filters {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   font-size: 12.5px;
   padding: 8px 12px;
   border-radius: 10px;

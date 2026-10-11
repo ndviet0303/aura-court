@@ -13,14 +13,17 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     })
   })
 
-  test('7.7.1: Quản lý quy tắc giá (thời gian hiệu lực & thứ tự ưu tiên rule)', async ({ page }) => {
+  test('7.7.1: Quản lý quy tắc giá (thời gian hiệu lực & thứ tự ưu tiên rule)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const org1 = manifest.fixtures?.organizations.org1
     const orgId = org1?.id
     const venue1Id = org1?.venue1A?.id
     const court1Id = org1?.venue1A?.courts?.[0]
-    if (!orgId || !venue1Id || !court1Id) throw new Error('Org1, Venue1A, or Court1 missing from manifest')
+    if (!orgId || !venue1Id || !court1Id)
+      throw new Error('Org1, Venue1A, or Court1 missing from manifest')
 
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
     const backendEnv = {
@@ -102,11 +105,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { court_id: number; base_id: number; peak_id: number; expired_id: number }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { court_id: number; base_id: number; peak_id: number; expired_id: number }
     expect(arranged.base_id).toBeGreaterThan(0)
     expect(arranged.peak_id).toBeGreaterThan(0)
     expect(arranged.expired_id).toBeGreaterThan(0)
@@ -156,11 +161,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       ]);
     `
 
-    const quoteCheck = JSON.parse(execFileSync('php', ['-r', quoteTestScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const quoteCheck = JSON.parse(
+      execFileSync('php', ['-r', quoteTestScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       peak_price: number
       peak_rule_type: string
       peak_rule_priority: number
@@ -178,7 +185,9 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     expect(quoteCheck.off_peak_rule_type).toBe('base')
   })
 
-  test('7.7.2: Giá của booking hiện hữu không đổi khi cập nhật bảng giá mới (tính bất biến)', async ({ page }) => {
+  test('7.7.2: Giá của booking hiện hữu không đổi khi cập nhật bảng giá mới (tính bất biến)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const customer = getActorCredentials(manifest, 'customer')
@@ -271,11 +280,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       ]);
     `
 
-    const arrangedBooking = JSON.parse(execFileSync('php', ['-r', arrangeBookingScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { court_id: number; booking_id: number; booking_code: string; initial_price: number }
+    const arrangedBooking = JSON.parse(
+      execFileSync('php', ['-r', arrangeBookingScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { court_id: number; booking_id: number; booking_code: string; initial_price: number }
 
     expect(arrangedBooking.initial_price).toBe(100000)
 
@@ -312,11 +323,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       ]);
     `
 
-    const verification = JSON.parse(execFileSync('php', ['-r', updatePricesScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const verification = JSON.parse(
+      execFileSync('php', ['-r', updatePricesScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       existing_booking_total: number
       existing_slot_unit_price: number
       existing_price_snapshot: any
@@ -340,9 +353,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
 
     await page.goto('/admin/pricing', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('.page-title')).toContainText('Thiết Lập Ma Trận Giá Linh Hoạt')
-    await expect(page.locator('.priority-stack-container, .rule-card').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.priority-stack-container, .rule-card').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
-  test('7.7.3: Vòng đời coupon & chiến dịch khuyến mãi, điều kiện áp dụng & hết hạn', async ({ page }) => {
+  test('7.7.3: Vòng đời coupon & chiến dịch khuyến mãi, điều kiện áp dụng & hết hạn', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const customer = getActorCredentials(manifest, 'customer')
@@ -350,7 +367,8 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     const orgId = org1?.id
     const venue1Id = org1?.venue1A?.id
     const venue2Id = org1?.venue1B?.id
-    if (!orgId || !venue1Id || !venue2Id) throw new Error('Org1, Venue1A, or Venue1B missing from manifest')
+    if (!orgId || !venue1Id || !venue2Id)
+      throw new Error('Org1, Venue1A, or Venue1B missing from manifest')
 
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
     const backendEnv = {
@@ -409,11 +427,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       echo json_encode(['campaign_id' => $campaign->id, 'coupon_id' => $coupon->id]);
     `
 
-    const arrangedPromo = JSON.parse(execFileSync('php', ['-r', arrangePromoScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { campaign_id: number; coupon_id: number }
+    const arrangedPromo = JSON.parse(
+      execFileSync('php', ['-r', arrangePromoScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { campaign_id: number; coupon_id: number }
 
     // 2. Customer logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -423,52 +443,76 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Test lifecycle: Valid preview with subtotal >= min_spend and matching venue1A
-    const validPreview = await withE2EApi(page, async ({ api }, { orgId, code, venueId }) => {
-      return await api.post('/coupons/preview', {
-        subtotal: 200000,
-        code,
-        venue_id: venueId,
-      }, {
-        headers: { 'X-Organization-ID': String(orgId) },
-      })
-    }, { orgId, code: promoCode, venueId: venue1Id }) as { discount: number; total: number }
+    const validPreview = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, code, venueId }) => {
+        return await api.post(
+          '/coupons/preview',
+          {
+            subtotal: 200000,
+            code,
+            venue_id: venueId,
+          },
+          {
+            headers: { 'X-Organization-ID': String(orgId) },
+          },
+        )
+      },
+      { orgId, code: promoCode, venueId: venue1Id },
+    )) as { discount: number; total: number }
 
     expect(validPreview.discount).toBe(30000)
     expect(validPreview.total).toBe(170000)
 
     // 4. Scope condition check: preview on DIFFERENT unassigned venue (venue1B) -> MUST fail with 422
-    const wrongVenuePreview = await withE2EApi(page, async ({ api }, { orgId, code, venueId }) => {
-      try {
-        await api.post('/coupons/preview', {
-          subtotal: 200000,
-          code,
-          venue_id: venueId,
-        }, {
-          headers: { 'X-Organization-ID': String(orgId) },
-        })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const wrongVenuePreview = await withE2EApi(
+      page,
+      async ({ api }, { orgId, code, venueId }) => {
+        try {
+          await api.post(
+            '/coupons/preview',
+            {
+              subtotal: 200000,
+              code,
+              venue_id: venueId,
+            },
+            {
+              headers: { 'X-Organization-ID': String(orgId) },
+            },
+          )
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { orgId, code: promoCode, venueId: venue2Id })
+      },
+      { orgId, code: promoCode, venueId: venue2Id },
+    )
 
     expect(wrongVenuePreview.success).toBe(false)
     expect(wrongVenuePreview.status).toBe(422)
     expect(wrongVenuePreview.message).toContain('Mã giảm giá không áp dụng cho cơ sở')
     // 5. Min spend check: preview with subtotal 100,000 (< 150,000 min spend) -> discount is 0 (not applied)
-    const minSpendPreview = await withE2EApi(page, async ({ api }, { orgId, code, venueId }) => {
-      return await api.post('/coupons/preview', {
-        subtotal: 100000,
-        code,
-        venue_id: venueId,
-      }, {
-        headers: { 'X-Organization-ID': String(orgId) },
-      })
-    }, { orgId, code: promoCode, venueId: venue1Id }) as { discount: number; total: number }
+    const minSpendPreview = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, code, venueId }) => {
+        return await api.post(
+          '/coupons/preview',
+          {
+            subtotal: 100000,
+            code,
+            venue_id: venueId,
+          },
+          {
+            headers: { 'X-Organization-ID': String(orgId) },
+          },
+        )
+      },
+      { orgId, code: promoCode, venueId: venue1Id },
+    )) as { discount: number; total: number }
 
     expect(minSpendPreview.discount).toBe(0)
     expect(minSpendPreview.total).toBe(100000)
@@ -491,24 +535,32 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     })
 
     // Suspended preview -> MUST fail with 422
-    const suspendedPreview = await withE2EApi(page, async ({ api }, { orgId, code, venueId }) => {
-      try {
-        await api.post('/coupons/preview', {
-          subtotal: 200000,
-          code,
-          venue_id: venueId,
-        }, {
-          headers: { 'X-Organization-ID': String(orgId) },
-        })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const suspendedPreview = await withE2EApi(
+      page,
+      async ({ api }, { orgId, code, venueId }) => {
+        try {
+          await api.post(
+            '/coupons/preview',
+            {
+              subtotal: 200000,
+              code,
+              venue_id: venueId,
+            },
+            {
+              headers: { 'X-Organization-ID': String(orgId) },
+            },
+          )
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { orgId, code: promoCode, venueId: venue1Id })
+      },
+      { orgId, code: promoCode, venueId: venue1Id },
+    )
 
     expect(suspendedPreview.success).toBe(false)
     expect(suspendedPreview.status).toBe(422)
@@ -532,24 +584,32 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     })
 
     // Retired preview -> MUST fail with 422
-    const retiredPreview = await withE2EApi(page, async ({ api }, { orgId, code, venueId }) => {
-      try {
-        await api.post('/coupons/preview', {
-          subtotal: 200000,
-          code,
-          venue_id: venueId,
-        }, {
-          headers: { 'X-Organization-ID': String(orgId) },
-        })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const retiredPreview = await withE2EApi(
+      page,
+      async ({ api }, { orgId, code, venueId }) => {
+        try {
+          await api.post(
+            '/coupons/preview',
+            {
+              subtotal: 200000,
+              code,
+              venue_id: venueId,
+            },
+            {
+              headers: { 'X-Organization-ID': String(orgId) },
+            },
+          )
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { orgId, code: promoCode, venueId: venue1Id })
+      },
+      { orgId, code: promoCode, venueId: venue1Id },
+    )
 
     expect(retiredPreview.success).toBe(false)
     expect(retiredPreview.status).toBe(422)
@@ -644,11 +704,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       echo json_encode(['coupon_code' => $coupon->code]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { coupon_code: string }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { coupon_code: string }
 
     // 2. Customer logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -658,29 +720,39 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Customer attempts to apply the non-combinable coupon while possessing active membership discount -> MUST fail with 422
-    const nonCombineAttempt = await withE2EApi(page, async ({ api }, { orgId, code, venueId }) => {
-      try {
-        await api.post('/coupons/preview', {
-          subtotal: 100000,
-          code,
-          venue_id: venueId,
-        }, {
-          headers: { 'X-Organization-ID': String(orgId) },
-        })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const nonCombineAttempt = await withE2EApi(
+      page,
+      async ({ api }, { orgId, code, venueId }) => {
+        try {
+          await api.post(
+            '/coupons/preview',
+            {
+              subtotal: 100000,
+              code,
+              venue_id: venueId,
+            },
+            {
+              headers: { 'X-Organization-ID': String(orgId) },
+            },
+          )
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { orgId, code: arranged.coupon_code, venueId: venue1Id })
+      },
+      { orgId, code: arranged.coupon_code, venueId: venue1Id },
+    )
 
     try {
       expect(nonCombineAttempt.success).toBe(false)
       expect(nonCombineAttempt.status).toBe(422)
-      expect(nonCombineAttempt.message).toContain('Mã giảm giá không thể kết hợp cùng ưu đãi hội viên trên cùng một đơn hàng.')
+      expect(nonCombineAttempt.message).toContain(
+        'Mã giảm giá không thể kết hợp cùng ưu đãi hội viên trên cùng một đơn hàng.',
+      )
     } finally {
       // Cleanup customer membership so subsequent test suites in the run are not polluted with discount
       const cleanupScript = `
@@ -759,11 +831,13 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       echo json_encode(['plan_id' => $plan->id]);
     `
 
-    const arrangedPlan = JSON.parse(execFileSync('php', ['-r', arrangePlanScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { plan_id: number }
+    const arrangedPlan = JSON.parse(
+      execFileSync('php', ['-r', arrangePlanScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { plan_id: number }
 
     // 2. Owner logs in and navigates to /admin/membership
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -784,16 +858,20 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     await expect(page.locator('.version-timeline-wrapper')).toBeVisible({ timeout: 10000 })
 
     // 4. Archive plan via API
-    const archiveRes = await withE2EApi(page, async ({ apiV2 }, planId) => {
-      return await apiV2.post(`/admin/memberships/plans/${planId}/archive`)
-    }, arrangedPlan.plan_id) as { message?: string }
+    const archiveRes = (await withE2EApi(
+      page,
+      async ({ apiV2 }, planId) => {
+        return await apiV2.post(`/admin/memberships/plans/${planId}/archive`)
+      },
+      arrangedPlan.plan_id,
+    )) as { message?: string }
 
     expect(archiveRes.message).toContain('Đã lưu trữ gói hội viên thành công!')
 
     // 5. Query version history: archived plan preserves subscriber note
-    const historyRes = await withE2EApi(page, async ({ apiV2 }) => {
+    const historyRes = (await withE2EApi(page, async ({ apiV2 }) => {
       return await apiV2.get('/admin/memberships/version-history')
-    }) as Array<{
+    })) as Array<{
       planId: number
       status: string
       note?: string

@@ -24,7 +24,6 @@ export function useUserBookings() {
   const showQrModal = ref(false)
   const qrBooking = ref<Booking | null>(null)
 
-
   async function load() {
     loading.value = true
     error.value = ''
@@ -104,7 +103,6 @@ export function useUserBookings() {
     showQrModal.value = false
     qrBooking.value = null
   }
-
 
   // Review Modal Handlers
   function openReview(b: Booking) {

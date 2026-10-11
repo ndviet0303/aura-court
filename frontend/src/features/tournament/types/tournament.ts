@@ -8,11 +8,13 @@ export interface Fixture {
   participant_one_name?: string
   participant_two_name?: string
   winner_id?: number
-  score?: {
-    sets?: Array<{ p1: number; p2: number }>
-    winner?: number
-    loser?: number
-  } | Record<string, unknown>
+  score?:
+    | {
+        sets?: Array<{ p1: number; p2: number }>
+        winner?: number
+        loser?: number
+      }
+    | Record<string, unknown>
 }
 
 export interface Participant {
@@ -91,5 +93,3 @@ export interface TournamentRegistrationPayload {
   checked_in?: boolean
   [key: string]: any
 }
-
-

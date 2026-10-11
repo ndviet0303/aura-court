@@ -55,7 +55,7 @@ export function useAuthForm() {
         regName.value.trim(),
         regEmail.value.trim(),
         regPassword.value,
-        regPasswordConfirmation.value
+        regPasswordConfirmation.value,
       )
       router.push('/onboarding')
     } catch (cause: unknown) {

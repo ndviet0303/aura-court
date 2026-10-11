@@ -17,7 +17,10 @@ const emit = defineEmits<{
 
 function formatMoney(amount: number): string {
   const prefix = amount > 0 ? '+' : ''
-  return prefix + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+  return (
+    prefix +
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+  )
 }
 
 function getIconForType(type: TransactionType): string {
@@ -103,7 +106,9 @@ function getIconForType(type: TransactionType): string {
         <span class="material-symbols-outlined">receipt_long</span>
       </div>
       <h4 class="empty-title">Không tìm thấy giao dịch nào</h4>
-      <p class="empty-desc">Không có giao dịch nào khớp với bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+      <p class="empty-desc">
+        Không có giao dịch nào khớp với bộ lọc hoặc từ khóa tìm kiếm của bạn.
+      </p>
       <button class="btn btn-outline" @click="emit('deposit')">
         <span class="material-symbols-outlined">add_card</span>
         <span>Nạp Tiền Vào Ví Ngay</span>
@@ -112,11 +117,7 @@ function getIconForType(type: TransactionType): string {
 
     <!-- Transactions List -->
     <div v-else class="transactions-list">
-      <div
-        v-for="t in transactions"
-        :key="t.id"
-        class="txn-row"
-      >
+      <div v-for="t in transactions" :key="t.id" class="txn-row">
         <!-- Icon -->
         <div class="txn-icon-box" :class="`icon-${t.type}`">
           <span class="material-symbols-outlined">{{ getIconForType(t.type) }}</span>
@@ -199,7 +200,7 @@ function getIconForType(type: TransactionType): string {
 }
 
 .title-icon {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   font-size: 22px;
 }
 
@@ -247,7 +248,7 @@ function getIconForType(type: TransactionType): string {
 }
 
 .search-input:focus {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   width: 220px;
 }
 
@@ -282,13 +283,13 @@ function getIconForType(type: TransactionType): string {
 
 .p-tab.active {
   background: var(--surface);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 :global(html.dark) .p-tab.active {
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
 /* Transactions List */
@@ -306,7 +307,9 @@ function getIconForType(type: TransactionType): string {
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .txn-row:hover {
@@ -335,11 +338,11 @@ function getIconForType(type: TransactionType): string {
 
 .icon-booking {
   background: var(--primary-container, rgba(107, 45, 63, 0.1));
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .icon-booking {
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
 .icon-pos {
@@ -348,7 +351,7 @@ function getIconForType(type: TransactionType): string {
 }
 
 :global(html.dark) .icon-pos {
-  color: var(--accent, #D8B46E);
+  color: var(--accent, #d8b46e);
 }
 
 .icon-refund {
@@ -406,7 +409,7 @@ function getIconForType(type: TransactionType): string {
 
 .meta-pin {
   font-size: 13px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .txn-time-line {

@@ -62,7 +62,7 @@ export function useCourtDetail() {
         loadReviews()
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   const basePrice = computed(() => {

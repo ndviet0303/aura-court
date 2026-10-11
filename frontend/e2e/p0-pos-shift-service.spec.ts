@@ -33,7 +33,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
     const cleanShiftScript = `
       require "vendor/autoload.php";
@@ -48,7 +48,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       encoding: 'utf-8',
     })
   })
-  test('5.1: Mở ca -> chọn khách/hàng & tính giá -> bán tiền mặt -> hóa đơn -> F5 chứng minh đơn duy nhất, trừ kho & tổng tiền ca', async ({ page }) => {
+  test('5.1: Mở ca -> chọn khách/hàng & tính giá -> bán tiền mặt -> hóa đơn -> F5 chứng minh đơn duy nhất, trừ kho & tổng tiền ca', async ({
+    page,
+  }) => {
     test.setTimeout(90000)
     const manifest = getTestManifest()
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -68,7 +70,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 1. Arrange a dedicated POS product with known stock for deterministic testing
@@ -89,12 +91,14 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     // 3. Navigate to /admin/pos
     await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.pos-view-layout, .pos-topbar').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.pos-view-layout, .pos-topbar').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     // 4. Ensure an active shift exists or open one
     const shiftBtn = page.locator('.topbar-btn.shift-btn')
     await expect(shiftBtn).toBeVisible({ timeout: 10000 })
-    const isShiftOpen = await shiftBtn.locator('.shift-pulse').count() > 0
+    const isShiftOpen = (await shiftBtn.locator('.shift-pulse').count()) > 0
 
     if (!isShiftOpen) {
       await shiftBtn.click()
@@ -107,10 +111,12 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
       // Click Open Shift
       const openBtn = shiftModal.locator('.btn-primary')
-      const openPromise = page.waitForResponse(
-        (res) => res.url().includes('/pos/shifts') && res.request().method() === 'POST',
-        { timeout: 20000 }
-      ).catch(() => null)
+      const openPromise = page
+        .waitForResponse(
+          (res) => res.url().includes('/pos/shifts') && res.request().method() === 'POST',
+          { timeout: 20000 },
+        )
+        .catch(() => null)
       await openBtn.click()
       await openPromise
       await expect(shiftModal).not.toBeVisible({ timeout: 20000 })
@@ -142,8 +148,11 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
 
     const orderResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/v2/pos/orders') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 20000 }
+      (res) =>
+        res.url().includes('/v2/pos/orders') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 20000 },
     )
     await checkoutBtn.click()
 
@@ -207,7 +216,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(dbState.shift_cash_sales).toBeGreaterThanOrEqual(15000)
   })
 
-  test('5.2: Bán hàng QR pending -> webhook xác thực chuyển paid & trừ tồn kho -> thử lại không trừ kho hai lần', async ({ page }) => {
+  test('5.2: Bán hàng QR pending -> webhook xác thực chuyển paid & trừ tồn kho -> thử lại không trừ kho hai lần', async ({
+    page,
+  }) => {
     test.setTimeout(90000)
     const manifest = getTestManifest()
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -227,7 +238,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 1. Arrange a dedicated product with 25 in stock
@@ -251,7 +262,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     // Ensure shift is open
     const shiftBtn = page.locator('.topbar-btn.shift-btn')
-    const isShiftOpen = await shiftBtn.evaluate((el) => el.classList.contains('shift-active')).catch(() => false)
+    const isShiftOpen = await shiftBtn
+      .evaluate((el) => el.classList.contains('shift-active'))
+      .catch(() => false)
     if (!isShiftOpen) {
       await shiftBtn.click()
       const shiftModal = page.locator('.modal-card')
@@ -274,8 +287,11 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     // 5. Click checkout -> creates pending QR order
     const qrResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/v2/pos/orders') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 20000 }
+      (res) =>
+        res.url().includes('/v2/pos/orders') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 20000 },
     )
     await page.locator('.checkout-submit-btn').click()
     const qrResponse = await qrResponsePromise
@@ -290,14 +306,20 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await expect(qrModal).toBeVisible({ timeout: 15000 })
     await expect(qrModal).toContainText('Đang chờ chuyển khoản')
     // 7. NEGATIVE PROOF: Attempting client-only confirm before payment receipt MUST fail with 422
-    const unverifiedAttempt = await withE2EApi(page, async ({ apiV2 }, oId) => {
-      try {
-        await apiV2.post(`/pos/orders/${oId}/confirm-qr`, { external_transaction_id: 'FAKE_TXN_123' })
-        return { success: true }
-      } catch (err: any) {
-        return { success: false, status: err?.status, message: err?.message }
-      }
-    }, orderId)
+    const unverifiedAttempt = await withE2EApi(
+      page,
+      async ({ apiV2 }, oId) => {
+        try {
+          await apiV2.post(`/pos/orders/${oId}/confirm-qr`, {
+            external_transaction_id: 'FAKE_TXN_123',
+          })
+          return { success: true }
+        } catch (err: any) {
+          return { success: false, status: err?.status, message: err?.message }
+        }
+      },
+      orderId,
+    )
     expect(unverifiedAttempt.success).toBe(false)
     expect(unverifiedAttempt.status).toBe(422)
 
@@ -338,7 +360,10 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       code: paymentRef,
       posOrderId: Number(orderId),
     })
-    expect(webhookRes.ok, `Webhook failed with status ${webhookRes.statusCode}: ${JSON.stringify(webhookRes.body)}`).toBe(true)
+    expect(
+      webhookRes.ok,
+      `Webhook failed with status ${webhookRes.statusCode}: ${JSON.stringify(webhookRes.body)}`,
+    ).toBe(true)
     // 9. Close QR modal as payment has completed via verified webhook
     const closeQrBtn = page.locator('.qr-modal-card .modal-close-btn')
     if (await closeQrBtn.isVisible()) {
@@ -374,14 +399,18 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(paidState.stock).toBe(24)
 
     // 10. Idempotency verification: re-confirming already completed order does NOT decrement stock again
-    const retryAttempt = await withE2EApi(page, async ({ apiV2 }, oId) => {
-      try {
-        const res = await apiV2.post(`/pos/orders/${oId}/confirm-qr`, {})
-        return { success: true, data: res.data }
-      } catch (err: any) {
-        return { success: false, status: err?.status }
-      }
-    }, orderId)
+    const retryAttempt = await withE2EApi(
+      page,
+      async ({ apiV2 }, oId) => {
+        try {
+          const res = await apiV2.post(`/pos/orders/${oId}/confirm-qr`, {})
+          return { success: true, data: res.data }
+        } catch (err: any) {
+          return { success: false, status: err?.status }
+        }
+      },
+      orderId,
+    )
     // Re-confirm is either rejected as already paid or returns existing receipt without double stock decrement
     const checkRetryScript = `
       require "vendor/autoload.php";
@@ -408,8 +437,11 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await page.locator('.product-card', { hasText: stockItem.name }).click()
     await page.locator('.pay-method-btn', { hasText: 'VietQR' }).click()
     const cancelOrderResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/v2/pos/orders') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 20000 }
+      (res) =>
+        res.url().includes('/v2/pos/orders') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 20000 },
     )
     await page.locator('.checkout-submit-btn').click()
     const cancelOrderResponse = await cancelOrderResponsePromise
@@ -420,7 +452,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // Click Cancel in QR modal
     const cancelPromise = page.waitForResponse(
       (res) => res.url().includes(`/pos/orders/${cancelOrderId}/cancel-qr`) && res.status() === 200,
-      { timeout: 20000 }
+      { timeout: 20000 },
     )
     await page.locator('.qr-modal-card .btn-cancel').click()
     await cancelPromise
@@ -460,8 +492,11 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await page.locator('.product-card', { hasText: stockItem.name }).click()
     await page.locator('.pay-method-btn', { hasText: 'VietQR' }).click()
     const expOrderResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/v2/pos/orders') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 20000 }
+      (res) =>
+        res.url().includes('/v2/pos/orders') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 20000 },
     )
     await page.locator('.checkout-submit-btn').click()
     const expOrderResponse = await expOrderResponsePromise
@@ -516,7 +551,10 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(expireState.stock).toBe(24)
   })
 
-  test('5.3: Đóng ca thu ngân -> đối soát chênh lệch tiền mặt -> khóa trạng thái sau khi F5', async ({ page, browser }) => {
+  test('5.3: Đóng ca thu ngân -> đối soát chênh lệch tiền mặt -> khóa trạng thái sau khi F5', async ({
+    page,
+    browser,
+  }) => {
     test.setTimeout(90000)
     const manifest = getTestManifest()
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -536,7 +574,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // Arrange a dedicated product for creating an unresolved pending order during shift
@@ -565,8 +603,10 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await expect(shiftModal).toBeVisible({ timeout: 10000 })
     await shiftModal.locator('input[type="number"]').fill('1000000')
     const shiftOpenResponse = page.waitForResponse(
-      (response) => new URL(response.url()).pathname === '/api/v2/pos/shifts'
-        && response.request().method() === 'POST' && response.ok(),
+      (response) =>
+        new URL(response.url()).pathname === '/api/v2/pos/shifts' &&
+        response.request().method() === 'POST' &&
+        response.ok(),
       { timeout: 15000 },
     )
     await shiftModal.locator('.btn-primary').click()
@@ -577,24 +617,32 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(shiftId).toBeDefined()
 
     // 3. Create an unresolved pending QR order during this shift
-    const pendingOrderRes = await withE2EApi(page, async ({ apiV2 }, pId) => {
-      return await apiV2.post('/pos/orders', {
-        payment_method: 'qr',
-        items: [{ product_id: pId, quantity: 1 }],
-      })
-    }, stockItem.product_id)
+    const pendingOrderRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, pId) => {
+        return await apiV2.post('/pos/orders', {
+          payment_method: 'qr',
+          items: [{ product_id: pId, quantity: 1 }],
+        })
+      },
+      stockItem.product_id,
+    )
     const pendingOrderId = pendingOrderRes.order?.id || pendingOrderRes.id
     expect(pendingOrderId).toBeDefined()
 
     // 4. NEGATIVE PROOF: "đơn pending chưa xử lý" - Attempting close without disposition fails with 409
-    const unhandledCloseAttempt = await withE2EApi(page, async ({ apiV2 }, sId) => {
-      try {
-        await apiV2.post(`/pos/shifts/${sId}/close`, { declared_cash: 980000 })
-        return { success: true }
-      } catch (err: any) {
-        return { success: false, status: err?.status, message: err?.message }
-      }
-    }, shiftId)
+    const unhandledCloseAttempt = await withE2EApi(
+      page,
+      async ({ apiV2 }, sId) => {
+        try {
+          await apiV2.post(`/pos/shifts/${sId}/close`, { declared_cash: 980000 })
+          return { success: true }
+        } catch (err: any) {
+          return { success: false, status: err?.status, message: err?.message }
+        }
+      },
+      shiftId,
+    )
     expect(unhandledCloseAttempt.success).toBe(false)
     expect(unhandledCloseAttempt.status).toBe(409)
     expect(unhandledCloseAttempt.message).toMatch(/pending order/i)
@@ -611,13 +659,17 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await expect(varianceBanner).toContainText('20.000')
 
     // Close shift with declared_cash: 980000, note, and pending_disposition: 'cancel'
-    const closeRes = await withE2EApi(page, async ({ apiV2 }, { sId }) => {
-      return await apiV2.post(`/pos/shifts/${sId}/close`, {
-        declared_cash: 980000,
-        note: 'Đếm thiếu 20.000đ tại cuối ca',
-        pending_disposition: 'cancel',
-      })
-    }, { sId: shiftId })
+    const closeRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, { sId }) => {
+        return await apiV2.post(`/pos/shifts/${sId}/close`, {
+          declared_cash: 980000,
+          note: 'Đếm thiếu 20.000đ tại cuối ca',
+          pending_disposition: 'cancel',
+        })
+      },
+      { sId: shiftId },
+    )
     expect(closeRes.shift?.status || closeRes.status).toBe('closed')
     await page.locator('.modal-close-btn').first().click()
     await expect(shiftModal).not.toBeVisible({ timeout: 10000 })
@@ -625,20 +677,26 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 6. "quyền sau reload": Cashier reloads -> shift is locked, cashier forbidden from reviewing reconciliation (403)
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.locator('.pos-topbar')).toBeVisible({ timeout: 20000 })
-    const isShiftStillActive = await shiftBtn.evaluate((el) => el.classList.contains('shift-active')).catch(() => false)
+    const isShiftStillActive = await shiftBtn
+      .evaluate((el) => el.classList.contains('shift-active'))
+      .catch(() => false)
     expect(isShiftStillActive).toBe(false)
 
-    const cashierReviewAttempt = await withE2EApi(page, async ({ apiV2 }, sId) => {
-      try {
-        await apiV2.post(`/pos/shifts/${sId}/review`, {
-          status: 'approved',
-          note: 'Thu ngân tự duyệt',
-        })
-        return { success: true }
-      } catch (err: any) {
-        return { success: false, status: err?.status, message: err?.message }
-      }
-    }, shiftId)
+    const cashierReviewAttempt = await withE2EApi(
+      page,
+      async ({ apiV2 }, sId) => {
+        try {
+          await apiV2.post(`/pos/shifts/${sId}/review`, {
+            status: 'approved',
+            note: 'Thu ngân tự duyệt',
+          })
+          return { success: true }
+        } catch (err: any) {
+          return { success: false, status: err?.status, message: err?.message }
+        }
+      },
+      shiftId,
+    )
     expect(cashierReviewAttempt.success).toBe(false)
     expect(cashierReviewAttempt.status).toBe(403)
 
@@ -647,27 +705,43 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     const managerPage = await managerContext.newPage()
     try {
       await managerPage.goto('/login', { waitUntil: 'domcontentloaded' })
-      const loginPromise = withE2EApi(managerPage, async ({ authApi }, { email, password }) => {
-        await authApi.login({ email, password })
-      }, { email: manager.email, password: manager.password })
+      const loginPromise = withE2EApi(
+        managerPage,
+        async ({ authApi }, { email, password }) => {
+          await authApi.login({ email, password })
+        },
+        { email: manager.email, password: manager.password },
+      )
       await Promise.race([
         loginPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Manager login timed out after 15s')), 15000)),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Manager login timed out after 15s')), 15000),
+        ),
       ])
 
-      const reviewPromise = withE2EApi(managerPage, async ({ apiV2 }, { sId, oId }) => {
-        return await apiV2.post(`/pos/shifts/${sId}/review`, {
-          status: 'approved',
-          note: 'Quản lý duyệt chênh lệch 20.000đ do đếm thiếu',
-        }, {
-          headers: {
-            'X-Organization-ID': String(oId),
-          },
-        })
-      }, { sId: shiftId, oId: org1.id })
+      const reviewPromise = withE2EApi(
+        managerPage,
+        async ({ apiV2 }, { sId, oId }) => {
+          return await apiV2.post(
+            `/pos/shifts/${sId}/review`,
+            {
+              status: 'approved',
+              note: 'Quản lý duyệt chênh lệch 20.000đ do đếm thiếu',
+            },
+            {
+              headers: {
+                'X-Organization-ID': String(oId),
+              },
+            },
+          )
+        },
+        { sId: shiftId, oId: org1.id },
+      )
       const managerReview = await Promise.race([
         reviewPromise,
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Manager review timed out after 15s')), 15000)),
+        new Promise<any>((_, reject) =>
+          setTimeout(() => reject(new Error('Manager review timed out after 15s')), 15000),
+        ),
       ])
       expect(managerReview).toBeDefined()
       expect(managerReview.reconciliation?.status).toBe('approved')
@@ -719,7 +793,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(shiftState.pending_order_cancel_reason).toBe('Cancelled upon shift close')
   })
 
-  test('5.4: Điểm danh khách tại sân / check-in -> thêm/bớt dịch vụ vào tab -> thanh toán tab không thu trùng', async ({ page }) => {
+  test('5.4: Điểm danh khách tại sân / check-in -> thêm/bớt dịch vụ vào tab -> thanh toán tab không thu trùng', async ({
+    page,
+  }) => {
     test.setTimeout(90000)
     const manifest = getTestManifest()
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -739,7 +815,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 1. Arrange a confirmed court reservation for testing check-in and court service tab
@@ -832,38 +908,50 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect([404, 422]).toContain(invalidCheckIn.status)
 
     // 5. Perform valid check-in via API (v2/attendance/check-in)
-    const checkInResult = await withE2EApi(page, async ({ apiV2 }, bookingCode) => {
-      return await apiV2.post('/attendance/check-in', {
-        code: bookingCode,
-        notes: 'Khách đến đúng giờ',
-      })
-    }, reservation.code)
+    const checkInResult = await withE2EApi(
+      page,
+      async ({ apiV2 }, bookingCode) => {
+        return await apiV2.post('/attendance/check-in', {
+          code: bookingCode,
+          notes: 'Khách đến đúng giờ',
+        })
+      },
+      reservation.code,
+    )
     expect(checkInResult).toBeDefined()
     expect(checkInResult.attendance).toBeDefined()
 
     // 6. NEGATIVE PROOF: Adding items to tab with quantity exceeding available stock is rejected with 409
-    const overStockAttempt = await withE2EApi(page, async ({ apiV2 }, { resId, prodId }) => {
-      try {
-        await apiV2.post('/service-tabs', {
-          reservation_id: resId,
-          items: [{ product_id: prodId, quantity: 999 }],
-        })
-        return { success: true }
-      } catch (err: any) {
-        return { success: false, status: err?.status, message: err?.message }
-      }
-    }, { resId: reservation.reservation_id, prodId: tabProduct.product_id })
+    const overStockAttempt = await withE2EApi(
+      page,
+      async ({ apiV2 }, { resId, prodId }) => {
+        try {
+          await apiV2.post('/service-tabs', {
+            reservation_id: resId,
+            items: [{ product_id: prodId, quantity: 999 }],
+          })
+          return { success: true }
+        } catch (err: any) {
+          return { success: false, status: err?.status, message: err?.message }
+        }
+      },
+      { resId: reservation.reservation_id, prodId: tabProduct.product_id },
+    )
     expect(overStockAttempt.success).toBe(false)
     expect(overStockAttempt.status).toBe(409)
     expect(overStockAttempt.message).toMatch(/Insufficient stock/i)
 
     // 7. Open service tab and add 2 valid items (2 x 25,000 = 50,000 VND)
-    const addTabResult = await withE2EApi(page, async ({ apiV2 }, { resId, prodId }) => {
-      return await apiV2.post('/service-tabs', {
-        reservation_id: resId,
-        items: [{ product_id: prodId, quantity: 2 }],
-      })
-    }, { resId: reservation.reservation_id, prodId: tabProduct.product_id })
+    const addTabResult = await withE2EApi(
+      page,
+      async ({ apiV2 }, { resId, prodId }) => {
+        return await apiV2.post('/service-tabs', {
+          reservation_id: resId,
+          items: [{ product_id: prodId, quantity: 2 }],
+        })
+      },
+      { resId: reservation.reservation_id, prodId: tabProduct.product_id },
+    )
     const tabData = addTabResult.tab || addTabResult
     const tabId = tabData?.id
     expect(tabId).toBeDefined()
@@ -872,9 +960,13 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     const items = tabData.items || []
     expect(items.length).toBeGreaterThanOrEqual(1)
     const itemIdToRemove = items[0].id
-    const removeResult = await withE2EApi(page, async ({ apiV2 }, { resId, itemId }) => {
-      return await apiV2.delete(`/service-tabs/${resId}/items/${itemId}`)
-    }, { resId: reservation.reservation_id, itemId: itemIdToRemove })
+    const removeResult = await withE2EApi(
+      page,
+      async ({ apiV2 }, { resId, itemId }) => {
+        return await apiV2.delete(`/service-tabs/${resId}/items/${itemId}`)
+      },
+      { resId: reservation.reservation_id, itemId: itemIdToRemove },
+    )
     expect(removeResult).toBeDefined()
 
     // 9. Navigate to /admin/pos and settle tab through UI button .btn-settle-tab
@@ -891,18 +983,31 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     const settleBtn = page.locator('.btn-settle-tab, button:has-text("Thanh toán Tab")').first()
     if (await settleBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await settleBtn.click()
-      await expect(page.locator('.receipt-modal, .pos-receipt-modal, [role="dialog"]').first()).toBeVisible({ timeout: 15000 })
+      await expect(
+        page.locator('.receipt-modal, .pos-receipt-modal, [role="dialog"]').first(),
+      ).toBeVisible({ timeout: 15000 })
     } else {
       // Settle directly via API if dropdown not supported on current viewport
-      await withE2EApi(page, async ({ apiV2 }, tId) => {
-        return await apiV2.post(`/service-tabs/${tId}/settle`, { payment_method: 'cash', cash_tendered: 50000 })
-      }, tabId)
+      await withE2EApi(
+        page,
+        async ({ apiV2 }, tId) => {
+          return await apiV2.post(`/service-tabs/${tId}/settle`, {
+            payment_method: 'cash',
+            cash_tendered: 50000,
+          })
+        },
+        tabId,
+      )
     }
 
     // 10. Re-settle retry: idempotent response returns duplicate: true, preventing double collection
-    const retrySettle = await withE2EApi(page, async ({ apiV2 }, tId) => {
-      return await apiV2.post(`/service-tabs/${tId}/settle`, { payment_method: 'cash' })
-    }, tabId)
+    const retrySettle = await withE2EApi(
+      page,
+      async ({ apiV2 }, tId) => {
+        return await apiV2.post(`/service-tabs/${tId}/settle`, { payment_method: 'cash' })
+      },
+      tabId,
+    )
     expect(retrySettle.duplicate).toBe(true)
 
     // 9. Database verification: tab is settled, exactly 1 POS order generated

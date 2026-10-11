@@ -141,8 +141,20 @@ describe('AdminRefundsPanel (owner refund-obligation review)', () => {
         id: 30,
         status: 'owner_reported',
         evidence: [
-          { id: 1, event_type: 'requested', actor_id: 10, event_fingerprint: 'a', created_at: '2026-09-25T01:00:00+07:00' },
-          { id: 2, event_type: 'approved', actor_id: 11, event_fingerprint: 'b', created_at: '2026-09-25T02:00:00+07:00' },
+          {
+            id: 1,
+            event_type: 'requested',
+            actor_id: 10,
+            event_fingerprint: 'a',
+            created_at: '2026-09-25T01:00:00+07:00',
+          },
+          {
+            id: 2,
+            event_type: 'approved',
+            actor_id: 11,
+            event_fingerprint: 'b',
+            created_at: '2026-09-25T02:00:00+07:00',
+          },
         ],
       }),
     ])

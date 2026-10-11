@@ -184,7 +184,7 @@ describe('ProfileView', () => {
       expect(profileApi.updateProfile).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Nguyen Van Updated',
-        })
+        }),
       )
     }
   })

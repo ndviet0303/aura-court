@@ -39,8 +39,18 @@ describe('RecurringBookingView', () => {
           {
             id: 1,
             name: 'Sân 1 (Thảm Tinsue)',
-            venue: { id: 1, name: 'Sân Cầu Lông Aura - Quận 1', slug: 'quan-1', address: '123 Le Loi', google_maps_url: null, is_active: true, share_url: '' },
-            price_slots: [{ id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 120000 }],
+            venue: {
+              id: 1,
+              name: 'Sân Cầu Lông Aura - Quận 1',
+              slug: 'quan-1',
+              address: '123 Le Loi',
+              google_maps_url: null,
+              is_active: true,
+              share_url: '',
+            },
+            price_slots: [
+              { id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 120000 },
+            ],
           },
         ]
       }
@@ -132,14 +142,40 @@ describe('RecurringBookingView', () => {
       total_amount: 480000,
       truncated_by: null,
       occurrences: [
-        { index: 1, starts_at: '2026-10-05T11:00:00Z', ends_at: '2026-10-05T13:00:00Z', weekday: 1, price: 240000, conflict: false, conflict_reason: null },
-        { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', weekday: 3, price: 240000, conflict: false, conflict_reason: null },
+        {
+          index: 1,
+          starts_at: '2026-10-05T11:00:00Z',
+          ends_at: '2026-10-05T13:00:00Z',
+          weekday: 1,
+          price: 240000,
+          conflict: false,
+          conflict_reason: null,
+        },
+        {
+          index: 2,
+          starts_at: '2026-10-07T11:00:00Z',
+          ends_at: '2026-10-07T13:00:00Z',
+          weekday: 3,
+          price: 240000,
+          conflict: false,
+          conflict_reason: null,
+        },
       ],
     }
     vi.mocked(apiV2.post).mockImplementation(async (url: string) => {
       if (url === '/recurring-series/preview') return preview
       if (url === '/recurring-series') {
-        return { series: { id: 11, court_id: 1, frequency: 'weekly', starts_at: '', ends_at: '', status: 'pending', total_amount: 480000 } }
+        return {
+          series: {
+            id: 11,
+            court_id: 1,
+            frequency: 'weekly',
+            starts_at: '',
+            ends_at: '',
+            status: 'pending',
+            total_amount: 480000,
+          },
+        }
       }
       return {}
     })
@@ -184,15 +220,41 @@ describe('RecurringBookingView', () => {
       total_amount: 480000,
       truncated_by: null,
       occurrences: [
-        { index: 1, starts_at: '2026-10-05T11:00:00Z', ends_at: '2026-10-05T13:00:00Z', weekday: 1, price: 240000, conflict: false, conflict_reason: null },
-        { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', weekday: 3, price: 240000, conflict: true, conflict_reason: 'Đã có người đặt' },
+        {
+          index: 1,
+          starts_at: '2026-10-05T11:00:00Z',
+          ends_at: '2026-10-05T13:00:00Z',
+          weekday: 1,
+          price: 240000,
+          conflict: false,
+          conflict_reason: null,
+        },
+        {
+          index: 2,
+          starts_at: '2026-10-07T11:00:00Z',
+          ends_at: '2026-10-07T13:00:00Z',
+          weekday: 3,
+          price: 240000,
+          conflict: true,
+          conflict_reason: 'Đã có người đặt',
+        },
       ],
     }
     vi.mocked(apiV2.post).mockImplementation(async (url: string, body?: unknown) => {
       if (url === '/recurring-series/preview') return preview
       if (url === '/recurring-series') {
         if ((body as { accept_partial?: boolean })?.accept_partial) {
-          return { series: { id: 12, court_id: 1, frequency: 'weekly', starts_at: '', ends_at: '', status: 'pending', total_amount: 240000 } }
+          return {
+            series: {
+              id: 12,
+              court_id: 1,
+              frequency: 'weekly',
+              starts_at: '',
+              ends_at: '',
+              status: 'pending',
+              total_amount: 240000,
+            },
+          }
         }
         return {
           status: 'partial_conflict',
@@ -200,7 +262,12 @@ describe('RecurringBookingView', () => {
           held_count: 1,
           revised_total: 240000,
           excluded: [
-            { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', conflict_reason: 'Đã có người đặt' },
+            {
+              index: 2,
+              starts_at: '2026-10-07T11:00:00Z',
+              ends_at: '2026-10-07T13:00:00Z',
+              conflict_reason: 'Đã có người đặt',
+            },
           ],
         }
       }

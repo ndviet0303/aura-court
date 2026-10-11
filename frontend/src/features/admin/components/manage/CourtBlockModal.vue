@@ -41,7 +41,9 @@ function handleAdd() {
       <div class="modal-header">
         <div class="title-with-icon">
           <span class="material-symbols-outlined card-title-icon">lock</span>
-          <h3 class="modal-title">{{ t('admin.manage.lockCourtModalTitle', { name: resolveLocalizedText(court.name) }) }}</h3>
+          <h3 class="modal-title">
+            {{ t('admin.manage.lockCourtModalTitle', { name: resolveLocalizedText(court.name) }) }}
+          </h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
@@ -84,7 +86,9 @@ function handleAdd() {
 
         <!-- Existing Blocks List -->
         <div class="existing-blocks-section">
-          <h4 class="form-sub-title">{{ t('admin.manage.currentLocksList', { count: court.blocks?.length || 0 }) }}</h4>
+          <h4 class="form-sub-title">
+            {{ t('admin.manage.currentLocksList', { count: court.blocks?.length || 0 }) }}
+          </h4>
 
           <div v-if="!court.blocks?.length" class="empty-blocks-msg">
             {{ t('admin.manage.noLocks') }}
@@ -105,7 +109,9 @@ function handleAdd() {
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">
+          {{ t('common.close') }}
+        </button>
       </div>
     </div>
   </div>

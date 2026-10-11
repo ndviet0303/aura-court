@@ -116,7 +116,7 @@ describe('useAdminStaff (D08)', () => {
         venue_id: 42,
         venue_ids: [42],
         permissions: ['pricing', 'schedule'],
-      })
+      }),
     )
   })
 
@@ -150,7 +150,7 @@ describe('useAdminStaff (D08)', () => {
         status: 'active',
         venue_id: 43,
         venue_ids: [43],
-      })
+      }),
     )
   })
 
@@ -196,7 +196,7 @@ describe('useAdminStaff (D08)', () => {
         role: 'cashier',
         venue_id: 42,
         venue_ids: [42],
-      })
+      }),
     )
   })
 

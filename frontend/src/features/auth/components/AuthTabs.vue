@@ -42,7 +42,7 @@ const { t } = useI18n()
 <style scoped>
 .auth-tabs {
   display: flex;
-  background: var(--surface-subtle, #FAF7F3);
+  background: var(--surface-subtle, #faf7f3);
   border: 1px solid var(--border, #ebdccb);
   padding: 4px;
   border-radius: 14px;
@@ -77,7 +77,7 @@ html.dark .auth-tabs {
 
 .auth-tab-btn.active {
   background: #ffffff;
-  color: #6B2D3F;
+  color: #6b2d3f;
   border-color: rgba(107, 45, 63, 0.15);
   box-shadow: 0 2px 10px rgba(107, 45, 63, 0.08);
 }
@@ -93,4 +93,3 @@ html.dark .auth-tab-btn.active {
   font-size: 18px;
 }
 </style>
-

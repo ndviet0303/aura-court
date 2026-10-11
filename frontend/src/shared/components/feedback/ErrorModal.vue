@@ -131,7 +131,8 @@ function handleRetry() {
 // Focus Trap & Keyboard Navigation (Task 4.4)
 function getFocusableElements(): HTMLElement[] {
   if (!modalCardRef.value) return []
-  const selector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  const selector =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
   return Array.from(modalCardRef.value.querySelectorAll<HTMLElement>(selector))
 }
 
@@ -152,12 +153,18 @@ function handleKeydown(event: KeyboardEvent) {
     const last = focusable[focusable.length - 1]
     if (!first || !last) return
     if (event.shiftKey) {
-      if (document.activeElement === first || !modalCardRef.value?.contains(document.activeElement)) {
+      if (
+        document.activeElement === first ||
+        !modalCardRef.value?.contains(document.activeElement)
+      ) {
         event.preventDefault()
         last.focus()
       }
     } else {
-      if (document.activeElement === last || !modalCardRef.value?.contains(document.activeElement)) {
+      if (
+        document.activeElement === last ||
+        !modalCardRef.value?.contains(document.activeElement)
+      ) {
         event.preventDefault()
         first.focus()
       }
@@ -250,7 +257,9 @@ onBeforeUnmount(() => {
 
             <!-- Error Tag / Code -->
             <div class="error-tag">
-              <span v-if="displayErrorCode">{{ t('errorModal.errorCodePrefix') }}: {{ displayErrorCode }}</span>
+              <span v-if="displayErrorCode"
+                >{{ t('errorModal.errorCodePrefix') }}: {{ displayErrorCode }}</span
+              >
               <span v-else>{{ t('errorModal.systemNotice') }}</span>
             </div>
 
@@ -334,7 +343,9 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border, rgba(225, 227, 228, 0.8));
   border-radius: 24px;
   padding: 36px 28px 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(198, 40, 40, 0.12);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.35),
+    0 8px 24px rgba(198, 40, 40, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -385,7 +396,8 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse-soft {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 8px 24px rgba(198, 40, 40, 0.25);
   }
@@ -531,7 +543,9 @@ onBeforeUnmount(() => {
 
 .error-modal-fade-enter-active .error-modal-card,
 .error-modal-fade-leave-active .error-modal-card {
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s ease;
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.22s ease;
 }
 
 .error-modal-fade-enter-from,

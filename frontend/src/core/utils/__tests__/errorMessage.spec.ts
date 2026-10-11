@@ -18,7 +18,7 @@ describe('errorMessage and resolveErrorDescriptor (Tasks 4.1, 4.2, 4.3)', () => 
   describe('Task 4.1: Stable business error codes', () => {
     it('translates CAPABILITY_DISABLED in both Vietnamese and English', () => {
       const err = { code: 'CAPABILITY_DISABLED', status: 404 }
-      
+
       const descVi = resolveErrorDescriptor(err, undefined, 'vi')
       expect(descVi.message).toBe('Tính năng này chưa được kích hoạt cho tổ chức được chọn.')
       expect(descVi.code).toBe('CAPABILITY_DISABLED')
@@ -65,18 +65,29 @@ describe('errorMessage and resolveErrorDescriptor (Tasks 4.1, 4.2, 4.3)', () => 
 
   describe('Task 4.2: Safe infrastructure detection and sanitization', () => {
     it('detects raw SQL queries, PDO exceptions, and stack traces', () => {
-      expect(isRawInfrastructureMessage('SQLSTATE[23505]: Unique violation: 7 ERROR: duplicate key')).toBe(true)
-      expect(isRawInfrastructureMessage('PDOException: Connection refused in /var/www/vendor/laravel/framework')).toBe(true)
+      expect(
+        isRawInfrastructureMessage('SQLSTATE[23505]: Unique violation: 7 ERROR: duplicate key'),
+      ).toBe(true)
+      expect(
+        isRawInfrastructureMessage(
+          'PDOException: Connection refused in /var/www/vendor/laravel/framework',
+        ),
+      ).toBe(true)
       expect(isRawInfrastructureMessage('SELECT * FROM users WHERE id = 1')).toBe(true)
-      expect(isRawInfrastructureMessage('Stack trace:\n#0 /app/Http/Controllers/PosController.php(42)')).toBe(true)
-      expect(isRawInfrastructureMessage('Call to undefined method App\\Models\\User::fake()')).toBe(true)
+      expect(
+        isRawInfrastructureMessage('Stack trace:\n#0 /app/Http/Controllers/PosController.php(42)'),
+      ).toBe(true)
+      expect(isRawInfrastructureMessage('Call to undefined method App\\Models\\User::fake()')).toBe(
+        true,
+      )
       expect(isRawInfrastructureMessage('Tính năng này chưa được kích hoạt')).toBe(false)
       expect(isRawInfrastructureMessage('Khung giờ bạn chọn đã có người đặt')).toBe(false)
     })
 
     it('sanitizes raw infrastructure errors and never leaks internal details', () => {
       const rawError = {
-        message: 'SQLSTATE[42S02]: Base table or view not found: 1146 Table "booking.venues" doesn\'t exist at /vendor/laravel/framework/src/Database.php:123',
+        message:
+          'SQLSTATE[42S02]: Base table or view not found: 1146 Table "booking.venues" doesn\'t exist at /vendor/laravel/framework/src/Database.php:123',
         status: 500,
       }
 
@@ -158,12 +169,16 @@ describe('errorMessage and resolveErrorDescriptor (Tasks 4.1, 4.2, 4.3)', () => 
 
       const desc = resolveErrorDescriptor(err, undefined, 'vi')
       expect(desc.details).toContain('Dữ liệu cung cấp không hợp lệ. Vui lòng kiểm tra lại.')
-      expect(desc.details).toContain('Khung giờ bạn chọn trên sân này đã có người đặt hoặc bị trùng lịch. Vui lòng chọn khung giờ khác.')
+      expect(desc.details).toContain(
+        'Khung giờ bạn chọn trên sân này đã có người đặt hoặc bị trùng lịch. Vui lòng chọn khung giờ khác.',
+      )
     })
 
     it('identifies unverified email errors', () => {
       expect(isUnverifiedEmailError('Your email address is not verified.')).toBe(true)
-      expect(isUnverifiedEmailError({ message: 'Địa chỉ email của bạn chưa được xác thực' })).toBe(true)
+      expect(isUnverifiedEmailError({ message: 'Địa chỉ email của bạn chưa được xác thực' })).toBe(
+        true,
+      )
       expect(isUnverifiedEmailError('Other error')).toBe(false)
     })
   })

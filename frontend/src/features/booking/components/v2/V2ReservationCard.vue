@@ -33,17 +33,21 @@ const emit = defineEmits<{
       <!-- Status Badge -->
       <div class="status-pill-badge" :class="reservation.status">
         <span v-if="reservation.status === 'held'" class="pulse-indicator-small"></span>
-        <span v-else-if="reservation.status === 'confirmed'" class="material-symbols-outlined status-icon">check_circle</span>
+        <span
+          v-else-if="reservation.status === 'confirmed'"
+          class="material-symbols-outlined status-icon"
+          >check_circle</span
+        >
         <span v-else class="material-symbols-outlined status-icon">cancel</span>
         <span>
           {{
             reservation.status === 'held'
               ? t('v2Reservations.card.statusHeld')
               : reservation.status === 'confirmed'
-              ? t('v2Reservations.card.statusConfirmed')
-              : reservation.status === 'cancelled'
-              ? t('v2Reservations.card.statusCancelled')
-              : reservation.status
+                ? t('v2Reservations.card.statusConfirmed')
+                : reservation.status === 'cancelled'
+                  ? t('v2Reservations.card.statusCancelled')
+                  : reservation.status
           }}
         </span>
       </div>
@@ -57,17 +61,15 @@ const emit = defineEmits<{
         </div>
         <div class="court-text-col">
           <h4 class="court-title">{{ reservation.court?.name || 'Aura Court' }}</h4>
-          <p class="court-address">{{ reservation.court?.venue?.address || 'Aura Sports Complex' }}</p>
+          <p class="court-address">
+            {{ reservation.court?.venue?.address || 'Aura Sports Complex' }}
+          </p>
         </div>
       </div>
 
       <!-- Schedule Slots -->
       <div class="slots-container">
-        <div
-          v-for="s in reservation.slots"
-          :key="s.starts_at"
-          class="slot-badge-item"
-        >
+        <div v-for="s in reservation.slots" :key="s.starts_at" class="slot-badge-item">
           <span class="material-symbols-outlined slot-icon">schedule</span>
           <span class="slot-time font-mono">{{ formatTimeSlot(s.starts_at, s.ends_at) }}</span>
           <span class="slot-date">· {{ formatDate(s.starts_at) }}</span>
@@ -85,10 +87,7 @@ const emit = defineEmits<{
       <div class="actions-col">
         <!-- Held Actions -->
         <template v-if="reservation.status === 'held'">
-          <button
-            class="btn btn-outline-details"
-            @click="emit('details', reservation)"
-          >
+          <button class="btn btn-outline-details" @click="emit('details', reservation)">
             <span class="material-symbols-outlined">info</span>
             <span>{{ t('v2Reservations.card.quoteDetailsBtn') }}</span>
           </button>
@@ -106,26 +105,27 @@ const emit = defineEmits<{
             :disabled="confirmingCode === reservation.code"
             @click="emit('confirm', reservation)"
           >
-            <span class="material-symbols-outlined" :class="{ spinning: confirmingCode === reservation.code }">
+            <span
+              class="material-symbols-outlined"
+              :class="{ spinning: confirmingCode === reservation.code }"
+            >
               {{ confirmingCode === reservation.code ? 'refresh' : 'check' }}
             </span>
-            <span>{{ confirmingCode === reservation.code ? t('v2Reservations.card.confirming') : t('v2Reservations.card.confirmBtn') }}</span>
+            <span>{{
+              confirmingCode === reservation.code
+                ? t('v2Reservations.card.confirming')
+                : t('v2Reservations.card.confirmBtn')
+            }}</span>
           </button>
         </template>
 
         <!-- Confirmed Actions -->
         <template v-else-if="reservation.status === 'confirmed'">
-          <button
-            class="btn btn-outline-details"
-            @click="emit('details', reservation)"
-          >
+          <button class="btn btn-outline-details" @click="emit('details', reservation)">
             <span class="material-symbols-outlined">receipt</span>
             <span>{{ t('v2Reservations.card.quoteDetailsBtn') }}</span>
           </button>
-          <button
-            class="btn btn-qr-pass"
-            @click="emit('qr', reservation)"
-          >
+          <button class="btn btn-qr-pass" @click="emit('qr', reservation)">
             <span class="material-symbols-outlined">qr_code_2</span>
             <span>{{ t('v2Reservations.card.qrPassBtn') }}</span>
           </button>
@@ -133,10 +133,7 @@ const emit = defineEmits<{
 
         <!-- Other Actions -->
         <template v-else>
-          <button
-            class="btn btn-outline-details"
-            @click="emit('details', reservation)"
-          >
+          <button class="btn btn-outline-details" @click="emit('details', reservation)">
             <span class="material-symbols-outlined">info</span>
             <span>{{ t('v2Reservations.card.quoteDetailsBtn') }}</span>
           </button>
@@ -155,7 +152,9 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .v2-reservation-card:hover {
@@ -194,7 +193,7 @@ const emit = defineEmits<{
 .booking-code {
   font-size: 12.5px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .court-venue-name {
@@ -261,7 +260,7 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   flex-shrink: 0;
 }
 
@@ -336,7 +335,7 @@ const emit = defineEmits<{
 .pricing-value {
   font-size: 16px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .actions-col {
@@ -356,7 +355,7 @@ const emit = defineEmits<{
   gap: 6px;
   padding: 8px 16px;
   border-radius: 9999px;
-  background: var(--accent, #C9A15A);
+  background: var(--accent, #c9a15a);
   color: #1c1618;
   font-size: 13px;
   font-weight: 800;
@@ -370,7 +369,8 @@ const emit = defineEmits<{
   filter: brightness(1.08);
 }
 
-.btn-outline-details, .btn-outline-cancel {
+.btn-outline-details,
+.btn-outline-cancel {
   display: inline-flex;
   align-items: center;
   gap: 4px;

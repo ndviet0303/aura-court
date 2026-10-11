@@ -55,7 +55,11 @@ onMounted(async () => {
       }
     }
   }
-  if (route.query.mode === 'register' || route.path === '/register' || props.initialMode === 'register') {
+  if (
+    route.query.mode === 'register' ||
+    route.path === '/register' ||
+    props.initialMode === 'register'
+  ) {
     mode.value = 'register'
   } else {
     mode.value = 'login'
@@ -63,7 +67,12 @@ onMounted(async () => {
 
   if (route.query.error) {
     const rawMsg = route.query.msg ? decodeURIComponent(String(route.query.msg)) : ''
-    if (rawMsg && !rawMsg.includes('SQLSTATE') && !rawMsg.includes('Connection:') && !rawMsg.includes('SQL:')) {
+    if (
+      rawMsg &&
+      !rawMsg.includes('SQLSTATE') &&
+      !rawMsg.includes('Connection:') &&
+      !rawMsg.includes('SQL:')
+    ) {
       error.value = `${t('auth.loginFailedPrefix')} ${rawMsg}`
     } else {
       error.value = t('auth.socialLoginFailed')
@@ -79,7 +88,7 @@ watch(
     } else if (route.query.mode === 'login' || route.path === '/login') {
       mode.value = 'login'
     }
-  }
+  },
 )
 
 function setMode(newMode: 'login' | 'register') {
@@ -127,7 +136,7 @@ async function handleRegister() {
       regName.value.trim(),
       regEmail.value.trim(),
       regPassword.value,
-      regPasswordConfirmation.value
+      regPasswordConfirmation.value,
     )
     handlePostAuthRedirect(user)
   } catch (cause: unknown) {
@@ -141,7 +150,9 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
   socialLoading.value = provider
   error.value = ''
   try {
-    const res = await api.get<{ url?: string | null; message?: string }>(`/auth/${provider}/redirect`)
+    const res = await api.get<{ url?: string | null; message?: string }>(
+      `/auth/${provider}/redirect`,
+    )
     if (!res.url) {
       throw new Error(res.message || `${provider} OAuth is not configured.`)
     }
@@ -161,7 +172,6 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
 
     <div class="container auth-container">
       <div class="auth-split-card">
-        
         <!-- Left Side: Brand Showcase Panel -->
         <AuthBrandPanel />
 
@@ -185,7 +195,12 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
             <div v-if="error" class="error-banner" role="alert">
               <span class="material-symbols-outlined error-icon">error</span>
               <span class="error-text">{{ error }}</span>
-              <button type="button" class="error-close-btn" @click="error = ''" :aria-label="t('common.close')">
+              <button
+                type="button"
+                class="error-close-btn"
+                @click="error = ''"
+                :aria-label="t('common.close')"
+              >
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -230,7 +245,9 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
           <!-- Toggle Bottom Link -->
           <div class="auth-switch-footer">
             <p class="switch-text">
-              <span>{{ mode === 'login' ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount') }}</span>
+              <span>{{
+                mode === 'login' ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')
+              }}</span>
               <button
                 type="button"
                 class="switch-action-btn"
@@ -240,9 +257,7 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
               </button>
             </p>
           </div>
-
         </div>
-
       </div>
     </div>
   </div>
@@ -267,14 +282,24 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
   width: 900px;
   max-width: 90vw;
   height: 500px;
-  background: radial-gradient(circle, rgba(255, 209, 220, 0.45) 0%, rgba(120, 85, 94, 0.08) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 209, 220, 0.45) 0%,
+    rgba(120, 85, 94, 0.08) 50%,
+    transparent 70%
+  );
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 html.dark .aura-glow-bg {
-  background: radial-gradient(circle, rgba(120, 85, 94, 0.4) 0%, rgba(255, 209, 220, 0.05) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(120, 85, 94, 0.4) 0%,
+    rgba(255, 209, 220, 0.05) 50%,
+    transparent 70%
+  );
 }
 
 .auth-container {
@@ -293,12 +318,16 @@ html.dark .aura-glow-bg {
   border: 1px solid var(--border, var(--outline, #e2e8f0));
   border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 20px 50px -15px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
   transition: all 0.3s ease;
 }
 
 html.dark .auth-split-card {
-  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 24px 60px -15px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* Form Panel (Right) */
@@ -371,9 +400,18 @@ html.dark .error-banner {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-5px); }
-  40%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 /* Switcher Footer */
@@ -398,7 +436,7 @@ html.dark .error-banner {
 .switch-action-btn {
   background: transparent;
   border: none;
-  color: #6B2D3F;
+  color: #6b2d3f;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;

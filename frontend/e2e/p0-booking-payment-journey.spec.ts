@@ -22,7 +22,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
   })
 
-  test('4.1: Luồng đặt sân trọn vẹn: Giữ chỗ UI -> QR/người nhận/số tiền -> Webhook test -> Booking xác nhận & trạng thái chuẩn', async ({ page }) => {
+  test('4.1: Luồng đặt sân trọn vẹn: Giữ chỗ UI -> QR/người nhận/số tiền -> Webhook test -> Booking xác nhận & trạng thái chuẩn', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
@@ -41,7 +43,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
     // 2. Navigate to court schedule
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     // 3. Select a future date (card index 1 = tomorrow)
     const dateCards = page.locator('.date-carousel .date-card-btn')
@@ -63,8 +67,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
     // 6. Click checkout, listen for the payment attempt creation response
     const paymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
 
     await checkoutBtn.click()
@@ -100,7 +107,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(instructionsPanel).toBeVisible({ timeout: 20000 })
 
     // Status starts pending
-    await expect(page.locator('[data-testid="owner-payment-status"]')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('[data-testid="owner-payment-status"]')).toBeVisible({
+      timeout: 10000,
+    })
 
     // QR code is rendered with valid URL
     const qrImage = page.locator('[data-testid="owner-payment-qr"]')
@@ -151,7 +160,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     const verifyScript = `
@@ -202,7 +211,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(state.allocation_count).toBe(1)
   })
 
-  test('4.2: Bảo mật thanh toán: Client không tự xác nhận, webhook sai tham số báo lỗi, gửi lặp sự kiện đảm bảo idempotent', async ({ page }) => {
+  test('4.2: Bảo mật thanh toán: Client không tự xác nhận, webhook sai tham số báo lỗi, gửi lặp sự kiện đảm bảo idempotent', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
@@ -221,7 +232,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
     // 2. Navigate to court schedule and select future date (index 2)
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const count = await dateCards.count()
@@ -241,8 +254,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
 
     const paymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
     await checkoutBtn.click()
 
@@ -287,7 +303,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 6. Test invalid authentication (tampered HMAC signature): rejected with HTTP 401
@@ -450,7 +466,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(finalState.allocation_count).toBe(1)
   })
 
-  test('4.3: Xung đột đồng thời: Hai trình duyệt tranh cùng một slot -> đúng 1 người giữ chỗ thành công, người thua nhận thông báo xung đột', async ({ browser }) => {
+  test('4.3: Xung đột đồng thời: Hai trình duyệt tranh cùng một slot -> đúng 1 người giữ chỗ thành công, người thua nhận thông báo xung đột', async ({
+    browser,
+  }) => {
     const manifest = getTestManifest()
     const customer1 = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -473,14 +491,18 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
         (async () => {
           await page1.goto('/login', { waitUntil: 'domcontentloaded' })
           await page1.locator('input[type="email"], input[name="email"]').fill(customer1.email)
-          await page1.locator('input[type="password"], input[name="password"]').fill(customer1.password)
+          await page1
+            .locator('input[type="password"], input[name="password"]')
+            .fill(customer1.password)
           await page1.locator('button[type="submit"]').click()
           await expect(page1).not.toHaveURL(/\/login/, { timeout: 15000 })
         })(),
         (async () => {
           await page2.goto('/login', { waitUntil: 'domcontentloaded' })
           await page2.locator('input[type="email"], input[name="email"]').fill(customer2.email)
-          await page2.locator('input[type="password"], input[name="password"]').fill(customer2.password)
+          await page2
+            .locator('input[type="password"], input[name="password"]')
+            .fill(customer2.password)
           await page2.locator('button[type="submit"]').click()
           await expect(page2).not.toHaveURL(/\/login/, { timeout: 15000 })
         })(),
@@ -492,8 +514,12 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
         page2.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' }),
       ])
       await Promise.all([
-        expect(page1.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 }),
-        expect(page2.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 }),
+        expect(page1.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+          timeout: 20000,
+        }),
+        expect(page2.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+          timeout: 20000,
+        }),
       ])
 
       // 4. Select the same future date (card index 3) on both pages
@@ -513,7 +539,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       await slotBtn1.click()
 
       // 6. Select the EXACT same slot in context 2
-      const slotBtn2 = page2.locator('.slots-grid .slot-cell-btn').filter({ hasText: slotTimeText?.trim() || '' })
+      const slotBtn2 = page2
+        .locator('.slots-grid .slot-cell-btn')
+        .filter({ hasText: slotTimeText?.trim() || '' })
       await expect(slotBtn2).toBeVisible({ timeout: 15000 })
       await slotBtn2.click()
 
@@ -524,14 +552,17 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       await expect(checkout2).toBeEnabled({ timeout: 10000 })
 
       // 8. Fire concurrent checkout submissions for the exact same slot
-      await Promise.allSettled([
-        checkout1.click(),
-        checkout2.click(),
-      ])
+      await Promise.allSettled([checkout1.click(), checkout2.click()])
 
       // 9. Evaluate race outcome: exactly ONE context transitions to payment; the other receives conflict error
-      const page1PaymentPromise = page1.waitForURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 15000 }).then(() => true).catch(() => false)
-      const page2PaymentPromise = page2.waitForURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 15000 }).then(() => true).catch(() => false)
+      const page1PaymentPromise = page1
+        .waitForURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 15000 })
+        .then(() => true)
+        .catch(() => false)
+      const page2PaymentPromise = page2
+        .waitForURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 15000 })
+        .then(() => true)
+        .catch(() => false)
 
       const [page1Won, page2Won] = await Promise.all([page1PaymentPromise, page2PaymentPromise])
 
@@ -540,20 +571,28 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
       if (page1Won) {
         // Page 1 is on payment page
-        await expect(page1.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({ timeout: 15000 })
+        await expect(page1.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+          timeout: 15000,
+        })
         // Page 2 stays on schedule and displays conflict error
         await expect(page2).toHaveURL(new RegExp(`/courts/${courtId}/schedule`))
         const errorBox2 = page2.locator('.summary-error-box, .alert-pill-error').first()
         await expect(errorBox2).toBeVisible({ timeout: 15000 })
-        await expect(errorBox2).toContainText(/người khác|không còn|no longer available|trùng|thay đổi/i)
+        await expect(errorBox2).toContainText(
+          /người khác|không còn|no longer available|trùng|thay đổi/i,
+        )
       } else {
         // Page 2 is on payment page
-        await expect(page2.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({ timeout: 15000 })
+        await expect(page2.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+          timeout: 15000,
+        })
         // Page 1 stays on schedule and displays conflict error
         await expect(page1).toHaveURL(new RegExp(`/courts/${courtId}/schedule`))
         const errorBox1 = page1.locator('.summary-error-box, .alert-pill-error').first()
         await expect(errorBox1).toBeVisible({ timeout: 15000 })
-        await expect(errorBox1).toContainText(/người khác|không còn|no longer available|trùng|thay đổi/i)
+        await expect(errorBox1).toContainText(
+          /người khác|không còn|no longer available|trùng|thay đổi/i,
+        )
       }
     } finally {
       await context1.close()
@@ -561,7 +600,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     }
   })
 
-  test('4.4: Hết hạn giữ chỗ tự động giải phóng slot và tiền đến muộn không hồi sinh booking', async ({ page }) => {
+  test('4.4: Hết hạn giữ chỗ tự động giải phóng slot và tiền đến muộn không hồi sinh booking', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
@@ -580,7 +621,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
     // 2. Navigate to schedule and select future date (card index 4)
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const targetCard = dateCards.nth(4)
@@ -596,8 +639,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
 
     const paymentResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/payment') && res.request().method() === 'POST' && (res.status() === 200 || res.status() === 201),
-      { timeout: 25000 }
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
     )
     await checkoutBtn.click()
 
@@ -635,7 +681,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 5. Verify backend released the hold: booking status is cancelled
@@ -751,7 +797,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(alertBox).toContainText(/thay đổi|xung đột|hết hạn|expired/i)
   })
 
-  test('4.5: Xem trước coupon và điểm tích lũy không trừ trước, giữ nguyên sau F5 và chống tiêu điểm hai lần', async ({ page }) => {
+  test('4.5: Xem trước coupon và điểm tích lũy không trừ trước, giữ nguyên sau F5 và chống tiêu điểm hai lần', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
@@ -761,7 +809,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     }
 
     // 1. Arrange dedicated court, coupon, and ensure loyalty points balance
-    const court = arrangeCourt(manifest, { testKey: '4_5_loyalty', venueId: venue1A.id, price: 100000 })
+    const court = arrangeCourt(manifest, {
+      testKey: '4_5_loyalty',
+      venueId: venue1A.id,
+      price: 100000,
+    })
     const courtId = court.court_id
     const customerId = manifest.fixtures?.users.customer?.id
     if (!customerId) {
@@ -769,7 +821,12 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     }
 
     grantLoyaltyPoints(manifest, { userId: customerId, organizationId: orgId, points: 200 })
-    const coupon = arrangeCoupon(manifest, { testKey: '4_5_cpn', discountValue: 20000, venueId: venue1A.id, organizationId: orgId })
+    const coupon = arrangeCoupon(manifest, {
+      testKey: '4_5_cpn',
+      discountValue: 20000,
+      venueId: venue1A.id,
+      organizationId: orgId,
+    })
 
     const backendEnv = {
       APP_ENV: 'testing',
@@ -781,7 +838,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*' ,
+      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
@@ -830,18 +887,26 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
     // 3. Coupon and Member Preview verification via API (no usage, no consumption)
-    const couponPreviewJson = await withE2EApi(page, async ({ api }, { code, venueId, courtId, orgId }) => {
-      return await api.post('/coupons/preview', {
-        subtotal: 100000,
-        code,
-        venue_id: venueId,
-        court_id: courtId,
-      }, {
-        headers: {
-          'X-Organization-ID': String(orgId),
-        },
-      })
-    }, { code: coupon.code, venueId: venue1A.id, courtId, orgId }) as {
+    const couponPreviewJson = (await withE2EApi(
+      page,
+      async ({ api }, { code, venueId, courtId, orgId }) => {
+        return await api.post(
+          '/coupons/preview',
+          {
+            subtotal: 100000,
+            code,
+            venue_id: venueId,
+            court_id: courtId,
+          },
+          {
+            headers: {
+              'X-Organization-ID': String(orgId),
+            },
+          },
+        )
+      },
+      { code: coupon.code, venueId: venue1A.id, courtId, orgId },
+    )) as {
       discount: number
       coupon_discount: number
       membership_discount: number
@@ -856,47 +921,67 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(checkPointState().debit_entries).toBe(initialDebitEntries)
 
     // 4. Stale/invalid coupon rejection without side effect
-    const invalidCouponStatus = await withE2EApi(page, async ({ api }, { venueId, orgId }) => {
-      try {
-        await api.post('/coupons/preview', {
-          subtotal: 100000,
-          code: 'INVALID_NONEXISTENT_COUPON',
-          venue_id: venueId,
-        }, {
-          headers: {
-            'X-Organization-ID': String(orgId),
-          },
-        })
-        return 200
-      } catch (err: any) {
-        return err.status || 422
-      }
-    }, { venueId: venue1A.id, orgId })
+    const invalidCouponStatus = await withE2EApi(
+      page,
+      async ({ api }, { venueId, orgId }) => {
+        try {
+          await api.post(
+            '/coupons/preview',
+            {
+              subtotal: 100000,
+              code: 'INVALID_NONEXISTENT_COUPON',
+              venue_id: venueId,
+            },
+            {
+              headers: {
+                'X-Organization-ID': String(orgId),
+              },
+            },
+          )
+          return 200
+        } catch (err: any) {
+          return err.status || 422
+        }
+      },
+      { venueId: venue1A.id, orgId },
+    )
     expect(invalidCouponStatus).toBe(422)
 
     // Below minimum spend preview yields 0 coupon discount
-    const belowMinSpendJson = await withE2EApi(page, async ({ api }, { code, venueId, orgId }) => {
-      return await api.post('/coupons/preview', {
-        subtotal: 10000,
-        code,
-        venue_id: venueId,
-      }, {
-        headers: {
-          'X-Organization-ID': String(orgId),
-        },
-      })
-    }, { code: coupon.code, venueId: venue1A.id, orgId }) as { coupon_discount: number }
+    const belowMinSpendJson = (await withE2EApi(
+      page,
+      async ({ api }, { code, venueId, orgId }) => {
+        return await api.post(
+          '/coupons/preview',
+          {
+            subtotal: 10000,
+            code,
+            venue_id: venueId,
+          },
+          {
+            headers: {
+              'X-Organization-ID': String(orgId),
+            },
+          },
+        )
+      },
+      { code: coupon.code, venueId: venue1A.id, orgId },
+    )) as { coupon_discount: number }
     expect(belowMinSpendJson.coupon_discount).toBe(0)
     expect(checkPointState().coupon_usage).toBe(0)
 
     // 5. Member status check
-    const membershipJson = await withE2EApi(page, async ({ api }, { orgId }) => {
-      return await api.get('/membership', {
-        headers: {
-          'X-Organization-ID': String(orgId),
-        },
-      })
-    }, { orgId })
+    const membershipJson = await withE2EApi(
+      page,
+      async ({ api }, { orgId }) => {
+        return await api.get('/membership', {
+          headers: {
+            'X-Organization-ID': String(orgId),
+          },
+        })
+      },
+      { orgId },
+    )
     expect(membershipJson).toBeDefined()
 
     // 6. Shared entry point controls: HomeView quick-booking dock LoyaltyPointSelector
@@ -906,14 +991,18 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       await homeSlot.click()
       const dockLoyalty = page.locator('.dock-loyalty-container .loyalty-point-selector')
       await expect(dockLoyalty).toBeVisible({ timeout: 15000 })
-      await expect(dockLoyalty.locator('.loyalty-balance-badge')).toContainText(new RegExp(String(initialState.balance)))
+      await expect(dockLoyalty.locator('.loyalty-balance-badge')).toContainText(
+        new RegExp(String(initialState.balance)),
+      )
       // Clear home selection to dismiss dock
       await page.locator('.dock-btn-clear').click()
     }
 
     // 7. Navigate to schedule and select future date
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const targetCard = dateCards.nth(1)
@@ -928,7 +1017,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     // 5. Verify LoyaltyPointSelector controls and preview without debiting
     const loyaltyBox = page.locator('.loyalty-point-selector')
     await expect(loyaltyBox).toBeVisible({ timeout: 15000 })
-    await expect(loyaltyBox.locator('.loyalty-balance-badge')).toContainText(new RegExp(String(initialState.balance)))
+    await expect(loyaltyBox.locator('.loyalty-balance-badge')).toContainText(
+      new RegExp(String(initialState.balance)),
+    )
 
     const pointsInput = loyaltyBox.locator('.loyalty-input')
     await pointsInput.fill('50')
@@ -937,7 +1028,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     // Preview breakdown renders discount and remaining payable
     await expect(loyaltyBox.locator('.loyalty-breakdown')).toBeVisible({ timeout: 10000 })
     await expect(loyaltyBox.locator('.loyalty-breakdown .discount-value')).toContainText(/50\.000/i)
-    await expect(loyaltyBox.locator('.loyalty-breakdown .remaining-value')).toContainText(/50\.000/i)
+    await expect(loyaltyBox.locator('.loyalty-breakdown .remaining-value')).toContainText(
+      /50\.000/i,
+    )
 
     // Test clear action
     const clearBtn = loyaltyBox.locator('.btn-quick.clear')
@@ -963,7 +1056,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 20000 })
     const bookingCode = page.url().split('/payment/')[1]?.split('?')[0]
     expect(bookingCode).toBeTruthy()
-    await expect(page.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({ timeout: 25000 })
+    await expect(page.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+      timeout: 25000,
+    })
     // Payment view reflects discounted payable (50,000 VND instead of 100,000 VND)
     await expect(page.locator('body')).toContainText(/50\.000/i)
     // Authoritative check: Hold creation debited points in PointLedger and recorded loyalty snapshot
@@ -1013,7 +1108,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
     // 7. Verify snapshot persistence after reload
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.locator('body')).toContainText(/50\.000/i)
 
     // 8. Protection against double consumption on invalid points or stale policy
@@ -1058,7 +1155,9 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
     const invResult = JSON.parse(invOut) as { caught: boolean; error: string }
     expect(invResult.caught).toBe(true)
-    expect(invResult.error).toMatch(/loyalty_policy_version|loyalty_points|Chính sách đổi điểm|Số dư điểm|thay đổi|không đủ/i)
+    expect(invResult.error).toMatch(
+      /loyalty_policy_version|loyalty_points|Chính sách đổi điểm|Số dư điểm|thay đổi|không đủ/i,
+    )
     // Authoritative check: Debit entries count has NOT increased (no point leakage or double consumption)
     const afterInvalidState = checkPointState()
     expect(afterInvalidState.debit_entries).toBe(initialDebitEntries + 1)

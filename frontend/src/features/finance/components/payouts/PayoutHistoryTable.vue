@@ -19,7 +19,7 @@ const props = withDefaults(
     searchQuery: '',
     selectedStatusFilter: 'all',
     selectedDateFilter: '',
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -184,7 +184,9 @@ function resetFilters() {
         <tbody v-else>
           <tr v-for="p in payouts" :key="p.id" class="data-row">
             <td>
-              <strong class="font-mono text-pink">{{ p.reference || p.code || `WD-${p.id}` }}</strong>
+              <strong class="font-mono text-pink">{{
+                p.reference || p.code || `WD-${p.id}`
+              }}</strong>
             </td>
 
             <td class="date-cell">
@@ -200,9 +202,13 @@ function resetFilters() {
               <div class="bank-col">
                 <span class="bank-acc">
                   {{ p.beneficiary?.bank_code || '---' }}
-                  <span v-if="p.beneficiary?.account_number"> - {{ p.beneficiary.account_number }}</span>
+                  <span v-if="p.beneficiary?.account_number">
+                    - {{ p.beneficiary.account_number }}</span
+                  >
                 </span>
-                <span class="holder-sub">{{ p.beneficiary?.account_holder || p.beneficiary_name || '' }}</span>
+                <span class="holder-sub">{{
+                  p.beneficiary?.account_holder || p.beneficiary_name || ''
+                }}</span>
               </div>
             </td>
 
@@ -562,14 +568,38 @@ function resetFilters() {
   border-radius: 4px;
 }
 
-.sk-ref { width: 90px; }
-.sk-date { width: 80px; }
-.sk-bank-col { display: flex; flex-direction: column; gap: 4px; }
-.sk-bank { width: 130px; }
-.sk-holder { width: 100px; height: 11px; }
-.sk-amount { width: 85px; }
-.sk-pill { width: 75px; height: 22px; border-radius: 999px; }
-.sk-btn { width: 68px; height: 28px; border-radius: 6px; margin-left: auto; }
+.sk-ref {
+  width: 90px;
+}
+.sk-date {
+  width: 80px;
+}
+.sk-bank-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sk-bank {
+  width: 130px;
+}
+.sk-holder {
+  width: 100px;
+  height: 11px;
+}
+.sk-amount {
+  width: 85px;
+}
+.sk-pill {
+  width: 75px;
+  height: 22px;
+  border-radius: 999px;
+}
+.sk-btn {
+  width: 68px;
+  height: 28px;
+  border-radius: 6px;
+  margin-left: auto;
+}
 
 .skeleton-shimmer {
   position: relative;
@@ -597,7 +627,11 @@ function resetFilters() {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>

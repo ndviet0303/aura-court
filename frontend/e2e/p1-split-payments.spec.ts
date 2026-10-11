@@ -12,7 +12,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     })
   })
 
-  test('8.2.1: Tạo nhóm chia tiền với nhiều thành viên/phần đóng góp & xác thực số tiền', async ({ page }) => {
+  test('8.2.1: Tạo nhóm chia tiền với nhiều thành viên/phần đóng góp & xác thực số tiền', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -99,11 +101,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       court_id: number
       reservation_id: number
       reservation_code: string
@@ -164,11 +168,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const validated = JSON.parse(execFileSync('php', ['-r', validateScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const validated = JSON.parse(
+      execFileSync('php', ['-r', validateScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       less_shares_error: boolean
       mismatch_sum_error: boolean
       group_id: number
@@ -198,13 +204,17 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
 
     // 4. Verify UI displays split group details
     await expect(page.locator('[data-testid="split-group"]')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('[data-testid="split-group-id"]')).toContainText(String(validated.group_id))
+    await expect(page.locator('[data-testid="split-group-id"]')).toContainText(
+      String(validated.group_id),
+    )
     await expect(page.locator('[data-testid="split-server-state"]')).toContainText('pending')
     const sharesList = page.locator('[data-testid="split-share"]')
     await expect(sharesList).toHaveCount(2)
   })
 
-  test('8.2.2: Các phần đóng góp đã xác thực -> đủ tiền xác nhận nhóm chia và vé đặt sân', async ({ page }) => {
+  test('8.2.2: Các phần đóng góp đã xác thực -> đủ tiền xác nhận nhóm chia và vé đặt sân', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -315,11 +325,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_id: number
       reservation_id: number
       share1_id: number
@@ -365,14 +377,17 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         encoding: 'utf-8',
       }).trim()
 
-      const res = await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-        headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signature,
-          'Content-Type': 'application/json',
+      const res = await page.request.post(
+        `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+        {
+          headers: {
+            'X-SePay-Timestamp': timestamp,
+            'X-SePay-Signature': signature,
+            'Content-Type': 'application/json',
+          },
+          data: payload,
         },
-        data: payload,
-      })
+      )
       expect(res.ok()).toBe(true)
 
       // Process receipt
@@ -424,11 +439,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         's2_status' => $s2->status,
       ]);
     `
-    const midState = JSON.parse(execFileSync('php', ['-r', midScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const midState = JSON.parse(
+      execFileSync('php', ['-r', midScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_status: string
       group_paid: number
       res_status: string
@@ -473,11 +490,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'slots_confirmed' => $slots->every(fn ($s) => $s->status === 'confirmed'),
       ]);
     `
-    const finalState = JSON.parse(execFileSync('php', ['-r', finalScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const finalState = JSON.parse(
+      execFileSync('php', ['-r', finalScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_status: string
       group_paid: number
       res_status: string
@@ -494,7 +513,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     expect(finalState.slots_confirmed).toBe(true)
   })
 
-  test('8.2.3: Bù tiền thiếu: Người tạo nhóm trả phần còn thiếu -> xác nhận vé đặt sân', async ({ page }) => {
+  test('8.2.3: Bù tiền thiếu: Người tạo nhóm trả phần còn thiếu -> xác nhận vé đặt sân', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -602,11 +623,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_id: number
       reservation_id: number
       share1_id: number
@@ -651,14 +674,17 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       encoding: 'utf-8',
     }).trim()
 
-    await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signature1,
-        'Content-Type': 'application/json',
+    await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signature1,
+          'Content-Type': 'application/json',
+        },
+        data: payload1,
       },
-      data: payload1,
-    })
+    )
 
     // Process Share 1 receipt
     const procScript1 = `
@@ -707,11 +733,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'transaction_date' => now()->addSeconds(10)->toIso8601String(),
       ]);
     `
-    const coverage = JSON.parse(execFileSync('php', ['-r', coverScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const coverage = JSON.parse(
+      execFileSync('php', ['-r', coverScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       coverage_amount: number
       coverage_ref: string
       transaction_date: string
@@ -750,14 +778,17 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       encoding: 'utf-8',
     }).trim()
 
-    await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signatureCover,
-        'Content-Type': 'application/json',
+    await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signatureCover,
+          'Content-Type': 'application/json',
+        },
+        data: payloadCover,
       },
-      data: payloadCover,
-    })
+    )
 
     // Process coverage receipt
     const procScriptCover = `
@@ -803,11 +834,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'host_id' => $group->host_user_id,
       ]);
     `
-    const finalCoveredState = JSON.parse(execFileSync('php', ['-r', verifyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const finalCoveredState = JSON.parse(
+      execFileSync('php', ['-r', verifyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_status: string
       host_covers_shortfall: boolean
       res_status: string
@@ -823,7 +856,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     expect(finalCoveredState.s2_payer_id).toBe(finalCoveredState.host_id) // Paid by host!
   })
 
-  test('8.2.4: Nhóm chia tiền hết hạn: Nhóm chưa đủ tiền hết hạn -> giải phóng giữ chỗ, giữ nghĩa vụ hoàn cho người thực trả', async ({ page }) => {
+  test('8.2.4: Nhóm chia tiền hết hạn: Nhóm chưa đủ tiền hết hạn -> giải phóng giữ chỗ, giữ nghĩa vụ hoàn cho người thực trả', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -930,11 +965,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_id: number
       reservation_id: number
       share1_id: number
@@ -978,14 +1015,17 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       encoding: 'utf-8',
     }).trim()
 
-    await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signatureExp,
-        'Content-Type': 'application/json',
+    await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signatureExp,
+          'Content-Type': 'application/json',
+        },
+        data: payloadExp,
       },
-      data: payloadExp,
-    })
+    )
 
     // Process Share 1 receipt
     const procScriptExp = `
@@ -1050,11 +1090,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const expiredState = JSON.parse(execFileSync('php', ['-r', expireScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const expiredState = JSON.parse(
+      execFileSync('php', ['-r', expireScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       expired_count: number
       group_status: string
       res_status: string
@@ -1173,11 +1215,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       group_id: number
       share1_id: number
     }
@@ -1227,11 +1271,13 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       ]);
     `
 
-    const securityResults = JSON.parse(execFileSync('php', ['-r', securityScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const securityResults = JSON.parse(
+      execFileSync('php', ['-r', securityScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       unverified_rejected: boolean
       unauthorized_cover_rejected: boolean
     }

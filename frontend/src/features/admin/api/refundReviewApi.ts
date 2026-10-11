@@ -7,12 +7,7 @@ import { apiV2 } from '@/core/api/client'
  * `owner_refund_obligations` shape — NOT the legacy `refunds` table.
  */
 export type RefundObligationStatus =
-  | 'requested'
-  | 'approved'
-  | 'owner_reported'
-  | 'acknowledged'
-  | 'rejected'
-  | 'recipient_disputed'
+  'requested' | 'approved' | 'owner_reported' | 'acknowledged' | 'rejected' | 'recipient_disputed'
 
 export interface RefundObligationEvidence {
   id: number
@@ -61,8 +56,7 @@ export const refundReviewApi = {
     apiV2.get<ObligationListEnvelope>('/refund-requests', {
       params: { organization_id: organizationId, ...(status ? { status } : {}) },
     }),
-  approveRefund: (id: number) =>
-    apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/approve`),
+  approveRefund: (id: number) => apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/approve`),
   rejectRefund: (id: number, reason: string) =>
     apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/reject`, { reason }),
   reportRefundExecution: (id: number, body: { transfer_reference: string; evidence: string }) =>

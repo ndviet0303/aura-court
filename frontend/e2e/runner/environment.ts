@@ -12,10 +12,7 @@ import {
   validateFrontendRuntimeConfig,
   runBackendPreflightCommand,
 } from './preflight.ts'
-import {
-  teardownEnvironment,
-  registerExitHandlers,
-} from './teardown.ts'
+import { teardownEnvironment, registerExitHandlers } from './teardown.ts'
 
 export interface EnvironmentOptions {
   runId?: string
@@ -125,7 +122,7 @@ export class E2EIsolatedEnvironment {
       fs.writeFileSync(
         path.join(this.tempDir, 'manifest.json'),
         JSON.stringify(this.manifest, null, 2),
-        'utf-8'
+        'utf-8',
       )
     }
   }
@@ -142,7 +139,7 @@ export class E2EIsolatedEnvironment {
 
     const dbViolations = validateDatabaseTarget(
       { host: this.dbHost, port: this.dbPort, database: this.dbName },
-      { strict: true, expectedDbName: this.dbName }
+      { strict: true, expectedDbName: this.dbName },
     )
     if (dbViolations.length > 0) {
       throw new Error(`Database validation failed: ${dbViolations.join(', ')}`)
@@ -162,7 +159,9 @@ export class E2EIsolatedEnvironment {
 
     // 3. Allocate free ports
     const backendPort = this.options.backendPort || (await getAvailablePort(8010))
-    const frontendPort = this.options.frontendPort || (await getAvailablePort(Number(process.env.PLAYWRIGHT_FRONTEND_PORT) || 4180))
+    const frontendPort =
+      this.options.frontendPort ||
+      (await getAvailablePort(Number(process.env.PLAYWRIGHT_FRONTEND_PORT) || 4180))
     const backendUrl = `http://127.0.0.1:${backendPort}`
     const frontendUrl = `http://127.0.0.1:${frontendPort}`
 
@@ -177,10 +176,12 @@ export class E2EIsolatedEnvironment {
       execFileSync(
         'createdb',
         ['-h', this.dbHost, '-p', String(this.dbPort), '-U', this.dbUser, this.dbName],
-        { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf-8' }
+        { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf-8' },
       )
     } catch (err) {
-      throw new Error(`Failed to create isolated database "${this.dbName}": ${(err as Error).message}`)
+      throw new Error(
+        `Failed to create isolated database "${this.dbName}": ${(err as Error).message}`,
+      )
     }
 
     // 6. Generate non-demo test credentials
@@ -305,7 +306,7 @@ export class E2EIsolatedEnvironment {
         this.backendDir,
         backendEnv,
         this.dbName,
-        this.runId
+        this.runId,
       )
       if (!preflight.passed) {
         throw new Error(`Preflight check rejected target: ${preflight.violations.join(', ')}`)
@@ -338,7 +339,7 @@ export class E2EIsolatedEnvironment {
             env: { ...process.env, ...backendEnv },
             stdio: ['ignore', 'pipe', 'pipe'],
             encoding: 'utf-8',
-          }
+          },
         )
         const fixtures = JSON.parse(seedOutput) as E2EFixturesPayload
         this.manifest.fixtures = fixtures
@@ -357,7 +358,7 @@ export class E2EIsolatedEnvironment {
           env: { ...process.env, ...backendEnv },
           stdio: ['ignore', this.backendLogFd, this.backendLogFd],
           detached: false,
-        }
+        },
       )
 
       this.manifest.backend.pid = this.backendProc.pid
@@ -371,7 +372,10 @@ export class E2EIsolatedEnvironment {
 
       // Spawn owned frontend process if not skipped
       if (!options.skipFrontend) {
-        this.frontendLogFd = fs.openSync(path.join(this.storageDir, 'logs', 'frontend-vite.log'), 'a')
+        this.frontendLogFd = fs.openSync(
+          path.join(this.storageDir, 'logs', 'frontend-vite.log'),
+          'a',
+        )
         this.frontendProc = spawn(
           'npx',
           ['vite', '--host', '127.0.0.1', '--port', String(frontendPort), '--strictPort'],
@@ -383,7 +387,7 @@ export class E2EIsolatedEnvironment {
             },
             stdio: ['ignore', this.frontendLogFd, this.frontendLogFd],
             detached: false,
-          }
+          },
         )
 
         this.manifest.frontend.pid = this.frontendProc.pid

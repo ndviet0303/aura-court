@@ -36,8 +36,14 @@ const sportOptions = computed<DropdownOption[]>(() => [
 ])
 
 const formatOptions = computed<DropdownOption[]>(() => [
-  { value: 'single_elimination', label: t('admin.tournaments.formatSingleElim') || 'Loại trực tiếp (Single Elimination)' },
-  { value: 'round_robin', label: t('admin.tournaments.formatRoundRobin') || 'Vòng tròn tính điểm (Round Robin)' },
+  {
+    value: 'single_elimination',
+    label: t('admin.tournaments.formatSingleElim') || 'Loại trực tiếp (Single Elimination)',
+  },
+  {
+    value: 'round_robin',
+    label: t('admin.tournaments.formatRoundRobin') || 'Vòng tròn tính điểm (Round Robin)',
+  },
 ])
 
 const isFormValid = computed(() => {
@@ -50,7 +56,9 @@ function handleSubmit() {
     name: name.value.trim(),
     sport: sport.value,
     format: format.value,
-    category: category.value.trim() || (sport.value === 'pickleball' ? 'Pickleball Open' : 'Cầu Lông Đơn Nam'),
+    category:
+      category.value.trim() ||
+      (sport.value === 'pickleball' ? 'Pickleball Open' : 'Cầu Lông Đơn Nam'),
     venue: venue.value.trim(),
     city: city.value.trim(),
     prize_pool: prizePool.value.trim(),
@@ -81,7 +89,9 @@ function handleSubmit() {
       <!-- Modal Body -->
       <form class="modal-body form-grid" @submit.prevent="handleSubmit">
         <div class="form-group full-width">
-          <label class="form-label required">{{ t('admin.tournaments.tournamentNameLabel') }}</label>
+          <label class="form-label required">{{
+            t('admin.tournaments.tournamentNameLabel')
+          }}</label>
           <input
             v-model="name"
             type="text"
@@ -93,20 +103,12 @@ function handleSubmit() {
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.tournaments.sportLabel') }}</label>
-          <SelectDropdown
-            v-model="sport"
-            :options="sportOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="sport" :options="sportOptions" variant="bordered" />
         </div>
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.tournaments.formatLabel') }}</label>
-          <SelectDropdown
-            v-model="format"
-            :options="formatOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="format" :options="formatOptions" variant="bordered" />
         </div>
 
         <div class="form-group">
@@ -155,14 +157,12 @@ function handleSubmit() {
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.cancel') }}
         </AuraButton>
-        <AuraButton
-          variant="primary"
-          :disabled="!isFormValid || saving"
-          @click="handleSubmit"
-        >
+        <AuraButton variant="primary" :disabled="!isFormValid || saving" @click="handleSubmit">
           <span v-if="saving" class="material-symbols-outlined icon-18 spin">sync</span>
           <span v-else class="material-symbols-outlined icon-18">add_circle</span>
-          <span>{{ saving ? t('common.saving') : t('admin.tournaments.createTournamentBtn') }}</span>
+          <span>{{
+            saving ? t('common.saving') : t('admin.tournaments.createTournamentBtn')
+          }}</span>
         </AuraButton>
       </div>
     </div>

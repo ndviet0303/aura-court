@@ -70,13 +70,15 @@ export const iconProvenanceMap: Record<string, IconProvenance> = {
   arrowLeft: {
     name: 'IconArrowLeft',
     nodeId: '1129:18852',
-    sourceFile: 'elements/additional-icons/icon-angle-left-component-additional-icons--1129-18852.svg',
+    sourceFile:
+      'elements/additional-icons/icon-angle-left-component-additional-icons--1129-18852.svg',
     description: 'Back navigation and prior step icon',
   },
   arrowRight: {
     name: 'IconArrowRight',
     nodeId: '1129:18846',
-    sourceFile: 'elements/additional-icons/icon-angle-right-component-additional-icons--1129-18846.svg',
+    sourceFile:
+      'elements/additional-icons/icon-angle-right-component-additional-icons--1129-18846.svg',
     description: 'Forward navigation and next step icon',
   },
   location: {

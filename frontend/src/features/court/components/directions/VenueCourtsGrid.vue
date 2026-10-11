@@ -22,7 +22,9 @@ function getCourtPrice(c: Court): number {
         <span class="material-symbols-outlined icon-20">sports_tennis</span>
         <span>{{ $t('directions.courtsAtLocation') }}</span>
       </h3>
-      <span class="court-count-badge">{{ $t('directions.readyCourts', { count: courts.length }) }}</span>
+      <span class="court-count-badge">{{
+        $t('directions.readyCourts', { count: courts.length })
+      }}</span>
     </div>
 
     <div class="courts-grid">
@@ -38,18 +40,12 @@ function getCourtPrice(c: Court): number {
         </div>
 
         <div class="card-actions-row">
-          <RouterLink
-            :to="`/courts/${c.slug || c.id}/schedule`"
-            class="btn-schedule-action"
-          >
+          <RouterLink :to="`/courts/${c.slug || c.id}/schedule`" class="btn-schedule-action">
             <span class="material-symbols-outlined icon-14">event_available</span>
             <span>{{ $t('directions.bookNow') }}</span>
           </RouterLink>
 
-          <RouterLink
-            :to="`/courts/${c.slug || c.id}`"
-            class="btn-detail-action"
-          >
+          <RouterLink :to="`/courts/${c.slug || c.id}`" class="btn-detail-action">
             <span>{{ $t('directions.details') }}</span>
           </RouterLink>
         </div>

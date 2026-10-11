@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { AuraButton, DatePicker, SelectDropdown, TimePicker, type DropdownOption } from '@/shared/components'
-
+import {
+  AuraButton,
+  DatePicker,
+  SelectDropdown,
+  TimePicker,
+  type DropdownOption,
+} from '@/shared/components'
 
 import type { Court } from '@/features/court/types/court'
 import type { RecurringFrequency, WeekdayOption } from '../../types/recurring'
@@ -49,7 +54,7 @@ const courtOptions = computed<DropdownOption[]>(() =>
     label: c.name,
     sublabel: c.venue ? `— ${c.venue.name}` : undefined,
     icon: 'sports_tennis',
-  }))
+  })),
 )
 
 function formatMoney(amount: number): string {
@@ -65,7 +70,9 @@ function formatMoney(amount: number): string {
       </div>
       <div>
         <h3 class="wizard-title">Tạo Lịch Định Kỳ Mới</h3>
-        <p class="wizard-sub">Giữ sân cố định theo tuần hoặc tháng, tự động tạo hóa đơn và lịch chơi.</p>
+        <p class="wizard-sub">
+          Giữ sân cố định theo tuần hoặc tháng, tự động tạo hóa đơn và lịch chơi.
+        </p>
       </div>
     </div>
 
@@ -99,9 +106,7 @@ function formatMoney(amount: number): string {
               {{ selectedCourt.venue.name }}
             </span>
           </div>
-          <div class="court-rate font-mono">
-            {{ formatMoney(hourlyRate) }}/h
-          </div>
+          <div class="court-rate font-mono">{{ formatMoney(hourlyRate) }}/h</div>
         </div>
       </div>
 
@@ -158,7 +163,12 @@ function formatMoney(amount: number): string {
             </button>
           </div>
           <span class="hint-text">
-            Đã chọn: {{ selectedWeekdays.map(id => weekdayButtons.find(w => w.id === id)?.name).join(', ') || 'Chưa chọn' }}
+            Đã chọn:
+            {{
+              selectedWeekdays
+                .map((id) => weekdayButtons.find((w) => w.id === id)?.name)
+                .join(', ') || 'Chưa chọn'
+            }}
           </span>
         </div>
       </div>
@@ -211,7 +221,10 @@ function formatMoney(amount: number): string {
 
         <div class="duration-badge">
           <span class="material-symbols-outlined dur-icon">schedule</span>
-          <span>Thời lượng mỗi buổi: <strong>{{ sessionDurationHours }} giờ</strong> ({{ startTime }} - {{ endTime }})</span>
+          <span
+            >Thời lượng mỗi buổi: <strong>{{ sessionDurationHours }} giờ</strong> ({{ startTime }} -
+            {{ endTime }})</span
+          >
         </div>
       </div>
 
@@ -255,7 +268,9 @@ function formatMoney(amount: number): string {
               :class="{ 'session-chip--conflict': s.conflict }"
               :title="s.conflictReason || undefined"
             >
-              <span v-if="s.conflict" class="material-symbols-outlined chip-warn-icon">warning</span>
+              <span v-if="s.conflict" class="material-symbols-outlined chip-warn-icon"
+                >warning</span
+              >
               {{ s.weekdayName }} {{ s.date.slice(5) }} ({{ s.time }})
             </span>
             <span v-if="previewSessions.length > 4" class="more-chip">
@@ -531,7 +546,9 @@ function formatMoney(amount: number): string {
   font-size: 14px;
   font-weight: 500;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   min-height: 42px;
 }
 
@@ -556,7 +573,9 @@ function formatMoney(amount: number): string {
   font-size: 14px;
   font-weight: 500;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   min-height: 42px;
 }
 

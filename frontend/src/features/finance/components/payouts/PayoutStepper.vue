@@ -8,7 +8,7 @@ const props = withDefaults(
   }>(),
   {
     currentStep: 2,
-  }
+  },
 )
 
 const { t } = useI18n()

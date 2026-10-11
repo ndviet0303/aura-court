@@ -82,11 +82,7 @@ async function submit() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            class="auth-submit-btn"
-            :disabled="loading"
-          >
+          <button type="submit" class="auth-submit-btn" :disabled="loading">
             <span v-if="loading" class="spinner" aria-hidden="true"></span>
             <span v-else class="material-symbols-outlined submit-icon">send</span>
             <span>
@@ -124,14 +120,24 @@ async function submit() {
   width: 700px;
   max-width: 90vw;
   height: 400px;
-  background: radial-gradient(circle, rgba(201, 161, 90, 0.22) 0%, rgba(107, 45, 63, 0.12) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(201, 161, 90, 0.22) 0%,
+    rgba(107, 45, 63, 0.12) 50%,
+    transparent 70%
+  );
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 html.dark .aura-glow-bg {
-  background: radial-gradient(circle, rgba(107, 45, 63, 0.4) 0%, rgba(223, 186, 114, 0.15) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(107, 45, 63, 0.4) 0%,
+    rgba(223, 186, 114, 0.15) 50%,
+    transparent 70%
+  );
 }
 
 .auth-container {
@@ -166,7 +172,7 @@ html.dark .auth-card-single {
   height: 56px;
   border-radius: 16px;
   background: #fbe8ec;
-  color: #6B2D3F;
+  color: #6b2d3f;
   border: 1px solid rgba(107, 45, 63, 0.15);
   display: flex;
   align-items: center;
@@ -262,9 +268,18 @@ html.dark .success-banner {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-5px); }
-  40%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 .auth-form {
@@ -323,7 +338,7 @@ html.dark .custom-input {
 }
 
 .custom-input:focus {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
@@ -334,7 +349,7 @@ html.dark .custom-input:focus {
 
 .auth-submit-btn {
   height: 48px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -374,7 +389,9 @@ html.dark .custom-input:focus {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .auth-card-footer {
@@ -390,7 +407,7 @@ html.dark .custom-input:focus {
   gap: 6px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #6B2D3F;
+  color: #6b2d3f;
   text-decoration: none;
   transition: opacity 0.15s ease;
 }

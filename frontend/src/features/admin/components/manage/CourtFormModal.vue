@@ -121,13 +121,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="show" class="modal-backdrop" role="dialog" aria-modal="true" @click.self="emit('close')">
+  <div
+    v-if="show"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    @click.self="emit('close')"
+  >
     <div class="modal-card modal-lg">
       <div class="modal-header">
         <div class="title-with-icon">
-          <span class="material-symbols-outlined card-title-icon">{{ editingCourtId ? 'edit' : 'add_circle' }}</span>
+          <span class="material-symbols-outlined card-title-icon">{{
+            editingCourtId ? 'edit' : 'add_circle'
+          }}</span>
           <h3 class="modal-title">
-            {{ editingCourtId ? t('admin.manage.editCourtModalTitle') : t('admin.manage.addCourtModalTitle') }}
+            {{
+              editingCourtId
+                ? t('admin.manage.editCourtModalTitle')
+                : t('admin.manage.addCourtModalTitle')
+            }}
           </h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
@@ -138,7 +150,9 @@ onBeforeUnmount(() => {
 
         <div class="modal-form-grid">
           <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label>
+            <label class="form-label"
+              >{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label
+            >
             <input
               v-model="courtForm.name"
               type="text"
@@ -148,7 +162,9 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.venueLabel') }} <span class="required">*</span>:</label>
+            <label class="form-label"
+              >{{ t('admin.manage.venueLabel') }} <span class="required">*</span>:</label
+            >
             <select v-model="courtForm.venue_id" class="form-input">
               <option v-for="v in venues" :key="v.id" :value="v.id">
                 {{ resolveLocalizedText(v.name) }}
@@ -160,7 +176,11 @@ onBeforeUnmount(() => {
             <label class="form-label">{{ t('admin.manage.sportZoneLabel') }}</label>
             <select v-model="courtForm.sport_zone_id" class="form-input">
               <option :value="null">{{ t('admin.manage.defaultSportZone') }}</option>
-              <option v-for="z in sportZones.filter(sz => sz.venue_id === courtForm.venue_id)" :key="z.id" :value="z.id">
+              <option
+                v-for="z in sportZones.filter((sz) => sz.venue_id === courtForm.venue_id)"
+                :key="z.id"
+                :value="z.id"
+              >
                 {{ resolveLocalizedText(z.name) }}
               </option>
             </select>
@@ -183,7 +203,13 @@ onBeforeUnmount(() => {
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtCapacityLabel') }}</label>
-            <input v-model.number="courtForm.capacity" type="number" class="form-input" min="1" max="100" />
+            <input
+              v-model.number="courtForm.capacity"
+              type="number"
+              class="form-input"
+              min="1"
+              max="100"
+            />
           </div>
 
           <div class="form-group">
@@ -266,7 +292,9 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">
+          {{ t('common.cancel') }}
+        </button>
         <button
           type="button"
           class="btn-primary"

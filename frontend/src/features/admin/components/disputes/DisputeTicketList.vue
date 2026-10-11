@@ -80,7 +80,11 @@ function getStatusBadge(item: DisputeCase) {
     return { label: t('admin.disputes.badgeHighPriority'), class: 'badge-high', icon: 'error' }
   }
   if (item.status === 'resolved') {
-    return { label: t('admin.disputes.badgeArbitrated'), class: 'badge-resolved', icon: 'check_circle' }
+    return {
+      label: t('admin.disputes.badgeArbitrated'),
+      class: 'badge-resolved',
+      icon: 'check_circle',
+    }
   }
   return { label: t('admin.disputes.badgeNormal'), class: 'badge-normal', icon: 'info' }
 }
@@ -93,7 +97,8 @@ function formatRelativeTime(dateStr?: string): string {
   const diffMinutes = Math.floor(diffMs / 60000)
 
   if (diffMinutes < 1) return locale.value === 'en' ? 'Just now' : 'Vừa xong'
-  if (diffMinutes < 60) return locale.value === 'en' ? `${diffMinutes}m ago` : `${diffMinutes} phút trước`
+  if (diffMinutes < 60)
+    return locale.value === 'en' ? `${diffMinutes}m ago` : `${diffMinutes} phút trước`
   const diffHours = Math.floor(diffMinutes / 60)
   if (diffHours < 24) return locale.value === 'en' ? `${diffHours}h ago` : `${diffHours} giờ trước`
   const diffDays = Math.floor(diffHours / 24)
@@ -107,7 +112,9 @@ function formatRelativeTime(dateStr?: string): string {
     <div class="list-header">
       <div class="list-title-row">
         <h2 class="list-title">{{ t('admin.disputes.title') }}</h2>
-        <span class="total-badge">{{ t('admin.disputes.totalCases', { count: items.length }) }}</span>
+        <span class="total-badge">{{
+          t('admin.disputes.totalCases', { count: items.length })
+        }}</span>
       </div>
 
       <!-- Filter Tabs (Draggable / Horizontal Scrollable) -->
@@ -115,7 +122,7 @@ function formatRelativeTime(dateStr?: string): string {
         ref="tabContainerRef"
         class="filter-tabs"
         :class="{ 'is-dragging': isMouseDown }"
-        style="scrollbar-width: none;"
+        style="scrollbar-width: none"
         @mousedown="onMouseDown"
         @mousemove="onMouseMove"
         @mouseup="onMouseUp"
@@ -203,13 +210,13 @@ function formatRelativeTime(dateStr?: string): string {
         </div>
 
         <h3 class="ticket-title">{{ item.title }}</h3>
-        <p class="ticket-parties">
-          {{ item.complainant.name }} vs {{ item.respondent.name }}
-        </p>
+        <p class="ticket-parties">{{ item.complainant.name }} vs {{ item.respondent.name }}</p>
 
         <div class="card-footer">
           <span class="status-pill" :class="getStatusBadge(item).class">
-            <span class="material-symbols-outlined status-icon">{{ getStatusBadge(item).icon }}</span>
+            <span class="material-symbols-outlined status-icon">{{
+              getStatusBadge(item).icon
+            }}</span>
             <span>{{ getStatusBadge(item).label }}</span>
           </span>
           <span class="amount-tag">

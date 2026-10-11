@@ -18,7 +18,7 @@ const props = withDefaults(
     loading: false,
     selectedBusinessType: 'all',
     selectedDate: '',
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -86,7 +86,11 @@ onUnmounted(() => {
 
 const tabs = computed<{ key: KycStatus | 'all'; label: string; count?: number }[]>(() => [
   { key: 'pending', label: t('admin.kyc.tabPending'), count: props.stats?.pending_count },
-  { key: 'needs_supplement', label: t('admin.kyc.tabNeedsSupplement'), count: props.stats?.needs_supplement_count },
+  {
+    key: 'needs_supplement',
+    label: t('admin.kyc.tabNeedsSupplement'),
+    count: props.stats?.needs_supplement_count,
+  },
   { key: 'flagged', label: t('admin.kyc.tabFlagged'), count: props.stats?.flagged_count },
   { key: 'approved', label: t('admin.kyc.tabApproved'), count: props.stats?.approved_count },
   { key: 'all', label: t('admin.kyc.tabAll') },
@@ -173,7 +177,9 @@ function getProgressPercent(item: HostKyc): number {
           :options="businessTypeOptions"
           variant="bordered"
           :placeholder="t('admin.kyc.filterBusinessType')"
-          @update:model-value="emit('update:selectedBusinessType', $event as KycBusinessType | 'all')"
+          @update:model-value="
+            emit('update:selectedBusinessType', $event as KycBusinessType | 'all')
+          "
         />
       </div>
       <div class="filter-col date-col">
@@ -196,7 +202,14 @@ function getProgressPercent(item: HostKyc): number {
           </div>
           <SkeletonLoader type="title" width="70%" height="18px" />
           <div class="doc-badges-row">
-            <SkeletonLoader v-for="j in 4" :key="j" type="rect" width="100%" height="22px" rounded="6px" />
+            <SkeletonLoader
+              v-for="j in 4"
+              :key="j"
+              type="rect"
+              width="100%"
+              height="22px"
+              rounded="6px"
+            />
           </div>
           <SkeletonLoader type="rect" width="100%" height="6px" rounded="999px" />
         </div>
@@ -248,20 +261,26 @@ function getProgressPercent(item: HostKyc): number {
         <!-- Mini document verification badges -->
         <div class="doc-badges-row">
           <span class="doc-badge success" :title="t('admin.kyc.sec1Title')">
-            <span class="material-symbols-outlined doc-icon">check</span> {{ t('admin.kyc.docCccd') }}
+            <span class="material-symbols-outlined doc-icon">check</span>
+            {{ t('admin.kyc.docCccd') }}
           </span>
           <span
             class="doc-badge"
             :class="item.status === 'flagged' || item.id === 1 ? 'warning' : 'success'"
             :title="t('admin.kyc.sec2Title')"
           >
-            <span class="material-symbols-outlined doc-icon">{{ item.status === 'flagged' || item.id === 1 ? 'warning' : 'check' }}</span> {{ t('admin.kyc.docGpkd') }}
+            <span class="material-symbols-outlined doc-icon">{{
+              item.status === 'flagged' || item.id === 1 ? 'warning' : 'check'
+            }}</span>
+            {{ t('admin.kyc.docGpkd') }}
           </span>
           <span class="doc-badge success" :title="t('admin.kyc.sec3Title')">
-            <span class="material-symbols-outlined doc-icon">check</span> {{ t('admin.kyc.docNapas') }}
+            <span class="material-symbols-outlined doc-icon">check</span>
+            {{ t('admin.kyc.docNapas') }}
           </span>
           <span class="doc-badge success" :title="t('admin.kyc.sec4Title')">
-            <span class="material-symbols-outlined doc-icon">check</span> {{ t('admin.kyc.docFacility') }}
+            <span class="material-symbols-outlined doc-icon">check</span>
+            {{ t('admin.kyc.docFacility') }}
           </span>
         </div>
 
@@ -388,7 +407,9 @@ function getProgressPercent(item: HostKyc): number {
   border-radius: 16px;
 }
 
-.icon-32 { font-size: 32px; }
+.icon-32 {
+  font-size: 32px;
+}
 
 .kyc-card {
   border: 1px solid var(--outline, #e1e3e4);
@@ -415,7 +436,9 @@ function getProgressPercent(item: HostKyc): number {
 .kyc-card.is-active {
   border-color: var(--primary, #78555e);
   background: var(--surface, #ffffff);
-  box-shadow: 0 0 0 2px var(--primary, #78555e), 0 4px 12px rgba(120, 85, 94, 0.12);
+  box-shadow:
+    0 0 0 2px var(--primary, #78555e),
+    0 4px 12px rgba(120, 85, 94, 0.12);
 }
 
 .kyc-card.is-flagged {
@@ -467,11 +490,26 @@ function getProgressPercent(item: HostKyc): number {
   white-space: nowrap;
 }
 
-.pill-pending { background: #fef3c7; color: #d97706; }
-.pill-flagged { background: #fee2e2; color: #dc2626; }
-.pill-needs-supplement { background: #e0f2fe; color: #0284c7; }
-.pill-approved { background: #d1fae5; color: #059669; }
-.pill-rejected { background: #f1f5f9; color: #64748b; }
+.pill-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+.pill-flagged {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.pill-needs-supplement {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+.pill-approved {
+  background: #d1fae5;
+  color: #059669;
+}
+.pill-rejected {
+  background: #f1f5f9;
+  color: #64748b;
+}
 
 .pulse-dot {
   width: 6px;
@@ -482,8 +520,15 @@ function getProgressPercent(item: HostKyc): number {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.3); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.3);
+  }
 }
 
 .card-name {
@@ -510,10 +555,18 @@ function getProgressPercent(item: HostKyc): number {
   gap: 2px;
 }
 
-.doc-badge.success { background: #d1fae5; color: #059669; }
-.doc-badge.warning { background: #fef3c7; color: #d97706; }
+.doc-badge.success {
+  background: #d1fae5;
+  color: #059669;
+}
+.doc-badge.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
 
-.doc-icon { font-size: 12px; }
+.doc-icon {
+  font-size: 12px;
+}
 
 .progress-container {
   display: flex;
@@ -543,4 +596,3 @@ function getProgressPercent(item: HostKyc): number {
   color: var(--primary, #78555e);
 }
 </style>
-

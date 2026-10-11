@@ -35,6 +35,8 @@ withDefaults(defineProps<Props>(), {
   display: inline-block;
   vertical-align: middle;
   flex-shrink: 0;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 </style>

@@ -1,7 +1,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminKycApi } from '../api/adminKycApi'
-import type { DocumentInspectPayload, HostKyc, KycAuditLog, KycBusinessType, KycStats, KycStatus } from '../types/kyc'
+import type {
+  DocumentInspectPayload,
+  HostKyc,
+  KycAuditLog,
+  KycBusinessType,
+  KycStats,
+  KycStatus,
+} from '../types/kyc'
 
 export function useAdminKyc() {
   const { t } = useI18n()
@@ -99,7 +106,8 @@ export function useAdminKyc() {
         rep_identity_matched: kyc.checklist_state.rep_identity_matched ?? true,
         business_license_valid: kyc.checklist_state.business_license_valid ?? true,
         bank_account_matched: kyc.checklist_state.bank_account_matched ?? true,
-        brand_name_discrepancy_accepted: kyc.checklist_state.brand_name_discrepancy_accepted ?? false,
+        brand_name_discrepancy_accepted:
+          kyc.checklist_state.brand_name_discrepancy_accepted ?? false,
         facility_inspected: kyc.checklist_state.facility_inspected ?? true,
       }
     }
@@ -189,9 +197,25 @@ export function useAdminKyc() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 800))
       const content = [
-        ['KYC_CODE', 'BUSINESS_NAME', 'TAX_CODE', 'REP_NAME', 'STATUS', 'OCR_SCORE', 'SUBMITTED_AT'].join(','),
+        [
+          'KYC_CODE',
+          'BUSINESS_NAME',
+          'TAX_CODE',
+          'REP_NAME',
+          'STATUS',
+          'OCR_SCORE',
+          'SUBMITTED_AT',
+        ].join(','),
         ...filteredQueue.value.map((k) =>
-          [k.kyc_code, `"${k.business_name}"`, k.tax_code, `"${k.representative_name}"`, k.status, `${k.ai_ocr_score}%`, k.submitted_at].join(',')
+          [
+            k.kyc_code,
+            `"${k.business_name}"`,
+            k.tax_code,
+            `"${k.representative_name}"`,
+            k.status,
+            `${k.ai_ocr_score}%`,
+            k.submitted_at,
+          ].join(','),
         ),
       ].join('\n')
 
@@ -238,7 +262,10 @@ export function useAdminKyc() {
 
   async function handleReject() {
     if (!selectedKyc.value) return
-    const reason = selectedRejectReason.value || customRejectReason.value || 'Hồ sơ không đáp ứng tiêu chuẩn thẩm định.'
+    const reason =
+      selectedRejectReason.value ||
+      customRejectReason.value ||
+      'Hồ sơ không đáp ứng tiêu chuẩn thẩm định.'
     isSubmitting.value = true
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {
@@ -266,7 +293,10 @@ export function useAdminKyc() {
 
   async function handleRequestSupplement() {
     if (!selectedKyc.value) return
-    const reason = selectedRejectReason.value || customRejectReason.value || 'Vui lòng bổ sung giấy tờ xác thực rõ nét hơn.'
+    const reason =
+      selectedRejectReason.value ||
+      customRejectReason.value ||
+      'Vui lòng bổ sung giấy tờ xác thực rõ nét hơn.'
     isSubmitting.value = true
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {
@@ -292,7 +322,12 @@ export function useAdminKyc() {
     }
   }
 
-  async function inspectAuthorizedDocument(doc: { id?: number; title: string; type: string; url?: string }) {
+  async function inspectAuthorizedDocument(doc: {
+    id?: number
+    title: string
+    type: string
+    url?: string
+  }) {
     if (doc.id && selectedKyc.value) {
       try {
         const res = await adminKycApi.getDocumentUrl(selectedKyc.value.id, doc.id)
@@ -324,7 +359,9 @@ export function useAdminKyc() {
       list = list.filter((item) => item.business_type === selectedBusinessType.value)
     }
     if (selectedDate.value) {
-      list = list.filter((item) => item.submitted_at && item.submitted_at.startsWith(selectedDate.value))
+      list = list.filter(
+        (item) => item.submitted_at && item.submitted_at.startsWith(selectedDate.value),
+      )
     }
     if (searchQuery.value) {
       const q = searchQuery.value.toLowerCase().trim()
@@ -333,7 +370,7 @@ export function useAdminKyc() {
           item.kyc_code.toLowerCase().includes(q) ||
           item.business_name.toLowerCase().includes(q) ||
           item.representative_name.toLowerCase().includes(q) ||
-          item.tax_code.includes(q)
+          item.tax_code.includes(q),
       )
     }
     return list
@@ -381,4 +418,3 @@ export function useAdminKyc() {
     inspectAuthorizedDocument,
   }
 }
-

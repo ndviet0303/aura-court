@@ -36,15 +36,28 @@ function localizeAuditAction(action: string): string {
   if (te(key)) {
     return t(key)
   }
-  if (norm.includes('invoice_paid') || norm.includes('payment')) return t('admin.exceptions.auditActions.contract_invoice_paid')
-  if (norm.includes('contract_created') || norm.includes('contract')) return t('admin.exceptions.auditActions.contract_created')
-  if (norm.includes('venue_updated') || norm.includes('venue')) return t('admin.exceptions.auditActions.venue_updated')
-  if (norm.includes('price_deleted') || norm.includes('price')) return t('admin.exceptions.auditActions.price_deleted')
+  if (norm.includes('invoice_paid') || norm.includes('payment'))
+    return t('admin.exceptions.auditActions.contract_invoice_paid')
+  if (norm.includes('contract_created') || norm.includes('contract'))
+    return t('admin.exceptions.auditActions.contract_created')
+  if (norm.includes('venue_updated') || norm.includes('venue'))
+    return t('admin.exceptions.auditActions.venue_updated')
+  if (norm.includes('price_deleted') || norm.includes('price'))
+    return t('admin.exceptions.auditActions.price_deleted')
   if (norm.includes('price_updated')) return t('admin.exceptions.auditActions.price_updated')
-  if (norm.includes('resolve') || norm.includes('override') || norm.includes('duyệt') || norm.includes('hoàn_tiền')) return t('admin.exceptions.auditActions.finance_exception_resolve')
-  if (norm.includes('flag') || norm.includes('cảnh_báo')) return t('admin.exceptions.auditActions.flag')
-  if (norm.includes('block') || norm.includes('chặn')) return t('admin.exceptions.auditActions.block')
-  if (norm.includes('unlock') || norm.includes('mở_khóa')) return t('admin.exceptions.auditActions.unlock')
+  if (
+    norm.includes('resolve') ||
+    norm.includes('override') ||
+    norm.includes('duyệt') ||
+    norm.includes('hoàn_tiền')
+  )
+    return t('admin.exceptions.auditActions.finance_exception_resolve')
+  if (norm.includes('flag') || norm.includes('cảnh_báo'))
+    return t('admin.exceptions.auditActions.flag')
+  if (norm.includes('block') || norm.includes('chặn'))
+    return t('admin.exceptions.auditActions.block')
+  if (norm.includes('unlock') || norm.includes('mở_khóa'))
+    return t('admin.exceptions.auditActions.unlock')
   return action
 }
 
@@ -55,13 +68,20 @@ function localizeAuditDetails(details: string, log: AuditLog): string {
   if (te(key)) {
     return t(key)
   }
-  if (norm.includes('contract_invoice_paid') || norm.includes('invoice')) return t('admin.exceptions.auditDetails.contract_invoice_paid')
-  if (norm.includes('venue_updated') || norm.includes('venue')) return t('admin.exceptions.auditDetails.venue_updated')
-  if (norm.includes('price_deleted') || norm.includes('price')) return t('admin.exceptions.auditDetails.price_deleted')
-  if (norm.includes('contract_created') || norm.includes('contract')) return t('admin.exceptions.auditDetails.contract_created')
-  if (norm.includes('vượt_hạn_mức') || norm.includes('limit')) return t('admin.exceptions.auditDetails.limit_blocked')
-  if (norm.includes('hoàn_cọc') || norm.includes('deposit')) return t('admin.exceptions.auditDetails.deposit_unlocked')
-  if (norm.includes('voucher') || norm.includes('săn')) return t('admin.exceptions.auditDetails.flag_voucher')
+  if (norm.includes('contract_invoice_paid') || norm.includes('invoice'))
+    return t('admin.exceptions.auditDetails.contract_invoice_paid')
+  if (norm.includes('venue_updated') || norm.includes('venue'))
+    return t('admin.exceptions.auditDetails.venue_updated')
+  if (norm.includes('price_deleted') || norm.includes('price'))
+    return t('admin.exceptions.auditDetails.price_deleted')
+  if (norm.includes('contract_created') || norm.includes('contract'))
+    return t('admin.exceptions.auditDetails.contract_created')
+  if (norm.includes('vượt_hạn_mức') || norm.includes('limit'))
+    return t('admin.exceptions.auditDetails.limit_blocked')
+  if (norm.includes('hoàn_cọc') || norm.includes('deposit'))
+    return t('admin.exceptions.auditDetails.deposit_unlocked')
+  if (norm.includes('voucher') || norm.includes('săn'))
+    return t('admin.exceptions.auditDetails.flag_voucher')
   return details
 }
 </script>
@@ -303,10 +323,18 @@ function localizeAuditDetails(details: string, log: AuditLog): string {
   margin-bottom: 3px;
 }
 
-.text-override { color: var(--primary, #78555e); }
-.text-flag { color: #d97706; }
-.text-block { color: #ba1a1a; }
-.text-unlock { color: #10b981; }
+.text-override {
+  color: var(--primary, #78555e);
+}
+.text-flag {
+  color: #d97706;
+}
+.text-block {
+  color: #ba1a1a;
+}
+.text-unlock {
+  color: #10b981;
+}
 
 .timeline-details {
   font-size: 12px;
@@ -368,10 +396,20 @@ function localizeAuditDetails(details: string, log: AuditLog): string {
   font-size: 13px;
 }
 
-.icon-10 { font-size: 10px; }
-.icon-12 { font-size: 12px; }
-.icon-16 { font-size: 16px; }
-.icon-24 { font-size: 24px; margin-bottom: 4px; }
-.my-1 { margin: 4px 0; }
+.icon-10 {
+  font-size: 10px;
+}
+.icon-12 {
+  font-size: 12px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-24 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+.my-1 {
+  margin: 4px 0;
+}
 </style>
-

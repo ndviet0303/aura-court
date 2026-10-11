@@ -95,11 +95,17 @@ export function usePricingCalendarV2() {
   // KPIs
   const totalRulesCount = computed(() => rules.value.length)
   const activeRulesCount = computed(() => rules.value.filter((r) => r.is_active).length)
-  const peakRulesCount = computed(() =>
-    rules.value.filter((r) => r.is_active && (r.type === 'peak' || r.type === 'surge')).length
+  const peakRulesCount = computed(
+    () =>
+      rules.value.filter((r) => r.is_active && (r.type === 'peak' || r.type === 'surge')).length,
   )
-  const holidayRulesCount = computed(() =>
-    rules.value.filter((r) => r.is_active && (r.type === 'holiday' || r.type === 'date_exception' || r.type === 'special_event')).length
+  const holidayRulesCount = computed(
+    () =>
+      rules.value.filter(
+        (r) =>
+          r.is_active &&
+          (r.type === 'holiday' || r.type === 'date_exception' || r.type === 'special_event'),
+      ).length,
   )
   const averagePrice = computed(() => {
     const active = rules.value.filter((r) => r.is_active && r.price > 0)
@@ -138,7 +144,9 @@ export function usePricingCalendarV2() {
         rules.value = rulesRes.value.rules
       } else if (rulesRes.status === 'rejected') {
         // Fallback to pricing calendar if price-rules route differs
-        const calRes = await adminApi.getPricingCalendar<{ rules: PriceRuleItem[] }>().catch(() => null)
+        const calRes = await adminApi
+          .getPricingCalendar<{ rules: PriceRuleItem[] }>()
+          .catch(() => null)
         if (calRes?.rules) {
           rules.value = calRes.rules
         }
@@ -194,7 +202,7 @@ export function usePricingCalendarV2() {
       showNotice(
         updatedStatus
           ? `Đã kích hoạt quy tắc #${rule.priority}`
-          : `Đã tạm dừng quy tắc #${rule.priority}`
+          : `Đã tạm dừng quy tắc #${rule.priority}`,
       )
     } catch (e: unknown) {
       rule.is_active = !updatedStatus // revert
@@ -212,7 +220,12 @@ export function usePricingCalendarV2() {
     }
   }
 
-  async function simulateQuote(courtId: number, dateStr: string, startTime: string, durationHours: number) {
+  async function simulateQuote(
+    courtId: number,
+    dateStr: string,
+    startTime: string,
+    durationHours: number,
+  ) {
     simulating.value = true
     quoteError.value = ''
     quoteResult.value = null
@@ -225,7 +238,9 @@ export function usePricingCalendarV2() {
       const startMinute = parseInt(mStr || '0', 10)
 
       for (let i = 0; i < durationHours; i++) {
-        const slotDate = new Date(`${dateStr}T${String(startHour + i).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:00`)
+        const slotDate = new Date(
+          `${dateStr}T${String(startHour + i).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:00`,
+        )
         slots.push(slotDate.toISOString())
       }
 
@@ -247,7 +262,7 @@ export function usePricingCalendarV2() {
   async function applyPresetRules(
     presetId: string,
     targetVenueId?: number | null,
-    targetCourtId?: number | null
+    targetCourtId?: number | null,
   ) {
     applyingPreset.value = true
     error.value = ''

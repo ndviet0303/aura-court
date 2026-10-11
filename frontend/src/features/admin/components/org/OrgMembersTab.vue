@@ -142,11 +142,7 @@ function getRoleLabel(role: string) {
           @keydown.enter.prevent="handleInvite"
         />
         <div class="role-select-wrap">
-          <SelectDropdown
-            v-model="roleInput"
-            :options="roleOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="roleInput" :options="roleOptions" variant="bordered" />
         </div>
       </div>
 
@@ -173,22 +169,13 @@ function getRoleLabel(role: string) {
           class="members-search-input"
           :placeholder="t('admin.org.searchMembersPlaceholder')"
         />
-        <button
-          v-if="searchQuery"
-          type="button"
-          class="clear-btn"
-          @click="searchQuery = ''"
-        >
+        <button v-if="searchQuery" type="button" class="clear-btn" @click="searchQuery = ''">
           ✕
         </button>
       </div>
 
       <div class="filter-wrap">
-        <SelectDropdown
-          v-model="roleFilter"
-          :options="filterRoleOptions"
-          variant="bordered"
-        />
+        <SelectDropdown v-model="roleFilter" :options="filterRoleOptions" variant="bordered" />
       </div>
     </div>
 
@@ -217,17 +204,15 @@ function getRoleLabel(role: string) {
             <td>
               <div class="member-profile-cell">
                 <div class="member-avatar">
-                  <img
-                    v-if="m.user?.avatar_url"
-                    :src="m.user.avatar_url"
-                    :alt="m.user.name"
-                  />
+                  <img v-if="m.user?.avatar_url" :src="m.user.avatar_url" :alt="m.user.name" />
                   <span v-else class="avatar-initial">
                     {{ (m.user?.name || m.user?.email || 'M').charAt(0).toUpperCase() }}
                   </span>
                 </div>
                 <div class="member-names">
-                  <strong class="user-name">{{ m.user?.name || t('admin.staff.hdrMember') }}</strong>
+                  <strong class="user-name">{{
+                    m.user?.name || t('admin.staff.hdrMember')
+                  }}</strong>
                   <span class="user-id font-mono">UID: #{{ m.user_id }}</span>
                 </div>
               </div>
@@ -293,17 +278,11 @@ function getRoleLabel(role: string) {
     <div v-if="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
       <div class="modal-content">
         <h3 class="modal-title">{{ t('admin.org.editRoleBtn') }}</h3>
-        <p class="modal-sub">
-          {{ memberToEdit?.user?.name }} ({{ memberToEdit?.user?.email }})
-        </p>
+        <p class="modal-sub">{{ memberToEdit?.user?.name }} ({{ memberToEdit?.user?.email }})</p>
 
         <div class="modal-form">
           <label class="form-label">{{ t('admin.org.hdrRole') }}</label>
-          <SelectDropdown
-            v-model="editRoleValue"
-            :options="roleOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="editRoleValue" :options="roleOptions" variant="bordered" />
         </div>
 
         <div class="modal-actions">
@@ -719,7 +698,7 @@ function getRoleLabel(role: string) {
 :global(html.dark) .email-input,
 :global(html.dark) .members-search-input {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 
@@ -744,7 +723,7 @@ function getRoleLabel(role: string) {
 
 :global(html.dark) .user-name,
 :global(html.dark) .email-text {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .user-id,
@@ -758,7 +737,7 @@ function getRoleLabel(role: string) {
 }
 
 :global(html.dark) .modal-title {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .modal-sub {
@@ -790,6 +769,10 @@ function getRoleLabel(role: string) {
   color: #cbd5e1;
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 </style>

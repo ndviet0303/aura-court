@@ -8,8 +8,22 @@ defineProps<{
     fixtureId?: number
     matchCode: string
     courtName: string
-    playerA: { name: string; club: string; seed?: number; score: number; sets: number[]; isServing?: boolean }
-    playerB: { name: string; club: string; seed?: number; score: number; sets: number[]; isServing?: boolean }
+    playerA: {
+      name: string
+      club: string
+      seed?: number
+      score: number
+      sets: number[]
+      isServing?: boolean
+    }
+    playerB: {
+      name: string
+      club: string
+      seed?: number
+      score: number
+      sets: number[]
+      isServing?: boolean
+    }
     currentSet: number
     hasConflict: boolean
     conflictDesc: string
@@ -40,7 +54,9 @@ const showPenaltyModal = ref(false)
     <div class="stitch-referee-header-row">
       <div class="match-badge-info">
         <span class="live-indicator-dot"></span>
-        <strong class="match-code-tag font-mono">{{ t('admin.tournaments.liveMatchLabel', { code: liveMatch.matchCode }) }}</strong>
+        <strong class="match-code-tag font-mono">{{
+          t('admin.tournaments.liveMatchLabel', { code: liveMatch.matchCode })
+        }}</strong>
         <span class="court-location-tag">{{ liveMatch.courtName }}</span>
       </div>
 
@@ -56,7 +72,9 @@ const showPenaltyModal = ref(false)
         <AuraButton variant="primary" size="sm" :disabled="saving" @click="emit('saveScore')">
           <span v-if="saving" class="material-symbols-outlined icon-14 spin">sync</span>
           <span v-else class="material-symbols-outlined icon-14">check_circle</span>
-          <span>{{ saving ? t('common.saving') : t('admin.tournaments.saveAndFinishMatchBtn') }}</span>
+          <span>{{
+            saving ? t('common.saving') : t('admin.tournaments.saveAndFinishMatchBtn')
+          }}</span>
         </AuraButton>
       </div>
     </div>
@@ -76,10 +94,7 @@ const showPenaltyModal = ref(false)
     </div>
 
     <!-- Scoring Arena -->
-    <div
-      class="scoring-stage-arena"
-      :class="{ 'is-swapped-sides': liveMatch.isSwappedSides }"
-    >
+    <div class="scoring-stage-arena" :class="{ 'is-swapped-sides': liveMatch.isSwappedSides }">
       <!-- Player A Card -->
       <div class="referee-player-card player-left">
         <div class="player-header">
@@ -100,7 +115,7 @@ const showPenaltyModal = ref(false)
           >
             <span id="score-a" class="score-display font-mono">{{ liveMatch.playerA.score }}</span>
           </button>
-          
+
           <div class="score-adjust-bar">
             <button type="button" class="btn-stitch-decrease" @click="emit('decrementA')">
               {{ t('admin.tournaments.decreaseScoreBtn') }}
@@ -113,8 +128,12 @@ const showPenaltyModal = ref(false)
       <div class="arena-center-divider">
         <div class="set-indicator-pill font-mono">SET {{ liveMatch.currentSet }}</div>
         <div class="sets-history-row font-mono">
-          <span class="set-history-score">{{ liveMatch.playerA.sets[0] || 21 }} - {{ liveMatch.playerB.sets[0] || 18 }}</span>
-          <span class="set-history-score">{{ liveMatch.playerA.sets[1] || 19 }} - {{ liveMatch.playerB.sets[1] || 21 }}</span>
+          <span class="set-history-score"
+            >{{ liveMatch.playerA.sets[0] || 21 }} - {{ liveMatch.playerB.sets[0] || 18 }}</span
+          >
+          <span class="set-history-score"
+            >{{ liveMatch.playerA.sets[1] || 19 }} - {{ liveMatch.playerB.sets[1] || 21 }}</span
+          >
         </div>
       </div>
 
@@ -358,7 +377,9 @@ const showPenaltyModal = ref(false)
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
-  transition: transform 0.1s, border-color 0.1s;
+  transition:
+    transform 0.1s,
+    border-color 0.1s;
 }
 
 .stitch-big-score-btn:hover {
@@ -458,11 +479,23 @@ const showPenaltyModal = ref(false)
   border-radius: 3px;
 }
 
-.square-tag.yellow { background: #facc15; }
-.square-tag.red { background: #ef4444; }
-.square-tag.black { background: #1f2937; }
+.square-tag.yellow {
+  background: #facc15;
+}
+.square-tag.red {
+  background: #ef4444;
+}
+.square-tag.black {
+  background: #1f2937;
+}
 
-.icon-16 { font-size: 16px; }
-.icon-14 { font-size: 14px; }
-.icon-12 { font-size: 12px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-14 {
+  font-size: 14px;
+}
+.icon-12 {
+  font-size: 12px;
+}
 </style>

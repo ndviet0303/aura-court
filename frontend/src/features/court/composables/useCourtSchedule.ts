@@ -39,10 +39,12 @@ export function useCourtSchedule() {
   const quoteLoading = ref(false)
   const activeQuote = ref<V2PriceQuote | null>(null)
 
-  const court = computed<Court | null>(() =>
-    store.courts.find((c: Court) => c.id === selectedCourtId.value) || null
+  const court = computed<Court | null>(
+    () => store.courts.find((c: Court) => c.id === selectedCourtId.value) || null,
   )
-  const directOwnerPayments = computed(() => court.value?.venue?.payment_model === 'direct_owner_v1')
+  const directOwnerPayments = computed(
+    () => court.value?.venue?.payment_model === 'direct_owner_v1',
+  )
 
   const venuesList = computed<Venue[]>(() => {
     const map = new Map<number, Venue>()
@@ -56,7 +58,9 @@ export function useCourtSchedule() {
 
   const filteredCourts = computed<Court[]>(() => {
     if (!selectedVenueId.value) return store.courts
-    return store.courts.filter((c: Court) => c.venue?.id === selectedVenueId.value || c.venue_id === selectedVenueId.value)
+    return store.courts.filter(
+      (c: Court) => c.venue?.id === selectedVenueId.value || c.venue_id === selectedVenueId.value,
+    )
   })
 
   const carouselDays = computed(() => {
@@ -98,7 +102,7 @@ export function useCourtSchedule() {
           timeZone: 'Asia/Ho_Chi_Minh',
           hour: '2-digit',
           hour12: false,
-        })
+        }),
       )
       if (timeFilter.value === 'morning') return hour < 12
       if (timeFilter.value === 'afternoon') return hour >= 12 && hour < 17
@@ -201,7 +205,11 @@ export function useCourtSchedule() {
   function selectVenue(venueId: number | null) {
     selectedVenueId.value = venueId
     const courtsInVenue = filteredCourts.value
-    if (courtsInVenue.length > 0 && courtsInVenue[0] && !courtsInVenue.some((c: Court) => c.id === selectedCourtId.value)) {
+    if (
+      courtsInVenue.length > 0 &&
+      courtsInVenue[0] &&
+      !courtsInVenue.some((c: Court) => c.id === selectedCourtId.value)
+    ) {
       selectCourt(courtsInVenue[0].id)
     }
   }
@@ -232,7 +240,13 @@ export function useCourtSchedule() {
   }
 
   async function proceedToBooking(loyaltyPayload?: any) {
-    if (loading.value || !court.value || store.selectedCourt !== court.value.id || store.selectedSlots.length === 0) return
+    if (
+      loading.value ||
+      !court.value ||
+      store.selectedCourt !== court.value.id ||
+      store.selectedSlots.length === 0
+    )
+      return
     if (!auth.user) {
       router.push({ name: 'login', query: { redirect: route.fullPath } })
       return
@@ -266,7 +280,8 @@ export function useCourtSchedule() {
     resendingEmail.value = true
     try {
       const res = await authApi.resendVerification()
-      notice.value = res?.message || 'Đã gửi email xác thực thành công! Vui lòng kiểm tra hộp thư của bạn.'
+      notice.value =
+        res?.message || 'Đã gửi email xác thực thành công! Vui lòng kiểm tra hộp thư của bạn.'
       error.value = ''
     } catch (cause) {
       error.value = errorMessage(cause, 'Không thể gửi email xác thực. Vui lòng thử lại sau.')

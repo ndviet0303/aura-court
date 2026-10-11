@@ -35,8 +35,12 @@ const { t } = useI18n()
         <div class="bank-meta">
           <div class="title-row">
             <h3 class="bank-name">
-              {{ beneficiary.bank_name || beneficiary.bank_code || t('admin.payouts.noBeneficiary') }}
-              <span v-if="beneficiary.bank_code" class="bank-code-tag">({{ beneficiary.bank_code }})</span>
+              {{
+                beneficiary.bank_name || beneficiary.bank_code || t('admin.payouts.noBeneficiary')
+              }}
+              <span v-if="beneficiary.bank_code" class="bank-code-tag"
+                >({{ beneficiary.bank_code }})</span
+              >
             </h3>
 
             <span
@@ -47,7 +51,11 @@ const { t } = useI18n()
               }"
             >
               <span class="material-symbols-outlined icon-14">
-                {{ beneficiary.is_verified || beneficiary.status === 'verified' ? 'verified' : 'schedule' }}
+                {{
+                  beneficiary.is_verified || beneficiary.status === 'verified'
+                    ? 'verified'
+                    : 'schedule'
+                }}
               </span>
               <span>
                 {{
@@ -79,7 +87,12 @@ const { t } = useI18n()
       </div>
 
       <div class="card-right">
-        <AuraButton variant="secondary" size="sm" class="btn-update-beneficiary" @click="emit('update')">
+        <AuraButton
+          variant="secondary"
+          size="sm"
+          class="btn-update-beneficiary"
+          @click="emit('update')"
+        >
           <span class="material-symbols-outlined icon-16">edit_square</span>
           <span>{{ t('admin.payouts.editBeneficiaryBtn') }}</span>
         </AuraButton>
@@ -285,8 +298,12 @@ const { t } = useI18n()
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 640px) {

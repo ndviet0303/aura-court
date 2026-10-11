@@ -81,16 +81,25 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
 
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/admin/venues') return mockVenues
-      if (url === '/admin/courts') return [
-        { id: 1, name: 'Court 1', venue_id: 1, venue: mockVenues[0], is_active: true, blocks: [] },
-      ]
+      if (url === '/admin/courts')
+        return [
+          {
+            id: 1,
+            name: 'Court 1',
+            venue_id: 1,
+            venue: mockVenues[0],
+            is_active: true,
+            blocks: [],
+          },
+        ]
       if (url.startsWith('/admin/sport-zones')) return []
       if (url === '/admin/refunds') return []
       if (url === '/admin/coupons') return []
       if (url === '/admin/audit-logs') return { data: [] }
-      if (url.includes('/members')) return { members: [
-        { id: 10, user_id: 100, name: 'Staff John', role: 'Staff', venue_id: 1 },
-      ] }
+      if (url.includes('/members'))
+        return {
+          members: [{ id: 10, user_id: 100, name: 'Staff John', role: 'Staff', venue_id: 1 }],
+        }
       return []
     })
 

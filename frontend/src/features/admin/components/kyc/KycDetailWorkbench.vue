@@ -18,7 +18,7 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -99,23 +99,43 @@ function inspectFacility(imgUrl: string, idx: number) {
         <div>
           <h2 class="host-title">{{ item.business_name }}</h2>
           <div class="host-sub-row">
-            <span class="sub-item">{{ t('admin.kyc.taxCode') }}: <strong>{{ item.tax_code }}</strong></span>
+            <span class="sub-item"
+              >{{ t('admin.kyc.taxCode') }}: <strong>{{ item.tax_code }}</strong></span
+            >
             <span class="dot-separator"></span>
-            <span class="sub-item">{{ t('admin.kyc.representative') }}: <strong>{{ item.representative_name }}</strong></span>
+            <span class="sub-item"
+              >{{ t('admin.kyc.representative') }}:
+              <strong>{{ item.representative_name }}</strong></span
+            >
             <span class="dot-separator"></span>
-            <span class="sub-item">{{ t('admin.kyc.businessTypeLabel') }}: <strong>{{ getBusinessTypeLabel(item.business_type) }}</strong></span>
+            <span class="sub-item"
+              >{{ t('admin.kyc.businessTypeLabel') }}:
+              <strong>{{ getBusinessTypeLabel(item.business_type) }}</strong></span
+            >
             <span class="dot-separator"></span>
-            <span class="sub-item">Phiên bản: <strong>v{{ item.version || 1 }}</strong></span>
+            <span class="sub-item"
+              >Phiên bản: <strong>v{{ item.version || 1 }}</strong></span
+            >
           </div>
         </div>
       </div>
 
       <div class="header-tools">
-        <button type="button" class="btn-tool" :title="t('admin.kyc.historyBtn')" @click="emit('openHistory')">
+        <button
+          type="button"
+          class="btn-tool"
+          :title="t('admin.kyc.historyBtn')"
+          @click="emit('openHistory')"
+        >
           <span class="material-symbols-outlined icon-18">history</span>
           <span>{{ t('admin.kyc.historyBtn') }}</span>
         </button>
-        <button type="button" class="btn-tool" :title="t('admin.kyc.hotlineBtn')" @click="emit('callHotline')">
+        <button
+          type="button"
+          class="btn-tool"
+          :title="t('admin.kyc.hotlineBtn')"
+          @click="emit('callHotline')"
+        >
           <span class="material-symbols-outlined icon-18">call</span>
           <span>{{ t('admin.kyc.hotlineBtn') }}</span>
         </button>
@@ -197,7 +217,9 @@ function inspectFacility(imgUrl: string, idx: number) {
           <div class="doc-viewer-box">
             <div
               class="doc-img"
-              :style="{ backgroundImage: `url(${item.business_license_url || '/aura/court-2.jpg'})` }"
+              :style="{
+                backgroundImage: `url(${item.business_license_url || '/aura/court-2.jpg'})`,
+              }"
             ></div>
             <div class="doc-watermark">AURA VERIFIED</div>
             <button type="button" class="btn-inspect" @click="inspectLicense">
@@ -274,7 +296,10 @@ function inspectFacility(imgUrl: string, idx: number) {
         </div>
 
         <div class="facility-grid">
-          <div v-if="item.facility_images && item.facility_images.length > 0" class="facility-photos-grid">
+          <div
+            v-if="item.facility_images && item.facility_images.length > 0"
+            class="facility-photos-grid"
+          >
             <div
               v-for="(img, idx) in item.facility_images.slice(0, 3)"
               :key="idx"
@@ -304,7 +329,9 @@ function inspectFacility(imgUrl: string, idx: number) {
             </div>
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">lightbulb</span>
-              <span class="spec-text">{{ item.lighting_spec || t('admin.kyc.sec4LightingDefault') }}</span>
+              <span class="spec-text">{{
+                item.lighting_spec || t('admin.kyc.sec4LightingDefault')
+              }}</span>
             </div>
             <div class="spec-row">
               <span class="material-symbols-outlined spec-icon">real_estate_agent</span>
@@ -407,10 +434,18 @@ function inspectFacility(imgUrl: string, idx: number) {
   flex-shrink: 0;
 }
 
-.icon-28 { font-size: 28px; }
-.icon-20 { font-size: 20px; }
-.icon-18 { font-size: 18px; }
-.icon-16 { font-size: 16px; }
+.icon-28 {
+  font-size: 28px;
+}
+.icon-20 {
+  font-size: 20px;
+}
+.icon-18 {
+  font-size: 18px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
 .host-title {
   font-size: 18px;
@@ -515,9 +550,15 @@ function inspectFacility(imgUrl: string, idx: number) {
   margin: 0;
 }
 
-.title-icon.primary { color: var(--primary, #78555e); }
-.title-icon.warning { color: #d97706; }
-.title-icon.success { color: #059669; }
+.title-icon.primary {
+  color: var(--primary, #78555e);
+}
+.title-icon.warning {
+  color: #d97706;
+}
+.title-icon.success {
+  color: #059669;
+}
 
 .status-tag {
   font-size: 11px;
@@ -529,8 +570,14 @@ function inspectFacility(imgUrl: string, idx: number) {
   gap: 4px;
 }
 
-.status-tag.success { background: #d1fae5; color: #059669; }
-.status-tag.warning { background: #fef3c7; color: #d97706; }
+.status-tag.success {
+  background: #d1fae5;
+  color: #059669;
+}
+.status-tag.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
 
 .verify-grid {
   display: grid;

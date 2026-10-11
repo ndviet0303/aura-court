@@ -128,7 +128,9 @@ const perks = [
           </div>
           <div class="perk-content">
             <strong class="perk-title">{{ $t('profile.perk4') }}</strong>
-            <p class="perk-desc">{{ $t('courtDetail.amenityLockers') }} & {{ $t('courtDetail.amenityShower') }}</p>
+            <p class="perk-desc">
+              {{ $t('courtDetail.amenityLockers') }} & {{ $t('courtDetail.amenityShower') }}
+            </p>
           </div>
         </div>
       </div>
@@ -183,7 +185,7 @@ html.dark .profile-tab-card {
 
 .title-icon {
   font-size: 26px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   margin-top: 2px;
 }
 
@@ -243,7 +245,7 @@ html.dark .tier-highlight-card {
 
 .tier-crown-icon {
   font-size: 24px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .tier-crown-icon {
@@ -307,7 +309,7 @@ html.dark .tier-benefit-highlight {
   font-size: 32px;
   font-weight: 900;
   line-height: 1;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .discount-value {
@@ -398,7 +400,7 @@ html.dark .perk-card {
   height: 38px;
   border-radius: 10px;
   background: rgba(107, 45, 63, 0.08);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -452,7 +454,7 @@ html.dark .perk-title {
   gap: 8px;
   padding: 10px 18px;
   border-radius: 10px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 650;

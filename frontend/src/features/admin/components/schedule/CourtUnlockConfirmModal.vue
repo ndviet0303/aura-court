@@ -19,7 +19,11 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div v-if="show && block" class="modal-backdrop modal-overlay-backdrop" @click.self="emit('close')">
+  <div
+    v-if="show && block"
+    class="modal-backdrop modal-overlay-backdrop"
+    @click.self="emit('close')"
+  >
     <div class="modal-card modal-sm">
       <div class="modal-header">
         <div class="title-with-icon">

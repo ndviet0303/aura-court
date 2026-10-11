@@ -51,8 +51,20 @@ const tomorrowStr = getLocalDateString(1)
 const dayAfterStr = getLocalDateString(2)
 
 const availableTimeSlots = [
-  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
-  '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+  '06:00',
+  '07:00',
+  '08:00',
+  '09:00',
+  '10:00',
+  '11:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+  '21:00',
 ]
 
 const courtOptions = computed<DropdownOption[]>(() =>
@@ -61,12 +73,10 @@ const courtOptions = computed<DropdownOption[]>(() =>
     label: c.name,
     sublabel: c.venue?.name ? `· ${c.venue.name}` : undefined,
     icon: 'stadium',
-  }))
+  })),
 )
 
-const selectedCourtObj = computed(() =>
-  props.courts.find((c) => c.id === props.selectedCourtId)
-)
+const selectedCourtObj = computed(() => props.courts.find((c) => c.id === props.selectedCourtId))
 
 function setDatePreset(date: string) {
   emit('update:selectedDate', date)
@@ -104,7 +114,9 @@ function setDatePreset(date: string) {
           @update:model-value="emit('update:selectedCourtId', Number($event))"
         />
         <span v-if="selectedCourtObj" class="court-sub-info">
-          {{ selectedCourtObj.venue?.address || t('v2Reservations.calculator.courtSubInfoDefault') }}
+          {{
+            selectedCourtObj.venue?.address || t('v2Reservations.calculator.courtSubInfoDefault')
+          }}
         </span>
       </div>
 
@@ -179,7 +191,11 @@ function setDatePreset(date: string) {
         <span class="material-symbols-outlined" :class="{ spinning: calculating }">
           {{ calculating ? 'refresh' : 'price_change' }}
         </span>
-        <span>{{ calculating ? t('v2Reservations.calculator.calculating') : t('v2Reservations.calculator.calculateBtn') }}</span>
+        <span>{{
+          calculating
+            ? t('v2Reservations.calculator.calculating')
+            : t('v2Reservations.calculator.calculateBtn')
+        }}</span>
       </button>
     </div>
 
@@ -205,17 +221,25 @@ function setDatePreset(date: string) {
           <div class="quote-row">
             <span class="row-label">{{ t('v2Reservations.calculator.timeRow') }}</span>
             <span class="row-value font-mono">
-              {{ selectedDate }} · {{ selectedTimeSlot }} - {{ String(Number(selectedTimeSlot.slice(0, 2)) + 1).padStart(2, '0') }}:00
+              {{ selectedDate }} · {{ selectedTimeSlot }} -
+              {{ String(Number(selectedTimeSlot.slice(0, 2)) + 1).padStart(2, '0') }}:00
             </span>
           </div>
           <div class="quote-row">
             <span class="row-label">{{ t('v2Reservations.calculator.tokenRow') }}</span>
-            <span class="row-value font-mono token-text">#{{ activeQuote.quote_token.slice(0, 16) }}...</span>
+            <span class="row-value font-mono token-text"
+              >#{{ activeQuote.quote_token.slice(0, 16) }}...</span
+            >
           </div>
           <div class="quote-divider"></div>
-          <div v-if="activeQuote.benefit_snapshot?.membership_discount_amount" class="quote-row discount">
+          <div
+            v-if="activeQuote.benefit_snapshot?.membership_discount_amount"
+            class="quote-row discount"
+          >
             <span class="row-label">{{ t('v2Reservations.calculator.membershipDiscount') }}</span>
-            <span class="row-value font-mono">-{{ money(activeQuote.benefit_snapshot.membership_discount_amount) }}</span>
+            <span class="row-value font-mono"
+              >-{{ money(activeQuote.benefit_snapshot.membership_discount_amount) }}</span
+            >
           </div>
           <div class="quote-row total">
             <span class="total-label">{{ t('v2Reservations.calculator.totalCost') }}</span>
@@ -224,10 +248,7 @@ function setDatePreset(date: string) {
         </div>
 
         <!-- Customer Loyalty Point Selector -->
-        <LoyaltyPointSelector
-          :quote-token="activeQuote.quote_token"
-          @change="onLoyaltyChange"
-        />
+        <LoyaltyPointSelector :quote-token="activeQuote.quote_token" @change="onLoyaltyChange" />
 
         <div class="quote-actions-row">
           <p class="quote-note">
@@ -242,17 +263,21 @@ function setDatePreset(date: string) {
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
                 {{ holding ? 'hourglass_top' : 'account_balance_wallet' }}
               </span>
-              <span>{{ holding ? t('v2Reservations.calculator.paying') : t('v2Reservations.calculator.payAndBookNow') }}</span>
+              <span>{{
+                holding
+                  ? t('v2Reservations.calculator.paying')
+                  : t('v2Reservations.calculator.payAndBookNow')
+              }}</span>
             </button>
-            <button
-              class="btn btn-hold-slot"
-              :disabled="holding"
-              @click="emit('hold')"
-            >
+            <button class="btn btn-hold-slot" :disabled="holding" @click="emit('hold')">
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
                 {{ holding ? 'hourglass_top' : 'bookmark_add' }}
               </span>
-              <span>{{ holding ? t('v2Reservations.calculator.holding') : t('v2Reservations.calculator.holdTemporary') }}</span>
+              <span>{{
+                holding
+                  ? t('v2Reservations.calculator.holding')
+                  : t('v2Reservations.calculator.holdTemporary')
+              }}</span>
             </button>
           </div>
         </div>
@@ -285,7 +310,7 @@ function setDatePreset(date: string) {
   height: 44px;
   border-radius: 12px;
   background: var(--primary-container, rgba(107, 45, 63, 0.1));
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   flex-shrink: 0;
 }
 
@@ -327,10 +352,11 @@ function setDatePreset(date: string) {
 
 .field-icon {
   font-size: 16px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
-.form-select, .form-input {
+.form-select,
+.form-input {
   width: 100%;
   padding: 10px 14px;
   border-radius: 12px;
@@ -343,8 +369,9 @@ function setDatePreset(date: string) {
   transition: all 0.2s ease;
 }
 
-.form-select:focus, .form-input:focus {
-  border-color: var(--primary, #6B2D3F);
+.form-select:focus,
+.form-input:focus {
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.12);
 }
 
@@ -413,9 +440,9 @@ function setDatePreset(date: string) {
 }
 
 .preset-btn.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
 }
 
 .slots-pill-grid {
@@ -443,9 +470,9 @@ function setDatePreset(date: string) {
 }
 
 .slot-chip.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.25);
 }
 
@@ -463,7 +490,7 @@ function setDatePreset(date: string) {
   margin-top: 24px;
   padding: 20px;
   background: linear-gradient(135deg, rgba(201, 161, 90, 0.08) 0%, rgba(107, 45, 63, 0.06) 100%);
-  border: 1.5px solid var(--accent, #C9A15A);
+  border: 1.5px solid var(--accent, #c9a15a);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
@@ -483,7 +510,7 @@ function setDatePreset(date: string) {
   padding: 4px 12px;
   border-radius: 9999px;
   background: var(--accent-container, rgba(201, 161, 90, 0.2));
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -558,7 +585,7 @@ function setDatePreset(date: string) {
 .total-value {
   font-size: 19px;
   font-weight: 900;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .quote-actions-row {
@@ -587,7 +614,7 @@ function setDatePreset(date: string) {
   gap: 8px;
   padding: 10px 22px;
   border-radius: 9999px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #fff;
   font-size: 13.5px;
   font-weight: 800;

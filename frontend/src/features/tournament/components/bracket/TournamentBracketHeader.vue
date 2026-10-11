@@ -254,4 +254,3 @@ const categoryOptions = computed(() => [
   font-size: 18px;
 }
 </style>
-

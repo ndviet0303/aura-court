@@ -50,11 +50,7 @@ const {
 <template>
   <main class="matchmaking-page-view">
     <!-- Hero Banner with Stats -->
-    <MatchmakingHero
-      :stats="stats"
-      :loading="loading"
-      @switch-tab="activeTab = $event"
-    />
+    <MatchmakingHero :stats="stats" :loading="loading" @switch-tab="activeTab = $event" />
 
     <!-- Feedback Notice Alerts -->
     <transition name="fade">
@@ -169,7 +165,6 @@ const {
       </div>
     </section>
 
-
     <!-- Join Match Modal -->
     <MatchJoinModal
       :show="!!selectedMatchForJoin"
@@ -180,10 +175,7 @@ const {
     />
 
     <!-- Moderation Modal -->
-    <SocialModerationModal
-      :show="showModModal"
-      @close="showModModal = false"
-    />
+    <SocialModerationModal :show="showModModal" @close="showModModal = false" />
 
     <!-- Drop-in Session Bill Modal -->
     <DropInSessionBillModal
@@ -328,7 +320,9 @@ const {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 .fade-enter-from,

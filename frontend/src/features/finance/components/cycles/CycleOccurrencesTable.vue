@@ -32,18 +32,30 @@ function formatTimeRange(startStr: string, endStr: string): string {
   if (!startStr) return ''
   try {
     const startDate = new Date(startStr)
-    const startFormatted = startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
-    
+    const startFormatted = startDate.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+
     if (endStr) {
       const endDate = new Date(endStr)
       if (endDate.getTime() > startDate.getTime()) {
-        const endFormatted = endDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+        const endFormatted = endDate.toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })
         return `${startFormatted} ➔ ${endFormatted}`
       }
     }
-    
+
     const defaultEndDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000)
-    const endFormatted = defaultEndDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+    const endFormatted = defaultEndDate.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
     return `${startFormatted} ➔ ${endFormatted}`
   } catch {
     const start = startStr.length >= 16 ? startStr.slice(11, 16) : startStr
@@ -98,7 +110,10 @@ const totalHours = computed(() => {
           <span class="material-symbols-outlined header-sport-icon">calendar_month</span>
           <h3 class="title">Lịch Sử & Danh Sách Buổi Thi Đấu Trong Kỳ</h3>
         </div>
-        <p class="sub">Tổng cộng {{ occurrences.length }} buổi đã được xếp lịch (khoảng {{ totalHours }} giờ thi đấu)</p>
+        <p class="sub">
+          Tổng cộng {{ occurrences.length }} buổi đã được xếp lịch (khoảng {{ totalHours }} giờ thi
+          đấu)
+        </p>
       </div>
 
       <!-- Filter Tabs -->
@@ -148,11 +163,7 @@ const totalHours = computed(() => {
         </div>
 
         <div v-else class="table-body">
-          <div
-            v-for="occ in filteredOccurrences"
-            :key="occ.id"
-            class="occurrence-row"
-          >
+          <div v-for="occ in filteredOccurrences" :key="occ.id" class="occurrence-row">
             <!-- Buổi Số -->
             <div class="col-seq">
               <strong class="seq font-mono">Buổi #{{ occ.sequence }}</strong>
@@ -161,7 +172,9 @@ const totalHours = computed(() => {
             <!-- Sân Thi Đấu -->
             <div class="col-court">
               <span class="material-symbols-outlined court-bullet-icon">sports_tennis</span>
-              <span class="court-name">{{ occ.court_name || invoice?.series?.court?.name || 'VIP 01' }}</span>
+              <span class="court-name">{{
+                occ.court_name || invoice?.series?.court?.name || 'VIP 01'
+              }}</span>
             </div>
 
             <!-- Thời Gian -->
@@ -178,7 +191,9 @@ const totalHours = computed(() => {
 
             <!-- Thời Lượng -->
             <div class="col-duration">
-              <span class="duration-badge font-mono">{{ calculateDurationHours(occ.starts_at, occ.ends_at) }}</span>
+              <span class="duration-badge font-mono">{{
+                calculateDurationHours(occ.starts_at, occ.ends_at)
+              }}</span>
             </div>
 
             <!-- Chi Phí -->
@@ -202,7 +217,10 @@ const totalHours = computed(() => {
     <div class="table-footnote">
       <div class="footnote-item">
         <span class="material-symbols-outlined fn-icon">verified_user</span>
-        <span>Lịch thi đấu cố định được bảo lưu chỗ tự động và được điều chỉnh linh hoạt theo thỏa thuận hợp đồng.</span>
+        <span
+          >Lịch thi đấu cố định được bảo lưu chỗ tự động và được điều chỉnh linh hoạt theo thỏa
+          thuận hợp đồng.</span
+        >
       </div>
     </div>
   </div>

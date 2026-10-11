@@ -14,7 +14,7 @@ describe('DatePicker', () => {
     await wrapper.get('.date-picker-trigger').trigger('click')
     expect(wrapper.text()).toContain('Tháng 8 năm 2026')
 
-    const day = wrapper.findAll('.date-picker-day').find(button => button.text() === '4')
+    const day = wrapper.findAll('.date-picker-day').find((button) => button.text() === '4')
     await day?.trigger('click')
     const updates = wrapper.emitted('update:modelValue') || []
     expect(updates[updates.length - 1]).toEqual(['2026-08-04'])

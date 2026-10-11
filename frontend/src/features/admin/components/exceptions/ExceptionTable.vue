@@ -73,13 +73,20 @@ function localizeDescription(item: FinancialException): string {
     return t(`admin.exceptions.descriptions.${item.type}`)
   }
   const desc = resolveLocalizedText(item.description)
-  if (desc.includes('Vượt hạn mức') || desc.includes('Deposit limit')) return t('admin.exceptions.descriptions.limit_exceeded')
-  if (desc.includes('Lệch đối soát') || desc.includes('settlement mismatch')) return t('admin.exceptions.descriptions.settlement_mismatch')
-  if (desc.includes('Hoàn tiền hủy') || desc.includes('cancellation refund')) return t('admin.exceptions.descriptions.late_refund')
-  if (desc.includes('săn voucher') || desc.includes('voucher hunting')) return t('admin.exceptions.descriptions.voucher_hunting')
-  if (desc.includes('Lệch cọc') || desc.includes('deposit hold mismatch')) return t('admin.exceptions.descriptions.deposit_hold_mismatch')
-  if (desc.includes('Trùng lặp') || desc.includes('Duplicate QR')) return t('admin.exceptions.descriptions.duplicate_charge')
-  if (desc.includes('ngập sân') || desc.includes('court flooding')) return t('admin.exceptions.descriptions.court_flooded_refund')
+  if (desc.includes('Vượt hạn mức') || desc.includes('Deposit limit'))
+    return t('admin.exceptions.descriptions.limit_exceeded')
+  if (desc.includes('Lệch đối soát') || desc.includes('settlement mismatch'))
+    return t('admin.exceptions.descriptions.settlement_mismatch')
+  if (desc.includes('Hoàn tiền hủy') || desc.includes('cancellation refund'))
+    return t('admin.exceptions.descriptions.late_refund')
+  if (desc.includes('săn voucher') || desc.includes('voucher hunting'))
+    return t('admin.exceptions.descriptions.voucher_hunting')
+  if (desc.includes('Lệch cọc') || desc.includes('deposit hold mismatch'))
+    return t('admin.exceptions.descriptions.deposit_hold_mismatch')
+  if (desc.includes('Trùng lặp') || desc.includes('Duplicate QR'))
+    return t('admin.exceptions.descriptions.duplicate_charge')
+  if (desc.includes('ngập sân') || desc.includes('court flooding'))
+    return t('admin.exceptions.descriptions.court_flooded_refund')
   return desc
 }
 
@@ -87,18 +94,23 @@ function localizeShift(shift?: string, type?: string): string {
   if (!shift && !type) return '--'
   const text = shift || type || ''
   if (text.includes('Sáng') || text.includes('Morning')) return t('admin.exceptions.shifts.morning')
-  if (text.includes('Chiều') || text.includes('Afternoon')) return t('admin.exceptions.shifts.afternoon')
+  if (text.includes('Chiều') || text.includes('Afternoon'))
+    return t('admin.exceptions.shifts.afternoon')
   if (text.includes('Tối') || text.includes('Evening')) return t('admin.exceptions.shifts.evening')
-  if (type && te(`admin.exceptions.descriptions.${type}`)) return t(`admin.exceptions.descriptions.${type}`)
+  if (type && te(`admin.exceptions.descriptions.${type}`))
+    return t(`admin.exceptions.descriptions.${type}`)
   return text
 }
 
 function localizeMemberTier(tier?: string): string {
   if (!tier) return ''
   if (tier.includes('Vàng') || tier.includes('Gold')) return t('admin.exceptions.memberTiers.gold')
-  if (tier.includes('Kim Cương') || tier.includes('Diamond')) return t('admin.exceptions.memberTiers.diamond')
-  if (tier.includes('Bạc') || tier.includes('Silver')) return t('admin.exceptions.memberTiers.silver')
-  if (tier.includes('vãng lai') || tier.includes('Guest')) return t('admin.exceptions.memberTiers.guest')
+  if (tier.includes('Kim Cương') || tier.includes('Diamond'))
+    return t('admin.exceptions.memberTiers.diamond')
+  if (tier.includes('Bạc') || tier.includes('Silver'))
+    return t('admin.exceptions.memberTiers.silver')
+  if (tier.includes('vãng lai') || tier.includes('Guest'))
+    return t('admin.exceptions.memberTiers.guest')
   if (tier.includes('mới') || tier.includes('New')) return t('admin.exceptions.memberTiers.new')
   return tier
 }
@@ -240,7 +252,9 @@ function localizeMemberTier(tier?: string): string {
                   </div>
                 </div>
               </td>
-              <td class="text-right"><SkeletonLoader height="16px" width="80px" borderRadius="4px" /></td>
+              <td class="text-right">
+                <SkeletonLoader height="16px" width="80px" borderRadius="4px" />
+              </td>
               <td><SkeletonLoader height="22px" width="120px" borderRadius="6px" /></td>
               <td><SkeletonLoader height="22px" width="70px" borderRadius="12px" /></td>
               <td class="text-right">
@@ -272,15 +286,32 @@ function localizeMemberTier(tier?: string): string {
               <td>
                 <div class="user-cell">
                   <div class="user-avatar-initial">
-                    {{ getUserInitials(item.metadata?.user?.name || item.resolver?.name || t('admin.schedule.systemUser')) }}
+                    {{
+                      getUserInitials(
+                        item.metadata?.user?.name ||
+                          item.resolver?.name ||
+                          t('admin.schedule.systemUser'),
+                      )
+                    }}
                   </div>
                   <div>
                     <div class="user-name">
-                      {{ resolveLocalizedText(item.metadata?.user?.name || item.resolver?.name || t('admin.schedule.systemUser')) }}
+                      {{
+                        resolveLocalizedText(
+                          item.metadata?.user?.name ||
+                            item.resolver?.name ||
+                            t('admin.schedule.systemUser'),
+                        )
+                      }}
                     </div>
                     <div class="user-sub font-mono">
-                      <span>{{ item.metadata?.user?.id || (item.resolver?.id ? `UID-${item.resolver.id}` : 'SYS') }}</span>
-                      <span v-if="item.metadata?.user?.tier" class="tier-tag"> · {{ localizeMemberTier(item.metadata.user.tier) }}</span>
+                      <span>{{
+                        item.metadata?.user?.id ||
+                        (item.resolver?.id ? `UID-${item.resolver.id}` : 'SYS')
+                      }}</span>
+                      <span v-if="item.metadata?.user?.tier" class="tier-tag">
+                        · {{ localizeMemberTier(item.metadata.user.tier) }}</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -307,15 +338,21 @@ function localizeMemberTier(tier?: string): string {
                   }"
                 >
                   <span class="material-symbols-outlined icon-14">
-                    {{ item.severity === 'critical' ? 'warning' : item.severity === 'medium' ? 'priority_high' : 'info' }}
+                    {{
+                      item.severity === 'critical'
+                        ? 'warning'
+                        : item.severity === 'medium'
+                          ? 'priority_high'
+                          : 'info'
+                    }}
                   </span>
                   <span>
                     {{
                       item.severity === 'critical'
                         ? t('admin.exceptions.riskHigh')
                         : item.severity === 'medium'
-                        ? t('admin.exceptions.riskMedium')
-                        : t('admin.exceptions.riskLow')
+                          ? t('admin.exceptions.riskMedium')
+                          : t('admin.exceptions.riskLow')
                     }}
                   </span>
                 </span>
@@ -717,11 +754,22 @@ function localizeMemberTier(tier?: string): string {
   font-size: 14px;
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
-.icon-36 { font-size: 36px; color: #10b981; }
-.mb-1 { margin-bottom: 4px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
+.icon-36 {
+  font-size: 36px;
+  color: #10b981;
+}
+.mb-1 {
+  margin-bottom: 4px;
+}
 
 /* Transitions */
 .slide-fade-enter-active,
@@ -734,4 +782,3 @@ function localizeMemberTier(tier?: string): string {
   opacity: 0;
 }
 </style>
-

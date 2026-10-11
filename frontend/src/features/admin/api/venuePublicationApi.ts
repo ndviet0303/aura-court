@@ -96,83 +96,102 @@ export interface OwnerReceivingConnection {
 export const venuePublicationApi = {
   getReadiness: async (
     organizationId: number,
-    venueId: number
+    venueId: number,
   ): Promise<{ data: VenueReadinessChecklist }> => {
     return api.get<{ data: VenueReadinessChecklist }>(
-      `/partner/organizations/${organizationId}/venues/${venueId}/readiness`
+      `/partner/organizations/${organizationId}/venues/${venueId}/readiness`,
     )
   },
 
   getReceivingConnection: async (organizationId: number, venueId: number) =>
     api.get<{ data: OwnerReceivingConnection | null }>(
-      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection`
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection`,
     ),
 
   createReceivingConnection: async (
     organizationId: number,
     venueId: number,
-    payload: { bank_code: string; account_name: string; account_number: string; legal_owner_confirmed: true }
-  ) => api.post<{ data: OwnerReceivingConnection; message: string }>(
-    `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection`,
-    payload
-  ),
+    payload: {
+      bank_code: string
+      account_name: string
+      account_number: string
+      legal_owner_confirmed: true
+    },
+  ) =>
+    api.post<{ data: OwnerReceivingConnection; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection`,
+      payload,
+    ),
 
   rotateReceivingCredential: async (
     organizationId: number,
     venueId: number,
     connectionId: number,
-    hmacSecret: string
-  ) => api.post<{ data: OwnerReceivingConnection; message: string }>(
-    `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/credential`,
-    { hmac_secret: hmacSecret }
-  ),
+    hmacSecret: string,
+  ) =>
+    api.post<{ data: OwnerReceivingConnection; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/credential`,
+      { hmac_secret: hmacSecret },
+    ),
 
   selectReceivingConnection: async (
     organizationId: number,
     venueId: number,
     connectionId: number,
-  ) => api.post<{ data: OwnerReceivingConnection; message: string }>(
-    `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/select`
-  ),
+  ) =>
+    api.post<{ data: OwnerReceivingConnection; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/select`,
+    ),
 
   rotateReceivingApiToken: async (
     organizationId: number,
     venueId: number,
     connectionId: number,
     apiToken: string,
-    providerAccountId: string
-  ) => api.post<{ data: OwnerReceivingConnection; message: string }>(
-    `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/query-credential`,
-    { api_token: apiToken, provider_account_id: providerAccountId }
-  ),
-
-  getReceivingConnectionEvidence: async (organizationId: number, venueId: number, connectionId: number) =>
-    api.get<{ data: ReceivingConnectionEvidenceItem[] }>(
-      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/evidence`
+    providerAccountId: string,
+  ) =>
+    api.post<{ data: OwnerReceivingConnection; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/query-credential`,
+      { api_token: apiToken, provider_account_id: providerAccountId },
     ),
 
-  syncReceivingTransactions: async (organizationId: number, venueId: number, connectionId: number) =>
-    api.post<{ data: { transactions_received: number; last_queried_transaction_id: string | null } }>(
-      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/transactions/sync`
+  getReceivingConnectionEvidence: async (
+    organizationId: number,
+    venueId: number,
+    connectionId: number,
+  ) =>
+    api.get<{ data: ReceivingConnectionEvidenceItem[] }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/evidence`,
+    ),
+
+  syncReceivingTransactions: async (
+    organizationId: number,
+    venueId: number,
+    connectionId: number,
+  ) =>
+    api.post<{
+      data: { transactions_received: number; last_queried_transaction_id: string | null }
+    }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/transactions/sync`,
     ),
 
   submitPublication: async (
     organizationId: number,
-    venueId: number
+    venueId: number,
   ): Promise<{ data: VenuePublicationRevision; message: string }> => {
     return api.post<{ data: VenuePublicationRevision; message: string }>(
-      `/partner/organizations/${organizationId}/venues/${venueId}/submit-publication`
+      `/partner/organizations/${organizationId}/venues/${venueId}/submit-publication`,
     )
   },
 
   setOperationalStatus: async (
     organizationId: number,
     venueId: number,
-    payload: { status: 'published' | 'temporarily_closed' | 'closed'; reason?: string }
+    payload: { status: 'published' | 'temporarily_closed' | 'closed'; reason?: string },
   ): Promise<{ data: any; message: string }> => {
     return api.post<{ data: any; message: string }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/operational-status`,
-      payload
+      payload,
     )
   },
 
@@ -187,11 +206,9 @@ export const venuePublicationApi = {
   },
 
   getPublicationRevision: async (
-    revisionId: number
+    revisionId: number,
   ): Promise<{ data: VenuePublicationRevision }> => {
-    return api.get<{ data: VenuePublicationRevision }>(
-      `/admin/venues/revisions/${revisionId}`
-    )
+    return api.get<{ data: VenuePublicationRevision }>(`/admin/venues/revisions/${revisionId}`)
   },
 
   reviewPublicationRevision: async (
@@ -200,11 +217,11 @@ export const venuePublicationApi = {
       decision: 'approve' | 'revision_required' | 'reject'
       reason?: string
       feedback_fields?: Record<string, string>
-    }
+    },
   ): Promise<{ data: VenuePublicationRevision; message: string }> => {
     return api.post<{ data: VenuePublicationRevision; message: string }>(
       `/admin/venues/revisions/${revisionId}/review`,
-      payload
+      payload,
     )
   },
 }

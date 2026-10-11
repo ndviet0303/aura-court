@@ -29,9 +29,13 @@ async function fetchUnread() {
 }
 
 // Refetch when route changes or user logs in
-watch(() => [route.path, auth.user], () => {
-  fetchUnread()
-}, { immediate: true })
+watch(
+  () => [route.path, auth.user],
+  () => {
+    fetchUnread()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -73,9 +77,9 @@ watch(() => [route.path, auth.user], () => {
 
 .navbar-bell-btn:hover,
 .navbar-bell-btn.is-active {
-  background: #FAF7F3;
-  border-color: #6B2D3F;
-  color: #6B2D3F;
+  background: #faf7f3;
+  border-color: #6b2d3f;
+  color: #6b2d3f;
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(107, 45, 63, 0.12);
 }

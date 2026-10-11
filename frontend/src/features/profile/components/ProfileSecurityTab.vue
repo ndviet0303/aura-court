@@ -35,8 +35,12 @@ const emit = defineEmits<{
     <div v-if="user?.social_provider" class="social-notice-card">
       <span class="material-symbols-outlined social-notice-ico">info</span>
       <div class="social-notice-body">
-        <strong>{{ $t('profile.socialLoginBadge') }} {{ user.social_provider.toUpperCase() }}</strong>
-        <p>{{ $t('profile.setPasswordSubtitle', { provider: user.social_provider.toUpperCase() }) }}</p>
+        <strong
+          >{{ $t('profile.socialLoginBadge') }} {{ user.social_provider.toUpperCase() }}</strong
+        >
+        <p>
+          {{ $t('profile.setPasswordSubtitle', { provider: user.social_provider.toUpperCase() }) }}
+        </p>
       </div>
     </div>
 
@@ -64,7 +68,8 @@ const emit = defineEmits<{
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label" for="sec-new-pwd">
-            {{ hasPasswordSet ? $t('profile.newPassword') : $t('profile.setPasswordTitle') }} <span class="required">*</span>
+            {{ hasPasswordSet ? $t('profile.newPassword') : $t('profile.setPasswordTitle') }}
+            <span class="required">*</span>
           </label>
           <div class="input-with-icon">
             <span class="material-symbols-outlined input-icon">lock</span>
@@ -115,7 +120,11 @@ const emit = defineEmits<{
           </li>
           <li :class="{ met: newPassword && newPassword === confirmPassword }">
             <span class="material-symbols-outlined check-ico">
-              {{ newPassword && newPassword === confirmPassword ? 'check_circle' : 'radio_button_unchecked' }}
+              {{
+                newPassword && newPassword === confirmPassword
+                  ? 'check_circle'
+                  : 'radio_button_unchecked'
+              }}
             </span>
             {{ $t('profile.passCriteria2') }}
           </li>
@@ -174,7 +183,7 @@ html.dark .profile-tab-card {
 
 .title-icon {
   font-size: 26px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   margin-top: 2px;
 }
 
@@ -310,7 +319,7 @@ html.dark .form-input {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.12);
 }
 

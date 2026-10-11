@@ -76,22 +76,13 @@ function goToVenuesManagement() {
           class="venues-search-input"
           :placeholder="t('admin.org.searchVenuesPlaceholder')"
         />
-        <button
-          v-if="searchQuery"
-          type="button"
-          class="clear-btn"
-          @click="searchQuery = ''"
-        >
+        <button v-if="searchQuery" type="button" class="clear-btn" @click="searchQuery = ''">
           ✕
         </button>
       </div>
 
       <div class="filter-wrap">
-        <SelectDropdown
-          v-model="statusFilter"
-          :options="statusOptions"
-          variant="bordered"
-        />
+        <SelectDropdown v-model="statusFilter" :options="statusOptions" variant="bordered" />
       </div>
     </div>
 
@@ -104,11 +95,7 @@ function goToVenuesManagement() {
 
     <!-- Venues List -->
     <div v-else-if="filteredVenues.length > 0" class="venues-list">
-      <div
-        v-for="v in filteredVenues"
-        :key="v.id"
-        class="venue-item-row"
-      >
+      <div v-for="v in filteredVenues" :key="v.id" class="venue-item-row">
         <div class="v-main">
           <div class="v-badge">
             <span class="material-symbols-outlined venue-icon">stadium</span>
@@ -128,10 +115,7 @@ function goToVenuesManagement() {
             {{ t('admin.org.courtsScale', { count: v.courts_count || 0 }) }}
           </span>
 
-          <span
-            class="status-chip"
-            :class="v.is_active ? 'status-active' : 'status-inactive'"
-          >
+          <span class="status-chip" :class="v.is_active ? 'status-active' : 'status-inactive'">
             ● {{ v.is_active ? t('admin.org.statusActive') : t('admin.org.statusInactive') }}
           </span>
 
@@ -405,9 +389,15 @@ function goToVenuesManagement() {
   background: transparent;
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 :global(html.dark) .org-venues-tab-card {
   background: var(--surface, #1e191c);
@@ -416,7 +406,7 @@ function goToVenuesManagement() {
 
 :global(html.dark) .venues-search-input {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 
@@ -427,11 +417,11 @@ function goToVenuesManagement() {
 
 :global(html.dark) .venue-item-row:hover {
   background: var(--soft, #30292e);
-  border-color: var(--pink-dark, #E58E9F);
+  border-color: var(--pink-dark, #e58e9f);
 }
 
 :global(html.dark) .v-name {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .v-addr {
@@ -440,7 +430,7 @@ function goToVenuesManagement() {
 
 :global(html.dark) .courts-count-pill {
   background: var(--surface, #1e191c);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 

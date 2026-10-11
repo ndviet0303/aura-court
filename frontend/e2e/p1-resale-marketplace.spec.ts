@@ -1,6 +1,10 @@
 import { getCanonicalBackendEnv } from './runner/test-data.ts'
 import { test, expect } from '@playwright/test'
-import { getTestManifest, sendSyntheticPaymentWebhook, formatVietnamDate } from './runner/test-data.ts'
+import {
+  getTestManifest,
+  sendSyntheticPaymentWebhook,
+  formatVietnamDate,
+} from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
@@ -12,7 +16,9 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
     })
   })
 
-  test('8.3.1: Điều kiện đăng nhượng vé & giới hạn giá (giờ cutoff, không vượt giá gốc, không nhượng vé đang tranh chấp)', async ({ page }) => {
+  test('8.3.1: Điều kiện đăng nhượng vé & giới hạn giá (giờ cutoff, không vượt giá gốc, không nhượng vé đang tranh chấp)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -127,11 +133,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       reservation_id: number
       entitlement_id: number
       user_id: number
@@ -194,11 +202,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const testConstraints = JSON.parse(execFileSync('php', ['-r', testConstraintsScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const testConstraints = JSON.parse(
+      execFileSync('php', ['-r', testConstraintsScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       excess_price_rejected: boolean
       disputed_rejected: boolean
       listing_id: number
@@ -335,11 +345,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       listing_id: number
       seller_id: number
       other_user_id: number
@@ -393,11 +405,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const withdrawResult = JSON.parse(execFileSync('php', ['-r', withdrawScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const withdrawResult = JSON.parse(
+      execFileSync('php', ['-r', withdrawScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       unauthorized_withdraw: boolean
       withdrawn_status: string
       double_withdraw_conflict: boolean
@@ -512,11 +526,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       listing_id: number
       seller_id: number
       buyer_id: number
@@ -547,11 +563,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const checkout = JSON.parse(execFileSync('php', ['-r', checkoutScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const checkout = JSON.parse(
+      execFileSync('php', ['-r', checkoutScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       attempt_id: number
       attempt_reference: string
       attempt_amount: number
@@ -602,11 +620,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const fakePurchaseResult = JSON.parse(execFileSync('php', ['-r', fakePurchaseScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const fakePurchaseResult = JSON.parse(
+      execFileSync('php', ['-r', fakePurchaseScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       rejected: boolean
       error_message: string
       listing_status: string
@@ -619,7 +639,9 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
     expect(fakePurchaseResult.seller_entitlement_status).toBe('active') // Still active with seller!
   })
 
-  test('8.3.4: Hoàn tất chuyển nhượng khi người mua thanh toán hợp lệ: Đổi quyền check-in duy nhất, không hoa hồng mới', async ({ page }) => {
+  test('8.3.4: Hoàn tất chuyển nhượng khi người mua thanh toán hợp lệ: Đổi quyền check-in duy nhất, không hoa hồng mới', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const staff = getActorCredentials(manifest, 'staff1')
@@ -741,11 +763,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       listing_id: number
       seller_id: number
       buyer_id: number
@@ -791,14 +815,17 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       encoding: 'utf-8',
     }).trim()
 
-    await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signatureBuyer,
-        'Content-Type': 'application/json',
+    await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signatureBuyer,
+          'Content-Type': 'application/json',
+        },
+        data: payloadBuyer,
       },
-      data: payloadBuyer,
-    })
+    )
 
     // Process buyer receipt
     const procBuyerScript = `
@@ -852,14 +879,17 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       encoding: 'utf-8',
     }).trim()
 
-    await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signatureReimb,
-        'Content-Type': 'application/json',
+    await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signatureReimb,
+          'Content-Type': 'application/json',
+        },
+        data: payloadReimb,
       },
-      data: payloadReimb,
-    })
+    )
 
     // Process reimbursement receipt
     const procReimbScript = `
@@ -965,11 +995,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
       ]);
     `
 
-    const purchaseResult = JSON.parse(execFileSync('php', ['-r', purchaseScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const purchaseResult = JSON.parse(
+      execFileSync('php', ['-r', purchaseScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       transfer_status: string
       listing_status: string
       seller_entitlement_status: string
@@ -1106,11 +1138,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
         'account_number' => $conn->accountNumber(),
       ]);
     `
-    const arrangeData = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arrangeData = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       listing_id: number
       buyer_a_id: number
       buyer_b_id: number
@@ -1199,11 +1233,13 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
         'final_listing_status' => $listing->fresh()->status,
       ]);
     `
-    const raceResult = JSON.parse(execFileSync('php', ['-r', raceScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const raceResult = JSON.parse(
+      execFileSync('php', ['-r', raceScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       buyer_a_status: string
       buyer_b_rejected: boolean
       buyer_b_status_code: number

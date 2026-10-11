@@ -4,12 +4,7 @@ import type { User } from '@/core/types/common'
 export type { AvailabilitySlot }
 
 export type BookingStatus =
-  | 'pending_payment'
-  | 'confirmed'
-  | 'cancelled'
-  | 'expired'
-  | 'refunded'
-  | 'refund_pending'
+  'pending_payment' | 'confirmed' | 'cancelled' | 'expired' | 'refunded' | 'refund_pending'
 
 export type PromotionCampaign = {
   id: number

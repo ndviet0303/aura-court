@@ -24,7 +24,7 @@ export const adminKycApi = {
 
   reviewKyc: async (
     id: number,
-    payload: ReviewKycPayload
+    payload: ReviewKycPayload,
   ): Promise<{ message: string; data: HostKyc }> => {
     return apiV2.post<{ message: string; data: HostKyc }>(`/admin/kyc/${id}/review`, payload)
   },

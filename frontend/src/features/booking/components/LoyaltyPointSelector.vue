@@ -199,7 +199,9 @@ onMounted(() => {
         </div>
         <div class="breakdown-row remaining">
           <span>{{ t('loyalty.remainingWalletPayable') }}</span>
-          <span class="remaining-value font-mono font-bold">{{ formatCurrency(remainingPayableVnd) }}</span>
+          <span class="remaining-value font-mono font-bold">{{
+            formatCurrency(remainingPayableVnd)
+          }}</span>
         </div>
       </div>
 

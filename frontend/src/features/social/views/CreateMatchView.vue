@@ -298,7 +298,9 @@ onMounted(() => {
   font-weight: 600;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .title-text-input:focus {

@@ -51,11 +51,7 @@ function handleAdd() {
           <div class="drop-inputs-grid">
             <div class="form-group">
               <label class="form-label">{{ t('admin.shifts.dropAmountLabel') }}</label>
-              <CurrencyInput
-                v-model="amount"
-                size="md"
-                placeholder="0"
-              />
+              <CurrencyInput v-model="amount" size="md" placeholder="0" />
             </div>
 
             <div class="form-group">
@@ -93,7 +89,9 @@ function handleAdd() {
 
         <!-- Drops List -->
         <div class="drops-list-box">
-          <h4 class="form-sub-title">{{ t('admin.shifts.dropsListTitle', { count: drops.length }) }}</h4>
+          <h4 class="form-sub-title">
+            {{ t('admin.shifts.dropsListTitle', { count: drops.length }) }}
+          </h4>
           <div v-if="drops.length === 0" class="empty-msg">
             <span class="material-symbols-outlined icon-16">info</span>
             <span>{{ t('admin.shifts.noDrops') }}</span>
@@ -103,10 +101,13 @@ function handleAdd() {
               <div class="drop-info">
                 <strong>{{ d.reason }}</strong>
                 <span class="drop-meta font-mono">
-                  {{ d.time }} · {{ t('admin.shifts.recipientMeta', { name: d.recipient || 'N/A' }) }}
+                  {{ d.time }} ·
+                  {{ t('admin.shifts.recipientMeta', { name: d.recipient || 'N/A' }) }}
                 </span>
               </div>
-              <strong class="drop-amount text-red font-mono">-{{ formatCurrency(d.amount) }}</strong>
+              <strong class="drop-amount text-red font-mono"
+                >-{{ formatCurrency(d.amount) }}</strong
+              >
             </div>
           </div>
         </div>

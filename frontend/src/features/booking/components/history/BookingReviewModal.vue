@@ -62,7 +62,17 @@ const hoveredRating = ref<number | null>(null)
               </span>
             </button>
             <span class="rating-text-hint font-mono">
-              {{ (hoveredRating ?? rating) === 5 ? 'Tuyệt vời (5/5)' : (hoveredRating ?? rating) === 4 ? 'Rất tốt (4/5)' : (hoveredRating ?? rating) === 3 ? 'Bình thường (3/5)' : (hoveredRating ?? rating) === 2 ? 'Chưa hài lòng (2/5)' : 'Kém (1/5)' }}
+              {{
+                (hoveredRating ?? rating) === 5
+                  ? 'Tuyệt vời (5/5)'
+                  : (hoveredRating ?? rating) === 4
+                    ? 'Rất tốt (4/5)'
+                    : (hoveredRating ?? rating) === 3
+                      ? 'Bình thường (3/5)'
+                      : (hoveredRating ?? rating) === 2
+                        ? 'Chưa hài lòng (2/5)'
+                        : 'Kém (1/5)'
+              }}
             </span>
           </div>
         </div>
@@ -84,7 +94,9 @@ const hoveredRating = ref<number | null>(null)
           Huỷ
         </button>
         <button class="btn-submit" type="button" :disabled="submitting" @click="emit('submit')">
-          <span v-if="submitting" class="material-symbols-outlined spin-icon">progress_activity</span>
+          <span v-if="submitting" class="material-symbols-outlined spin-icon"
+            >progress_activity</span
+          >
           <span v-else>Gửi Đánh Giá</span>
         </button>
       </div>
@@ -137,7 +149,7 @@ const hoveredRating = ref<number | null>(null)
 
 .header-icon-gold {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .modal-title {
@@ -196,7 +208,7 @@ const hoveredRating = ref<number | null>(null)
 
 .code-badge {
   font-size: 11px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 700;
 }
 
@@ -224,7 +236,9 @@ const hoveredRating = ref<number | null>(null)
   padding: 4px;
   cursor: pointer;
   color: var(--muted);
-  transition: transform 0.15s ease, color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -269,7 +283,7 @@ const hoveredRating = ref<number | null>(null)
 }
 
 .form-textarea:focus {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
 }
 
 .modal-footer {
@@ -298,7 +312,7 @@ const hoveredRating = ref<number | null>(null)
   padding: 9px 22px;
   border-radius: 10px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #fff);
   font-size: 13px;
   font-weight: 700;
@@ -316,7 +330,11 @@ const hoveredRating = ref<number | null>(null)
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

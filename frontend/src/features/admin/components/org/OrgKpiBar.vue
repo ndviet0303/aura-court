@@ -35,7 +35,9 @@ const { t } = useI18n()
           <span class="kpi-label">{{ t('admin.org.kpiVenues') }}</span>
           <div class="kpi-val-row">
             <span class="kpi-number">{{ totalVenues }}</span>
-            <span class="kpi-unit">{{ t('admin.org.tabVenues', { count: totalVenues }).split(' ')[0] }}</span>
+            <span class="kpi-unit">{{
+              t('admin.org.tabVenues', { count: totalVenues }).split(' ')[0]
+            }}</span>
           </div>
         </div>
       </div>
@@ -78,10 +80,7 @@ const { t } = useI18n()
         <div class="kpi-meta">
           <span class="kpi-label">{{ t('admin.org.kpiAutoApprove') }}</span>
           <div class="kpi-val-row">
-            <span
-              class="kpi-status-tag"
-              :class="autoApprove ? 'tag-enabled' : 'tag-disabled'"
-            >
+            <span class="kpi-status-tag" :class="autoApprove ? 'tag-enabled' : 'tag-disabled'">
               {{ autoApprove ? t('admin.org.enabled') : t('admin.org.disabled') }}
             </span>
           </div>
@@ -140,7 +139,9 @@ const { t } = useI18n()
   border: 1px solid var(--outline);
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .kpi-card:hover {
@@ -259,7 +260,7 @@ const { t } = useI18n()
 }
 
 :global(html.dark) .kpi-card:hover {
-  border-color: var(--pink-dark, #E58E9F);
+  border-color: var(--pink-dark, #e58e9f);
 }
 
 :global(html.dark) .kpi-label {
@@ -267,7 +268,7 @@ const { t } = useI18n()
 }
 
 :global(html.dark) .kpi-number {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .kpi-unit {

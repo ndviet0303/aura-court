@@ -19,7 +19,7 @@ const props = withDefaults(
     suffix: '₫',
     size: 'md',
     inputClass: '',
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -47,7 +47,7 @@ watch(
   (newVal) => {
     displayValue.value = formatNumber(newVal)
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function onInput(event: Event) {
@@ -63,7 +63,8 @@ function onInput(event: Event) {
     finalNumeric = props.max
   }
 
-  const formatted = finalNumeric > 0 || target.value.trim() === '0' ? formatNumber(finalNumeric) : ''
+  const formatted =
+    finalNumeric > 0 || target.value.trim() === '0' ? formatNumber(finalNumeric) : ''
   displayValue.value = formatted
 
   emit('update:modelValue', finalNumeric)
@@ -108,13 +109,7 @@ function onFocus(e: FocusEvent) {
 </script>
 
 <template>
-  <div
-    class="currency-input-wrapper"
-    :class="[
-      `size-${size}`,
-      { 'is-disabled': disabled }
-    ]"
-  >
+  <div class="currency-input-wrapper" :class="[`size-${size}`, { 'is-disabled': disabled }]">
     <input
       ref="inputRef"
       type="text"

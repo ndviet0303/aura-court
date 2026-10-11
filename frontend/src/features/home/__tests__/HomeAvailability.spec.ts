@@ -6,7 +6,11 @@ import { i18n, setAppLocale } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
 import { bookingApi } from '@/features/booking/api/bookingApi'
 import type { Court } from '@/features/court/types/court'
-import { getVenueLocalDate, formatSlotRange, resolveAvailabilityHeading } from '../utils/homeAvailability'
+import {
+  getVenueLocalDate,
+  formatSlotRange,
+  resolveAvailabilityHeading,
+} from '../utils/homeAvailability'
 import DatePicker from '@/shared/components/forms/DatePicker.vue'
 
 vi.mock('vue-router', () => ({
@@ -34,24 +38,84 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
   }
 
   const courtASlotsDate1 = [
-    { startsAt: '2026-09-22T17:00:00+07:00', endsAt: '2026-09-22T18:00:00+07:00', price: 120000, available: true },
-    { startsAt: '2026-09-22T18:00:00+07:00', endsAt: '2026-09-22T19:00:00+07:00', price: 120000, available: true },
-    { startsAt: '2026-09-22T19:00:00+07:00', endsAt: '2026-09-22T20:00:00+07:00', price: 120000, available: false }, // booked
-    { startsAt: '2026-09-22T20:00:00+07:00', endsAt: '2026-09-22T21:00:00+07:00', price: 120000, available: false }, // booked
-    { startsAt: '2026-09-22T21:00:00+07:00', endsAt: '2026-09-22T22:00:00+07:00', price: 120000, available: true },
+    {
+      startsAt: '2026-09-22T17:00:00+07:00',
+      endsAt: '2026-09-22T18:00:00+07:00',
+      price: 120000,
+      available: true,
+    },
+    {
+      startsAt: '2026-09-22T18:00:00+07:00',
+      endsAt: '2026-09-22T19:00:00+07:00',
+      price: 120000,
+      available: true,
+    },
+    {
+      startsAt: '2026-09-22T19:00:00+07:00',
+      endsAt: '2026-09-22T20:00:00+07:00',
+      price: 120000,
+      available: false,
+    }, // booked
+    {
+      startsAt: '2026-09-22T20:00:00+07:00',
+      endsAt: '2026-09-22T21:00:00+07:00',
+      price: 120000,
+      available: false,
+    }, // booked
+    {
+      startsAt: '2026-09-22T21:00:00+07:00',
+      endsAt: '2026-09-22T22:00:00+07:00',
+      price: 120000,
+      available: true,
+    },
   ]
 
   const courtBSlotsDate1 = [
-    { startsAt: '2026-09-22T17:00:00+07:00', endsAt: '2026-09-22T18:00:00+07:00', price: 120000, available: true },
-    { startsAt: '2026-09-22T18:00:00+07:00', endsAt: '2026-09-22T19:00:00+07:00', price: 120000, available: true },
-    { startsAt: '2026-09-22T19:00:00+07:00', endsAt: '2026-09-22T20:00:00+07:00', price: 120000, available: true }, // available
-    { startsAt: '2026-09-22T20:00:00+07:00', endsAt: '2026-09-22T21:00:00+07:00', price: 120000, available: true }, // available
-    { startsAt: '2026-09-22T21:00:00+07:00', endsAt: '2026-09-22T22:00:00+07:00', price: 120000, available: true },
+    {
+      startsAt: '2026-09-22T17:00:00+07:00',
+      endsAt: '2026-09-22T18:00:00+07:00',
+      price: 120000,
+      available: true,
+    },
+    {
+      startsAt: '2026-09-22T18:00:00+07:00',
+      endsAt: '2026-09-22T19:00:00+07:00',
+      price: 120000,
+      available: true,
+    },
+    {
+      startsAt: '2026-09-22T19:00:00+07:00',
+      endsAt: '2026-09-22T20:00:00+07:00',
+      price: 120000,
+      available: true,
+    }, // available
+    {
+      startsAt: '2026-09-22T20:00:00+07:00',
+      endsAt: '2026-09-22T21:00:00+07:00',
+      price: 120000,
+      available: true,
+    }, // available
+    {
+      startsAt: '2026-09-22T21:00:00+07:00',
+      endsAt: '2026-09-22T22:00:00+07:00',
+      price: 120000,
+      available: true,
+    },
   ]
 
   const courtASlotsDate2 = [
-    { startsAt: '2026-09-25T19:00:00+07:00', endsAt: '2026-09-25T20:00:00+07:00', price: 140000, available: true },
-    { startsAt: '2026-09-25T20:00:00+07:00', endsAt: '2026-09-25T21:00:00+07:00', price: 140000, available: true },
+    {
+      startsAt: '2026-09-25T19:00:00+07:00',
+      endsAt: '2026-09-25T20:00:00+07:00',
+      price: 140000,
+      available: true,
+    },
+    {
+      startsAt: '2026-09-25T20:00:00+07:00',
+      endsAt: '2026-09-25T21:00:00+07:00',
+      price: 140000,
+      available: true,
+    },
   ]
 
   beforeEach(() => {
@@ -61,7 +125,10 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
     setAppLocale('vi')
     vi.clearAllMocks()
 
-    vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([courtA as unknown as Court, courtB as unknown as Court])
+    vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([
+      courtA as unknown as Court,
+      courtB as unknown as Court,
+    ])
   })
 
   afterEach(() => {
@@ -283,12 +350,16 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
   it('Task 8.1 & 8.3: Localization in both vi and en renders correct dynamic headings and labels', () => {
     // 1. Vietnamese locale
     setAppLocale('vi')
-    expect(resolveAvailabilityHeading('Sân 1', '2026-09-22', 'vi')).toBe('Lịch trống — Sân 1 — 2026-09-22')
+    expect(resolveAvailabilityHeading('Sân 1', '2026-09-22', 'vi')).toBe(
+      'Lịch trống — Sân 1 — 2026-09-22',
+    )
     expect(resolveAvailabilityHeading(null, '2026-09-22', 'vi')).toBe('Lịch sân trống trực quan')
 
     // 2. English locale
     setAppLocale('en')
-    expect(resolveAvailabilityHeading('Court 1', '2026-09-22', 'en')).toBe('Availability — Court 1 — 2026-09-22')
+    expect(resolveAvailabilityHeading('Court 1', '2026-09-22', 'en')).toBe(
+      'Availability — Court 1 — 2026-09-22',
+    )
     expect(resolveAvailabilityHeading(null, '2026-09-22', 'en')).toBe('Live Availability')
 
     // 3. Slot Range format
@@ -331,7 +402,7 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
     const tokyoSlots = [
       {
         startsAt: '2026-09-22T10:00:00.000Z', // 19:00 in Tokyo (+9), 17:00 in HCM (+7)
-        endsAt: '2026-09-22T11:00:00.000Z',   // 20:00 in Tokyo (+9), 18:00 in HCM (+7)
+        endsAt: '2026-09-22T11:00:00.000Z', // 20:00 in Tokyo (+9), 18:00 in HCM (+7)
         price: 150000,
         available: true,
       },

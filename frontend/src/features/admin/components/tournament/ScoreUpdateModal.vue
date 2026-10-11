@@ -40,10 +40,11 @@ watch(
       status.value = m.status || 'pending'
       score1.value = m.player1?.sets?.[0] ?? 21
       score2.value = m.player2?.sets?.[0] ?? 18
-      selectedWinnerId.value = m.winnerId || (score1.value >= score2.value ? m.player1?.id : m.player2?.id)
+      selectedWinnerId.value =
+        m.winnerId || (score1.value >= score2.value ? m.player1?.id : m.player2?.id)
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function onScoreChange() {
@@ -77,7 +78,12 @@ function handleSave() {
         <div class="title-with-icon">
           <span class="material-symbols-outlined card-title-icon">edit_note</span>
           <h2 class="modal-title">
-            {{ t('admin.tournaments.updateMatchModalTitle', { number: match.matchNumber, round: match.roundName }) }}
+            {{
+              t('admin.tournaments.updateMatchModalTitle', {
+                number: match.matchNumber,
+                round: match.roundName,
+              })
+            }}
           </h2>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
@@ -98,11 +104,7 @@ function handleSave() {
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.tournaments.matchStatusField') }}</label>
-          <SelectDropdown
-            v-model="status"
-            :options="statusOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="status" :options="statusOptions" variant="bordered" />
         </div>
 
         <!-- Scores & Winner Picker -->
@@ -156,7 +158,10 @@ function handleSave() {
 
         <div class="advancement-notice-box">
           <span class="material-symbols-outlined icon-16 notice-icon">alt_route</span>
-          <span>Người chiến thắng sẽ tự động được đưa vào nhánh đấu vòng kế tiếp (Bán kết / Chung kết).</span>
+          <span
+            >Người chiến thắng sẽ tự động được đưa vào nhánh đấu vòng kế tiếp (Bán kết / Chung
+            kết).</span
+          >
         </div>
       </div>
 

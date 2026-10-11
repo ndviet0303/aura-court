@@ -17,7 +17,7 @@ const form = ref({
   name: '',
   price: 50000,
   quantity: 1,
-  vat_rate: 0.10,
+  vat_rate: 0.1,
 })
 
 function handleSubmit() {
@@ -28,7 +28,7 @@ function handleSubmit() {
     quantity: form.value.quantity || 1,
     vat_rate: form.value.vat_rate,
   })
-  form.value = { name: '', price: 50000, quantity: 1, vat_rate: 0.10 }
+  form.value = { name: '', price: 50000, quantity: 1, vat_rate: 0.1 }
 }
 </script>
 
@@ -58,21 +58,11 @@ function handleSubmit() {
         </div>
         <div class="form-group">
           <label class="form-label">{{ t('admin.pos.customItemPrice') }}</label>
-          <input
-            v-model.number="form.price"
-            type="number"
-            step="10000"
-            class="form-input"
-          />
+          <input v-model.number="form.price" type="number" step="10000" class="form-input" />
         </div>
         <div class="form-group">
           <label class="form-label">{{ t('admin.pos.customItemQty') }}</label>
-          <input
-            v-model.number="form.quantity"
-            type="number"
-            min="1"
-            class="form-input"
-          />
+          <input v-model.number="form.quantity" type="number" min="1" class="form-input" />
         </div>
         <div class="form-group">
           <label class="form-label">{{ t('admin.pos.vatRateLabel') }}</label>
@@ -96,8 +86,8 @@ function handleSubmit() {
             <button
               type="button"
               class="vat-pill-btn"
-              :class="{ active: form.vat_rate === 0.10 }"
-              @click="form.vat_rate = 0.10"
+              :class="{ active: form.vat_rate === 0.1 }"
+              @click="form.vat_rate = 0.1"
             >
               10% (Chuẩn)
             </button>
@@ -109,7 +99,12 @@ function handleSubmit() {
         <button type="button" class="btn-cancel" @click="emit('close')">
           {{ t('admin.pos.cancel') }}
         </button>
-        <button type="button" class="btn-primary" :disabled="!form.name.trim()" @click="handleSubmit">
+        <button
+          type="button"
+          class="btn-primary"
+          :disabled="!form.name.trim()"
+          @click="handleSubmit"
+        >
           <span class="material-symbols-outlined icon-18">add_shopping_cart</span>
           <span>{{ t('admin.pos.addToCart') }}</span>
         </button>

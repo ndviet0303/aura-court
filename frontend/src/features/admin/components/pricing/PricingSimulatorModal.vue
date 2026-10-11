@@ -18,7 +18,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'simulate', payload: { courtId: number; dateStr: string; startTime: string; durationHours: number }): void
+  (
+    e: 'simulate',
+    payload: { courtId: number; dateStr: string; startTime: string; durationHours: number },
+  ): void
 }>()
 
 const { t } = useI18n()
@@ -35,7 +38,7 @@ const courtOptions = computed<DropdownOption[]>(() =>
     value: c.id,
     label: `${resolveLocalizedText(c.name)}${c.venue ? ` (${resolveLocalizedText(c.venue.name)})` : ''}`,
     icon: 'sports_tennis',
-  }))
+  })),
 )
 
 // Auto-select first court when courts load
@@ -46,7 +49,7 @@ watch(
       selectedCourtId.value = cList[0].id
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function runSimulation() {
@@ -150,7 +153,9 @@ const localEstimatedQuote = computed(() => {
             @click="runSimulation"
           >
             <span class="material-symbols-outlined icon-18">play_arrow</span>
-            <span>{{ simulating ? t('admin.pricing.simCalculating') : t('admin.pricing.simCalculateBtn') }}</span>
+            <span>{{
+              simulating ? t('admin.pricing.simCalculating') : t('admin.pricing.simCalculateBtn')
+            }}</span>
           </AuraButton>
         </div>
 
@@ -170,16 +175,29 @@ const localEstimatedQuote = computed(() => {
           </div>
 
           <!-- Slot by slot breakdown -->
-          <div v-if="quoteResult.slot_snapshot && quoteResult.slot_snapshot.length > 0" class="slots-breakdown">
-            <div
-              v-for="(slot, idx) in quoteResult.slot_snapshot"
-              :key="idx"
-              class="breakdown-row"
-            >
+          <div
+            v-if="quoteResult.slot_snapshot && quoteResult.slot_snapshot.length > 0"
+            class="slots-breakdown"
+          >
+            <div v-for="(slot, idx) in quoteResult.slot_snapshot" :key="idx" class="breakdown-row">
               <span class="font-mono slot-time-badge">
-                {{ slot.starts_at ? new Date(slot.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : `Slot ${idx + 1}` }}
+                {{
+                  slot.starts_at
+                    ? new Date(slot.starts_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : `Slot ${idx + 1}`
+                }}
                 -
-                {{ slot.ends_at ? new Date(slot.ends_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '' }}
+                {{
+                  slot.ends_at
+                    ? new Date(slot.ends_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : ''
+                }}
               </span>
               <span class="applied-rule-tag">
                 {{ slot.rule?.type ? slot.rule.type.toUpperCase() : 'BASE RULE' }}
@@ -202,7 +220,12 @@ const localEstimatedQuote = computed(() => {
               {{ formatCurrency(localEstimatedQuote.total) }}
             </strong>
           </div>
-          <span class="quote-note">{{ t('admin.pricing.previewFormula', { duration: durationHours, rate: formatCurrency(localEstimatedQuote.hourly) }) }}</span>
+          <span class="quote-note">{{
+            t('admin.pricing.previewFormula', {
+              duration: durationHours,
+              rate: formatCurrency(localEstimatedQuote.hourly),
+            })
+          }}</span>
         </div>
       </div>
 

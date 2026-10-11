@@ -45,7 +45,7 @@ export function useDropInSessionBill() {
 
   const isApproximate = computed(() => {
     const divisor = Math.max(1, actualHeadcount.value)
-    return (totalAmount.value % divisor) !== 0
+    return totalAmount.value % divisor !== 0
   })
 
   const isFinalized = computed(() => {
@@ -66,15 +66,25 @@ export function useDropInSessionBill() {
           sport_type: 'badminton',
           sport_name: 'Cầu lông',
           sport_icon: 'sports_tennis',
-          venue_name: ((m.court as Record<string, unknown>)?.venue as Record<string, unknown>)?.name as string || (m.venue_name as string) || 'Cơ sở',
-          court_name: (m.court as Record<string, unknown>)?.name as string || (m.court_name as string) || 'Sân',
+          venue_name:
+            (((m.court as Record<string, unknown>)?.venue as Record<string, unknown>)
+              ?.name as string) ||
+            (m.venue_name as string) ||
+            'Cơ sở',
+          court_name:
+            ((m.court as Record<string, unknown>)?.name as string) ||
+            (m.court_name as string) ||
+            'Sân',
           city: (m.city as string) || 'Hà Nội',
           starts_at: (m.starts_at as string) || '',
           ends_at: (m.ends_at as string) || undefined,
           joined_count: (m.joined_count as number) || 0,
           required_participants: (m.required_participants as number) || 4,
           visibility: 'public',
-          host_name: (m.host_name as string) || ((m.creator as Record<string, unknown>)?.name as string) || 'Chủ cơ sở',
+          host_name:
+            (m.host_name as string) ||
+            ((m.creator as Record<string, unknown>)?.name as string) ||
+            'Chủ cơ sở',
           is_owner_hosted: true,
           category: (m.category as DropInSessionCategory) || 'giao lưu',
           skill_levels: (m.skill_levels as BadmintonSkillLabel[]) || [],
@@ -87,10 +97,12 @@ export function useDropInSessionBill() {
       if (billRes?.bill) {
         currentBill.value = billRes.bill
         actualHeadcount.value = billRes.bill.actual_headcount || actualHeadcount.value
-        courtDurationMinutes.value = billRes.bill.court_duration_minutes || courtDurationMinutes.value
+        courtDurationMinutes.value =
+          billRes.bill.court_duration_minutes || courtDurationMinutes.value
         courtHourlyRate.value = billRes.bill.court_hourly_rate || courtHourlyRate.value
         shuttlecockCount.value = billRes.bill.shuttlecock_count ?? shuttlecockCount.value
-        shuttlecockUnitPrice.value = billRes.bill.shuttlecock_unit_price ?? shuttlecockUnitPrice.value
+        shuttlecockUnitPrice.value =
+          billRes.bill.shuttlecock_unit_price ?? shuttlecockUnitPrice.value
       } else {
         currentBill.value = null
         if (currentMatch.value) {

@@ -51,13 +51,19 @@ export const useBookingStore = defineStore('booking', () => {
     try {
       const res = await bookingApi.getAvailability(courtId, date)
       // Guard at commit point: ONLY mutate slots if this generation is still active
-      if (currentGeneration !== availabilityRequestId || activeAvailabilityContext !== requestContext) {
+      if (
+        currentGeneration !== availabilityRequestId ||
+        activeAvailabilityContext !== requestContext
+      ) {
         return []
       }
       slots.value = res
       return res
     } catch (cause) {
-      if (currentGeneration !== availabilityRequestId || activeAvailabilityContext !== requestContext) {
+      if (
+        currentGeneration !== availabilityRequestId ||
+        activeAvailabilityContext !== requestContext
+      ) {
         return []
       }
       slots.value = []

@@ -68,10 +68,30 @@ describe('ScheduleView', () => {
   }
 
   const mockSlots = [
-    { startsAt: '2026-08-31T08:00:00.000Z', endsAt: '2026-08-31T09:00:00.000Z', price: 100000, available: true },
-    { startsAt: '2026-08-31T09:00:00.000Z', endsAt: '2026-08-31T10:00:00.000Z', price: 100000, available: true },
-    { startsAt: '2026-08-31T14:00:00.000Z', endsAt: '2026-08-31T15:00:00.000Z', price: 100000, available: false },
-    { startsAt: '2026-08-31T18:00:00.000Z', endsAt: '2026-08-31T19:00:00.000Z', price: 125000, available: true },
+    {
+      startsAt: '2026-08-31T08:00:00.000Z',
+      endsAt: '2026-08-31T09:00:00.000Z',
+      price: 100000,
+      available: true,
+    },
+    {
+      startsAt: '2026-08-31T09:00:00.000Z',
+      endsAt: '2026-08-31T10:00:00.000Z',
+      price: 100000,
+      available: true,
+    },
+    {
+      startsAt: '2026-08-31T14:00:00.000Z',
+      endsAt: '2026-08-31T15:00:00.000Z',
+      price: 100000,
+      available: false,
+    },
+    {
+      startsAt: '2026-08-31T18:00:00.000Z',
+      endsAt: '2026-08-31T19:00:00.000Z',
+      price: 125000,
+      available: true,
+    },
   ]
 
   it('renders breadcrumbs, header, date picker, court selector, slots grid, and summary', async () => {
@@ -191,5 +211,4 @@ describe('ScheduleView', () => {
     expect(store.selectedSlots).toEqual([])
     expect(bookingApi.create).not.toHaveBeenCalled()
   })
-
 })

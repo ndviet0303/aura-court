@@ -12,7 +12,9 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
   const manifest = getTestManifest()
   const customer = getActorCredentials(manifest, 'customer')
 
-  test('10.1.1: Giả lập sự cố mạng / mất kết nối (Giữ nguyên dữ liệu nhập & Focus)', async ({ page }) => {
+  test('10.1.1: Giả lập sự cố mạng / mất kết nối (Giữ nguyên dữ liệu nhập & Focus)', async ({
+    page,
+  }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
 
     const emailInput = page.locator('input[type="email"], input[name="email"]')
@@ -86,7 +88,9 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
     // Assert: Truthful feedback or prompt; NO false success notification
     await expect(page.locator('.alert-pill-error')).toContainText(/hết hạn|đăng nhập/i)
-    const successToast = page.locator('.toast-success, .alert-success:has-text("thành công"), .alert-pill-success')
+    const successToast = page.locator(
+      '.toast-success, .alert-success:has-text("thành công"), .alert-pill-success',
+    )
     await expect(successToast).toHaveCount(0)
   })
 
@@ -118,7 +122,9 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
     expect(page.url()).not.toContain('/admin/organization')
   })
 
-  test('10.1.4: Lỗi máy chủ 500 Internal Server Error & Chống thông báo thành công giả', async ({ page }) => {
+  test('10.1.4: Lỗi máy chủ 500 Internal Server Error & Chống thông báo thành công giả', async ({
+    page,
+  }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
 
     // Inject 500 Internal Server Error and track invocation
@@ -171,7 +177,9 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
     await expect.poll(() => tournamentsAttempted).toBe(true)
 
     // Assert: Truthful degraded service feedback rendered, no phantom tournaments or false success
-    const bodyContent = page.locator('.alert-error, .error-state, .empty-state, .tournaments-view, body').first()
+    const bodyContent = page
+      .locator('.alert-error, .error-state, .empty-state, .tournaments-view, body')
+      .first()
     await expect(bodyContent).toBeVisible({ timeout: 10000 })
     await expect(page.locator('.toast-success, .alert-success')).toHaveCount(0)
   })

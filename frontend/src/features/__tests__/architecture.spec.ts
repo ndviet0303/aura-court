@@ -33,7 +33,7 @@ describe('Scoped Frontend Architecture Rules', () => {
       const unexpectedStores = storeFiles.filter((f) => !BASELINE_LEGACY_STORES.includes(f))
       expect(
         unexpectedStores,
-        `New store(s) [${unexpectedStores.join(', ')}] detected in legacy @/stores. Place domain stores in features/{domain}/stores/ instead.`
+        `New store(s) [${unexpectedStores.join(', ')}] detected in legacy @/stores. Place domain stores in features/{domain}/stores/ instead.`,
       ).toEqual([])
     }
   })
@@ -52,7 +52,7 @@ describe('Scoped Frontend Architecture Rules', () => {
         // View max lines: 250
         expect(
           lines.length,
-          `View [${relPath}] has ${lines.length} lines. Views must not exceed 250 total lines.`
+          `View [${relPath}] has ${lines.length} lines. Views must not exceed 250 total lines.`,
         ).toBeLessThanOrEqual(250)
 
         // Script block max lines: 200
@@ -61,20 +61,20 @@ describe('Scoped Frontend Architecture Rules', () => {
           const scriptLines = scriptMatch[1].split('\n').length
           expect(
             scriptLines,
-            `Script block in [${relPath}] has ${scriptLines} lines. View script must not exceed 200 lines.`
+            `Script block in [${relPath}] has ${scriptLines} lines. View script must not exceed 200 lines.`,
           ).toBeLessThanOrEqual(200)
         }
 
         // Views must not import raw API client
         expect(
           content.includes('@/core/api/client') || content.includes('core/api/client'),
-          `View [${relPath}] imports raw API client. Use feature API module or composable instead.`
+          `View [${relPath}] imports raw API client. Use feature API module or composable instead.`,
         ).toBe(false)
 
         // Views must not import legacy stores
         expect(
           content.includes('@/stores/'),
-          `View [${relPath}] imports legacy store from @/stores/. Use feature store or local state.`
+          `View [${relPath}] imports legacy store from @/stores/. Use feature store or local state.`,
         ).toBe(false)
       }
     }
@@ -94,19 +94,19 @@ describe('Scoped Frontend Architecture Rules', () => {
         // Component max lines: 300
         expect(
           lines.length,
-          `Component [${relPath}] has ${lines.length} lines. Components must not exceed 300 total lines.`
+          `Component [${relPath}] has ${lines.length} lines. Components must not exceed 300 total lines.`,
         ).toBeLessThanOrEqual(300)
 
         // Components must not import raw API client
         expect(
           content.includes('@/core/api/client') || content.includes('core/api/client'),
-          `Component [${relPath}] imports raw API client. Use feature API module or composable instead.`
+          `Component [${relPath}] imports raw API client. Use feature API module or composable instead.`,
         ).toBe(false)
 
         // Components must not import legacy stores
         expect(
           content.includes('@/stores/'),
-          `Component [${relPath}] imports legacy store from @/stores/. Use feature store or local state.`
+          `Component [${relPath}] imports legacy store from @/stores/. Use feature store or local state.`,
         ).toBe(false)
       }
     }
@@ -120,13 +120,17 @@ describe('Scoped Frontend Architecture Rules', () => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i] ?? ''
-        if (line.includes("path: 'partner") || line.includes("path: '/partner") || line.includes('subscription')) {
+        if (
+          line.includes("path: 'partner") ||
+          line.includes("path: '/partner") ||
+          line.includes('subscription')
+        ) {
           // Check following lines for dynamic import
           const chunk = lines.slice(i, i + 5).join('\n')
           if (chunk.includes('component:')) {
             expect(
               chunk.includes('() => import('),
-              `Route definition near line ${i + 1} for partner/subscription must use lazy dynamic import () => import(...).`
+              `Route definition near line ${i + 1} for partner/subscription must use lazy dynamic import () => import(...).`,
             ).toBe(true)
           }
         }

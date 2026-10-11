@@ -19,7 +19,14 @@ import { SkeletonLoader } from '@/shared/components'
       <div v-for="col in 7" :key="col" class="skeleton-col">
         <SkeletonLoader type="rect" width="100%" height="32px" rounded="8px" />
         <div class="skeleton-slots">
-          <SkeletonLoader v-for="s in 5" :key="s" type="rect" width="100%" height="46px" rounded="8px" />
+          <SkeletonLoader
+            v-for="s in 5"
+            :key="s"
+            type="rect"
+            width="100%"
+            height="46px"
+            rounded="8px"
+          />
         </div>
       </div>
     </div>

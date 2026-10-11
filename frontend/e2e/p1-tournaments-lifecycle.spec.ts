@@ -86,11 +86,13 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
       ]);
     `
 
-    const capacityResult = JSON.parse(execFileSync('php', ['-r', capacityScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const capacityResult = JSON.parse(
+      execFileSync('php', ['-r', capacityScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       tourney_id: number
       capacity: number
       p1_registered: boolean
@@ -181,11 +183,13 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
       ]);
     `
 
-    const checkInResult = JSON.parse(execFileSync('php', ['-r', checkInScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { participant_status: string; stranger_denied: boolean }
+    const checkInResult = JSON.parse(
+      execFileSync('php', ['-r', checkInScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { participant_status: string; stranger_denied: boolean }
 
     expect(checkInResult.participant_status).toBe('present')
     expect(checkInResult.stranger_denied).toBe(true)
@@ -298,11 +302,13 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
       ]);
     `
 
-    const bracketResult = JSON.parse(execFileSync('php', ['-r', bracketScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const bracketResult = JSON.parse(
+      execFileSync('php', ['-r', bracketScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       seed1_has_bye: boolean
       seed1_advanced_to_final: boolean
       unauth_denied: boolean
@@ -396,11 +402,13 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
       ]);
     `
 
-    const finalizeResult = JSON.parse(execFileSync('php', ['-r', finalizeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const finalizeResult = JSON.parse(
+      execFileSync('php', ['-r', finalizeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       status: string
       score_blocked: boolean
       regen_blocked: boolean
@@ -411,7 +419,9 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
     expect(finalizeResult.regen_blocked).toBe(true)
   })
 
-  test('9.4.5: Giao diện trình duyệt /tournaments và /tournaments/:id/bracket & Duy trì sau F5', async ({ page }) => {
+  test('9.4.5: Giao diện trình duyệt /tournaments và /tournaments/:id/bracket & Duy trì sau F5', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const customer1 = getActorCredentials(manifest, 'customer')
@@ -468,11 +478,13 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
       ]);
     `
 
-    const tourneyData = JSON.parse(execFileSync('php', ['-r', arrangeTourneyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { tourney_id: number; tourney_name: string }
+    const tourneyData = JSON.parse(
+      execFileSync('php', ['-r', arrangeTourneyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { tourney_id: number; tourney_name: string }
 
     // 2. Customer navigates to /tournaments
     await page.context().clearCookies()
@@ -484,14 +496,22 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
     await expect(card).toContainText(tourneyData.tourney_name)
 
     // 4. Open /tournaments/:id/bracket
-    await page.goto(`/tournaments/${tourneyData.tourney_id}/bracket`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`/tournaments/${tourneyData.tourney_id}/bracket`, {
+      waitUntil: 'domcontentloaded',
+    })
 
     // 5. Verify bracket header and matches render correctly
-    await expect(page.locator('.bracket-header-view, .tournament-bracket-view')).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('text=' + tourneyData.tourney_name).first()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.bracket-header-view, .tournament-bracket-view')).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.locator('text=' + tourneyData.tourney_name).first()).toBeVisible({
+      timeout: 15000,
+    })
 
     // 6. Reload confirms durable persistence from Postgres database
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('text=' + tourneyData.tourney_name).first()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('text=' + tourneyData.tourney_name).first()).toBeVisible({
+      timeout: 15000,
+    })
   })
 })

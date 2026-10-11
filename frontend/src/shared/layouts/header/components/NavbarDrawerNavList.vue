@@ -58,7 +58,10 @@ const isOwner = computed(() => {
     userAny.role === 'venue_manager' ||
     userAny.capabilities?.can_manage_venues === true ||
     (Array.isArray(userAny.organizations) &&
-      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+      userAny.organizations.some(
+        (o: any) =>
+          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+      ))
   )
 })
 
@@ -67,7 +70,11 @@ const hasPartnerIntentOrApp = computed(() => {
   if (!userAny) return false
   if (isOwner.value) return false
   if (userAny.capabilities?.has_partner_application === true) return true
-  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  if (
+    typeof window !== 'undefined' &&
+    localStorage.getItem('aura_partner_intent') === 'court_owner'
+  )
+    return true
   return false
 })
 
@@ -85,7 +92,12 @@ const partnerRoute = computed(() => {
   <div class="drawer-nav-container">
     <nav class="drawer-nav-list" aria-label="Mobile navigation links">
       <!-- Home -->
-      <RouterLink to="/" class="drawer-nav-row" :class="{ active: route.path === '/' }" @click="emit('navigate')">
+      <RouterLink
+        to="/"
+        class="drawer-nav-row"
+        :class="{ active: route.path === '/' }"
+        @click="emit('navigate')"
+      >
         <div class="nav-row-main">
           <span class="material-symbols-outlined row-icon">home</span>
           <span class="row-label">{{ $t('nav.home') }}</span>
@@ -97,7 +109,10 @@ const partnerRoute = computed(() => {
         <button
           type="button"
           class="drawer-nav-row accordion-trigger"
-          :class="{ active: route.path.startsWith('/courts') || isBookingActive, open: openAccordion === 'booking' }"
+          :class="{
+            active: route.path.startsWith('/courts') || isBookingActive,
+            open: openAccordion === 'booking',
+          }"
           @click="toggle('booking')"
         >
           <div class="nav-row-main">
@@ -114,7 +129,11 @@ const partnerRoute = computed(() => {
               :key="item.to"
               :to="item.to"
               class="drawer-subnav-item"
-              :class="{ active: route.path === item.to || (item.to === '/recurring-booking' && route.path.startsWith('/recurring-booking')) }"
+              :class="{
+                active:
+                  route.path === item.to ||
+                  (item.to === '/recurring-booking' && route.path.startsWith('/recurring-booking')),
+              }"
               @click="emit('navigate')"
             >
               <span class="material-symbols-outlined sub-icon">{{ item.icon }}</span>
@@ -157,7 +176,12 @@ const partnerRoute = computed(() => {
       </div>
 
       <!-- About -->
-      <RouterLink to="/about" class="drawer-nav-row" :class="{ active: route.path === '/about' }" @click="emit('navigate')">
+      <RouterLink
+        to="/about"
+        class="drawer-nav-row"
+        :class="{ active: route.path === '/about' }"
+        @click="emit('navigate')"
+      >
         <div class="nav-row-main">
           <span class="material-symbols-outlined row-icon">info</span>
           <span class="row-label">{{ $t('nav.about') }}</span>
@@ -203,9 +227,19 @@ const partnerRoute = computed(() => {
       >
         <div class="nav-row-main">
           <span class="material-symbols-outlined row-icon">storefront</span>
-          <span class="row-label">{{ (auth.user as any)?.capabilities?.partner_application_status === 'submitted' || (auth.user as any)?.capabilities?.partner_application_status === 'in_review' ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}</span>
+          <span class="row-label">{{
+            (auth.user as any)?.capabilities?.partner_application_status === 'submitted' ||
+            (auth.user as any)?.capabilities?.partner_application_status === 'in_review'
+              ? 'Hồ sơ đối tác'
+              : 'Thiết lập cụm sân'
+          }}</span>
         </div>
-        <span class="drawer-admin-tag">{{ (auth.user as any)?.capabilities?.partner_application_status === 'submitted' || (auth.user as any)?.capabilities?.partner_application_status === 'in_review' ? 'CHỜ DUYỆT' : 'ĐỐI TÁC' }}</span>
+        <span class="drawer-admin-tag">{{
+          (auth.user as any)?.capabilities?.partner_application_status === 'submitted' ||
+          (auth.user as any)?.capabilities?.partner_application_status === 'in_review'
+            ? 'CHỜ DUYỆT'
+            : 'ĐỐI TÁC'
+        }}</span>
       </RouterLink>
     </nav>
   </div>
@@ -251,8 +285,8 @@ const partnerRoute = computed(() => {
 }
 
 .drawer-nav-row:hover {
-  background: var(--surface-subtle, #FAF7F3);
-  color: #6B2D3F;
+  background: var(--surface-subtle, #faf7f3);
+  color: #6b2d3f;
 }
 
 html.dark .drawer-nav-row {
@@ -266,7 +300,7 @@ html.dark .drawer-nav-row:hover {
 
 .drawer-nav-row.active {
   background: rgba(107, 45, 63, 0.08);
-  color: #6B2D3F;
+  color: #6b2d3f;
   font-weight: 700;
   border-color: rgba(107, 45, 63, 0.18);
 }
@@ -286,7 +320,7 @@ html.dark .drawer-nav-row.active {
 .row-icon,
 .drawer-subnav-item .sub-icon {
   font-size: 20px;
-  color: #6B2D3F;
+  color: #6b2d3f;
   flex-shrink: 0;
 }
 
@@ -321,7 +355,10 @@ html.dark .row-arrow {
 /* Accordion Transition Animation */
 .accordion-enter-active,
 .accordion-leave-active {
-  transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.22s ease,
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   max-height: 400px;
 }
@@ -360,13 +397,13 @@ html.dark .drawer-subnav-list {
 }
 
 .drawer-subnav-item:hover {
-  background: #FAF7F3;
-  color: #6B2D3F;
+  background: #faf7f3;
+  color: #6b2d3f;
 }
 
 .drawer-subnav-item.active {
   background: rgba(107, 45, 63, 0.08);
-  color: #6B2D3F;
+  color: #6b2d3f;
   font-weight: 700;
 }
 

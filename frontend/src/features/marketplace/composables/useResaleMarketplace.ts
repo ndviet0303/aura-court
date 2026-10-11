@@ -51,9 +51,11 @@ export function useResaleMarketplace() {
     try {
       const s = new Date(start)
       const e = end ? new Date(end) : null
-      const startH = String(s.getHours()).padStart(2, '0') + ':' + String(s.getMinutes()).padStart(2, '0')
+      const startH =
+        String(s.getHours()).padStart(2, '0') + ':' + String(s.getMinutes()).padStart(2, '0')
       if (!e) return startH
-      const endH = String(e.getHours()).padStart(2, '0') + ':' + String(e.getMinutes()).padStart(2, '0')
+      const endH =
+        String(e.getHours()).padStart(2, '0') + ':' + String(e.getMinutes()).padStart(2, '0')
       return `${startH} - ${endH}`
     } catch {
       return ''
@@ -75,7 +77,10 @@ export function useResaleMarketplace() {
   // Filtered & Sorted listings for the Marketplace (Buy tab)
   const filteredListings = computed(() => {
     let result = listings.value.filter((item) => {
-      if (selectedVenue.value !== 'all' && !item.venueName?.toLowerCase().includes(selectedVenue.value.toLowerCase())) {
+      if (
+        selectedVenue.value !== 'all' &&
+        !item.venueName?.toLowerCase().includes(selectedVenue.value.toLowerCase())
+      ) {
         return false
       }
       if (selectedTimePeriod.value !== 'all' && item.timePeriod !== selectedTimePeriod.value) {
@@ -335,7 +340,9 @@ export function useResaleMarketplace() {
       const reservations = res?.data || (Array.isArray(res) ? res : [])
       const slots: UserBookingSlot[] = []
 
-      const listedEntitlementIds = new Set(myListings.value.filter(l => l.status === 'listed').map(l => l.entitlementId))
+      const listedEntitlementIds = new Set(
+        myListings.value.filter((l) => l.status === 'listed').map((l) => l.entitlementId),
+      )
 
       reservations.forEach((reservation: any) => {
         if (reservation.status === 'confirmed' && Array.isArray(reservation.entitlements)) {
@@ -349,13 +356,16 @@ export function useResaleMarketplace() {
                 id: ent.id,
                 reservationId: reservation.id,
                 courtName: ent.court?.name || reservation.court?.name || 'Sân Cầu Lông',
-                venueName: ent.court?.venue?.name || reservation.court?.venue?.name || 'Aura Court Cầu Giấy',
+                venueName:
+                  ent.court?.venue?.name || reservation.court?.venue?.name || 'Aura Court Cầu Giấy',
                 dateStr: formatDateStr(ent.starts_at),
                 timeSlot: formatTimeSlot(ent.starts_at, ent.ends_at),
                 originalPrice: ent.amount || reservation.total_amount || 200000,
                 startsAt: ent.starts_at,
                 eligible: isEligible,
-                ineligibleReason: !isEligible ? 'Đã quá thời hạn cho phép pass sân (phải trước giờ chơi ít nhất 2 tiếng)' : undefined,
+                ineligibleReason: !isEligible
+                  ? 'Đã quá thời hạn cho phép pass sân (phải trước giờ chơi ít nhất 2 tiếng)'
+                  : undefined,
               })
             }
           })
@@ -408,7 +418,7 @@ export function useResaleMarketplace() {
 
   function openSellModal(slot: UserBookingSlot) {
     selectedSlotToSell.value = slot
-    askingPriceInput.value = Math.round((slot.originalPrice || 200000) * 0.8 / 10000) * 10000
+    askingPriceInput.value = Math.round(((slot.originalPrice || 200000) * 0.8) / 10000) * 10000
     isSellModalOpen.value = true
   }
 
@@ -423,14 +433,20 @@ export function useResaleMarketplace() {
     error.value = ''
     try {
       await marketplaceApi.purchaseListing(selectedListingToBuy.value.id, {
-        buyer_payment_reference: buyPaymentMethod.value === 'wallet' ? 'wallet_balance' : 'banking_transfer_qr',
+        buyer_payment_reference:
+          buyPaymentMethod.value === 'wallet' ? 'wallet_balance' : 'banking_transfer_qr',
         seller_refund_accepted: true,
       })
-      showNotice(`Đã mua lại suất chơi sân ${selectedListingToBuy.value.courtName} thành công! Lịch chơi đã được chuyển vào tài khoản của bạn.`)
+      showNotice(
+        `Đã mua lại suất chơi sân ${selectedListingToBuy.value.courtName} thành công! Lịch chơi đã được chuyển vào tài khoản của bạn.`,
+      )
       closeBuyModal()
       await refreshAll()
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Mua lại suất chơi thất bại. Vui lòng kiểm tra lại số dư hoặc thử lại.')
+      error.value = errorMessage(
+        e,
+        'Mua lại suất chơi thất bại. Vui lòng kiểm tra lại số dư hoặc thử lại.',
+      )
     } finally {
       processingAction.value = false
     }
@@ -438,7 +454,10 @@ export function useResaleMarketplace() {
 
   async function confirmSell() {
     if (!selectedSlotToSell.value) return
-    if (askingPriceInput.value <= 0 || askingPriceInput.value > selectedSlotToSell.value.originalPrice) {
+    if (
+      askingPriceInput.value <= 0 ||
+      askingPriceInput.value > selectedSlotToSell.value.originalPrice
+    ) {
       error.value = 'Giá pass phải lớn hơn 0 và không được vượt quá giá gốc.'
       return
     }
@@ -461,7 +480,11 @@ export function useResaleMarketplace() {
   }
 
   async function cancelListing(listingId: number) {
-    if (!confirm('Bạn có chắc chắn muốn rút tin nhượng này về không? Slot sẽ được trả lại quyền sử dụng cho bạn.')) {
+    if (
+      !confirm(
+        'Bạn có chắc chắn muốn rút tin nhượng này về không? Slot sẽ được trả lại quyền sử dụng cho bạn.',
+      )
+    ) {
       return
     }
 

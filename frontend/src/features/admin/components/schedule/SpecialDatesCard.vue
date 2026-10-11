@@ -28,7 +28,11 @@ const { t } = useI18n()
         <p class="sub">{{ t('admin.schedule.specialDatesSub') }}</p>
       </div>
 
-      <AuraButton variant="primary" class="btn-add-special-date btn-add-circle" @click="emit('add')">
+      <AuraButton
+        variant="primary"
+        class="btn-add-special-date btn-add-circle"
+        @click="emit('add')"
+      >
         <span class="material-symbols-outlined icon-16">add</span>
         <span>{{ t('admin.schedule.addSpecialDateBtn') }}</span>
       </AuraButton>
@@ -202,9 +206,18 @@ const { t } = useI18n()
   border-radius: 6px;
 }
 
-.type-holiday { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
-.type-special_hours { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.type-closed { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.type-holiday {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+.type-special_hours {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+.type-closed {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
 
 .btn-delete-date {
   border: 0;

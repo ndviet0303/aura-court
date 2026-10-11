@@ -94,21 +94,22 @@ export function useOrganizationOwner() {
   // Computed KPIs
   const totalVenuesCount = computed(() => currentOrg.value.venues?.length || 0)
   const activeVenuesCount = computed(
-    () => currentOrg.value.venues?.filter((v) => v.is_active).length || 0
+    () => currentOrg.value.venues?.filter((v) => v.is_active).length || 0,
   )
   const totalCourtsCount = computed(() =>
-    (currentOrg.value.venues || []).reduce((acc, v) => acc + (v.courts_count || 0), 0)
+    (currentOrg.value.venues || []).reduce((acc, v) => acc + (v.courts_count || 0), 0),
   )
   const totalMembersCount = computed(() => currentOrg.value.members?.length || 0)
   const ownersCount = computed(
-    () => currentOrg.value.members?.filter((m) => m.role === 'organization_owner').length || 0
+    () => currentOrg.value.members?.filter((m) => m.role === 'organization_owner').length || 0,
   )
   const managersCount = computed(
-    () => currentOrg.value.members?.filter((m) => m.role === 'venue_manager').length || 0
+    () => currentOrg.value.members?.filter((m) => m.role === 'venue_manager').length || 0,
   )
   const staffCount = computed(
     () =>
-      currentOrg.value.members?.filter((m) => m.role === 'staff' || m.role === 'cashier').length || 0
+      currentOrg.value.members?.filter((m) => m.role === 'staff' || m.role === 'cashier').length ||
+      0,
   )
 
   function showNotice(msg: string) {
@@ -127,7 +128,10 @@ export function useOrganizationOwner() {
     error.value = ''
 
     try {
-      const orgRes = await adminApi.getOrganizations<{ organizations?: Organization[]; organization?: Organization }>()
+      const orgRes = await adminApi.getOrganizations<{
+        organizations?: Organization[]
+        organization?: Organization
+      }>()
       const list = orgRes?.organizations || (orgRes?.organization ? [orgRes.organization] : [])
       organizationsList.value = list
 
@@ -167,14 +171,14 @@ export function useOrganizationOwner() {
             : []
 
         const matchedVenues = orgVenuesList.filter(
-          (v: any) => !v.organization_id || v.organization_id === currentOrg.value.id
+          (v: any) => !v.organization_id || v.organization_id === currentOrg.value.id,
         )
         currentOrg.value.venues = matchedVenues.map((v: any) => ({
           id: v.id,
           name: v.name,
           address: v.address,
           is_active: v.is_active ?? true,
-          courts_count: Array.isArray(v.courts) ? v.courts.length : (v.courts_count || 0),
+          courts_count: Array.isArray(v.courts) ? v.courts.length : v.courts_count || 0,
         }))
       }
     } catch (e: unknown) {
@@ -196,7 +200,7 @@ export function useOrganizationOwner() {
     try {
       const res = await adminApi.updateOrganization<{ organization: Organization }>(
         currentOrg.value.id,
-        payload
+        payload,
       )
       if (res?.organization) {
         Object.assign(currentOrg.value, res.organization)
@@ -217,7 +221,7 @@ export function useOrganizationOwner() {
     try {
       const res = await adminApi.updateOrganization<{ organization: Organization }>(
         currentOrg.value.id,
-        payload
+        payload,
       )
       if (res?.organization) {
         Object.assign(currentOrg.value, res.organization)
@@ -258,16 +262,13 @@ export function useOrganizationOwner() {
     }
   }
 
-  async function updateMemberRole(
-    memberId: number,
-    payload: { role: string; status?: string }
-  ) {
+  async function updateMemberRole(memberId: number, payload: { role: string; status?: string }) {
     saving.value = true
     try {
       const res = await adminApi.updateOrgMember<{ member: OrgMember }>(
         currentOrg.value.id,
         memberId,
-        payload
+        payload,
       )
       if (res?.member && currentOrg.value.members) {
         const idx = currentOrg.value.members.findIndex((m) => m.id === memberId)

@@ -1,7 +1,8 @@
 import type { Court } from '@/features/court/types/court'
 
 export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly'
-export type RecurringStatus = 'draft' | 'pending' | 'confirmed' | 'active' | 'paused' | 'cancelled' | 'delinquent'
+export type RecurringStatus =
+  'draft' | 'pending' | 'confirmed' | 'active' | 'paused' | 'cancelled' | 'delinquent'
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable'
 export type OccurrenceStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'released'
 
@@ -127,6 +128,4 @@ export interface RecurringPartialConflict {
   excluded: RecurringPartialConflictExcluded[]
 }
 
-export type CreateRecurringSeriesResult =
-  | { series: RecurringSeries }
-  | RecurringPartialConflict
+export type CreateRecurringSeriesResult = { series: RecurringSeries } | RecurringPartialConflict

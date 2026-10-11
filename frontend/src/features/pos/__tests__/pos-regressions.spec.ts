@@ -241,7 +241,9 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
       }
     })
 
-    const { posApi: actualPosApi } = await vi.importActual<{ posApi: typeof posApi }>('../api/posApi')
+    const { posApi: actualPosApi } = await vi.importActual<{ posApi: typeof posApi }>(
+      '../api/posApi',
+    )
     const reservations = await actualPosApi.getActiveReservations()
 
     // posApi fetched from canonical /reservations on apiV2 (not legacy /admin/bookings)
@@ -340,7 +342,9 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
       return []
     })
 
-    const { posApi: actualPosApi } = await vi.importActual<{ posApi: typeof posApi }>('../api/posApi')
+    const { posApi: actualPosApi } = await vi.importActual<{ posApi: typeof posApi }>(
+      '../api/posApi',
+    )
     const customers = await actualPosApi.searchCustomers('VIP')
 
     // 1. Verifies /customers endpoint is called with query

@@ -91,11 +91,7 @@ onMounted(() => {
 <template>
   <div class="admin-manage-page">
     <!-- Top Header -->
-    <ManageHeader
-      :coupons-count="coupons.length"
-      @open-coupons="openCouponModal"
-      @refresh="load"
-    />
+    <ManageHeader :coupons-count="coupons.length" @open-coupons="openCouponModal" @refresh="load" />
 
     <!-- KPI Stats Cards -->
     <ManageKpiBar
@@ -272,14 +268,14 @@ onMounted(() => {
 }
 
 .subtab-btn.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   box-shadow: 0 2px 10px rgba(107, 45, 63, 0.25);
 }
 
 :global(html.dark) .subtab-btn.active {
-  background: #6B2D3F;
-  color: #FAF7F3;
+  background: #6b2d3f;
+  color: #faf7f3;
   border-color: rgba(201, 161, 90, 0.3);
   box-shadow: 0 2px 12px rgba(107, 45, 63, 0.45);
 }
@@ -300,7 +296,7 @@ onMounted(() => {
 
 :global(html.dark) .subtab-btn.active .tab-count-badge {
   background: rgba(250, 247, 243, 0.15);
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 .alert-pill {
   padding: 8px 16px;

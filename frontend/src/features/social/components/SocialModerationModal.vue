@@ -148,7 +148,9 @@ onMounted(() => {
         <div v-for="r in reports" :key="r.id" class="report-card-item">
           <div class="report-meta-row">
             <span class="report-type-tag">
-              {{ r.reportable_type?.includes('Comment') ? 'Bình luận' : 'Bài viết' }} #{{ r.reportable_id }}
+              {{ r.reportable_type?.includes('Comment') ? 'Bình luận' : 'Bài viết' }} #{{
+                r.reportable_id
+              }}
             </span>
             <span class="report-status-badge" :class="r.status">
               {{ r.status === 'resolved' ? 'Đã xử lý' : 'Chờ xử lý' }}
@@ -156,12 +158,8 @@ onMounted(() => {
           </div>
 
           <div class="report-body-box">
-            <div class="report-reason-txt">
-              <strong>Lý do báo cáo:</strong> {{ r.reason }}
-            </div>
-            <div class="reporter-name">
-              Người báo cáo: {{ r.reporter?.name || 'Ẩn danh' }}
-            </div>
+            <div class="report-reason-txt"><strong>Lý do báo cáo:</strong> {{ r.reason }}</div>
+            <div class="reporter-name">Người báo cáo: {{ r.reporter?.name || 'Ẩn danh' }}</div>
             <div v-if="r.reportable?.content" class="report-content-preview">
               "{{ r.reportable.content }}"
             </div>

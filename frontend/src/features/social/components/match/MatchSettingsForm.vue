@@ -29,24 +29,69 @@ const emit = defineEmits<{
 }>()
 
 const formatOptions: DropdownOption[] = [
-  { value: 'doubles', label: 'Đánh Đôi (Doubles - 4 người)', sublabel: '2 người mỗi bên', icon: 'groups' },
-  { value: 'singles', label: 'Đánh Đơn (Singles - 2 người)', sublabel: '1 vs 1 đối kháng', icon: 'person' },
-  { value: 'team', label: 'Đấu Nhóm / CLB (Team Match)', sublabel: 'Nhiều người xoay tua', icon: 'diversity_3' },
+  {
+    value: 'doubles',
+    label: 'Đánh Đôi (Doubles - 4 người)',
+    sublabel: '2 người mỗi bên',
+    icon: 'groups',
+  },
+  {
+    value: 'singles',
+    label: 'Đánh Đơn (Singles - 2 người)',
+    sublabel: '1 vs 1 đối kháng',
+    icon: 'person',
+  },
+  {
+    value: 'team',
+    label: 'Đấu Nhóm / CLB (Team Match)',
+    sublabel: 'Nhiều người xoay tua',
+    icon: 'diversity_3',
+  },
 ]
 
 const skillOptions: DropdownOption[] = [
-  { value: 'all', label: 'Mọi trình độ (Giao lưu vui vẻ / Open)', sublabel: 'Level 1.0 - 5.0', icon: 'sentiment_satisfied' },
-  { value: 'intermediate', label: 'Trung bình / Phong trào cứng', sublabel: 'Level 2.5 - 3.5', icon: 'military_tech' },
-  { value: 'advanced', label: 'Bán chuyên / Nâng cao (Competitive)', sublabel: 'Level 4.0 - 5.0', icon: 'workspace_premium' },
+  {
+    value: 'all',
+    label: 'Mọi trình độ (Giao lưu vui vẻ / Open)',
+    sublabel: 'Level 1.0 - 5.0',
+    icon: 'sentiment_satisfied',
+  },
+  {
+    value: 'intermediate',
+    label: 'Trung bình / Phong trào cứng',
+    sublabel: 'Level 2.5 - 3.5',
+    icon: 'military_tech',
+  },
+  {
+    value: 'advanced',
+    label: 'Bán chuyên / Nâng cao (Competitive)',
+    sublabel: 'Level 4.0 - 5.0',
+    icon: 'workspace_premium',
+  },
 ]
 
 const visibilityOptions: DropdownOption[] = [
-  { value: 'public', label: 'Công khai (Public)', sublabel: 'Hiển thị trên bảng tin cộng đồng', icon: 'public' },
-  { value: 'invite_only', label: 'Chỉ người được mời (Invite Only)', sublabel: 'Cần phê duyệt từ chủ phòng', icon: 'lock' },
+  {
+    value: 'public',
+    label: 'Công khai (Public)',
+    sublabel: 'Hiển thị trên bảng tin cộng đồng',
+    icon: 'public',
+  },
+  {
+    value: 'invite_only',
+    label: 'Chỉ người được mời (Invite Only)',
+    sublabel: 'Cần phê duyệt từ chủ phòng',
+    icon: 'lock',
+  },
 ]
 const categoryOptions: DropdownOption[] = [
   { value: 'giao lưu', label: 'Giao lưu', sublabel: 'Buổi giao lưu thân mật', icon: 'handshake' },
-  { value: 'đánh vãng lai', label: 'Đánh vãng lai', sublabel: 'Buổi đánh vãng lai tự do', icon: 'directions_walk' },
+  {
+    value: 'đánh vãng lai',
+    label: 'Đánh vãng lai',
+    sublabel: 'Buổi đánh vãng lai tự do',
+    icon: 'directions_walk',
+  },
 ]
 
 const allBadmintonSkillLabels: Array<{ id: BadmintonSkillLabel; label: string; desc: string }> = [
@@ -57,7 +102,10 @@ const allBadmintonSkillLabels: Array<{ id: BadmintonSkillLabel; label: string; d
   { id: 'K', label: 'K (Khá)', desc: 'Khá / Bán chuyên' },
 ]
 
-function toggleSkillLabel(label: BadmintonSkillLabel, currentLabels: BadmintonSkillLabel[] | undefined) {
+function toggleSkillLabel(
+  label: BadmintonSkillLabel,
+  currentLabels: BadmintonSkillLabel[] | undefined,
+) {
   const list = currentLabels ? [...currentLabels] : []
   const idx = list.indexOf(label)
   if (idx >= 0) {
@@ -88,39 +136,69 @@ function adjustPlayers(current: number, delta: number) {
         <span class="material-symbols-outlined head-icon">tune</span>
         <h3 class="section-title">Thông Số & Quy Định Trận Đấu</h3>
       </div>
-      <span class="section-desc">Thiết lập thể thức thi đấu, trình độ yêu cầu và chi phí chia sẻ</span>
+      <span class="section-desc"
+        >Thiết lập thể thức thi đấu, trình độ yêu cầu và chi phí chia sẻ</span
+      >
     </div>
 
     <!-- Owner-hosted drop-in session toggle -->
-    <div class="owner-session-toggle-box" style="margin-bottom: 20px; padding: 14px 16px; background: rgba(var(--color-primary-rgb, 107, 45, 63), 0.08); border-radius: 12px; border: 1px solid rgba(var(--color-primary-rgb, 107, 45, 63), 0.2);">
-      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
+    <div
+      class="owner-session-toggle-box"
+      style="
+        margin-bottom: 20px;
+        padding: 14px 16px;
+        background: rgba(var(--color-primary-rgb, 107, 45, 63), 0.08);
+        border-radius: 12px;
+        border: 1px solid rgba(var(--color-primary-rgb, 107, 45, 63), 0.2);
+      "
+    >
+      <label
+        style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600"
+      >
         <input
           type="checkbox"
           :checked="isOwnerHosted"
-          style="width: 18px; height: 18px; accent-color: #8b263e; cursor: pointer;"
+          style="width: 18px; height: 18px; accent-color: #8b263e; cursor: pointer"
           @change="emit('update:isOwnerHosted', ($event.target as HTMLInputElement).checked)"
         />
-        <span style="font-size: 15px;">Mở buổi cho chủ cơ sở (Owner-hosted Drop-in)</span>
+        <span style="font-size: 15px">Mở buổi cho chủ cơ sở (Owner-hosted Drop-in)</span>
       </label>
-      <p style="margin: 6px 0 0 28px; font-size: 13px; color: #666;">
-        Dành cho chủ cơ sở mở sân nhận khách lẻ. Chủ cơ sở là người tổ chức (không tự tính vào người chơi). Bảng chi phí sân và cầu được chốt sau buổi.
+      <p style="margin: 6px 0 0 28px; font-size: 13px; color: #666">
+        Dành cho chủ cơ sở mở sân nhận khách lẻ. Chủ cơ sở là người tổ chức (không tự tính vào người
+        chơi). Bảng chi phí sân và cầu được chốt sau buổi.
       </p>
 
-      <div v-if="isOwnerHosted" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 14px;">
+      <div
+        v-if="isOwnerHosted"
+        style="
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px dashed rgba(0, 0, 0, 0.12);
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        "
+      >
         <div>
-          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Phân loại buổi chơi:</label>
+          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px"
+            >Phân loại buổi chơi:</label
+          >
           <SelectDropdown
             :model-value="sessionCategory || 'giao lưu'"
             :options="categoryOptions"
             variant="bordered"
             placeholder="Chọn phân loại..."
-            @update:model-value="emit('update:sessionCategory', String($event) as 'giao lưu' | 'đánh vãng lai')"
+            @update:model-value="
+              emit('update:sessionCategory', String($event) as 'giao lưu' | 'đánh vãng lai')
+            "
           />
         </div>
 
         <div>
-          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Nhãn trình độ chấp nhận (Chọn một hoặc nhiều):</label>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px"
+            >Nhãn trình độ chấp nhận (Chọn một hoặc nhiều):</label
+          >
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
             <button
               v-for="s in allBadmintonSkillLabels"
               :key="s.id"
@@ -128,7 +206,9 @@ function adjustPlayers(current: number, delta: number) {
               :style="{
                 padding: '6px 14px',
                 borderRadius: '20px',
-                border: (acceptedSkillLabels || ['TB']).includes(s.id) ? '2px solid #8b263e' : '1px solid #ccc',
+                border: (acceptedSkillLabels || ['TB']).includes(s.id)
+                  ? '2px solid #8b263e'
+                  : '1px solid #ccc',
                 background: (acceptedSkillLabels || ['TB']).includes(s.id) ? '#8b263e' : '#fff',
                 color: (acceptedSkillLabels || ['TB']).includes(s.id) ? '#fff' : '#333',
                 fontWeight: '600',
@@ -262,7 +342,9 @@ function adjustPlayers(current: number, delta: number) {
               min="0"
               step="5000"
               class="styled-input font-mono"
-              @input="emit('update:costPerPerson', Number(($event.target as HTMLInputElement).value))"
+              @input="
+                emit('update:costPerPerson', Number(($event.target as HTMLInputElement).value))
+              "
             />
             <span class="currency-tag">₫/người</span>
           </div>
@@ -570,7 +652,7 @@ function adjustPlayers(current: number, delta: number) {
 
 .toggle-slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 18px;
   width: 18px;
   left: 3px;

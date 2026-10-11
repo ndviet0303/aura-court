@@ -27,7 +27,7 @@ function setDiscountPreset(percent: number) {
 }
 
 const feeAmount = computed(() => {
-  return Math.round((props.askingPrice * 0.05))
+  return Math.round(props.askingPrice * 0.05)
 })
 
 const estimatedPayout = computed(() => {
@@ -96,27 +96,11 @@ const estimatedPayout = computed(() => {
           <!-- Quick Discount Presets -->
           <div class="preset-chips">
             <span class="preset-label">Gợi ý giảm giá nhanh:</span>
-            <button
-              type="button"
-              class="chip-btn"
-              @click="setDiscountPreset(10)"
-            >
-              -10%
-            </button>
-            <button
-              type="button"
-              class="chip-btn popular"
-              @click="setDiscountPreset(20)"
-            >
+            <button type="button" class="chip-btn" @click="setDiscountPreset(10)">-10%</button>
+            <button type="button" class="chip-btn popular" @click="setDiscountPreset(20)">
               -20% (Bán nhanh)
             </button>
-            <button
-              type="button"
-              class="chip-btn"
-              @click="setDiscountPreset(30)"
-            >
-              -30%
-            </button>
+            <button type="button" class="chip-btn" @click="setDiscountPreset(30)">-30%</button>
           </div>
         </div>
 
@@ -140,16 +124,15 @@ const estimatedPayout = computed(() => {
         <div class="policy-notice">
           <span class="material-symbols-outlined notice-icon">info</span>
           <p class="notice-text">
-            Suất chơi sẽ được hiển thị công khai trên chợ. Bạn có thể rút tin bất cứ lúc nào trước khi có người mua.
+            Suất chơi sẽ được hiển thị công khai trên chợ. Bạn có thể rút tin bất cứ lúc nào trước
+            khi có người mua.
           </p>
         </div>
       </div>
 
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <AuraButton variant="secondary" size="md" @click="emit('close')">
-          Huỷ
-        </AuraButton>
+        <AuraButton variant="secondary" size="md" @click="emit('close')"> Huỷ </AuraButton>
         <AuraButton
           variant="gold"
           size="md"
@@ -192,8 +175,14 @@ const estimatedPayout = computed(() => {
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modal-header {
@@ -212,7 +201,7 @@ const estimatedPayout = computed(() => {
 
 .modal-icon {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .modal-title {
@@ -277,12 +266,12 @@ const estimatedPayout = computed(() => {
 }
 
 .meta-item.highlight {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 700;
 }
 
 html.dark .meta-item.highlight {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .icon-14 {
@@ -348,7 +337,7 @@ html.dark .meta-item.highlight {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
 }
 
@@ -386,14 +375,14 @@ html.dark .meta-item.highlight {
 }
 
 .chip-btn:hover {
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
 }
 
 .chip-btn.popular {
   background: rgba(201, 161, 90, 0.1);
-  border-color: var(--accent, #C9A15A);
-  color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
+  color: var(--accent, #c9a15a);
   font-weight: 700;
 }
 
@@ -442,7 +431,7 @@ html.dark .meta-item.highlight {
 
 .notice-icon {
   font-size: 18px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .notice-text {
@@ -479,7 +468,7 @@ html.dark .meta-item.highlight {
   padding: 10px 22px;
   border-radius: 12px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 700;
@@ -502,7 +491,11 @@ html.dark .meta-item.highlight {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

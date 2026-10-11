@@ -10,7 +10,7 @@ export function useV2Reservations() {
   const courts = ref<Court[]>([])
   const reservations = ref<V2Reservation[]>([])
   const selectedCourtId = ref<number | null>(null)
-  
+
   // Local Date & Time selection defaults (Vietnam / local timezone aware)
   const getLocalDateString = (offsetDays = 0): string => {
     const d = new Date()
@@ -63,9 +63,12 @@ export function useV2Reservations() {
 
   const formatTimeSlot = (startsAt: string, endsAt?: string) => {
     if (!startsAt) return ''
-    const start = (startsAt.includes('T') ? startsAt.split('T')[1]?.slice(0, 5) : startsAt.slice(11, 16)) || '00:00'
+    const start =
+      (startsAt.includes('T') ? startsAt.split('T')[1]?.slice(0, 5) : startsAt.slice(11, 16)) ||
+      '00:00'
     if (endsAt) {
-      const end = (endsAt.includes('T') ? endsAt.split('T')[1]?.slice(0, 5) : endsAt.slice(11, 16)) || '00:00'
+      const end =
+        (endsAt.includes('T') ? endsAt.split('T')[1]?.slice(0, 5) : endsAt.slice(11, 16)) || '00:00'
       return `${start} - ${end}`
     }
     const parts = start.split(':').map(Number)
@@ -215,7 +218,6 @@ export function useV2Reservations() {
     }
   }
 
-
   async function confirmReservation(reservation: V2Reservation) {
     confirmingCode.value = reservation.code
     error.value = ''
@@ -232,7 +234,6 @@ export function useV2Reservations() {
     }
   }
 
-
   const filteredReservations = computed(() => {
     let list = reservations.value
 
@@ -246,7 +247,7 @@ export function useV2Reservations() {
         (r) =>
           r.code?.toLowerCase().includes(q) ||
           r.court?.name?.toLowerCase().includes(q) ||
-          r.court?.venue?.name?.toLowerCase().includes(q)
+          r.court?.venue?.name?.toLowerCase().includes(q),
       )
     }
 
@@ -255,16 +256,17 @@ export function useV2Reservations() {
 
   const totalCount = computed(() => reservations.value.length)
   const heldCount = computed(() => reservations.value.filter((r) => r.status === 'held').length)
-  const confirmedCount = computed(() => reservations.value.filter((r) => r.status === 'confirmed').length)
-  const cancelledCount = computed(() => reservations.value.filter((r) => r.status === 'cancelled' || r.status === 'expired').length)
-
-  const activeHeldReservation = computed(() =>
-    reservations.value.find((r) => r.status === 'held')
+  const confirmedCount = computed(
+    () => reservations.value.filter((r) => r.status === 'confirmed').length,
+  )
+  const cancelledCount = computed(
+    () =>
+      reservations.value.filter((r) => r.status === 'cancelled' || r.status === 'expired').length,
   )
 
-  const selectedCourt = computed(() =>
-    courts.value.find((c) => c.id === selectedCourtId.value)
-  )
+  const activeHeldReservation = computed(() => reservations.value.find((r) => r.status === 'held'))
+
+  const selectedCourt = computed(() => courts.value.find((c) => c.id === selectedCourtId.value))
 
   function openDetails(reservation: V2Reservation) {
     selectedReservationForDetails.value = reservation

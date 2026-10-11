@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
     email: string,
     password: string,
     password_confirmation: string,
-    extra?: Omit<RegisterPayload, 'name' | 'email' | 'password' | 'password_confirmation'>
+    extra?: Omit<RegisterPayload, 'name' | 'email' | 'password' | 'password_confirmation'>,
   ) {
     const result = await authApi.register({
       name,
@@ -59,7 +59,12 @@ export const useAuthStore = defineStore('auth', () => {
     await authApi.forgotPassword({ email })
   }
 
-  async function resetPassword(email: string, token: string, password: string, password_confirmation: string) {
+  async function resetPassword(
+    email: string,
+    token: string,
+    password: string,
+    password_confirmation: string,
+  ) {
     await authApi.resetPassword({ email, token, password, password_confirmation })
   }
 
@@ -68,7 +73,11 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value
   }
 
-  async function changePassword(current_password: string, password: string, password_confirmation: string) {
+  async function changePassword(
+    current_password: string,
+    password: string,
+    password_confirmation: string,
+  ) {
     await authApi.changePassword({ current_password, password, password_confirmation })
   }
 
