@@ -5,7 +5,7 @@ Manage the platform service plans purchased by partner organizations, with verif
 ## Requirements
 
 ### Requirement: Versioned platform plan and fee consent
-The platform SHALL manage service plans distinct from customer memberships. Authorized platform administrators SHALL create, revise, publish and retire versioned plans with configured 1-, 6- and 12-calendar-month terms, prices, currency, disclosed taxes/provider fees, venue/court/staff quotas, features and renewal/change/refund terms. Subscriptions SHALL remain the sole platform service-charge model without transaction commission. Selection/payment SHALL snapshot accepted price and terms. Unsupported or incomplete commercial configurations SHALL not activate; upgrades/downgrades SHALL disclose effective date, price and quota consequences before commitment.
+The platform SHALL manage service plans distinct from customer memberships. Authorized platform administrators SHALL create, revise, publish and retire versioned plans with configured 1-, 6- and 12-calendar-month terms, prices, currency, disclosed applicable taxes and actual provider fees, venue/court/staff quotas, features and renewal/change/refund terms. Subscriptions SHALL remain the sole platform service-charge model without transaction commission. The configured 1-, 6- and 12-calendar-month terms SHALL be billing cycles of that same subscription model. The platform MUST NOT offer commission-based access or charge a platform percentage or replacement transaction surcharge on booking, tournament registration or marketplace transfer activity. Provider fees MUST be identified separately from the platform subscription price and MUST NOT be presented as platform commission. Selection/payment SHALL snapshot accepted price and terms. Unsupported or incomplete commercial configurations SHALL not activate; upgrades/downgrades SHALL disclose effective date, price and quota consequences before commitment. Existing trial, verified activation, renewal, expiry and entitlement rules SHALL remain applicable.
 
 #### Scenario: Plan changes after selection
 - **WHEN** the catalog changes after payment initiation
@@ -22,6 +22,18 @@ The platform SHALL manage service plans distinct from customer memberships. Auth
 #### Scenario: Published catalog
 - **WHEN** an administrator retires a plan
 - **THEN** new purchase SHALL stop while purchased periods and evidence remain accessible
+
+#### Scenario: One commercial model with configured billing terms
+- **WHEN** a partner reviews platform pricing or selects a plan
+- **THEN** the platform SHALL present configured 1-, 6- or 12-calendar-month subscription options without a commission-based alternative or transaction-volume percentage charge
+
+#### Scenario: Subscription fee is not deducted from booking proceeds
+- **WHEN** a partner purchases or renews a plan
+- **THEN** payment SHALL use the existing verified subscription collection flow without deducting the subscription price or an additional platform fee from booking settlements
+
+#### Scenario: Provider fees remain separate
+- **WHEN** a supported payment incurs an actual provider fee
+- **THEN** applicable disclosures SHALL distinguish that fee from subscription charges without introducing a new platform transaction charge
 
 ### Requirement: Verified and idempotent paid activation
 Paid subscriptions SHALL activate only after server-side verification of a successful provider outcome matching payment reference, subscription, amount and currency. Unknown outcomes SHALL remain pending verification; failed attempts SHALL allow retry without granting entitlement. Duplicate, delayed or out-of-order events MUST NOT duplicate activation, receipts or financial records, or downgrade a completed success.
