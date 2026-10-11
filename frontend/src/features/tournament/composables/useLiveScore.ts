@@ -111,7 +111,11 @@ export function useLiveScore() {
       if (m.player1.sets_won === 1 || (m.current_set === 3 && m.player1.sets_won === 1)) {
         return { type: 'match_point', player: 1, text: `⚡ MATCH POINT CHO ${m.player1.name}` }
       }
-      return { type: 'game_point', player: 1, text: `GAME POINT CHO ${m.player1.name} (SET ${m.current_set})` }
+      return {
+        type: 'game_point',
+        player: 1,
+        text: `GAME POINT CHO ${m.player1.name} (SET ${m.current_set})`,
+      }
     }
 
     // P2 at game point
@@ -119,7 +123,11 @@ export function useLiveScore() {
       if (m.player2.sets_won === 1 || (m.current_set === 3 && m.player2.sets_won === 1)) {
         return { type: 'match_point', player: 2, text: `⚡ MATCH POINT CHO ${m.player2.name}` }
       }
-      return { type: 'game_point', player: 2, text: `GAME POINT CHO ${m.player2.name} (SET ${m.current_set})` }
+      return {
+        type: 'game_point',
+        player: 2,
+        text: `GAME POINT CHO ${m.player2.name} (SET ${m.current_set})`,
+      }
     }
 
     return null
@@ -131,10 +139,19 @@ export function useLiveScore() {
     return {
       aces: [Math.max(1, Math.floor(p1Total / 7)), Math.max(1, Math.floor(p2Total / 9))],
       winners: [Math.max(3, Math.floor(p1Total * 0.45)), Math.max(2, Math.floor(p2Total * 0.38))],
-      unforced_errors: [Math.max(2, Math.floor(p2Total * 0.25)), Math.max(3, Math.floor(p1Total * 0.3))],
+      unforced_errors: [
+        Math.max(2, Math.floor(p2Total * 0.25)),
+        Math.max(3, Math.floor(p1Total * 0.3)),
+      ],
       first_serve_pct: [68 + (p1Score % 12), 64 + (p2Score % 15)],
-      break_points: [`${Math.max(1, Math.floor(p1Total / 8))}/${Math.max(2, Math.floor(p1Total / 5))}`, `${Math.max(0, Math.floor(p2Total / 10))}/${Math.max(1, Math.floor(p2Total / 7))}`],
-      max_consecutive_pts: [Math.max(3, Math.min(8, Math.floor(p1Total / 4))), Math.max(2, Math.min(6, Math.floor(p2Total / 5)))],
+      break_points: [
+        `${Math.max(1, Math.floor(p1Total / 8))}/${Math.max(2, Math.floor(p1Total / 5))}`,
+        `${Math.max(0, Math.floor(p2Total / 10))}/${Math.max(1, Math.floor(p2Total / 7))}`,
+      ],
+      max_consecutive_pts: [
+        Math.max(3, Math.min(8, Math.floor(p1Total / 4))),
+        Math.max(2, Math.min(6, Math.floor(p2Total / 5))),
+      ],
       net_points_won_pct: [72 + (p1Score % 14), 60 + (p2Score % 16)],
       total_points_won: [p1Total, p2Total],
       smash_speed_max: `${340 + ((p1Score * 7) % 65)} km/h`,
@@ -178,7 +195,9 @@ export function useLiveScore() {
         } catch {
           const tourneys = await tournamentApi.list<any[]>()
           const list = Array.isArray(tourneys) ? tourneys : []
-          const found = list.find((t) => t.uuid === targetParam || String(t.id) === targetParam || t.slug === targetParam)
+          const found = list.find(
+            (t) => t.uuid === targetParam || String(t.id) === targetParam || t.slug === targetParam,
+          )
           if (found) {
             const single = await tournamentApi.getById<any>(found.uuid || found.id)
             targetTourneys = single ? [single] : [found]
@@ -213,15 +232,30 @@ export function useLiveScore() {
                   scoreObj = null
                 }
               }
-              const p1Score = scoreObj?.p1 ?? (f.winner_id === f.participant_one_id ? 21 : (f.status === 'ongoing' ? 14 : 0))
-              const p2Score = scoreObj?.p2 ?? (f.winner_id === f.participant_two_id ? 21 : (f.status === 'ongoing' ? 11 : 0))
-              const p1Name = p1?.name || p1?.user?.name || (f.participant_one_id ? `VĐV #${f.participant_one_id}` : 'Chờ xác định')
-              const p2Name = p2?.name || p2?.user?.name || (f.participant_two_id ? `VĐV #${f.participant_two_id}` : 'Chờ xác định')
+              const p1Score =
+                scoreObj?.p1 ??
+                (f.winner_id === f.participant_one_id ? 21 : f.status === 'ongoing' ? 14 : 0)
+              const p2Score =
+                scoreObj?.p2 ??
+                (f.winner_id === f.participant_two_id ? 21 : f.status === 'ongoing' ? 11 : 0)
+              const p1Name =
+                p1?.name ||
+                p1?.user?.name ||
+                (f.participant_one_id ? `VĐV #${f.participant_one_id}` : 'Chờ xác định')
+              const p2Name =
+                p2?.name ||
+                p2?.user?.name ||
+                (f.participant_two_id ? `VĐV #${f.participant_two_id}` : 'Chờ xác định')
               const p1Avatar = p1?.avatar || p1?.user?.avatar_url || getAvatarUrl(p1Name)
               const p2Avatar = p2?.avatar || p2?.user?.avatar_url || getAvatarUrl(p2Name)
 
               const roundLabel = f.round === 1 ? 'Tứ Kết' : f.round === 2 ? 'Bán Kết' : 'Chung Kết'
-              const statusVal = f.status === 'completed' ? 'completed' : f.status === 'ongoing' ? 'live' : 'upcoming'
+              const statusVal =
+                f.status === 'completed'
+                  ? 'completed'
+                  : f.status === 'ongoing'
+                    ? 'live'
+                    : 'upcoming'
 
               liveList.push({
                 id: f.id,
@@ -360,7 +394,10 @@ export function useLiveScore() {
     } else if (actionType === 'net') {
       actionDesc = 'Bỏ nhỏ / bắt lưới thành công'
       match.stats.winners[idx] = (match.stats.winners[idx] || 0) + 1
-      match.stats.net_points_won_pct[idx] = Math.min(100, (match.stats.net_points_won_pct[idx] || 0) + 2)
+      match.stats.net_points_won_pct[idx] = Math.min(
+        100,
+        (match.stats.net_points_won_pct[idx] || 0) + 2,
+      )
       eventType = 'winner'
     } else if (actionType === 'ace') {
       actionDesc = 'Giao bóng ăn điểm trực tiếp (Ace)'
@@ -412,7 +449,9 @@ export function useLiveScore() {
       if (setWinnerPlayer.sets_won >= 2 || match.current_set >= 3) {
         match.status = 'completed'
         match.winner = setWinner
-        showNotice(`🏆 ${setWinnerPlayer.name} THẮNG CHUNG CUỘC (${match.player1.sets_won} - ${match.player2.sets_won})!`)
+        showNotice(
+          `🏆 ${setWinnerPlayer.name} THẮNG CHUNG CUỘC (${match.player1.sets_won} - ${match.player2.sets_won})!`,
+        )
         playEvents.value.unshift({
           id: Date.now() + 1,
           player: setWinnerPlayer.name,
@@ -434,7 +473,9 @@ export function useLiveScore() {
           p2: 0,
         })
 
-        showNotice(`🏸 ${setWinnerPlayer.name} thắng Set ${completedSetNum} (${finalP1} - ${finalP2})! Bắt đầu Set ${match.current_set}.`)
+        showNotice(
+          `🏸 ${setWinnerPlayer.name} thắng Set ${completedSetNum} (${finalP1} - ${finalP2})! Bắt đầu Set ${match.current_set}.`,
+        )
         playEvents.value.unshift({
           id: Date.now() + 1,
           player: setWinnerPlayer.name,
@@ -485,7 +526,10 @@ export function useLiveScore() {
   function toggleServer() {
     if (!activeMatch.value) return
     activeMatch.value.serving_player = activeMatch.value.serving_player === 1 ? 2 : 1
-    const pName = activeMatch.value.serving_player === 1 ? activeMatch.value.player1.name : activeMatch.value.player2.name
+    const pName =
+      activeMatch.value.serving_player === 1
+        ? activeMatch.value.player1.name
+        : activeMatch.value.player2.name
     showNotice(`Đã chuyển quyền giao cầu sang: ${pName}`)
   }
 
@@ -553,7 +597,7 @@ export function useLiveScore() {
     () => route.params.id,
     () => {
       loadLiveMatches()
-    }
+    },
   )
 
   onMounted(() => {

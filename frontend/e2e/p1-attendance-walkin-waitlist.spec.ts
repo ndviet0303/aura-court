@@ -154,11 +154,13 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       ]);
     `
 
-    const walkInResult = JSON.parse(execFileSync('php', ['-r', walkInScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const walkInResult = JSON.parse(
+      execFileSync('php', ['-r', walkInScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       res_id: number
       is_walk_in: boolean
       staff_booked: string
@@ -309,11 +311,13 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       ]);
     `
 
-    const earlyResult = JSON.parse(execFileSync('php', ['-r', earlyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const earlyResult = JSON.parse(
+      execFileSync('php', ['-r', earlyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       early_rejected: boolean
       early_message: string
       wrong_venue_rejected: boolean
@@ -468,11 +472,13 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       ]);
     `
 
-    const noShowResult = JSON.parse(execFileSync('php', ['-r', noShowScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const noShowResult = JSON.parse(
+      execFileSync('php', ['-r', noShowScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       premature_noshow_rejected: boolean
       expired_checkin_rejected: boolean
       attendance_status: string
@@ -597,11 +603,13 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       ]);
     `
 
-    const waitlistResult = JSON.parse(execFileSync('php', ['-r', waitlistScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const waitlistResult = JSON.parse(
+      execFileSync('php', ['-r', waitlistScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       entry_id: number
       initial_status: string
       duplicate_rejected: boolean
@@ -620,7 +628,9 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
     expect(waitlistResult.notification_created).toBe(true)
   })
 
-  test('8.5.5: Quản lý thông báo đọc/chưa đọc, xác thực API và duy trì giao diện sau F5', async ({ page }) => {
+  test('8.5.5: Quản lý thông báo đọc/chưa đọc, xác thực API và duy trì giao diện sau F5', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
@@ -663,11 +673,13 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       ]);
     `
 
-    const seedNotif = JSON.parse(execFileSync('php', ['-r', seedNotifScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const seedNotif = JSON.parse(
+      execFileSync('php', ['-r', seedNotifScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       unread_count: number
       notification_id: string
     }
@@ -710,11 +722,13 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       ]);
     `
 
-    const markReadResult = JSON.parse(execFileSync('php', ['-r', markReadScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const markReadResult = JSON.parse(
+      execFileSync('php', ['-r', markReadScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       unread_after: number
       is_read: boolean
     }

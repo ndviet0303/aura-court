@@ -2,8 +2,6 @@
 
 namespace App\Services\Finance;
 
-use App\Services\Infrastructure\ObservabilityService;
-
 use App\Models\FinanceException;
 use App\Models\Journal;
 use App\Models\Organization;
@@ -17,6 +15,7 @@ use App\Models\PlatformProviderReceipt;
 use App\Models\ProviderEvent;
 use App\Models\ReconciliationRun;
 use App\Models\Settlement;
+use App\Services\Infrastructure\ObservabilityService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +25,7 @@ class ReconciliationService
     public function run(Organization $organization, ?CarbonInterface $runDate = null): ReconciliationRun
     {
         $date = ($runDate ?: now())->toDateString();
+
         return DB::transaction(function () use ($organization, $date): ReconciliationRun {
             $existing = ReconciliationRun::query()->where('organization_id', $organization->id)->whereDate('run_date', $date)->lockForUpdate()->first();
             $run = $existing ?: ReconciliationRun::create([
@@ -43,7 +43,7 @@ class ReconciliationService
                 ->where('organization_id', $organization->id)
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('allocated_at', [$from, $to])
-                      ->orWhereBetween('created_at', [$from, $to]);
+                        ->orWhereBetween('created_at', [$from, $to]);
                 })
                 ->with(['attempt', 'receipt'])
                 ->get();
@@ -52,8 +52,8 @@ class ReconciliationService
                 ->where('organization_id', $organization->id)
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('received_at', [$from, $to])
-                      ->orWhereBetween('event_at', [$from, $to])
-                      ->orWhereBetween('created_at', [$from, $to]);
+                        ->orWhereBetween('event_at', [$from, $to])
+                        ->orWhereBetween('created_at', [$from, $to]);
                 })
                 ->with(['allocation', 'attempt'])
                 ->get();
@@ -64,7 +64,7 @@ class ReconciliationService
                 ->whereIn('status', ['PAID', 'COMPLETED', 'SUCCEEDED', 'SUCCESS', 'paid', 'completed', 'succeeded', 'success'])
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('verified_at', [$from, $to])
-                      ->orWhereBetween('created_at', [$from, $to]);
+                        ->orWhereBetween('created_at', [$from, $to]);
                 })
                 ->get();
 
@@ -74,10 +74,10 @@ class ReconciliationService
                 ->whereIn('status', ['acknowledged', 'reported', 'owner_reported', 'approved'])
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('recipient_acknowledged_at', [$from, $to])
-                      ->orWhereBetween('owner_reported_at', [$from, $to])
-                      ->orWhereBetween('approved_at', [$from, $to])
-                      ->orWhereBetween('requested_at', [$from, $to])
-                      ->orWhereBetween('created_at', [$from, $to]);
+                        ->orWhereBetween('owner_reported_at', [$from, $to])
+                        ->orWhereBetween('approved_at', [$from, $to])
+                        ->orWhereBetween('requested_at', [$from, $to])
+                        ->orWhereBetween('created_at', [$from, $to]);
                 })
                 ->get();
 
@@ -87,7 +87,7 @@ class ReconciliationService
                 ->where('status', 'succeeded')
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('paid_at', [$from, $to])
-                      ->orWhereBetween('created_at', [$from, $to]);
+                        ->orWhereBetween('created_at', [$from, $to]);
                 })
                 ->with('receipt')
                 ->get();
@@ -96,7 +96,7 @@ class ReconciliationService
                 ->whereHas('paymentAttempt', fn ($q) => $q->where('organization_id', $organization->id))
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('verified_at', [$from, $to])
-                      ->orWhereBetween('created_at', [$from, $to]);
+                        ->orWhereBetween('created_at', [$from, $to]);
                 })
                 ->with('paymentAttempt')
                 ->get();
@@ -121,6 +121,7 @@ class ReconciliationService
             // Helper: Classify purpose into standardized financial source categories
             $classifyPurpose = function (?string $purpose): string {
                 $p = strtolower(trim((string) $purpose));
+
                 return match (true) {
                     str_contains($p, 'recur') || str_contains($p, 'invoice') => 'recurring_invoices',
                     str_contains($p, 'split') => 'split_shares',
@@ -255,7 +256,7 @@ class ReconciliationService
 
                 if (! $hasAllocation || in_array($receipt->status, [OwnerPaymentReceipt::STATUS_UNMATCHED, OwnerPaymentReceipt::STATUS_EXCEPTION, OwnerPaymentReceipt::STATUS_LATE], true)) {
                     $verifiedAmount = (int) $receipt->amount;
-                    $variance = - $verifiedAmount; // Negative variance: receipt without allocation
+                    $variance = -$verifiedAmount; // Negative variance: receipt without allocation
                     $mismatches[] = [
                         'id' => "receipt_unallocated_{$receipt->id}",
                         'entity' => 'direct_owner',
@@ -330,7 +331,7 @@ class ReconciliationService
                 $hasSucceededAttempt = $pReceipt->paymentAttempt && $pReceipt->paymentAttempt->status === 'succeeded';
                 if (! $hasSucceededAttempt) {
                     $verifiedAmount = (int) $pReceipt->amount;
-                    $variance = - $verifiedAmount;
+                    $variance = -$verifiedAmount;
                     $mismatches[] = [
                         'id' => "platform_receipt_unallocated_{$pReceipt->id}",
                         'entity' => 'platform',
@@ -528,6 +529,7 @@ class ReconciliationService
     {
         abort_unless($exception->status === 'open', 409, 'Finance exception is already resolved.');
         $exception->update(['status' => 'resolved', 'resolved_at' => now(), 'resolved_by' => $userId, 'resolution' => $resolution]);
+
         return $exception->fresh();
     }
 }

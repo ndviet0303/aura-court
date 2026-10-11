@@ -13,14 +13,14 @@ const props = withDefaults(
   {
     beneficiary: undefined,
     loading: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
   (e: 'close'): void
   (
     e: 'submit',
-    payload: { bank_code: string; account_number: string; account_holder: string; tax_id?: string }
+    payload: { bank_code: string; account_number: string; account_holder: string; tax_id?: string },
   ): void
 }>()
 
@@ -56,7 +56,7 @@ watch(
       taxId.value = b.tax_id || ''
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleHolderInput(event: Event) {

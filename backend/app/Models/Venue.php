@@ -41,7 +41,7 @@ class Venue extends Model
     public function setIsActiveAttribute($value): void
     {
         $this->attributes['is_active'] = (bool) $value;
-        if ($value && (!isset($this->attributes['status']) || $this->attributes['status'] === 'temporarily_closed')) {
+        if ($value && (! isset($this->attributes['status']) || $this->attributes['status'] === 'temporarily_closed')) {
             $this->attributes['status'] = 'published';
         } elseif (! $value && in_array($this->attributes['status'] ?? null, ['published', 'active'], true)) {
             $this->attributes['status'] = 'temporarily_closed';
@@ -56,15 +56,16 @@ class Venue extends Model
                 return $decoded;
             }
         }
+
         return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
     }
+
     public function getTimezoneAttribute(): string
     {
         return $this->attributes['timezone']
             ?? ($this->relationLoaded('organization') ? $this->organization?->timezone : null)
             ?? 'Asia/Ho_Chi_Minh';
     }
-
 
     public function organization(): BelongsTo
     {

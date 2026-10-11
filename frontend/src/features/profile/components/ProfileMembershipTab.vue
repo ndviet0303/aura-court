@@ -18,29 +18,6 @@ const discountPercent = computed(() => {
   if (props.membership?.plan?.discount_percent) return props.membership.plan.discount_percent
   return 10
 })
-
-const perks = [
-  {
-    icon: 'percent',
-    title: 'Giảm giá trực tiếp khi đặt sân',
-    desc: 'Tự động áp dụng chiết khấu khi thanh toán mọi khung giờ tiêu chuẩn.',
-  },
-  {
-    icon: 'event_available',
-    title: 'Ưu tiên giữ chỗ sớm 7 ngày',
-    desc: 'Mở khóa lịch thi đấu trước các thành viên phổ thông.',
-  },
-  {
-    icon: 'support_agent',
-    title: 'Hỗ trợ khách hàng ưu tiên',
-    desc: 'Được phục vụ ưu tiên bởi đội ngũ chăm sóc khách hàng Aura Court.',
-  },
-  {
-    icon: 'water_drop',
-    title: 'Tiện ích nước uống & khăn thể thao',
-    desc: 'Nhận nước khoáng điện giải miễn phí tại quầy lễ tân cụm sân.',
-  },
-]
 </script>
 
 <template>
@@ -128,7 +105,9 @@ const perks = [
           </div>
           <div class="perk-content">
             <strong class="perk-title">{{ $t('profile.perk4') }}</strong>
-            <p class="perk-desc">{{ $t('courtDetail.amenityLockers') }} & {{ $t('courtDetail.amenityShower') }}</p>
+            <p class="perk-desc">
+              {{ $t('courtDetail.amenityLockers') }} & {{ $t('courtDetail.amenityShower') }}
+            </p>
           </div>
         </div>
       </div>
@@ -183,7 +162,7 @@ html.dark .profile-tab-card {
 
 .title-icon {
   font-size: 26px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   margin-top: 2px;
 }
 
@@ -243,7 +222,7 @@ html.dark .tier-highlight-card {
 
 .tier-crown-icon {
   font-size: 24px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .tier-crown-icon {
@@ -307,7 +286,7 @@ html.dark .tier-benefit-highlight {
   font-size: 32px;
   font-weight: 900;
   line-height: 1;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .discount-value {
@@ -398,7 +377,7 @@ html.dark .perk-card {
   height: 38px;
   border-radius: 10px;
   background: rgba(107, 45, 63, 0.08);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -452,7 +431,7 @@ html.dark .perk-title {
   gap: 8px;
   padding: 10px 18px;
   border-radius: 10px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 650;

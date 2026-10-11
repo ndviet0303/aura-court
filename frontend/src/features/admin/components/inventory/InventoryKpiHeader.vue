@@ -38,7 +38,9 @@ const { t } = useI18n()
 
       <div class="header-actions">
         <AuraButton variant="outline" :disabled="loading" @click="emit('refresh')">
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': loading }"
+            >refresh</span
+          >
           <span>{{ t('common.refresh') }}</span>
         </AuraButton>
 
@@ -67,7 +69,9 @@ const { t } = useI18n()
           <span class="lbl">{{ t('admin.inventory.totalItems') }}</span>
         </div>
         <SkeletonLoader v-if="loading" type="text" width="90px" height="22px" />
-        <strong v-else class="val font-mono">{{ t('admin.inventory.totalItemsCount', { count: kpis.totalItems }) }}</strong>
+        <strong v-else class="val font-mono">{{
+          t('admin.inventory.totalItemsCount', { count: kpis.totalItems })
+        }}</strong>
       </div>
 
       <div class="kpi-card">
@@ -76,7 +80,9 @@ const { t } = useI18n()
           <span class="lbl">{{ t('admin.inventory.totalValue') }}</span>
         </div>
         <SkeletonLoader v-if="loading" type="text" width="120px" height="22px" />
-        <strong v-else class="val text-pink font-mono">{{ formatCurrency(kpis.totalValue) }}</strong>
+        <strong v-else class="val text-pink font-mono">{{
+          formatCurrency(kpis.totalValue)
+        }}</strong>
       </div>
 
       <div class="kpi-card">
@@ -85,7 +91,9 @@ const { t } = useI18n()
           <span class="lbl">{{ t('admin.inventory.lowStock') }}</span>
         </div>
         <SkeletonLoader v-if="loading" type="text" width="90px" height="22px" />
-        <strong v-else class="val text-yellow font-mono">{{ t('admin.inventory.lowStockCount', { count: kpis.lowStockCount }) }}</strong>
+        <strong v-else class="val text-yellow font-mono">{{
+          t('admin.inventory.lowStockCount', { count: kpis.lowStockCount })
+        }}</strong>
       </div>
 
       <div class="kpi-card">
@@ -94,7 +102,9 @@ const { t } = useI18n()
           <span class="lbl">{{ t('admin.inventory.outOfStock') }}</span>
         </div>
         <SkeletonLoader v-if="loading" type="text" width="90px" height="22px" />
-        <strong v-else class="val text-red font-mono">{{ t('admin.inventory.outOfStockCount', { count: kpis.outOfStockCount }) }}</strong>
+        <strong v-else class="val text-red font-mono">{{
+          t('admin.inventory.outOfStockCount', { count: kpis.outOfStockCount })
+        }}</strong>
       </div>
     </div>
 
@@ -187,7 +197,9 @@ const { t } = useI18n()
   border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .kpi-card:hover {
@@ -220,9 +232,15 @@ const { t } = useI18n()
   color: var(--ink);
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
 
 .tabs-row {
   display: flex;
@@ -267,8 +285,12 @@ const { t } = useI18n()
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 900px) {

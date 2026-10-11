@@ -20,7 +20,10 @@ const filteredCustomers = computed(() => {
   const q = customerQuery.value.trim().toLowerCase()
   if (!q) return props.customerDatabase
   return props.customerDatabase.filter(
-    (c) => c.name.toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.tier ? c.tier.toLowerCase().includes(q) : false)
+    (c) =>
+      c.name.toLowerCase().includes(q) ||
+      (c.phone || '').includes(q) ||
+      (c.tier ? c.tier.toLowerCase().includes(q) : false),
   )
 })
 
@@ -86,9 +89,7 @@ function formatMoney(val: number): string {
                 <span class="tier-pill" :class="(cust.tier || 'standard').toLowerCase()">
                   {{ cust.tier || 'Standard' }}
                 </span>
-                <span class="discount-pill">
-                  -{{ Math.round(cust.discount_rate * 100) }}%
-                </span>
+                <span class="discount-pill"> -{{ Math.round(cust.discount_rate * 100) }}% </span>
                 <span class="wallet-pill" v-if="cust.wallet_balance > 0">
                   <span class="material-symbols-outlined icon-12">account_balance_wallet</span>
                   {{ formatMoney(cust.wallet_balance) }}

@@ -71,7 +71,8 @@ const {
       </div>
       <p class="page-sub">
         {{ $t('schedule.schedulePageSub') }}
-        <strong>{{ court?.venue?.name || 'Aura Court' }}</strong>.
+        <strong>{{ court?.venue?.name || 'Aura Court' }}</strong
+        >.
       </p>
     </header>
 
@@ -231,9 +232,18 @@ const {
 }
 
 @keyframes pulseDot {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.7; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
 }
 
 .page-sub {

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Tournament;
 
-use App\Http\Controllers\Controller;
-
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Controller;
 use App\Models\Tournament;
 use App\Models\TournamentFixture;
+use App\Models\TournamentGrant;
 use App\Models\TournamentParticipant;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Tournament\TournamentService;
@@ -45,11 +45,11 @@ class TournamentController extends Controller
             $query->where('status', $request->input('status'));
         }
         if ($request->filled('search')) {
-            $search = '%' . $request->input('search') . '%';
+            $search = '%'.$request->input('search').'%';
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', $search)
-                  ->orWhere('settings->venue', 'like', $search)
-                  ->orWhere('settings->city', 'like', $search);
+                    ->orWhere('settings->venue', 'like', $search)
+                    ->orWhere('settings->city', 'like', $search);
             });
         }
 
@@ -65,8 +65,8 @@ class TournamentController extends Controller
                 'fixtures.participantOne.user',
                 'fixtures.participantTwo.user',
                 'fixtures.winner.user',
-                'standings.participant.user'
-            ])
+                'standings.participant.user',
+            ]),
         ]);
     }
 
@@ -113,7 +113,7 @@ class TournamentController extends Controller
                 $data['format'],
                 $participantIds,
                 $settings
-            )
+            ),
         ], 201));
     }
 
@@ -126,8 +126,9 @@ class TournamentController extends Controller
             'checked_in' => 'nullable|boolean',
         ]);
         $checkedIn = $request->has('checked_in') ? (bool) $request->input('checked_in') : null;
+
         return $this->idempotency->run($request, fn () => response()->json([
-            'participant' => $this->tournaments->checkIn($participant, $request->user(), $data['status'] ?? null, $checkedIn)
+            'participant' => $this->tournaments->checkIn($participant, $request->user(), $data['status'] ?? null, $checkedIn),
         ]));
     }
 
@@ -142,8 +143,9 @@ class TournamentController extends Controller
             'reason' => 'nullable|string',
         ]);
         $expectedVersion = $data['expected_version'] ?? $tournament->version;
+
         return $this->idempotency->run($request, fn () => response()->json([
-            'fixture' => $this->tournaments->submitScore($tournament, $fixture, $request->user(), $expectedVersion, $data['score'], $data['winner_id'], $data['reason'] ?? null)
+            'fixture' => $this->tournaments->submitScore($tournament, $fixture, $request->user(), $expectedVersion, $data['score'], $data['winner_id'], $data['reason'] ?? null),
         ]));
     }
 
@@ -151,8 +153,9 @@ class TournamentController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
+
         return $this->idempotency->run($request, fn () => response()->json([
-            'tournament' => $this->tournaments->regenerateBracket($tournament, $request->user())
+            'tournament' => $this->tournaments->regenerateBracket($tournament, $request->user()),
         ]));
     }
 
@@ -160,6 +163,7 @@ class TournamentController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
+
         return response()->json(['events' => $this->tournaments->events($tournament, (int) $request->integer('after_version')), 'current_version' => $tournament->version]);
     }
 
@@ -206,11 +210,11 @@ class TournamentController extends Controller
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
 
-        $participant = \App\Models\TournamentParticipant::where('tournament_id', $tournament->id)
+        $participant = TournamentParticipant::where('tournament_id', $tournament->id)
             ->where('user_id', $request->user()->id)
             ->first();
 
-        if (!$participant) {
+        if (! $participant) {
             return response()->json([
                 'registered' => false,
                 'participant' => null,
@@ -240,6 +244,7 @@ class TournamentController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
+
         return response()->json(['mode' => 'polling', 'tournament' => $tournament->load(['fixtures', 'standings.participant.user']), 'current_version' => $tournament->version]);
     }
 
@@ -249,6 +254,7 @@ class TournamentController extends Controller
         abort_unless($tournament->organization_id === $organization->id, 404);
 
         $grants = $tournament->grants()->active()->with(['user', 'grantedBy'])->get();
+
         return response()->json(['grants' => $grants]);
     }
 
@@ -262,14 +268,14 @@ class TournamentController extends Controller
             'role' => 'required|string|in:organizer,official',
         ]);
 
-        $grant = \App\Models\TournamentGrant::where('tournament_id', $tournament->id)
+        $grant = TournamentGrant::where('tournament_id', $tournament->id)
             ->where('user_id', $data['user_id'])
             ->where('role', $data['role'])
             ->whereNull('revoked_at')
             ->first();
 
         if (! $grant) {
-            $grant = \App\Models\TournamentGrant::create([
+            $grant = TournamentGrant::create([
                 'organization_id' => $tournament->organization_id,
                 'tournament_id' => $tournament->id,
                 'user_id' => $data['user_id'],
@@ -287,8 +293,8 @@ class TournamentController extends Controller
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
 
-        if (! ($grant instanceof \App\Models\TournamentGrant)) {
-            $grant = \App\Models\TournamentGrant::findOrFail($grant);
+        if (! ($grant instanceof TournamentGrant)) {
+            $grant = TournamentGrant::findOrFail($grant);
         }
         abort_unless($grant->tournament_id === $tournament->id, 404);
 
@@ -303,7 +309,7 @@ class TournamentController extends Controller
         abort_unless($tournament->organization_id === $organization->id, 404);
 
         return $this->idempotency->run($request, fn () => response()->json([
-            'tournament' => $this->tournaments->finalize($tournament, $request->user())
+            'tournament' => $this->tournaments->finalize($tournament, $request->user()),
         ]));
     }
 
@@ -317,7 +323,7 @@ class TournamentController extends Controller
         ]);
 
         return $this->idempotency->run($request, fn () => response()->json([
-            'tournament' => $this->tournaments->reopen($tournament, $request->user(), $data['reason'])
+            'tournament' => $this->tournaments->reopen($tournament, $request->user(), $data['reason']),
         ]));
     }
 }

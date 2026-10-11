@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class ProcessExpiredSubscriptionsCommand extends Command
 {
     protected $signature = 'platform:process-expired-subscriptions';
+
     protected $description = 'Scan and process expired platform subscriptions';
 
     public function handle(ProcessExpiredSubscriptions $action): int

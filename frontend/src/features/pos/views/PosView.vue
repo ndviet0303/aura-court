@@ -27,7 +27,6 @@ const {
   fetchFailed: capabilityFetchFailed,
   error: capabilityError,
   fetchCapabilities,
-  loaded: capabilitiesLoaded,
 } = useTenantCapabilities()
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -130,16 +129,20 @@ async function handleSettleTab(tabId: number) {
     if (serverReceipt) {
       currentReceipt.value = {
         order_code: serverReceipt.order_code || `POS-${res?.order?.id || Date.now()}`,
-        created_at: serverReceipt.created_at ? new Date(serverReceipt.created_at).toLocaleString() : new Date().toLocaleString(),
+        created_at: serverReceipt.created_at
+          ? new Date(serverReceipt.created_at).toLocaleString()
+          : new Date().toLocaleString(),
         cashier_name: serverReceipt.cashier_name || auth.user?.name || t('admin.pos.tblCashier'),
         customer_name: serverReceipt.customer_name || selectedCustomer.value?.name,
         court_info: serverReceipt.court_info,
-        items: Array.isArray(serverReceipt.items) ? serverReceipt.items.map((i: any) => ({
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price ?? i.unit_price ?? 0,
-          total: i.total ?? i.line_total ?? 0,
-        })) : [],
+        items: Array.isArray(serverReceipt.items)
+          ? serverReceipt.items.map((i: any) => ({
+              name: i.name,
+              quantity: i.quantity,
+              price: i.price ?? i.unit_price ?? 0,
+              total: i.total ?? i.line_total ?? 0,
+            }))
+          : [],
         subtotal: serverReceipt.subtotal ?? 0,
         discount_amount: 0,
         tax_amount: 0,
@@ -163,6 +166,12 @@ function showNotice(msg: string) {
   setTimeout(() => {
     if (notice.value === msg) notice.value = ''
   }, 4000)
+}
+
+function selectCustomer(customer: CustomerProfile) {
+  selectedCustomer.value = customer
+  showCustomerModal.value = false
+  showNotice(t('admin.pos.selectedCustomerNotice', { name: customer.name }))
 }
 
 function showError(msg: string) {
@@ -192,7 +201,12 @@ function handleSelectProduct(prod: Product) {
   showNotice(t('admin.pos.addedToCart', { name: prod.name }))
 }
 
-function handleAddCustomItem(payload: { name: string; price: number; quantity: number; vat_rate: number }) {
+function handleAddCustomItem(payload: {
+  name: string
+  price: number
+  quantity: number
+  vat_rate: number
+}) {
   const newProd: Product = {
     id: Date.now(),
     sku: `CUSTOM-${Date.now().toString().slice(-4)}`,
@@ -271,7 +285,9 @@ async function handleCheckout() {
 
   if (paymentMethod.value === 'court_tab') {
     if (!selectedReservationId.value) {
-      showError(t('admin.pos.selectReservationFirst') || 'Vui lòng chọn lịch đặt sân để ghi vào tab.')
+      showError(
+        t('admin.pos.selectReservationFirst') || 'Vui lòng chọn lịch đặt sân để ghi vào tab.',
+      )
       processingCheckout.value = false
       return
     }
@@ -286,7 +302,10 @@ async function handleCheckout() {
       }
 
       await posApi.addItemToTab(tabPayload)
-      showNotice(t('admin.pos.tabItemsAdded') || 'Đã ghi nhận đồ dùng vào tab sân và giữ chỗ tồn kho thành công.')
+      showNotice(
+        t('admin.pos.tabItemsAdded') ||
+          'Đã ghi nhận đồ dùng vào tab sân và giữ chỗ tồn kho thành công.',
+      )
       clearCart()
       resetCheckoutKey()
       await Promise.allSettled([loadProducts(), fetchCurrentCourtTab(selectedReservationId.value)])
@@ -326,55 +345,66 @@ async function handleCheckout() {
     }
 
     const serverReceipt = response?.receipt || response?.order?.receipt || response?.order
-    const receiptData: OrderReceipt = serverReceipt ? {
-      order_code: serverReceipt.order_code || `POS-${response?.order?.id || Date.now()}`,
-      created_at: serverReceipt.created_at ? new Date(serverReceipt.created_at).toLocaleString() : new Date().toLocaleString(),
-      cashier_name: serverReceipt.cashier_name || auth.user?.name || t('admin.pos.tblCashier'),
-      customer_name: serverReceipt.customer_name || selectedCustomer.value?.name,
-      court_info: serverReceipt.court_info || activeReservations.value.find((r) => r.id === selectedReservationId.value)?.court_name,
-      items: Array.isArray(serverReceipt.items) ? serverReceipt.items.map((i: any) => ({
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price ?? i.unit_price ?? 0,
-        total: i.total ?? i.line_total ?? ((i.price ?? i.unit_price ?? 0) * i.quantity),
-        vat_rate: i.vat_rate,
-      })) : cart.value.map((c) => ({
-        name: c.product.name,
-        quantity: c.quantity,
-        price: c.product.price,
-        total: c.product.price * c.quantity * (c.rental_hours || 1),
-        vat_rate: c.vat_rate,
-      })),
-      subtotal: serverReceipt.subtotal ?? subtotal.value,
-      discount_amount: serverReceipt.discount_amount ?? discountAmount.value,
-      tax_amount: serverReceipt.tax_amount ?? taxAmount.value,
-      vat_breakdown: serverReceipt.vat_breakdown ?? vatBreakdown.value,
-      grand_total: serverReceipt.grand_total ?? serverReceipt.total_amount ?? grandTotal.value,
-      payment_method: (serverReceipt.payment_method || paymentMethod.value) as any,
-      cash_tendered: serverReceipt.cash_tendered ?? (paymentMethod.value === 'cash' ? cashTendered.value : undefined),
-      change_due: serverReceipt.change_due ?? (cashChange.value || undefined),
-    } : {
-      order_code: `POS-${Date.now()}`,
-      created_at: new Date().toLocaleString(),
-      cashier_name: auth.user?.name || t('admin.pos.tblCashier'),
-      customer_name: selectedCustomer.value?.name,
-      court_info: activeReservations.value.find((r) => r.id === selectedReservationId.value)?.court_name,
-      items: cart.value.map((c) => ({
-        name: c.product.name,
-        quantity: c.quantity,
-        price: c.product.price,
-        total: c.product.price * c.quantity * (c.rental_hours || 1),
-        vat_rate: c.vat_rate,
-      })),
-      subtotal: subtotal.value,
-      discount_amount: discountAmount.value,
-      tax_amount: taxAmount.value,
-      vat_breakdown: vatBreakdown.value,
-      grand_total: grandTotal.value,
-      payment_method: paymentMethod.value,
-      cash_tendered: paymentMethod.value === 'cash' ? cashTendered.value : undefined,
-      change_due: cashChange.value || undefined,
-    }
+    const receiptData: OrderReceipt = serverReceipt
+      ? {
+          order_code: serverReceipt.order_code || `POS-${response?.order?.id || Date.now()}`,
+          created_at: serverReceipt.created_at
+            ? new Date(serverReceipt.created_at).toLocaleString()
+            : new Date().toLocaleString(),
+          cashier_name: serverReceipt.cashier_name || auth.user?.name || t('admin.pos.tblCashier'),
+          customer_name: serverReceipt.customer_name || selectedCustomer.value?.name,
+          court_info:
+            serverReceipt.court_info ||
+            activeReservations.value.find((r) => r.id === selectedReservationId.value)?.court_name,
+          items: Array.isArray(serverReceipt.items)
+            ? serverReceipt.items.map((i: any) => ({
+                name: i.name,
+                quantity: i.quantity,
+                price: i.price ?? i.unit_price ?? 0,
+                total: i.total ?? i.line_total ?? (i.price ?? i.unit_price ?? 0) * i.quantity,
+                vat_rate: i.vat_rate,
+              }))
+            : cart.value.map((c) => ({
+                name: c.product.name,
+                quantity: c.quantity,
+                price: c.product.price,
+                total: c.product.price * c.quantity * (c.rental_hours || 1),
+                vat_rate: c.vat_rate,
+              })),
+          subtotal: serverReceipt.subtotal ?? subtotal.value,
+          discount_amount: serverReceipt.discount_amount ?? discountAmount.value,
+          tax_amount: serverReceipt.tax_amount ?? taxAmount.value,
+          vat_breakdown: serverReceipt.vat_breakdown ?? vatBreakdown.value,
+          grand_total: serverReceipt.grand_total ?? serverReceipt.total_amount ?? grandTotal.value,
+          payment_method: (serverReceipt.payment_method || paymentMethod.value) as any,
+          cash_tendered:
+            serverReceipt.cash_tendered ??
+            (paymentMethod.value === 'cash' ? cashTendered.value : undefined),
+          change_due: serverReceipt.change_due ?? (cashChange.value || undefined),
+        }
+      : {
+          order_code: `POS-${Date.now()}`,
+          created_at: new Date().toLocaleString(),
+          cashier_name: auth.user?.name || t('admin.pos.tblCashier'),
+          customer_name: selectedCustomer.value?.name,
+          court_info: activeReservations.value.find((r) => r.id === selectedReservationId.value)
+            ?.court_name,
+          items: cart.value.map((c) => ({
+            name: c.product.name,
+            quantity: c.quantity,
+            price: c.product.price,
+            total: c.product.price * c.quantity * (c.rental_hours || 1),
+            vat_rate: c.vat_rate,
+          })),
+          subtotal: subtotal.value,
+          discount_amount: discountAmount.value,
+          tax_amount: taxAmount.value,
+          vat_breakdown: vatBreakdown.value,
+          grand_total: grandTotal.value,
+          payment_method: paymentMethod.value,
+          cash_tendered: paymentMethod.value === 'cash' ? cashTendered.value : undefined,
+          change_due: cashChange.value || undefined,
+        }
 
     cart.value.forEach((item) => {
       adjustProductStock(item.product.id, -item.quantity)
@@ -487,7 +517,10 @@ function handleKeydown(e: KeyboardEvent) {
 
 async function initPosData() {
   const userAny = auth.user as any
-  const activeOrgId = userAny?.capabilities?.active_organization_id || userAny?.organizations?.[0]?.organization_id || userAny?.organizations?.[0]?.id
+  const activeOrgId =
+    userAny?.capabilities?.active_organization_id ||
+    userAny?.organizations?.[0]?.organization_id ||
+    userAny?.organizations?.[0]?.id
   await fetchCapabilities(activeOrgId)
 
   if (capabilityFetchFailed.value) {
@@ -534,9 +567,17 @@ onUnmounted(() => {
       <span class="material-symbols-outlined icon-24">cloud_off</span>
       <div class="banner-text">
         <strong>{{ t('admin.pos.capabilityFetchFailedTitle') || 'Lỗi kết nối quyền hạn' }}</strong>
-        <p>{{ capabilityError || t('admin.pos.capabilityFetchFailedDesc') || 'Không thể xác thực quyền hạn POS. Vui lòng thử lại.' }}</p>
+        <p>
+          {{
+            capabilityError ||
+            t('admin.pos.capabilityFetchFailedDesc') ||
+            'Không thể xác thực quyền hạn POS. Vui lòng thử lại.'
+          }}
+        </p>
       </div>
-      <AuraButton variant="secondary" size="sm" @click="initPosData">{{ t('common.retry') || 'Thử lại' }}</AuraButton>
+      <AuraButton variant="secondary" size="sm" @click="initPosData">{{
+        t('common.retry') || 'Thử lại'
+      }}</AuraButton>
     </div>
     <div v-else-if="isPosDisabled" class="pos-disabled-banner" role="alert">
       <span class="material-symbols-outlined icon-24">lock</span>
@@ -628,7 +669,7 @@ onUnmounted(() => {
       :show="showCustomerModal"
       :customer-database="customerDatabase"
       @close="showCustomerModal = false"
-      @select="selectedCustomer = $event; showCustomerModal = false; showNotice(t('admin.pos.selectedCustomerNotice', { name: $event.name }))"
+      @select="selectCustomer"
     />
 
     <PosCustomItemModal

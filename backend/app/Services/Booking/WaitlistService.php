@@ -3,6 +3,7 @@
 namespace App\Services\Booking;
 
 use App\Models\Court;
+use App\Models\ReservationSlot;
 use App\Models\WaitlistEntry;
 use App\Notifications\AuraBookingNotification;
 use Carbon\Carbon;
@@ -27,7 +28,7 @@ class WaitlistService
         $v1Occupied = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])
             ->whereHas('slots', fn ($query) => $query->where('starts_at', $startUtc)->whereIn('status', ['held', 'confirmed']))
             ->exists();
-        $v2Occupied = \App\Models\ReservationSlot::query()
+        $v2Occupied = ReservationSlot::query()
             ->where('court_id', $court->id)
             ->where('starts_at', $startUtc)
             ->whereIn('status', ['held', 'confirmed'])

@@ -43,7 +43,9 @@ function formatMoney(amount: number): string {
           <span class="kpi-title">{{ t('admin.dashboard.totalBookings') }}</span>
         </div>
         <strong class="kpi-value">{{ report.bookings }}</strong>
-        <span class="kpi-sub">{{ t('admin.dashboard.confirmedBookings', { count: report.confirmed }) }}</span>
+        <span class="kpi-sub">{{
+          t('admin.dashboard.confirmedBookings', { count: report.confirmed })
+        }}</span>
       </div>
 
       <div class="kpi-card">
@@ -60,7 +62,9 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined kpi-icon text-yellow">currency_exchange</span>
           <span class="kpi-title">{{ t('admin.dashboard.pendingRefunds') }}</span>
         </div>
-        <strong class="kpi-value text-yellow">{{ report.pendingRefunds >= 1000 ? formatMoney(report.pendingRefunds) : report.pendingRefunds }}</strong>
+        <strong class="kpi-value text-yellow">{{
+          report.pendingRefunds >= 1000 ? formatMoney(report.pendingRefunds) : report.pendingRefunds
+        }}</strong>
         <span class="kpi-sub">{{ t('admin.dashboard.awaitingAccounting') }}</span>
       </div>
     </template>
@@ -113,9 +117,15 @@ function formatMoney(amount: number): string {
   color: var(--muted);
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
 
 /* Skeleton Shimmer */
 .skeleton-card {
@@ -181,8 +191,12 @@ function formatMoney(amount: number): string {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 900px) {

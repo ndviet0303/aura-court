@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { AuraButton } from '@/shared/components'
 import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   tournament: TournamentItem | null
   loading?: boolean
@@ -50,7 +50,12 @@ function handleSubmit() {
             <p class="modal-sub">{{ $t('tournament.registerModalSub') }}</p>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" :aria-label="$t('common.close')" @click="emit('close')">
+        <button
+          type="button"
+          class="modal-close-btn"
+          :aria-label="$t('common.close')"
+          @click="emit('close')"
+        >
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -334,7 +339,9 @@ function handleSubmit() {
   color: var(--ink);
   font-size: 13.5px;
   font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-input:focus {
@@ -353,4 +360,3 @@ function handleSubmit() {
   background: var(--surface-container-low, rgba(0, 0, 0, 0.01));
 }
 </style>
-

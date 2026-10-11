@@ -1,6 +1,11 @@
 import { computed, ref } from 'vue'
 import { platformSubscriptionApi } from '../api/platformSubscriptionApi'
-import type { PlatformPlan, PlatformSubscription, PaymentAttempt, SubscriptionQuotaUsage } from '../types'
+import type {
+  PlatformPlan,
+  PlatformSubscription,
+  PaymentAttempt,
+  SubscriptionQuotaUsage,
+} from '../types'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export function usePlatformSubscription() {
@@ -16,7 +21,9 @@ export function usePlatformSubscription() {
   const error = ref<string | null>(null)
   const notice = ref<string | null>(null)
 
-  const hasActiveSubscription = computed(() => subscription.value?.is_valid === true && canTakeBookings.value)
+  const hasActiveSubscription = computed(
+    () => subscription.value?.is_valid === true && canTakeBookings.value,
+  )
 
   function clearMessages() {
     error.value = null
@@ -61,7 +68,10 @@ export function usePlatformSubscription() {
     })
   }
 
-  async function activateTrial(organizationId: number, plan: PlatformPlan): Promise<PlatformSubscription | null> {
+  async function activateTrial(
+    organizationId: number,
+    plan: PlatformPlan,
+  ): Promise<PlatformSubscription | null> {
     activating.value = true
     clearMessages()
     try {
@@ -85,7 +95,7 @@ export function usePlatformSubscription() {
     organizationId: number,
     plan: PlatformPlan,
     returnUrl: string,
-    cancelUrl: string
+    cancelUrl: string,
   ): Promise<PaymentAttempt | null> {
     initiating.value = true
     clearMessages()
@@ -99,7 +109,9 @@ export function usePlatformSubscription() {
       })
       paymentAttempt.value = response.data
       await fetchCurrent(organizationId)
-      notice.value = response.message || 'Đã tạo hướng dẫn thanh toán. Trạng thái sẽ cập nhật sau khi máy chủ xác minh.'
+      notice.value =
+        response.message ||
+        'Đã tạo hướng dẫn thanh toán. Trạng thái sẽ cập nhật sau khi máy chủ xác minh.'
       return paymentAttempt.value
     } catch (cause) {
       error.value = errorMessage(cause, 'Khởi tạo thanh toán thất bại.')
@@ -112,7 +124,11 @@ export function usePlatformSubscription() {
   async function confirmReturn(organizationId: number): Promise<boolean> {
     const updated = await fetchCurrent(organizationId)
     if (!updated && error.value) return false
-    if (updated?.status === 'active' && updated.is_valid && paymentAttempt.value?.status === 'succeeded') {
+    if (
+      updated?.status === 'active' &&
+      updated.is_valid &&
+      paymentAttempt.value?.status === 'succeeded'
+    ) {
       notice.value = 'Máy chủ đã xác nhận thanh toán và kích hoạt gói dịch vụ.'
       return true
     }
@@ -136,7 +152,7 @@ export function usePlatformSubscription() {
   async function renew(
     organizationId: number,
     returnUrl: string,
-    cancelUrl: string
+    cancelUrl: string,
   ): Promise<PaymentAttempt | null> {
     clearMessages()
     try {
@@ -146,7 +162,9 @@ export function usePlatformSubscription() {
       })
       paymentAttempt.value = response.data
       await fetchCurrent(organizationId)
-      notice.value = response.message || 'Đã tạo hướng dẫn gia hạn. Trạng thái sẽ cập nhật sau khi máy chủ xác minh.'
+      notice.value =
+        response.message ||
+        'Đã tạo hướng dẫn gia hạn. Trạng thái sẽ cập nhật sau khi máy chủ xác minh.'
       return paymentAttempt.value
     } catch (cause) {
       error.value = errorMessage(cause, 'Không thể khởi tạo gia hạn.')

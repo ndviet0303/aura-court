@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\DisputeCase;
-use App\Models\FeedComment;
 use App\Models\FeedPost;
 use App\Models\FeedReport;
 use App\Models\ModerationRecord;
@@ -25,18 +24,27 @@ class DisputeLifecycleAndModerationTest extends TestCase
     use RefreshDatabase;
 
     private User $platformAdmin;
+
     private Organization $tenantA;
+
     private User $ownerA;
+
     private Venue $venueA;
+
     private Court $courtA;
 
     private Organization $tenantB;
+
     private User $ownerB;
+
     private Venue $venueB;
+
     private Court $courtB;
 
     private User $customerAlice;
+
     private User $customerBob;
+
     private User $stranger;
 
     protected function setUp(): void
@@ -120,7 +128,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $start = (clone $end)->subHour();
 
         $booking = Booking::create([
-            'code' => 'BK-' . strtoupper(uniqid()),
+            'code' => 'BK-'.strtoupper(uniqid()),
             'user_id' => $user->id,
             'court_id' => $court->id,
             'total_amount' => 300000,

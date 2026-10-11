@@ -8,8 +8,8 @@ use App\Models\TournamentFixture;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentStanding;
 use App\Models\User;
-use App\Services\Infrastructure\OutboxService;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Infrastructure\OutboxService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -29,8 +29,10 @@ class TournamentService
         }
         if (is_string($fee)) {
             $digits = preg_replace('/\D/', '', $fee);
+
             return $digits !== '' ? (int) $digits : 0;
         }
+
         return 0;
     }
 
@@ -103,7 +105,7 @@ class TournamentService
 
     public function register(Tournament $tournament, User $user, array $data = []): array
     {
-        return DB::transaction(function () use ($tournament, $user, $data): array {
+        return DB::transaction(function () use ($tournament, $user): array {
             $tournament = Tournament::query()->whereKey($tournament->id)->lockForUpdate()->firstOrFail();
 
             $existing = TournamentParticipant::where('tournament_id', $tournament->id)
@@ -112,7 +114,7 @@ class TournamentService
 
             $entryFee = self::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
 
-            if ($existing && !in_array($existing->status, ['withdrawn', 'rejected'], true)) {
+            if ($existing && ! in_array($existing->status, ['withdrawn', 'rejected'], true)) {
                 return [
                     'participant' => $existing->load('user'),
                     'already_registered' => true,
@@ -230,7 +232,7 @@ class TournamentService
                 ->where('user_id', $targetUserId)
                 ->first();
 
-            if ($existing && !in_array($existing->status, ['withdrawn', 'rejected'], true)) {
+            if ($existing && ! in_array($existing->status, ['withdrawn', 'rejected'], true)) {
                 abort(422, 'Participant is already registered.');
             }
 
@@ -239,10 +241,10 @@ class TournamentService
             $wallet = null;
 
             if ($entryFee > 0) {
-                $isWaived = !empty($data['fee_waiver']);
+                $isWaived = ! empty($data['fee_waiver']);
                 if ($isWaived) {
                     $waiverReason = $data['waiver_reason'] ?? null;
-                    abort_if(empty($waiverReason) || !is_string($waiverReason) || trim($waiverReason) === '', 422, 'Waiver reason is required when fee is waived.');
+                    abort_if(empty($waiverReason) || ! is_string($waiverReason) || trim($waiverReason) === '', 422, 'Waiver reason is required when fee is waived.');
                 } else {
                     $wallet = $this->walletPayment->getOrCreateWallet($targetUserId, $tournament->organization_id);
                     $this->walletPayment->debit(
@@ -339,7 +341,7 @@ class TournamentService
         }
         abort_unless(in_array($status, ['registered', 'checked_in', 'present', 'absent', 'withdrawn'], true), 422, 'Invalid attendance status.');
 
-        if ($isSelf && !$isOfficial) {
+        if ($isSelf && ! $isOfficial) {
             abort_unless(in_array($status, ['checked_in', 'registered', 'withdrawn'], true), 403, 'Participants can only check-in, uncheck, or withdraw.');
         }
 
@@ -367,7 +369,7 @@ class TournamentService
             abort_unless(in_array($winnerId, array_filter([$fixture->participant_one_id, $fixture->participant_two_id]), true), 422, 'Winner must be a fixture participant.');
 
             $isCorrection = ($fixture->status === 'completed');
-            abort_if($isCorrection && (empty($reason) || !is_string($reason) || trim($reason) === ''), 422, 'Lý do điều chỉnh kết quả là bắt buộc.');
+            abort_if($isCorrection && (empty($reason) || ! is_string($reason) || trim($reason) === ''), 422, 'Lý do điều chỉnh kết quả là bắt buộc.');
 
             if ($tournament->format === 'single_elimination') {
                 $nextRound = $fixture->round + 1;
@@ -405,7 +407,7 @@ class TournamentService
                 'winner_id' => $winnerId,
                 'is_correction' => $isCorrection,
             ];
-            if (!empty($reason)) {
+            if (! empty($reason)) {
                 $payload['reason'] = $reason;
             }
 
@@ -433,6 +435,7 @@ class TournamentService
             }
             $tournament->increment('version');
             $this->emit($tournament->fresh(), $actor, 'tournament.bracket_regenerated', []);
+
             return $tournament->fresh(['participants.user', 'fixtures', 'standings.participant.user']);
         });
     }
@@ -593,6 +596,7 @@ class TournamentService
             }
             $bracket = $next;
         }
+
         return array_chunk($bracket, 2);
     }
 
@@ -646,7 +650,7 @@ class TournamentService
             ->get();
 
         foreach ($fixtures as $fixture) {
-            if (!$fixture->participant_one_id || !$fixture->participant_two_id) {
+            if (! $fixture->participant_one_id || ! $fixture->participant_two_id) {
                 continue;
             }
             $p1 = $fixture->participant_one_id;
@@ -672,6 +676,7 @@ class TournamentService
             if ($b['wins'] !== $a['wins']) {
                 return $b['wins'] <=> $a['wins'];
             }
+
             return $a['losses'] <=> $b['losses'];
         });
 

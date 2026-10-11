@@ -38,7 +38,11 @@ const calendarCourtOptions = computed<DropdownOption[]>(() => [
   { value: 'venue', label: t('admin.schedule.venueScheduleOption'), icon: 'domain' },
   ...props.courts
     .filter((court) => (court.venue_id || court.venue?.id) === props.selectedVenueId)
-    .map((court) => ({ value: court.id, label: resolveLocalizedText(court.name), icon: 'sports_tennis' })),
+    .map((court) => ({
+      value: court.id,
+      label: resolveLocalizedText(court.name),
+      icon: 'sports_tennis',
+    })),
 ])
 </script>
 
@@ -60,26 +64,42 @@ const calendarCourtOptions = computed<DropdownOption[]>(() => [
           :options="venueOptions"
           variant="bordered"
           aria-label="Venue Filter"
-          @update:model-value="(val) => emit('update:selectedVenueId', val === 'all' ? 'all' : Number(val))"
+          @update:model-value="
+            (val) => emit('update:selectedVenueId', val === 'all' ? 'all' : Number(val))
+          "
         />
       </div>
 
-      <div v-if="typeof selectedVenueId === 'number' && calendarCourtOptions.length > 1" class="venue-filter-wrap">
+      <div
+        v-if="typeof selectedVenueId === 'number' && calendarCourtOptions.length > 1"
+        class="venue-filter-wrap"
+      >
         <SelectDropdown
           :model-value="selectedCalendarCourtId"
           :options="calendarCourtOptions"
           variant="bordered"
           aria-label="Calendar scope"
-          @update:model-value="(val) => emit('update:selectedCalendarCourtId', val === 'venue' ? 'venue' : Number(val))"
+          @update:model-value="
+            (val) => emit('update:selectedCalendarCourtId', val === 'venue' ? 'venue' : Number(val))
+          "
         />
       </div>
 
-      <AuraButton variant="outline" class="btn-refresh" :disabled="loading" @click="emit('refresh')">
+      <AuraButton
+        variant="outline"
+        class="btn-refresh"
+        :disabled="loading"
+        @click="emit('refresh')"
+      >
         <span class="material-symbols-outlined icon-18">refresh</span>
         <span>{{ t('admin.schedule.refreshBtn') }}</span>
       </AuraButton>
 
-      <AuraButton variant="outline" class="btn-action-neutral btn-audit-logs" @click="emit('openAuditLogs')">
+      <AuraButton
+        variant="outline"
+        class="btn-action-neutral btn-audit-logs"
+        @click="emit('openAuditLogs')"
+      >
         <span class="material-symbols-outlined icon-18">history</span>
         <span>{{ t('admin.schedule.auditLogsBtn') }}</span>
       </AuraButton>

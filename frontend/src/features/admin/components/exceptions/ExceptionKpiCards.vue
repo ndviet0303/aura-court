@@ -104,7 +104,9 @@ const { t } = useI18n()
   flex-direction: column;
   gap: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .kpi-card:hover {
@@ -112,10 +114,18 @@ const { t } = useI18n()
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.card-critical { border-top: 3px solid #ba1a1a; }
-.card-warning { border-top: 3px solid #f59e0b; }
-.card-success { border-top: 3px solid #10b981; }
-.card-risk { border-top: 3px solid var(--primary, #78555e); }
+.card-critical {
+  border-top: 3px solid #ba1a1a;
+}
+.card-warning {
+  border-top: 3px solid #f59e0b;
+}
+.card-success {
+  border-top: 3px solid #10b981;
+}
+.card-risk {
+  border-top: 3px solid var(--primary, #78555e);
+}
 
 .kpi-meta {
   display: flex;
@@ -138,17 +148,37 @@ const { t } = useI18n()
   justify-content: center;
 }
 
-.bg-critical-tint { background: rgba(186, 26, 26, 0.1); }
-.bg-warning-tint { background: rgba(245, 158, 11, 0.1); }
-.bg-success-tint { background: rgba(16, 185, 129, 0.1); }
-.bg-primary-tint { background: rgba(120, 85, 94, 0.1); }
+.bg-critical-tint {
+  background: rgba(186, 26, 26, 0.1);
+}
+.bg-warning-tint {
+  background: rgba(245, 158, 11, 0.1);
+}
+.bg-success-tint {
+  background: rgba(16, 185, 129, 0.1);
+}
+.bg-primary-tint {
+  background: rgba(120, 85, 94, 0.1);
+}
 
-.text-critical { color: #ba1a1a; }
-.text-warning { color: #d97706; }
-.text-success { color: #10b981; }
-.text-primary { color: var(--primary, #78555e); }
-.text-ink { color: var(--ink, #191c1d); }
-.text-muted { color: var(--muted, #5d5f5f); }
+.text-critical {
+  color: #ba1a1a;
+}
+.text-warning {
+  color: #d97706;
+}
+.text-success {
+  color: #10b981;
+}
+.text-primary {
+  color: var(--primary, #78555e);
+}
+.text-ink {
+  color: var(--ink, #191c1d);
+}
+.text-muted {
+  color: var(--muted, #5d5f5f);
+}
 
 .kpi-value {
   font-size: 24px;
@@ -161,4 +191,3 @@ const { t } = useI18n()
   color: var(--muted, #817476);
 }
 </style>
-

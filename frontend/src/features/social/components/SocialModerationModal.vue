@@ -32,6 +32,11 @@ async function loadReports() {
   }
 }
 
+function filterByStatus(status: 'pending' | 'resolved' | 'all') {
+  selectedStatus.value = status
+  loadReports()
+}
+
 async function handleHide(report: any) {
   if (!auditReason.value.trim()) {
     error.value = 'Vui lòng nhập lý do kiểm duyệt để ẩn nội dung vi phạm.'
@@ -100,7 +105,7 @@ onMounted(() => {
             type="button"
             class="filter-pill"
             :class="{ active: selectedStatus === 'pending' }"
-            @click="selectedStatus = 'pending'; loadReports()"
+            @click="filterByStatus('pending')"
           >
             Chờ xử lý
           </button>
@@ -108,7 +113,7 @@ onMounted(() => {
             type="button"
             class="filter-pill"
             :class="{ active: selectedStatus === 'resolved' }"
-            @click="selectedStatus = 'resolved'; loadReports()"
+            @click="filterByStatus('resolved')"
           >
             Đã xử lý
           </button>
@@ -116,7 +121,7 @@ onMounted(() => {
             type="button"
             class="filter-pill"
             :class="{ active: selectedStatus === 'all' }"
-            @click="selectedStatus = 'all'; loadReports()"
+            @click="filterByStatus('all')"
           >
             Tất cả
           </button>
@@ -143,7 +148,9 @@ onMounted(() => {
         <div v-for="r in reports" :key="r.id" class="report-card-item">
           <div class="report-meta-row">
             <span class="report-type-tag">
-              {{ r.reportable_type?.includes('Comment') ? 'Bình luận' : 'Bài viết' }} #{{ r.reportable_id }}
+              {{ r.reportable_type?.includes('Comment') ? 'Bình luận' : 'Bài viết' }} #{{
+                r.reportable_id
+              }}
             </span>
             <span class="report-status-badge" :class="r.status">
               {{ r.status === 'resolved' ? 'Đã xử lý' : 'Chờ xử lý' }}
@@ -151,12 +158,8 @@ onMounted(() => {
           </div>
 
           <div class="report-body-box">
-            <div class="report-reason-txt">
-              <strong>Lý do báo cáo:</strong> {{ r.reason }}
-            </div>
-            <div class="reporter-name">
-              Người báo cáo: {{ r.reporter?.name || 'Ẩn danh' }}
-            </div>
+            <div class="report-reason-txt"><strong>Lý do báo cáo:</strong> {{ r.reason }}</div>
+            <div class="reporter-name">Người báo cáo: {{ r.reporter?.name || 'Ẩn danh' }}</div>
             <div v-if="r.reportable?.content" class="report-content-preview">
               "{{ r.reportable.content }}"
             </div>

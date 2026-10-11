@@ -48,7 +48,12 @@ async function submit() {
   loading.value = true
   error.value = ''
   try {
-    await auth.resetPassword(email.value.trim(), token.value.trim(), password.value, confirmation.value)
+    await auth.resetPassword(
+      email.value.trim(),
+      token.value.trim(),
+      password.value,
+      confirmation.value,
+    )
     router.push('/login')
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
@@ -220,19 +225,21 @@ async function submit() {
                 </button>
               </div>
 
-              <div v-if="confirmation" class="match-status" :class="passwordsMatch ? 'match-ok' : 'match-error'">
+              <div
+                v-if="confirmation"
+                class="match-status"
+                :class="passwordsMatch ? 'match-ok' : 'match-error'"
+              >
                 <span class="material-symbols-outlined match-icon">
                   {{ passwordsMatch ? 'check_circle' : 'cancel' }}
                 </span>
-                <span>{{ passwordsMatch ? t('auth.passwordMatch') : t('auth.passwordsDoNotMatch') }}</span>
+                <span>{{
+                  passwordsMatch ? t('auth.passwordMatch') : t('auth.passwordsDoNotMatch')
+                }}</span>
               </div>
             </div>
 
-            <button
-              type="submit"
-              class="auth-submit-btn"
-              :disabled="loading"
-            >
+            <button type="submit" class="auth-submit-btn" :disabled="loading">
               <span v-if="loading" class="spinner" aria-hidden="true"></span>
               <span v-else class="material-symbols-outlined submit-icon">check</span>
               <span>
@@ -271,14 +278,24 @@ async function submit() {
   width: 700px;
   max-width: 90vw;
   height: 400px;
-  background: radial-gradient(circle, rgba(201, 161, 90, 0.25) 0%, rgba(107, 45, 63, 0.12) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(201, 161, 90, 0.25) 0%,
+    rgba(107, 45, 63, 0.12) 50%,
+    transparent 70%
+  );
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 html.dark .aura-glow-bg {
-  background: radial-gradient(circle, rgba(223, 186, 114, 0.18) 0%, rgba(107, 45, 63, 0.25) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(223, 186, 114, 0.18) 0%,
+    rgba(107, 45, 63, 0.25) 50%,
+    transparent 70%
+  );
 }
 
 .auth-container {
@@ -315,7 +332,7 @@ html.dark .auth-card-single {
   height: 56px;
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(223, 186, 114, 0.2) 0%, rgba(107, 45, 63, 0.12) 100%);
-  color: #6B2D3F;
+  color: #6b2d3f;
   border: 1px solid rgba(201, 161, 90, 0.35);
   display: flex;
   align-items: center;
@@ -362,7 +379,7 @@ html.dark .icon-circle {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #FAF7F3;
+  background: #faf7f3;
   border: 1px solid #ebdccb;
   border-radius: 14px;
   margin-bottom: 20px;
@@ -379,7 +396,7 @@ html.dark .account-pill-card {
   border-radius: 10px;
   background: #ffffff;
   border: 1px solid #ebdccb;
-  color: #6B2D3F;
+  color: #6b2d3f;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -499,7 +516,7 @@ html.dark .missing-params-box {
 }
 
 .manual-toggle-btn:hover {
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .manual-toggle-btn:hover {
@@ -549,9 +566,18 @@ html.dark .error-banner {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-5px); }
-  40%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 .auth-form {
@@ -614,7 +640,7 @@ html.dark .custom-input {
 }
 
 .custom-input:focus {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
@@ -669,7 +695,7 @@ html.dark .match-status.match-ok {
 .auth-submit-btn {
   margin-top: 6px;
   height: 48px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -709,7 +735,9 @@ html.dark .match-status.match-ok {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .auth-card-footer {
@@ -729,7 +757,7 @@ html.dark .auth-card-footer {
   gap: 6px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #6B2D3F;
+  color: #6b2d3f;
   text-decoration: none;
   transition: opacity 0.15s ease;
 }
@@ -746,4 +774,3 @@ html.dark .back-link {
   font-size: 18px;
 }
 </style>
-

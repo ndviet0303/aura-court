@@ -3,7 +3,26 @@ import { i18n, setAppLocale } from '../index'
 import vi from '../locales/vi'
 import en from '../locales/en'
 
+/** Dot paths of every leaf message, so a missing nested key is reported in full. */
+function keyPaths(messages: object, prefix = ''): string[] {
+  return Object.entries(messages).flatMap(([key, value]) =>
+    typeof value === 'object' && value !== null
+      ? keyPaths(value, `${prefix}${key}.`)
+      : [`${prefix}${key}`],
+  )
+}
+
 describe('Bilingual Localization (Song ngữ vi / en)', () => {
+  it('defines every message key in both vi and en', () => {
+    const viKeys = new Set(keyPaths(vi))
+    const enKeys = new Set(keyPaths(en))
+
+    expect({
+      missingFromEn: [...viKeys].filter((key) => !enKeys.has(key)),
+      missingFromVi: [...enKeys].filter((key) => !viKeys.has(key)),
+    }).toEqual({ missingFromEn: [], missingFromVi: [] })
+  })
+
   it('contains matching keys for POS VietQR and shift balancing in both vi and en', () => {
     expect(vi.admin.pos.qrModalTitle).toBe('Thanh toán VietQR')
     expect(en.admin.pos.qrModalTitle).toBe('VietQR Payment')
@@ -17,7 +36,9 @@ describe('Bilingual Localization (Song ngữ vi / en)', () => {
     expect(vi.admin.pos.tabShiftHistory).toBe('Lịch sử ca & Đối soát')
     expect(en.admin.pos.tabShiftHistory).toBe('Shift History & Reconciliation')
 
-    expect(vi.admin.pos.shiftVarianceMatched).toBe('Khớp 100% so với dữ liệu đơn hàng và tiền đầu ca.')
+    expect(vi.admin.pos.shiftVarianceMatched).toBe(
+      'Khớp 100% so với dữ liệu đơn hàng và tiền đầu ca.',
+    )
     expect(en.admin.pos.shiftVarianceMatched).toBe('100% matched with orders and opening float.')
 
     expect(vi.admin.pos.statusApproved).toBe('Đã duyệt')
@@ -37,19 +58,27 @@ describe('Bilingual Localization (Song ngữ vi / en)', () => {
     expect(vi.wallet.depositModal.methodSepayTitle).toBe('Chuyển khoản VietQR SePay (Khuyên dùng)')
     expect(en.wallet.depositModal.methodSepayTitle).toBe('VietQR SePay Bank Transfer (Recommended)')
 
-    expect(vi.wallet.depositModal.vqrListening).toBe('Hệ thống SePay đang tự động lắng nghe giao dịch chuyển khoản...')
-    expect(en.wallet.depositModal.vqrListening).toBe('SePay system is automatically listening for incoming bank transfer...')
+    expect(vi.wallet.depositModal.vqrListening).toBe(
+      'Hệ thống SePay đang tự động lắng nghe giao dịch chuyển khoản...',
+    )
+    expect(en.wallet.depositModal.vqrListening).toBe(
+      'SePay system is automatically listening for incoming bank transfer...',
+    )
   })
 
   it('translates dynamic keys accurately when switching locales via setAppLocale', () => {
     setAppLocale('vi')
     expect(i18n.global.t('admin.pos.qrModalTitle')).toBe('Thanh toán VietQR')
-    expect(i18n.global.t('wallet.depositModal.titleSepay')).toBe('Chuyển Khoản Nạp Tiền VietQR SePay 24/7')
+    expect(i18n.global.t('wallet.depositModal.titleSepay')).toBe(
+      'Chuyển Khoản Nạp Tiền VietQR SePay 24/7',
+    )
     expect(i18n.global.t('wallet.activeCard')).toBe('Đang kích hoạt')
 
     setAppLocale('en')
     expect(i18n.global.t('admin.pos.qrModalTitle')).toBe('VietQR Payment')
-    expect(i18n.global.t('wallet.depositModal.titleSepay')).toBe('VietQR SePay 24/7 Bank Transfer Top-Up')
+    expect(i18n.global.t('wallet.depositModal.titleSepay')).toBe(
+      'VietQR SePay 24/7 Bank Transfer Top-Up',
+    )
     expect(i18n.global.t('wallet.activeCard')).toBe('Active')
 
     // Reset back to vi

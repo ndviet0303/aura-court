@@ -38,7 +38,9 @@ export function useTournamentBracketAdmin() {
   })
 
   const currentWizardStep = ref<number>(3)
-  const activeSubNav = ref<'bracket-management' | 'athlete-check-in' | 'live-referee-console' | 'tournament-overview'>('bracket-management')
+  const activeSubNav = ref<
+    'bracket-management' | 'athlete-check-in' | 'live-referee-console' | 'tournament-overview'
+  >('bracket-management')
   const selectedRoundFilter = ref<'all' | 'r16' | 'qf' | 'sf' | 'final'>('all')
 
   // Feedback State
@@ -68,7 +70,9 @@ export function useTournamentBracketAdmin() {
 
   const checkInMetrics = computed(() => {
     const total = participants.value.length
-    const checkedInCount = participants.value.filter((p) => p.checkedIn || p.status === 'checked_in').length
+    const checkedInCount = participants.value.filter(
+      (p) => p.checkedIn || p.status === 'checked_in',
+    ).length
     const pending_count = total - checkedInCount
     const percentage = total > 0 ? Math.round((checkedInCount / total) * 100) : 0
     return {
@@ -84,8 +88,9 @@ export function useTournamentBracketAdmin() {
     return participants.value.filter((ath) => {
       const matchStatus =
         checkInFilterStatus.value === 'all' ||
-        (checkInFilterStatus.value === 'checked_in' && (ath.checkedIn || ath.status === 'checked_in')) ||
-        (checkInFilterStatus.value === 'pending' && (!ath.checkedIn && ath.status === 'pending')) ||
+        (checkInFilterStatus.value === 'checked_in' &&
+          (ath.checkedIn || ath.status === 'checked_in')) ||
+        (checkInFilterStatus.value === 'pending' && !ath.checkedIn && ath.status === 'pending') ||
         (checkInFilterStatus.value === 'no_show' && ath.status === 'no_show')
 
       const q = checkInSearchQuery.value.trim().toLowerCase()
@@ -104,7 +109,10 @@ export function useTournamentBracketAdmin() {
     ath.checkedIn = nextState
     ath.status = nextState ? 'checked_in' : 'pending'
     if (nextState) {
-      ath.checkInTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      ath.checkInTime = new Date().toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
       showNotice(`Đã điểm danh: ${ath.name}`)
     } else {
       ath.checkInTime = undefined
@@ -126,8 +134,24 @@ export function useTournamentBracketAdmin() {
     fixtureId: 1,
     matchCode: 'M-01',
     courtName: 'Sân 1 - Sân Chính',
-    playerA: { id: 1, name: 'Vận động viên 1', club: 'Aura Club', seed: 1, score: 0, sets: [21, 19], isServing: true },
-    playerB: { id: 2, name: 'Vận động viên 2', club: 'Tự do', seed: 2, score: 0, sets: [18, 21], isServing: false },
+    playerA: {
+      id: 1,
+      name: 'Vận động viên 1',
+      club: 'Aura Club',
+      seed: 1,
+      score: 0,
+      sets: [21, 19],
+      isServing: true,
+    },
+    playerB: {
+      id: 2,
+      name: 'Vận động viên 2',
+      club: 'Tự do',
+      seed: 2,
+      score: 0,
+      sets: [18, 21],
+      isServing: false,
+    },
     currentSet: 1,
     hasConflict: false,
     conflictDesc: 'Xung đột đồng bộ tỷ số từ trọng tài phụ: 19-18 so với máy chủ 21-18.',
@@ -210,7 +234,9 @@ export function useTournamentBracketAdmin() {
           p2: liveMatch.value.playerB.score,
         },
       })
-      showNotice(`Đã lưu kết quả trận đấu (${liveMatch.value.playerA.score} - ${liveMatch.value.playerB.score})!`)
+      showNotice(
+        `Đã lưu kết quả trận đấu (${liveMatch.value.playerA.score} - ${liveMatch.value.playerB.score})!`,
+      )
       await loadTournamentData(tournament.value.id)
     } catch (e) {
       showError(errorMessage(e, 'Không thể cập nhật tỷ số trận đấu.'))
@@ -235,9 +261,10 @@ export function useTournamentBracketAdmin() {
   async function saveMatchScore(updated: FixtureMatch, scoreP1?: number, scoreP2?: number) {
     saving.value = true
     try {
-      const p1Score = scoreP1 ?? (updated.player1.sets[0] ?? 21)
-      const p2Score = scoreP2 ?? (updated.player2.sets[0] ?? 18)
-      const winnerId = updated.winnerId || (p1Score >= p2Score ? updated.player1.id : updated.player2.id)
+      const p1Score = scoreP1 ?? updated.player1.sets[0] ?? 21
+      const p2Score = scoreP2 ?? updated.player2.sets[0] ?? 18
+      const winnerId =
+        updated.winnerId || (p1Score >= p2Score ? updated.player1.id : updated.player2.id)
 
       if (winnerId) {
         await tournamentApi.scoreFixture(tournament.value.id, updated.id, {
@@ -333,7 +360,14 @@ export function useTournamentBracketAdmin() {
           .map((f: any) => ({
             id: f.id,
             roundNumber: f.round || 1,
-            roundName: f.round === 1 ? 'Vòng 1' : f.round === 2 ? 'Tứ Kết' : f.round === 3 ? 'Bán Kết' : 'Chung Kết',
+            roundName:
+              f.round === 1
+                ? 'Vòng 1'
+                : f.round === 2
+                  ? 'Tứ Kết'
+                  : f.round === 3
+                    ? 'Bán Kết'
+                    : 'Chung Kết',
             position: f.position || 1,
             matchNumber: f.position || 1,
             courtName: f.court_name || `Sân ${f.court_id || f.position || 1}`,
@@ -362,7 +396,10 @@ export function useTournamentBracketAdmin() {
               : { name: 'Chờ xác định', sets: [] },
             winnerId: f.winner_id,
           }))
-          .sort((a: FixtureMatch, b: FixtureMatch) => (a.roundNumber || 1) - (b.roundNumber || 1) || (a.position || 1) - (b.position || 1))
+          .sort(
+            (a: FixtureMatch, b: FixtureMatch) =>
+              (a.roundNumber || 1) - (b.roundNumber || 1) || (a.position || 1) - (b.position || 1),
+          )
         syncLiveMatchFromFixtures()
       }
     } catch (e: unknown) {

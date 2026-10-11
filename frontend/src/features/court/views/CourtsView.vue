@@ -88,12 +88,7 @@ onMounted(async () => {
 
     <!-- Courts Grid -->
     <div v-else class="courts-grid" data-testid="courts-grid">
-      <CourtItemCard
-        v-for="(c, idx) in filteredCourts"
-        :key="c.id"
-        :court="c"
-        :index="idx"
-      />
+      <CourtItemCard v-for="(c, idx) in filteredCourts" :key="c.id" :court="c" :index="idx" />
     </div>
   </div>
 </template>

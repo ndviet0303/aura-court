@@ -8,12 +8,14 @@ const DatePickerStub = defineComponent({
   props: { modelValue: { type: String, default: '' } },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs }) {
-    return () => h('input', {
-      ...attrs,
-      type: 'date',
-      value: props.modelValue,
-      onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value),
-    })
+    return () =>
+      h('input', {
+        ...attrs,
+        type: 'date',
+        value: props.modelValue,
+        onInput: (event: Event) =>
+          emit('update:modelValue', (event.target as HTMLInputElement).value),
+      })
   },
 })
 

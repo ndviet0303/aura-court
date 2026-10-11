@@ -5,16 +5,14 @@ namespace Tests\Feature\POS;
 use App\Models\CashShift;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\OwnerPaymentReceipt;
+use App\Models\Payment;
 use App\Models\PosOrder;
-use App\Models\PosPayment;
 use App\Models\PosProduct;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Services\POS\PosService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,11 +21,17 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private Venue $venue;
+
     private User $cashier;
+
     private User $manager;
+
     private User $customer;
+
     private PosProduct $drinkProduct;
+
     private PosProduct $serviceProduct;
 
     protected function setUp(): void
@@ -36,14 +40,14 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Central Arena',
-            'slug' => 'aura-central-' . uniqid(),
+            'slug' => 'aura-central-'.uniqid(),
             'status' => 'active',
         ]);
 
         $this->venue = Venue::create([
             'organization_id' => $this->tenant->id,
             'name' => 'Central Courts',
-            'slug' => 'central-courts-' . uniqid(),
+            'slug' => 'central-courts-'.uniqid(),
             'status' => 'published',
             'is_active' => true,
         ]);
@@ -127,7 +131,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'register_id' => 'REG-01',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'open-' . uniqid(),
+            'Idempotency-Key' => 'open-'.uniqid(),
         ])->assertCreated();
 
         // 2. Create pending QR order for 2 drinks (30,000 VND)
@@ -138,7 +142,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'order-' . uniqid(),
+            'Idempotency-Key' => 'order-'.uniqid(),
         ]);
         $orderRes->assertCreated();
         $orderId = $orderRes->json('order.id');
@@ -151,7 +155,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'amount' => 10000, // Expected 30,000
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-bad-' . uniqid(),
+            'Idempotency-Key' => 'confirm-bad-'.uniqid(),
         ]);
         $mismatchRes->assertStatus(422);
 
@@ -162,13 +166,13 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'amount' => 30000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-unverified-' . uniqid(),
+            'Idempotency-Key' => 'confirm-unverified-'.uniqid(),
         ]);
         $unverifiedRes->assertStatus(422);
         $this->assertStringContainsString('not been verified by payment provider', $unverifiedRes->json('message'));
 
         // 5. With genuine verified transaction, verification succeeds
-        \App\Models\Payment::create([
+        Payment::create([
             'booking_id' => null,
             'provider' => 'vietqr',
             'external_transaction_id' => 'TXN-VERIFIED-GENUINE',
@@ -181,7 +185,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'amount' => 30000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-ok-' . uniqid(),
+            'Idempotency-Key' => 'confirm-ok-'.uniqid(),
         ]);
         $verifiedRes->assertOk();
         $this->assertSame('completed', $verifiedRes->json('order.status'));
@@ -197,7 +201,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'register_id' => 'POS-REG-A',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'shift-1-' . uniqid(),
+            'Idempotency-Key' => 'shift-1-'.uniqid(),
         ]);
         $shiftRes->assertCreated();
         $shiftId = $shiftRes->json('shift.id');
@@ -212,7 +216,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'cash_tendered' => 50000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'sale-1-' . uniqid(),
+            'Idempotency-Key' => 'sale-1-'.uniqid(),
         ])->assertCreated();
 
         // 3. Record cash movement (cash_in 50,000 for change float)
@@ -222,7 +226,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'reason' => 'Adding change float',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'cm-1-' . uniqid(),
+            'Idempotency-Key' => 'cm-1-'.uniqid(),
         ])->assertOk();
 
         // 4. Record cash movement (cash_out 20,000 for emergency cleaning supplies)
@@ -232,7 +236,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'reason' => 'Broom and mop soap',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'cm-2-' . uniqid(),
+            'Idempotency-Key' => 'cm-2-'.uniqid(),
         ])->assertOk();
 
         // Expected cash: 200,000 (opening) + 30,000 (cash sale) + 50,000 (cash in) - 20,000 (cash out) = 260,000 VND
@@ -242,7 +246,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'note' => 'Shift balanced cleanly',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'close-1-' . uniqid(),
+            'Idempotency-Key' => 'close-1-'.uniqid(),
         ]);
         $closeRes->assertOk();
         $this->assertSame(260000, (int) $closeRes->json('shift.expected_cash'));
@@ -262,7 +266,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'order-pending-' . uniqid(),
+            'Idempotency-Key' => 'order-pending-'.uniqid(),
         ]);
         $orderRes->assertCreated();
         $orderId = $orderRes->json('order.id');
@@ -272,7 +276,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'declared_cash' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'close-fail-' . uniqid(),
+            'Idempotency-Key' => 'close-fail-'.uniqid(),
         ]);
         $failClose->assertStatus(409);
         $this->assertStringContainsString('without disposition', $failClose->json('message'));
@@ -283,7 +287,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'pending_disposition' => 'handover',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'close-handover-' . uniqid(),
+            'Idempotency-Key' => 'close-handover-'.uniqid(),
         ]);
         $handoverClose->assertOk();
 
@@ -292,7 +296,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
 
         // 5. Late confirmation of order after shift is closed:
         // Confirms successfully, tags late payment metadata, does NOT mutate closed shift expected cash
-        \App\Models\Payment::create([
+        Payment::create([
             'booking_id' => null,
             'provider' => 'vietqr',
             'external_transaction_id' => 'LATE-TXN-112233',
@@ -307,7 +311,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'amount' => 15000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-late-' . uniqid(),
+            'Idempotency-Key' => 'confirm-late-'.uniqid(),
         ]);
         $confirmRes->assertOk();
         $this->assertSame('completed', $confirmRes->json('order.status'));
@@ -333,7 +337,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'cash_tendered' => 30000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'order-refund-src-' . uniqid(),
+            'Idempotency-Key' => 'order-refund-src-'.uniqid(),
         ]);
         $orderId = $orderRes->json('order.id');
         $this->assertSame(18, $this->drinkProduct->fresh()->stock_quantity);
@@ -347,7 +351,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'refund_method' => 'cash',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'refund-1-' . uniqid(),
+            'Idempotency-Key' => 'refund-1-'.uniqid(),
         ]);
 
         $refundRes->assertOk();
@@ -370,7 +374,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'declared_cash' => 315000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'close-refund-' . uniqid(),
+            'Idempotency-Key' => 'close-refund-'.uniqid(),
         ]);
         $closeRes->assertOk();
         $this->assertSame(315000, (int) $closeRes->json('shift.expected_cash'));
@@ -384,7 +388,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'opening_cash' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'svc-shift-' . uniqid(),
+            'Idempotency-Key' => 'svc-shift-'.uniqid(),
         ])->assertCreated();
 
         $orderRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
@@ -395,7 +399,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'cash_tendered' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'svc-order-' . uniqid(),
+            'Idempotency-Key' => 'svc-order-'.uniqid(),
         ]);
         $orderRes->assertCreated();
         $this->assertSame('completed', $orderRes->json('order.status'));
@@ -409,7 +413,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'expire-qr-' . uniqid(),
+            'Idempotency-Key' => 'expire-qr-'.uniqid(),
         ]);
         $qrOrderId = $qrOrderRes->json('order.id');
         $qrOrder = PosOrder::findOrFail($qrOrderId);
@@ -434,7 +438,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'venue_id' => $this->venue->id,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'mixed-shift-' . uniqid(),
+            'Idempotency-Key' => 'mixed-shift-'.uniqid(),
         ])->assertCreated();
 
         // 2. Mixed tender payment: 1 drink (15,000 VND) paid via 10,000 Cash + 5,000 QR
@@ -450,7 +454,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             ],
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'mixed-order-' . uniqid(),
+            'Idempotency-Key' => 'mixed-order-'.uniqid(),
         ]);
         $mixedRes->assertCreated();
         $orderId = $mixedRes->json('order.id');
@@ -487,13 +491,13 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'amount' => 5000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-unverified-mixed-' . uniqid(),
+            'Idempotency-Key' => 'confirm-unverified-mixed-'.uniqid(),
         ]);
         $unverifiedRes->assertStatus(422);
         $this->assertStringContainsString('Payment has not been verified by payment provider.', $unverifiedRes->json('message'));
 
         // 6. Seed genuine payment
-        \App\Models\Payment::create([
+        Payment::create([
             'booking_id' => null,
             'provider' => 'vietqr',
             'external_transaction_id' => 'MIXED-TXN-5000',
@@ -509,7 +513,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'amount' => 5000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-genuine-mixed-' . uniqid(),
+            'Idempotency-Key' => 'confirm-genuine-mixed-'.uniqid(),
         ]);
         $confirmRes->assertOk();
         $this->assertSame('completed', $confirmRes->json('order.status'));
@@ -559,7 +563,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'order-1-' . uniqid(),
+            'Idempotency-Key' => 'order-1-'.uniqid(),
         ]);
         $orderRes1->assertCreated();
         $order1Id = $orderRes1->json('order.id');
@@ -576,7 +580,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'cash_tendered' => 500000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'order-2-' . uniqid(),
+            'Idempotency-Key' => 'order-2-'.uniqid(),
         ]);
         $orderRes2->assertStatus(409);
         $this->assertStringContainsString('Insufficient stock', $orderRes2->json('message'));
@@ -609,7 +613,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'cash_tendered' => 500000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'order-3-' . uniqid(),
+            'Idempotency-Key' => 'order-3-'.uniqid(),
         ]);
         $orderRes3->assertCreated();
         $this->assertSame('completed', $orderRes3->json('order.status'));

@@ -214,53 +214,53 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         try {
             $date = $baseDate->copy()->setTime(20, 0);
             CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '20:00', 'ends_at' => '21:00', 'price' => 100000, 'is_active' => true]);
-        // 1. Preserved historical booking with old snapshot
-        $historicalBooking = Booking::create([
-            'code' => 'BK-HIST-POLICY-01',
-            'user_id' => $customer->id,
-            'court_id' => $court->id,
-            'total_amount' => 100000,
-            'status' => 'confirmed',
-            'policy_snapshot' => ['cancellation_grace_hours' => 24, 'version' => 'legacy'],
-            'price_snapshot' => ['base_price' => 100000],
-        ]);
-        $historicalBooking->slots()->create([
-            'court_id' => $court->id,
-            'starts_at' => Carbon::now()->addDays(5)->setTime(10, 0),
-            'ends_at' => Carbon::now()->addDays(5)->setTime(11, 0),
-            'unit_price' => 100000,
-            'status' => 'confirmed',
-        ]);
+            // 1. Preserved historical booking with old snapshot
+            $historicalBooking = Booking::create([
+                'code' => 'BK-HIST-POLICY-01',
+                'user_id' => $customer->id,
+                'court_id' => $court->id,
+                'total_amount' => 100000,
+                'status' => 'confirmed',
+                'policy_snapshot' => ['cancellation_grace_hours' => 24, 'version' => 'legacy'],
+                'price_snapshot' => ['base_price' => 100000],
+            ]);
+            $historicalBooking->slots()->create([
+                'court_id' => $court->id,
+                'starts_at' => Carbon::now()->addDays(5)->setTime(10, 0),
+                'ends_at' => Carbon::now()->addDays(5)->setTime(11, 0),
+                'unit_price' => 100000,
+                'status' => 'confirmed',
+            ]);
 
-        Sanctum::actingAs($customer);
-        $histShowRes = $this->getJson("/api/v1/bookings/{$historicalBooking->code}");
-        $histShowRes->assertOk();
-        $this->assertEquals(24, $historicalBooking->fresh()->policy_snapshot['cancellation_grace_hours']);
+            Sanctum::actingAs($customer);
+            $histShowRes = $this->getJson("/api/v1/bookings/{$historicalBooking->code}");
+            $histShowRes->assertOk();
+            $this->assertEquals(24, $historicalBooking->fresh()->policy_snapshot['cancellation_grace_hours']);
 
-        // 2. Continued ordinary wallet checkout
-        $checkoutRes = $this->actingAs($customer)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ])->assertCreated();
+            // 2. Continued ordinary wallet checkout
+            $checkoutRes = $this->actingAs($customer)->postJson('/api/v1/bookings', [
+                'court_id' => $court->id,
+                'slots' => [$date->toIso8601String()],
+            ])->assertCreated();
 
-        $newBookingCode = $checkoutRes->json('booking.code');
-        $newBooking = Booking::where('code', $newBookingCode)->firstOrFail();
-        $this->assertSame('confirmed', $newBooking->status);
-        $this->assertSame(400000, (int) $wallet->fresh()->balance);
+            $newBookingCode = $checkoutRes->json('booking.code');
+            $newBooking = Booking::where('code', $newBookingCode)->firstOrFail();
+            $this->assertSame('confirmed', $newBooking->status);
+            $this->assertSame(400000, (int) $wallet->fresh()->balance);
 
-        // New snapshot does not have cancellation_grace_hours
-        $this->assertArrayNotHasKey('cancellation_grace_hours', $newBooking->policy_snapshot ?? []);
-        // 3. Continued check-in behavior (during arrival window)
-        Carbon::setTestNow($date);
-        Sanctum::actingAs($staff);
-        $checkInRes = $this->withHeaders([
-            'X-Organization-ID' => (string) $org->id,
-            'Idempotency-Key' => uniqid('idem-'),
-        ])->postJson('/api/v2/attendance/check-in', [
-            'code' => $newBookingCode,
-        ]);
-        $checkInRes->assertCreated();
-        $this->assertSame('checked_in', $checkInRes->json('attendance.status'));
+            // New snapshot does not have cancellation_grace_hours
+            $this->assertArrayNotHasKey('cancellation_grace_hours', $newBooking->policy_snapshot ?? []);
+            // 3. Continued check-in behavior (during arrival window)
+            Carbon::setTestNow($date);
+            Sanctum::actingAs($staff);
+            $checkInRes = $this->withHeaders([
+                'X-Organization-ID' => (string) $org->id,
+                'Idempotency-Key' => uniqid('idem-'),
+            ])->postJson('/api/v2/attendance/check-in', [
+                'code' => $newBookingCode,
+            ]);
+            $checkInRes->assertCreated();
+            $this->assertSame('checked_in', $checkInRes->json('attendance.status'));
         } finally {
             Carbon::setTestNow();
         }

@@ -30,8 +30,12 @@ const { t } = useI18n()
         {{ activeShifts }}
       </strong>
       <span class="stat-trend" :class="activeShifts > 0 ? 'text-green' : 'text-muted-sub'">
-        <span class="material-symbols-outlined icon-14">{{ activeShifts > 0 ? 'sensors' : 'pause_circle' }}</span>
-        <span>{{ activeShifts > 0 ? t('admin.shifts.statusLive') : t('admin.shifts.closedStatus') }}</span>
+        <span class="material-symbols-outlined icon-14">{{
+          activeShifts > 0 ? 'sensors' : 'pause_circle'
+        }}</span>
+        <span>{{
+          activeShifts > 0 ? t('admin.shifts.statusLive') : t('admin.shifts.closedStatus')
+        }}</span>
       </span>
     </div>
 
@@ -74,18 +78,30 @@ const { t } = useI18n()
     <!-- Card 4: Variance Discrepancy -->
     <div class="stat-card">
       <div class="stat-top-row">
-        <span class="material-symbols-outlined stat-icon" :class="totalVariance > 0 ? 'text-yellow' : 'text-green'">difference</span>
+        <span
+          class="material-symbols-outlined stat-icon"
+          :class="totalVariance > 0 ? 'text-yellow' : 'text-green'"
+          >difference</span
+        >
         <span class="stat-label">{{ t('admin.shifts.varianceAlertKpi') }}</span>
       </div>
       <div v-if="loading" class="stat-skeleton-wrap">
         <SkeletonLoader type="rect" height="24px" width="110px" />
       </div>
-      <strong v-else class="stat-value font-mono" :class="totalVariance > 0 ? 'text-yellow' : 'text-green'">
+      <strong
+        v-else
+        class="stat-value font-mono"
+        :class="totalVariance > 0 ? 'text-yellow' : 'text-green'"
+      >
         {{ formatCurrency(totalVariance) }}
       </strong>
       <span class="stat-trend" :class="totalVariance > 0 ? 'text-yellow' : 'text-green'">
-        <span class="material-symbols-outlined icon-14">{{ totalVariance > 0 ? 'warning' : 'check_circle' }}</span>
-        <span>{{ totalVariance > 0 ? t('admin.shifts.hasVariance') : t('admin.shifts.balancedCash') }}</span>
+        <span class="material-symbols-outlined icon-14">{{
+          totalVariance > 0 ? 'warning' : 'check_circle'
+        }}</span>
+        <span>{{
+          totalVariance > 0 ? t('admin.shifts.hasVariance') : t('admin.shifts.balancedCash')
+        }}</span>
       </span>
     </div>
 
@@ -98,9 +114,7 @@ const { t } = useI18n()
       <div v-if="loading" class="stat-skeleton-wrap">
         <SkeletonLoader type="rect" height="24px" width="80px" />
       </div>
-      <strong v-else class="stat-value text-purple font-mono">
-        {{ matchRate }}%
-      </strong>
+      <strong v-else class="stat-value text-purple font-mono"> {{ matchRate }}% </strong>
       <span class="stat-trend text-purple">
         <span class="material-symbols-outlined icon-14">task_alt</span>
         <span>{{ t('admin.shifts.approvedReconciliation') }}</span>
@@ -125,7 +139,9 @@ const { t } = useI18n()
   border: 1px solid var(--outline);
   background: var(--surface);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .stat-card:hover {
@@ -175,13 +191,27 @@ const { t } = useI18n()
   font-size: 14px;
 }
 
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-purple { color: #8b5cf6; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
-.text-muted-sub { color: var(--muted); }
+.text-green {
+  color: #10b981;
+}
+.text-blue {
+  color: #3b82f6;
+}
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-purple {
+  color: #8b5cf6;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
+.text-muted-sub {
+  color: var(--muted);
+}
 
 :global(html.dark) .stat-card {
   background: var(--surface, #1e191c);

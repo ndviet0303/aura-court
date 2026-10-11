@@ -88,7 +88,8 @@ export type Court = {
   reviews_count?: number
   reviews_avg_rating?: number | null
   amenities?: string[]
-  surface_type?: 'wood' | 'synthetic' | 'acrylic' | 'concrete' | 'grass' | 'clay' | 'hard' | 'other' | null
+  surface_type?:
+    'wood' | 'synthetic' | 'acrylic' | 'concrete' | 'grass' | 'clay' | 'hard' | 'other' | null
   capacity?: number | null
   timezone?: string
 }

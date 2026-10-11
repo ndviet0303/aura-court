@@ -18,9 +18,9 @@ use App\Models\Reservation;
 use App\Models\ServiceTabItem;
 use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
+use App\Models\TenantCustomer;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
-use App\Models\TenantCustomer;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
@@ -29,6 +29,7 @@ use App\Services\Booking\DiscountService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\Reservation\LegacyBookingBackfillService;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -710,7 +711,7 @@ class PosService
             }
         }
 
-        return DB::transaction(function () use ($order, $verificationData, $externalRef): PosOrder {
+        return DB::transaction(function () use ($order, $externalRef): PosOrder {
             $order = PosOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
             abort_unless($order->status === 'pending_payment', 409, 'Order is not awaiting payment.');
 
@@ -1122,7 +1123,7 @@ class PosService
                 $isExpired = true;
             }
             $expiresAt = data_get($order->metadata, 'expires_at');
-            if ($expiresAt && \Carbon\Carbon::parse($expiresAt)->lt($now)) {
+            if ($expiresAt && Carbon::parse($expiresAt)->lt($now)) {
                 $isExpired = true;
             }
 

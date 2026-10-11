@@ -39,7 +39,6 @@ async function handleGoToDashboard() {
   }
   router.push('/admin/organization')
 }
-
 </script>
 
 <template>
@@ -55,16 +54,15 @@ async function handleGoToDashboard() {
               <span>TIẾN TRÌNH THẨM ĐỊNH</span>
             </div>
             <h1 class="status-main-title">Trạng thái Hồ sơ Đối tác</h1>
-            <p class="status-main-sub">Theo dõi tiến trình thẩm định và kết quả xét duyệt hồ sơ đối tác.</p>
+            <p class="status-main-sub">
+              Theo dõi tiến trình thẩm định và kết quả xét duyệt hồ sơ đối tác.
+            </p>
           </div>
 
-          <button
-            type="button"
-            :disabled="loading"
-            class="btn-refresh-status"
-            @click="loadData"
-          >
-            <span class="material-symbols-outlined icon-16" :class="{ 'spin': loading }">refresh</span>
+          <button type="button" :disabled="loading" class="btn-refresh-status" @click="loadData">
+            <span class="material-symbols-outlined icon-16" :class="{ spin: loading }"
+              >refresh</span
+            >
             <span>Làm mới</span>
           </button>
         </div>
@@ -93,7 +91,15 @@ async function handleGoToDashboard() {
                 'status-rejected': isRejected,
               }"
             >
-              {{ isPendingReview ? 'Chờ thẩm định' : isSupplementationRequested ? 'Cần bổ sung' : isApproved ? 'Đã duyệt' : 'Từ chối' }}
+              {{
+                isPendingReview
+                  ? 'Chờ thẩm định'
+                  : isSupplementationRequested
+                    ? 'Cần bổ sung'
+                    : isApproved
+                      ? 'Đã duyệt'
+                      : 'Từ chối'
+              }}
             </span>
           </div>
 
@@ -104,7 +110,8 @@ async function handleGoToDashboard() {
               <span>Hồ sơ đang trong quá trình thẩm định</span>
             </p>
             <p class="notice-desc">
-              Hồ sơ của bạn đã được khóa để chuyên viên xem xét. Bạn sẽ không thể chỉnh sửa thông tin cho đến khi có phản hồi chính thức.
+              Hồ sơ của bạn đã được khóa để chuyên viên xem xét. Bạn sẽ không thể chỉnh sửa thông
+              tin cho đến khi có phản hồi chính thức.
             </p>
           </div>
 

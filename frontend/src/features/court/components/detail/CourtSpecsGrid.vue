@@ -7,8 +7,16 @@ const { t } = useI18n()
 const specs = computed(() => [
   { icon: 'layers', label: t('courtDetail.specMat'), val: t('courtDetail.specMatDesc') },
   { icon: 'height', label: t('courtDetail.specCeiling'), val: t('courtDetail.specCeilingDesc') },
-  { icon: 'lightbulb', label: t('courtDetail.specLighting'), val: t('courtDetail.specLightingDesc') },
-  { icon: 'mode_fan', label: t('courtDetail.specVentilation'), val: t('courtDetail.specVentilationDesc') },
+  {
+    icon: 'lightbulb',
+    label: t('courtDetail.specLighting'),
+    val: t('courtDetail.specLightingDesc'),
+  },
+  {
+    icon: 'mode_fan',
+    label: t('courtDetail.specVentilation'),
+    val: t('courtDetail.specVentilationDesc'),
+  },
 ])
 </script>
 

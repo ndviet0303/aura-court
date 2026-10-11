@@ -14,9 +14,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     temporaryOrganizationIds = []
     temporaryPlanIds = []
     const manifest = getTestManifest()
-    const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isRemoteProd =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
-      test.skip(true, 'Yêu cầu môi trường database cục bộ để quản lý staff/invitation và kiểm tra DB trực tiếp')
+      test.skip(
+        true,
+        'Yêu cầu môi trường database cục bộ để quản lý staff/invitation và kiểm tra DB trực tiếp',
+      )
     }
 
     await page.addInitScript(() => {
@@ -80,7 +84,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     })
   })
 
-  test('7.6.1: Danh bạ nhân viên, điều hướng tab, chỉ số KPI & gửi lời mời qua modal', async ({ page }) => {
+  test('7.6.1: Danh bạ nhân viên, điều hướng tab, chỉ số KPI & gửi lời mời qua modal', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -118,7 +124,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page.locator('.staff-directory-container')).toBeVisible({ timeout: 5000 })
 
     // 4. Open Invite Modal
-    const inviteBtn = page.locator('[data-testid="invite-staff-btn"], .btn-primary-cta, button:has-text("Mời Nhân Sự")').first()
+    const inviteBtn = page
+      .locator('[data-testid="invite-staff-btn"], .btn-primary-cta, button:has-text("Mời Nhân Sự")')
+      .first()
     await expect(inviteBtn).toBeVisible()
     await inviteBtn.click()
 
@@ -132,7 +140,10 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await modal.locator('input[type="tel"]').first().fill('0901234567')
 
     // Click send invite
-    await modal.locator('button:has-text("Gửi Thư Mời"), [data-testid="send-invite-btn"]').first().click()
+    await modal
+      .locator('button:has-text("Gửi Thư Mời"), [data-testid="send-invite-btn"]')
+      .first()
+      .click()
     // 6. Assert feedback alert appears (or wait briefly if network cleared it)
     const notice = page.locator('[data-testid="staff-notice"], .alert-success, .alert-pill').first()
     await notice.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
@@ -182,11 +193,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       ]);
     `
 
-    const checkResult = JSON.parse(execFileSync('php', ['-r', checkInviteScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const checkResult = JSON.parse(
+      execFileSync('php', ['-r', checkInviteScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       invitation_found: boolean
       invitation_status: string
       invitation_token_length: number
@@ -203,7 +216,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     expect(checkResult.member_status).toBe('invited')
   })
 
-  test('7.6.2: Chấp nhận lời mời qua token & Quyền vai trò theo cơ sở có hiệu lực', async ({ page }) => {
+  test('7.6.2: Chấp nhận lời mời qua token & Quyền vai trò theo cơ sở có hiệu lực', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const org1 = manifest.fixtures?.organizations.org1
@@ -278,11 +293,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       echo json_encode(['token' => $token, 'user_id' => $user->id]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { token: string; user_id: number }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { token: string; user_id: number }
 
     // 2. Invitee logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -292,9 +309,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Accept invitation by token via authenticated API caller
-    const acceptRes = await withE2EApi(page, async ({ api }, token) => {
-      return await api.post(`/invitations/${token}/accept`)
-    }, arranged.token) as {
+    const acceptRes = (await withE2EApi(
+      page,
+      async ({ api }, token) => {
+        return await api.post(`/invitations/${token}/accept`)
+      },
+      arranged.token,
+    )) as {
       message?: string
       invitation?: { status: string }
       member?: { status: string; role: string; permissions: any }
@@ -305,9 +326,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     expect(acceptRes.member?.role).toBe('venue_manager')
 
     // 4. Verify Idempotency: calling accept again returns 200 without error
-    const reAcceptRes = await withE2EApi(page, async ({ api }, token) => {
-      return await api.post(`/invitations/${token}/accept`)
-    }, arranged.token) as {
+    const reAcceptRes = (await withE2EApi(
+      page,
+      async ({ api }, token) => {
+        return await api.post(`/invitations/${token}/accept`)
+      },
+      arranged.token,
+    )) as {
       message?: string
     }
 
@@ -340,11 +365,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       ]);
     `
 
-    const memberCheck = JSON.parse(execFileSync('php', ['-r', verifyMemberScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const memberCheck = JSON.parse(
+      execFileSync('php', ['-r', verifyMemberScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       status: string
       role: string
       venue_ids: number[]
@@ -359,7 +386,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     expect(memberCheck.can_manage_venue2).toBe(false)
   })
 
-  test('7.6.3: Thu hồi lời mời & Chứng minh việc thu hồi có hiệu lực tuyệt đối', async ({ page }) => {
+  test('7.6.3: Thu hồi lời mời & Chứng minh việc thu hồi có hiệu lực tuyệt đối', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -427,11 +456,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       echo json_encode(['invitation_id' => $inv->id, 'token' => $token]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { invitation_id: number; token: string }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { invitation_id: number; token: string }
 
     // 2. Owner logs in
     await page.context().clearCookies()
@@ -442,9 +473,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Owner revokes the invitation via API
-    const revokeRes = await withE2EApi(page, async ({ api }, { orgId, invId }) => {
-      return await api.post(`/organizations/${orgId}/invitations/${invId}/revoke`)
-    }, { orgId, invId: arranged.invitation_id }) as { message?: string; invitation?: { status: string } }
+    const revokeRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, invId }) => {
+        return await api.post(`/organizations/${orgId}/invitations/${invId}/revoke`)
+      },
+      { orgId, invId: arranged.invitation_id },
+    )) as { message?: string; invitation?: { status: string } }
 
     expect(revokeRes.message).toContain('Đã thu hồi lời mời thành công.')
     expect(revokeRes.invitation?.status).toBe('revoked')
@@ -459,25 +494,31 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 5. Invitee attempts to accept revoked invitation -> MUST fail with 422
-    const acceptAttempt = await withE2EApi(page, async ({ api }, token) => {
-      try {
-        await api.post(`/invitations/${token}/accept`)
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const acceptAttempt = await withE2EApi(
+      page,
+      async ({ api }, token) => {
+        try {
+          await api.post(`/invitations/${token}/accept`)
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, arranged.token)
+      },
+      arranged.token,
+    )
 
     expect(acceptAttempt.success).toBe(false)
     expect(acceptAttempt.status).toBe(422)
     expect(acceptAttempt.message).toContain('Lời mời đã bị thu hồi.')
   })
 
-  test('7.6.4: Cập nhật vai trò nhân viên, quyền cơ sở & Khóa/đình chỉ thành viên', async ({ page }) => {
+  test('7.6.4: Cập nhật vai trò nhân viên, quyền cơ sở & Khóa/đình chỉ thành viên', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -498,7 +539,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(staffRow).toBeVisible({ timeout: 10000 })
 
     // 3. Open Edit Role Modal
-    const editBtn = staffRow.locator('[data-testid="edit-staff-btn"], button:has(span:text-is("edit"))').first()
+    const editBtn = staffRow
+      .locator('[data-testid="edit-staff-btn"], button:has(span:text-is("edit"))')
+      .first()
     await editBtn.click()
 
     const editModal = page.locator('.modal-backdrop')
@@ -506,11 +549,18 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page.locator('.modal-title')).toContainText('Cập nhật Quyền hạn & Trạng thái')
 
     // 4. Change role to Manager and save
-    const roleDropdown = editModal.locator('.custom-dropdown-trigger, [data-testid="edit-role-select"], button[aria-label="Dropdown"]').first()
+    const roleDropdown = editModal
+      .locator(
+        '.custom-dropdown-trigger, [data-testid="edit-role-select"], button[aria-label="Dropdown"]',
+      )
+      .first()
     await roleDropdown.click()
     await page.locator('.dropdown-item', { hasText: 'Quản lý cơ sở' }).first().click()
 
-    await editModal.locator('button:has-text("Lưu Thay Đổi"), [data-testid="confirm-edit-role-btn"]').first().click()
+    await editModal
+      .locator('button:has-text("Lưu Thay Đổi"), [data-testid="confirm-edit-role-btn"]')
+      .first()
+      .click()
     // Notice appears
     const notice = page.locator('[data-testid="staff-notice"], .alert-success, .alert-pill').first()
     await notice.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
@@ -518,11 +568,17 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(staffRow.locator('.role-badge')).toContainText('Quản lý cơ sở')
 
     // 6. Toggle lock / suspend status
-    const toggleBtn = staffRow.locator('[data-testid="toggle-status-btn"], button:has-text("lock"), .actions-col button:nth-child(2)').first()
+    const toggleBtn = staffRow
+      .locator(
+        '[data-testid="toggle-status-btn"], button:has-text("lock"), .actions-col button:nth-child(2)',
+      )
+      .first()
     await toggleBtn.click()
 
     // Status indicator updates to suspended
-    await expect(staffRow.locator('.status-indicator')).toContainText('Tạm ngưng', { timeout: 10000 })
+    await expect(staffRow.locator('.status-indicator')).toContainText('Tạm ngưng', {
+      timeout: 10000,
+    })
     // 7. Verify backend DB confirms status is suspended and audit log recorded
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
     const backendEnv = {
@@ -562,11 +618,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       ]);
     `
 
-    const auditCheck = JSON.parse(execFileSync('php', ['-r', checkAuditScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const auditCheck = JSON.parse(
+      execFileSync('php', ['-r', checkAuditScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       status: string
       role: string
       audit_found: boolean
@@ -598,7 +656,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     } catch {}
   })
 
-  test('7.6.5: Bảo vệ chủ sân duy nhất (không thể hạ cấp, khóa hay xóa active owner cuối cùng)', async ({ page }) => {
+  test('7.6.5: Bảo vệ chủ sân duy nhất (không thể hạ cấp, khóa hay xóa active owner cuối cùng)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -616,7 +676,9 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     // 2. In UI: verify remove button for owner is disabled
     const ownerRow = page.locator('.table-grid-row', { hasText: owner.email }).first()
     await expect(ownerRow).toBeVisible({ timeout: 10000 })
-    const removeBtn = ownerRow.locator('[data-testid="remove-staff-btn"], button:has(span:text-is("delete"))').first()
+    const removeBtn = ownerRow
+      .locator('[data-testid="remove-staff-btn"], button:has(span:text-is("delete"))')
+      .first()
     await expect(removeBtn).toBeDisabled()
     // Arrange a dedicated single-owner test organization to test the last active owner protection invariant
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
@@ -657,62 +719,83 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       ]);
       echo json_encode(['org_id' => $testOrg->id, 'member_id' => $ownerMember->id]);
     `
-    const arrangedSingle = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { org_id: number; member_id: number }
+    const arrangedSingle = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { org_id: number; member_id: number }
     temporaryOrganizationIds.push(arrangedSingle.org_id)
 
     // 3. Attempt direct API demotion of the only active owner -> MUST fail with 422
-    const demoteAttempt = await withE2EApi(page, async ({ api }, { testOrgId, memberId }) => {
-      try {
-        await api.patch(`/organizations/${testOrgId}/members/${memberId}`, { role: 'staff' })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const demoteAttempt = await withE2EApi(
+      page,
+      async ({ api }, { testOrgId, memberId }) => {
+        try {
+          await api.patch(`/organizations/${testOrgId}/members/${memberId}`, { role: 'staff' })
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { testOrgId: arrangedSingle.org_id, memberId: arrangedSingle.member_id })
+      },
+      { testOrgId: arrangedSingle.org_id, memberId: arrangedSingle.member_id },
+    )
 
     expect(demoteAttempt.success).toBe(false)
     expect(demoteAttempt.status).toBe(422)
-    expect(demoteAttempt.message).toContain('Cannot demote or suspend the last active organization owner.')
+    expect(demoteAttempt.message).toContain(
+      'Cannot demote or suspend the last active organization owner.',
+    )
 
     // 4. Attempt direct API suspension of the only active owner -> MUST fail with 422
-    const suspendAttempt = await withE2EApi(page, async ({ api }, { testOrgId, memberId }) => {
-      try {
-        await api.patch(`/organizations/${testOrgId}/members/${memberId}`, { role: 'organization_owner', status: 'suspended' })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const suspendAttempt = await withE2EApi(
+      page,
+      async ({ api }, { testOrgId, memberId }) => {
+        try {
+          await api.patch(`/organizations/${testOrgId}/members/${memberId}`, {
+            role: 'organization_owner',
+            status: 'suspended',
+          })
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { testOrgId: arrangedSingle.org_id, memberId: arrangedSingle.member_id })
+      },
+      { testOrgId: arrangedSingle.org_id, memberId: arrangedSingle.member_id },
+    )
 
     expect(suspendAttempt.success).toBe(false)
     expect(suspendAttempt.status).toBe(422)
-    expect(suspendAttempt.message).toContain('Cannot demote or suspend the last active organization owner.')
+    expect(suspendAttempt.message).toContain(
+      'Cannot demote or suspend the last active organization owner.',
+    )
 
     // 5. Attempt direct API deletion of the only active owner -> MUST fail with 422
-    const deleteAttempt = await withE2EApi(page, async ({ api }, { testOrgId, memberId }) => {
-      try {
-        await api.delete(`/organizations/${testOrgId}/members/${memberId}`)
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const deleteAttempt = await withE2EApi(
+      page,
+      async ({ api }, { testOrgId, memberId }) => {
+        try {
+          await api.delete(`/organizations/${testOrgId}/members/${memberId}`)
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, { testOrgId: arrangedSingle.org_id, memberId: arrangedSingle.member_id })
+      },
+      { testOrgId: arrangedSingle.org_id, memberId: arrangedSingle.member_id },
+    )
 
     expect(deleteAttempt.success).toBe(false)
     expect(deleteAttempt.status).toBe(422)
@@ -811,11 +894,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       echo json_encode(['org_id' => $org->id, 'plan_id' => $plan->id]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { org_id: number; plan_id: number }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { org_id: number; plan_id: number }
     temporaryOrganizationIds.push(arranged.org_id)
     temporaryPlanIds.push(arranged.plan_id)
 
@@ -827,21 +912,25 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Attempt to invite a 2nd staff member when quota is 1 -> MUST fail with 422 validation exception
-    const quotaExceededAttempt = await withE2EApi(page, async ({ api }, testOrgId) => {
-      try {
-        await api.post(`/organizations/${testOrgId}/invitations`, {
-          email: `overflow.staff@staff-${manifest.runId.replaceAll('_', '-')}.auracourt.test`,
-          role: 'staff',
-        })
-        return { success: true }
-      } catch (err: any) {
-        return {
-          success: false,
-          status: err?.status || err?.response?.status,
-          message: err?.message || err?.data?.message,
+    const quotaExceededAttempt = await withE2EApi(
+      page,
+      async ({ api }, testOrgId) => {
+        try {
+          await api.post(`/organizations/${testOrgId}/invitations`, {
+            email: `overflow.staff@staff-${manifest.runId.replaceAll('_', '-')}.auracourt.test`,
+            role: 'staff',
+          })
+          return { success: true }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err?.status || err?.response?.status,
+            message: err?.message || err?.data?.message,
+          }
         }
-      }
-    }, arranged.org_id)
+      },
+      arranged.org_id,
+    )
 
     expect(quotaExceededAttempt.success).toBe(false)
     expect(quotaExceededAttempt.status).toBe(422)
@@ -908,11 +997,13 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       echo json_encode(['org_id' => $org2->id, 'venue_id' => $venue->id]);
     `
 
-    const arrangedSwitch = JSON.parse(execFileSync('php', ['-r', switchOrgScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { org_id: number; venue_id: number }
+    const arrangedSwitch = JSON.parse(
+      execFileSync('php', ['-r', switchOrgScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { org_id: number; venue_id: number }
     temporaryOrganizationIds.push(arrangedSwitch.org_id)
 
     // 2. Log in as owner
@@ -923,19 +1014,25 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Query members of org1 vs members of org_switch to verify clean isolation
-    const isolationTest = await withE2EApi(page, async ({ api }, { org1Id, org2Id }) => {
-      const org1Res = await api.get(`/organizations/${org1Id}/members`) as { members: any[] }
-      const org2Res = await api.get(`/organizations/${org2Id}/members`) as { members: any[] }
+    const isolationTest = await withE2EApi(
+      page,
+      async ({ api }, { org1Id, org2Id }) => {
+        const org1Res = (await api.get(`/organizations/${org1Id}/members`)) as { members: any[] }
+        const org2Res = (await api.get(`/organizations/${org2Id}/members`)) as { members: any[] }
 
-      return {
-        org1MembersCount: org1Res.members.length,
-        org2MembersCount: org2Res.members.length,
-        org2MemberOrgIds: org2Res.members.map((m: any) => m.organization_id),
-      }
-    }, { org1Id, org2Id: arrangedSwitch.org_id })
+        return {
+          org1MembersCount: org1Res.members.length,
+          org2MembersCount: org2Res.members.length,
+          org2MemberOrgIds: org2Res.members.map((m: any) => m.organization_id),
+        }
+      },
+      { org1Id, org2Id: arrangedSwitch.org_id },
+    )
 
     expect(isolationTest.org1MembersCount).toBeGreaterThanOrEqual(4)
     expect(isolationTest.org2MembersCount).toBe(1)
-    expect(isolationTest.org2MemberOrgIds.every((id: number) => id === arrangedSwitch.org_id)).toBe(true)
+    expect(isolationTest.org2MemberOrgIds.every((id: number) => id === arrangedSwitch.org_id)).toBe(
+      true,
+    )
   })
 })

@@ -114,7 +114,11 @@ export function useAdminMembership() {
     try {
       if (editingPlan.value && !createNewVersion) {
         await membershipApi.updatePlan(editingPlan.value.id, planData)
-        showNotice(t('admin.membership.planSavedNotice', { name: resolveLocalizedText(planData.name || editingPlan.value.name) }))
+        showNotice(
+          t('admin.membership.planSavedNotice', {
+            name: resolveLocalizedText(planData.name || editingPlan.value.name),
+          }),
+        )
       } else if (editingPlan.value && createNewVersion) {
         const curVer = editingPlan.value.version || 'v1.0'
         const parts = curVer.replace('v', '').split('.')
@@ -126,10 +130,19 @@ export function useAdminMembership() {
           ...planData,
           version: nextVer,
         })
-        showNotice(t('admin.membership.planVersionSavedNotice', { version: nextVer, name: resolveLocalizedText(planData.name || editingPlan.value.name) }))
+        showNotice(
+          t('admin.membership.planVersionSavedNotice', {
+            version: nextVer,
+            name: resolveLocalizedText(planData.name || editingPlan.value.name),
+          }),
+        )
       } else {
         await membershipApi.createPlan(planData)
-        showNotice(t('admin.membership.planSavedNotice', { name: resolveLocalizedText(planData.name || '') }))
+        showNotice(
+          t('admin.membership.planSavedNotice', {
+            name: resolveLocalizedText(planData.name || ''),
+          }),
+        )
       }
       await loadData()
       isPlanModalOpen.value = false
@@ -145,7 +158,9 @@ export function useAdminMembership() {
     try {
       const plan = plans.value.find((p) => p.id === planId)
       await membershipApi.archivePlan(planId)
-      showNotice(t('admin.membership.planArchivedNotice', { name: resolveLocalizedText(plan?.name || '') }))
+      showNotice(
+        t('admin.membership.planArchivedNotice', { name: resolveLocalizedText(plan?.name || '') }),
+      )
       await loadData()
     } catch (e: unknown) {
       showError(errorMessage(e, t('admin.membership.savePlanError')))
@@ -182,10 +197,18 @@ export function useAdminMembership() {
     try {
       if (editingRule.value) {
         await membershipApi.updateMultiplierRule(editingRule.value.id, ruleData)
-        showNotice(t('admin.membership.ruleSavedNotice', { name: resolveLocalizedText(ruleData.name || editingRule.value.name) }))
+        showNotice(
+          t('admin.membership.ruleSavedNotice', {
+            name: resolveLocalizedText(ruleData.name || editingRule.value.name),
+          }),
+        )
       } else {
         await membershipApi.createMultiplierRule(ruleData)
-        showNotice(t('admin.membership.ruleSavedNotice', { name: resolveLocalizedText(ruleData.name || '') }))
+        showNotice(
+          t('admin.membership.ruleSavedNotice', {
+            name: resolveLocalizedText(ruleData.name || ''),
+          }),
+        )
       }
       await loadData()
       isRuleModalOpen.value = false

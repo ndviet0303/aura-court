@@ -41,11 +41,7 @@ function formatMoney(val: number): string {
         </div>
 
         <div v-else class="drafts-list">
-          <div
-            v-for="draft in drafts"
-            :key="draft.id"
-            class="draft-item-card"
-          >
+          <div v-for="draft in drafts" :key="draft.id" class="draft-item-card">
             <div class="draft-info">
               <div class="draft-title-row">
                 <span class="draft-id-tag">{{ draft.id }}</span>
@@ -53,7 +49,9 @@ function formatMoney(val: number): string {
               </div>
               <div class="draft-meta-row">
                 <span class="draft-time">{{ draft.saved_at }}</span>
-                <span class="draft-items-count">{{ t('admin.pos.draftItemsCount', { count: draft.items.length }) }}</span>
+                <span class="draft-items-count">{{
+                  t('admin.pos.draftItemsCount', { count: draft.items.length })
+                }}</span>
                 <strong class="draft-total">{{ formatMoney(draft.total_amount) }}</strong>
               </div>
             </div>
@@ -67,11 +65,7 @@ function formatMoney(val: number): string {
               >
                 <span class="material-symbols-outlined icon-18">delete</span>
               </button>
-              <button
-                type="button"
-                class="btn-restore"
-                @click="emit('loadDraft', draft)"
-              >
+              <button type="button" class="btn-restore" @click="emit('loadDraft', draft)">
                 <span class="material-symbols-outlined icon-18">restore</span>
                 <span>{{ t('admin.pos.restoreDraft') }}</span>
               </button>

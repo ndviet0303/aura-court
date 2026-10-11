@@ -36,12 +36,7 @@ const orgDropdownOptions = computed<DropdownOption[]>(() => {
     <!-- Top row: Identity & Quick Switcher -->
     <div class="org-main-row">
       <div class="org-avatar-brand">
-        <img
-          v-if="org.logo_url"
-          :src="org.logo_url"
-          :alt="org.name"
-          class="org-logo-img"
-        />
+        <img v-if="org.logo_url" :src="org.logo_url" :alt="org.name" class="org-logo-img" />
         <div v-else class="org-logo-fallback">
           <span class="material-symbols-outlined org-icon-main">corporate_fare</span>
         </div>
@@ -338,7 +333,7 @@ const orgDropdownOptions = computed<DropdownOption[]>(() => {
 }
 
 :global(html.dark) .org-name {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .slug-tag {
@@ -346,7 +341,7 @@ const orgDropdownOptions = computed<DropdownOption[]>(() => {
 }
 
 :global(html.dark) .meta-chip {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   background: var(--surface-subtle, #262024);
   border-color: var(--outline, #4d4049);
 }
@@ -366,7 +361,7 @@ const orgDropdownOptions = computed<DropdownOption[]>(() => {
 
 :global(html.dark) .tab-btn.active {
   background: rgba(229, 142, 159, 0.18);
-  color: var(--pink-dark, #E58E9F);
+  color: var(--pink-dark, #e58e9f);
   border-color: rgba(229, 142, 159, 0.35);
 }
 

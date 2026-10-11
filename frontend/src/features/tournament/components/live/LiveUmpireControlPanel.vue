@@ -40,22 +40,12 @@ const emit = defineEmits<{
 
       <!-- Quick Operations Toolbar -->
       <div class="operations-toolbar">
-        <button
-          type="button"
-          class="op-btn"
-          title="Đổi bên giao cầu"
-          @click="emit('toggleServer')"
-        >
+        <button type="button" class="op-btn" title="Đổi bên giao cầu" @click="emit('toggleServer')">
           <span class="material-symbols-outlined op-ico">swap_calls</span>
           <span>Đổi Giao Cầu</span>
         </button>
 
-        <button
-          type="button"
-          class="op-btn"
-          title="Đổi sân thi đấu"
-          @click="emit('switchSides')"
-        >
+        <button type="button" class="op-btn" title="Đổi sân thi đấu" @click="emit('switchSides')">
           <span class="material-symbols-outlined op-ico">sync_alt</span>
           <span>Đổi Sân</span>
         </button>
@@ -99,9 +89,7 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined serve-ico">sports_tennis</span>
             GIAO CẦU
           </span>
-          <span v-else class="serve-tag receive">
-            NHẬN CẦU
-          </span>
+          <span v-else class="serve-tag receive"> NHẬN CẦU </span>
         </div>
 
         <!-- Big Hero +1 Score Button -->
@@ -198,11 +186,17 @@ const emit = defineEmits<{
 
         <!-- Sets Won Mini Counter -->
         <div class="sets-won-board">
-          <span class="set-win-num font-mono" :class="{ leader: match.player1.sets_won > match.player2.sets_won }">
+          <span
+            class="set-win-num font-mono"
+            :class="{ leader: match.player1.sets_won > match.player2.sets_won }"
+          >
             {{ match.player1.sets_won }}
           </span>
           <span class="sets-sep">-</span>
-          <span class="set-win-num font-mono" :class="{ leader: match.player2.sets_won > match.player1.sets_won }">
+          <span
+            class="set-win-num font-mono"
+            :class="{ leader: match.player2.sets_won > match.player1.sets_won }"
+          >
             {{ match.player2.sets_won }}
           </span>
         </div>
@@ -220,9 +214,7 @@ const emit = defineEmits<{
           </div>
         </div>
 
-        <div v-if="match.status === 'completed'" class="completed-flag">
-          🏆 ĐÃ KẾT THÚC
-        </div>
+        <div v-if="match.status === 'completed'" class="completed-flag">🏆 ĐÃ KẾT THÚC</div>
       </div>
 
       <!-- Player 2 Scoring Column -->
@@ -240,9 +232,7 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined serve-ico">sports_tennis</span>
             GIAO CẦU
           </span>
-          <span v-else class="serve-tag receive">
-            NHẬN CẦU
-          </span>
+          <span v-else class="serve-tag receive"> NHẬN CẦU </span>
         </div>
 
         <!-- Big Hero +1 Score Button -->
@@ -560,7 +550,9 @@ const emit = defineEmits<{
   border-radius: 14px;
   border: 0;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   color: #fff;
 }
 

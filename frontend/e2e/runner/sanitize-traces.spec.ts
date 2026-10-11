@@ -59,14 +59,21 @@ test('sanitizeZipArchive scrubs secrets inside zip entries', () => {
   assert.ok(sanitized, 'sanitizeZipArchive must succeed')
 
   // Read back zip content
-  const readBack = execFileSync('python3', [
-    '-c',
-    `import zipfile, sys; z = zipfile.ZipFile(sys.argv[1], 'r'); print(z.read('trace.network').decode('utf-8'))`,
-    testZip,
-  ], { encoding: 'utf-8' })
+  const readBack = execFileSync(
+    'python3',
+    [
+      '-c',
+      `import zipfile, sys; z = zipfile.ZipFile(sys.argv[1], 'r'); print(z.read('trace.network').decode('utf-8'))`,
+      testZip,
+    ],
+    { encoding: 'utf-8' },
+  )
 
   assert.ok(!readBack.includes('Password123!@#xyz'), 'Zip trace must not contain raw password')
-  assert.ok(!readBack.includes('jwt_secret_token_123456789'), 'Zip trace must not contain raw jwt token')
+  assert.ok(
+    !readBack.includes('jwt_secret_token_123456789'),
+    'Zip trace must not contain raw jwt token',
+  )
   assert.ok(!readBack.includes('cookie_val_99999'), 'Zip trace must not contain raw session cookie')
   assert.ok(readBack.includes('[REDACTED'), 'Zip trace must contain redaction placeholders')
   fs.rmSync(tempDir, { recursive: true, force: true })
@@ -75,7 +82,11 @@ test('sanitizeZipArchive scrubs secrets inside zip entries', () => {
 test('sanitizeDirectory cleans reports and trace files in folder structure', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dir-sanitize-test-'))
   const reportPath = path.join(tempDir, 'report.html')
-  fs.writeFileSync(reportPath, '<html><body>Token: Bearer secret_access_token_12345</body></html>', 'utf-8')
+  fs.writeFileSync(
+    reportPath,
+    '<html><body>Token: Bearer secret_access_token_12345</body></html>',
+    'utf-8',
+  )
 
   const res = sanitizeDirectory(tempDir)
   assert.equal(res.filesScanned, 1)

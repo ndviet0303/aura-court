@@ -78,7 +78,6 @@ export function useSocialTournament() {
           participants: m.participants || [],
         }
       })
-
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách kèo giao lưu.')
     } finally {

@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('tournaments', 'uuid')) {
+        if (! Schema::hasColumn('tournaments', 'uuid')) {
             Schema::table('tournaments', function (Blueprint $table) {
                 $table->uuid('uuid')->nullable()->after('id')->unique();
             });

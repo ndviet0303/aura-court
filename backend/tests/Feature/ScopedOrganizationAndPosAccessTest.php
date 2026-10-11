@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CashShift;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
@@ -20,6 +21,7 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         Config::set('features.flags.tenant_pos_and_wallet', true);
         Config::set('features.pilot_organizations', []);
     }
+
     public function test_owner_can_access_scoped_organization_data_without_platform_admin(): void
     {
         $org = Organization::create(['name' => 'Aura Scoped Org', 'slug' => 'aura-scoped-'.uniqid()]);
@@ -89,7 +91,7 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
             ])
             ->assertStatus(403);
         // 3. Cashier cannot perform shift reconciliation reviews (requires owner/manager)
-        $shift = \App\Models\CashShift::create([
+        $shift = CashShift::create([
             'organization_id' => $org->id,
             'cashier_id' => $cashier->id,
             'status' => 'closed',

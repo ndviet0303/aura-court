@@ -9,12 +9,36 @@ const props = defineProps<{
 const { t } = useI18n()
 
 const amenityMap: Record<string, { icon: string; nameKey: string; descKey: string }> = {
-  parking: { icon: 'local_parking', nameKey: 'courtDetail.amenityParking', descKey: 'courtDetail.amenityParkingDesc' },
-  wifi: { icon: 'wifi', nameKey: 'courtDetail.amenityWifi', descKey: 'courtDetail.amenityWifiDesc' },
-  shower: { icon: 'shower', nameKey: 'courtDetail.amenityShower', descKey: 'courtDetail.amenityShowerDesc' },
-  cafe: { icon: 'local_cafe', nameKey: 'courtDetail.amenityCafe', descKey: 'courtDetail.amenityCafeDesc' },
-  shop: { icon: 'sports_tennis', nameKey: 'courtDetail.amenityShop', descKey: 'courtDetail.amenityShopDesc' },
-  lounge: { icon: 'weekend', nameKey: 'courtDetail.amenityLounge', descKey: 'courtDetail.amenityLoungeDesc' },
+  parking: {
+    icon: 'local_parking',
+    nameKey: 'courtDetail.amenityParking',
+    descKey: 'courtDetail.amenityParkingDesc',
+  },
+  wifi: {
+    icon: 'wifi',
+    nameKey: 'courtDetail.amenityWifi',
+    descKey: 'courtDetail.amenityWifiDesc',
+  },
+  shower: {
+    icon: 'shower',
+    nameKey: 'courtDetail.amenityShower',
+    descKey: 'courtDetail.amenityShowerDesc',
+  },
+  cafe: {
+    icon: 'local_cafe',
+    nameKey: 'courtDetail.amenityCafe',
+    descKey: 'courtDetail.amenityCafeDesc',
+  },
+  shop: {
+    icon: 'sports_tennis',
+    nameKey: 'courtDetail.amenityShop',
+    descKey: 'courtDetail.amenityShopDesc',
+  },
+  lounge: {
+    icon: 'weekend',
+    nameKey: 'courtDetail.amenityLounge',
+    descKey: 'courtDetail.amenityLoungeDesc',
+  },
 }
 
 const displayedAmenities = computed(() => {
@@ -35,12 +59,32 @@ const displayedAmenities = computed(() => {
   }
 
   return [
-    { icon: 'local_parking', name: t('courtDetail.amenityParking'), desc: t('courtDetail.amenityParkingDesc') },
+    {
+      icon: 'local_parking',
+      name: t('courtDetail.amenityParking'),
+      desc: t('courtDetail.amenityParkingDesc'),
+    },
     { icon: 'wifi', name: t('courtDetail.amenityWifi'), desc: t('courtDetail.amenityWifiDesc') },
-    { icon: 'shower', name: t('courtDetail.amenityShower'), desc: t('courtDetail.amenityShowerDesc') },
-    { icon: 'local_cafe', name: t('courtDetail.amenityCafe'), desc: t('courtDetail.amenityCafeDesc') },
-    { icon: 'sports_tennis', name: t('courtDetail.amenityShop'), desc: t('courtDetail.amenityShopDesc') },
-    { icon: 'weekend', name: t('courtDetail.amenityLounge'), desc: t('courtDetail.amenityLoungeDesc') },
+    {
+      icon: 'shower',
+      name: t('courtDetail.amenityShower'),
+      desc: t('courtDetail.amenityShowerDesc'),
+    },
+    {
+      icon: 'local_cafe',
+      name: t('courtDetail.amenityCafe'),
+      desc: t('courtDetail.amenityCafeDesc'),
+    },
+    {
+      icon: 'sports_tennis',
+      name: t('courtDetail.amenityShop'),
+      desc: t('courtDetail.amenityShopDesc'),
+    },
+    {
+      icon: 'weekend',
+      name: t('courtDetail.amenityLounge'),
+      desc: t('courtDetail.amenityLoungeDesc'),
+    },
   ]
 })
 </script>

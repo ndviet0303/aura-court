@@ -60,7 +60,7 @@ const { t } = useI18n()
 
 .page-title-icon {
   font-size: 28px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .page-title-icon {

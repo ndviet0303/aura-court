@@ -70,7 +70,12 @@ const {
             :placeholder="t('admin.exceptions.searchPlaceholder')"
             class="search-input"
           />
-          <button v-if="searchQuery" type="button" class="btn-clear-search" @click="searchQuery = ''">
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="btn-clear-search"
+            @click="searchQuery = ''"
+          >
             <span class="material-symbols-outlined icon-14">close</span>
           </button>
         </div>
@@ -82,7 +87,9 @@ const {
           :title="t('common.refresh')"
           @click="loadData"
         >
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }"
+            >refresh</span
+          >
         </AuraButton>
 
         <!-- Export Button -->
@@ -96,7 +103,9 @@ const {
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': isExporting }">
             {{ isExporting ? 'sync' : 'download' }}
           </span>
-          <span>{{ isExporting ? t('admin.exceptions.exporting') : t('admin.exceptions.exportBtn') }}</span>
+          <span>{{
+            isExporting ? t('admin.exceptions.exporting') : t('admin.exceptions.exportBtn')
+          }}</span>
         </AuraButton>
       </div>
     </header>
@@ -127,7 +136,9 @@ const {
         :items="filteredExceptions"
         :active-tab="activeTab"
         :total-count="exceptions.length"
-        :critical-count="exceptions.filter((e) => e.severity === 'critical' && e.status !== 'resolved').length"
+        :critical-count="
+          exceptions.filter((e) => e.severity === 'critical' && e.status !== 'resolved').length
+        "
         :loading="loading"
         :show-advanced-filters="showAdvancedFilters"
         :filter-date="filterDate"
@@ -238,8 +249,15 @@ const {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
 }
 
 .page-sub {
@@ -330,16 +348,24 @@ const {
   align-items: start;
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Transitions */
@@ -358,4 +384,3 @@ const {
   }
 }
 </style>
-

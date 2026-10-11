@@ -53,11 +53,18 @@ export function useTenantCapabilities() {
     fetchFailed.value = false
     error.value = null
   }
-  async function fetchCapabilities(orgId?: number, accountId?: number): Promise<CapabilitiesResponse | null> {
+  async function fetchCapabilities(
+    orgId?: number,
+    accountId?: number,
+  ): Promise<CapabilitiesResponse | null> {
     const requestUser = auth.user
     const resolvedAccountId = accountId ?? auth.user?.id ?? null
 
-    if (currentAccountId.value !== null && resolvedAccountId !== null && currentAccountId.value !== resolvedAccountId) {
+    if (
+      currentAccountId.value !== null &&
+      resolvedAccountId !== null &&
+      currentAccountId.value !== resolvedAccountId
+    ) {
       resetCapabilities()
     } else if (currentOrgId.value !== null && orgId !== undefined && currentOrgId.value !== orgId) {
       // If organization context changed, reset loaded flags so stale capabilities are not reused

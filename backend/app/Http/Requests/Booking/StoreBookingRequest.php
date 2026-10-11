@@ -29,6 +29,7 @@ class StoreBookingRequest extends FormRequest
     {
         $validator->sometimes('idempotency_key', 'required|string|max:100', function ($input) {
             $key = $this->header('Idempotency-Key') ?? $this->header('X-Idempotency-Key') ?? ($input->idempotency_key ?? null);
+
             return ! empty($input->loyalty_points) && empty($key);
         });
     }

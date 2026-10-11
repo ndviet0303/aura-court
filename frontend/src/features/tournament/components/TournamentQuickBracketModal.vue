@@ -28,11 +28,18 @@ const participantsList = computed(() => {
             <span class="material-symbols-outlined">account_tree</span>
           </div>
           <div>
-            <h3 class="modal-title">{{ $t('tournament.quickBracketTitle', { name: tournament.name }) }}</h3>
+            <h3 class="modal-title">
+              {{ $t('tournament.quickBracketTitle', { name: tournament.name }) }}
+            </h3>
             <p class="modal-sub">{{ $t('tournament.quickBracketSub') }}</p>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" :aria-label="$t('common.close')" @click="emit('close')">
+        <button
+          type="button"
+          class="modal-close-btn"
+          :aria-label="$t('common.close')"
+          @click="emit('close')"
+        >
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -67,7 +74,14 @@ const participantsList = computed(() => {
               class="participant-mini-card"
             >
               <span class="seed-num font-mono">#{{ p.seed || idx + 1 }}</span>
-              <img :src="p.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'" :alt="p.name" class="p-mini-avt" />
+              <img
+                :src="
+                  p.avatar ||
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'
+                "
+                :alt="p.name"
+                class="p-mini-avt"
+              />
               <div class="p-mini-info">
                 <span class="p-mini-name">{{ p.name }}</span>
                 <span class="p-mini-club">{{ p.club || 'Aura Club' }}</span>

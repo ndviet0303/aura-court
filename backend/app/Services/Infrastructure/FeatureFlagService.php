@@ -17,6 +17,7 @@ class FeatureFlagService
         if ($organizationId === null || in_array('*', $pilotOrganizations, true)) {
             return true;
         }
+
         return in_array((string) $organizationId, $pilotOrganizations, true);
     }
 

@@ -59,7 +59,13 @@ const matchStats = computed(() => {
             {{ match.court }}
           </span>
           <span class="status-tag" :class="`status-${match.status}`">
-            {{ match.status === 'live' ? 'ĐANG DIỄN RA' : match.status === 'final' ? 'KẾT THÚC' : 'SẮP ĐẤU' }}
+            {{
+              match.status === 'live'
+                ? 'ĐANG DIỄN RA'
+                : match.status === 'final'
+                  ? 'KẾT THÚC'
+                  : 'SẮP ĐẤU'
+            }}
           </span>
         </div>
 
@@ -67,13 +73,21 @@ const matchStats = computed(() => {
           <!-- Player 1 Card -->
           <div class="p-card" :class="{ winner: match.player1.isWinner }">
             <div class="avatar-wrap">
-              <img :src="match.player1.avatar" :alt="match.player1.name" class="big-avt" loading="lazy" />
+              <img
+                :src="match.player1.avatar"
+                :alt="match.player1.name"
+                class="big-avt"
+                loading="lazy"
+              />
               <span v-if="match.player1.seed" class="seed-badge">{{ match.player1.seed }}</span>
             </div>
             <strong class="p-name">{{ match.player1.name }}</strong>
             <span class="p-club">{{ match.player1.club || 'Aura Club' }}</span>
 
-            <div class="score-display font-mono" :class="{ 'score-winner': match.player1.isWinner }">
+            <div
+              class="score-display font-mono"
+              :class="{ 'score-winner': match.player1.isWinner }"
+            >
               {{ match.player1.score }}
             </div>
 
@@ -92,13 +106,21 @@ const matchStats = computed(() => {
           <!-- Player 2 Card -->
           <div class="p-card" :class="{ winner: match.player2.isWinner }">
             <div class="avatar-wrap">
-              <img :src="match.player2.avatar" :alt="match.player2.name" class="big-avt" loading="lazy" />
+              <img
+                :src="match.player2.avatar"
+                :alt="match.player2.name"
+                class="big-avt"
+                loading="lazy"
+              />
               <span v-if="match.player2.seed" class="seed-badge">{{ match.player2.seed }}</span>
             </div>
             <strong class="p-name">{{ match.player2.name }}</strong>
             <span class="p-club">{{ match.player2.club || 'Aura Club' }}</span>
 
-            <div class="score-display font-mono" :class="{ 'score-winner': match.player2.isWinner }">
+            <div
+              class="score-display font-mono"
+              :class="{ 'score-winner': match.player2.isWinner }"
+            >
               {{ match.player2.score }}
             </div>
 
@@ -156,9 +178,7 @@ const matchStats = computed(() => {
 
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <AuraButton variant="ghost" size="md" @click="emit('close')">
-          Đóng
-        </AuraButton>
+        <AuraButton variant="ghost" size="md" @click="emit('close')"> Đóng </AuraButton>
 
         <AuraButton
           v-if="tournamentId"
@@ -295,9 +315,19 @@ const matchStats = computed(() => {
   letter-spacing: 0.5px;
 }
 
-.status-live { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.status-final { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-.status-upcoming, .status-scheduled { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+.status-live {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.status-final {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+.status-upcoming,
+.status-scheduled {
+  background: rgba(100, 116, 139, 0.15);
+  color: #64748b;
+}
 
 .versus-display {
   display: grid;
@@ -446,8 +476,14 @@ const matchStats = computed(() => {
   font-size: 11.5px;
 }
 
-.stat-p1 { text-align: left; font-weight: 750; }
-.stat-p2 { text-align: right; font-weight: 750; }
+.stat-p1 {
+  text-align: left;
+  font-weight: 750;
+}
+.stat-p2 {
+  text-align: right;
+  font-weight: 750;
+}
 
 .mini-highlights-grid {
   display: grid;
@@ -469,8 +505,12 @@ const matchStats = computed(() => {
   font-size: 10px;
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-red { color: #ef4444; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-red {
+  color: #ef4444;
+}
 
 .modal-footer {
   display: flex;

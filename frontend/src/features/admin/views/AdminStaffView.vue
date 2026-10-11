@@ -76,15 +76,8 @@ async function handleConfirmRemove(memberId: number) {
       </div>
 
       <div class="header-actions">
-        <AuraButton
-          variant="secondary"
-          :disabled="loading"
-          @click="loadStaffData"
-        >
-          <span
-            class="material-symbols-outlined icon-18"
-            :class="{ 'spin-icon': loading }"
-          >
+        <AuraButton variant="secondary" :disabled="loading" @click="loadStaffData">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">
             refresh
           </span>
           <span>{{ t('admin.staff.refreshBtn') }}</span>
@@ -337,18 +330,22 @@ async function handleConfirmRemove(memberId: number) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 :global(html.dark) .admin-staff-view {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .view-nav-btn {
   background: var(--surface, #1e191c);
   border-color: var(--outline, #4d4049);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .view-nav-btn:hover {

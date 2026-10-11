@@ -39,9 +39,7 @@ const { t } = useI18n()
           @update-rates="emit('update-rates', $event)"
         />
 
-        <LoyaltyPointsSimulator
-          :config="config"
-        />
+        <LoyaltyPointsSimulator :config="config" />
       </div>
 
       <div class="config-divider"></div>

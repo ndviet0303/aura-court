@@ -58,7 +58,6 @@ onUnmounted(() => {
     <div class="aura-glow-bg" aria-hidden="true"></div>
 
     <div class="container legal-container">
-      
       <!-- Top Hero Header -->
       <div class="legal-header">
         <div class="legal-badge">
@@ -69,7 +68,7 @@ onUnmounted(() => {
         <p class="legal-subtitle">
           {{ $t('legal.termsSubtitle') }}
         </p>
-        
+
         <!-- Navigation switcher -->
         <div class="doc-switcher">
           <span class="doc-tab active">
@@ -100,7 +99,6 @@ onUnmounted(() => {
 
       <!-- Main Content Layout -->
       <div class="legal-grid">
-        
         <!-- Sticky Sidebar Navigation -->
         <aside class="legal-sidebar">
           <div class="sidebar-sticky-card">
@@ -138,7 +136,6 @@ onUnmounted(() => {
 
         <!-- Main Document Body -->
         <main class="legal-body">
-          
           <!-- Section 1 -->
           <section id="general" class="content-card">
             <div class="section-head">
@@ -149,15 +146,29 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Chào mừng bạn đến với tổ hợp sân thể thao chuyên nghiệp <strong>Aura Court</strong>. Khi truy cập website, đăng ký tài khoản thành viên hoặc đặt khung giờ thi đấu, bạn xác nhận đã đọc, hiểu và cam kết tuân thủ toàn bộ các Điều khoản dịch vụ này.
+                Chào mừng bạn đến với tổ hợp sân thể thao chuyên nghiệp <strong>Aura Court</strong>.
+                Khi truy cập website, đăng ký tài khoản thành viên hoặc đặt khung giờ thi đấu, bạn
+                xác nhận đã đọc, hiểu và cam kết tuân thủ toàn bộ các Điều khoản dịch vụ này.
               </p>
               <div class="definition-box">
                 <h4>Các thuật ngữ chính:</h4>
                 <ul>
-                  <li><strong>"Aura Court" / "Chúng tôi":</strong> Đơn vị vận hành cụm sân cầu lông tiêu chuẩn quốc tế và nền tảng công nghệ đặt lịch trực tuyến.</li>
-                  <li><strong>"Hội viên" / "Khách hàng" / "Bạn":</strong> Cá nhân, câu lạc bộ hoặc tổ chức sử dụng nền tảng đặt sân hoặc sử dụng cơ sở vật chất của Aura Court.</li>
-                  <li><strong>"Khung giờ" (Slot):</strong> Khoảng thời gian thi đấu tối thiểu 60 phút được xác nhận thành công trên hệ thống.</li>
-                  <li><strong>"Mã đặt sân" (Booking Code / QR):</strong> Chuỗi ký tự và mã QR định danh duy nhất gửi đến quý khách để làm thủ tục check-in nhận sân.</li>
+                  <li>
+                    <strong>"Aura Court" / "Chúng tôi":</strong> Đơn vị vận hành cụm sân cầu lông
+                    tiêu chuẩn quốc tế và nền tảng công nghệ đặt lịch trực tuyến.
+                  </li>
+                  <li>
+                    <strong>"Hội viên" / "Khách hàng" / "Bạn":</strong> Cá nhân, câu lạc bộ hoặc tổ
+                    chức sử dụng nền tảng đặt sân hoặc sử dụng cơ sở vật chất của Aura Court.
+                  </li>
+                  <li>
+                    <strong>"Khung giờ" (Slot):</strong> Khoảng thời gian thi đấu tối thiểu 60 phút
+                    được xác nhận thành công trên hệ thống.
+                  </li>
+                  <li>
+                    <strong>"Mã đặt sân" (Booking Code / QR):</strong> Chuỗi ký tự và mã QR định
+                    danh duy nhất gửi đến quý khách để làm thủ tục check-in nhận sân.
+                  </li>
                 </ul>
               </div>
             </div>
@@ -173,12 +184,24 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Để tích lũy điểm thưởng hội viên, quản lý lịch đặt sân định kỳ và nhận thông báo ưu tiên, quý khách vui lòng đăng ký tài khoản <strong>Aura ID</strong>.
+                Để tích lũy điểm thưởng hội viên, quản lý lịch đặt sân định kỳ và nhận thông báo ưu
+                tiên, quý khách vui lòng đăng ký tài khoản <strong>Aura ID</strong>.
               </p>
               <ul>
-                <li><strong>Tính chuẩn xác thông tin:</strong> Khách hàng cam kết cung cấp thông tin liên hệ chính xác (Họ tên, Số điện thoại, Email) nhằm đảm bảo tính hợp lệ khi đối soát thanh toán và xác minh danh tính nhận sân.</li>
-                <li><strong>Trách nhiệm bảo mật:</strong> Quý khách có trách nhiệm tự bảo quản mật khẩu tài khoản và thông báo ngay cho ban quản lý nếu phát hiện truy cập trái phép.</li>
-                <li><strong>Quyền quản trị tài khoản:</strong> Aura Court bảo lưu quyền tạm khóa hoặc chấm dứt tài khoản nếu phát hiện hành vi đầu cơ slot, spam đơn ảo hoặc vi phạm quy chế ứng xử tại sân.</li>
+                <li>
+                  <strong>Tính chuẩn xác thông tin:</strong> Khách hàng cam kết cung cấp thông tin
+                  liên hệ chính xác (Họ tên, Số điện thoại, Email) nhằm đảm bảo tính hợp lệ khi đối
+                  soát thanh toán và xác minh danh tính nhận sân.
+                </li>
+                <li>
+                  <strong>Trách nhiệm bảo mật:</strong> Quý khách có trách nhiệm tự bảo quản mật
+                  khẩu tài khoản và thông báo ngay cho ban quản lý nếu phát hiện truy cập trái phép.
+                </li>
+                <li>
+                  <strong>Quyền quản trị tài khoản:</strong> Aura Court bảo lưu quyền tạm khóa hoặc
+                  chấm dứt tài khoản nếu phát hiện hành vi đầu cơ slot, spam đơn ảo hoặc vi phạm quy
+                  chế ứng xử tại sân.
+                </li>
               </ul>
             </div>
           </section>
@@ -193,34 +216,47 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Hệ thống đặt sân thông minh của Aura Court vận hành hoàn toàn tự động theo thời gian thực nhằm đảm bảo tính công bằng và minh bạch:
+                Hệ thống đặt sân thông minh của Aura Court vận hành hoàn toàn tự động theo thời gian
+                thực nhằm đảm bảo tính công bằng và minh bạch:
               </p>
               <div class="steps-flow">
                 <div class="flow-step">
                   <span class="step-num">1</span>
                   <div>
                     <h5>Chọn sân &amp; khung giờ</h5>
-                    <p>Khách hàng lựa chọn cụm sân, loại sân (Sân Tiêu chuẩn hoặc VIP Arena) và khung giờ thi đấu trống trên bảng lịch điện tử.</p>
+                    <p>
+                      Khách hàng lựa chọn cụm sân, loại sân (Sân Tiêu chuẩn hoặc VIP Arena) và khung
+                      giờ thi đấu trống trên bảng lịch điện tử.
+                    </p>
                   </div>
                 </div>
                 <div class="flow-step">
                   <span class="step-num">2</span>
                   <div>
                     <h5>Khóa tạm giữ chỗ (15 phút)</h5>
-                    <p>Hệ thống tự động bảo lưu khung giờ đã chọn trong 15 phút để bạn tiến hành quét mã QR thanh toán an toàn.</p>
+                    <p>
+                      Hệ thống tự động bảo lưu khung giờ đã chọn trong 15 phút để bạn tiến hành quét
+                      mã QR thanh toán an toàn.
+                    </p>
                   </div>
                 </div>
                 <div class="flow-step">
                   <span class="step-num">3</span>
                   <div>
                     <h5>Xác nhận đơn &amp; Nhận mã QR vào sân</h5>
-                    <p>Khi giao dịch thanh toán thành công, hệ thống chuyển trạng thái sang <em>"Đã xác nhận"</em> và tạo mã QR check-in tức thì.</p>
+                    <p>
+                      Khi giao dịch thanh toán thành công, hệ thống chuyển trạng thái sang
+                      <em>"Đã xác nhận"</em> và tạo mã QR check-in tức thì.
+                    </p>
                   </div>
                 </div>
               </div>
               <div class="notice-callout">
                 <span class="material-symbols-outlined">info</span>
-                <span>Lưu ý: Nếu sau 15 phút đơn hàng chưa được thanh toán, khung giờ sẽ tự động mở khóa cho các hội viên khác đặt lịch.</span>
+                <span
+                  >Lưu ý: Nếu sau 15 phút đơn hàng chưa được thanh toán, khung giờ sẽ tự động mở
+                  khóa cho các hội viên khác đặt lịch.</span
+                >
               </div>
             </div>
           </section>
@@ -235,12 +271,24 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Aura Court ứng dụng thanh toán không tiền mặt an toàn qua cổng <strong>VietQR / SePay</strong> tự động đối soát trong vài giây:
+                Aura Court ứng dụng thanh toán không tiền mặt an toàn qua cổng
+                <strong>VietQR / SePay</strong> tự động đối soát trong vài giây:
               </p>
               <ul>
-                <li><strong>Nội dung chuyển khoản:</strong> Khi quét mã QR thanh toán, quý khách vui lòng giữ nguyên nội dung chuyển khoản tự động (chứa mã đơn hàng) để hệ thống ghi nhận đối soát tức thì.</li>
-                <li><strong>Hóa đơn điện tử:</strong> Mọi biên nhận giao dịch được lưu trữ vĩnh viễn và minh bạch trong mục "Lịch đặt sân" trên tài khoản cá nhân.</li>
-                <li><strong>Hỗ trợ đối soát sai lệch:</strong> Trường hợp chuyển nhầm số tiền hoặc sai mã giao dịch, vui lòng gửi ảnh chụp sao kê ngân hàng tới hotline hoặc quầy lễ tân để được hỗ trợ đối soát thủ công nhanh nhất.</li>
+                <li>
+                  <strong>Nội dung chuyển khoản:</strong> Khi quét mã QR thanh toán, quý khách vui
+                  lòng giữ nguyên nội dung chuyển khoản tự động (chứa mã đơn hàng) để hệ thống ghi
+                  nhận đối soát tức thì.
+                </li>
+                <li>
+                  <strong>Hóa đơn điện tử:</strong> Mọi biên nhận giao dịch được lưu trữ vĩnh viễn
+                  và minh bạch trong mục "Lịch đặt sân" trên tài khoản cá nhân.
+                </li>
+                <li>
+                  <strong>Hỗ trợ đối soát sai lệch:</strong> Trường hợp chuyển nhầm số tiền hoặc sai
+                  mã giao dịch, vui lòng gửi ảnh chụp sao kê ngân hàng tới hotline hoặc quầy lễ tân
+                  để được hỗ trợ đối soát thủ công nhanh nhất.
+                </li>
               </ul>
             </div>
           </section>
@@ -255,14 +303,37 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Aura Court hỗ trợ <strong>hủy hoặc đổi lịch đặt sân theo chính sách của từng cơ sở</strong>. Trước khi bạn xác nhận, hệ thống luôn hiển thị phí áp dụng, hạn chót và số tiền được hoàn (hoặc khoản chênh lệch cần thanh toán thêm) đã được tính sẵn theo chính sách.
+                Aura Court hỗ trợ
+                <strong>hủy hoặc đổi lịch đặt sân theo chính sách của từng cơ sở</strong>. Trước khi
+                bạn xác nhận, hệ thống luôn hiển thị phí áp dụng, hạn chót và số tiền được hoàn
+                (hoặc khoản chênh lệch cần thanh toán thêm) đã được tính sẵn theo chính sách.
               </p>
               <ul>
-                <li><strong>Hủy đơn (toàn bộ hoặc một phần):</strong> Bạn có thể yêu cầu hủy toàn bộ hoặc từng khung giờ. Phí hủy và số tiền hoàn được xác định theo chính sách của cơ sở tại thời điểm đặt và hiển thị trước khi bạn xác nhận.</li>
-                <li><strong>Đổi lịch/giờ:</strong> Bạn có thể đổi sang khung giờ, ngày chơi hoặc sân đấu khác. Nếu lịch mới đắt hơn, chỗ mới sẽ được giữ cho đến khi khoản chênh lệch được xác minh; nếu rẻ hơn, phần chênh lệch được tạo thành yêu cầu hoàn tiền.</li>
-                <li><strong>Hoàn tiền theo quy trình:</strong> Khoản hoàn tiền chỉ được coi là hoàn tất khi bạn xác nhận đã nhận tiền. Báo cáo chuyển khoản của chủ sân hoặc trạng thái đang tranh chấp chưa phải là đã hoàn tất.</li>
-                <li><strong>Chuyển nhượng vé (P2P Resale):</strong> Trường hợp người chơi không thể tham gia thi đấu đúng giờ đã đặt, quý khách có thể chủ động đăng bán lại slot đặt sân trên Chợ Nhượng Vé Aura Court để tìm người mua lại theo quy định sàn.</li>
-                <li><strong>Sự cố bất khả kháng từ sân:</strong> Trường hợp sự cố kỹ thuật đột xuất từ phía cơ sở vận hành (mất điện lưới diện rộng, thiên tai ngập sân), ban quản trị sẽ chủ động liên hệ để xử lý bồi hoàn thỏa đáng.</li>
+                <li>
+                  <strong>Hủy đơn (toàn bộ hoặc một phần):</strong> Bạn có thể yêu cầu hủy toàn bộ
+                  hoặc từng khung giờ. Phí hủy và số tiền hoàn được xác định theo chính sách của cơ
+                  sở tại thời điểm đặt và hiển thị trước khi bạn xác nhận.
+                </li>
+                <li>
+                  <strong>Đổi lịch/giờ:</strong> Bạn có thể đổi sang khung giờ, ngày chơi hoặc sân
+                  đấu khác. Nếu lịch mới đắt hơn, chỗ mới sẽ được giữ cho đến khi khoản chênh lệch
+                  được xác minh; nếu rẻ hơn, phần chênh lệch được tạo thành yêu cầu hoàn tiền.
+                </li>
+                <li>
+                  <strong>Hoàn tiền theo quy trình:</strong> Khoản hoàn tiền chỉ được coi là hoàn
+                  tất khi bạn xác nhận đã nhận tiền. Báo cáo chuyển khoản của chủ sân hoặc trạng
+                  thái đang tranh chấp chưa phải là đã hoàn tất.
+                </li>
+                <li>
+                  <strong>Chuyển nhượng vé (P2P Resale):</strong> Trường hợp người chơi không thể
+                  tham gia thi đấu đúng giờ đã đặt, quý khách có thể chủ động đăng bán lại slot đặt
+                  sân trên Chợ Nhượng Vé Aura Court để tìm người mua lại theo quy định sàn.
+                </li>
+                <li>
+                  <strong>Sự cố bất khả kháng từ sân:</strong> Trường hợp sự cố kỹ thuật đột xuất từ
+                  phía cơ sở vận hành (mất điện lưới diện rộng, thiên tai ngập sân), ban quản trị sẽ
+                  chủ động liên hệ để xử lý bồi hoàn thỏa đáng.
+                </li>
               </ul>
             </div>
           </section>
@@ -277,28 +348,41 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Để bảo vệ mặt thảm chuyên dụng BWF và duy trì môi trường thể thao văn minh, toàn bộ người chơi cần tuân thủ các quy định:
+                Để bảo vệ mặt thảm chuyên dụng BWF và duy trì môi trường thể thao văn minh, toàn bộ
+                người chơi cần tuân thủ các quy định:
               </p>
               <div class="rules-grid">
                 <div class="rule-box">
                   <span class="material-symbols-outlined rule-icon">do_not_step</span>
                   <h5>Giày chuyên dụng cầu lông</h5>
-                  <p>Bắt buộc sử dụng giày thể thao đế cao su Non-marking không để lại vệt màu. Nghiêm cấm mang giày cao gót, đế đinh hoặc dép vào khu vực thảm thi đấu.</p>
+                  <p>
+                    Bắt buộc sử dụng giày thể thao đế cao su Non-marking không để lại vệt màu.
+                    Nghiêm cấm mang giày cao gót, đế đinh hoặc dép vào khu vực thảm thi đấu.
+                  </p>
                 </div>
                 <div class="rule-box">
                   <span class="material-symbols-outlined rule-icon">smoke_free</span>
                   <h5>Không gian không khói thuốc</h5>
-                  <p>Nghiêm cấm tuyệt đối việc hút thuốc lá, thuốc lá điện tử hoặc sử dụng các chất kích thích trong toàn bộ khuôn viên nhà thi đấu Aura Court.</p>
+                  <p>
+                    Nghiêm cấm tuyệt đối việc hút thuốc lá, thuốc lá điện tử hoặc sử dụng các chất
+                    kích thích trong toàn bộ khuôn viên nhà thi đấu Aura Court.
+                  </p>
                 </div>
                 <div class="rule-box">
                   <span class="material-symbols-outlined rule-icon">delete</span>
                   <h5>Giữ gìn vệ sinh chung</h5>
-                  <p>Vui lòng bỏ vỏ chai, quấn cán, ống cầu đã qua sử dụng vào thùng rác phân loại sau khi kết thúc buổi tập luyện.</p>
+                  <p>
+                    Vui lòng bỏ vỏ chai, quấn cán, ống cầu đã qua sử dụng vào thùng rác phân loại
+                    sau khi kết thúc buổi tập luyện.
+                  </p>
                 </div>
                 <div class="rule-box">
                   <span class="material-symbols-outlined rule-icon">timer</span>
                   <h5>Đúng giờ thi đấu</h5>
-                  <p>Có mặt trước 10 phút để khởi động và hoàn tất bàn giao sân đúng giờ khi hết lượt thuê để không ảnh hưởng đến trận đấu tiếp theo.</p>
+                  <p>
+                    Có mặt trước 10 phút để khởi động và hoàn tất bàn giao sân đúng giờ khi hết lượt
+                    thuê để không ảnh hưởng đến trận đấu tiếp theo.
+                  </p>
                 </div>
               </div>
             </div>
@@ -314,9 +398,21 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <ul>
-                <li><strong>An toàn thể thao:</strong> Người chơi tự đánh giá tình trạng thể lực và tự chịu trách nhiệm về an toàn sức khỏe khi tham gia các hoạt động vận động cường độ cao. Aura Court trang bị sẵn tủ sơ cứu y tế sơ cấp cứu tại quầy lễ tân.</li>
-                <li><strong>Tủ đồ locker thông minh:</strong> Aura Court trang bị hệ thống tủ đồ khóa an toàn cho hội viên. Quý khách vui lòng tự bảo quản các vật phẩm giá trị cao (trang sức, tiền mặt, thiết bị điện tử).</li>
-                <li><strong>Trách nhiệm bảo vệ tài sản chung:</strong> Mọi hành vi cố ý phá hoại lưới thi đấu, cột chắn, tường cách âm hoặc hệ thống đèn LED 800 Lux sẽ bị xử lý bồi thường theo biểu giá quy định của ban quản lý.</li>
+                <li>
+                  <strong>An toàn thể thao:</strong> Người chơi tự đánh giá tình trạng thể lực và tự
+                  chịu trách nhiệm về an toàn sức khỏe khi tham gia các hoạt động vận động cường độ
+                  cao. Aura Court trang bị sẵn tủ sơ cứu y tế sơ cấp cứu tại quầy lễ tân.
+                </li>
+                <li>
+                  <strong>Tủ đồ locker thông minh:</strong> Aura Court trang bị hệ thống tủ đồ khóa
+                  an toàn cho hội viên. Quý khách vui lòng tự bảo quản các vật phẩm giá trị cao
+                  (trang sức, tiền mặt, thiết bị điện tử).
+                </li>
+                <li>
+                  <strong>Trách nhiệm bảo vệ tài sản chung:</strong> Mọi hành vi cố ý phá hoại lưới
+                  thi đấu, cột chắn, tường cách âm hoặc hệ thống đèn LED 800 Lux sẽ bị xử lý bồi
+                  thường theo biểu giá quy định của ban quản lý.
+                </li>
               </ul>
             </div>
           </section>
@@ -331,9 +427,10 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Mọi góp ý, thắc mắc về chất lượng dịch vụ hoặc yêu cầu hỗ trợ đặc biệt, xin vui lòng liên hệ với ban quản lý Aura Court qua các kênh:
+                Mọi góp ý, thắc mắc về chất lượng dịch vụ hoặc yêu cầu hỗ trợ đặc biệt, xin vui lòng
+                liên hệ với ban quản lý Aura Court qua các kênh:
               </p>
-              
+
               <div class="contact-card-box">
                 <div class="c-item">
                   <span class="material-symbols-outlined">call</span>
@@ -359,9 +456,7 @@ onUnmounted(() => {
               </div>
             </div>
           </section>
-
         </main>
-
       </div>
     </div>
   </div>
@@ -382,14 +477,24 @@ onUnmounted(() => {
   width: 1000px;
   max-width: 90vw;
   height: 500px;
-  background: radial-gradient(circle at center, rgba(201, 161, 90, 0.12) 0%, rgba(107, 45, 63, 0.08) 45%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(201, 161, 90, 0.12) 0%,
+    rgba(107, 45, 63, 0.08) 45%,
+    transparent 70%
+  );
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 :global(html.dark .aura-glow-bg) {
-  background: radial-gradient(circle at center, rgba(216, 180, 110, 0.15) 0%, rgba(68, 26, 38, 0.25) 50%, transparent 75%);
+  background: radial-gradient(
+    circle at center,
+    rgba(216, 180, 110, 0.15) 0%,
+    rgba(68, 26, 38, 0.25) 50%,
+    transparent 75%
+  );
 }
 
 .legal-container {
@@ -412,7 +517,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   background: rgba(201, 161, 90, 0.12);
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   padding: 6px 16px;
   border-radius: 999px;
   font-size: 11.5px;
@@ -442,7 +547,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .legal-title) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .legal-subtitle {
@@ -490,7 +595,7 @@ onUnmounted(() => {
 
 .doc-tab.active {
   background: var(--surface, #ffffff);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
 }
 
@@ -505,7 +610,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .doc-tab:hover:not(.active)) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .legal-meta-row {
@@ -530,11 +635,11 @@ onUnmounted(() => {
 
 .meta-item .material-symbols-outlined {
   font-size: 18px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 :global(html.dark .meta-item .material-symbols-outlined) {
-  color: #D8B46E;
+  color: #d8b46e;
 }
 
 /* Legal Grid Layout */
@@ -580,13 +685,13 @@ onUnmounted(() => {
 }
 
 :global(html.dark .sidebar-title) {
-  color: #FAF7F3;
+  color: #faf7f3;
   border-color: #382f35;
 }
 
 .sidebar-title .material-symbols-outlined {
   font-size: 18px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark .sidebar-title .material-symbols-outlined) {
@@ -628,12 +733,12 @@ onUnmounted(() => {
 
 :global(html.dark .nav-link-btn:hover) {
   background: #262024;
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .nav-link-btn.active {
-  background: var(--accent-container, #FAF2E3);
-  color: var(--on-accent-container, #684F17);
+  background: var(--accent-container, #faf2e3);
+  color: var(--on-accent-container, #684f17);
   font-weight: 700;
 }
 
@@ -673,7 +778,7 @@ onUnmounted(() => {
   height: 40px;
   border-radius: 50%;
   background: var(--surface, #ffffff);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   border: 1px solid var(--border, #e8e1d7);
   display: grid;
   place-items: center;
@@ -695,7 +800,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .sidebar-support-box h4) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .sidebar-support-box p {
@@ -716,7 +821,7 @@ onUnmounted(() => {
   gap: 6px;
   width: 100%;
   padding: 8px 14px;
-  background: var(--accent, #C9A15A);
+  background: var(--accent, #c9a15a);
   color: #1c1618;
   border-radius: 10px;
   font-size: 13px;
@@ -775,7 +880,7 @@ onUnmounted(() => {
   height: 44px;
   border-radius: 12px;
   background: rgba(201, 161, 90, 0.12);
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   border: 1px solid rgba(201, 161, 90, 0.3);
   display: grid;
   place-items: center;
@@ -801,7 +906,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .section-head h2) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .section-text {
@@ -842,7 +947,7 @@ onUnmounted(() => {
 /* Custom Callout & Boxes */
 .definition-box {
   background: var(--surface-subtle, #f7f3ed);
-  border-left: 4px solid var(--accent, #C9A15A);
+  border-left: 4px solid var(--accent, #c9a15a);
   border-radius: 0 14px 14px 0;
   padding: 18px 20px;
   margin: 18px 0;
@@ -861,7 +966,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .definition-box h4) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .definition-box ul {
@@ -894,7 +999,7 @@ onUnmounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--accent, #C9A15A);
+  background: var(--accent, #c9a15a);
   color: #1c1618;
   display: grid;
   place-items: center;
@@ -917,7 +1022,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .flow-step h5) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .flow-step p {
@@ -940,7 +1045,7 @@ onUnmounted(() => {
   border-radius: 12px;
   padding: 12px 16px;
   font-size: 13px;
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   font-weight: 600;
 }
 
@@ -990,7 +1095,7 @@ onUnmounted(() => {
 
 :global(html.dark .legal-table th) {
   background: #262024;
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .legal-table tbody tr:last-child td {
@@ -1055,7 +1160,9 @@ onUnmounted(() => {
   border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 18px 16px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .rule-box:hover {
@@ -1074,7 +1181,7 @@ onUnmounted(() => {
 
 .rule-icon {
   font-size: 26px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   margin-bottom: 8px;
   display: block;
 }
@@ -1091,7 +1198,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .rule-box h5) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .rule-box p {
@@ -1130,7 +1237,7 @@ onUnmounted(() => {
 
 .c-item .material-symbols-outlined {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -1147,13 +1254,13 @@ onUnmounted(() => {
 }
 
 :global(html.dark .c-item strong) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .c-item a,
 .c-item span {
   font-size: 13.5px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   text-decoration: none;
   font-weight: 600;
 }

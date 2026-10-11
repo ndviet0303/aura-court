@@ -22,7 +22,12 @@ function formatDate(iso: string): string {
   if (!iso) return ''
   try {
     const d = new Date(iso)
-    return d.toLocaleDateString(locale.value === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+    return d.toLocaleDateString(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
   } catch {
     return iso.slice(0, 10)
   }
@@ -30,7 +35,6 @@ function formatDate(iso: string): string {
 
 const isConfirmed = computed(() => props.booking.status === 'confirmed')
 const isPendingPayment = computed(() => props.booking.status === 'pending_payment')
-const isCancelled = computed(() => ['cancelled', 'expired', 'refunded'].includes(props.booking.status))
 
 const statusMeta = computed(() => {
   if (isConfirmed.value) {
@@ -40,7 +44,11 @@ const statusMeta = computed(() => {
     return { label: t('booking.statusPending'), icon: 'schedule', class: 'status-pending' }
   }
   if (props.booking.status === 'refunded') {
-    return { label: t('booking.statusRefunded'), icon: 'currency_exchange', class: 'status-refunded' }
+    return {
+      label: t('booking.statusRefunded'),
+      icon: 'currency_exchange',
+      class: 'status-refunded',
+    }
   }
   return { label: t('booking.statusCancelled'), icon: 'cancel', class: 'status-cancelled' }
 })
@@ -80,7 +88,9 @@ const sportLabel = computed(() => {
         </h3>
         <div class="venue-info">
           <span class="material-symbols-outlined venue-icon">location_on</span>
-          <span class="venue-text">{{ booking.court?.venue?.name || 'Aura Badminton Center' }}</span>
+          <span class="venue-text">{{
+            booking.court?.venue?.name || 'Aura Badminton Center'
+          }}</span>
           <RouterLink
             v-if="booking.court?.slug"
             :to="`/courts/${booking.court.slug}/directions`"
@@ -103,7 +113,9 @@ const sportLabel = computed(() => {
       <div v-for="s in booking.slots" :key="s.starts_at" class="slot-item">
         <div class="slot-time-col">
           <span class="material-symbols-outlined slot-icon">schedule</span>
-          <span class="slot-time font-mono">{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at.slice(11, 16) }}</span>
+          <span class="slot-time font-mono"
+            >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at.slice(11, 16) }}</span
+          >
         </div>
         <div class="slot-date-col">
           <span class="material-symbols-outlined slot-icon">calendar_today</span>
@@ -115,21 +127,35 @@ const sportLabel = computed(() => {
       </div>
 
       <div v-if="booking.discount_amount && booking.discount_amount > 0" class="discount-row">
-        <span class="discount-label">{{ $t('payment.couponDiscount') }} ({{ booking.coupon?.code || 'COUPON' }}):</span>
+        <span class="discount-label"
+          >{{ $t('payment.couponDiscount') }} ({{ booking.coupon?.code || 'COUPON' }}):</span
+        >
         <span class="discount-value font-mono">-{{ formatCurrency(booking.discount_amount) }}</span>
       </div>
 
-      <div v-if="booking.membership_discount_amount && booking.membership_discount_amount > 0" class="discount-row">
+      <div
+        v-if="booking.membership_discount_amount && booking.membership_discount_amount > 0"
+        class="discount-row"
+      >
         <span class="discount-label">{{ $t('payment.memberDiscount') }}:</span>
-        <span class="discount-value font-mono">-{{ formatCurrency(booking.membership_discount_amount) }}</span>
+        <span class="discount-value font-mono"
+          >-{{ formatCurrency(booking.membership_discount_amount) }}</span
+        >
       </div>
 
-      <div v-if="booking.loyalty_discount_amount && booking.loyalty_discount_amount > 0" class="discount-row">
+      <div
+        v-if="booking.loyalty_discount_amount && booking.loyalty_discount_amount > 0"
+        class="discount-row"
+      >
         <span class="discount-label">
           {{ $t('loyalty.loyaltyDiscount') }}
-          <span v-if="booking.loyalty_points_redeemed">({{ booking.loyalty_points_redeemed }} {{ $t('loyalty.points') }})</span>:
+          <span v-if="booking.loyalty_points_redeemed"
+            >({{ booking.loyalty_points_redeemed }} {{ $t('loyalty.points') }})</span
+          >:
         </span>
-        <span class="discount-value font-mono">-{{ formatCurrency(booking.loyalty_discount_amount) }}</span>
+        <span class="discount-value font-mono"
+          >-{{ formatCurrency(booking.loyalty_discount_amount) }}</span
+        >
       </div>
     </div>
     <!-- Card Bottom & Actions -->
@@ -141,11 +167,7 @@ const sportLabel = computed(() => {
 
       <div class="actions-group">
         <!-- Pay Now (if pending) -->
-        <RouterLink
-          v-if="isPendingPayment"
-          :to="`/payment/${booking.code}`"
-          class="btn-card-pay"
-        >
+        <RouterLink v-if="isPendingPayment" :to="`/payment/${booking.code}`" class="btn-card-pay">
           <span class="material-symbols-outlined">payments</span>
           <span>{{ $t('booking.payNowBtn') }}</span>
         </RouterLink>
@@ -162,10 +184,7 @@ const sportLabel = computed(() => {
         </button>
 
         <!-- Split Bill with teammates -->
-        <RouterLink
-          :to="`/split-bill/${booking.code}`"
-          class="btn-card-secondary"
-        >
+        <RouterLink :to="`/split-bill/${booking.code}`" class="btn-card-secondary">
           <span class="material-symbols-outlined">group</span>
           <span>{{ $t('booking.splitBillBtn') }}</span>
         </RouterLink>
@@ -178,7 +197,11 @@ const sportLabel = computed(() => {
           @click="emit('review', booking)"
         >
           <span class="material-symbols-outlined">rate_review</span>
-          <span>{{ booking.review ? `${$t('booking.reviewBtn')} (${booking.review.rating}★)` : $t('booking.reviewBtn') }}</span>
+          <span>{{
+            booking.review
+              ? `${$t('booking.reviewBtn')} (${booking.review.rating}★)`
+              : $t('booking.reviewBtn')
+          }}</span>
         </button>
 
         <!-- Reschedule (if confirmed) -->
@@ -219,7 +242,9 @@ const sportLabel = computed(() => {
   border: 1px solid var(--outline);
   background: var(--surface);
   box-shadow: 0 2px 12px rgba(107, 45, 63, 0.03);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .user-booking-card:hover {
@@ -248,7 +273,7 @@ const sportLabel = computed(() => {
 .booking-code {
   font-size: 12px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .sport-badge {
@@ -273,7 +298,7 @@ const sportLabel = computed(() => {
 }
 
 .court-link:hover {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   text-decoration: underline;
 }
 
@@ -287,11 +312,11 @@ const sportLabel = computed(() => {
 
 .venue-icon {
   font-size: 15px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .directions-link {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   text-decoration: none;
   font-size: 12px;
   font-weight: 600;
@@ -356,7 +381,8 @@ const sportLabel = computed(() => {
   flex-wrap: wrap;
 }
 
-.slot-time-col, .slot-date-col {
+.slot-time-col,
+.slot-date-col {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -370,7 +396,7 @@ const sportLabel = computed(() => {
 
 .slot-price-col {
   font-weight: 700;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .discount-row {
@@ -407,7 +433,7 @@ const sportLabel = computed(() => {
 .total-amount {
   font-size: 18px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .actions-group {
@@ -423,7 +449,7 @@ const sportLabel = computed(() => {
   padding: 8px 16px;
   border-radius: 10px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #fff);
   font-size: 12.5px;
   font-weight: 700;
@@ -449,8 +475,8 @@ const sportLabel = computed(() => {
 }
 
 .btn-card-secondary:hover {
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
 }
 
 .btn-card-danger {

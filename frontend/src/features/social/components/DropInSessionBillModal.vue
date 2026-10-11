@@ -47,7 +47,7 @@ watch(
       loadBill(matchId as number)
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 async function handleEndSession() {
@@ -67,7 +67,7 @@ async function handleSaveDraft() {
 async function handleFinalize() {
   if (!props.match) return
   const confirmed = window.confirm(
-    'Bạn có chắc chắn muốn chốt bảng chi phí này? Sau khi chốt, dữ liệu sẽ ở chế độ chỉ đọc và không thể sửa đổi.'
+    'Bạn có chắc chắn muốn chốt bảng chi phí này? Sau khi chốt, dữ liệu sẽ ở chế độ chỉ đọc và không thể sửa đổi.',
   )
   if (!confirmed) return
   await finalizeBill(props.match.id)
@@ -86,7 +86,10 @@ async function handleFinalize() {
           <span class="material-symbols-outlined header-ico">receipt_long</span>
           <div>
             <h3 class="modal-title">Bảng Chi Phí Buổi Giao Lưu Cầu Lông</h3>
-            <span class="modal-sub">{{ match.title }} ({{ match.venue_name }}{{ match.court_name ? ' · ' + match.court_name : '' }})</span>
+            <span class="modal-sub"
+              >{{ match.title }} ({{ match.venue_name
+              }}{{ match.court_name ? ' · ' + match.court_name : '' }})</span
+            >
           </div>
         </div>
         <button type="button" class="modal-close-btn" aria-label="Đóng" @click="emit('close')">
@@ -117,8 +120,12 @@ async function handleFinalize() {
           <span>Đang tải thông tin chi phí...</span>
         </div>
 
-        <div v-else-if="error" class="session-active-card" style="border-color: #ef9a9a; background: #fffbfa;">
-          <div class="state-icon-box" style="background: rgba(198, 40, 40, 0.1); color: #c62828;">
+        <div
+          v-else-if="error"
+          class="session-active-card"
+          style="border-color: #ef9a9a; background: #fffbfa"
+        >
+          <div class="state-icon-box" style="background: rgba(198, 40, 40, 0.1); color: #c62828">
             <span class="material-symbols-outlined state-icon">error</span>
           </div>
           <h4>Không thể tải bảng chi phí</h4>
@@ -127,16 +134,17 @@ async function handleFinalize() {
 
         <div v-else>
           <!-- Case 1: Session not ended yet -->
-          <div v-if="match.status !== 'ended' && match.status !== 'completed'" class="session-active-card">
+          <div
+            v-if="match.status !== 'ended' && match.status !== 'completed'"
+            class="session-active-card"
+          >
             <div class="state-icon-box">
               <span class="material-symbols-outlined state-icon">sports_score</span>
             </div>
             <h4>Buổi chơi đang diễn ra hoặc chưa kết thúc</h4>
-            <p>
-              Bảng chi phí thực tế chỉ có thể được tạo và chốt sau khi buổi chơi đã kết thúc.
-            </p>
+            <p>Bảng chi phí thực tế chỉ có thể được tạo và chốt sau khi buổi chơi đã kết thúc.</p>
 
-            <div v-if="isHost || match.is_host" style="margin-top: 16px;">
+            <div v-if="isHost || match.is_host" style="margin-top: 16px">
               <AuraButton
                 variant="primary"
                 size="md"
@@ -168,9 +176,13 @@ async function handleFinalize() {
                 </div>
                 <div class="card-info-col">
                   <span class="label">Tiền Sân Thực Tế</span>
-                  <div class="value font-mono highlight">{{ formatCurrency(currentBill.court_subtotal) }}</div>
+                  <div class="value font-mono highlight">
+                    {{ formatCurrency(currentBill.court_subtotal) }}
+                  </div>
                   <span class="sub font-mono">
-                    {{ currentBill.court_duration_minutes }} phút ({{ (currentBill.court_duration_minutes / 60).toFixed(1) }}h) × {{ formatCurrency(currentBill.court_hourly_rate) }}/h
+                    {{ currentBill.court_duration_minutes }} phút ({{
+                      (currentBill.court_duration_minutes / 60).toFixed(1)
+                    }}h) × {{ formatCurrency(currentBill.court_hourly_rate) }}/h
                   </span>
                 </div>
               </div>
@@ -181,9 +193,12 @@ async function handleFinalize() {
                 </div>
                 <div class="card-info-col">
                   <span class="label">Tiền Cầu Thực Tế</span>
-                  <div class="value font-mono highlight">{{ formatCurrency(currentBill.shuttlecock_subtotal) }}</div>
+                  <div class="value font-mono highlight">
+                    {{ formatCurrency(currentBill.shuttlecock_subtotal) }}
+                  </div>
                   <span class="sub font-mono">
-                    {{ currentBill.shuttlecock_count }} quả × {{ formatCurrency(currentBill.shuttlecock_unit_price) }}/quả
+                    {{ currentBill.shuttlecock_count }} quả ×
+                    {{ formatCurrency(currentBill.shuttlecock_unit_price) }}/quả
                   </span>
                 </div>
               </div>
@@ -193,21 +208,31 @@ async function handleFinalize() {
             <div class="total-summary-card">
               <div class="total-row">
                 <span class="total-label">Tổng Chi Phí Thực Tế (Sân + Cầu):</span>
-                <span class="total-val font-mono">{{ formatCurrency(currentBill.total_amount) }}</span>
+                <span class="total-val font-mono">{{
+                  formatCurrency(currentBill.total_amount)
+                }}</span>
               </div>
               <div class="divisor-row">
                 <span>Số người chia phí thực tế:</span>
-                <span class="font-mono"><strong>{{ currentBill.actual_headcount }}</strong> người</span>
+                <span class="font-mono"
+                  ><strong>{{ currentBill.actual_headcount }}</strong> người</span
+                >
               </div>
               <div class="share-row">
                 <div class="share-col">
                   <span class="share-label">Phần Mỗi Người Cần Đóng:</span>
                   <span class="share-hint" v-if="currentBill.is_approximate">
-                    (Phép chia lẻ: {{ formatCurrency(currentBill.total_amount) }} ÷ {{ currentBill.actual_headcount }} người)
+                    (Phép chia lẻ: {{ formatCurrency(currentBill.total_amount) }} ÷
+                    {{ currentBill.actual_headcount }} người)
                   </span>
                 </div>
                 <div class="share-price font-mono">
-                  <span v-if="currentBill.is_approximate" class="approx-tag" title="Giá trị làm tròn gần đúng">≈</span>
+                  <span
+                    v-if="currentBill.is_approximate"
+                    class="approx-tag"
+                    title="Giá trị làm tròn gần đúng"
+                    >≈</span
+                  >
                   {{ formatCurrency(currentBill.per_person_amount) }}
                 </div>
               </div>
@@ -216,7 +241,9 @@ async function handleFinalize() {
             <div class="transparency-notice">
               <span class="material-symbols-outlined notice-ico">info</span>
               <span>
-                Bảng chi phí này được host chốt dựa trên số giờ sân và số quả cầu thực tế sử dụng. Không bao gồm nước uống hoặc phụ kiện ngoài. Các thành viên tự thanh toán trực tiếp cho host hoặc quản lý sân.
+                Bảng chi phí này được host chốt dựa trên số giờ sân và số quả cầu thực tế sử dụng.
+                Không bao gồm nước uống hoặc phụ kiện ngoài. Các thành viên tự thanh toán trực tiếp
+                cho host hoặc quản lý sân.
               </span>
             </div>
           </div>
@@ -226,7 +253,10 @@ async function handleFinalize() {
             <div v-if="!isHost && !match.is_host" class="waiting-host-card">
               <span class="material-symbols-outlined">hourglass_top</span>
               <h4>Chủ cơ sở đang cập nhật bảng chi phí</h4>
-              <p>Chủ cơ sở đang xác nhận số người, giờ chơi và số quả cầu. Bảng chi phí sẽ hiển thị ngay khi được chốt.</p>
+              <p>
+                Chủ cơ sở đang xác nhận số người, giờ chơi và số quả cầu. Bảng chi phí sẽ hiển thị
+                ngay khi được chốt.
+              </p>
             </div>
 
             <form v-else @submit.prevent="handleFinalize">
@@ -234,7 +264,10 @@ async function handleFinalize() {
                 <span class="material-symbols-outlined intro-ico">edit_note</span>
                 <div>
                   <h4>Nhập Chi Phí Thực Tế Sau Buổi Chơi</h4>
-                  <p>Chỉ áp dụng cho tiền sân và tiền cầu lông. Nước, đá, quấn cán thanh toán riêng tại quầy.</p>
+                  <p>
+                    Chỉ áp dụng cho tiền sân và tiền cầu lông. Nước, đá, quấn cán thanh toán riêng
+                    tại quầy.
+                  </p>
                 </div>
               </div>
 
@@ -253,7 +286,9 @@ async function handleFinalize() {
                     class="input-control font-mono"
                     required
                   />
-                  <span class="input-hint">Đã trừ người vắng, cộng thêm khách vãng lai (walk-in)</span>
+                  <span class="input-hint"
+                    >Đã trừ người vắng, cộng thêm khách vãng lai (walk-in)</span
+                  >
                 </div>
 
                 <div class="form-group">
@@ -269,7 +304,10 @@ async function handleFinalize() {
                     class="input-control font-mono"
                     required
                   />
-                  <span class="input-hint">{{ (courtDurationMinutes / 60).toFixed(1) }} giờ (ví dụ: 90 phút = 1.5 giờ)</span>
+                  <span class="input-hint"
+                    >{{ (courtDurationMinutes / 60).toFixed(1) }} giờ (ví dụ: 90 phút = 1.5
+                    giờ)</span
+                  >
                 </div>
 
                 <div class="form-group">
@@ -330,12 +368,16 @@ async function handleFinalize() {
 
                 <div class="preview-row">
                   <span>Tiền sân ({{ courtDurationMinutes }} phút):</span>
-                  <span class="font-mono"><strong>{{ formatCurrency(courtSubtotal) }}</strong></span>
+                  <span class="font-mono"
+                    ><strong>{{ formatCurrency(courtSubtotal) }}</strong></span
+                  >
                 </div>
 
                 <div class="preview-row">
                   <span>Tiền cầu ({{ shuttlecockCount }} quả):</span>
-                  <span class="font-mono"><strong>{{ formatCurrency(shuttlecockSubtotal) }}</strong></span>
+                  <span class="font-mono"
+                    ><strong>{{ formatCurrency(shuttlecockSubtotal) }}</strong></span
+                  >
                 </div>
 
                 <div class="preview-divider"></div>
@@ -494,8 +536,12 @@ async function handleFinalize() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .session-active-card,

@@ -25,6 +25,7 @@ class HardeningAcceptanceService
             $results[$name] = ['status' => $code === 0 ? 'passed' : 'failed', 'exit_code' => $code, 'output' => substr($process->getOutput().$process->getErrorOutput(), -20000)];
             $passed = $passed && $code === 0;
         }
+
         return AcceptanceRun::create(['phase' => 'final-hardening', 'status' => $passed ? 'passed' : 'blocked', 'suites' => array_keys($suites), 'results' => $results, 'started_at' => $startedAt, 'completed_at' => now()]);
     }
 

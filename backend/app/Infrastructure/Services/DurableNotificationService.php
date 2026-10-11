@@ -10,6 +10,7 @@ use App\Models\HostKyc;
 use App\Models\OutboxMessage;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformSubscription;
+use App\Models\User;
 use App\Models\VenuePublicationRevision;
 use App\Services\Infrastructure\OutboxService;
 use Illuminate\Database\Eloquent\Model;
@@ -114,7 +115,7 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         $key = "subscription.activated.{$subscription->id}.v{$subscription->plan_version}";
         $org = $subscription->organization;
         $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? \App\Models\User::query()->value('id') ?? 1);
+        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
 
         return $this->recordOutboxNotification(
             key: $key,
@@ -136,7 +137,7 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         $key = "payment.failed.{$attempt->reference_code}";
         $org = $attempt->organization;
         $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? \App\Models\User::query()->value('id') ?? 1);
+        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
 
         return $this->recordOutboxNotification(
             key: $key,
@@ -196,7 +197,7 @@ class DurableNotificationService implements DurableNotificationServiceInterface
             return $this->recordOutboxNotification(
                 key: $key,
                 userId: (int) $booking->user_id,
-                eventType: 'booking.' . $event,
+                eventType: 'booking.'.$event,
                 payload: [
                     'user_id' => (int) $booking->user_id,
                     'booking_id' => $booking->id,

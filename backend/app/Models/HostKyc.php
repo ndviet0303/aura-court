@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class HostKyc extends Model
 {
@@ -78,6 +80,7 @@ class HostKyc extends Model
         'version' => 'integer',
         'submitted_version' => 'integer',
     ];
+
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
@@ -97,6 +100,7 @@ class HostKyc extends Model
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
+
     public function currentUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'current_user_id');
@@ -107,26 +111,27 @@ class HostKyc extends Model
         return $this->belongsTo(self::class, 'parent_kyc_id');
     }
 
-    public function childKycs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function childKycs(): HasMany
     {
         return $this->hasMany(self::class, 'parent_kyc_id');
     }
-    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+
+    public function documents(): HasMany
     {
         return $this->hasMany(PartnerDocument::class);
     }
 
-    public function consents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function consents(): HasMany
     {
         return $this->hasMany(PartnerConsent::class);
     }
 
-    public function reviewHistories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reviewHistories(): HasMany
     {
         return $this->hasMany(PartnerReviewHistory::class)->orderBy('created_at', 'desc');
     }
 
-    public function provisionedOrganization(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function provisionedOrganization(): HasOne
     {
         return $this->hasOne(Organization::class, 'source_kyc_id');
     }

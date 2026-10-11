@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Reservation;
 
-use App\Http\Controllers\Controller;
-
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Controller;
 use App\Models\PriceRule;
 use App\Models\Reservation;
+use App\Models\TenantCustomer;
+use App\Models\User;
+use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Payment\ReservationPaymentService;
@@ -22,7 +24,7 @@ class V2ReservationController extends Controller
         private readonly PriceQuoteService $quotes,
         private readonly ReservationService $reservations,
         private readonly IdempotencyService $idempotency,
-        private readonly \App\Services\Booking\OrdinaryCheckoutService $checkoutService,
+        private readonly OrdinaryCheckoutService $checkoutService,
     ) {}
 
     public function index(Request $request)
@@ -126,10 +128,10 @@ class V2ReservationController extends Controller
                     403,
                     'Only staff can perform walk-in bookings for other customers.'
                 );
-                $customer = \App\Models\User::findOrFail((int) $data['customer_id']);
+                $customer = User::findOrFail((int) $data['customer_id']);
                 abort_if($customer->isRestricted(), 403, 'Tài khoản khách hàng đang bị khóa hoặc hạn chế.');
                 abort_unless(
-                    $organization->hasMember($customer->id) || \App\Models\TenantCustomer::where('organization_id', $organization->id)->where('user_id', $customer->id)->exists(),
+                    $organization->hasMember($customer->id) || TenantCustomer::where('organization_id', $organization->id)->where('user_id', $customer->id)->exists(),
                     422,
                     'Customer does not belong to this organization.'
                 );
@@ -174,10 +176,10 @@ class V2ReservationController extends Controller
                     403,
                     'Only staff can perform walk-in bookings for other customers.'
                 );
-                $customer = \App\Models\User::findOrFail((int) $data['customer_id']);
+                $customer = User::findOrFail((int) $data['customer_id']);
                 abort_if($customer->isRestricted(), 403, 'Tài khoản khách hàng đang bị khóa hoặc hạn chế.');
                 abort_unless(
-                    $organization->hasMember($customer->id) || \App\Models\TenantCustomer::where('organization_id', $organization->id)->where('user_id', $customer->id)->exists(),
+                    $organization->hasMember($customer->id) || TenantCustomer::where('organization_id', $organization->id)->where('user_id', $customer->id)->exists(),
                     422,
                     'Customer does not belong to this organization.'
                 );

@@ -2,23 +2,26 @@
 
 namespace App\Models;
 
+use App\Events\CourtStatusUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable(['code', 'user_id', 'court_id', 'coupon_id', 'total_amount', 'discount_amount', 'membership_discount_amount', 'status', 'payment_model', 'payment_expires_at', 'payment_expiring_notified_at', 'coupon_usage_released_at', 'cancelled_at', 'cancellation_reason', 'policy_snapshot', 'price_snapshot', 'metadata'])]
 class Booking extends Model
 {
     protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed'];
+
     protected static function booted(): void
     {
         static::saved(function (Booking $booking): void {
-            \Illuminate\Support\Facades\DB::afterCommit(function () use ($booking): void {
+            DB::afterCommit(function () use ($booking): void {
                 $court = $booking->court ?? Court::find($booking->court_id);
                 if ($court && $court->venue_id) {
-                    \App\Events\CourtStatusUpdated::dispatch(
+                    CourtStatusUpdated::dispatch(
                         venueId: (int) $court->venue_id,
                         courtId: (int) $court->id,
                         status: in_array($booking->status, ['cancelled', 'refunded'], true) ? 'available' : 'booked',
@@ -33,10 +36,10 @@ class Booking extends Model
         });
 
         static::deleted(function (Booking $booking): void {
-            \Illuminate\Support\Facades\DB::afterCommit(function () use ($booking): void {
+            DB::afterCommit(function () use ($booking): void {
                 $court = $booking->court ?? Court::find($booking->court_id);
                 if ($court && $court->venue_id) {
-                    \App\Events\CourtStatusUpdated::dispatch(
+                    CourtStatusUpdated::dispatch(
                         venueId: (int) $court->venue_id,
                         courtId: (int) $court->id,
                         status: 'available',
@@ -65,6 +68,7 @@ class Booking extends Model
             'metadata' => 'array',
         ];
     }
+
     public function getLoyaltyDiscountAmountAttribute(): int
     {
         return (int) ($this->metadata['loyalty_discount_amount']
@@ -80,7 +84,6 @@ class Booking extends Model
             ?? $this->policy_snapshot['loyalty_snapshot']['points_spent']
             ?? 0);
     }
-
 
     public function user(): BelongsTo
     {

@@ -27,11 +27,11 @@ function scrollToPillars() {
             <span class="material-symbols-outlined icon-18">verified</span>
             <span>{{ t('about.badge') }}</span>
           </div>
-          
+
           <h1 class="hero-headline">
             {{ t('about.title') }}
           </h1>
-          
+
           <p class="hero-subtext">
             {{ t('about.subtitle') }}
           </p>
@@ -120,7 +120,11 @@ function scrollToPillars() {
             </div>
             <div class="image-stack">
               <div class="image-card short-card">
-                <img src="/courts/pickleball-neon.jpg" alt="Aura Court Pickleball Arena" loading="lazy" />
+                <img
+                  src="/courts/pickleball-neon.jpg"
+                  alt="Aura Court Pickleball Arena"
+                  loading="lazy"
+                />
                 <div class="image-overlay">
                   <span class="chip-venue">USA Pickleball Certified</span>
                 </div>
@@ -334,13 +338,23 @@ function scrollToPillars() {
   transform: translateX(-50%);
   width: 1000px;
   height: 600px;
-  background: radial-gradient(circle at center, rgba(201, 161, 90, 0.12) 0%, rgba(107, 45, 63, 0.08) 45%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(201, 161, 90, 0.12) 0%,
+    rgba(107, 45, 63, 0.08) 45%,
+    transparent 70%
+  );
   pointer-events: none;
   z-index: 0;
 }
 
 :global(html.dark .aura-glow-bg) {
-  background: radial-gradient(circle at center, rgba(216, 180, 110, 0.15) 0%, rgba(68, 26, 38, 0.25) 50%, transparent 75%);
+  background: radial-gradient(
+    circle at center,
+    rgba(216, 180, 110, 0.15) 0%,
+    rgba(68, 26, 38, 0.25) 50%,
+    transparent 75%
+  );
 }
 
 .container {
@@ -354,8 +368,8 @@ function scrollToPillars() {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background: var(--primary-container, #f8e8ec);
+  color: var(--primary, #6b2d3f);
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 12px;
@@ -369,7 +383,7 @@ function scrollToPillars() {
 :global(html.dark .brand-badge),
 :global(html.dark .section-badge) {
   background: rgba(68, 26, 38, 0.85);
-  color: #E58E9F;
+  color: #e58e9f;
   border-color: rgba(229, 142, 159, 0.3);
 }
 
@@ -442,14 +456,14 @@ function scrollToPillars() {
 .stat-num {
   font-size: clamp(28px, 3.5vw, 40px);
   font-weight: 850;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   letter-spacing: -0.03em;
   line-height: 1;
   font-family: monospace, ui-monospace, sans-serif;
 }
 
 :global(html.dark .stat-num) {
-  color: #D8B46E;
+  color: #d8b46e;
   text-shadow: 0 0 16px rgba(216, 180, 110, 0.35);
 }
 
@@ -647,8 +661,8 @@ function scrollToPillars() {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background: var(--primary-container, #f8e8ec);
+  color: var(--primary, #6b2d3f);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -656,8 +670,8 @@ function scrollToPillars() {
 }
 
 :global(html.dark .pillar-icon-box) {
-  background: #3B1822;
-  color: #D8B46E;
+  background: #3b1822;
+  color: #d8b46e;
   border: 1px solid rgba(216, 180, 110, 0.3);
 }
 
@@ -789,7 +803,7 @@ function scrollToPillars() {
   line-height: 1;
   letter-spacing: -0.02em;
   display: inline-block;
-  background: linear-gradient(135deg, #a67324 0%, #6B2D3F 100%);
+  background: linear-gradient(135deg, #a67324 0%, #6b2d3f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -821,7 +835,7 @@ function scrollToPillars() {
 }
 
 .cta-box {
-  background: linear-gradient(135deg, #6B2D3F 0%, #441A26 60%, #2A1017 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #441a26 60%, #2a1017 100%);
   border-radius: 28px;
   padding: 60px 40px;
   text-align: center;
@@ -833,7 +847,7 @@ function scrollToPillars() {
 }
 
 :global(html.dark .cta-box) {
-  background: linear-gradient(135deg, #3B1822 0%, #240F16 60%, #15090D 100%);
+  background: linear-gradient(135deg, #3b1822 0%, #240f16 60%, #15090d 100%);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   border-color: rgba(216, 180, 110, 0.35);
 }
@@ -949,4 +963,3 @@ function scrollToPillars() {
   }
 }
 </style>
-

@@ -154,32 +154,36 @@ const venueOptions = computed<DropdownOption[]>(() => {
 
       <!-- Rows -->
       <div v-else class="table-body">
-        <div
-          v-for="s in shifts"
-          :key="s.id"
-          class="history-row"
-        >
+        <div v-for="s in shifts" :key="s.id" class="history-row">
           <div class="code-col">
             <div class="code-line">
               <strong class="code font-mono">{{ s.code }}</strong>
-              <span v-if="s.status === 'open'" class="live-mini-dot">● {{ t('admin.shifts.openStatus') }}</span>
+              <span v-if="s.status === 'open'" class="live-mini-dot"
+                >● {{ t('admin.shifts.openStatus') }}</span
+              >
             </div>
             <span class="cashier">{{ s.cashier_name }}</span>
           </div>
 
           <div class="venue-col">
             <span class="venue-text">{{ resolveLocalizedText(s.venue_name) }}</span>
-            <span class="time-sub font-mono">{{ s.opened_at ? formatDateTime(s.opened_at) : '' }}</span>
+            <span class="time-sub font-mono">{{
+              s.opened_at ? formatDateTime(s.opened_at) : ''
+            }}</span>
           </div>
 
           <div class="sales-col">
             <strong class="text-pink font-mono">{{ formatCurrency(s.total_sales) }}</strong>
-            <span class="orders-count">{{ t('admin.shifts.ordersCountLabel', { count: s.orders_count }) }}</span>
+            <span class="orders-count">{{
+              t('admin.shifts.ordersCountLabel', { count: s.orders_count })
+            }}</span>
           </div>
 
           <div class="cash-col">
             <strong class="font-mono text-ink">{{ formatCurrency(s.declared_cash) }}</strong>
-            <span class="expected-sub">{{ t('admin.shifts.expectedSubLabel', { amount: formatCurrency(s.expected_cash) }) }}</span>
+            <span class="expected-sub">{{
+              t('admin.shifts.expectedSubLabel', { amount: formatCurrency(s.expected_cash) })
+            }}</span>
           </div>
 
           <div class="diff-col">
@@ -192,26 +196,19 @@ const venueOptions = computed<DropdownOption[]>(() => {
           </div>
 
           <div class="status-col">
-            <span
-              class="status-badge"
-              :class="`status-${s.reconciliation_status}`"
-            >
+            <span class="status-badge" :class="`status-${s.reconciliation_status}`">
               {{
                 s.reconciliation_status === 'matched'
                   ? t('admin.shifts.statusMatched')
                   : s.reconciliation_status === 'approved'
-                  ? t('admin.shifts.statusApproved')
-                  : t('admin.shifts.statusException')
+                    ? t('admin.shifts.statusApproved')
+                    : t('admin.shifts.statusException')
               }}
             </span>
           </div>
 
           <div class="action-col text-right">
-            <AuraButton
-              size="sm"
-              variant="secondary"
-              @click="emit('openReview', s)"
-            >
+            <AuraButton size="sm" variant="secondary" @click="emit('openReview', s)">
               <span class="material-symbols-outlined icon-14">visibility</span>
               <span>{{ t('admin.shifts.viewAuditBtn') }}</span>
             </AuraButton>
@@ -417,7 +414,10 @@ const venueOptions = computed<DropdownOption[]>(() => {
   font-size: 13.5px;
 }
 
-.code-col, .venue-col, .sales-col, .cash-col {
+.code-col,
+.venue-col,
+.sales-col,
+.cash-col {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -445,17 +445,34 @@ const venueOptions = computed<DropdownOption[]>(() => {
   color: var(--ink);
 }
 
-.cashier, .time-sub, .orders-count, .expected-sub {
+.cashier,
+.time-sub,
+.orders-count,
+.expected-sub {
   font-size: 11px;
   color: var(--muted);
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
-.text-ink { color: var(--ink); }
-.text-right { text-align: right; justify-content: flex-end; display: flex; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
+.text-ink {
+  color: var(--ink);
+}
+.text-right {
+  text-align: right;
+  justify-content: flex-end;
+  display: flex;
+}
 
 .status-badge {
   display: inline-flex;
@@ -476,12 +493,15 @@ const venueOptions = computed<DropdownOption[]>(() => {
   color: #8b5cf6;
 }
 
-.status-exception, .status-rejected {
+.status-exception,
+.status-rejected {
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
 
-.icon-14 { font-size: 14px; }
+.icon-14 {
+  font-size: 14px;
+}
 
 :global(html.dark) .history-table-card,
 :global(html.dark) .search-box,
@@ -500,7 +520,8 @@ const venueOptions = computed<DropdownOption[]>(() => {
   .history-table-card {
     overflow-x: auto;
   }
-  .table-header, .history-row {
+  .table-header,
+  .history-row {
     min-width: 900px;
   }
 }

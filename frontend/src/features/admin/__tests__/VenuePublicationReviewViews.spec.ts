@@ -83,7 +83,9 @@ describe('VenueReadinessModal', () => {
 
     expect(wrapper.text()).toContain('Đạt toàn bộ tiêu chuẩn xuất bản')
 
-    const submitBtn = wrapper.findAll('button').find((b) => b.text().includes('Gửi yêu cầu xuất bản'))
+    const submitBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Gửi yêu cầu xuất bản'))
     expect(submitBtn).toBeDefined()
     await submitBtn?.trigger('click')
 
@@ -182,7 +184,9 @@ describe('VenueReadinessModal', () => {
 
     expect(wrapper.find('[data-testid="owner-receiving-connection-panel"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Tài khoản nhận tiền của chủ sân đã xác minh')
-    const submitButton = wrapper.findAll('button').find((button) => button.text().includes('Gửi yêu cầu xuất bản'))
+    const submitButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Gửi yêu cầu xuất bản'))
     expect(submitButton?.element.disabled).toBe(true)
 
     await wrapper.get('[data-testid="receiving-bank-code"]').setValue('MBBank')
@@ -205,7 +209,9 @@ describe('VenueReadinessModal', () => {
     vi.mocked(venuePublicationApi.getReadiness).mockResolvedValueOnce({
       data: { is_ready: false, missing_items: [], checklist: {} as any },
     })
-    vi.mocked(venuePublicationApi.getReceivingConnectionEvidence).mockResolvedValueOnce({ data: [] })
+    vi.mocked(venuePublicationApi.getReceivingConnectionEvidence).mockResolvedValueOnce({
+      data: [],
+    })
     vi.mocked(venuePublicationApi.rotateReceivingCredential).mockResolvedValueOnce({
       data: {
         id: 9,
@@ -235,7 +241,9 @@ describe('VenueReadinessModal', () => {
     })
     await flushPromises()
 
-    await wrapper.get('[data-testid="hmac-secret-input"]').setValue('whsec_test_secret_value_which_is_long_enough')
+    await wrapper
+      .get('[data-testid="hmac-secret-input"]')
+      .setValue('whsec_test_secret_value_which_is_long_enough')
     await wrapper.get('[data-testid="save-hmac-secret"]').trigger('click')
     await flushPromises()
 
@@ -245,13 +253,19 @@ describe('VenueReadinessModal', () => {
       9,
       'whsec_test_secret_value_which_is_long_enough',
     )
-    expect((wrapper.get('[data-testid="hmac-secret-input"]').element as HTMLInputElement).value).toBe('')
+    expect(
+      (wrapper.get('[data-testid="hmac-secret-input"]').element as HTMLInputElement).value,
+    ).toBe('')
     expect(wrapper.text()).toContain('Đang chờ giao dịch kiểm tra')
   })
 
   it('requires selecting a verified receiver and refreshes readiness after selection', async () => {
     vi.mocked(venuePublicationApi.getReadiness).mockResolvedValue({
-      data: { is_ready: false, missing_items: [{ code: 'RECEIVING_CONNECTION_REQUIRED', message: 'Choose a receiver.' }], checklist: {} as any },
+      data: {
+        is_ready: false,
+        missing_items: [{ code: 'RECEIVING_CONNECTION_REQUIRED', message: 'Choose a receiver.' }],
+        checklist: {} as any,
+      },
     })
     vi.mocked(venuePublicationApi.getReceivingConnection).mockResolvedValue({
       data: {
@@ -288,7 +302,9 @@ describe('VenueReadinessModal', () => {
     })
     await flushPromises()
 
-    const submitButton = wrapper.findAll('button').find((button) => button.text().includes('Gửi yêu cầu xuất bản'))
+    const submitButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Gửi yêu cầu xuất bản'))
     expect(submitButton?.element.disabled).toBe(true)
     await wrapper.get('[data-testid="select-receiving-connection"]').trigger('click')
     await flushPromises()
@@ -335,7 +351,9 @@ describe('AdminPublicationQueueView', () => {
     expect(wrapper.text()).toContain('Sân Sao Mai')
     expect(wrapper.text()).toContain('Rev 1')
 
-    const approveBtn = wrapper.findAll('button').find((b) => b.text().includes('Phê duyệt xuất bản'))
+    const approveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Phê duyệt xuất bản'))
     expect(approveBtn).toBeDefined()
     await approveBtn?.trigger('click')
 

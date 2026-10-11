@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ProcessOutboxMessage;
 use App\Models\Friendship;
 use App\Models\MatchInvitation;
 use App\Models\MatchPost;
@@ -22,9 +21,13 @@ class SocialNotificationDeliveryTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $alice;
+
     private User $bob;
+
     private User $host;
+
     private User $invitee;
 
     protected function setUp(): void
@@ -33,7 +36,7 @@ class SocialNotificationDeliveryTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Notifications Arena',
-            'slug' => 'aura-notif-' . uniqid(),
+            'slug' => 'aura-notif-'.uniqid(),
             'status' => 'active',
         ]);
 

@@ -47,7 +47,11 @@ async function runAction(id: number, action: () => Promise<unknown>, successKey:
 }
 
 function approve(id: number) {
-  return runAction(id, () => refundReviewApi.approveRefund(id), 'admin.manage.refundReview.toasts.approved')
+  return runAction(
+    id,
+    () => refundReviewApi.approveRefund(id),
+    'admin.manage.refundReview.toasts.approved',
+  )
 }
 
 function openReject(id: number) {
@@ -61,7 +65,11 @@ function cancelReject(id: number) {
 
 function submitReject(id: number) {
   const reason = (rejectReason[id] ?? '').trim()
-  return runAction(id, () => refundReviewApi.rejectRefund(id, reason), 'admin.manage.refundReview.toasts.rejected')
+  return runAction(
+    id,
+    () => refundReviewApi.rejectRefund(id, reason),
+    'admin.manage.refundReview.toasts.rejected',
+  )
 }
 
 function submitReport(id: number) {
@@ -69,7 +77,11 @@ function submitReport(id: number) {
     transfer_reference: (transferReference[id] ?? '').trim(),
     evidence: (transferEvidence[id] ?? '').trim(),
   }
-  return runAction(id, () => refundReviewApi.reportRefundExecution(id, body), 'admin.manage.refundReview.toasts.reported')
+  return runAction(
+    id,
+    () => refundReviewApi.reportRefundExecution(id, body),
+    'admin.manage.refundReview.toasts.reported',
+  )
 }
 </script>
 
@@ -83,12 +95,18 @@ function submitReport(id: number) {
         </div>
         <p class="panel-sub">{{ t('admin.manage.refundReview.subtitle') }}</p>
       </div>
-      <span class="refund-count-badge font-mono">{{ t('admin.manage.refundsCount', { count: refunds.length }) }}</span>
+      <span class="refund-count-badge font-mono">{{
+        t('admin.manage.refundsCount', { count: refunds.length })
+      }}</span>
     </div>
 
     <!-- Action feedback -->
-    <p v-if="actionError" class="action-alert error" data-testid="refund-action-error">{{ actionError }}</p>
-    <p v-if="actionNotice" class="action-alert success" data-testid="refund-action-notice">{{ actionNotice }}</p>
+    <p v-if="actionError" class="action-alert error" data-testid="refund-action-error">
+      {{ actionError }}
+    </p>
+    <p v-if="actionNotice" class="action-alert success" data-testid="refund-action-notice">
+      {{ actionNotice }}
+    </p>
 
     <!-- Skeleton Loading State -->
     <div v-if="loading" class="refunds-list">
@@ -116,11 +134,20 @@ function submitReport(id: number) {
 
     <!-- Obligation Review List -->
     <div v-else class="refunds-list">
-      <div v-for="o in refunds" :key="o.id" class="refund-card" :data-testid="`refund-card-${o.id}`">
+      <div
+        v-for="o in refunds"
+        :key="o.id"
+        class="refund-card"
+        :data-testid="`refund-card-${o.id}`"
+      >
         <div class="ref-info-col">
           <div class="ref-title-row">
-            <span class="ref-booking-code font-mono">{{ o.reference_code || o.reservation_code || `#${o.id}` }}</span>
-            <strong class="ref-amount text-pink font-mono">{{ formatCurrency(o.refund_amount) }}</strong>
+            <span class="ref-booking-code font-mono">{{
+              o.reference_code || o.reservation_code || `#${o.id}`
+            }}</span>
+            <strong class="ref-amount text-pink font-mono">{{
+              formatCurrency(o.refund_amount)
+            }}</strong>
           </div>
           <p v-if="o.reservation_code" class="ref-reason font-mono">{{ o.reservation_code }}</p>
           <p v-if="o.reason" class="ref-reason">{{ o.reason }}</p>
@@ -502,7 +529,9 @@ function submitReport(id: number) {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .btn-review:disabled {
@@ -622,7 +651,11 @@ function submitReport(id: number) {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>

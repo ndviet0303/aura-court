@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency, resolveLocalizedText } from '@/i18n'
-import { AuraButton, SelectDropdown } from '@/shared/components'
+import { SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 import type { PriceRuleItem } from '../../types/pricing'
 import type { Court, Venue } from '@/features/court/types/court'
@@ -16,7 +16,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'createForSlot', payload: { weekday: number; starts_at: string; ends_at: string; court_id?: number }): void
+  (
+    e: 'createForSlot',
+    payload: { weekday: number; starts_at: string; ends_at: string; court_id?: number },
+  ): void
 }>()
 
 const { t } = useI18n()
@@ -38,7 +41,7 @@ const courtOptions = computed<DropdownOption[]>(() =>
     value: c.id,
     label: `${resolveLocalizedText(c.name)}${c.venue ? ` (${resolveLocalizedText(c.venue.name)})` : ''}`,
     icon: 'sports_tennis',
-  }))
+  })),
 )
 
 // Calculate the 7 days of the current viewed week
@@ -103,7 +106,10 @@ const timeSlots = [
 ]
 
 // Compute the price and active rule for a specific day and slot
-function getSlotPricing(day: { weekday: number; isoDate: string; isWeekend: boolean }, slot: typeof timeSlots[0]) {
+function getSlotPricing(
+  day: { weekday: number; isoDate: string; isWeekend: boolean },
+  slot: (typeof timeSlots)[0],
+) {
   const court = activeCourt.value
   const venueId = court?.venue_id || court?.venue?.id
   const activeRules = props.rules.filter((rule) => {
@@ -119,12 +125,18 @@ function getSlotPricing(day: { weekday: number; isoDate: string; isWeekend: bool
   const compareRules = (a: PriceRuleItem, b: PriceRuleItem) => {
     const scopeRank = (rule: PriceRuleItem) =>
       rule.court_id ? 4 : rule.sport_zone_id ? 3 : rule.venue_id ? 2 : 1
-    return scopeRank(b) - scopeRank(a) || b.priority - a.priority || b.version - a.version || b.id - a.id
+    return (
+      scopeRank(b) - scopeRank(a) || b.priority - a.priority || b.version - a.version || b.id - a.id
+    )
   }
 
   // 1. Check Date Exception / Holiday rules matching ISO date
   const holidayRule = activeRules
-    .filter((r) => (r.type === 'holiday' || r.type === 'date_exception' || r.type === 'special_event') && r.exception_date === day.isoDate)
+    .filter(
+      (r) =>
+        (r.type === 'holiday' || r.type === 'date_exception' || r.type === 'special_event') &&
+        r.exception_date === day.isoDate,
+    )
     .sort(compareRules)[0]
 
   if (holidayRule) {
@@ -152,7 +164,11 @@ function getSlotPricing(day: { weekday: number; isoDate: string; isWeekend: bool
     return {
       price: peakRule.price,
       type: peakRule.type === 'surge' ? 'promo' : 'peak',
-      ruleName: peakRule.name || (peakRule.type === 'surge' ? t('admin.pricing.typeSurgeOption') : t('admin.pricing.typePeakOption')),
+      ruleName:
+        peakRule.name ||
+        (peakRule.type === 'surge'
+          ? t('admin.pricing.typeSurgeOption')
+          : t('admin.pricing.typePeakOption')),
       isCustom: true,
     }
   }
@@ -265,12 +281,7 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
             >
               <span class="material-symbols-outlined icon-16">chevron_right</span>
             </button>
-            <button
-              v-if="weekOffset !== 0"
-              type="button"
-              class="btn-today"
-              @click="weekOffset = 0"
-            >
+            <button v-if="weekOffset !== 0" type="button" class="btn-today" @click="weekOffset = 0">
               {{ t('admin.pricing.currentWeek') }}
             </button>
           </div>
@@ -279,11 +290,22 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
 
       <!-- Legend -->
       <div class="calendar-legend">
-        <span class="legend-item"><span class="legend-dot dot-peak"></span> {{ t('admin.pricing.typePeakOption') }}</span>
-        <span class="legend-item"><span class="legend-dot dot-promo"></span> {{ t('admin.pricing.legendPromo') }}</span>
-        <span class="legend-item"><span class="legend-dot dot-weekend"></span> {{ t('admin.pricing.legendWeekend') }}</span>
-        <span class="legend-item"><span class="legend-dot dot-holiday"></span> {{ t('admin.pricing.legendHoliday') }}</span>
-        <span class="legend-item"><span class="legend-dot dot-standard"></span> {{ t('admin.pricing.legendStandard') }}</span>
+        <span class="legend-item"
+          ><span class="legend-dot dot-peak"></span> {{ t('admin.pricing.typePeakOption') }}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot dot-promo"></span> {{ t('admin.pricing.legendPromo') }}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot dot-weekend"></span> {{ t('admin.pricing.legendWeekend') }}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot dot-holiday"></span> {{ t('admin.pricing.legendHoliday') }}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot dot-standard"></span>
+          {{ t('admin.pricing.legendStandard') }}</span
+        >
       </div>
 
       <!-- 7-Day Grid Matrix -->
@@ -308,14 +330,23 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
               v-for="slot in timeSlots"
               :key="slot.starts_at"
               class="slot-card"
-              :class="[`slot-${getSlotPricing(day, slot).type}`, { 'slot-custom-rule': getSlotPricing(day, slot).isCustom }]"
+              :class="[
+                `slot-${getSlotPricing(day, slot).type}`,
+                { 'slot-custom-rule': getSlotPricing(day, slot).isCustom },
+              ]"
               :title="`${getSlotPricing(day, slot).ruleName} • ${t('admin.pricing.clickToConfigureSlot')}`"
               @click="handleSlotClick(day.weekday, slot.starts_at, slot.ends_at)"
             >
               <div class="slot-time-row font-mono">
                 <span class="slot-time">{{ slot.label }}</span>
-                <span v-if="getSlotPricing(day, slot).type === 'peak'" class="slot-chip chip-peak">PEAK</span>
-                <span v-else-if="getSlotPricing(day, slot).type === 'promo'" class="slot-chip chip-promo">PROMO</span>
+                <span v-if="getSlotPricing(day, slot).type === 'peak'" class="slot-chip chip-peak"
+                  >PEAK</span
+                >
+                <span
+                  v-else-if="getSlotPricing(day, slot).type === 'promo'"
+                  class="slot-chip chip-promo"
+                  >PROMO</span
+                >
               </div>
 
               <div class="slot-rate font-mono">
@@ -471,11 +502,21 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
   border-radius: 3px;
 }
 
-.dot-peak { background: #db2777; }
-.dot-promo { background: #3b82f6; }
-.dot-weekend { background: #8b5cf6; }
-.dot-holiday { background: #f59e0b; }
-.dot-standard { background: #10b981; }
+.dot-peak {
+  background: #db2777;
+}
+.dot-promo {
+  background: #3b82f6;
+}
+.dot-weekend {
+  background: #8b5cf6;
+}
+.dot-holiday {
+  background: #f59e0b;
+}
+.dot-standard {
+  background: #10b981;
+}
 
 .week-grid {
   display: grid;
@@ -536,7 +577,10 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .slot-card:hover {

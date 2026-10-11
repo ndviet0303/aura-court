@@ -11,7 +11,6 @@ use App\Models\CourtPriceSlot;
 use App\Models\EntitlementTransfer;
 use App\Models\FinanceException;
 use App\Models\LoyaltyRule;
-use App\Models\MarketplaceListing;
 use App\Models\MonthlyInvoice;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -29,8 +28,6 @@ use App\Models\PosProduct;
 use App\Models\PriceRule;
 use App\Models\ProviderEvent;
 use App\Models\ReceivingConnection;
-use App\Models\RecurringOccurrence;
-use App\Models\RecurringSeries;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
@@ -859,7 +856,6 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             'features.flags.tenant_pos_and_wallet' => true,
         ]);
 
-
         // Tournament with max_participants = 2, entry_fee = 100,000 VND
         $tournament = Tournament::create([
             'organization_id' => $org->id,
@@ -1098,6 +1094,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $this->sendOwnerPayment($fixture, $attempt->reference, $amount, 'receipt-conf-'.Str::random(10));
 
         $reservation->refresh();
+
         return $reservation;
     }
 

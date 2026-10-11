@@ -17,9 +17,13 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $cashier;
+
     private User $manager;
+
     private PosProduct $productA;
+
     private PosProduct $productB;
 
     protected function setUp(): void
@@ -28,7 +32,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Arena East',
-            'slug' => 'aura-east-' . uniqid(),
+            'slug' => 'aura-east-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -80,7 +84,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
             'opening_cash' => -5000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'neg-open-' . uniqid(),
+            'Idempotency-Key' => 'neg-open-'.uniqid(),
         ]);
         $negOpen->assertStatus(422);
 
@@ -103,7 +107,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
             'opening_cash' => 200000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'dup-open-' . uniqid(),
+            'Idempotency-Key' => 'dup-open-'.uniqid(),
         ]);
         $dupOpen->assertStatus(409);
 
@@ -115,7 +119,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
             'cash_tendered' => 50000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'sale-1-' . uniqid(),
+            'Idempotency-Key' => 'sale-1-'.uniqid(),
         ]);
         $sale1->assertCreated();
         $order1Id = $sale1->json('order.id');
@@ -127,7 +131,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
             'cash_tendered' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'sale-2-' . uniqid(),
+            'Idempotency-Key' => 'sale-2-'.uniqid(),
         ]);
         $sale2->assertCreated();
         $order2Id = $sale2->json('order.id');

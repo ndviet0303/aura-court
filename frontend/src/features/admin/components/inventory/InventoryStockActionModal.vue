@@ -65,7 +65,7 @@ watch(
       note.value = ''
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleSubmit() {
@@ -74,7 +74,8 @@ function handleSubmit() {
 
   let finalNote = note.value.trim()
   if (props.type === 'out' && outReason.value) {
-    const reasonLabel = outReasonOptions.value.find((r) => r.value === outReason.value)?.label || outReason.value
+    const reasonLabel =
+      outReasonOptions.value.find((r) => r.value === outReason.value)?.label || outReason.value
     finalNote = finalNote ? `[${reasonLabel}] ${finalNote}` : `[${reasonLabel}]`
   }
 
@@ -99,10 +100,22 @@ function handleSubmit() {
           </span>
           <div>
             <h3 class="modal-title">
-              {{ type === 'in' ? t('admin.inventory.stockInTitle') : type === 'out' ? t('admin.inventory.stockOutTitle') : t('admin.inventory.adjustStockTitle') }}
+              {{
+                type === 'in'
+                  ? t('admin.inventory.stockInTitle')
+                  : type === 'out'
+                    ? t('admin.inventory.stockOutTitle')
+                    : t('admin.inventory.adjustStockTitle')
+              }}
             </h3>
             <p class="modal-sub">
-              {{ type === 'in' ? t('admin.inventory.stockInSub') : type === 'out' ? t('admin.inventory.stockOutSub') : t('admin.inventory.adjustStockSub') }}
+              {{
+                type === 'in'
+                  ? t('admin.inventory.stockInSub')
+                  : type === 'out'
+                    ? t('admin.inventory.stockOutSub')
+                    : t('admin.inventory.adjustStockSub')
+              }}
             </p>
           </div>
         </div>
@@ -115,7 +128,8 @@ function handleSubmit() {
           <div class="p-summary-left">
             <strong class="p-name">{{ resolveLocalizedText(product.name) }}</strong>
             <span class="p-meta font-mono">
-              SKU: {{ product.sku }} · {{ t('admin.inventory.currentStockLabel') }}: <strong>{{ product.stock_quantity }} {{ product.unit }}</strong>
+              SKU: {{ product.sku }} · {{ t('admin.inventory.currentStockLabel') }}:
+              <strong>{{ product.stock_quantity }} {{ product.unit }}</strong>
             </span>
           </div>
 
@@ -123,7 +137,13 @@ function handleSubmit() {
             <span class="proj-label">{{ t('admin.inventory.projectedStock') }}</span>
             <strong
               class="proj-val font-mono"
-              :class="projectedStock === 0 ? 'text-red' : projectedStock <= product.min_stock ? 'text-yellow' : 'text-green'"
+              :class="
+                projectedStock === 0
+                  ? 'text-red'
+                  : projectedStock <= product.min_stock
+                    ? 'text-yellow'
+                    : 'text-green'
+              "
             >
               {{ projectedStock }} {{ product.unit }}
             </strong>
@@ -135,9 +155,21 @@ function handleSubmit() {
           <!-- Quantity Input -->
           <div class="form-group">
             <label class="form-label flex-between">
-              <span>{{ type === 'adjust' ? t('admin.inventory.qtyAfterAuditLabel') : t('admin.inventory.transactionQtyLabel') }} *</span>
-              <span v-if="type === 'adjust'" class="variance-preview font-mono" :class="auditVariance >= 0 ? 'text-green' : 'text-red'">
-                {{ auditVariance >= 0 ? `+${auditVariance}` : auditVariance }} {{ product.unit }} ({{ t('admin.inventory.varianceLabel') }})
+              <span
+                >{{
+                  type === 'adjust'
+                    ? t('admin.inventory.qtyAfterAuditLabel')
+                    : t('admin.inventory.transactionQtyLabel')
+                }}
+                *</span
+              >
+              <span
+                v-if="type === 'adjust'"
+                class="variance-preview font-mono"
+                :class="auditVariance >= 0 ? 'text-green' : 'text-red'"
+              >
+                {{ auditVariance >= 0 ? `+${auditVariance}` : auditVariance }}
+                {{ product.unit }} ({{ t('admin.inventory.varianceLabel') }})
               </span>
             </label>
             <div class="qty-input-wrap">
@@ -176,7 +208,13 @@ function handleSubmit() {
               v-model="note"
               type="text"
               class="form-input"
-              :placeholder="type === 'in' ? t('admin.inventory.noteInPlaceholder') : type === 'out' ? t('admin.inventory.noteOutPlaceholder') : t('admin.inventory.noteAdjustPlaceholder')"
+              :placeholder="
+                type === 'in'
+                  ? t('admin.inventory.noteInPlaceholder')
+                  : type === 'out'
+                    ? t('admin.inventory.noteOutPlaceholder')
+                    : t('admin.inventory.noteAdjustPlaceholder')
+              "
             />
           </div>
         </form>
@@ -189,7 +227,9 @@ function handleSubmit() {
           :disabled="quantity < 0 || (type !== 'adjust' && quantity <= 0) || saving"
           @click="handleSubmit"
         >
-          <span v-if="saving" class="material-symbols-outlined icon-16 spin-anim">progress_activity</span>
+          <span v-if="saving" class="material-symbols-outlined icon-16 spin-anim"
+            >progress_activity</span
+          >
           <span>{{ saving ? t('common.saving') : t('admin.inventory.confirmActionBtn') }}</span>
         </AuraButton>
       </div>
@@ -240,9 +280,15 @@ function handleSubmit() {
   font-size: 28px;
 }
 
-.icon-green { color: #10b981; }
-.icon-orange { color: #f59e0b; }
-.icon-blue { color: #3b82f6; }
+.icon-green {
+  color: #10b981;
+}
+.icon-orange {
+  color: #f59e0b;
+}
+.icon-blue {
+  color: #3b82f6;
+}
 
 .modal-title {
   margin: 0;
@@ -323,9 +369,15 @@ function handleSubmit() {
   font-weight: 800;
 }
 
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
 
 .stock-action-form {
   display: flex;
@@ -382,7 +434,9 @@ function handleSubmit() {
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-input:focus {
@@ -399,14 +453,20 @@ function handleSubmit() {
   background: var(--surface-secondary, rgba(0, 0, 0, 0.015));
 }
 
-.icon-16 { font-size: 16px; }
+.icon-16 {
+  font-size: 16px;
+}
 
 .spin-anim {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

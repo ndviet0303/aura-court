@@ -190,7 +190,9 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
   it('discards stale capability responses when organization context switches', async () => {
     const { fetchCapabilities, isPosEnabled } = useTenantCapabilities()
 
-    const { promise: slowFirstPromise, resolve: resolveFirstCall } = (Promise as any).withResolvers()
+    const { promise: slowFirstPromise, resolve: resolveFirstCall } = (
+      Promise as any
+    ).withResolvers()
     vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
       if (url.includes('/organizations/1/capabilities')) {
         // Slow response from Org 1 (POS enabled)
@@ -230,7 +232,8 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
   })
 
   it('resets capabilities on logout and clears context', async () => {
-    const { fetchCapabilities, resetCapabilities, isPosEnabled, currentOrgId } = useTenantCapabilities()
+    const { fetchCapabilities, resetCapabilities, isPosEnabled, currentOrgId } =
+      useTenantCapabilities()
 
     vi.mocked(apiV2.get).mockResolvedValue({
       organization_id: 5,
@@ -251,7 +254,8 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
 
   it('discards deferred capability response arriving after logout/reset', async () => {
     const auth = useAuthStore()
-    const { fetchCapabilities, resetCapabilities, isPosEnabled, currentOrgId, loaded } = useTenantCapabilities()
+    const { fetchCapabilities, resetCapabilities, isPosEnabled, currentOrgId, loaded } =
+      useTenantCapabilities()
 
     const { promise: slowPromise, resolve: resolveCall } = (Promise as any).withResolvers()
 
@@ -288,7 +292,8 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
 
   it('updates capabilities when switching from Account 101/Org 1 to Account 102/Org 2 and clears loading', async () => {
     const auth = useAuthStore()
-    const { fetchCapabilities, isPosEnabled, currentOrgId, currentAccountId, loading, loaded } = useTenantCapabilities()
+    const { fetchCapabilities, isPosEnabled, currentOrgId, currentAccountId, loading, loaded } =
+      useTenantCapabilities()
 
     vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
       if (url.includes('/organizations/1/capabilities')) {

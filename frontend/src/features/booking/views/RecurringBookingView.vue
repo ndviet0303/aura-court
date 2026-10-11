@@ -76,8 +76,17 @@ const HCM = 'Asia/Ho_Chi_Minh'
 function formatSession(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt)
   const end = new Date(endsAt)
-  const date = start.toLocaleDateString('vi-VN', { timeZone: HCM, day: '2-digit', month: '2-digit' })
-  const timeOpts: Intl.DateTimeFormatOptions = { timeZone: HCM, hour: '2-digit', minute: '2-digit', hour12: false }
+  const date = start.toLocaleDateString('vi-VN', {
+    timeZone: HCM,
+    day: '2-digit',
+    month: '2-digit',
+  })
+  const timeOpts: Intl.DateTimeFormatOptions = {
+    timeZone: HCM,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }
   return `${date} · ${start.toLocaleTimeString('vi-VN', timeOpts)} - ${end.toLocaleTimeString('vi-VN', timeOpts)}`
 }
 
@@ -120,7 +129,11 @@ onMounted(() => {
     <!-- Tab 1: Create New Series & Quick Overview -->
     <section v-if="activeTab === 'create'" class="tab-pane">
       <!-- Partial-conflict negotiation: keep the available sessions or change the schedule -->
-      <div v-if="partialConflict" class="partial-conflict-card" data-testid="recurring-partial-conflict">
+      <div
+        v-if="partialConflict"
+        class="partial-conflict-card"
+        data-testid="recurring-partial-conflict"
+      >
         <div class="partial-head">
           <span class="material-symbols-outlined">event_busy</span>
           <div>
@@ -131,12 +144,17 @@ onMounted(() => {
         <ul class="partial-excluded">
           <li v-for="ex in partialConflict.excluded" :key="ex.index">
             <span class="ex-when">{{ formatSession(ex.starts_at, ex.ends_at) }}</span>
-            <span class="ex-reason">{{ ex.conflict_reason || t('recurring.accept.conflictGeneric') }}</span>
+            <span class="ex-reason">{{
+              ex.conflict_reason || t('recurring.accept.conflictGeneric')
+            }}</span>
           </li>
         </ul>
         <div class="partial-summary">
           <span>{{ t('recurring.accept.heldCount', { count: partialConflict.held_count }) }}</span>
-          <strong>{{ t('recurring.accept.revisedTotal') }}: {{ formatMoney(partialConflict.revised_total) }}</strong>
+          <strong
+            >{{ t('recurring.accept.revisedTotal') }}:
+            {{ formatMoney(partialConflict.revised_total) }}</strong
+          >
         </div>
         <div class="partial-actions">
           <AuraButton variant="outline" size="md" @click="dismissPartialConflict">
@@ -204,10 +222,7 @@ onMounted(() => {
 
     <!-- Tab 3: Invoices & Billing Cycles Overview -->
     <section v-else-if="activeTab === 'invoices'" class="tab-pane">
-      <RecurringInvoicesList
-        :invoices="allInvoices"
-        :loading="loading"
-      />
+      <RecurringInvoicesList :invoices="allInvoices" :loading="loading" />
     </section>
   </main>
 </template>
@@ -345,5 +360,4 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 10px;
 }
-
 </style>

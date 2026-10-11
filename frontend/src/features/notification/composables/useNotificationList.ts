@@ -1,18 +1,42 @@
 import { ref, computed, onMounted } from 'vue'
 import { notificationApi } from '../api/notificationApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { AppNotification, NotificationFilterType, NotificationMeta } from '../types/notification'
+import type {
+  AppNotification,
+  NotificationFilterType,
+  NotificationMeta,
+} from '../types/notification'
 
-export function getNotificationCategory(event?: string): 'booking' | 'payment' | 'social' | 'system' {
+export function getNotificationCategory(
+  event?: string,
+): 'booking' | 'payment' | 'social' | 'system' {
   if (!event) return 'system'
   const ev = event.toLowerCase()
-  if (ev.includes('booking') || ev.includes('court') || ev.includes('waitlist') || ev.includes('schedule') || ev.includes('reschedule')) {
+  if (
+    ev.includes('booking') ||
+    ev.includes('court') ||
+    ev.includes('waitlist') ||
+    ev.includes('schedule') ||
+    ev.includes('reschedule')
+  ) {
     return 'booking'
   }
-  if (ev.includes('payment') || ev.includes('split_bill') || ev.includes('wallet') || ev.includes('refund') || ev.includes('sepay') || ev.includes('stripe')) {
+  if (
+    ev.includes('payment') ||
+    ev.includes('split_bill') ||
+    ev.includes('wallet') ||
+    ev.includes('refund') ||
+    ev.includes('sepay') ||
+    ev.includes('stripe')
+  ) {
     return 'payment'
   }
-  if (ev.includes('match') || ev.includes('tournament') || ev.includes('social') || ev.includes('resale')) {
+  if (
+    ev.includes('match') ||
+    ev.includes('tournament') ||
+    ev.includes('social') ||
+    ev.includes('resale')
+  ) {
     return 'social'
   }
   return 'system'
@@ -22,28 +46,63 @@ export function getNotificationMeta(event?: string): NotificationMeta {
   const ev = (event || '').toLowerCase()
 
   if (ev.includes('booking.confirmed') || ev.includes('booking_paid')) {
-    return { icon: 'task_alt', color: '#059669', category: 'booking', badgeText: 'ĐẶT SÂN THÀNH CÔNG' }
+    return {
+      icon: 'task_alt',
+      color: '#059669',
+      category: 'booking',
+      badgeText: 'ĐẶT SÂN THÀNH CÔNG',
+    }
   }
   if (ev.includes('booking.created')) {
-    return { icon: 'calendar_month', color: '#db2777', category: 'booking', badgeText: 'GIỮ CHỖ SÂN' }
+    return {
+      icon: 'calendar_month',
+      color: '#db2777',
+      category: 'booking',
+      badgeText: 'GIỮ CHỖ SÂN',
+    }
   }
   if (ev.includes('booking.expiring') || ev.includes('expiring_soon')) {
-    return { icon: 'alarm', color: '#d97706', category: 'booking', badgeText: 'SẮP HẾT HẠN GIỮ CHỖ' }
+    return {
+      icon: 'alarm',
+      color: '#d97706',
+      category: 'booking',
+      badgeText: 'SẮP HẾT HẠN GIỮ CHỖ',
+    }
   }
   if (ev.includes('booking.expired') || ev.includes('cancel')) {
     return { icon: 'event_busy', color: '#dc2626', category: 'booking', badgeText: 'LỊCH ĐÃ HỦY' }
   }
   if (ev.includes('waitlist')) {
-    return { icon: 'how_to_reg', color: '#0284c7', category: 'booking', badgeText: 'HÀNG ĐỢI SÂN TRỐNG' }
+    return {
+      icon: 'how_to_reg',
+      color: '#0284c7',
+      category: 'booking',
+      badgeText: 'HÀNG ĐỢI SÂN TRỐNG',
+    }
   }
   if (ev.includes('payment.success') || ev.includes('sepay') || ev.includes('stripe')) {
-    return { icon: 'payments', color: '#059669', category: 'payment', badgeText: 'THANH TOÁN THÀNH CÔNG' }
+    return {
+      icon: 'payments',
+      color: '#059669',
+      category: 'payment',
+      badgeText: 'THANH TOÁN THÀNH CÔNG',
+    }
   }
   if (ev.includes('split_bill')) {
-    return { icon: 'call_split', color: '#7c3aed', category: 'payment', badgeText: 'CHIA TIỀN NHÓM' }
+    return {
+      icon: 'call_split',
+      color: '#7c3aed',
+      category: 'payment',
+      badgeText: 'CHIA TIỀN NHÓM',
+    }
   }
   if (ev.includes('wallet')) {
-    return { icon: 'account_balance_wallet', color: '#6B2D3F', category: 'payment', badgeText: 'VÍ HỘI VIÊN' }
+    return {
+      icon: 'account_balance_wallet',
+      color: '#6B2D3F',
+      category: 'payment',
+      badgeText: 'VÍ HỘI VIÊN',
+    }
   }
   if (ev.includes('matchmaking') || ev.includes('match')) {
     return { icon: 'groups', color: '#0284c7', category: 'social', badgeText: 'KÈO GIAO LƯU' }
@@ -55,7 +114,12 @@ export function getNotificationMeta(event?: string): NotificationMeta {
     return { icon: 'swap_horiz', color: '#059669', category: 'social', badgeText: 'CHỢ NHƯỢNG VÉ' }
   }
 
-  return { icon: 'notifications', color: '#6B2D3F', category: 'system', badgeText: 'THÔNG BÁO HỆ THỐNG' }
+  return {
+    icon: 'notifications',
+    color: '#6B2D3F',
+    category: 'system',
+    badgeText: 'THÔNG BÁO HỆ THỐNG',
+  }
 }
 
 export function useNotificationList() {
@@ -92,7 +156,9 @@ export function useNotificationList() {
   const filteredNotifications = computed(() => {
     if (activeFilter.value === 'all') return notifications.value
     if (activeFilter.value === 'unread') return notifications.value.filter((n) => !n.read_at)
-    return notifications.value.filter((n) => getNotificationCategory(n.data?.event) === activeFilter.value)
+    return notifications.value.filter(
+      (n) => getNotificationCategory(n.data?.event) === activeFilter.value,
+    )
   })
 
   async function load() {

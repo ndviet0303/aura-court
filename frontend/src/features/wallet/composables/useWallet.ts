@@ -1,5 +1,11 @@
 import { ref, computed, onMounted } from 'vue'
-import type { VenueWallet, Transaction, TransactionType, PaymentMethodType, CardDetails } from '../types/wallet'
+import type {
+  VenueWallet,
+  Transaction,
+  TransactionType,
+  PaymentMethodType,
+  CardDetails,
+} from '../types/wallet'
 export type { VenueWallet, Transaction, TransactionType, PaymentMethodType, CardDetails }
 import { walletApi } from '../api/walletApi'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -74,7 +80,11 @@ export function useWallet(organizationId?: number) {
   const filteredTransactions = computed(() => {
     return transactions.value.filter((t) => {
       if (transactionFilter.value !== 'all' && t.type !== transactionFilter.value) return false
-      if (selectedVenueFilter.value !== 'all' && !t.venue_name.toLowerCase().includes(selectedVenueFilter.value.toLowerCase())) return false
+      if (
+        selectedVenueFilter.value !== 'all' &&
+        !t.venue_name.toLowerCase().includes(selectedVenueFilter.value.toLowerCase())
+      )
+        return false
       if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase().trim()
         const matchesTitle = t.title.toLowerCase().includes(q)
@@ -106,7 +116,7 @@ export function useWallet(organizationId?: number) {
     const userIdentifier = auth.user?.phone || auth.user?.id || 'MEMBER'
     const memo = `ORD NAP ${userIdentifier}`
     const qrUrl = `https://img.vietqr.io/image/${bank}-${accountNo}-compact2.png?amount=${depositAmount.value}&addInfo=${encodeURIComponent(
-      memo
+      memo,
     )}&accountName=${encodeURIComponent(accountName)}`
 
     return {
@@ -123,7 +133,10 @@ export function useWallet(organizationId?: number) {
     loading.value = true
     error.value = ''
     try {
-      if (organizationId !== undefined && (!Number.isSafeInteger(organizationId) || organizationId <= 0)) {
+      if (
+        organizationId !== undefined &&
+        (!Number.isSafeInteger(organizationId) || organizationId <= 0)
+      ) {
         throw new Error('Không tìm thấy tổ chức cho ví được chọn.')
       }
       const res = await walletApi.getWallet(organizationId)
@@ -157,9 +170,15 @@ export function useWallet(organizationId?: number) {
           type: t.type === 'credit' ? 'topup' : 'booking',
           title: t.type === 'credit' ? 'Nạp tiền ví Aura' : 'Thanh toán đặt sân',
           venue_name: 'Hệ Thống Aura Court',
-          description: t.description || (t.type === 'credit' ? 'Nạp tiền vào ví' : 'Trừ số dư đặt sân'),
+          description:
+            t.description || (t.type === 'credit' ? 'Nạp tiền vào ví' : 'Trừ số dư đặt sân'),
           date: t.created_at ? new Date(t.created_at).toLocaleDateString('vi-VN') : '',
-          time: t.created_at ? new Date(t.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
+          time: t.created_at
+            ? new Date(t.created_at).toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '',
           amount: t.type === 'credit' ? t.amount : -t.amount,
           balance_after: t.balance_after ?? realBal,
           status: 'success',
@@ -209,7 +228,9 @@ export function useWallet(organizationId?: number) {
       processing.value = true
       error.value = ''
       try {
-        const selectedWallet = wallets.value.find((wallet) => wallet.id === depositTargetWalletId.value)
+        const selectedWallet = wallets.value.find(
+          (wallet) => wallet.id === depositTargetWalletId.value,
+        )
         if (!selectedWallet) throw new Error('Vui lòng chọn ví trước khi nạp tiền.')
         const initRes = await walletApi.initiateDeposit({
           amount: depositAmount.value,
@@ -233,7 +254,9 @@ export function useWallet(organizationId?: number) {
     error.value = ''
     try {
       if (depositMethod.value !== 'sepay') {
-        throw new Error('Nạp tiền qua Stripe chưa được cấu hình. Vui lòng sử dụng chuyển khoản VietQR.')
+        throw new Error(
+          'Nạp tiền qua Stripe chưa được cấu hình. Vui lòng sử dụng chuyển khoản VietQR.',
+        )
       }
 
       if (activeDeposit.value?.reference) {
@@ -242,7 +265,9 @@ export function useWallet(organizationId?: number) {
           await loadWalletData()
           isDepositModalOpen.value = false
           depositStep.value = 'select'
-          showNotice(`Nạp tiền thành công! Đã cộng ${statusRes.amount.toLocaleString('vi-VN')} VND vào ví.`)
+          showNotice(
+            `Nạp tiền thành công! Đã cộng ${statusRes.amount.toLocaleString('vi-VN')} VND vào ví.`,
+          )
           activeDeposit.value = null
           return
         }
@@ -258,7 +283,9 @@ export function useWallet(organizationId?: number) {
         // Pending status
         isDepositModalOpen.value = false
         depositStep.value = 'select'
-        showNotice('Giao dịch đang chờ ngân hàng/SePay xác thực. Số dư sẽ tự động được cộng khi hệ thống nhận được giao dịch.')
+        showNotice(
+          'Giao dịch đang chờ ngân hàng/SePay xác thực. Số dư sẽ tự động được cộng khi hệ thống nhận được giao dịch.',
+        )
         return
       }
 

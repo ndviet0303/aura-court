@@ -70,7 +70,10 @@ export function useAdminFinancialExceptions() {
       author: meta.author_name || raw.user?.name || 'System Sentinel',
       role: meta.author_role || (raw.user ? 'Risk Officer' : 'System Guard'),
       time: formattedTime || '09:00',
-      action: meta.action_type || raw.action?.replace('finance_exception.', '').toUpperCase() || 'CAN THIỆP',
+      action:
+        meta.action_type ||
+        raw.action?.replace('finance_exception.', '').toUpperCase() ||
+        'CAN THIỆP',
       details: meta.resolution || raw.action || '',
       hash: meta.audit_hash || `0x${Math.random().toString(16).substring(2, 10).toUpperCase()}`,
       type,
@@ -112,9 +115,26 @@ export function useAdminFinancialExceptions() {
     return exceptions.value.filter((item) => {
       // Tab filter
       if (activeTab.value === 'critical' && item.severity !== 'critical') return false
-      if (activeTab.value === 'refund' && item.type !== 'late_refund' && !item.description?.toLowerCase().includes('hoàn')) return false
-      if (activeTab.value === 'deposit' && item.type !== 'voucher_hunting' && item.type !== 'limit_exceeded' && !item.description?.toLowerCase().includes('nạp') && !item.description?.toLowerCase().includes('rút')) return false
-      if (activeTab.value === 'deposit_hold' && item.type !== 'deposit_hold_mismatch' && !item.description?.toLowerCase().includes('cọc')) return false
+      if (
+        activeTab.value === 'refund' &&
+        item.type !== 'late_refund' &&
+        !item.description?.toLowerCase().includes('hoàn')
+      )
+        return false
+      if (
+        activeTab.value === 'deposit' &&
+        item.type !== 'voucher_hunting' &&
+        item.type !== 'limit_exceeded' &&
+        !item.description?.toLowerCase().includes('nạp') &&
+        !item.description?.toLowerCase().includes('rút')
+      )
+        return false
+      if (
+        activeTab.value === 'deposit_hold' &&
+        item.type !== 'deposit_hold_mismatch' &&
+        !item.description?.toLowerCase().includes('cọc')
+      )
+        return false
 
       // Severity dropdown filter
       if (filterSeverity.value !== 'all' && item.severity !== filterSeverity.value) return false
@@ -136,11 +156,21 @@ export function useAdminFinancialExceptions() {
       const q = searchQuery.value.toLowerCase()
       const userObj = item.metadata?.user || item.resolver
       return (
-        String(item.reference || '').toLowerCase().includes(q) ||
-        String(userObj?.name || '').toLowerCase().includes(q) ||
-        String(userObj?.id || '').toLowerCase().includes(q) ||
-        String(item.description || '').toLowerCase().includes(q) ||
-        String(item.metadata?.court || '').toLowerCase().includes(q)
+        String(item.reference || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(userObj?.name || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(userObj?.id || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(item.description || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(item.metadata?.court || '')
+          .toLowerCase()
+          .includes(q)
       )
     })
   })
@@ -199,7 +229,9 @@ export function useAdminFinancialExceptions() {
 
       // Refresh data to fetch updated stats and append new immutable audit log
       await loadData()
-      notice.value = t('admin.exceptions.overrideSuccessMsg', { ref: targetItem.reference || targetItem.id })
+      notice.value = t('admin.exceptions.overrideSuccessMsg', {
+        ref: targetItem.reference || targetItem.id,
+      })
       setTimeout(() => {
         notice.value = ''
       }, 5000)
@@ -263,4 +295,3 @@ export function useAdminFinancialExceptions() {
     loadData,
   }
 }
-

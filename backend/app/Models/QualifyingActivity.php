@@ -11,7 +11,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class QualifyingActivity extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['score_delta' => 'integer', 'qualifies_at' => 'datetime', 'metadata' => 'array']; }
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function verifier(): BelongsTo { return $this->belongsTo(User::class, 'verified_by'); }
+
+    protected function casts(): array
+    {
+        return ['score_delta' => 'integer', 'qualifies_at' => 'datetime', 'metadata' => 'array'];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
 }

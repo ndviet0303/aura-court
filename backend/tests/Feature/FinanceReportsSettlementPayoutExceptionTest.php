@@ -2,10 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\Payment\BeneficiaryValidationRequest;
-use App\Contracts\Payment\BeneficiaryValidationResponse;
 use App\Contracts\Payment\PaymentProviderInterface;
-use App\Contracts\Payment\PayoutInstruction;
 use App\Contracts\Payment\PayoutStatusResponse;
 use App\Contracts\Payment\PayoutSubmissionResponse;
 use App\Models\Beneficiary;
@@ -16,7 +13,6 @@ use App\Models\Payout;
 use App\Models\Settlement;
 use App\Models\User;
 use App\Services\Payment\PaymentProviderManager;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -26,10 +22,15 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
     use RefreshDatabase;
 
     private Organization $organization;
+
     private User $owner;
+
     private User $manager;
+
     private User $cashier;
+
     private User $staff;
+
     private User $customer;
 
     protected function setUp(): void
@@ -38,7 +39,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
 
         $this->organization = Organization::create([
             'name' => 'Finance Pilot Org',
-            'slug' => 'fin-pilot-' . uniqid(),
+            'slug' => 'fin-pilot-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -201,7 +202,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
     {
         $headers = [
             'X-Organization-Id' => $this->organization->id,
-            'Idempotency-Key' => 'snap-' . uniqid(),
+            'Idempotency-Key' => 'snap-'.uniqid(),
         ];
 
         $res = $this->actingAs($this->owner)->postJson('/api/v2/finance/settlements/snapshot', [
@@ -248,7 +249,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $createRes = $this->actingAs($this->owner)->postJson('/api/v2/finance/payouts', [
             'settlement_id' => $settlement->id,
             'beneficiary_id' => $beneficiary->id,
-        ], array_merge($headers, ['Idempotency-Key' => 'pay-draft-' . uniqid()]));
+        ], array_merge($headers, ['Idempotency-Key' => 'pay-draft-'.uniqid()]));
 
         $createRes->assertCreated()
             ->assertJsonPath('payout.status', 'draft')
@@ -257,7 +258,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $payoutId = $createRes->json('payout.id');
 
         // 2. Approve Payout
-        $approveRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/approve", [], array_merge($headers, ['Idempotency-Key' => 'pay-appr-' . uniqid()]));
+        $approveRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/approve", [], array_merge($headers, ['Idempotency-Key' => 'pay-appr-'.uniqid()]));
         $approveRes->assertOk()
             ->assertJsonPath('payout.status', 'approved');
 
@@ -283,13 +284,13 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $this->app->instance(PaymentProviderManager::class, $providerManager);
 
         // 3. Submit Payout
-        $submitRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/submit", [], array_merge($headers, ['Idempotency-Key' => 'pay-sub-' . uniqid()]));
+        $submitRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/submit", [], array_merge($headers, ['Idempotency-Key' => 'pay-sub-'.uniqid()]));
         $submitRes->assertOk()
             ->assertJsonPath('payout.status', 'submitted')
             ->assertJsonPath('payout.provider_payout_id', 'payout-sub-999');
 
         // 4. Query Payout Status
-        $statusRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/status", [], array_merge($headers, ['Idempotency-Key' => 'pay-stat-' . uniqid()]));
+        $statusRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/status", [], array_merge($headers, ['Idempotency-Key' => 'pay-stat-'.uniqid()]));
         $statusRes->assertOk()
             ->assertJsonPath('payout.status', 'paid');
     }
@@ -324,7 +325,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
             'action_type' => 'manual_override',
             'reason' => 'Xác nhận do điều chỉnh giá giờ vàng hợp lệ',
             'note' => 'Đã ghi chú vào hồ sơ kiểm toán',
-        ], array_merge($headers, ['Idempotency-Key' => 'ex-res-' . uniqid()]));
+        ], array_merge($headers, ['Idempotency-Key' => 'ex-res-'.uniqid()]));
         $resolveRes->assertOk()
             ->assertJsonPath('exception.status', 'resolved');
 

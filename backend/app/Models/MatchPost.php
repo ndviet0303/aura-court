@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+
 #[Fillable([
     'organization_id',
     'creator_id',
@@ -41,7 +42,9 @@ class MatchPost extends Model
     use BelongsToTenant;
 
     public const CATEGORY_GIAO_LUU = 'giao lưu';
+
     public const CATEGORY_VANG_LAI = 'đánh vãng lai';
+
     public const VALID_CATEGORIES = [
         self::CATEGORY_GIAO_LUU,
         self::CATEGORY_VANG_LAI,
@@ -50,10 +53,15 @@ class MatchPost extends Model
     ];
 
     public const SKILL_NEWBIE = 'newbie';
+
     public const SKILL_Y = 'Y';
+
     public const SKILL_TBY = 'TBY';
+
     public const SKILL_TB = 'TB';
+
     public const SKILL_K = 'K';
+
     public const VALID_SKILL_LABELS = [
         self::SKILL_NEWBIE,
         self::SKILL_Y,
@@ -79,13 +87,40 @@ class MatchPost extends Model
         ];
     }
 
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'creator_id'); }
-    public function court(): BelongsTo { return $this->belongsTo(Court::class, 'court_id'); }
-    public function invitations(): HasMany { return $this->hasMany(MatchInvitation::class); }
-    public function participations(): HasMany { return $this->hasMany(MatchParticipation::class); }
-    public function bill(): HasOne { return $this->hasOne(MatchBill::class); }
-    public function reservation(): BelongsTo { return $this->belongsTo(Reservation::class, 'reservation_id'); }
-    public function entitlement(): BelongsTo { return $this->belongsTo(ReservationEntitlement::class, 'entitlement_id'); }
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function court(): BelongsTo
+    {
+        return $this->belongsTo(Court::class, 'court_id');
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(MatchInvitation::class);
+    }
+
+    public function participations(): HasMany
+    {
+        return $this->hasMany(MatchParticipation::class);
+    }
+
+    public function bill(): HasOne
+    {
+        return $this->hasOne(MatchBill::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class, 'reservation_id');
+    }
+
+    public function entitlement(): BelongsTo
+    {
+        return $this->belongsTo(ReservationEntitlement::class, 'entitlement_id');
+    }
 
     public function isOwnerHosted(): bool
     {

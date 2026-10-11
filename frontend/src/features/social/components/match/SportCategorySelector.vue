@@ -176,7 +176,9 @@ const sports: SportOption[] = [
 .sport-card.active {
   border-color: var(--pink-dark, #db2777);
   background: var(--pink-light, rgba(236, 72, 153, 0.06));
-  box-shadow: 0 0 0 1px var(--pink-dark, #db2777), 0 4px 16px rgba(219, 39, 119, 0.12);
+  box-shadow:
+    0 0 0 1px var(--pink-dark, #db2777),
+    0 4px 16px rgba(219, 39, 119, 0.12);
 }
 
 .card-top {

@@ -135,7 +135,7 @@ html.dark .empty-title {
   gap: 6px;
   padding: 10px 18px;
   border-radius: 10px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 700;

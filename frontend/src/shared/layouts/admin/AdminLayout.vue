@@ -69,11 +69,36 @@ const navGroups: NavGroup[] = [
     titleKey: 'admin.nav.courtsGroup',
     icon: 'sports_tennis',
     items: [
-      { id: 'courts-manage', path: '/admin/manage', labelKey: 'admin.nav.manageCourts', icon: 'grid_view' },
-      { id: 'courts-schedule', path: '/admin/schedule', labelKey: 'admin.nav.scheduleManage', icon: 'schedule' },
-      { id: 'courts-contracts', path: '/admin/contracts', labelKey: 'admin.nav.recurringContracts', icon: 'contract' },
-      { id: 'courts-venues', path: '/admin/venues', labelKey: 'admin.nav.manageVenues', icon: 'location_on' },
-      { id: 'courts-pricing', path: '/admin/pricing', labelKey: 'admin.nav.pricingMatrix', icon: 'price_change' },
+      {
+        id: 'courts-manage',
+        path: '/admin/manage',
+        labelKey: 'admin.nav.manageCourts',
+        icon: 'grid_view',
+      },
+      {
+        id: 'courts-schedule',
+        path: '/admin/schedule',
+        labelKey: 'admin.nav.scheduleManage',
+        icon: 'schedule',
+      },
+      {
+        id: 'courts-contracts',
+        path: '/admin/contracts',
+        labelKey: 'admin.nav.recurringContracts',
+        icon: 'contract',
+      },
+      {
+        id: 'courts-venues',
+        path: '/admin/venues',
+        labelKey: 'admin.nav.manageVenues',
+        icon: 'location_on',
+      },
+      {
+        id: 'courts-pricing',
+        path: '/admin/pricing',
+        labelKey: 'admin.nav.pricingMatrix',
+        icon: 'price_change',
+      },
     ],
   },
   {
@@ -81,10 +106,30 @@ const navGroups: NavGroup[] = [
     titleKey: 'admin.nav.posGroup',
     icon: 'point_of_sale',
     items: [
-      { id: 'pos-retail', path: '/admin/pos', labelKey: 'admin.nav.posRetail', icon: 'point_of_sale' },
-      { id: 'pos-shifts', path: '/admin/shifts', labelKey: 'admin.nav.shiftsReconciliation', icon: 'receipt_long' },
-      { id: 'pos-inventory', path: '/admin/inventory', labelKey: 'admin.nav.inventory', icon: 'inventory_2' },
-      { id: 'pos-membership', path: '/admin/membership', labelKey: 'admin.nav.membership', icon: 'card_membership' },
+      {
+        id: 'pos-retail',
+        path: '/admin/pos',
+        labelKey: 'admin.nav.posRetail',
+        icon: 'point_of_sale',
+      },
+      {
+        id: 'pos-shifts',
+        path: '/admin/shifts',
+        labelKey: 'admin.nav.shiftsReconciliation',
+        icon: 'receipt_long',
+      },
+      {
+        id: 'pos-inventory',
+        path: '/admin/inventory',
+        labelKey: 'admin.nav.inventory',
+        icon: 'inventory_2',
+      },
+      {
+        id: 'pos-membership',
+        path: '/admin/membership',
+        labelKey: 'admin.nav.membership',
+        icon: 'card_membership',
+      },
     ],
   },
   {
@@ -92,9 +137,24 @@ const navGroups: NavGroup[] = [
     titleKey: 'admin.nav.financeGroup',
     icon: 'account_balance_wallet',
     items: [
-      { id: 'finance-payouts', path: '/admin/payouts', labelKey: 'admin.nav.payouts', icon: 'account_balance_wallet' },
-      { id: 'finance-reconciliation', path: '/admin/reconciliation', labelKey: 'admin.nav.reconciliationAlerts', icon: 'analytics' },
-      { id: 'finance-exceptions', path: '/admin/financial-exceptions', labelKey: 'admin.nav.financialExceptions', icon: 'shield' },
+      {
+        id: 'finance-payouts',
+        path: '/admin/payouts',
+        labelKey: 'admin.nav.payouts',
+        icon: 'account_balance_wallet',
+      },
+      {
+        id: 'finance-reconciliation',
+        path: '/admin/reconciliation',
+        labelKey: 'admin.nav.reconciliationAlerts',
+        icon: 'analytics',
+      },
+      {
+        id: 'finance-exceptions',
+        path: '/admin/financial-exceptions',
+        labelKey: 'admin.nav.financialExceptions',
+        icon: 'shield',
+      },
     ],
   },
   {
@@ -102,7 +162,12 @@ const navGroups: NavGroup[] = [
     titleKey: 'admin.nav.tournamentGroup',
     icon: 'emoji_events',
     items: [
-      { id: 'tournaments-bracket', path: '/admin/tournaments', labelKey: 'admin.nav.tournaments', icon: 'account_tree' },
+      {
+        id: 'tournaments-bracket',
+        path: '/admin/tournaments',
+        labelKey: 'admin.nav.tournaments',
+        icon: 'account_tree',
+      },
     ],
   },
   {
@@ -110,10 +175,25 @@ const navGroups: NavGroup[] = [
     titleKey: 'admin.nav.orgGroup',
     icon: 'corporate_fare',
     items: [
-      { id: 'org-profile', path: '/admin/organization', labelKey: 'admin.nav.organization', icon: 'corporate_fare' },
+      {
+        id: 'org-profile',
+        path: '/admin/organization',
+        labelKey: 'admin.nav.organization',
+        icon: 'corporate_fare',
+      },
       { id: 'org-staff', path: '/admin/staff', labelKey: 'admin.nav.staffManage', icon: 'badge' },
-      { id: 'org-kyc', path: '/admin/kyc', labelKey: 'admin.nav.kycVerification', icon: 'verified_user' },
-      { id: 'org-disputes', path: '/admin/disputes', labelKey: 'admin.nav.disputes', icon: 'gavel' },
+      {
+        id: 'org-kyc',
+        path: '/admin/kyc',
+        labelKey: 'admin.nav.kycVerification',
+        icon: 'verified_user',
+      },
+      {
+        id: 'org-disputes',
+        path: '/admin/disputes',
+        labelKey: 'admin.nav.disputes',
+        icon: 'gavel',
+      },
     ],
   },
 ]
@@ -124,14 +204,21 @@ function isItemPermitted(item: NavItem): boolean {
   if (auth.user.role === 'admin' || userAny.capabilities?.is_platform_admin) {
     return true
   }
-  const activeOrgs = (userAny.organizations as Array<any> | undefined)?.filter((o: any) => o.status === 'active') || []
+  const activeOrgs =
+    (userAny.organizations as Array<any> | undefined)?.filter((o: any) => o.status === 'active') ||
+    []
   const isOwner =
     activeOrgs.some((o: any) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
     userAny.capabilities?.can_manage_venues === true
   const isCashier = activeOrgs.some((o: any) => o.role === 'cashier' || o.role === 'staff')
 
   // Courts group: manage, schedule, contracts, venues, pricing
-  if (item.path === '/admin/manage' || item.path === '/admin/contracts' || item.path === '/admin/venues' || item.path === '/admin/pricing') {
+  if (
+    item.path === '/admin/manage' ||
+    item.path === '/admin/contracts' ||
+    item.path === '/admin/venues' ||
+    item.path === '/admin/pricing'
+  ) {
     return !!isOwner
   }
   if (item.path === '/admin/schedule') {
@@ -246,7 +333,11 @@ const searchResults = computed<SearchResultItem[]>(() => {
     const groupTitle = t(group.titleKey).toLowerCase()
     for (const item of group.items) {
       const itemLabel = t(item.labelKey).toLowerCase()
-      if (itemLabel.includes(query) || groupTitle.includes(query) || item.path.toLowerCase().includes(query)) {
+      if (
+        itemLabel.includes(query) ||
+        groupTitle.includes(query) ||
+        item.path.toLowerCase().includes(query)
+      ) {
         results.push({ ...item, groupTitleKey: group.titleKey })
       }
     }
@@ -259,11 +350,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
 <template>
   <div class="admin-workspace-layout">
     <!-- Mobile Sidebar Toggle Overlay -->
-    <div
-      v-if="isMobileSidebarOpen"
-      class="sidebar-backdrop"
-      @click="closeMobileSidebar"
-    ></div>
+    <div v-if="isMobileSidebarOpen" class="sidebar-backdrop" @click="closeMobileSidebar"></div>
 
     <!-- Left Admin Sidebar -->
     <aside class="admin-sidebar" :class="{ 'is-open': isMobileSidebarOpen }">
@@ -341,7 +428,11 @@ const searchResults = computed<SearchResultItem[]>(() => {
         <!-- Search Results View -->
         <template v-if="isSearching">
           <div class="nav-section-label">
-            {{ searchResults.length > 0 ? `${t('admin.nav.quickSearch')} (${searchResults.length})` : t('admin.nav.quickSearch') }}
+            {{
+              searchResults.length > 0
+                ? `${t('admin.nav.quickSearch')} (${searchResults.length})`
+                : t('admin.nav.quickSearch')
+            }}
           </div>
 
           <div v-if="searchResults.length === 0" class="no-search-results">
@@ -391,7 +482,10 @@ const searchResults = computed<SearchResultItem[]>(() => {
               v-for="group in permittedNavGroups"
               :key="group.id"
               class="nav-group-block"
-              :class="{ 'is-group-open': expandedGroups[group.id], 'has-active-child': isGroupActive(group) }"
+              :class="{
+                'is-group-open': expandedGroups[group.id],
+                'has-active-child': isGroupActive(group),
+              }"
             >
               <!-- Group Accordion Trigger Header -->
               <button
@@ -463,11 +557,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
     <div class="admin-main-container">
       <!-- Mobile Bar with Toggle Button -->
       <div class="mobile-admin-bar lg:hidden">
-        <button
-          type="button"
-          class="btn-toggle-menu"
-          @click="isMobileSidebarOpen = true"
-        >
+        <button type="button" class="btn-toggle-menu" @click="isMobileSidebarOpen = true">
           <span class="material-symbols-outlined">menu</span>
           <span class="font-semibold text-sm">AURA CONTROL</span>
         </button>
@@ -663,13 +753,13 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 .lang-pill-btn.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   box-shadow: 0 1px 4px rgba(107, 45, 63, 0.3);
 }
 
 :global(html.dark) .lang-pill-btn.active {
-  background: var(--primary, #E58E9F);
+  background: var(--primary, #e58e9f);
   color: #1c0a10;
   font-weight: 800;
 }
@@ -704,14 +794,14 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 .search-input-wrap:focus-within {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   background: var(--surface, #ffffff);
   box-shadow: 0 0 0 2px rgba(107, 45, 63, 0.15);
 }
 
 :global(html.dark) .search-input-wrap:focus-within {
   background: #1e2026;
-  border-color: #E58E9F;
+  border-color: #e58e9f;
   box-shadow: 0 0 0 2px rgba(229, 142, 159, 0.2);
 }
 
@@ -815,7 +905,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 .sidebar-nav-item.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 3px 12px rgba(107, 45, 63, 0.22);
@@ -831,7 +921,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 :global(html.dark) .sidebar-nav-item.active {
-  background: var(--primary, #E58E9F);
+  background: var(--primary, #e58e9f);
   color: #1c0a10;
   font-weight: 800;
   box-shadow: 0 3px 12px rgba(229, 142, 159, 0.3);
@@ -929,7 +1019,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 .group-header-btn.is-active-parent {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 750;
 }
 
@@ -951,7 +1041,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 .group-header-btn.is-active-parent .group-icon {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .group-icon {
@@ -981,12 +1071,12 @@ const searchResults = computed<SearchResultItem[]>(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   box-shadow: 0 0 6px rgba(107, 45, 63, 0.6);
 }
 
 :global(html.dark) .active-indicator-dot {
-  background: #E58E9F;
+  background: #e58e9f;
   box-shadow: 0 0 6px rgba(229, 142, 159, 0.7);
 }
 
@@ -1057,14 +1147,14 @@ const searchResults = computed<SearchResultItem[]>(() => {
 }
 
 .sidebar-subnav-item.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.22);
 }
 
 :global(html.dark) .sidebar-subnav-item.active {
-  background: var(--primary, #E58E9F);
+  background: var(--primary, #e58e9f);
   color: #1c0a10;
   font-weight: 800;
   box-shadow: 0 2px 8px rgba(229, 142, 159, 0.3);
@@ -1143,7 +1233,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 12.5px;
   font-weight: 700;
@@ -1155,7 +1245,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
 
 :global(html.dark) .user-avatar-circle {
   background: #36141d;
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
 .user-info-text {

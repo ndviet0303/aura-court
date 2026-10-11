@@ -2,15 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
-use App\Models\ReservationEntitlement;
+use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Social\MarketplaceService;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Payment\SplitPaymentService;
+use App\Services\Payment\WalletPaymentService;
+use App\Services\Social\MarketplaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -60,7 +62,7 @@ class AdvancedBookingMarketplaceTest extends TestCase
         $this->assertDatabaseCount('reservation_entitlements', 1);
     }
 
-    /** @return array{0:Organization,1:User,2:\App\Models\Court} */
+    /** @return array{0:Organization,1:User,2:Court} */
     private function tenant(): array
     {
         $organization = Organization::create([
@@ -81,19 +83,21 @@ class AdvancedBookingMarketplaceTest extends TestCase
         $court = $venue->courts()->create(['name' => 'Advanced Court', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.marketplace_split_payments' => true, 'features.flags.marketplace_slot_resale' => true]);
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $organization->id);
         $walletService->credit($wallet, 5000000, 'test_topup', 1, 'Fund for test');
+
         return [$organization, $user, $court];
     }
 
-    private function reservation(Organization $organization, User $user, int $courtId, bool $future = false): \App\Models\Reservation
+    private function reservation(Organization $organization, User $user, int $courtId, bool $future = false): Reservation
     {
         $date = now(config('app.timezone'))->addDays($future ? 4 : 2)->setTime(8, 0);
         $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/v2/reservations', ['court_id' => $courtId, 'slots' => [$date->toIso8601String()]]);
         $response->assertCreated();
-        $reservation = \App\Models\Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
+        $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
         $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('confirm-')])->postJson('/api/v2/reservations/'.$reservation->code.'/confirm')->assertOk();
+
         return $reservation->fresh('entitlements');
     }
 }

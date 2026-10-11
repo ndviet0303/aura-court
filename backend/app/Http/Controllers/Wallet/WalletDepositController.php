@@ -110,7 +110,7 @@ class WalletDepositController extends Controller
 
         $wallet = $this->walletPayments->getOrCreateWallet($user->id, (int) $orgId);
 
-        $reference = 'DEP-' . strtoupper(Str::random(8)) . '-' . $user->id;
+        $reference = 'DEP-'.strtoupper(Str::random(8)).'-'.$user->id;
         $idempotencyKey ??= $reference;
 
         $bank = 'TPBank';
@@ -120,7 +120,7 @@ class WalletDepositController extends Controller
         $amount = (int) $validated['amount'];
 
         $qrUrl = "https://img.vietqr.io/image/{$bank}-{$accountNumber}-compact2.png?amount={$amount}&addInfo="
-            . urlencode($code) . '&accountName=' . urlencode($accountName);
+            .urlencode($code).'&accountName='.urlencode($accountName);
 
         $transferInfo = [
             'bank' => $bank,

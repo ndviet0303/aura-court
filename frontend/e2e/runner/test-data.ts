@@ -20,11 +20,15 @@ export function getTestManifest(): RunManifest {
     return getDiscoveryManifest()
   }
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as RunManifest
-  const isProductionTarget = ['prod', 'production'].includes((process.env.E2E_TARGET || process.env.TARGET_ENV || 'local').toLowerCase())
+  const isProductionTarget = ['prod', 'production'].includes(
+    (process.env.E2E_TARGET || process.env.TARGET_ENV || 'local').toLowerCase(),
+  )
   const isProductionManifest = /^prod_e2e_[0-9]+_[a-f0-9]{8}$/.test(manifest.runId)
   if (isProductionTarget !== isProductionManifest) {
     if (!process.env.E2E_MANIFEST_PATH) return getDiscoveryManifest()
-    throw new Error('E2E manifest does not belong to the selected target. Run global setup for this target.')
+    throw new Error(
+      'E2E manifest does not belong to the selected target. Run global setup for this target.',
+    )
   }
   return manifest
 }
@@ -32,16 +36,40 @@ export function getTestManifest(): RunManifest {
 export function getDiscoveryManifest(): RunManifest {
   // Test discovery must never borrow real production identities or credentials.
   const roles = {
-    admin: 'platform_admin', owner: 'organization_owner', foreignOwner: 'organization_owner',
-    manager: 'venue_manager', cashier: 'cashier', staff: 'staff', customer: 'customer',
-    customer2: 'customer', unverifiedCustomer: 'customer', restrictedCustomer: 'customer',
+    admin: 'platform_admin',
+    owner: 'organization_owner',
+    foreignOwner: 'organization_owner',
+    manager: 'venue_manager',
+    cashier: 'cashier',
+    staff: 'staff',
+    customer: 'customer',
+    customer2: 'customer',
+    unverifiedCustomer: 'customer',
+    restrictedCustomer: 'customer',
   }
-  const users = Object.fromEntries(Object.entries(roles).map(([actor, role], index) => [actor, {
-    id: index + 1, name: `Discovery ${actor}`, email: `${actor}@discovery.auracourt.test`,
-    password: 'DiscoveryOnly123!', role,
-  }])) as { [Actor in keyof typeof roles]: { id: number; name: string; email: string; password: string; role: string } }
+  const users = Object.fromEntries(
+    Object.entries(roles).map(([actor, role], index) => [
+      actor,
+      {
+        id: index + 1,
+        name: `Discovery ${actor}`,
+        email: `${actor}@discovery.auracourt.test`,
+        password: 'DiscoveryOnly123!',
+        role,
+      },
+    ]),
+  ) as {
+    [Actor in keyof typeof roles]: {
+      id: number
+      name: string
+      email: string
+      password: string
+      role: string
+    }
+  }
   return {
-    runId: 'discovery', createdAt: new Date().toISOString(),
+    runId: 'discovery',
+    createdAt: new Date().toISOString(),
     tempDir: path.join(os.tmpdir(), 'aura_discovery'),
     storagePath: path.join(os.tmpdir(), 'aura_discovery', 'storage'),
     database: { name: 'booking_discovery', host: '127.0.0.1', port: 5432, user: 'postgres' },
@@ -49,16 +77,39 @@ export function getDiscoveryManifest(): RunManifest {
     frontend: { port: 4180, url: 'http://127.0.0.1:4180', pid: 0 },
     credentials: users,
     fixtures: {
-      run_id: 'discovery', users,
+      run_id: 'discovery',
+      users,
       organizations: {
         org1: {
-          id: 1, name: 'Discovery Primary', slug: 'discovery-primary',
-          venue1A: { id: 1, name: 'Discovery A', slug: 'discovery-a', routingId: 'discovery-1a', courts: [1, 2] },
-          venue1B: { id: 2, name: 'Discovery B', slug: 'discovery-b', routingId: 'discovery-1b', courts: [3] },
+          id: 1,
+          name: 'Discovery Primary',
+          slug: 'discovery-primary',
+          venue1A: {
+            id: 1,
+            name: 'Discovery A',
+            slug: 'discovery-a',
+            routingId: 'discovery-1a',
+            courts: [1, 2],
+          },
+          venue1B: {
+            id: 2,
+            name: 'Discovery B',
+            slug: 'discovery-b',
+            routingId: 'discovery-1b',
+            courts: [3],
+          },
         },
         org2: {
-          id: 2, name: 'Discovery Foreign', slug: 'discovery-foreign',
-          venue2: { id: 3, name: 'Discovery C', slug: 'discovery-c', routingId: 'discovery-2', courts: [4] },
+          id: 2,
+          name: 'Discovery Foreign',
+          slug: 'discovery-foreign',
+          venue2: {
+            id: 3,
+            name: 'Discovery C',
+            slug: 'discovery-c',
+            routingId: 'discovery-2',
+            courts: [4],
+          },
         },
       },
     },
@@ -136,7 +187,7 @@ export interface ExpiredHoldsResult {
 export function getFuturePlayDate(
   daysAhead: number = 2,
   hour: number = 10,
-  minute: number = 0
+  minute: number = 0,
 ): FuturePlayDate {
   // Use Intl to compute local time in Asia/Ho_Chi_Minh
   const now = new Date()
@@ -188,7 +239,11 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
   const backendDir = path.resolve(import.meta.dirname, '../../../backend')
   let realAppKey = cleanProcessEnv.APP_KEY
   if (!realAppKey) {
-    const envName = manifest.runId.startsWith('prod_e2e_') || !fs.existsSync(path.join(backendDir, '.env.testing')) ? '.env' : '.env.testing'
+    const envName =
+      manifest.runId.startsWith('prod_e2e_') ||
+      !fs.existsSync(path.join(backendDir, '.env.testing'))
+        ? '.env'
+        : '.env.testing'
     const envPath = path.resolve(backendDir, envName)
     if (fs.existsSync(envPath)) {
       const match = fs.readFileSync(envPath, 'utf-8').match(/^APP_KEY=(.*)$/m)
@@ -246,10 +301,11 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
 export function executeGuardedBackendPhp(
   manifest: RunManifest,
   script: string,
-  options?: { cwd?: string }
+  options?: { cwd?: string },
 ): string {
   const backendDir = options?.cwd || path.resolve(import.meta.dirname, '../../../backend')
-  const guardedScript = `
+  const guardedScript =
+    `
     require "vendor/autoload.php";
     $app = require_once "bootstrap/app.php";
     $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -284,7 +340,7 @@ export function arrangeCourt(
     testKey: string
     venueId?: number
     price?: number
-  }
+  },
 ): ArrangedCourt {
   const backendDir = path.resolve(import.meta.dirname, '../../../backend')
   const payload = {
@@ -306,7 +362,7 @@ export function arrangeCourt(
       cwd: backendDir,
       env: getCanonicalBackendEnv(manifest),
       encoding: 'utf-8',
-    }
+    },
   )
 
   return JSON.parse(raw) as ArrangedCourt
@@ -326,7 +382,7 @@ export function arrangeCoupon(
     usageLimit?: number
     venueId?: number
     organizationId?: number
-  }
+  },
 ): ArrangedCoupon {
   const backendDir = path.resolve(import.meta.dirname, '../../../backend')
   const payload = {
@@ -353,7 +409,7 @@ export function arrangeCoupon(
       cwd: backendDir,
       env: getCanonicalBackendEnv(manifest),
       encoding: 'utf-8',
-    }
+    },
   )
 
   return JSON.parse(raw) as ArrangedCoupon
@@ -368,7 +424,7 @@ export function grantLoyaltyPoints(
     userId?: number
     organizationId?: number
     points: number
-  }
+  },
 ): GrantedPoints {
   const backendDir = path.resolve(import.meta.dirname, '../../../backend')
   const payload = {
@@ -390,7 +446,7 @@ export function grantLoyaltyPoints(
       cwd: backendDir,
       env: getCanonicalBackendEnv(manifest),
       encoding: 'utf-8',
-    }
+    },
   )
 
   return JSON.parse(raw) as GrantedPoints
@@ -409,7 +465,7 @@ export function arrangePosStock(
     cost?: number
     stockQuantity?: number
     organizationId?: number
-  }
+  },
 ): ArrangedStock {
   const backendDir = path.resolve(import.meta.dirname, '../../../backend')
   const payload = {
@@ -435,7 +491,7 @@ export function arrangePosStock(
       cwd: backendDir,
       env: getCanonicalBackendEnv(manifest),
       encoding: 'utf-8',
-    }
+    },
   )
 
   return JSON.parse(raw) as ArrangedStock
@@ -450,7 +506,7 @@ export function expireHolds(
     bookingCode?: string
     reservationCode?: string
     minutes?: number
-  } = {}
+  } = {},
 ): ExpiredHoldsResult {
   const backendDir = path.resolve(import.meta.dirname, '../../../backend')
   const args = [
@@ -516,29 +572,47 @@ export function formatVietnamDate(date: Date = new Date()): string {
 function sendProductionPosWebhook(
   manifest: RunManifest,
   options: SyntheticWebhookOptions,
-  rawBody: string
+  rawBody: string,
 ): SyntheticWebhookResponse {
-  const organizationIds = Object.values(manifest.fixtures?.organizations || {})
-    .flatMap(org => org ? [org.id] : [])
+  const organizationIds = Object.values(manifest.fixtures?.organizations || {}).flatMap((org) =>
+    org ? [org.id] : [],
+  )
   const cashier = manifest.fixtures?.users.cashier
-  if (manifest.backend.url.replace(/\/$/, '') !== 'https://court-api.ziet.dev'
-    || !/^prod_e2e_[0-9]+_[a-f0-9]{8}$/.test(manifest.runId)
-    || manifest.fixtures?.run_id !== manifest.runId
-    || organizationIds.length !== 2 || new Set(organizationIds).size !== 2
-    || organizationIds.some(id => ![73, 74].includes(id))
-    || !cashier?.id || cashier.email !== `cashier_${manifest.runId}@auracourt.test`
-    || !Number.isFinite(Date.parse(manifest.createdAt))
-    || !Number.isSafeInteger(options.posOrderId) || Number(options.posOrderId) <= 0
-    || !Number.isSafeInteger(options.amount) || options.amount <= 0
-    || !/^POS-[0-9]+-[A-Z0-9_-]+$/.test(options.code)) {
-    throw new Error('Production POS signing requires a fresh checkout ID, current synthetic cashier and authorized test tenants 73/74.')
+  if (
+    manifest.backend.url.replace(/\/$/, '') !== 'https://court-api.ziet.dev' ||
+    !/^prod_e2e_[0-9]+_[a-f0-9]{8}$/.test(manifest.runId) ||
+    manifest.fixtures?.run_id !== manifest.runId ||
+    organizationIds.length !== 2 ||
+    new Set(organizationIds).size !== 2 ||
+    organizationIds.some((id) => ![73, 74].includes(id)) ||
+    !cashier?.id ||
+    cashier.email !== `cashier_${manifest.runId}@auracourt.test` ||
+    !Number.isFinite(Date.parse(manifest.createdAt)) ||
+    !Number.isSafeInteger(options.posOrderId) ||
+    Number(options.posOrderId) <= 0 ||
+    !Number.isSafeInteger(options.amount) ||
+    options.amount <= 0 ||
+    !/^POS-[0-9]+-[A-Z0-9_-]+$/.test(options.code)
+  ) {
+    throw new Error(
+      'Production POS signing requires a fresh checkout ID, current synthetic cashier and authorized test tenants 73/74.',
+    )
   }
-  const scope = Buffer.from(JSON.stringify({
-    runId: manifest.runId, createdAt: manifest.createdAt, organizationIds,
-    cashierId: cashier.id, cashierEmail: cashier.email,
-    orderId: options.posOrderId, rawBody, tamperSignature: !!options.tamperSignature,
-  })).toString('base64')
-  const result = executeGuardedBackendPhp(manifest, `
+  const scope = Buffer.from(
+    JSON.stringify({
+      runId: manifest.runId,
+      createdAt: manifest.createdAt,
+      organizationIds,
+      cashierId: cashier.id,
+      cashierEmail: cashier.email,
+      orderId: options.posOrderId,
+      rawBody,
+      tamperSignature: !!options.tamperSignature,
+    }),
+  ).toString('base64')
+  const result = executeGuardedBackendPhp(
+    manifest,
+    `
     $scope = json_decode(base64_decode('${scope}'), true, 512, JSON_THROW_ON_ERROR);
     $event = json_decode($scope['rawBody'], true, 512, JSON_THROW_ON_ERROR);
     $order = \\App\\Models\\PosOrder::whereKey($scope['orderId'])
@@ -596,7 +670,8 @@ function sendProductionPosWebhook(
       'statusCode' => $status, 'ok' => $status >= 200 && $status < 300,
       'body' => json_decode($body, true) ?? $body,
     ], JSON_THROW_ON_ERROR);
-  `)
+  `,
+  )
   return JSON.parse(result) as SyntheticWebhookResponse
 }
 
@@ -605,7 +680,7 @@ function sendProductionPosWebhook(
  */
 export async function sendSyntheticPaymentWebhook(
   manifest: RunManifest,
-  options: SyntheticWebhookOptions
+  options: SyntheticWebhookOptions,
 ): Promise<SyntheticWebhookResponse> {
   const timestamp = String(options.timestamp || Math.floor(Date.now() / 1000))
   const rawBody = JSON.stringify({
@@ -626,13 +701,16 @@ export async function sendSyntheticPaymentWebhook(
     ? `${manifest.backend.url}/api/v1/webhooks/sepay`
     : `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${options.routingId}`
   const secret = isPos ? 'test_sepay_hmac_secret_e2e' : options.secret
-  const signatureHash = crypto.createHmac('sha256', secret)
+  const signatureHash = crypto
+    .createHmac('sha256', secret)
     .update(isPos ? rawBody : `${timestamp}.${rawBody}`)
     .digest('hex')
 
   const signature = options.tamperSignature
     ? 'sha256=0000000000000000000000000000000000000000000000000000000000000000'
-    : (isPos ? signatureHash : `sha256=${signatureHash}`)
+    : isPos
+      ? signatureHash
+      : `sha256=${signatureHash}`
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -658,29 +736,41 @@ export async function sendSyntheticPaymentWebhook(
   if (!isPos && response.ok) {
     // Production acknowledges receipt ingestion before its queue allocates payment.
     // Wait for the real terminal receipt; never process it or change its status here.
-    const lookup = Buffer.from(JSON.stringify({
-      routingId: options.routingId,
-      eventId: JSON.parse(rawBody).id,
-      organizationIds: Object.values(manifest.fixtures?.organizations || {}).flatMap((org) => org ? [org.id] : []),
-    })).toString('base64')
+    const lookup = Buffer.from(
+      JSON.stringify({
+        routingId: options.routingId,
+        eventId: JSON.parse(rawBody).id,
+        organizationIds: Object.values(manifest.fixtures?.organizations || {}).flatMap((org) =>
+          org ? [org.id] : [],
+        ),
+      }),
+    ).toString('base64')
     const deadline = Date.now() + 15000
     let processed = false
     while (Date.now() < deadline) {
-      const result = JSON.parse(executeGuardedBackendPhp(manifest, `
+      const result = JSON.parse(
+        executeGuardedBackendPhp(
+          manifest,
+          `
         $lookup = json_decode(base64_decode('${lookup}'), true);
         $connection = \\App\\Models\\ReceivingConnection::where('routing_id', $lookup['routingId'])
           ->whereIn('organization_id', $lookup['organizationIds'])->firstOrFail();
         $receipt = \\App\\Models\\OwnerPaymentReceipt::where('receiving_connection_id', $connection->id)
           ->where('provider_event_id', (string) $lookup['eventId'])->first();
         echo json_encode(['processed' => $receipt && $receipt->processed_at !== null]);
-      `)) as { processed: boolean }
+      `,
+        ),
+      ) as { processed: boolean }
       if (result.processed) {
         processed = true
         break
       }
       await new Promise((resolve) => setTimeout(resolve, 300))
     }
-    if (!processed) throw new Error('Payment webhook was acknowledged but its test receipt was not processed within 15 seconds.')
+    if (!processed)
+      throw new Error(
+        'Payment webhook was acknowledged but its test receipt was not processed within 15 seconds.',
+      )
   }
 
   return {

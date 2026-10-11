@@ -89,11 +89,11 @@ class OwnerRefundObligation extends Model
     {
         return $this->belongsTo(Reservation::class);
     }
+
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
     }
-
 
     public function booking(): BelongsTo
     {

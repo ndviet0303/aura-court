@@ -32,19 +32,11 @@ const { t } = useI18n()
       <!-- Quick Actions Toolbar -->
       <div class="quick-actions-bar">
         <span class="quick-label">{{ t('admin.schedule.quickActions') }}</span>
-        <button
-          type="button"
-          class="btn-quick-action"
-          @click="emit('copySchedule', 1, 'weekdays')"
-        >
+        <button type="button" class="btn-quick-action" @click="emit('copySchedule', 1, 'weekdays')">
           <span class="material-symbols-outlined icon-14">content_copy</span>
           <span>{{ t('admin.schedule.copyMonToWeekdays') }}</span>
         </button>
-        <button
-          type="button"
-          class="btn-quick-action"
-          @click="emit('copySchedule', 1, 'all')"
-        >
+        <button type="button" class="btn-quick-action" @click="emit('copySchedule', 1, 'all')">
           <span class="material-symbols-outlined icon-14">sync</span>
           <span>{{ t('admin.schedule.copyMonToAll') }}</span>
         </button>
@@ -89,17 +81,17 @@ const { t } = useI18n()
             </button>
           </div>
           <span class="day-status" :class="day.isOpen ? 'text-green' : 'text-red'">
-            {{ day.isOpen ? `● ${t('admin.schedule.statusOpen')}` : `○ ${t('admin.schedule.statusClosed')}` }}
+            {{
+              day.isOpen
+                ? `● ${t('admin.schedule.statusOpen')}`
+                : `○ ${t('admin.schedule.statusClosed')}`
+            }}
           </span>
         </div>
 
         <div class="shifts-col">
           <template v-if="day.isOpen">
-            <div
-              v-for="(shift, sIdx) in day.shifts"
-              :key="shift.id"
-              class="shift-time-chip"
-            >
+            <div v-for="(shift, sIdx) in day.shifts" :key="shift.id" class="shift-time-chip">
               <TimePicker v-model="shift.start" />
               <span class="material-symbols-outlined icon-arrow">arrow_forward</span>
               <TimePicker v-model="shift.end" />
@@ -114,11 +106,7 @@ const { t } = useI18n()
               </button>
             </div>
 
-            <button
-              type="button"
-              class="btn-add-shift-link"
-              @click="emit('addShift', day.id)"
-            >
+            <button type="button" class="btn-add-shift-link" @click="emit('addShift', day.id)">
               <span class="material-symbols-outlined icon-16">add</span>
               <span>{{ t('admin.schedule.addShift') }}</span>
             </button>
@@ -281,8 +269,12 @@ const { t } = useI18n()
   font-weight: 600;
 }
 
-.text-green { color: #10b981; }
-.text-red { color: #ef4444; }
+.text-green {
+  color: #10b981;
+}
+.text-red {
+  color: #ef4444;
+}
 
 .shifts-col {
   display: flex;

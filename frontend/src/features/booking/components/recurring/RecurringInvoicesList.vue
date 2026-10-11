@@ -41,9 +41,13 @@ function openInvoiceDetail(inv: RecurringInvoice) {
       <div class="header-titles">
         <h3 class="invoices-title">
           Danh Sách Hóa Đơn Chu Kỳ Tháng
-          <span v-if="invoices.length > 0" class="count-badge font-mono">{{ invoices.length }}</span>
+          <span v-if="invoices.length > 0" class="count-badge font-mono">{{
+            invoices.length
+          }}</span>
         </h3>
-        <p class="invoices-sub">Theo dõi nghĩa vụ từng kỳ và chỉ dùng hướng dẫn chuyển khoản được xác minh của chủ sân.</p>
+        <p class="invoices-sub">
+          Theo dõi nghĩa vụ từng kỳ và chỉ dùng hướng dẫn chuyển khoản được xác minh của chủ sân.
+        </p>
       </div>
     </div>
 
@@ -64,7 +68,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           :class="{ active: filterStatus === 'pending' }"
           @click="filterStatus = 'pending'"
         >
-          Chờ thanh toán ({{ invoices.filter(i => i.status === 'pending').length }})
+          Chờ thanh toán ({{ invoices.filter((i) => i.status === 'pending').length }})
         </button>
         <button
           type="button"
@@ -72,7 +76,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           :class="{ active: filterStatus === 'guaranteed' }"
           @click="filterStatus = 'guaranteed'"
         >
-          Được bảo lãnh ({{ invoices.filter(i => i.status === 'guaranteed').length }})
+          Được bảo lãnh ({{ invoices.filter((i) => i.status === 'guaranteed').length }})
         </button>
         <button
           type="button"
@@ -80,7 +84,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           :class="{ active: filterStatus === 'zero_payable' }"
           @click="filterStatus = 'zero_payable'"
         >
-          Không cần thanh toán ({{ invoices.filter(i => i.status === 'zero_payable').length }})
+          Không cần thanh toán ({{ invoices.filter((i) => i.status === 'zero_payable').length }})
         </button>
         <button
           type="button"
@@ -88,7 +92,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           :class="{ active: filterStatus === 'paid' }"
           @click="filterStatus = 'paid'"
         >
-          Đã thanh toán ({{ invoices.filter(i => i.status === 'paid').length }})
+          Đã thanh toán ({{ invoices.filter((i) => i.status === 'paid').length }})
         </button>
         <button
           type="button"
@@ -96,7 +100,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           :class="{ active: filterStatus === 'overdue' }"
           @click="filterStatus = 'overdue'"
         >
-          Quá hạn ({{ invoices.filter(i => i.status === 'overdue').length }})
+          Quá hạn ({{ invoices.filter((i) => i.status === 'overdue').length }})
         </button>
       </div>
     </div>
@@ -117,17 +121,17 @@ function openInvoiceDetail(inv: RecurringInvoice) {
       </div>
       <h4 class="empty-title">Không Tìm Thấy Hóa Đơn Nào</h4>
       <p class="empty-desc">
-        {{ filterStatus === 'all' ? 'Chưa có hóa đơn chu kỳ nào được phát hành.' : 'Không có hóa đơn nào phù hợp với bộ lọc hiện tại.' }}
+        {{
+          filterStatus === 'all'
+            ? 'Chưa có hóa đơn chu kỳ nào được phát hành.'
+            : 'Không có hóa đơn nào phù hợp với bộ lọc hiện tại.'
+        }}
       </p>
     </div>
 
     <!-- Invoices List -->
     <div v-else class="invoices-cards-list">
-      <div
-        v-for="inv in filteredInvoices"
-        :key="inv.id"
-        class="invoice-card"
-      >
+      <div v-for="inv in filteredInvoices" :key="inv.id" class="invoice-card">
         <div class="inv-card-top">
           <div class="inv-badge-group">
             <span class="inv-id font-mono">HÓA ĐƠN #{{ inv.id }}</span>
@@ -138,11 +142,25 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             class="status-pill"
             :class="{
               'status-paid': inv.status === 'paid',
-              'status-pending': inv.status === 'pending' || inv.status === 'guaranteed' || inv.status === 'zero_payable',
-              'status-overdue': inv.status === 'overdue'
+              'status-pending':
+                inv.status === 'pending' ||
+                inv.status === 'guaranteed' ||
+                inv.status === 'zero_payable',
+              'status-overdue': inv.status === 'overdue',
             }"
           >
-            ● {{ inv.status === 'paid' ? 'Đã thanh toán' : inv.status === 'zero_payable' ? 'Không cần thanh toán (0 ₫)' : inv.status === 'guaranteed' ? 'Được bảo lãnh (chưa thanh toán)' : inv.status === 'overdue' ? 'Quá hạn' : 'Chờ thanh toán' }}
+            ●
+            {{
+              inv.status === 'paid'
+                ? 'Đã thanh toán'
+                : inv.status === 'zero_payable'
+                  ? 'Không cần thanh toán (0 ₫)'
+                  : inv.status === 'guaranteed'
+                    ? 'Được bảo lãnh (chưa thanh toán)'
+                    : inv.status === 'overdue'
+                      ? 'Quá hạn'
+                      : 'Chờ thanh toán'
+            }}
           </span>
         </div>
 
@@ -151,19 +169,25 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             <span class="material-symbols-outlined court-icon">sports_tennis</span>
             <div class="venue-texts">
               <span class="court-title">{{ inv.series.court.name }}</span>
-              <span v-if="inv.series.court.venue" class="venue-sub">{{ inv.series.court.venue.name }}</span>
+              <span v-if="inv.series.court.venue" class="venue-sub">{{
+                inv.series.court.venue.name
+              }}</span>
             </div>
           </div>
 
           <div class="inv-details-grid">
             <div class="inv-col">
               <span class="col-lbl">Kỳ thanh toán</span>
-              <span class="col-val">{{ formatDate(inv.period_start) }} ➔ {{ formatDate(inv.period_end) }}</span>
+              <span class="col-val"
+                >{{ formatDate(inv.period_start) }} ➔ {{ formatDate(inv.period_end) }}</span
+              >
             </div>
 
             <div class="inv-col">
               <span class="col-lbl">Hạn thanh toán</span>
-              <span class="col-val">{{ inv.status === 'zero_payable' ? 'Không áp dụng' : formatDate(inv.due_at) }}</span>
+              <span class="col-val">{{
+                inv.status === 'zero_payable' ? 'Không áp dụng' : formatDate(inv.due_at)
+              }}</span>
             </div>
 
             <div class="inv-col">
@@ -174,13 +198,10 @@ function openInvoiceDetail(inv: RecurringInvoice) {
         </div>
 
         <div class="inv-card-actions">
-          <AuraButton
-            variant="primary"
-            size="sm"
-            icon="payments"
-            @click="openInvoiceDetail(inv)"
-          >
-            <span>{{ inv.status === 'paid' ? 'Xem Chi Tiết Lịch Buổi' : 'Xem Trạng Thái Thanh Toán' }}</span>
+          <AuraButton variant="primary" size="sm" icon="payments" @click="openInvoiceDetail(inv)">
+            <span>{{
+              inv.status === 'paid' ? 'Xem Chi Tiết Lịch Buổi' : 'Xem Trạng Thái Thanh Toán'
+            }}</span>
           </AuraButton>
         </div>
       </div>

@@ -5,14 +5,14 @@ namespace App\Services\Finance;
 use App\Contracts\Payment\WebhookEvent;
 use App\Models\Booking;
 use App\Models\Journal;
-use App\Models\Payment;
+use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
+use App\Models\Payment;
 use App\Models\PlatformProviderReceipt;
 use App\Models\ProviderEvent;
 use App\Models\Reservation;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 
 class FinancialPostingService
 {
@@ -21,6 +21,7 @@ class FinancialPostingService
     public function postReservationPayment(Reservation $reservation, int $amount, string $providerReference, array $metadata = []): Journal
     {
         $organizationId = $reservation->organization_id;
+
         return $this->postCollection(
             organizationId: $organizationId,
             eventType: 'reservation.payment',
@@ -36,6 +37,7 @@ class FinancialPostingService
     public function postLegacyBookingPayment(Booking $booking, Payment $payment): Journal
     {
         $organizationId = $booking->court?->venue?->organization_id;
+
         return $this->postCollection(
             organizationId: $organizationId,
             eventType: 'booking.payment',
@@ -82,7 +84,7 @@ class FinancialPostingService
         $attempt = $receipt->attempt()->firstOrFail();
         $allocation = $receipt->allocation()->firstOrFail();
         if (
-            $attempt->status !== \App\Models\OwnerPaymentAttempt::STATUS_PAID
+            $attempt->status !== OwnerPaymentAttempt::STATUS_PAID
             || (int) $attempt->receiving_connection_id !== (int) $receipt->receiving_connection_id
             || (int) $attempt->organization_id !== (int) $receipt->organization_id
             || (int) $attempt->venue_id !== (int) $receipt->venue_id
@@ -212,6 +214,7 @@ class FinancialPostingService
     public function postRefund(int $organizationId, string $reference, int $amount, string $refundReference, array $metadata = []): Journal
     {
         $accounts = $this->ledger->systemAccounts($organizationId);
+
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'refund',
@@ -244,6 +247,7 @@ class FinancialPostingService
             ['account_id' => $accounts['cash_clearing']->id, 'side' => 'debit', 'amount' => $buyerAmount],
             ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $sellerRefund],
         ];
+
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'marketplace.sale',
@@ -268,6 +272,7 @@ class FinancialPostingService
         }
         $accounts = $this->ledger->systemAccounts($organizationId);
         $debit = $paymentMethod === 'wallet' ? $accounts['wallet_liability'] : $accounts['cash_clearing'];
+
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'pos.sale',
@@ -288,6 +293,7 @@ class FinancialPostingService
             return $existing->load('entries');
         }
         $accounts = $this->ledger->systemAccounts($organizationId);
+
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'wallet.credit',
@@ -308,6 +314,7 @@ class FinancialPostingService
             return $existing->load('entries');
         }
         $accounts = $this->ledger->systemAccounts($organizationId);
+
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'wallet.deposit',
@@ -330,6 +337,7 @@ class FinancialPostingService
             return $existing->load('entries');
         }
         $accounts = $this->ledger->systemAccounts($organizationId);
+
         return $this->ledger->post([
             'organization_id' => $organizationId,
             'event_type' => 'wallet.spend',
@@ -372,7 +380,7 @@ class FinancialPostingService
     public function postWalletBookingRefund(Booking $booking, int $amount, int $walletAccountId, ?string $refundReference = null): Journal
     {
         $organizationId = $booking->court?->venue?->organization_id;
-        $eventId = "booking:{$booking->id}:refund:" . ($refundReference ?? 'full');
+        $eventId = "booking:{$booking->id}:refund:".($refundReference ?? 'full');
         $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'booking.wallet_refund')->where('event_id', $eventId)->first();
         if ($existing) {
             return $existing->load('entries');
@@ -397,7 +405,7 @@ class FinancialPostingService
     public function postWalletReservationPayment(Reservation $reservation, int $amount, int $walletAccountId, ?int $walletTxId = null): Journal
     {
         $organizationId = $reservation->organization_id;
-        $eventId = "reservation:{$reservation->id}:payment:" . ($walletTxId ?? $reservation->id);
+        $eventId = "reservation:{$reservation->id}:payment:".($walletTxId ?? $reservation->id);
         $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'reservation.wallet_payment')->where('event_id', $eventId)->first();
         if ($existing) {
             return $existing->load('entries');
@@ -423,7 +431,7 @@ class FinancialPostingService
     public function postWalletReservationRefund(Reservation $reservation, int $amount, int $walletAccountId, ?string $refundReference = null): Journal
     {
         $organizationId = $reservation->organization_id;
-        $eventId = "reservation:{$reservation->id}:refund:" . ($refundReference ?? 'full');
+        $eventId = "reservation:{$reservation->id}:refund:".($refundReference ?? 'full');
         $existing = Journal::query()->where('organization_id', $organizationId)->where('event_type', 'reservation.wallet_refund')->where('event_id', $eventId)->first();
         if ($existing) {
             return $existing->load('entries');

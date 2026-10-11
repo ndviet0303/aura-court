@@ -12,7 +12,18 @@ class FinanceException extends Model
 {
     use BelongsToTenant;
 
-    protected function casts(): array { return ['amount' => 'integer', 'links' => 'array', 'metadata' => 'array', 'detected_at' => 'datetime', 'due_at' => 'datetime', 'resolved_at' => 'datetime']; }
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
-    public function resolver(): BelongsTo { return $this->belongsTo(User::class, 'resolved_by'); }
+    protected function casts(): array
+    {
+        return ['amount' => 'integer', 'links' => 'array', 'metadata' => 'array', 'detected_at' => 'datetime', 'due_at' => 'datetime', 'resolved_at' => 'datetime'];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function resolver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'resolved_by');
+    }
 }

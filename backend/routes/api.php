@@ -50,6 +50,7 @@ use App\Http\Controllers\Webhook\SepayWebhookController;
 use App\Http\Middleware\RequireOrganizationRole;
 use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
+use App\Models\HostKyc;
 use App\Models\User;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Auth\Events\Verified;
@@ -120,7 +121,7 @@ Route::prefix('v1')->group(function () {
 
             $ownerMemberships = $memberships->filter(fn ($m) => in_array($m->role, ['organization_owner', 'venue_manager']));
             $primaryOrg = $ownerMemberships->first()?->organization;
-            $latestKyc = \App\Models\HostKyc::where('user_id', $user->id)->latest()->first();
+            $latestKyc = HostKyc::where('user_id', $user->id)->latest()->first();
 
             return response()->json(array_merge($user->toArray(), [
                 'wallet_balance' => $wallet->balance,

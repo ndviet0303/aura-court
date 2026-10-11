@@ -46,11 +46,15 @@ function formatMoney(amount?: number): string {
             <span class="material-symbols-outlined sport-ico">{{ previewMatch.sport_icon }}</span>
             <span class="sport-name">{{ previewMatch.sport_name }}</span>
             <span v-if="previewMatch.game_format" class="format-dot">·</span>
-            <span v-if="previewMatch.game_format" class="format-txt">{{ previewMatch.game_format }}</span>
+            <span v-if="previewMatch.game_format" class="format-txt">{{
+              previewMatch.game_format
+            }}</span>
           </div>
 
           <div class="slots-status-badge" :class="{ full: isFull, open: !isFull }">
-            <span class="material-symbols-outlined status-ico">{{ isFull ? 'check_circle' : 'group_add' }}</span>
+            <span class="material-symbols-outlined status-ico">{{
+              isFull ? 'check_circle' : 'group_add'
+            }}</span>
             <span>{{ isFull ? 'Đã đủ người' : `Cần thêm ${remainingSlots} người` }}</span>
           </div>
         </div>
@@ -63,8 +67,15 @@ function formatMoney(amount?: number): string {
 
           <div class="host-profile-row">
             <div class="host-avatar-box">
-              <img v-if="previewMatch.host_avatar" :src="previewMatch.host_avatar" :alt="previewMatch.host_name" class="avatar-img" />
-              <span v-else class="avatar-fallback">{{ previewMatch.host_name.charAt(0).toUpperCase() }}</span>
+              <img
+                v-if="previewMatch.host_avatar"
+                :src="previewMatch.host_avatar"
+                :alt="previewMatch.host_name"
+                class="avatar-img"
+              />
+              <span v-else class="avatar-fallback">{{
+                previewMatch.host_name.charAt(0).toUpperCase()
+              }}</span>
             </div>
             <div class="host-text-col">
               <div class="host-name-row">
@@ -84,7 +95,9 @@ function formatMoney(amount?: number): string {
               <span class="material-symbols-outlined meta-ico">location_on</span>
               <span class="meta-val">
                 <strong>{{ previewMatch.venue_name }}</strong>
-                <span v-if="previewMatch.court_name" class="court-sub"> · {{ previewMatch.court_name }}</span>
+                <span v-if="previewMatch.court_name" class="court-sub">
+                  · {{ previewMatch.court_name }}</span
+                >
               </span>
             </div>
 
@@ -96,12 +109,16 @@ function formatMoney(amount?: number): string {
             <div class="meta-item-row">
               <div class="meta-item">
                 <span class="material-symbols-outlined meta-ico">signal_cellular_alt</span>
-                <span class="meta-val">Level {{ previewMatch.min_skill || 1 }} - {{ previewMatch.max_skill || 5 }}</span>
+                <span class="meta-val"
+                  >Level {{ previewMatch.min_skill || 1 }} - {{ previewMatch.max_skill || 5 }}</span
+                >
               </div>
 
               <div class="meta-item">
                 <span class="material-symbols-outlined meta-ico">payments</span>
-                <span class="meta-val font-mono highlight">{{ formatMoney(previewMatch.cost_per_person) }}</span>
+                <span class="meta-val font-mono highlight">{{
+                  formatMoney(previewMatch.cost_per_person)
+                }}</span>
               </div>
             </div>
           </div>
@@ -110,7 +127,9 @@ function formatMoney(amount?: number): string {
           <div class="slots-visualizer">
             <div class="slots-header">
               <span class="slots-label">Thành viên tham gia:</span>
-              <span class="slots-count font-mono">{{ previewMatch.joined_count }}/{{ previewMatch.required_participants }}</span>
+              <span class="slots-count font-mono"
+                >{{ previewMatch.joined_count }}/{{ previewMatch.required_participants }}</span
+              >
             </div>
             <div class="slots-dots-row">
               <div
@@ -140,7 +159,9 @@ function formatMoney(amount?: number): string {
     <div class="match-summary-card">
       <div class="summary-item">
         <span class="summary-label">Chế độ hiển thị</span>
-        <span class="summary-val">{{ previewMatch.visibility === 'public' ? 'Công khai toàn hệ thống' : 'Chỉ người được mời' }}</span>
+        <span class="summary-val">{{
+          previewMatch.visibility === 'public' ? 'Công khai toàn hệ thống' : 'Chỉ người được mời'
+        }}</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">Bạn bè đã chọn mời</span>
@@ -148,7 +169,13 @@ function formatMoney(amount?: number): string {
       </div>
       <div class="summary-item">
         <span class="summary-label">Hình thức chia tiền</span>
-        <span class="summary-val">{{ previewMatch.is_owner_hosted ? 'Chia đều sau buổi' : (previewMatch.split_bill_mode === 'auto_split' ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu') }}</span>
+        <span class="summary-val">{{
+          previewMatch.is_owner_hosted
+            ? 'Chia đều sau buổi'
+            : previewMatch.split_bill_mode === 'auto_split'
+              ? 'Tự động trừ ví Aura'
+              : 'Chủ phòng tự thu'
+        }}</span>
       </div>
     </div>
 

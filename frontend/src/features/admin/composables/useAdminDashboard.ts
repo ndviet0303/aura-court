@@ -12,7 +12,12 @@ export interface AdminReport {
   pendingRefunds: number
   occupancyRate?: number
   byHour?: { hour: string; bookings: number }[]
-  byCourt?: { court_id: number; bookings: number; revenue: number; court?: { id: number; name: string } }[]
+  byCourt?: {
+    court_id: number
+    bookings: number
+    revenue: number
+    court?: { id: number; name: string }
+  }[]
 }
 
 export interface AdminBooking {

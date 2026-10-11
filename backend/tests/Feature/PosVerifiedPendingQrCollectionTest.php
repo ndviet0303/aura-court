@@ -4,13 +4,12 @@ namespace Tests\Feature;
 
 use App\Domain\Payment\Actions\ProcessQrPayment;
 use App\Models\CashShift;
-use App\Models\FinancialJournalEntry;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\Payment;
 use App\Models\PosOrder;
 use App\Models\PosPayment;
 use App\Models\PosProduct;
-use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,8 +19,11 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $cashier;
+
     private CashShift $shift;
+
     private PosProduct $product;
 
     protected function setUp(): void
@@ -30,7 +32,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Arena POS Tenant',
-            'slug' => 'aura-pos-' . uniqid(),
+            'slug' => 'aura-pos-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -87,7 +89,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'qr-test-disabled-' . uniqid(),
+            'Idempotency-Key' => 'qr-test-disabled-'.uniqid(),
         ]);
 
         $response->assertStatus(422)
@@ -96,7 +98,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
 
     public function test_pending_qr_order_creation_does_not_finalize_inventory_or_financial_effects(): void
     {
-        $idempotencyKey = 'qr-init-' . uniqid();
+        $idempotencyKey = 'qr-init-'.uniqid();
         $response = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 3],
@@ -145,7 +147,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
 
     public function test_verified_qr_confirmation_atomically_decrements_stock_and_posts_financial_effects(): void
     {
-        $idempotencyKey = 'qr-confirm-' . uniqid();
+        $idempotencyKey = 'qr-confirm-'.uniqid();
         $createRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 4],
@@ -166,13 +168,13 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'provider' => 'vietqr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'unverified-key-' . uniqid(),
+            'Idempotency-Key' => 'unverified-key-'.uniqid(),
         ]);
         $unverifiedRes->assertStatus(422)
             ->assertJsonFragment(['message' => 'Payment has not been verified by payment provider.']);
 
         // 2) Seed the verified payment record
-        \App\Models\Payment::create([
+        Payment::create([
             'booking_id' => null,
             'provider' => 'vietqr',
             'external_transaction_id' => 'MB-TXN-998877',
@@ -189,7 +191,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'provider' => 'vietqr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-key-' . uniqid(),
+            'Idempotency-Key' => 'confirm-key-'.uniqid(),
         ]);
 
         $confirmRes->assertOk()
@@ -231,7 +233,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'external_transaction_id' => 'MB-TXN-998877',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'dup-confirm-' . uniqid(),
+            'Idempotency-Key' => 'dup-confirm-'.uniqid(),
         ]);
         $dupConfirm->assertStatus(409);
     }
@@ -245,7 +247,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'qr-cancel-test-' . uniqid(),
+            'Idempotency-Key' => 'qr-cancel-test-'.uniqid(),
         ]);
 
         $orderId = $createRes->json('order.id');
@@ -255,7 +257,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'reason' => 'Customer timed out or changed payment method',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'cancel-key-' . uniqid(),
+            'Idempotency-Key' => 'cancel-key-'.uniqid(),
         ]);
 
         $cancelRes->assertOk()
@@ -283,7 +285,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'external_transaction_id' => 'TX-LATE-123',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-cancelled-' . uniqid(),
+            'Idempotency-Key' => 'confirm-cancelled-'.uniqid(),
         ]);
         $confirmCancelled->assertStatus(409);
     }
@@ -297,7 +299,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'qr-webhook-test-' . uniqid(),
+            'Idempotency-Key' => 'qr-webhook-test-'.uniqid(),
         ]);
 
         $orderId = $createRes->json('order.id');

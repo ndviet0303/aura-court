@@ -11,7 +11,10 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', payload: { date: string; name: string; type: SpecialDateItem['type']; hours?: string }): void
+  (
+    e: 'submit',
+    payload: { date: string; name: string; type: SpecialDateItem['type']; hours?: string },
+  ): void
 }>()
 
 const { t } = useI18n()
@@ -49,7 +52,9 @@ function handleSubmit() {
       <div class="modal-header">
         <div class="title-with-icon">
           <span class="material-symbols-outlined card-title-icon">event</span>
-          <h3 class="modal-title modal-title-text">{{ t('admin.schedule.addSpecialDateModalTitle') }}</h3>
+          <h3 class="modal-title modal-title-text">
+            {{ t('admin.schedule.addSpecialDateModalTitle') }}
+          </h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>

@@ -22,7 +22,9 @@ function formatMoney(amount: number): string {
     <div class="section-header">
       <div class="header-titles">
         <h2 class="section-title">Danh Sách Tin Đã Đăng Nhượng Của Tôi</h2>
-        <p class="section-sub">Theo dõi trạng thái các slot sân bạn đang niêm yết chuyển nhượng trên chợ Aura.</p>
+        <p class="section-sub">
+          Theo dõi trạng thái các slot sân bạn đang niêm yết chuyển nhượng trên chợ Aura.
+        </p>
       </div>
 
       <AuraButton variant="primary" size="sm" icon="add" @click="emit('create-new')">
@@ -34,7 +36,9 @@ function formatMoney(amount: number): string {
     <div v-if="listings.length === 0" class="empty-state-card">
       <span class="material-symbols-outlined empty-icon">receipt_long</span>
       <h3>Bạn chưa có tin đăng pass sân nào</h3>
-      <p>Khi bạn bận và pass lại slot đã đặt, các tin niêm yết sẽ hiển thị tại đây để bạn quản lý.</p>
+      <p>
+        Khi bạn bận và pass lại slot đã đặt, các tin niêm yết sẽ hiển thị tại đây để bạn quản lý.
+      </p>
       <AuraButton variant="primary" size="md" icon="sell" @click="emit('create-new')">
         Xem Các Lịch Có Thể Pass
       </AuraButton>
@@ -48,9 +52,21 @@ function formatMoney(amount: number): string {
             <strong class="court-name">{{ item.courtName }}</strong>
             <span class="status-pill" :class="`status-${item.status}`">
               <span class="material-symbols-outlined status-icon">
-                {{ item.status === 'listed' ? 'schedule' : item.status === 'sold' ? 'check_circle' : 'remove_circle_outline' }}
+                {{
+                  item.status === 'listed'
+                    ? 'schedule'
+                    : item.status === 'sold'
+                      ? 'check_circle'
+                      : 'remove_circle_outline'
+                }}
               </span>
-              <span>{{ item.status === 'listed' ? 'Đang rao bán' : item.status === 'sold' ? 'Đã bán' : 'Đã rút tin' }}</span>
+              <span>{{
+                item.status === 'listed'
+                  ? 'Đang rao bán'
+                  : item.status === 'sold'
+                    ? 'Đã bán'
+                    : 'Đã rút tin'
+              }}</span>
             </span>
           </div>
 
@@ -176,7 +192,7 @@ function formatMoney(amount: number): string {
 }
 
 .my-listing-row:hover {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
 }
 
 .slot-info {
@@ -244,7 +260,7 @@ function formatMoney(amount: number): string {
 
 .icon-14 {
   font-size: 14px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .pricing-info {
@@ -263,11 +279,11 @@ function formatMoney(amount: number): string {
 .price-val {
   font-size: 16px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .price-val {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .price-orig {
@@ -323,7 +339,7 @@ html.dark .price-val {
 }
 
 .btn-primary {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   border: 0;
 }
@@ -339,7 +355,7 @@ html.dark .price-val {
 }
 
 .btn-outline:hover {
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
 }
 </style>

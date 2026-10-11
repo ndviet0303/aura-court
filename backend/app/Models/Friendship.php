@@ -13,7 +13,9 @@ class Friendship extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_ACCEPTED = 'accepted';
+
     public const STATUS_DECLINED = 'declined';
 
     public function requester(): BelongsTo
@@ -54,6 +56,7 @@ class Friendship extends Model
         if ($this->addressee_id === $userId) {
             return $this->requester;
         }
+
         return null;
     }
 }

@@ -11,10 +11,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EntitlementTransfer extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['buyer_amount' => 'integer', 'marketplace_fee' => 'integer', 'seller_refund' => 'integer', 'metadata' => 'array']; }
-    public function listing(): BelongsTo { return $this->belongsTo(MarketplaceListing::class, 'marketplace_listing_id'); }
-    public function seller(): BelongsTo { return $this->belongsTo(User::class, 'seller_id'); }
-    public function buyer(): BelongsTo { return $this->belongsTo(User::class, 'buyer_id'); }
-    public function sellerEntitlement(): BelongsTo { return $this->belongsTo(ReservationEntitlement::class, 'seller_entitlement_id'); }
-    public function buyerEntitlement(): BelongsTo { return $this->belongsTo(ReservationEntitlement::class, 'buyer_entitlement_id'); }
+
+    protected function casts(): array
+    {
+        return ['buyer_amount' => 'integer', 'marketplace_fee' => 'integer', 'seller_refund' => 'integer', 'metadata' => 'array'];
+    }
+
+    public function listing(): BelongsTo
+    {
+        return $this->belongsTo(MarketplaceListing::class, 'marketplace_listing_id');
+    }
+
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function buyer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'buyer_id');
+    }
+
+    public function sellerEntitlement(): BelongsTo
+    {
+        return $this->belongsTo(ReservationEntitlement::class, 'seller_entitlement_id');
+    }
+
+    public function buyerEntitlement(): BelongsTo
+    {
+        return $this->belongsTo(ReservationEntitlement::class, 'buyer_entitlement_id');
+    }
 }

@@ -24,12 +24,12 @@ export function useVenueDirections() {
     // Check store courts by slug or venue slug
     const key = slug.value.toLowerCase()
     const courtMatch = store.courts.find(
-      (c) => c.slug?.toLowerCase() === key || String(c.id) === key
+      (c) => c.slug?.toLowerCase() === key || String(c.id) === key,
     )
     if (courtMatch?.venue) return courtMatch.venue
 
     const venueMatch = store.courts.find(
-      (c) => c.venue?.slug?.toLowerCase() === key || String(c.venue?.id) === key
+      (c) => c.venue?.slug?.toLowerCase() === key || String(c.venue?.id) === key,
     )
     if (venueMatch?.venue) return venueMatch.venue
 
@@ -116,7 +116,11 @@ export function useVenueDirections() {
     const venueName = v?.name || 'Aura Court'
     const venueAddress = v?.address || 'Hà Nội'
     const query = encodeURIComponent(`${venueName}, ${venueAddress}`)
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer')
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${query}`,
+      '_blank',
+      'noopener,noreferrer',
+    )
   }
 
   function shareLocation(): void {
@@ -124,11 +128,13 @@ export function useVenueDirections() {
     if (!v) return
     const url = window.location.href
     if (navigator.share) {
-      navigator.share({
-        title: `${v.name} - Aura Court`,
-        text: `Địa chỉ: ${v.address}`,
-        url,
-      }).catch(() => {})
+      navigator
+        .share({
+          title: `${v.name} - Aura Court`,
+          text: `Địa chỉ: ${v.address}`,
+          url,
+        })
+        .catch(() => {})
     } else {
       copyAddress()
     }

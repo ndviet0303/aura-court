@@ -75,7 +75,7 @@ const documentRequirements = computed<DocRequirement[]>(() => {
       description: 'Hợp đồng thuê mặt bằng, quyền sử dụng đất hoặc giấy phép xây dựng sân.',
       required: true,
       icon: 'stadium',
-    }
+    },
   )
 
   return list
@@ -105,7 +105,10 @@ function formatSize(bytes: number): string {
   <div class="document-upload-step">
     <div class="step-head">
       <h3 class="step-title">Bước 2: Tải lên Hồ sơ Xác thực (Private Documents)</h3>
-      <p class="step-sub">Các tài liệu được lưu trữ trên vùng nhớ riêng tư an toàn, chỉ phục vụ mục đích kiểm duyệt định danh của đội ngũ Aura Sports.</p>
+      <p class="step-sub">
+        Các tài liệu được lưu trữ trên vùng nhớ riêng tư an toàn, chỉ phục vụ mục đích kiểm duyệt
+        định danh của đội ngũ Aura Sports.
+      </p>
     </div>
 
     <!-- Documents List -->
@@ -118,8 +121,13 @@ function formatSize(bytes: number): string {
       >
         <div class="doc-main-row">
           <div class="doc-left-wrap">
-            <div class="section-icon-box" :class="{ 'is-completed': Boolean(getUploadedDoc(req.type)) }">
-              <span class="material-symbols-outlined">{{ getUploadedDoc(req.type) ? 'check_circle' : req.icon }}</span>
+            <div
+              class="section-icon-box"
+              :class="{ 'is-completed': Boolean(getUploadedDoc(req.type)) }"
+            >
+              <span class="material-symbols-outlined">{{
+                getUploadedDoc(req.type) ? 'check_circle' : req.icon
+              }}</span>
             </div>
             <div class="doc-info-col">
               <div class="doc-title-row">
@@ -128,7 +136,9 @@ function formatSize(bytes: number): string {
                 <span v-else class="opt-badge">Không bắt buộc</span>
               </div>
               <p class="doc-desc">{{ req.description }}</p>
-              <span class="doc-formats-hint">Định dạng hỗ trợ: PDF, PNG, JPG, JPEG (Tối đa 10MB)</span>
+              <span class="doc-formats-hint"
+                >Định dạng hỗ trợ: PDF, PNG, JPG, JPEG (Tối đa 10MB)</span
+              >
             </div>
           </div>
 
@@ -141,15 +151,22 @@ function formatSize(bytes: number): string {
               </span>
               <div class="file-meta-col">
                 <span class="file-name-text">{{ getUploadedDoc(req.type)?.file_name }}</span>
-                <span class="file-size-text">{{ formatSize(getUploadedDoc(req.type)?.file_size || 0) }}</span>
+                <span class="file-size-text">{{
+                  formatSize(getUploadedDoc(req.type)?.file_size || 0)
+                }}</span>
               </div>
             </div>
 
             <label
               class="upload-btn-label"
-              :class="{ 'uploading-disabled': uploading, 'is-reupload': Boolean(getUploadedDoc(req.type)) }"
+              :class="{
+                'uploading-disabled': uploading,
+                'is-reupload': Boolean(getUploadedDoc(req.type)),
+              }"
             >
-              <span class="material-symbols-outlined icon-16">{{ getUploadedDoc(req.type) ? 'sync' : 'cloud_upload' }}</span>
+              <span class="material-symbols-outlined icon-16">{{
+                getUploadedDoc(req.type) ? 'sync' : 'cloud_upload'
+              }}</span>
               <span>{{ getUploadedDoc(req.type) ? 'Tải lại' : 'Tải lên' }}</span>
               <input
                 type="file"
@@ -169,21 +186,12 @@ function formatSize(bytes: number): string {
 
     <!-- Navigation Buttons -->
     <div class="step-footer">
-      <button
-        type="button"
-        class="btn-back-step"
-        @click="emit('back')"
-      >
+      <button type="button" class="btn-back-step" @click="emit('back')">
         <span class="material-symbols-outlined icon-16">arrow_back</span>
         <span>Quay lại</span>
       </button>
 
-      <button
-        type="button"
-        :disabled="uploading"
-        class="btn-next-step"
-        @click="emit('next')"
-      >
+      <button type="button" :disabled="uploading" class="btn-next-step" @click="emit('next')">
         <span>Tiếp tục: Thỏa thuận & Gửi duyệt</span>
         <span class="material-symbols-outlined icon-18">arrow_forward</span>
       </button>

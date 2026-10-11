@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PlatformPlan } from '../types'
 
-const props = defineProps<{
+defineProps<{
   plan: PlatformPlan
   trialEligible: boolean
   isCurrentPlan?: boolean
@@ -19,19 +19,34 @@ function formatMoney(amount: number): string {
 }
 
 function cycleLabel(cycle: string): string {
-  return ({ monthly: 'tháng', yearly: 'năm', six_months: '6 tháng', twelve_months: '12 tháng' } as Record<string, string>)[cycle] || cycle
+  return (
+    (
+      {
+        monthly: 'tháng',
+        yearly: 'năm',
+        six_months: '6 tháng',
+        twelve_months: '12 tháng',
+      } as Record<string, string>
+    )[cycle] || cycle
+  )
 }
 </script>
 
 <template>
   <div
     class="plan-catalog-card p-6 rounded-xl border bg-white dark:bg-gray-800 flex flex-col justify-between transition-shadow hover:shadow-md"
-    :class="isCurrentPlan ? 'border-emerald-600 ring-2 ring-emerald-500/20' : 'border-gray-200 dark:border-gray-700'"
+    :class="
+      isCurrentPlan
+        ? 'border-emerald-600 ring-2 ring-emerald-500/20'
+        : 'border-gray-200 dark:border-gray-700'
+    "
   >
     <div class="space-y-4">
       <!-- Header & Badges -->
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+        <span
+          class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
+        >
           {{ plan.code }}
         </span>
         <span
@@ -65,25 +80,40 @@ function cycleLabel(cycle: string): string {
         <ul class="text-xs space-y-1.5 text-gray-600 dark:text-gray-300">
           <li class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-emerald-600">domain</span>
-            <span>Tối đa <strong>{{ plan.quotas.max_venues }}</strong> cơ sở thể thao</span>
+            <span
+              >Tối đa <strong>{{ plan.quotas.max_venues }}</strong> cơ sở thể thao</span
+            >
           </li>
           <li class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-emerald-600">sports_tennis</span>
-            <span>Tối đa <strong>{{ plan.quotas.max_courts }}</strong> sân hoạt động</span>
+            <span
+              >Tối đa <strong>{{ plan.quotas.max_courts }}</strong> sân hoạt động</span
+            >
           </li>
           <li class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-emerald-600">badge</span>
-            <span>Tối đa <strong>{{ plan.quotas.max_staff }}</strong> nhân viên / quản trị viên</span>
+            <span
+              >Tối đa <strong>{{ plan.quotas.max_staff }}</strong> nhân viên / quản trị viên</span
+            >
           </li>
         </ul>
       </div>
 
       <!-- Terms and Transparency Disclosure -->
-      <div class="pt-3 border-t border-gray-100 dark:border-gray-700 text-[11px] text-gray-500 dark:text-gray-400 space-y-1">
-        <p>Phiên bản điều khoản: <strong>{{ plan.terms.version }}</strong></p>
+      <div
+        class="pt-3 border-t border-gray-100 dark:border-gray-700 text-[11px] text-gray-500 dark:text-gray-400 space-y-1"
+      >
+        <p>
+          Phiên bản điều khoản: <strong>{{ plan.terms.version }}</strong>
+        </p>
         <p>{{ plan.terms.text }}</p>
-        <p>Thuê bao dịch vụ cố định — <strong>0% hoa hồng nền tảng</strong> trên mọi lượt đặt sân và giải đấu.</p>
-        <p>Phí xử lý giao dịch cổng thanh toán (nếu có) được tách biệt riêng theo thực tế đối tác.</p>
+        <p>
+          Thuê bao dịch vụ cố định — <strong>0% hoa hồng nền tảng</strong> trên mọi lượt đặt sân và
+          giải đấu.
+        </p>
+        <p>
+          Phí xử lý giao dịch cổng thanh toán (nếu có) được tách biệt riêng theo thực tế đối tác.
+        </p>
         <p>Tự động gia hạn mỗi kỳ; có thể hủy gia hạn bất kỳ lúc nào.</p>
       </div>
     </div>

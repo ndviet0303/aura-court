@@ -24,8 +24,8 @@ const emit = defineEmits<{
 
       <h1 class="hero-title">Đặt Sân Cố Định & Quản Lý Lịch Định Kỳ</h1>
       <p class="hero-sub">
-        Đăng ký giữ khung giờ cố định hàng tuần cho cá nhân, câu lạc bộ hoặc doanh nghiệp.
-        Tự động giữ chỗ, xuất hóa đơn theo chu kỳ tháng và đối soát lịch minh bạch 100%.
+        Đăng ký giữ khung giờ cố định hàng tuần cho cá nhân, câu lạc bộ hoặc doanh nghiệp. Tự động
+        giữ chỗ, xuất hóa đơn theo chu kỳ tháng và đối soát lịch minh bạch 100%.
       </p>
 
       <div class="hero-badges">

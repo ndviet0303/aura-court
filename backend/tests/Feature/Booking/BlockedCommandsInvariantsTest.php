@@ -5,7 +5,6 @@ namespace Tests\Feature\Booking;
 use App\Events\CourtStatusUpdated;
 use App\Models\Booking;
 use App\Models\Coupon;
-use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Journal;
 use App\Models\Organization;
@@ -17,13 +16,11 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\WaitlistEntry;
 use App\Models\WalletTransaction;
-use App\Notifications\AuraBookingNotification;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class BlockedCommandsInvariantsTest extends TestCase

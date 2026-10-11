@@ -29,7 +29,9 @@ const runtimeConfigReady = fetch('/runtime-config.json', {
 
 function appendQueryParams(url: string, params?: QueryParams): string {
   if (!params) return url
-  const entries = Object.entries(params).filter(([_, value]) => value !== undefined && value !== null)
+  const entries = Object.entries(params).filter(
+    ([_, value]) => value !== undefined && value !== null,
+  )
   if (entries.length === 0) return url
 
   const separator = url.includes('?') ? '&' : '?'
@@ -161,9 +163,12 @@ function parseOptions(optOrKey?: ApiRequestOptions | string): ApiRequestOptions 
   return optOrKey
 }
 
-function buildHeaders(options?: ApiRequestOptions, defaultIdempotent = false): Record<string, string> {
+function buildHeaders(
+  options?: ApiRequestOptions,
+  defaultIdempotent = false,
+): Record<string, string> {
   const headers: Record<string, string> = {
-    ...((options?.headers as Record<string, string>) || {}),
+    ...(options?.headers as Record<string, string>),
   }
   if (options?.idempotencyKey) {
     headers['Idempotency-Key'] = options.idempotencyKey

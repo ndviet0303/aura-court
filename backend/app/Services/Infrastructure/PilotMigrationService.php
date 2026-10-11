@@ -2,13 +2,11 @@
 
 namespace App\Services\Infrastructure;
 
-use App\Services\Reservation\LegacyBookingBackfillService;
-
 use App\Models\Booking;
 use App\Models\Organization;
 use App\Models\PilotMigrationRun;
 use App\Models\Reservation;
-use Illuminate\Support\Facades\DB;
+use App\Services\Reservation\LegacyBookingBackfillService;
 
 class PilotMigrationService
 {
@@ -63,12 +61,14 @@ class PilotMigrationService
     private function source(int $organizationId): array
     {
         $bookings = Booking::query()->whereHas('court.venue', fn ($query) => $query->where('organization_id', $organizationId))->get();
+
         return ['booking_count' => $bookings->count(), 'amount' => (int) $bookings->sum('total_amount')];
     }
 
     private function target(int $organizationId): array
     {
         $reservations = Reservation::query()->where('organization_id', $organizationId)->whereHas('legacyMapping')->get();
+
         return ['reservation_count' => $reservations->count(), 'amount' => (int) $reservations->sum('total_amount')];
     }
 

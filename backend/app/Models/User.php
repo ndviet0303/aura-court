@@ -43,6 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->role === 'admin';
     }
+
     public function isRestricted(): bool
     {
         return in_array($this->status, ['suspended', 'banned', 'locked'], true);
@@ -52,6 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return ! is_null($this->phone_verified_at);
     }
+
     public function isPlatformAdmin(): bool
     {
         return $this->role === 'platform_admin' || $this->role === 'admin';
@@ -110,6 +112,7 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($organizationId) {
             $query->where('organization_id', $organizationId);
         }
+
         return $query->exists();
     }
 
@@ -121,6 +124,7 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($organizationId) {
             $query->where('organization_id', $organizationId);
         }
+
         return $query->exists();
     }
 
@@ -132,6 +136,7 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($organizationId) {
             $query->where('organization_id', $organizationId);
         }
+
         return $query->exists();
     }
 
@@ -192,6 +197,7 @@ class User extends Authenticatable implements MustVerifyEmail
                     $allVenueIds = array_merge($allVenueIds, $orgVenues);
                 }
             }
+
             return array_values(array_unique($allVenueIds));
         }
 
@@ -260,6 +266,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Membership::class);
     }
+
     public function tenantCustomers(): HasMany
     {
         return $this->hasMany(TenantCustomer::class);

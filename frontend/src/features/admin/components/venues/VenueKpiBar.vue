@@ -83,7 +83,9 @@ const { t } = useI18n()
   border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .kpi-card:hover {
@@ -121,12 +123,22 @@ const { t } = useI18n()
   color: var(--muted);
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-green {
+  color: #10b981;
+}
+.text-blue {
+  color: #3b82f6;
+}
 
-.mt-1 { margin-top: 4px; }
-.mt-2 { margin-top: 8px; }
+.mt-1 {
+  margin-top: 4px;
+}
+.mt-2 {
+  margin-top: 8px;
+}
 
 @media (max-width: 900px) {
   .venue-kpi-bar {

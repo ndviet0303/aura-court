@@ -26,10 +26,7 @@ const {
       <!-- Left Column (Main Information) -->
       <div class="main-info-col">
         <!-- Hero and Gallery -->
-        <CourtDetailHero
-          :court="court"
-          @open-gallery="isGalleryOpen = true"
-        />
+        <CourtDetailHero :court="court" @open-gallery="isGalleryOpen = true" />
 
         <!-- Technical Specs -->
         <CourtSpecsGrid />
@@ -38,11 +35,7 @@ const {
         <CourtAmenitiesGrid :amenities="court.amenities" />
 
         <!-- Player Reviews & Ratings Section -->
-        <CourtReviewsSection
-          :court="court"
-          :reviews="reviews"
-          :loading="reviewsLoading"
-        />
+        <CourtReviewsSection :court="court" :reviews="reviews" :loading="reviewsLoading" />
       </div>
 
       <!-- Right Column (Sticky Booking Widget) -->

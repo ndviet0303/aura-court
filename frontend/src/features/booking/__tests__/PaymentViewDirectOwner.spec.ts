@@ -14,7 +14,11 @@ vi.mock('../composables/usePaymentProcessing', () => ({
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mocks.push }),
-  useRoute: () => ({ params: { code: 'BK-DIRECT-1' }, query: {}, fullPath: '/payment/BK-DIRECT-1' }),
+  useRoute: () => ({
+    params: { code: 'BK-DIRECT-1' },
+    query: {},
+    fullPath: '/payment/BK-DIRECT-1',
+  }),
   RouterLink: { template: '<a><slot /></a>' },
 }))
 
@@ -39,7 +43,12 @@ describe('PaymentView direct owner checkout', () => {
         slots: [],
       }),
       court: ref(null),
-      playerDetails: ref({ name: 'Player', phone: '0900000000', email: 'player@example.test', partnerName: '' }),
+      playerDetails: ref({
+        name: 'Player',
+        phone: '0900000000',
+        email: 'player@example.test',
+        partnerName: '',
+      }),
       walletBalance: ref(0),
       paymentAmount: ref(100000),
       directPaymentAttempt: ref({
@@ -52,8 +61,13 @@ describe('PaymentView direct owner checkout', () => {
         status: 'pending',
         expires_at: '2026-09-25T12:30:00Z',
         paid_at: null,
-        receiver: { bank_code: 'MBBank', account_name: 'Venue Owner', account_number: '0123456789' },
-        qr_url: 'https://img.vietqr.io/image/MB-0123456789-compact2.png?amount=100000&addInfo=ACDIRECT31',
+        receiver: {
+          bank_code: 'MBBank',
+          account_name: 'Venue Owner',
+          account_number: '0123456789',
+        },
+        qr_url:
+          'https://img.vietqr.io/image/MB-0123456789-compact2.png?amount=100000&addInfo=ACDIRECT31',
       }),
       directPaymentError: ref(''),
       directPaymentLoading: ref(false),
@@ -80,7 +94,9 @@ describe('PaymentView direct owner checkout', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="owner-payment-instructions"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="owner-payment-qr"]').attributes('src')).toContain('ACDIRECT31')
+    expect(wrapper.find('[data-testid="owner-payment-qr"]').attributes('src')).toContain(
+      'ACDIRECT31',
+    )
     expect(wrapper.find('.wallet-pay-card').exists()).toBe(false)
     expect(wrapper.find('.summary-coupon-block').exists()).toBe(false)
     expect(wrapper.text()).toContain('0123456789')

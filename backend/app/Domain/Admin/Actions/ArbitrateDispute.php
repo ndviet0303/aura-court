@@ -23,11 +23,12 @@ class ArbitrateDispute
         private readonly AuditLogRepositoryInterface $auditLogs,
         private readonly OutboxService $outbox,
     ) {}
+
     public function execute(ArbitrateDisputeData $data): DisputeCase
     {
         $dispute = $this->disputeRepository->findById($data->disputeId);
 
-        if (!$dispute) {
+        if (! $dispute) {
             throw new InvalidArgumentException("Hồ sơ tranh chấp #{$data->disputeId} không tồn tại.");
         }
         if ((int) $data->reviewerId === (int) $dispute->complainant_id || (int) $data->reviewerId === (int) $dispute->respondent_id) {
@@ -91,7 +92,7 @@ class ArbitrateDispute
                         'venue_id' => $venueId,
                         'booking_id' => $dispute->booking_id,
                         'payer_id' => $payerId,
-                        'reference_code' => 'REF-DSP-' . strtoupper(Str::random(10)),
+                        'reference_code' => 'REF-DSP-'.strtoupper(Str::random(10)),
                         'idempotency_key' => "dispute_refund_{$dispute->id}_v{$currentVersion}",
                         'request_fingerprint' => hash('sha256', "dispute_refund_{$dispute->id}_v{$currentVersion}"),
                         'slot_ids' => $slotIds,
@@ -193,7 +194,7 @@ class ArbitrateDispute
             if ($dispute->complainant_id) {
                 $this->outbox->enqueue([
                     'organization_id' => $dispute->organization_id,
-                    'message_key' => "dispute_arbitrated_complainant:{$dispute->id}:v{$currentVersion}:" . uniqid(),
+                    'message_key' => "dispute_arbitrated_complainant:{$dispute->id}:v{$currentVersion}:".uniqid(),
                     'channel' => 'notification',
                     'event_type' => 'dispute.arbitrated',
                     'aggregate_type' => DisputeCase::class,
@@ -214,7 +215,7 @@ class ArbitrateDispute
             if ($dispute->respondent_id) {
                 $this->outbox->enqueue([
                     'organization_id' => $dispute->organization_id,
-                    'message_key' => "dispute_arbitrated_respondent:{$dispute->id}:v{$currentVersion}:" . uniqid(),
+                    'message_key' => "dispute_arbitrated_respondent:{$dispute->id}:v{$currentVersion}:".uniqid(),
                     'channel' => 'notification',
                     'event_type' => 'dispute.arbitrated',
                     'aggregate_type' => DisputeCase::class,

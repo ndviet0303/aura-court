@@ -31,7 +31,17 @@ export interface PayoutRecord {
   provider?: string
   provider_payout_id?: string | null
   idempotency_key?: string
-  status: 'draft' | 'approved' | 'submitted' | 'processing' | 'paid' | 'failed' | 'reversed' | 'pending_approval' | 'rejected' | string
+  status:
+    | 'draft'
+    | 'approved'
+    | 'submitted'
+    | 'processing'
+    | 'paid'
+    | 'failed'
+    | 'reversed'
+    | 'pending_approval'
+    | 'rejected'
+    | string
   failure_reason?: string | null
   approved_at?: string | null
   submitted_at?: string | null
@@ -80,7 +90,6 @@ export interface FinanceExceptionItem {
   resolution_note?: string
 }
 
-
 export interface MonthlyInvoiceData {
   id: number | string
   uuid?: string
@@ -124,4 +133,3 @@ export interface OccurrenceItem {
     status?: string
   }
 }
-

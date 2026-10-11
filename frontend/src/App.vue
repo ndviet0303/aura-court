@@ -5,7 +5,6 @@ import { Navbar, SiteFooter } from '@/shared/layouts'
 import { DemoWarningModal } from '@/shared/components'
 import { isRouteNavigating } from '@/stores/navigation'
 
-
 const route = useRoute()
 const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
 </script>
@@ -15,7 +14,12 @@ const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
     <Navbar />
     <!-- Top Navigation Progress Indicator -->
     <Transition name="progress-fade">
-      <div v-if="isRouteNavigating" class="route-progress-bar" role="progressbar" aria-label="Loading page">
+      <div
+        v-if="isRouteNavigating"
+        class="route-progress-bar"
+        role="progressbar"
+        aria-label="Loading page"
+      >
         <div class="progress-glow"></div>
       </div>
     </Transition>
@@ -70,7 +74,7 @@ const isAdminRoute = computed(() => Boolean(route?.path?.startsWith('/admin')))
 .progress-glow {
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, #F8E8EC 0%, #6B2D3F 40%, #C9A15A 70%, #FAF2E3 100%);
+  background: linear-gradient(90deg, #f8e8ec 0%, #6b2d3f 40%, #c9a15a 70%, #faf2e3 100%);
   animation: route-progress-sweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   transform-origin: left center;
 }

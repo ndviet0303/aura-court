@@ -5,7 +5,6 @@ import type { TournamentItem } from '../types/tournament'
 import { usePaymentProcessing } from '@/features/booking/composables/usePaymentProcessing'
 import { tournamentApi } from '../api/tournamentApi'
 import { useAuthStore } from '@/stores/auth'
-import { apiV2, api } from '@/core/api/client'
 
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({
@@ -116,9 +115,12 @@ describe('Task 1.2 Regression: Local tournament registration and payment confirm
     await payment.handleWalletPay()
 
     // Authoritative backend registration endpoint was called
-    expect(tournamentApi.register).toHaveBeenCalledWith('tourney-uuid-1', expect.objectContaining({
-      name: 'Athlete Demo',
-    }))
+    expect(tournamentApi.register).toHaveBeenCalledWith(
+      'tourney-uuid-1',
+      expect.objectContaining({
+        name: 'Athlete Demo',
+      }),
+    )
     expect(payment.status.value).toBe('confirmed')
     expect(payment.showSuccessModal.value).toBe(true)
   })
@@ -126,9 +128,7 @@ describe('Task 1.2 Regression: Local tournament registration and payment confirm
   it('Task 8.9 Fix: persisted tournament registration is preserved on reload from server participants', async () => {
     const tournamentWithParticipant: TournamentItem = {
       ...sampleTournament,
-      participants: [
-        { id: 88, user_id: 1, name: 'Nguyễn Văn A' } as any,
-      ],
+      participants: [{ id: 88, user_id: 1, name: 'Nguyễn Văn A' } as any],
     }
     vi.mocked(tournamentApi.list).mockResolvedValue([tournamentWithParticipant])
 

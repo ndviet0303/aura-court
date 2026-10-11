@@ -23,13 +23,6 @@ export function useAuthForm() {
   const regPassword = ref('')
   const regPasswordConfirmation = ref('')
 
-  function showNotice(msg: string) {
-    notice.value = msg
-    setTimeout(() => {
-      if (notice.value === msg) notice.value = ''
-    }, 4000)
-  }
-
   async function handleLogin() {
     loading.value = true
     error.value = ''
@@ -55,7 +48,7 @@ export function useAuthForm() {
         regName.value.trim(),
         regEmail.value.trim(),
         regPassword.value,
-        regPasswordConfirmation.value
+        regPasswordConfirmation.value,
       )
       router.push('/onboarding')
     } catch (cause: unknown) {

@@ -47,12 +47,7 @@ export type RefundRecipient = {
 // (or rejected / recipient_disputed). Only `acknowledged` is a verified,
 // completed refund — an owner_reported transfer or a dispute is NOT.
 export type RefundObligationStatus =
-  | 'requested'
-  | 'approved'
-  | 'owner_reported'
-  | 'acknowledged'
-  | 'rejected'
-  | 'recipient_disputed'
+  'requested' | 'approved' | 'owner_reported' | 'acknowledged' | 'rejected' | 'recipient_disputed'
 
 export type RefundEvidenceEvent = {
   id: number

@@ -20,7 +20,9 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     LARAVEL_STORAGE_PATH: manifest.storagePath,
   }
 
-  test('10.4.1: Đồng bộ khả dụng hai phiên trình duyệt khi có biến động & Nhất quán khi tải lại (Không giả DOM)', async ({ browser }) => {
+  test('10.4.1: Đồng bộ khả dụng hai phiên trình duyệt khi có biến động & Nhất quán khi tải lại (Không giả DOM)', async ({
+    browser,
+  }) => {
     // 1. Use the primary seeded court (court1A1) which is canonical and default in the venue
     const courtId = manifest.fixtures?.organizations.org1.venue1A?.courts[0] || 1
 
@@ -38,19 +40,31 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       await pageA.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
       await pageB.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
 
-      await expect(pageA.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 15000 })
-      await expect(pageB.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 15000 })
-      await expect(pageA.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 15000 })
-      await expect(pageB.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 15000 })
+      await expect(
+        pageA.locator('.schedule-split-layout, .schedule-view-page').first(),
+      ).toBeVisible({ timeout: 15000 })
+      await expect(
+        pageB.locator('.schedule-split-layout, .schedule-view-page').first(),
+      ).toBeVisible({ timeout: 15000 })
+      await expect(pageA.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({
+        timeout: 15000,
+      })
+      await expect(pageB.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({
+        timeout: 15000,
+      })
       // 4. In Session A, select tomorrow's date card
       const dateCardsA = pageA.locator('.date-carousel .date-card-btn')
       await dateCardsA.nth(1).click()
-      await expect(pageA.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 10000 })
+      await expect(pageA.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({
+        timeout: 10000,
+      })
 
       // In Session B, select the same tomorrow's date card
       const dateCardsB = pageB.locator('.date-carousel .date-card-btn')
       await dateCardsB.nth(1).click()
-      await expect(pageB.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 10000 })
+      await expect(pageB.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({
+        timeout: 10000,
+      })
 
       // 5. Identify the first available slot in Session A
       const slotButtonA = pageA.locator('.slot-cell-btn.is-available').first()
@@ -60,7 +74,10 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       expect(slotTime).toMatch(/^\d{2}:\d{2}$/)
 
       // Verify that initially, Session B ALSO sees this slot as available (using fullTimeText to prevent matching preceding slot)
-      const slotButtonB = pageB.locator('.slot-cell-btn').filter({ has: pageB.locator('.s-time', { hasText: fullTimeText }) }).first()
+      const slotButtonB = pageB
+        .locator('.slot-cell-btn')
+        .filter({ has: pageB.locator('.s-time', { hasText: fullTimeText }) })
+        .first()
       await expect(slotButtonB).toBeVisible({ timeout: 10000 })
       await expect(slotButtonB).toHaveClass(/is-available/)
       await expect(slotButtonB).not.toBeDisabled()
@@ -124,11 +141,13 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       // Session B queries backend availability for the court and date to prove the held slot is locked
       const backendUrl = manifest.backend.url
       const availResponse = await pageB.request.get(
-        `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${targetDate}`
+        `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${targetDate}`,
       )
       expect(availResponse.status()).toBe(200)
       const slotsData = await availResponse.json()
-      const heldSlotInBackend = slotsData.find((s: { startsAt: string }) => s.startsAt.includes(slotTime))
+      const heldSlotInBackend = slotsData.find((s: { startsAt: string }) =>
+        s.startsAt.includes(slotTime),
+      )
       expect(heldSlotInBackend).toBeDefined()
       expect(heldSlotInBackend.available).toBe(false)
 
@@ -136,7 +155,10 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       const dateCardsBAfter = pageB.locator('.date-carousel .date-card-btn')
       await dateCardsBAfter.nth(1).click()
 
-      const slotBtnAfter = pageB.locator('.slot-cell-btn').filter({ has: pageB.locator('.s-time', { hasText: fullTimeText }) }).first()
+      const slotBtnAfter = pageB
+        .locator('.slot-cell-btn')
+        .filter({ has: pageB.locator('.s-time', { hasText: fullTimeText }) })
+        .first()
       await expect(slotBtnAfter).toBeVisible({ timeout: 15000 })
       await expect(slotBtnAfter).toHaveClass(/is-occupied/)
       await expect(slotBtnAfter).toBeDisabled()
@@ -158,7 +180,7 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
           env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
           encoding: 'utf-8',
         })
-      } catch (err) {
+      } catch {
         // Ignore cleanup failure
       }
       await contextA.close()
@@ -166,7 +188,9 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     }
   })
 
-  test('10.4.2: Hai phiên: Sơ đồ nhánh đấu & Cập nhật tỷ số qua cơ chế Polling (Không giả DOM)', async ({ browser }) => {
+  test('10.4.2: Hai phiên: Sơ đồ nhánh đấu & Cập nhật tỷ số qua cơ chế Polling (Không giả DOM)', async ({
+    browser,
+  }) => {
     const owner = getActorCredentials(manifest, 'owner1')
     const customer1 = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -224,10 +248,14 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
 
     try {
       // 3. Spectator visits the bracket page
-      await pageSpectator.goto(`/tournaments/${tourneyId}/bracket`, { waitUntil: 'domcontentloaded' })
+      await pageSpectator.goto(`/tournaments/${tourneyId}/bracket`, {
+        waitUntil: 'domcontentloaded',
+      })
 
       // Verify the bracket view is rendered
-      await expect(pageSpectator.locator('.tournament-bracket-view, .bracket-main-body').first()).toBeVisible({ timeout: 15000 })
+      await expect(
+        pageSpectator.locator('.tournament-bracket-view, .bracket-main-body').first(),
+      ).toBeVisible({ timeout: 15000 })
 
       // 4. Assert: Round 1 Match 2 card (P2 vs P3) displays the real submitted score (21 for winner, 15 for loser)
       const match2 = pageSpectator.locator('.bracket-match-node').nth(1)
@@ -291,7 +319,9 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     const tomorrowVn = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(tomorrowDate)
 
     // 2. Query availability for today in Vietnam timezone
-    const responseToday = await page.request.get(`${backendUrl}/api/v1/availability?court_id=${courtId}&date=${todayVn}`)
+    const responseToday = await page.request.get(
+      `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${todayVn}`,
+    )
     expect(responseToday.status()).toBe(200)
 
     const slotsToday = await responseToday.json()
@@ -301,12 +331,16 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     // Verify all slots strictly match today's date in Asia/Ho_Chi_Minh without leaking to adjacent days
     for (const slot of slotsToday) {
       expect(slot.startsAt).toMatch(/T\d{2}:\d{2}:\d{2}\+07:00$/)
-      const slotVnDate = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date(slot.startsAt))
+      const slotVnDate = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(
+        new Date(slot.startsAt),
+      )
       expect(slotVnDate).toBe(todayVn)
     }
 
     // 3. Verify midnight boundary & day crossing transition with tomorrow's slots
-    const responseTomorrow = await page.request.get(`${backendUrl}/api/v1/availability?court_id=${courtId}&date=${tomorrowVn}`)
+    const responseTomorrow = await page.request.get(
+      `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${tomorrowVn}`,
+    )
     expect(responseTomorrow.status()).toBe(200)
 
     const slotsTomorrow = await responseTomorrow.json()
@@ -316,12 +350,16 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
     // The first slot of tomorrow (06:00:00+07:00) is 23:00:00 UTC of todayVn.
     // Verify that the server correctly scoped it to tomorrowVn and not todayVn!
     const firstSlotTomorrow = slotsTomorrow[0]
-    const firstSlotVnDate = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date(firstSlotTomorrow.startsAt))
+    const firstSlotVnDate = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(
+      new Date(firstSlotTomorrow.startsAt),
+    )
     expect(firstSlotVnDate).toBe(tomorrowVn)
 
     // 4. Verify on client UI: Schedule page renders formatted date in Vietnamese
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 15000,
+    })
 
     const activeDatePill = page.locator('.date-carousel .date-card-btn.active').first()
     await expect(activeDatePill).toBeVisible({ timeout: 10000 })

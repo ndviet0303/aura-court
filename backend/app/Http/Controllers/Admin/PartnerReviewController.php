@@ -36,7 +36,7 @@ class PartnerReviewController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = '%' . $request->input('search') . '%';
+            $search = '%'.$request->input('search').'%';
             $query->where(function ($q) use ($search) {
                 $q->where('kyc_code', 'like', $search)
                     ->orWhere('business_name', 'like', $search)
@@ -64,7 +64,7 @@ class PartnerReviewController extends Controller
     public function show(int $id): JsonResponse
     {
         $application = $this->kycRepo->findById($id);
-        if (!$application) {
+        if (! $application) {
             return response()->json(['message' => 'Hồ sơ đối tác không tồn tại.'], 404);
         }
 

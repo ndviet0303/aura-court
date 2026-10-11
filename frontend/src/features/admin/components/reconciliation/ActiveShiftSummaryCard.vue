@@ -81,25 +81,13 @@ const { t } = useI18n()
         </div>
 
         <div class="shift-quick-actions">
-          <AuraButton
-            variant="secondary"
-            icon="payments"
-            @click="emit('openCashDrops')"
-          >
+          <AuraButton variant="secondary" icon="payments" @click="emit('openCashDrops')">
             {{ t('admin.shifts.cashDropsBtn', { count: shift.cash_drops.length }) }}
           </AuraButton>
-          <AuraButton
-            variant="secondary"
-            icon="calculate"
-            @click="emit('openDenominations')"
-          >
+          <AuraButton variant="secondary" icon="calculate" @click="emit('openDenominations')">
             {{ t('admin.shifts.auditDenominationsBtn') }}
           </AuraButton>
-          <AuraButton
-            variant="primary"
-            icon="lock_clock"
-            @click="emit('closeShift')"
-          >
+          <AuraButton variant="primary" icon="lock_clock" @click="emit('closeShift')">
             {{ t('admin.shifts.closeShiftBtn') }}
           </AuraButton>
         </div>
@@ -114,20 +102,32 @@ const { t } = useI18n()
 
         <div class="metric-box">
           <span class="metric-lbl">{{ t('admin.shifts.cashSalesLabel') }}</span>
-          <strong class="metric-val text-green font-mono">+{{ formatCurrency(shift.cash_sales) }}</strong>
-          <span class="metric-sub">{{ t('admin.shifts.ordersCountLabel', { count: shift.orders_count }) }}</span>
+          <strong class="metric-val text-green font-mono"
+            >+{{ formatCurrency(shift.cash_sales) }}</strong
+          >
+          <span class="metric-sub">{{
+            t('admin.shifts.ordersCountLabel', { count: shift.orders_count })
+          }}</span>
         </div>
 
         <div class="metric-box">
           <span class="metric-lbl">{{ t('admin.shifts.qrSalesLabel') }}</span>
-          <strong class="metric-val text-blue font-mono">{{ formatCurrency(shift.qr_sales + shift.wallet_sales) }}</strong>
+          <strong class="metric-val text-blue font-mono">{{
+            formatCurrency(shift.qr_sales + shift.wallet_sales)
+          }}</strong>
           <span class="metric-sub">PayOS & Ví Aura</span>
         </div>
 
         <div class="metric-box">
           <span class="metric-lbl">{{ t('admin.shifts.totalSalesLabel') }}</span>
-          <strong class="metric-val text-pink font-mono">{{ formatCurrency(shift.total_sales) }}</strong>
-          <span class="metric-sub">{{ t('admin.shifts.cashDropsTally') }}: -{{ formatCurrency(shift.cash_drops_total) }}</span>
+          <strong class="metric-val text-pink font-mono">{{
+            formatCurrency(shift.total_sales)
+          }}</strong>
+          <span class="metric-sub"
+            >{{ t('admin.shifts.cashDropsTally') }}: -{{
+              formatCurrency(shift.cash_drops_total)
+            }}</span
+          >
         </div>
       </div>
 
@@ -144,7 +144,9 @@ const { t } = useI18n()
           <span class="var-lbl">{{ t('admin.shifts.varianceLabel') }}</span>
           <strong
             class="font-mono"
-            :class="shift.variance === 0 ? 'text-green' : shift.variance < 0 ? 'text-red' : 'text-yellow'"
+            :class="
+              shift.variance === 0 ? 'text-green' : shift.variance < 0 ? 'text-red' : 'text-yellow'
+            "
           >
             {{ shift.variance > 0 ? '+' : '' }}{{ formatCurrency(shift.variance) }}
           </strong>
@@ -284,9 +286,18 @@ const { t } = useI18n()
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  50% { transform: scale(1.4); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.7; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
 }
 
 .shift-code-tag {
@@ -363,12 +374,24 @@ const { t } = useI18n()
   color: var(--muted);
 }
 
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
-.text-ink { color: var(--ink); }
+.text-green {
+  color: #10b981;
+}
+.text-blue {
+  color: #3b82f6;
+}
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
+.text-ink {
+  color: var(--ink);
+}
 
 .shift-variance-bar {
   display: flex;
@@ -416,9 +439,15 @@ const { t } = useI18n()
   color: #ef4444;
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 :global(html.dark) .active-shift-card {
   background: var(--surface, #1e191c);

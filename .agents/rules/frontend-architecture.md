@@ -39,7 +39,7 @@ src/
 
 ## Views (Pages)
 
-- Views are **thin orchestrators** — ideally <150 lines, max ~200 lines of `<script setup>`.
+- Views are **thin orchestrators** — ideally <150 lines, max 200 lines of `<script>`.
 - Views compose feature components and call composables. They do NOT contain:
   - Direct API calls (`api.get()`, `apiV2.post()`)
   - Complex business logic
@@ -133,7 +133,7 @@ export function useBookingCreate() {
 
 - **Shared components** (`shared/components/`): Pure UI atoms and molecules. No domain logic. Props in, events out.
 - **Feature components** (`features/{domain}/components/`): Domain-aware, can access domain stores and composables.
-- Every component file max **300 lines**. Split when exceeding.
+- Every component file max **400 lines**. Split when exceeding.
 - Use `defineProps` and `defineEmits` with TypeScript generics.
 - Prefix shared components with a project prefix: `Aura{Name}.vue`.
 
@@ -211,3 +211,29 @@ export type Booking = {
 - No `this.$` usage — Options API is forbidden in new code.
 - Money values are integers (VND). Format with `Intl.NumberFormat('vi-VN')`.
 - Dates: Store as ISO strings. Display with locale-aware formatting.
+
+## Static analysis
+
+CI (`frontend_check`) runs `type-check`, `oxlint .`, `eslint .`, `format:check` and `test:unit`, all without `--fix`. New findings fail. Existing debt lives in baselines that only shrink.
+
+**Architecture check.** `src/__tests__/architecture.spec.ts` runs inside `test:unit` and checks every file in `src/` against these limits:
+
+| Rule | Limit |
+|------|-------|
+| View (a `.vue` file under `views/`) | 250 lines, of which at most 200 are script |
+| Component (any other `.vue` file) | 400 lines |
+| `.vue` imports of the raw API client (`core/api/client`, `lib/api`) or a legacy store (`stores/`) | none |
+| Files in `src/stores/` | no new ones |
+| Router `component:` bound to a statically imported `.vue` file | none; lazy-load routes |
+
+Files that broke a rule when the check landed are listed in `src/__tests__/architecture-allowlist.json` as `[rule, file, ceiling]`.
+
+- A listed file may shrink and grow back up to its ceiling, but never past it.
+- Lower a ceiling on purpose when a file shrinks but is still over the limit. Never raise one.
+- Once a file is within the limit, the check fails until you delete its entry.
+- Fix new violations instead of allowlisting them. The ready-to-paste line in the failure message is for existing debt that moves, such as a renamed file.
+
+**ESLint suppressions.** `eslint-suppressions.json` records the existing `@typescript-eslint/no-explicit-any` violations. ESLint writes it; do not edit it by hand.
+
+- After removing `any`, run `npx eslint . --prune-suppressions` and commit the smaller file. ESLint fails while a suppression is unused.
+- Do not suppress findings in new code, and never pass `--pass-on-unpruned-suppressions`.

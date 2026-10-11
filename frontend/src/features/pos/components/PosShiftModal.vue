@@ -39,7 +39,7 @@ const expectedCash = computed(() => {
   if (!props.activeShift) return 0
   const opening = props.activeShift.opening_cash ?? props.activeShift.initial_cash ?? 0
   const cashSales = props.activeShift.cash_sales ?? 0
-  return props.activeShift.expected_cash ?? (opening + cashSales)
+  return props.activeShift.expected_cash ?? opening + cashSales
 })
 
 const liveVariance = computed(() => {
@@ -53,7 +53,7 @@ watch(
       declaredCash.value = expectedCash.value
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 watch(
@@ -62,19 +62,29 @@ watch(
     if (isOpen && activeTab.value === 'history') {
       loadHistory()
     }
-  }
+  },
 )
 
 async function loadHistory() {
   loadingHistory.value = true
   try {
     const data = await posApi.getShifts()
-    shiftsHistory.value = Array.isArray(data) ? data : ((data as any)?.data || [])
+    shiftsHistory.value = Array.isArray(data) ? data : (data as any)?.data || []
   } catch (err) {
     console.error('Failed to load shifts history:', err)
   } finally {
     loadingHistory.value = false
   }
+}
+
+function showHistory() {
+  activeTab.value = 'history'
+  loadHistory()
+}
+
+function startReview(shiftId: number) {
+  reviewingShiftId.value = shiftId
+  reviewStatus.value = 'approved'
 }
 
 function handleOpen() {
@@ -133,7 +143,7 @@ async function handleReviewReconciliation(shiftId: number) {
           type="button"
           class="tab-btn"
           :class="{ active: activeTab === 'history' }"
-          @click="activeTab = 'history'; loadHistory()"
+          @click="showHistory"
         >
           <span class="material-symbols-outlined icon-18">history</span>
           <span>{{ t('admin.pos.tabShiftHistory') }}</span>
@@ -147,7 +157,11 @@ async function handleReviewReconciliation(shiftId: number) {
           <div v-if="activeShift" class="shift-active-box">
             <div class="shift-status-badge">
               <span class="status-dot"></span>
-              <span>{{ t('admin.pos.shiftActiveBadge', { id: activeShift.id }) }} ({{ t('admin.pos.shiftStatusOpen') }})</span>
+              <span
+                >{{ t('admin.pos.shiftActiveBadge', { id: activeShift.id }) }} ({{
+                  t('admin.pos.shiftStatusOpen')
+                }})</span
+              >
             </div>
 
             <div class="shift-stats-grid">
@@ -157,19 +171,27 @@ async function handleReviewReconciliation(shiftId: number) {
               </div>
               <div class="stat-card">
                 <span class="stat-label">{{ t('admin.pos.shiftOpeningCash') }}</span>
-                <strong class="stat-val">{{ formatMoney(activeShift.initial_cash || activeShift.opening_cash || 0) }}</strong>
+                <strong class="stat-val">{{
+                  formatMoney(activeShift.initial_cash || activeShift.opening_cash || 0)
+                }}</strong>
               </div>
               <div class="stat-card">
                 <span class="stat-label">{{ t('admin.pos.shiftCashSales') }}</span>
-                <strong class="stat-val text-green">{{ formatMoney(activeShift.cash_sales || 0) }}</strong>
+                <strong class="stat-val text-green">{{
+                  formatMoney(activeShift.cash_sales || 0)
+                }}</strong>
               </div>
               <div class="stat-card">
                 <span class="stat-label">{{ t('admin.pos.shiftQrWalletSales') }}</span>
-                <strong class="stat-val text-blue">{{ formatMoney((activeShift.qr_sales || 0) + (activeShift.wallet_sales || 0)) }}</strong>
+                <strong class="stat-val text-blue">{{
+                  formatMoney((activeShift.qr_sales || 0) + (activeShift.wallet_sales || 0))
+                }}</strong>
               </div>
               <div class="stat-card highlight-expected">
                 <span class="stat-label">{{ t('admin.pos.shiftExpectedCash') }}</span>
-                <strong class="stat-val text-amber font-bold">{{ formatMoney(expectedCash) }}</strong>
+                <strong class="stat-val text-amber font-bold">{{
+                  formatMoney(expectedCash)
+                }}</strong>
               </div>
             </div>
 
@@ -181,7 +203,8 @@ async function handleReviewReconciliation(shiftId: number) {
 
               <div class="form-group">
                 <label class="form-label">
-                  {{ t('admin.pos.shiftDeclaredCashLabel') }} {{ t('admin.pos.shiftActualCashNote') }}
+                  {{ t('admin.pos.shiftDeclaredCashLabel') }}
+                  {{ t('admin.pos.shiftActualCashNote') }}
                 </label>
                 <input
                   v-model.number="declaredCash"
@@ -196,21 +219,29 @@ async function handleReviewReconciliation(shiftId: number) {
               <div
                 class="variance-banner"
                 :class="{
-                  'matched': liveVariance === 0,
-                  'deficit': liveVariance < 0,
-                  'surplus': liveVariance > 0
+                  matched: liveVariance === 0,
+                  deficit: liveVariance < 0,
+                  surplus: liveVariance > 0,
                 }"
               >
                 <div class="variance-header">
                   <span class="material-symbols-outlined icon-18">
-                    {{ liveVariance === 0 ? 'check_circle' : (liveVariance < 0 ? 'warning' : 'add_circle') }}
+                    {{
+                      liveVariance === 0
+                        ? 'check_circle'
+                        : liveVariance < 0
+                          ? 'warning'
+                          : 'add_circle'
+                    }}
                   </span>
                   <span>{{ t('admin.pos.shiftVarianceLabel') }}</span>
                   <strong>{{ liveVariance > 0 ? '+' : '' }}{{ formatMoney(liveVariance) }}</strong>
                 </div>
                 <div class="variance-subtext">
                   <span v-if="liveVariance === 0">{{ t('admin.pos.shiftVarianceMatched') }}</span>
-                  <span v-else-if="liveVariance < 0">{{ t('admin.pos.shiftVarianceDeficit') }}</span>
+                  <span v-else-if="liveVariance < 0">{{
+                    t('admin.pos.shiftVarianceDeficit')
+                  }}</span>
                   <span v-else>{{ t('admin.pos.shiftVarianceSurplus') }}</span>
                 </div>
               </div>
@@ -277,13 +308,17 @@ async function handleReviewReconciliation(shiftId: number) {
                 </thead>
                 <tbody>
                   <tr v-for="s in shiftsHistory" :key="s.id">
-                    <td><strong>#{{ s.id }}</strong></td>
+                    <td>
+                      <strong>#{{ s.id }}</strong>
+                    </td>
                     <td>{{ s.cashier?.name || t('admin.pos.tblCashier') }}</td>
                     <td>
                       <div class="time-cell">
                         <span>{{ s.opened_at }}</span>
                         <span v-if="s.closed_at" class="text-sub">→ {{ s.closed_at }}</span>
-                        <span v-else class="status-open-pill">{{ t('admin.pos.shiftStatusOpen') }}</span>
+                        <span v-else class="status-open-pill">{{
+                          t('admin.pos.shiftStatusOpen')
+                        }}</span>
                       </div>
                     </td>
                     <td>{{ formatMoney(s.opening_cash) }}</td>
@@ -295,7 +330,7 @@ async function handleReviewReconciliation(shiftId: number) {
                         :class="{
                           'text-green font-bold': s.variance === 0,
                           'text-red font-bold': s.variance < 0,
-                          'text-blue font-bold': s.variance > 0
+                          'text-blue font-bold': s.variance > 0,
                         }"
                       >
                         {{ s.variance > 0 ? '+' : '' }}{{ formatMoney(s.variance) }}
@@ -306,22 +341,35 @@ async function handleReviewReconciliation(shiftId: number) {
                       <span
                         v-if="s.status === 'closed'"
                         class="reconcile-pill"
-                        :class="s.reconciliation?.status || (s.variance === 0 ? 'matched' : 'exception')"
+                        :class="
+                          s.reconciliation?.status || (s.variance === 0 ? 'matched' : 'exception')
+                        "
                       >
-                        {{ s.reconciliation?.status === 'approved' ? t('admin.pos.statusApproved') : (s.variance === 0 ? t('admin.pos.shiftVarianceMatched') : t('admin.pos.tblVariance')) }}
+                        {{
+                          s.reconciliation?.status === 'approved'
+                            ? t('admin.pos.statusApproved')
+                            : s.variance === 0
+                              ? t('admin.pos.shiftVarianceMatched')
+                              : t('admin.pos.tblVariance')
+                        }}
                       </span>
-                      <span v-else class="reconcile-pill open">{{ t('admin.pos.statusNotClosed') }}</span>
+                      <span v-else class="reconcile-pill open">{{
+                        t('admin.pos.statusNotClosed')
+                      }}</span>
                     </td>
                     <td>
                       <button
                         v-if="s.status === 'closed' && s.reconciliation?.status !== 'approved'"
                         type="button"
                         class="btn-review"
-                        @click="reviewingShiftId = s.id; reviewStatus = 'approved'"
+                        @click="startReview(s.id)"
                       >
                         {{ t('admin.pos.btnReview') }}
                       </button>
-                      <span v-else-if="s.reconciliation?.status === 'approved'" class="text-green text-sm">
+                      <span
+                        v-else-if="s.reconciliation?.status === 'approved'"
+                        class="text-green text-sm"
+                      >
                         {{ t('admin.pos.statusReviewed') }}
                       </span>
                     </td>
@@ -352,11 +400,7 @@ async function handleReviewReconciliation(shiftId: number) {
                   >
                     {{ t('admin.pos.saveReconciliation') }}
                   </button>
-                  <button
-                    type="button"
-                    class="btn-cancel-review"
-                    @click="reviewingShiftId = null"
-                  >
+                  <button type="button" class="btn-cancel-review" @click="reviewingShiftId = null">
                     {{ t('admin.pos.close') }}
                   </button>
                 </div>
@@ -550,12 +594,24 @@ async function handleReviewReconciliation(shiftId: number) {
   color: #f1f5f9;
 }
 
-.text-green { color: #4ade80; }
-.text-blue { color: #38bdf8; }
-.text-amber { color: #fbbf24; }
-.text-red { color: #f87171; }
-.text-bold { font-weight: 700; }
-.font-bold { font-weight: 700; }
+.text-green {
+  color: #4ade80;
+}
+.text-blue {
+  color: #38bdf8;
+}
+.text-amber {
+  color: #fbbf24;
+}
+.text-red {
+  color: #f87171;
+}
+.text-bold {
+  font-weight: 700;
+}
+.font-bold {
+  font-weight: 700;
+}
 
 .close-shift-form {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -582,7 +638,9 @@ async function handleReviewReconciliation(shiftId: number) {
   margin-bottom: 4px;
 }
 
-.form-input, .form-textarea, .form-select {
+.form-input,
+.form-textarea,
+.form-select {
   width: 100%;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -592,7 +650,9 @@ async function handleReviewReconciliation(shiftId: number) {
   font-size: 14px;
 }
 
-.form-input:focus, .form-textarea:focus, .form-select:focus {
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
   outline: none;
   border-color: #38bdf8;
 }
@@ -705,7 +765,8 @@ async function handleReviewReconciliation(shiftId: number) {
   gap: 6px;
 }
 
-.btn-primary:disabled, .btn-danger:disabled {
+.btn-primary:disabled,
+.btn-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -720,7 +781,8 @@ async function handleReviewReconciliation(shiftId: number) {
   font-size: 13px;
 }
 
-.shifts-table th, .shifts-table td {
+.shifts-table th,
+.shifts-table td {
   padding: 8px 10px;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -832,7 +894,11 @@ async function handleReviewReconciliation(shiftId: number) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

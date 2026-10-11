@@ -4,15 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\Court;
-use App\Models\EntitlementTransfer;
 use App\Models\Journal;
 use App\Models\MarketplaceListing;
 use App\Models\Organization;
-use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
-use App\Models\Settlement;
 use App\Models\Tournament;
 use App\Models\TournamentParticipant;
 use App\Models\User;
@@ -22,7 +19,6 @@ use App\Services\Finance\FinancialPostingService;
 use App\Services\Finance\LedgerService;
 use App\Services\Finance\SettlementService;
 use App\Services\Social\MarketplaceService;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -31,15 +27,23 @@ class ZeroCommissionRetirementRegressionTest extends TestCase
     use RefreshDatabase;
 
     private FinancialPostingService $financials;
+
     private LedgerService $ledger;
+
     private MarketplaceService $marketplace;
+
     private SettlementService $settlements;
 
     private Organization $organization;
+
     private Venue $venue;
+
     private Court $court;
+
     private User $seller;
+
     private User $buyer;
+
     private WalletAccount $wallet;
 
     protected function setUp(): void
@@ -52,12 +56,12 @@ class ZeroCommissionRetirementRegressionTest extends TestCase
 
         $this->organization = Organization::create([
             'name' => 'Zero Commission Org',
-            'slug' => 'zero-comm-org-' . uniqid(),
+            'slug' => 'zero-comm-org-'.uniqid(),
         ]);
         $this->venue = Venue::create([
             'organization_id' => $this->organization->id,
             'name' => 'Zero Comm Venue',
-            'slug' => 'zero-comm-ven-' . uniqid(),
+            'slug' => 'zero-comm-ven-'.uniqid(),
             'is_active' => true,
         ]);
         $this->court = Court::create([

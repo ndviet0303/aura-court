@@ -36,11 +36,7 @@ export const SPORT_GALLERY_COLLECTIONS: Record<string, string[]> = {
     '/courts/football-3.jpg',
     '/courts/football-1.jpg',
   ],
-  tennis: [
-    '/courts/tennis-1.jpg',
-    '/courts/tennis-2.jpg',
-    '/courts/tennis-3.jpg',
-  ],
+  tennis: ['/courts/tennis-1.jpg', '/courts/tennis-2.jpg', '/courts/tennis-3.jpg'],
   pickleball: [
     '/courts/pickleball-outdoor.jpg',
     '/courts/pickleball-neon.jpg',
@@ -51,10 +47,7 @@ export const SPORT_GALLERY_COLLECTIONS: Record<string, string[]> = {
     '/courts/basketball-2.jpg',
     '/courts/basketball-1.jpg',
   ],
-  table_tennis: [
-    '/courts/table-tennis-1.jpg',
-    '/courts/table-tennis-2.jpg',
-  ],
+  table_tennis: ['/courts/table-tennis-1.jpg', '/courts/table-tennis-2.jpg'],
   volleyball: [
     '/courts/volleyball-indoor.jpg',
     '/courts/volleyball-1.jpg',
@@ -66,7 +59,9 @@ export const SPORT_GALLERY_COLLECTIONS: Record<string, string[]> = {
 /**
  * Detect sport category key from court attributes
  */
-export function detectCourtSport(court?: CourtImageEntity | null): keyof typeof SPORT_DEFAULT_IMAGES {
+export function detectCourtSport(
+  court?: CourtImageEntity | null,
+): keyof typeof SPORT_DEFAULT_IMAGES {
   const sportType = (court?.sport_zone?.sport_type || '').toLowerCase()
   const name = (court?.name || '').toLowerCase()
   const zoneName = (court?.sport_zone?.name || '').toLowerCase()

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Readiness;
 
+use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Events\CourtStatusUpdated;
 use App\Jobs\ProcessOutboxMessage;
 use App\Models\Booking;
@@ -35,13 +36,11 @@ use App\Services\Infrastructure\OutboxService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\POS\PosService;
 use Carbon\Carbon;
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -70,19 +69,19 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         ]);
 
         $owner = User::factory()->create([
-            'email' => "owner.{$prefix}.".uniqid()."@aura.test",
+            'email' => "owner.{$prefix}.".uniqid().'@aura.test',
             'email_verified_at' => now(),
             'role' => 'owner',
         ]);
 
         $staff = User::factory()->create([
-            'email' => "staff.{$prefix}.".uniqid()."@aura.test",
+            'email' => "staff.{$prefix}.".uniqid().'@aura.test',
             'email_verified_at' => now(),
             'role' => 'staff',
         ]);
 
         $customer = User::factory()->create([
-            'email' => "customer.{$prefix}.".uniqid()."@aura.test",
+            'email' => "customer.{$prefix}.".uniqid().'@aura.test',
             'email_verified_at' => now(),
             'role' => 'customer',
         ]);
@@ -293,7 +292,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 
         Queue::fake([ProcessOutboxMessage::class]);
 
-        $messageKey = 'msg.write_tx.' . uniqid();
+        $messageKey = 'msg.write_tx.'.uniqid();
 
         // Enqueue outbox message inside core write transaction
         $outboxMessage = DB::transaction(function () use ($org, $customer, $messageKey) {
@@ -569,7 +568,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             ->once()
             ->andThrow(new \RuntimeException('Connection timed out to external SMTP mail provider'));
 
-        $durableNotification = app(\App\Contracts\Infrastructure\DurableNotificationServiceInterface::class);
+        $durableNotification = app(DurableNotificationServiceInterface::class);
 
         // Durable notification sends database channel but mail fails
         $outboxMessage = $durableNotification->notifyBooking(
@@ -609,7 +608,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $org = $fixture['org'];
         $customer = $fixture['customer'];
 
-        $key = 'recovery.idempotent.' . uniqid();
+        $key = 'recovery.idempotent.'.uniqid();
 
         // 1. Create a failed outbox message with attempts = 1, available now
         $message = OutboxMessage::create([
@@ -783,7 +782,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         // D) OutboxMessage & ProviderEvent
         $outbox = OutboxMessage::create([
             'organization_id' => $org->id,
-            'message_key' => 'bck.outbox.' . uniqid(),
+            'message_key' => 'bck.outbox.'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'booking.created',
             'payload' => ['user_id' => $customer->id, 'title' => 'Backup Test'],

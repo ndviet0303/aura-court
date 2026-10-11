@@ -88,7 +88,9 @@ const { t } = useI18n()
               <select
                 :value="bulkScope"
                 class="form-input"
-                @change="emit('update:bulkScope', ($event.target as HTMLSelectElement).value as any)"
+                @change="
+                  emit('update:bulkScope', ($event.target as HTMLSelectElement).value as any)
+                "
               >
                 <option value="current">{{ t('admin.manage.scopeCurrentDay') }}</option>
                 <option value="weekdays">{{ t('admin.manage.scopeWeekdays') }}</option>
@@ -102,7 +104,9 @@ const { t } = useI18n()
               <select
                 :value="bulkStartHour"
                 class="form-input"
-                @change="emit('update:bulkStartHour', Number(($event.target as HTMLSelectElement).value))"
+                @change="
+                  emit('update:bulkStartHour', Number(($event.target as HTMLSelectElement).value))
+                "
               >
                 <option v-for="h in 18" :key="h" :value="h + 4">
                   {{ String(h + 4).padStart(2, '0') }}:00
@@ -115,7 +119,9 @@ const { t } = useI18n()
               <select
                 :value="bulkEndHour"
                 class="form-input"
-                @change="emit('update:bulkEndHour', Number(($event.target as HTMLSelectElement).value))"
+                @change="
+                  emit('update:bulkEndHour', Number(($event.target as HTMLSelectElement).value))
+                "
               >
                 <option v-for="h in 18" :key="h" :value="h + 5">
                   {{ String(h + 5).padStart(2, '0') }}:00
@@ -130,7 +136,9 @@ const { t } = useI18n()
                 type="number"
                 step="10000"
                 class="form-input font-mono"
-                @input="emit('update:bulkPrice', Number(($event.target as HTMLInputElement).value) || 0)"
+                @input="
+                  emit('update:bulkPrice', Number(($event.target as HTMLInputElement).value) || 0)
+                "
               />
             </div>
 
@@ -157,7 +165,9 @@ const { t } = useI18n()
               <div v-for="slot in morningSlots" :key="slot.id" class="slot-pill">
                 <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
                 <span class="slot-price font-mono">{{ formatCurrency(slot.price) }}</span>
-                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -165,13 +175,17 @@ const { t } = useI18n()
           <div class="period-group">
             <h5 class="period-heading">
               <span class="material-symbols-outlined icon-16">light_mode</span>
-              <span>{{ t('admin.manage.afternoonSlotsTitle', { count: afternoonSlots.length }) }}</span>
+              <span>{{
+                t('admin.manage.afternoonSlotsTitle', { count: afternoonSlots.length })
+              }}</span>
             </h5>
             <div class="period-slots-grid">
               <div v-for="slot in afternoonSlots" :key="slot.id" class="slot-pill">
                 <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
                 <span class="slot-price font-mono">{{ formatCurrency(slot.price) }}</span>
-                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -185,7 +199,9 @@ const { t } = useI18n()
               <div v-for="slot in peakSlots" :key="slot.id" class="slot-pill">
                 <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
                 <span class="slot-price text-pink font-mono">{{ formatCurrency(slot.price) }}</span>
-                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -199,7 +215,9 @@ const { t } = useI18n()
               <div v-for="slot in nightSlots" :key="slot.id" class="slot-pill">
                 <span class="slot-time font-mono">{{ slot.starts_at }} - {{ slot.ends_at }}</span>
                 <span class="slot-price font-mono">{{ formatCurrency(slot.price) }}</span>
-                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">✕</button>
+                <button type="button" class="btn-del-slot" @click="emit('deleteSlot', slot.id)">
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -208,12 +226,22 @@ const { t } = useI18n()
 
       <div class="modal-footer pricing-modal-footer">
         <div class="pricing-stats-summary">
-          <span>{{ t('admin.manage.totalSlotsSummary', { count: pricingStats.count }) }}</span> · 
-          <span>{{ t('admin.manage.minPriceSummary', { amount: formatCurrency(pricingStats.min) }) }}</span> · 
-          <span>{{ t('admin.manage.maxPriceSummary', { amount: formatCurrency(pricingStats.max) }) }}</span> · 
-          <span>{{ t('admin.manage.avgPriceSummary', { amount: formatCurrency(pricingStats.avg) }) }}</span>
+          <span>{{ t('admin.manage.totalSlotsSummary', { count: pricingStats.count }) }}</span> ·
+          <span>{{
+            t('admin.manage.minPriceSummary', { amount: formatCurrency(pricingStats.min) })
+          }}</span>
+          ·
+          <span>{{
+            t('admin.manage.maxPriceSummary', { amount: formatCurrency(pricingStats.max) })
+          }}</span>
+          ·
+          <span>{{
+            t('admin.manage.avgPriceSummary', { amount: formatCurrency(pricingStats.avg) })
+          }}</span>
         </div>
-        <button type="button" class="btn-primary" @click="emit('close')">{{ t('admin.manage.finishCloseBtn') }}</button>
+        <button type="button" class="btn-primary" @click="emit('close')">
+          {{ t('admin.manage.finishCloseBtn') }}
+        </button>
       </div>
     </div>
   </div>

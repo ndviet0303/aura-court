@@ -31,8 +31,15 @@ function goToWallet() {
       <div class="header-left">
         <span class="material-symbols-outlined wallet-icon">account_balance_wallet</span>
         <div>
-          <h3 class="wallet-pay-title">{{ $t('payment.payFromWalletTitle') || 'Thanh Toán Bằng Ví Aura' }}</h3>
-          <p class="wallet-pay-subtitle">{{ $t('payment.payFromWalletSubtitle') || 'Trừ trực tiếp số dư ví và xác nhận giữ chỗ ngay lập tức' }}</p>
+          <h3 class="wallet-pay-title">
+            {{ $t('payment.payFromWalletTitle') || 'Thanh Toán Bằng Ví Aura' }}
+          </h3>
+          <p class="wallet-pay-subtitle">
+            {{
+              $t('payment.payFromWalletSubtitle') ||
+              'Trừ trực tiếp số dư ví và xác nhận giữ chỗ ngay lập tức'
+            }}
+          </p>
         </div>
       </div>
       <div class="balance-pill" :class="{ 'balance-insufficient': !isSufficient }">
@@ -58,7 +65,10 @@ function goToWallet() {
           {{ processing ? 'progress_activity' : 'check_circle' }}
         </span>
         <span v-if="processing">{{ $t('payment.processing') || 'Đang xử lý thanh toán...' }}</span>
-        <span v-else>{{ $t('payment.confirmWalletPay', { amount: formatCurrency(amount) }) || `Xác Nhận Thanh Toán ${formatCurrency(amount)}` }}</span>
+        <span v-else>{{
+          $t('payment.confirmWalletPay', { amount: formatCurrency(amount) }) ||
+          `Xác Nhận Thanh Toán ${formatCurrency(amount)}`
+        }}</span>
       </button>
     </div>
 
@@ -67,16 +77,19 @@ function goToWallet() {
       <div class="shortfall-alert">
         <span class="material-symbols-outlined shortfall-icon">warning</span>
         <div class="shortfall-text">
-          <strong>{{ $t('payment.insufficientBalanceTitle') || 'Số dư ví chưa đủ để thanh toán' }}</strong>
-          <p>{{ $t('payment.shortfallDesc', { shortfall: formatCurrency(shortfall) }) || `Bạn cần nạp thêm tối thiểu ${formatCurrency(shortfall)} để hoàn tất giao dịch.` }}</p>
+          <strong>{{
+            $t('payment.insufficientBalanceTitle') || 'Số dư ví chưa đủ để thanh toán'
+          }}</strong>
+          <p>
+            {{
+              $t('payment.shortfallDesc', { shortfall: formatCurrency(shortfall) }) ||
+              `Bạn cần nạp thêm tối thiểu ${formatCurrency(shortfall)} để hoàn tất giao dịch.`
+            }}
+          </p>
         </div>
       </div>
 
-      <button
-        type="button"
-        class="btn-topup-wallet"
-        @click="goToWallet"
-      >
+      <button type="button" class="btn-topup-wallet" @click="goToWallet">
         <span class="material-symbols-outlined">add_card</span>
         <span>{{ $t('payment.topupNowCta') || 'Nạp Tiền Vào Ví Ngay' }}</span>
       </button>
@@ -90,7 +103,10 @@ function goToWallet() {
       </div>
       <div class="trust-item">
         <span class="material-symbols-outlined trust-icon">policy</span>
-        <span>{{ $t('payment.autoRefundNotice') || 'Phí và số tiền hoàn được tính trước theo chính sách khi huỷ hoặc đổi lịch' }}</span>
+        <span>{{
+          $t('payment.autoRefundNotice') ||
+          'Phí và số tiền hoàn được tính trước theo chính sách khi huỷ hoặc đổi lịch'
+        }}</span>
       </div>
     </div>
   </div>

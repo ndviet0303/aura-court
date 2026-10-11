@@ -10,7 +10,7 @@ use InvalidArgumentException;
 class LedgerService
 {
     /**
-     * @param array<int, array{account_id?: int, account_code?: string, side: string, amount: int, source_type?: string, source_id?: int, metadata?: array}> $entries
+     * @param  array<int, array{account_id?: int, account_code?: string, side: string, amount: int, source_type?: string, source_id?: int, metadata?: array}>  $entries
      */
     public function post(array $attributes, array $entries): Journal
     {
@@ -57,6 +57,7 @@ class LedgerService
                     'metadata' => $entry['metadata'] ?? null,
                 ]);
             }
+
             return $journal->load('entries');
         });
     }
@@ -83,6 +84,7 @@ class LedgerService
                 'code' => $code,
             ], array_merge($definition, ['currency' => 'VND', 'is_system' => true, 'status' => 'active']));
         }
+
         return $accounts;
     }
 }

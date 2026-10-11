@@ -6,7 +6,7 @@
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 10px 22px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #ffffff);
   font-size: 13.5px;
   font-weight: 700;
@@ -23,8 +23,11 @@
 }
 
 /* In Dark Mode, primary button background is luminous Rose-Velvet, so text must be dark espresso for AAA contrast */
-html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(.btn-pink):not(.accent):not(.btn-accent):not(.gold):not(.btn-gold):not(.btn-floating-proceed) {
-  background: var(--primary, #E58E9F);
+html.dark
+  .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-secondary):not(.pink):not(
+    .btn-pink
+  ):not(.accent):not(.btn-accent):not(.gold):not(.btn-gold):not(.btn-floating-proceed) {
+  background: var(--primary, #e58e9f);
   color: var(--on-primary, #1c0a10);
   font-weight: 800;
   box-shadow: 0 4px 16px rgba(229, 142, 159, 0.35);
@@ -42,7 +45,7 @@ html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-s
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--primary, #6B2D3F);
+  outline: 2px solid var(--primary, #6b2d3f);
   outline-offset: 2px;
 }
 
@@ -51,8 +54,8 @@ html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-s
 .btn.gold,
 .btn-accent,
 .btn-gold {
-  background: var(--accent, #C9A15A);
-  color: var(--on-accent, #2A1704);
+  background: var(--accent, #c9a15a);
+  color: var(--on-accent, #2a1704);
   font-weight: 750;
   border: 1px solid rgba(201, 161, 90, 0.4);
   box-shadow: var(--shadow-gold, 0 4px 16px rgba(201, 161, 90, 0.28));
@@ -63,7 +66,7 @@ html.dark .btn:not(.secondary):not(.outline):not(.ghost):not(.danger):not(.btn-s
 .btn-accent:hover,
 .btn-gold:hover {
   background: var(--accent-hover, #b88e45);
-  color: var(--on-accent, #2A1704);
+  color: var(--on-accent, #2a1704);
   box-shadow: 0 6px 22px rgba(201, 161, 90, 0.42);
   transform: translateY(-1px);
 }
@@ -72,7 +75,7 @@ html.dark .btn.accent,
 html.dark .btn.gold,
 html.dark .btn-accent,
 html.dark .btn-gold {
-  background: var(--accent, #D8B46E);
+  background: var(--accent, #d8b46e);
   color: var(--on-accent, #1c1202);
   font-weight: 800;
   box-shadow: 0 4px 18px rgba(216, 180, 110, 0.35);
@@ -102,8 +105,8 @@ html.dark .btn-gold:hover {
 .btn.outline:hover,
 .btn-secondary:hover {
   background: var(--surface-subtle, #f7f3ed);
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
   box-shadow: 0 4px 14px rgba(107, 45, 63, 0.1);
   transform: translateY(-1px);
 }
@@ -113,22 +116,22 @@ html.dark .btn.outline,
 html.dark .btn-secondary {
   background: #262024;
   border-color: #4d4049;
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 html.dark .btn.secondary:hover,
 html.dark .btn.outline:hover,
 html.dark .btn-secondary:hover {
   background: #322b30;
-  border-color: var(--primary, #E58E9F);
-  color: var(--primary, #E58E9F);
+  border-color: var(--primary, #e58e9f);
+  color: var(--primary, #e58e9f);
   box-shadow: 0 4px 16px rgba(229, 142, 159, 0.2);
 }
 
 /* Tint / Container Variant */
 .btn.pink,
 .btn-pink {
-  background: var(--primary-container, #F8E8EC);
+  background: var(--primary-container, #f8e8ec);
   color: var(--on-primary-container, #4e1827);
   border: 1px solid rgba(107, 45, 63, 0.2);
 }
@@ -136,13 +139,13 @@ html.dark .btn-secondary:hover {
 .btn.pink:hover,
 .btn-pink:hover {
   background: #f2d6de;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .btn.pink,
 html.dark .btn-pink {
   background: var(--primary-container, #441a26);
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
   border: 1px solid rgba(229, 142, 159, 0.35);
 }
 
@@ -210,7 +213,7 @@ html.dark .btn-pink:hover {
   border: 0;
   background: none;
   cursor: pointer;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -223,7 +226,7 @@ html.dark .btn-pink:hover {
 
 .search-action {
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #ffffff);
   border-radius: 14px;
   cursor: pointer;
@@ -249,11 +252,15 @@ html.dark .btn-pink:hover {
 .search-action .material-symbols-outlined {
   font-size: 24px !important;
   color: inherit;
-  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 600,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 html.dark .search-action {
-  background: var(--primary, #E58E9F);
+  background: var(--primary, #e58e9f);
   color: var(--on-primary, #1c0a10);
   box-shadow: 0 4px 16px rgba(229, 142, 159, 0.35);
 }

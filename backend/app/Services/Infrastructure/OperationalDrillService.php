@@ -32,6 +32,7 @@ class OperationalDrillService
         } catch (\Throwable $exception) {
             $run->update(['status' => 'blocked', 'failure_reason' => $exception->getMessage(), 'completed_at' => now()]);
         }
+
         return $run->fresh();
     }
 
@@ -40,6 +41,7 @@ class OperationalDrillService
         $process = new Process($command, $cwd);
         $process->setTimeout(3600);
         $code = $process->run();
+
         return ['status' => $code === 0 ? 'passed' : 'failed', 'exit_code' => $code, 'output' => substr($process->getOutput().$process->getErrorOutput(), -20000)];
     }
 }

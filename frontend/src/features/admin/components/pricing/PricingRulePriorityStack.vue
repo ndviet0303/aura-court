@@ -68,7 +68,11 @@ const typeOptions = computed<DropdownOption[]>(() => [
   { value: 'weekly', label: t('admin.pricing.typeWeeklyOption'), icon: 'calendar_view_week' },
   { value: 'standard', label: t('admin.pricing.typeStandardOption'), icon: 'check_circle' },
   { value: 'base', label: t('admin.pricing.typeBaseOption'), icon: 'layers' },
-  { value: 'date_exception', label: t('admin.pricing.typeDateExceptionOption'), icon: 'event_busy' },
+  {
+    value: 'date_exception',
+    label: t('admin.pricing.typeDateExceptionOption'),
+    icon: 'event_busy',
+  },
   { value: 'surge', label: t('admin.pricing.typeSurgeOption'), icon: 'bolt' },
   { value: 'special_event', label: t('admin.pricing.typeSpecialEventOption'), icon: 'stars' },
 ])
@@ -155,7 +159,9 @@ function getTypeLabel(type: string): string {
             :model-value="selectedVenueId"
             :options="venueOptions"
             variant="bordered"
-            @update:model-value="emit('update:selectedVenueId', $event === 'all' ? 'all' : Number($event))"
+            @update:model-value="
+              emit('update:selectedVenueId', $event === 'all' ? 'all' : Number($event))
+            "
           />
         </div>
 
@@ -165,7 +171,9 @@ function getTypeLabel(type: string): string {
             :model-value="selectedCourtId"
             :options="courtOptions"
             variant="bordered"
-            @update:model-value="emit('update:selectedCourtId', $event === 'all' ? 'all' : Number($event))"
+            @update:model-value="
+              emit('update:selectedCourtId', $event === 'all' ? 'all' : Number($event))
+            "
           />
         </div>
 
@@ -203,7 +211,13 @@ function getTypeLabel(type: string): string {
       <p class="empty-sub">{{ t('admin.pricing.noRulesFoundSub') }}</p>
       <div class="empty-actions">
         <AuraButton
-          v-if="searchQuery || selectedVenueId !== 'all' || selectedCourtId !== 'all' || selectedTypeFilter !== 'all' || selectedStatusFilter !== 'all'"
+          v-if="
+            searchQuery ||
+            selectedVenueId !== 'all' ||
+            selectedCourtId !== 'all' ||
+            selectedTypeFilter !== 'all' ||
+            selectedStatusFilter !== 'all'
+          "
           variant="outline"
           @click="emit('clearFilters')"
         >
@@ -226,7 +240,10 @@ function getTypeLabel(type: string): string {
         :class="[`type-${rule.type}`, { 'rule-inactive': !rule.is_active }]"
       >
         <!-- Priority badge -->
-        <div class="priority-badge" :title="t('admin.pricing.priorityTooltip', { rank: rule.priority })">
+        <div
+          class="priority-badge"
+          :title="t('admin.pricing.priorityTooltip', { rank: rule.priority })"
+        >
           <span class="priority-num">#{{ rule.priority }}</span>
         </div>
 
@@ -234,7 +251,10 @@ function getTypeLabel(type: string): string {
         <div class="rule-details">
           <div class="rule-title-row">
             <strong class="rule-name">
-              {{ rule.name || (rule.court ? resolveLocalizedText(rule.court.name) : getTypeLabel(rule.type)) }}
+              {{
+                rule.name ||
+                (rule.court ? resolveLocalizedText(rule.court.name) : getTypeLabel(rule.type))
+              }}
             </strong>
             <span class="rule-type-badge" :class="`badge-${rule.type}`">
               {{ getTypeLabel(rule.type) }}
@@ -275,9 +295,12 @@ function getTypeLabel(type: string): string {
             </span>
             <span v-if="rule.effective_from || rule.effective_until" class="meta-item font-mono">
               <span class="material-symbols-outlined icon-14">date_range</span>
-              {{ rule.effective_from?.slice(0, 10) || '…' }} – {{ rule.effective_until?.slice(0, 10) || '…' }}
+              {{ rule.effective_from?.slice(0, 10) || '…' }} –
+              {{ rule.effective_until?.slice(0, 10) || '…' }}
             </span>
-            <span class="meta-item">{{ t('admin.pricing.versionLabel', { version: rule.version }) }}</span>
+            <span class="meta-item">{{
+              t('admin.pricing.versionLabel', { version: rule.version })
+            }}</span>
 
             <!-- Price / Adjustment -->
             <span class="meta-item price-tag font-mono">
@@ -291,12 +314,13 @@ function getTypeLabel(type: string): string {
         <!-- Controls -->
         <div class="rule-actions">
           <!-- Active Switch -->
-          <label class="toggle-switch" :title="rule.is_active ? t('admin.pricing.statusActive') : t('admin.pricing.statusInactive')">
-            <input
-              type="checkbox"
-              :checked="rule.is_active"
-              @change="emit('toggleActive', rule)"
-            />
+          <label
+            class="toggle-switch"
+            :title="
+              rule.is_active ? t('admin.pricing.statusActive') : t('admin.pricing.statusInactive')
+            "
+          >
+            <input type="checkbox" :checked="rule.is_active" @change="emit('toggleActive', rule)" />
             <span class="slider round"></span>
           </label>
 
@@ -445,7 +469,10 @@ function getTypeLabel(type: string): string {
   border-radius: 12px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .rule-card:hover {
@@ -506,7 +533,8 @@ function getTypeLabel(type: string): string {
   color: var(--pink-dark, #db2777);
 }
 
-.badge-holiday, .badge-special_event {
+.badge-holiday,
+.badge-special_event {
   background: rgba(245, 158, 11, 0.12);
   color: #d97706;
 }
@@ -516,12 +544,14 @@ function getTypeLabel(type: string): string {
   color: #7c3aed;
 }
 
-.badge-standard, .badge-base {
+.badge-standard,
+.badge-base {
   background: rgba(16, 185, 129, 0.12);
   color: #059669;
 }
 
-.badge-surge, .badge-bad_weather {
+.badge-surge,
+.badge-bad_weather {
   background: rgba(239, 68, 68, 0.12);
   color: #dc2626;
 }
@@ -648,7 +678,7 @@ function getTypeLabel(type: string): string {
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 16px;
   width: 16px;
   left: 3px;
@@ -704,8 +734,16 @@ input:checked + .slider:before {
   flex-wrap: wrap;
 }
 
-.icon-12 { font-size: 12px; }
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-12 {
+  font-size: 12px;
+}
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 </style>

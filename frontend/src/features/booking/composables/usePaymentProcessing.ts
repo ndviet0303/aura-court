@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -11,7 +11,6 @@ import type { TournamentItem } from '@/features/tournament/types/tournament'
 
 export function usePaymentProcessing() {
   const route = useRoute()
-  const router = useRouter()
   const store = useBookingStore()
   const auth = useAuthStore()
 
@@ -48,7 +47,13 @@ export function usePaymentProcessing() {
   const isDirectOwnerPayment = computed(() => booking.value?.payment_model === 'direct_owner_v1')
 
   const isTournament = computed(() => {
-    return !!tournament.value || store.payment?.type === 'tournament' || !!route.query.tournament_uuid || !!route.query.tournament_id || (typeof route.params.code === 'string' && route.params.code.startsWith('TRN-'))
+    return (
+      !!tournament.value ||
+      store.payment?.type === 'tournament' ||
+      !!route.query.tournament_uuid ||
+      !!route.query.tournament_id ||
+      (typeof route.params.code === 'string' && route.params.code.startsWith('TRN-'))
+    )
   })
 
   const court = computed<Court | null>(() => {
@@ -100,7 +105,10 @@ export function usePaymentProcessing() {
 
     try {
       if (isTournament.value) {
-        if (couponCode.value.trim().toUpperCase() === 'AURA2026' || couponCode.value.trim().toUpperCase() === 'VIP') {
+        if (
+          couponCode.value.trim().toUpperCase() === 'AURA2026' ||
+          couponCode.value.trim().toUpperCase() === 'VIP'
+        ) {
           if (store.payment) {
             store.payment.amount = Math.max(0, store.payment.amount - 50000)
             couponSuccess.value = 'Đã áp dụng giảm giá 50.000 ₫ lệ phí giải!'
@@ -128,14 +136,31 @@ export function usePaymentProcessing() {
     error.value = ''
     try {
       if (isTournament.value) {
-        const tourneyId = tournament.value?.uuid || tournament.value?.id || (route.query.tournament_uuid as string) || (route.query.tournament_id as string)
+        const tourneyId =
+          tournament.value?.uuid ||
+          tournament.value?.id ||
+          (route.query.tournament_uuid as string) ||
+          (route.query.tournament_id as string)
         if (!tourneyId) {
           throw new Error('Không tìm thấy thông tin giải đấu để đăng ký.')
         }
         const res = await tournamentApi.register(tourneyId, {
-          name: athleteInfo.value.name || (route.query.name as string) || (route.query.athlete_name as string) || auth.user?.name || 'Vận Động Viên Aura',
-          phone: athleteInfo.value.phone || (route.query.phone as string) || auth.user?.phone || '0901234567',
-          partner: athleteInfo.value.partnerName || (route.query.partner as string) || (route.query.partner_name as string) || undefined,
+          name:
+            athleteInfo.value.name ||
+            (route.query.name as string) ||
+            (route.query.athlete_name as string) ||
+            auth.user?.name ||
+            'Vận Động Viên Aura',
+          phone:
+            athleteInfo.value.phone ||
+            (route.query.phone as string) ||
+            auth.user?.phone ||
+            '0901234567',
+          partner:
+            athleteInfo.value.partnerName ||
+            (route.query.partner as string) ||
+            (route.query.partner_name as string) ||
+            undefined,
           notes: athleteInfo.value.notes || (route.query.notes as string) || undefined,
         })
         if (res?.receipt && store.payment) {
@@ -189,14 +214,20 @@ export function usePaymentProcessing() {
     error.value = ''
 
     try {
-      const tourneyUuid = (route.query.tournament_uuid || route.query.tournament_id) as string | undefined
+      const tourneyUuid = (route.query.tournament_uuid || route.query.tournament_id) as
+        string | undefined
       const codeParam = route.params.code as string | undefined
 
       // Check if tournament flow
-      if (tourneyUuid || (codeParam && codeParam.startsWith('TRN-')) || route.query.type === 'tournament') {
+      if (
+        tourneyUuid ||
+        (codeParam && codeParam.startsWith('TRN-')) ||
+        route.query.type === 'tournament'
+      ) {
         await loadBalance()
-        const identifier = tourneyUuid || (codeParam ? codeParam.replace(/^TRN-/, '').split('-')[0] : '')
-        
+        const identifier =
+          tourneyUuid || (codeParam ? codeParam.replace(/^TRN-/, '').split('-')[0] : '')
+
         if (identifier) {
           try {
             const tourneyData = await tournamentApi.getById(identifier)
@@ -215,24 +246,31 @@ export function usePaymentProcessing() {
               current_slots: 12,
               max_slots: 16,
               entry_fee: '300.000 ₫ / VĐV',
-              image_url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop&q=80',
+              image_url:
+                'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop&q=80',
               version: 1,
             }
           }
         }
 
         athleteInfo.value = {
-          name: (route.query.name as string) || (route.query.athlete_name as string) || auth.user?.name || 'Vận Động Viên Aura',
+          name:
+            (route.query.name as string) ||
+            (route.query.athlete_name as string) ||
+            auth.user?.name ||
+            'Vận Động Viên Aura',
           phone: (route.query.phone as string) || auth.user?.phone || '0901234567',
-          partnerName: (route.query.partner as string) || (route.query.partner_name as string) || undefined,
+          partnerName:
+            (route.query.partner as string) || (route.query.partner_name as string) || undefined,
           notes: (route.query.notes as string) || undefined,
         }
 
         const fee = parseFeeAmount(tournament.value?.entry_fee)
         const tourneyIdNum = tournament.value?.id || 1
-        const tourneyCode = codeParam && /^ORD/i.test(codeParam)
-          ? codeParam.replace(/\s+/g, '')
-          : `ORD${tourneyIdNum}`
+        const tourneyCode =
+          codeParam && /^ORD/i.test(codeParam)
+            ? codeParam.replace(/\s+/g, '')
+            : `ORD${tourneyIdNum}`
 
         store.payment = {
           code: tourneyCode,
@@ -298,7 +336,10 @@ export function usePaymentProcessing() {
         stopDirectPaymentPolling()
       }
     } catch (cause) {
-      directPaymentError.value = errorMessage(cause, 'Không thể tải thông tin thanh toán trực tiếp.')
+      directPaymentError.value = errorMessage(
+        cause,
+        'Không thể tải thông tin thanh toán trực tiếp.',
+      )
       stopDirectPaymentPolling()
     } finally {
       directPaymentLoading.value = false
@@ -311,7 +352,7 @@ export function usePaymentProcessing() {
     directPaymentRefreshing.value = true
     directPaymentError.value = ''
     try {
-      const response = await store.refreshPaymentStatus() as {
+      const response = (await store.refreshPaymentStatus()) as {
         status: string
         payment_attempt?: ReservationPaymentAttempt | null
       } | null

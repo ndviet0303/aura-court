@@ -70,11 +70,7 @@ function formatMoney(amount: number): string {
     </div>
 
     <!-- Category Tabs -->
-    <div
-      ref="categoryScrollRef"
-      class="category-tabs-scroll"
-      @wheel.passive="onCategoryWheel"
-    >
+    <div ref="categoryScrollRef" class="category-tabs-scroll" @wheel.passive="onCategoryWheel">
       <button
         v-for="cat in categories"
         :key="cat.key"
@@ -121,23 +117,27 @@ function formatMoney(amount: number): string {
           @keydown.enter="emit('selectProduct', prod)"
         >
           <div class="prod-img-wrap">
-            <img
-              v-if="prod.image_url"
-              :src="prod.image_url"
-              :alt="prod.name"
-              loading="lazy"
-            />
+            <img v-if="prod.image_url" :src="prod.image_url" :alt="prod.name" loading="lazy" />
             <div v-else class="no-img-placeholder">
               <span class="material-symbols-outlined fallback-icon">
-                {{ prod.is_rental ? 'schedule' : prod.is_service ? 'build' : prod.category === 'drinks' ? 'local_cafe' : 'sports_tennis' }}
+                {{
+                  prod.is_rental
+                    ? 'schedule'
+                    : prod.is_service
+                      ? 'build'
+                      : prod.category === 'drinks'
+                        ? 'local_cafe'
+                        : 'sports_tennis'
+                }}
               </span>
             </div>
-            <span v-if="prod.is_rental" class="badge-tag badge-rental">{{ t('admin.pos.badgeRental') }}</span>
-            <span v-else-if="prod.is_service" class="badge-tag badge-service">{{ t('admin.pos.badgeService') }}</span>
-            <span
-              v-else-if="prod.stock_quantity <= 0"
-              class="badge-tag badge-out-of-stock"
-            >
+            <span v-if="prod.is_rental" class="badge-tag badge-rental">{{
+              t('admin.pos.badgeRental')
+            }}</span>
+            <span v-else-if="prod.is_service" class="badge-tag badge-service">{{
+              t('admin.pos.badgeService')
+            }}</span>
+            <span v-else-if="prod.stock_quantity <= 0" class="badge-tag badge-out-of-stock">
               {{ t('admin.pos.badgeOutOfStock') }}
             </span>
           </div>
@@ -153,7 +153,10 @@ function formatMoney(amount: number): string {
                 <span v-else class="prod-stock service-tag">
                   {{ prod.unit || 'dịch vụ' }}
                 </span>
-                <span class="prod-vat-tag" :class="`vat-${Math.round((prod.vat_rate ?? 0.08) * 100)}`">
+                <span
+                  class="prod-vat-tag"
+                  :class="`vat-${Math.round((prod.vat_rate ?? 0.08) * 100)}`"
+                >
                   {{ Math.round((prod.vat_rate ?? 0.08) * 100) }}%
                 </span>
               </div>

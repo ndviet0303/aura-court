@@ -38,11 +38,20 @@ describe('Organization Owner & Scoped Access (Task 3.1 & 3.4)', () => {
         address: '100 Tenant Way',
         is_active: true,
         organization_id: 1,
-        courts: [{ id: 1, name: 'Court 1' }, { id: 2, name: 'Court 2' }],
+        courts: [
+          { id: 1, name: 'Court 1' },
+          { id: 2, name: 'Court 2' },
+        ],
       },
     ],
     members: [
-      { id: 1, user_id: 10, role: 'organization_owner', status: 'active', user: { name: 'Owner User' } },
+      {
+        id: 1,
+        user_id: 10,
+        role: 'organization_owner',
+        status: 'active',
+        user: { name: 'Owner User' },
+      },
     ],
   }
 

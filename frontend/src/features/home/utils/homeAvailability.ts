@@ -1,5 +1,4 @@
 import type { AvailabilitySlot } from '@/features/court/types/court'
-import { formatTime } from '@/i18n'
 
 /**
  * Gets the current or provided date string (YYYY-MM-DD) in the venue's local timezone (default: Asia/Ho_Chi_Minh).
@@ -7,7 +6,7 @@ import { formatTime } from '@/i18n'
  */
 export function getVenueLocalDate(
   dateOrTimezone?: Date | string | number,
-  timeZone?: string
+  timeZone?: string,
 ): string {
   let tz = timeZone || 'Asia/Ho_Chi_Minh'
   let dInput: Date | string | number = new Date()
@@ -51,7 +50,7 @@ export function getVenueLocalDate(
 export function formatSlotRange(
   slot: AvailabilitySlot,
   locale = 'vi',
-  timeZone = 'Asia/Ho_Chi_Minh'
+  timeZone = 'Asia/Ho_Chi_Minh',
 ): string {
   const options: Intl.DateTimeFormatOptions = {
     timeZone,
@@ -64,7 +63,9 @@ export function formatSlotRange(
   const startDate = new Date(slot.startsAt)
   const start = new Intl.DateTimeFormat(loc, options).format(startDate)
 
-  const endDate = slot.endsAt ? new Date(slot.endsAt) : new Date(startDate.getTime() + 60 * 60 * 1000)
+  const endDate = slot.endsAt
+    ? new Date(slot.endsAt)
+    : new Date(startDate.getTime() + 60 * 60 * 1000)
   const end = new Intl.DateTimeFormat(loc, options).format(endDate)
 
   return `${start} – ${end}`
@@ -79,7 +80,7 @@ export function resolveAvailabilityHeading(
   courtName?: string | null,
   dateStr?: string | null,
   locale: string = 'vi',
-  timeZone: string = 'Asia/Ho_Chi_Minh'
+  timeZone: string = 'Asia/Ho_Chi_Minh',
 ): string {
   if (!courtName) {
     return locale === 'en' ? 'Live Availability' : 'Lịch sân trống trực quan'

@@ -117,7 +117,11 @@ function shouldShowRound(r: number): boolean {
       >
         <span v-if="isGenerating" class="material-symbols-outlined icon-16 spin">sync</span>
         <span v-else class="material-symbols-outlined icon-16">alt_route</span>
-        <span>{{ isGenerating ? t('admin.tournaments.generatingBracket') : t('admin.tournaments.regenerateBracketBtn') }}</span>
+        <span>{{
+          isGenerating
+            ? t('admin.tournaments.generatingBracket')
+            : t('admin.tournaments.regenerateBracketBtn')
+        }}</span>
       </AuraButton>
     </div>
 
@@ -142,7 +146,9 @@ function shouldShowRound(r: number): boolean {
         >
           <div class="round-header">
             <div class="flex-align">
-              <span v-if="r === totalRounds" class="material-symbols-outlined icon-18 trophy-gold">emoji_events</span>
+              <span v-if="r === totalRounds" class="material-symbols-outlined icon-18 trophy-gold"
+                >emoji_events</span
+              >
               <h4>{{ getRoundTitle(r) }}</h4>
             </div>
             <span class="round-meta">{{ getRoundMeta(r) }}</span>
@@ -156,38 +162,64 @@ function shouldShowRound(r: number): boolean {
               :class="{
                 'is-live': match.status === 'live',
                 'is-completed': match.status === 'completed',
-                'finals-card': r === totalRounds
+                'finals-card': r === totalRounds,
               }"
               @click="emit('selectMatch', match)"
             >
               <div class="match-meta-header">
                 <span class="match-court-name">{{ match.courtName }}</span>
-                <span v-if="match.status === 'live'" class="live-pill">{{ t('admin.tournaments.liveBadge') }}</span>
+                <span v-if="match.status === 'live'" class="live-pill">{{
+                  t('admin.tournaments.liveBadge')
+                }}</span>
                 <span v-else class="match-time-tag font-mono">{{ match.scheduledTime }}</span>
               </div>
 
               <div class="match-players-box">
                 <div class="player-slot" :class="{ winner: match.player1?.isWinner }">
                   <div class="player-info">
-                    <span v-if="match.player1?.seed" class="seed-badge">[{{ match.player1.seed }}]</span>
-                    <span class="player-name" :class="{ placeholder: !match.player1?.name || match.player1?.name === 'Chờ xác định' }">
+                    <span v-if="match.player1?.seed" class="seed-badge"
+                      >[{{ match.player1.seed }}]</span
+                    >
+                    <span
+                      class="player-name"
+                      :class="{
+                        placeholder: !match.player1?.name || match.player1?.name === 'Chờ xác định',
+                      }"
+                    >
                       {{ match.player1?.name || '—' }}
                     </span>
                   </div>
-                  <div v-if="match.player1?.sets && match.player1.sets.length > 0" class="player-scores font-mono">
-                    <span v-for="(s, idx) in match.player1.sets" :key="idx" class="set-score">{{ s }}</span>
+                  <div
+                    v-if="match.player1?.sets && match.player1.sets.length > 0"
+                    class="player-scores font-mono"
+                  >
+                    <span v-for="(s, idx) in match.player1.sets" :key="idx" class="set-score">{{
+                      s
+                    }}</span>
                   </div>
                 </div>
 
                 <div class="player-slot" :class="{ winner: match.player2?.isWinner }">
                   <div class="player-info">
-                    <span v-if="match.player2?.seed" class="seed-badge">[{{ match.player2.seed }}]</span>
-                    <span class="player-name" :class="{ placeholder: !match.player2?.name || match.player2?.name === 'Chờ xác định' }">
+                    <span v-if="match.player2?.seed" class="seed-badge"
+                      >[{{ match.player2.seed }}]</span
+                    >
+                    <span
+                      class="player-name"
+                      :class="{
+                        placeholder: !match.player2?.name || match.player2?.name === 'Chờ xác định',
+                      }"
+                    >
                       {{ match.player2?.name || '—' }}
                     </span>
                   </div>
-                  <div v-if="match.player2?.sets && match.player2.sets.length > 0" class="player-scores font-mono">
-                    <span v-for="(s, idx) in match.player2.sets" :key="idx" class="set-score">{{ s }}</span>
+                  <div
+                    v-if="match.player2?.sets && match.player2.sets.length > 0"
+                    class="player-scores font-mono"
+                  >
+                    <span v-for="(s, idx) in match.player2.sets" :key="idx" class="set-score">{{
+                      s
+                    }}</span>
                   </div>
                 </div>
               </div>

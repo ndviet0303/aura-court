@@ -14,6 +14,7 @@ use App\Models\PlatformSubscription;
 use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
@@ -26,9 +27,10 @@ class FinalMutationEligibilityAndCacheTest extends TestCase
     private function createCustomerWithWallet(int $orgId, int $balance = 500000): User
     {
         $user = User::factory()->create(['role' => 'customer']);
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $orgId);
         $walletService->credit($wallet, $balance, 'test_topup', 1, 'Fund for test');
+
         return $user;
     }
 

@@ -169,7 +169,7 @@ describe('Wallet Deposit and Balance Management', () => {
     vi.mocked(walletApi.getWallet)
       .mockResolvedValueOnce({
         id: 'wallet-org-1',
-      organization_id: 1,
+        organization_id: 1,
         balance: 200000,
         currency: 'VND',
         points: 200,
@@ -177,7 +177,7 @@ describe('Wallet Deposit and Balance Management', () => {
       })
       .mockResolvedValueOnce({
         id: 'wallet-org-1',
-      organization_id: 1,
+        organization_id: 1,
         balance: 500000,
         currency: 'VND',
         points: 500,
@@ -230,10 +230,17 @@ describe('Wallet Deposit and Balance Management', () => {
 
   it('keeps the wallet selected by the route when submitting a blocked direct-cohort deposit', async () => {
     vi.mocked(walletApi.getWallet).mockResolvedValue({
-      id: 'wallet-org-73', organization_id: 73, balance: 500000, currency: 'VND', points: 0, transactions: [],
+      id: 'wallet-org-73',
+      organization_id: 73,
+      balance: 500000,
+      currency: 'VND',
+      points: 0,
+      transactions: [],
     })
     vi.mocked(walletApi.initiateDeposit).mockRejectedValue({
-      status: 409, code: 'DIRECT_OWNER_PAYMENTS_ENABLED', message: 'Thanh toán trực tiếp cho chủ sân.',
+      status: 409,
+      code: 'DIRECT_OWNER_PAYMENTS_ENABLED',
+      message: 'Thanh toán trực tiếp cho chủ sân.',
     })
 
     const wrapper = mount(WalletView, { global: { plugins: [i18n] } })
@@ -243,10 +250,13 @@ describe('Wallet Deposit and Balance Management', () => {
     await wrapper.find('.modal-backdrop button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(walletApi.initiateDeposit).toHaveBeenCalledWith({ amount: 200000, organization_id: 73, provider: 'sepay' })
+    expect(walletApi.initiateDeposit).toHaveBeenCalledWith({
+      amount: 200000,
+      organization_id: 73,
+      provider: 'sepay',
+    })
     expect(wrapper.text()).toContain('Thanh toán trực tiếp cho chủ sân.')
     expect(wrapper.text()).toContain('500.000')
     wrapper.unmount()
   })
-
 })

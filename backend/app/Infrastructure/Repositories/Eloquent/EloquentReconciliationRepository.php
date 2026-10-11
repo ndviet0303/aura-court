@@ -199,6 +199,7 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
             'mismatches_count' => $mismatchCount,
             'analyzed_at' => now()->toIso8601String(),
         ];
+
         return [
             'run' => $run,
             'provider_events' => $providerEvents,

@@ -13,7 +13,6 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
-use App\Models\WalletTransaction;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

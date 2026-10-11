@@ -15,7 +15,9 @@ const { t } = useI18n()
 
 const totalParticipants = computed(() => props.participants?.length || 0)
 const totalMatches = computed(() => props.matches?.length || 0)
-const completedMatches = computed(() => props.matches?.filter((m) => m.status === 'completed').length || 0)
+const completedMatches = computed(
+  () => props.matches?.filter((m) => m.status === 'completed').length || 0,
+)
 const progressPercent = computed(() => {
   if (totalMatches.value === 0) return 0
   return Math.round((completedMatches.value / totalMatches.value) * 100)
@@ -44,10 +46,13 @@ const progressPercent = computed(() => {
       <div class="kpi-card">
         <span class="material-symbols-outlined kpi-icon">groups</span>
         <span class="kpi-label">{{ t('admin.tournaments.kpiTotalAthletes') }}</span>
-        <strong class="kpi-val font-mono">{{ t('admin.tournaments.kpiAthletesVal', { count: totalParticipants }) }}</strong>
+        <strong class="kpi-val font-mono">{{
+          t('admin.tournaments.kpiAthletesVal', { count: totalParticipants })
+        }}</strong>
         <span class="kpi-trend text-green">
           <span class="material-symbols-outlined icon-12">check</span>
-          {{ totalParticipants }}/{{ tournament.maxSlots }} {{ t('admin.tournaments.slotsOccupied') }}
+          {{ totalParticipants }}/{{ tournament.maxSlots }}
+          {{ t('admin.tournaments.slotsOccupied') }}
         </span>
       </div>
 
@@ -61,14 +66,23 @@ const progressPercent = computed(() => {
       <div class="kpi-card">
         <span class="material-symbols-outlined kpi-icon">sports_tennis</span>
         <span class="kpi-label">{{ t('admin.tournaments.kpiCompletedMatches') }}</span>
-        <strong class="kpi-val font-mono">{{ t('admin.tournaments.kpiMatchesVal', { completed: completedMatches, total: totalMatches }) }}</strong>
-        <span class="kpi-trend text-blue">{{ t('admin.tournaments.kpiMatchesProgress', { percent: progressPercent }) }}</span>
+        <strong class="kpi-val font-mono">{{
+          t('admin.tournaments.kpiMatchesVal', { completed: completedMatches, total: totalMatches })
+        }}</strong>
+        <span class="kpi-trend text-blue">{{
+          t('admin.tournaments.kpiMatchesProgress', { percent: progressPercent })
+        }}</span>
       </div>
 
       <div class="kpi-card">
         <span class="material-symbols-outlined kpi-icon">stadium</span>
         <span class="kpi-label">{{ t('admin.tournaments.kpiCourtsInUse') }}</span>
-        <strong class="kpi-val font-mono">{{ t('admin.tournaments.kpiCourtsVal', { active: tournament.courtsAvailable || 4, total: tournament.courtsAvailable || 4 }) }}</strong>
+        <strong class="kpi-val font-mono">{{
+          t('admin.tournaments.kpiCourtsVal', {
+            active: tournament.courtsAvailable || 4,
+            total: tournament.courtsAvailable || 4,
+          })
+        }}</strong>
         <span class="kpi-trend text-green">{{ tournament.venue }} ({{ tournament.city }})</span>
       </div>
     </div>
@@ -79,7 +93,11 @@ const progressPercent = computed(() => {
       <div class="info-rows-grid">
         <div class="info-cell">
           <span class="cell-label">{{ t('admin.tournaments.formatLabel') }}:</span>
-          <strong class="cell-val">{{ tournament.format === 'single_elimination' ? t('admin.tournaments.formatSingleElim') : t('admin.tournaments.formatRoundRobin') }}</strong>
+          <strong class="cell-val">{{
+            tournament.format === 'single_elimination'
+              ? t('admin.tournaments.formatSingleElim')
+              : t('admin.tournaments.formatRoundRobin')
+          }}</strong>
         </div>
         <div class="info-cell">
           <span class="cell-label">{{ t('admin.tournaments.sportLabel') }}:</span>
@@ -177,8 +195,12 @@ const progressPercent = computed(() => {
   font-size: 12px;
 }
 
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
+.text-green {
+  color: #10b981;
+}
+.text-blue {
+  color: #3b82f6;
+}
 
 .tournament-info-section {
   display: flex;
@@ -224,7 +246,8 @@ const progressPercent = computed(() => {
   text-transform: uppercase;
 }
 
-.status-badge.open, .status-badge.ready {
+.status-badge.open,
+.status-badge.ready {
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;
 }
@@ -255,4 +278,3 @@ const progressPercent = computed(() => {
   }
 }
 </style>
-

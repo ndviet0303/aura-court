@@ -18,7 +18,7 @@ const props = withDefaults(
     beneficiary: undefined,
     selectedSettlement: null,
     loading: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -50,7 +50,11 @@ const settlementOptions = computed<DropdownOption[]>(() => {
 })
 
 const activeSettlement = computed(() => {
-  return props.eligibleSettlements.find((s) => s.id === selectedSettlementId.value) || props.eligibleSettlements[0] || null
+  return (
+    props.eligibleSettlements.find((s) => s.id === selectedSettlementId.value) ||
+    props.eligibleSettlements[0] ||
+    null
+  )
 })
 
 watch(
@@ -65,16 +69,17 @@ watch(
       customAmount.value = activeSettlement.value?.tenant_payable || props.availableNet || 1000000
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 watch(
   () => selectedSettlementId.value,
   () => {
     if (activeSettlement.value) {
-      customAmount.value = activeSettlement.value.tenant_payable || activeSettlement.value.net_amount || 0
+      customAmount.value =
+        activeSettlement.value.tenant_payable || activeSettlement.value.net_amount || 0
     }
-  }
+  },
 )
 
 function formatMoney(amount: number): string {
@@ -129,7 +134,11 @@ function handleFormSubmit() {
               <span class="preview-title">{{ t('admin.payouts.beneficiaryLabel') }}</span>
             </div>
             <div class="preview-body">
-              <strong>{{ beneficiary.bank_name || beneficiary.bank_code }} ({{ beneficiary.account_number }})</strong>
+              <strong
+                >{{ beneficiary.bank_name || beneficiary.bank_code }} ({{
+                  beneficiary.account_number
+                }})</strong
+              >
               <span class="holder-text">{{ beneficiary.account_holder }}</span>
             </div>
           </div>
@@ -150,7 +159,9 @@ function handleFormSubmit() {
             </div>
             <span class="sub-hint">
               {{ t('admin.payouts.availableBalance') }}
-              <strong class="text-pink">{{ formatMoney(activeSettlement?.tenant_payable || availableNet) }}</strong>
+              <strong class="text-pink">{{
+                formatMoney(activeSettlement?.tenant_payable || availableNet)
+              }}</strong>
             </span>
           </div>
 

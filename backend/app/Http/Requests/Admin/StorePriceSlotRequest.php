@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\OrganizationMember;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePriceSlotRequest extends FormRequest
@@ -24,8 +25,8 @@ class StorePriceSlotRequest extends FormRequest
         return $user->organizationMembers()
             ->where('status', 'active')
             ->whereIn('role', [
-                \App\Models\OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                \App\Models\OrganizationMember::ROLE_VENUE_MANAGER,
+                OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                OrganizationMember::ROLE_VENUE_MANAGER,
             ])
             ->exists();
     }

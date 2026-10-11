@@ -10,6 +10,7 @@ use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class PartnerLifecycleActionsTest extends TestCase
@@ -17,7 +18,9 @@ class PartnerLifecycleActionsTest extends TestCase
     use RefreshDatabase;
 
     private SuspendPartner $suspendAction;
+
     private RestorePartner $restoreAction;
+
     private TerminatePartner $terminateAction;
 
     protected function setUp(): void
@@ -130,7 +133,7 @@ class PartnerLifecycleActionsTest extends TestCase
             'partner_status_reason' => 'Vi phạm nghiêm trọng',
         ]);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         $this->restoreAction->execute($org->id, $admin->id);
     }
 
@@ -154,7 +157,7 @@ class PartnerLifecycleActionsTest extends TestCase
         $this->assertEquals('Chấm dứt hợp đồng hợp tác theo quyết định HĐQT.', $terminated->partner_status_reason);
 
         // Terminating again must fail with 409
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         $this->terminateAction->execute($org->id, $admin->id, 'Second attempt');
     }
 }

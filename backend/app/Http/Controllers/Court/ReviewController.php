@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Court;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\Review;

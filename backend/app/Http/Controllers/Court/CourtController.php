@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Court;
 
-use App\Http\Controllers\Controller;
-
 use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Http\Controllers\Controller;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\Venue;
+use App\Services\Infrastructure\FeatureFlagService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+
 class CourtController extends Controller
 {
     public function index(Request $request)
@@ -22,7 +23,7 @@ class CourtController extends Controller
         Cache::add('venues_version', 1, now()->addYears(10));
         $courtsVersion = Cache::get('courts_version', 1);
         $venuesVersion = Cache::get('venues_version', 1);
-        $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:" . md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
+        $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
             $courtsQuery = Court::where('is_active', true)
                 ->whereHas('venue', fn ($query) => $query->where('is_active', true))
@@ -46,7 +47,7 @@ class CourtController extends Controller
                 ->get();
 
             $eligibility = app(VerifyEffectiveBookingEligibility::class);
-            $features = app(\App\Services\Infrastructure\FeatureFlagService::class);
+            $features = app(FeatureFlagService::class);
             $venueEligibilityCache = [];
             $filteredCourts = [];
 
@@ -85,13 +86,14 @@ class CourtController extends Controller
         $organizationId = (int) ($court->venue?->organization_id ?? 0);
         $court->venue?->setAttribute(
             'payment_model',
-            app(\App\Services\Infrastructure\FeatureFlagService::class)->enabled('direct_owner_payments', $organizationId)
+            app(FeatureFlagService::class)->enabled('direct_owner_payments', $organizationId)
                 ? 'direct_owner_v1'
                 : 'legacy_wallet_v1'
         );
 
         return response()->json($court);
     }
+
     public function adminIndex(Request $request)
     {
         $user = $request->user();
@@ -224,6 +226,7 @@ class CourtController extends Controller
 
         return $court->fresh(['venue', 'sportZone']);
     }
+
     public function destroy(Court $court)
     {
         $user = request()->user();

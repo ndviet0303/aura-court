@@ -35,11 +35,26 @@ const passwordStrength = computed(() => {
   if (/[0-9]/.test(pwd) || /[^A-Za-z0-9]/.test(pwd)) score++
 
   if (score <= 1) {
-    return { score: 1, label: t('auth.passwordStrength.weak'), percent: 33, colorClass: 'strength-weak' }
+    return {
+      score: 1,
+      label: t('auth.passwordStrength.weak'),
+      percent: 33,
+      colorClass: 'strength-weak',
+    }
   } else if (score <= 3) {
-    return { score: 2, label: t('auth.passwordStrength.medium'), percent: 66, colorClass: 'strength-medium' }
+    return {
+      score: 2,
+      label: t('auth.passwordStrength.medium'),
+      percent: 66,
+      colorClass: 'strength-medium',
+    }
   } else {
-    return { score: 3, label: t('auth.passwordStrength.strong'), percent: 100, colorClass: 'strength-strong' }
+    return {
+      score: 3,
+      label: t('auth.passwordStrength.strong'),
+      percent: 100,
+      colorClass: 'strength-strong',
+    }
   }
 })
 
@@ -175,7 +190,11 @@ const passwordsMatch = computed(() => {
       </div>
 
       <!-- Password match status indicator -->
-      <div v-if="passwordConfirmation" class="match-status" :class="passwordsMatch ? 'match-ok' : 'match-error'">
+      <div
+        v-if="passwordConfirmation"
+        class="match-status"
+        :class="passwordsMatch ? 'match-ok' : 'match-error'"
+      >
         <span class="material-symbols-outlined match-icon">
           {{ passwordsMatch ? 'check_circle' : 'cancel' }}
         </span>
@@ -189,9 +208,14 @@ const passwordsMatch = computed(() => {
         <input type="checkbox" v-model="acceptTerms" class="custom-checkbox" required />
         <span class="checkbox-text">
           {{ t('auth.termsNotice') }}
-          <RouterLink to="/terms" target="_blank" class="terms-link">{{ t('auth.termsOfService') }}</RouterLink>
+          <RouterLink to="/terms" target="_blank" class="terms-link">{{
+            t('auth.termsOfService')
+          }}</RouterLink>
           {{ t('auth.and') }}
-          <RouterLink to="/privacy" target="_blank" class="terms-link">{{ t('auth.privacyPolicy') }}</RouterLink>.
+          <RouterLink to="/privacy" target="_blank" class="terms-link">{{
+            t('auth.privacyPolicy')
+          }}</RouterLink
+          >.
         </span>
       </label>
     </div>
@@ -267,7 +291,7 @@ html.dark .custom-input {
 }
 
 .custom-input:focus {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
@@ -277,7 +301,7 @@ html.dark .custom-input:focus {
 }
 
 .custom-input:focus ~ .input-icon {
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .custom-input:focus ~ .input-icon {
@@ -355,7 +379,9 @@ html.dark .strength-progress-track {
 .strength-progress-fill {
   height: 100%;
   border-radius: 999px;
-  transition: width 0.3s ease, background-color 0.3s ease;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
 }
 
 .strength-progress-fill.strength-weak {
@@ -413,7 +439,7 @@ html.dark .match-status.match-ok {
   margin-top: 3px;
   width: 16px;
   height: 16px;
-  accent-color: #6B2D3F;
+  accent-color: #6b2d3f;
   cursor: pointer;
 }
 
@@ -428,7 +454,7 @@ html.dark .custom-checkbox {
 }
 
 .terms-link {
-  color: #6B2D3F;
+  color: #6b2d3f;
   text-decoration: underline;
 }
 
@@ -439,7 +465,7 @@ html.dark .terms-link {
 .auth-submit-btn {
   margin-top: 6px;
   height: 48px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -484,6 +510,8 @@ html.dark .terms-link {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

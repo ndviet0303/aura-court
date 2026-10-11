@@ -24,7 +24,7 @@ watch(
     autoApprove.value = o.auto_approve_booking ?? true
     resaleFee.value = o.resale_fee_percent ?? 5
   },
-  { deep: true }
+  { deep: true },
 )
 
 function handleSave() {
@@ -99,15 +99,8 @@ function handleSave() {
 
       <!-- Form Actions -->
       <div class="form-actions">
-        <AuraButton
-          type="submit"
-          variant="primary"
-          :disabled="saving"
-        >
-          <span
-            class="material-symbols-outlined icon-18"
-            :class="{ 'spin-icon': saving }"
-          >
+        <AuraButton type="submit" variant="primary" :disabled="saving">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': saving }">
             {{ saving ? 'sync' : 'save' }}
           </span>
           <span>{{ t('admin.org.savePoliciesBtn') }}</span>
@@ -288,7 +281,7 @@ function handleSave() {
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 20px;
   width: 20px;
   left: 3px;
@@ -340,11 +333,11 @@ input:checked + .slider:before {
 
 :global(html.dark) .policy-card-item:hover {
   background: var(--soft, #30292e);
-  border-color: var(--pink-dark, #E58E9F);
+  border-color: var(--pink-dark, #e58e9f);
 }
 
 :global(html.dark) .p-title {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 :global(html.dark) .p-desc {
@@ -353,7 +346,7 @@ input:checked + .slider:before {
 
 :global(html.dark) .num-input {
   background: var(--surface, #1e191c);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 

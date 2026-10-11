@@ -4,7 +4,11 @@ import { financeApi } from '../api/financeApi'
 import type { SettlementRecord, PayoutRecord, BeneficiaryAccount } from '../types/finance'
 import { errorMessage } from '@/core/utils/errorMessage'
 
-export type { SettlementRecord as SettlementItem, PayoutRecord as PayoutItem, BeneficiaryAccount as BeneficiaryInfo }
+export type {
+  SettlementRecord as SettlementItem,
+  PayoutRecord as PayoutItem,
+  BeneficiaryAccount as BeneficiaryInfo,
+}
 
 export function getProviderFee(s: SettlementRecord): number {
   if (s.provider_fee_amount !== undefined && s.provider_fee_amount !== null) {
@@ -28,7 +32,7 @@ export function getNetPayable(s: SettlementRecord): number {
   if (s.tenant_payable !== undefined && s.tenant_payable !== null) {
     return Number(s.tenant_payable)
   }
-  return Number(s.net_amount ?? ((s.gross_amount || 0) - getTotalDeduction(s)))
+  return Number(s.net_amount ?? (s.gross_amount || 0) - getTotalDeduction(s))
 }
 
 export function useAdminPayouts() {
@@ -106,8 +110,7 @@ export function useAdminPayouts() {
         payoutStatusFilter.value === 'all' || p.status === payoutStatusFilter.value
 
       const matchDate =
-        !payoutDateFilter.value ||
-        (p.created_at && p.created_at.startsWith(payoutDateFilter.value))
+        !payoutDateFilter.value || (p.created_at && p.created_at.startsWith(payoutDateFilter.value))
 
       return matchSearch && matchStatus && matchDate
     })
@@ -222,7 +225,7 @@ export function useAdminPayouts() {
         settlement_id: settlementId,
         beneficiary_id: beneficiaryId,
       })
-      const newPayout = ('payout' in res && res.payout) ? res.payout : (res as PayoutRecord)
+      const newPayout = 'payout' in res && res.payout ? res.payout : (res as PayoutRecord)
       if (newPayout) {
         newPayout.reference = newPayout.reference || `WD-${String(newPayout.id).padStart(6, '0')}`
         payouts.value.unshift(newPayout)
@@ -231,7 +234,7 @@ export function useAdminPayouts() {
       showNoticeMessage(
         t('admin.payouts.payoutCreateSuccess', {
           amount: (newPayout?.amount || 0).toLocaleString('vi-VN') + ' ₫',
-        })
+        }),
       )
       await loadData()
     } catch (e: unknown) {
@@ -246,7 +249,7 @@ export function useAdminPayouts() {
     error.value = ''
     try {
       const res = await financeApi.approvePayout(payoutId)
-      const updated = ('payout' in res && res.payout) ? res.payout : (res as PayoutRecord)
+      const updated = 'payout' in res && res.payout ? res.payout : (res as PayoutRecord)
       const idx = payouts.value.findIndex((p) => p.id === payoutId)
       if (idx !== -1 && updated) {
         payouts.value[idx] = { ...payouts.value[idx], ...updated }
@@ -264,7 +267,7 @@ export function useAdminPayouts() {
     error.value = ''
     try {
       const res = await financeApi.submitPayout(payoutId)
-      const updated = ('payout' in res && res.payout) ? res.payout : (res as PayoutRecord)
+      const updated = 'payout' in res && res.payout ? res.payout : (res as PayoutRecord)
       const idx = payouts.value.findIndex((p) => p.id === payoutId)
       if (idx !== -1 && updated) {
         payouts.value[idx] = { ...payouts.value[idx], ...updated }
@@ -282,7 +285,7 @@ export function useAdminPayouts() {
     error.value = ''
     try {
       const res = await financeApi.queryPayoutStatus(payoutId)
-      const updated = ('payout' in res && res.payout) ? res.payout : (res as PayoutRecord)
+      const updated = 'payout' in res && res.payout ? res.payout : (res as PayoutRecord)
       const idx = payouts.value.findIndex((p) => p.id === payoutId)
       if (idx !== -1 && updated) {
         payouts.value[idx] = { ...payouts.value[idx], ...updated }
@@ -303,7 +306,8 @@ export function useAdminPayouts() {
         period_start: periodStart,
         period_end: periodEnd,
       })
-      const newSettle = ('settlement' in res && res.settlement) ? res.settlement : (res as SettlementRecord)
+      const newSettle =
+        'settlement' in res && res.settlement ? res.settlement : (res as SettlementRecord)
       if (newSettle) {
         settlements.value.unshift(newSettle)
       }
@@ -333,7 +337,8 @@ export function useAdminPayouts() {
         account_holder: info.account_holder,
         tax_id: info.tax_id,
       })
-      const newBen = ('beneficiary' in res && res.beneficiary) ? res.beneficiary : (res as BeneficiaryAccount)
+      const newBen =
+        'beneficiary' in res && res.beneficiary ? res.beneficiary : (res as BeneficiaryAccount)
       if (newBen) {
         beneficiary.value = {
           ...beneficiary.value,

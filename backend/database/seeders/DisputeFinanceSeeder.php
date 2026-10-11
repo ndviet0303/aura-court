@@ -2,10 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\AuditLog;
+use App\Models\Beneficiary;
 use App\Models\DisputeCase;
 use App\Models\FinanceException;
 use App\Models\Organization;
+use App\Models\Payout;
 use App\Models\ReconciliationRun;
+use App\Models\Settlement;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -500,7 +505,7 @@ class DisputeFinanceSeeder extends Seeder
         }
 
         // 2b. Audit Logs for Immutable Ledger
-        $adminUser = \App\Models\User::where('email', 'like', '%admin%')->first() ?? \App\Models\User::first();
+        $adminUser = User::where('email', 'like', '%admin%')->first() ?? User::first();
         $auditLogs = [
             [
                 'user_id' => $adminUser?->id,
@@ -581,7 +586,7 @@ class DisputeFinanceSeeder extends Seeder
         ];
 
         foreach ($auditLogs as $log) {
-            \App\Models\AuditLog::firstOrCreate(
+            AuditLog::firstOrCreate(
                 [
                     'action' => $log['action'],
                     'auditable_id' => $log['auditable_id'],
@@ -749,11 +754,11 @@ class DisputeFinanceSeeder extends Seeder
         }
 
         foreach ($allOrgs as $currentOrg) {
-            $beneficiary = \App\Models\Beneficiary::updateOrCreate(
+            $beneficiary = Beneficiary::updateOrCreate(
                 ['organization_id' => $currentOrg->id, 'account_number' => '0071000888999'],
                 [
                     'provider' => 'payos',
-                    'provider_beneficiary_id' => 'ben_vcb_' . $currentOrg->id,
+                    'provider_beneficiary_id' => 'ben_vcb_'.$currentOrg->id,
                     'bank_code' => 'VCB',
                     'account_holder' => 'CONG TY CP THE THAO AURA',
                     'tax_id' => '0317892110',
@@ -764,7 +769,7 @@ class DisputeFinanceSeeder extends Seeder
             );
 
             // Settlement 1 (Settled / Eligible in the past)
-            $settlement1 = \App\Models\Settlement::firstOrCreate(
+            $settlement1 = Settlement::firstOrCreate(
                 [
                     'organization_id' => $currentOrg->id,
                     'period_start' => $now->copy()->subDays(30)->toDateString(),
@@ -792,7 +797,7 @@ class DisputeFinanceSeeder extends Seeder
             );
 
             // Settlement 2 (Eligible recently)
-            $settlement2 = \App\Models\Settlement::firstOrCreate(
+            $settlement2 = Settlement::firstOrCreate(
                 [
                     'organization_id' => $currentOrg->id,
                     'period_start' => $now->copy()->subDays(15)->toDateString(),
@@ -820,7 +825,7 @@ class DisputeFinanceSeeder extends Seeder
             );
 
             // Payout 1: Paid
-            \App\Models\Payout::updateOrCreate(
+            Payout::updateOrCreate(
                 [
                     'organization_id' => $currentOrg->id,
                     'idempotency_key' => "settlement:{$settlement1->id}:payout",
@@ -831,7 +836,7 @@ class DisputeFinanceSeeder extends Seeder
                     'amount' => $settlement1->tenant_payable,
                     'currency' => 'VND',
                     'provider' => 'payos',
-                    'provider_payout_id' => 'pout_vcb_001_' . $currentOrg->id,
+                    'provider_payout_id' => 'pout_vcb_001_'.$currentOrg->id,
                     'status' => 'paid',
                     'settlement_snapshot' => $settlement1->snapshot,
                     'approved_at' => $now->copy()->subDays(13),
@@ -841,7 +846,7 @@ class DisputeFinanceSeeder extends Seeder
             );
 
             // Payout 2: Approved
-            \App\Models\Payout::updateOrCreate(
+            Payout::updateOrCreate(
                 [
                     'organization_id' => $currentOrg->id,
                     'idempotency_key' => "settlement:{$settlement2->id}:payout",

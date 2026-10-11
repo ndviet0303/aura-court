@@ -20,8 +20,24 @@ const persistedGroup: SplitGroup = {
   expires_at: '2026-09-27T12:00:00Z',
   reservation: { id: 204, code: 'RSV-204', total_amount: 175000, status: 'held' },
   shares: [
-    { id: 501, share_number: 1, amount: 85000, paid_amount: 85000, status: 'paid', paid_at: '2026-09-26T10:00:00Z', payment_reference: 'CLIENT-REF' },
-    { id: 502, share_number: 2, amount: 90000, paid_amount: 0, status: 'pending', paid_at: null, payment_reference: null },
+    {
+      id: 501,
+      share_number: 1,
+      amount: 85000,
+      paid_amount: 85000,
+      status: 'paid',
+      paid_at: '2026-09-26T10:00:00Z',
+      payment_reference: 'CLIENT-REF',
+    },
+    {
+      id: 502,
+      share_number: 2,
+      amount: 90000,
+      paid_amount: 0,
+      status: 'pending',
+      paid_at: null,
+      payment_reference: null,
+    },
   ],
 }
 
@@ -55,8 +71,12 @@ describe('GroupSplitBillView', () => {
     expect(wrapper.text()).toContain('RSV-204')
     expect(wrapper.text()).toContain('175.000')
     expect(wrapper.findAll('[data-testid="split-share"]')).toHaveLength(2)
-    expect(wrapper.get('[data-testid="split-evidence-warning"]').text()).toContain('Chưa có biên nhận')
-    expect(wrapper.get('[data-testid="split-share"]').text()).toContain('Đang chờ biên nhận xác minh')
+    expect(wrapper.get('[data-testid="split-evidence-warning"]').text()).toContain(
+      'Chưa có biên nhận',
+    )
+    expect(wrapper.get('[data-testid="split-share"]').text()).toContain(
+      'Đang chờ biên nhận xác minh',
+    )
     expect(wrapper.text()).not.toContain('Đã thanh toán')
     expect(wrapper.find('img[src*="vietqr"]').exists()).toBe(false)
     wrapper.unmount()
@@ -67,7 +87,11 @@ describe('GroupSplitBillView', () => {
       .mockResolvedValueOnce({ split: persistedGroup })
       .mockRejectedValueOnce(new Error('Service unavailable'))
       .mockResolvedValueOnce({
-        split: { ...persistedGroup, status: 'expired', shares: [{ ...persistedGroup.shares[0]!, status: 'expired' }, persistedGroup.shares[1]!] },
+        split: {
+          ...persistedGroup,
+          status: 'expired',
+          shares: [{ ...persistedGroup.shares[0]!, status: 'expired' }, persistedGroup.shares[1]!],
+        },
       })
     const wrapper = await renderSplit('/split-bill/71')
 
@@ -86,7 +110,8 @@ describe('GroupSplitBillView', () => {
   })
 
   it('shows a truthful error and no sample members when the scoped API fails or returns no group', async () => {
-    vi.mocked(financeApi.getSplitGroup).mockRejectedValueOnce(new Error('Not found'))
+    vi.mocked(financeApi.getSplitGroup)
+      .mockRejectedValueOnce(new Error('Not found'))
       .mockResolvedValueOnce({ split: undefined } as unknown as { split: SplitGroup })
     const wrapper = await renderSplit('/split-bill/71')
 

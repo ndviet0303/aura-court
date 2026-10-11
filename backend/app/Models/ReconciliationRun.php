@@ -12,6 +12,13 @@ class ReconciliationRun extends Model
 {
     use BelongsToTenant;
 
-    protected function casts(): array { return ['run_date' => 'date', 'provider_total' => 'integer', 'journal_total' => 'integer', 'settlement_total' => 'integer', 'payout_total' => 'integer', 'mismatch_amount' => 'integer', 'details' => 'array', 'started_at' => 'datetime', 'completed_at' => 'datetime']; }
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
+    protected function casts(): array
+    {
+        return ['run_date' => 'date', 'provider_total' => 'integer', 'journal_total' => 'integer', 'settlement_total' => 'integer', 'payout_total' => 'integer', 'mismatch_amount' => 'integer', 'details' => 'array', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 }

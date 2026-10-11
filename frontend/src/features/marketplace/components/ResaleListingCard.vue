@@ -16,7 +16,9 @@ const discountPercent = computed(() => {
   if (!props.listing.originalPrice || props.listing.originalPrice <= props.listing.resalePrice) {
     return 0
   }
-  return Math.round(((props.listing.originalPrice - props.listing.resalePrice) / props.listing.originalPrice) * 100)
+  return Math.round(
+    ((props.listing.originalPrice - props.listing.resalePrice) / props.listing.originalPrice) * 100,
+  )
 })
 </script>
 
@@ -32,10 +34,22 @@ const discountPercent = computed(() => {
       <!-- Badge (Hot / Deal / Urgent) -->
       <div v-if="listing.badge" class="badge-chip" :class="listing.badge">
         <span class="material-symbols-outlined badge-icon">
-          {{ listing.badge === 'hot' ? 'local_fire_department' : listing.badge === 'urgent' ? 'bolt' : 'savings' }}
+          {{
+            listing.badge === 'hot'
+              ? 'local_fire_department'
+              : listing.badge === 'urgent'
+                ? 'bolt'
+                : 'savings'
+          }}
         </span>
         <span class="badge-text">
-          {{ listing.badge === 'hot' ? 'Giờ Vàng' : listing.badge === 'urgent' ? 'Pass Gấp' : 'Giá Hời' }}
+          {{
+            listing.badge === 'hot'
+              ? 'Giờ Vàng'
+              : listing.badge === 'urgent'
+                ? 'Pass Gấp'
+                : 'Giá Hời'
+          }}
         </span>
       </div>
     </div>
@@ -72,9 +86,7 @@ const discountPercent = computed(() => {
     </div>
 
     <!-- Seller Note -->
-    <p v-if="listing.notes" class="seller-note">
-      "{{ listing.notes }}"
-    </p>
+    <p v-if="listing.notes" class="seller-note">"{{ listing.notes }}"</p>
 
     <!-- Card Footer: Pricing & Action -->
     <div class="card-footer">
@@ -115,18 +127,22 @@ const discountPercent = computed(() => {
 
 .resale-card:hover {
   transform: translateY(-3px);
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 12px 28px rgba(107, 45, 63, 0.12);
 }
 
 :global(html.dark) .resale-card:hover {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   box-shadow: 0 12px 28px rgba(201, 161, 90, 0.12);
 }
 
 .resale-card.is-featured {
   border-color: rgba(201, 161, 90, 0.4);
-  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-subtle, rgba(201, 161, 90, 0.03)) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--surface) 0%,
+    var(--surface-subtle, rgba(201, 161, 90, 0.03)) 100%
+  );
 }
 
 .card-header {
@@ -147,7 +163,7 @@ const discountPercent = computed(() => {
 
 .venue-icon {
   font-size: 16px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .badge-chip {
@@ -234,11 +250,11 @@ const discountPercent = computed(() => {
 }
 
 .meta-value.highlight {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .meta-value.highlight {
-  color: var(--on-surface, #FAF7F3);
+  color: var(--on-surface, #faf7f3);
 }
 
 .seller-row {

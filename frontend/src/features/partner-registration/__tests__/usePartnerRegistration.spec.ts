@@ -14,7 +14,10 @@ vi.mock('../api/partnerRegistrationApi', () => ({
   },
 }))
 
-function mockApplication(id: number, status: PartnerApplication['status'] = 'draft'): PartnerApplication {
+function mockApplication(
+  id: number,
+  status: PartnerApplication['status'] = 'draft',
+): PartnerApplication {
   return {
     id,
     kyc_code: `KYC-${id}`,
@@ -62,7 +65,9 @@ describe('usePartnerRegistration', () => {
 
   it('fetches the server resource and computes status correctly', async () => {
     const application = mockApplication(10)
-    vi.mocked(partnerRegistrationApi.getCurrentApplication).mockResolvedValueOnce({ data: application })
+    vi.mocked(partnerRegistrationApi.getCurrentApplication).mockResolvedValueOnce({
+      data: application,
+    })
 
     const composable = usePartnerRegistration()
     expect(composable.application.value).toBeNull()
@@ -76,7 +81,10 @@ describe('usePartnerRegistration', () => {
 
   it('starts an application without sending unrecorded consent fields', async () => {
     const application = mockApplication(11)
-    vi.mocked(partnerRegistrationApi.startApplication).mockResolvedValueOnce({ data: application, message: 'Created' })
+    vi.mocked(partnerRegistrationApi.startApplication).mockResolvedValueOnce({
+      data: application,
+      message: 'Created',
+    })
 
     const composable = usePartnerRegistration()
     const result = await composable.start()
@@ -88,7 +96,9 @@ describe('usePartnerRegistration', () => {
 
   it('uses the backend upload field and refreshes the application version', async () => {
     const application = mockApplication(12)
-    vi.mocked(partnerRegistrationApi.getCurrentApplication).mockResolvedValueOnce({ data: application })
+    vi.mocked(partnerRegistrationApi.getCurrentApplication).mockResolvedValueOnce({
+      data: application,
+    })
     vi.mocked(partnerRegistrationApi.uploadDocument).mockResolvedValueOnce({
       data: {
         id: 7,

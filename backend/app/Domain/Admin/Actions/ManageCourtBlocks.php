@@ -5,6 +5,7 @@ namespace App\Domain\Admin\Actions;
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Models\Court;
 use App\Models\CourtBlock;
+use App\Models\Venue;
 use App\Services\Reservation\CourtCommitmentConflictService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ class ManageCourtBlocks
         $endsAt = Carbon::parse($data['ends_at'])->utc();
 
         return DB::transaction(function () use ($court, $startsAt, $endsAt, $data) {
-            \App\Models\Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
+            Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
             $court = Court::query()->whereKey($court->id)->lockForUpdate()->firstOrFail();
             $this->conflicts->assertBlockPreservesCommitments($court, $startsAt, $endsAt);
 

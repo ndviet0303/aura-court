@@ -11,8 +11,8 @@ use App\Models\OrganizationMember;
 use App\Models\PosOrder;
 use App\Models\PosPayment;
 use App\Models\PosProduct;
-use App\Models\StockMovement;
 use App\Models\TenantMembership;
+use App\Models\TenantMembershipPlan;
 use App\Models\User;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
@@ -24,9 +24,13 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $cashier;
+
     private User $customer;
+
     private CashShift $shift;
+
     private PosProduct $product;
 
     protected function setUp(): void
@@ -35,7 +39,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Arena Central',
-            'slug' => 'aura-central-' . uniqid(),
+            'slug' => 'aura-central-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -93,7 +97,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'payment_method' => 'wallet',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'wallet-nocust-' . uniqid(),
+            'Idempotency-Key' => 'wallet-nocust-'.uniqid(),
         ]);
         $noCustRes->assertStatus(422);
 
@@ -108,7 +112,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'payment_method' => 'wallet',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'wallet-sale-' . uniqid(),
+            'Idempotency-Key' => 'wallet-sale-'.uniqid(),
         ]);
 
         $checkoutRes->assertCreated();
@@ -189,7 +193,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'payment_method' => 'wallet',
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'wallet-insufficient-' . uniqid(),
+            'Idempotency-Key' => 'wallet-insufficient-'.uniqid(),
         ]);
 
         $res->assertStatus(409)
@@ -217,7 +221,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'cash_tendered' => 300000, // Shortfall of 24,000
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'cash-shortfall-' . uniqid(),
+            'Idempotency-Key' => 'cash-shortfall-'.uniqid(),
         ]);
 
         $underpaidRes->assertStatus(422)
@@ -232,7 +236,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'cash_tendered' => 500000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'cash-success-' . uniqid(),
+            'Idempotency-Key' => 'cash-success-'.uniqid(),
         ]);
 
         $cashRes->assertCreated()
@@ -260,7 +264,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
     public function test_membership_applied_once_and_conflicting_coupon_rejected(): void
     {
         // 1. Create a membership plan with 10% POS discount
-        $plan = \App\Models\TenantMembershipPlan::create([
+        $plan = TenantMembershipPlan::create([
             'organization_id' => $this->tenant->id,
             'name' => 'VIP Member Plan',
             'version' => 1,
@@ -320,7 +324,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'cash_tendered' => 300000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'synthetic-disc-' . uniqid(),
+            'Idempotency-Key' => 'synthetic-disc-'.uniqid(),
         ]);
 
         $syntheticRes->assertStatus(422)
@@ -348,7 +352,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'cash_tendered' => 300000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'conflict-coupon-' . uniqid(),
+            'Idempotency-Key' => 'conflict-coupon-'.uniqid(),
         ]);
 
         $conflictRes->assertStatus(422)

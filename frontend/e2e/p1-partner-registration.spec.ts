@@ -9,7 +9,7 @@ import { createE2EApiClient } from './runner/api-client.ts'
 
 test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt & Cấp quyền @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')
@@ -34,16 +34,20 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     // 2. Start application draft via API (or retrieve current if already created)
     let appId: number
     try {
-      const startRes = await api.post('/partner/application/start', {}) as { data: { id: number; status: string } }
+      const startRes = (await api.post('/partner/application/start', {})) as {
+        data: { id: number; status: string }
+      }
       appId = startRes.data?.id
     } catch {
-      const currentRes = await api.get('/partner/application/current') as { data: { id: number; status: string } }
+      const currentRes = (await api.get('/partner/application/current')) as {
+        data: { id: number; status: string }
+      }
       appId = currentRes.data?.id
     }
     expect(appId).toBeDefined()
     // 3. Save draft details with valid business_type ('individual') and contact info
     const uniqueBusinessName = `Câu lạc bộ Cầu lông Hoàng Gia ${Date.now()}`
-    const saveRes = await api.put(`/partner/application/${appId}`, {
+    const saveRes = (await api.put(`/partner/application/${appId}`, {
       business_type: 'individual',
       business_name: uniqueBusinessName,
       legal_name: 'Nguyễn Văn Hoàng Gia',
@@ -60,14 +64,16 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
       city: 'Thành phố Hồ Chí Minh',
       sports: ['badminton'],
       court_scale: 4,
-    }) as { data: { id: number; business_name: string } }
+    })) as { data: { id: number; business_name: string } }
 
     expect(saveRes.data.business_name).toBe(uniqueBusinessName)
 
     // 4. Verify draft persistence across reload
     await page.goto('/partner-registration', { waitUntil: 'domcontentloaded' })
 
-    const currentRes = await api.get('/partner/application/current') as { data: { id: number; business_name: string; status: string } }
+    const currentRes = (await api.get('/partner/application/current')) as {
+      data: { id: number; business_name: string; status: string }
+    }
     expect(currentRes.data?.id).toBe(appId)
     expect(currentRes.data?.business_name).toBe(uniqueBusinessName)
     expect(currentRes.data?.status).toBe('draft')
@@ -114,7 +120,9 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
 
     let appId = currentRes?.data?.id
     if (!appId) {
-      const startRes = await api.post('/partner/application/start', {}) as { data: { id: number } }
+      const startRes = (await api.post('/partner/application/start', {})) as {
+        data: { id: number }
+      }
       appId = startRes.data?.id
       if (appId) {
         await api.put(`/partner/application/${appId}`, {
@@ -129,7 +137,7 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     }
 
     // 3. Upload simulated verification document
-    const uploadRes = await api.post(`/partner/application/${appId}/documents`, undefined, {
+    const uploadRes = (await api.post(`/partner/application/${appId}/documents`, undefined, {
       multipart: {
         document_type: 'representative_id_front',
         file: {
@@ -138,17 +146,21 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
           buffer: Buffer.from('%PDF-1.4 Mock ID Front Document Content'),
         },
       },
-    }) as { data: { id: number; file_name: string; document_type: string } }
+    })) as { data: { id: number; file_name: string; document_type: string } }
 
     expect(uploadRes.data?.id).toBeDefined()
     expect(uploadRes.data?.document_type).toBe('representative_id_front')
 
     // 4. Negative test: Unsigned / unauthenticated document download is rejected with 403
-    const unsignedDownloadRes = await page.request.get(`${manifest.backend.url}/api/v1/partner/documents/download?id=${uploadRes.data.id}`)
+    const unsignedDownloadRes = await page.request.get(
+      `${manifest.backend.url}/api/v1/partner/documents/download?id=${uploadRes.data.id}`,
+    )
     expect(unsignedDownloadRes.status()).toBe(403)
   })
 
-  test('7.2.3: Nộp hồ sơ hoàn chỉnh -> Từ chối tự duyệt -> Admin yêu cầu bổ sung -> Nộp lại', async ({ page }) => {
+  test('7.2.3: Nộp hồ sơ hoàn chỉnh -> Từ chối tự duyệt -> Admin yêu cầu bổ sung -> Nộp lại', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const admin = getActorCredentials(manifest, 'admin')
@@ -161,9 +173,13 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     const api = createE2EApiClient(page, manifest)
-    let currentRes = await api.get('/partner/application/current').catch(() => null) as { data?: { id: number; version: number } } | null
+    let currentRes = (await api.get('/partner/application/current').catch(() => null)) as {
+      data?: { id: number; version: number }
+    } | null
     if (!currentRes?.data?.id) {
-      const startRes = await api.post('/partner/application/start', {}) as { data: { id: number; version: number } }
+      const startRes = (await api.post('/partner/application/start', {})) as {
+        data: { id: number; version: number }
+      }
       currentRes = startRes
     }
     const appId = currentRes.data!.id
@@ -187,11 +203,13 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     }
 
     // Refresh application to get latest version after document uploads
-    const refreshedRes = await api.get(`/partner/application/${appId}`) as { data: { version: number } }
+    const refreshedRes = (await api.get(`/partner/application/${appId}`)) as {
+      data: { version: number }
+    }
     const appVersion = refreshedRes.data.version
 
     // 2. Submit application with complete legal consents
-    const submitRes = await api.post(`/partner/application/${appId}/submit`, {
+    const submitRes = (await api.post(`/partner/application/${appId}/submit`, {
       expected_version: appVersion,
       consents: [
         { consent_type: 'cooperation_terms', terms_version: 'v1.0' },
@@ -200,7 +218,7 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
         { consent_type: 'data_processing_agreement', terms_version: 'v1.0' },
         { consent_type: 'service_responsibility', terms_version: 'v1.0' },
       ],
-    }) as { data: { status: string; version: number } }
+    })) as { data: { status: string; version: number } }
     expect(['submitted', 'pending']).toContain(submitRes.data?.status)
     const submittedVersion = submitRes.data.version
 
@@ -230,12 +248,12 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     // 5. Admin requests revision/supplementation
     const adminApi = createE2EApiClient(page, manifest)
     const revisionNotes = 'Vui lòng bổ sung bản scan hợp đồng thuê sân có công chứng rõ nét hơn'
-    const reviewRes = await adminApi.post(`/admin/partner/applications/${appId}/review`, {
+    const reviewRes = (await adminApi.post(`/admin/partner/applications/${appId}/review`, {
       decision: 'revision_required',
       reason: revisionNotes,
       reviewer_notes: revisionNotes,
       expected_version: submittedVersion,
-    }) as { data: { status: string; version: number } }
+    })) as { data: { status: string; version: number } }
 
     expect(reviewRes.data?.status).toBe('revision_required')
     const revisionVersion = reviewRes.data.version
@@ -252,13 +270,17 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     // 7. Verify applicant views revision request in history and status
     await page.goto('/partner/application-status', { waitUntil: 'domcontentloaded' })
 
-    const historyRes = await api.get(`/partner/application/${appId}/history`) as { data: Array<{ action: string; reason: string; notes?: string }> }
+    const historyRes = (await api.get(`/partner/application/${appId}/history`)) as {
+      data: Array<{ action: string; reason: string; notes?: string }>
+    }
 
     expect(historyRes.data?.length).toBeGreaterThan(0)
-    expect(historyRes.data?.some(h => (h.reason || h.notes || '').includes('hợp đồng thuê'))).toBe(true)
+    expect(
+      historyRes.data?.some((h) => (h.reason || h.notes || '').includes('hợp đồng thuê')),
+    ).toBe(true)
 
     // 8. Resubmit application
-    const resubmitRes = await api.post(`/partner/application/${appId}/submit`, {
+    const resubmitRes = (await api.post(`/partner/application/${appId}/submit`, {
       expected_version: revisionVersion,
       consents: [
         { consent_type: 'cooperation_terms', terms_version: 'v1.0' },
@@ -267,13 +289,16 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
         { consent_type: 'data_processing_agreement', terms_version: 'v1.0' },
         { consent_type: 'service_responsibility', terms_version: 'v1.0' },
       ],
-    }) as { data: { status: string; version: number } }
+    })) as { data: { status: string; version: number } }
     expect(['submitted', 'pending']).toContain(resubmitRes.data?.status)
   })
 
-  test('7.2.4: Admin duyệt -> Khởi tạo tổ chức -> Gán vai trò Chủ sân (không cấp quyền Admin nền tảng)', async ({ page }) => {
+  test('7.2.4: Admin duyệt -> Khởi tạo tổ chức -> Gán vai trò Chủ sân (không cấp quyền Admin nền tảng)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
-    const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isRemoteProd =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
       test.skip(true, 'Yêu cầu môi trường database cục bộ để khởi tạo KYC và kiểm tra DB trực tiếp')
       return
@@ -321,11 +346,13 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
       }
       echo json_encode(['id' => $kyc->id, 'version' => $kyc->version]);
     `
-    const appInfo = JSON.parse(execFileSync('php', ['-r', findAppScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { id: number; version: number }
+    const appInfo = JSON.parse(
+      execFileSync('php', ['-r', findAppScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { id: number; version: number }
     const appId = appInfo.id
     const appVersion = appInfo.version
 
@@ -337,14 +364,18 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Admin approves application
-    const approveRes = await withE2EApi(page, async ({ api }, { id, version }) => {
-      return await api.post(`/admin/partner/applications/${id}/review`, {
-        decision: 'approve',
-        reason: 'Hồ sơ đầy đủ điều kiện hoạt động đối tác',
-        reviewer_notes: 'Phê duyệt khởi tạo câu lạc bộ',
-        expected_version: version,
-      })
-    }, { id: appId, version: appVersion }) as { data: { status: string; organization_id?: number } }
+    const approveRes = (await withE2EApi(
+      page,
+      async ({ api }, { id, version }) => {
+        return await api.post(`/admin/partner/applications/${id}/review`, {
+          decision: 'approve',
+          reason: 'Hồ sơ đầy đủ điều kiện hoạt động đối tác',
+          reviewer_notes: 'Phê duyệt khởi tạo câu lạc bộ',
+          expected_version: version,
+        })
+      },
+      { id: appId, version: appVersion },
+    )) as { data: { status: string; organization_id?: number } }
 
     expect(approveRes.data?.status).toBe('approved')
 
@@ -378,11 +409,13 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
         'user_is_platform_admin' => $user->isPlatformAdmin(),
       ]);
     `
-    const provisionState = JSON.parse(execFileSync('php', ['-r', verifyProvisionScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const provisionState = JSON.parse(
+      execFileSync('php', ['-r', verifyProvisionScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       kyc_status: string
       has_org: boolean
       membership_role: string

@@ -11,6 +11,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PlayerProfile extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['skill_level' => 'integer', 'approximate_latitude' => 'float', 'approximate_longitude' => 'float', 'availability' => 'array', 'preferred_positions' => 'array', 'reputation_score' => 'integer']; }
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
+
+    protected function casts(): array
+    {
+        return ['skill_level' => 'integer', 'approximate_latitude' => 'float', 'approximate_longitude' => 'float', 'availability' => 'array', 'preferred_positions' => 'array', 'reputation_score' => 'integer'];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

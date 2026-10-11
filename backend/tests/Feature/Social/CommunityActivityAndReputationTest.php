@@ -5,12 +5,10 @@ namespace Tests\Feature\Social;
 use App\Models\Court;
 use App\Models\MatchParticipation;
 use App\Models\MatchPost;
-use App\Models\ModerationRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlayerProfile;
 use App\Models\QualifyingActivity;
-use App\Models\ReputationDispute;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
@@ -30,16 +28,27 @@ class CommunityActivityAndReputationTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private Organization $otherTenant;
+
     private Venue $venue;
+
     private Court $court;
+
     private User $owner;
+
     private User $manager;
+
     private User $hostCustomer;
+
     private User $playerA;
+
     private User $playerB;
+
     private User $stranger;
+
     private MatchService $matchService;
+
     private ReputationService $reputationService;
 
     protected function setUp(): void
@@ -48,13 +57,13 @@ class CommunityActivityAndReputationTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Community Badminton Club',
-            'slug' => 'community-badminton-' . uniqid(),
+            'slug' => 'community-badminton-'.uniqid(),
             'status' => 'active',
         ]);
 
         $this->otherTenant = Organization::create([
             'name' => 'Other Badminton Club',
-            'slug' => 'other-badminton-' . uniqid(),
+            'slug' => 'other-badminton-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -66,7 +75,7 @@ class CommunityActivityAndReputationTest extends TestCase
         $this->venue = Venue::create([
             'organization_id' => $this->tenant->id,
             'name' => 'Community Stadium',
-            'slug' => 'community-stadium-' . uniqid(),
+            'slug' => 'community-stadium-'.uniqid(),
             'status' => 'active',
             'timezone' => 'Asia/Ho_Chi_Minh',
         ]);
@@ -114,12 +123,13 @@ class CommunityActivityAndReputationTest extends TestCase
     private function headersFor(User $user, ?Organization $org = null): array
     {
         $org = $org ?? $this->tenant;
+
         return [
-            'Authorization' => 'Bearer ' . $user->createToken('test')->plainTextToken,
+            'Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken,
             'X-Organization-Id' => (string) $org->id,
             'X-Organization-ID' => (string) $org->id,
-            'Idempotency-Key' => 'idem-' . uniqid(),
-            'X-Idempotency-Key' => 'idem-' . uniqid(),
+            'Idempotency-Key' => 'idem-'.uniqid(),
+            'X-Idempotency-Key' => 'idem-'.uniqid(),
             'Accept' => 'application/json',
         ];
     }
@@ -136,7 +146,7 @@ class CommunityActivityAndReputationTest extends TestCase
             'organization_id' => $court->venue->organization_id,
             'user_id' => $user->id,
             'court_id' => $court->id,
-            'code' => 'RES-' . uniqid(),
+            'code' => 'RES-'.uniqid(),
             'status' => 'confirmed',
             'currency' => 'VND',
             'total_amount' => 120000,
@@ -633,7 +643,7 @@ class CommunityActivityAndReputationTest extends TestCase
         $otherVenue = Venue::create([
             'organization_id' => $this->otherTenant->id,
             'name' => 'Other Stadium',
-            'slug' => 'other-stadium-' . uniqid(),
+            'slug' => 'other-stadium-'.uniqid(),
             'status' => 'active',
         ]);
         $otherCourt = Court::create([
@@ -645,7 +655,7 @@ class CommunityActivityAndReputationTest extends TestCase
             'organization_id' => $this->otherTenant->id,
             'user_id' => $this->playerA->id,
             'court_id' => $otherCourt->id,
-            'code' => 'RES-OTHER-' . uniqid(),
+            'code' => 'RES-OTHER-'.uniqid(),
             'status' => 'confirmed',
             'total_amount' => 100000,
         ]);
@@ -664,7 +674,7 @@ class CommunityActivityAndReputationTest extends TestCase
             'organization_id' => $this->tenant->id,
             'user_id' => $this->playerA->id,
             'court_id' => $this->court->id,
-            'code' => 'RES-OUR-' . uniqid(),
+            'code' => 'RES-OUR-'.uniqid(),
             'status' => 'confirmed',
             'total_amount' => 100000,
         ]);
@@ -685,7 +695,7 @@ class CommunityActivityAndReputationTest extends TestCase
             'organization_id' => $this->tenant->id,
             'user_id' => $this->playerA->id,
             'court_id' => $this->court->id,
-            'code' => 'RES-DISP-' . uniqid(),
+            'code' => 'RES-DISP-'.uniqid(),
             'status' => 'confirmed',
             'total_amount' => 100000,
         ]);

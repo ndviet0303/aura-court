@@ -11,9 +11,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TournamentFixture extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['round' => 'integer', 'position' => 'integer', 'score' => 'array', 'version' => 'integer']; }
-    public function tournament(): BelongsTo { return $this->belongsTo(Tournament::class); }
-    public function participantOne(): BelongsTo { return $this->belongsTo(TournamentParticipant::class, 'participant_one_id'); }
-    public function participantTwo(): BelongsTo { return $this->belongsTo(TournamentParticipant::class, 'participant_two_id'); }
-    public function winner(): BelongsTo { return $this->belongsTo(TournamentParticipant::class, 'winner_id'); }
+
+    protected function casts(): array
+    {
+        return ['round' => 'integer', 'position' => 'integer', 'score' => 'array', 'version' => 'integer'];
+    }
+
+    public function tournament(): BelongsTo
+    {
+        return $this->belongsTo(Tournament::class);
+    }
+
+    public function participantOne(): BelongsTo
+    {
+        return $this->belongsTo(TournamentParticipant::class, 'participant_one_id');
+    }
+
+    public function participantTwo(): BelongsTo
+    {
+        return $this->belongsTo(TournamentParticipant::class, 'participant_two_id');
+    }
+
+    public function winner(): BelongsTo
+    {
+        return $this->belongsTo(TournamentParticipant::class, 'winner_id');
+    }
 }

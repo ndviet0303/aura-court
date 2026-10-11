@@ -21,7 +21,9 @@ export function useUserProfile() {
   const name = ref(auth.user?.name || '')
   const phone = ref(auth.user?.phone || '')
   const playLevel = ref(auth.user?.play_level || 'intermediate')
-  const favoriteSports = ref<string[]>(Array.isArray(auth.user?.favorite_sports) ? auth.user.favorite_sports : ['badminton'])
+  const favoriteSports = ref<string[]>(
+    Array.isArray(auth.user?.favorite_sports) ? auth.user.favorite_sports : ['badminton'],
+  )
   const avatarUrl = ref(auth.user?.avatar_url || '')
 
   // Password Form States
@@ -37,14 +39,18 @@ export function useUserProfile() {
       name.value = user.name || ''
       phone.value = user.phone || ''
       playLevel.value = user.play_level || 'intermediate'
-      favoriteSports.value = Array.isArray(user.favorite_sports) ? user.favorite_sports : ['badminton']
+      favoriteSports.value = Array.isArray(user.favorite_sports)
+        ? user.favorite_sports
+        : ['badminton']
       avatarUrl.value = user.avatar_url || ''
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   const userInitials = computed(() => getUserInitials(name.value || auth.user?.name))
-  const displayAvatar = computed(() => getAvatarUrl(name.value || auth.user?.name, avatarUrl.value || auth.user?.avatar_url))
+  const displayAvatar = computed(() =>
+    getAvatarUrl(name.value || auth.user?.name, avatarUrl.value || auth.user?.avatar_url),
+  )
 
   const isEmailVerified = computed(() => !!auth.user?.email_verified_at)
   const isSocialUser = computed(() => !!auth.user?.social_provider)

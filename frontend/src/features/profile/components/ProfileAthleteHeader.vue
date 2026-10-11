@@ -67,7 +67,9 @@ const emit = defineEmits<{
               :disabled="resendingVerification"
               @click="emit('resendVerification')"
             >
-              {{ resendingVerification ? $t('common.submitting') : $t('profile.resendVerification') }}
+              {{
+                resendingVerification ? $t('common.submitting') : $t('profile.resendVerification')
+              }}
             </button>
           </div>
         </div>
@@ -155,7 +157,7 @@ html.dark .athlete-hero-card {
   height: 76px;
   border-radius: 50%;
   border: 3px solid var(--outline, #ebdccb);
-  background: #FAF7F3;
+  background: #faf7f3;
   flex-shrink: 0;
   overflow: visible;
   box-shadow: 0 6px 16px rgba(107, 45, 63, 0.12);
@@ -223,7 +225,7 @@ html.dark .athlete-name {
   padding: 3px 9px;
   border-radius: 6px;
   background: rgba(107, 45, 63, 0.08);
-  color: #6B2D3F;
+  color: #6b2d3f;
   border: 1px solid rgba(107, 45, 63, 0.2);
 }
 

@@ -163,7 +163,10 @@ function getRankIcon(rank: number): string {
   border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface-container, rgba(0, 0, 0, 0.02));
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .team-rank-card:hover {
@@ -200,10 +203,19 @@ function getRankIcon(rank: number): string {
   font-size: 18px;
 }
 
-.rank-gold .rank-ico { color: #d97706; }
-.rank-silver .rank-ico { color: #64748b; }
-.rank-bronze .rank-ico { color: #b45309; }
-.rank-default .rank-ico { color: var(--muted); font-size: 14px; }
+.rank-gold .rank-ico {
+  color: #d97706;
+}
+.rank-silver .rank-ico {
+  color: #64748b;
+}
+.rank-bronze .rank-ico {
+  color: #b45309;
+}
+.rank-default .rank-ico {
+  color: var(--muted);
+  font-size: 14px;
+}
 
 .rank-num {
   font-size: 11px;
@@ -285,4 +297,3 @@ function getRankIcon(rank: number): string {
   letter-spacing: 0.5px;
 }
 </style>
-

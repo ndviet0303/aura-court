@@ -77,10 +77,13 @@ describe('useAdminKyc review conflict & authorized documents', () => {
 
     await composable.handleApprove()
 
-    expect(adminKycApi.reviewKyc).toHaveBeenCalledWith(101, expect.objectContaining({
-      decision: 'approve',
-      expected_version: 2,
-    }))
+    expect(adminKycApi.reviewKyc).toHaveBeenCalledWith(
+      101,
+      expect.objectContaining({
+        decision: 'approve',
+        expected_version: 2,
+      }),
+    )
 
     // Handled conflict and refreshed
     expect(composable.notice.value).toContain('Xung đột xét duyệt')
@@ -104,6 +107,8 @@ describe('useAdminKyc review conflict & authorized documents', () => {
 
     expect(adminKycApi.getDocumentUrl).toHaveBeenCalledWith(101, 501)
     expect(composable.isInspectModalOpen.value).toBe(true)
-    expect(composable.inspectData.value?.imageUrl).toBe('https://storage.aura.test/signed/license.pdf')
+    expect(composable.inspectData.value?.imageUrl).toBe(
+      'https://storage.aura.test/signed/license.pdf',
+    )
   })
 })

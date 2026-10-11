@@ -1,8 +1,15 @@
-export type DisputeStatus = 'pending' | 'investigating' | 'awaiting_response' | 'resolved' | 'dismissed'
+export type DisputeStatus =
+  'pending' | 'investigating' | 'awaiting_response' | 'resolved' | 'dismissed'
 
 export type DisputeSeverity = 'critical' | 'high' | 'medium' | 'low'
 
-export type DisputeType = 'double_booking' | 'match_stake' | 'resale_fraud' | 'equipment_damage' | 'tournament_score' | 'other'
+export type DisputeType =
+  | 'double_booking'
+  | 'match_stake'
+  | 'resale_fraud'
+  | 'equipment_damage'
+  | 'tournament_score'
+  | 'other'
 
 export interface DisputeParty {
   id?: number

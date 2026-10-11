@@ -36,7 +36,12 @@ describe('AdminStaffView', () => {
       user_id: 101,
       role: 'organization_owner',
       status: 'active',
-      user: { id: 101, name: 'Elena Jackson', email: 'elena.j@auracourt.vn', phone: '0901 888 999' },
+      user: {
+        id: 101,
+        name: 'Elena Jackson',
+        email: 'elena.j@auracourt.vn',
+        phone: '0901 888 999',
+      },
       venue: { id: 0, name: 'Tất cả cơ sở' },
     },
     {
@@ -44,7 +49,12 @@ describe('AdminStaffView', () => {
       user_id: 102,
       role: 'venue_manager',
       status: 'active',
-      user: { id: 102, name: 'Marcus Reed', email: 'marcus.reed@auracourt.vn', phone: '0912 345 678' },
+      user: {
+        id: 102,
+        name: 'Marcus Reed',
+        email: 'marcus.reed@auracourt.vn',
+        phone: '0912 345 678',
+      },
       venue: { id: 1, name: 'Downtown Arena (Quận 1)' },
     },
   ]

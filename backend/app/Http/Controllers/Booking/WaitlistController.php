@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Booking;
 
 use App\Http\Controllers\Controller;
-
 use App\Services\Booking\WaitlistService;
 use Illuminate\Http\Request;
 

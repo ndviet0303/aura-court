@@ -55,7 +55,9 @@ function reset() {
 }
 
 const slotsWithId = computed(() =>
-  (props.booking?.slots ?? []).filter((s): s is typeof s & { id: number } => typeof s.id === 'number'),
+  (props.booking?.slots ?? []).filter(
+    (s): s is typeof s & { id: number } => typeof s.id === 'number',
+  ),
 )
 
 const targetSlotIds = computed<number[]>(() =>
@@ -158,7 +160,12 @@ watch(
 </script>
 
 <template>
-  <div v-if="show && booking" class="modal-backdrop" @click.self="emit('close')" data-testid="cancel-modal">
+  <div
+    v-if="show && booking"
+    class="modal-backdrop"
+    @click.self="emit('close')"
+    data-testid="cancel-modal"
+  >
     <div class="modal-card">
       <div class="modal-header">
         <div>
@@ -193,11 +200,23 @@ watch(
           <!-- Scope: whole / partial -->
           <div class="scope-row">
             <label class="scope-option">
-              <input type="radio" value="whole" v-model="scope" data-testid="cancel-scope-whole" @change="quote = null" />
+              <input
+                type="radio"
+                value="whole"
+                v-model="scope"
+                data-testid="cancel-scope-whole"
+                @change="quote = null"
+              />
               <span>{{ t('v2Reservations.refund.scopeWhole') }}</span>
             </label>
             <label class="scope-option">
-              <input type="radio" value="partial" v-model="scope" data-testid="cancel-scope-partial" @change="quote = null" />
+              <input
+                type="radio"
+                value="partial"
+                v-model="scope"
+                data-testid="cancel-scope-partial"
+                @change="quote = null"
+              />
               <span>{{ t('v2Reservations.refund.scopePartial') }}</span>
             </label>
           </div>
@@ -211,7 +230,9 @@ watch(
                 :data-testid="`cancel-slot-${s.id}`"
                 @change="toggleSlot(s.id)"
               />
-              <span class="font-mono">{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span>
+              <span class="font-mono"
+                >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span
+              >
               <span class="slot-price font-mono">{{ formatCurrency(s.unit_price) }}</span>
             </label>
           </div>
@@ -230,7 +251,9 @@ watch(
           <div v-if="quote" class="preview-box" data-testid="cancel-quote">
             <div class="preview-row">
               <span>{{ t('v2Reservations.refund.deadlineLabel') }}</span>
-              <span class="font-mono" data-testid="cancel-deadline">{{ quote.calculation.due_at }}</span>
+              <span class="font-mono" data-testid="cancel-deadline">{{
+                quote.calculation.due_at
+              }}</span>
             </div>
             <div class="preview-row">
               <span>{{ t('v2Reservations.refund.grossLabel') }}</span>
@@ -238,22 +261,32 @@ watch(
             </div>
             <div class="preview-row">
               <span>{{ t('v2Reservations.refund.feeLabel') }} ({{ feeTypeLabel }})</span>
-              <span class="font-mono" data-testid="cancel-fee">{{ formatCurrency(quote.calculation.fee_amount) }}</span>
+              <span class="font-mono" data-testid="cancel-fee">{{
+                formatCurrency(quote.calculation.fee_amount)
+              }}</span>
             </div>
             <div class="preview-row emphasis">
               <span>{{ t('v2Reservations.refund.refundLabel') }}</span>
-              <span class="font-mono" data-testid="cancel-refund">{{ formatCurrency(quote.calculation.refund_amount) }}</span>
+              <span class="font-mono" data-testid="cancel-refund">{{
+                formatCurrency(quote.calculation.refund_amount)
+              }}</span>
             </div>
             <div v-if="quote.points_to_restore" class="preview-row">
               <span>{{ t('v2Reservations.refund.pointsRestoreLabel') }}</span>
               <span class="font-mono">{{ quote.points_to_restore }}</span>
             </div>
-            <p v-if="quote.calculation.refund_amount === 0" class="hint" data-testid="cancel-no-money">
+            <p
+              v-if="quote.calculation.refund_amount === 0"
+              class="hint"
+              data-testid="cancel-no-money"
+            >
               {{ t('v2Reservations.refund.noMoneyBack') }}
             </p>
 
             <div class="form-row">
-              <label class="form-label" for="cancel-reason">{{ t('v2Reservations.refund.reasonLabel') }}</label>
+              <label class="form-label" for="cancel-reason">{{
+                t('v2Reservations.refund.reasonLabel')
+              }}</label>
               <textarea
                 id="cancel-reason"
                 v-model="reason"
@@ -307,7 +340,11 @@ watch(
           data-testid="cancel-submit-btn"
           @click="submit"
         >
-          {{ submitting ? t('v2Reservations.refund.submitting') : t('v2Reservations.refund.submitBtn') }}
+          {{
+            submitting
+              ? t('v2Reservations.refund.submitting')
+              : t('v2Reservations.refund.submitBtn')
+          }}
         </button>
       </div>
     </div>

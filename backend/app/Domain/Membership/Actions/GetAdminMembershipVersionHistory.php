@@ -25,13 +25,13 @@ class GetAdminMembershipVersionHistory
             $changes = [];
 
             if (! empty($benefits['discount_percent'])) {
-                $changes[] = 'Giảm giá sân ' . $benefits['discount_percent'] . '%';
+                $changes[] = 'Giảm giá sân '.$benefits['discount_percent'].'%';
             }
             if (! empty($benefits['point_multiplier'])) {
-                $changes[] = 'Tích điểm x' . $benefits['point_multiplier'];
+                $changes[] = 'Tích điểm x'.$benefits['point_multiplier'];
             }
             if (! empty($benefits['advance_booking_days'])) {
-                $changes[] = 'Đặt sân trước ' . $benefits['advance_booking_days'] . ' ngày';
+                $changes[] = 'Đặt sân trước '.$benefits['advance_booking_days'].' ngày';
             }
             if (! empty($benefits['perks']) && is_array($benefits['perks'])) {
                 foreach (array_slice($benefits['perks'], 0, 2) as $p) {
@@ -43,7 +43,7 @@ class GetAdminMembershipVersionHistory
                 'id' => (string) $plan->id,
                 'planId' => $plan->id,
                 'planName' => $plan->name,
-                'version' => 'v' . $plan->version . '.0',
+                'version' => 'v'.$plan->version.'.0',
                 'status' => $plan->status === 'published' ? 'active' : 'archived',
                 'updatedAt' => $plan->updated_at?->format('H:i, d/m/Y') ?? now()->format('H:i, d/m/Y'),
                 'updatedBy' => 'Admin Quản Trị',

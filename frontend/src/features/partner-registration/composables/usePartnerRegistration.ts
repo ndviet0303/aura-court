@@ -20,8 +20,12 @@ export function usePartnerRegistration() {
   const fieldErrors = ref<Record<string, string[]>>({})
 
   const isDraft = computed(() => application.value?.status === 'draft')
-  const isPendingReview = computed(() => ['pending', 'pending_review'].includes(application.value?.status ?? ''))
-  const isSupplementationRequested = computed(() => ['revision_required', 'supplementation_requested'].includes(application.value?.status ?? ''))
+  const isPendingReview = computed(() =>
+    ['pending', 'pending_review'].includes(application.value?.status ?? ''),
+  )
+  const isSupplementationRequested = computed(() =>
+    ['revision_required', 'supplementation_requested'].includes(application.value?.status ?? ''),
+  )
   const isApproved = computed(() => application.value?.status === 'approved')
   const isRejected = computed(() => application.value?.status === 'rejected')
 
@@ -32,7 +36,13 @@ export function usePartnerRegistration() {
 
   function extractErrors(err: unknown) {
     error.value = errorMessage(err)
-    if (err && typeof err === 'object' && 'errors' in err && typeof err.errors === 'object' && err.errors !== null) {
+    if (
+      err &&
+      typeof err === 'object' &&
+      'errors' in err &&
+      typeof err.errors === 'object' &&
+      err.errors !== null
+    ) {
       fieldErrors.value = err.errors as Record<string, string[]>
     }
   }

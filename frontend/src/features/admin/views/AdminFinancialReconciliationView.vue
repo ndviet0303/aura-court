@@ -60,8 +60,12 @@ const {
 
       <div class="header-quick-actions">
         <AuraButton variant="primary" type="button" :disabled="syncing" @click="triggerSync">
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': syncing }">sync</span>
-          <span>{{ syncing ? t('admin.reconciliation.syncing') : t('admin.reconciliation.syncNow') }}</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': syncing }"
+            >sync</span
+          >
+          <span>{{
+            syncing ? t('admin.reconciliation.syncing') : t('admin.reconciliation.syncNow')
+          }}</span>
         </AuraButton>
       </div>
     </header>
@@ -207,8 +211,12 @@ const {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .alert-notice {

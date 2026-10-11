@@ -15,8 +15,10 @@ function apiContext(page: Page) {
       },
       logout: () => logoutE2EActor(page, manifest),
     },
-    apiUrl: (path: string) => `${manifest.backend.url}/api/v1${path.startsWith('/') ? path : `/${path}`}`,
-    apiV2Url: (path: string) => `${manifest.backend.url}/api/v2${path.startsWith('/') ? path : `/${path}`}`,
+    apiUrl: (path: string) =>
+      `${manifest.backend.url}/api/v1${path.startsWith('/') ? path : `/${path}`}`,
+    apiV2Url: (path: string) =>
+      `${manifest.backend.url}/api/v2${path.startsWith('/') ? path : `/${path}`}`,
   }
 }
 

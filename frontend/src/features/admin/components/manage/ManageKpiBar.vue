@@ -103,7 +103,7 @@ const { t } = useI18n()
 
 .total-icon-box {
   background: rgba(107, 45, 63, 0.08);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .total-icon-box {
@@ -152,11 +152,19 @@ const { t } = useI18n()
   line-height: 1.1;
 }
 
-.text-green { color: #10b981; }
-:global(html.dark) .text-green { color: #34d399; }
+.text-green {
+  color: #10b981;
+}
+:global(html.dark) .text-green {
+  color: #34d399;
+}
 
-.text-yellow { color: #f59e0b; }
-:global(html.dark) .text-yellow { color: #fbbf24; }
+.text-yellow {
+  color: #f59e0b;
+}
+:global(html.dark) .text-yellow {
+  color: #fbbf24;
+}
 
 .icon-22 {
   font-size: 22px;
@@ -227,8 +235,12 @@ const { t } = useI18n()
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 900px) {

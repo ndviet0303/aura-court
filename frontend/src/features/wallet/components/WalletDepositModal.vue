@@ -42,7 +42,6 @@ const emit = defineEmits<{
 }>()
 const { t } = useI18n()
 
-
 const customAmountInput = ref<number>(props.amount)
 
 function onCustomInput(e: Event) {
@@ -71,12 +70,20 @@ function formatMoney(amount: number): string {
             {{ step === 'stripe_pay' ? 'credit_card' : 'account_balance_wallet' }}
           </span>
           <h3 class="modal-title">
-            <template v-if="step === 'sepay_pay'">{{ t('wallet.depositModal.titleSepay') }}</template>
-            <template v-else-if="step === 'stripe_pay'">{{ t('wallet.depositModal.titleStripe') }}</template>
+            <template v-if="step === 'sepay_pay'">{{
+              t('wallet.depositModal.titleSepay')
+            }}</template>
+            <template v-else-if="step === 'stripe_pay'">{{
+              t('wallet.depositModal.titleStripe')
+            }}</template>
             <template v-else>{{ t('wallet.depositModal.titleDefault') }}</template>
           </h3>
         </div>
-        <button class="modal-close-btn" @click="emit('close')" :aria-label="t('wallet.depositModal.cancelBtn')">
+        <button
+          class="modal-close-btn"
+          @click="emit('close')"
+          :aria-label="t('wallet.depositModal.cancelBtn')"
+        >
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -95,7 +102,8 @@ function formatMoney(amount: number): string {
             @change="emit('update:targetWalletId', ($event.target as HTMLSelectElement).value)"
           >
             <option v-for="w in wallets" :key="w.id" :value="w.id">
-              {{ w.venue_name }} · {{ t('wallet.depositModal.currentBalance', { amount: formatMoney(w.balance) }) }}
+              {{ w.venue_name }} ·
+              {{ t('wallet.depositModal.currentBalance', { amount: formatMoney(w.balance) }) }}
             </option>
           </select>
         </div>
@@ -161,7 +169,9 @@ function formatMoney(amount: number): string {
               />
               <div class="method-meta">
                 <div class="method-title-row">
-                  <span class="material-symbols-outlined method-icon text-accent">qr_code_scanner</span>
+                  <span class="material-symbols-outlined method-icon text-accent"
+                    >qr_code_scanner</span
+                  >
                   <strong>{{ t('wallet.depositModal.methodSepayTitle') }}</strong>
                   <span class="instant-pill">{{ t('wallet.depositModal.methodSepayTag') }}</span>
                 </div>
@@ -243,7 +253,9 @@ function formatMoney(amount: number): string {
                 <button
                   type="button"
                   class="btn-copy-mini"
-                  @click="emit('copy', transferInfo.accountNo, t('wallet.depositModal.copiedAccount'))"
+                  @click="
+                    emit('copy', transferInfo.accountNo, t('wallet.depositModal.copiedAccount'))
+                  "
                   :title="t('wallet.depositModal.copiedAccount')"
                 >
                   <span class="material-symbols-outlined">content_copy</span>
@@ -258,7 +270,9 @@ function formatMoney(amount: number): string {
 
             <div class="vqr-detail-row">
               <span class="vqr-d-label">{{ t('wallet.depositModal.amountLabel') }}</span>
-              <strong class="vqr-d-val text-primary font-mono">{{ formatMoney(transferInfo.amount) }}</strong>
+              <strong class="vqr-d-val text-primary font-mono">{{
+                formatMoney(transferInfo.amount)
+              }}</strong>
             </div>
 
             <div class="vqr-detail-row highlight-memo">
@@ -354,7 +368,9 @@ function formatMoney(amount: number): string {
         </div>
 
         <div class="stripe-summary-pill">
-          <span>{{ t('wallet.depositModal.stripeSummaryPill', { amount: formatMoney(amount) }) }}</span>
+          <span>{{
+            t('wallet.depositModal.stripeSummaryPill', { amount: formatMoney(amount) })
+          }}</span>
         </div>
       </div>
 
@@ -369,12 +385,7 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined">arrow_back</span>
           <span>{{ t('wallet.depositModal.backBtn') }}</span>
         </button>
-        <button
-          v-else
-          type="button"
-          class="btn btn-outline"
-          @click="emit('close')"
-        >
+        <button v-else type="button" class="btn btn-outline" @click="emit('close')">
           <span>{{ t('wallet.depositModal.cancelBtn') }}</span>
         </button>
 
@@ -410,7 +421,9 @@ function formatMoney(amount: number): string {
         >
           <span class="material-symbols-outlined">lock</span>
           <span v-if="processing">{{ t('wallet.depositModal.stripeProcessing') }}</span>
-          <span v-else>{{ t('wallet.depositModal.payNowBtn', { amount: formatMoney(amount) }) }}</span>
+          <span v-else>{{
+            t('wallet.depositModal.payNowBtn', { amount: formatMoney(amount) })
+          }}</span>
         </button>
       </div>
     </div>
@@ -426,7 +439,7 @@ function formatMoney(amount: number): string {
 
 .header-icon {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .form-group {
@@ -447,7 +460,7 @@ function formatMoney(amount: number): string {
 
 .label-icon {
   font-size: 16px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .form-select-luxury,
@@ -465,7 +478,7 @@ function formatMoney(amount: number): string {
 
 .form-select-luxury:focus,
 .form-input-luxury:focus {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
 }
 
 .presets-grid {
@@ -493,18 +506,18 @@ function formatMoney(amount: number): string {
 }
 
 .preset-btn:hover {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
 }
 
 .preset-btn.active {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   background: var(--accent-container, rgba(201, 161, 90, 0.15));
-  color: var(--on-accent-container, #684F17);
-  box-shadow: 0 0 0 1px var(--accent, #C9A15A);
+  color: var(--on-accent-container, #684f17);
+  box-shadow: 0 0 0 1px var(--accent, #c9a15a);
 }
 
 :global(html.dark) .preset-btn.active {
-  color: var(--accent, #D8B46E);
+  color: var(--accent, #d8b46e);
   background: rgba(216, 180, 110, 0.2);
 }
 
@@ -563,13 +576,13 @@ function formatMoney(amount: number): string {
 }
 
 .method-option-card.selected {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   background: var(--accent-container, rgba(201, 161, 90, 0.08));
 }
 
 .method-radio {
   margin-top: 3px;
-  accent-color: var(--accent, #C9A15A);
+  accent-color: var(--accent, #c9a15a);
 }
 
 .method-meta {
@@ -592,7 +605,7 @@ function formatMoney(amount: number): string {
 }
 
 .method-icon.text-accent {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .instant-pill {
@@ -655,15 +668,21 @@ function formatMoney(amount: number): string {
 
 .total-val {
   font-size: 18px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark) .total-val {
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
-.text-green { color: #10b981; font-weight: 700; }
-.text-gold { color: var(--accent, #C9A15A); font-weight: 700; }
+.text-green {
+  color: #10b981;
+  font-weight: 700;
+}
+.text-gold {
+  color: var(--accent, #c9a15a);
+  font-weight: 700;
+}
 
 /* VietQR Step */
 .vietqr-body {
@@ -759,7 +778,7 @@ function formatMoney(amount: number): string {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -780,12 +799,12 @@ function formatMoney(amount: number): string {
 }
 
 .text-primary {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-size: 14px;
 }
 
 :global(html.dark) .text-primary {
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }
 
 .vqr-listening-pill {

@@ -35,25 +35,33 @@ defineProps<{
     <div class="stats-comparison-list">
       <!-- Total Points Won -->
       <div class="stat-row">
-        <strong class="val-p1 font-mono highlight">{{ match.stats.total_points_won ? match.stats.total_points_won[0] : match.player1.current_score }}</strong>
+        <strong class="val-p1 font-mono highlight">{{
+          match.stats.total_points_won
+            ? match.stats.total_points_won[0]
+            : match.player1.current_score
+        }}</strong>
         <div class="stat-mid">
           <span class="stat-label">Tổng Điểm Thắng (Total Points)</span>
           <div class="stat-bars">
             <div
               class="bar-left"
               :style="{
-                width: `${Math.round(((match.stats.total_points_won ? match.stats.total_points_won[0] : match.player1.current_score) / Math.max(1, (match.stats.total_points_won ? match.stats.total_points_won[0] + match.stats.total_points_won[1] : match.player1.current_score + match.player2.current_score))) * 100)}%`
+                width: `${Math.round(((match.stats.total_points_won ? match.stats.total_points_won[0] : match.player1.current_score) / Math.max(1, match.stats.total_points_won ? match.stats.total_points_won[0] + match.stats.total_points_won[1] : match.player1.current_score + match.player2.current_score)) * 100)}%`,
               }"
             ></div>
             <div
               class="bar-right"
               :style="{
-                width: `${Math.round(((match.stats.total_points_won ? match.stats.total_points_won[1] : match.player2.current_score) / Math.max(1, (match.stats.total_points_won ? match.stats.total_points_won[0] + match.stats.total_points_won[1] : match.player1.current_score + match.player2.current_score))) * 100)}%`
+                width: `${Math.round(((match.stats.total_points_won ? match.stats.total_points_won[1] : match.player2.current_score) / Math.max(1, match.stats.total_points_won ? match.stats.total_points_won[0] + match.stats.total_points_won[1] : match.player1.current_score + match.player2.current_score)) * 100)}%`,
               }"
             ></div>
           </div>
         </div>
-        <strong class="val-p2 font-mono highlight">{{ match.stats.total_points_won ? match.stats.total_points_won[1] : match.player2.current_score }}</strong>
+        <strong class="val-p2 font-mono highlight">{{
+          match.stats.total_points_won
+            ? match.stats.total_points_won[1]
+            : match.player2.current_score
+        }}</strong>
       </div>
 
       <!-- Aces -->
@@ -302,8 +310,12 @@ defineProps<{
   font-size: 15px;
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-red { color: #ef4444; }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-red {
+  color: #ef4444;
+}
 
 .highlights-row {
   display: grid;

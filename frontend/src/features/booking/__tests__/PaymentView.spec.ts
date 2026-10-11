@@ -39,7 +39,7 @@ vi.mock('@/features/tournament/api/tournamentApi', () => ({
         name: 'Saigon Open Tennis Masters 2026',
         entry_fee: '500.000 ₫ / VĐV',
         venue: 'Aura Center Court A',
-      })
+      }),
     ),
     getTournament: vi.fn(() =>
       Promise.resolve({
@@ -48,7 +48,7 @@ vi.mock('@/features/tournament/api/tournamentApi', () => ({
         name: 'Saigon Open Tennis Masters 2026',
         entry_fee: '500.000 ₫ / VĐV',
         venue: 'Aura Center Court A',
-      })
+      }),
     ),
   },
 }))

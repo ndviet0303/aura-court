@@ -77,7 +77,9 @@ const { t } = useI18n()
           <span class="kpi-label">{{ t('admin.disputes.kpiConsensus') }}</span>
           <div class="kpi-value-row">
             <span class="kpi-value text-consensus">{{ stats.consensusRate }}%</span>
-            <span class="kpi-sub">{{ t('admin.disputes.kpiConsensusSub', { count: stats.resolvedCount }) }}</span>
+            <span class="kpi-sub">{{
+              t('admin.disputes.kpiConsensusSub', { count: stats.resolvedCount })
+            }}</span>
           </div>
         </div>
       </div>
@@ -101,7 +103,9 @@ const { t } = useI18n()
   align-items: center;
   gap: 16px;
   box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   color: var(--ink);
 }
 

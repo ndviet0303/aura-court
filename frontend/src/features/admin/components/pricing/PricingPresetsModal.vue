@@ -15,7 +15,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'applyPreset', payload: { presetId: string; venueId?: number | null; courtId?: number | null }): void
+  (
+    e: 'applyPreset',
+    payload: { presetId: string; venueId?: number | null; courtId?: number | null },
+  ): void
 }>()
 
 const { t } = useI18n()
@@ -78,10 +81,7 @@ const presetTemplates = [
     descKey: 'admin.pricing.presetHolidayDesc',
     badgeKey: 'admin.pricing.presetHolidayBadge',
     icon: 'celebration',
-    highlightRules: [
-      'Holiday Surcharge: +35% Full Day',
-      'High Priority (#5 override)',
-    ],
+    highlightRules: ['Holiday Surcharge: +35% Full Day', 'High Priority (#5 override)'],
   },
   {
     id: 'night_owl',
@@ -134,21 +134,13 @@ function handleApply(presetId: string) {
               variant="bordered"
               @update:model-value="handleVenueChange"
             />
-            <SelectDropdown
-              v-model="selectedCourtId"
-              :options="courtOptions"
-              variant="bordered"
-            />
+            <SelectDropdown v-model="selectedCourtId" :options="courtOptions" variant="bordered" />
           </div>
         </div>
 
         <!-- Presets List -->
         <div class="presets-list">
-          <div
-            v-for="p in presetTemplates"
-            :key="p.id"
-            class="preset-card"
-          >
+          <div v-for="p in presetTemplates" :key="p.id" class="preset-card">
             <div class="p-left">
               <div class="p-icon-box">
                 <span class="material-symbols-outlined p-icon">{{ p.icon }}</span>
@@ -299,7 +291,9 @@ function handleApply(presetId: string) {
   border: 1px solid var(--outline);
   background: var(--surface);
   gap: 16px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .preset-card:hover {

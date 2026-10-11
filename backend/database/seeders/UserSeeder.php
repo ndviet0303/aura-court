@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
+use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -79,7 +80,7 @@ class UserSeeder extends Seeder
         }
 
         // Seed 1,000,000,000 VND into soicuteeee wallet
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $soicuteWallet = $walletService->getOrCreateWallet($soicuteUser->id, $org?->id);
         if ($soicuteWallet->balance < 1000000000) {
             $walletService->credit($soicuteWallet, 1000000000 - $soicuteWallet->balance, 'manual_seed', 1, 'Admin nạp 1 tỷ đồng khởi tạo');

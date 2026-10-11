@@ -5,11 +5,12 @@ namespace App\Console\Commands;
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Booking;
 use App\Models\LegacyBookingMapping;
-use App\Models\OwnerPaymentAttempt;
 use App\Models\Organization;
+use App\Models\OwnerPaymentAttempt;
 use App\Models\Reservation;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+
 class E2EExpireHoldsCommand extends Command
 {
     protected $signature = 'e2e:expire-holds
@@ -25,6 +26,7 @@ class E2EExpireHoldsCommand extends Command
         $runId = trim((string) $this->option('run-id'));
         if ($runId === '' || ! preg_match('/^[a-zA-Z0-9_-]+$/', $runId)) {
             $this->error('CRITICAL: Missing or invalid --run-id');
+
             return self::FAILURE;
         }
 
@@ -32,6 +34,7 @@ class E2EExpireHoldsCommand extends Command
         $env = app()->environment();
         if ($env !== 'testing' && $env !== 'local') {
             $this->error("CRITICAL: Refusing to mutate target in environment '{$env}'. Only 'testing' or 'local' allowed.");
+
             return self::FAILURE;
         }
 
@@ -39,9 +42,10 @@ class E2EExpireHoldsCommand extends Command
         $dbHost = (string) ($dbConfig['host'] ?? '');
         $dbName = (string) ($dbConfig['database'] ?? '');
 
-        $allowedHosts = ['127.0.0.1', 'localhost', '::1', 'bt-server', '100.64.0.15', (string) env('DB_HOST')];
+        $allowedHosts = ['127.0.0.1', 'localhost', '::1', 'bt-server', '100.64.0.15', (string) config('database.connections.'.config('database.default').'.host')];
         if (! in_array($dbHost, $allowedHosts, true)) {
             $this->error("CRITICAL: Refusing remote target '{$dbHost}'.");
+
             return self::FAILURE;
         }
 
@@ -50,11 +54,13 @@ class E2EExpireHoldsCommand extends Command
             $expectedDb = "booking_e2e_{$runId}_test";
             if ($dbName === 'booking' || $dbName === 'booking_test') {
                 $this->error("CRITICAL: Refusing to expire holds in protected database '{$dbName}'.");
+
                 return self::FAILURE;
             }
 
             if ($dbName !== $expectedDb) {
                 $this->error("CRITICAL: Active database '{$dbName}' does not match expected '{$expectedDb}'.");
+
                 return self::FAILURE;
             }
         }
@@ -64,6 +70,7 @@ class E2EExpireHoldsCommand extends Command
             : null;
         if ($isProdRun && empty($organizationIds)) {
             $this->error('Production hold expiry requires a run-owned test organization.');
+
             return self::FAILURE;
         }
 
@@ -138,6 +145,7 @@ class E2EExpireHoldsCommand extends Command
         ];
 
         $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
         return self::SUCCESS;
     }
 }

@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringSeries } from '../../types/recurring'
 
-const props = defineProps<{
+defineProps<{
   seriesList: RecurringSeries[]
   loading?: boolean
 }>()
@@ -37,7 +37,7 @@ function formatFrequency(freq: string): string {
 }
 
 function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number | string) {
-  const key = typeof inv === 'object' ? (inv.uuid || inv.id) : inv
+  const key = typeof inv === 'object' ? inv.uuid || inv.id : inv
   router.push(`/recurring-booking/cycles/${key}`)
 }
 </script>
@@ -51,9 +51,13 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
       <div>
         <h3 class="manager-title">
           Quản Lý Hợp Đồng Đặt Sân Cố Định
-          <span v-if="seriesList.length > 0" class="count-badge font-mono">{{ seriesList.length }}</span>
+          <span v-if="seriesList.length > 0" class="count-badge font-mono">{{
+            seriesList.length
+          }}</span>
         </h3>
-        <p class="manager-sub">Kiểm tra lịch đặt sân hàng tuần và danh sách hóa đơn thanh toán định kỳ.</p>
+        <p class="manager-sub">
+          Kiểm tra lịch đặt sân hàng tuần và danh sách hóa đơn thanh toán định kỳ.
+        </p>
       </div>
     </div>
 
@@ -80,25 +84,17 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
       </div>
       <h4 class="empty-title">Chưa Có Hợp Đồng Đặt Sân Nào</h4>
       <p class="empty-desc">
-        Bạn chưa đăng ký lịch đặt sân cố định nào. Hãy thiết lập hợp đồng để giữ khung giờ chơi ưa thích của bạn!
+        Bạn chưa đăng ký lịch đặt sân cố định nào. Hãy thiết lập hợp đồng để giữ khung giờ chơi ưa
+        thích của bạn!
       </p>
-      <AuraButton
-        variant="primary"
-        size="md"
-        icon="add_circle"
-        @click="emit('create-new')"
-      >
+      <AuraButton variant="primary" size="md" icon="add_circle" @click="emit('create-new')">
         <span>Tạo Lịch Cố Định Ngay</span>
       </AuraButton>
     </div>
 
     <!-- Active Series Cards -->
     <div v-else class="series-items-list">
-      <div
-        v-for="s in seriesList"
-        :key="s.id"
-        class="series-card"
-      >
+      <div v-for="s in seriesList" :key="s.id" class="series-card">
         <div class="series-card-top">
           <div class="series-badge-group">
             <span class="series-id-pill font-mono">HỢP ĐỒNG #{{ s.id }}</span>
@@ -112,11 +108,19 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
                 'status-active': s.status === 'active' || s.status === 'confirmed',
                 'status-paused': s.status === 'paused',
                 'status-cancelled': s.status === 'cancelled',
-                'status-delinquent': s.status === 'delinquent'
+                'status-delinquent': s.status === 'delinquent',
               }"
             >
               <span class="status-dot"></span>
-              {{ s.status === 'active' || s.status === 'confirmed' ? 'Đang hoạt động' : s.status === 'paused' ? 'Tạm dừng' : s.status === 'delinquent' ? 'Quá hạn' : 'Đã hủy' }}
+              {{
+                s.status === 'active' || s.status === 'confirmed'
+                  ? 'Đang hoạt động'
+                  : s.status === 'paused'
+                    ? 'Tạm dừng'
+                    : s.status === 'delinquent'
+                      ? 'Quá hạn'
+                      : 'Đã hủy'
+              }}
             </span>
           </div>
         </div>
@@ -142,7 +146,8 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
           <div class="metric-item">
             <span class="metric-label">Khung giờ</span>
             <span class="metric-value font-mono">
-              {{ s.starts_at ? s.starts_at.slice(11, 16) : '18:00' }} - {{ s.ends_at ? s.ends_at.slice(11, 16) : '20:00' }}
+              {{ s.starts_at ? s.starts_at.slice(11, 16) : '18:00' }} -
+              {{ s.ends_at ? s.ends_at.slice(11, 16) : '20:00' }}
             </span>
           </div>
 
@@ -155,7 +160,9 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
 
           <div class="metric-item">
             <span class="metric-label">Tổng số buổi</span>
-            <span class="metric-value font-mono">{{ s.occurrence_count || (s.occurrences?.length || 0) }} buổi</span>
+            <span class="metric-value font-mono"
+              >{{ s.occurrence_count || s.occurrences?.length || 0 }} buổi</span
+            >
           </div>
 
           <div class="metric-item">
@@ -186,10 +193,17 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
                   :class="{
                     'status-paid': inv.status === 'paid',
                     'status-pending': inv.status === 'pending',
-                    'status-overdue': inv.status === 'overdue'
+                    'status-overdue': inv.status === 'overdue',
                   }"
                 >
-                  ● {{ inv.status === 'paid' ? 'Đã đóng' : inv.status === 'overdue' ? 'Quá hạn' : 'Chờ thanh toán' }}
+                  ●
+                  {{
+                    inv.status === 'paid'
+                      ? 'Đã đóng'
+                      : inv.status === 'overdue'
+                        ? 'Quá hạn'
+                        : 'Chờ thanh toán'
+                  }}
                 </span>
 
                 <AuraButton
@@ -212,12 +226,10 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
             <span class="occ-title">Các buổi sắp diễn ra:</span>
           </div>
           <div class="occ-chips-row">
-            <span
-              v-for="occ in s.occurrences.slice(0, 5)"
-              :key="occ.id"
-              class="occ-pill"
-            >
-              Buổi {{ occ.sequence }}: {{ formatDate(occ.starts_at) }} ({{ occ.starts_at.slice(11, 16) }})
+            <span v-for="occ in s.occurrences.slice(0, 5)" :key="occ.id" class="occ-pill">
+              Buổi {{ occ.sequence }}: {{ formatDate(occ.starts_at) }} ({{
+                occ.starts_at.slice(11, 16)
+              }})
             </span>
             <span v-if="s.occurrences.length > 5" class="occ-more">
               +{{ s.occurrences.length - 5 }} buổi nữa

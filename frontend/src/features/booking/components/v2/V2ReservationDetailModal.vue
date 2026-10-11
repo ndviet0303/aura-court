@@ -26,7 +26,9 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined header-icon">receipt_long</span>
           <div>
             <h3 class="modal-title">{{ t('v2Reservations.modal.detailsTitle') }}</h3>
-            <span class="modal-subtitle font-mono">{{ t('v2Reservations.modal.reservationCode', { code: reservation.code }) }}</span>
+            <span class="modal-subtitle font-mono">{{
+              t('v2Reservations.modal.reservationCode', { code: reservation.code })
+            }}</span>
           </div>
         </div>
         <button class="modal-close-btn" type="button" @click="emit('close')">
@@ -40,7 +42,10 @@ const emit = defineEmits<{
           <div class="info-group">
             <span class="info-label">{{ t('v2Reservations.modal.courtInfo') }}</span>
             <strong class="info-value">{{ reservation.court?.name || 'Aura Court' }}</strong>
-            <span class="info-sub">{{ reservation.court?.venue?.name || 'Aura Court' }} · {{ reservation.court?.venue?.address || '' }}</span>
+            <span class="info-sub"
+              >{{ reservation.court?.venue?.name || 'Aura Court' }} ·
+              {{ reservation.court?.venue?.address || '' }}</span
+            >
           </div>
           <div class="info-group">
             <span class="info-label">{{ t('v2Reservations.modal.statusLabel') }}</span>
@@ -76,11 +81,7 @@ const emit = defineEmits<{
         <div class="slots-table-section">
           <h4 class="section-heading">{{ t('v2Reservations.modal.slotsHeading') }}</h4>
           <div class="slots-list">
-            <div
-              v-for="(slot, idx) in reservation.slots"
-              :key="idx"
-              class="slot-table-row"
-            >
+            <div v-for="(slot, idx) in reservation.slots" :key="idx" class="slot-table-row">
               <div class="slot-info-col">
                 <span class="material-symbols-outlined">schedule</span>
                 <span class="font-mono">{{ formatTimeSlot(slot.starts_at, slot.ends_at) }}</span>
@@ -95,22 +96,37 @@ const emit = defineEmits<{
 
         <!-- Total Breakdown -->
         <div class="total-breakdown-card">
-          <div v-if="reservation.quote?.benefit_snapshot?.membership_discount_amount" class="breakdown-subline discount">
+          <div
+            v-if="reservation.quote?.benefit_snapshot?.membership_discount_amount"
+            class="breakdown-subline discount"
+          >
             <span>{{ t('v2Reservations.calculator.membershipDiscount') }}</span>
-            <strong class="font-mono text-pink">-{{ money(reservation.quote.benefit_snapshot.membership_discount_amount) }}</strong>
+            <strong class="font-mono text-pink"
+              >-{{ money(reservation.quote.benefit_snapshot.membership_discount_amount) }}</strong
+            >
           </div>
-          <div v-if="reservation.loyalty_discount_amount && reservation.loyalty_discount_amount > 0" class="loyalty-sub-breakdown">
+          <div
+            v-if="reservation.loyalty_discount_amount && reservation.loyalty_discount_amount > 0"
+            class="loyalty-sub-breakdown"
+          >
             <div class="breakdown-subline">
               <span>{{ t('loyalty.pointsUsed') || 'Điểm đã dùng' }}:</span>
               <strong class="font-mono">{{ reservation.loyalty_points_redeemed }}</strong>
             </div>
             <div class="breakdown-subline discount">
               <span>{{ t('loyalty.discountAmount') || 'Giảm giá điểm' }}:</span>
-              <strong class="font-mono text-pink">-{{ money(reservation.loyalty_discount_amount) }}</strong>
+              <strong class="font-mono text-pink"
+                >-{{ money(reservation.loyalty_discount_amount) }}</strong
+              >
             </div>
             <div class="breakdown-subline">
               <span>{{ t('loyalty.netPaid') || 'Thực trả từ ví' }}:</span>
-              <strong class="font-mono">{{ money(reservation.net_payable ?? (reservation.total_amount - reservation.loyalty_discount_amount)) }}</strong>
+              <strong class="font-mono">{{
+                money(
+                  reservation.net_payable ??
+                    reservation.total_amount - reservation.loyalty_discount_amount,
+                )
+              }}</strong>
             </div>
           </div>
           <div class="total-row">
@@ -192,7 +208,7 @@ const emit = defineEmits<{
 
 .header-icon {
   font-size: 24px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .modal-title {
@@ -277,7 +293,7 @@ const emit = defineEmits<{
 
 .quote-snapshot-box {
   background: linear-gradient(135deg, rgba(201, 161, 90, 0.08) 0%, rgba(107, 45, 63, 0.05) 100%);
-  border: 1px solid var(--accent, #C9A15A);
+  border: 1px solid var(--accent, #c9a15a);
   border-radius: 12px;
   padding: 12px 16px;
 }
@@ -288,7 +304,7 @@ const emit = defineEmits<{
   gap: 6px;
   font-size: 12px;
   font-weight: 800;
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   margin-bottom: 8px;
 }
 
@@ -367,7 +383,7 @@ const emit = defineEmits<{
 
 .total-price {
   font-size: 18px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .modal-footer {

@@ -10,11 +10,23 @@ import { errorMessage } from '@/core/utils/errorMessage'
 const props = defineProps<{
   show: boolean
   editingCourtId: number | null
-  courtForm: CourtForm
   venues: Venue[]
   sportZones: SportZone[]
   saving?: boolean
 }>()
+
+const name = defineModel<string>('name', { required: true })
+const venueId = defineModel<number>('venueId', { required: true })
+const sportZoneId = defineModel<number | null>('sportZoneId', { required: true })
+const surfaceType = defineModel<CourtForm['surface_type']>('surfaceType', { required: true })
+// A cleared number input yields '', which is not a valid capacity.
+const capacity = defineModel<number | null>('capacity', {
+  required: true,
+  set: (value) => (typeof value === 'number' ? value : null),
+})
+const isActive = defineModel<boolean>('isActive', { required: true })
+const description = defineModel<string>('description', { required: true })
+const imageUrl = defineModel<string>('imageUrl', { required: true })
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -70,17 +82,17 @@ const courtDescriptionTags = computed(() => [
 ])
 
 function toggleDescriptionTag(tagLabel: string) {
-  if (!props.courtForm.description) {
-    props.courtForm.description = tagLabel
+  if (!description.value) {
+    description.value = tagLabel
     return
   }
-  if (props.courtForm.description.includes(tagLabel)) {
-    props.courtForm.description = props.courtForm.description
+  if (description.value.includes(tagLabel)) {
+    description.value = description.value
       .replace(new RegExp(`(^|,\\s*)` + tagLabel.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')), '')
       .replace(/^,\s*/, '')
       .trim()
   } else {
-    props.courtForm.description = `${props.courtForm.description}, ${tagLabel}`
+    description.value = `${description.value}, ${tagLabel}`
   }
 }
 
@@ -96,7 +108,7 @@ async function handleFileUpload(event: Event) {
     const formData = new FormData()
     formData.append('image', file)
     const res = await adminApi.uploadImage(formData)
-    props.courtForm.image_url = res.url
+    imageUrl.value = res.url
   } catch (err: unknown) {
     uploadError.value = errorMessage(err, t('admin.manage.uploadImageError'))
   } finally {
@@ -121,13 +133,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="show" class="modal-backdrop" role="dialog" aria-modal="true" @click.self="emit('close')">
+  <div
+    v-if="show"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    @click.self="emit('close')"
+  >
     <div class="modal-card modal-lg">
       <div class="modal-header">
         <div class="title-with-icon">
-          <span class="material-symbols-outlined card-title-icon">{{ editingCourtId ? 'edit' : 'add_circle' }}</span>
+          <span class="material-symbols-outlined card-title-icon">{{
+            editingCourtId ? 'edit' : 'add_circle'
+          }}</span>
           <h3 class="modal-title">
-            {{ editingCourtId ? t('admin.manage.editCourtModalTitle') : t('admin.manage.addCourtModalTitle') }}
+            {{
+              editingCourtId
+                ? t('admin.manage.editCourtModalTitle')
+                : t('admin.manage.addCourtModalTitle')
+            }}
           </h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
@@ -138,9 +162,11 @@ onBeforeUnmount(() => {
 
         <div class="modal-form-grid">
           <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label>
+            <label class="form-label"
+              >{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label
+            >
             <input
-              v-model="courtForm.name"
+              v-model="name"
               type="text"
               class="form-input"
               :placeholder="t('admin.manage.courtNamePlaceholder')"
@@ -148,8 +174,10 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.venueLabel') }} <span class="required">*</span>:</label>
-            <select v-model="courtForm.venue_id" class="form-input">
+            <label class="form-label"
+              >{{ t('admin.manage.venueLabel') }} <span class="required">*</span>:</label
+            >
+            <select v-model="venueId" class="form-input">
               <option v-for="v in venues" :key="v.id" :value="v.id">
                 {{ resolveLocalizedText(v.name) }}
               </option>
@@ -158,9 +186,13 @@ onBeforeUnmount(() => {
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.sportZoneLabel') }}</label>
-            <select v-model="courtForm.sport_zone_id" class="form-input">
+            <select v-model="sportZoneId" class="form-input">
               <option :value="null">{{ t('admin.manage.defaultSportZone') }}</option>
-              <option v-for="z in sportZones.filter(sz => sz.venue_id === courtForm.venue_id)" :key="z.id" :value="z.id">
+              <option
+                v-for="z in sportZones.filter((sz) => sz.venue_id === venueId)"
+                :key="z.id"
+                :value="z.id"
+              >
                 {{ resolveLocalizedText(z.name) }}
               </option>
             </select>
@@ -168,7 +200,7 @@ onBeforeUnmount(() => {
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtSurfaceLabel') }}</label>
-            <select v-model="courtForm.surface_type" class="form-input">
+            <select v-model="surfaceType" class="form-input">
               <option value="">{{ t('admin.manage.unspecified') }}</option>
               <option value="wood">{{ t('admin.manage.surfaceWood') }}</option>
               <option value="synthetic">{{ t('admin.manage.surfaceSynthetic') }}</option>
@@ -183,13 +215,13 @@ onBeforeUnmount(() => {
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtCapacityLabel') }}</label>
-            <input v-model.number="courtForm.capacity" type="number" class="form-input" min="1" max="100" />
+            <input v-model.number="capacity" type="number" class="form-input" min="1" max="100" />
           </div>
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtStatusLabel') }}</label>
             <label class="toggle-check-label">
-              <input v-model="courtForm.is_active" type="checkbox" />
+              <input v-model="isActive" type="checkbox" />
               <span>{{ t('admin.manage.allowBookingCheckbox') }}</span>
             </label>
           </div>
@@ -197,7 +229,7 @@ onBeforeUnmount(() => {
           <div class="form-group full-width">
             <label class="form-label">{{ t('admin.manage.courtDescLabel') }}</label>
             <textarea
-              v-model="courtForm.description"
+              v-model="description"
               rows="2"
               class="form-textarea"
               :placeholder="t('admin.manage.courtDescPlaceholder')"
@@ -210,7 +242,7 @@ onBeforeUnmount(() => {
                 :key="tag.label"
                 type="button"
                 class="tag-btn"
-                :class="{ active: courtForm.description?.includes(tag.label) }"
+                :class="{ active: description.includes(tag.label) }"
                 @click="toggleDescriptionTag(tag.label)"
               >
                 + {{ tag.label }}
@@ -222,7 +254,7 @@ onBeforeUnmount(() => {
             <label class="form-label">{{ t('admin.manage.courtImageLabel') }}</label>
             <div class="img-input-row">
               <input
-                v-model="courtForm.image_url"
+                v-model="imageUrl"
                 type="text"
                 class="form-input"
                 :placeholder="t('admin.manage.courtImagePlaceholder')"
@@ -255,7 +287,7 @@ onBeforeUnmount(() => {
                 :key="preset.name"
                 type="button"
                 class="preset-thumb-btn"
-                @click="courtForm.image_url = preset.url"
+                @click="imageUrl = preset.url"
               >
                 <img :src="preset.url" :alt="preset.name" />
                 <span>{{ preset.name }}</span>
@@ -266,11 +298,13 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">
+          {{ t('common.cancel') }}
+        </button>
         <button
           type="button"
           class="btn-primary"
-          :disabled="saving || !courtForm.name.trim()"
+          :disabled="saving || !name.trim()"
           @click="emit('save')"
         >
           <span v-if="saving">{{ t('admin.manage.savingText') }}</span>

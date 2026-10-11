@@ -22,7 +22,7 @@ class ReviewHostKyc
     {
         $kyc = $this->kycRepository->findById($data->kycId);
 
-        if (!$kyc) {
+        if (! $kyc) {
             throw new InvalidArgumentException("Hồ sơ KYC #{$data->kycId} không tồn tại.");
         }
 

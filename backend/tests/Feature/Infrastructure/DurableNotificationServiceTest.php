@@ -5,6 +5,7 @@ namespace Tests\Feature\Infrastructure;
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Models\HostKyc;
 use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\OutboxMessage;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformPlan;
@@ -63,7 +64,7 @@ class DurableNotificationServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $org = Organization::create(['name' => 'Notif Org', 'slug' => 'notif-org', 'status' => 'active']);
-        \App\Models\OrganizationMember::create([
+        OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $user->id,
             'role' => 'organization_owner',

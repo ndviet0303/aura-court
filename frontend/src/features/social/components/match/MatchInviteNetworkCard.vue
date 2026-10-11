@@ -19,11 +19,11 @@ const emit = defineEmits<{
       <div class="section-title-wrap">
         <span class="material-symbols-outlined head-icon">person_add</span>
         <h3 class="section-title">Mời Trực Tiếp Bạn Chơi & Đồng Đội</h3>
-        <span v-if="selectedCount > 0" class="selected-badge">
-          Đã chọn {{ selectedCount }}
-        </span>
+        <span v-if="selectedCount > 0" class="selected-badge"> Đã chọn {{ selectedCount }} </span>
       </div>
-      <span class="section-desc">Gửi lời mời trực tiếp đến bạn bè quen thuộc trong mạng lưới Aura</span>
+      <span class="section-desc"
+        >Gửi lời mời trực tiếp đến bạn bè quen thuộc trong mạng lưới Aura</span
+      >
     </div>
 
     <!-- Search Friends Filter -->

@@ -16,27 +16,33 @@ export const partnerRegistrationApi = {
     return api.post<{ data: PartnerApplication; message: string }>('/partner/application/start', {})
   },
 
-  saveDraft: async (id: number, payload: SaveDraftPayload): Promise<{ data: PartnerApplication; message: string }> => {
-    return api.put<{ data: PartnerApplication; message: string }>(`/partner/application/${id}`, payload)
+  saveDraft: async (
+    id: number,
+    payload: SaveDraftPayload,
+  ): Promise<{ data: PartnerApplication; message: string }> => {
+    return api.put<{ data: PartnerApplication; message: string }>(
+      `/partner/application/${id}`,
+      payload,
+    )
   },
 
   uploadDocument: async (
     id: number,
-    formData: FormData
+    formData: FormData,
   ): Promise<{ data: PartnerDocument; message: string }> => {
     return api.post<{ data: PartnerDocument; message: string }>(
       `/partner/application/${id}/documents`,
-      formData
+      formData,
     )
   },
 
   submitApplication: async (
     id: number,
-    payload: SubmitApplicationPayload
+    payload: SubmitApplicationPayload,
   ): Promise<{ data: PartnerApplication; message: string }> => {
     return api.post<{ data: PartnerApplication; message: string }>(
       `/partner/application/${id}/submit`,
-      payload
+      payload,
     )
   },
 

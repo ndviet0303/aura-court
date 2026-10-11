@@ -30,7 +30,7 @@ export function validateDatabaseForTeardown(dbName: string, expectedRunId: strin
   const expectedPrefix = `booking_e2e_${expectedRunId}_test`
   if (dbName !== expectedPrefix) {
     throw new TeardownSafetyError(
-      `CRITICAL: Target database "${dbName}" does not match manifest run ID "${expectedPrefix}".`
+      `CRITICAL: Target database "${dbName}" does not match manifest run ID "${expectedPrefix}".`,
     )
   }
 
@@ -56,7 +56,7 @@ export function validateManifestForTeardown(manifest: RunManifest): void {
   const resolvedTempDir = path.resolve(manifest.tempDir || '')
   if (resolvedTempDir !== expectedCanonicalTempDir) {
     throw new TeardownSafetyError(
-      `CRITICAL: Manifest tempDir "${manifest.tempDir}" does not equal canonical path "${expectedCanonicalTempDir}".`
+      `CRITICAL: Manifest tempDir "${manifest.tempDir}" does not equal canonical path "${expectedCanonicalTempDir}".`,
     )
   }
 
@@ -64,7 +64,7 @@ export function validateManifestForTeardown(manifest: RunManifest): void {
   const allowedHosts = ['127.0.0.1', 'localhost', '::1']
   if (!allowedHosts.includes(manifest.database?.host)) {
     throw new TeardownSafetyError(
-      `CRITICAL: Manifest database host "${manifest.database?.host}" is not local loopback.`
+      `CRITICAL: Manifest database host "${manifest.database?.host}" is not local loopback.`,
     )
   }
 
@@ -77,7 +77,7 @@ export function validateManifestForTeardown(manifest: RunManifest): void {
  */
 export async function terminateProcess(
   pid: number | undefined,
-  expectedKeywords: string[] = []
+  expectedKeywords: string[] = [],
 ): Promise<boolean> {
   if (!pid || pid <= 0) return false
 
@@ -103,7 +103,7 @@ export async function terminateProcess(
       const matches = expectedKeywords.every((keyword) => cmd.includes(keyword.toLowerCase()))
       if (!matches) {
         console.warn(
-          `[Teardown Safety] Refusing to kill PID ${pid}: command "${cmd.trim()}" does not match all required keywords [${expectedKeywords.join(', ')}]. Possible PID reuse.`
+          `[Teardown Safety] Refusing to kill PID ${pid}: command "${cmd.trim()}" does not match all required keywords [${expectedKeywords.join(', ')}]. Possible PID reuse.`,
         )
         return false
       }
@@ -185,7 +185,7 @@ export function dropDedicatedDatabase(
   dbName: string,
   host: string = '127.0.0.1',
   port: number = 5432,
-  user: string = 'ziet'
+  user: string = 'ziet',
 ): boolean {
   try {
     execFileSync('dropdb', ['-h', host, '-p', String(port), '-U', user, '--if-exists', dbName], {
@@ -213,7 +213,7 @@ export function dropDedicatedDatabase(
         {
           stdio: ['ignore', 'pipe', 'pipe'],
           encoding: 'utf-8',
-        }
+        },
       )
       return true
     } catch (secondError) {
@@ -228,7 +228,7 @@ export function dropDedicatedDatabase(
  */
 export async function teardownEnvironment(
   manifest: RunManifest,
-  options: { preserveOnFailure?: boolean } = {}
+  options: { preserveOnFailure?: boolean } = {},
 ): Promise<void> {
   if (manifest.status === 'torn_down') {
     return
@@ -252,7 +252,7 @@ export async function teardownEnvironment(
         }).toLowerCase()
         if (!cmd.includes('<defunct>') && !cmd.includes('zombie')) {
           throw new TeardownSafetyError(
-            `CRITICAL: Backend process (PID ${manifest.backend.pid}) failed to terminate or PID does not match ownership.`
+            `CRITICAL: Backend process (PID ${manifest.backend.pid}) failed to terminate or PID does not match ownership.`,
           )
         }
       } catch (e) {
@@ -276,7 +276,7 @@ export async function teardownEnvironment(
         }).toLowerCase()
         if (!cmd.includes('<defunct>') && !cmd.includes('zombie')) {
           throw new TeardownSafetyError(
-            `CRITICAL: Frontend process (PID ${manifest.frontend.pid}) failed to terminate or PID does not match ownership.`
+            `CRITICAL: Frontend process (PID ${manifest.frontend.pid}) failed to terminate or PID does not match ownership.`,
           )
         }
       } catch (e) {
@@ -291,11 +291,11 @@ export async function teardownEnvironment(
       manifest.database.name,
       manifest.database.host,
       manifest.database.port,
-      manifest.database.user
+      manifest.database.user,
     )
     if (!dropped) {
       throw new TeardownSafetyError(
-        `CRITICAL: Failed to drop dedicated database "${manifest.database.name}".`
+        `CRITICAL: Failed to drop dedicated database "${manifest.database.name}".`,
       )
     }
   }
@@ -327,7 +327,9 @@ export function registerExitHandlers(manifestGetter: () => RunManifest | null): 
 
     const manifest = manifestGetter()
     if (manifest && manifest.status !== 'torn_down') {
-      console.log(`\n[E2E Runner] Received ${signal || 'exit'}, running manifest teardown for run ${manifest.runId}...`)
+      console.log(
+        `\n[E2E Runner] Received ${signal || 'exit'}, running manifest teardown for run ${manifest.runId}...`,
+      )
       try {
         await teardownEnvironment(manifest)
       } catch (err) {

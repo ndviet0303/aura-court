@@ -4,7 +4,7 @@ import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { DenominationCount } from '../../composables/useAdminShiftReconciliation'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   denominations: DenominationCount[]
   totalCash: number
@@ -39,40 +39,19 @@ const { t } = useI18n()
             <span class="text-right">{{ t('admin.shifts.hdrSubtotal') }}</span>
           </div>
 
-          <div
-            v-for="d in denominations"
-            :key="d.value"
-            class="denom-row"
-          >
+          <div v-for="d in denominations" :key="d.value" class="denom-row">
             <strong class="denom-val font-mono">{{ formatCurrency(d.value) }}</strong>
-            
+
             <div class="count-input-group">
-              <input
-                v-model.number="d.count"
-                type="number"
-                min="0"
-                class="denom-input font-mono"
-              />
+              <input v-model.number="d.count" type="number" min="0" class="denom-input font-mono" />
               <div class="quick-increment-btns">
-                <button
-                  type="button"
-                  class="btn-increment"
-                  @click="emit('increment', d.value, 1)"
-                >
+                <button type="button" class="btn-increment" @click="emit('increment', d.value, 1)">
                   +1
                 </button>
-                <button
-                  type="button"
-                  class="btn-increment"
-                  @click="emit('increment', d.value, 5)"
-                >
+                <button type="button" class="btn-increment" @click="emit('increment', d.value, 5)">
                   +5
                 </button>
-                <button
-                  type="button"
-                  class="btn-increment"
-                  @click="emit('increment', d.value, 10)"
-                >
+                <button type="button" class="btn-increment" @click="emit('increment', d.value, 10)">
                   +10
                 </button>
                 <button
@@ -321,8 +300,12 @@ const { t } = useI18n()
   border-top: 1px solid var(--outline);
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
 :global(html.dark) .modal-card {
   background: var(--surface, #1e191c);

@@ -21,7 +21,10 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:activeTab', tab: 'all' | 'open' | 'my_matches' | 'partners' | 'feed' | 'connections'): void
+  (
+    e: 'update:activeTab',
+    tab: 'all' | 'open' | 'my_matches' | 'partners' | 'feed' | 'connections',
+  ): void
   (e: 'update:searchQuery', val: string): void
   (e: 'update:selectedSport', sport: SocialSportType): void
   (e: 'update:selectedSkill', skill: string): void
@@ -30,7 +33,6 @@ const emit = defineEmits<{
   (e: 'update:selectedBadmintonSkill', skill: string): void
   (e: 'reset'): void
 }>()
-
 
 const sportsList = computed<Array<{ id: SocialSportType; label: string; icon: string }>>(() => [
   { id: 'all', label: t('matchmaking.filterAllSports'), icon: 'sports' },
@@ -221,7 +223,12 @@ const badmintonSkillOptions = [
         </div>
 
         <AuraButton
-          v-if="searchQuery || selectedSport !== 'all' || selectedSkill !== 'all' || selectedCity !== 'all'"
+          v-if="
+            searchQuery ||
+            selectedSport !== 'all' ||
+            selectedSkill !== 'all' ||
+            selectedCity !== 'all'
+          "
           variant="ghost"
           size="md"
           icon="restart_alt"
@@ -374,7 +381,9 @@ const badmintonSkillOptions = [
   color: var(--ink);
   font-size: 13.5px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input:focus {

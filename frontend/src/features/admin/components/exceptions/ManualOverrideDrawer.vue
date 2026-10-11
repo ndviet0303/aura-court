@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import { SelectDropdown, AuraButton } from '@/shared/components'
@@ -25,13 +25,20 @@ function localizeDescription(item?: FinancialException | null): string {
     return t(`admin.exceptions.descriptions.${item.type}`)
   }
   const desc = resolveLocalizedText(item.description)
-  if (desc.includes('Vượt hạn mức') || desc.includes('Deposit limit')) return t('admin.exceptions.descriptions.limit_exceeded')
-  if (desc.includes('Lệch đối soát') || desc.includes('settlement mismatch')) return t('admin.exceptions.descriptions.settlement_mismatch')
-  if (desc.includes('Hoàn tiền hủy') || desc.includes('cancellation refund')) return t('admin.exceptions.descriptions.late_refund')
-  if (desc.includes('săn voucher') || desc.includes('voucher hunting')) return t('admin.exceptions.descriptions.voucher_hunting')
-  if (desc.includes('Lệch cọc') || desc.includes('deposit hold mismatch')) return t('admin.exceptions.descriptions.deposit_hold_mismatch')
-  if (desc.includes('Trùng lặp') || desc.includes('Duplicate QR')) return t('admin.exceptions.descriptions.duplicate_charge')
-  if (desc.includes('ngập sân') || desc.includes('court flooding')) return t('admin.exceptions.descriptions.court_flooded_refund')
+  if (desc.includes('Vượt hạn mức') || desc.includes('Deposit limit'))
+    return t('admin.exceptions.descriptions.limit_exceeded')
+  if (desc.includes('Lệch đối soát') || desc.includes('settlement mismatch'))
+    return t('admin.exceptions.descriptions.settlement_mismatch')
+  if (desc.includes('Hoàn tiền hủy') || desc.includes('cancellation refund'))
+    return t('admin.exceptions.descriptions.late_refund')
+  if (desc.includes('săn voucher') || desc.includes('voucher hunting'))
+    return t('admin.exceptions.descriptions.voucher_hunting')
+  if (desc.includes('Lệch cọc') || desc.includes('deposit hold mismatch'))
+    return t('admin.exceptions.descriptions.deposit_hold_mismatch')
+  if (desc.includes('Trùng lặp') || desc.includes('Duplicate QR'))
+    return t('admin.exceptions.descriptions.duplicate_charge')
+  if (desc.includes('ngập sân') || desc.includes('court flooding'))
+    return t('admin.exceptions.descriptions.court_flooded_refund')
   return desc
 }
 
@@ -48,7 +55,11 @@ const hasSigned = ref(false)
 
 const actionOptions = computed<DropdownOption[]>(() => [
   { value: 'refund', label: t('admin.exceptions.optManualRefund'), icon: 'currency_exchange' },
-  { value: 'rebalance', label: t('admin.exceptions.optWalletRebalance'), icon: 'account_balance_wallet' },
+  {
+    value: 'rebalance',
+    label: t('admin.exceptions.optWalletRebalance'),
+    icon: 'account_balance_wallet',
+  },
   { value: 'unflag', label: t('admin.exceptions.optUnflagWithdrawal'), icon: 'lock_open' },
   { value: 'cancel_lock', label: t('admin.exceptions.optCancelAndLock'), icon: 'block' },
 ])
@@ -66,7 +77,7 @@ watch(
       await nextTick()
       initCanvas()
     }
-  }
+  },
 )
 
 function initCanvas() {
@@ -238,13 +249,26 @@ function handleSubmit() {
           <div class="summary-row">
             <span class="summary-label">{{ t('admin.exceptions.entityLabel') }}</span>
             <span class="font-medium text-ink">
-              {{ resolveLocalizedText(item.metadata?.user?.name || item.resolver?.name || t('admin.schedule.systemUser')) }}
-              <span class="text-muted font-mono">({{ item.metadata?.user?.id || (item.resolver?.id ? `UID-${item.resolver.id}` : 'SYS') }})</span>
+              {{
+                resolveLocalizedText(
+                  item.metadata?.user?.name ||
+                    item.resolver?.name ||
+                    t('admin.schedule.systemUser'),
+                )
+              }}
+              <span class="text-muted font-mono"
+                >({{
+                  item.metadata?.user?.id ||
+                  (item.resolver?.id ? `UID-${item.resolver.id}` : 'SYS')
+                }})</span
+              >
             </span>
           </div>
           <div class="summary-row">
             <span class="summary-label">{{ t('admin.exceptions.requestedAmountLabel') }}</span>
-            <span class="font-mono font-bold text-critical amount-large">{{ formatCurrency(item.amount) }}</span>
+            <span class="font-mono font-bold text-critical amount-large">{{
+              formatCurrency(item.amount)
+            }}</span>
           </div>
           <div class="summary-row">
             <span class="summary-label">{{ t('admin.exceptions.alertReasonLabel') }}</span>
@@ -259,11 +283,7 @@ function handleSubmit() {
             <span>{{ t('admin.exceptions.actionTypeLabel') }}</span>
             <span class="text-critical">*</span>
           </label>
-          <SelectDropdown
-            v-model="actionType"
-            :options="actionOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="actionType" :options="actionOptions" variant="bordered" />
         </div>
 
         <!-- 2. Audit Reason Textarea -->
@@ -310,7 +330,12 @@ function handleSubmit() {
                 <span class="file-size">{{ (proofFile.size / 1024).toFixed(1) }} KB</span>
               </div>
             </div>
-            <button type="button" class="btn-remove-file" :title="t('admin.exceptions.removeFile')" @click="removeFile">
+            <button
+              type="button"
+              class="btn-remove-file"
+              :title="t('admin.exceptions.removeFile')"
+              @click="removeFile"
+            >
               <span class="material-symbols-outlined icon-18">delete</span>
             </button>
           </div>
@@ -367,11 +392,7 @@ function handleSubmit() {
         <AuraButton variant="outline" @click="emit('close')">
           <span>{{ t('common.cancel') }}</span>
         </AuraButton>
-        <AuraButton
-          variant="primary"
-          :disabled="loading"
-          @click="handleSubmit"
-        >
+        <AuraButton variant="primary" :disabled="loading" @click="handleSubmit">
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">
             {{ loading ? 'sync' : 'verified' }}
           </span>
@@ -582,7 +603,9 @@ function handleSubmit() {
   background: var(--surface-container-low, #f8f9fa);
   padding: 16px;
   text-align: center;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .file-dropzone:hover {
@@ -761,22 +784,40 @@ function handleSubmit() {
   justify-content: flex-end;
 }
 
-.text-critical { color: #ba1a1a; }
-.text-success { color: #10b981; }
-.text-muted { color: var(--muted, #817476); }
-.text-ink { color: var(--ink, #191c1d); }
-.pointer-events-none { pointer-events: none; }
+.text-critical {
+  color: #ba1a1a;
+}
+.text-success {
+  color: #10b981;
+}
+.text-muted {
+  color: var(--muted, #817476);
+}
+.text-ink {
+  color: var(--ink, #191c1d);
+}
+.pointer-events-none {
+  pointer-events: none;
+}
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
-.icon-24 { font-size: 24px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
+.icon-24 {
+  font-size: 24px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Fade Transitions */
@@ -789,4 +830,3 @@ function handleSubmit() {
   opacity: 0;
 }
 </style>
-

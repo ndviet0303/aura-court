@@ -183,4 +183,3 @@ class MembershipPlanSeeder extends Seeder
         }
     }
 }
-

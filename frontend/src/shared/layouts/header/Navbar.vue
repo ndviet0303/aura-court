@@ -25,11 +25,14 @@ onMounted(() => {
   }
 })
 
-watch(() => auth.user, (user) => {
-  if (user) {
-    bookingStore.fetchWalletBalance().catch(() => {})
-  }
-})
+watch(
+  () => auth.user,
+  (user) => {
+    if (user) {
+      bookingStore.fetchWalletBalance().catch(() => {})
+    }
+  },
+)
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -67,7 +70,9 @@ watch(() => route.path, closeMobileMenu)
           :title="`Số dư ví: ${formatCurrency(bookingStore.walletBalance)} · Bấm để quản lý ví`"
         >
           <span class="material-symbols-outlined wallet-pill-icon">account_balance_wallet</span>
-          <span class="wallet-pill-amount font-mono">{{ formatShortCurrency(bookingStore.walletBalance) }}</span>
+          <span class="wallet-pill-amount font-mono">{{
+            formatShortCurrency(bookingStore.walletBalance)
+          }}</span>
         </RouterLink>
 
         <!-- Notification Bell Icon Button (when authenticated) -->
@@ -84,7 +89,10 @@ watch(() => route.path, closeMobileMenu)
           :aria-expanded="isMobileMenuOpen"
           aria-label="Toggle navigation menu"
         >
-          <span class="material-symbols-outlined menu-icon" :class="{ 'is-open': isMobileMenuOpen }">
+          <span
+            class="material-symbols-outlined menu-icon"
+            :class="{ 'is-open': isMobileMenuOpen }"
+          >
             {{ isMobileMenuOpen ? 'close' : 'menu' }}
           </span>
         </button>
@@ -111,7 +119,9 @@ watch(() => route.path, closeMobileMenu)
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--outline, rgba(0, 0, 0, 0.06));
   box-sizing: border-box;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .topbar-inner {

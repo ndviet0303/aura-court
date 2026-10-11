@@ -2,11 +2,10 @@
 
 namespace App\Services\Finance;
 
-use App\Services\Payment\PaymentProviderManager;
-
 use App\Contracts\Payment\BeneficiaryValidationRequest;
 use App\Models\Beneficiary;
 use App\Models\Organization;
+use App\Services\Payment\PaymentProviderManager;
 
 class BeneficiaryService
 {

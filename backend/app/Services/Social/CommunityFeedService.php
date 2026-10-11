@@ -10,7 +10,6 @@ use App\Models\ModerationRecord;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 class CommunityFeedService
 {
@@ -23,7 +22,7 @@ class CommunityFeedService
      */
     public function canViewPost(FeedPost $post, User $viewer, bool $isModerator = false): bool
     {
-        if ($post->is_hidden && !$isModerator && $post->user_id !== $viewer->id) {
+        if ($post->is_hidden && ! $isModerator && $post->user_id !== $viewer->id) {
             return false;
         }
 
@@ -40,8 +39,10 @@ class CommunityFeedService
             if ($isModerator && $post->reports()->exists()) {
                 return true;
             }
+
             return $this->friendships->areFriends($post->user_id, $viewer->id);
         }
+
         return false;
     }
 

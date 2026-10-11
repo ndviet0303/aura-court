@@ -143,7 +143,7 @@ const emit = defineEmits<{
 }
 
 .tab-btn.active {
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #fff);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.2);
@@ -198,11 +198,13 @@ const emit = defineEmits<{
   color: var(--ink);
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input:focus {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.12);
 }
 

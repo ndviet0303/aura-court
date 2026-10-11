@@ -5,7 +5,7 @@ import { AuraButton, DatePicker, SelectDropdown, type DropdownOption } from '@/s
 import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 import type { AuditLogItem } from '../../composables/useAdminStaff'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     logs: AuditLogItem[]
     searchQuery?: string
@@ -18,7 +18,7 @@ const props = withDefaults(
     actionFilter: 'all',
     dateFilter: '',
     loading: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -52,7 +52,9 @@ const actionFilterOptions = computed<DropdownOption[]>(() => [
       </div>
 
       <AuraButton variant="secondary" size="sm" :disabled="loading" @click="emit('refresh')">
-        <span class="material-symbols-outlined icon-16" :class="{ 'spin-icon': loading }">refresh</span>
+        <span class="material-symbols-outlined icon-16" :class="{ 'spin-icon': loading }"
+          >refresh</span
+        >
         <span>{{ t('admin.staff.refreshBtn') }}</span>
       </AuraButton>
     </div>
@@ -265,7 +267,9 @@ const actionFilterOptions = computed<DropdownOption[]>(() => [
   background: var(--surface);
   align-items: center;
   gap: 16px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .audit-item-row:hover {
@@ -385,8 +389,12 @@ const actionFilterOptions = computed<DropdownOption[]>(() => [
   color: var(--muted);
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
 :global(html.dark) .audit-logs-container,
 :global(html.dark) .audit-item-row,
@@ -397,14 +405,14 @@ const actionFilterOptions = computed<DropdownOption[]>(() => [
 
 :global(html.dark) .audit-search-input {
   background: var(--surface-subtle, #262024);
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
   border-color: var(--outline, #4d4049);
 }
 
 :global(html.dark) .actor-name,
 :global(html.dark) .action-title,
 :global(html.dark) .timestamp-row {
-  color: var(--ink, #FAF7F3);
+  color: var(--ink, #faf7f3);
 }
 
 @media (max-width: 900px) {

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Booking;
 
+use App\Models\Booking;
+use App\Models\BookingSlot;
+use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
@@ -154,6 +157,54 @@ class SplitPaymentReceiptVerificationTest extends TestCase
 
         // CRITICAL INVARIANT: Host wallet is NOT debited a second time!
         $this->assertSame($initialBalance, (int) $hostWallet->fresh()->balance);
+    }
+
+    public function test_completed_split_confirms_the_mapped_legacy_booking(): void
+    {
+        $fixture = $this->tenant();
+        $reservation = $this->createHeldReservation($fixture, 200000);
+        $slot = $reservation->slots()->firstOrFail();
+        $booking = Booking::create([
+            'code' => 'BK-SPLIT-'.Str::upper(Str::random(8)),
+            'user_id' => $fixture['host']->id,
+            'court_id' => $fixture['court']->id,
+            'total_amount' => 200000,
+            'status' => 'pending_payment',
+            'payment_model' => 'direct_owner_v1',
+        ]);
+        $legacySlot = BookingSlot::create([
+            'booking_id' => $booking->id,
+            'court_id' => $fixture['court']->id,
+            'starts_at' => $slot->starts_at,
+            'ends_at' => $slot->ends_at,
+            'unit_price' => 200000,
+            'status' => 'held',
+        ]);
+        $mapping = LegacyBookingMapping::create([
+            'organization_id' => $fixture['organization']->id,
+            'reservation_id' => $reservation->id,
+            'legacy_booking_id' => $booking->id,
+            'legacy_code' => $booking->code,
+            'legacy_status' => 'pending_payment',
+            'legacy_total_amount' => 200000,
+            'legacy_slot_count' => 1,
+            'source_checksum' => hash('sha256', 'split-legacy'),
+            'migrated_at' => now(),
+        ]);
+        $group = app(SplitPaymentService::class)->create($reservation, $fixture['host'], [
+            ['amount' => 100000],
+            ['amount' => 100000],
+        ]);
+
+        foreach ($group->shares as $share) {
+            $attempt = OwnerPaymentAttempt::where('purpose_id', 'split_group:'.$group->id.':share:'.$share->id)->firstOrFail();
+            $this->sendOwnerPayment($fixture, $attempt->reference, 100000, 'split-legacy-evt-'.$share->share_number);
+        }
+
+        $this->assertSame('confirmed', $reservation->fresh()->status);
+        $this->assertSame('confirmed', $booking->fresh()->status);
+        $this->assertSame('confirmed', $legacySlot->fresh()->status);
+        $this->assertSame('confirmed', $mapping->fresh()->legacy_status);
     }
 
     public function test_host_shortfall_coverage_creates_payment_obligation_and_requires_verified_receipt(): void

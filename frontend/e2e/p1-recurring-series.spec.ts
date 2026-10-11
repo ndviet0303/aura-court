@@ -13,7 +13,9 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     })
   })
 
-  test('8.1.1: Xem trước chuỗi đặt định kỳ nhiều tuần & tính toán (ngày chơi, số buổi, thời lượng & tổng tiền)', async ({ page }) => {
+  test('8.1.1: Xem trước chuỗi đặt định kỳ nhiều tuần & tính toán (ngày chơi, số buổi, thời lượng & tổng tiền)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -67,11 +69,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       echo json_encode(['court_id' => $court->id]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { court_id: number }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { court_id: number }
 
     const courtId = arranged.court_id
     expect(courtId).toBeGreaterThan(0)
@@ -91,20 +95,24 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     // Request 4 weekly occurrences on Monday, 09:00 - 11:00 (2 hours per session = 200,000 VND per occurrence)
     // Starting on next Monday
     const nextMonday = new Date()
-    const daysUntilNextMonday = ((1 + 7 - nextMonday.getDay()) % 7) || 7
+    const daysUntilNextMonday = (1 + 7 - nextMonday.getDay()) % 7 || 7
     nextMonday.setDate(nextMonday.getDate() + daysUntilNextMonday)
     const startDateStr = nextMonday.toISOString().slice(0, 10)
 
-    const previewResult = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate }) => {
-      return await apiV2.post('/recurring-series/preview', {
-        court_id: courtId,
-        frequency: 'weekly',
-        weekdays: [1],
-        starts_at: `${startDate} 09:00:00`,
-        ends_at: `${startDate} 11:00:00`,
-        occurrences: 4,
-      })
-    }, { courtId, startDate: startDateStr }) as {
+    const previewResult = (await withE2EApi(
+      page,
+      async ({ apiV2 }, { courtId, startDate }) => {
+        return await apiV2.post('/recurring-series/preview', {
+          court_id: courtId,
+          frequency: 'weekly',
+          weekdays: [1],
+          starts_at: `${startDate} 09:00:00`,
+          ends_at: `${startDate} 11:00:00`,
+          occurrences: 4,
+        })
+      },
+      { courtId, startDate: startDateStr },
+    )) as {
       frequency: string
       weekdays: number[]
       count: number
@@ -143,7 +151,9 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     expect(previewResult.total_amount).toBe(800000)
   })
 
-  test('8.1.2: Xử lý xung đột: Chính sách all-or-nothing từ chối cả chuỗi với mã lỗi 409 conflict', async ({ page }) => {
+  test('8.1.2: Xử lý xung đột: Chính sách all-or-nothing từ chối cả chuỗi với mã lỗi 409 conflict', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -236,11 +246,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { court_id: number; conflict_date: string }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { court_id: number; conflict_date: string }
 
     const courtId = arranged.court_id
 
@@ -257,43 +269,58 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     // 3. Preview 3-week series on Tuesday 14:00 - 16:00
     const nextTuesdayDate = arranged.conflict_date
 
-    const preview = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate }) => {
-      return await apiV2.post('/recurring-series/preview', {
-        court_id: courtId,
-        frequency: 'weekly',
-        weekdays: [2], // Tuesday
-        starts_at: `${startDate} 14:00:00`,
-        ends_at: `${startDate} 16:00:00`,
-        occurrences: 3,
-      })
-    }, { courtId, startDate: nextTuesdayDate }) as any
+    const preview = (await withE2EApi(
+      page,
+      async ({ apiV2 }, { courtId, startDate }) => {
+        return await apiV2.post('/recurring-series/preview', {
+          court_id: courtId,
+          frequency: 'weekly',
+          weekdays: [2], // Tuesday
+          starts_at: `${startDate} 14:00:00`,
+          ends_at: `${startDate} 16:00:00`,
+          occurrences: 3,
+        })
+      },
+      { courtId, startDate: nextTuesdayDate },
+    )) as any
 
     // Occurrence 1 has conflict!
     expect(preview.occurrences[0].conflict).toBe(true)
     expect(preview.occurrences[0].conflict_reason).toBeDefined()
 
     // 4. Attempt to submit with all_or_nothing policy: MUST be rejected with 409!
-    const submitAttempt = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate, preview }) => {
-      try {
-        const payload = {
-          court_id: courtId,
-          frequency: 'weekly',
-          weekdays: [2],
-          starts_at: `${startDate} 14:00:00`,
-          ends_at: `${startDate} 16:00:00`,
-          occurrences: 3,
-          accepted: {
-            total: preview.total_amount,
-            occurrences: preview.occurrences.map((o: any) => ({ starts_at: o.starts_at, price: o.price })),
-          },
-          accept_partial: false,
+    const submitAttempt = await withE2EApi(
+      page,
+      async ({ apiV2 }, { courtId, startDate, preview }) => {
+        try {
+          const payload = {
+            court_id: courtId,
+            frequency: 'weekly',
+            weekdays: [2],
+            starts_at: `${startDate} 14:00:00`,
+            ends_at: `${startDate} 16:00:00`,
+            occurrences: 3,
+            accepted: {
+              total: preview.total_amount,
+              occurrences: preview.occurrences.map((o: any) => ({
+                starts_at: o.starts_at,
+                price: o.price,
+              })),
+            },
+            accept_partial: false,
+          }
+          const res = await apiV2.post('/recurring-series', payload)
+          return { success: true, res }
+        } catch (err: any) {
+          return {
+            success: false,
+            status: err.status || err.response?.status,
+            message: err.message || err.response?.data?.message || String(err),
+          }
         }
-        const res = await apiV2.post('/recurring-series', payload)
-        return { success: true, res }
-      } catch (err: any) {
-        return { success: false, status: err.status || err.response?.status, message: err.message || err.response?.data?.message || String(err) }
-      }
-    }, { courtId, startDate: nextTuesdayDate, preview })
+      },
+      { courtId, startDate: nextTuesdayDate, preview },
+    )
 
     expect(submitAttempt.success).toBe(false)
     expect(submitAttempt.status).toBe(409)
@@ -309,15 +336,19 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       use App\\Models\\RecurringSeries;
       echo json_encode(['series_count' => RecurringSeries::where('court_id', ${courtId})->count()]);
     `
-    const verify = JSON.parse(execFileSync('php', ['-r', verifyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { series_count: number }
+    const verify = JSON.parse(
+      execFileSync('php', ['-r', verifyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { series_count: number }
     expect(verify.series_count).toBe(0)
   })
 
-  test('8.1.3: Xử lý xung đột: Đàm phán xung đột từng phần -> chấp nhận các buổi còn trống', async ({ page }) => {
+  test('8.1.3: Xử lý xung đột: Đàm phán xung đột từng phần -> chấp nhận các buổi còn trống', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -412,11 +443,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { court_id: number; start_date: string }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { court_id: number; start_date: string }
 
     const courtId = arranged.court_id
 
@@ -431,41 +464,57 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     await page.goto('/recurring-booking', { waitUntil: 'domcontentloaded' })
 
     // 3. Preview 4-week series on Wednesday (Week 1, Week 2 [conflicted], Week 3, Week 4)
-    const preview = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate }) => {
-      return await apiV2.post('/recurring-series/preview', {
-        court_id: courtId,
-        frequency: 'weekly',
-        weekdays: [3], // Wednesday
-        starts_at: `${startDate} 10:00:00`,
-        ends_at: `${startDate} 11:00:00`,
-        occurrences: 4,
-      })
-    }, { courtId, startDate: arranged.start_date }) as any
+    const preview = (await withE2EApi(
+      page,
+      async ({ apiV2 }, { courtId, startDate }) => {
+        return await apiV2.post('/recurring-series/preview', {
+          court_id: courtId,
+          frequency: 'weekly',
+          weekdays: [3], // Wednesday
+          starts_at: `${startDate} 10:00:00`,
+          ends_at: `${startDate} 11:00:00`,
+          occurrences: 4,
+        })
+      },
+      { courtId, startDate: arranged.start_date },
+    )) as any
 
     expect(preview.occurrences.length).toBe(4)
     expect(preview.occurrences[1].conflict).toBe(true) // Week 2 is conflicted
 
     // 4. Submit without accept_partial -> Returns partial_conflict status with excluded occurrences
-    const initialSubmit = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate, preview }) => {
-      return await apiV2.post('/recurring-series', {
-        court_id: courtId,
-        frequency: 'weekly',
-        weekdays: [3],
-        starts_at: `${startDate} 10:00:00`,
-        ends_at: `${startDate} 11:00:00`,
-        occurrences: 4,
-        accepted: {
-          total: preview.total_amount,
-          occurrences: preview.occurrences.map((o: any) => ({ starts_at: o.starts_at, price: o.price })),
-        },
-        accept_partial: false,
-      })
-    }, { courtId, startDate: arranged.start_date, preview }) as {
+    const initialSubmit = (await withE2EApi(
+      page,
+      async ({ apiV2 }, { courtId, startDate, preview }) => {
+        return await apiV2.post('/recurring-series', {
+          court_id: courtId,
+          frequency: 'weekly',
+          weekdays: [3],
+          starts_at: `${startDate} 10:00:00`,
+          ends_at: `${startDate} 11:00:00`,
+          occurrences: 4,
+          accepted: {
+            total: preview.total_amount,
+            occurrences: preview.occurrences.map((o: any) => ({
+              starts_at: o.starts_at,
+              price: o.price,
+            })),
+          },
+          accept_partial: false,
+        })
+      },
+      { courtId, startDate: arranged.start_date, preview },
+    )) as {
       status: string
       currency: string
       held_count: number
       revised_total: number
-      excluded: Array<{ index: number; starts_at: string; ends_at: string; conflict_reason: string }>
+      excluded: Array<{
+        index: number
+        starts_at: string
+        ends_at: string
+        conflict_reason: string
+      }>
     }
 
     expect(initialSubmit.status).toBe('partial_conflict')
@@ -475,21 +524,28 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     expect(initialSubmit.excluded[0].index).toBe(2)
 
     // 5. Accept partial negotiation: submit with accept_partial: true
-    const acceptedSubmit = await withE2EApi(page, async ({ apiV2 }, { courtId, startDate, preview }) => {
-      return await apiV2.post('/recurring-series', {
-        court_id: courtId,
-        frequency: 'weekly',
-        weekdays: [3],
-        starts_at: `${startDate} 10:00:00`,
-        ends_at: `${startDate} 11:00:00`,
-        occurrences: 4,
-        accepted: {
-          total: preview.total_amount,
-          occurrences: preview.occurrences.map((o: any) => ({ starts_at: o.starts_at, price: o.price })),
-        },
-        accept_partial: true,
-      })
-    }, { courtId, startDate: arranged.start_date, preview }) as { series: { id: number; occurrence_count: number; status: string; total_amount: number } }
+    const acceptedSubmit = (await withE2EApi(
+      page,
+      async ({ apiV2 }, { courtId, startDate, preview }) => {
+        return await apiV2.post('/recurring-series', {
+          court_id: courtId,
+          frequency: 'weekly',
+          weekdays: [3],
+          starts_at: `${startDate} 10:00:00`,
+          ends_at: `${startDate} 11:00:00`,
+          occurrences: 4,
+          accepted: {
+            total: preview.total_amount,
+            occurrences: preview.occurrences.map((o: any) => ({
+              starts_at: o.starts_at,
+              price: o.price,
+            })),
+          },
+          accept_partial: true,
+        })
+      },
+      { courtId, startDate: arranged.start_date, preview },
+    )) as { series: { id: number; occurrence_count: number; status: string; total_amount: number } }
 
     expect(acceptedSubmit.series?.id).toBeDefined()
     expect(acceptedSubmit.series.occurrence_count).toBe(3) // Exactly 3 sessions retained!
@@ -497,7 +553,9 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     expect(acceptedSubmit.series.total_amount).toBe(300000) // 3 * 100,000 VND
   })
 
-  test('8.1.4: Vòng đời thanh toán theo kỳ: Thanh toán kỳ đầu chỉ xác nhận kỳ đó, các kỳ tương lai giữ chỗ', async ({ page }) => {
+  test('8.1.4: Vòng đời thanh toán theo kỳ: Thanh toán kỳ đầu chỉ xác nhận kỳ đó, các kỳ tương lai giữ chỗ', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -616,11 +674,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       series_id: number
       inv1_id: number
       inv1_amount: number
@@ -667,14 +727,17 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       encoding: 'utf-8',
     }).trim()
 
-    const webhookRes = await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signature,
-        'Content-Type': 'application/json',
+    const webhookRes = await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signature,
+          'Content-Type': 'application/json',
+        },
+        data: webhookPayload,
       },
-      data: webhookPayload,
-    })
+    )
     expect(webhookRes.ok()).toBe(true)
 
     // 3. Process payment receipt and verify period confirmation state
@@ -713,11 +776,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
     `
 
-    const postPaymentState = JSON.parse(execFileSync('php', ['-r', verifyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const postPaymentState = JSON.parse(
+      execFileSync('php', ['-r', verifyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       receipt_found: boolean
       receipt_status: string | null
       receipt_exception: string | null
@@ -727,7 +792,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       occ1_status: string
       occ2_status: string
     }
-
 
     // Invoice 1 is PAID; Occurrence 1 is CONFIRMED
     expect(postPaymentState.inv1_status).toBe('paid')
@@ -741,7 +805,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     expect(postPaymentState.series_status).toBe('pending')
   })
 
-  test('8.1.5: Overdue cycle release: overdue grace expiration releases only that period\'s occurrences', async ({ page }) => {
+  test("8.1.5: Overdue cycle release: overdue grace expiration releases only that period's occurrences", async () => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -862,11 +926,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       series_id: number
       inv1_id: number
       inv2_id: number
@@ -905,11 +971,13 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
     `
 
-    const releaseState = JSON.parse(execFileSync('php', ['-r', releaseScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const releaseState = JSON.parse(
+      execFileSync('php', ['-r', releaseScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       released_count: number
       series_status: string
       inv1_status: string

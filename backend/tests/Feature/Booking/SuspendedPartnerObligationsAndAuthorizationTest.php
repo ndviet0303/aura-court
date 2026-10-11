@@ -7,6 +7,9 @@ use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\PlatformPlan;
+use App\Models\PlatformSubscription;
+use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
@@ -39,14 +42,14 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $plan = \App\Models\PlatformPlan::create([
+        $plan = PlatformPlan::create([
             'code' => 'ACTIVE_PLAN',
             'name' => 'Active Plan',
             'price' => 300000,
             'billing_cycle' => 'monthly',
             'is_active' => true,
         ]);
-        \App\Models\PlatformSubscription::create([
+        PlatformSubscription::create([
             'organization_id' => $org->id,
             'plan_id' => $plan->id,
             'status' => 'active',
@@ -134,7 +137,7 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
         $crossTenantRes->assertStatus(403);
 
         // 5. Create a legacy unpaid hold
-        $legacyHold = \App\Models\Reservation::create([
+        $legacyHold = Reservation::create([
             'organization_id' => $org->id,
             'user_id' => $customer->id,
             'court_id' => $court->id,
@@ -172,4 +175,3 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
         $this->assertDatabaseMissing('refunds', ['booking_id' => $existingBooking->id]);
     }
 }
-

@@ -79,11 +79,7 @@ const userShortcuts = [
     </div>
 
     <!-- Admin Center Featured Banner (Full Width) -->
-    <RouterLink
-      v-if="isAdmin"
-      to="/admin"
-      class="admin-portal-banner"
-    >
+    <RouterLink v-if="isAdmin" to="/admin" class="admin-portal-banner">
       <div class="admin-icon-box">
         <span class="material-symbols-outlined">admin_panel_settings</span>
       </div>
@@ -104,12 +100,7 @@ const userShortcuts = [
 
     <!-- Balanced 2-Column User Shortcuts Grid -->
     <div class="shortcuts-grid">
-      <RouterLink
-        v-for="s in userShortcuts"
-        :key="s.path"
-        :to="s.path"
-        class="shortcut-card"
-      >
+      <RouterLink v-for="s in userShortcuts" :key="s.path" :to="s.path" class="shortcut-card">
         <div class="shortcut-icon-box" :style="{ color: s.color, backgroundColor: `${s.color}15` }">
           <span class="material-symbols-outlined">{{ s.icon }}</span>
         </div>
@@ -160,7 +151,7 @@ html.dark .profile-tab-card {
 
 .title-icon {
   font-size: 26px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   margin-top: 2px;
 }
 
@@ -338,7 +329,7 @@ html.dark .shortcut-card {
 }
 
 .shortcut-card:hover {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
@@ -397,13 +388,15 @@ html.dark .shortcut-title {
 .shortcut-arrow {
   font-size: 18px;
   color: var(--muted, #6e6668);
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
   flex-shrink: 0;
 }
 
 .shortcut-card:hover .shortcut-arrow {
   transform: translateX(4px);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .shortcut-card:hover .shortcut-arrow {

@@ -201,16 +201,23 @@ export function translateMessage(msg: string, locale?: string): string {
 export function isUnverifiedEmailError(error: unknown): boolean {
   if (!error) return false
   const msg = typeof error === 'string' ? error : (error as Record<string, any>)?.message || ''
-  return String(msg).toLowerCase().includes('not verified') || String(msg).toLowerCase().includes('chưa được xác thực')
+  return (
+    String(msg).toLowerCase().includes('not verified') ||
+    String(msg).toLowerCase().includes('chưa được xác thực')
+  )
 }
 
 export function resolveErrorDescriptor(
   error: unknown,
   fallback?: string,
-  locale?: string
+  locale?: string,
 ): StructuredErrorDescriptor {
   const activeLocale = getEffectiveLocale(locale)
-  const defaultFallback = fallback || (activeLocale === 'en' ? 'An error occurred. Please try again.' : 'Đã có lỗi xảy ra. Vui lòng thử lại.')
+  const defaultFallback =
+    fallback ||
+    (activeLocale === 'en'
+      ? 'An error occurred. Please try again.'
+      : 'Đã có lỗi xảy ra. Vui lòng thử lại.')
 
   if (!error) {
     return {
@@ -229,7 +236,9 @@ export function resolveErrorDescriptor(
       code: isRaw ? 'SERVER_ERROR' : null,
       messageKey: isRaw ? 'errors.serverError' : null,
       message: isRaw
-        ? (activeLocale === 'en' ? 'The server encountered an issue. Please try again later.' : 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.')
+        ? activeLocale === 'en'
+          ? 'The server encountered an issue. Please try again later.'
+          : 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
         : translateMessage(error, activeLocale),
       details: [],
       isRawInfrastructure: isRaw,
@@ -241,7 +250,7 @@ export function resolveErrorDescriptor(
     const err = error as Record<string, any>
     const code = (err.code as string | number) || null
     const status = (err.status as number) || null
-    let rawMsg = err.message || err.data?.message || err.response?.data?.message || ''
+    const rawMsg = err.message || err.data?.message || err.response?.data?.message || ''
     const isRaw = isRawInfrastructureMessage(String(rawMsg))
 
     // Extract validation details if available
@@ -261,9 +270,10 @@ export function resolveErrorDescriptor(
 
     if (isRaw) {
       messageKey = 'errors.serverError'
-      message = activeLocale === 'en'
-        ? 'The server encountered an issue. Please try again later.'
-        : 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
+      message =
+        activeLocale === 'en'
+          ? 'The server encountered an issue. Please try again later.'
+          : 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
     } else if (code && ERROR_CODE_MAP[String(code)]) {
       const mapped = ERROR_CODE_MAP[String(code)]!
       messageKey = mapped.key
@@ -283,7 +293,7 @@ export function resolveErrorDescriptor(
       message,
       details,
       isRawInfrastructure: isRaw,
-      supportCode: isRaw ? (status ? `SRV-${status}` : 'SRV-500') : (code ? String(code) : null),
+      supportCode: isRaw ? (status ? `SRV-${status}` : 'SRV-500') : code ? String(code) : null,
     }
   }
 
@@ -297,11 +307,7 @@ export function resolveErrorDescriptor(
   }
 }
 
-export function errorMessage(
-  error: unknown,
-  fallback?: string,
-  locale?: string
-): string {
+export function errorMessage(error: unknown, fallback?: string, locale?: string): string {
   const descriptor = resolveErrorDescriptor(error, fallback, locale)
   return descriptor.message
 }

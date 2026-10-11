@@ -116,7 +116,9 @@ onMounted(() => {
   border: 1px solid var(--border, rgba(225, 227, 228, 0.8));
   border-radius: 24px;
   padding: 36px 32px 30px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(120, 85, 94, 0.15);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.35),
+    0 8px 24px rgba(120, 85, 94, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -220,7 +222,7 @@ onMounted(() => {
   border: 0;
   border-radius: 9999px;
   padding: 14px 24px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #ffffff);
   font-size: 14px;
   font-weight: 700;
@@ -256,7 +258,9 @@ onMounted(() => {
 
 .demo-modal-fade-enter-active .demo-modal-card,
 .demo-modal-fade-leave-active .demo-modal-card {
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s ease;
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.22s ease;
 }
 
 .demo-modal-fade-enter-from,

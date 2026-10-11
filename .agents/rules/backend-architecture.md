@@ -160,7 +160,45 @@ class CreateBooking
 ## 10. General Rules
 
 - Prefer composition over inheritance.
-- Max lines per class: 300.
+- Max lines per class: 300. This covers every file in `app/`, including `app/Services`. Split a large service into smaller services; it does not have to become Actions.
 - All money values are integers (cents/VND). Never use float for money.
 - Timezone: Storage in UTC. Display in `Asia/Ho_Chi_Minh`.
 - Language: Code in English. User-facing messages in Vietnamese (via lang files).
+
+---
+
+## 11. Static analysis
+
+CI (`backend_static`) runs these in check-only mode, with no database:
+
+1. `vendor/bin/pint --test`
+2. `vendor/bin/phpstan analyse -c phpstan-level0.neon --memory-limit=1G`: level 0 with no baseline.
+3. `vendor/bin/phpstan analyse --memory-limit=1G`: level 5 with `phpstan-baseline.neon`.
+4. `vendor/bin/phpunit tests/Unit/Architecture`
+
+**PHPStan baseline.** `phpstan-baseline.neon` records the existing level-5 findings. It only shrinks.
+
+- New findings fail. Fix them; never regenerate the baseline to absorb them.
+- Level-0 findings (unknown classes, functions or methods, wrong argument counts, undefined variables) never go into the baseline. The level-0 run ignores the baseline, so it fails on them anyway.
+- When you fix baselined findings, PHPStan fails on the unmatched entries. If those are the only failures, run `vendor/bin/phpstan analyse --memory-limit=1G --generate-baseline` and commit the smaller file.
+- A justified exception gets an inline `// @phpstan-ignore <identifier> (reason)`. The reason is required.
+
+**Architecture check.** `tests/Unit/Architecture/BackendArchitectureTest.php` checks every file in `app/` against these limits:
+
+| Rule | Limit |
+|------|-------|
+| Lines per file | 300 |
+| Public methods per controller | 7 |
+| `$request->validate(` or `Storage::` in a controller | none |
+| `<Model>::query()`, `where()`, `find()` and similar in a controller or a `Domain/*/Actions` class | none |
+| `Illuminate\Http\Request` import, or `execute()` parameter typed as a request, in an action | none |
+| DTO in `Domain/*/DTOs` that is not a `readonly class` | none |
+| `Http/Requests` file without `extends FormRequest`, `rules()` or `authorize()` | none |
+| `Contracts/Repositories` interface not bound in `RepositoryServiceProvider` | none |
+
+Files that broke a rule when the check landed are listed in `tests/Unit/Architecture/architecture-allowlist.json` as `[rule, file, ceiling]`.
+
+- A listed file may shrink and grow back up to its ceiling, but never past it.
+- Lower a ceiling on purpose when a file shrinks but is still over the limit. Never raise one.
+- Once a file is within the limit, the check fails until you delete its entry.
+- Fix new violations instead of allowlisting them. The ready-to-paste line in the failure message is for existing debt that moves, such as a renamed file.

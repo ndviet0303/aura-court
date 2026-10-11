@@ -34,15 +34,50 @@ const props = withDefaults(
     hasActiveFilters: false,
     sportCategories: () => [
       { id: 'all', labelKey: 'courts.allSports', defaultLabel: 'Tất cả môn', icon: 'apps' },
-      { id: 'badminton', labelKey: 'courts.sportBadminton', defaultLabel: 'Cầu lông', icon: 'sports_tennis' },
-      { id: 'pickleball', labelKey: 'courts.sportPickleball', defaultLabel: 'Pickleball', icon: 'sports_tennis' },
-      { id: 'tennis', labelKey: 'courts.sportTennis', defaultLabel: 'Tennis', icon: 'sports_tennis' },
-      { id: 'basketball', labelKey: 'courts.sportBasketball', defaultLabel: 'Bóng rổ', icon: 'sports_basketball' },
-      { id: 'football', labelKey: 'courts.sportFootball', defaultLabel: 'Bóng đá', icon: 'sports_soccer' },
-      { id: 'table_tennis', labelKey: 'courts.sportTableTennis', defaultLabel: 'Bóng bàn', icon: 'table_restaurant' },
-      { id: 'volleyball', labelKey: 'courts.sportVolleyball', defaultLabel: 'Bóng chuyền', icon: 'sports_volleyball' },
+      {
+        id: 'badminton',
+        labelKey: 'courts.sportBadminton',
+        defaultLabel: 'Cầu lông',
+        icon: 'sports_tennis',
+      },
+      {
+        id: 'pickleball',
+        labelKey: 'courts.sportPickleball',
+        defaultLabel: 'Pickleball',
+        icon: 'sports_tennis',
+      },
+      {
+        id: 'tennis',
+        labelKey: 'courts.sportTennis',
+        defaultLabel: 'Tennis',
+        icon: 'sports_tennis',
+      },
+      {
+        id: 'basketball',
+        labelKey: 'courts.sportBasketball',
+        defaultLabel: 'Bóng rổ',
+        icon: 'sports_basketball',
+      },
+      {
+        id: 'football',
+        labelKey: 'courts.sportFootball',
+        defaultLabel: 'Bóng đá',
+        icon: 'sports_soccer',
+      },
+      {
+        id: 'table_tennis',
+        labelKey: 'courts.sportTableTennis',
+        defaultLabel: 'Bóng bàn',
+        icon: 'table_restaurant',
+      },
+      {
+        id: 'volleyball',
+        labelKey: 'courts.sportVolleyball',
+        defaultLabel: 'Bóng chuyền',
+        icon: 'sports_volleyball',
+      },
     ],
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -251,11 +286,7 @@ const activeSortLabel = computed(() => {
         </button>
 
         <!-- Clear All Text Link -->
-        <button
-          type="button"
-          class="btn-clear-all-text"
-          @click="emit('reset')"
-        >
+        <button type="button" class="btn-clear-all-text" @click="emit('reset')">
           {{ t('courts.clearFilters') }}
         </button>
       </div>
@@ -370,7 +401,9 @@ const activeSortLabel = computed(() => {
   color: var(--ink);
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input:focus {
@@ -390,7 +423,9 @@ const activeSortLabel = computed(() => {
   padding: 4px;
   color: var(--muted);
   border-radius: 50%;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
 .btn-clear-search:hover {

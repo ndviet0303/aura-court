@@ -38,7 +38,7 @@ export function useCreateMatch() {
   const selectedSport = ref<SocialSportType>('badminton')
   const selectedVenueName = ref('Aura Court Cầu Giấy')
   const selectedCourtId = ref<number | null>(null)
-  
+
   // Date & Time (Default to today/tomorrow next round hour)
   const todayStr = new Date().toISOString().slice(0, 10)
   const matchDate = ref(todayStr)
@@ -105,7 +105,7 @@ export function useCreateMatch() {
     if (!friendSearchQuery.value.trim()) return friends.value
     const q = friendSearchQuery.value.toLowerCase()
     return friends.value.filter(
-      (f) => f.name.toLowerCase().includes(q) || f.skill.toLowerCase().includes(q)
+      (f) => f.name.toLowerCase().includes(q) || f.skill.toLowerCase().includes(q),
     )
   })
 
@@ -202,7 +202,12 @@ export function useCreateMatch() {
     }
 
     const isOwnerHosted = isOwnerHostedSession.value
-    const hostData = hostUser as { id?: number; name?: string; avatar_url?: string; avatar?: string } | null
+    const hostData = hostUser as {
+      id?: number
+      name?: string
+      avatar_url?: string
+      avatar?: string
+    } | null
     const participantsList = isOwnerHosted
       ? selectedFriends.value.map((f) => ({
           id: f.id,
@@ -230,38 +235,44 @@ export function useCreateMatch() {
             role: 'Member',
           })),
         ]
-      return {
-        id: 9999,
-        title: displayTitle.value,
-        sport_type: selectedSport.value,
-        sport_name: sportNameVi.value,
-        sport_icon: sportIconName.value,
-        venue_name: selectedVenueName.value,
-        court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
-        city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
-        starts_at: formattedStart,
-        joined_count: isOwnerHosted ? selectedFriendsCount.value : 1 + selectedFriendsCount.value,
-        required_participants: maxPlayers.value,
-        visibility: visibility.value,
-        min_skill: minSk,
-        max_skill: maxSk,
-        game_format: formatNameVi.value,
-        cost_per_person: isOwnerHosted ? undefined : costPerPerson.value,
-        split_bill_mode: isOwnerHosted ? 'Chia đều sau buổi' : (splitCost.value ? 'auto_split' : 'host_pays'),
-        host_id: hostData?.id || 1,
-        host_name: hostData?.name || (isOwnerHosted ? 'Tôi (Chủ cơ sở)' : 'Tôi (Chủ phòng)'),
-        host_avatar: hostData?.avatar_url || hostData?.avatar,
-        host_reputation: 99,
-        host_level: isOwnerHosted ? 'Chủ cơ sở' : 'Level 3.5',
-        description: matchDescription.value.trim() || 'Mở buổi giao lưu thân thiện, vui vẻ và rèn luyện thể lực.',
-        status: 'open',
-        is_owner_hosted: isOwnerHosted,
-        court_id: selectedCourtId.value || undefined,
-        category: isOwnerHosted ? sessionCategory.value : undefined,
-        skill_levels: isOwnerHosted ? acceptedSkillLabels.value : undefined,
-        participants: participantsList,
-        is_joined: !isOwnerHosted,
-        is_host: true,
+    return {
+      id: 9999,
+      title: displayTitle.value,
+      sport_type: selectedSport.value,
+      sport_name: sportNameVi.value,
+      sport_icon: sportIconName.value,
+      venue_name: selectedVenueName.value,
+      court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+      city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
+      starts_at: formattedStart,
+      joined_count: isOwnerHosted ? selectedFriendsCount.value : 1 + selectedFriendsCount.value,
+      required_participants: maxPlayers.value,
+      visibility: visibility.value,
+      min_skill: minSk,
+      max_skill: maxSk,
+      game_format: formatNameVi.value,
+      cost_per_person: isOwnerHosted ? undefined : costPerPerson.value,
+      split_bill_mode: isOwnerHosted
+        ? 'Chia đều sau buổi'
+        : splitCost.value
+          ? 'auto_split'
+          : 'host_pays',
+      host_id: hostData?.id || 1,
+      host_name: hostData?.name || (isOwnerHosted ? 'Tôi (Chủ cơ sở)' : 'Tôi (Chủ phòng)'),
+      host_avatar: hostData?.avatar_url || hostData?.avatar,
+      host_reputation: 99,
+      host_level: isOwnerHosted ? 'Chủ cơ sở' : 'Level 3.5',
+      description:
+        matchDescription.value.trim() ||
+        'Mở buổi giao lưu thân thiện, vui vẻ và rèn luyện thể lực.',
+      status: 'open',
+      is_owner_hosted: isOwnerHosted,
+      court_id: selectedCourtId.value || undefined,
+      category: isOwnerHosted ? sessionCategory.value : undefined,
+      skill_levels: isOwnerHosted ? acceptedSkillLabels.value : undefined,
+      participants: participantsList,
+      is_joined: !isOwnerHosted,
+      is_host: true,
     }
   })
 
@@ -290,8 +301,8 @@ export function useCreateMatch() {
 
   function selectQuickVenue(venueName: string) {
     selectedVenueName.value = venueName
-    const matchingCourt = courts.value.find(
-      (c) => c.venue?.name?.toLowerCase().includes(venueName.toLowerCase())
+    const matchingCourt = courts.value.find((c) =>
+      c.venue?.name?.toLowerCase().includes(venueName.toLowerCase()),
     )
     if (matchingCourt) {
       selectedCourtId.value = matchingCourt.id
@@ -344,7 +355,8 @@ export function useCreateMatch() {
           starts_at: startDate.toISOString(),
           ends_at: endDate.toISOString(),
           city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
-          min_skill: skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1,
+          min_skill:
+            skillLevel.value === 'advanced' ? 4 : skillLevel.value === 'intermediate' ? 2 : 1,
           max_skill: 5,
           required_participants: Math.max(2, maxPlayers.value),
           availability: {
@@ -379,7 +391,7 @@ export function useCreateMatch() {
         try {
           const inviteRes = await socialApi.invitePartners(
             createdMatchId,
-            selectedFriends.value.map((f) => f.id)
+            selectedFriends.value.map((f) => f.id),
           )
           const failed = inviteRes?.results?.filter((r) => r.status === 'failed') || []
           if (failed.length > 0) {

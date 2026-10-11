@@ -41,9 +41,9 @@ const themeStore = useThemeStore()
 }
 
 .theme-toggle-btn:hover {
-  background: #FAF7F3;
-  border-color: #6B2D3F;
-  color: #6B2D3F;
+  background: #faf7f3;
+  border-color: #6b2d3f;
+  color: #6b2d3f;
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(107, 45, 63, 0.12);
 }
@@ -57,7 +57,7 @@ html.dark .theme-toggle-btn {
 html.dark .theme-toggle-btn:hover {
   background: #262024;
   border-color: rgba(223, 186, 114, 0.4);
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .icon-container {
@@ -72,7 +72,9 @@ html.dark .theme-toggle-btn:hover {
 .icon {
   position: absolute;
   font-size: 19px;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  transition:
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease;
 }
 
 /* Light Mode: Sun is visible, Moon rotated out */
@@ -103,4 +105,3 @@ html.dark .moon-icon {
   transform: rotate(0deg) scale(1);
 }
 </style>
-

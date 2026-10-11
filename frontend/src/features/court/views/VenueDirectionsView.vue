@@ -26,10 +26,7 @@ const {
 
     <div v-else-if="venue" class="directions-content-layout">
       <!-- Top Hero Banner -->
-      <VenueDirectionsHero
-        :venue="venue"
-        :matched-court="matchedCourt"
-      />
+      <VenueDirectionsHero :venue="venue" :matched-court="matchedCourt" />
 
       <!-- Main Map & Actions -->
       <VenueMapActionCard
@@ -41,15 +38,10 @@ const {
       />
 
       <!-- Transport, Parking & Hotline -->
-      <VenueTransportGuide
-        :venue="venue"
-      />
+      <VenueTransportGuide :venue="venue" />
 
       <!-- Courts Available at this Location -->
-      <VenueCourtsGrid
-        v-if="courtsAtVenue.length > 0"
-        :courts="courtsAtVenue"
-      />
+      <VenueCourtsGrid v-if="courtsAtVenue.length > 0" :courts="courtsAtVenue" />
     </div>
   </div>
 </template>
@@ -91,7 +83,11 @@ const {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

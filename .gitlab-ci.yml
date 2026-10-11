@@ -35,31 +35,56 @@ cache:
 frontend_check:
   stage: validate
   image: node:22-alpine
-  rules:
+  rules: &validate_rules
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: never
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
     - if: '$CI_PIPELINE_SOURCE == "web"'
   script:
-    - "echo \"=== Step 1: Frontend Check (Type-check, Unit tests, Build) ===\""
+    - "echo \"=== Step 1: Frontend Check (Lint, Format, Type-check, Unit tests, Build) ===\""
     - cd frontend
     - npm ci
+    - npx oxlint .
+    - npx eslint .
+    - npm run format:check
     - npm run type-check
     - npm run test:unit -- --run --maxWorkers=1
-    - npm run build
+    - npm run build-only
+
+backend_static:
+  stage: validate
+  image: composer:2
+  rules: *validate_rules
+  variables:
+    COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
+  # Keeps Composer's downloads, most of the install time, not vendor/, so every run still installs from composer.lock.
+  # Replaces the global .docker/cache, which only build_and_deploy needs.
+  cache:
+    key:
+      files:
+        - backend/composer.lock
+    paths:
+      - .composer-cache/
+  script:
+    - "echo \"=== Step 2: Backend Static Checks (Pint, PHPStan, Architecture) ===\""
+    - cd backend
+    # Same install as the production image, plus dev dependencies for the checks.
+    - cp .env.example .env
+    - composer install --no-interaction --prefer-dist --ignore-platform-reqs
+    - vendor/bin/pint --test
+    # On a cold result cache, PHPStan workers peak near 190 MB, above PHP's common 128M default.
+    - vendor/bin/phpstan analyse -c phpstan-level0.neon --no-progress --memory-limit=1G
+    - vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+    - vendor/bin/phpunit tests/Unit/Architecture
+
 backend_test:
   stage: validate
   image: composer:2
   services:
     - name: postgres:17-alpine
       alias: postgres
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-    - if: '$CI_PIPELINE_SOURCE == "web"'
+  rules: *validate_rules
   variables:
     # Throwaway service credentials; phpunit.xml forces DB_DATABASE=booking_test, CI only points DB_HOST at the service.
     POSTGRES_DB: booking_test
@@ -83,12 +108,14 @@ backend_test:
     - composer install --no-interaction --prefer-dist
     - php artisan key:generate
     - vendor/bin/phpunit
+
 build_and_deploy:
   stage: build
   image: docker:latest
   timeout: 10m
   needs:
     - frontend_check
+    - backend_static
     - backend_test
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"'

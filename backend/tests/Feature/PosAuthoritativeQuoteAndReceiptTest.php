@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\CashShift;
-use App\Models\Coupon;
 use App\Models\Journal;
 use App\Models\MembershipEntitlement;
 use App\Models\Organization;
@@ -21,10 +20,15 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
     use RefreshDatabase;
 
     private Organization $organization;
+
     private User $cashier;
+
     private User $customer;
+
     private PosProduct $rentalProduct;
+
     private PosProduct $drinkProduct;
+
     private CashShift $shift;
 
     protected function setUp(): void
@@ -33,7 +37,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
 
         $this->organization = Organization::create([
             'name' => 'Aura POS Arena',
-            'slug' => 'aura-pos-' . uniqid(),
+            'slug' => 'aura-pos-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -215,7 +219,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->organization->id,
-            'Idempotency-Key' => 'pos-order-' . uniqid(),
+            'Idempotency-Key' => 'pos-order-'.uniqid(),
         ];
 
         // Racket rental: 2 hours * 50k = 100k

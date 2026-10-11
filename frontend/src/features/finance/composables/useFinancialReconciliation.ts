@@ -46,29 +46,33 @@ export function useFinancialReconciliation() {
   const runs = ref<ReconciliationRun[]>([])
 
   // Watch activeTab to set default date ranges when switching tabs
-  watch(activeTab, (tab) => {
-    const today = new Date()
-    const toDateStr = (d: Date) => d.toISOString().slice(0, 10)
+  watch(
+    activeTab,
+    (tab) => {
+      const today = new Date()
+      const toDateStr = (d: Date) => d.toISOString().slice(0, 10)
 
-    if (tab === 'today') {
-      dateFrom.value = toDateStr(today)
-      dateTo.value = toDateStr(today)
-    } else if (tab === 'yesterday') {
-      const y = new Date(today)
-      y.setDate(y.getDate() - 1)
-      dateFrom.value = toDateStr(y)
-      dateTo.value = toDateStr(y)
-    } else if (tab === '7days') {
-      const past7 = new Date(today)
-      past7.setDate(past7.getDate() - 6)
-      dateFrom.value = toDateStr(past7)
-      dateTo.value = toDateStr(today)
-    } else if (tab === 'month') {
-      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-      dateFrom.value = toDateStr(firstOfMonth)
-      dateTo.value = toDateStr(today)
-    }
-  }, { immediate: true })
+      if (tab === 'today') {
+        dateFrom.value = toDateStr(today)
+        dateTo.value = toDateStr(today)
+      } else if (tab === 'yesterday') {
+        const y = new Date(today)
+        y.setDate(y.getDate() - 1)
+        dateFrom.value = toDateStr(y)
+        dateTo.value = toDateStr(y)
+      } else if (tab === '7days') {
+        const past7 = new Date(today)
+        past7.setDate(past7.getDate() - 6)
+        dateFrom.value = toDateStr(past7)
+        dateTo.value = toDateStr(today)
+      } else if (tab === 'month') {
+        const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+        dateFrom.value = toDateStr(firstOfMonth)
+        dateTo.value = toDateStr(today)
+      }
+    },
+    { immediate: true },
+  )
 
   // Filtered runs
   const filteredRuns = computed(() => {
@@ -107,7 +111,9 @@ export function useFinancialReconciliation() {
       // Search query filter
       if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase()
-        const matchTxn = (item.txnCode || item.details?.txnCode || `REC-${item.id}`).toLowerCase().includes(q)
+        const matchTxn = (item.txnCode || item.details?.txnCode || `REC-${item.id}`)
+          .toLowerCase()
+          .includes(q)
         const matchChannel = (item.channel || item.details?.channel || '').toLowerCase().includes(q)
         const matchCustomer = (item.details?.customer || '').toLowerCase().includes(q)
         const matchCourt = (item.details?.court || '').toLowerCase().includes(q)

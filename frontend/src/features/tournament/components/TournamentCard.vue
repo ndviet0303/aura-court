@@ -59,7 +59,10 @@ const sportIcon = computed(() => {
 
 const slotPercentage = computed(() => {
   if (!props.tournament.max_slots) return 0
-  return Math.min(100, Math.round((props.tournament.current_slots / props.tournament.max_slots) * 100))
+  return Math.min(
+    100,
+    Math.round((props.tournament.current_slots / props.tournament.max_slots) * 100),
+  )
 })
 </script>
 
@@ -85,7 +88,10 @@ const slotPercentage = computed(() => {
 
     <!-- Card Main Body -->
     <div class="card-body">
-      <RouterLink :to="`/tournaments/${tournament.uuid || tournament.id}/bracket`" class="tournament-name-link">
+      <RouterLink
+        :to="`/tournaments/${tournament.uuid || tournament.id}/bracket`"
+        class="tournament-name-link"
+      >
         <h3 class="tournament-name" :title="tournament.name">{{ tournament.name }}</h3>
       </RouterLink>
 
@@ -106,7 +112,10 @@ const slotPercentage = computed(() => {
       <div v-if="tournament.current_match" class="live-match-box">
         <div class="live-tag">
           <span class="live-dot"></span>
-          <span>LIVE: {{ tournament.current_match.round_label }} · {{ tournament.current_match.court }}</span>
+          <span
+            >LIVE: {{ tournament.current_match.round_label }} ·
+            {{ tournament.current_match.court }}</span
+          >
         </div>
         <div class="matchup-players">
           <span class="p-name">{{ tournament.current_match.player1_name }}</span>
@@ -118,7 +127,9 @@ const slotPercentage = computed(() => {
       <!-- Winner info if completed -->
       <div v-if="tournament.winner_team" class="winner-box">
         <span class="material-symbols-outlined winner-ico">emoji_events</span>
-        <span>{{ $t('tournament.championWinner') }} <strong>{{ tournament.winner_team }}</strong></span>
+        <span
+          >{{ $t('tournament.championWinner') }} <strong>{{ tournament.winner_team }}</strong></span
+        >
       </div>
 
       <!-- Slots & Prize Pool Summary Bar -->
@@ -137,9 +148,14 @@ const slotPercentage = computed(() => {
               <span class="material-symbols-outlined mini-ico">group</span>
               {{ $t('tournament.entrySlots') }}
             </span>
-            <strong class="slots-count">{{ tournament.current_slots }}/{{ tournament.max_slots }}</strong>
+            <strong class="slots-count"
+              >{{ tournament.current_slots }}/{{ tournament.max_slots }}</strong
+            >
           </div>
-          <div class="progress-track" :title="$t('tournament.registeredPercentage', { percent: slotPercentage })">
+          <div
+            class="progress-track"
+            :title="$t('tournament.registeredPercentage', { percent: slotPercentage })"
+          >
             <div class="progress-fill" :style="{ width: `${slotPercentage}%` }"></div>
           </div>
         </div>
@@ -188,7 +204,10 @@ const slotPercentage = computed(() => {
   border: 1px solid var(--outline);
   background: var(--surface);
   overflow: hidden;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s ease;
 }
 
 .tournament-card:hover {
@@ -219,7 +238,12 @@ const slotPercentage = computed(() => {
 .card-img-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.7) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
 }
 
 .status-badge {
@@ -379,9 +403,18 @@ const slotPercentage = computed(() => {
 }
 
 @keyframes pulse-dot {
-  0% { transform: scale(0.9); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.5; }
-  100% { transform: scale(0.9); opacity: 1; }
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
 }
 
 .matchup-players {
@@ -397,7 +430,7 @@ const slotPercentage = computed(() => {
   font-weight: 800;
   color: var(--muted);
   padding: 2px 6px;
-  background: var(--surface-container, rgba(0,0,0,0.05));
+  background: var(--surface-container, rgba(0, 0, 0, 0.05));
   border-radius: 4px;
 }
 
@@ -431,7 +464,8 @@ const slotPercentage = computed(() => {
   margin-top: auto;
 }
 
-.prize-col, .slots-col {
+.prize-col,
+.slots-col {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -490,4 +524,3 @@ const slotPercentage = computed(() => {
   padding-top: 4px;
 }
 </style>
-

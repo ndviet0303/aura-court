@@ -16,14 +16,8 @@ defineProps<{
       <span class="sub">Cập nhật thời gian thực</span>
     </div>
 
-
     <div class="events-timeline">
-      <div
-        v-for="ev in events"
-        :key="ev.id"
-        class="event-node"
-        :class="`type-${ev.type}`"
-      >
+      <div v-for="ev in events" :key="ev.id" class="event-node" :class="`type-${ev.type}`">
         <div class="time-col font-mono">{{ ev.time }}</div>
         <div class="event-desc-col">
           <strong class="p-name">{{ ev.player }}:</strong>
@@ -75,7 +69,6 @@ defineProps<{
   font-size: 12px;
   color: var(--muted);
 }
-
 
 .events-timeline {
   display: flex;

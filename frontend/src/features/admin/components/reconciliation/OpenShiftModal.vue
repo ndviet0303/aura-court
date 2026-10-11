@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatCurrency } from '@/i18n'
 import { AuraButton, CurrencyInput } from '@/shared/components'
 
 defineProps<{
@@ -47,11 +46,7 @@ function handleSubmit() {
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.shifts.startingFloatLabel') }}</label>
-          <CurrencyInput
-            v-model="openingCash"
-            size="md"
-            placeholder="0"
-          />
+          <CurrencyInput v-model="openingCash" size="md" placeholder="0" />
         </div>
 
         <!-- Presets -->
@@ -70,7 +65,10 @@ function handleSubmit() {
 
         <div class="info-callout">
           <span class="material-symbols-outlined icon-16">info</span>
-          <span>Số tiền này sẽ được dùng làm căn cứ đối chiếu số dư tiền mặt trong két khi đóng ca.</span>
+          <span
+            >Số tiền này sẽ được dùng làm căn cứ đối chiếu số dư tiền mặt trong két khi đóng
+            ca.</span
+          >
         </div>
       </div>
 
@@ -78,15 +76,8 @@ function handleSubmit() {
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.close') }}
         </AuraButton>
-        <AuraButton
-          variant="primary"
-          :disabled="saving || openingCash < 0"
-          @click="handleSubmit"
-        >
-          <span
-            class="material-symbols-outlined icon-16"
-            :class="{ 'spin-icon': saving }"
-          >
+        <AuraButton variant="primary" :disabled="saving || openingCash < 0" @click="handleSubmit">
+          <span class="material-symbols-outlined icon-16" :class="{ 'spin-icon': saving }">
             check
           </span>
           <span>{{ t('admin.shifts.confirmOpenShift') }}</span>
@@ -248,15 +239,21 @@ function handleSubmit() {
   border-top: 1px solid var(--outline);
 }
 
-.icon-16 { font-size: 16px; }
+.icon-16 {
+  font-size: 16px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 :global(html.dark) .modal-card {

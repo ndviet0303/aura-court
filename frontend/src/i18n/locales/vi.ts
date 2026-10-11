@@ -5,18 +5,22 @@ export default {
     appName: 'Aura Court',
     tagline: 'Nơi chính xác tạo nên phong độ',
     demoNotice: 'ĐÂY LÀ WEBSITE DEMO.',
-    demoNoticeDesc: 'Dữ liệu, giá và luồng đặt sân chỉ phục vụ trình diễn; không tạo thành cam kết cung cấp dịch vụ. Không chuyển tiền thật hoặc nhập thông tin nhạy cảm.',
+    demoNoticeDesc:
+      'Dữ liệu, giá và luồng đặt sân chỉ phục vụ trình diễn; không tạo thành cam kết cung cấp dịch vụ. Không chuyển tiền thật hoặc nhập thông tin nhạy cảm.',
     demoModal: {
       title: 'Thông báo Website Thử Nghiệm',
       warningTag: 'LƯU Ý QUAN TRỌNG',
-      content1: 'Hệ thống Aura Court hiện đang chạy ở chế độ thử nghiệm (Demo) phục vụ mục đích trình diễn tính năng và giao diện.',
-      content2: 'Mọi thông tin sân đấu, giá cả và giao dịch thanh toán đều là dữ liệu mẫu mô phỏng. Vui lòng không chuyển tiền thật hoặc nhập thông tin nhạy cảm.',
+      content1:
+        'Hệ thống Aura Court hiện đang chạy ở chế độ thử nghiệm (Demo) phục vụ mục đích trình diễn tính năng và giao diện.',
+      content2:
+        'Mọi thông tin sân đấu, giá cả và giao dịch thanh toán đều là dữ liệu mẫu mô phỏng. Vui lòng không chuyển tiền thật hoặc nhập thông tin nhạy cảm.',
       understandBtn: 'Tôi đã hiểu và tiếp tục',
     },
     demoFooter: 'Bản thử nghiệm (Demo)',
     privacyAndSupport: 'Chính sách · Hỗ trợ',
     footer: {
-      tagline: 'Nâng tầm trải nghiệm thể thao chuyên nghiệp với hệ thống sân đấu chuẩn quốc tế và công nghệ đặt sân tức thì.',
+      tagline:
+        'Nâng tầm trải nghiệm thể thao chuyên nghiệp với hệ thống sân đấu chuẩn quốc tế và công nghệ đặt sân tức thì.',
       explore: 'Khám phá',
       support: 'Hỗ trợ & Chính sách',
       contact: 'Liên hệ & Giờ mở cửa',
@@ -148,7 +152,8 @@ export default {
     eyebrow: 'Thể thao chuyên nghiệp',
     heroTitle: 'Nơi chính xác',
     heroTitleEmphasis: 'tạo nên phong độ.',
-    heroSubtitle: 'Trải nghiệm nhịp điệu của trận đấu trên những sân thể thao chuyên nghiệp. Đặt sân trong vài giây và bắt đầu cuộc chơi.',
+    heroSubtitle:
+      'Trải nghiệm nhịp điệu của trận đấu trên những sân thể thao chuyên nghiệp. Đặt sân trong vài giây và bắt đầu cuộc chơi.',
     bookNow: 'Đặt sân ngay',
     bookCourtBtn: 'Đặt sân ngay',
     exploreAura: 'Khám phá Aura',
@@ -193,22 +198,30 @@ export default {
       eyebrow: 'Tiêu chuẩn quốc tế',
       title: 'Trải nghiệm thể thao chuẩn quốc tế',
       f1Title: 'Mặt sân thi đấu BWF',
-      f1Desc: 'Thảm sàn tiêu chuẩn thi đấu quốc tế đàn hồi cao, giảm thiểu tối đa chấn thương đầu gối và cổ chân.',
+      f1Desc:
+        'Thảm sàn tiêu chuẩn thi đấu quốc tế đàn hồi cao, giảm thiểu tối đa chấn thương đầu gối và cổ chân.',
       f2Title: 'Ánh sáng chống chói 500 Lux',
-      f2Desc: 'Hệ thống đèn LED bố trí chuẩn góc nghiêng, đảm bảo tầm nhìn rõ nét cho từng pha cầu tốc độ cao.',
+      f2Desc:
+        'Hệ thống đèn LED bố trí chuẩn góc nghiêng, đảm bảo tầm nhìn rõ nét cho từng pha cầu tốc độ cao.',
       f3Title: 'Đặt sân tức thì 10 giây',
-      f3Desc: 'Xem lịch trống thời gian thực, chọn khung giờ linh hoạt và thanh toán QR tự động không cần chờ đợi.',
+      f3Desc:
+        'Xem lịch trống thời gian thực, chọn khung giờ linh hoạt và thanh toán QR tự động không cần chờ đợi.',
     },
     featuresTitle: 'Trải nghiệm thể thao chuẩn quốc tế',
-    featuresSubtitle: 'Hạ tầng cao cấp kết hợp cùng công nghệ quản lý thời gian thực mang đến sự chính xác tuyệt đối.',
+    featuresSubtitle:
+      'Hạ tầng cao cấp kết hợp cùng công nghệ quản lý thời gian thực mang đến sự chính xác tuyệt đối.',
     feat1Title: 'Mặt sân thi đấu BWF',
-    feat1Desc: 'Thảm sàn tiêu chuẩn thi đấu quốc tế đàn hồi cao, giảm thiểu tối đa chấn thương đầu gối và cổ chân.',
+    feat1Desc:
+      'Thảm sàn tiêu chuẩn thi đấu quốc tế đàn hồi cao, giảm thiểu tối đa chấn thương đầu gối và cổ chân.',
     feat2Title: 'Ánh sáng chống chói 500 Lux',
-    feat2Desc: 'Hệ thống đèn LED bố trí chuẩn góc nghiêng, đảm bảo tầm nhìn rõ nét cho từng pha cầu tốc độ cao.',
+    feat2Desc:
+      'Hệ thống đèn LED bố trí chuẩn góc nghiêng, đảm bảo tầm nhìn rõ nét cho từng pha cầu tốc độ cao.',
     feat3Title: 'Đặt sân tức thì 10 giây',
-    feat3Desc: 'Xem lịch trống thời gian thực, chọn khung giờ linh hoạt và thanh toán QR tự động không cần chờ đợi.',
+    feat3Desc:
+      'Xem lịch trống thời gian thực, chọn khung giờ linh hoạt và thanh toán QR tự động không cần chờ đợi.',
     feat4Title: 'Không gian & Tiện ích 5 sao',
-    feat4Desc: 'Phòng thay đồ riêng biệt, phòng tắm nóng lạnh, nước uống miễn phí và bãi đỗ xe ô tô rộng rãi.',
+    feat4Desc:
+      'Phòng thay đồ riêng biệt, phòng tắm nóng lạnh, nước uống miễn phí và bãi đỗ xe ô tô rộng rãi.',
     floating: {
       summary: 'Đang chọn {count} khung giờ, tổng tiền {total}',
       slotsCount: '{count} khung giờ đã chọn',
@@ -221,15 +234,18 @@ export default {
     courtsGridSubtitle: 'Lựa chọn sân đấu phù hợp nhất cho phong cách và cường độ thi đấu của bạn.',
     viewAllCourts: 'Xem tất cả sân',
     bannerTitle: 'Sẵn sàng ra sân thi đấu?',
-    bannerSubtitle: 'Hơn 1.200 vận động viên tin chọn Aura Court mỗi tuần. Đặt khung giờ của bạn ngay bây giờ.',
+    bannerSubtitle:
+      'Hơn 1.200 vận động viên tin chọn Aura Court mỗi tuần. Đặt khung giờ của bạn ngay bây giờ.',
     bannerBookBtn: 'Giữ chỗ sân ngay',
   },
   courts: {
     eyebrow: 'Danh sách sân đấu',
     title: 'Hệ thống sân Aura Court',
-    subtitle: 'Tìm kiếm sân đấu chất lượng cao, trang bị tiêu chuẩn thi đấu quốc tế và sẵn sàng phục vụ bạn.',
+    subtitle:
+      'Tìm kiếm sân đấu chất lượng cao, trang bị tiêu chuẩn thi đấu quốc tế và sẵn sàng phục vụ bạn.',
     courtsHeroTitle: 'Khám Phá Cụm Sân & Sân Đấu Chuyên Nghiệp',
-    courtsHeroSub: 'Hơn {count} sân thi đấu thể thao tiêu chuẩn quốc tế: Cầu lông, Pickleball, Tennis và bóng rổ.',
+    courtsHeroSub:
+      'Hơn {count} sân thi đấu thể thao tiêu chuẩn quốc tế: Cầu lông, Pickleball, Tennis và bóng rổ.',
     searchPlaceholder: 'Tìm sân theo tên, cơ sở hoặc khu vực...',
     filterLocation: 'Địa điểm / Cơ sở',
     allLocations: 'Tất cả cơ sở',
@@ -295,7 +311,8 @@ export default {
     premiumVenue: 'Sân Tiêu Chuẩn',
     reviewsCount: '{count} đánh giá',
     aboutTitle: 'Về sân đấu này',
-    aboutDefaultDesc: 'Trải nghiệm thi đấu thể thao đỉnh cao trên sân đấu đạt tiêu chuẩn chất lượng cao. Trang bị mặt sân cao cấp đàn hồi giảm chấn thương, hệ thống đèn LED chống chói 500 Lux đồng đều và không gian trần cao thoáng đãng.',
+    aboutDefaultDesc:
+      'Trải nghiệm thi đấu thể thao đỉnh cao trên sân đấu đạt tiêu chuẩn chất lượng cao. Trang bị mặt sân cao cấp đàn hồi giảm chấn thương, hệ thống đèn LED chống chói 500 Lux đồng đều và không gian trần cao thoáng đãng.',
     specsTitle: 'Thông số kỹ thuật sân',
     specMat: 'Thảm BWF 5 lớp',
     specMatDesc: 'Đàn hồi cao, giảm áp lực khớp',
@@ -332,7 +349,8 @@ export default {
     selectDuration: 'Chọn thời lượng dự kiến',
     confirmAndBook: 'Xem lịch & Đặt sân ngay',
     estimatedTotal: 'Tạm tính ({duration}h)',
-    cancellationPolicy: 'Có thể huỷ hoặc đổi lịch theo chính sách của sân — phí và số tiền hoàn được tính trước khi bạn xác nhận',
+    cancellationPolicy:
+      'Có thể huỷ hoặc đổi lịch theo chính sách của sân — phí và số tiền hoàn được tính trước khi bạn xác nhận',
     instantConfirmation: 'Xác nhận lịch đặt ngay lập tức',
     locationTitle: 'Vị trí & Cơ sở',
     openInMaps: 'Mở Google Maps',
@@ -352,7 +370,8 @@ export default {
     breadcrumbSchedule: 'Lịch đặt trực tiếp',
     schedulePageTitle: 'Lịch Đặt Sân Theo Ngày',
     liveUpdatePill: 'Cập nhật trực tiếp',
-    schedulePageSub: 'Xem tình trạng khung giờ trống theo thời gian thực và chọn lịch thi đấu phù hợp tại',
+    schedulePageSub:
+      'Xem tình trạng khung giờ trống theo thời gian thực và chọn lịch thi đấu phù hợp tại',
     slotsSectionTitle: 'Khung Giờ Thi Đấu',
     slotsAvailableCount: '{available} / {total} khung giờ sẵn sàng',
     quick1h: 'Chọn 1h',
@@ -395,7 +414,8 @@ export default {
     totalPrice: 'Tổng thanh toán',
     completeBooking: 'Tiến hành đặt sân',
     facilityHighlight: 'Cơ sở vật chất chuẩn BWF',
-    facilityHighlightDesc: 'Mặt sân thảm tiêu chuẩn, đèn LED chống chói và hệ thống thông gió tối ưu.',
+    facilityHighlightDesc:
+      'Mặt sân thảm tiêu chuẩn, đèn LED chống chói và hệ thống thông gió tối ưu.',
     selectCourt: 'Chọn sân thi đấu',
     applyCoupon: 'Mã khuyến mãi / Voucher',
     couponPlaceholder: 'Nhập mã (ví dụ: AURA10)',
@@ -416,7 +436,8 @@ export default {
   booking: {
     eyebrow: 'Quản lý lịch chơi',
     title: 'Quản Lý Lịch Đặt Sân Của Tôi',
-    subtitle: 'Theo dõi lịch thi đấu, check-in mã QR tại sân và quản lý trạng thái thanh toán nhanh chóng.',
+    subtitle:
+      'Theo dõi lịch thi đấu, check-in mã QR tại sân và quản lý trạng thái thanh toán nhanh chóng.',
     courtsError: 'Không thể tải danh sách sân. Vui lòng thử lại.',
     availabilityError: 'Không thể tải lịch sân. Vui lòng thử lại.',
     upcomingCountLabel: 'Trận đấu sắp tới',
@@ -430,7 +451,8 @@ export default {
     tabCancelled: 'Đã hủy',
     searchPlaceholder: 'Tìm theo mã đơn (#BK-...), tên sân...',
     emptyTitle: 'Không Tìm Thấy Lịch Đặt Sân',
-    emptyDesc: 'Bạn chưa có lịch đặt sân nào trong danh mục này. Hãy chọn sân và đặt giờ chơi ngay!',
+    emptyDesc:
+      'Bạn chưa có lịch đặt sân nào trong danh mục này. Hãy chọn sân và đặt giờ chơi ngay!',
     statusConfirmed: 'ĐÃ XÁC NHẬN',
     statusPending: 'CHỜ THANH TOÁN',
     statusRefunded: 'ĐÃ HOÀN TIỀN',
@@ -457,20 +479,23 @@ export default {
     downloadTicket: 'Tải vé điện tử',
     cancelBtn: 'Huỷ / Hoàn tiền',
     rescheduleBtn: 'Đổi lịch',
-    policyNotice: 'Bạn có thể huỷ hoặc đổi lịch theo chính sách của sân. Phí và số tiền hoàn (hoặc chênh lệch cần trả thêm) được tính trước khi bạn xác nhận.',
+    policyNotice:
+      'Bạn có thể huỷ hoặc đổi lịch theo chính sách của sân. Phí và số tiền hoàn (hoặc chênh lệch cần trả thêm) được tính trước khi bạn xác nhận.',
   },
   recurring: {
     accept: {
       confirmedNotice: 'Đã xác nhận chuỗi đặt sân định kỳ.',
       pendingNotice: 'Đã tạo chuỗi — thanh toán từng kỳ để xác nhận các buổi.',
       partialTitle: 'Một số buổi đã có người đặt',
-      partialHint: 'Cơ sở này cho phép đặt một phần. Xem các buổi không khả dụng bên dưới, sau đó chấp nhận các buổi còn lại hoặc đổi lịch.',
+      partialHint:
+        'Cơ sở này cho phép đặt một phần. Xem các buổi không khả dụng bên dưới, sau đó chấp nhận các buổi còn lại hoặc đổi lịch.',
       conflictGeneric: 'Đã có người đặt',
       heldCount: 'Sẽ giữ {count} buổi',
       revisedTotal: 'Tổng tiền điều chỉnh',
       acceptRemaining: 'Chấp nhận {count} buổi còn lại',
       reReview: 'Đổi lịch',
-      driftNotice: 'Giá hoặc tình trạng chỗ đã thay đổi so với bản xem trước. Chúng tôi đã cập nhật — vui lòng xem lại và xác nhận lại.',
+      driftNotice:
+        'Giá hoặc tình trạng chỗ đã thay đổi so với bản xem trước. Chúng tôi đã cập nhật — vui lòng xem lại và xác nhận lại.',
       need: {
         court: 'Vui lòng chọn sân thể thao.',
         weekdays: 'Vui lòng chọn ít nhất một ngày trong tuần.',
@@ -520,7 +545,8 @@ export default {
       tokenRow: 'Mã token báo giá:',
       totalCost: 'Tổng Chi Phí Báo Giá:',
       membershipDiscount: 'Ưu đãi hội viên:',
-      instantNote: '* Thanh toán tức thì qua số dư ví để xác nhận lịch đặt và kích hoạt quyền vào sân ngay.',
+      instantNote:
+        '* Thanh toán tức thì qua số dư ví để xác nhận lịch đặt và kích hoạt quyền vào sân ngay.',
       paying: 'Đang Thanh Toán...',
       payAndBookNow: 'Thanh Toán Ví & Đặt Sân Ngay',
       holding: 'Đang Giữ Chỗ...',
@@ -538,7 +564,8 @@ export default {
     },
     payment: {
       title: 'Thanh toán trực tiếp cho chủ sân',
-      instructions: 'Chuyển đúng số tiền vào tài khoản của cơ sở. Lịch chỉ được xác nhận sau khi máy chủ xác minh giao dịch.',
+      instructions:
+        'Chuyển đúng số tiền vào tài khoản của cơ sở. Lịch chỉ được xác nhận sau khi máy chủ xác minh giao dịch.',
       loading: 'Đang tải thông tin thanh toán…',
       waiting: 'Đang chờ xác minh chuyển khoản',
       paid: 'Đã xác minh thanh toán. Lịch đặt đã được xác nhận.',
@@ -582,9 +609,11 @@ export default {
     },
     view: {
       myReservationsTitle: 'Lịch Đặt Sân V2 Của Tôi',
-      myReservationsSubtitle: 'Danh sách lịch đặt được bảo chứng giá và quản lý theo mã xác thực độc quyền.',
+      myReservationsSubtitle:
+        'Danh sách lịch đặt được bảo chứng giá và quản lý theo mã xác thực độc quyền.',
       emptyTitle: 'Không Tìm Thấy Lịch Đặt V2',
-      emptyDesc: 'Bạn chưa có lịch đặt sân v2 nào trong danh mục này. Hãy tạo báo giá và khóa lịch ngay ở trên!',
+      emptyDesc:
+        'Bạn chưa có lịch đặt sân v2 nào trong danh mục này. Hãy tạo báo giá và khóa lịch ngay ở trên!',
       emptySearchDesc: 'Không có kết quả khớp với từ khóa tìm kiếm.',
       createQuoteNow: 'Tạo Báo Giá Ngay',
     },
@@ -593,7 +622,8 @@ export default {
       selectCourtAndTime: 'Vui lòng chọn sân và khung giờ chơi.',
       quoteSuccess: 'Đã tạo báo giá động bất biến! Báo giá được bảo đảm trong 15 phút.',
       quoteError: 'Không thể tạo báo giá cho khung giờ này.',
-      holdSuccess: 'Đã giữ lịch thành công! Vui lòng xác nhận thanh toán để kích hoạt quyền vào sân.',
+      holdSuccess:
+        'Đã giữ lịch thành công! Vui lòng xác nhận thanh toán để kích hoạt quyền vào sân.',
       holdError: 'Không thể giữ lịch đặt.',
       checkoutSuccess: 'Đặt sân và thanh toán thành công qua ví! Mã lịch đặt: #{code}',
       checkoutPending: 'Đã giữ sân #{code}, đang chờ xác minh chuyển khoản vào tài khoản cơ sở.',
@@ -604,7 +634,8 @@ export default {
     },
     reschedule: {
       title: 'Đổi lịch đặt sân',
-      subtitle: 'Chọn sân và khung giờ mới. Hệ thống sẽ tính trước phí đổi lịch và chênh lệch theo chính sách đã áp dụng trước khi bạn xác nhận.',
+      subtitle:
+        'Chọn sân và khung giờ mới. Hệ thống sẽ tính trước phí đổi lịch và chênh lệch theo chính sách đã áp dụng trước khi bạn xác nhận.',
       courtLabel: 'Sân mới',
       courtPlaceholder: 'Chọn sân đấu…',
       dateLabel: 'Ngày chơi mới',
@@ -618,13 +649,16 @@ export default {
       newTotalLabel: 'Tổng chi phí mới',
       changeFeeLabel: 'Phí đổi lịch',
       caseExtraTitle: 'Cần thanh toán thêm',
-      caseExtraDesc: 'Lịch mới đắt hơn. Bạn cần thanh toán khoản chênh lệch bên dưới. Chỗ mới được GIỮ và chỉ hoán đổi sau khi máy chủ xác minh khoản thanh toán bổ sung.',
+      caseExtraDesc:
+        'Lịch mới đắt hơn. Bạn cần thanh toán khoản chênh lệch bên dưới. Chỗ mới được GIỮ và chỉ hoán đổi sau khi máy chủ xác minh khoản thanh toán bổ sung.',
       extraPaymentLabel: 'Số tiền cần trả thêm',
       caseRefundTitle: 'Được hoàn phần chênh lệch',
-      caseRefundDesc: 'Lịch mới rẻ hơn. Việc hoán đổi diễn ra ngay và phần chênh lệch sẽ được tạo thành yêu cầu hoàn tiền — chưa phải là đã hoàn tất.',
+      caseRefundDesc:
+        'Lịch mới rẻ hơn. Việc hoán đổi diễn ra ngay và phần chênh lệch sẽ được tạo thành yêu cầu hoàn tiền — chưa phải là đã hoàn tất.',
       refundDifferenceLabel: 'Số tiền hoàn chênh lệch',
       caseEqualTitle: 'Không phát sinh chi phí',
-      caseEqualDesc: 'Lịch mới có cùng chi phí. Việc hoán đổi diễn ra ngay, không phát sinh thanh toán hay hoàn tiền.',
+      caseEqualDesc:
+        'Lịch mới có cùng chi phí. Việc hoán đổi diễn ra ngay, không phát sinh thanh toán hay hoàn tiền.',
       recipientHeading: 'Tài khoản nhận hoàn chênh lệch',
       bankCode: 'Mã ngân hàng',
       accountName: 'Tên chủ tài khoản',
@@ -635,10 +669,13 @@ export default {
       statusLabel: 'Trạng thái',
       replacementCodeLabel: 'Mã lịch thay thế',
       resultHeldTitle: 'Chỗ mới đang được giữ',
-      resultHeldDesc: 'Vui lòng thanh toán khoản chênh lệch để hoàn tất. Lịch cũ chưa bị thay đổi cho đến khi khoản thanh toán được xác minh.',
+      resultHeldDesc:
+        'Vui lòng thanh toán khoản chênh lệch để hoàn tất. Lịch cũ chưa bị thay đổi cho đến khi khoản thanh toán được xác minh.',
       resultSwappedTitle: 'Đã đổi lịch thành công',
-      resultRefundCreatedDesc: 'Đã tạo yêu cầu hoàn tiền cho phần chênh lệch. Đây CHƯA phải là xác nhận đã hoàn tiền — chỉ khi bạn xác nhận đã nhận tiền mới được coi là hoàn tất.',
-      conflictError: 'Khung giờ ở sân thay thế đã có người đặt. Lịch gốc của bạn được giữ nguyên, chưa thay đổi. Vui lòng chọn sân hoặc giờ khác.',
+      resultRefundCreatedDesc:
+        'Đã tạo yêu cầu hoàn tiền cho phần chênh lệch. Đây CHƯA phải là xác nhận đã hoàn tiền — chỉ khi bạn xác nhận đã nhận tiền mới được coi là hoàn tất.',
+      conflictError:
+        'Khung giờ ở sân thay thế đã có người đặt. Lịch gốc của bạn được giữ nguyên, chưa thay đổi. Vui lòng chọn sân hoặc giờ khác.',
       previewError: 'Không thể tính toán đổi lịch. Vui lòng thử lại.',
       submitError: 'Không thể gửi yêu cầu đổi lịch. Vui lòng thử lại.',
       selectCourtAndTime: 'Vui lòng chọn sân và khung giờ mới.',
@@ -647,7 +684,8 @@ export default {
     },
     refund: {
       cancelTitle: 'Huỷ lịch & hoàn tiền',
-      cancelSubtitle: 'Chọn huỷ toàn bộ hoặc từng khung giờ. Hệ thống hiển thị trước phí huỷ và số tiền hoàn theo chính sách đã áp dụng trước khi bạn xác nhận.',
+      cancelSubtitle:
+        'Chọn huỷ toàn bộ hoặc từng khung giờ. Hệ thống hiển thị trước phí huỷ và số tiền hoàn theo chính sách đã áp dụng trước khi bạn xác nhận.',
       scopeWhole: 'Huỷ toàn bộ lịch',
       scopePartial: 'Huỷ một phần theo khung giờ',
       selectSlotsLabel: 'Chọn khung giờ muốn huỷ',
@@ -674,7 +712,8 @@ export default {
       submittedTitle: 'Đã gửi yêu cầu hoàn tiền',
       statusLabel: 'Trạng thái',
       referenceLabel: 'Mã tham chiếu',
-      notVerifiedHint: 'Yêu cầu đã được ghi nhận. Khoản hoàn tiền chỉ được coi là hoàn tất khi bạn xác nhận đã nhận tiền — báo cáo chuyển khoản của chủ sân hoặc tranh chấp KHÔNG phải là đã hoàn tất.',
+      notVerifiedHint:
+        'Yêu cầu đã được ghi nhận. Khoản hoàn tiền chỉ được coi là hoàn tất khi bạn xác nhận đã nhận tiền — báo cáo chuyển khoản của chủ sân hoặc tranh chấp KHÔNG phải là đã hoàn tất.',
       quoteError: 'Không thể tính toán hoàn tiền. Vui lòng thử lại.',
       submitError: 'Không thể gửi yêu cầu hoàn tiền. Vui lòng thử lại.',
       selectSlots: 'Vui lòng chọn ít nhất một khung giờ để huỷ.',
@@ -732,12 +771,14 @@ export default {
     securityNotice: 'Thanh toán bảo mật mã hóa SSL 256-bit chuẩn PCI-DSS',
     cancellationNotice: 'Hỗ trợ huỷ và đổi lịch theo chính sách của sân',
     demoWarningTitle: 'Môi trường Thử nghiệm / Sandbox',
-    demoWarningDesc: 'Mã QR và thông tin bên dưới phục vụ trải nghiệm mô phỏng. Vui lòng không thực hiện chuyển tiền thật.',
+    demoWarningDesc:
+      'Mã QR và thông tin bên dưới phục vụ trải nghiệm mô phỏng. Vui lòng không thực hiện chuyển tiền thật.',
     demoPayBtn: 'Mô phỏng thanh toán thành công (Sandbox)',
     demoProcessing: 'Đang ghi nhận thanh toán…',
     demoOnlyNote: 'Nút giả lập chuyển khoản tự động trong môi trường Demo.',
     confirmedTitle: 'Đặt sân thành công!',
-    confirmedDesc: 'Cảm ơn bạn! Phiếu đặt sân của bạn đã được xác nhận. Biên lai và mã vào sân đã sẵn sàng.',
+    confirmedDesc:
+      'Cảm ơn bạn! Phiếu đặt sân của bạn đã được xác nhận. Biên lai và mã vào sân đã sẵn sàng.',
     bookingId: 'Mã đặt sân',
     entryCode: 'Mã vào sân (PIN)',
     entryCodeDesc: 'Nhập mã PIN này tại cửa ra vào sân hoặc xuất trình cho lễ tân.',
@@ -819,12 +860,14 @@ export default {
     hidePassword: 'Ẩn mật khẩu',
     showPassword: 'Hiện mật khẩu',
     trustCommunityTitle: 'Cộng đồng thể thao Aura Club',
-    trustCommunityDesc: 'Kết nối hơn 3,500+ vận động viên, tự động ghép kèo đấu ELO và nhận ưu đãi tích điểm thành viên khi đặt sân.',
+    trustCommunityDesc:
+      'Kết nối hơn 3,500+ vận động viên, tự động ghép kèo đấu ELO và nhận ưu đãi tích điểm thành viên khi đặt sân.',
     tagInstantBooking: 'Đặt sân tức thì',
     tagMoneyBack: 'Bảo chứng hoàn tiền',
     tagLeaderboard: 'BXH & Xếp hạng',
     trustScoreLabel: 'TrustScore',
-    invalidResetLinkDesc: 'Vui lòng sử dụng đường link được gửi qua email hoặc gửi lại yêu cầu đặt lại mật khẩu mới.',
+    invalidResetLinkDesc:
+      'Vui lòng sử dụng đường link được gửi qua email hoặc gửi lại yêu cầu đặt lại mật khẩu mới.',
     enterTokenManually: 'Nhập mã Token thủ công',
     tokenPlaceholder: 'Nhập mã token đặt lại mật khẩu',
     validAccountBadge: 'Tài khoản hợp lệ',
@@ -866,7 +909,8 @@ export default {
     venueAddressPlaceholder: 'Số 123 Đường Cầu Giấy, Hà Nội',
     courtsCount: 'Số lượng sân',
     courtsCountPlaceholder: 'VD: 4',
-    courtOwnerNotice: 'Sau khi đăng ký, bạn sẽ được cấp quyền Quản trị Tổ chức để cấu hình sân và bảng giá.',
+    courtOwnerNotice:
+      'Sau khi đăng ký, bạn sẽ được cấp quyền Quản trị Tổ chức để cấu hình sân và bảng giá.',
     registerCourtOwnerBtn: 'Đăng ký & Mở cụm sân ngay',
     orDivider: 'Hoặc tiếp tục với',
     loginWithGoogle: 'Đăng nhập với Google',
@@ -883,7 +927,8 @@ export default {
     perk2Desc: 'Tự động kiểm tra giao dịch và giữ sân ngay lập tức.',
     perk3Title: 'Mặt sân chuẩn thi đấu',
     perk3Desc: 'Thảm thi đấu giảm chấn BWF, đèn chống lóa hiện đại.',
-    testimonialText: '“Mặt sân cực kỳ êm ái, quy trình đặt sân tiện lợi và rõ ràng nhất mình từng trải nghiệm.”',
+    testimonialText:
+      '“Mặt sân cực kỳ êm ái, quy trình đặt sân tiện lợi và rõ ràng nhất mình từng trải nghiệm.”',
     testimonialAuthor: 'Nguyễn Thành Long · Vận động viên phong trào',
   },
   profile: {
@@ -922,7 +967,8 @@ export default {
     passwordSection: 'Đổi mật khẩu',
     passwordSubtitle: 'Để bảo mật tài khoản, hãy sử dụng mật khẩu mạnh tối thiểu 8 ký tự.',
     setPasswordTitle: 'Thiết lập mật khẩu đăng nhập',
-    setPasswordSubtitle: 'Tài khoản của bạn được tạo qua mạng xã hội ({provider}). Bạn có thể thiết lập mật khẩu riêng để có thể đăng nhập bằng email & mật khẩu bất cứ lúc nào.',
+    setPasswordSubtitle:
+      'Tài khoản của bạn được tạo qua mạng xã hội ({provider}). Bạn có thể thiết lập mật khẩu riêng để có thể đăng nhập bằng email & mật khẩu bất cứ lúc nào.',
     setPasswordBtn: 'Thiết lập mật khẩu ngay',
     socialLoginBadge: 'Đăng nhập qua',
     currentPassword: 'Mật khẩu hiện tại',
@@ -970,7 +1016,8 @@ export default {
     scSplitBillTitle: 'Chia Tiền Nhóm (Split Bill)',
     scSplitBillDesc: 'Tự động tính tiền sân, chia theo người chơi và quét mã QR.',
     scPartnerTitle: 'Đăng Ký Đối Tác Chủ Sân',
-    scPartnerDesc: 'Gia nhập mạng lưới Aura Court, mở rộng tệp khách hàng và tối ưu doanh thu sân bãi.',
+    scPartnerDesc:
+      'Gia nhập mạng lưới Aura Court, mở rộng tệp khách hàng và tối ưu doanh thu sân bãi.',
     sports: {
       badminton: 'Cầu Lông',
       pickleball: 'Pickleball',
@@ -985,7 +1032,8 @@ export default {
   notifications: {
     eyebrow: 'AURA NOTIFICATION CENTER',
     title: 'Thông Báo Của Bạn',
-    subtitle: 'Theo dõi trạng thái giữ chỗ, biên lai thanh toán tự động, biến động ví và lời mời ghép trận thi đấu.',
+    subtitle:
+      'Theo dõi trạng thái giữ chỗ, biên lai thanh toán tự động, biến động ví và lời mời ghép trận thi đấu.',
     empty: 'Không có thông báo mới nào.',
     markAllRead: 'Đọc Tất Cả',
     refreshBtn: 'Làm Mới',
@@ -1008,11 +1056,13 @@ export default {
     },
     viewDetail: 'Xem chi tiết',
     emptyAllTitle: 'Hộp thư thông báo trống',
-    emptyAllDesc: 'Bạn đã xem hết các thông báo gần đây. Các cập nhật mới về lịch sân, ví và kèo đấu sẽ hiển thị tại đây.',
+    emptyAllDesc:
+      'Bạn đã xem hết các thông báo gần đây. Các cập nhật mới về lịch sân, ví và kèo đấu sẽ hiển thị tại đây.',
     emptyUnreadTitle: 'Không có thông báo chưa đọc',
     emptyUnreadDesc: 'Tuyệt vời! Bạn đã xem toàn bộ thông báo trong hệ thống.',
     emptyBookingTitle: 'Chưa có thông báo đặt sân',
-    emptyBookingDesc: 'Các thông báo xác nhận đặt sân, đổi lịch hoặc nhắc giờ thi đấu sẽ xuất hiện ở đây.',
+    emptyBookingDesc:
+      'Các thông báo xác nhận đặt sân, đổi lịch hoặc nhắc giờ thi đấu sẽ xuất hiện ở đây.',
     emptyPaymentTitle: 'Chưa có thông báo giao dịch',
     emptyPaymentDesc: 'Biên lai chuyển khoản VietQR, nạp tiền ví và chia bill sẽ được lưu tại đây.',
     emptySocialTitle: 'Chưa có thông báo cộng đồng',
@@ -1023,7 +1073,8 @@ export default {
   wallet: {
     membershipEyebrow: 'HỘI VIÊN AURA & VÍ ĐIỆN TỬ',
     title: 'Ví Hội Viên & Nạp Tiền Đa Cụm Sân',
-    subtitle: 'Quản lý số dư trả trước, nạp tiền tự động 24/7 qua VietQR và thanh toán không tiền mặt tại tất cả cụm sân Aura Court.',
+    subtitle:
+      'Quản lý số dư trả trước, nạp tiền tự động 24/7 qua VietQR và thanh toán không tiền mặt tại tất cả cụm sân Aura Court.',
     refresh: 'Làm mới',
     refreshBalance: 'Làm mới số dư',
     refreshBtn: 'Làm mới',
@@ -1033,14 +1084,16 @@ export default {
     linkedVenues: 'Liên kết {count} cụm sân',
     accumulatedPoints: 'Điểm tích lũy: {points} pts',
     venueWalletsTitle: 'Thẻ Hội Viên & Ví Từng Cụm Sân',
-    venueWalletsSubtitle: 'Số dư trả trước và điểm tích lũy được định danh và đồng bộ tự động tại từng câu lạc bộ Aura Court.',
+    venueWalletsSubtitle:
+      'Số dư trả trước và điểm tích lũy được định danh và đồng bộ tự động tại từng câu lạc bộ Aura Court.',
     availableCards: '{count} THẺ KHẢ DỤNG',
     availableBalance: 'Số dư khả dụng',
     auraPoints: 'Điểm Aura',
     payQrBtn: 'Mã POS / Check-in',
     topupCardBtn: 'Nạp thêm',
     transactionsTitle: 'Lịch Sử Giao Dịch & Biến Động Số Dư',
-    transactionsSubtitle: 'Theo dõi lịch sử nạp tiền, thanh toán đặt sân tự động, hoàn huỷ và chi tiêu dịch vụ tại quầy.',
+    transactionsSubtitle:
+      'Theo dõi lịch sử nạp tiền, thanh toán đặt sân tự động, hoàn huỷ và chi tiêu dịch vụ tại quầy.',
     searchPlaceholder: 'Tìm theo mã GD, sân...',
     filterAll: 'Tất cả',
     filterDeposit: 'Nạp tiền',
@@ -1048,7 +1101,8 @@ export default {
     filterRefund: 'Hoàn tiền',
     modalDepositTitle: 'Nạp Tiền Vào Ví Hội Viên',
     modalQrTitle: 'Mã QR Check-in & POS',
-    modalQrDesc: 'Đưa mã này cho nhân viên tại quầy lễ tân để check-in nhận sân hoặc thanh toán nước & phụ kiện thể thao.',
+    modalQrDesc:
+      'Đưa mã này cho nhân viên tại quầy lễ tân để check-in nhận sân hoặc thanh toán nước & phụ kiện thể thao.',
     cardNumber: 'Mã thẻ hội viên:',
     copyCardSuccess: 'Đã sao chép mã thẻ hội viên',
     depositModal: {
@@ -1064,10 +1118,12 @@ export default {
       paymentMethodLabel: 'Phương thức thanh toán:',
       methodSepayTitle: 'Chuyển khoản VietQR SePay (Khuyên dùng)',
       methodSepayTag: 'Tức thì 3s',
-      methodSepayDesc: 'Quét mã VietQR chuyển khoản liên ngân hàng 24/7 qua cổng SePay tự động cộng số dư tức thì sau 3 giây.',
+      methodSepayDesc:
+        'Quét mã VietQR chuyển khoản liên ngân hàng 24/7 qua cổng SePay tự động cộng số dư tức thì sau 3 giây.',
       methodStripeTitle: 'Cổng thanh toán quốc tế Stripe',
       methodStripeTag: 'Bảo mật SSL',
-      methodStripeDesc: 'Hỗ trợ thẻ tín dụng / ghi nợ quốc tế Visa, MasterCard, JCB, Apple Pay với chuẩn mã hóa PCI-DSS Level 1.',
+      methodStripeDesc:
+        'Hỗ trợ thẻ tín dụng / ghi nợ quốc tế Visa, MasterCard, JCB, Apple Pay với chuẩn mã hóa PCI-DSS Level 1.',
       summaryDepositAmount: 'Số tiền nạp:',
       summaryFee: 'Phí giao dịch:',
       summaryFeeFree: '0 ₫ (Miễn phí)',
@@ -1084,7 +1140,8 @@ export default {
       amountLabel: 'Số tiền:',
       transferMemo: 'Nội dung chuyển khoản:',
       vqrListening: 'Hệ thống SePay đang tự động lắng nghe giao dịch chuyển khoản...',
-      vqrNote: 'LƯU Ý: Vui lòng giữ đúng nội dung chuyển khoản ở trên để hệ thống ghi nhận nạp tiền tự động trong 3-10 giây.',
+      vqrNote:
+        'LƯU Ý: Vui lòng giữ đúng nội dung chuyển khoản ở trên để hệ thống ghi nhận nạp tiền tự động trong 3-10 giây.',
       copiedAccount: 'Đã chép số tài khoản',
       copiedMemo: 'Đã chép nội dung chuyển khoản',
       copiedAmount: 'Đã chép số tiền',
@@ -1103,14 +1160,17 @@ export default {
   },
   tournament: {
     title: 'Hệ Thống Giải Đấu & Tranh Tài Cao Cấp',
-    subtitle: 'Đăng ký tham gia tranh tài các giải đấu Cầu lông, Pickleball, Tennis chuẩn chuyên nghiệp. Theo dõi nhánh đấu, bảng xếp hạng và tỷ số thời gian thực.',
+    subtitle:
+      'Đăng ký tham gia tranh tài các giải đấu Cầu lông, Pickleball, Tennis chuẩn chuyên nghiệp. Theo dõi nhánh đấu, bảng xếp hạng và tỷ số thời gian thực.',
     totalTournaments: 'Tổng Giải Đấu',
     openRegistration: 'Đang Mở Đăng Ký',
     totalPrize: 'Tổng Quỹ Thưởng',
     liveScoreTitle: 'Live Score & Tỉ Số Trực Tiếp',
-    liveScoreSubtitle: 'Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.',
+    liveScoreSubtitle:
+      'Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.',
     socialHubTitle: 'Ghép Kèo Giao Lưu & Tìm Bạn Thi Đấu',
-    socialHubSubtitle: 'Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.',
+    socialHubSubtitle:
+      'Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.',
     partnerFinderBtn: 'Tìm Bạn Ghép Đôi',
     createMatchBtn: 'Tạo Kèo Mới',
     bracketTitle: 'Sơ Đồ Nhánh Đấu (Bracket)',
@@ -1121,7 +1181,7 @@ export default {
     selectCategoryPlaceholder: 'Chọn hạng mục thi đấu',
     categorySinglesMen: "Đơn Nam (Men's Singles)",
     categoryDoublesMen: "Đôi Nam (Men's Doubles)",
-    categoryMixedDoubles: "Đôi Nam Nữ (Mixed Doubles)",
+    categoryMixedDoubles: 'Đôi Nam Nữ (Mixed Doubles)',
     tabBracket: 'Sơ Đồ Cây Nhánh Đấu (Knockout Bracket)',
     tabStandings: 'Bảng Xếp Hạng Vòng Bảng (Standings)',
     quarterFinals: 'Tứ Kết (Quarter-Finals)',
@@ -1175,16 +1235,19 @@ export default {
     quickBracketTitle: 'Tổng Quan Nhánh Đấu: {name}',
     quickBracketSub: 'Thông tin thi đấu, danh sách hạt giống và tiến trình giải.',
     seedsListTitle: 'Danh Sách Hạt Giống & Vận Động Viên',
-    openFullBracketHelp: 'Nhấn nút bên dưới để mở toàn bộ sơ đồ cây nhánh đấu và chi tiết từng trận.',
+    openFullBracketHelp:
+      'Nhấn nút bên dưới để mở toàn bộ sơ đồ cây nhánh đấu và chi tiết từng trận.',
     viewFullBracketBtn: 'Xem Cây Nhánh Đầy Đủ & Điểm Số',
     leaderboardTitle: 'Bảng Xếp Hạng Circuit Aura Points 2026',
-    leaderboardSub: 'Tích lũy điểm thưởng qua từng giải đấu trong hệ thống để giành suất tham dự vòng Chung Kết Toàn Quốc Aura Master Cup.',
+    leaderboardSub:
+      'Tích lũy điểm thưởng qua từng giải đấu trong hệ thống để giành suất tham dự vòng Chung Kết Toàn Quốc Aura Master Cup.',
     championshipCupsWon: '{count} Cup Vô Địch',
   },
   resale: {
     eyebrow: 'THỊ TRƯỜNG CHUYỂN NHƯỢNG P2P',
     title: 'Chợ Chuyển Nhượng & Pass Sân',
-    subtitle: 'Mua lại slot giờ vàng giá tốt hoặc nhượng lại lịch đặt khi bận đột xuất. Giao dịch minh bạch, an toàn tuyệt đối qua cơ chế Escrow bảo vệ người dùng 100%.',
+    subtitle:
+      'Mua lại slot giờ vàng giá tốt hoặc nhượng lại lịch đặt khi bận đột xuất. Giao dịch minh bạch, an toàn tuyệt đối qua cơ chế Escrow bảo vệ người dùng 100%.',
     escrowBadge: 'Bảo hiểm giao dịch Aura Escrow',
     instantTransferBadge: 'Chuyển nhượng vé tức thì',
     findSlotsTab: 'Tìm Slot Pass',
@@ -1202,10 +1265,12 @@ export default {
     sortTimeAsc: 'Giờ chơi gần nhất',
     resetFilters: 'Xóa bộ lọc',
     emptyListingsTitle: 'Chưa có slot nào phù hợp với bộ lọc',
-    emptyListingsDesc: 'Thử điều chỉnh tiêu chí tìm kiếm hoặc kiểm tra lại sau khi có thành viên khác đăng tin pass sân.',
+    emptyListingsDesc:
+      'Thử điều chỉnh tiêu chí tìm kiếm hoặc kiểm tra lại sau khi có thành viên khác đăng tin pass sân.',
     resetAndShowAll: 'Xóa bộ lọc & Xem tất cả',
     sellIntroTitle: 'Danh Sách Lịch Đã Đặt Có Thể Pass Lại',
-    sellIntroSub: 'Chỉ các suất chơi thuộc lịch đã thanh toán thành công và cách giờ bắt đầu tối thiểu 2 tiếng mới đủ điều kiện đăng nhượng.',
+    sellIntroSub:
+      'Chỉ các suất chơi thuộc lịch đã thanh toán thành công và cách giờ bắt đầu tối thiểu 2 tiếng mới đủ điều kiện đăng nhượng.',
     emptyUserSlots: 'Hiện bạn không có lịch đặt sân nào sắp tới để chuyển nhượng.',
     bookNowBtn: 'Đặt Sân Ngay',
     passSlotBtn: 'Pass Lại Slot Này',
@@ -1215,13 +1280,15 @@ export default {
     resalePrice: 'Giá pass',
     buyNowBtn: 'Mua Ngay',
     buyModalTitle: 'Xác Nhận Mua Lại Slot Sân',
-    buyModalDesc: 'Vé đặt sân sẽ được chuyển nhượng ngay lập tức vào tài khoản của bạn sau khi thanh toán thành công.',
+    buyModalDesc:
+      'Vé đặt sân sẽ được chuyển nhượng ngay lập tức vào tài khoản của bạn sau khi thanh toán thành công.',
     paymentMethod: 'Phương thức thanh toán:',
     payWithWallet: 'Ví Aura Club (Số dư: {balance})',
     payWithVietQr: 'Quét mã VietQR SePay',
     confirmBuyBtn: 'Xác Nhận Mua Slot',
     sellModalTitle: 'Đăng Tin Chuyển Nhượng Sân',
-    sellModalDesc: 'Nhập giá bạn muốn pass lại. Hệ thống gợi ý giảm 10-30% để thanh khoản nhanh nhất.',
+    sellModalDesc:
+      'Nhập giá bạn muốn pass lại. Hệ thống gợi ý giảm 10-30% để thanh khoản nhanh nhất.',
     askingPriceLabel: 'Giá bạn muốn pass (VNĐ):',
     confirmSellBtn: 'Đăng Tin Nhượng Sân',
     cancelListingBtn: 'Hủy Tin Đăng',
@@ -1233,12 +1300,14 @@ export default {
   },
   splitBill: {
     title: 'Chia tiền đặt sân theo nhóm',
-    subtitle: 'Thông tin nhóm và từng phần đóng góp được tải từ máy chủ. Chỉ biên nhận đã xác minh mới xác nhận thanh toán.',
+    subtitle:
+      'Thông tin nhóm và từng phần đóng góp được tải từ máy chủ. Chỉ biên nhận đã xác minh mới xác nhận thanh toán.',
     backToBookings: 'Quay lại lịch sử đặt sân',
     refresh: 'Tải lại trạng thái',
     loading: 'Đang tải nhóm chia tiền...',
     noGroupSelected: 'Chưa chọn nhóm chia tiền.',
-    bookingLookupUnavailable: 'Chưa thể tra cứu nhóm chia tiền từ mã đặt sân này. Vui lòng thử lại sau.',
+    bookingLookupUnavailable:
+      'Chưa thể tra cứu nhóm chia tiền từ mã đặt sân này. Vui lòng thử lại sau.',
     invalidGroup: 'Máy chủ không trả về nhóm chia tiền hợp lệ.',
     loadFailed: 'Không thể tải nhóm chia tiền. Vui lòng thử lại.',
     staleWarning: 'Không thể cập nhật trạng thái. Dữ liệu bên dưới có thể đã thay đổi.',
@@ -1247,8 +1316,10 @@ export default {
     acceptedTotal: 'Tổng tiền đặt sân đã chấp nhận',
     serverState: 'Trạng thái nhóm ghi trên máy chủ',
     expiresAt: 'Hết hạn giữ chỗ',
-    evidenceUnavailable: 'Chưa có biên nhận thanh toán đã xác minh từ API. Trạng thái nhóm hoặc tham chiếu do khách gửi không phải bằng chứng đã nhận tiền.',
-    actionsUnavailable: 'Chia theo món/thời lượng, thêm dịch vụ và tạo yêu cầu đóng góp chưa khả dụng khi API chưa lưu các thay đổi này. Tổng tiền ở đây chỉ gồm tiền đặt sân đã chấp nhận; chi phí sau buổi không phải khoản đã thu.',
+    evidenceUnavailable:
+      'Chưa có biên nhận thanh toán đã xác minh từ API. Trạng thái nhóm hoặc tham chiếu do khách gửi không phải bằng chứng đã nhận tiền.',
+    actionsUnavailable:
+      'Chia theo món/thời lượng, thêm dịch vụ và tạo yêu cầu đóng góp chưa khả dụng khi API chưa lưu các thay đổi này. Tổng tiền ở đây chỉ gồm tiền đặt sân đã chấp nhận; chi phí sau buổi không phải khoản đã thu.',
     shares: 'Các phần đóng góp',
     shareNumber: 'Phần số {number}',
     shareExpired: 'Phần đóng góp đã hết hạn.',
@@ -1258,7 +1329,8 @@ export default {
   matchmaking: {
     eyebrow: 'MỞ KÈO GIAO LƯU',
     title: 'Ghép Kèo Giao Lưu & Tìm Bạn Thi Đấu',
-    subtitle: 'Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.',
+    subtitle:
+      'Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.',
     openMatches: 'Kèo đang tuyển người',
     totalMembers: 'Vận động viên tham gia',
     totalVenues: 'Cụm sân liên kết',
@@ -1282,7 +1354,8 @@ export default {
     levelIntermediate: 'Trung bình khá',
     levelAdvanced: 'Nâng cao / Chuyên nghiệp',
     createMatchPageTitle: 'Khởi Tạo Kèo Mới & Ghép Trận',
-    createMatchPageSub: 'Tìm kiếm đối thủ, kết nối đồng đội và tự động chia sẻ chi phí sân thể thao Aura Court.',
+    createMatchPageSub:
+      'Tìm kiếm đối thủ, kết nối đồng đội và tự động chia sẻ chi phí sân thể thao Aura Court.',
     backToMatchmaking: 'Quay lại Ghép Kèo',
     customTitleLabel: 'Tiêu đề kèo giao lưu (tự động gợi ý nếu để trống)',
     customTitlePlaceholder: 'Ví dụ: Tìm 2 bạn đánh đôi nam/nữ cầu lông trình độ khá thứ 7...',
@@ -1300,9 +1373,11 @@ export default {
   legal: {
     badge: 'QUY ĐỊNH & PHÁP LÝ AURA COURT',
     termsTitle: 'Điều khoản dịch vụ',
-    termsSubtitle: 'Vui lòng đọc kỹ các điều khoản dưới đây trước khi sử dụng dịch vụ đặt sân trực tuyến và tham gia hoạt động thể thao tại hệ thống sân thi đấu chuyên nghiệp Aura Court.',
+    termsSubtitle:
+      'Vui lòng đọc kỹ các điều khoản dưới đây trước khi sử dụng dịch vụ đặt sân trực tuyến và tham gia hoạt động thể thao tại hệ thống sân thi đấu chuyên nghiệp Aura Court.',
     privacyTitle: 'Chính sách bảo mật',
-    privacySubtitle: 'Aura Court cam kết bảo vệ thông tin cá nhân và quyền riêng tư của quý khách hàng với tiêu chuẩn an toàn dữ liệu cao nhất.',
+    privacySubtitle:
+      'Aura Court cam kết bảo vệ thông tin cá nhân và quyền riêng tư của quý khách hàng với tiêu chuẩn an toàn dữ liệu cao nhất.',
     tabTerms: 'Điều khoản dịch vụ',
     tabPrivacy: 'Chính sách bảo mật',
     updatedDate: 'Cập nhật: Tháng 08/2026',
@@ -1351,7 +1426,20 @@ export default {
     today: 'Hôm nay',
     clear: 'Xóa',
     weekdays: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
-    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+    months: [
+      'Tháng 1',
+      'Tháng 2',
+      'Tháng 3',
+      'Tháng 4',
+      'Tháng 5',
+      'Tháng 6',
+      'Tháng 7',
+      'Tháng 8',
+      'Tháng 9',
+      'Tháng 10',
+      'Tháng 11',
+      'Tháng 12',
+    ],
   },
   admin: {
     eyebrow: 'Quản trị hệ thống',
@@ -1364,11 +1452,13 @@ export default {
     scheduleManage: 'Lịch hoạt động & Bảo trì',
     operatingHours: 'Lịch hoạt động',
     scheduleConfig: 'Cấu hình Lịch hoạt động',
-    scheduleDesc: 'Thiết lập khung giờ hoạt động chuẩn, quản lý ngoại lệ ngày lễ và lên lịch bảo trì sân để đảm bảo khung giờ đặt sân chính xác.',
+    scheduleDesc:
+      'Thiết lập khung giờ hoạt động chuẩn, quản lý ngoại lệ ngày lễ và lên lịch bảo trì sân để đảm bảo khung giờ đặt sân chính xác.',
     auditLog: 'Nhật ký kiểm toán',
     publishChanges: 'Lưu & Áp dụng thay đổi',
     standardWeekly: 'Lịch hoạt động tuần chuẩn',
-    standardWeeklyDesc: 'Khung giờ này áp dụng cho toàn bộ các sân tiêu chuẩn trừ khi có lịch bảo trì hoặc ngoại lệ.',
+    standardWeeklyDesc:
+      'Khung giờ này áp dụng cho toàn bộ các sân tiêu chuẩn trừ khi có lịch bảo trì hoặc ngoại lệ.',
     allVenues: 'Tất cả cụm sân',
     addShift: 'Thêm ca hoạt động',
     removeShift: 'Xóa ca',
@@ -1380,7 +1470,8 @@ export default {
     closedAllDay: 'Đóng cả ngày',
     modifiedHours: 'Điều chỉnh: {hours}',
     maintenance: 'Lịch bảo trì sân',
-    maintenanceDesc: 'Theo dõi và lên lịch khóa các sân đang bảo dưỡng thảm, thay lưới hoặc kiểm tra kỹ thuật.',
+    maintenanceDesc:
+      'Theo dõi và lên lịch khóa các sân đang bảo dưỡng thảm, thay lưới hoặc kiểm tra kỹ thuật.',
     courtOffline: '{court} Tạm dừng',
     scheduleDowntime: 'Lên lịch bảo trì',
     maintenanceReason: 'Lý do bảo trì',
@@ -1417,7 +1508,8 @@ export default {
     membershipLoyalty: 'Gói hội viên & Điểm thưởng',
     dashboard: {
       pageTitle: 'Tổng Quan Báo Cáo & Quản Trị Hệ Thống',
-      pageSubtitle: 'Theo dõi doanh thu toàn hệ thống thời gian thực, công suất sử dụng sân và kiểm duyệt thanh toán.',
+      pageSubtitle:
+        'Theo dõi doanh thu toàn hệ thống thời gian thực, công suất sử dụng sân và kiểm duyệt thanh toán.',
       totalRevenue: 'Tổng Doanh Thu',
       revenueTrend: '↑ 14.2% so với tháng trước',
       totalBookings: 'Lượt Đặt Sân',
@@ -1589,7 +1681,8 @@ export default {
       statusRejected: 'Đã từ chối',
       refundReview: {
         title: 'Duyệt hoàn tiền huỷ sân',
-        subtitle: 'Danh sách yêu cầu hoàn tiền của lịch đặt. Duyệt, từ chối, báo đã chuyển khoản hoặc xác nhận theo vai trò của bạn.',
+        subtitle:
+          'Danh sách yêu cầu hoàn tiền của lịch đặt. Duyệt, từ chối, báo đã chuyển khoản hoặc xác nhận theo vai trò của bạn.',
         actions: {
           approve: 'Duyệt',
           reject: 'Từ chối',
@@ -1613,7 +1706,8 @@ export default {
           recipient_disputed: 'Đang tranh chấp',
         },
         hints: {
-          notVerified: 'Khoản hoàn tiền chỉ được coi là hoàn tất khi người nhận xác nhận đã nhận tiền. Báo cáo đã chuyển khoản của chủ sân hoặc trạng thái tranh chấp KHÔNG phải là đã hoàn tất/đã xác minh.',
+          notVerified:
+            'Khoản hoàn tiền chỉ được coi là hoàn tất khi người nhận xác nhận đã nhận tiền. Báo cáo đã chuyển khoản của chủ sân hoặc trạng thái tranh chấp KHÔNG phải là đã hoàn tất/đã xác minh.',
         },
         toasts: {
           approved: 'Đã duyệt yêu cầu hoàn tiền.',
@@ -1717,7 +1811,8 @@ export default {
     },
     venues: {
       title: 'Quản lý Cụm sân & Cơ sở',
-      subtitle: 'Quản trị toàn bộ hệ thống cơ sở thi đấu, định vị Google Maps, mã QR đặt sân và trạng thái hoạt động.',
+      subtitle:
+        'Quản trị toàn bộ hệ thống cơ sở thi đấu, định vị Google Maps, mã QR đặt sân và trạng thái hoạt động.',
       addNewVenue: 'Thêm Cơ Sở Mới',
       refreshBtn: 'Làm mới',
       totalVenues: 'Tổng số cụm sân',
@@ -1744,7 +1839,7 @@ export default {
       deleteVenueSuccess: 'Đã ngưng hoạt động cơ sở {name}!',
       deleteVenueBtn: 'Ngừng hoạt động',
       saving: 'Đang lưu...',
-      
+
       // KPI Bar
       kpiTotalVenues: 'Tổng Cơ Sở',
       kpiActiveVenues: 'Đang Hoạt Động',
@@ -1777,14 +1872,18 @@ export default {
       operatingOpenCheckbox: 'Đang mở cửa vận hành (Active)',
       saveVenueBtn: 'Lưu Cơ Sở',
       bookingPolicyTitle: 'Chính sách đặt sân',
-      bookingPolicyDescription: 'Chọn rõ từng điều kiện. Bản lưu mới tạo phiên bản chính sách mới và không tự ghi nhận sự đồng ý của khách.',
+      bookingPolicyDescription:
+        'Chọn rõ từng điều kiện. Bản lưu mới tạo phiên bản chính sách mới và không tự ghi nhận sự đồng ý của khách.',
       bookingPolicyVersion: 'Phiên bản {version}',
       bookingPolicyNotConfigured: 'Chưa cấu hình',
-      bookingPolicySaveVenueFirst: 'Lưu cơ sở trước, sau đó mở chỉnh sửa để cấu hình chính sách đặt sân.',
+      bookingPolicySaveVenueFirst:
+        'Lưu cơ sở trước, sau đó mở chỉnh sửa để cấu hình chính sách đặt sân.',
       loadingBookingPolicy: 'Đang tải chính sách...',
       bookingPolicyRequired: 'Hãy điền hoặc chọn đầy đủ các điều kiện trước khi lưu.',
-      bookingPolicyDurationInvalid: 'Thời lượng tối đa phải lớn hơn hoặc bằng thời lượng tối thiểu.',
-      bookingPolicyFeeInvalid: 'Phí phần trăm không vượt quá 100%; chính sách không thu phí phải ghi số tiền bằng 0.',
+      bookingPolicyDurationInvalid:
+        'Thời lượng tối đa phải lớn hơn hoặc bằng thời lượng tối thiểu.',
+      bookingPolicyFeeInvalid:
+        'Phí phần trăm không vượt quá 100%; chính sách không thu phí phải ghi số tiền bằng 0.',
       saveBookingPolicy: 'Lưu phiên bản chính sách',
       bookingPolicySaved: 'Đã lưu phiên bản chính sách {version}.',
       bookingPolicyBooking: 'Giữ chỗ và thời lượng',
@@ -1833,10 +1932,12 @@ export default {
       readinessBtn: 'Điều kiện & Thanh toán',
       receivingConnection: {
         title: 'Kết nối tài khoản nhận tiền của chủ sân',
-        description: 'Kết nối cơ sở với tài khoản SePay của chính chủ sân. Aura Court không yêu cầu mật khẩu ngân hàng.',
+        description:
+          'Kết nối cơ sở với tài khoản SePay của chính chủ sân. Aura Court không yêu cầu mật khẩu ngân hàng.',
         loading: 'Đang tải kết nối nhận tiền…',
         refreshStatus: 'Cập nhật trạng thái',
-        created: 'Đã lưu tài khoản nhận tiền ở trạng thái nháp. Hãy cấu hình webhook trong SePay để tiếp tục.',
+        created:
+          'Đã lưu tài khoản nhận tiền ở trạng thái nháp. Hãy cấu hình webhook trong SePay để tiếp tục.',
         selected: 'Đã chọn tài khoản đã xác minh để nhận thanh toán mới.',
         selecting: 'Đang chọn…',
         select: 'Dùng tài khoản này cho thanh toán mới',
@@ -1845,7 +1946,8 @@ export default {
         cancelAddAccount: 'Hủy',
         verifyBeforeSelecting: 'Hãy xác minh tài khoản trước khi chọn nhận thanh toán mới.',
         saveFailed: 'Không thể lưu tài khoản nhận tiền.',
-        secretSaved: 'Đã lưu secret HMAC. Hãy gửi một giao dịch vào có xác thực để kiểm tra kết nối.',
+        secretSaved:
+          'Đã lưu secret HMAC. Hãy gửi một giao dịch vào có xác thực để kiểm tra kết nối.',
         secretFailed: 'Không thể lưu secret HMAC.',
         apiTokenSaved: 'Đã lưu API token SePay an toàn.',
         apiTokenFailed: 'Không thể lưu API token SePay.',
@@ -1863,15 +1965,18 @@ export default {
         accountName: 'Tên chủ tài khoản',
         accountNumber: 'Số tài khoản ngân hàng',
         legalOwnerAttestation: 'Tôi xác nhận tổ chức được quyền nhận thanh toán vào tài khoản này.',
-        noBankPassword: 'Chỉ nhập thông tin tài khoản. Không nhập mật khẩu ngân hàng hoặc mã xác thực một lần.',
+        noBankPassword:
+          'Chỉ nhập thông tin tài khoản. Không nhập mật khẩu ngân hàng hoặc mã xác thực một lần.',
         saving: 'Đang lưu…',
         saveAccount: 'Lưu tài khoản nhận tiền',
         sepaySetup: 'Cấu hình webhook SePay',
         hmacSecret: 'Secret HMAC-SHA256 SePay',
         saveHmacSecret: 'Lưu hoặc xoay vòng secret',
-        secretNeverShown: 'Secret được mã hóa và không hiển thị lại sau khi lưu. Xoay vòng yêu cầu xác minh lại.',
+        secretNeverShown:
+          'Secret được mã hóa và không hiển thị lại sau khi lưu. Xoay vòng yêu cầu xác minh lại.',
         optionalQuery: 'Truy vấn giao dịch tùy chọn',
-        queryApiNote: 'Thêm API token SePay để máy chủ đối soát khi webhook bị lỡ. Đây là tùy chọn; webhook vẫn là thông báo chính.',
+        queryApiNote:
+          'Thêm API token SePay để máy chủ đối soát khi webhook bị lỡ. Đây là tùy chọn; webhook vẫn là thông báo chính.',
         providerAccountId: 'ID tài khoản ngân hàng SePay',
         apiToken: 'API token SePay',
         saveApiToken: 'Lưu hoặc xoay vòng API token',
@@ -1882,12 +1987,14 @@ export default {
         retryLoad: 'Tải lại kết nối',
         readiness: 'Tài khoản nhận tiền của chủ sân đã xác minh',
         notVerifiedMissing: 'Cần xác minh tài khoản nhận tiền của chủ sân trước khi xuất bản.',
-        notSelectedMissing: 'Cần chọn tài khoản nhận tiền đã xác minh cho cơ sở trước khi xuất bản.',
+        notSelectedMissing:
+          'Cần chọn tài khoản nhận tiền đã xác minh cho cơ sở trước khi xuất bản.',
       },
 
       // QR Modal
       qrModalTitle: 'Mã QR Cơ Sở: {name}',
-      qrModalSub: 'Khách hàng có thể quét mã QR này tại quầy hoặc cửa sân để mở trang đặt sân / chỉ đường:',
+      qrModalSub:
+        'Khách hàng có thể quét mã QR này tại quầy hoặc cửa sân để mở trang đặt sân / chỉ đường:',
       downloadQrBtn: 'Tải Mã QR (PNG)',
       copyLinkBtn: 'Sao Chép Link',
       copiedLink: 'Đã sao chép liên kết vào clipboard!',
@@ -1896,7 +2003,8 @@ export default {
     },
     schedule: {
       title: 'Lịch hoạt động & Giờ Mở Cửa Toàn Hệ Thống',
-      subtitle: 'Cấu hình thời gian mở sân chuẩn hàng tuần, ngày lễ Tết và lên lịch khoá bảo trì từng sân đấu.',
+      subtitle:
+        'Cấu hình thời gian mở sân chuẩn hàng tuần, ngày lễ Tết và lên lịch khoá bảo trì từng sân đấu.',
       auditLogsBtn: 'Nhật Ký Kiểm Toán',
       saveScheduleBtn: 'Lưu Cấu Hình Lịch',
       refreshBtn: 'Làm mới',
@@ -1937,7 +2045,8 @@ export default {
 
       // Maintenance & Downtime
       maintenanceTitle: 'Lịch Bảo Trì & Tạm Khoá Sân',
-      maintenanceSub: 'Khoá tạm thời một hoặc nhiều sân phục vụ thay thảm, sửa đèn, vệ sinh định kỳ.',
+      maintenanceSub:
+        'Khoá tạm thời một hoặc nhiều sân phục vụ thay thảm, sửa đèn, vệ sinh định kỳ.',
       scheduleDowntimeBtn: 'Lên lịch bảo trì',
       statusLocked: 'Đang khoá',
       statusUpcoming: 'Sắp diễn ra',
@@ -1950,7 +2059,8 @@ export default {
 
       // Special Dates
       specialDatesTitle: 'Ngày Đặc Biệt & Sự Kiện',
-      specialDatesSub: 'Lịch hoạt động riêng biệt cho các dịp lễ Tết, giải đấu nội bộ hoặc sửa chữa cụm sân.',
+      specialDatesSub:
+        'Lịch hoạt động riêng biệt cho các dịp lễ Tết, giải đấu nội bộ hoặc sửa chữa cụm sân.',
       addSpecialDateBtn: 'Thêm ngày đặc biệt',
       standardHours: 'Theo lịch chuẩn',
       typeHoliday: 'Ngày Lễ',
@@ -1979,7 +2089,8 @@ export default {
       venueScheduleOption: 'Lịch chung cơ sở',
       loadError: 'Không thể tải dữ liệu lịch hoạt động.',
       unlockConfirmTitle: 'Xác nhận mở khoá sân',
-      unlockConfirmMsg: 'Bạn có chắc chắn muốn kết thúc bảo trì và mở khoá lại sân này cho khách đặt không?',
+      unlockConfirmMsg:
+        'Bạn có chắc chắn muốn kết thúc bảo trì và mở khoá lại sân này cho khách đặt không?',
 
       // Special Date Modal
       addSpecialDateModalTitle: 'Thêm ngày đặc biệt / ngoại lệ',
@@ -2036,7 +2147,8 @@ export default {
     },
     pricing: {
       title: 'Thiết Lập Ma Trận Giá Linh Hoạt',
-      subtitle: 'Cài đặt quy tắc định giá theo giờ cao điểm, phụ thu ngày lễ, giảm giá giờ thấp điểm và tự động tính báo giá.',
+      subtitle:
+        'Cài đặt quy tắc định giá theo giờ cao điểm, phụ thu ngày lễ, giảm giá giờ thấp điểm và tự động tính báo giá.',
       refreshBtn: 'Làm Mới',
       presetsBtn: 'Bộ Quy Tắc Mẫu',
       simulatorBtn: 'Mô Phỏng Báo Giá',
@@ -2054,7 +2166,8 @@ export default {
       kpiAvgBasePrice: 'Giá Trung Bình',
       kpiPerSlot: 'Mỗi khung giờ / sân',
       hierarchyTitle: 'Độ Ưu Tiên Quy Tắc (Dynamic Price Hierarchy)',
-      hierarchySub: 'Áp dụng theo thứ tự ngoại lệ ngày/lễ, cao điểm, theo tuần, cơ bản; phạm vi và độ ưu tiên phân xử khi trùng cùng tầng.',
+      hierarchySub:
+        'Áp dụng theo thứ tự ngoại lệ ngày/lễ, cao điểm, theo tuần, cơ bản; phạm vi và độ ưu tiên phân xử khi trùng cùng tầng.',
       searchRulesPlaceholder: 'Tìm quy tắc theo tên, sân, loại giá, số tiền...',
       allVenues: 'Tất cả cơ sở',
       allCourts: 'Tất cả sân',
@@ -2098,7 +2211,8 @@ export default {
       toTime: 'Đến',
       priceAmountLabel: 'Đơn giá áp dụng (₫):',
       priorityLabel: 'Độ ưu tiên (Priority):',
-      priorityHint: 'Số lớn hơn thắng trong cùng phạm vi và tầng giá; phiên bản mới hơn phân xử khi còn trùng.',
+      priorityHint:
+        'Số lớn hơn thắng trong cùng phạm vi và tầng giá; phiên bản mới hơn phân xử khi còn trùng.',
       effectiveDatesHeading: 'Thời hạn áp dụng quy tắc',
       effectiveFromLabel: 'Có hiệu lực từ (bao gồm):',
       effectiveUntilLabel: 'Có hiệu lực đến hết ngày (bao gồm):',
@@ -2129,19 +2243,23 @@ export default {
       applyPresetTo: 'Áp dụng bộ quy tắc cho',
       applyPresetBtn: 'Áp Dụng Bộ Mẫu',
       presetUrbanTitle: 'Sân Trung Tâm Đô Thị (Urban Peak Pack)',
-      presetUrbanDesc: 'Tối ưu hóa doanh thu giờ cao điểm tối 17:00 - 21:00 (+50%) và phụ thu cuối tuần (+25%).',
+      presetUrbanDesc:
+        'Tối ưu hóa doanh thu giờ cao điểm tối 17:00 - 21:00 (+50%) và phụ thu cuối tuần (+25%).',
       presetUrbanBadge: 'Phổ biến nhất',
       presetStudentTitle: 'Ưu Đãi Học Sinh / Sinh Viên (Student Promo)',
-      presetStudentDesc: 'Giảm 25% các khung giờ trưa vắng khách (11:00 - 14:00) từ Thứ 2 đến Thứ 6.',
+      presetStudentDesc:
+        'Giảm 25% các khung giờ trưa vắng khách (11:00 - 14:00) từ Thứ 2 đến Thứ 6.',
       presetStudentBadge: 'Tăng lấp đầy',
       presetHolidayTitle: 'Phụ Thu Lễ Tết Toàn Hệ Thống (+35%)',
-      presetHolidayDesc: 'Tự động áp dụng mức giá phụ thu ngày lễ toàn hệ thống với độ ưu tiên cao.',
+      presetHolidayDesc:
+        'Tự động áp dụng mức giá phụ thu ngày lễ toàn hệ thống với độ ưu tiên cao.',
       presetHolidayBadge: 'Lễ Tết',
       presetNightTitle: 'Khung Giờ Đêm Tiết Kiệm (Night Owl Pack)',
       presetNightDesc: 'Ưu đãi giảm 15% cho các khung giờ muộn 21:00 - 23:00.',
       presetNightBadge: 'Đêm muộn',
       simulatorModalTitle: 'Trình Mô Phỏng & Báo Giá Tự Động',
-      simIntro: 'Kiểm tra đơn giá chính xác sẽ tính cho khách hàng theo thời gian thực dựa trên toàn bộ quy tắc:',
+      simIntro:
+        'Kiểm tra đơn giá chính xác sẽ tính cho khách hàng theo thời gian thực dựa trên toàn bộ quy tắc:',
       selectBookingDate: 'Ngày đặt sân:',
       selectStartTime: 'Giờ bắt đầu:',
       rentalDuration: 'Thời lượng thuê:',
@@ -2151,11 +2269,13 @@ export default {
       estimatedQuote: 'Tổng Báo Giá Cho Khách:',
       estimatedQuotePreview: 'Báo Giá Ước Tính Sơ Bộ:',
       previewFormula: 'Thời lượng {duration} giờ × {rate}/giờ',
-      calculatedNote: 'Đã tự động tính toán qua ma trận ưu tiên (Idempotent Dynamic Pricing Engine)',
+      calculatedNote:
+        'Đã tự động tính toán qua ma trận ưu tiên (Idempotent Dynamic Pricing Engine)',
     },
     contracts: {
       title: 'Quản Lý Hợp Đồng Đặt Sân Định Kỳ',
-      subtitle: 'Theo dõi lịch đặt sân định kỳ và các kỳ thanh toán; khách hàng tạo chuỗi qua bước xem trước và chấp nhận đặt sân.',
+      subtitle:
+        'Theo dõi lịch đặt sân định kỳ và các kỳ thanh toán; khách hàng tạo chuỗi qua bước xem trước và chấp nhận đặt sân.',
       refreshBtn: 'Làm mới',
       exportExcel: 'Xuất Báo Cáo Excel',
       activeContracts: 'Tổng Hợp Đồng Đang Chạy',
@@ -2176,7 +2296,8 @@ export default {
       statusCancelled: 'Đã huỷ / Chấm dứt',
       searchPlaceholder: 'Tìm theo tên khách, CLB, mã HĐ...',
       noContractsFound: 'Không tìm thấy hợp đồng nào',
-      noContractsSub: 'Thử thay đổi bộ lọc; khách hàng tạo chuỗi định kỳ qua bước xem trước và chấp nhận đặt sân.',
+      noContractsSub:
+        'Thử thay đổi bộ lọc; khách hàng tạo chuỗi định kỳ qua bước xem trước và chấp nhận đặt sân.',
       hdrContractAndCustomer: 'Hợp Đồng & Khách Hàng',
       hdrCourtAndSlot: 'Sân & Khung Giờ',
       hdrMatchSchedule: 'Lịch Thi Đấu',
@@ -2211,7 +2332,8 @@ export default {
     },
     staff: {
       title: 'Nhân sự & Phân quyền',
-      subtitle: 'Quản trị danh sách nhân sự, phân quyền vai trò và theo dõi nhật ký hoạt động hệ thống.',
+      subtitle:
+        'Quản trị danh sách nhân sự, phân quyền vai trò và theo dõi nhật ký hoạt động hệ thống.',
       refreshBtn: 'Làm mới',
       totalStaff: 'Tổng Nhân Sự',
       totalStaffCount: '{count} Nhân viên',
@@ -2273,13 +2395,15 @@ export default {
       editModalSub: 'Thay đổi chức danh hoặc trạng thái hoạt động của thành viên.',
       confirmUpdateBtn: 'Lưu Thay Đổi',
       confirmRemoveTitle: 'Xác Nhận Xoá Nhân Viên',
-      confirmRemoveMsg: 'Bạn có chắc chắn muốn xoá thành viên {email} khỏi tổ chức? Thao tác này sẽ thu hồi toàn bộ quyền truy cập hệ thống.',
+      confirmRemoveMsg:
+        'Bạn có chắc chắn muốn xoá thành viên {email} khỏi tổ chức? Thao tác này sẽ thu hồi toàn bộ quyền truy cập hệ thống.',
       removeConfirmBtn: 'Xoá Nhân Viên',
       cannotDemoteOwner: 'Không thể hạ quyền hoặc xoá Chủ sở hữu cuối cùng của tổ chức.',
 
       // Role Matrix
       roleMatrixHeading: 'Ma trận Đối soát Quyền hạn (Role Permission Matrix)',
-      roleMatrixSub: 'Chi tiết phân quyền truy cập các tính năng cốt lõi theo từng chức danh nhân sự.',
+      roleMatrixSub:
+        'Chi tiết phân quyền truy cập các tính năng cốt lõi theo từng chức danh nhân sự.',
       hdrModuleAndAction: 'Module & Quyền Hạn',
       matrix: {
         courtManagement: 'Quản lý Hệ thống Sân',
@@ -2325,7 +2449,8 @@ export default {
     },
     payouts: {
       title: 'Báo cáo Doanh thu & Rút tiền',
-      subtitle: 'Quản lý quyết toán doanh thu, đối soát phí dịch vụ và thực hiện lệnh rút tiền về tài khoản ngân hàng.',
+      subtitle:
+        'Quản lý quyết toán doanh thu, đối soát phí dịch vụ và thực hiện lệnh rút tiền về tài khoản ngân hàng.',
       refreshBtn: 'Làm mới',
       createPayoutBtn: 'Tạo Lệnh Rút Tiền',
       snapshotSettlementBtn: 'Tạo Kỳ Quyết Toán',
@@ -2394,7 +2519,8 @@ export default {
 
       // Settlement Periods Table
       settlementTableTitle: 'Kỳ Đối Soát Doanh Thu (Settlement Batches)',
-      settlementTableSub: 'Các kỳ chốt doanh thu bất biến theo chu kỳ D+2 trước khi tạo lệnh rút tiền',
+      settlementTableSub:
+        'Các kỳ chốt doanh thu bất biến theo chu kỳ D+2 trước khi tạo lệnh rút tiền',
       colPeriod: 'Kỳ Đối Soát',
       colGross: 'Doanh Thu Gross',
       colFee: 'Khấu Trừ & Phí',
@@ -2432,7 +2558,8 @@ export default {
       snapshotModalTitle: 'Tạo Kỳ Quyết Toán Doanh Thu Mới',
       periodStartLabel: 'Ngày bắt đầu kỳ:',
       periodEndLabel: 'Ngày kết thúc kỳ:',
-      snapshotExplanation: 'Hệ thống sẽ tổng hợp doanh thu từ các đơn đặt sân trong khoảng thời gian này và tự động tính toán số tiền thực nhận sau khi trừ phí dịch vụ.',
+      snapshotExplanation:
+        'Hệ thống sẽ tổng hợp doanh thu từ các đơn đặt sân trong khoảng thời gian này và tự động tính toán số tiền thực nhận sau khi trừ phí dịch vụ.',
       confirmSnapshotBtn: 'Tạo Kỳ Quyết Toán',
 
       // Alerts & Notifications
@@ -2602,7 +2729,8 @@ export default {
       orderSuccess: 'Thanh toán đơn hàng thành công!',
       orderError: 'Thanh toán thất bại. Vui lòng thử lại.',
       disabledTitle: 'Tính năng POS chưa được kích hoạt',
-      disabledNotice: 'Hệ thống POS chưa được cấp quyền cho tổ chức này. Vui lòng liên hệ quản trị viên để đăng ký gói hỗ trợ.',
+      disabledNotice:
+        'Hệ thống POS chưa được cấp quyền cho tổ chức này. Vui lòng liên hệ quản trị viên để đăng ký gói hỗ trợ.',
       openShiftSuccess: 'Đã mở ca làm việc mới!',
       closeShiftSuccess: 'Đã kết thúc ca làm việc!',
       printCommand: 'Đang gửi lệnh in tới máy in hoá đơn (POS-80)...',
@@ -2691,7 +2819,8 @@ export default {
       qrAccountNameLabel: 'Chủ tài khoản:',
       qrAmountLabel: 'Số tiền:',
       qrMemoLabel: 'Nội dung CK:',
-      qrInstructions: 'Khách hàng quét mã bằng ứng dụng ngân hàng. Hệ thống sẽ tự động cập nhật khi nhận được webhook hoặc thu ngân có thể bấm xác nhận bên dưới.',
+      qrInstructions:
+        'Khách hàng quét mã bằng ứng dụng ngân hàng. Hệ thống sẽ tự động cập nhật khi nhận được webhook hoặc thu ngân có thể bấm xác nhận bên dưới.',
       qrCancelBtn: 'Hủy giao dịch',
       qrConfirmReceivedBtn: 'Xác nhận đã nhận tiền',
       qrOrderWaiting: 'Đơn hàng đang chờ thanh toán QR. Vui lòng quét mã để hoàn tất.',
@@ -2709,7 +2838,8 @@ export default {
       shiftActualCashNote: '(Tiền mặt thực tế kiểm đếm)',
       shiftVarianceLabel: 'Chênh lệch kiểm kê (Variance):',
       shiftVarianceMatched: 'Khớp 100% so với dữ liệu đơn hàng và tiền đầu ca.',
-      shiftVarianceDeficit: 'Thiếu tiền so với kỳ vọng hệ thống. Cần ghi chú giải trình lý do bên dưới.',
+      shiftVarianceDeficit:
+        'Thiếu tiền so với kỳ vọng hệ thống. Cần ghi chú giải trình lý do bên dưới.',
       shiftVarianceSurplus: 'Thừa tiền so với kỳ vọng hệ thống.',
       loadingShifts: 'Đang tải lịch sử ca...',
       noShiftsRecorded: 'Chưa có ca thu ngân nào được ghi nhận.',
@@ -2736,7 +2866,8 @@ export default {
     },
     shifts: {
       title: 'Đối Soát Ca Thu Ngân & Két Tiền Mặt',
-      subtitle: 'Theo dõi tiền mặt thực tế, kiểm đếm từng mệnh giá, quản lý rút két và phê duyệt đối soát ca thu ngân.',
+      subtitle:
+        'Theo dõi tiền mặt thực tế, kiểm đếm từng mệnh giá, quản lý rút két và phê duyệt đối soát ca thu ngân.',
       historyTitle: 'Lịch Sử Ca & Báo Cáo Đối Soát',
       updatedCashNotice: 'Đã cập nhật tiền két thực tế: {amount}',
       statusLive: 'ĐANG HOẠT ĐỘNG',
@@ -2792,7 +2923,8 @@ export default {
       varianceAlertKpi: 'Chênh Lệch Cần Xử Lý',
       matchRateKpi: 'Tỷ Lệ Khớp Ca',
       noActiveShift: 'Hiện không có ca thu ngân nào đang mở',
-      noActiveShiftDesc: 'Mở ca làm việc mới để bắt đầu nhận đơn thanh toán và quản lý tiền mặt tại cơ sở.',
+      noActiveShiftDesc:
+        'Mở ca làm việc mới để bắt đầu nhận đơn thanh toán và quản lý tiền mặt tại cơ sở.',
       startShiftNow: 'Mở Ca Ngay',
       allVenues: 'Tất cả cơ sở',
       filterVenueLabel: 'Cơ sở:',
@@ -2800,7 +2932,8 @@ export default {
       openStatus: 'Đang mở',
       closedStatus: 'Đã đóng',
       openShiftModalTitle: 'Mở Ca Thu Ngân Mới',
-      openShiftDesc: 'Khai báo số tiền mặt khởi tạo có sẵn trong két trước khi bắt đầu ca bán hàng.',
+      openShiftDesc:
+        'Khai báo số tiền mặt khởi tạo có sẵn trong két trước khi bắt đầu ca bán hàng.',
       selectVenueLabel: 'Cơ sở tiếp nhận ca:',
       startingFloatLabel: 'Tiền mặt đầu ca (Float):',
       preset0: '0 ₫',
@@ -2818,7 +2951,8 @@ export default {
       shortCash: 'Thiếu tiền két',
       balancedCash: 'Cân đối hoàn hảo',
       closingNoteLabel: 'Ghi chú bàn giao / Giải trình:',
-      closingNotePlaceholder: 'Nhập giải trình nếu có chênh lệch hoặc ghi chú bàn giao ca tiếp theo...',
+      closingNotePlaceholder:
+        'Nhập giải trình nếu có chênh lệch hoặc ghi chú bàn giao ca tiếp theo...',
       confirmCloseShift: 'Xác Nhận Đóng Ca',
       reviewModalTitle: 'Chi Tiết Đối Soát Ca Thu Ngân',
       shiftCodeLabel: 'Mã ca:',
@@ -2856,139 +2990,141 @@ export default {
       applyDenomSuccess: 'Đã cập nhật số tiền đếm {amount} vào tiền két!',
     },
     inventory: {
-      title: "Quản lý Kho Hàng & Dịch Vụ",
-      subtitle: "Theo dõi tồn kho hàng hóa, dụng cụ cho thuê, đồ uống và lịch sử nhập xuất kho.",
-      addProduct: "Thêm Hàng Hóa",
-      stockIn: "Nhập Kho",
-      auditStock: "Kiểm Kê Kho",
-      totalItems: "TỔNG LƯỢNG TỒN KHO",
-      totalItemsCount: "{count} đơn vị",
-      totalValue: "GIÁ TRỊ VỐN TỒN KHO",
-      lowStock: "CẢNH BÁO SẮP HẾT HÀNG",
-      lowStockCount: "{count} mặt hàng",
-      outOfStock: "ĐÃ HẾT HÀNG TRONG KHO",
-      outOfStockCount: "{count} mặt hàng",
-      tabCatalog: "Danh Mục Hàng Hóa & Tồn Kho",
-      tabMovements: "Lịch Sử Nhập / Xuất Kho",
-      searchPlaceholder: "Tìm theo tên sản phẩm, mã SKU, mã vạch...",
-      searchMovementsPlaceholder: "Tìm theo sản phẩm, mã chứng từ, ghi chú...",
-      allCategories: "Tất cả danh mục",
-      allStockStatuses: "Tất cả trạng thái kho",
-      allProductsFilter: "Tất cả mặt hàng",
-      dateFromPlaceholder: "Từ ngày",
-      dateToPlaceholder: "Đến ngày",
-      inStockOption: "Còn hàng",
-      lowStockOption: "Cảnh báo sắp hết",
-      outOfStockOption: "Đã hết hàng",
-      hdrProductAndSku: "Sản Phẩm & SKU",
-      hdrCategory: "Danh Mục",
-      hdrCostAndPrice: "Giá Vốn / Bán Lẻ",
-      hdrCurrentStock: "Tồn Kho Hiện Tại",
-      hdrActions: "Hành Động",
-      costSubLabel: "Vốn: {amount}",
-      belowMinAlert: "Dưới mức tối thiểu ({min})",
-      stockInBtn: "Nhập",
-      stockOutBtn: "Xuất",
-      editProduct: "Chỉnh sửa",
-      movementsTitle: "Nhật Ký Biến Động Nhập / Xuất Kho",
-      allMovementTypes: "Tất cả loại giao dịch",
-      typeInOption: "Nhập kho (Stock In)",
-      typeOutOption: "Xuất kho (Stock Out)",
-      typeAdjustOption: "Kiểm kê điều chỉnh",
-      hdrTimestamp: "Thời Gian",
-      hdrProduct: "Sản Phẩm",
-      hdrTransactionType: "Loại Giao Dịch",
-      hdrQuantity: "Số Lượng",
-      hdrStockBalance: "Tồn Sau GD",
-      hdrNoteAndPerformer: "Ghi Chú & Người Thực Hiện",
-      badgeIn: "NHẬP KHO",
-      badgeOut: "XUẤT KHO",
-      badgeAdjust: "ĐIỀU CHỈNH",
-      badgeSale: "BÁN HÀNG",
-      noNote: "Không có ghi chú",
-      performerSub: "Bởi: {user}",
-      editProductTitle: "Chỉnh Sửa Sản Phẩm",
-      addProductTitle: "Thêm Mặt Hàng Mới Vào Kho",
-      productModalSub: "Cấu hình thông tin chi tiết, đơn vị tính, giá vốn và định mức tồn kho.",
-      productNameLabel: "Tên sản phẩm / Dịch vụ",
-      productNamePlaceholder: "Vd: Nước bù khoáng Pocari Sweat 500ml...",
-      skuLabel: "Mã SKU",
-      autoGenSku: "Tạo mã tự động",
-      barcodeLabel: "Mã vạch Barcode (Tùy chọn)",
-      barcodePlaceholder: "Vd: 8935001701011",
-      categoryLabel: "Danh mục hàng hóa",
-            catDrinksShort: "Đồ uống",
-      catEquipmentShort: "Dụng cụ",
-      catAccessoriesShort: "Phụ kiện",
-      catSnacksShort: "Dinh dưỡng",
-      catRentalShort: "Cho thuê",
-      catServicesShort: "Dịch vụ",
-      catDrinksOption: "Đồ uống & Nước giải khát",
-      catEquipmentOption: "Thiết bị & Dụng cụ thi đấu",
-      catAccessoriesOption: "Phụ kiện thể thao",
-      catSnacksOption: "Đồ ăn nhẹ & Năng lượng",
-      catRentalOption: "Dụng cụ cho thuê",
-      catServicesOption: "Dịch vụ & Tiện ích",
-      unitLabel: "Đơn vị tính (UoM)",
-      unitBottle: "Chai (Bottle)",
-      unitCan: "Lon (Can)",
-      unitBox: "Hộp (Box)",
-      unitTube: "Ống (Tube)",
-      unitItem: "Cái (Item)",
-      unitPair: "Đôi (Pair)",
-      unitPack: "Gói (Pack)",
-      unitSet: "Bộ (Set)",
-      costLabel: "Giá vốn nhập hàng (Cost)",
-      priceLabel: "Giá bán lẻ (Retail Price)",
-            taxRateLabel: "Thuế suất GTGT (VAT)",
-      tax8Percent: "8% - Giảm thuế GTGT (Đồ uống, thực phẩm, thể thao)",
-      tax10Percent: "10% - Tiêu chuẩn (Dịch vụ, tiện ích, sân bãi)",
-      tax5Percent: "5% - Thuế suất ưu đãi",
-      tax0Percent: "0% - Không chịu thuế / Miễn thuế",
-      taxBreakdownLabel: "Bóc tách giá & Thuế VAT",
-      netPriceLabel: "Giá chưa thuế (Net Price)",
-      vatAmountLabel: "Tiền thuế VAT ({rate}%)",
-      profitMarginLabel: "Lợi nhuận",
-      initialStockLabel: "Số lượng tồn ban đầu",
-      currentStockLabel: "Số lượng tồn kho",
-      stockEditNoteHint: "Để thay đổi số lượng tồn kho thực tế, vui lòng sử dụng chức năng Nhập/Xuất/Kiểm kê.",
-      minStockLabel: "Mức cảnh báo tồn tối thiểu (Min)",
-      supplierLabel: "Nhà cung cấp (Supplier)",
-      supplierPlaceholder: "Vd: Công ty TNHH Thể Thao ABC...",
-      descriptionLabel: "Mô tả chi tiết / Ghi chú sản phẩm",
-      descriptionPlaceholder: "Nhập thông tin xuất xứ, quy cách đóng gói...",
-      saveProductBtn: "Lưu Mặt Hàng",
-      stockInTitle: "Nhập Hàng Vào Kho",
-      stockInSub: "Ghi nhận tăng tồn kho hàng hóa từ nhà cung cấp hoặc nguồn nhập.",
-      stockOutTitle: "Xuất Kho / Hủy Hàng Hóa",
-      stockOutSub: "Ghi nhận giảm tồn kho do xuất hủy, hàng hỏng, hết hạn hoặc sử dụng nội bộ.",
-      adjustStockTitle: "Kiểm Kê Điều Chỉnh Kho",
-      adjustStockSub: "Cập nhật lại số lượng tồn kho thực tế sau khi kiểm đếm định kỳ.",
-      targetCurrentStock: "SKU: {sku} · Tồn hiện tại: {stock} {unit}",
-      projectedStock: "TỒN DỰ KIẾN SAU GD",
-      qtyAfterAuditLabel: "Số lượng thực tế đếm được sau kiểm kê",
-      varianceLabel: "Chênh lệch",
-      transactionQtyLabel: "Số lượng thực hiện",
-      unitImportCostLabel: "Đơn giá vốn nhập lô này",
-      outReasonLabel: "Lý do xuất kho",
-      reasonDamaged: "Hàng hóa bị hư hỏng / lỗi",
-      reasonExpired: "Hết hạn sử dụng",
-      reasonInternalUse: "Sử dụng nội bộ / Tiếp khách",
-      reasonLost: "Thất thoát / Không tìm thấy",
-      reasonOther: "Lý do khác",
-      docNoteLabel: "Chứng từ / Ghi chú chi tiết",
-      noteInPlaceholder: "Vd: Hóa đơn nhập NCC số HD-8821...",
-      noteOutPlaceholder: "Vd: Biên bản hủy hàng hỏng số 04...",
-      noteAdjustPlaceholder: "Vd: Kiểm kê định kỳ đầu tháng...",
-      confirmActionBtn: "Xác Nhận Thực Hiện",
-      deleteProductTitle: "Ngừng Kinh Doanh / Xóa Sản Phẩm",
-      deleteProductSub: "Sản phẩm sẽ bị ẩn khỏi danh mục bán hàng POS và kho.",
-      deleteConfirmMsg: "Bạn có chắc chắn muốn xóa sản phẩm '{name}' (SKU: {sku}) khỏi danh mục không?",
-      deleteWithStockWarning: "Cảnh báo: Sản phẩm này hiện vẫn còn {stock} {unit} trong kho!",
-      noMatchingProducts: "Không tìm thấy sản phẩm nào phù hợp với bộ lọc tìm kiếm.",
-      noProductsCreatedYet: "Chưa có mặt hàng nào trong kho. Hãy thêm sản phẩm đầu tiên!",
-      noMatchingMovements: "Không có bản ghi biến động kho nào phù hợp với bộ lọc.",
-      noMovementsRecordedYet: "Chưa có lịch sử nhập / xuất kho nào được ghi nhận.",
+      title: 'Quản lý Kho Hàng & Dịch Vụ',
+      subtitle: 'Theo dõi tồn kho hàng hóa, dụng cụ cho thuê, đồ uống và lịch sử nhập xuất kho.',
+      addProduct: 'Thêm Hàng Hóa',
+      stockIn: 'Nhập Kho',
+      auditStock: 'Kiểm Kê Kho',
+      totalItems: 'TỔNG LƯỢNG TỒN KHO',
+      totalItemsCount: '{count} đơn vị',
+      totalValue: 'GIÁ TRỊ VỐN TỒN KHO',
+      lowStock: 'CẢNH BÁO SẮP HẾT HÀNG',
+      lowStockCount: '{count} mặt hàng',
+      outOfStock: 'ĐÃ HẾT HÀNG TRONG KHO',
+      outOfStockCount: '{count} mặt hàng',
+      tabCatalog: 'Danh Mục Hàng Hóa & Tồn Kho',
+      tabMovements: 'Lịch Sử Nhập / Xuất Kho',
+      searchPlaceholder: 'Tìm theo tên sản phẩm, mã SKU, mã vạch...',
+      searchMovementsPlaceholder: 'Tìm theo sản phẩm, mã chứng từ, ghi chú...',
+      allCategories: 'Tất cả danh mục',
+      allStockStatuses: 'Tất cả trạng thái kho',
+      allProductsFilter: 'Tất cả mặt hàng',
+      dateFromPlaceholder: 'Từ ngày',
+      dateToPlaceholder: 'Đến ngày',
+      inStockOption: 'Còn hàng',
+      lowStockOption: 'Cảnh báo sắp hết',
+      outOfStockOption: 'Đã hết hàng',
+      hdrProductAndSku: 'Sản Phẩm & SKU',
+      hdrCategory: 'Danh Mục',
+      hdrCostAndPrice: 'Giá Vốn / Bán Lẻ',
+      hdrCurrentStock: 'Tồn Kho Hiện Tại',
+      hdrActions: 'Hành Động',
+      costSubLabel: 'Vốn: {amount}',
+      belowMinAlert: 'Dưới mức tối thiểu ({min})',
+      stockInBtn: 'Nhập',
+      stockOutBtn: 'Xuất',
+      editProduct: 'Chỉnh sửa',
+      movementsTitle: 'Nhật Ký Biến Động Nhập / Xuất Kho',
+      allMovementTypes: 'Tất cả loại giao dịch',
+      typeInOption: 'Nhập kho (Stock In)',
+      typeOutOption: 'Xuất kho (Stock Out)',
+      typeAdjustOption: 'Kiểm kê điều chỉnh',
+      hdrTimestamp: 'Thời Gian',
+      hdrProduct: 'Sản Phẩm',
+      hdrTransactionType: 'Loại Giao Dịch',
+      hdrQuantity: 'Số Lượng',
+      hdrStockBalance: 'Tồn Sau GD',
+      hdrNoteAndPerformer: 'Ghi Chú & Người Thực Hiện',
+      badgeIn: 'NHẬP KHO',
+      badgeOut: 'XUẤT KHO',
+      badgeAdjust: 'ĐIỀU CHỈNH',
+      badgeSale: 'BÁN HÀNG',
+      noNote: 'Không có ghi chú',
+      performerSub: 'Bởi: {user}',
+      editProductTitle: 'Chỉnh Sửa Sản Phẩm',
+      addProductTitle: 'Thêm Mặt Hàng Mới Vào Kho',
+      productModalSub: 'Cấu hình thông tin chi tiết, đơn vị tính, giá vốn và định mức tồn kho.',
+      productNameLabel: 'Tên sản phẩm / Dịch vụ',
+      productNamePlaceholder: 'Vd: Nước bù khoáng Pocari Sweat 500ml...',
+      skuLabel: 'Mã SKU',
+      autoGenSku: 'Tạo mã tự động',
+      barcodeLabel: 'Mã vạch Barcode (Tùy chọn)',
+      barcodePlaceholder: 'Vd: 8935001701011',
+      categoryLabel: 'Danh mục hàng hóa',
+      catDrinksShort: 'Đồ uống',
+      catEquipmentShort: 'Dụng cụ',
+      catAccessoriesShort: 'Phụ kiện',
+      catSnacksShort: 'Dinh dưỡng',
+      catRentalShort: 'Cho thuê',
+      catServicesShort: 'Dịch vụ',
+      catDrinksOption: 'Đồ uống & Nước giải khát',
+      catEquipmentOption: 'Thiết bị & Dụng cụ thi đấu',
+      catAccessoriesOption: 'Phụ kiện thể thao',
+      catSnacksOption: 'Đồ ăn nhẹ & Năng lượng',
+      catRentalOption: 'Dụng cụ cho thuê',
+      catServicesOption: 'Dịch vụ & Tiện ích',
+      unitLabel: 'Đơn vị tính (UoM)',
+      unitBottle: 'Chai (Bottle)',
+      unitCan: 'Lon (Can)',
+      unitBox: 'Hộp (Box)',
+      unitTube: 'Ống (Tube)',
+      unitItem: 'Cái (Item)',
+      unitPair: 'Đôi (Pair)',
+      unitPack: 'Gói (Pack)',
+      unitSet: 'Bộ (Set)',
+      costLabel: 'Giá vốn nhập hàng (Cost)',
+      priceLabel: 'Giá bán lẻ (Retail Price)',
+      taxRateLabel: 'Thuế suất GTGT (VAT)',
+      tax8Percent: '8% - Giảm thuế GTGT (Đồ uống, thực phẩm, thể thao)',
+      tax10Percent: '10% - Tiêu chuẩn (Dịch vụ, tiện ích, sân bãi)',
+      tax5Percent: '5% - Thuế suất ưu đãi',
+      tax0Percent: '0% - Không chịu thuế / Miễn thuế',
+      taxBreakdownLabel: 'Bóc tách giá & Thuế VAT',
+      netPriceLabel: 'Giá chưa thuế (Net Price)',
+      vatAmountLabel: 'Tiền thuế VAT ({rate}%)',
+      profitMarginLabel: 'Lợi nhuận',
+      initialStockLabel: 'Số lượng tồn ban đầu',
+      currentStockLabel: 'Số lượng tồn kho',
+      stockEditNoteHint:
+        'Để thay đổi số lượng tồn kho thực tế, vui lòng sử dụng chức năng Nhập/Xuất/Kiểm kê.',
+      minStockLabel: 'Mức cảnh báo tồn tối thiểu (Min)',
+      supplierLabel: 'Nhà cung cấp (Supplier)',
+      supplierPlaceholder: 'Vd: Công ty TNHH Thể Thao ABC...',
+      descriptionLabel: 'Mô tả chi tiết / Ghi chú sản phẩm',
+      descriptionPlaceholder: 'Nhập thông tin xuất xứ, quy cách đóng gói...',
+      saveProductBtn: 'Lưu Mặt Hàng',
+      stockInTitle: 'Nhập Hàng Vào Kho',
+      stockInSub: 'Ghi nhận tăng tồn kho hàng hóa từ nhà cung cấp hoặc nguồn nhập.',
+      stockOutTitle: 'Xuất Kho / Hủy Hàng Hóa',
+      stockOutSub: 'Ghi nhận giảm tồn kho do xuất hủy, hàng hỏng, hết hạn hoặc sử dụng nội bộ.',
+      adjustStockTitle: 'Kiểm Kê Điều Chỉnh Kho',
+      adjustStockSub: 'Cập nhật lại số lượng tồn kho thực tế sau khi kiểm đếm định kỳ.',
+      targetCurrentStock: 'SKU: {sku} · Tồn hiện tại: {stock} {unit}',
+      projectedStock: 'TỒN DỰ KIẾN SAU GD',
+      qtyAfterAuditLabel: 'Số lượng thực tế đếm được sau kiểm kê',
+      varianceLabel: 'Chênh lệch',
+      transactionQtyLabel: 'Số lượng thực hiện',
+      unitImportCostLabel: 'Đơn giá vốn nhập lô này',
+      outReasonLabel: 'Lý do xuất kho',
+      reasonDamaged: 'Hàng hóa bị hư hỏng / lỗi',
+      reasonExpired: 'Hết hạn sử dụng',
+      reasonInternalUse: 'Sử dụng nội bộ / Tiếp khách',
+      reasonLost: 'Thất thoát / Không tìm thấy',
+      reasonOther: 'Lý do khác',
+      docNoteLabel: 'Chứng từ / Ghi chú chi tiết',
+      noteInPlaceholder: 'Vd: Hóa đơn nhập NCC số HD-8821...',
+      noteOutPlaceholder: 'Vd: Biên bản hủy hàng hỏng số 04...',
+      noteAdjustPlaceholder: 'Vd: Kiểm kê định kỳ đầu tháng...',
+      confirmActionBtn: 'Xác Nhận Thực Hiện',
+      deleteProductTitle: 'Ngừng Kinh Doanh / Xóa Sản Phẩm',
+      deleteProductSub: 'Sản phẩm sẽ bị ẩn khỏi danh mục bán hàng POS và kho.',
+      deleteConfirmMsg:
+        "Bạn có chắc chắn muốn xóa sản phẩm '{name}' (SKU: {sku}) khỏi danh mục không?",
+      deleteWithStockWarning: 'Cảnh báo: Sản phẩm này hiện vẫn còn {stock} {unit} trong kho!',
+      noMatchingProducts: 'Không tìm thấy sản phẩm nào phù hợp với bộ lọc tìm kiếm.',
+      noProductsCreatedYet: 'Chưa có mặt hàng nào trong kho. Hãy thêm sản phẩm đầu tiên!',
+      noMatchingMovements: 'Không có bản ghi biến động kho nào phù hợp với bộ lọc.',
+      noMovementsRecordedYet: 'Chưa có lịch sử nhập / xuất kho nào được ghi nhận.',
     },
     membership: {
       title: 'Quản lý Gói hội viên & Điểm thưởng',
@@ -2998,7 +3134,7 @@ export default {
       tabPlans: 'Gói Hội Viên VIP',
       tabLoyalty: 'Tỷ Lệ Tích Điểm & Quy Tắc',
       tabHistory: 'Lịch Sử Phiên Bản & Bảo Toàn',
-      
+
       // KPI stats
       kpiTotalMembers: 'Tổng Hội Viên VIP',
       kpiTotalMembersCount: '{count} Thành viên',
@@ -3009,7 +3145,7 @@ export default {
       kpiPointsIssuedTrend: 'Hệ số trung bình x1.6',
       kpiRedemptionRate: 'Tỷ Lệ Đổi Thưởng',
       kpiRedemptionRateTrend: 'Voucher nước & giờ chơi',
-      
+
       // Plans Grid
       currentPlansTitle: 'Gói Hội Viên Hiện Tại',
       activePlansCount: '{count} Gói đang hoạt động',
@@ -3069,7 +3205,8 @@ export default {
 
       // Version History Timeline
       versionTimelineTitle: 'Lịch sử phiên bản',
-      versionTimelineDesc: 'Thay đổi quyền lợi sẽ được lưu thành phiên bản mới để không ảnh hưởng user cũ đang duy trì gói.',
+      versionTimelineDesc:
+        'Thay đổi quyền lợi sẽ được lưu thành phiên bản mới để không ảnh hưởng user cũ đang duy trì gói.',
       activeSubscribersCount: '{count} users active',
       updatedByLabel: 'Cập nhật bởi {user}',
       expandHistoryBtn: 'Xem tất cả lịch sử',
@@ -3100,7 +3237,8 @@ export default {
       newPerkPlaceholder: 'Thêm đặc quyền mới...',
       addPerkBtn: 'Thêm',
       createNewVersionLabel: 'Tạo phiên bản mới (VD: {current} -> {next})',
-      versioningDesc: 'Bảo lưu chính sách gói cũ cho {count} hội viên đang hoạt động, chỉ áp dụng chính sách mới cho hội viên đăng ký từ hôm nay.',
+      versioningDesc:
+        'Bảo lưu chính sách gói cũ cho {count} hội viên đang hoạt động, chỉ áp dụng chính sách mới cho hội viên đăng ký từ hôm nay.',
       saveUpdateBtn: 'Lưu Cập Nhật',
       createPlanSubmitBtn: 'Tạo Gói Mới',
 
@@ -3124,10 +3262,12 @@ export default {
       activeSubscribersLabel: 'Hội viên đang dùng bản này',
       activeSubscribersValue: '{count} Thành viên',
       retentionRateLabel: 'Tỷ lệ duy trì',
-      versionProtectNotice: 'Mỗi khi bạn sửa chính sách và chọn "Lưu thành phiên bản mới", hệ thống tự động giữ nguyên quyền lợi cho {count} hội viên này cho đến hết kỳ hạn đã thanh toán.',
+      versionProtectNotice:
+        'Mỗi khi bạn sửa chính sách và chọn "Lưu thành phiên bản mới", hệ thống tự động giữ nguyên quyền lợi cho {count} hội viên này cho đến hết kỳ hạn đã thanh toán.',
       currentPerksSnapshotTitle: 'Quyền lợi phiên bản hiện hành ({version}):',
       archivePlanBtn: 'Lưu trữ gói (Archive)',
-      archivePlanConfirm: 'Bạn có chắc chắn muốn lưu trữ gói {name}? Các hội viên hiện tại vẫn giữ quyền lợi đến khi hết hạn.',
+      archivePlanConfirm:
+        'Bạn có chắc chắn muốn lưu trữ gói {name}? Các hội viên hiện tại vẫn giữ quyền lợi đến khi hết hạn.',
       closeBtn: 'Đóng',
 
       // Notices & Errors
@@ -3147,7 +3287,8 @@ export default {
     exceptions: {
       title: 'Ngoại Lệ Tài Chính & Sổ Cái Kiểm Toán',
       liveMonitoring: 'THEO DÕI REALTIME',
-      subtitle: 'Theo dõi, xử lý can thiệp các giao dịch bất thường, sai lệch đối soát cổng thanh toán và lưu vết kiểm toán bất biến SHA-256.',
+      subtitle:
+        'Theo dõi, xử lý can thiệp các giao dịch bất thường, sai lệch đối soát cổng thanh toán và lưu vết kiểm toán bất biến SHA-256.',
       searchPlaceholder: 'Tìm theo Mã TXN, UID, Tên khách hàng...',
       exportBtn: 'Xuất Báo Cáo',
       exporting: 'Đang xuất...',
@@ -3199,7 +3340,8 @@ export default {
 
       // Detail Modal
       detailModalTitle: 'Hồ Sơ Chi Tiết Giao Dịch Ngoại Lệ',
-      detailModalSub: 'Chi tiết đối soát giao dịch, dữ liệu sai lệch và thông tin chủ thể cần thẩm định.',
+      detailModalSub:
+        'Chi tiết đối soát giao dịch, dữ liệu sai lệch và thông tin chủ thể cần thẩm định.',
       generalInfo: 'Thông tin chung',
       anomalyAnalysis: 'Phân tích sai lệch đối soát',
       expectedAmount: 'Số tiền kỳ vọng hệ thống',
@@ -3238,9 +3380,11 @@ export default {
       clearSign: 'Xóa chữ ký',
       autoSign: 'Ký tự động',
       signatureVerified: 'Chữ ký số hợp lệ',
-      legalCommitment: 'Tôi xác nhận việc can thiệp này tuân thủ chính sách quản trị rủi ro của tổ chức và chịu trách nhiệm cá nhân về quyết định này.',
+      legalCommitment:
+        'Tôi xác nhận việc can thiệp này tuân thủ chính sách quản trị rủi ro của tổ chức và chịu trách nhiệm cá nhân về quyết định này.',
       signAndRecordBtn: 'Ký duyệt & Ghi nhận vào Sổ cái',
-      overrideSuccessMsg: 'Đã can thiệp và ghi nhận vào sổ cái kiểm toán thành công cho giao dịch {ref}.',
+      overrideSuccessMsg:
+        'Đã can thiệp và ghi nhận vào sổ cái kiểm toán thành công cho giao dịch {ref}.',
       overrideErrorMsg: 'Không thể can thiệp ngoại lệ. Vui lòng kiểm tra lại.',
 
       // Audit Sidebar
@@ -3297,7 +3441,8 @@ export default {
     },
     reconciliation: {
       title: 'Đối Soát Tài Chính & Cảnh Báo Thông Minh',
-      subtitle: 'Hệ thống đối soát 3 chiều tự động giữa Sổ cái nội bộ Aura, Cổng thanh toán (PSP) và Tài khoản quyết toán ngân hàng.',
+      subtitle:
+        'Hệ thống đối soát 3 chiều tự động giữa Sổ cái nội bộ Aura, Cổng thanh toán (PSP) và Tài khoản quyết toán ngân hàng.',
       liveSync: 'NAPAS & PSP: ONLINE 100%',
       syncNow: 'Đồng Bộ Tức Thì',
       syncing: 'Đang đồng bộ...',
@@ -3324,7 +3469,8 @@ export default {
 
       // Alert Banner
       alertBannerTitle: 'Phát hiện {count} sai lệch tài chính cần xử lý trước chu kỳ quyết toán',
-      alertBannerDesc: 'Bao gồm: Giao dịch trễ Webhook Napas247, chênh lệch làm tròn phí đối tác cổng và các mục chờ bù trừ.',
+      alertBannerDesc:
+        'Bao gồm: Giao dịch trễ Webhook Napas247, chênh lệch làm tròn phí đối tác cổng và các mục chờ bù trừ.',
       autoResolveSafeBtn: 'Bù Trừ An Toàn Tự Động',
       openInvestigationBtn: 'Mở Trình Đối Chiếu',
 
@@ -3356,7 +3502,8 @@ export default {
 
       // Data Grid Table
       gridTitle: 'Lưới Đối Soát Đa Chiều (3-Way Reconciliation Grid)',
-      gridSubtitle: 'Đối chiếu trực tiếp giữa Sổ cái Aura Booking, Webhook Cổng PSP và Dòng tiền Quyết toán Ngân hàng.',
+      gridSubtitle:
+        'Đối chiếu trực tiếp giữa Sổ cái Aura Booking, Webhook Cổng PSP và Dòng tiền Quyết toán Ngân hàng.',
       countBadge: '{count} phiên ghi nhận',
       thTxn: 'Mã TXN / Phiên',
       thChannel: 'Kênh & Đối Tác',
@@ -3423,11 +3570,15 @@ export default {
       tagBankSettled: 'Đã quyết toán',
       diagCardTitle: 'Chẩn Đoán Nguyên Nhân Gốc Rễ (Reconciliation Diagnostic)',
       confidenceLabel: 'Độ tin cậy: {score}%',
-      diagDefaultText: 'Phân tích hệ thống: Khách hàng đã quét mã QR thành công, đối tác PSP ghi nhận có tiền. Tuy nhiên luồng chuyển tiếp Napas247 sang tài khoản thụ hưởng ngân hàng bị trễ do bảo trì mạng lưới lúc 06:40. Tiền đã vào tài khoản tổng lúc 07:10 (sau chu kỳ sao kê sáng).',
-      diagSuccessText: 'Tất cả các dòng tiền giữa Sổ cái Aura, Cổng PSP và Tài khoản Quyết toán đều khớp 100%. Không có bất thường kỹ thuật hay chậm trễ webhook.',
+      diagDefaultText:
+        'Phân tích hệ thống: Khách hàng đã quét mã QR thành công, đối tác PSP ghi nhận có tiền. Tuy nhiên luồng chuyển tiếp Napas247 sang tài khoản thụ hưởng ngân hàng bị trễ do bảo trì mạng lưới lúc 06:40. Tiền đã vào tài khoản tổng lúc 07:10 (sau chu kỳ sao kê sáng).',
+      diagSuccessText:
+        'Tất cả các dòng tiền giữa Sổ cái Aura, Cổng PSP và Tài khoản Quyết toán đều khớp 100%. Không có bất thường kỹ thuật hay chậm trễ webhook.',
       diagRecTitle: 'Khuyến nghị hành động:',
-      diagRecMismatch: 'Xác nhận "Bù Trừ Tự Động" để ghi nhận khớp doanh thu và cập nhật hạn mức quyết toán an toàn mà không cần chờ đến sao kê chiều.',
-      diagRecMatched: 'Hệ thống đã tự động xác thực và ghi nhận sổ cái an toàn. Không yêu cầu can thiệp thủ công.',
+      diagRecMismatch:
+        'Xác nhận "Bù Trừ Tự Động" để ghi nhận khớp doanh thu và cập nhật hạn mức quyết toán an toàn mà không cần chờ đến sao kê chiều.',
+      diagRecMatched:
+        'Hệ thống đã tự động xác thực và ghi nhận sổ cái an toàn. Không yêu cầu can thiệp thủ công.',
       auditNotesLabel: 'Ghi chú kiểm toán / Ký duyệt can thiệp:',
       auditNotesPlaceholder: 'Nhập lý do bù trừ hoặc mã tham chiếu tra soát ngân hàng...',
       btnCloseDrawer: 'Đóng',
@@ -3438,7 +3589,8 @@ export default {
       title: 'Phê Duyệt KYC & Thẩm Định Chủ Sân',
       breadcrumb: 'Quản trị nền tảng / Hồ sơ pháp lý chủ sân',
       badge: 'PORTAL THẨM ĐỊNH',
-      subtitle: 'Xác minh hồ sơ pháp lý, mã số thuế, căn cước công dân và tài khoản thụ hưởng NAPAS trước khi mở sàn giao dịch',
+      subtitle:
+        'Xác minh hồ sơ pháp lý, mã số thuế, căn cước công dân và tài khoản thụ hưởng NAPAS trước khi mở sàn giao dịch',
       searchPlaceholder: 'Tìm theo Mã KYC, Tên sân, CCCD, MST...',
       exportBtn: 'Xuất Báo Cáo',
       exporting: 'Đang xuất...',
@@ -3448,7 +3600,7 @@ export default {
       noDataInTab: 'Không có hồ sơ nào trong mục này.',
       loadingQueue: 'Đang tải danh sách hồ sơ...',
       loadError: 'Không thể tải danh sách hồ sơ KYC.',
-      
+
       // KPI Cards
       kpiPending: 'Hồ sơ Chờ thẩm định',
       kpiPendingBadge: 'Ưu tiên',
@@ -3513,7 +3665,8 @@ export default {
       sec1Match100: '100% Khớp',
       sec1DbMatched: 'Khớp CSDL Dân cư',
       sec1FaceSelfie: 'Khớp ảnh chân dung',
-      sec1Banner: 'Điểm tin cậy OCR: {score}%. Dữ liệu trùng khớp hoàn toàn với Cổng Dịch vụ công Quốc gia.',
+      sec1Banner:
+        'Điểm tin cậy OCR: {score}%. Dữ liệu trùng khớp hoàn toàn với Cổng Dịch vụ công Quốc gia.',
 
       // Document Section 2: GPKD
       sec2Title: '2. Giấy Phép Đăng Ký Kinh Doanh (GPKD)',
@@ -3522,7 +3675,8 @@ export default {
       sec2LegalName: 'Tên pháp lý trên GPKD',
       sec2BrandName: 'Tên hiển thị thương hiệu',
       sec2TaxStatus: 'Mã số thuế (Tổng cục Thuế)',
-      sec2Banner: 'Tên hiển thị trên app khác với tên pháp lý doanh nghiệp. Đã kiểm tra ngành nghề kinh doanh Cầu lông (mã 9311): Hợp lệ.',
+      sec2Banner:
+        'Tên hiển thị trên app khác với tên pháp lý doanh nghiệp. Đã kiểm tra ngành nghề kinh doanh Cầu lông (mã 9311): Hợp lệ.',
 
       // Document Section 3: NAPAS
       sec3Title: '3. Xác Thực Tài Khoản Thụ Hưởng (NAPAS 24/7)',
@@ -3692,7 +3846,8 @@ export default {
     },
     org: {
       pageTitle: 'Hồ Sơ Tổ Chức & Doanh Nghiệp',
-      pageSubtitle: 'Quản lý pháp nhân, chuỗi sân trực thuộc, phân quyền đội ngũ nhân sự và cấu hình chính sách tự động hóa',
+      pageSubtitle:
+        'Quản lý pháp nhân, chuỗi sân trực thuộc, phân quyền đội ngũ nhân sự và cấu hình chính sách tự động hóa',
       refreshBtn: 'Làm mới',
       switchOrgLabel: 'Đang chọn Tổ chức / Doanh nghiệp:',
       selectOrgPlaceholder: 'Chọn tổ chức...',
@@ -3711,7 +3866,8 @@ export default {
       tabMembers: 'Đội Ngũ Quản Trị ({count})',
       tabPolicies: 'Chính Sách & Tự Động',
       profileTitle: 'Hồ Sơ Doanh Nghiệp & Định Danh Thương Hiệu',
-      profileSubtitle: 'Thông tin pháp lý, liên hệ hỗ trợ và bộ nhận diện thương hiệu hiển thị trên toàn hệ thống',
+      profileSubtitle:
+        'Thông tin pháp lý, liên hệ hỗ trợ và bộ nhận diện thương hiệu hiển thị trên toàn hệ thống',
       orgNameLabel: 'Tên doanh nghiệp / Chuỗi sân:',
       slugLabel: 'Mã định danh hệ thống (Slug):',
       taxCodeLabel: 'Mã số thuế (Tax ID / MST):',
@@ -3726,7 +3882,8 @@ export default {
       logoUrlPlaceholder: 'https://example.com/logo.png',
       saveOrgBtn: 'Lưu Thông Tin Doanh Nghiệp',
       membersTitle: 'Đội Ngũ Quản Trị & Nhân Sự',
-      membersSubtitle: 'Phân quyền phân cấp quản lý cơ sở, nhân viên thu ngân, lễ tân và kỹ thuật viên',
+      membersSubtitle:
+        'Phân quyền phân cấp quản lý cơ sở, nhân viên thu ngân, lễ tân và kỹ thuật viên',
       inviteEmailPlaceholder: 'Nhập email nhân sự cần mời hoặc thêm...',
       roleOwner: 'Chủ Sở Hữu (Owner)',
       roleManager: 'Quản Lý Cơ Sở (Manager)',
@@ -3761,9 +3918,11 @@ export default {
       policiesTitle: 'Chính Sách Vận Hành & Tự Động Hóa',
       policiesSubtitle: 'Cấu hình quy tắc đặt sân và phí sàn chuyển nhượng vé',
       autoApproveTitle: 'Tự Động Duyệt Đơn Đặt Sân (Auto-Approve)',
-      autoApproveDesc: 'Đơn đặt sân thanh toán VietQR / Thẻ thành công sẽ tự động khóa lịch ngay lập tức mà không cần nhân viên bấm duyệt.',
+      autoApproveDesc:
+        'Đơn đặt sân thanh toán VietQR / Thẻ thành công sẽ tự động khóa lịch ngay lập tức mà không cần nhân viên bấm duyệt.',
       resaleFeeLabel: 'Phí sàn chuyển nhượng P2P (%):',
-      resaleFeeDesc: 'Tỷ lệ % phí dịch vụ nền tảng trích lại khi người chơi bán lại slot đặt sân trên Chợ Resale.',
+      resaleFeeDesc:
+        'Tỷ lệ % phí dịch vụ nền tảng trích lại khi người chơi bán lại slot đặt sân trên Chợ Resale.',
       savePoliciesBtn: 'Lưu Cấu Hình Chính Sách',
     },
     nav: {
@@ -3807,7 +3966,8 @@ export default {
   about: {
     badge: 'CÂU CHUYỆN & TẦM NHÌN AURA COURT',
     title: 'Định hình chuẩn mực mới cho không gian thể thao đỉnh cao.',
-    subtitle: 'Aura Court kết hợp hệ thống sân đấu tiêu chuẩn quốc tế (BWF, USA Pickleball, FIFA Turf) cùng công nghệ IoT thông minh, hệ thống VAR Replay và nền tảng đặt sân real-time — mang đến trải nghiệm thi đấu và tập luyện đỉnh cao cho mọi vận động viên.',
+    subtitle:
+      'Aura Court kết hợp hệ thống sân đấu tiêu chuẩn quốc tế (BWF, USA Pickleball, FIFA Turf) cùng công nghệ IoT thông minh, hệ thống VAR Replay và nền tảng đặt sân real-time — mang đến trải nghiệm thi đấu và tập luyện đỉnh cao cho mọi vận động viên.',
     bookCourtBtn: 'Đặt sân trải nghiệm',
     exploreFeaturesBtn: 'Khám phá tiện ích',
     stats: {
@@ -3832,39 +3992,52 @@ export default {
     pillars: {
       badge: '4 TRỤ CỘT ĐỘT PHÁ',
       title: 'Trải nghiệm khác biệt chỉ có tại Aura Court',
-      subtitle: 'Từng chi tiết tại Aura Court đều được thiết kế tỉ mỉ để tối ưu hóa hiệu suất thi đấu và sự thoải mái của bạn.',
+      subtitle:
+        'Từng chi tiết tại Aura Court đều được thiết kế tỉ mỉ để tối ưu hóa hiệu suất thi đấu và sự thoải mái của bạn.',
       p1Title: 'Sân đấu tiêu chuẩn Quốc tế',
-      p1Desc: 'Thảm thi đấu cầu lông BWF 5 lớp, sân Pickleball mặt Acrylic đạt chuẩn USA Pickleball, sân cỏ nhân tạo FIFA 5v5 không gây xước da.',
+      p1Desc:
+        'Thảm thi đấu cầu lông BWF 5 lớp, sân Pickleball mặt Acrylic đạt chuẩn USA Pickleball, sân cỏ nhân tạo FIFA 5v5 không gây xước da.',
       p2Title: 'Công nghệ Smart-Court 4.0',
-      p2Desc: 'Camera AI tự động ghi nhận highlight, xem lại pha cầu VAR tức thì trên ứng dụng, check-in tự động không cần xếp hàng.',
+      p2Desc:
+        'Camera AI tự động ghi nhận highlight, xem lại pha cầu VAR tức thì trên ứng dụng, check-in tự động không cần xếp hàng.',
       p3Title: 'Giữ chỗ & Chia tiền 10 giây',
-      p3Desc: 'Lịch sân trực quan thời gian thực, giữ chỗ tức thì, chia hóa đơn tự động theo nhóm (Group Split Bill) qua mã QR tiện lợi.',
+      p3Desc:
+        'Lịch sân trực quan thời gian thực, giữ chỗ tức thì, chia hóa đơn tự động theo nhóm (Group Split Bill) qua mã QR tiện lợi.',
       p4Title: 'Dịch vụ & Tiện ích 5 sao',
-      p4Desc: 'Phòng thay đồ riêng tư có vòi sen nóng lạnh, tủ đồ thông minh Smart Locker, quầy bar dinh dưỡng thể thao và bãi đỗ xe rộng rãi.',
+      p4Desc:
+        'Phòng thay đồ riêng tư có vòi sen nóng lạnh, tủ đồ thông minh Smart Locker, quầy bar dinh dưỡng thể thao và bãi đỗ xe rộng rãi.',
     },
     values: {
       badge: 'GIÁ TRỊ CỐT LÕI',
       title: 'Cam kết tạo nên thương hiệu Aura Court',
       v1Title: 'Chính xác (Precision)',
-      v1Desc: 'Chính xác từ kích thước sân thi đấu, độ phẳng mặt sàn đến từng mili-giây đối soát giữ chỗ thời gian thực.',
+      v1Desc:
+        'Chính xác từ kích thước sân thi đấu, độ phẳng mặt sàn đến từng mili-giây đối soát giữ chỗ thời gian thực.',
       v2Title: 'Đam mê (Passion)',
-      v2Desc: 'Lan tỏa tình yêu thể thao lành mạnh, đồng hành cùng các câu lạc bộ và tổ chức những giải đấu phong trào quy mô lớn.',
+      v2Desc:
+        'Lan tỏa tình yêu thể thao lành mạnh, đồng hành cùng các câu lạc bộ và tổ chức những giải đấu phong trào quy mô lớn.',
       v3Title: 'Tiên phong (Innovation)',
-      v3Desc: 'Liên tục cập nhật công nghệ đặt sân, AI phân tích trận đấu và hệ thống tính điểm ELO xếp hạng cộng đồng.',
+      v3Desc:
+        'Liên tục cập nhật công nghệ đặt sân, AI phân tích trận đấu và hệ thống tính điểm ELO xếp hạng cộng đồng.',
       v4Title: 'Minh bạch (Transparency)',
-      v4Desc: 'Giá thuê sân niêm yết rõ ràng, không phụ phí ẩn, chính sách vận hành công khai và bảo vệ tối đa quyền lợi người chơi.',
+      v4Desc:
+        'Giá thuê sân niêm yết rõ ràng, không phụ phí ẩn, chính sách vận hành công khai và bảo vệ tối đa quyền lợi người chơi.',
     },
     sports: {
       badge: 'HỆ THỐNG MÔN THI ĐẤU',
       title: 'Đa dạng sân chơi đẳng cấp cho mọi nhu cầu',
       badminton: 'Cầu lông (Badminton)',
-      badmintonDesc: 'Sân thảm chuyên dụng BWF dày 5.0mm, độ nảy tiêu chuẩn, chống trơn trượt tối đa.',
+      badmintonDesc:
+        'Sân thảm chuyên dụng BWF dày 5.0mm, độ nảy tiêu chuẩn, chống trơn trượt tối đa.',
       pickleball: 'Pickleball Pro',
-      pickleballDesc: 'Sân ngoài trời & trong nhà phủ sơn Acrylic chống lóa, lưới đạt chuẩn USA Pickleball.',
+      pickleballDesc:
+        'Sân ngoài trời & trong nhà phủ sơn Acrylic chống lóa, lưới đạt chuẩn USA Pickleball.',
       football: 'Bóng đá 5v5',
-      footballDesc: 'Mặt cỏ nhân tạo cao cấp hạt cao su mềm, hệ thống thoát nước thông minh chơi tốt cả mùa mưa.',
+      footballDesc:
+        'Mặt cỏ nhân tạo cao cấp hạt cao su mềm, hệ thống thoát nước thông minh chơi tốt cả mùa mưa.',
       tableTennis: 'Bóng bàn (Table Tennis)',
-      tableTennisDesc: 'Bàn thi đấu Double Fish ITTF chuẩn Olympic, thảm sàn vân cát chống mỏi chân.',
+      tableTennisDesc:
+        'Bàn thi đấu Double Fish ITTF chuẩn Olympic, thảm sàn vân cát chống mỏi chân.',
     },
     cta: {
       title: 'Sẵn sàng nâng tầm phong độ cùng Aura Court?',
@@ -3888,7 +4061,8 @@ export default {
     loginTitle: 'Đăng nhập · Aura Court',
     loginDesc: 'Đăng nhập vào tài khoản Aura Court để quản lý lịch đặt sân và thanh toán.',
     registerTitle: 'Đăng ký tài khoản · Aura Court',
-    registerDesc: 'Tạo tài khoản thành viên Aura Court để đặt sân nhanh chóng và nhận nhiều ưu đãi.',
+    registerDesc:
+      'Tạo tài khoản thành viên Aura Court để đặt sân nhanh chóng và nhận nhiều ưu đãi.',
     onboardingTitle: 'Thiết lập tài khoản · Aura Court',
     onboardingDesc: 'Hoàn tất hồ sơ cá nhân và sở thích thể thao của bạn tại Aura Court.',
     forgotPasswordTitle: 'Quên mật khẩu · Aura Court',
@@ -3896,47 +4070,59 @@ export default {
     resetPasswordTitle: 'Đặt lại mật khẩu · Aura Court',
     resetPasswordDesc: 'Tạo mật khẩu mới an toàn cho tài khoản Aura Court của bạn.',
     termsTitle: 'Điều khoản dịch vụ · Aura Court',
-    termsDesc: 'Xem các điều khoản sử dụng dịch vụ, quy định đặt sân và chính sách hủy, đổi lịch tại Aura Court.',
+    termsDesc:
+      'Xem các điều khoản sử dụng dịch vụ, quy định đặt sân và chính sách hủy, đổi lịch tại Aura Court.',
     privacyTitle: 'Chính sách bảo mật · Aura Court',
-    privacyDesc: 'Cam kết bảo vệ thông tin cá nhân và dữ liệu thanh toán của khách hàng tại Aura Court.',
+    privacyDesc:
+      'Cam kết bảo vệ thông tin cá nhân và dữ liệu thanh toán của khách hàng tại Aura Court.',
     courtsTitle: 'Danh sách sân thể thao · Aura Court',
     courtsDesc: 'Tìm sân thể thao phù hợp, xem giá và khung giờ còn trống tại Aura Court.',
     courtDetailTitle: 'Chi tiết sân thể thao · Aura Court',
-    courtDetailDesc: 'Thông tin chi tiết mặt sân, bảng giá, tiện ích và các khung giờ trống tại Aura Court.',
+    courtDetailDesc:
+      'Thông tin chi tiết mặt sân, bảng giá, tiện ích và các khung giờ trống tại Aura Court.',
     scheduleTitle: 'Lịch hoạt động & Khung giờ sân · Aura Court',
     scheduleDesc: 'Xem lịch trống và đặt khung giờ thi đấu trực quan theo ngày tại Aura Court.',
     courtDirectionsTitle: 'Chỉ đường đến sân · Aura Court',
-    courtDirectionsDesc: 'Xem địa chỉ chi tiết, bản đồ và hướng dẫn đường đi đến cụm sân Aura Court.',
+    courtDirectionsDesc:
+      'Xem địa chỉ chi tiết, bản đồ và hướng dẫn đường đi đến cụm sân Aura Court.',
     bookingTitle: 'Lịch đặt sân & Đơn hàng của tôi · Aura Court',
     bookingDesc: 'Quản lý danh sách đặt sân, xem mã QR check-in và trạng thái giữ chỗ.',
     walletTitle: 'Ví của tôi & Nạp tiền cụm sân · Aura Court',
-    walletDesc: 'Quản lý số dư ví, nạp tiền nhanh chóng và theo dõi lịch sử giao dịch tại các cụm sân.',
+    walletDesc:
+      'Quản lý số dư ví, nạp tiền nhanh chóng và theo dõi lịch sử giao dịch tại các cụm sân.',
     resaleTitle: 'Chợ nhượng sân & Chuyển giao khung giờ · Aura Court',
-    resaleDesc: 'Khám phá các khung giờ nhượng lại từ hội viên hoặc đăng tin chuyển nhượng lịch sân linh hoạt.',
+    resaleDesc:
+      'Khám phá các khung giờ nhượng lại từ hội viên hoặc đăng tin chuyển nhượng lịch sân linh hoạt.',
     recurringBookingTitle: 'Đặt sân định kỳ & Lịch cố định · Aura Court',
-    recurringBookingDesc: 'Giữ cố định khung giờ vàng hàng tuần theo tháng hoặc quý mà không sợ hết chỗ.',
+    recurringBookingDesc:
+      'Giữ cố định khung giờ vàng hàng tuần theo tháng hoặc quý mà không sợ hết chỗ.',
     paymentCycleDetailTitle: 'Chi tiết kỳ thanh toán định kỳ · Aura Court',
     paymentCycleDetailDesc: 'Theo dõi tiến độ thanh toán, hóa đơn và lịch thi đấu các kỳ định kỳ.',
     tournamentsTitle: 'Danh sách giải đấu & Tranh tài · Aura Court',
-    tournamentsDesc: 'Khám phá các giải đấu thể thao phong trào và bán chuyên đang mở đăng ký tại Aura Court.',
+    tournamentsDesc:
+      'Khám phá các giải đấu thể thao phong trào và bán chuyên đang mở đăng ký tại Aura Court.',
     tournamentBracketTitle: 'Sơ đồ thi đấu & Nhánh đấu · Aura Court',
     tournamentBracketDesc: 'Xem bảng đấu, sơ đồ loại trực tiếp và kết quả phân nhánh các giải đấu.',
     tournamentLiveTitle: 'Tỷ số trực tiếp & Bảng điểm Live · Aura Court',
-    tournamentLiveDesc: 'Cập nhật trực tiếp điểm số, set đấu và diễn biến các trận đấu đang diễn ra.',
+    tournamentLiveDesc:
+      'Cập nhật trực tiếp điểm số, set đấu và diễn biến các trận đấu đang diễn ra.',
     matchmakingTitle: 'Tìm kèo giao lưu & Ghép trận · Aura Court',
-    matchmakingDesc: 'Kết nối cùng những người chơi cùng trình độ, ghép đôi thi đấu giao lưu thể thao.',
+    matchmakingDesc:
+      'Kết nối cùng những người chơi cùng trình độ, ghép đôi thi đấu giao lưu thể thao.',
     createMatchTitle: 'Tạo kèo giao lưu mới · Aura Court',
     createMatchDesc: 'Tạo trận đấu giao lưu, mời bạn bè hoặc mở tìm kiếm đồng đội trong khu vực.',
     paymentTitle: 'Thanh toán đặt sân · Aura Court',
     paymentDesc: 'Thanh toán an toàn, xác nhận tự động tức thì qua cổng thanh toán QR.',
     splitBillTitle: 'Chia tiền & Quyết toán nhóm · Aura Court',
-    splitBillDesc: 'Chia đều hóa đơn sân theo người hoặc theo thời gian chơi với mã QR thanh toán cá nhân.',
+    splitBillDesc:
+      'Chia đều hóa đơn sân theo người hoặc theo thời gian chơi với mã QR thanh toán cá nhân.',
     dropInBillTitle: 'Bảng chi phí buổi giao lưu · Aura Court',
     dropInBillDesc: 'Xem và chốt bảng chi phí thực tế tiền sân, cầu lông cho buổi chơi giao lưu.',
     profileTitle: 'Hồ sơ cá nhân & Cài đặt · Aura Court',
     profileDesc: 'Xem thông tin thành viên, hạng hội viên, bảo mật và các liên kết nhanh.',
     notificationsTitle: 'Hộp thư thông báo · Aura Court',
-    notificationsDesc: 'Xem thông báo đặt sân, nhắc lịch thi đấu và thông tin quan trọng từ Aura Court.',
+    notificationsDesc:
+      'Xem thông báo đặt sân, nhắc lịch thi đấu và thông tin quan trọng từ Aura Court.',
     adminTitle: 'Hệ thống Quản trị Aura Control · Aura Court',
     adminDesc: 'Bảng điều khiển quản trị vận hành, sân bãi, tài chính và phân quyền nhân sự.',
     adminManageTitle: 'Quản lý Sân thi đấu · Aura Control',
@@ -3958,11 +4144,14 @@ export default {
     adminDisputesTitle: 'Trung tâm Xử lý Tranh chấp · Aura Control',
     adminVenuePublicationTitle: 'Duyệt Xuất Bản Cụm Sân · Aura Control',
     partnerRegistrationTitle: 'Đăng Ký Đối Tác Chủ Sân · Aura Court',
-    partnerRegistrationDesc: 'Đăng ký trở thành đối tác kinh doanh sân thể thao trên nền tảng Aura Court.',
+    partnerRegistrationDesc:
+      'Đăng ký trở thành đối tác kinh doanh sân thể thao trên nền tảng Aura Court.',
     partnerApplicationStatusTitle: 'Tiến Trình Thẩm Định Đối Tác · Aura Court',
-    partnerApplicationStatusDesc: 'Theo dõi tiến trình xét duyệt hồ sơ đăng ký đối tác và bổ sung tài liệu.',
+    partnerApplicationStatusDesc:
+      'Theo dõi tiến trình xét duyệt hồ sơ đăng ký đối tác và bổ sung tài liệu.',
     partnerSubscriptionTitle: 'Gói Dịch Vụ Nền Tảng · Aura Court',
-    partnerSubscriptionDesc: 'Quản lý gói thuê bao dịch vụ, hạn mức và trạng thái kinh doanh của cơ sở.',
+    partnerSubscriptionDesc:
+      'Quản lý gói thuê bao dịch vụ, hạn mức và trạng thái kinh doanh của cơ sở.',
     notFoundTitle: 'Không tìm thấy trang (404) · Aura Court',
     notFoundDesc: 'Đường dẫn bạn truy cập không tồn tại hoặc đã được di chuyển sang vị trí khác.',
   },

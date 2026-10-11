@@ -65,10 +65,7 @@ function formatMoney(amount: number): string {
         <div class="payment-method-block">
           <label class="block-label">Phương thức thanh toán:</label>
           <div class="methods-grid">
-            <label
-              class="method-option"
-              :class="{ selected: paymentMethod === 'wallet' }"
-            >
+            <label class="method-option" :class="{ selected: paymentMethod === 'wallet' }">
               <input
                 type="radio"
                 name="resale_payment"
@@ -83,10 +80,7 @@ function formatMoney(amount: number): string {
               </div>
             </label>
 
-            <label
-              class="method-option"
-              :class="{ selected: paymentMethod === 'transfer' }"
-            >
+            <label class="method-option" :class="{ selected: paymentMethod === 'transfer' }">
               <input
                 type="radio"
                 name="resale_payment"
@@ -128,16 +122,17 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined shield-ico">verified</span>
           <div class="notice-txt">
             <strong>Cam kết hoàn tiền 100%:</strong>
-            <span> Tiền sẽ được giữ an toàn trên hệ thống Aura Escrow và chỉ giải ngân sau khi bạn hoàn tất buổi chơi thành công.</span>
+            <span>
+              Tiền sẽ được giữ an toàn trên hệ thống Aura Escrow và chỉ giải ngân sau khi bạn hoàn
+              tất buổi chơi thành công.</span
+            >
           </div>
         </div>
       </div>
 
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <AuraButton variant="secondary" size="md" @click="emit('close')">
-          Đóng
-        </AuraButton>
+        <AuraButton variant="secondary" size="md" @click="emit('close')"> Đóng </AuraButton>
         <AuraButton
           variant="primary"
           size="md"
@@ -179,8 +174,14 @@ function formatMoney(amount: number): string {
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modal-header {
@@ -199,7 +200,7 @@ function formatMoney(amount: number): string {
 
 .modal-icon {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .modal-title {
@@ -282,12 +283,12 @@ function formatMoney(amount: number): string {
 }
 
 .detail-item.highlight {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 700;
 }
 
 html.dark .detail-item.highlight {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .icon-14 {
@@ -329,18 +330,18 @@ html.dark .detail-item.highlight {
 }
 
 .method-option.selected {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   background: rgba(107, 45, 63, 0.04);
 }
 
 html.dark .method-option.selected {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   background: rgba(201, 161, 90, 0.06);
 }
 
 .method-icon {
   font-size: 20px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .method-text {
@@ -399,11 +400,11 @@ html.dark .method-option.selected {
 
 .total-price {
   font-size: 18px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 html.dark .total-price {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .escrow-notice-box {
@@ -458,7 +459,7 @@ html.dark .total-price {
   padding: 10px 22px;
   border-radius: 12px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 700;
@@ -476,7 +477,11 @@ html.dark .total-price {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

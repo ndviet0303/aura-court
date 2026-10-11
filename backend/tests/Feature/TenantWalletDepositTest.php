@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\Payment\WebhookEvent;
 use App\Models\Organization;
-use App\Models\Payment;
 use App\Models\PaymentIntent;
 use App\Models\ProviderEvent;
 use App\Models\User;
-use App\Models\WalletAccount;
+use App\Models\WalletTransaction;
 use App\Services\Payment\ProviderEventHandler;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,7 +18,7 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_customer_can_initiate_wallet_deposit(): void
     {
-        $org = Organization::create(['name' => 'Deposit Org', 'slug' => 'dep-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'Deposit Org', 'slug' => 'dep-org-'.uniqid()]);
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -56,9 +54,9 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_deposit_initiation_is_idempotent_with_same_key(): void
     {
-        $org = Organization::create(['name' => 'Idempotent Org', 'slug' => 'idem-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'Idempotent Org', 'slug' => 'idem-org-'.uniqid()]);
         $user = User::factory()->create();
-        $idemKey = 'deposit-key-' . uniqid();
+        $idemKey = 'deposit-key-'.uniqid();
 
         $first = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
             'amount' => 300000,
@@ -79,7 +77,7 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_deposit_status_returns_pending_without_provider_event(): void
     {
-        $org = Organization::create(['name' => 'Unverified Org', 'slug' => 'unver-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'Unverified Org', 'slug' => 'unver-org-'.uniqid()]);
         $user = User::factory()->create();
 
         $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -88,7 +86,7 @@ class TenantWalletDepositTest extends TestCase
         ])->assertCreated()->json();
 
         // Customer returns from provider without a verified webhook event
-        $statusResponse = $this->actingAs($user)->getJson('/api/v1/wallet/deposits/' . $init['reference']);
+        $statusResponse = $this->actingAs($user)->getJson('/api/v1/wallet/deposits/'.$init['reference']);
 
         $statusResponse->assertOk()
             ->assertJsonPath('reference', $init['reference'])
@@ -102,7 +100,7 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_deposit_history_lists_user_deposits(): void
     {
-        $org = Organization::create(['name' => 'History Org', 'slug' => 'hist-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'History Org', 'slug' => 'hist-org-'.uniqid()]);
         $user = User::factory()->create();
 
         $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -115,14 +113,14 @@ class TenantWalletDepositTest extends TestCase
             'organization_id' => $org->id,
         ])->assertCreated();
 
-        $response = $this->actingAs($user)->getJson('/api/v1/wallet/deposits?organization_id=' . $org->id);
+        $response = $this->actingAs($user)->getJson('/api/v1/wallet/deposits?organization_id='.$org->id);
         $response->assertOk();
         $this->assertCount(2, $response->json('deposits'));
     }
 
     public function test_verified_provider_event_credits_wallet_and_updates_status(): void
     {
-        $org = Organization::create(['name' => 'Provider Org', 'slug' => 'prov-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'Provider Org', 'slug' => 'prov-org-'.uniqid()]);
         $user = User::factory()->create();
 
         $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -137,7 +135,7 @@ class TenantWalletDepositTest extends TestCase
         $event = ProviderEvent::create([
             'organization_id' => $org->id,
             'provider' => 'payos',
-            'event_id' => 'evt-deposit-' . uniqid(),
+            'event_id' => 'evt-deposit-'.uniqid(),
             'type' => 'payment.succeeded',
             'status' => 'PAID',
             'reference' => $intent->reference,
@@ -155,7 +153,7 @@ class TenantWalletDepositTest extends TestCase
         $this->assertSame(500000, $wallet->fresh()->balance);
 
         // Status API reflects updated wallet balance and succeeded status
-        $status = $this->actingAs($user)->getJson('/api/v1/wallet/deposits/' . $intent->reference);
+        $status = $this->actingAs($user)->getJson('/api/v1/wallet/deposits/'.$intent->reference);
         $status->assertOk()
             ->assertJsonPath('status', 'succeeded')
             ->assertJsonPath('wallet_balance', 500000);
@@ -163,7 +161,7 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_duplicate_provider_event_delivers_exactly_one_credit(): void
     {
-        $org = Organization::create(['name' => 'Dup Org', 'slug' => 'dup-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'Dup Org', 'slug' => 'dup-org-'.uniqid()]);
         $user = User::factory()->create();
 
         $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -196,7 +194,7 @@ class TenantWalletDepositTest extends TestCase
         $this->assertSame(400000, $wallet->fresh()->balance);
 
         // Database transaction count for this intent must be exactly 1
-        $this->assertSame(1, \App\Models\WalletTransaction::where('source_type', PaymentIntent::class)->where('source_id', $intent->id)->count());
+        $this->assertSame(1, WalletTransaction::where('source_type', PaymentIntent::class)->where('source_id', $intent->id)->count());
     }
 
     public function test_invalid_signature_is_rejected_and_does_not_credit(): void
@@ -219,7 +217,7 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_out_of_order_failed_event_does_not_reverse_succeeded_deposit(): void
     {
-        $org = Organization::create(['name' => 'Order Org', 'slug' => 'order-org-' . uniqid()]);
+        $org = Organization::create(['name' => 'Order Org', 'slug' => 'order-org-'.uniqid()]);
         $user = User::factory()->create();
 
         $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -270,7 +268,7 @@ class TenantWalletDepositTest extends TestCase
     public function test_sepay_webhook_matches_payment_intent_and_credits_tenant_wallet(): void
     {
         config(['services.sepay.hmac_secret' => 'test-secret']);
-        $org = Organization::create(['name' => 'SePay Tenant Org', 'slug' => 'sepay-tenant-' . uniqid()]);
+        $org = Organization::create(['name' => 'SePay Tenant Org', 'slug' => 'sepay-tenant-'.uniqid()]);
         $user = User::factory()->create();
 
         $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
@@ -310,8 +308,8 @@ class TenantWalletDepositTest extends TestCase
 
     public function test_tenant_isolation_credits_correct_tenant_wallet(): void
     {
-        $orgA = Organization::create(['name' => 'Org Alpha', 'slug' => 'org-alpha-' . uniqid()]);
-        $orgB = Organization::create(['name' => 'Org Beta', 'slug' => 'org-beta-' . uniqid()]);
+        $orgA = Organization::create(['name' => 'Org Alpha', 'slug' => 'org-alpha-'.uniqid()]);
+        $orgB = Organization::create(['name' => 'Org Beta', 'slug' => 'org-beta-'.uniqid()]);
         $user = User::factory()->create();
 
         $initA = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [

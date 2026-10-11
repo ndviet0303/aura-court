@@ -118,11 +118,22 @@ export function useAdminShiftReconciliation() {
   })
 
   function mapPosShift(raw: any, defaultVenueName = 'Aura Badminton Arena'): CashShiftItem {
-    const rawVariance = raw.variance ?? (raw.declared_cash != null && raw.expected_cash != null ? raw.declared_cash - raw.expected_cash : 0)
-    let reconStatus = raw.reconciliation?.status || (raw.status === 'open' ? 'open' : rawVariance === 0 ? 'matched' : 'exception')
+    const rawVariance =
+      raw.variance ??
+      (raw.declared_cash != null && raw.expected_cash != null
+        ? raw.declared_cash - raw.expected_cash
+        : 0)
+    const reconStatus =
+      raw.reconciliation?.status ||
+      (raw.status === 'open' ? 'open' : rawVariance === 0 ? 'matched' : 'exception')
 
     const vName = raw.venue?.name || venuesList.value[0]?.name || defaultVenueName
-    const cashierName = raw.cashier?.name || raw.user?.name || (raw.cashier_id === 1 || raw.cashier_id === 3 ? 'Aura Administrator' : `Thu ngân #${raw.cashier_id || 1}`)
+    const cashierName =
+      raw.cashier?.name ||
+      raw.user?.name ||
+      (raw.cashier_id === 1 || raw.cashier_id === 3
+        ? 'Aura Administrator'
+        : `Thu ngân #${raw.cashier_id || 1}`)
 
     return {
       id: raw.id,
@@ -131,8 +142,13 @@ export function useAdminShiftReconciliation() {
       cashier_name: cashierName,
       cashier_email: raw.cashier?.email || raw.user?.email,
       venue_id: raw.venue_id || venuesList.value[0]?.id || 1,
-      venue_name: typeof vName === 'object' ? vName.vi || vName.en || Object.values(vName)[0] : vName,
-      shift_name: raw.name || (raw.opened_at ? `Ca trực ngày ${new Date(raw.opened_at).toLocaleDateString('vi-VN')}` : 'Ca bán hàng'),
+      venue_name:
+        typeof vName === 'object' ? vName.vi || vName.en || Object.values(vName)[0] : vName,
+      shift_name:
+        raw.name ||
+        (raw.opened_at
+          ? `Ca trực ngày ${new Date(raw.opened_at).toLocaleDateString('vi-VN')}`
+          : 'Ca bán hàng'),
       opened_at: raw.opened_at || raw.created_at || new Date().toISOString(),
       closed_at: raw.closed_at || null,
       status: raw.status || (raw.closed_at ? 'closed' : 'open'),
@@ -140,9 +156,17 @@ export function useAdminShiftReconciliation() {
       cash_sales: Number(raw.cash_sales || 0),
       qr_sales: Number(raw.qr_sales || 0),
       wallet_sales: Number(raw.wallet_sales || 0),
-      total_sales: Number(raw.total_sales || (Number(raw.cash_sales || 0) + Number(raw.qr_sales || 0) + Number(raw.wallet_sales || 0))),
-      expected_cash: Number(raw.expected_cash || Number(raw.opening_cash || 0) + Number(raw.cash_sales || 0)),
-      declared_cash: Number(raw.declared_cash ?? (raw.status === 'open' ? (Number(raw.opening_cash || 0) + Number(raw.cash_sales || 0)) : 0)),
+      total_sales: Number(
+        raw.total_sales ||
+          Number(raw.cash_sales || 0) + Number(raw.qr_sales || 0) + Number(raw.wallet_sales || 0),
+      ),
+      expected_cash: Number(
+        raw.expected_cash || Number(raw.opening_cash || 0) + Number(raw.cash_sales || 0),
+      ),
+      declared_cash: Number(
+        raw.declared_cash ??
+          (raw.status === 'open' ? Number(raw.opening_cash || 0) + Number(raw.cash_sales || 0) : 0),
+      ),
       variance: Number(rawVariance || 0),
       cash_drops_total: Number(raw.cash_drops_total || 0),
       cash_drops: raw.cash_drops || [],
@@ -171,7 +195,11 @@ export function useAdminShiftReconciliation() {
         venuesList.value = venuesRes.value
       }
 
-      const defaultVenue = venuesList.value[0]?.name ? (typeof venuesList.value[0].name === 'object' ? (venuesList.value[0].name as any).vi || Object.values(venuesList.value[0].name)[0] : venuesList.value[0].name) : 'Aura Badminton Arena'
+      const defaultVenue = venuesList.value[0]?.name
+        ? typeof venuesList.value[0].name === 'object'
+          ? (venuesList.value[0].name as any).vi || Object.values(venuesList.value[0].name)[0]
+          : venuesList.value[0].name
+        : 'Aura Badminton Arena'
 
       if (activeRes.status === 'fulfilled' && activeRes.value) {
         activeShift.value = mapPosShift(activeRes.value, defaultVenue as string)
@@ -180,7 +208,9 @@ export function useAdminShiftReconciliation() {
       }
 
       if (historyRes.status === 'fulfilled' && Array.isArray(historyRes.value)) {
-        shiftHistory.value = historyRes.value.map((item) => mapPosShift(item, defaultVenue as string))
+        shiftHistory.value = historyRes.value.map((item) =>
+          mapPosShift(item, defaultVenue as string),
+        )
       }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải dữ liệu đối soát ca làm việc.')
@@ -196,18 +226,16 @@ export function useAdminShiftReconciliation() {
         statusFilter.value === 'all' ||
         (statusFilter.value === 'open' && shift.status === 'open') ||
         (statusFilter.value === 'matched' && shift.reconciliation_status === 'matched') ||
-        (statusFilter.value === 'exception' && (shift.reconciliation_status === 'exception' || shift.variance !== 0)) ||
+        (statusFilter.value === 'exception' &&
+          (shift.reconciliation_status === 'exception' || shift.variance !== 0)) ||
         (statusFilter.value === 'approved' && shift.reconciliation_status === 'approved')
 
       // Venue filter
-      const matchVenue =
-        selectedVenueId.value === 'all' ||
-        shift.venue_id === selectedVenueId.value
+      const matchVenue = selectedVenueId.value === 'all' || shift.venue_id === selectedVenueId.value
 
       // Date filter
       const matchDate =
-        !selectedDate.value ||
-        (shift.opened_at && shift.opened_at.startsWith(selectedDate.value))
+        !selectedDate.value || (shift.opened_at && shift.opened_at.startsWith(selectedDate.value))
 
       // Search query
       const q = searchQuery.value.trim().toLowerCase()
@@ -230,15 +258,27 @@ export function useAdminShiftReconciliation() {
   const todayCashCollected = computed(() => {
     const active = hasActiveShift.value ? activeShift.value.cash_sales : 0
     const historyToday = shiftHistory.value
-      .filter((s) => s.status === 'closed' && s.closed_at && s.closed_at.startsWith(new Date().toISOString().slice(0, 10)))
+      .filter(
+        (s) =>
+          s.status === 'closed' &&
+          s.closed_at &&
+          s.closed_at.startsWith(new Date().toISOString().slice(0, 10)),
+      )
       .reduce((sum, s) => sum + s.cash_sales, 0)
     return active + historyToday
   })
 
   const todayDigitalRevenue = computed(() => {
-    const active = hasActiveShift.value ? activeShift.value.qr_sales + activeShift.value.wallet_sales : 0
+    const active = hasActiveShift.value
+      ? activeShift.value.qr_sales + activeShift.value.wallet_sales
+      : 0
     const historyToday = shiftHistory.value
-      .filter((s) => s.status === 'closed' && s.closed_at && s.closed_at.startsWith(new Date().toISOString().slice(0, 10)))
+      .filter(
+        (s) =>
+          s.status === 'closed' &&
+          s.closed_at &&
+          s.closed_at.startsWith(new Date().toISOString().slice(0, 10)),
+      )
       .reduce((sum, s) => sum + s.qr_sales + s.wallet_sales, 0)
     return active + historyToday
   })
@@ -250,7 +290,12 @@ export function useAdminShiftReconciliation() {
   const matchRatePercent = computed(() => {
     const closedShifts = shiftHistory.value.filter((s) => s.status === 'closed')
     if (closedShifts.length === 0) return 100
-    const matchedCount = closedShifts.filter((s) => s.reconciliation_status === 'matched' || s.reconciliation_status === 'approved' || s.variance === 0).length
+    const matchedCount = closedShifts.filter(
+      (s) =>
+        s.reconciliation_status === 'matched' ||
+        s.reconciliation_status === 'approved' ||
+        s.variance === 0,
+    ).length
     return Math.round((matchedCount / closedShifts.length) * 100)
   })
 
@@ -347,7 +392,9 @@ export function useAdminShiftReconciliation() {
     activeShift.value.declared_cash = totalDenominationCash.value
     activeShift.value.variance = activeShift.value.declared_cash - activeShift.value.expected_cash
     showDenominationModal.value = false
-    showNotice(`Đã cập nhật số tiền đếm ${totalDenominationCash.value.toLocaleString('vi-VN')} ₫ vào tiền két!`)
+    showNotice(
+      `Đã cập nhật số tiền đếm ${totalDenominationCash.value.toLocaleString('vi-VN')} ₫ vào tiền két!`,
+    )
   }
 
   function openReviewModal(shift: CashShiftItem) {

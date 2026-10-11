@@ -24,6 +24,13 @@ class Journal extends Model
         static::deleting(fn () => throw new \LogicException('Financial journals are append-only.'));
     }
 
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
-    public function entries(): HasMany { return $this->hasMany(JournalEntry::class); }
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function entries(): HasMany
+    {
+        return $this->hasMany(JournalEntry::class);
+    }
 }

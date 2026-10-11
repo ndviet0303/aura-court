@@ -2,11 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\ElevatedAuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
-use App\Models\Venue;
 use App\Services\Infrastructure\ElevatedAccessService;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -56,7 +54,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
     public function test_role_matrix_enforcement_for_owner_manager_cashier_staff_customer(): void
     {
         $org = Organization::create(['name' => 'Aura Central', 'slug' => 'aura-central']);
-        
+
         $owner = User::factory()->create();
         $manager = User::factory()->create();
         $cashier = User::factory()->create();
@@ -111,7 +109,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
             'FINANCE_PAYOUT_OVERRIDE',
             'Resolving bank account reconciliation issue #881',
             $org->id,
-            function () use ($org) {
+            function () {
                 return 'Resolved successfully';
             }
         );

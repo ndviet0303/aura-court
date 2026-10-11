@@ -54,7 +54,7 @@ return new class extends Migration
         foreach ($venues as $venue) {
             $orgId = DB::table('organizations')->insertGetId([
                 'name' => $venue->name,
-                'slug' => $venue->slug ?: 'org-' . $venue->id,
+                'slug' => $venue->slug ?: 'org-'.$venue->id,
                 'status' => 'active',
                 'created_at' => $now,
                 'updated_at' => $now,

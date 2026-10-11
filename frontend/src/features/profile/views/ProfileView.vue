@@ -101,9 +101,7 @@ const {
         :membership="membership"
       />
 
-      <ProfileShortcutsTab
-        v-else-if="activeTab === 'shortcuts'"
-      />
+      <ProfileShortcutsTab v-else-if="activeTab === 'shortcuts'" />
     </main>
   </div>
 </template>
@@ -159,7 +157,9 @@ const {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 .fade-enter-from,

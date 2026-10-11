@@ -36,20 +36,24 @@ const organizationId = ref<number | null>(null)
 const paymentQrImage = ref('')
 const generatingQr = ref(false)
 
-watch(paymentAttempt, async (attempt) => {
-  paymentQrImage.value = ''
-  if (!attempt?.qr_code) return
-  if (/^(data:image\/|https?:\/\/)/i.test(attempt.qr_code)) {
-    paymentQrImage.value = attempt.qr_code
-    return
-  }
-  generatingQr.value = true
-  try {
-    paymentQrImage.value = await QRCode.toDataURL(attempt.qr_code, { width: 240, margin: 2 })
-  } finally {
-    generatingQr.value = false
-  }
-}, { immediate: true })
+watch(
+  paymentAttempt,
+  async (attempt) => {
+    paymentQrImage.value = ''
+    if (!attempt?.qr_code) return
+    if (/^(data:image\/|https?:\/\/)/i.test(attempt.qr_code)) {
+      paymentQrImage.value = attempt.qr_code
+      return
+    }
+    generatingQr.value = true
+    try {
+      paymentQrImage.value = await QRCode.toDataURL(attempt.qr_code, { width: 240, margin: 2 })
+    } finally {
+      generatingQr.value = false
+    }
+  },
+  { immediate: true },
+)
 
 function callbackUrls() {
   const returned = new URL(window.location.href)
@@ -62,15 +66,26 @@ function callbackUrls() {
 }
 
 function paymentStatusLabel(status: string): string {
-  return ({ pending: 'Đang chờ xác minh', succeeded: 'Đã được máy chủ xác nhận', failed: 'Thanh toán thất bại', expired: 'Yêu cầu đã hết hạn' } as Record<string, string>)[status] || status
+  return (
+    (
+      {
+        pending: 'Đang chờ xác minh',
+        succeeded: 'Đã được máy chủ xác nhận',
+        failed: 'Thanh toán thất bại',
+        expired: 'Yêu cầu đã hết hạn',
+      } as Record<string, string>
+    )[status] || status
+  )
 }
 
 onMounted(async () => {
   const user = auth.user as any
-  const activeOrganizationId = user?.capabilities?.active_organization_id ?? user?.organizations?.[0]?.organization_id
+  const activeOrganizationId =
+    user?.capabilities?.active_organization_id ?? user?.organizations?.[0]?.organization_id
   const orgId = Number(route.params.organizationId || activeOrganizationId)
   if (!Number.isInteger(orgId) || orgId <= 0) {
-    error.value = 'Không tìm thấy tổ chức đang hoạt động. Hãy chọn tổ chức trước khi quản lý thuê bao.'
+    error.value =
+      'Không tìm thấy tổ chức đang hoạt động. Hãy chọn tổ chức trước khi quản lý thuê bao.'
     return
   }
   organizationId.value = orgId
@@ -122,23 +137,31 @@ async function refreshPaymentStatus() {
 <template>
   <div class="platform-subscription-view py-8 px-4 max-w-5xl mx-auto space-y-8">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-        Gói Dịch vụ Nền tảng
-      </h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gói Dịch vụ Nền tảng</h1>
       <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
         Quản lý gói thuê bao, hạn mức vận hành và trạng thái mở bán sân bãi của câu lạc bộ.
       </p>
     </div>
 
     <!-- Feedback Alerts -->
-    <div v-if="notice" class="p-4 text-xs font-medium text-emerald-800 bg-emerald-100 rounded-lg dark:bg-emerald-950/40 dark:text-emerald-300">
+    <div
+      v-if="notice"
+      class="p-4 text-xs font-medium text-emerald-800 bg-emerald-100 rounded-lg dark:bg-emerald-950/40 dark:text-emerald-300"
+    >
       {{ notice }}
     </div>
-    <div v-if="error" class="p-4 text-xs font-medium text-red-800 bg-red-100 rounded-lg dark:bg-red-950/40 dark:text-red-300">
+    <div
+      v-if="error"
+      class="p-4 text-xs font-medium text-red-800 bg-red-100 rounded-lg dark:bg-red-950/40 dark:text-red-300"
+    >
       {{ error }}
     </div>
 
-    <section v-if="paymentAttempt" class="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-900 dark:bg-blue-950/20" aria-live="polite">
+    <section
+      v-if="paymentAttempt"
+      class="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-900 dark:bg-blue-950/20"
+      aria-live="polite"
+    >
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 class="font-semibold text-gray-900 dark:text-white">Thanh toán gói dịch vụ</h2>
@@ -146,22 +169,52 @@ async function refreshPaymentStatus() {
             Mã giao dịch: <strong>{{ paymentAttempt.reference_code }}</strong>
           </p>
           <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
-            {{ new Intl.NumberFormat('vi-VN', { style: 'currency', currency: paymentAttempt.currency }).format(paymentAttempt.amount) }}
+            {{
+              new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: paymentAttempt.currency,
+              }).format(paymentAttempt.amount)
+            }}
           </p>
           <p class="mt-2 text-sm font-medium text-blue-800 dark:text-blue-300">
             {{ paymentStatusLabel(paymentAttempt.status) }}
           </p>
         </div>
-        <button type="button" :disabled="loading" class="rounded-lg border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50 dark:border-blue-800 dark:text-blue-300" @click="refreshPaymentStatus">
+        <button
+          type="button"
+          :disabled="loading"
+          class="rounded-lg border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50 dark:border-blue-800 dark:text-blue-300"
+          @click="refreshPaymentStatus"
+        >
           {{ loading ? 'Đang kiểm tra...' : 'Kiểm tra trạng thái' }}
         </button>
       </div>
-      <div v-if="paymentAttempt.status === 'pending' && generatingQr" class="mt-4 text-xs text-gray-500">Đang tạo mã QR…</div>
-      <div v-else-if="paymentAttempt.status === 'pending' && paymentQrImage" class="mt-4 flex flex-col items-start gap-3">
-        <img :src="paymentQrImage" alt="Mã QR thanh toán thuê bao" class="h-56 w-56 rounded-lg bg-white p-2" />
-        <p class="text-xs text-gray-600 dark:text-gray-300">Trạng thái chỉ đổi sau khi máy chủ xác minh giao dịch.</p>
+      <div
+        v-if="paymentAttempt.status === 'pending' && generatingQr"
+        class="mt-4 text-xs text-gray-500"
+      >
+        Đang tạo mã QR…
       </div>
-      <a v-if="paymentAttempt.status === 'pending' && paymentAttempt.checkout_url" :href="paymentAttempt.checkout_url" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+      <div
+        v-else-if="paymentAttempt.status === 'pending' && paymentQrImage"
+        class="mt-4 flex flex-col items-start gap-3"
+      >
+        <img
+          :src="paymentQrImage"
+          alt="Mã QR thanh toán thuê bao"
+          class="h-56 w-56 rounded-lg bg-white p-2"
+        />
+        <p class="text-xs text-gray-600 dark:text-gray-300">
+          Trạng thái chỉ đổi sau khi máy chủ xác minh giao dịch.
+        </p>
+      </div>
+      <a
+        v-if="paymentAttempt.status === 'pending' && paymentAttempt.checkout_url"
+        :href="paymentAttempt.checkout_url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-4 inline-flex rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800"
+      >
         Mở trang thanh toán
       </a>
     </section>
@@ -189,7 +242,8 @@ async function refreshPaymentStatus() {
           {{ subscription ? 'Thay đổi hoặc Nâng cấp Gói' : 'Chọn Gói Dịch vụ để Kích hoạt' }}
         </h2>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          Mô hình thuê bao cố định (tháng / năm) minh bạch, 0% hoa hồng doanh thu, tách biệt hoàn toàn phí cổng thanh toán.
+          Mô hình thuê bao cố định (tháng / năm) minh bạch, 0% hoa hồng doanh thu, tách biệt hoàn
+          toàn phí cổng thanh toán.
         </p>
       </div>
 

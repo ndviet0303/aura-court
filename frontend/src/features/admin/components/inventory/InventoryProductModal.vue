@@ -108,7 +108,8 @@ watch(
       barcode.value = p.barcode || ''
       category.value = p.category || 'drinks'
       unit.value = p.unit || 'chai'
-      taxRate.value = p.tax_rate !== undefined ? Number(p.tax_rate) : (p.category === 'services' ? 10 : 8)
+      taxRate.value =
+        p.tax_rate !== undefined ? Number(p.tax_rate) : p.category === 'services' ? 10 : 8
       price.value = Number(p.price) || 0
       cost.value = Number(p.cost) || 0
       stockQty.value = Number(p.stock_quantity) || 0
@@ -130,7 +131,7 @@ watch(
       supplier.value = ''
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleSave() {
@@ -159,11 +160,17 @@ function handleSave() {
       <div class="modal-header">
         <div class="title-with-icon">
           <div class="header-icon-box">
-            <span class="material-symbols-outlined card-title-icon">{{ product ? 'edit_note' : 'add_box' }}</span>
+            <span class="material-symbols-outlined card-title-icon">{{
+              product ? 'edit_note' : 'add_box'
+            }}</span>
           </div>
           <div>
             <h3 class="modal-title">
-              {{ product ? t('admin.inventory.editProductTitle') : t('admin.inventory.addProductTitle') }}
+              {{
+                product
+                  ? t('admin.inventory.editProductTitle')
+                  : t('admin.inventory.addProductTitle')
+              }}
             </h3>
             <p class="modal-sub">{{ t('admin.inventory.productModalSub') }}</p>
           </div>
@@ -302,7 +309,11 @@ function handleSave() {
               <!-- Initial/Current Stock -->
               <div class="form-group">
                 <label class="form-label">
-                  {{ product ? t('admin.inventory.currentStockLabel') : t('admin.inventory.initialStockLabel') }}
+                  {{
+                    product
+                      ? t('admin.inventory.currentStockLabel')
+                      : t('admin.inventory.initialStockLabel')
+                  }}
                 </label>
                 <input
                   v-model.number="stockQty"
@@ -316,7 +327,12 @@ function handleSave() {
               <!-- Min Stock Alert -->
               <div class="form-group">
                 <label class="form-label">{{ t('admin.inventory.minStockLabel') }}</label>
-                <input v-model.number="minStock" type="number" min="0" class="form-input font-mono" />
+                <input
+                  v-model.number="minStock"
+                  type="number"
+                  min="0"
+                  class="form-input font-mono"
+                />
               </div>
 
               <!-- Supplier -->
@@ -353,7 +369,9 @@ function handleSave() {
           :disabled="!name.trim() || !sku.trim() || saving"
           @click="handleSave"
         >
-          <span v-if="saving" class="material-symbols-outlined icon-16 spin-anim">progress_activity</span>
+          <span v-if="saving" class="material-symbols-outlined icon-16 spin-anim"
+            >progress_activity</span
+          >
           <span>{{ saving ? t('common.saving') : t('admin.inventory.saveProductBtn') }}</span>
         </AuraButton>
       </div>
@@ -560,7 +578,9 @@ function handleSave() {
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-input:focus {
@@ -630,19 +650,27 @@ function handleSave() {
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
 }
 
-.icon-16 { font-size: 16px; }
+.icon-16 {
+  font-size: 16px;
+}
 
 .spin-anim {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {
-  .section-grid, .section-grid.grid-3, .pricing-grid {
+  .section-grid,
+  .section-grid.grid-3,
+  .pricing-grid {
     grid-template-columns: 1fr;
   }
 }

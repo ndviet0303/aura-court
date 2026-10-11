@@ -5,8 +5,8 @@ namespace App\Jobs;
 use App\Models\ProviderEvent;
 use App\Services\Payment\ProviderEventHandler;
 use App\Services\Payment\ProviderWebhookService;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -17,7 +17,10 @@ class ProcessProviderEvent implements ShouldQueue
 
     public int $tries = 8;
 
-    public function __construct(public readonly int $providerEventId) { $this->afterCommit = true; }
+    public function __construct(public readonly int $providerEventId)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(ProviderWebhookService $webhooks): void
     {

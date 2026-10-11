@@ -2,12 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\FeedComment;
 use App\Models\FeedPost;
-use App\Models\FeedReaction;
-use App\Models\FeedReport;
 use App\Models\Friendship;
-use App\Models\ModerationRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
@@ -19,9 +15,13 @@ class CommunityFeedTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $alice;
+
     private User $bob;
+
     private User $stranger;
+
     private User $moderator;
 
     protected function setUp(): void
@@ -30,7 +30,7 @@ class CommunityFeedTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Community Hub',
-            'slug' => 'aura-hub-' . uniqid(),
+            'slug' => 'aura-hub-'.uniqid(),
             'status' => 'active',
         ]);
 

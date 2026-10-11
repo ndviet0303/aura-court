@@ -11,6 +11,7 @@ use App\Models\PlatformSubscription;
 use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -24,9 +25,10 @@ class UnifiedBookingEligibilityTest extends TestCase
     private function createCustomerWithWallet(int $orgId, int $balance = 500000): User
     {
         $user = User::factory()->create(['role' => 'customer']);
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $orgId);
         $walletService->credit($wallet, $balance, 'test_topup', 1, 'Fund for test');
+
         return $user;
     }
 
@@ -77,7 +79,7 @@ class UnifiedBookingEligibilityTest extends TestCase
         $this->getJson("/api/v1/sport-zones/{$sportZone->id}")->assertNotFound();
 
         // 3. Availability on draft court must return 404
-        $availRes = $this->getJson('/api/v1/availability?court_id=' . $court->id . '&date=' . now()->addDay()->toDateString());
+        $availRes = $this->getJson('/api/v1/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
         $availRes->assertStatus(404);
 
         // 4. Direct booking attempt on draft court must fail with 404
@@ -140,7 +142,7 @@ class UnifiedBookingEligibilityTest extends TestCase
         $this->getJson('/api/v1/sport-zones')->assertOk()->assertJsonFragment(['id' => $sportZone->id]);
 
         // Customer loaded availability earlier:
-        $availRes = $this->getJson('/api/v1/availability?court_id=' . $court->id . '&date=' . now()->addDay()->toDateString());
+        $availRes = $this->getJson('/api/v1/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
         $availRes->assertStatus(200);
 
         // Partner organization gets suspended!

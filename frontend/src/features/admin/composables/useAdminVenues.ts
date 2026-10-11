@@ -41,8 +41,12 @@ export function useAdminVenues() {
         (statusFilter.value === 'active' && v.is_active) ||
         (statusFilter.value === 'inactive' && !v.is_active)
 
-      const venueName = typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
-      const venueAddr = typeof v.address === 'string' ? v.address : (v.address as any)?.vi || (v.address as any)?.en || ''
+      const venueName =
+        typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
+      const venueAddr =
+        typeof v.address === 'string'
+          ? v.address
+          : (v.address as any)?.vi || (v.address as any)?.en || ''
 
       const matchSearch =
         !q ||
@@ -83,10 +87,7 @@ export function useAdminVenues() {
     loading.value = true
     error.value = ''
     try {
-      const [vRes, zRes] = await Promise.all([
-        adminApi.getVenues(),
-        adminApi.getSportZones(),
-      ])
+      const [vRes, zRes] = await Promise.all([adminApi.getVenues(), adminApi.getSportZones()])
       if (vRes) venues.value = vRes as AdminVenueItem[]
       if (zRes) sportZones.value = zRes
     } catch (e) {
@@ -147,7 +148,11 @@ export function useAdminVenues() {
 
     savingBookingPolicy.value = true
     try {
-      const response = await adminApi.saveVenueBookingPolicy(venue.organization_id, venue.id, settings)
+      const response = await adminApi.saveVenueBookingPolicy(
+        venue.organization_id,
+        venue.id,
+        settings,
+      )
       bookingPolicy.value = response.data
       showNotice(t('admin.venues.bookingPolicySaved', { version: response.data.version }))
     } catch (e) {
@@ -163,8 +168,13 @@ export function useAdminVenues() {
     try {
       await adminApi.updateVenue(venue.id, { is_active: nextStatus })
       venue.is_active = nextStatus
-      const statusText = nextStatus ? t('admin.venues.statusActive') : t('admin.venues.statusInactive')
-      const nameStr = typeof venue.name === 'string' ? venue.name : (venue.name as any)?.vi || (venue.name as any)?.en || ''
+      const statusText = nextStatus
+        ? t('admin.venues.statusActive')
+        : t('admin.venues.statusInactive')
+      const nameStr =
+        typeof venue.name === 'string'
+          ? venue.name
+          : (venue.name as any)?.vi || (venue.name as any)?.en || ''
       showNotice(t('admin.venues.toggleStatusSuccess', { name: nameStr, status: statusText }))
     } catch (e) {
       showError(errorMessage(e, 'Không thể cập nhật trạng thái cơ sở.'))
@@ -175,7 +185,10 @@ export function useAdminVenues() {
     try {
       await adminApi.deleteVenue(venue.id)
       venue.is_active = false
-      const nameStr = typeof venue.name === 'string' ? venue.name : (venue.name as any)?.vi || (venue.name as any)?.en || ''
+      const nameStr =
+        typeof venue.name === 'string'
+          ? venue.name
+          : (venue.name as any)?.vi || (venue.name as any)?.en || ''
       showNotice(t('admin.venues.deleteVenueSuccess', { name: nameStr }))
     } catch (e) {
       showError(errorMessage(e, 'Không thể ngưng hoạt động cơ sở.'))

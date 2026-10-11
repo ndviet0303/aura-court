@@ -96,14 +96,16 @@ export function assertAuthStateSafeLocation(targetPath: string, repoRoot: string
   // Disallow any storage inside repository working directory or common artifact paths
   if (resolvedTarget.startsWith(resolvedRepo)) {
     throw new Error(
-      `Security violation: Auth state/manifest path "${resolvedTarget}" must not be located inside repository "${resolvedRepo}"`
+      `Security violation: Auth state/manifest path "${resolvedTarget}" must not be located inside repository "${resolvedRepo}"`,
     )
   }
 
   const forbiddenSegments = ['.git', 'artifacts', 'test-results', 'playwright-report']
   for (const segment of forbiddenSegments) {
     if (resolvedTarget.split(path.sep).includes(segment)) {
-      throw new Error(`Security violation: Path "${resolvedTarget}" contains sensitive/committed segment "${segment}"`)
+      throw new Error(
+        `Security violation: Path "${resolvedTarget}" contains sensitive/committed segment "${segment}"`,
+      )
     }
   }
 }
@@ -112,7 +114,9 @@ export function assertAuthStateSafeLocation(targetPath: string, repoRoot: string
  * Asserts that a mutation response is NOT demo-simulated.
  * Demo mutations are rolled back by SimulateDemoMutations middleware and must never count as persistence.
  */
-export function assertNonDemoPersistence(headers: Headers | Record<string, string | string[] | undefined>): void {
+export function assertNonDemoPersistence(
+  headers: Headers | Record<string, string | string[] | undefined>,
+): void {
   let demoHeader: string | undefined
 
   if (headers instanceof Headers) {
@@ -124,7 +128,7 @@ export function assertNonDemoPersistence(headers: Headers | Record<string, strin
 
   if (demoHeader === 'true' || demoHeader === '1') {
     throw new Error(
-      'Persistence violation: Received X-Demo-Simulated response header. Demo mutations roll back and must not count as browser acceptance persistence.'
+      'Persistence violation: Received X-Demo-Simulated response header. Demo mutations roll back and must not count as browser acceptance persistence.',
     )
   }
 }
@@ -137,7 +141,7 @@ export async function authenticateActorSession(
   manifest: RunManifest,
   actor: ActorRole,
   page: Page,
-  repoRoot?: string
+  repoRoot?: string,
 ): Promise<ActorSession> {
   const authStatePath = getActorAuthStatePath(manifest, actor)
 
@@ -169,15 +173,17 @@ export async function authenticateActorSession(
       password: credential.password,
     },
     headers: {
-      'Accept': 'application/json',
-      'Referer': frontendUrl,
-      'Origin': frontendUrl,
+      Accept: 'application/json',
+      Referer: frontendUrl,
+      Origin: frontendUrl,
     },
   })
 
   if (!loginRes.ok()) {
     const errText = await loginRes.text()
-    throw new Error(`Actor login failed for "${actor}" (${credential.email}) with status ${loginRes.status()}: ${errText}`)
+    throw new Error(
+      `Actor login failed for "${actor}" (${credential.email}) with status ${loginRes.status()}: ${errText}`,
+    )
   }
 
   // Verify non-demo persistence
@@ -186,8 +192,8 @@ export async function authenticateActorSession(
   // Verify authenticated identity via /auth/me
   const meRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/me`, {
     headers: {
-      'Accept': 'application/json',
-      'Referer': frontendUrl,
+      Accept: 'application/json',
+      Referer: frontendUrl,
     },
   })
   if (!meRes.ok()) {
@@ -196,7 +202,9 @@ export async function authenticateActorSession(
 
   const meData = (await meRes.json()) as { user?: { email?: string; status?: string } }
   if (meData.user?.email !== credential.email) {
-    throw new Error(`Session user mismatch: expected ${credential.email}, got ${meData.user?.email}`)
+    throw new Error(
+      `Session user mismatch: expected ${credential.email}, got ${meData.user?.email}`,
+    )
   }
 
   // 3. Save storageState to dedicated outside-git ephemeral file
@@ -218,7 +226,7 @@ export async function createAuthenticatedContext(
   actor: ActorRole,
   browser: { newContext: (options?: unknown) => Promise<BrowserContext> },
   helperPage?: Page,
-  repoRoot?: string
+  repoRoot?: string,
 ): Promise<BrowserContext> {
   const authStatePath = getActorAuthStatePath(manifest, actor)
 

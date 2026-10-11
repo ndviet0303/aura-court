@@ -54,11 +54,11 @@ class CreateAdminAccount extends Command
         }
 
         $this->newLine();
-        $this->info("=== KHỞI TẠO TÀI KHOẢN ADMIN THÀNH CÔNG ===");
+        $this->info('=== KHỞI TẠO TÀI KHOẢN ADMIN THÀNH CÔNG ===');
         $this->table(
             ['ID', 'Tên', 'Email', 'Mật khẩu', 'Vai trò', 'Trạng thái'],
             [
-                [$user->id, $user->name, $user->email, $password, $user->role, 'Sẵn sàng đăng nhập']
+                [$user->id, $user->name, $user->email, $password, $user->role, 'Sẵn sàng đăng nhập'],
             ]
         );
 

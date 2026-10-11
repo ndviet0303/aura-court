@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import type { MatchFixture } from '../../composables/useLiveScore'
 
 defineProps<{
@@ -82,7 +82,12 @@ function formatName(name: string): string {
         <button type="button" class="arrow-btn" aria-label="Cuộn sang trái" @click="scroll('left')">
           <span class="material-symbols-outlined">chevron_left</span>
         </button>
-        <button type="button" class="arrow-btn" aria-label="Cuộn sang phải" @click="scroll('right')">
+        <button
+          type="button"
+          class="arrow-btn"
+          aria-label="Cuộn sang phải"
+          @click="scroll('right')"
+        >
           <span class="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
@@ -116,12 +121,8 @@ function formatName(name: string): string {
             <span class="live-dot-pulse"></span>
             LIVE
           </span>
-          <span v-else-if="f.status === 'completed'" class="status-pill completed">
-            KẾT THÚC
-          </span>
-          <span v-else class="status-pill scheduled">
-            SẮP ĐẤU
-          </span>
+          <span v-else-if="f.status === 'completed'" class="status-pill completed"> KẾT THÚC </span>
+          <span v-else class="status-pill scheduled"> SẮP ĐẤU </span>
 
           <span class="court-badge">
             <span class="material-symbols-outlined mini-ico">location_on</span>
@@ -137,11 +138,18 @@ function formatName(name: string): string {
             class="player-row"
             :class="{
               leader: (f.player1.current_score || 0) > (f.player2.current_score || 0),
-              winner: f.status === 'completed' && (f.player1.current_score || 0) > (f.player2.current_score || 0),
+              winner:
+                f.status === 'completed' &&
+                (f.player1.current_score || 0) > (f.player2.current_score || 0),
             }"
           >
             <div class="p-info">
-              <img :src="f.player1.avatar" :alt="f.player1.name" class="p-mini-avt" loading="lazy" />
+              <img
+                :src="f.player1.avatar"
+                :alt="f.player1.name"
+                class="p-mini-avt"
+                loading="lazy"
+              />
               <span class="p-name" :title="f.player1.name">{{ formatName(f.player1.name) }}</span>
             </div>
             <span class="p-score font-mono">{{ f.player1.current_score ?? 0 }}</span>
@@ -151,11 +159,18 @@ function formatName(name: string): string {
             class="player-row"
             :class="{
               leader: (f.player2.current_score || 0) > (f.player1.current_score || 0),
-              winner: f.status === 'completed' && (f.player2.current_score || 0) > (f.player1.current_score || 0),
+              winner:
+                f.status === 'completed' &&
+                (f.player2.current_score || 0) > (f.player1.current_score || 0),
             }"
           >
             <div class="p-info">
-              <img :src="f.player2.avatar" :alt="f.player2.name" class="p-mini-avt" loading="lazy" />
+              <img
+                :src="f.player2.avatar"
+                :alt="f.player2.name"
+                class="p-mini-avt"
+                loading="lazy"
+              />
               <span class="p-name" :title="f.player2.name">{{ formatName(f.player2.name) }}</span>
             </div>
             <span class="p-score font-mono">{{ f.player2.current_score ?? 0 }}</span>
@@ -303,7 +318,10 @@ function formatName(name: string): string {
   background: var(--surface);
   cursor: pointer;
   text-align: left;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
   position: relative;
   user-select: none;
 }
@@ -317,7 +335,9 @@ function formatName(name: string): string {
 .fixture-card-chip.active {
   border-color: var(--pink-dark, #db2777);
   background: rgba(219, 39, 119, 0.06);
-  box-shadow: 0 0 0 1px var(--pink-dark, #db2777), 0 8px 22px rgba(219, 39, 119, 0.15);
+  box-shadow:
+    0 0 0 1px var(--pink-dark, #db2777),
+    0 8px 22px rgba(219, 39, 119, 0.15);
 }
 
 /* Top Meta Row */
@@ -354,8 +374,15 @@ function formatName(name: string): string {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.5; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
 }
 
 .status-pill {

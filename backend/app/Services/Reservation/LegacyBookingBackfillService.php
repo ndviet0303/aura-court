@@ -42,6 +42,7 @@ class LegacyBookingBackfillService
                     'code' => $booking->code,
                     'reason' => 'Missing venue or organization owner',
                 ];
+
                 continue;
             }
 
@@ -51,6 +52,7 @@ class LegacyBookingBackfillService
                     'code' => $booking->code,
                     'reason' => 'Booking has zero slots',
                 ];
+
                 continue;
             }
 
@@ -100,6 +102,7 @@ class LegacyBookingBackfillService
             $audit = $this->audit($organizationId);
             $audit['created'] = 0;
             $audit['existing'] = $audit['mapped_count'];
+
             return $audit;
         }
 
@@ -124,6 +127,7 @@ class LegacyBookingBackfillService
             if ($mapping) {
                 $this->assertMapping($booking, $mapping);
                 $existing++;
+
                 continue;
             }
 

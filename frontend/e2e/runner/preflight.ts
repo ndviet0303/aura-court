@@ -36,7 +36,7 @@ export function validateEnvironment(env: Record<string, string | undefined>): st
  */
 export function validateDatabaseTarget(
   db: { host?: string; port?: number; database?: string; connection?: string; url?: string },
-  options: { strict?: boolean; expectedDbName?: string } = {}
+  options: { strict?: boolean; expectedDbName?: string } = {},
 ): string[] {
   const violations: string[] = []
   const host = db.host || '127.0.0.1'
@@ -52,7 +52,9 @@ export function validateDatabaseTarget(
   }
 
   if (options.strict && database === 'booking_test') {
-    violations.push('DB_SHARED_PHPUNIT: "booking_test" is reserved for PHPUnit; E2E must own a dedicated database.')
+    violations.push(
+      'DB_SHARED_PHPUNIT: "booking_test" is reserved for PHPUnit; E2E must own a dedicated database.',
+    )
   }
 
   if (!database.endsWith('_test')) {
@@ -60,7 +62,9 @@ export function validateDatabaseTarget(
   }
 
   if (options.expectedDbName && database !== options.expectedDbName) {
-    violations.push(`DB_MISMATCH: Target database "${database}" does not match expected "${options.expectedDbName}".`)
+    violations.push(
+      `DB_MISMATCH: Target database "${database}" does not match expected "${options.expectedDbName}".`,
+    )
   }
 
   if (db.url) {
@@ -74,7 +78,9 @@ export function validateDatabaseTarget(
         violations.push('CRITICAL: Database URL targets production database "booking".')
       }
       if (options.expectedDbName && urlDb && urlDb !== options.expectedDbName) {
-        violations.push(`DB_URL_MISMATCH: Database URL target "${urlDb}" does not match expected "${options.expectedDbName}".`)
+        violations.push(
+          `DB_URL_MISMATCH: Database URL target "${urlDb}" does not match expected "${options.expectedDbName}".`,
+        )
       }
     } catch {
       violations.push('DB_URL_MALFORMED: Database URL is invalid.')
@@ -97,7 +103,9 @@ export function validateNoCachedConfig(backendDir: string): string[] {
 
   for (const file of cacheFiles) {
     if (fs.existsSync(file)) {
-      violations.push(`CACHE_ACTIVE: Cached artifact "${path.basename(file)}" exists. Test overrides cannot be verified safely.`)
+      violations.push(
+        `CACHE_ACTIVE: Cached artifact "${path.basename(file)}" exists. Test overrides cannot be verified safely.`,
+      )
     }
   }
 
@@ -109,20 +117,22 @@ export function validateNoCachedConfig(backendDir: string): string[] {
  */
 export function validateFrontendRuntimeConfig(
   frontendDir: string,
-  expectedBackendUrl: string
+  expectedBackendUrl: string,
 ): string[] {
   const violations: string[] = []
   const runtimeConfigPath = path.join(frontendDir, 'public', 'runtime-config.json')
 
   if (fs.existsSync(runtimeConfigPath)) {
     try {
-      const content = JSON.parse(fs.readFileSync(runtimeConfigPath, 'utf-8')) as { apiUrl?: unknown }
+      const content = JSON.parse(fs.readFileSync(runtimeConfigPath, 'utf-8')) as {
+        apiUrl?: unknown
+      }
       if (typeof content.apiUrl === 'string' && content.apiUrl.trim().length > 0) {
         const trimmed = content.apiUrl.trim().replace(/\/$/, '')
         const normalizedExpected = expectedBackendUrl.trim().replace(/\/$/, '')
         if (trimmed !== normalizedExpected) {
           violations.push(
-            `FRONTEND_API_OVERRIDE: runtime-config.json specifies apiUrl="${trimmed}", conflicting with isolated runner "${normalizedExpected}".`
+            `FRONTEND_API_OVERRIDE: runtime-config.json specifies apiUrl="${trimmed}", conflicting with isolated runner "${normalizedExpected}".`,
           )
         }
       }
@@ -141,7 +151,7 @@ export function runBackendPreflightCommand(
   backendDir: string,
   env: Record<string, string>,
   expectedDb: string,
-  runId: string
+  runId: string,
 ): PreflightCheckResult {
   try {
     const output = execFileSync(
@@ -168,7 +178,7 @@ export function runBackendPreflightCommand(
         })(),
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
-      }
+      },
     )
 
     const parsed = JSON.parse(output) as {

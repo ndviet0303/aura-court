@@ -50,10 +50,16 @@ async function handleStartApplication() {
   } catch {}
 }
 async function handleSaveDraft(payload: SaveDraftPayload): Promise<boolean> {
-  try { return (await saveDraft(payload)) !== null } catch { return false }
+  try {
+    return (await saveDraft(payload)) !== null
+  } catch {
+    return false
+  }
 }
 async function handleUpload(payload: { file: File; documentType: string }) {
-  try { await uploadDocument(payload.file, payload.documentType) } catch {}
+  try {
+    await uploadDocument(payload.file, payload.documentType)
+  } catch {}
 }
 async function handleSubmit(payload: SubmitApplicationPayload) {
   try {
@@ -89,7 +95,8 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
           </div>
           <h1 class="partner-title">Đăng ký Trở thành Đối tác Cho thuê Sân</h1>
           <p class="partner-subtitle">
-            Quy trình xét duyệt minh bạch, an toàn dành cho các chủ câu lạc bộ và cơ sở thể thao trên toàn quốc.
+            Quy trình xét duyệt minh bạch, an toàn dành cho các chủ câu lạc bộ và cơ sở thể thao
+            trên toàn quốc.
           </p>
         </div>
 
@@ -99,7 +106,9 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
               <span class="material-symbols-outlined">bolt</span>
             </div>
             <h4>Vận hành Tự động</h4>
-            <p>Bảng giá linh hoạt theo giờ, theo ngày và hệ thống lịch đặt realtime chống trùng sân.</p>
+            <p>
+              Bảng giá linh hoạt theo giờ, theo ngày và hệ thống lịch đặt realtime chống trùng sân.
+            </p>
           </div>
 
           <div class="benefit-card">
@@ -107,7 +116,9 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
               <span class="material-symbols-outlined">payments</span>
             </div>
             <h4>Thanh toán Minh bạch</h4>
-            <p>Hỗ trợ QR Code thanh toán trực tiếp về tài khoản chủ sân, đối soát minh bạch 24/7.</p>
+            <p>
+              Hỗ trợ QR Code thanh toán trực tiếp về tài khoản chủ sân, đối soát minh bạch 24/7.
+            </p>
           </div>
 
           <div class="benefit-card">
@@ -115,7 +126,9 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
               <span class="material-symbols-outlined">groups</span>
             </div>
             <h4>Hàng ngàn Khách hàng</h4>
-            <p>Kết nối ngay với cộng đồng người chơi thể thao năng động trên nền tảng Aura Sports.</p>
+            <p>
+              Kết nối ngay với cộng đồng người chơi thể thao năng động trên nền tảng Aura Sports.
+            </p>
           </div>
         </div>
 
@@ -125,18 +138,16 @@ async function handleSubmit(payload: SubmitApplicationPayload) {
             <div class="info-text-wrap">
               <h4>Bắt đầu hồ sơ đối tác</h4>
               <p>
-                Hồ sơ của bạn sẽ được đội ngũ vận hành Aura Sports kiểm duyệt trước khi mở quyền quản lý và xuất bản cơ sở. Bạn sẽ xem và xác nhận các điều khoản cần thiết trước khi nộp hồ sơ.
+                Hồ sơ của bạn sẽ được đội ngũ vận hành Aura Sports kiểm duyệt trước khi mở quyền
+                quản lý và xuất bản cơ sở. Bạn sẽ xem và xác nhận các điều khoản cần thiết trước khi
+                nộp hồ sơ.
               </p>
             </div>
           </div>
         </div>
 
         <div class="action-footer">
-          <button
-            type="button"
-            class="btn-start-action"
-            @click="handleStartApplication"
-          >
+          <button type="button" class="btn-start-action" @click="handleStartApplication">
             <span>Bắt đầu Hồ sơ Đăng ký</span>
             <span class="material-symbols-outlined icon-18">arrow_forward</span>
           </button>

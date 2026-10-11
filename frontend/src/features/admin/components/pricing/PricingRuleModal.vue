@@ -47,7 +47,11 @@ const typeOptions = computed<DropdownOption[]>(() => [
   { value: 'weekly', label: t('admin.pricing.typeWeeklyOption'), icon: 'calendar_view_week' },
   { value: 'standard', label: t('admin.pricing.typeStandardOption'), icon: 'check_circle' },
   { value: 'base', label: t('admin.pricing.typeBaseOption'), icon: 'layers' },
-  { value: 'date_exception', label: t('admin.pricing.typeDateExceptionOption'), icon: 'event_busy' },
+  {
+    value: 'date_exception',
+    label: t('admin.pricing.typeDateExceptionOption'),
+    icon: 'event_busy',
+  },
   { value: 'surge', label: t('admin.pricing.typeSurgeOption'), icon: 'bolt' },
   { value: 'special_event', label: t('admin.pricing.typeSpecialEventOption'), icon: 'stars' },
 ])
@@ -137,7 +141,7 @@ watch(
       isActive.value = true
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleVenueChange(val: string | number) {
@@ -174,8 +178,10 @@ function handleSave() {
     venue_id: venueId.value ? Number(venueId.value) : null,
     sport_zone_id: sportZoneId.value ? Number(sportZoneId.value) : null,
     court_id: courtId.value ? Number(courtId.value) : null,
-    weekday: type.value === 'weekly' ? (weekday.value || 1) : null,
-    exception_date: ['holiday', 'date_exception', 'special_event'].includes(type.value) ? exceptionDate.value : null,
+    weekday: type.value === 'weekly' ? weekday.value || 1 : null,
+    exception_date: ['holiday', 'date_exception', 'special_event'].includes(type.value)
+      ? exceptionDate.value
+      : null,
     effective_from: effectiveFrom.value || null,
     effective_until: effectiveUntil.value || null,
     starts_at: isAllDay.value ? null : startsAt.value,
@@ -220,11 +226,7 @@ function handleSave() {
 
             <div class="form-group flex-1">
               <label class="form-label required">{{ t('admin.pricing.ruleTypeLabel') }}</label>
-              <SelectDropdown
-                v-model="type"
-                :options="typeOptions"
-                variant="bordered"
-              />
+              <SelectDropdown v-model="type" :options="typeOptions" variant="bordered" />
             </div>
           </div>
 
@@ -281,7 +283,10 @@ function handleSave() {
             </div>
           </div>
 
-          <div v-else-if="['holiday', 'date_exception', 'special_event'].includes(type)" class="form-group">
+          <div
+            v-else-if="['holiday', 'date_exception', 'special_event'].includes(type)"
+            class="form-group"
+          >
             <label class="form-label required">{{ t('admin.pricing.exceptionDateLabel') }}</label>
             <DatePicker v-model="exceptionDate" />
           </div>
@@ -299,10 +304,18 @@ function handleSave() {
                 >
                   {{ t('admin.pricing.presetAllDay') }}
                 </button>
-                <button type="button" class="preset-pill" @click="setTimePreset('06:00', '11:00')">06:00 - 11:00</button>
-                <button type="button" class="preset-pill" @click="setTimePreset('11:00', '14:00')">11:00 - 14:00</button>
-                <button type="button" class="preset-pill" @click="setTimePreset('17:00', '21:00')">17:00 - 21:00</button>
-                <button type="button" class="preset-pill" @click="setTimePreset('21:00', '23:00')">21:00 - 23:00</button>
+                <button type="button" class="preset-pill" @click="setTimePreset('06:00', '11:00')">
+                  06:00 - 11:00
+                </button>
+                <button type="button" class="preset-pill" @click="setTimePreset('11:00', '14:00')">
+                  11:00 - 14:00
+                </button>
+                <button type="button" class="preset-pill" @click="setTimePreset('17:00', '21:00')">
+                  17:00 - 21:00
+                </button>
+                <button type="button" class="preset-pill" @click="setTimePreset('21:00', '23:00')">
+                  21:00 - 23:00
+                </button>
               </div>
             </div>
 
@@ -480,8 +493,14 @@ function handleSave() {
   flex-wrap: wrap;
 }
 
-.flex-1 { flex: 1; min-width: 180px; }
-.flex-2 { flex: 2; min-width: 220px; }
+.flex-1 {
+  flex: 1;
+  min-width: 180px;
+}
+.flex-2 {
+  flex: 2;
+  min-width: 220px;
+}
 
 .form-group {
   display: flex;
@@ -692,7 +711,7 @@ function handleSave() {
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 18px;
   width: 18px;
   left: 3px;

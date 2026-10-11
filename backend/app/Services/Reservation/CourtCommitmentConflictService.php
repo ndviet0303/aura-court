@@ -10,6 +10,7 @@ use App\Models\ReservationSlot;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+
 class CourtCommitmentConflictService
 {
     public function __construct(private readonly VenueOperatingCalendar $calendar) {}

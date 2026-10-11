@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
 import type { Court, AvailabilitySlot } from '../../types/court'
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
 
@@ -104,11 +104,7 @@ const durationHours = computed(() => {
       </div>
 
       <div v-else class="slots-list-wrap">
-        <div
-          v-for="s in selectedSlots"
-          :key="s.startsAt"
-          class="slot-summary-item"
-        >
+        <div v-for="s in selectedSlots" :key="s.startsAt" class="slot-summary-item">
           <div class="slot-time-badge">
             <span class="material-symbols-outlined icon-14">schedule</span>
             <span class="font-mono time-txt">
@@ -156,12 +152,24 @@ const durationHours = computed(() => {
           <span class="material-symbols-outlined error-icon">error</span>
           <strong class="error-title">{{ $t('schedule.cannotCreateBooking') }}</strong>
         </div>
-        <button type="button" class="btn-dismiss-error" aria-label="Đóng" @click="emit('clearError')">
+        <button
+          type="button"
+          class="btn-dismiss-error"
+          aria-label="Đóng"
+          @click="emit('clearError')"
+        >
           <span class="material-symbols-outlined icon-14">close</span>
         </button>
       </div>
       <p class="error-msg">{{ error }}</p>
-      <div v-if="error.toLowerCase().includes('ví') || error.toLowerCase().includes('wallet') || error.toLowerCase().includes('nạp')" class="unverified-action-row">
+      <div
+        v-if="
+          error.toLowerCase().includes('ví') ||
+          error.toLowerCase().includes('wallet') ||
+          error.toLowerCase().includes('nạp')
+        "
+        class="unverified-action-row"
+      >
         <RouterLink to="/wallet" class="btn-resend-verify">
           <span class="material-symbols-outlined icon-14">add_card</span>
           <span>{{ $t('payment.topupNowCta') || 'Nạp tiền vào ví ngay' }}</span>
@@ -175,7 +183,9 @@ const durationHours = computed(() => {
           @click="emit('resendVerification')"
         >
           <span class="material-symbols-outlined icon-14">mail</span>
-          <span>{{ resendingEmail ? $t('schedule.sendingEmail') : $t('schedule.resendVerificationEmail') }}</span>
+          <span>{{
+            resendingEmail ? $t('schedule.sendingEmail') : $t('schedule.resendVerificationEmail')
+          }}</span>
         </button>
         <RouterLink to="/profile" class="btn-goto-profile">
           <span class="material-symbols-outlined icon-14">person</span>
@@ -197,7 +207,10 @@ const durationHours = computed(() => {
             <span>{{ $t('payment.currentBalance') || 'Số dư ví' }}:</span>
           </div>
           <div class="wallet-status-right">
-            <strong class="font-mono" :class="bookingStore.walletBalance >= totalPrice ? 'text-emerald' : 'text-danger'">
+            <strong
+              class="font-mono"
+              :class="bookingStore.walletBalance >= totalPrice ? 'text-emerald' : 'text-danger'"
+            >
               {{ formatCurrency(bookingStore.walletBalance) }}
             </strong>
             <RouterLink
@@ -232,7 +245,13 @@ const durationHours = computed(() => {
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>
-        <span>{{ loading ? $t('schedule.initializingBooking') : directOwnerPayments ? $t('schedule.directOwnerPaymentBtn') : $t('schedule.confirmAndPayBtn') }}</span>
+        <span>{{
+          loading
+            ? $t('schedule.initializingBooking')
+            : directOwnerPayments
+              ? $t('schedule.directOwnerPaymentBtn')
+              : $t('schedule.confirmAndPayBtn')
+        }}</span>
       </button>
     </div>
   </div>
@@ -672,8 +691,12 @@ const durationHours = computed(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Feedback Notice & Error Boxes */
@@ -725,8 +748,14 @@ const durationHours = computed(() => {
 }
 
 @keyframes shakeIn {
-  0% { transform: translateY(-4px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .error-header {
