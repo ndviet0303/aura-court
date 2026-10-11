@@ -210,4 +210,13 @@
   - Thử local với cùng lock (bỏ scripts và autoload): cache trống thì in 135 dòng `Downloading` và mất 57 s; cache có sẵn thì không in dòng `Downloading` nào và mất 4,7 s.
   - `cache:` ở mức job thay cho cache global `.docker/cache` (chỉ `build_and_deploy` dùng). Nhờ vậy job backend không còn "Failed to extract cache" và không còn tải lên cache rỗng.
   - Cache miss chỉ có nghĩa là tải đầy đủ như trước. Static check không đọc cache này, nên vẫn đúng spec "không phụ thuộc runtime service".
-- [ ] 7.7 Kiểm cache trên MR: pipeline đầu sau 7.6 có "Created cache" cho key mới; lần chạy lại `backend_static` có "Successfully extracted cache" và `composer install` không còn dòng `Downloading`. Ghi thời gian `composer install` và thời gian job mới.
+- [x] 7.7 Kiểm cache trên MR: pipeline đầu sau 7.6 có "Created cache" cho key mới; lần chạy lại `backend_static` có "Successfully extracted cache" và `composer install` không còn dòng `Downloading`. Ghi thời gian `composer install` và thời gian job mới.
+  - Đã có lần chạy đầu: pipeline 2935263470 (commit `d6bc8db`), `backend_static` pass sau 162 s. Key mới `0_backend/composer-3fa1f8f…-protected` chưa có cache, nên job tải đủ 135 package (52 s). Cuối job có "Created cache" và không có cảnh báo "No files to cache".
+  - Mốc so sánh: job backend ở pipeline `6a7895a` (chưa có cache) cũng mất 163 s. Con số 206 s ở 7.4 có thêm 20 s pull image lần đầu. Thời gian trên runner này dao động mạnh (`frontend_check` lần lượt 285 s, 345 s, 517 s), nên chỉ so riêng bước `composer install`.
+  - Lần retry đầu (job 17090613600) fail sau 13 s với `aborted: terminated`, trước bước checkout và restore cache. Nguyên nhân: runner khởi động lại lúc 13:32:20 sau khi `config.toml` đổi sang `concurrent = 2`. Không liên quan cấu hình cache.
+  - Retry lần hai (job 17090718628) pass sau 115 s:
+    - Log có "Successfully extracted cache" cho đúng key.
+    - `composer install` không in dòng `Downloading` nào và chỉ mất 6 s, so với 44–53 s khi chưa có cache.
+    - Restore cache mất 3 s. Cuối job vẫn tạo lại cache, thêm khoảng 3 s.
+  - Cả job giảm từ 162 s xuống 115 s. Mức giảm 47 s này lớn hơn phần Composer tiết kiệm, vì lần này Pint và PHPStan cũng nhanh hơn (máy đỡ tải). Mức tiết kiệm thật của cache là khoảng 40 s mỗi lần chạy.
+  - Kết quả check không đổi: Pint PASS, PHPStan cả hai level `[OK] No errors`, architecture test OK.
