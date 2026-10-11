@@ -230,6 +230,8 @@ class AttendanceOperationsAndReadinessTest extends TestCase
 
     public function test_check_in_validates_arrival_window_and_court_readiness(): void
     {
+        // Back-to-back slots on court1 must not overlap when the clock ticks between now() calls.
+        $this->freezeTime();
         $fixture = $this->tenant();
         $tz = 'Asia/Ho_Chi_Minh';
         $attendanceService = app(AttendanceService::class);
@@ -246,8 +248,9 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         }
 
         // 2. Arrival window expired: slot started 45 minutes ago, no_show_after_minutes is 30 minutes
+        // court2: court1 holds the maintenance case's slot over this window.
         $pastSlot = now($tz)->subMinutes(45);
-        $expiredRes = $this->createConfirmedReservation($fixture, $fixture['court1'], $fixture['customer'], $pastSlot);
+        $expiredRes = $this->createConfirmedReservation($fixture, $fixture['court2'], $fixture['customer'], $pastSlot);
         try {
             $attendanceService->checkIn($fixture['staff'], $fixture['organization']->id, $expiredRes->code, 'Expired window', $fixture['customer']);
             $this->fail('Expected expired arrival window check-in to be rejected.');

@@ -25,7 +25,7 @@ class ReconcileLegacyPartnersCommandTest extends TestCase
         $org = Organization::create([
             'name' => 'Legacy Club',
             'slug' => 'legacy-club',
-            'partner_status' => 'pending_verification',
+            'partner_status' => 'pending',
         ]);
         $org->users()->attach($owner->id, ['role' => 'owner', 'status' => 'active']);
         $venue = Venue::create([
@@ -70,7 +70,7 @@ class ReconcileLegacyPartnersCommandTest extends TestCase
         $this->assertSame($venueCountBefore, Venue::count());
         $this->assertSame($bookingCountBefore, Booking::count());
 
-        $this->assertSame('pending_verification', $org->fresh()->partner_status);
+        $this->assertSame('pending', $org->fresh()->partner_status);
         $this->assertTrue((bool) $venue->fresh()->is_active);
         $this->assertSame('confirmed', $booking->fresh()->status);
     }

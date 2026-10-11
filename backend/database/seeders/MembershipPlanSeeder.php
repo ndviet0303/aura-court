@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\LoyaltyRule;
-use App\Models\MembershipPlan;
 use App\Models\Organization;
 use App\Models\TenantMembershipPlan;
 use Carbon\Carbon;
@@ -82,15 +81,6 @@ class MembershipPlanSeeder extends Seeder
             ];
 
             foreach ($membershipPlans as $plan) {
-                MembershipPlan::updateOrCreate(
-                    ['name' => $plan['name']],
-                    [
-                        'description' => $plan['description'],
-                        'discount_percent' => $plan['discount_percent'],
-                        'is_active' => true,
-                    ]
-                );
-
                 TenantMembershipPlan::updateOrCreate(
                     ['organization_id' => $org->id, 'name' => $plan['name']],
                     [

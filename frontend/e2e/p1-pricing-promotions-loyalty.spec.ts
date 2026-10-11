@@ -269,7 +269,7 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
         'starts_at' => now()->addDays(5)->setTime(14, 0)->utc(),
         'ends_at' => now()->addDays(5)->setTime(15, 0)->utc(),
         'unit_price' => 100000,
-        'status' => 'booked',
+        'status' => 'confirmed',
       ]);
 
       echo json_encode([

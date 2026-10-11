@@ -29,7 +29,7 @@ class TournamentSeeder extends Seeder
             [
                 'name' => 'Aura Badminton Summer Championship 2026',
                 'format' => 'single_elimination',
-                'status' => 'ongoing',
+                'status' => 'in_progress',
                 'starts_at' => $now->copy()->addDays(2),
                 'settings' => [
                     'max_participants' => 16,
@@ -59,7 +59,7 @@ class TournamentSeeder extends Seeder
             [
                 'name' => 'Hanoi 5v5 Corporate Football League 2026',
                 'format' => 'single_elimination',
-                'status' => 'upcoming',
+                'status' => 'open',
                 'starts_at' => $now->copy()->addDays(20),
                 'settings' => [
                     'max_participants' => 8,
@@ -89,7 +89,7 @@ class TournamentSeeder extends Seeder
             [
                 'name' => 'Da Nang Coastal Pickleball Open 2026',
                 'format' => 'single_elimination',
-                'status' => 'completed',
+                'status' => 'finalized',
                 'starts_at' => $now->copy()->subDays(10),
                 'settings' => [
                     'max_participants' => 16,
@@ -152,14 +152,14 @@ class TournamentSeeder extends Seeder
                         'user_id' => $user->id,
                         'seed' => $pIdx,
                         'status' => 'registered',
-                        'checked_in_at' => in_array($tData['status'], ['ongoing', 'completed']) ? $now : null,
+                        'checked_in_at' => in_array($tData['status'], ['in_progress', 'finalized']) ? $now : null,
                     ]);
                     $participants[] = $part;
                 }
 
                 // Create Fixtures (Quarters, Semis, Finals)
                 if (count($participants) >= 8) {
-                    $isDoneOrLive = in_array($tData['status'], ['ongoing', 'completed']);
+                    $isDoneOrLive = in_array($tData['status'], ['in_progress', 'finalized']);
 
                     // Quarter Finals (Round 1)
                     $qfScores = [
@@ -196,8 +196,8 @@ class TournamentSeeder extends Seeder
 
                     for ($pos = 1; $pos <= 2; $pos++) {
                         $pair = $sfPairs[$pos - 1];
-                        $wId = $tData['status'] === 'completed' ? $participants[$pair['p1']]->id : null;
-                        $isLive = $tData['status'] === 'ongoing';
+                        $wId = $tData['status'] === 'finalized' ? $participants[$pair['p1']]->id : null;
+                        $isLive = $tData['status'] === 'in_progress';
 
                         TournamentFixture::updateOrCreate(
                             ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'round' => 2, 'position' => $pos],
@@ -205,23 +205,23 @@ class TournamentSeeder extends Seeder
                                 'participant_one_id' => $participants[$pair['p1']]->id,
                                 'participant_two_id' => $participants[$pair['p2']]->id,
                                 'winner_id' => $wId,
-                                'score' => $tData['status'] === 'completed' ? $pair['score'] : ($isLive ? ['p1' => 14, 'p2' => 12] : null),
-                                'status' => $tData['status'] === 'completed' ? 'completed' : ($isLive ? 'ongoing' : 'scheduled'),
+                                'score' => $tData['status'] === 'finalized' ? $pair['score'] : ($isLive ? ['p1' => 14, 'p2' => 12] : null),
+                                'status' => $tData['status'] === 'finalized' ? 'completed' : ($isLive ? 'live' : 'scheduled'),
                                 'version' => 1,
                             ]
                         );
                     }
 
                     // Finals (Round 3)
-                    $finalWinnerId = $tData['status'] === 'completed' ? $participants[0]->id : null;
+                    $finalWinnerId = $tData['status'] === 'finalized' ? $participants[0]->id : null;
                     TournamentFixture::updateOrCreate(
                         ['organization_id' => $currentOrg->id, 'tournament_id' => $tournament->id, 'round' => 3, 'position' => 1],
                         [
                             'participant_one_id' => $participants[0]->id,
                             'participant_two_id' => $participants[6]->id,
                             'winner_id' => $finalWinnerId,
-                            'score' => $tData['status'] === 'completed' ? ['p1' => 21, 'p2' => 19, 'sets' => [['p1' => 21, 'p2' => 19]]] : null,
-                            'status' => $tData['status'] === 'completed' ? 'completed' : 'scheduled',
+                            'score' => $tData['status'] === 'finalized' ? ['p1' => 21, 'p2' => 19, 'sets' => [['p1' => 21, 'p2' => 19]]] : null,
+                            'status' => $tData['status'] === 'finalized' ? 'completed' : 'scheduled',
                             'version' => 1,
                         ]
                     );

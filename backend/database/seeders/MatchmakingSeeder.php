@@ -352,7 +352,7 @@ class MatchmakingSeeder extends Seeder
                 // Add Creator participation
                 MatchParticipation::updateOrCreate(
                     ['organization_id' => $currentOrg->id, 'match_post_id' => $post->id, 'user_id' => $creator->id],
-                    ['status' => 'accepted', 'joined_at' => $now->copy()->subHours(5)]
+                    ['status' => 'joined', 'joined_at' => $now->copy()->subHours(5)]
                 );
 
                 // Add other participants
@@ -360,7 +360,7 @@ class MatchmakingSeeder extends Seeder
                     $joinedUser = $customers[($mIndex + $p) % $customers->count()];
                     MatchParticipation::updateOrCreate(
                         ['organization_id' => $currentOrg->id, 'match_post_id' => $post->id, 'user_id' => $joinedUser->id],
-                        ['status' => 'accepted', 'joined_at' => $now->copy()->subHours(2)]
+                        ['status' => 'joined', 'joined_at' => $now->copy()->subHours(2)]
                     );
                 }
             }

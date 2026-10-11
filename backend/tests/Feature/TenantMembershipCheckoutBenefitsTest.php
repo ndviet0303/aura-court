@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Court;
-use App\Models\Membership;
-use App\Models\MembershipPlan;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosProduct;
@@ -113,19 +111,6 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             'organization_id' => $tenant['organization']->id,
             'membership_id' => $membership->id,
             'benefit_code' => 'discount_percent',
-        ]);
-
-        $legacyPlan = MembershipPlan::create([
-            'name' => 'Unscoped legacy tier '.Str::random(8),
-            'discount_percent' => 20,
-            'is_active' => true,
-        ]);
-        Membership::create([
-            'user_id' => $tenant['customer']->id,
-            'membership_plan_id' => $legacyPlan->id,
-            'starts_at' => now()->subDay(),
-            'ends_at' => now()->addMonth(),
-            'status' => 'active',
         ]);
 
         $this->actingAs($tenant['customer'])->withHeaders($headers)->getJson('/api/v1/membership')

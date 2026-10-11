@@ -437,7 +437,7 @@ class OrdinaryCheckoutService
             $msg = strtolower($exception->getMessage());
             if (str_contains($msg, 'booking_slots_active_unique')
                 || (str_contains($msg, 'unique') && str_contains($msg, 'booking_slots'))
-                || str_contains($msg, 'reservation_entitlements_active_unique')
+                || Str::contains($msg, ['reservation_entitlements_active_unique', 'reservation_slots_no_overlap'])
             ) {
                 abort(409, 'Một hoặc nhiều slot vừa được người khác đặt.');
             }
@@ -702,7 +702,7 @@ class OrdinaryCheckoutService
             });
         } catch (QueryException $exception) {
             $msg = strtolower($exception->getMessage());
-            if (str_contains($msg, 'reservation_entitlements_active_unique')
+            if (Str::contains($msg, ['reservation_entitlements_active_unique', 'reservation_slots_no_overlap'])
                 || (str_contains($msg, 'reservation_entitlements') && str_contains($msg, 'unique'))
                 || str_contains($msg, 'booking_slots_active_unique')
             ) {

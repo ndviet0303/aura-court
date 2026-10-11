@@ -724,7 +724,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             'starts_at' => $targetDate->copy()->addHours(2),
             'ends_at' => $targetDate->copy()->addHours(3),
             'amount' => 150000,
-            'status' => 'confirmed',
+            'status' => 'active',
         ]);
 
         // C) POS Shift, Product, Order with items & payment, StockMovement
@@ -1065,7 +1065,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             'starts_at' => $targetDate->copy()->addHours(2),
             'ends_at' => $targetDate->copy()->addHours(3),
             'amount' => 150000,
-            'status' => 'confirmed',
+            'status' => 'active',
         ]);
 
         // Warm up

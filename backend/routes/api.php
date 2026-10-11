@@ -390,9 +390,6 @@ Route::prefix('v1')->group(function () {
                 Route::post('promotions/{campaign}/activate', [PromotionController::class, 'activateCampaign']);
                 Route::post('promotions/{campaign}/suspend', [PromotionController::class, 'suspendCampaign']);
                 Route::post('promotions/{campaign}/retire', [PromotionController::class, 'retireCampaign']);
-                Route::get('membership-plans', [PromotionController::class, 'plans']);
-                Route::post('membership-plans', [PromotionController::class, 'storePlan']);
-                Route::post('memberships', [PromotionController::class, 'assignMembership']);
                 Route::get('contracts', [AdminContractController::class, 'index']);
                 Route::get('contracts/{id}', [AdminContractController::class, 'show']);
                 Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);
