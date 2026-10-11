@@ -35,11 +35,11 @@ See `proposal.md` (Why) for motivation. This section covers the current state an
 | Pint | 293 / 767 files | 0 (format commit) |
 | Prettier | ~500 files (452 `src`, 48 `e2e` + config) | 0 (format commit) |
 | vue-tsc | 0 | 0, now also covering `worker.ts` |
-| ESLint | 598 (508 `no-explicit-any`) in 169 files | 508 `any` suppressed, rest fixed |
+| ESLint | 598 (508 `no-explicit-any`) in 169 files | 507 `any` suppressed in 112 files, rest fixed |
 | oxlint | 394 (327 `vitest/require-mock-type-parameters`) | 0 (rule off, rest fixed) |
 | Larastan level 0 | 18 (17 with casts parsing) | 0, never baselined |
-| Larastan level 5 | 1,343 (1,057 with casts parsing) | ~1,030 in baseline |
-| Backend architecture, repo-wide (after Pint) | 31 classes > 300 lines; 15 controllers > 7 public methods; 29 controllers with inline validation; 31/49 controllers and 17 domain files query models | allowlisted with ceilings |
+| Larastan level 5 | 1,343 (1,057 with casts parsing) | 1,021 in baseline (769 entries) |
+| Backend architecture, repo-wide (after Pint) | 31 classes > 300 lines; 15 controllers > 7 public methods; 29 controllers with inline validation; 31/49 controllers and 17 domain files query models (by a broader grep, see §6) | 121 allowlist entries with ceilings |
 | Frontend architecture, repo-wide (after Prettier) | 36/52 views > 250 lines; 2 view scripts > 200 lines; 101/271 components > 400 lines; 21 `.vue` files import legacy stores; 6 import the raw API client; 5 legacy stores; 17 eager routes | 172 allowlist entries with ceilings |
 | Locale parity | 3,638 keys per locale, 0 missing | enforced by unit test |
 
@@ -111,7 +111,7 @@ Alternative considered: format-on-touch. It never converges, and every diff mixe
 Why each choice:
 - **Level 5.** Levels 1–5 add real defect classes: argument types, nullsafe misuse, unknown methods and properties. Level 6 adds about 1,100 missing iterable and generic annotations. That is annotation work, not bugs, and is left to later changes.
 - **Casts parsing.** Without it the baseline would carry 286 false positives and teach people to ignore the analyzer.
-- **Level-0 run without baseline.** A regenerated baseline of about 1,000 entries can silently absorb a crash. A level-0 run with no baseline cannot. It costs about 10 s.
+- **Level-0 run without baseline.** A regenerated baseline covering about 1,000 errors can silently absorb a crash. A level-0 run with no baseline cannot. It costs about 10 s.
 
 Alternatives considered:
 - **Grep the baseline for crash identifiers.** The list would be hand-maintained, and identifiers such as `class.notFound` are also emitted for PHPDoc at higher levels.
@@ -138,7 +138,7 @@ Tightening the host check is an E2E safety decision outside this change.
 
 **ESLint.**
 - Fix now: `no-unused-vars`, `prefer-const`, `no-empty-object-type`, deprecated slot syntax, the template parse error and prop mutation.
-- Record the 508 `@typescript-eslint/no-explicit-any` with `eslint . --suppress-rule @typescript-eslint/no-explicit-any`. This suppresses only that rule, so any other leftover still fails.
+- Record the remaining `@typescript-eslint/no-explicit-any` with `eslint . --suppress-rule @typescript-eslint/no-explicit-any`. That is 507: one of the 508 went when a test callback got a type during the lint fixes. This suppresses only that rule, so any other leftover still fails.
 - CI never passes `--pass-on-unpruned-suppressions`.
 - `frontend/.prettierignore` lists `eslint-suppressions.json`. ESLint rewrites the file on every prune, without a final newline, and `format:check` covers the root `*.json` files.
 
@@ -208,6 +208,8 @@ Alternatives considered:
 4. PHPStan with the default config
 5. `phpunit tests/Unit/Architecture`
 
+Both PHPStan runs pass `--memory-limit=1G`. On a cold result cache, which is every CI run, the largest of 8 workers peaked at 188 MB, above PHP's common 128M default. A local run passes only while its result cache is warm.
+
 **`frontend_check`** changes:
 - add `oxlint .`, `eslint .` and `format:check`, all without `--fix` or cache;
 - use `build-only`, because type-check already ran;
@@ -231,7 +233,7 @@ Alternatives considered:
 - **The Composer image differs from production PHP, so CI results differ from local ones.** → The first pipeline must reproduce the local counts exactly. If it does not, pin the image to the production PHP minor version.
 - **Someone regenerates a baseline to hide new debt.** → The level-0 run blocks crash-class findings. Baseline diffs are visible in review. The regeneration commands are documented in the agent rules.
 - **Allowlisted files can regrow up to their ceiling.** → Accepted. Burn-down changes lower ceilings explicitly.
-- **508 suppressed `any` and about 1,030 baseline entries can feel permanent.** → Follow-up changes per domain, each reducing the counts.
+- **507 suppressed `any` and 1,021 baselined errors can feel permanent.** → Follow-up changes per domain, each reducing the counts.
 - **CI gets about 1–1.5 minutes slower.** → Accepted. `backend_static` and `frontend_check` run in parallel.
 
 ## Migration Plan

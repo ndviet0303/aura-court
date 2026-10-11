@@ -38,7 +38,7 @@
 ## 3. Sửa lint frontend
 
 - [x] 3.1 Tắt `vitest/require-mock-type-parameters` trong `.oxlintrc.json`.
-- [ ] 3.2 Bỏ mutate prop trong `CourtFormModal.vue`, `BusinessAddressSection.vue`, `BusinessBankSection.vue`:
+- [x] 3.2 Bỏ mutate prop trong `CourtFormModal.vue`, `BusinessAddressSection.vue`, `BusinessBankSection.vue`:
   - mỗi field được sửa dùng một `defineModel`;
   - parent (`AdminManageView.vue`, `BusinessInfoStep.vue`) bind bằng `v-model:<field>`;
   - giữ nguyên hành vi lưu/huỷ;
@@ -174,16 +174,24 @@
 
 ## 7. Cổng CI và kiểm chứng
 
-- [ ] 7.1 Thêm job `backend_static` vào `.gitlab-ci.yml`:
+- [x] 7.1 Thêm job `backend_static` vào `.gitlab-ci.yml`:
   - stage `validate`, image Composer chính thức, cùng `rules` với `frontend_check`;
   - chuẩn bị: copy `.env.example` sang `.env`, chạy `composer install --no-interaction --prefer-dist --ignore-platform-reqs`;
   - chạy lần lượt: `vendor/bin/pint --test`, PHPStan với `-c phpstan-level0.neon`, PHPStan với config mặc định, rồi `vendor/bin/phpunit tests/Unit/Architecture`.
-- [ ] 7.2 Sửa `frontend_check`:
+  - Đã làm: image `composer:2`; `rules` dùng chung qua YAML anchor `&validate_rules`, nên luôn giống `frontend_check`.
+  - Thêm `--memory-limit=1G` cho cả hai lần chạy PHPStan. Mô phỏng cục bộ (checkout từ `git archive`, `.env` lấy từ `.env.example`, DB/Redis không truy cập được, cache lạnh) cho thấy worker lớn nhất cần 188 MB, nên crash ở mức 128M mặc định. Trên repo local trước đó pass chỉ nhờ result cache. Lệnh trong `backend-architecture.md` cũng thêm cờ này.
+  - Mô phỏng sáu bước của job đều pass, tổng khoảng 80 s; Pint chậm nhất (51 s).
+- [x] 7.2 Sửa `frontend_check`:
   - thêm `npx oxlint .`, `npx eslint .` và `npm run format:check` (không `--fix`, không cache), chạy trước bước test;
   - đổi `npm run build` thành `npm run build-only`.
-- [ ] 7.3 Thêm `backend_static` vào `needs` của `build_and_deploy`.
+  - Đã làm: thứ tự là oxlint → eslint → format:check → type-check → test → build-only, để lỗi rẻ fail sớm.
+  - Chạy cục bộ (Node 26, không `npm ci`) đều pass: oxlint 1 s, eslint 16 s, format:check 17 s, type-check 34 s, 389 test 80 s, build-only 3 s. Phần lint thêm khoảng 34 s, bù lại `build-only` bỏ lần type-check thứ hai.
+- [x] 7.3 Thêm `backend_static` vào `needs` của `build_and_deploy`.
+  - Đã làm: `rules` của `backend_static` bao trọn các trường hợp `build_and_deploy` chạy (push lên dev/main, MR vào dev/main), nên `needs` luôn tìm thấy job.
 - [ ] 7.4 Pipeline đầu tiên trên merge request:
   - cả hai job xanh;
   - số lỗi PHPStan trong CI khớp local (nếu lệch thì pin image theo PHP minor của production);
   - ghi lại thời gian validate tăng thêm.
-- [ ] 7.5 Chạy `openspec validate add-static-analysis-gates --strict`, rồi cập nhật số liệu cuối vào `design.md`: số entry baseline, suppressions và allowlist.
+- [x] 7.5 Chạy `openspec validate add-static-analysis-gates --strict`, rồi cập nhật số liệu cuối vào `design.md`: số entry baseline, suppressions và allowlist.
+  - Đã làm: đếm lại từ file. Baseline PHPStan có 769 entry, gồm 1.021 lỗi. Suppressions có 507 `no-explicit-any` trong 112 file. Allowlist frontend 172 entry, backend 121 entry.
+  - Design ghi rõ 508 → 507 và lý do con số model-query lúc đề xuất cao hơn. Validate `--strict` pass.
