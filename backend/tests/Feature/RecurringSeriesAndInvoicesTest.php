@@ -18,6 +18,14 @@ class RecurringSeriesAndInvoicesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Fixed clock: the four weekly occurrences below always span two monthly invoices (October and November).
+        $this->travelTo(Carbon::parse('2026-10-11 10:00:00', config('app.timezone')));
+    }
+
     /** @return array{0:Organization,1:User,2:Court} */
     private function tenant(): array
     {
@@ -100,11 +108,12 @@ class RecurringSeriesAndInvoicesTest extends TestCase
         // Series is delinquent
         $this->assertSame('delinquent', $series->fresh()->status);
 
-        // Future occurrences released and reservations cancelled
+        // Only the overdue period's future occurrences release; the next period keeps its own pending invoice.
         $futureOccurrences = $series->occurrences()->where('starts_at', '>', now())->get();
         foreach ($futureOccurrences as $occ) {
-            $this->assertSame('released', $occ->status);
-            $this->assertSame('cancelled', $occ->reservation?->fresh()->status);
+            $released = $occ->starts_at->isSameMonth($invoice->period_start);
+            $this->assertSame($released ? 'released' : 'confirmed', $occ->status);
+            $this->assertSame($released ? 'cancelled' : 'confirmed', $occ->reservation?->fresh()->status);
         }
     }
 
@@ -173,12 +182,13 @@ class RecurringSeriesAndInvoicesTest extends TestCase
         $released = $service->markOverdueAndReleaseFuture();
         $this->assertGreaterThan(0, $released);
 
-        // Series A future inventory released and series marked delinquent.
+        // Series A's overdue-period inventory released and series marked delinquent.
         $this->assertSame('overdue', $invoiceA->fresh()->status);
         $this->assertSame('delinquent', $seriesA->fresh()->status);
         foreach ($seriesA->occurrences()->where('starts_at', '>', now())->get() as $occ) {
-            $this->assertSame('released', $occ->status);
-            $this->assertSame('cancelled', $occ->reservation?->fresh()->status);
+            $released = $occ->starts_at->isSameMonth($invoiceA->period_start);
+            $this->assertSame($released ? 'released' : 'confirmed', $occ->status);
+            $this->assertSame($released ? 'cancelled' : 'confirmed', $occ->reservation?->fresh()->status);
         }
 
         // Series B (received money) remains paid and tracked; its inventory is untouched.
