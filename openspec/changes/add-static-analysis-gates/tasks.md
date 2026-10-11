@@ -152,18 +152,25 @@
 
 ## 6. Tooling và tài liệu
 
-- [ ] 6.1 Tạo `frontend/tsconfig.worker.json` cho `worker.ts` (types `@cloudflare/workers-types`) và thêm vào `references` của `tsconfig.json`.
+- [x] 6.1 Tạo `frontend/tsconfig.worker.json` cho `worker.ts` (types `@cloudflare/workers-types`) và thêm vào `references` của `tsconfig.json`.
   - Kiểm tra: thêm thử một lỗi type vào `worker.ts` thì `npm run type-check` fail; sau đó hoàn tác.
-- [ ] 6.2 Thêm test parity key hai chiều vi/en vào `src/i18n/__tests__/bilingual.spec.ts`.
+  - Đã làm: config độc lập (`lib: ["esnext"]`, không DOM, `types` chỉ có Workers, `noEmit`). Dùng bản `@cloudflare/workers-types` đã có trong devDependencies.
+  - Đã kiểm tra: đổi `env.ASSETS.fetch` thành `fetchh` thì type-check fail (exit 2, TS2551 nêu type `Fetcher` của Workers). Đã hoàn tác, type-check pass trở lại.
+- [x] 6.2 Thêm test parity key hai chiều vi/en vào `src/i18n/__tests__/bilingual.spec.ts`.
   - Kiểm tra: xoá thử một key thì test fail và báo đúng tên key.
   - Sau đó xoá `check_i18n.ts` ở root repo.
-- [ ] 6.3 Thêm `.nvmrc` (`22`) ở root repo.
-- [ ] 6.4 Sửa `.agents/rules/frontend-architecture.md`:
+  - Đã làm: so khớp đường dẫn key lá (kể cả chỉ số mảng như `weekdays`, `months`) theo cả hai chiều, gộp trong một assertion nên một lần chạy báo đủ cả hai chiều.
+  - Đã kiểm tra: xoá thử `common.noData` ở en và `common.refresh` ở vi thì test fail, nêu đúng hai key đó. Đã hoàn tác. `check_i18n.ts` đã xoá; không còn tham chiếu.
+- [x] 6.3 Thêm `.nvmrc` (`22`) ở root repo.
+  - Đã làm: khớp image CI `node:22-alpine` và `engines` (`^22.18.0 || >=24.12.0`).
+- [x] 6.4 Sửa `.agents/rules/frontend-architecture.md`:
   - đổi giới hạn component từ 300 thành 400 dòng, cho khớp với dòng 400 ở cuối file;
   - thêm mục "Static analysis": allowlist, cách hạ ceiling, `--prune-suppressions`.
-- [ ] 6.5 Sửa `.agents/rules/backend-architecture.md`:
+  - Đã làm: thêm cả bảng luật mà check enforce, vì spec yêu cầu tài liệu nêu đúng các giới hạn đó. Luật "`.vue` không import legacy store" trước đây chưa được ghi rõ. Sửa luôn "~200" dòng script view thành 200 cho khớp với check.
+- [x] 6.5 Sửa `.agents/rules/backend-architecture.md`:
   - ghi rõ luật 300 dòng áp dụng cho cả `app/Services`, nhưng không bắt chuyển chúng sang Actions;
   - thêm mục "Static analysis": allowlist, lệnh `--generate-baseline`, quy tắc baseline chỉ giảm, level 0 không bao giờ vào baseline.
+  - Đã làm: thêm bảng luật mà test enforce và cách ignore inline có lý do. Chỉ chạy `--generate-baseline` khi lỗi duy nhất là entry baseline không còn khớp, để baseline không nuốt lỗi mới. Grep tài liệu ngoài change này không còn giới hạn cũ.
 
 ## 7. Cổng CI và kiểm chứng
 
