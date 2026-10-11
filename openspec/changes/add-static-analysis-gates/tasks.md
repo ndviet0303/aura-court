@@ -113,14 +113,19 @@
 
 ## 5. Kiến trúc toàn repo
 
-- [ ] 5.1 Viết lại test kiến trúc backend thành `tests/Unit/Architecture/BackendArchitectureTest.php`, quét toàn bộ `app/`:
+- [x] 5.1 Viết lại test kiến trúc backend thành `tests/Unit/Architecture/BackendArchitectureTest.php`, quét toàn bộ `app/`:
   - giữ đúng các luật hiện có, đo theo cặp (luật, file);
   - luật "query model trực tiếp" dùng mọi class trong `app/Models`;
   - gom tất cả vi phạm rồi fail một lần, mỗi dòng báo lỗi dán thẳng được vào allowlist.
-- [ ] 5.2 Thêm allowlist backend dạng `(luật, file, ceiling)`:
+  - Đã làm: test là `PHPUnit\Framework\TestCase` thuần, không boot app. Giữ đủ luật của test scoped cũ (controller, action, DTO, FormRequest, repository binding) và áp cho toàn `app/`; luật 300 dòng áp cho mọi file PHP. Luật model-query giữ danh sách method của test cũ, chỉ mở rộng danh sách model. Cách đo ghi ở design §6. Test scoped cũ đã bị xoá.
+- [x] 5.2 Thêm allowlist backend dạng `(luật, file, ceiling)`:
   - vượt ceiling thì fail;
   - entry đã về dưới giới hạn (stale) thì fail.
-- [ ] 5.3 Sinh allowlist backend từ lần chạy đầu sau commit Pint. Sau đó `vendor/bin/phpunit tests/Unit/Architecture` pass mà không cần database.
+  - Đã làm: `tests/Unit/Architecture/architecture-allowlist.json`, cùng ngữ nghĩa với allowlist frontend. Luật lạ trong allowlist cũng fail.
+- [x] 5.3 Sinh allowlist backend từ lần chạy đầu sau commit Pint. Sau đó `vendor/bin/phpunit tests/Unit/Architecture` pass mà không cần database.
+  - Đã làm: 121 entry, gồm 31 `class-lines`, 15 `controller-public-methods`, 29 `inline-validation` và 46 `model-query` (30 controller, 16 action). Các luật còn lại hiện không có vi phạm.
+  - Design ghi 31 controller và 17 file domain vì grep lúc đề xuất đếm thêm `with()`, `whereIn()`, `firstOrCreate()`, `updateOrCreate()`. Đo tại `main` bằng regex của test cũng ra 30 và 16, nên không phải do nhóm 1 xoá file.
+  - Test pass trong 0,15 s khi DB, cache và queue trỏ vào địa chỉ không tồn tại.
 - [x] 5.4 Tạo `frontend/src/__tests__/architecture.spec.ts` và allowlist cùng thư mục, quét toàn `src/` với các luật:
   - view ≤ 250 dòng, phần script ≤ 200 dòng;
   - component ≤ 400 dòng;
@@ -130,14 +135,20 @@
   - Đã làm: cách đo từng luật ghi ở design §6. Spec scoped cũ `src/features/__tests__/architecture.spec.ts` đã bị xoá cùng script.
 - [x] 5.5 Sinh allowlist frontend từ lần chạy đầu sau commit Prettier. Sau đó `npm run test:unit -- --run` pass.
   - Đã làm: 172 entry. Gồm 101 component, 36 view, 2 phần script của view, 21 file import legacy store, 6 file import raw API, 5 legacy store và 1 router có 17 route eager.
-- [ ] 5.6 Kiểm chứng ratchet trên cả hai stack:
+- [x] 5.6 Kiểm chứng ratchet trên cả hai stack:
   - thêm một dòng vào file đang ở đúng ceiling thì fail;
   - một component mới dài 401 dòng thì fail;
   - một file đã đạt chuẩn mà vẫn còn entry thì fail;
   - hoàn tác các thay đổi thử.
-  - Frontend đã kiểm chứng: cả ba trường hợp trên đều fail; thêm store mới hoặc route eager mới cũng fail. Còn backend.
-- [ ] 5.7 Xoá `backend/scripts/check-backend-architecture.php` và `frontend/scripts/check-frontend-architecture.mjs`. Grep xác nhận không còn tham chiếu.
-  - Frontend đã xoá cả script lẫn spec scoped cũ (commit `c71fe28`). Còn script backend.
+  - Frontend đã kiểm chứng: cả ba trường hợp trên đều fail; thêm store mới hoặc route eager mới cũng fail.
+  - Backend đã kiểm chứng:
+    - thêm 1 dòng vào `Console/Commands/E2EArrangeTestDataCommand.php` (đúng trần 328) thì fail "above its ceiling 328";
+    - class mới 301 dòng trong `app/Services` thì fail "class-lines is 301, limit 300", kèm dòng allowlist dán được;
+    - entry stale `["class-lines", "Models/User.php", 400]` thì fail "within its limit now";
+    - đã hoàn tác, chạy lại OK.
+- [x] 5.7 Xoá `backend/scripts/check-backend-architecture.php` và `frontend/scripts/check-frontend-architecture.mjs`. Grep xác nhận không còn tham chiếu.
+  - Frontend đã xoá cả script lẫn spec scoped cũ (commit `c71fe28`).
+  - Backend đã xoá script cùng test scoped cũ. `git grep --untracked` tên hai script và test cũ, ngoài thư mục change này, không còn kết quả.
 
 ## 6. Tooling và tài liệu
 

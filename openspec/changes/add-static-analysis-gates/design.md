@@ -170,6 +170,15 @@ Alternatives considered:
   - Raw API and legacy store imports are import specifiers, `@/` or relative, that resolve to `core/api/client`, `lib/api` (its re-export), or under `stores/`.
   - Each file in `src/stores/` counts 1 against a limit of 0, so the existing stores are allowlisted and a new one fails.
   - A router file counts each `component:` bound to a statically imported `.vue` file as an eager route.
+- Backend definitions (paths are relative to `app/`):
+  - Lines are editor lines of every PHP file, so the 300-line limit covers services, models and commands too. The old scoped test counted a trailing newline as an extra line.
+  - Controller rules apply under `Http/Controllers/`, action rules under `Domain/*/Actions/`, and the DTO rule under `Domain/*/DTOs/`.
+  - Public methods are those a controller class declares itself, without magic methods. Methods from a trait count toward the class that uses it.
+  - Inline validation counts `$request->validate(`, and storage access counts `Storage::`.
+  - A direct model query is `<Model>::query|where|find|findOrFail|create|update|first|get|all|paginate` for every class in `Models/`. This is the old test's method list, so calls such as `with()`, `whereIn()` or `firstOrCreate()` are not counted. The proposal's grep counted them, which is why it found 31 controllers and 17 domain files instead of 30 and 16.
+  - The request dependency counts an `Illuminate\Http\Request` import, plus each `execute()` parameter typed as `Request` or a subclass such as a FormRequest.
+  - A DTO that is not a `readonly class` counts 1.
+  - Two checks from the old test stay, each with a limit of 0. A file under `Http/Requests/` extends `FormRequest` and declares `rules()` and `authorize()`. Each interface under `Contracts/Repositories/` is bound in `RepositoryServiceProvider`.
 
 **Allowlist semantics.** An entry is `(rule, file, ceiling)`.
 - The check fails if the file's number exceeds its ceiling.
