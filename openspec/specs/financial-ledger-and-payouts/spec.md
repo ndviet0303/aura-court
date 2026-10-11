@@ -7,19 +7,19 @@ Provides auditable money movement, direct-owner accounting, provider integration
 ## Requirements
 
 ### Requirement: Immutable balanced ledger
-Financial events SHALL retain immutable balanced accounting within the correct receiving entity and model version. Direct owner receipts SHALL represent the owner's revenue/receivables, not Aura Court cash, wallet liability, tenant payable or platform commission. Subscription revenue SHALL be separate platform income. Legacy wallet, commission, reserve, settlement and compensation entries SHALL remain unchanged and reportable. Adjustments SHALL reference original events; historical values MUST NOT be recomputed from new policy.
+Financial events SHALL retain immutable balanced accounting within the correct receiving entity and model version. Direct owner receipts SHALL represent the owner's revenue/receivables, not Aura Court cash, wallet liability, tenant payable or platform commission. Subscription revenue SHALL be separate platform income. New booking/reservation payments, tournament registrations, provider collections and marketplace sales after commission retirement MUST NOT accrue platform commission or a replacement platform transaction fee. Legacy wallet, commission, reserve, settlement and compensation entries SHALL remain unchanged and reportable. Adjustments SHALL reference original events; historical values MUST NOT be recomputed from new policy.
 
 #### Scenario: Reservation payment is accepted
 - **WHEN** a new direct booking receipt is accepted
-- **THEN** one owner-scoped balanced event SHALL be recorded without platform custody/payable entries
+- **THEN** one owner-scoped balanced event SHALL be recorded without platform custody/payable entries or a platform commission deduction
 
 #### Scenario: Refund is processed
 - **WHEN** verified external owner refund evidence is accepted
-- **THEN** one compensating owner-scoped event SHALL reference original paid allocations without changing source entries
+- **THEN** one compensating owner-scoped event SHALL reference original paid allocations without changing source entries or recalculating commission from current configuration
 
 #### Scenario: Historical replay
 - **WHEN** an already posted legacy event is retried
-- **THEN** only its original monetary result SHALL be returned
+- **THEN** only its original journal and monetary result SHALL be returned without recalculation or an additional journal
 
 #### Scenario: Retired command does not create a journal
 - **WHEN** a stale unsupported legacy command is rejected rather than an authorized new-policy request
@@ -28,6 +28,18 @@ Financial events SHALL retain immutable balanced accounting within the correct r
 #### Scenario: Historical cancellation refund remains in reports
 - **WHEN** a report includes a cancellation refund recorded before cutover
 - **THEN** the original amount, allocation, model and journal SHALL remain visible without new-rate recomputation
+
+#### Scenario: Wallet collection has no commission
+- **WHEN** a new wallet-funded booking, reservation or tournament payment of 200,000 VND is posted with no applicable provider fee
+- **THEN** wallet liability SHALL decrease by 200,000 VND and tenant payable SHALL increase by 200,000 VND, with no platform commission entry
+
+#### Scenario: Provider fee is retained without commission
+- **WHEN** a new platform-received provider collection of 200,000 VND has an applicable provider fee of 2,000 VND
+- **THEN** the balanced journal SHALL record 198,000 VND tenant payable and the 2,000 VND provider fee without a platform commission deduction
+
+#### Scenario: Legacy fee settings cannot restore commission
+- **WHEN** a new collection is processed after retirement while legacy commission configuration or supplied metadata still contains a nonzero rate or amount
+- **THEN** the platform SHALL neither deduct nor report a newly accrued commission from that collection
 
 ### Requirement: Provider operations and webhook de-duplication
 Provider integration SHALL verify recipient-bound direct-owner collection, separate subscription receipts and legacy obligations. Provider-event identities SHALL be unique within validated connection context; identical replay SHALL never duplicate charge allocation, refund recognition, journal or legacy payout. Browser/client claims SHALL not authorize monetary transitions. Failed delivery SHALL preserve raw evidence safely for bounded recovery and unresolved exceptions.
@@ -88,3 +100,22 @@ At least daily and upon monetary anomalies, the platform SHALL reconcile receipt
 #### Scenario: Reconciliation detects a mismatch
 - **WHEN** transaction-level or receiver-level reconciliation detects nonzero variance
 - **THEN** a linked finance exception SHALL be recorded within 15 minutes of detection and SHALL remain open until evidence and rerun establish resolution
+
+### Requirement: Commission-free settlement and historical fee visibility
+Settlements, finance APIs, exports and UI SHALL derive financial amounts from recorded journals or existing immutable snapshots, never recompute old records with the new pricing policy. Existing financial field compatibility SHALL be preserved: historical commission values MUST remain accessible, and new commission-free activity SHALL contribute zero commission. Provider fees and historical platform commissions MUST be distinguishable; historical commissions MUST NOT be relabeled as provider fees or omitted from total deductions. Current commercial messaging SHALL not advertise a commission model. Existing settlement eligibility, payout lifecycle, thresholds and authorization SHALL remain unchanged.
+
+#### Scenario: Settlement contains only new commission-free activity
+- **WHEN** a settlement is captured solely from post-retirement collections without historical commission adjustments
+- **THEN** its commission amount SHALL be zero, actual provider fees SHALL remain visible and tenant payable SHALL match the ledger without a platform deduction
+
+#### Scenario: Settlement period crosses retirement
+- **WHEN** a report or new settlement snapshot includes both historical commission-bearing journals and new commission-free journals
+- **THEN** it SHALL preserve the recorded historical commission, add no commission for the new collections and retain ledger-derived tenant payable
+
+#### Scenario: Existing snapshot is read or requested again
+- **WHEN** a previously captured settlement is viewed, exported or requested again after retirement
+- **THEN** its monetary amounts and source snapshot SHALL remain unchanged, with any commission identified as historical
+
+#### Scenario: Zero commission takes precedence over a legacy alias
+- **WHEN** a compatible finance payload supplies an explicit zero commission and also includes a nonzero legacy alias
+- **THEN** the UI SHALL honor the canonical zero instead of displaying or adding the stale alias as a current fee

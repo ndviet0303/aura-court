@@ -50,11 +50,11 @@ A host SHALL allocate the accepted booking total to two through eight real permi
 - **THEN** a referenced payment obligation SHALL be created and coverage SHALL not complete until verified
 
 ### Requirement: Controlled marketplace transfer
-Only the current holder of confirmed, unused, undisputed eligible court-time SHALL list a transfer under a published venue policy, with default minimum two hours before play and asking price no higher than original. One effective listing and one exclusive buyer attempt SHALL exist per entitlement. The new holder SHALL be valid and any payment obligations SHALL be independently verified before transfer. Baseline paid transfer SHALL collect directly to the verified venue owner and track owner-executed seller reimbursement under disclosed terms; free transfer SHALL require explicit acceptance without fabricated payment. Aura Court MUST NOT hold or pay between parties or accrue commission. The original court/time/booking price-policy snapshot SHALL remain, consideration recorded separately; holder/check-in access SHALL update atomically. Failed/late financial outcomes SHALL enter reconciliation before relisting.
+Only the current holder of confirmed, unused, undisputed eligible court-time SHALL list a transfer under a published venue policy, with default minimum two hours before play and asking price no higher than original. One effective listing and one exclusive buyer attempt SHALL exist per entitlement. The new holder SHALL be valid and any payment obligations SHALL be independently verified before transfer. Baseline paid transfer SHALL collect directly to the verified venue owner and track owner-executed seller reimbursement of the accepted resale price under disclosed terms, without a marketplace fee or platform commission; free transfer SHALL require explicit acceptance without fabricated payment. Aura Court MUST NOT hold or pay between parties or accrue commission. A new purchase after commission retirement SHALL use zero marketplace fee even if an unsold listing retains an older nonzero fee rate. Previously completed transfers and their monetary records MUST remain unchanged. The original court/time/booking price-policy snapshot SHALL remain, consideration recorded separately; holder/check-in access SHALL update atomically. Failed/late financial outcomes SHALL enter reconciliation before relisting.
 
 #### Scenario: Eligible slot sells
-- **WHEN** verified buyer payment and required seller reimbursement evidence satisfy the published transfer policy
-- **THEN** one entitlement SHALL transfer, new check-in authority SHALL be issued, prior holder access revoked and original price preserved
+- **WHEN** verified buyer payment and required seller reimbursement evidence satisfy the published transfer policy for an eligible unsold listing at 200,000 VND after retirement
+- **THEN** one entitlement SHALL transfer, new check-in authority SHALL be issued, prior holder access revoked, original price preserved, and a 200,000 VND seller refund and zero marketplace fee recorded
 
 #### Scenario: Dispute or restricted buyer
 - **WHEN** a listing's booking becomes disputed or the buyer is restricted before commitment
@@ -70,7 +70,11 @@ Only the current holder of confirmed, unused, undisputed eligible court-time SHA
 
 #### Scenario: Historical fee
 - **WHEN** a completed historical transfer contains commission
-- **THEN** history SHALL remain unchanged while new transfers use zero platform fee
+- **THEN** history SHALL remain unchanged while new transfers use zero platform fee; its recorded buyer amount, seller refund, marketplace fee and financial journal SHALL remain available without a retroactive refund or recomputation
+
+#### Scenario: Old unsold listing is purchased after retirement
+- **WHEN** a buyer starts a new purchase of an eligible unsold listing with a stored five-percent fee
+- **THEN** the purchase SHALL charge zero marketplace fee and record the accepted resale price as the seller refund without changing any prior completed transfer
 
 #### Scenario: Seller refund cannot be accepted
 - **WHEN** buyer funds were received but required seller reimbursement cannot be evidenced

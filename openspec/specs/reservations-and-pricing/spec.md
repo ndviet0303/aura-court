@@ -86,7 +86,7 @@ Committed hold, confirmation, expiry, cancellation, reschedule and operational r
 - **THEN** no replacement/release event SHALL be emitted
 
 ### Requirement: Authoritative ordinary checkout and promotion result
-V1/V2 direct checkout SHALL share server-calculated prices, same-tenant coupons and versioned membership entitlements, permitted combination rules and loyalty conversion. A hold SHALL reserve scarce coupon uses and points without irrevocably spending them before successful payment. Confirmation SHALL atomically finalize allocation/discounts and consume reserved benefits once; expiry/cancellation SHALL release unconsumed reservations. Fully discounted bookings SHALL record legitimate zero payment rather than fabricated bank receipts. Point preview SHALL be read-only and reflect actual eligibility.
+V1/V2 direct checkout SHALL share server-calculated prices, same-tenant coupons and versioned membership entitlements, permitted combination rules and loyalty conversion. Customers SHALL be able to preview and select same-tenant loyalty points before confirming a new ordinary booking. A hold SHALL reserve scarce coupon uses and points without irrevocably spending them before successful payment. Confirmation SHALL atomically finalize allocation/discounts and consume reserved benefits once; expiry/cancellation SHALL release unconsumed reservations. For a pre-cutover legacy wallet cohort, accepted loyalty reduction, point debit, remaining wallet payment, booking confirmation and inventory allocation SHALL commit atomically with the policy snapshot and related financial records. Checkout without loyalty selection SHALL preserve existing behavior for its payment model. Fully discounted bookings SHALL record legitimate zero payment rather than fabricated bank receipts. Point preview SHALL be read-only and reflect actual eligibility. Loyalty redemption SHALL NOT apply retroactive discounts to existing bookings.
 
 #### Scenario: Prohibited combination
 - **WHEN** coupon/membership/points policy prohibits the requested combination
@@ -98,7 +98,7 @@ V1/V2 direct checkout SHALL share server-calculated prices, same-tenant coupons 
 
 #### Scenario: Loyalty covers total
 - **WHEN** accepted benefits make the amount payable zero
-- **THEN** booking SHALL confirm atomically with a zero-payable record and one point consumption without requesting bank transfer
+- **THEN** booking SHALL confirm atomically with a zero-payable record and one point consumption without requesting bank transfer, creating a fabricated positive wallet debit or leaving a pending payment
 
 #### Scenario: Concurrent points
 - **WHEN** two holds compete for the same point balance
@@ -111,6 +111,22 @@ V1/V2 direct checkout SHALL share server-calculated prices, same-tenant coupons 
 #### Scenario: Legacy unpaid hold
 - **WHEN** a pre-cutover unpaid hold is submitted for confirmation
 - **THEN** it SHALL require payment evidence under its recorded model and SHALL not be silently converted or confirmed free
+
+#### Scenario: Customer discovers the loyalty control before payment
+- **WHEN** a customer reviews selected court-times before the checkout action that creates an ordinary booking
+- **THEN** the interface SHALL offer a localized points control, explain the applicable organization and show the authoritative points, discount and remaining amount payable before confirmation
+
+#### Scenario: Atomic points and wallet checkout
+- **WHEN** an eligible legacy wallet cohort customer confirms a booking with 200,000 VND payable before loyalty, sufficient points, and a permitted 5,000 VND point reduction
+- **THEN** checkout SHALL record the point debit and 5,000 VND reduction, charge 195,000 VND from the wallet and confirm the booking and its slots as one transaction
+
+#### Scenario: Failure after a partial checkout step
+- **WHEN** insufficient funds, an inventory conflict or a persistence failure prevents checkout completion
+- **THEN** point and wallet balances, coupon usage, booking records, inventory and financial postings SHALL remain unchanged by the failed operation
+
+#### Scenario: Reload after successful checkout
+- **WHEN** a customer reloads a confirmed booking that used points
+- **THEN** booking detail and payment history SHALL show the persisted loyalty reduction and net paid amount consistent with point, payment and financial records
 
 ### Requirement: Complete tenant promotion lifecycle
 Authorized owners or delegated pricing staff SHALL create, revise, activate, suspend and retire scoped campaigns/coupons with customer eligibility, effective dates, limits, minimum spend and combination rules. Updates SHALL require current business entitlement, preserve audit/version history and active earned membership terms. Customer booking SHALL apply the same organization-scoped membership catalog managed by that owner.
@@ -149,3 +165,22 @@ Customers SHALL request whole/partial cancellation and court/date/time changes; 
 #### Scenario: Legacy policy
 - **WHEN** a historical booking has older terms or no sufficient change terms
 - **THEN** it SHALL retain historical evidence and require an explicit supported resolution rather than fabricated consent
+
+### Requirement: Home availability identifies its selected court and date
+The home availability panel SHALL identify the selected court and selected local play date adjacent to the slots and provide a nearby court selector. Its title MUST NOT imply all-court aggregation or always claim today's date when another date is selected. Each slot SHALL expose its start and end time and availability for that court only. Changing court/date SHALL refresh the matching slots, clear incompatible selections and prevent stale responses from presenting another court's availability as the selected court's. Labels SHALL support Vietnamese and English.
+
+#### Scenario: One court is booked from 19 to 21
+- **WHEN** court A is booked from 19:00 to 21:00 using hourly slots
+- **THEN** its 19:00–20:00 and 20:00–21:00 slots SHALL be unavailable under a heading identifying court A and the selected date
+
+#### Scenario: Another court remains available
+- **WHEN** the user changes from booked court A to court B that has no conflicting booking or closure at 19:00–21:00
+- **THEN** the panel SHALL identify court B and display both of its corresponding future slots as available
+
+#### Scenario: Different play date
+- **WHEN** the user selects a date other than today
+- **THEN** the heading and returned slots SHALL represent that date in the venue's applicable local timezone without a misleading today label
+
+#### Scenario: Court switches while requests are pending
+- **WHEN** an older availability request completes after the user has selected another court or date
+- **THEN** its response SHALL NOT replace the currently selected court/date's displayed availability
