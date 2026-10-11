@@ -33,7 +33,7 @@ readonly class ArbitrateDisputeData
             penaltyPoints: (int) $request->input('penalty_points', 0),
             notes: $request->input('notes'),
             reviewerId: $request->user()?->id,
-            digitalSignatureHash: $request->input('digital_signature_hash') ?: ('SIG-' . strtoupper(bin2hex(random_bytes(8)))),
+            digitalSignatureHash: $request->input('digital_signature_hash') ?: ('SIG-'.strtoupper(bin2hex(random_bytes(8)))),
         );
     }
 }

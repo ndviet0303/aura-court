@@ -25,7 +25,7 @@ trait BelongsToTenant
             }
 
             if ($context->hasOrganization()) {
-                $builder->where($builder->getModel()->getTable() . '.organization_id', $context->getOrganizationId());
+                $builder->where($builder->getModel()->getTable().'.organization_id', $context->getOrganizationId());
             }
         });
     }

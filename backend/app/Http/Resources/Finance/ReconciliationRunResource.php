@@ -10,6 +10,7 @@ class ReconciliationRunResource extends JsonResource
     public function toArray(Request $request): array
     {
         $details = is_array($this->details) ? $this->details : (json_decode($this->details ?? '[]', true) ?: []);
+
         return [
             'id' => $this->id,
             'organization_id' => $this->organization_id,

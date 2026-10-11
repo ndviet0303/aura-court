@@ -4,7 +4,6 @@ namespace App\Services\POS;
 
 use App\Models\CashShift;
 use App\Models\PosOrder;
-use App\Models\PosOrderItem;
 use App\Models\PosProduct;
 use App\Models\Reservation;
 use App\Models\ServiceTab;
@@ -206,7 +205,7 @@ class ServiceTabService
 
     public function removeItem(User $staff, int $organizationId, int|string $reservationIdOrCode, int $itemId): ServiceTab
     {
-        return DB::transaction(function () use ($staff, $organizationId, $reservationIdOrCode, $itemId): ServiceTab {
+        return DB::transaction(function () use ($organizationId, $reservationIdOrCode, $itemId): ServiceTab {
             $tab = $this->getTab($organizationId, $reservationIdOrCode);
             abort_unless($tab !== null, 404, 'Active service tab not found.');
 
@@ -222,7 +221,7 @@ class ServiceTabService
 
     public function cancelTab(User $staff, int $organizationId, int $tabId, ?string $reason = null): ServiceTab
     {
-        return DB::transaction(function () use ($staff, $organizationId, $tabId, $reason): ServiceTab {
+        return DB::transaction(function () use ($organizationId, $tabId, $reason): ServiceTab {
             $tab = ServiceTab::query()
                 ->where('organization_id', $organizationId)
                 ->whereKey($tabId)
@@ -236,7 +235,7 @@ class ServiceTabService
 
             $tab->update([
                 'status' => ServiceTab::STATUS_CANCELLED,
-                'notes' => $reason ? trim(($tab->notes ? $tab->notes . "\n" : '') . "Cancelled: {$reason}") : $tab->notes,
+                'notes' => $reason ? trim(($tab->notes ? $tab->notes."\n" : '')."Cancelled: {$reason}") : $tab->notes,
             ]);
 
             return $tab->fresh(['items.product', 'reservation']);
@@ -308,7 +307,7 @@ class ServiceTabService
             } else {
                 $changeDue = 0;
             }
-            $orderCode = 'TAB-POS-' . strtoupper(uniqid());
+            $orderCode = 'TAB-POS-'.strtoupper(uniqid());
 
             // Create PosOrder
             $order = PosOrder::create([

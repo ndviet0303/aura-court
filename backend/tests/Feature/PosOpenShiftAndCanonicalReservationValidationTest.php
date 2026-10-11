@@ -7,7 +7,6 @@ use App\Models\Court;
 use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PosOrder;
 use App\Models\PosProduct;
 use App\Models\Reservation;
 use App\Models\User;
@@ -20,12 +19,19 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenantA;
+
     private Organization $tenantB;
+
     private User $cashierA;
+
     private User $customer;
+
     private User $unaffiliatedUser;
+
     private PosProduct $productA;
+
     private Venue $venueA;
+
     private Court $courtA;
 
     protected function setUp(): void
@@ -34,13 +40,13 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $this->tenantA = Organization::create([
             'name' => 'Aura Court Tenant A',
-            'slug' => 'aura-a-' . uniqid(),
+            'slug' => 'aura-a-'.uniqid(),
             'status' => 'active',
         ]);
 
         $this->tenantB = Organization::create([
             'name' => 'Competitor Tenant B',
-            'slug' => 'comp-b-' . uniqid(),
+            'slug' => 'comp-b-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -77,7 +83,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         $this->venueA = Venue::create([
             'organization_id' => $this->tenantA->id,
             'name' => 'Venue A',
-            'slug' => 'venue-a-' . uniqid(),
+            'slug' => 'venue-a-'.uniqid(),
             'is_active' => true,
         ]);
         $this->courtA = Court::create([
@@ -103,7 +109,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
     {
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'shift-req-' . uniqid(),
+            'Idempotency-Key' => 'shift-req-'.uniqid(),
         ];
 
         $payload = [
@@ -130,7 +136,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ]);
 
         $responseClosed = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', $payload, array_merge($headers, [
-            'Idempotency-Key' => 'shift-closed-' . uniqid(),
+            'Idempotency-Key' => 'shift-closed-'.uniqid(),
         ]));
         $responseClosed->assertStatus(409)
             ->assertJsonFragment(['message' => 'Cashier does not have an active open shift.']);
@@ -145,7 +151,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ]);
 
         $responseSuccess = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', $payload, array_merge($headers, [
-            'Idempotency-Key' => 'shift-open-' . uniqid(),
+            'Idempotency-Key' => 'shift-open-'.uniqid(),
         ]));
         $responseSuccess->assertCreated()
             ->assertJsonPath('order.total_amount', 30000);
@@ -164,7 +170,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $reservation = Reservation::create([
             'organization_id' => $this->tenantA->id,
-            'code' => 'RES-A-' . strtoupper(uniqid()),
+            'code' => 'RES-A-'.strtoupper(uniqid()),
             'user_id' => $this->customer->id,
             'court_id' => $this->courtA->id,
             'status' => 'confirmed',
@@ -173,7 +179,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'res-attach-' . uniqid(),
+            'Idempotency-Key' => 'res-attach-'.uniqid(),
         ];
 
         $response = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', [
@@ -201,11 +207,11 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ]);
 
         // Reservation in Tenant B
-        $venueB = Venue::create(['organization_id' => $this->tenantB->id, 'name' => 'Venue B', 'slug' => 'venue-b-' . uniqid(), 'is_active' => true]);
+        $venueB = Venue::create(['organization_id' => $this->tenantB->id, 'name' => 'Venue B', 'slug' => 'venue-b-'.uniqid(), 'is_active' => true]);
         $courtB = Court::create(['venue_id' => $venueB->id, 'name' => 'Court B1', 'is_active' => true]);
         $reservationB = Reservation::create([
             'organization_id' => $this->tenantB->id,
-            'code' => 'RES-B-' . strtoupper(uniqid()),
+            'code' => 'RES-B-'.strtoupper(uniqid()),
             'user_id' => $this->customer->id,
             'court_id' => $courtB->id,
             'status' => 'confirmed',
@@ -214,7 +220,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'cross-tenant-res-' . uniqid(),
+            'Idempotency-Key' => 'cross-tenant-res-'.uniqid(),
         ];
 
         // Cashier in Tenant A attempts to attach reservation from Tenant B
@@ -243,7 +249,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'unmapped-res-' . uniqid(),
+            'Idempotency-Key' => 'unmapped-res-'.uniqid(),
         ];
 
         // Legacy ID 999888 does not exist
@@ -272,7 +278,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $canonicalReservation = Reservation::create([
             'organization_id' => $this->tenantA->id,
-            'code' => 'RES-CANONICAL-' . strtoupper(uniqid()),
+            'code' => 'RES-CANONICAL-'.strtoupper(uniqid()),
             'user_id' => $this->customer->id,
             'court_id' => $this->courtA->id,
             'status' => 'confirmed',
@@ -294,7 +300,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'mapped-legacy-' . uniqid(),
+            'Idempotency-Key' => 'mapped-legacy-'.uniqid(),
         ];
 
         $response = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', [
@@ -314,7 +320,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
     {
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'unauth-pos-' . uniqid(),
+            'Idempotency-Key' => 'unauth-pos-'.uniqid(),
         ];
 
         $payload = [

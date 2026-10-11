@@ -14,9 +14,9 @@ use App\Http\Requests\Admin\ListDisputeRequest;
 use App\Http\Resources\Admin\DisputeCaseResource;
 use App\Models\Booking;
 use App\Models\DisputeCase;
+use App\Models\LegacyBookingMapping;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
-use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Services\Infrastructure\OutboxService;
 use Carbon\Carbon;
@@ -127,7 +127,7 @@ class AdminDisputeController extends Controller
             $isBookingOwner = (int) $booking->user_id === (int) $user->id;
             $hasEntitlement = false;
             if (! $isBookingOwner) {
-                $reservationIds = \App\Models\LegacyBookingMapping::where('legacy_booking_id', $booking->id)->pluck('reservation_id');
+                $reservationIds = LegacyBookingMapping::where('legacy_booking_id', $booking->id)->pluck('reservation_id');
                 $hasEntitlement = ReservationEntitlement::query()
                     ->where('user_id', $user->id)
                     ->whereIn('reservation_id', $reservationIds)
@@ -176,7 +176,7 @@ class AdminDisputeController extends Controller
             $requestedEvidence = ['photos_or_video', 'detailed_statement'];
         }
 
-        $disputeCode = 'DSP-' . strtoupper(Str::random(10));
+        $disputeCode = 'DSP-'.strtoupper(Str::random(10));
         $court = $booking?->court;
         $venue = $court?->venue;
         $org = $venue?->organization;
@@ -222,7 +222,7 @@ class AdminDisputeController extends Controller
         if ($status === 'awaiting_evidence') {
             $this->outbox->enqueue([
                 'organization_id' => $dispute->organization_id,
-                'message_key' => "dispute_evidence_requested:{$dispute->id}:" . now()->timestamp,
+                'message_key' => "dispute_evidence_requested:{$dispute->id}:".now()->timestamp,
                 'channel' => 'notification',
                 'event_type' => 'dispute.evidence_requested',
                 'aggregate_type' => DisputeCase::class,

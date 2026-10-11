@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\POS;
 
-use App\Http\Controllers\Controller;
-
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Controller;
 use App\Models\CashShift;
 use App\Models\LoyaltyRule;
 use App\Models\PosOrder;
 use App\Models\PosPayment;
 use App\Models\PosProduct;
+use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
 use App\Models\TenantMembershipPlan;
 use App\Models\WalletAccount;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\POS\PosService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PosController extends Controller
 {
@@ -49,6 +50,7 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($product->organization_id === $organization->id, 404);
+
         return response()->json(['product' => $product->load('movements')]);
     }
 
@@ -58,11 +60,11 @@ class PosController extends Controller
         $data = $request->validate([
             'sku' => [
                 'required', 'string', 'max:80',
-                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id),
+                Rule::unique('pos_products')->where('organization_id', $organization->id),
             ],
             'barcode' => [
                 'nullable', 'string', 'max:100',
-                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id),
+                Rule::unique('pos_products')->where('organization_id', $organization->id),
             ],
             'name' => 'required|string|max:180',
             'description' => 'nullable|string',
@@ -76,6 +78,7 @@ class PosController extends Controller
             'tax_rate' => 'nullable|integer|in:0,5,8,10',
             'metadata' => 'nullable|array',
         ]);
+
         return $this->idempotency->run($request, fn () => response()->json(['product' => $this->pos->createProduct($organization->id, $data, $request->user())], 201));
     }
 
@@ -86,11 +89,11 @@ class PosController extends Controller
         $data = $request->validate([
             'sku' => [
                 'sometimes', 'string', 'max:80',
-                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id)->ignore($product->id),
+                Rule::unique('pos_products')->where('organization_id', $organization->id)->ignore($product->id),
             ],
             'barcode' => [
                 'nullable', 'string', 'max:100',
-                \Illuminate\Validation\Rule::unique('pos_products')->where('organization_id', $organization->id)->ignore($product->id),
+                Rule::unique('pos_products')->where('organization_id', $organization->id)->ignore($product->id),
             ],
             'name' => 'sometimes|string|max:180',
             'description' => 'nullable|string',
@@ -104,6 +107,7 @@ class PosController extends Controller
             'is_active' => 'nullable|boolean',
             'metadata' => 'nullable|array',
         ]);
+
         return $this->idempotency->run($request, fn () => response()->json(['product' => $this->pos->updateProduct($product, $data)]));
     }
 
@@ -112,8 +116,10 @@ class PosController extends Controller
         $organization = $this->organization($request);
         abort_unless($product->organization_id === $organization->id, 404);
         $this->pos->deleteProduct($product);
+
         return response()->json(['message' => 'Product deleted successfully.']);
     }
+
     public function adjustStock(Request $request, PosProduct $product)
     {
         $organization = $this->organization($request);
@@ -175,11 +181,11 @@ class PosController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $query->where('created_at', '>=', $request->date_from . ' 00:00:00');
+            $query->where('created_at', '>=', $request->date_from.' 00:00:00');
         }
 
         if ($request->filled('date_to')) {
-            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('created_at', '<=', $request->date_to.' 23:59:59');
         }
 
         return $query->take(150)->get();
@@ -223,6 +229,7 @@ class PosController extends Controller
             'rounding_amount' => 'nullable|integer',
         ]);
         $quote = $this->pos->calculateQuote($organization->id, $data, $request->user());
+
         return response()->json(['quote' => $quote]);
     }
 
@@ -263,6 +270,7 @@ class PosController extends Controller
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
             $order = $this->pos->completeOrder($request->user(), $organization->id, $data);
+
             return response()->json([
                 'order' => $order,
                 'receipt' => $order->receipt,
@@ -274,6 +282,7 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($order->organization_id === $organization->id, 404);
+
         return response()->json([
             'order' => $order->load(['items', 'payments', 'customer:id,name,email,phone', 'cashier:id,name']),
             'receipt' => $order->receipt,
@@ -293,6 +302,7 @@ class PosController extends Controller
 
         return $this->idempotency->run($request, function () use ($order, $data) {
             $confirmed = $this->pos->confirmQrPayment($order, $data);
+
             return response()->json([
                 'order' => $confirmed,
                 'receipt' => $confirmed->receipt,
@@ -310,6 +320,7 @@ class PosController extends Controller
 
         return $this->idempotency->run($request, function () use ($order, $data) {
             $cancelled = $this->pos->cancelPendingQr($order, $data['reason'] ?? 'cancelled_by_cashier');
+
             return response()->json([
                 'order' => $cancelled,
                 'receipt' => $cancelled->receipt,
@@ -408,6 +419,7 @@ class PosController extends Controller
             'venue_id' => 'nullable|integer',
             'register_id' => 'nullable|string|max:80',
         ]);
+
         return $this->idempotency->run($request, fn () => response()->json([
             'shift' => $this->pos->openShift(
                 $request->user(),
@@ -429,6 +441,7 @@ class PosController extends Controller
             'pending_disposition' => 'nullable|string|in:cancel,handover',
             'handover_to_shift_id' => 'nullable|integer',
         ]);
+
         return $this->idempotency->run($request, fn () => response()->json([
             'shift' => $this->pos->closeShift(
                 $shift,
@@ -531,6 +544,7 @@ class PosController extends Controller
             if ($shift->status === 'open') {
                 $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
             }
+
             return $shift;
         });
 
@@ -613,8 +627,8 @@ class PosController extends Controller
         $organization = $this->organization($request);
         abort_unless($shift->organization_id === $organization->id, 404);
         $data = $request->validate(['status' => 'required|in:matched,approved,exception,rejected', 'note' => 'nullable|string|max:2000']);
-        
-        $reconciliation = $shift->reconciliation ?: new \App\Models\ShiftReconciliation([
+
+        $reconciliation = $shift->reconciliation ?: new ShiftReconciliation([
             'organization_id' => $organization->id,
             'cash_shift_id' => $shift->id,
             'variance' => $shift->variance ?? 0,
@@ -622,7 +636,7 @@ class PosController extends Controller
 
         $reconciliation->status = $data['status'];
         if (isset($data['note'])) {
-            $reconciliation->note = ($reconciliation->note ? $reconciliation->note . " | " : "") . $data['note'];
+            $reconciliation->note = ($reconciliation->note ? $reconciliation->note.' | ' : '').$data['note'];
         }
         $reconciliation->reviewed_by = $request->user()->id;
         $reconciliation->reviewed_at = now();
@@ -631,10 +645,10 @@ class PosController extends Controller
         return response()->json(['reconciliation' => $reconciliation, 'shift' => $shift->fresh('reconciliation')]);
     }
 
-
     public function membershipPlans(Request $request)
     {
         $organization = $this->organization($request);
+
         return TenantMembershipPlan::where('organization_id', $organization->id)
             ->whereIn('status', ['active', 'published'])
             ->latest('published_at')
@@ -645,6 +659,7 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['name' => 'required|string|max:160', 'price' => 'required|integer|min:0', 'benefits' => 'required|array']);
+
         return $this->idempotency->run($request, fn () => response()->json(['plan' => $this->pos->publishPlan($organization->id, $data)], 201));
     }
 
@@ -653,6 +668,7 @@ class PosController extends Controller
         $organization = $this->organization($request);
         $data = $request->validate(['user_id' => 'required|integer', 'plan_id' => 'required|integer', 'months' => 'nullable|integer|min:1|max:24']);
         $plan = TenantMembershipPlan::where('organization_id', $organization->id)->findOrFail($data['plan_id']);
+
         return $this->idempotency->run($request, fn () => response()->json(['membership' => $this->pos->assignMembership($organization->id, $data['user_id'], $plan, $data['months'] ?? 1)], 201));
     }
 
@@ -660,18 +676,21 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['name' => 'required|string|max:160', 'earn_points_per_100_vnd' => 'required|integer|min:0', 'redeem_points_per_100_vnd' => 'required|integer|min:1']);
+
         return $this->idempotency->run($request, fn () => response()->json(['rule' => LoyaltyRule::create($data + ['organization_id' => $organization->id, 'version' => (int) LoyaltyRule::where('organization_id', $organization->id)->where('name', $data['name'])->max('version') + 1, 'status' => 'published', 'published_at' => now()])], 201));
     }
 
     public function wallet(Request $request)
     {
         $organization = $this->organization($request);
+
         return WalletAccount::firstOrCreate(['organization_id' => $organization->id, 'user_id' => $request->user()->id, 'currency' => 'VND'], ['balance' => 0, 'status' => 'active']);
     }
 
     public function benefits(Request $request)
     {
         $organization = $this->organization($request);
+
         return $this->pos->benefits($organization->id, $request->user()->id);
     }
 
@@ -679,6 +698,7 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['points' => 'required|integer|min:1', 'source_type' => 'required|string|max:120', 'source_id' => 'required|integer']);
+
         return $this->idempotency->run($request, fn () => response()->json(['points' => $this->pos->redeemPoints($organization->id, $request->user()->id, $data['points'], $data['source_type'], $data['source_id'])], 201));
     }
 
@@ -686,6 +706,7 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['user_id' => 'required|integer', 'amount' => 'required|integer|min:1', 'source_type' => 'required|string|max:120', 'source_id' => 'required|integer', 'reference' => 'required|string|max:160']);
+
         return $this->idempotency->run($request, fn () => response()->json(['transaction' => $this->pos->creditWallet($organization->id, $data['user_id'], $data['amount'], $data['source_type'], $data['source_id'], $data['reference'])], 201));
     }
 
@@ -693,6 +714,7 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['amount' => 'required|integer|min:1', 'reference' => 'required|string|max:160']);
+
         return $this->idempotency->run($request, fn () => response()->json(['transaction' => $this->pos->spendWallet($organization->id, $request->user()->id, $data['amount'], $data['reference'])], 201));
     }
 }

@@ -11,7 +11,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MatchInvitation extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['responded_at' => 'datetime']; }
-    public function post(): BelongsTo { return $this->belongsTo(MatchPost::class, 'match_post_id'); }
-    public function invitee(): BelongsTo { return $this->belongsTo(User::class, 'invitee_id'); }
+
+    protected function casts(): array
+    {
+        return ['responded_at' => 'datetime'];
+    }
+
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(MatchPost::class, 'match_post_id');
+    }
+
+    public function invitee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'invitee_id');
+    }
 }

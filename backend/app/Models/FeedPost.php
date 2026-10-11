@@ -16,6 +16,7 @@ class FeedPost extends Model
     use BelongsToTenant, HasFactory;
 
     public const AUDIENCE_ORGANIZATION = 'organization';
+
     public const AUDIENCE_FRIENDS = 'friends';
 
     protected function casts(): array

@@ -25,7 +25,9 @@ class ServiceTab extends Model
     use BelongsToTenant;
 
     public const STATUS_UNPAID = 'unpaid';
+
     public const STATUS_SETTLED = 'settled';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     protected function casts(): array

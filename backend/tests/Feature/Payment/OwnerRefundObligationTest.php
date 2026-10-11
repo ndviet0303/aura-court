@@ -2,17 +2,17 @@
 
 namespace Tests\Feature\Payment;
 
-use App\Models\Coupon;
 use App\Models\Booking;
 use App\Models\BookingSlot;
+use App\Models\Coupon;
+use App\Models\Court;
 use App\Models\Journal;
 use App\Models\LegacyBookingMapping;
 use App\Models\LegacyBookingSlotMapping;
-use App\Models\OwnerPaymentAttempt;
-use App\Models\OwnerPaymentReceipt;
-use App\Models\OwnerRefundObligation;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\OwnerPaymentReceipt;
+use App\Models\OwnerRefundObligation;
 use App\Models\PointLedger;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
@@ -212,7 +212,7 @@ class OwnerRefundObligationTest extends TestCase
             'status' => 'published',
             'is_active' => true,
         ]);
-        $court = \App\Models\Court::create(['venue_id' => $venue->id, 'name' => 'Refund Court', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Refund Court', 'is_active' => true]);
         $coupon = Coupon::create([
             'organization_id' => $organization->id,
             'code' => 'REFUND10',

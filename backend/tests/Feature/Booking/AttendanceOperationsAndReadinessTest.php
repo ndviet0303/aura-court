@@ -4,6 +4,7 @@ namespace Tests\Feature\Booking;
 
 use App\Events\CourtStatusUpdated;
 use App\Models\BookingAttendance;
+use App\Models\CashShift;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\Organization;
@@ -366,7 +367,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         $this->assertSame(150000, (int) $tab->fresh()->total_amount);
 
         // Tab can be settled afterward once a cash shift is open
-        \App\Models\CashShift::create([
+        CashShift::create([
             'organization_id' => $fixture['organization']->id,
             'venue_id' => $fixture['venue']->id,
             'cashier_id' => $fixture['staff']->id,

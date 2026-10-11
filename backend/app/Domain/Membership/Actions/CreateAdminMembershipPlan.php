@@ -4,6 +4,7 @@ namespace App\Domain\Membership\Actions;
 
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Models\TenantMembershipPlan;
+use Illuminate\Validation\ValidationException;
 
 class CreateAdminMembershipPlan
 {
@@ -14,7 +15,7 @@ class CreateAdminMembershipPlan
     public function execute(int $organizationId, array $data): TenantMembershipPlan
     {
         if (array_key_exists('cancellationFeeWaived', $data) || array_key_exists('cancellation_fee_waived', $data)) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'cancellationFeeWaived' => 'Membership cancellation fee waiver is no longer supported.',
             ]);
         }

@@ -16,9 +16,10 @@ class SecurityReviewService
             $checks[$pattern] = $process->getExitCode() === 1 ? 'passed' : 'review';
         }
         $checks['rls_policies'] = file_exists(database_path('migrations/2026_08_22_000002_create_postgresql_rls_policies.php')) ? 'present' : 'missing';
-        $checks['elevated_audit_path'] = class_exists(\App\Services\Infrastructure\ElevatedAccessService::class) ? 'present' : 'missing';
-        $checks['export_audit'] = class_exists(\App\Services\Infrastructure\AuditLogger::class) ? 'present' : 'missing';
+        $checks['elevated_audit_path'] = class_exists(ElevatedAccessService::class) ? 'present' : 'missing';
+        $checks['export_audit'] = class_exists(AuditLogger::class) ? 'present' : 'missing';
         $checks['rate_limits'] = file_exists(base_path('bootstrap/app.php')) ? 'review' : 'missing';
+
         return $checks;
     }
 }

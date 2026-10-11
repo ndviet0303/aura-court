@@ -231,6 +231,7 @@ class PayOsPaymentProvider implements PaymentProviderInterface
     private function numericReference(string $reference): int
     {
         $number = (int) preg_replace('/\D+/', '', $reference);
+
         return $number > 0 ? $number : abs(crc32($reference));
     }
 }

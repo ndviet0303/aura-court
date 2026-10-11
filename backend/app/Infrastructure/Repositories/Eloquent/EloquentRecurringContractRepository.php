@@ -115,7 +115,6 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
         ];
     }
 
-
     public function cancelContract(int $id, ?string $reason = null): RecurringSeries
     {
         return DB::transaction(function () use ($id, $reason) {
@@ -137,5 +136,4 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
             return $series->fresh(['court.venue', 'user', 'invoices', 'occurrences']);
         });
     }
-
 }

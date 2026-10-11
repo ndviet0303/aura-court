@@ -7,7 +7,6 @@ use App\Models\Booking;
 use App\Models\BookingAttendance;
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
@@ -17,6 +16,7 @@ use App\Models\User;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -25,11 +25,17 @@ class BookingAttendanceAndCheckInTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenantA;
+
     private Organization $tenantB;
+
     private User $staffA;
+
     private User $cashierA;
+
     private User $customer;
+
     private Venue $venueA;
+
     private Court $courtA;
 
     protected function setUp(): void
@@ -38,14 +44,14 @@ class BookingAttendanceAndCheckInTest extends TestCase
 
         $this->tenantA = Organization::create([
             'name' => 'Aura Court Tenant A',
-            'slug' => 'aura-a-' . uniqid(),
+            'slug' => 'aura-a-'.uniqid(),
             'status' => 'active',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
 
         $this->tenantB = Organization::create([
             'name' => 'Competitor Tenant B',
-            'slug' => 'comp-b-' . uniqid(),
+            'slug' => 'comp-b-'.uniqid(),
             'status' => 'active',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
@@ -77,7 +83,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         $this->venueA = Venue::create([
             'organization_id' => $this->tenantA->id,
             'name' => 'Aura Complex District 1',
-            'slug' => 'aura-d1-' . uniqid(),
+            'slug' => 'aura-d1-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -105,7 +111,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
             'organization_id' => $org->id,
             'user_id' => $user->id,
             'court_id' => $court->id,
-            'code' => 'RES-' . strtoupper(uniqid()),
+            'code' => 'RES-'.strtoupper(uniqid()),
             'status' => $status,
             'currency' => 'VND',
             'total_amount' => 150000,
@@ -197,7 +203,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
 
     public function test_wrong_tenant_booking_scan_is_rejected_without_disclosing_details(): void
     {
-        $venueB = Venue::create(['organization_id' => $this->tenantB->id, 'name' => 'Tenant B Venue', 'slug' => 'b-venue-' . uniqid(), 'is_active' => true]);
+        $venueB = Venue::create(['organization_id' => $this->tenantB->id, 'name' => 'Tenant B Venue', 'slug' => 'b-venue-'.uniqid(), 'is_active' => true]);
         $courtB = Court::create(['venue_id' => $venueB->id, 'name' => 'Tenant B Court', 'is_active' => true]);
         $userB = User::factory()->create();
 
@@ -235,7 +241,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
             'organization_id' => $this->tenantA->id,
             'user_id' => $this->customer->id,
             'court_id' => $this->courtA->id,
-            'code' => 'RES-FUTURE-' . uniqid(),
+            'code' => 'RES-FUTURE-'.uniqid(),
             'status' => 'confirmed',
             'currency' => 'VND',
             'total_amount' => 120000,
@@ -352,7 +358,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         $this->assertSame(ServiceTab::STATUS_UNPAID, $tab->fresh()->status);
 
         // Court transitions to awaiting_inspection (Task 8.5 [D52])
-        $this->assertSame('awaiting_inspection', \Illuminate\Support\Facades\Cache::get("court:{$this->courtA->id}:operational_status"));
+        $this->assertSame('awaiting_inspection', Cache::get("court:{$this->courtA->id}:operational_status"));
 
         // Tab can still be settled after checkout
         $tab->update(['status' => ServiceTab::STATUS_SETTLED, 'settled_at' => now(), 'settled_by' => $this->staffA->id]);
@@ -371,7 +377,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         $todaySlot = Carbon::now($tz)->subMinutes(5)->second(0);
 
         $legacyBooking = Booking::create([
-            'code' => 'BK-LEGACY-' . uniqid(),
+            'code' => 'BK-LEGACY-'.uniqid(),
             'user_id' => $this->customer->id,
             'court_id' => $this->courtA->id,
             'total_amount' => 140000,

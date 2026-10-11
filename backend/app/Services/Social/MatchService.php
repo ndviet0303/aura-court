@@ -20,6 +20,7 @@ use App\Services\Infrastructure\OutboxService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+
 class MatchService
 {
     public function profile(User $user, int $organizationId, array $data): PlayerProfile
@@ -27,6 +28,7 @@ class MatchService
         if (($data['skill_level'] ?? 1) < 1 || ($data['skill_level'] ?? 1) > 5) {
             throw ValidationException::withMessages(['skill_level' => 'Skill level must be between one and five.']);
         }
+
         return PlayerProfile::updateOrCreate(['organization_id' => $organizationId, 'user_id' => $user->id], [
             'skill_level' => (int) $data['skill_level'],
             'city' => $data['city'] ?? null,
@@ -257,8 +259,8 @@ class MatchService
         // Allow open matches that haven't ended yet, or active matches from today onwards
         $query->where(function ($q) {
             $q->where('ends_at', '>=', now()->utc())
-              ->orWhere('starts_at', '>=', now()->utc()->subHours(12))
-              ->orWhere('starts_at', '>=', now()->startOfDay()->utc());
+                ->orWhere('starts_at', '>=', now()->utc()->subHours(12))
+                ->orWhere('starts_at', '>=', now()->startOfDay()->utc());
         });
 
         $posts = $query->get();
@@ -273,8 +275,12 @@ class MatchService
         $requestedSkillLabel = $filters['skill_level'] ?? $filters['skill_label'] ?? null;
 
         return $posts->filter(function (MatchPost $post) use ($requestedMin, $requestedMax, $availability, $city, $lat, $lng, $radius, $requestedSkillLabel): bool {
-            if ($post->joined_count >= $post->required_participants) return false;
-            if ($city && ! str_contains(mb_strtolower((string) $post->city), $city)) return false;
+            if ($post->joined_count >= $post->required_participants) {
+                return false;
+            }
+            if ($city && ! str_contains(mb_strtolower((string) $post->city), $city)) {
+                return false;
+            }
 
             // Skill label filter for owner-hosted badminton sessions
             if ($requestedSkillLabel) {
@@ -284,10 +290,19 @@ class MatchService
                 }
             }
 
-            if ($requestedMin !== null && $post->max_skill !== null && $post->max_skill < $requestedMin) return false;
-            if ($requestedMax !== null && $post->min_skill !== null && $post->min_skill > $requestedMax) return false;
-            if ($availability && ! empty(array_diff((array) $availability, (array) $post->availability))) return false;
-            if ($radius !== null && $lat !== null && $lng !== null && $post->approximate_latitude !== null && $post->approximate_longitude !== null && $this->distance($lat, $lng, $post->approximate_latitude, $post->approximate_longitude) > $radius) return false;
+            if ($requestedMin !== null && $post->max_skill !== null && $post->max_skill < $requestedMin) {
+                return false;
+            }
+            if ($requestedMax !== null && $post->min_skill !== null && $post->min_skill > $requestedMax) {
+                return false;
+            }
+            if ($availability && ! empty(array_diff((array) $availability, (array) $post->availability))) {
+                return false;
+            }
+            if ($radius !== null && $lat !== null && $lng !== null && $post->approximate_latitude !== null && $post->approximate_longitude !== null && $this->distance($lat, $lng, $post->approximate_latitude, $post->approximate_longitude) > $radius) {
+                return false;
+            }
+
             return true;
         })->values();
     }
@@ -297,6 +312,7 @@ class MatchService
         if ($post->visibility === 'invite_only' && $post->creator_id !== $viewer->id && ! $post->invitations()->where('invitee_id', $viewer->id)->whereIn('status', ['pending', 'accepted'])->exists()) {
             abort(404);
         }
+
         return $post->load(['participations.user', 'invitations', 'court.venue', 'bill.finalizedBy']);
     }
 
@@ -356,17 +372,19 @@ class MatchService
                     'reason' => 'Cannot invite match creator.',
                 ];
                 $failedCount++;
+
                 continue;
             }
 
             $user = User::find($inviteeId);
-            if (!$user) {
+            if (! $user) {
                 $results[] = [
                     'invitee_id' => $inviteeId,
                     'status' => 'failed',
                     'reason' => 'User not found or does not exist.',
                 ];
                 $failedCount++;
+
                 continue;
             }
 
@@ -377,6 +395,7 @@ class MatchService
                     'reason' => 'Match is already full.',
                 ];
                 $failedCount++;
+
                 continue;
             }
 
@@ -387,6 +406,7 @@ class MatchService
                     'reason' => 'User already joined this match.',
                 ];
                 $failedCount++;
+
                 continue;
             }
 
@@ -496,6 +516,7 @@ class MatchService
                     $post->update(['status' => 'full']);
                 }
             }
+
             return $participation->fresh();
         });
     }
@@ -668,7 +689,7 @@ class MatchService
                     'user_id' => $post->creator_id,
                     'notification' => [
                         'title' => 'Phản hồi lời mời trận đấu',
-                        'body' => "{$user->name} đã " . ($status === 'accepted' ? 'chấp nhận' : 'từ chối') . " lời mời tham gia trận đấu: {$post->title}",
+                        'body' => "{$user->name} đã ".($status === 'accepted' ? 'chấp nhận' : 'từ chối')." lời mời tham gia trận đấu: {$post->title}",
                         'type' => 'match_invitation_response',
                         'source_id' => $post->id,
                         'invitation_id' => $invitation->id,
@@ -706,8 +727,12 @@ class MatchService
                 'ends_at' => $endsAt,
             ];
 
-            if (isset($data['title'])) $updates['title'] = $data['title'];
-            if (isset($data['visibility'])) $updates['visibility'] = $data['visibility'];
+            if (isset($data['title'])) {
+                $updates['title'] = $data['title'];
+            }
+            if (isset($data['visibility'])) {
+                $updates['visibility'] = $data['visibility'];
+            }
             if (isset($data['category'])) {
                 abort_unless(in_array($data['category'], MatchPost::VALID_CATEGORIES, true), 422, 'Phân loại không hợp lệ.');
                 $updates['category'] = $data['category'];
@@ -728,6 +753,7 @@ class MatchService
             }
 
             $post->update($updates);
+
             return $post->fresh(['court.venue', 'participations', 'bill']);
         }
 
@@ -742,6 +768,7 @@ class MatchService
         }
 
         $post->update($data);
+
         return $post->fresh(['participations']);
     }
 
@@ -1054,11 +1081,14 @@ class MatchService
             'shuttlecock_unit_price' => null,
         ];
     }
+
     private function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
         $earth = 6371;
-        $dLat = deg2rad($lat2 - $lat1); $dLon = deg2rad($lon2 - $lon1);
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
         $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+
         return $earth * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }

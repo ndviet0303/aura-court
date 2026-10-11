@@ -13,7 +13,18 @@ class Beneficiary extends Model
 {
     use BelongsToTenant;
 
-    protected function casts(): array { return ['verification_payload' => 'array', 'verified_at' => 'datetime']; }
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
-    public function payouts(): HasMany { return $this->hasMany(Payout::class); }
+    protected function casts(): array
+    {
+        return ['verification_payload' => 'array', 'verified_at' => 'datetime'];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(Payout::class);
+    }
 }

@@ -40,7 +40,9 @@ class SocialTournamentTest extends TestCase
     {
         [$organization, $owner] = $this->tenant();
         $players = User::factory()->count(4)->create();
-        foreach ($players as $player) OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $player->id, 'role' => 'customer', 'status' => 'active']);
+        foreach ($players as $player) {
+            OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $player->id, 'role' => 'customer', 'status' => 'active']);
+        }
         $first = app(TournamentService::class)->createAndGenerate($owner, $organization->id, 'A', 'single_elimination', $players->pluck('id')->all());
         $second = app(TournamentService::class)->createAndGenerate($owner, $organization->id, 'B', 'single_elimination', $players->pluck('id')->all());
         $firstOrder = $first->fixtures()->with(['participantOne', 'participantTwo'])->orderBy('round')->orderBy('position')->get()->map(fn ($fixture) => [$fixture->participantOne?->user_id, $fixture->participantTwo?->user_id])->all();
@@ -52,7 +54,9 @@ class SocialTournamentTest extends TestCase
     {
         [$organization, $owner] = $this->tenant();
         $players = User::factory()->count(2)->create();
-        foreach ($players as $player) OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $player->id, 'role' => 'customer', 'status' => 'active']);
+        foreach ($players as $player) {
+            OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $player->id, 'role' => 'customer', 'status' => 'active']);
+        }
         $tournament = app(TournamentService::class)->createAndGenerate($owner, $organization->id, 'Conflict', 'single_elimination', $players->pluck('id')->all());
         $fixture = $tournament->fixtures->firstWhere('status', 'pending');
         $this->actingAs($owner)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => 'score-conflict'])->postJson("/api/v2/tournaments/{$tournament->id}/fixtures/{$fixture->id}/score", ['expected_version' => 0, 'winner_id' => $fixture->participant_one_id, 'score' => ['winner' => 1]])->assertConflict();
@@ -64,6 +68,7 @@ class SocialTournamentTest extends TestCase
         $owner = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.social_matchmaking_tournaments' => true]);
+
         return [$organization, $owner];
     }
 }

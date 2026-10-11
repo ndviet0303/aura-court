@@ -16,6 +16,7 @@ class MoneyFlowUatService
             $capabilities[$capability] = $sandboxVerified ? 'verified' : 'blocked';
         }
         $evidence = ['sandbox_capabilities' => $capabilities] + $evidence;
+
         return $this->gates->review('phase-2-entry', $organizationIds, $rollbackVerified && $sandboxVerified, $evidence, $reviewer);
     }
 }

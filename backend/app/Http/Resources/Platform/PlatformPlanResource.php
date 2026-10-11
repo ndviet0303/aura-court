@@ -19,7 +19,7 @@ class PlatformPlanResource extends JsonResource
             'name' => $this->name,
             'version' => (int) $this->version,
             'price' => (int) $this->price,
-            'price_formatted' => number_format((int) $this->price, 0, ',', '.') . '₫',
+            'price_formatted' => number_format((int) $this->price, 0, ',', '.').'₫',
             'currency' => $this->currency ?? 'VND',
             'billing_cycle' => $this->billing_cycle,
             'billing_months' => $this->billingMonths(),

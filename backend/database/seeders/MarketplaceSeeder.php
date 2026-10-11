@@ -136,7 +136,7 @@ class MarketplaceSeeder extends Seeder
 
         foreach ($sampleData as $idx => $sample) {
             $seller = $sellerUsers->get($idx % $sellerUsers->count());
-            
+
             // Match court by keyword if possible, otherwise by modulo
             $court = $courts->first(fn ($c) => str_contains($c->slug, $sample['court_keyword']))
                 ?? $courts->get($idx % $courts->count());
@@ -148,7 +148,7 @@ class MarketplaceSeeder extends Seeder
                 'organization_id' => $org->id,
                 'user_id' => $seller->id,
                 'court_id' => $court->id,
-                'code' => 'RES-P2P-' . strtoupper(substr(md5(uniqid()), 0, 8)),
+                'code' => 'RES-P2P-'.strtoupper(substr(md5(uniqid()), 0, 8)),
                 'status' => 'confirmed',
                 'currency' => 'VND',
                 'total_amount' => $sample['original_price'],
@@ -204,7 +204,7 @@ class MarketplaceSeeder extends Seeder
                 'organization_id' => $org->id,
                 'user_id' => $demoUser->id,
                 'court_id' => $court->id,
-                'code' => 'RES-MY-' . strtoupper(substr(md5(uniqid()), 0, 8)),
+                'code' => 'RES-MY-'.strtoupper(substr(md5(uniqid()), 0, 8)),
                 'status' => 'confirmed',
                 'currency' => 'VND',
                 'total_amount' => 250000,

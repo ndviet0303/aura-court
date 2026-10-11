@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Domain\Venue\Actions\TransitionVenueLifecycle;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Domain\Venue\Actions\ReviewVenuePublication;
+use App\Domain\Venue\Actions\TransitionVenueLifecycle;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Venue\ReviewVenuePublicationRequest;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +29,7 @@ class AdminVenuePublicationController extends Controller
     public function show(int $revisionId, VenueLifecycleRepositoryInterface $venueRepo): JsonResponse
     {
         $revision = $venueRepo->findPublicationRevision($revisionId);
-        if (!$revision) {
+        if (! $revision) {
             return response()->json(['message' => 'Yêu cầu xuất bản không tồn tại.'], 404);
         }
 

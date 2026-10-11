@@ -25,6 +25,7 @@ trait ResolvesV2Organization
             if ($court?->venue?->organization && $court->venue->organization->status === 'active') {
                 $organization = $court->venue->organization;
                 $context->setOrganization($organization);
+
                 return $organization;
             }
         }
@@ -99,6 +100,7 @@ trait ResolvesV2Organization
                 'code' => 'ORGANIZATION_ACCESS_DENIED',
             ], 403));
         }
+
         return $organization;
     }
 

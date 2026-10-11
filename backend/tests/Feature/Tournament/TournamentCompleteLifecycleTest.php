@@ -6,14 +6,11 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Tournament;
 use App\Models\TournamentEvent;
-use App\Models\TournamentFixture;
 use App\Models\TournamentGrant;
-use App\Models\TournamentParticipant;
 use App\Models\TournamentStanding;
 use App\Models\User;
 use App\Models\WalletAccount;
 use App\Services\Tournament\TournamentService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -22,16 +19,27 @@ class TournamentCompleteLifecycleTest extends TestCase
     use RefreshDatabase;
 
     private Organization $organization;
+
     private User $owner;
+
     private User $customerOfficial;
+
     private User $customerOrganizer;
+
     private User $player1;
+
     private User $player2;
+
     private User $player3;
+
     private User $player4;
+
     private WalletAccount $wallet1;
+
     private WalletAccount $wallet2;
+
     private WalletAccount $wallet3;
+
     private WalletAccount $wallet4;
 
     protected function setUp(): void
@@ -40,7 +48,7 @@ class TournamentCompleteLifecycleTest extends TestCase
 
         $this->organization = Organization::create([
             'name' => 'Aura Masters Arena',
-            'slug' => 'aura-masters-' . uniqid(),
+            'slug' => 'aura-masters-'.uniqid(),
         ]);
 
         config([
@@ -138,7 +146,7 @@ class TournamentCompleteLifecycleTest extends TestCase
     {
         return [
             'X-Organization-ID' => (string) $this->organization->id,
-            'Idempotency-Key' => $keyPrefix . uniqid(),
+            'Idempotency-Key' => $keyPrefix.uniqid(),
         ];
     }
 

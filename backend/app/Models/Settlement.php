@@ -31,6 +31,13 @@ class Settlement extends Model
         });
     }
 
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
-    public function payouts(): HasMany { return $this->hasMany(Payout::class); }
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(Payout::class);
+    }
 }

@@ -17,6 +17,7 @@ class PilotMigrate extends Command
         $ids = array_values(array_filter(array_map('intval', explode(',', $value))));
         $run = $migrations->run($ids, (bool) $this->option('rehearse'));
         $this->line(json_encode($run->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
         return $run->status === 'passed' ? self::SUCCESS : self::FAILURE;
     }
 }

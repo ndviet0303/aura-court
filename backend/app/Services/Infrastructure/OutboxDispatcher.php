@@ -2,14 +2,14 @@
 
 namespace App\Services\Infrastructure;
 
-use App\Services\Payment\ProviderOutboxHandler;
-
 use App\Events\TenantRealtimeEvent;
 use App\Models\OutboxMessage;
 use App\Models\User;
 use App\Notifications\OutboxNotification;
+use App\Services\Payment\ProviderOutboxHandler;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
+
 class OutboxDispatcher
 {
     public function dispatch(OutboxMessage $message): void
@@ -69,11 +69,11 @@ class OutboxDispatcher
             if (str_starts_with($actionUrl, 'http://') || str_starts_with($actionUrl, 'https://')) {
                 $actionFullUrl = $actionUrl;
             } else {
-                $actionFullUrl = $publicDomain . '/' . ltrim($actionUrl, '/');
+                $actionFullUrl = $publicDomain.'/'.ltrim($actionUrl, '/');
             }
         }
 
-        $logoUrl = $publicDomain . '/aura/badge-logo.png';
+        $logoUrl = $publicDomain.'/aura/badge-logo.png';
         $mailView = $payload['mail_view'] ?? 'emails.booking-notification';
         $title = (string) ($payload['title'] ?? 'Thông báo Aura Court');
         $body = (string) ($payload['body'] ?? '');
@@ -90,7 +90,7 @@ class OutboxDispatcher
             'frontendUrl' => $publicDomain,
         ], function ($mail) use ($user, $title) {
             $mail->to($user->email, $user->name)
-                ->subject($title . ' · Aura Court');
+                ->subject($title.' · Aura Court');
         });
     }
 

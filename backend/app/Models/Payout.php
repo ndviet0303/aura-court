@@ -17,7 +17,18 @@ class Payout extends Model
         return ['amount' => 'integer', 'settlement_snapshot' => 'array', 'approved_at' => 'datetime', 'submitted_at' => 'datetime', 'paid_at' => 'datetime', 'failed_at' => 'datetime', 'reversed_at' => 'datetime'];
     }
 
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
-    public function settlement(): BelongsTo { return $this->belongsTo(Settlement::class); }
-    public function beneficiary(): BelongsTo { return $this->belongsTo(Beneficiary::class); }
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function settlement(): BelongsTo
+    {
+        return $this->belongsTo(Settlement::class);
+    }
+
+    public function beneficiary(): BelongsTo
+    {
+        return $this->belongsTo(Beneficiary::class);
+    }
 }

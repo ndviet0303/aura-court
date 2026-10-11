@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
-use App\Models\Refund;
+use App\Models\Organization;
+use App\Models\PlatformPlan;
+use App\Models\PlatformSubscription;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\BookingService;
@@ -23,20 +23,20 @@ class BookingFlowsTest extends TestCase
     {
         parent::setUp();
 
-        $org = \App\Models\Organization::first();
+        $org = Organization::first();
         if ($org) {
             $org->update(['partner_status' => 'approved', 'status' => 'active']);
-            $plan = \App\Models\PlatformPlan::firstOrCreate(
+            $plan = PlatformPlan::firstOrCreate(
                 ['code' => 'PLATFORM_GROWTH'],
                 ['name' => 'Growth', 'price' => 100000, 'billing_cycle' => 'monthly', 'is_active' => true]
             );
-            \App\Models\PlatformSubscription::firstOrCreate(
+            PlatformSubscription::firstOrCreate(
                 ['organization_id' => $org->id],
                 ['plan_id' => $plan->id, 'status' => 'active', 'starts_at' => now()->subDay(), 'ends_at' => now()->addMonth()]
             );
         }
 
-        $venue = \App\Models\Venue::first();
+        $venue = Venue::first();
         if ($venue) {
             $venue->update(['status' => 'published', 'is_active' => true]);
         }

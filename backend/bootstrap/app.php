@@ -2,8 +2,8 @@
 
 use App\Http\Middleware\EnsureAccountNotRestricted;
 use App\Http\Middleware\EnsureAdmin;
-use App\Http\Middleware\EnsureOrganizationAdminOrStaff;
 use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\EnsureOrganizationAdminOrStaff;
 use App\Http\Middleware\EnsureTournamentRole;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;

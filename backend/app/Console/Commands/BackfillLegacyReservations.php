@@ -22,6 +22,7 @@ class BackfillLegacyReservations extends Command
         if ($this->option('audit')) {
             $result = $backfill->audit($orgId);
             $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
             return self::SUCCESS;
         }
 

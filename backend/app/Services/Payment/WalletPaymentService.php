@@ -22,6 +22,7 @@ class WalletPaymentService
                 $organization = Organization::where('status', 'active')->whereHas('venues')->first()
                     ?: Organization::where('status', 'active')->first()
                     ?: Organization::first();
+
                 return $organization?->id;
             });
         }

@@ -28,7 +28,7 @@ class ResetPasswordNotification extends Notification
         $publicDomain = (str_contains($frontendUrl, 'localhost') || str_contains($frontendUrl, '127.0.0.1'))
             ? 'https://court.ziet.dev'
             : rtrim($frontendUrl, '/');
-        $logoUrl = $publicDomain . '/aura/badge-logo.png';
+        $logoUrl = $publicDomain.'/aura/badge-logo.png';
 
         return (new MailMessage)
             ->subject('Đặt lại mật khẩu · Aura Court')

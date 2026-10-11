@@ -10,17 +10,18 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 
 echo "=================================================================\n";
 echo "Task 1.5: Read-Only Legacy Inventory & Checksum Verification\n";
-echo "Database: " . config('database.connections.pgsql.database') . "\n";
-echo "Time:     " . date('Y-m-d H:i:s T') . "\n";
+echo 'Database: '.config('database.connections.pgsql.database')."\n";
+echo 'Time:     '.date('Y-m-d H:i:s T')."\n";
 echo "=================================================================\n\n";
 
 // 1. Wallet Accounts & Balances Inventory
@@ -36,9 +37,9 @@ $walletChecksumRaw = DB::table('wallet_accounts')
 $walletChecksum = hash('sha256', $walletChecksumRaw);
 
 echo "[1] WALLET ACCOUNTS:\n";
-echo "    - Total Accounts: " . ($walletStats->total_accounts ?? 0) . "\n";
-echo "    - Total Balance:  " . number_format((float) ($walletStats->total_balance ?? 0)) . " VND\n";
-echo "    - SHA-256 Hash:   " . $walletChecksum . "\n\n";
+echo '    - Total Accounts: '.($walletStats->total_accounts ?? 0)."\n";
+echo '    - Total Balance:  '.number_format((float) ($walletStats->total_balance ?? 0))." VND\n";
+echo '    - SHA-256 Hash:   '.$walletChecksum."\n\n";
 
 // 2. Wallet Transactions (Historical Ledger)
 $txStats = DB::table('wallet_transactions')
@@ -53,9 +54,9 @@ $txChecksumRaw = DB::table('wallet_transactions')
 $txChecksum = hash('sha256', $txChecksumRaw);
 
 echo "[2] WALLET TRANSACTIONS:\n";
-echo "    - Total Tx Count: " . ($txStats->total_tx ?? 0) . "\n";
-echo "    - Total Volume:   " . number_format((float) ($txStats->total_volume ?? 0)) . " VND\n";
-echo "    - SHA-256 Hash:   " . $txChecksum . "\n\n";
+echo '    - Total Tx Count: '.($txStats->total_tx ?? 0)."\n";
+echo '    - Total Volume:   '.number_format((float) ($txStats->total_volume ?? 0))." VND\n";
+echo '    - SHA-256 Hash:   '.$txChecksum."\n\n";
 
 // 3. Bookings Classification (legacy_wallet_v1 vs direct_owner_v1)
 $totalBookings = DB::table('bookings')->count();
@@ -85,10 +86,10 @@ $journalStats = DB::table('journals')
 $isBalanced = ((int) ($journalStats->sum_debit ?? 0)) === ((int) ($journalStats->sum_credit ?? 0));
 
 echo "[4] FINANCIAL JOURNALS AUDIT:\n";
-echo "    - Total Journals: " . ($journalStats->total_journals ?? 0) . "\n";
-echo "    - Sum Debit:      " . number_format((float) ($journalStats->sum_debit ?? 0)) . " VND\n";
-echo "    - Sum Credit:     " . number_format((float) ($journalStats->sum_credit ?? 0)) . " VND\n";
-echo "    - Balanced State: " . ($isBalanced ? "BALANCED (Invariants hold)" : "MISMATCH (Warning: Debit != Credit)") . "\n\n";
+echo '    - Total Journals: '.($journalStats->total_journals ?? 0)."\n";
+echo '    - Sum Debit:      '.number_format((float) ($journalStats->sum_debit ?? 0))." VND\n";
+echo '    - Sum Credit:     '.number_format((float) ($journalStats->sum_credit ?? 0))." VND\n";
+echo '    - Balanced State: '.($isBalanced ? 'BALANCED (Invariants hold)' : 'MISMATCH (Warning: Debit != Credit)')."\n\n";
 
 // 5. Entitlements & Points
 $pointsTotal = DB::table('point_ledgers')->count();

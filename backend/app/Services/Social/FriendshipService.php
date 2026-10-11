@@ -3,12 +3,10 @@
 namespace App\Services\Social;
 
 use App\Models\Friendship;
-use App\Models\PlayerProfile;
-use App\Services\Infrastructure\OutboxService;
-use Illuminate\Support\Facades\DB;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use App\Services\Infrastructure\OutboxService;
 use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Support\Facades\DB;
 
 class FriendshipService
 {
@@ -28,7 +26,7 @@ class FriendshipService
 
         $friends = $friendships->map(function (Friendship $friendship) use ($user) {
             $friend = $friendship->otherUser($user->id);
-            if (!$friend) {
+            if (! $friend) {
                 return null;
             }
 

@@ -72,7 +72,6 @@ class RecurringSeriesAndInvoicesTest extends TestCase
         $this->assertGreaterThan(0, $invoice->amount);
     }
 
-
     public function test_overdue_invoice_releases_future_inventory_and_marks_series_delinquent(): void
     {
         [$organization, $user, $court] = $this->tenant();

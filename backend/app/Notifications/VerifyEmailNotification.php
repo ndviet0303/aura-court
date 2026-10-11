@@ -13,7 +13,7 @@ class VerifyEmailNotification extends BaseVerifyEmail
         $publicDomain = (str_contains($frontendUrl, 'localhost') || str_contains($frontendUrl, '127.0.0.1'))
             ? 'https://court.ziet.dev'
             : rtrim($frontendUrl, '/');
-        $logoUrl = $publicDomain . '/aura/badge-logo.png';
+        $logoUrl = $publicDomain.'/aura/badge-logo.png';
 
         return (new MailMessage)
             ->subject('Xác thực địa chỉ Email · Aura Court')
@@ -37,7 +37,7 @@ class VerifyEmailNotification extends BaseVerifyEmail
         $publicDomain = (str_contains($frontendUrl, 'localhost') || str_contains($frontendUrl, '127.0.0.1'))
             ? 'https://court.ziet.dev'
             : rtrim($frontendUrl, '/');
-        $logoUrl = $publicDomain . '/aura/badge-logo.png';
+        $logoUrl = $publicDomain.'/aura/badge-logo.png';
 
         return (new MailMessage)
             ->subject('Xác thực địa chỉ Email · Aura Court')

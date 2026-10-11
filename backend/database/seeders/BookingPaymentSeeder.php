@@ -33,7 +33,7 @@ class BookingPaymentSeeder extends Seeder
         foreach (range(1, 72) as $number) {
             $court = $courts[($number - 1) % $courts->count()];
             $customer = $customers[($number - 1) % $customers->count()];
-            
+
             // Distribute across today (1..20), past 7 days (21..42), future days (43..58), past weeks (59..72)
             if ($number <= 20) {
                 $dayOffset = 0; // Today

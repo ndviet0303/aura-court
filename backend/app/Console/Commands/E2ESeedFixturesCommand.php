@@ -34,7 +34,8 @@ class E2ESeedFixturesCommand extends Command
     {
         $runId = trim((string) $this->option('run-id'));
         if ($runId === '' || ! preg_match('/^[a-zA-Z0-9_-]+$/', $runId)) {
-            $this->error("CRITICAL: --run-id is mandatory and must match /^[a-zA-Z0-9_-]+$/.");
+            $this->error('CRITICAL: --run-id is mandatory and must match /^[a-zA-Z0-9_-]+$/.');
+
             return self::FAILURE;
         }
 
@@ -42,6 +43,7 @@ class E2ESeedFixturesCommand extends Command
         $env = app()->environment();
         if ($env !== 'testing') {
             $this->error("CRITICAL: e2e:seed-fixtures is restricted to APP_ENV=testing, got '{$env}'.");
+
             return self::FAILURE;
         }
 
@@ -53,16 +55,19 @@ class E2ESeedFixturesCommand extends Command
         $allowedHosts = ['127.0.0.1', 'localhost', '::1'];
         if (! in_array($dbHost, $allowedHosts, true)) {
             $this->error("CRITICAL: Database host '{$dbHost}' is not local loopback.");
+
             return self::FAILURE;
         }
 
         if ($dbName === 'booking' || $dbName === 'booking_test') {
             $this->error("CRITICAL: Refusing to seed fixtures into protected database '{$dbName}'.");
+
             return self::FAILURE;
         }
 
         if ($dbName !== $expectedDb) {
             $this->error("CRITICAL: Configured database '{$dbName}' does not match expected run database '{$expectedDb}'.");
+
             return self::FAILURE;
         }
 
@@ -71,14 +76,17 @@ class E2ESeedFixturesCommand extends Command
             $row = DB::connection()->selectOne('SELECT current_database() as db, inet_server_addr() as server_ip');
             if ($row?->db !== $expectedDb) {
                 $this->error("CRITICAL: Connected database '{$row?->db}' does not match '{$expectedDb}'.");
+
                 return self::FAILURE;
             }
             if ($row?->server_ip !== null && ! in_array($row->server_ip, ['127.0.0.1', '::1'], true)) {
                 $this->error("CRITICAL: Connected server IP '{$row->server_ip}' is remote.");
+
                 return self::FAILURE;
             }
         } catch (\Throwable $e) {
-            $this->error("CRITICAL: Database connectivity probe failed: " . $e->getMessage());
+            $this->error('CRITICAL: Database connectivity probe failed: '.$e->getMessage());
+
             return self::FAILURE;
         }
 
@@ -93,7 +101,7 @@ class E2ESeedFixturesCommand extends Command
 
     protected function seedFixtures(string $runId, array $customCredentials = [], ?string $password = null, array $organizationIds = []): int
     {
-        $defaultPassword = $password ?? 'Password123!@#' . $runId;
+        $defaultPassword = $password ?? 'Password123!@#'.$runId;
 
         return DB::transaction(function () use ($runId, $customCredentials, $defaultPassword, $organizationIds) {
             // -------------------------------------------------------------
@@ -206,6 +214,7 @@ class E2ESeedFixturesCommand extends Command
                 }
                 $organization = Organization::findOrFail($organizationIds[$index]);
                 $organization->update($attributes);
+
                 return $organization;
             };
 
@@ -865,6 +874,7 @@ class E2ESeedFixturesCommand extends Command
             ];
 
             $this->output->writeln(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
             return self::SUCCESS;
         });
     }

@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Reservation;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Booking;
 use App\Models\Reservation;
-use App\Services\Reservation\LegacyBookingBackfillService;
 use App\Services\Infrastructure\TenantContext;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Http\Request;
 
 class LegacyBookingAdapterController extends Controller

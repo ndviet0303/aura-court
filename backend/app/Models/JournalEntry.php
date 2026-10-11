@@ -23,7 +23,18 @@ class JournalEntry extends Model
         static::deleting(fn () => throw new \LogicException('Journal entries are append-only.'));
     }
 
-    public function journal(): BelongsTo { return $this->belongsTo(Journal::class); }
-    public function account(): BelongsTo { return $this->belongsTo(Account::class); }
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
+    public function journal(): BelongsTo
+    {
+        return $this->belongsTo(Journal::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 }

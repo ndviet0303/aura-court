@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Events\CourtStatusUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
@@ -16,6 +16,7 @@ class Court extends Model
     use HasTranslations;
 
     public array $translatable = ['name', 'description'];
+
     protected $appends = ['timezone'];
 
     protected static function booted(): void
@@ -36,7 +37,7 @@ class Court extends Model
                 $court->slug = Str::slug($court->name);
             }
             if ($court->isDirty('is_active') && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
+                CourtStatusUpdated::dispatch(
                     venueId: (int) $court->venue_id,
                     courtId: (int) $court->id,
                     status: $court->is_active ? 'available' : 'maintenance',
@@ -66,15 +67,16 @@ class Court extends Model
         if ($this->relationLoaded('venue') && $this->venue) {
             return $this->venue->amenities;
         }
+
         return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
     }
+
     public function getTimezoneAttribute(): string
     {
         return $this->attributes['timezone']
             ?? ($this->relationLoaded('venue') ? $this->venue?->timezone : null)
             ?? 'Asia/Ho_Chi_Minh';
     }
-
 
     public function priceSlots(): HasMany
     {
@@ -110,6 +112,7 @@ class Court extends Model
     {
         return $this->hasMany(Review::class);
     }
+
     public function resolveRouteBinding($value, $field = null)
     {
         return $this->where(ctype_digit((string) $value) ? 'id' : 'slug', $value)->first();

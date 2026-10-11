@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Social;
 
-use App\Http\Controllers\Controller;
-
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\MatchPostResource;
+use App\Models\Court;
 use App\Models\MatchInvitation;
 use App\Models\MatchPost;
+use App\Models\OrganizationMember;
 use App\Models\PlayerProfile;
 use App\Models\ReputationDispute;
 use App\Models\User;
@@ -25,6 +26,7 @@ class SocialController extends Controller
     public function profile(Request $request)
     {
         $organization = $this->organization($request);
+
         return response()->json(PlayerProfile::firstOrCreate(['organization_id' => $organization->id, 'user_id' => $request->user()->id], ['skill_level' => 1, 'reputation_score' => 60]));
     }
 
@@ -32,6 +34,7 @@ class SocialController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['skill_level' => 'required|integer|min:1|max:5', 'city' => 'nullable|string|max:120', 'latitude' => 'nullable|numeric|between:-90,90', 'longitude' => 'nullable|numeric|between:-180,180', 'location_precision_km' => 'nullable|integer|min:1|max:50', 'availability' => 'nullable|array', 'preferred_positions' => 'nullable|array', 'visibility' => 'nullable|in:organization,private']);
+
         return $this->idempotency->run($request, fn () => response()->json(['profile' => $this->matches->profile($request->user(), $organization->id, $data)]));
     }
 
@@ -57,7 +60,6 @@ class SocialController extends Controller
     {
         return response()->json(['match' => MatchPostResource::make($this->matches->show($post, $request->user()))]);
     }
-
 
     public function create(Request $request)
     {
@@ -86,6 +88,7 @@ class SocialController extends Controller
             'metadata' => 'nullable|array',
         ]);
         $data['visibility'] = $data['visibility'] ?? 'public';
+
         return $this->idempotency->run($request, fn () => response()->json(['match' => MatchPostResource::make($this->matches->createPost($request->user(), $organization->id, $data))], 201));
     }
 
@@ -131,10 +134,12 @@ class SocialController extends Controller
 
     public function getDefaultRates(Request $request, MatchPost $post)
     {
-        $court = $post->court ?? ($post->court_id ? \App\Models\Court::find($post->court_id) : null);
+        $court = $post->court ?? ($post->court_id ? Court::find($post->court_id) : null);
         abort_unless($court, 404, 'Không tìm thấy sân.');
+
         return response()->json(['rates' => $this->matches->getDefaultRates($court, $post->starts_at)]);
     }
+
     public function invite(Request $request, MatchPost $post)
     {
         $organization = $this->organization($request);
@@ -146,14 +151,14 @@ class SocialController extends Controller
         ]);
 
         return $this->idempotency->run($request, function () use ($post, $request, $data) {
-            if (!empty($data['invitee_ids'])) {
+            if (! empty($data['invitee_ids'])) {
                 $batch = $this->matches->inviteMany($post, $request->user(), $data['invitee_ids']);
                 $first = $batch['invitations'][0] ?? null;
 
                 return response()->json(array_merge($batch, ['invitation' => $first]), 201);
             }
 
-            abort_unless(!empty($data['invitee_id']), 422, 'invitee_id or invitee_ids is required.');
+            abort_unless(! empty($data['invitee_id']), 422, 'invitee_id or invitee_ids is required.');
             $invitation = $this->matches->invite($post, $request->user(), (int) $data['invitee_id']);
 
             return response()->json([
@@ -186,17 +191,19 @@ class SocialController extends Controller
         abort_unless($post->organization_id === $organization?->id, 404);
 
         if (! $organization->hasMember($request->user()->id)) {
-            \App\Models\OrganizationMember::firstOrCreate(
+            OrganizationMember::firstOrCreate(
                 ['organization_id' => $organization->id, 'user_id' => $request->user()->id],
-                ['role' => \App\Models\OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']
+                ['role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']
             );
         }
 
         return $this->idempotency->run($request, fn () => response()->json(['participation' => $this->matches->join($post, $request->user())], 201));
     }
+
     public function approveParticipant(Request $request, MatchPost $match)
     {
         $data = $request->validate(['user_id' => 'required|integer']);
+
         return $this->idempotency->run($request, fn () => response()->json([
             'participation' => $this->matches->approveParticipant($match, $request->user(), (int) $data['user_id']),
             'message' => 'Participant approved.',
@@ -206,6 +213,7 @@ class SocialController extends Controller
     public function rejectParticipant(Request $request, MatchPost $match)
     {
         $data = $request->validate(['user_id' => 'required|integer']);
+
         return $this->idempotency->run($request, fn () => response()->json([
             'participation' => $this->matches->rejectParticipant($match, $request->user(), (int) $data['user_id']),
             'message' => 'Participant rejected.',
@@ -227,18 +235,19 @@ class SocialController extends Controller
             'status' => 'required|in:present,late,absent,withdrawn',
             'notes' => 'nullable|string|max:1000',
         ]);
+
         return $this->idempotency->run($request, fn () => response()->json([
             'participation' => $this->matches->recordAttendance($match, $request->user(), (int) $data['user_id'], $data['status'], $data['notes'] ?? null),
             'message' => 'Attendance recorded.',
         ]));
     }
 
-
     public function respond(Request $request, MatchInvitation $invitation)
     {
         $organization = $this->organization($request);
         abort_unless($invitation->organization_id === $organization->id, 404);
         $data = $request->validate(['status' => 'required|in:accepted,declined']);
+
         return $this->idempotency->run($request, fn () => response()->json(['invitation' => $this->matches->respond($invitation, $request->user(), $data['status'])]));
     }
 
@@ -246,6 +255,7 @@ class SocialController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['user_id' => 'required|integer', 'type' => 'required|in:attendance,late_cancellation,no_show', 'source_type' => 'required|string|max:120', 'source_id' => 'required|integer']);
+
         return $this->idempotency->run($request, fn () => response()->json(['profile' => $this->reputation->record(User::findOrFail($data['user_id']), $organization->id, $data['type'], $data['source_type'], $data['source_id'], $request->user()->id)]));
     }
 
@@ -253,6 +263,7 @@ class SocialController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validate(['reason' => 'required|string|max:2000']);
+
         return $this->idempotency->run($request, fn () => response()->json(['dispute' => $this->reputation->fileDispute($request->user(), $organization->id, $activity, $data['reason'])], 201));
     }
 
@@ -261,6 +272,7 @@ class SocialController extends Controller
         $organization = $this->organization($request);
         abort_unless($dispute->organization_id === $organization->id, 404);
         $data = $request->validate(['decision' => 'required|in:upheld,rejected', 'resolution' => 'required|string|max:2000']);
+
         return $this->idempotency->run($request, fn () => response()->json(['dispute' => $this->reputation->resolveDispute($dispute, $request->user(), $data['decision'], $data['resolution'])]));
     }
 }

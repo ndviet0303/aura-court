@@ -14,9 +14,13 @@ class FriendshipLifecycleTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $alice;
+
     private User $bob;
+
     private User $charlie;
+
     private User $eve;
 
     protected function setUp(): void
@@ -25,7 +29,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Badminton Club',
-            'slug' => 'aura-club-' . uniqid(),
+            'slug' => 'aura-club-'.uniqid(),
             'status' => 'active',
         ]);
 

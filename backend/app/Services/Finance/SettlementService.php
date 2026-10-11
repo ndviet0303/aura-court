@@ -4,10 +4,10 @@ namespace App\Services\Finance;
 
 use App\Models\Account;
 use App\Models\Journal;
-use App\Models\Settlement;
 use App\Models\Organization;
-use Carbon\CarbonInterface;
+use App\Models\Settlement;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class SettlementService
@@ -61,12 +61,14 @@ class SettlementService
         if ($settlement->status === 'pending' && $settlement->eligible_at?->isPast()) {
             $settlement->update(['status' => 'eligible']);
         }
+
         return $settlement->fresh();
     }
 
     private function tenantPayable(int $organizationId, $journals): int
     {
         $accountId = $this->accountId($organizationId, 'tenant_payable');
+
         return (int) $journals->sum(fn (Journal $journal) => $journal->entries->where('account_id', $accountId)->sum(fn ($entry) => $entry->side === 'credit' ? $entry->amount : -$entry->amount));
     }
 

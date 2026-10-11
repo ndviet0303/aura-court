@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Social;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Controller;
 use App\Models\FeedComment;
 use App\Models\FeedPost;
 use App\Models\FeedReport;
@@ -222,7 +222,7 @@ class CommunityFeedController extends Controller
 
         $this->outbox->enqueue([
             'organization_id' => $organization->id,
-            'message_key' => "feed_post_hidden:{$post->id}:" . now()->timestamp . ':' . uniqid(),
+            'message_key' => "feed_post_hidden:{$post->id}:".now()->timestamp.':'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'feed.post_hidden',
             'aggregate_type' => FeedPost::class,
@@ -257,7 +257,7 @@ class CommunityFeedController extends Controller
 
         $this->outbox->enqueue([
             'organization_id' => $organization->id,
-            'message_key' => "feed_post_restored:{$post->id}:" . now()->timestamp . ':' . uniqid(),
+            'message_key' => "feed_post_restored:{$post->id}:".now()->timestamp.':'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'feed.post_restored',
             'aggregate_type' => FeedPost::class,
@@ -293,7 +293,7 @@ class CommunityFeedController extends Controller
 
         $this->outbox->enqueue([
             'organization_id' => $organization->id,
-            'message_key' => "feed_comment_hidden:{$comment->id}:" . now()->timestamp . ':' . uniqid(),
+            'message_key' => "feed_comment_hidden:{$comment->id}:".now()->timestamp.':'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'feed.comment_hidden',
             'aggregate_type' => FeedComment::class,
@@ -329,7 +329,7 @@ class CommunityFeedController extends Controller
 
         $this->outbox->enqueue([
             'organization_id' => $organization->id,
-            'message_key' => "feed_comment_restored:{$comment->id}:" . now()->timestamp . ':' . uniqid(),
+            'message_key' => "feed_comment_restored:{$comment->id}:".now()->timestamp.':'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'feed.comment_restored',
             'aggregate_type' => FeedComment::class,
@@ -409,7 +409,7 @@ class CommunityFeedController extends Controller
 
         $this->outbox->enqueue([
             'organization_id' => $organization->id,
-            'message_key' => "feed_report_dismissed:{$report->id}:" . now()->timestamp . ':' . uniqid(),
+            'message_key' => "feed_report_dismissed:{$report->id}:".now()->timestamp.':'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'feed.report_dismissed',
             'aggregate_type' => FeedReport::class,

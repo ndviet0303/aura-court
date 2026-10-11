@@ -9,9 +9,8 @@
  * - FormRequests: extends FormRequest, has rules() and authorize().
  * - Repositories: all repository interfaces registered in RepositoryServiceProvider.
  */
-
-$appDir = realpath(__DIR__ . '/../app');
-if (!$appDir) {
+$appDir = realpath(__DIR__.'/../app');
+if (! $appDir) {
     echo "Cannot find app directory.\n";
     exit(1);
 }
@@ -19,23 +18,25 @@ if (!$appDir) {
 $errors = [];
 
 // 1. Check RepositoryServiceProvider bindings
-$providerContent = file_get_contents($appDir . '/Providers/RepositoryServiceProvider.php');
-$contractFiles = glob($appDir . '/Contracts/Repositories/*RepositoryInterface.php') ?: [];
+$providerContent = file_get_contents($appDir.'/Providers/RepositoryServiceProvider.php');
+$contractFiles = glob($appDir.'/Contracts/Repositories/*RepositoryInterface.php') ?: [];
 foreach ($contractFiles as $file) {
     $interfaceName = basename($file, '.php');
-    if (!str_contains($providerContent, $interfaceName . '::class')) {
+    if (! str_contains($providerContent, $interfaceName.'::class')) {
         $errors[] = "Repository interface [{$interfaceName}] is not registered in RepositoryServiceProvider.";
     }
 }
 
 // 2. Check Controllers
 $controllerDirs = [
-    $appDir . '/Http/Controllers/Partner',
-    $appDir . '/Http/Controllers/Subscription',
+    $appDir.'/Http/Controllers/Partner',
+    $appDir.'/Http/Controllers/Subscription',
 ];
 foreach ($controllerDirs as $dir) {
-    if (!is_dir($dir)) continue;
-    foreach (glob($dir . '/*.php') as $file) {
+    if (! is_dir($dir)) {
+        continue;
+    }
+    foreach (glob($dir.'/*.php') as $file) {
         $content = file_get_contents($file);
         $lines = count(explode("\n", $content));
         if ($lines > 300) {
@@ -55,13 +56,15 @@ foreach ($controllerDirs as $dir) {
 
 // 3. Check Actions
 $actionDirs = [
-    $appDir . '/Domain/Partner/Actions',
-    $appDir . '/Domain/Subscription/Actions',
-    $appDir . '/Domain/Venue/Actions',
+    $appDir.'/Domain/Partner/Actions',
+    $appDir.'/Domain/Subscription/Actions',
+    $appDir.'/Domain/Venue/Actions',
 ];
 foreach ($actionDirs as $dir) {
-    if (!is_dir($dir)) continue;
-    foreach (glob($dir . '/*.php') as $file) {
+    if (! is_dir($dir)) {
+        continue;
+    }
+    foreach (glob($dir.'/*.php') as $file) {
         $content = file_get_contents($file);
         $lines = count(explode("\n", $content));
         if ($lines > 300) {
@@ -78,21 +81,23 @@ foreach ($actionDirs as $dir) {
 
 // 4. Check DTOs
 $dtoDirs = [
-    $appDir . '/Domain/Partner/DTOs',
-    $appDir . '/Domain/Subscription/DTOs',
-    $appDir . '/Domain/Venue/DTOs',
+    $appDir.'/Domain/Partner/DTOs',
+    $appDir.'/Domain/Subscription/DTOs',
+    $appDir.'/Domain/Venue/DTOs',
 ];
 foreach ($dtoDirs as $dir) {
-    if (!is_dir($dir)) continue;
-    foreach (glob($dir . '/*.php') as $file) {
+    if (! is_dir($dir)) {
+        continue;
+    }
+    foreach (glob($dir.'/*.php') as $file) {
         $content = file_get_contents($file);
-        if (!preg_match('/\breadonly\s+class\b/', $content)) {
+        if (! preg_match('/\breadonly\s+class\b/', $content)) {
             $errors[] = "DTO [{$file}] is not declared as a readonly class.";
         }
     }
 }
 
-if (!empty($errors)) {
+if (! empty($errors)) {
     echo "Backend Architecture Violations Found:\n";
     foreach ($errors as $error) {
         echo "  - {$error}\n";

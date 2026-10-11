@@ -20,6 +20,7 @@ class ProvisionScopedAccountCommand extends Command
         {--role=organization_owner : Scoped organization role (organization_owner, cashier)}
         {--dry-run : Preflight analysis only without writing changes}
         {--confirm-production : Explicit confirmation required for production environment}';
+
     protected $description = 'Provision or upgrade an account for scoped organization and POS operation with credential preservation';
 
     public function handle(FeatureFlagService $featureFlags): int
@@ -35,12 +36,14 @@ class ProvisionScopedAccountCommand extends Command
         if (empty($env) || empty($email) || empty($orgOption)) {
             $this->error('Target information is incomplete. Provisioning requires explicit --env, --email, and --org.');
             $this->line('Usage: php artisan org:provision-pos --env=local|staging|production --email=user@example.com --org=<id> [--role=organization_owner|cashier] [--dry-run]');
+
             return self::FAILURE;
         }
 
         // Validate environment
         if (! in_array($env, ['local', 'testing', 'staging', 'production'], true)) {
             $this->error("Invalid environment '{$env}'. Must be one of: local, testing, staging, production.");
+
             return self::FAILURE;
         }
 
@@ -52,6 +55,7 @@ class ProvisionScopedAccountCommand extends Command
             $this->warn('explicit operational confirmation via --confirm-production.');
             $this->warn('Provisioning paused safely without changes.');
             $this->warn('================================================================');
+
             return self::FAILURE;
         }
 
@@ -64,6 +68,7 @@ class ProvisionScopedAccountCommand extends Command
         ];
         if (! in_array($role, $validRoles, true)) {
             $this->error("Invalid role '{$role}'. Allowed scoped roles: ".implode(', ', $validRoles));
+
             return self::FAILURE;
         }
 
@@ -72,6 +77,7 @@ class ProvisionScopedAccountCommand extends Command
         $organization = Organization::find($orgId);
         if (! $organization) {
             $this->error("Organization with ID #{$orgId} does not exist. Missing target cannot be substituted.");
+
             return self::FAILURE;
         }
 
@@ -130,11 +136,12 @@ class ProvisionScopedAccountCommand extends Command
         if ($dryRun) {
             $this->newLine();
             $this->info('DRY-RUN COMPLETE: Preflight verified successfully. No changes were committed to database.');
+
             return self::SUCCESS;
         }
 
         // 5. Execute Mutation in Transaction with Credential Preservation
-        DB::transaction(function () use ($user, $isNewUser, $email, $orgId, $role, $organization, $originalPasswordHash): void {
+        DB::transaction(function () use ($user, $isNewUser, $email, $orgId, $role, $originalPasswordHash): void {
             if ($isNewUser) {
                 $user = User::create([
                     'name' => Str::title(explode('@', $email)[0]),

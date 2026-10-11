@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Contracts\Payment\PaymentIntentRequest;
 use App\Contracts\Payment\PaymentIntentResponse;
+use App\Contracts\Payment\PaymentProviderInterface;
 use App\Contracts\Payment\PayoutInstruction;
 use App\Contracts\Payment\PayoutSubmissionResponse;
 use App\Contracts\Payment\RefundRequest;
@@ -17,10 +18,11 @@ class ProviderOperationService
 {
     public function __construct(private readonly PaymentProviderManager $providers) {}
 
-    public function provider(?string $name = null): \App\Contracts\Payment\PaymentProviderInterface
+    public function provider(?string $name = null): PaymentProviderInterface
     {
         return $this->providers->provider($name);
     }
+
     public function createPaymentIntent(PaymentIntentRequest $request, ?int $organizationId = null, ?int $userId = null): PaymentIntentResponse
     {
         $provider = $this->providers->provider();
@@ -47,6 +49,7 @@ class ProviderOperationService
 
         $response = $provider->createPaymentIntent($request);
         $intent->update(['provider_intent_id' => $response->providerIntentId, 'status' => strtolower($response->status), 'metadata' => array_merge($intent->metadata ?? [], $response->raw)]);
+
         return $response;
     }
 
@@ -60,6 +63,7 @@ class ProviderOperationService
         try {
             $response = $provider->executeRefund($request);
             $this->complete($operation, $response->providerRefundId, $response->status, $response->toArray());
+
             return $response;
         } catch (\Throwable $exception) {
             $this->fail($operation, $exception);
@@ -77,6 +81,7 @@ class ProviderOperationService
         try {
             $response = $provider->submitPayout($instruction);
             $this->complete($operation, $response->providerPayoutId, $response->status, $response->toArray());
+
             return $response;
         } catch (\Throwable $exception) {
             $this->fail($operation, $exception);
@@ -102,6 +107,7 @@ class ProviderOperationService
             if (! str_contains(strtolower($exception->getMessage()), 'provider_operations')) {
                 throw $exception;
             }
+
             return ProviderOperation::where('provider', $provider)->where('idempotency_key', $key)->firstOrFail();
         }
     }

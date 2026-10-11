@@ -10,5 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 class ReputationDispute extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['decided_at' => 'datetime']; }
+
+    protected function casts(): array
+    {
+        return ['decided_at' => 'datetime'];
+    }
 }

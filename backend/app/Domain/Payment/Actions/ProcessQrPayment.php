@@ -4,9 +4,11 @@ namespace App\Domain\Payment\Actions;
 
 use App\Models\Payment;
 use App\Models\PaymentIntent;
+use App\Models\PosOrder;
 use App\Models\User;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\POS\PosService;
 use Illuminate\Support\Facades\DB;
 
 class ProcessQrPayment
@@ -15,6 +17,7 @@ class ProcessQrPayment
         private readonly WalletPaymentService $walletPayments,
         private readonly FinancialPostingService $financials,
     ) {}
+
     public function execute(array $data, string $raw): void
     {
         $externalId = (string) ($data['id'] ?? '');
@@ -38,11 +41,11 @@ class ProcessQrPayment
             // Check if transfer code is for a pending POS Order (e.g. POS-1-66AB... or ORD POS 123)
             if (preg_match('/(POS-[0-9a-zA-Z\-_]+)/i', $rawContent, $mPos)) {
                 $posRef = trim($mPos[1]);
-                $posOrder = \App\Models\PosOrder::where('payment_reference', $posRef)
+                $posOrder = PosOrder::where('payment_reference', $posRef)
                     ->where('status', 'pending_payment')
                     ->first();
                 if ($posOrder && $amount >= $posOrder->total_amount) {
-                    app(\App\Services\POS\PosService::class)->confirmQrPayment($posOrder, [
+                    app(PosService::class)->confirmQrPayment($posOrder, [
                         'external_transaction_id' => $externalId,
                         'amount' => $amount,
                         'source' => 'vietqr_webhook',
@@ -56,6 +59,7 @@ class ProcessQrPayment
                         'payload' => json_decode($raw, true),
                         'received_at' => now(),
                     ]);
+
                     return;
                 }
             }

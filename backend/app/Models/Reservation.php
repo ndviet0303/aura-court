@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Events\CourtStatusUpdated;
-use Carbon\Carbon;
 use App\Traits\BelongsToTenant;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

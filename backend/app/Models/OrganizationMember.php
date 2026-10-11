@@ -11,9 +11,13 @@ class OrganizationMember extends Model
     use HasFactory;
 
     public const ROLE_ORGANIZATION_OWNER = 'organization_owner';
+
     public const ROLE_VENUE_MANAGER = 'venue_manager';
+
     public const ROLE_CASHIER = 'cashier';
+
     public const ROLE_STAFF = 'staff';
+
     public const ROLE_CUSTOMER = 'customer';
 
     public const VALID_ROLES = [
@@ -31,6 +35,7 @@ class OrganizationMember extends Model
         'permissions',
         'status',
     ];
+
     protected $casts = [
         'permissions' => 'array',
     ];

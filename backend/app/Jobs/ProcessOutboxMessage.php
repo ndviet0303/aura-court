@@ -5,8 +5,8 @@ namespace App\Jobs;
 use App\Models\OutboxMessage;
 use App\Services\Infrastructure\OutboxDispatcher;
 use App\Services\Infrastructure\OutboxService;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -17,7 +17,10 @@ class ProcessOutboxMessage implements ShouldQueue
 
     public int $tries = 8;
 
-    public function __construct(public readonly int $outboxMessageId) { $this->afterCommit = true; }
+    public function __construct(public readonly int $outboxMessageId)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(OutboxService $outbox, OutboxDispatcher $dispatcher): void
     {

@@ -26,7 +26,7 @@ class CompletePersonalOnboarding
     {
         return DB::transaction(function () use ($data) {
             $user = $this->userRepo->findByIdWithLock($data->userId);
-            if (!$user) {
+            if (! $user) {
                 abort(404, 'Người dùng không tồn tại.');
             }
 

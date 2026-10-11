@@ -16,7 +16,7 @@ class ResolveTenantContext
     {
         $orgId = $request->header('X-Organization-ID') ?? $request->header('X-Organization-Id');
         $orgSlug = $request->header('X-Organization-Slug') ?? $request->header('X-Organization-slug') ?? $request->route('organizationSlug');
-        
+
         $organization = null;
 
         if ($orgId) {

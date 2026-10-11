@@ -14,5 +14,4 @@ interface RecurringContractRepositoryInterface
     public function getStats(?int $venueId = null): array;
 
     public function cancelContract(int $id, ?string $reason = null): RecurringSeries;
-
 }

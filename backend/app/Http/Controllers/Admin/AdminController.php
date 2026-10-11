@@ -22,20 +22,21 @@ use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
 use App\Models\LegacyBookingMapping;
 use App\Models\LegacyBookingSlotMapping;
+use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
+use App\Models\Payment;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PosOrder;
+use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
-use App\Models\Payment;
-use App\Models\Refund;
 use App\Models\Venue;
 use App\Services\Infrastructure\AuditLogger;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
@@ -62,9 +63,9 @@ class AdminController extends Controller
         $isAdminRoute = $request->is('api/*/admin/venues');
         if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
             abort_unless($user->organizationMembers()->where('status', 'active')->whereIn('role', [
-                \App\Models\OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                \App\Models\OrganizationMember::ROLE_VENUE_MANAGER,
-                \App\Models\OrganizationMember::ROLE_STAFF,
+                OrganizationMember::ROLE_ORGANIZATION_OWNER,
+                OrganizationMember::ROLE_VENUE_MANAGER,
+                OrganizationMember::ROLE_STAFF,
             ])->exists(), 403, 'Unauthorized venue management.');
 
             $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
@@ -74,10 +75,11 @@ class AdminController extends Controller
                 ->with(['sportZones' => fn ($query) => $query->where('is_active', true)->withCount('courts')])
                 ->orderBy('id')
                 ->get();
+
             return response()->json($venues);
         }
 
-        $cacheKey = "venues:v{$version}:" . ($request->query('sport_type') ?? 'all');
+        $cacheKey = "venues:v{$version}:".($request->query('sport_type') ?? 'all');
         $venues = Cache::remember($cacheKey, 300, function () use ($request) {
             return $this->venues->getActiveVenuesWithCourts($request->query('sport_type'))->toArray();
         });
@@ -99,8 +101,8 @@ class AdminController extends Controller
         if ($user && ! $user->isPlatformAdmin()) {
             $orgId = $request->input('organization_id')
                 ?? $user->organizations()->where('organizations.status', 'active')->first()?->id;
-            abort_unless($orgId && $user->hasRoleInOrganization($orgId, [\App\Models\OrganizationMember::ROLE_ORGANIZATION_OWNER, \App\Models\OrganizationMember::ROLE_VENUE_MANAGER]), 403, 'Unauthorized organization.');
-            $organization = \App\Models\Organization::find($orgId);
+            abort_unless($orgId && $user->hasRoleInOrganization($orgId, [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER]), 403, 'Unauthorized organization.');
+            $organization = Organization::find($orgId);
             abort_unless($organization?->isApprovedPartner(), 403, 'Câu lạc bộ cần được phê duyệt đối tác trước khi tạo cơ sở.');
             $data['organization_id'] = $orgId;
             $data['status'] = 'draft';
@@ -460,6 +462,7 @@ class AdminController extends Controller
             ->groupBy('court_id')
             ->map(function ($items, $courtId) {
                 $court = $items->first()['court'] ?? ($courtId ? Court::find($courtId) : null);
+
                 return [
                     'court_id' => (int) $courtId,
                     'bookings' => $items->count(),
@@ -474,6 +477,7 @@ class AdminController extends Controller
                 ->groupBy('court_id')
                 ->map(function ($slots, $courtId) {
                     $court = Court::find($courtId);
+
                     return [
                         'court_id' => (int) $courtId,
                         'bookings' => $slots->count(),
@@ -548,7 +552,7 @@ class AdminController extends Controller
 
         // 2. POS orders
         foreach ($data['pos_orders'] as $pos) {
-            $code = $pos->payment_reference ?: (data_get($pos->metadata, 'code') ?: ('POS-' . $pos->id));
+            $code = $pos->payment_reference ?: (data_get($pos->metadata, 'code') ?: ('POS-'.$pos->id));
             $customer = $pos->customer?->email ?: ($pos->customer?->name ?: (data_get($pos->metadata, 'customer_name') ?: 'Guest'));
             $venueOrCourt = $pos->venue?->name ?: ($pos->shift?->venue?->name ?: ($pos->reservation?->court?->name ?: 'N/A'));
 
@@ -568,7 +572,7 @@ class AdminController extends Controller
 
         // 3. Owner refunds
         foreach ($data['owner_refunds_collection'] as $ref) {
-            $code = $ref->reference_code ?: ('REF-' . $ref->id);
+            $code = $ref->reference_code ?: ('REF-'.$ref->id);
             $customer = $ref->payer?->email ?: ($ref->payer?->name ?: 'N/A');
             $venueOrCourt = $ref->venue?->name ?: ($ref->reservation?->court?->venue?->name ?: ($ref->reservation?->court?->name ?: ($ref->booking?->court?->name ?: 'N/A')));
 
@@ -589,7 +593,7 @@ class AdminController extends Controller
         // 4. Platform subscriptions (only if user is platform admin)
         if ($data['is_platform_admin']) {
             foreach ($data['platform_attempts'] as $pa) {
-                $code = $pa->reference_code ?: ('SUB-' . $pa->id);
+                $code = $pa->reference_code ?: ('SUB-'.$pa->id);
                 $customer = $pa->organization?->name ?: ($pa->subscription?->organization?->name ?: 'Platform');
 
                 $csvRows->push([
@@ -675,7 +679,7 @@ class AdminController extends Controller
         $legacyMappings = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')
             ->where(function ($q) use ($v1Ids, $v2Ids) {
                 $q->whereIn('legacy_booking_id', $v1Ids)
-                  ->orWhereIn('reservation_id', $v2Ids);
+                    ->orWhereIn('reservation_id', $v2Ids);
             })
             ->get();
 
@@ -740,7 +744,7 @@ class AdminController extends Controller
             if ($matchedBooking) {
                 $mergedV1BookingIds[$matchedBooking->id] = true;
                 $canonicalBookings->push([
-                    'id' => 'v2_' . $res->id,
+                    'id' => 'v2_'.$res->id,
                     'code' => $res->code ?: $matchedBooking->code,
                     'status' => 'confirmed',
                     'total_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
@@ -756,7 +760,7 @@ class AdminController extends Controller
                 ]);
             } else {
                 $canonicalBookings->push([
-                    'id' => 'v2_' . $res->id,
+                    'id' => 'v2_'.$res->id,
                     'code' => $res->code,
                     'status' => $res->status,
                     'total_amount' => (int) $res->total_amount,
@@ -786,7 +790,7 @@ class AdminController extends Controller
 
             // 3. Otherwise push as standalone canonical booking
             $canonicalBookings->push([
-                'id' => 'v1_' . $b->id,
+                'id' => 'v1_'.$b->id,
                 'code' => $b->code,
                 'status' => $b->status,
                 'total_amount' => (int) $b->total_amount,
@@ -808,14 +812,14 @@ class AdminController extends Controller
             ->whereIn('status', ['completed', 'paid'])
             ->where(function ($q) use ($from, $to) {
                 $q->whereBetween('created_at', [$from, $to])
-                  ->orWhereBetween('completed_at', [$from, $to]);
+                    ->orWhereBetween('completed_at', [$from, $to]);
             });
 
         if ($scopedVenueIds !== null) {
             $posOrdersQuery->where(function ($q) use ($scopedVenueIds) {
                 $q->whereIn('venue_id', $scopedVenueIds)
-                  ->orWhereHas('shift', fn ($s) => $s->whereIn('venue_id', $scopedVenueIds))
-                  ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
+                    ->orWhereHas('shift', fn ($s) => $s->whereIn('venue_id', $scopedVenueIds))
+                    ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
             });
         }
 
@@ -830,8 +834,8 @@ class AdminController extends Controller
         if ($scopedVenueIds !== null) {
             $ownerRefundsQuery->where(function ($q) use ($scopedVenueIds) {
                 $q->whereIn('venue_id', $scopedVenueIds)
-                  ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds))
-                  ->orWhereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
+                    ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds))
+                    ->orWhereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
             });
         }
 
@@ -848,7 +852,7 @@ class AdminController extends Controller
                 ->where('status', 'succeeded')
                 ->where(function ($q) use ($from, $to) {
                     $q->whereBetween('created_at', [$from, $to])
-                      ->orWhereBetween('paid_at', [$from, $to]);
+                        ->orWhereBetween('paid_at', [$from, $to]);
                 });
 
             if ($scopedVenueIds !== null) {

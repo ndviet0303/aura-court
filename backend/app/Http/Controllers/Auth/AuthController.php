@@ -2,21 +2,26 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Auth\Actions\CompletePersonalOnboarding;
+use App\Domain\Auth\DTOs\CompletePersonalOnboardingData;
 use App\Http\Controllers\Controller;
-
+use App\Http\Requests\Auth\CompletePersonalOnboardingRequest;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use App\Domain\Auth\Actions\CompletePersonalOnboarding;
-use App\Domain\Auth\DTOs\CompletePersonalOnboardingData;
-use App\Http\Requests\Auth\CompletePersonalOnboardingRequest;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\AbstractProvider;
 
 class AuthController extends Controller
 {
@@ -33,7 +38,7 @@ class AuthController extends Controller
             'password_set' => true,
             'social_provider' => null,
         ]);
-        event(new \Illuminate\Auth\Events\Registered($user));
+        event(new Registered($user));
 
         Auth::login($user);
         try {
@@ -60,6 +65,7 @@ class AuthController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
             }
+
             return response()->json([
                 'message' => 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.',
                 'error' => 'account_restricted',
@@ -79,7 +85,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $token = $request->user()?->currentAccessToken();
-        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+        if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
         Auth::guard('web')->logout();
@@ -125,12 +131,14 @@ class AuthController extends Controller
 
         return response()->json(['message' => $message], 422);
     }
+
     public function changePassword(Request $request)
     {
         $user = $request->user();
         if (! $user->password_set) {
             $data = $request->validate(['password' => ['required', 'string', 'min:8', 'confirmed']]);
             $user->update(['password' => $data['password'], 'password_set' => true]);
+
             return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
         }
         $data = $request->validate([
@@ -138,6 +146,7 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
         $user->update(['password' => $data['password']]);
+
         return ['message' => 'Mật khẩu đã được cập nhật.', 'user' => $user->fresh()];
     }
 
@@ -153,11 +162,12 @@ class AuthController extends Controller
 
         if (in_array($host, ['ziet-mac', 'ziet-mac.local', '192.168.1.181'], true)) {
             $scheme = $request->getScheme();
-            $port = $request->getPort() ? ':' . $request->getPort() : ':8000';
+            $port = $request->getPort() ? ':'.$request->getPort() : ':8000';
+
             return "{$scheme}://{$host}{$port}/api/v1/auth/{$provider}/callback";
         }
 
-        return $configured ?: ($request->getSchemeAndHttpHost() . "/api/v1/auth/{$provider}/callback");
+        return $configured ?: ($request->getSchemeAndHttpHost()."/api/v1/auth/{$provider}/callback");
     }
 
     protected function resolveFrontendUrl(Request $request): string
@@ -185,14 +195,15 @@ class AuthController extends Controller
             return response()->json([
                 'url' => null,
                 'demo_mode' => true,
-                'message' => "Chưa cấu hình API credentials cho {$provider}."
+                'message' => "Chưa cấu hình API credentials cho {$provider}.",
             ]);
         }
 
         $redirectUri = $this->resolveOAuthRedirectUri($request, $provider);
 
-        /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
-        $driver = \Laravel\Socialite\Facades\Socialite::driver($provider);
+        /** @var AbstractProvider $driver */
+        $driver = Socialite::driver($provider);
+
         return response()->json(['url' => $driver->redirectUrl($redirectUri)->stateless()->redirect()->getTargetUrl()]);
     }
 
@@ -207,11 +218,11 @@ class AuthController extends Controller
         try {
             $redirectUri = $this->resolveOAuthRedirectUri($request, $provider);
 
-            /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
-            $driver = \Laravel\Socialite\Facades\Socialite::driver($provider);
+            /** @var AbstractProvider $driver */
+            $driver = Socialite::driver($provider);
             $socialUser = $driver->redirectUrl($redirectUri)->stateless()->user();
 
-            $email = $socialUser->getEmail() ?: ($socialUser->getId() . '@facebook.auracourt.vn');
+            $email = $socialUser->getEmail() ?: ($socialUser->getId().'@facebook.auracourt.vn');
             $name = Str::limit($socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete'), 255, '');
             $avatar = $socialUser->getAvatar();
             if ($avatar && strlen($avatar) > 2048) {
@@ -224,7 +235,7 @@ class AuthController extends Controller
                 $user = $this->createOAuthUser($name, $email, $provider, $avatar);
             } else {
                 if ($user->isRestricted()) {
-                    return redirect("{$frontendUrl}/login?error=account_restricted&msg=" . urlencode('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'));
+                    return redirect("{$frontendUrl}/login?error=account_restricted&msg=".urlencode('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'));
                 }
                 if ($avatar && (empty($user->avatar_url) || str_contains($user->avatar_url, 'athlete-'))) {
                     try {
@@ -251,14 +262,16 @@ class AuthController extends Controller
 
             return redirect("{$frontendUrl}/");
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('OAuth Callback Error: ' . $e->getMessage(), [
+            Log::error('OAuth Callback Error: '.$e->getMessage(), [
                 'provider' => $provider,
                 'trace' => $e->getTraceAsString(),
             ]);
             $userMessage = config('app.debug') ? $e->getMessage() : 'Đăng nhập mạng xã hội thất bại. Vui lòng thử lại sau.';
-            return redirect("{$frontendUrl}/login?error=oauth_failed&msg=" . urlencode($userMessage));
+
+            return redirect("{$frontendUrl}/login?error=oauth_failed&msg=".urlencode($userMessage));
         }
     }
+
     private function createOAuthUser(string $name, string $email, string $provider, ?string $avatar): User
     {
         $payload = [
@@ -268,7 +281,7 @@ class AuthController extends Controller
         ];
         try {
             $user = User::create($payload);
-        } catch (\Illuminate\Database\QueryException $qe) {
+        } catch (QueryException $qe) {
             if (str_contains($qe->getMessage(), '22001') || str_contains($qe->getMessage(), 'avatar_url')) {
                 $payload['avatar_url'] = null;
                 $user = User::create($payload);
@@ -278,6 +291,7 @@ class AuthController extends Controller
         }
         $user->email_verified_at = now();
         $user->save();
+
         return $user;
     }
 

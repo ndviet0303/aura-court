@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\Court;
 
-use App\Http\Controllers\Controller;
-
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Http\Controllers\Controller;
 use App\Models\SportZone;
-use App\Models\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
@@ -32,7 +30,7 @@ class SportZoneController extends Controller
         }
 
         $version = Cache::get('sport_zones_version', 1);
-        $cacheKey = "sport_zones:v{$version}:" . md5(json_encode([$isAdminRoute, $scopedVenueIds, $request->only(['sport_type'])]));
+        $cacheKey = "sport_zones:v{$version}:".md5(json_encode([$isAdminRoute, $scopedVenueIds, $request->only(['sport_type'])]));
 
         $zones = Cache::remember($cacheKey, 300, function () use ($request, $scopedVenueIds, $isAdminRoute) {
             return SportZone::query()

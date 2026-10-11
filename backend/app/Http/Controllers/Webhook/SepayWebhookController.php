@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
-
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 

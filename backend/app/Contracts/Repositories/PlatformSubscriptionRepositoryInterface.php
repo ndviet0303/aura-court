@@ -5,6 +5,7 @@ namespace App\Contracts\Repositories;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformProviderReceipt;
 use App\Models\PlatformSubscription;
+use Illuminate\Support\Collection;
 
 interface PlatformSubscriptionRepositoryInterface
 {
@@ -16,8 +17,7 @@ interface PlatformSubscriptionRepositoryInterface
 
     public function findLatestPaymentAttemptForOrganization(int $organizationId): ?PlatformPaymentAttempt;
 
-    public function getExpiredActiveSubscriptions(\DateTimeInterface $now): \Illuminate\Support\Collection;
-
+    public function getExpiredActiveSubscriptions(\DateTimeInterface $now): Collection;
 
     public function findById(int $id): ?PlatformSubscription;
 

@@ -18,6 +18,7 @@ class ReviewPhaseGate extends Command
         $evidence = $this->option('evidence') ? json_decode((string) $this->option('evidence'), true, flags: JSON_THROW_ON_ERROR) : [];
         $review = $gates->review((string) $this->argument('phase'), $ids, (bool) $this->option('rollback-verified'), $evidence, $this->option('reviewer'));
         $this->line(json_encode($review->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
         return $review->decision === 'go' ? self::SUCCESS : self::FAILURE;
     }
 }

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\POS\PosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -79,7 +80,7 @@ class LoyaltyPointExpiryTest extends TestCase
         try {
             app(PosService::class)->redeemPoints($organization->id, $customer->id, 300, 'pos_discount', 9);
             $this->fail('Expected 409 for overdrawing expired points.');
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertSame(409, $e->getStatusCode());
             $this->assertStringContainsString('Insufficient loyalty points', $e->getMessage());
         }

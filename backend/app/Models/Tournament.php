@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 class Tournament extends Model
 {
     use BelongsToTenant;
+
     protected $appends = ['entry_fee', 'max_participants'];
 
     public function getEntryFeeAttribute(): string
@@ -24,7 +25,6 @@ class Tournament extends Model
     {
         return (int) ($this->settings['max_participants'] ?? 16);
     }
-
 
     protected static function booted(): void
     {
@@ -81,6 +81,7 @@ class Tournament extends Model
     {
         return $this->hasMany(TournamentEvent::class);
     }
+
     public function grants(): HasMany
     {
         return $this->hasMany(TournamentGrant::class);
@@ -108,6 +109,7 @@ class Tournament extends Model
                 if ($requiredRole === 'official') {
                     return $q->whereIn('role', ['organizer', 'official']);
                 }
+
                 return $q->where('role', $requiredRole);
             })
             ->exists();

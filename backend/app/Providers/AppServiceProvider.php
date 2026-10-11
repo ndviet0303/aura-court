@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Contracts\Infrastructure\SubscriptionPaymentAdapterInterface;
 use App\Contracts\Payment\PaymentProviderInterface;
-use App\Services\Payment\PayOsPaymentProvider;
-use App\Services\Payment\PaymentProviderManager;
+use App\Infrastructure\Payment\ProviderNeutralSubscriptionPaymentAdapter;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\TenantContext;
+use App\Services\Payment\PaymentProviderManager;
+use App\Services\Payment\PayOsPaymentProvider;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
@@ -29,8 +31,8 @@ class AppServiceProvider extends ServiceProvider
             $app->make(PayOsPaymentProvider::class),
         ));
         $this->app->singleton(
-            \App\Contracts\Infrastructure\SubscriptionPaymentAdapterInterface::class,
-            \App\Infrastructure\Payment\ProviderNeutralSubscriptionPaymentAdapter::class
+            SubscriptionPaymentAdapterInterface::class,
+            ProviderNeutralSubscriptionPaymentAdapter::class
         );
     }
 

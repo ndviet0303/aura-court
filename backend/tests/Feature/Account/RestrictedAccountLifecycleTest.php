@@ -3,21 +3,24 @@
 namespace Tests\Feature\Account;
 
 use App\Models\Booking;
-use App\Models\Court;
-use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\PointLedger;
 use App\Models\Reservation;
+use App\Models\ReservationEntitlement;
+use App\Models\ReservationSlot;
+use App\Models\TenantCustomer;
 use App\Models\User;
-use App\Models\Venue;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Social\MarketplaceService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\AbstractProvider;
 use Laravel\Socialite\Two\User as SocialiteUser;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class RestrictedAccountLifecycleTest extends TestCase
@@ -178,7 +181,7 @@ class RestrictedAccountLifecycleTest extends TestCase
         $court = $fixture['org1']['court1'];
         $org = $fixture['org1']['org'];
         $staff = User::factory()->create(['status' => 'active', 'email_verified_at' => now()]);
-        \App\Models\OrganizationMember::create([
+        OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $staff->id,
             'role' => 'staff',
@@ -189,7 +192,7 @@ class RestrictedAccountLifecycleTest extends TestCase
             'status' => 'locked',
             'email_verified_at' => now(),
         ]);
-        \App\Models\TenantCustomer::create([
+        TenantCustomer::create([
             'organization_id' => $org->id,
             'user_id' => $customer->id,
             'name' => 'Locked Customer',
@@ -201,7 +204,7 @@ class RestrictedAccountLifecycleTest extends TestCase
 
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'test-walkin-' . uniqid(),
+            'Idempotency-Key' => 'test-walkin-'.uniqid(),
         ])->postJson('/api/v2/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
@@ -237,15 +240,15 @@ class RestrictedAccountLifecycleTest extends TestCase
 
         $seller = User::factory()->create(['status' => 'locked', 'email_verified_at' => now()]);
         $buyer = User::factory()->create(['status' => 'suspended', 'email_verified_at' => now()]);
-        $reservation = \App\Models\Reservation::create([
+        $reservation = Reservation::create([
             'organization_id' => $org->id,
             'user_id' => $seller->id,
             'court_id' => $fixture['org1']['court1']->id,
-            'code' => 'RES-TEST-' . uniqid(),
+            'code' => 'RES-TEST-'.uniqid(),
             'status' => 'confirmed',
             'total_amount' => 100000,
         ]);
-        $slot = \App\Models\ReservationSlot::create([
+        $slot = ReservationSlot::create([
             'organization_id' => $org->id,
             'reservation_id' => $reservation->id,
             'court_id' => $fixture['org1']['court1']->id,
@@ -255,7 +258,7 @@ class RestrictedAccountLifecycleTest extends TestCase
             'status' => 'confirmed',
         ]);
 
-        $entitlement = \App\Models\ReservationEntitlement::create([
+        $entitlement = ReservationEntitlement::create([
             'organization_id' => $org->id,
             'reservation_id' => $reservation->id,
             'reservation_slot_id' => $slot->id,
@@ -267,12 +270,12 @@ class RestrictedAccountLifecycleTest extends TestCase
             'amount' => 100000,
         ]);
 
-        $marketplace = app(\App\Services\Social\MarketplaceService::class);
+        $marketplace = app(MarketplaceService::class);
 
         try {
             $marketplace->list($entitlement, $seller, 100000);
             $this->fail('Restricted seller should be blocked from listing.');
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertEquals(403, $e->getStatusCode());
         }
 
@@ -281,9 +284,9 @@ class RestrictedAccountLifecycleTest extends TestCase
         $listing = $marketplace->list($entitlement, $seller, 100000);
 
         try {
-            $marketplace->purchase($listing, $buyer, 'idemp-' . uniqid(), 'pay-ref-' . uniqid());
+            $marketplace->purchase($listing, $buyer, 'idemp-'.uniqid(), 'pay-ref-'.uniqid());
             $this->fail('Restricted buyer should be blocked from purchasing.');
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertEquals(403, $e->getStatusCode());
         }
     }

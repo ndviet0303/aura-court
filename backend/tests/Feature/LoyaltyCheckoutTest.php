@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Domain\Booking\DTOs\CreateBookingData;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
@@ -11,7 +10,6 @@ use App\Models\LoyaltyRule;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
-use App\Models\PriceQuote;
 use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\SportZone;
@@ -19,12 +17,8 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
-use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Payment\WalletPaymentService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class LoyaltyCheckoutTest extends TestCase
@@ -35,8 +29,8 @@ class LoyaltyCheckoutTest extends TestCase
     private function setupCheckoutEnv(int $initialPoints = 2000, int $initialWallet = 500000): array
     {
         $org = Organization::create([
-            'name' => 'Loyalty Org ' . uniqid(),
-            'slug' => 'loyalty-org-' . uniqid(),
+            'name' => 'Loyalty Org '.uniqid(),
+            'slug' => 'loyalty-org-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
@@ -52,7 +46,7 @@ class LoyaltyCheckoutTest extends TestCase
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Loyalty Center',
-            'slug' => 'loyalty-center-' . uniqid(),
+            'slug' => 'loyalty-center-'.uniqid(),
             'is_active' => true,
             'status' => 'active',
         ]);

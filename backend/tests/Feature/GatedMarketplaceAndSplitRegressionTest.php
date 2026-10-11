@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\EntitlementTransfer;
 use App\Models\FinanceException;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\Reservation;
-use App\Models\ReservationEntitlement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\SplitPaymentService;
@@ -144,6 +142,7 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
             ['amount' => 50000],
         ]);
     }
+
     public function test_marketplace_resale_and_successful_entitlement_transfer(): void
     {
         [$organization, $seller, $court, $reservation] = $this->setupTenantAndReservation(enablePilot: false);

@@ -16,6 +16,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+
 class E2EArrangeTestDataCommand extends Command
 {
     protected $signature = 'e2e:arrange-test-data
@@ -30,6 +31,7 @@ class E2EArrangeTestDataCommand extends Command
         $runId = trim((string) $this->option('run-id'));
         if ($runId === '' || ! preg_match('/^[a-zA-Z0-9_-]+$/', $runId)) {
             $this->error('CRITICAL: Missing or invalid --run-id');
+
             return self::FAILURE;
         }
 
@@ -37,6 +39,7 @@ class E2EArrangeTestDataCommand extends Command
         $env = app()->environment();
         if ($env !== 'testing' && $env !== 'local') {
             $this->error("CRITICAL: Refusing to mutate target in environment '{$env}'. Only 'testing' or 'local' allowed.");
+
             return self::FAILURE;
         }
 
@@ -47,6 +50,7 @@ class E2EArrangeTestDataCommand extends Command
         $allowedHosts = ['127.0.0.1', 'localhost', '::1', 'bt-server', '100.64.0.15', (string) config('database.connections.'.config('database.default').'.host')];
         if (! in_array($dbHost, $allowedHosts, true)) {
             $this->error("CRITICAL: Refusing remote target '{$dbHost}'.");
+
             return self::FAILURE;
         }
 
@@ -55,11 +59,13 @@ class E2EArrangeTestDataCommand extends Command
             $expectedDb = "booking_e2e_{$runId}_test";
             if ($dbName === 'booking' || $dbName === 'booking_test') {
                 $this->error("CRITICAL: Refusing to arrange test data in protected database '{$dbName}'.");
+
                 return self::FAILURE;
             }
 
             if ($dbName !== $expectedDb) {
                 $this->error("CRITICAL: Active database '{$dbName}' does not match expected '{$expectedDb}'.");
+
                 return self::FAILURE;
             }
         }
@@ -74,6 +80,7 @@ class E2EArrangeTestDataCommand extends Command
             }
             if (! Organization::whereKey($organizationId)->where('settings->e2e_run_id', $runId)->exists()) {
                 $this->error('Production arrangement is restricted to the current run-owned test organization.');
+
                 return self::FAILURE;
             }
         }
@@ -90,6 +97,7 @@ class E2EArrangeTestDataCommand extends Command
                     return $this->arrangePosStock($runId, $payload);
                 default:
                     $this->error("Unknown scenario: {$scenario}");
+
                     return self::FAILURE;
             }
         });
@@ -97,10 +105,10 @@ class E2EArrangeTestDataCommand extends Command
 
     private function arrangeCourt(string $runId, array $payload): int
     {
-        $testKey = $payload['test_key'] ?? 'test_' . uniqid();
+        $testKey = $payload['test_key'] ?? 'test_'.uniqid();
         $venueId = $payload['venue_id'] ?? null;
         if (! $venueId) {
-            $venue = Venue::where('slug', 'like', "%venue-1a%")->first() ?: Venue::firstOrFail();
+            $venue = Venue::where('slug', 'like', '%venue-1a%')->first() ?: Venue::firstOrFail();
             $venueId = $venue->id;
         } else {
             $venue = Venue::findOrFail($venueId);
@@ -108,7 +116,7 @@ class E2EArrangeTestDataCommand extends Command
 
         $basePrice = (int) ($payload['price'] ?? 100000);
         $courtName = "Court {$testKey} {$runId}";
-        $courtSlug = "court-" . Str::slug($testKey) . "-{$runId}-" . Str::lower(Str::random(6));
+        $courtSlug = 'court-'.Str::slug($testKey)."-{$runId}-".Str::lower(Str::random(6));
         $court = Court::create([
             'venue_id' => $venue->id,
             'name' => $courtName,
@@ -143,7 +151,7 @@ class E2EArrangeTestDataCommand extends Command
             }
         }
         CourtPriceSlot::insert($slots);
-        \Illuminate\Support\Facades\Cache::increment('courts_version');
+        Cache::increment('courts_version');
 
         $out = [
             'status' => 'success',
@@ -156,19 +164,20 @@ class E2EArrangeTestDataCommand extends Command
         ];
 
         $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
         return self::SUCCESS;
     }
 
     private function arrangeCoupon(string $runId, array $payload): int
     {
-        $testKey = $payload['test_key'] ?? 'CPN_' . strtoupper(uniqid());
+        $testKey = $payload['test_key'] ?? 'CPN_'.strtoupper(uniqid());
         $orgId = $payload['organization_id'] ?? null;
         if (! $orgId) {
-            $org = Organization::where('slug', 'like', "%aura-primary%")->first() ?: Organization::firstOrFail();
+            $org = Organization::where('slug', 'like', '%aura-primary%')->first() ?: Organization::firstOrFail();
             $orgId = $org->id;
         }
 
-        $defaultCode = "CPN_" . substr(strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $testKey)), 0, 16) . "_" . substr($runId, -8) . "_" . Str::upper(Str::random(4));
+        $defaultCode = 'CPN_'.substr(strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $testKey)), 0, 16).'_'.substr($runId, -8).'_'.Str::upper(Str::random(4));
         $code = strtoupper(preg_replace('/[^a-zA-Z0-9_-]/', '', $payload['code'] ?? $defaultCode));
         if (strlen($code) > 36) {
             $code = substr($code, 0, 36);
@@ -205,6 +214,7 @@ class E2EArrangeTestDataCommand extends Command
         ];
 
         $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
         return self::SUCCESS;
     }
 
@@ -218,7 +228,7 @@ class E2EArrangeTestDataCommand extends Command
 
         $orgId = $payload['organization_id'] ?? null;
         if (! $orgId) {
-            $org = Organization::where('slug', 'like', "%aura-primary%")->first() ?: Organization::firstOrFail();
+            $org = Organization::where('slug', 'like', '%aura-primary%')->first() ?: Organization::firstOrFail();
             $orgId = $org->id;
         }
 
@@ -265,15 +275,16 @@ class E2EArrangeTestDataCommand extends Command
         ];
 
         $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
         return self::SUCCESS;
     }
 
     private function arrangePosStock(string $runId, array $payload): int
     {
-        $testKey = $payload['test_key'] ?? 'pos_' . uniqid();
+        $testKey = $payload['test_key'] ?? 'pos_'.uniqid();
         $orgId = $payload['organization_id'] ?? null;
         if (! $orgId) {
-            $org = Organization::where('slug', 'like', "%aura-primary%")->first() ?: Organization::firstOrFail();
+            $org = Organization::where('slug', 'like', '%aura-primary%')->first() ?: Organization::firstOrFail();
             $orgId = $org->id;
         }
 
@@ -311,6 +322,7 @@ class E2EArrangeTestDataCommand extends Command
         ];
 
         $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
         return self::SUCCESS;
     }
 }

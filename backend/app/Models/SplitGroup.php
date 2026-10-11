@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\Payment\OwnerPaymentAttemptService;
+use App\Services\Payment\ReservationPaymentService;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -12,16 +14,32 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SplitGroup extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['expected_amount' => 'integer', 'paid_amount' => 'integer', 'expires_at' => 'datetime', 'host_covers_shortfall' => 'boolean', 'confirmed_at' => 'datetime']; }
+
+    protected function casts(): array
+    {
+        return ['expected_amount' => 'integer', 'paid_amount' => 'integer', 'expires_at' => 'datetime', 'host_covers_shortfall' => 'boolean', 'confirmed_at' => 'datetime'];
+    }
+
     protected $appends = ['coverage_payment_attempt'];
 
-    public function reservation(): BelongsTo { return $this->belongsTo(Reservation::class); }
-    public function host(): BelongsTo { return $this->belongsTo(User::class, 'host_user_id'); }
-    public function shares(): HasMany { return $this->hasMany(SplitShare::class); }
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
+    }
+
+    public function host(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'host_user_id');
+    }
+
+    public function shares(): HasMany
+    {
+        return $this->hasMany(SplitShare::class);
+    }
 
     public function coveragePaymentAttempt(): ?OwnerPaymentAttempt
     {
-        return app(\App\Services\Payment\OwnerPaymentAttemptService::class)->latestForPurpose(
+        return app(OwnerPaymentAttemptService::class)->latestForPurpose(
             'split_share',
             'split_group:'.$this->id.':coverage'
         );
@@ -31,6 +49,6 @@ class SplitGroup extends Model
     {
         $attempt = $this->coveragePaymentAttempt();
 
-        return $attempt ? app(\App\Services\Payment\ReservationPaymentService::class)->instructions($attempt) : null;
+        return $attempt ? app(ReservationPaymentService::class)->instructions($attempt) : null;
     }
 }

@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Cache;
 
 class Organization extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',
@@ -22,6 +25,7 @@ class Organization extends Model
         'source_kyc_id',
         'settings',
     ];
+
     protected $casts = [
         'settings' => 'array',
         'partner_status_changed_at' => 'datetime',
@@ -42,10 +46,11 @@ class Organization extends Model
     protected static function booted(): void
     {
         static::saved(function () {
-            \Illuminate\Support\Facades\Cache::increment('courts_version');
-            \Illuminate\Support\Facades\Cache::increment('venues_version');
+            Cache::increment('courts_version');
+            Cache::increment('venues_version');
         });
     }
+
     public function getSupportEmailAttribute(): ?string
     {
         return $this->settings['support_email'] ?? null;
@@ -105,10 +110,12 @@ class Organization extends Model
     {
         return $this->hasMany(OrganizationMember::class);
     }
+
     public function invitations(): HasMany
     {
         return $this->hasMany(OrganizationInvitation::class);
     }
+
     public function customers(): HasMany
     {
         return $this->hasMany(TenantCustomer::class);
@@ -120,6 +127,7 @@ class Organization extends Model
             ->withPivot(['role', 'permissions', 'status'])
             ->withTimestamps();
     }
+
     public function owner()
     {
         return $this->hasOneThrough(
@@ -138,10 +146,11 @@ class Organization extends Model
         if ($role) {
             $query->where('role', $role);
         }
+
         return $query->exists();
     }
 
-    public function sourceKyc(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function sourceKyc(): BelongsTo
     {
         return $this->belongsTo(HostKyc::class, 'source_kyc_id');
     }
@@ -161,12 +170,12 @@ class Organization extends Model
         return $this->partner_status === 'terminated';
     }
 
-    public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function subscriptions(): HasMany
     {
         return $this->hasMany(PlatformSubscription::class);
     }
 
-    public function activeSubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function activeSubscription(): HasOne
     {
         return $this->hasOne(PlatformSubscription::class)
             ->whereIn('status', ['active', 'trial'])

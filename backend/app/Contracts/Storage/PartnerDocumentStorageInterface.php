@@ -3,6 +3,7 @@
 namespace App\Contracts\Storage;
 
 use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 interface PartnerDocumentStorageInterface
 {
@@ -23,10 +24,11 @@ interface PartnerDocumentStorageInterface
      * Generate a scoped temporary URL for authorized reading.
      */
     public function temporaryReadUrl(string $filePath, int $expirationMinutes = 15): string;
+
     /**
      * Stream download response for a private file.
      */
-    public function downloadResponse(string $filePath, ?string $fileName = null): \Symfony\Component\HttpFoundation\StreamedResponse;
+    public function downloadResponse(string $filePath, ?string $fileName = null): StreamedResponse;
 
     /**
      * Delete a private document file from storage.

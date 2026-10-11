@@ -11,7 +11,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RecurringOccurrence extends Model
 {
     use BelongsToTenant;
-    protected function casts(): array { return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'amount' => 'integer', 'released_at' => 'datetime']; }
-    public function series(): BelongsTo { return $this->belongsTo(RecurringSeries::class, 'recurring_series_id'); }
-    public function reservation(): BelongsTo { return $this->belongsTo(Reservation::class); }
+
+    protected function casts(): array
+    {
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'amount' => 'integer', 'released_at' => 'datetime'];
+    }
+
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(RecurringSeries::class, 'recurring_series_id');
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
+    }
 }

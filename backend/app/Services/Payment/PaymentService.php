@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Services\Payment;
+
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Domain\Payment\Actions\ProcessQrPayment;
 use App\Models\Booking;
-use App\Notifications\AuraBookingNotification;
 use App\Services\Finance\FinancialPostingService;
 use Illuminate\Support\Facades\Log;
 

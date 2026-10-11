@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosProduct;
-use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,8 +14,11 @@ class PosProductStockMovementCrudTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenantA;
+
     private Organization $tenantB;
+
     private User $managerA;
+
     private User $cashierA;
 
     protected function setUp(): void
@@ -25,13 +27,13 @@ class PosProductStockMovementCrudTest extends TestCase
 
         $this->tenantA = Organization::create([
             'name' => 'Aura Arena Tenant A',
-            'slug' => 'aura-a-' . uniqid(),
+            'slug' => 'aura-a-'.uniqid(),
             'status' => 'active',
         ]);
 
         $this->tenantB = Organization::create([
             'name' => 'Aura Arena Tenant B',
-            'slug' => 'aura-b-' . uniqid(),
+            'slug' => 'aura-b-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -64,7 +66,7 @@ class PosProductStockMovementCrudTest extends TestCase
     {
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'prod-create-' . uniqid(),
+            'Idempotency-Key' => 'prod-create-'.uniqid(),
         ];
 
         // 1. Create Product
@@ -111,7 +113,7 @@ class PosProductStockMovementCrudTest extends TestCase
         $updateRes = $this->actingAs($this->managerA)->putJson("/api/v2/pos/products/{$productId}", [
             'name' => 'Quấn cán Yonex Super Grap AC102EX',
             'price' => 38000,
-        ], array_merge($headers, ['Idempotency-Key' => 'prod-upd-' . uniqid()]));
+        ], array_merge($headers, ['Idempotency-Key' => 'prod-upd-'.uniqid()]));
 
         $updateRes->assertOk()
             ->assertJsonPath('product.name', 'Quấn cán Yonex Super Grap AC102EX')
@@ -201,7 +203,7 @@ class PosProductStockMovementCrudTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->tenantA->id,
-            'Idempotency-Key' => 'adj-' . uniqid(),
+            'Idempotency-Key' => 'adj-'.uniqid(),
         ];
 
         // 1. Inflow / Receipt adjustment: +10 units
@@ -228,7 +230,7 @@ class PosProductStockMovementCrudTest extends TestCase
             'quantity_delta' => -5,
             'type' => 'disposal',
             'note' => 'Hàng mẫu và hàng hỏng',
-        ], array_merge($headers, ['Idempotency-Key' => 'adj-out-' . uniqid()]));
+        ], array_merge($headers, ['Idempotency-Key' => 'adj-out-'.uniqid()]));
 
         $outRes->assertOk()
             ->assertJsonPath('product.stock_quantity', 20);
@@ -237,7 +239,7 @@ class PosProductStockMovementCrudTest extends TestCase
         $overflowRes = $this->actingAs($this->managerA)->postJson("/api/v2/pos/products/{$product->id}/stock", [
             'quantity_delta' => -50,
             'type' => 'disposal',
-        ], array_merge($headers, ['Idempotency-Key' => 'adj-overflow-' . uniqid()]));
+        ], array_merge($headers, ['Idempotency-Key' => 'adj-overflow-'.uniqid()]));
 
         $overflowRes->assertStatus(409)
             ->assertJsonFragment(['message' => 'Insufficient stock.']);

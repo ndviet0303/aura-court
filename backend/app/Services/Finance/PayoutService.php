@@ -2,14 +2,12 @@
 
 namespace App\Services\Finance;
 
-use App\Services\Payment\ProviderOperationService;
-
 use App\Contracts\Payment\PayoutInstruction;
+use App\Models\Beneficiary;
 use App\Models\FinanceException;
 use App\Models\Payout;
-use App\Models\Beneficiary;
 use App\Models\Settlement;
-use Illuminate\Support\Facades\DB;
+use App\Services\Payment\ProviderOperationService;
 
 class PayoutService
 {
@@ -44,6 +42,7 @@ class PayoutService
         abort_unless($payout->amount >= (int) config('finance.minimum_payout', 500000), 422, 'Payout is below the minimum threshold.');
         abort_unless($payout->beneficiary?->status === 'verified', 422, 'Beneficiary verification is required.');
         $payout->update(['status' => 'approved', 'approved_at' => now()]);
+
         return $payout->fresh(['settlement', 'beneficiary']);
     }
 
@@ -66,6 +65,7 @@ class PayoutService
             'status' => 'submitted',
             'submitted_at' => now(),
         ]);
+
         return $payout->fresh(['settlement', 'beneficiary']);
     }
 
@@ -110,6 +110,7 @@ class PayoutService
             ]);
         }
         $payout->update($attributes);
+
         return $payout->fresh(['settlement', 'beneficiary']);
     }
 }

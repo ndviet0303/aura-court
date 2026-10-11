@@ -15,10 +15,15 @@ class MatchInvitationAndResponseTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $host;
+
     private User $player1;
+
     private User $player2;
+
     private User $stranger;
+
     private MatchPost $match;
 
     protected function setUp(): void
@@ -27,7 +32,7 @@ class MatchInvitationAndResponseTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Matchmaking Arena',
-            'slug' => 'aura-match-' . uniqid(),
+            'slug' => 'aura-match-'.uniqid(),
             'status' => 'active',
         ]);
 

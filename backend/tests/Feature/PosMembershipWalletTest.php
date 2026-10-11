@@ -7,7 +7,6 @@ use App\Models\LoyaltyRule;
 use App\Models\MembershipEntitlement;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PointLedger;
 use App\Models\PosProduct;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
@@ -16,6 +15,7 @@ use App\Models\Venue;
 use App\Services\POS\PosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class PosMembershipWalletTest extends TestCase
@@ -24,7 +24,7 @@ class PosMembershipWalletTest extends TestCase
 
     public function test_offline_pos_cannot_finalize_payment_or_inventory(): void
     {
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         app(PosService::class)->completeOrder(User::factory()->create(), 1, ['offline' => true]);
     }
 
@@ -43,7 +43,7 @@ class PosMembershipWalletTest extends TestCase
     {
         [$organization, $customer] = $this->tenant();
         app(PosService::class)->creditWallet($organization->id, $customer->id, 100000, 'test', 1, 'wallet-credit-1');
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         app(PosService::class)->spendWallet($organization->id, $customer->id, 100001, 'wallet-spend-1');
     }
 
@@ -99,6 +99,7 @@ class PosMembershipWalletTest extends TestCase
             'coupon_code' => 'EXPIRED20',
         ]);
     }
+
     public function test_server_side_coupon_and_tenant_membership_applied_in_pos(): void
     {
         [$organization, $cashier] = $this->tenant();
@@ -316,7 +317,7 @@ class PosMembershipWalletTest extends TestCase
         try {
             $pos->redeemPoints($organization->id, $customer->id, 500, 'pos_discount', 103);
             $this->fail('Expected 409 exception for insufficient points.');
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertSame(409, $e->getStatusCode());
             $this->assertStringContainsString('Insufficient loyalty points', $e->getMessage());
         }
@@ -336,6 +337,7 @@ class PosMembershipWalletTest extends TestCase
         $cashier = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $cashier->id, 'role' => 'cashier', 'status' => 'active']);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.tenant_pos_and_wallet' => true]);
+
         return [$organization, $cashier];
     }
 }

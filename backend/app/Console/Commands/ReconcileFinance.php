@@ -20,6 +20,7 @@ class ReconcileFinance extends Command
         }
         $query->pluck('id')->each(fn (int $id) => RunDailyReconciliation::dispatchSync($id));
         $this->info('Finance reconciliation completed.');
+
         return self::SUCCESS;
     }
 }

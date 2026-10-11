@@ -24,6 +24,7 @@ class VerifyEffectiveBookingEligibility
 
         return $this->entitlementCache[$orgId];
     }
+
     public function execute(Court|int $court): array
     {
         $courtModel = $court instanceof Court

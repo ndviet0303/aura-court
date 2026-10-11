@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Partner;
 
+use App\Models\HostKyc;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -70,7 +71,7 @@ class PartnerApplicationCorrectionJourneyTest extends TestCase
         $parts = parse_url($readUrl);
         $this->get($parts['path'].'?'.$parts['query'])->assertOk();
 
-        $application = \App\Models\HostKyc::findOrFail($applicationId);
+        $application = HostKyc::findOrFail($applicationId);
         $consents = array_map(fn (string $type) => [
             'consent_type' => $type,
             'terms_version' => '2026.1',
@@ -108,7 +109,7 @@ class PartnerApplicationCorrectionJourneyTest extends TestCase
             'expected_version' => $current['version'],
         ])->assertOk();
 
-        $updated = \App\Models\HostKyc::findOrFail($applicationId);
+        $updated = HostKyc::findOrFail($applicationId);
         $this->postJson("{$applicationPath}/submit", [
             'expected_version' => $updated->version,
             'consents' => $consents,

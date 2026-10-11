@@ -15,6 +15,7 @@ class EnsureFeatureEnabled
     public function handle(Request $request, Closure $next, string $flag): Response
     {
         $this->features->assertEnabled($flag, $this->tenantContext->getOrganizationId());
+
         return $next($request);
     }
 }

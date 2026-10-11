@@ -3,7 +3,6 @@
 namespace App\Services\Reservation;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
-use App\Services\Booking\DiscountService;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
@@ -12,6 +11,7 @@ use App\Models\PriceQuote;
 use App\Models\PriceRule;
 use App\Models\ReservationSlot;
 use App\Models\User;
+use App\Services\Booking\DiscountService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

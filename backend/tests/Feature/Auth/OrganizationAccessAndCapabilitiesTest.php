@@ -55,6 +55,7 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
         $this->getJson('/api/v2/attendance/SOME_CODE')
             ->assertStatus(400); // Organization context required
     }
+
     public function test_approved_owner_has_customer_role_and_scoped_owner_capabilities(): void
     {
         $ownerUser = User::factory()->create([

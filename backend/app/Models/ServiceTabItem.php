@@ -17,7 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ServiceTabItem extends Model
 {
     public const STATUS_RESERVED = 'reserved';
+
     public const STATUS_SETTLED = 'settled';
+
     public const STATUS_RELEASED = 'released';
 
     protected function casts(): array

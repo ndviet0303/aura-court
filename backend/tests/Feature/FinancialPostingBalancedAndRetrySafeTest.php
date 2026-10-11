@@ -23,18 +23,23 @@ class FinancialPostingBalancedAndRetrySafeTest extends TestCase
     use RefreshDatabase;
 
     private FinancialPostingService $financials;
+
     private Organization $organization;
+
     private Venue $venue;
+
     private Court $court;
+
     private User $user;
+
     private WalletAccount $wallet;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->financials = app(FinancialPostingService::class);
-        $this->organization = Organization::create(['name' => 'Finance Test Org', 'slug' => 'fin-org-' . uniqid()]);
-        $this->venue = Venue::create(['organization_id' => $this->organization->id, 'name' => 'Finance Venue', 'slug' => 'fin-ven-' . uniqid(), 'is_active' => true]);
+        $this->organization = Organization::create(['name' => 'Finance Test Org', 'slug' => 'fin-org-'.uniqid()]);
+        $this->venue = Venue::create(['organization_id' => $this->organization->id, 'name' => 'Finance Venue', 'slug' => 'fin-ven-'.uniqid(), 'is_active' => true]);
         $this->court = Court::create(['venue_id' => $this->venue->id, 'name' => 'Court A', 'is_active' => true]);
         $this->user = User::factory()->create();
         $this->wallet = WalletAccount::create([
