@@ -14,17 +14,26 @@
 
 ## 2. Format toàn repo
 
-- [ ] 2.1 Chạy `vendor/bin/pint` trong `backend/` và commit riêng, commit chỉ chứa output của Pint. Sau đó `vendor/bin/pint --test` pass.
-- [ ] 2.2 Sửa script Prettier:
+- [x] 2.1 Chạy `vendor/bin/pint` trong `backend/` và commit riêng, commit chỉ chứa output của Pint. Sau đó `vendor/bin/pint --test` pass.
+  - Đã làm: commit `897118f`. Bộ PHPUnit trước và sau Pint có cùng 21 test fail, đều fail sẵn trên `main`.
+- [x] 2.2 Sửa script Prettier:
   - mở rộng `format` sang `src/`, `e2e/` và các file config ở gốc `frontend/`;
   - thêm `format:check` với cùng phạm vi.
-- [ ] 2.3 Chạy `npm run format` và commit riêng. Sau đó `npm run format:check` pass.
-- [ ] 2.4 Sau commit format, xác nhận:
+  - Đã làm: cả `format` cũng chạy `--no-cache`. Cache của experimental CLI bỏ qua lượt thứ hai, nên file cần hai lượt format không bao giờ hội tụ.
+- [x] 2.3 Chạy `npm run format` và commit riêng. Sau đó `npm run format:check` pass.
+  - Đã làm: commit `d426dfc`, gồm 502 file.
+  - Trước đó tách 8 handler inline nhiều câu lệnh thành hàm, ở commit riêng `8eb81dc`. Với `semi: false`, Prettier xuống dòng các handler này mà không có `;`, và compiler của Vue báo lỗi.
+- [x] 2.4 Sau commit format, xác nhận:
   - `npm run type-check`, `npm run test:unit -- --run` và `npm run build-only` đều pass;
   - smoke các màn booking, admin và partner không lệch layout.
-- [ ] 2.5 Tạo `.git-blame-ignore-revs`:
+  - Đã làm:
+    - type-check, 386 unit test và build-only đều pass.
+    - Spec kiến trúc scoped cũ fail trên code đã format, nên phần frontend của nhóm 5 được làm sớm (commit `c71fe28`), xem design §6.
+    - Thay smoke tay bằng so sánh toàn bộ build trước/sau format (design §2): CSS giống hệt, 22 chunk JS chỉ khác khoảng trắng ở mép text, không màn nào đổi hiển thị.
+- [x] 2.5 Tạo `.git-blame-ignore-revs`:
   - chứa SHA của hai commit format;
   - có comment hướng dẫn `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+  - Lưu ý: nếu MR được squash hoặc rebase thì SHA đổi, phải cập nhật file này sau khi merge.
 
 ## 3. Sửa lint frontend
 
@@ -79,19 +88,23 @@
   - vượt ceiling thì fail;
   - entry đã về dưới giới hạn (stale) thì fail.
 - [ ] 5.3 Sinh allowlist backend từ lần chạy đầu sau commit Pint. Sau đó `vendor/bin/phpunit tests/Unit/Architecture` pass mà không cần database.
-- [ ] 5.4 Tạo `frontend/src/__tests__/architecture.spec.ts` và allowlist cùng thư mục, quét toàn `src/` với các luật:
+- [x] 5.4 Tạo `frontend/src/__tests__/architecture.spec.ts` và allowlist cùng thư mục, quét toàn `src/` với các luật:
   - view ≤ 250 dòng, phần script ≤ 200 dòng;
   - component ≤ 400 dòng;
   - không import raw API client hoặc `@/stores/` từ `.vue`;
   - không thêm store mới vào `src/stores/`;
   - route phải lazy-load.
-- [ ] 5.5 Sinh allowlist frontend từ lần chạy đầu sau commit Prettier. Sau đó `npm run test:unit -- --run` pass.
+  - Đã làm: cách đo từng luật ghi ở design §6. Spec scoped cũ `src/features/__tests__/architecture.spec.ts` đã bị xoá cùng script.
+- [x] 5.5 Sinh allowlist frontend từ lần chạy đầu sau commit Prettier. Sau đó `npm run test:unit -- --run` pass.
+  - Đã làm: 172 entry. Gồm 101 component, 36 view, 2 phần script của view, 21 file import legacy store, 6 file import raw API, 5 legacy store và 1 router có 17 route eager.
 - [ ] 5.6 Kiểm chứng ratchet trên cả hai stack:
   - thêm một dòng vào file đang ở đúng ceiling thì fail;
   - một component mới dài 401 dòng thì fail;
   - một file đã đạt chuẩn mà vẫn còn entry thì fail;
   - hoàn tác các thay đổi thử.
+  - Frontend đã kiểm chứng: cả ba trường hợp trên đều fail; thêm store mới hoặc route eager mới cũng fail. Còn backend.
 - [ ] 5.7 Xoá `backend/scripts/check-backend-architecture.php` và `frontend/scripts/check-frontend-architecture.mjs`. Grep xác nhận không còn tham chiếu.
+  - Frontend đã xoá cả script lẫn spec scoped cũ (commit `c71fe28`). Còn script backend.
 
 ## 6. Tooling và tài liệu
 

@@ -26,7 +26,7 @@ See `proposal.md` (Why) for motivation. This section covers the current state an
   - Covers only Partner/Subscription controllers and Partner/Subscription/Venue actions and DTOs.
   - Model-query detection uses a hard-coded list of 8 models.
 - Backend PHP script: its docblock promises checks it does not implement.
-- Frontend script: covers only 2 features.
+- Frontend script and Vitest spec (`src/features/__tests__/architecture.spec.ts`): both cover only 2 features, with a 300-line component limit. The spec runs in `test:unit`, so it gates CI today.
 
 **Debt measured on 2026-10-11:**
 
@@ -40,7 +40,7 @@ See `proposal.md` (Why) for motivation. This section covers the current state an
 | Larastan level 0 | 18 (17 with casts parsing) | 0, never baselined |
 | Larastan level 5 | 1,343 (1,057 with casts parsing) | ~1,030 in baseline |
 | Backend architecture, repo-wide (after Pint) | 31 classes > 300 lines; 15 controllers > 7 public methods; 29 controllers with inline validation; 31/49 controllers and 17 domain files query models | allowlisted with ceilings |
-| Frontend architecture, repo-wide (after Prettier) | 36/52 views > 250 lines; 103/271 components > 400 lines; 36 legacy store imports; 13 raw API client imports | allowlisted with ceilings |
+| Frontend architecture, repo-wide (after Prettier) | 36/52 views > 250 lines; 2 view scripts > 200 lines; 101/271 components > 400 lines; 21 `.vue` files import legacy stores; 6 import the raw API client; 5 legacy stores; 17 eager routes | 172 allowlist entries with ceilings |
 | Locale parity | 3,638 keys per locale, 0 missing | enforced by unit test |
 
 **Larastan reads casts only from the `casts()` return type by default.** The 96 models here declare `casts(): array` without an array shape, so `datetime` and `array` casts are invisible to it. Probes showed `Tournament::$settings` as `string|null` and `SplitGroup::$expires_at` as `string`. With `parseModelCastsMethod: true`:
@@ -82,9 +82,20 @@ Alternatives considered:
 - The Pint commit (backend) and the Prettier commit (frontend) contain only formatter output.
 - Both SHAs go into `.git-blame-ignore-revs`.
 - They land back-to-back, right before the baselines. Open branches rebase once and re-run the formatter instead of resolving formatting conflicts by hand.
-- Prettier is safe on Vue templates here because the compiler uses the default `condense` whitespace mode.
 - `V2ReservationQrModal.vue` must be fixed first, because Prettier cannot parse it.
 - Prettier scope is `src/`, `e2e/` and the root config files. `format` and the new `format:check` target the same paths.
+- Both scripts pass `--no-cache`. With its cache on, the experimental CLI skipped the second pass that `ArbitrationDrawer.vue` needs, so `format` never converged.
+
+**What applying Prettier to the templates turned up:**
+
+- **Multi-statement inline handlers.** With `semi: false`, Prettier puts each statement on its own line without `;`, and the Vue compiler then fails to parse the handler. The 8 affected handlers moved into functions in a commit before the format commit, so the format commit stays formatter output only.
+- **Edge whitespace in text.** Condense mode keeps a single space where Prettier wraps text onto its own line. 119 text nodes gained a leading or trailing space.
+  - Every one sits at the start of a first child or the end of a last child of a `p`, `li`, `div`, `h1`/`h3`/`h4` (block) or `button` (inline-block). CSS drops such spaces at line edges.
+  - No rule gives those elements `white-space: pre*`, `display: inline`/`contents`, or `::before`/`::after` content, which would make the spaces visible.
+- **Verification, used in place of a manual smoke test.** It covers every screen instead of a sample:
+  - template ASTs compared before and after: only those edge spaces differ;
+  - script, TS and JSON ASTs compared: the only differences are equivalent, either `;` ASI guards or regrouped `&&`/`||`/`??` chains;
+  - production builds compared after normalizing content hashes and scope ids: CSS is identical, and 22 JS chunks differ only in whitespace inside strings.
 
 Alternative considered: format-on-touch. It never converges, and every diff mixes formatting with logic.
 
@@ -152,6 +163,12 @@ Alternatives considered:
 **How a rule is measured.**
 - Each rule yields one number per file: lines, script lines, public methods or occurrences.
 - A file violates the rule when its number exceeds the rule's limit.
+- Frontend definitions (files under `__tests__/` are skipped):
+  - A view is a `.vue` file under a `views/` directory; every other `.vue` file is a component.
+  - Lines are editor lines; a trailing newline does not add one. Script lines are the lines inside all `<script>` blocks.
+  - Raw API and legacy store imports are import specifiers, `@/` or relative, that resolve to `core/api/client`, `lib/api` (its re-export), or under `stores/`.
+  - Each file in `src/stores/` counts 1 against a limit of 0, so the existing stores are allowlisted and a new one fails.
+  - A router file counts each `component:` bound to a statically imported `.vue` file as an eager route.
 
 **Allowlist semantics.** An entry is `(rule, file, ceiling)`.
 - The check fails if the file's number exceeds its ceiling.
@@ -161,8 +178,10 @@ Alternatives considered:
 **Failure output.** The check collects every violation and fails once. Each message is a ready-to-paste allowlist line, so the initial allowlist comes from the first run instead of being hand-written.
 
 **Timing.** Ceilings are measured after the format commits, because Prettier added about 7% to `.vue` line counts.
+- The frontend spec lands right after the Prettier commit, not in step 5. The old scoped spec fails on formatted code: two files grew past its limits, and its line-based router regex misses wrapped `component: () =>` lines.
+- Keeping the old spec green would mean raising its limits or allowlisting files in a file about to be deleted.
 
-**Cleanup.** Delete both scripts. Rename the backend test to drop "Scoped".
+**Cleanup.** Delete both scripts and the old scoped frontend spec. Rename the backend test to drop "Scoped".
 
 Alternatives considered:
 - **Name-only allowlist:** allowlisted files could grow without limit.
@@ -197,7 +216,7 @@ Alternatives considered:
 ## Risks / Trade-offs
 
 - **Format commits conflict with open branches.** → Land them back-to-back at a quiet moment. Branches rebase and re-run `pint` / `npm run format` instead of resolving conflicts by hand.
-- **Prettier changes rendered whitespace in a template.** → Condense mode makes this safe in principle. Still run the unit tests and the build, and smoke-test the booking, admin and partner screens after the commit.
+- **Prettier changes rendered whitespace in a template.** → It did, in 119 text nodes. §2 explains why none of them is visible and how every screen was checked. Tests that compare raw `textContent` without trimming could still notice; the unit suite passes, and Playwright's text matchers normalize whitespace.
 - **The Composer image differs from production PHP, so CI results differ from local ones.** → The first pipeline must reproduce the local counts exactly. If it does not, pin the image to the production PHP minor version.
 - **Someone regenerates a baseline to hide new debt.** → The level-0 run blocks crash-class findings. Baseline diffs are visible in review. The regeneration commands are documented in the agent rules.
 - **Allowlisted files can regrow up to their ceiling.** → Accepted. Burn-down changes lower ceilings explicitly.
@@ -209,7 +228,7 @@ Alternatives considered:
 Each step keeps the existing pipeline green:
 
 1. Fix the blocking and crash issues: QR modal, imports, dead actions, E2E `env()`.
-2. Pint commit, then Prettier commit. Record both SHAs.
+2. Pint commit, then Prettier commit, then the frontend architecture spec (see §6, Timing). Record both format SHAs.
 3. Small lint fixes; turn the oxlint rule off.
 4. Install Larastan and the configs, add the inline ignores, generate the PHPStan baseline and the ESLint suppressions.
 5. Repo-wide architecture checks and allowlists; delete the old scripts; align the docs.
