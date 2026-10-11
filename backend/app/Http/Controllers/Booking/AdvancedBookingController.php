@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\RecurringSeriesPreviewRequest;
 use App\Models\MarketplaceListing;
 use App\Models\MonthlyInvoice;
+use App\Models\Organization;
 use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
 use App\Models\Reservation;

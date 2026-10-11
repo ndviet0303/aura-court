@@ -1,15 +1,16 @@
 ## 1. Sửa lỗi chặn và lỗi crash
 
-- [ ] 1.1 Đóng thẻ `<div class="qr-box">` trong `V2ReservationQrModal.vue`.
+- [x] 1.1 Đóng thẻ `<div class="qr-box">` trong `V2ReservationQrModal.vue`.
   - Kiểm tra lại modal QR: phần tóm tắt lịch và footer nằm đúng vị trí.
   - Cả 323 SFC parse không lỗi bằng `@vue/compiler-sfc`.
-- [ ] 1.2 Sửa import trong 3 file:
+- [x] 1.2 Sửa import trong 3 file:
   - `AdvancedBookingController`: thêm `Organization`.
   - `OrdinaryCheckoutService`: thêm `Coupon`.
   - `SplitPaymentService`: `LegacyBookingBackfillService` phải trỏ tới `App\Services\Reservation`.
   - Với nhánh nào chưa có test đi qua thì viết test hồi quy cho nhánh đó.
-- [ ] 1.3 Xoá 4 action chết: `SnapshotSettlement`, `OpenShift`, `CloseShift`, `JoinMatch`. Trước khi xoá, grep xác nhận chúng có 0 tham chiếu.
-- [ ] 1.4 Thay `env()` trong 3 lệnh E2E (`E2EArrangeTestDataCommand`, `E2EExpireHoldsCommand`, `E2EInspectTargetCommand`) bằng `config()` theo design §4. Hành vi guard phải giữ nguyên khi chưa cache config.
+  - Đã làm: test cho fallback tổ chức của `listings` và cho split payment xác nhận legacy booking; cả hai fail trước khi sửa. Nhánh `Coupon::GROUP_ALL` không chạy tới được, vì `eligibility_group` của coupon và campaign đều NOT NULL, default `all_customers`. Vì vậy không viết test cho nhánh này; PHPStan level 0 chặn lỗi tái phát.
+- [x] 1.3 Xoá 4 action chết: `SnapshotSettlement`, `OpenShift`, `CloseShift`, `JoinMatch`. Trước khi xoá, grep xác nhận chúng có 0 tham chiếu.
+- [x] 1.4 Thay `env()` trong 3 lệnh E2E (`E2EArrangeTestDataCommand`, `E2EExpireHoldsCommand`, `E2EInspectTargetCommand`) bằng `config()` theo design §4. Hành vi guard phải giữ nguyên khi chưa cache config.
 
 ## 2. Format toàn repo
 

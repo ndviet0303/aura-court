@@ -44,7 +44,7 @@ class E2EArrangeTestDataCommand extends Command
         $dbHost = (string) ($dbConfig['host'] ?? '');
         $dbName = (string) ($dbConfig['database'] ?? '');
 
-        $allowedHosts = ['127.0.0.1', 'localhost', '::1', 'bt-server', '100.64.0.15', (string) env('DB_HOST')];
+        $allowedHosts = ['127.0.0.1', 'localhost', '::1', 'bt-server', '100.64.0.15', (string) config('database.connections.'.config('database.default').'.host')];
         if (! in_array($dbHost, $allowedHosts, true)) {
             $this->error("CRITICAL: Refusing remote target '{$dbHost}'.");
             return self::FAILURE;

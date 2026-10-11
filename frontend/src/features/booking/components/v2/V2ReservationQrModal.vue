@@ -50,6 +50,7 @@ const emit = defineEmits<{
           <span class="qr-instruction">
             {{ t('v2Reservations.modal.qrInstruction') }}
           </span>
+        </div>
 
         <div class="schedule-summary-box">
           <div

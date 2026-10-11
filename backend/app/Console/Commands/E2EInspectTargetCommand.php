@@ -29,7 +29,7 @@ class E2EInspectTargetCommand extends Command
         $cacheStore = (string) config('cache.default');
         $dbConnection = (string) config('database.default');
         $dbConfig = config("database.connections.{$dbConnection}") ?? [];
-        $rawUrl = (string) ($dbConfig['url'] ?? env('DB_URL') ?? env('DATABASE_URL') ?? '');
+        $rawUrl = (string) ($dbConfig['url'] ?? '');
 
         // Resolve effective config as processed by Laravel DatabaseManager
         try {
