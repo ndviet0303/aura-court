@@ -19,6 +19,7 @@ class SplitShare extends Model
         return ['amount' => 'integer', 'paid_amount' => 'integer', 'expires_at' => 'datetime', 'paid_at' => 'datetime', 'refunded_at' => 'datetime'];
     }
 
+    // @phpstan-ignore rules.modelAppends (Larastan takes paymentAttempt() for the accessor; Laravel uses getPaymentAttemptAttribute())
     protected $appends = ['payment_attempt'];
 
     public function group(): BelongsTo

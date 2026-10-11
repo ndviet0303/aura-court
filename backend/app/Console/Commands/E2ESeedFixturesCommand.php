@@ -90,6 +90,7 @@ class E2ESeedFixturesCommand extends Command
             return self::FAILURE;
         }
 
+        // @phpstan-ignore larastan.console.undefinedOption (the only subclass, e2e:seed-production-fixtures, overrides handle(), so it never reaches this read)
         $credentialsJson = (string) $this->option('credentials-json');
         $customCredentials = [];
         if ($credentialsJson !== '') {

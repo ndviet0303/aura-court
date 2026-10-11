@@ -20,6 +20,7 @@ class SplitGroup extends Model
         return ['expected_amount' => 'integer', 'paid_amount' => 'integer', 'expires_at' => 'datetime', 'host_covers_shortfall' => 'boolean', 'confirmed_at' => 'datetime'];
     }
 
+    // @phpstan-ignore rules.modelAppends (Larastan takes coveragePaymentAttempt() for the accessor; Laravel uses getCoveragePaymentAttemptAttribute())
     protected $appends = ['coverage_payment_attempt'];
 
     public function reservation(): BelongsTo
