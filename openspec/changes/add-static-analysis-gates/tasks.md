@@ -188,10 +188,18 @@
   - Chạy cục bộ (Node 26, không `npm ci`) đều pass: oxlint 1 s, eslint 16 s, format:check 17 s, type-check 34 s, 389 test 80 s, build-only 3 s. Phần lint thêm khoảng 34 s, bù lại `build-only` bỏ lần type-check thứ hai.
 - [x] 7.3 Thêm `backend_static` vào `needs` của `build_and_deploy`.
   - Đã làm: `rules` của `backend_static` bao trọn các trường hợp `build_and_deploy` chạy (push lên dev/main, MR vào dev/main), nên `needs` luôn tìm thấy job.
-- [ ] 7.4 Pipeline đầu tiên trên merge request:
+- [x] 7.4 Pipeline đầu tiên trên merge request:
   - cả hai job xanh;
   - số lỗi PHPStan trong CI khớp local (nếu lệch thì pin image theo PHP minor của production);
   - ghi lại thời gian validate tăng thêm.
+  - Đã làm: MR !1, pipeline 2935239682. `frontend_check` pass sau 285 s, `backend_static` pass sau 206 s; `build_and_deploy` ở dạng manual.
+  - PHPStan trong CI khớp local: cả level 0 và level 5 có baseline đều ra `[OK] No errors`. Image `composer:2` chạy PHP 8.5.11, cùng minor với production (`php:8.5-alpine`), nên không cần pin.
+  - Thời gian:
+    - Runner macOS chỉ chạy một job mỗi lúc: `backend_static` xếp hàng 288 s chờ `frontend_check` xong. Vì vậy giai đoạn validate kéo dài 8 phút 13 giây, và trọn 206 s của job backend cộng thẳng vào thời gian pipeline.
+    - Job backend gồm: pull image 20 s (chỉ lần đầu), `composer install` 44 s, Pint 59 s, PHPStan 27 s + 31 s.
+    - Trong `frontend_check`, oxlint + eslint + format:check thêm 36 s. Đổi `npm run build` thành `build-only` bỏ lần type-check thứ hai, trước đây chạy song song với `vite build` và tốn gần bằng lần đầu (56 s). Đo local: chạy lại `vue-tsc --build` khi đã có `.tsbuildinfo` vẫn mất 36 s, so với 38 s khi cold. Project GitLab này chưa có pipeline cũ nào để so, nên đây là ước tính: job frontend nhanh hơn khoảng 15 s.
+    - Tổng cộng mỗi pipeline chậm thêm khoảng 3 phút, không phải 1–1,5 phút như design ước tính. Design §Risks đã cập nhật.
+  - Pipeline `external` trên cùng commit là commit status "Workers Builds: booing" của Cloudflare, không thuộc hai job validate. Lúc ghi chú này nó vẫn ở trạng thái running, nên chưa kết luận gì về nó.
 - [x] 7.5 Chạy `openspec validate add-static-analysis-gates --strict`, rồi cập nhật số liệu cuối vào `design.md`: số entry baseline, suppressions và allowlist.
   - Đã làm: đếm lại từ file. Baseline PHPStan có 769 entry, gồm 1.021 lỗi. Suppressions có 507 `no-explicit-any` trong 112 file. Allowlist frontend 172 entry, backend 121 entry.
   - Design ghi rõ 508 → 507 và lý do con số model-query lúc đề xuất cao hơn. Validate `--strict` pass.

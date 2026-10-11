@@ -234,7 +234,7 @@ Alternatives considered:
 - **Someone regenerates a baseline to hide new debt.** → The level-0 run blocks crash-class findings. Baseline diffs are visible in review. The regeneration commands are documented in the agent rules.
 - **Allowlisted files can regrow up to their ceiling.** → Accepted. Burn-down changes lower ceilings explicitly.
 - **507 suppressed `any` and 1,021 baselined errors can feel permanent.** → Follow-up changes per domain, each reducing the counts.
-- **CI gets about 1–1.5 minutes slower.** → Accepted. `backend_static` and `frontend_check` run in parallel.
+- **CI gets about 3 minutes slower, not the estimated 1–1.5.** → The macOS runner runs one job at a time, so `backend_static` (206 s) ran after `frontend_check` (285 s) instead of beside it. Setting the runner's concurrency to 2 would overlap the two jobs. A Composer cache would shorten the 44 s `composer install`.
 
 ## Migration Plan
 
