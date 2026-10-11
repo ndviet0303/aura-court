@@ -79,27 +79,37 @@
 
 ## 4. Baseline cho nợ còn lại
 
-- [ ] 4.1 Chạy `composer require --dev larastan/larastan:^3` trong `backend/`. Commit `composer.json` và `composer.lock`.
-- [ ] 4.2 Tạo `phpstan-level0.neon`:
+- [x] 4.1 Chạy `composer require --dev larastan/larastan:^3` trong `backend/`. Commit `composer.json` và `composer.lock`.
+  - Đã làm: Larastan v3.13.0 và PHPStan 2.3.1, kèm `iamcal/sql-parser`.
+  - `composer audit` báo 5 advisory ở 4 package có sẵn (`laravel/framework`, `league/commonmark`, `league/flysystem`, `phpseclib/phpseclib`). Larastan không gây ra advisory nào; xử lý chúng nằm ngoài change này.
+- [x] 4.2 Tạo `phpstan-level0.neon`:
   - extension Larastan và Carbon;
   - `paths: [app/]`;
   - `parseModelCastsMethod: true`;
   - `reportIgnoresWithoutComments: true`;
   - `level: 0`.
-- [ ] 4.3 Tạo `phpstan.neon`: include `phpstan-level0.neon` và `phpstan-baseline.neon`, đặt `level: 5`.
-- [ ] 4.4 Thêm 3 inline `@phpstan-ignore <identifier> (<lý do>)` theo design §4:
+- [x] 4.3 Tạo `phpstan.neon`: include `phpstan-level0.neon` và `phpstan-baseline.neon`, đặt `level: 5`.
+- [x] 4.4 Thêm 3 inline `@phpstan-ignore <identifier> (<lý do>)` theo design §4:
   - `SplitGroup` và `SplitShare`: `rules.modelAppends`;
   - `E2ESeedFixturesCommand`: `larastan.console.undefinedOption`.
-- [ ] 4.5 Chạy `vendor/bin/phpstan analyse -c phpstan-level0.neon --memory-limit=2G`: phải báo 0 lỗi.
-- [ ] 4.6 Sinh `phpstan-baseline.neon` bằng `vendor/bin/phpstan analyse --memory-limit=2G --generate-baseline`:
+- [x] 4.5 Chạy `vendor/bin/phpstan analyse -c phpstan-level0.neon --memory-limit=2G`: phải báo 0 lỗi.
+- [x] 4.6 Sinh `phpstan-baseline.neon` bằng `vendor/bin/phpstan analyse --memory-limit=2G --generate-baseline`:
   - khoảng 1.030 entry;
   - không có entry nào trong 4 file action đã xoá;
   - chạy `vendor/bin/phpstan analyse --memory-limit=2G` sau đó pass.
-- [ ] 4.7 Sinh `frontend/eslint-suppressions.json` bằng `npx eslint . --suppress-rule @typescript-eslint/no-explicit-any`. Sau đó `npx eslint .` pass.
-- [ ] 4.8 Kiểm chứng baseline chỉ giảm:
+  - Đã làm: 769 entry, gộp 1.021 lỗi. Con số khoảng 1.030 trong design được đo trước nhóm 1.
+- [x] 4.7 Sinh `frontend/eslint-suppressions.json` bằng `npx eslint . --suppress-rule @typescript-eslint/no-explicit-any`. Sau đó `npx eslint .` pass.
+  - Đã làm: 507 `any` trong 112 file.
+  - ESLint ghi file này không có newline cuối, mà `format:check` lại quét mọi `*.json` ở gốc `frontend/`. Vì vậy thêm `frontend/.prettierignore` để Prettier bỏ qua file này.
+- [x] 4.8 Kiểm chứng baseline chỉ giảm:
   - sửa thử một lỗi đã ghi thì PHPStan và ESLint đều fail vì entry thừa;
   - thêm một `any` mới vào file đã có suppression thì ESLint fail;
   - hoàn tác các thay đổi thử.
+  - Đã kiểm chứng:
+    - Bỏ một `?->` đã ghi baseline: PHPStan exit 1 (`was not matched in reported errors`).
+    - Gõ kiểu một `any` đã suppress: ESLint exit 2, vì còn suppression thừa.
+    - Thêm `any` mới vào file đã có suppression: ESLint exit 1.
+    - Đã hoàn tác cả ba.
 
 ## 5. Kiến trúc toàn repo
 

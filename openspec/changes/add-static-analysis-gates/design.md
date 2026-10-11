@@ -140,6 +140,7 @@ Tightening the host check is an E2E safety decision outside this change.
 - Fix now: `no-unused-vars`, `prefer-const`, `no-empty-object-type`, deprecated slot syntax, the template parse error and prop mutation.
 - Record the 508 `@typescript-eslint/no-explicit-any` with `eslint . --suppress-rule @typescript-eslint/no-explicit-any`. This suppresses only that rule, so any other leftover still fails.
 - CI never passes `--pass-on-unpruned-suppressions`.
+- `frontend/.prettierignore` lists `eslint-suppressions.json`. ESLint rewrites the file on every prune, without a final newline, and `format:check` covers the root `*.json` files.
 
 **oxlint.**
 - Turn off `vitest/require-mock-type-parameters`. Its 327 findings are type parameters on test mocks, which is churn with no defect value.
