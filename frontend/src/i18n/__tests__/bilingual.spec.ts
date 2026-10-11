@@ -3,7 +3,26 @@ import { i18n, setAppLocale } from '../index'
 import vi from '../locales/vi'
 import en from '../locales/en'
 
+/** Dot paths of every leaf message, so a missing nested key is reported in full. */
+function keyPaths(messages: object, prefix = ''): string[] {
+  return Object.entries(messages).flatMap(([key, value]) =>
+    typeof value === 'object' && value !== null
+      ? keyPaths(value, `${prefix}${key}.`)
+      : [`${prefix}${key}`],
+  )
+}
+
 describe('Bilingual Localization (Song ngữ vi / en)', () => {
+  it('defines every message key in both vi and en', () => {
+    const viKeys = new Set(keyPaths(vi))
+    const enKeys = new Set(keyPaths(en))
+
+    expect({
+      missingFromEn: [...viKeys].filter((key) => !enKeys.has(key)),
+      missingFromVi: [...enKeys].filter((key) => !viKeys.has(key)),
+    }).toEqual({ missingFromEn: [], missingFromVi: [] })
+  })
+
   it('contains matching keys for POS VietQR and shift balancing in both vi and en', () => {
     expect(vi.admin.pos.qrModalTitle).toBe('Thanh toán VietQR')
     expect(en.admin.pos.qrModalTitle).toBe('VietQR Payment')
