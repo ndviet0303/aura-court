@@ -1,9 +1,5 @@
 export type PartnerApplicationStatus =
-  | 'draft'
-  | 'pending'
-  | 'revision_required'
-  | 'approved'
-  | 'rejected'
+  'draft' | 'pending' | 'revision_required' | 'approved' | 'rejected'
 
 export type BusinessType = 'individual' | 'household' | 'company'
 

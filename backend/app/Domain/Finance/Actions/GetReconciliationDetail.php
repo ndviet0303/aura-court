@@ -4,7 +4,6 @@ namespace App\Domain\Finance\Actions;
 
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Models\Organization;
-use App\Models\ReconciliationRun;
 
 class GetReconciliationDetail
 {
@@ -16,7 +15,7 @@ class GetReconciliationDetail
     {
         $run = $this->reconciliationRepository->findForOrganization($organization, $runId);
 
-        if (!$run) {
+        if (! $run) {
             abort(404, 'Reconciliation run not found.');
         }
 

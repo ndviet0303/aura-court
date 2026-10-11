@@ -5,18 +5,22 @@ export default {
     appName: 'Aura Court',
     tagline: 'Where precision creates performance',
     demoNotice: 'DEMO WEBSITE ONLY.',
-    demoNoticeDesc: 'Data, pricing, and booking flows are for demonstration purposes only. Do not transfer real money or enter sensitive information.',
+    demoNoticeDesc:
+      'Data, pricing, and booking flows are for demonstration purposes only. Do not transfer real money or enter sensitive information.',
     demoModal: {
       title: 'Demo Website Notice',
       warningTag: 'IMPORTANT NOTICE',
-      content1: 'Aura Court is currently running in demonstration (Demo) mode to showcase user interface and booking workflows.',
-      content2: 'All court data, schedules, and payment flows are simulated for testing. Please do not send real money or enter sensitive credentials.',
+      content1:
+        'Aura Court is currently running in demonstration (Demo) mode to showcase user interface and booking workflows.',
+      content2:
+        'All court data, schedules, and payment flows are simulated for testing. Please do not send real money or enter sensitive credentials.',
       understandBtn: 'I Understand & Continue',
     },
     demoFooter: 'Demo Environment',
     privacyAndSupport: 'Policy · Support',
     footer: {
-      tagline: 'Elevating your athletic performance with international standard badminton courts and seamless booking technology.',
+      tagline:
+        'Elevating your athletic performance with international standard badminton courts and seamless booking technology.',
       explore: 'Explore',
       support: 'Support & Policies',
       contact: 'Contact & Hours',
@@ -148,7 +152,8 @@ export default {
     eyebrow: 'Professional Sports',
     heroTitle: 'Where precision',
     heroTitleEmphasis: 'creates performance.',
-    heroSubtitle: 'Experience the rhythm of the game on professional sports courts. Book your slot in seconds and start playing.',
+    heroSubtitle:
+      'Experience the rhythm of the game on professional sports courts. Book your slot in seconds and start playing.',
     bookNow: 'Book Court Now',
     bookCourtBtn: 'Book Court Now',
     exploreAura: 'Explore Aura',
@@ -193,22 +198,30 @@ export default {
       eyebrow: 'International Standard',
       title: 'International Standard Sports Experience',
       f1Title: 'BWF-Grade Flooring',
-      f1Desc: 'High-resilience international tournament matting, minimizing knee strain and ankle rollover risk.',
+      f1Desc:
+        'High-resilience international tournament matting, minimizing knee strain and ankle rollover risk.',
       f2Title: '500 Lux Glare-Free Lighting',
-      f2Desc: 'Precision-angled overhead LED arrays providing crisp visibility for ultra-high-speed rallies.',
+      f2Desc:
+        'Precision-angled overhead LED arrays providing crisp visibility for ultra-high-speed rallies.',
       f3Title: 'Instant 10-Second Booking',
-      f3Desc: 'Real-time live availability calendar, flexible slot picker, and automated VietQR checkout without delays.',
+      f3Desc:
+        'Real-time live availability calendar, flexible slot picker, and automated VietQR checkout without delays.',
     },
     featuresTitle: 'International Standard Sports Experience',
-    featuresSubtitle: 'Premium infrastructure engineered alongside real-time scheduling technology delivers absolute precision.',
+    featuresSubtitle:
+      'Premium infrastructure engineered alongside real-time scheduling technology delivers absolute precision.',
     feat1Title: 'BWF-Grade Flooring',
-    feat1Desc: 'High-resilience international tournament matting, minimizing knee strain and ankle rollover risk.',
+    feat1Desc:
+      'High-resilience international tournament matting, minimizing knee strain and ankle rollover risk.',
     feat2Title: '500 Lux Glare-Free Lighting',
-    feat2Desc: 'Precision-angled overhead LED arrays providing crisp visibility for ultra-high-speed rallies.',
+    feat2Desc:
+      'Precision-angled overhead LED arrays providing crisp visibility for ultra-high-speed rallies.',
     feat3Title: 'Instant 10-Second Booking',
-    feat3Desc: 'Real-time live availability calendar, flexible slot picker, and automated VietQR checkout without delays.',
+    feat3Desc:
+      'Real-time live availability calendar, flexible slot picker, and automated VietQR checkout without delays.',
     feat4Title: '5-Star Amenities & Lounge',
-    feat4Desc: 'Private changing rooms, hot showers, complimentary hydration stations, and spacious vehicle parking.',
+    feat4Desc:
+      'Private changing rooms, hot showers, complimentary hydration stations, and spacious vehicle parking.',
     floating: {
       summary: '{count} slots selected, total: {total}',
       slotsCount: '{count} slots selected',
@@ -218,7 +231,8 @@ export default {
       proceed: 'Proceed to Checkout',
     },
     courtsGridTitle: 'Featured Courts',
-    courtsGridSubtitle: 'Select the optimal court tailored to your match pace and competitive standard.',
+    courtsGridSubtitle:
+      'Select the optimal court tailored to your match pace and competitive standard.',
     viewAllCourts: 'View All Courts',
     bannerTitle: 'Ready to Step Onto the Court?',
     bannerSubtitle: 'Over 1,200 athletes trust Aura Court each week. Reserve your prime slot now.',
@@ -227,9 +241,11 @@ export default {
   courts: {
     eyebrow: 'Court Directory',
     title: 'Aura Court Venues & Courts',
-    subtitle: 'Discover top-tier sporting facilities equipped to international tournament standards.',
+    subtitle:
+      'Discover top-tier sporting facilities equipped to international tournament standards.',
     courtsHeroTitle: 'Explore Sports Venues & Professional Courts',
-    courtsHeroSub: 'Over {count} international standard sports courts: Badminton, Pickleball, Tennis, and Basketball.',
+    courtsHeroSub:
+      'Over {count} international standard sports courts: Badminton, Pickleball, Tennis, and Basketball.',
     searchPlaceholder: 'Search courts by name, venue, or location...',
     filterLocation: 'Location / Venue',
     allLocations: 'All Locations',
@@ -295,7 +311,8 @@ export default {
     premiumVenue: 'Tournament Grade',
     reviewsCount: '{count} reviews',
     aboutTitle: 'About This Court',
-    aboutDefaultDesc: 'Experience high-performance athletic play on courts crafted to professional standards. Featuring shock-absorbent multi-layer flooring, 500 Lux glare-free uniform illumination, and high-clearance ceilings.',
+    aboutDefaultDesc:
+      'Experience high-performance athletic play on courts crafted to professional standards. Featuring shock-absorbent multi-layer flooring, 500 Lux glare-free uniform illumination, and high-clearance ceilings.',
     specsTitle: 'Court Specifications',
     specMat: '5-Layer BWF Mat',
     specMatDesc: 'High resilience, protects joints',
@@ -332,7 +349,8 @@ export default {
     selectDuration: 'Estimated Match Duration',
     confirmAndBook: 'View Calendar & Reserve',
     estimatedTotal: 'Estimated Total ({duration}h)',
-    cancellationPolicy: 'Cancellation and rescheduling supported under the venue policy — fees and refunds are calculated before you commit',
+    cancellationPolicy:
+      'Cancellation and rescheduling supported under the venue policy — fees and refunds are calculated before you commit',
     instantConfirmation: 'Instant automated booking confirmation',
     locationTitle: 'Location & Facilities',
     openInMaps: 'Open in Google Maps',
@@ -378,7 +396,8 @@ export default {
     noSlotsSelectedHint: 'Please select one or more timeslots on the schedule to proceed.',
     removeSlot: 'Remove this slot',
     instantHoldPerk: '100% real-time instant slot reservation',
-    flexReschedulePerk: 'Flexible cancellation & rescheduling under policy, with transparent fees and refunds',
+    flexReschedulePerk:
+      'Flexible cancellation & rescheduling under policy, with transparent fees and refunds',
     cannotCreateBooking: 'Unable to create reservation',
     sendingEmail: 'Sending email...',
     resendVerificationEmail: 'Resend verification email',
@@ -395,7 +414,8 @@ export default {
     totalPrice: 'Total Price',
     completeBooking: 'Proceed to Checkout',
     facilityHighlight: 'BWF Certified Quality',
-    facilityHighlightDesc: 'International standard matting, glare-free LED lighting, and optimal ventilation.',
+    facilityHighlightDesc:
+      'International standard matting, glare-free LED lighting, and optimal ventilation.',
     selectCourt: 'Select Court',
     applyCoupon: 'Promo Code / Voucher',
     couponPlaceholder: 'Enter code (e.g. AURA10)',
@@ -416,7 +436,8 @@ export default {
   booking: {
     eyebrow: 'Match Management',
     title: 'My Court Bookings',
-    subtitle: 'Track match schedules, digital QR check-in at the venue, and payment statuses seamlessly.',
+    subtitle:
+      'Track match schedules, digital QR check-in at the venue, and payment statuses seamlessly.',
     courtsError: 'Failed to load courts list. Please try again.',
     availabilityError: 'Failed to load court availability. Please try again.',
     upcomingCountLabel: 'Upcoming Matches',
@@ -430,7 +451,8 @@ export default {
     tabCancelled: 'Cancelled',
     searchPlaceholder: 'Search by booking code (#BK-...), court name...',
     emptyTitle: 'No Bookings Found',
-    emptyDesc: 'You have no reservations in this category. Choose a court and book a timeslot today!',
+    emptyDesc:
+      'You have no reservations in this category. Choose a court and book a timeslot today!',
     statusConfirmed: 'CONFIRMED',
     statusPending: 'PENDING PAYMENT',
     statusRefunded: 'REFUNDED',
@@ -457,20 +479,23 @@ export default {
     downloadTicket: 'Download E-Ticket',
     cancelBtn: 'Cancel / Refund',
     rescheduleBtn: 'Reschedule',
-    policyNotice: 'You can cancel or reschedule under the venue policy. The fee and refund (or extra payment due) are calculated before you commit.',
+    policyNotice:
+      'You can cancel or reschedule under the venue policy. The fee and refund (or extra payment due) are calculated before you commit.',
   },
   recurring: {
     accept: {
       confirmedNotice: 'Recurring series confirmed.',
       pendingNotice: 'Series created — pay each billing period to confirm its sessions.',
       partialTitle: 'Some sessions are already booked',
-      partialHint: 'This venue allows partial booking. Review the unavailable sessions below, then accept the remaining ones or change the schedule.',
+      partialHint:
+        'This venue allows partial booking. Review the unavailable sessions below, then accept the remaining ones or change the schedule.',
       conflictGeneric: 'Already booked',
       heldCount: '{count} session(s) will be held',
       revisedTotal: 'Revised total',
       acceptRemaining: 'Accept remaining {count} session(s)',
       reReview: 'Change schedule',
-      driftNotice: 'Prices or availability changed since your preview. We refreshed it — please review and confirm again.',
+      driftNotice:
+        'Prices or availability changed since your preview. We refreshed it — please review and confirm again.',
       need: {
         court: 'Please choose a court.',
         weekdays: 'Please choose at least one weekday.',
@@ -520,7 +545,8 @@ export default {
       tokenRow: 'Quote token:',
       totalCost: 'Total Quote Cost:',
       membershipDiscount: 'Membership discount:',
-      instantNote: '* Instant payment via wallet balance confirms reservation and activates entry entitlement immediately.',
+      instantNote:
+        '* Instant payment via wallet balance confirms reservation and activates entry entitlement immediately.',
       paying: 'Processing Payment...',
       payAndBookNow: 'Pay with Wallet & Book Now',
       holding: 'Holding Slot...',
@@ -538,7 +564,8 @@ export default {
     },
     payment: {
       title: 'Pay the venue owner directly',
-      instructions: 'Transfer the exact amount to the venue account. The reservation confirms only after the server verifies the transfer.',
+      instructions:
+        'Transfer the exact amount to the venue account. The reservation confirms only after the server verifies the transfer.',
       loading: 'Loading payment instructions…',
       waiting: 'Waiting for verified bank transfer',
       paid: 'Payment verified. Reservation confirmed.',
@@ -582,9 +609,11 @@ export default {
     },
     view: {
       myReservationsTitle: 'My V2 Court Reservations',
-      myReservationsSubtitle: 'List of reservations with guaranteed pricing managed by unique verification tokens.',
+      myReservationsSubtitle:
+        'List of reservations with guaranteed pricing managed by unique verification tokens.',
       emptyTitle: 'No V2 Reservations Found',
-      emptyDesc: 'You have no V2 reservations in this category yet. Create a quote and hold your slot above!',
+      emptyDesc:
+        'You have no V2 reservations in this category yet. Create a quote and hold your slot above!',
       emptySearchDesc: 'No reservations match your search query.',
       createQuoteNow: 'Create Quote Now',
     },
@@ -604,7 +633,8 @@ export default {
     },
     reschedule: {
       title: 'Reschedule booking',
-      subtitle: 'Pick a new court and time. We calculate the change fee and difference under the accepted policy before you commit.',
+      subtitle:
+        'Pick a new court and time. We calculate the change fee and difference under the accepted policy before you commit.',
       courtLabel: 'New court',
       courtPlaceholder: 'Select a court…',
       dateLabel: 'New play date',
@@ -618,13 +648,16 @@ export default {
       newTotalLabel: 'New total',
       changeFeeLabel: 'Change fee',
       caseExtraTitle: 'Extra payment due',
-      caseExtraDesc: 'The new booking is more expensive. Pay the difference below. The replacement is HELD and swaps only after the server verifies the extra payment.',
+      caseExtraDesc:
+        'The new booking is more expensive. Pay the difference below. The replacement is HELD and swaps only after the server verifies the extra payment.',
       extraPaymentLabel: 'Extra payment due',
       caseRefundTitle: 'Difference refunded',
-      caseRefundDesc: 'The new booking is cheaper. The swap is immediate and the difference is raised as a refund request — not yet completed.',
+      caseRefundDesc:
+        'The new booking is cheaper. The swap is immediate and the difference is raised as a refund request — not yet completed.',
       refundDifferenceLabel: 'Refund difference',
       caseEqualTitle: 'No money movement',
-      caseEqualDesc: 'The new booking costs the same. The swap is immediate with no payment or refund.',
+      caseEqualDesc:
+        'The new booking costs the same. The swap is immediate with no payment or refund.',
       recipientHeading: 'Account to receive the refunded difference',
       bankCode: 'Bank code',
       accountName: 'Account holder name',
@@ -635,10 +668,13 @@ export default {
       statusLabel: 'Status',
       replacementCodeLabel: 'Replacement code',
       resultHeldTitle: 'Replacement is held',
-      resultHeldDesc: 'Pay the difference to complete. Your original booking is unchanged until the payment is verified.',
+      resultHeldDesc:
+        'Pay the difference to complete. Your original booking is unchanged until the payment is verified.',
       resultSwappedTitle: 'Reschedule completed',
-      resultRefundCreatedDesc: 'A refund request was created for the difference. This is NOT a confirmed refund — it is complete only once you acknowledge receipt.',
-      conflictError: 'The replacement court-time is no longer available. Your original booking is preserved and unchanged. Please pick another court or time.',
+      resultRefundCreatedDesc:
+        'A refund request was created for the difference. This is NOT a confirmed refund — it is complete only once you acknowledge receipt.',
+      conflictError:
+        'The replacement court-time is no longer available. Your original booking is preserved and unchanged. Please pick another court or time.',
       previewError: 'Unable to calculate the reschedule. Please try again.',
       submitError: 'Unable to submit the reschedule request. Please try again.',
       selectCourtAndTime: 'Please select a new court and time.',
@@ -647,7 +683,8 @@ export default {
     },
     refund: {
       cancelTitle: 'Cancel & refund',
-      cancelSubtitle: 'Cancel the whole booking or specific slots. The cancellation fee and refund under the accepted policy are shown before you commit.',
+      cancelSubtitle:
+        'Cancel the whole booking or specific slots. The cancellation fee and refund under the accepted policy are shown before you commit.',
       scopeWhole: 'Cancel the whole booking',
       scopePartial: 'Cancel specific slots',
       selectSlotsLabel: 'Select slots to cancel',
@@ -674,7 +711,8 @@ export default {
       submittedTitle: 'Refund request submitted',
       statusLabel: 'Status',
       referenceLabel: 'Reference code',
-      notVerifiedHint: 'Your request is recorded. The refund is complete only once you acknowledge receipt — an owner-reported transfer or a dispute is NOT completion.',
+      notVerifiedHint:
+        'Your request is recorded. The refund is complete only once you acknowledge receipt — an owner-reported transfer or a dispute is NOT completion.',
       quoteError: 'Unable to calculate the refund. Please try again.',
       submitError: 'Unable to submit the refund request. Please try again.',
       selectSlots: 'Please select at least one slot to cancel.',
@@ -732,12 +770,14 @@ export default {
     securityNotice: 'Protected with 256-bit SSL encryption & PCI-DSS standards',
     cancellationNotice: 'Cancellation and rescheduling supported under the venue policy',
     demoWarningTitle: 'Demo / Sandbox Environment',
-    demoWarningDesc: 'The QR code and banking info below are for demonstration testing only. Please do not send real money.',
+    demoWarningDesc:
+      'The QR code and banking info below are for demonstration testing only. Please do not send real money.',
     demoPayBtn: 'Simulate Successful Payment (Sandbox)',
     demoProcessing: 'Recording simulated payment…',
     demoOnlyNote: 'Demo instant payment confirmation simulator button.',
     confirmedTitle: 'Booking Confirmed Successfully!',
-    confirmedDesc: 'Thank you! Your court reservation has been locked in. Your receipt and access PIN are ready.',
+    confirmedDesc:
+      'Thank you! Your court reservation has been locked in. Your receipt and access PIN are ready.',
     bookingId: 'Booking Ref',
     entryCode: 'Court Entry PIN',
     entryCodeDesc: 'Enter this PIN code at the court gate or present it to the reception desk.',
@@ -774,7 +814,8 @@ export default {
     shortfallDesc: 'You need to top up at least {shortfall} to complete this transaction.',
     topupNowCta: 'Top Up Wallet Now',
     instantConfirmation: 'Instant confirmation, no waiting',
-    autoRefundNotice: 'Fees and refunds are calculated up front under the policy when cancelling or rescheduling',
+    autoRefundNotice:
+      'Fees and refunds are calculated up front under the policy when cancelling or rescheduling',
     walletPaymentBadge: 'Aura Wallet',
     processing: 'Processing payment...',
     tournamentSummaryTitle: 'Tournament Fee Breakdown',
@@ -789,7 +830,8 @@ export default {
     totalCheckout: 'TOTAL AMOUNT:',
     successTitle: 'Payment Successful!',
     tournamentSuccessTitle: 'Tournament Entry Confirmed!',
-    txCodeConfirmed: 'Transaction code {code} has been officially verified by Aura Court via wallet balance.',
+    txCodeConfirmed:
+      'Transaction code {code} has been officially verified by Aura Court via wallet balance.',
     viewBracketCta: 'View Tournament Bracket',
     viewScheduleCta: 'View My Bookings',
   },
@@ -819,7 +861,8 @@ export default {
     hidePassword: 'Hide password',
     showPassword: 'Show password',
     trustCommunityTitle: 'Aura Club Sports Community',
-    trustCommunityDesc: 'Connect with 3,500+ athletes, auto ELO matchmaking, and earn member reward points upon booking.',
+    trustCommunityDesc:
+      'Connect with 3,500+ athletes, auto ELO matchmaking, and earn member reward points upon booking.',
     tagInstantBooking: 'Instant Booking',
     tagMoneyBack: 'Money-back Guarantee',
     tagLeaderboard: 'Leaderboard & Rankings',
@@ -866,7 +909,8 @@ export default {
     venueAddressPlaceholder: '123 Cau Giay Street, Hanoi',
     courtsCount: 'Number of Courts',
     courtsCountPlaceholder: 'e.g. 4',
-    courtOwnerNotice: 'Upon registration, you will be granted Organization Admin access to configure venues and rates.',
+    courtOwnerNotice:
+      'Upon registration, you will be granted Organization Admin access to configure venues and rates.',
     registerCourtOwnerBtn: 'Register & Launch Venue Now',
     orDivider: 'Or continue with',
     loginWithGoogle: 'Continue with Google',
@@ -883,7 +927,8 @@ export default {
     perk2Desc: 'Automatic bank transfer verification and instant slot locking.',
     perk3Title: 'Tournament Grade Flooring',
     perk3Desc: 'BWF certified shock-absorbing mats and glare-free stadium lighting.',
-    testimonialText: '“The court cushioning is remarkable and the instant booking flow is unmatched.”',
+    testimonialText:
+      '“The court cushioning is remarkable and the instant booking flow is unmatched.”',
     testimonialAuthor: 'Alex Turner · Club Player',
   },
   profile: {
@@ -914,15 +959,18 @@ export default {
     levelPro: 'Professional',
     levelProDesc: 'Professional athlete or certified sports coach.',
     favoriteSports: 'Favorite Sports & Activities',
-    favoriteSportsHint: 'Select sports you play to receive tailored matchmaking and venue suggestions',
+    favoriteSportsHint:
+      'Select sports you play to receive tailored matchmaking and venue suggestions',
     chooseAvatar: 'Athlete Avatar Persona',
     chooseAvatarHint: 'Choose an athlete avatar that represents your sport style',
     saveChanges: 'Save Changes',
     saveSuccess: 'Profile updated successfully.',
     passwordSection: 'Change Password',
-    passwordSubtitle: 'To keep your account secure, use a strong password with at least 8 characters.',
+    passwordSubtitle:
+      'To keep your account secure, use a strong password with at least 8 characters.',
     setPasswordTitle: 'Set Account Password',
-    setPasswordSubtitle: 'Your account was created via social login ({provider}). You can set a dedicated password to log in with your email anytime.',
+    setPasswordSubtitle:
+      'Your account was created via social login ({provider}). You can set a dedicated password to log in with your email anytime.',
     setPasswordBtn: 'Set Password Now',
     socialLoginBadge: 'Signed in via',
     currentPassword: 'Current Password',
@@ -970,7 +1018,8 @@ export default {
     scSplitBillTitle: 'Group Split Bill',
     scSplitBillDesc: 'Automate court cost splitting per player with quick QR codes.',
     scPartnerTitle: 'Partner Facility Onboarding',
-    scPartnerDesc: 'Join the Aura Court network to expand player reach and optimize venue utilization.',
+    scPartnerDesc:
+      'Join the Aura Court network to expand player reach and optimize venue utilization.',
     sports: {
       badminton: 'Badminton',
       pickleball: 'Pickleball',
@@ -985,7 +1034,8 @@ export default {
   notifications: {
     eyebrow: 'AURA NOTIFICATION CENTER',
     title: 'Your Notifications',
-    subtitle: 'Track booking status, automated payment receipts, wallet updates, and matchmaking invites.',
+    subtitle:
+      'Track booking status, automated payment receipts, wallet updates, and matchmaking invites.',
     empty: 'No new notifications.',
     markAllRead: 'Mark All As Read',
     refreshBtn: 'Refresh',
@@ -1008,13 +1058,16 @@ export default {
     },
     viewDetail: 'View Details',
     emptyAllTitle: 'Inbox is empty',
-    emptyAllDesc: 'You have caught up with all recent notices. New booking, wallet, and tournament updates will appear here.',
+    emptyAllDesc:
+      'You have caught up with all recent notices. New booking, wallet, and tournament updates will appear here.',
     emptyUnreadTitle: 'No unread notifications',
     emptyUnreadDesc: 'Great job! You have read all notifications in the system.',
     emptyBookingTitle: 'No booking notifications',
-    emptyBookingDesc: 'Booking confirmations, schedule changes, and slot reminders will appear here.',
+    emptyBookingDesc:
+      'Booking confirmations, schedule changes, and slot reminders will appear here.',
     emptyPaymentTitle: 'No transaction notifications',
-    emptyPaymentDesc: 'VietQR payment receipts, wallet top-ups, and split bill updates will appear here.',
+    emptyPaymentDesc:
+      'VietQR payment receipts, wallet top-ups, and split bill updates will appear here.',
     emptySocialTitle: 'No community notifications',
     emptySocialDesc: 'Matchmaking invites, tournament schedules, and results will show up here.',
     exploreBooking: 'Book Court Now',
@@ -1023,7 +1076,8 @@ export default {
   wallet: {
     membershipEyebrow: 'AURA CLUB MEMBERSHIP & WALLET',
     title: 'Athlete Multi-Pass & Venue Wallets',
-    subtitle: 'Manage prepaid balances, automated 24/7 top-ups via VietQR, and seamless cashless play across all Aura Court venues.',
+    subtitle:
+      'Manage prepaid balances, automated 24/7 top-ups via VietQR, and seamless cashless play across all Aura Court venues.',
     refresh: 'Refresh',
     refreshBalance: 'Refresh Balance',
     refreshBtn: 'Refresh',
@@ -1033,14 +1087,16 @@ export default {
     linkedVenues: 'Linked to {count} venues',
     accumulatedPoints: 'Reward Points: {points} pts',
     venueWalletsTitle: 'Venue Member Cards & Wallets',
-    venueWalletsSubtitle: 'Prepaid balance and points are synchronized automatically across each Aura Court club.',
+    venueWalletsSubtitle:
+      'Prepaid balance and points are synchronized automatically across each Aura Court club.',
     availableCards: '{count} ACTIVE CARDS',
     availableBalance: 'Available Balance',
     auraPoints: 'Aura Points',
     payQrBtn: 'POS / Check-in QR',
     topupCardBtn: 'Top Up',
     transactionsTitle: 'Transaction History & Statements',
-    transactionsSubtitle: 'Track top-ups, automated booking payments, refunds, and on-site pro-shop purchases.',
+    transactionsSubtitle:
+      'Track top-ups, automated booking payments, refunds, and on-site pro-shop purchases.',
     searchPlaceholder: 'Search by Txn ID, venue...',
     filterAll: 'All',
     filterDeposit: 'Top-up',
@@ -1064,10 +1120,12 @@ export default {
       paymentMethodLabel: 'Payment method:',
       methodSepayTitle: 'VietQR SePay Bank Transfer (Recommended)',
       methodSepayTag: 'Instant 3s',
-      methodSepayDesc: 'Scan VietQR code for 24/7 interbank transfer via SePay gateway, auto-credited instantly in 3 seconds.',
+      methodSepayDesc:
+        'Scan VietQR code for 24/7 interbank transfer via SePay gateway, auto-credited instantly in 3 seconds.',
       methodStripeTitle: 'Stripe International Payment Gateway',
       methodStripeTag: 'SSL Secured',
-      methodStripeDesc: 'Supports international credit/debit cards Visa, MasterCard, JCB, Apple Pay with PCI-DSS Level 1 encryption.',
+      methodStripeDesc:
+        'Supports international credit/debit cards Visa, MasterCard, JCB, Apple Pay with PCI-DSS Level 1 encryption.',
       summaryDepositAmount: 'Deposit amount:',
       summaryFee: 'Processing fee:',
       summaryFeeFree: '0 ₫ (Free)',
@@ -1084,7 +1142,8 @@ export default {
       amountLabel: 'Amount:',
       transferMemo: 'Transfer Memo:',
       vqrListening: 'SePay system is automatically listening for incoming bank transfer...',
-      vqrNote: 'IMPORTANT: Keep the exact transfer memo above for automatic balance crediting within 3-10 seconds.',
+      vqrNote:
+        'IMPORTANT: Keep the exact transfer memo above for automatic balance crediting within 3-10 seconds.',
       copiedAccount: 'Account number copied',
       copiedMemo: 'Transfer memo copied',
       copiedAmount: 'Transfer amount copied',
@@ -1103,14 +1162,16 @@ export default {
   },
   tournament: {
     title: 'Premier Tournament & Championship System',
-    subtitle: 'Register for professional badminton, pickleball, and tennis tournaments. Follow brackets, leaderboards, and real-time scores.',
+    subtitle:
+      'Register for professional badminton, pickleball, and tennis tournaments. Follow brackets, leaderboards, and real-time scores.',
     totalTournaments: 'Total Tournaments',
     openRegistration: 'Registration Open',
     totalPrize: 'Total Prize Pool',
     liveScoreTitle: 'Live Score & Real-Time Stats',
     liveScoreSubtitle: 'Real-time rally score updates, speed tracking, and tournament analytics.',
     socialHubTitle: 'Matchmaking & Open Community Games',
-    socialHubSubtitle: 'Find sports partners at your skill level, host open games, or recruit tournament teammates.',
+    socialHubSubtitle:
+      'Find sports partners at your skill level, host open games, or recruit tournament teammates.',
     partnerFinderBtn: 'Find Partner / Team',
     createMatchBtn: 'Create New Match',
     bracketTitle: 'Tournament Bracket',
@@ -1121,7 +1182,7 @@ export default {
     selectCategoryPlaceholder: 'Select division category',
     categorySinglesMen: "Men's Singles",
     categoryDoublesMen: "Men's Doubles",
-    categoryMixedDoubles: "Mixed Doubles",
+    categoryMixedDoubles: 'Mixed Doubles',
     tabBracket: 'Knockout Bracket Tree',
     tabStandings: 'Group Stage Standings',
     quarterFinals: 'Quarter-Finals',
@@ -1158,7 +1219,8 @@ export default {
     registeredPercentage: '{percent}% registered',
     championWinner: 'Champion:',
     emptyTournamentsTitle: 'No Matching Tournaments Found',
-    emptyTournamentsSub: 'Try searching with different keywords or resetting sport and format filters.',
+    emptyTournamentsSub:
+      'Try searching with different keywords or resetting sport and format filters.',
     registerModalTitle: 'Tournament Registration',
     registerModalSub: 'Complete the form to secure your official spot in the tournament bracket.',
     entryFeeLabel: 'Entry Fee:',
@@ -1178,13 +1240,15 @@ export default {
     openFullBracketHelp: 'Click below to explore full bracket tree and live scores.',
     viewFullBracketBtn: 'View Full Bracket & Scores',
     leaderboardTitle: 'Aura Points Circuit Leaderboard 2026',
-    leaderboardSub: 'Accumulate circuit points across nationwide events to qualify for the Aura Master Cup Finals.',
+    leaderboardSub:
+      'Accumulate circuit points across nationwide events to qualify for the Aura Master Cup Finals.',
     championshipCupsWon: '{count} Championship Cup(s)',
   },
   resale: {
     eyebrow: 'P2P ESCROW MARKETPLACE',
     title: 'Court Slot Resale Marketplace',
-    subtitle: 'Buy prime playing slots at discounted rates or transfer your bookings when schedules change. 100% transparent and safe with Aura Escrow protection.',
+    subtitle:
+      'Buy prime playing slots at discounted rates or transfer your bookings when schedules change. 100% transparent and safe with Aura Escrow protection.',
     escrowBadge: 'Aura Escrow Transaction Protection',
     instantTransferBadge: 'Instant Digital Pass Transfer',
     findSlotsTab: 'Explore Slots',
@@ -1202,10 +1266,12 @@ export default {
     sortTimeAsc: 'Earliest match time',
     resetFilters: 'Reset filters',
     emptyListingsTitle: 'No Matching Resale Slots Found',
-    emptyListingsDesc: 'Try broadening your search criteria or check back later when other members post new slots.',
+    emptyListingsDesc:
+      'Try broadening your search criteria or check back later when other members post new slots.',
     resetAndShowAll: 'Reset filters & view all',
     sellIntroTitle: 'Eligible Bookings Available for Resale',
-    sellIntroSub: 'Only confirmed paid bookings scheduled at least 2 hours in advance are eligible for resale.',
+    sellIntroSub:
+      'Only confirmed paid bookings scheduled at least 2 hours in advance are eligible for resale.',
     emptyUserSlots: 'You currently have no upcoming court bookings eligible for resale.',
     bookNowBtn: 'Book a Court',
     passSlotBtn: 'List for Resale',
@@ -1215,7 +1281,8 @@ export default {
     resalePrice: 'Resale price',
     buyNowBtn: 'Buy Slot',
     buyModalTitle: 'Confirm Resale Slot Purchase',
-    buyModalDesc: 'The court reservation ticket and entry PIN will be transferred instantly to your account upon confirmation.',
+    buyModalDesc:
+      'The court reservation ticket and entry PIN will be transferred instantly to your account upon confirmation.',
     paymentMethod: 'Payment method:',
     payWithWallet: 'Aura Club Wallet (Balance: {balance})',
     payWithVietQr: 'Scan VietQR SePay',
@@ -1233,12 +1300,14 @@ export default {
   },
   splitBill: {
     title: 'Group reservation split',
-    subtitle: 'Group and share details come from the server. Only verified receipts confirm payment.',
+    subtitle:
+      'Group and share details come from the server. Only verified receipts confirm payment.',
     backToBookings: 'Back to bookings',
     refresh: 'Refresh status',
     loading: 'Loading split group...',
     noGroupSelected: 'No split group selected.',
-    bookingLookupUnavailable: 'A split group cannot yet be looked up by this booking code. Please try again later.',
+    bookingLookupUnavailable:
+      'A split group cannot yet be looked up by this booking code. Please try again later.',
     invalidGroup: 'The server did not return a valid split group.',
     loadFailed: 'Could not load the split group. Please try again.',
     staleWarning: 'Status could not be refreshed. The details below may have changed.',
@@ -1247,8 +1316,10 @@ export default {
     acceptedTotal: 'Accepted reservation total',
     serverState: 'Group state recorded by the server',
     expiresAt: 'Hold expires',
-    evidenceUnavailable: 'The API has not supplied verified payment receipts. A group state or customer-submitted reference is not evidence that funds were received.',
-    actionsUnavailable: 'Item/time splits, service additions and contribution requests are unavailable until the API persists them. This total covers only the accepted reservation; post-session costs are not collected here.',
+    evidenceUnavailable:
+      'The API has not supplied verified payment receipts. A group state or customer-submitted reference is not evidence that funds were received.',
+    actionsUnavailable:
+      'Item/time splits, service additions and contribution requests are unavailable until the API persists them. This total covers only the accepted reservation; post-session costs are not collected here.',
     shares: 'Contributions',
     shareNumber: 'Share {number}',
     shareExpired: 'This share has expired.',
@@ -1258,7 +1329,8 @@ export default {
   matchmaking: {
     eyebrow: 'OPEN SOCIAL MATCHES',
     title: 'Matchmaking & Community Games',
-    subtitle: 'Find athletic partners at your skill level, host friendly community games, or recruit tournament teammates.',
+    subtitle:
+      'Find athletic partners at your skill level, host friendly community games, or recruit tournament teammates.',
     openMatches: 'Open Matches Available',
     totalMembers: 'Active Players',
     totalVenues: 'Linked Venues',
@@ -1282,7 +1354,8 @@ export default {
     levelIntermediate: 'Intermediate',
     levelAdvanced: 'Advanced / Semi-Pro',
     createMatchPageTitle: 'Create New Community Match',
-    createMatchPageSub: 'Find opponents, connect with teammates, and share court costs automatically.',
+    createMatchPageSub:
+      'Find opponents, connect with teammates, and share court costs automatically.',
     backToMatchmaking: 'Back to Matchmaking',
     customTitleLabel: 'Match Title (Optional - auto-generated if left empty)',
     customTitlePlaceholder: 'e.g., Looking for 2 intermediate players for Saturday doubles...',
@@ -1300,9 +1373,11 @@ export default {
   legal: {
     badge: 'LEGAL & COMPLIANCE AURA COURT',
     termsTitle: 'Terms of Service',
-    termsSubtitle: 'Please read these terms carefully before using our digital court booking services and participating in sports activities across the Aura Court network.',
+    termsSubtitle:
+      'Please read these terms carefully before using our digital court booking services and participating in sports activities across the Aura Court network.',
     privacyTitle: 'Privacy Policy',
-    privacySubtitle: 'Aura Court is strictly dedicated to safeguarding your personal data and privacy with enterprise-grade security standards.',
+    privacySubtitle:
+      'Aura Court is strictly dedicated to safeguarding your personal data and privacy with enterprise-grade security standards.',
     tabTerms: 'Terms of Service',
     tabPrivacy: 'Privacy Policy',
     updatedDate: 'Last Updated: August 2026',
@@ -1335,9 +1410,11 @@ export default {
     bikeTitle: 'By Motorbike / Scooter',
     bikeDesc: 'Sheltered basement motorbike parking with automatic smart card access.',
     transitTitle: 'Public Transit',
-    transitDesc: 'Bus stops and rapid metro transit stations located just a 150m walk from the venue.',
+    transitDesc:
+      'Bus stops and rapid metro transit stations located just a 150m walk from the venue.',
     lobbyTitle: 'Lobby & Main Reception',
-    lobbyDesc: 'Enter Lobby A on Floor 1, take elevator to Floor 2 for Check-in desk and locker rooms.',
+    lobbyDesc:
+      'Enter Lobby A on Floor 1, take elevator to Floor 2 for Check-in desk and locker rooms.',
     courtsAtLocation: 'Courts Available at This Venue',
     readyCourts: '{count} courts available',
     priceFrom: 'Rental from:',
@@ -1351,7 +1428,20 @@ export default {
     today: 'Today',
     clear: 'Clear',
     weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    months: [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ],
   },
   admin: {
     eyebrow: 'System Administration',
@@ -1364,23 +1454,27 @@ export default {
     scheduleManage: 'Schedule & Maintenance',
     operatingHours: 'Operating Hours',
     scheduleConfig: 'Operating Hours Configuration',
-    scheduleDesc: 'Configure standard opening hours, holiday exceptions, and court downtime to ensure precision booking.',
+    scheduleDesc:
+      'Configure standard opening hours, holiday exceptions, and court downtime to ensure precision booking.',
     auditLog: 'Audit Logs',
     publishChanges: 'Save & Publish Changes',
     standardWeekly: 'Standard Weekly Schedule',
-    standardWeeklyDesc: 'These hours apply to all standard courts unless superseded by maintenance or special date overrides.',
+    standardWeeklyDesc:
+      'These hours apply to all standard courts unless superseded by maintenance or special date overrides.',
     allVenues: 'All Venues',
     addShift: 'Add Shift',
     removeShift: 'Remove Shift',
     closed: 'Closed',
     open: 'Open',
     specialDates: 'Special Dates & Holidays',
-    specialDatesDesc: 'Holidays, tournaments, or custom closure dates that override the standard weekly schedule.',
+    specialDatesDesc:
+      'Holidays, tournaments, or custom closure dates that override the standard weekly schedule.',
     addSpecialDate: 'Add Special Date',
     closedAllDay: 'Closed All Day',
     modifiedHours: 'Modified: {hours}',
     maintenance: 'Court Maintenance Schedule',
-    maintenanceDesc: 'Schedule and track court closures for mat resurfacing, net repairs, or technical inspections.',
+    maintenanceDesc:
+      'Schedule and track court closures for mat resurfacing, net repairs, or technical inspections.',
     courtOffline: '{court} Offline',
     scheduleDowntime: 'Schedule Downtime',
     maintenanceReason: 'Maintenance Reason',
@@ -1417,7 +1511,8 @@ export default {
     membershipLoyalty: 'Membership & Loyalty Points',
     dashboard: {
       pageTitle: 'Executive Analytics & Facility Operations',
-      pageSubtitle: 'Real-time multi-venue revenue analytics, court utilization rates, and payment verification.',
+      pageSubtitle:
+        'Real-time multi-venue revenue analytics, court utilization rates, and payment verification.',
       totalRevenue: 'Total Revenue',
       revenueTrend: '↑ 14.2% vs last month',
       totalBookings: 'Total Bookings',
@@ -1436,7 +1531,8 @@ export default {
       byHour: 'Hourly Distribution',
       byCourt: 'By Court Utilization',
       recentBookings: 'Recent Booking Transactions',
-      recentBookingsSub: 'Monitor real-time online reservations, scheduled court slots, and payment status.',
+      recentBookingsSub:
+        'Monitor real-time online reservations, scheduled court slots, and payment status.',
       searchBookingPlaceholder: 'Search booking code, customer name...',
       allStatuses: 'All Statuses',
       statusConfirmed: 'Confirmed & Paid',
@@ -1477,7 +1573,8 @@ export default {
     },
     manage: {
       title: 'Courts & Operational Management',
-      subtitle: 'Manage court facilities, dynamic pricing matrices, maintenance downtimes, and refund approvals.',
+      subtitle:
+        'Manage court facilities, dynamic pricing matrices, maintenance downtimes, and refund approvals.',
       couponsCount: 'Discount Codes ({count})',
       refresh: 'Refresh',
       totalCourts: 'Total Courts',
@@ -1589,7 +1686,8 @@ export default {
       statusRejected: 'Rejected',
       refundReview: {
         title: 'Refund review',
-        subtitle: 'Refund requests for this booking. Approve, reject, report a transfer, or acknowledge based on your role.',
+        subtitle:
+          'Refund requests for this booking. Approve, reject, report a transfer, or acknowledge based on your role.',
         actions: {
           approve: 'Approve',
           reject: 'Reject',
@@ -1613,7 +1711,8 @@ export default {
           recipient_disputed: 'Disputed',
         },
         hints: {
-          notVerified: 'A refund is complete only once the recipient acknowledges receipt. An owner-reported transfer or a dispute is NOT a verified/completed refund.',
+          notVerified:
+            'A refund is complete only once the recipient acknowledges receipt. An owner-reported transfer or a dispute is NOT a verified/completed refund.',
         },
         toasts: {
           approved: 'Refund request approved.',
@@ -1717,7 +1816,8 @@ export default {
     },
     venues: {
       title: 'Venues & Facilities Management',
-      subtitle: 'Manage athletic venues, GPS locations, QR check-in posters, and facility statuses.',
+      subtitle:
+        'Manage athletic venues, GPS locations, QR check-in posters, and facility statuses.',
       addNewVenue: 'Add New Venue',
       refreshBtn: 'Refresh',
       totalVenues: 'Total Facilities',
@@ -1771,20 +1871,24 @@ export default {
       imagesHint: 'https://example.com/venue-front.jpg',
       googleMapsLabel: 'Google Maps Link',
       googleMapsPlaceholder: 'https://maps.app.goo.gl/... or https://google.com/maps/...',
-      googleMapsHint: 'Enter a valid Google Maps URL so customers can easily navigate and find directions.',
+      googleMapsHint:
+        'Enter a valid Google Maps URL so customers can easily navigate and find directions.',
       googleMapsInvalid: 'Invalid Google Maps URL (must start with https://...)',
       operationalStatusLabel: 'Operational Status',
       operatingOpenCheckbox: 'Open for operations (Active)',
       saveVenueBtn: 'Save Facility',
       bookingPolicyTitle: 'Booking policy',
-      bookingPolicyDescription: 'Choose each term explicitly. Saving creates a new policy version and does not record customer consent.',
+      bookingPolicyDescription:
+        'Choose each term explicitly. Saving creates a new policy version and does not record customer consent.',
       bookingPolicyVersion: 'Version {version}',
       bookingPolicyNotConfigured: 'Not configured',
-      bookingPolicySaveVenueFirst: 'Save the venue first, then edit it to configure its booking policy.',
+      bookingPolicySaveVenueFirst:
+        'Save the venue first, then edit it to configure its booking policy.',
       loadingBookingPolicy: 'Loading policy...',
       bookingPolicyRequired: 'Complete every policy field before saving.',
       bookingPolicyDurationInvalid: 'Maximum duration must be at least the minimum duration.',
-      bookingPolicyFeeInvalid: 'Percentage fees cannot exceed 100%; a no-fee policy must explicitly use zero.',
+      bookingPolicyFeeInvalid:
+        'Percentage fees cannot exceed 100%; a no-fee policy must explicitly use zero.',
       saveBookingPolicy: 'Save policy version',
       bookingPolicySaved: 'Saved policy version {version}.',
       bookingPolicyBooking: 'Holds and duration',
@@ -1833,10 +1937,12 @@ export default {
       readinessBtn: 'Readiness & payments',
       receivingConnection: {
         title: 'Direct owner payment connection',
-        description: 'Connect the venue to its own SePay receiver. Aura Court never asks for bank login credentials.',
+        description:
+          'Connect the venue to its own SePay receiver. Aura Court never asks for bank login credentials.',
         loading: 'Loading receiving connection…',
         refreshStatus: 'Refresh status',
-        created: 'Receiving connection saved as a draft. Configure the webhook in SePay to continue.',
+        created:
+          'Receiving connection saved as a draft. Configure the webhook in SePay to continue.',
         selected: 'This verified account is selected for new payments.',
         selecting: 'Selecting…',
         select: 'Use this account for new payments',
@@ -1845,7 +1951,8 @@ export default {
         cancelAddAccount: 'Cancel',
         verifyBeforeSelecting: 'Verify this account before selecting it for new payments.',
         saveFailed: 'Could not save the receiving account.',
-        secretSaved: 'HMAC secret saved. Send an authenticated inbound event to verify this connection.',
+        secretSaved:
+          'HMAC secret saved. Send an authenticated inbound event to verify this connection.',
         secretFailed: 'Could not save the HMAC secret.',
         apiTokenSaved: 'SePay API token saved securely.',
         apiTokenFailed: 'Could not save the SePay API token.',
@@ -1862,16 +1969,20 @@ export default {
         bankCode: 'Bank code',
         accountName: 'Account holder name',
         accountNumber: 'Bank account number',
-        legalOwnerAttestation: 'I confirm that this organization is authorized to receive payments into this account.',
-        noBankPassword: 'Enter bank details only. Do not enter online banking passwords or one-time codes.',
+        legalOwnerAttestation:
+          'I confirm that this organization is authorized to receive payments into this account.',
+        noBankPassword:
+          'Enter bank details only. Do not enter online banking passwords or one-time codes.',
         saving: 'Saving…',
         saveAccount: 'Save receiver details',
         sepaySetup: 'SePay webhook setup',
         hmacSecret: 'SePay HMAC-SHA256 secret',
         saveHmacSecret: 'Save or rotate secret',
-        secretNeverShown: 'The secret is encrypted and will not be displayed after saving. Rotating it requires a new verification event.',
+        secretNeverShown:
+          'The secret is encrypted and will not be displayed after saving. Rotating it requires a new verification event.',
         optionalQuery: 'Optional transaction query',
-        queryApiNote: 'Add a SePay API token for server-side recovery when a webhook is missed. This is optional; the webhook remains the primary notification.',
+        queryApiNote:
+          'Add a SePay API token for server-side recovery when a webhook is missed. This is optional; the webhook remains the primary notification.',
         providerAccountId: 'SePay bank account ID',
         apiToken: 'SePay API token',
         saveApiToken: 'Save or rotate API token',
@@ -1882,12 +1993,14 @@ export default {
         retryLoad: 'Retry loading connection',
         readiness: 'Verified owner payment receiver',
         notVerifiedMissing: 'A verified owner receiving connection is required before publication.',
-        notSelectedMissing: 'Select the verified receiving account for this venue before publication.',
+        notSelectedMissing:
+          'Select the verified receiving account for this venue before publication.',
       },
 
       // QR Modal
       qrModalTitle: 'Facility QR Code: {name}',
-      qrModalSub: 'Customers can scan this QR code at front desk to access online booking and directions:',
+      qrModalSub:
+        'Customers can scan this QR code at front desk to access online booking and directions:',
       downloadQrBtn: 'Download QR (PNG)',
       copyLinkBtn: 'Copy Link',
       copiedLink: 'Link copied to clipboard!',
@@ -1896,7 +2009,8 @@ export default {
     },
     schedule: {
       title: 'Facility Operating Hours & Schedules',
-      subtitle: 'Configure weekly recurring schedules, holiday exceptions, and court downtime maintenance.',
+      subtitle:
+        'Configure weekly recurring schedules, holiday exceptions, and court downtime maintenance.',
       auditLogsBtn: 'Audit Logs',
       saveScheduleBtn: 'Save Schedule Config',
       refreshBtn: 'Refresh',
@@ -1979,7 +2093,8 @@ export default {
       venueScheduleOption: 'Venue-wide schedule',
       loadError: 'Could not load operating schedule data.',
       unlockConfirmTitle: 'Confirm Court Unlock',
-      unlockConfirmMsg: 'Are you sure you want to end maintenance and unlock this court for player bookings?',
+      unlockConfirmMsg:
+        'Are you sure you want to end maintenance and unlock this court for player bookings?',
 
       // Special Date Modal
       addSpecialDateModalTitle: 'Add Special Date / Exception',
@@ -2036,7 +2151,8 @@ export default {
     },
     pricing: {
       title: 'Dynamic Pricing Matrix V2',
-      subtitle: 'Configure dynamic pricing rules for peak slots, holiday surcharges, low-demand discounts, and calculate instant quotes.',
+      subtitle:
+        'Configure dynamic pricing rules for peak slots, holiday surcharges, low-demand discounts, and calculate instant quotes.',
       refreshBtn: 'Refresh',
       presetsBtn: 'Pricing Presets',
       simulatorBtn: 'Price Simulator',
@@ -2054,7 +2170,8 @@ export default {
       kpiAvgBasePrice: 'Average Rate',
       kpiPerSlot: 'Per slot / court',
       hierarchyTitle: 'Dynamic Price Hierarchy (Priority Stack)',
-      hierarchySub: 'Date and holiday exceptions, peak, weekly, and base rules are evaluated in order; scope and priority resolve overlaps within a tier.',
+      hierarchySub:
+        'Date and holiday exceptions, peak, weekly, and base rules are evaluated in order; scope and priority resolve overlaps within a tier.',
       searchRulesPlaceholder: 'Search rules by name, court, price type, amount...',
       allVenues: 'All Venues',
       allCourts: 'All Courts',
@@ -2098,7 +2215,8 @@ export default {
       toTime: 'To',
       priceAmountLabel: 'Rate Amount (₫):',
       priorityLabel: 'Priority Rank:',
-      priorityHint: 'Higher ranks win within the same scope and pricing tier; newer versions break remaining ties.',
+      priorityHint:
+        'Higher ranks win within the same scope and pricing tier; newer versions break remaining ties.',
       effectiveDatesHeading: 'Rule validity dates',
       effectiveFromLabel: 'Valid from (inclusive):',
       effectiveUntilLabel: 'Valid through (inclusive):',
@@ -2129,13 +2247,16 @@ export default {
       applyPresetTo: 'Apply Preset Pack To',
       applyPresetBtn: 'Apply Preset Pack',
       presetUrbanTitle: 'Urban Center Prime Matrix (Urban Peak Pack)',
-      presetUrbanDesc: 'Maximize evening peak revenue 17:00 - 21:00 (+50%) and weekend surcharge (+25%).',
+      presetUrbanDesc:
+        'Maximize evening peak revenue 17:00 - 21:00 (+50%) and weekend surcharge (+25%).',
       presetUrbanBadge: 'Most Popular',
       presetStudentTitle: 'Student & Off-Peak Promo (Student Pack)',
-      presetStudentDesc: '25% discount for low-traffic lunch hours (11:00 - 14:00) Monday through Friday.',
+      presetStudentDesc:
+        '25% discount for low-traffic lunch hours (11:00 - 14:00) Monday through Friday.',
       presetStudentBadge: 'Boost Occupancy',
       presetHolidayTitle: 'Holiday & Festivity Surcharge (+35%)',
-      presetHolidayDesc: 'Automatically apply a festive surcharge across all courts with top priority.',
+      presetHolidayDesc:
+        'Automatically apply a festive surcharge across all courts with top priority.',
       presetHolidayBadge: 'Festivity',
       presetNightTitle: 'Night Owl Low-Traffic Promo (Night Owl Pack)',
       presetNightDesc: '15% discount on late night slots (21:00 - 23:00) to fill late capacity.',
@@ -2155,7 +2276,8 @@ export default {
     },
     contracts: {
       title: 'Recurring Contracts & Long-term Bookings',
-      subtitle: 'Review recurring bookings and payment periods; customers create a series through the preview and acceptance flow.',
+      subtitle:
+        'Review recurring bookings and payment periods; customers create a series through the preview and acceptance flow.',
       refreshBtn: 'Refresh',
       exportExcel: 'Export Excel Report',
       activeContracts: 'Active Running Contracts',
@@ -2176,7 +2298,8 @@ export default {
       statusCancelled: 'Cancelled / Terminated',
       searchPlaceholder: 'Search customer, club, contract code...',
       noContractsFound: 'No contracts found',
-      noContractsSub: 'Try adjusting your filters; customers create recurring bookings through preview and acceptance.',
+      noContractsSub:
+        'Try adjusting your filters; customers create recurring bookings through preview and acceptance.',
       hdrContractAndCustomer: 'Contract & Customer',
       hdrCourtAndSlot: 'Court & Slot',
       hdrMatchSchedule: 'Match Schedule',
@@ -2273,7 +2396,8 @@ export default {
       editModalSub: 'Change role assignment or toggle access status for this team member.',
       confirmUpdateBtn: 'Save Changes',
       confirmRemoveTitle: 'Confirm Member Removal',
-      confirmRemoveMsg: 'Are you sure you want to remove {email} from the organization? This will immediately revoke all platform access.',
+      confirmRemoveMsg:
+        'Are you sure you want to remove {email} from the organization? This will immediately revoke all platform access.',
       removeConfirmBtn: 'Remove Member',
       cannotDemoteOwner: 'Cannot demote or remove the last organization owner.',
 
@@ -2302,7 +2426,8 @@ export default {
 
       // Audit Trail
       auditTitle: 'Security & Audit Trail',
-      auditSub: 'Comprehensive immutable log of configuration modifications, monetary approvals, and logins.',
+      auditSub:
+        'Comprehensive immutable log of configuration modifications, monetary approvals, and logins.',
       auditFilterAll: 'All Actions',
       auditFilterAuth: 'Auth & Login',
       auditFilterPrice: 'Pricing & Courts',
@@ -2325,7 +2450,8 @@ export default {
     },
     payouts: {
       title: 'Revenue Settlements & Payouts',
-      subtitle: 'Manage revenue settlements, verify fee reconciliations, and disburse payouts to bank accounts.',
+      subtitle:
+        'Manage revenue settlements, verify fee reconciliations, and disburse payouts to bank accounts.',
       refreshBtn: 'Refresh',
       createPayoutBtn: 'Create Payout',
       snapshotSettlementBtn: 'Snapshot Settlement',
@@ -2394,7 +2520,8 @@ export default {
 
       // Settlement Periods Table
       settlementTableTitle: 'Revenue Settlement Periods (Batches)',
-      settlementTableSub: 'Immutable revenue snapshots with D+2 holding period before payout creation',
+      settlementTableSub:
+        'Immutable revenue snapshots with D+2 holding period before payout creation',
       colPeriod: 'Settlement Period',
       colGross: 'Gross Revenue',
       colFee: 'Fees & Deductions',
@@ -2432,7 +2559,8 @@ export default {
       snapshotModalTitle: 'Create New Settlement Period Snapshot',
       periodStartLabel: 'Period Start Date:',
       periodEndLabel: 'Period End Date:',
-      snapshotExplanation: 'The system aggregates booking revenues in this date range and calculates net payable funds after platform and gateway fee deductions.',
+      snapshotExplanation:
+        'The system aggregates booking revenues in this date range and calculates net payable funds after platform and gateway fee deductions.',
       confirmSnapshotBtn: 'Create Snapshot',
 
       // Alerts & Notifications
@@ -2481,7 +2609,8 @@ export default {
       scoreP1Label: 'Player 1 Score',
       scoreP2Label: 'Player 2 Score',
       noMatchesFoundTitle: 'No Brackets Generated Yet',
-      noMatchesFoundDesc: 'Click "Generate Brackets" to create the initial tournament matchups based on seeded players.',
+      noMatchesFoundDesc:
+        'Click "Generate Brackets" to create the initial tournament matchups based on seeded players.',
       noAthletesFound: 'No Athletes Found',
       noAthletesSub: 'Try searching with different keywords or change the status filter.',
       playerScoresField: '{name} (Set Scores):',
@@ -2602,7 +2731,8 @@ export default {
       orderSuccess: 'Order checkout successful!',
       orderError: 'Order checkout failed. Please try again.',
       disabledTitle: 'POS System Unavailable',
-      disabledNotice: 'POS point-of-sale features are not enabled for this organization. Please contact your platform administrator.',
+      disabledNotice:
+        'POS point-of-sale features are not enabled for this organization. Please contact your platform administrator.',
       openShiftSuccess: 'New shift opened successfully!',
       closeShiftSuccess: 'Shift closed successfully!',
       printCommand: 'Sending print job to thermal printer (POS-80)...',
@@ -2691,7 +2821,8 @@ export default {
       qrAccountNameLabel: 'Account Name:',
       qrAmountLabel: 'Amount:',
       qrMemoLabel: 'Transfer Memo:',
-      qrInstructions: 'Customer scans QR code with banking app. The system will update automatically upon webhook receipt, or cashier can confirm below.',
+      qrInstructions:
+        'Customer scans QR code with banking app. The system will update automatically upon webhook receipt, or cashier can confirm below.',
       qrCancelBtn: 'Cancel Transaction',
       qrConfirmReceivedBtn: 'Confirm Payment Received',
       qrOrderWaiting: 'Order is awaiting QR payment. Please scan code to complete.',
@@ -2709,7 +2840,8 @@ export default {
       shiftActualCashNote: '(Actual counted cash)',
       shiftVarianceLabel: 'Drawer Variance:',
       shiftVarianceMatched: '100% matched with orders and opening float.',
-      shiftVarianceDeficit: 'Cash deficit compared to expected total. Please explain in notes below.',
+      shiftVarianceDeficit:
+        'Cash deficit compared to expected total. Please explain in notes below.',
       shiftVarianceSurplus: 'Cash surplus compared to expected total.',
       loadingShifts: 'Loading shift history...',
       noShiftsRecorded: 'No cashier shifts recorded yet.',
@@ -2736,7 +2868,8 @@ export default {
     },
     shifts: {
       title: 'Cash Register & Shift Balancing',
-      subtitle: 'Count physical drawer denominations, log cash drops, and audit cashier end-of-shift reconciliations.',
+      subtitle:
+        'Count physical drawer denominations, log cash drops, and audit cashier end-of-shift reconciliations.',
       historyTitle: 'Shift History & Reconciliation Reports',
       updatedCashNotice: 'Actual cash drawer updated: {amount}',
       statusLive: 'ACTIVE SHIFT',
@@ -2792,7 +2925,8 @@ export default {
       varianceAlertKpi: 'Variance Discrepancy',
       matchRateKpi: 'Reconciliation Match Rate',
       noActiveShift: 'No active cash register shift currently open',
-      noActiveShiftDesc: 'Open a new shift to start receiving POS payments and track physical cash at the venue.',
+      noActiveShiftDesc:
+        'Open a new shift to start receiving POS payments and track physical cash at the venue.',
       startShiftNow: 'Open Shift Now',
       allVenues: 'All Venues',
       filterVenueLabel: 'Venue:',
@@ -2800,7 +2934,8 @@ export default {
       openStatus: 'Open',
       closedStatus: 'Closed',
       openShiftModalTitle: 'Open New Cash Shift',
-      openShiftDesc: 'Declare the starting cash float available inside the drawer before opening the register.',
+      openShiftDesc:
+        'Declare the starting cash float available inside the drawer before opening the register.',
       selectVenueLabel: 'Operational Venue:',
       startingFloatLabel: 'Starting Drawer Float:',
       preset0: '0 ₫',
@@ -2809,7 +2944,8 @@ export default {
       preset2m: '2,000,000 ₫',
       confirmOpenShift: 'Confirm Open Shift',
       closeShiftModalTitle: 'Close Shift & Drawer Balancing',
-      closeShiftDesc: 'Count physical cash in the drawer and declare any variance for manager reconciliation.',
+      closeShiftDesc:
+        'Count physical cash in the drawer and declare any variance for manager reconciliation.',
       countedCashLabel: 'Counted Cash in Drawer:',
       openCalculator: 'Open Denomination Counter',
       expectedInDrawer: 'Expected in Drawer:',
@@ -2818,7 +2954,8 @@ export default {
       shortCash: 'Drawer Short',
       balancedCash: 'Perfect Balance',
       closingNoteLabel: 'Handover / Variance Explanation:',
-      closingNotePlaceholder: 'Explain any discrepancy or add handover notes for the incoming shift cashier...',
+      closingNotePlaceholder:
+        'Explain any discrepancy or add handover notes for the incoming shift cashier...',
       confirmCloseShift: 'Confirm & Close Shift',
       reviewModalTitle: 'Shift Reconciliation Audit Details',
       shiftCodeLabel: 'Shift Code:',
@@ -2856,139 +2993,143 @@ export default {
       applyDenomSuccess: 'Updated counted cash {amount} to drawer!',
     },
     inventory: {
-      title: "Inventory & Stock Management",
-      subtitle: "Track athletic merchandise, rental gear, beverages, and stock movement history.",
-      addProduct: "Add Product",
-      stockIn: "Stock In",
-      auditStock: "Stock Audit",
-      totalItems: "TOTAL STOCK QUANTITY",
-      totalItemsCount: "{count} items",
-      totalValue: "TOTAL INVENTORY VALUE",
-      lowStock: "LOW STOCK ALERT",
-      lowStockCount: "{count} items",
-      outOfStock: "OUT OF STOCK",
-      outOfStockCount: "{count} items",
-      tabCatalog: "Product Catalog & Stock",
-      tabMovements: "Stock Movement History",
-      searchPlaceholder: "Search product name, SKU, barcode...",
-      searchMovementsPlaceholder: "Search by product, invoice reference, notes...",
-      allCategories: "All Categories",
-      allStockStatuses: "All Stock Statuses",
-      allProductsFilter: "All Products",
-      dateFromPlaceholder: "From date",
-      dateToPlaceholder: "To date",
-      inStockOption: "In Stock",
-      lowStockOption: "Low Stock Warning",
-      outOfStockOption: "Out of Stock",
-      hdrProductAndSku: "Product & SKU",
-      hdrCategory: "Category",
-      hdrCostAndPrice: "Cost / Retail Price",
-      hdrCurrentStock: "Current Stock",
-      hdrActions: "Actions",
-      costSubLabel: "Cost: {amount}",
-      belowMinAlert: "Below minimum ({min})",
-      stockInBtn: "In",
-      stockOutBtn: "Out",
-      editProduct: "Edit",
-      movementsTitle: "Stock Movement & Inventory Audit Log",
-      allMovementTypes: "All Transaction Types",
-      typeInOption: "Stock In (Receipt)",
-      typeOutOption: "Stock Out (Disposal)",
-      typeAdjustOption: "Audit Adjustment",
-      hdrTimestamp: "Timestamp",
-      hdrProduct: "Product",
-      hdrTransactionType: "Transaction Type",
-      hdrQuantity: "Quantity",
-      hdrStockBalance: "Balance After",
-      hdrNoteAndPerformer: "Notes & Performed By",
-      badgeIn: "STOCK IN",
-      badgeOut: "STOCK OUT",
-      badgeAdjust: "ADJUSTMENT",
-      badgeSale: "SALE",
-      noNote: "No notes",
-      performerSub: "By: {user}",
-      editProductTitle: "Edit Product",
-      addProductTitle: "Add New Product to Inventory",
-      productModalSub: "Configure item details, unit of measurement, pricing, and safety stock levels.",
-      productNameLabel: "Product / Service Name",
-      productNamePlaceholder: "e.g., Mineral water, energy drink...",
-      skuLabel: "SKU Code",
-      autoGenSku: "Auto Generate",
-      barcodeLabel: "Barcode (Optional)",
-      barcodePlaceholder: "e.g., 8935001701011",
-      categoryLabel: "Product Category",
-            catDrinksShort: "Drinks",
-      catEquipmentShort: "Equipment",
-      catAccessoriesShort: "Accessories",
-      catSnacksShort: "Nutrition",
-      catRentalShort: "Rental",
-      catServicesShort: "Services",
-      catDrinksOption: "Beverages & Drinks",
-      catEquipmentOption: "Equipment & Gear",
-      catAccessoriesOption: "Sports Accessories",
-      catSnacksOption: "Snacks & Energy Bars",
-      catRentalOption: "Rental Equipment",
-      catServicesOption: "Services & Amenities",
-      unitLabel: "Unit of Measure (UoM)",
-      unitBottle: "Bottle",
-      unitCan: "Can",
-      unitBox: "Box",
-      unitTube: "Tube",
-      unitItem: "Item / Piece",
-      unitPair: "Pair",
-      unitPack: "Pack",
-      unitSet: "Set",
-      costLabel: "Cost Price (Unit Cost)",
-      priceLabel: "Retail Price",
-            taxRateLabel: "VAT Tax Rate",
-      tax8Percent: "8% - Reduced VAT (Beverages, Goods, Sports)",
-      tax10Percent: "10% - Standard VAT (Services, Amenities)",
-      tax5Percent: "5% - Preferential VAT Rate",
-      tax0Percent: "0% - Tax Exempt / Zero VAT",
-      taxBreakdownLabel: "Price & VAT Breakdown",
-      netPriceLabel: "Price Before Tax (Net)",
-      vatAmountLabel: "VAT Amount ({rate}%)",
-      profitMarginLabel: "Margin",
-      initialStockLabel: "Initial Stock Quantity",
-      currentStockLabel: "Current Stock Quantity",
-      stockEditNoteHint: "To alter physical inventory count, please use Stock In/Out or Audit Adjustments.",
-      minStockLabel: "Minimum Stock Alert Threshold",
-      supplierLabel: "Supplier",
-      supplierPlaceholder: "e.g., ABC Sports Co., Ltd...",
-      descriptionLabel: "Product Description & Notes",
-      descriptionPlaceholder: "Specifications, packaging details, origin...",
-      saveProductBtn: "Save Product",
-      stockInTitle: "Stock In (Receive Goods)",
-      stockInSub: "Record incoming inventory shipments from suppliers or internal transfers.",
-      stockOutTitle: "Stock Out / Disposal",
-      stockOutSub: "Record inventory deduction due to damage, expiration, or internal club consumption.",
-      adjustStockTitle: "Physical Inventory Audit Adjustment",
-      adjustStockSub: "Reconcile actual physical stock count after regular count audits.",
-      targetCurrentStock: "SKU: {sku} · Current Stock: {stock} {unit}",
-      projectedStock: "PROJECTED BALANCE",
-      qtyAfterAuditLabel: "Actual count after physical audit",
-      varianceLabel: "Variance",
-      transactionQtyLabel: "Transaction Quantity",
-      unitImportCostLabel: "Batch Import Unit Cost",
-      outReasonLabel: "Stock Out Reason",
-      reasonDamaged: "Damaged / Defective Goods",
-      reasonExpired: "Expired Product",
-      reasonInternalUse: "Internal Club Use / Hospitality",
-      reasonLost: "Lost / Missing Inventory",
-      reasonOther: "Other Reason",
-      docNoteLabel: "Reference & Document Notes",
-      noteInPlaceholder: "e.g., Supplier Invoice #INV-8821...",
-      noteOutPlaceholder: "e.g., Damage report #04...",
-      noteAdjustPlaceholder: "e.g., Monthly inventory audit...",
-      confirmActionBtn: "Confirm Transaction",
-      deleteProductTitle: "Deactivate / Delete Product",
-      deleteProductSub: "Product will be removed from POS sales catalog and stock lists.",
+      title: 'Inventory & Stock Management',
+      subtitle: 'Track athletic merchandise, rental gear, beverages, and stock movement history.',
+      addProduct: 'Add Product',
+      stockIn: 'Stock In',
+      auditStock: 'Stock Audit',
+      totalItems: 'TOTAL STOCK QUANTITY',
+      totalItemsCount: '{count} items',
+      totalValue: 'TOTAL INVENTORY VALUE',
+      lowStock: 'LOW STOCK ALERT',
+      lowStockCount: '{count} items',
+      outOfStock: 'OUT OF STOCK',
+      outOfStockCount: '{count} items',
+      tabCatalog: 'Product Catalog & Stock',
+      tabMovements: 'Stock Movement History',
+      searchPlaceholder: 'Search product name, SKU, barcode...',
+      searchMovementsPlaceholder: 'Search by product, invoice reference, notes...',
+      allCategories: 'All Categories',
+      allStockStatuses: 'All Stock Statuses',
+      allProductsFilter: 'All Products',
+      dateFromPlaceholder: 'From date',
+      dateToPlaceholder: 'To date',
+      inStockOption: 'In Stock',
+      lowStockOption: 'Low Stock Warning',
+      outOfStockOption: 'Out of Stock',
+      hdrProductAndSku: 'Product & SKU',
+      hdrCategory: 'Category',
+      hdrCostAndPrice: 'Cost / Retail Price',
+      hdrCurrentStock: 'Current Stock',
+      hdrActions: 'Actions',
+      costSubLabel: 'Cost: {amount}',
+      belowMinAlert: 'Below minimum ({min})',
+      stockInBtn: 'In',
+      stockOutBtn: 'Out',
+      editProduct: 'Edit',
+      movementsTitle: 'Stock Movement & Inventory Audit Log',
+      allMovementTypes: 'All Transaction Types',
+      typeInOption: 'Stock In (Receipt)',
+      typeOutOption: 'Stock Out (Disposal)',
+      typeAdjustOption: 'Audit Adjustment',
+      hdrTimestamp: 'Timestamp',
+      hdrProduct: 'Product',
+      hdrTransactionType: 'Transaction Type',
+      hdrQuantity: 'Quantity',
+      hdrStockBalance: 'Balance After',
+      hdrNoteAndPerformer: 'Notes & Performed By',
+      badgeIn: 'STOCK IN',
+      badgeOut: 'STOCK OUT',
+      badgeAdjust: 'ADJUSTMENT',
+      badgeSale: 'SALE',
+      noNote: 'No notes',
+      performerSub: 'By: {user}',
+      editProductTitle: 'Edit Product',
+      addProductTitle: 'Add New Product to Inventory',
+      productModalSub:
+        'Configure item details, unit of measurement, pricing, and safety stock levels.',
+      productNameLabel: 'Product / Service Name',
+      productNamePlaceholder: 'e.g., Mineral water, energy drink...',
+      skuLabel: 'SKU Code',
+      autoGenSku: 'Auto Generate',
+      barcodeLabel: 'Barcode (Optional)',
+      barcodePlaceholder: 'e.g., 8935001701011',
+      categoryLabel: 'Product Category',
+      catDrinksShort: 'Drinks',
+      catEquipmentShort: 'Equipment',
+      catAccessoriesShort: 'Accessories',
+      catSnacksShort: 'Nutrition',
+      catRentalShort: 'Rental',
+      catServicesShort: 'Services',
+      catDrinksOption: 'Beverages & Drinks',
+      catEquipmentOption: 'Equipment & Gear',
+      catAccessoriesOption: 'Sports Accessories',
+      catSnacksOption: 'Snacks & Energy Bars',
+      catRentalOption: 'Rental Equipment',
+      catServicesOption: 'Services & Amenities',
+      unitLabel: 'Unit of Measure (UoM)',
+      unitBottle: 'Bottle',
+      unitCan: 'Can',
+      unitBox: 'Box',
+      unitTube: 'Tube',
+      unitItem: 'Item / Piece',
+      unitPair: 'Pair',
+      unitPack: 'Pack',
+      unitSet: 'Set',
+      costLabel: 'Cost Price (Unit Cost)',
+      priceLabel: 'Retail Price',
+      taxRateLabel: 'VAT Tax Rate',
+      tax8Percent: '8% - Reduced VAT (Beverages, Goods, Sports)',
+      tax10Percent: '10% - Standard VAT (Services, Amenities)',
+      tax5Percent: '5% - Preferential VAT Rate',
+      tax0Percent: '0% - Tax Exempt / Zero VAT',
+      taxBreakdownLabel: 'Price & VAT Breakdown',
+      netPriceLabel: 'Price Before Tax (Net)',
+      vatAmountLabel: 'VAT Amount ({rate}%)',
+      profitMarginLabel: 'Margin',
+      initialStockLabel: 'Initial Stock Quantity',
+      currentStockLabel: 'Current Stock Quantity',
+      stockEditNoteHint:
+        'To alter physical inventory count, please use Stock In/Out or Audit Adjustments.',
+      minStockLabel: 'Minimum Stock Alert Threshold',
+      supplierLabel: 'Supplier',
+      supplierPlaceholder: 'e.g., ABC Sports Co., Ltd...',
+      descriptionLabel: 'Product Description & Notes',
+      descriptionPlaceholder: 'Specifications, packaging details, origin...',
+      saveProductBtn: 'Save Product',
+      stockInTitle: 'Stock In (Receive Goods)',
+      stockInSub: 'Record incoming inventory shipments from suppliers or internal transfers.',
+      stockOutTitle: 'Stock Out / Disposal',
+      stockOutSub:
+        'Record inventory deduction due to damage, expiration, or internal club consumption.',
+      adjustStockTitle: 'Physical Inventory Audit Adjustment',
+      adjustStockSub: 'Reconcile actual physical stock count after regular count audits.',
+      targetCurrentStock: 'SKU: {sku} · Current Stock: {stock} {unit}',
+      projectedStock: 'PROJECTED BALANCE',
+      qtyAfterAuditLabel: 'Actual count after physical audit',
+      varianceLabel: 'Variance',
+      transactionQtyLabel: 'Transaction Quantity',
+      unitImportCostLabel: 'Batch Import Unit Cost',
+      outReasonLabel: 'Stock Out Reason',
+      reasonDamaged: 'Damaged / Defective Goods',
+      reasonExpired: 'Expired Product',
+      reasonInternalUse: 'Internal Club Use / Hospitality',
+      reasonLost: 'Lost / Missing Inventory',
+      reasonOther: 'Other Reason',
+      docNoteLabel: 'Reference & Document Notes',
+      noteInPlaceholder: 'e.g., Supplier Invoice #INV-8821...',
+      noteOutPlaceholder: 'e.g., Damage report #04...',
+      noteAdjustPlaceholder: 'e.g., Monthly inventory audit...',
+      confirmActionBtn: 'Confirm Transaction',
+      deleteProductTitle: 'Deactivate / Delete Product',
+      deleteProductSub: 'Product will be removed from POS sales catalog and stock lists.',
       deleteConfirmMsg: "Are you sure you want to remove product '{name}' (SKU: {sku})?",
-      deleteWithStockWarning: "Warning: This product currently has {stock} {unit} remaining in stock!",
-      noMatchingProducts: "No products match the selected filters.",
-      noProductsCreatedYet: "No inventory products recorded yet. Add your first product!",
-      noMatchingMovements: "No stock movement records match the current filters.",
-      noMovementsRecordedYet: "No stock transaction logs recorded yet.",
+      deleteWithStockWarning:
+        'Warning: This product currently has {stock} {unit} remaining in stock!',
+      noMatchingProducts: 'No products match the selected filters.',
+      noProductsCreatedYet: 'No inventory products recorded yet. Add your first product!',
+      noMatchingMovements: 'No stock movement records match the current filters.',
+      noMovementsRecordedYet: 'No stock transaction logs recorded yet.',
     },
     membership: {
       title: 'Membership Plans & Loyalty Rewards',
@@ -2998,7 +3139,7 @@ export default {
       tabPlans: 'VIP Membership Plans',
       tabLoyalty: 'Loyalty Rates & Multipliers',
       tabHistory: 'Version History & Grandfathering',
-      
+
       // KPI stats
       kpiTotalMembers: 'Total VIP Members',
       kpiTotalMembersCount: '{count} Members',
@@ -3009,7 +3150,7 @@ export default {
       kpiPointsIssuedTrend: 'Avg multiplier x1.6',
       kpiRedemptionRate: 'Redemption Rate',
       kpiRedemptionRateTrend: 'Beverage & court vouchers',
-      
+
       // Plans Grid
       currentPlansTitle: 'Active Membership Plans',
       activePlansCount: '{count} Active Plans',
@@ -3069,7 +3210,8 @@ export default {
 
       // Version History Timeline
       versionTimelineTitle: 'Version History',
-      versionTimelineDesc: 'Benefit updates are saved as new versions to grandfather existing active subscribers.',
+      versionTimelineDesc:
+        'Benefit updates are saved as new versions to grandfather existing active subscribers.',
       activeSubscribersCount: '{count} users active',
       updatedByLabel: 'Updated by {user}',
       expandHistoryBtn: 'View full history',
@@ -3100,7 +3242,8 @@ export default {
       newPerkPlaceholder: 'Add new perk...',
       addPerkBtn: 'Add',
       createNewVersionLabel: 'Create new version (e.g. {current} -> {next})',
-      versioningDesc: 'Preserve legacy terms for {count} active subscribers; new terms apply to new signups.',
+      versioningDesc:
+        'Preserve legacy terms for {count} active subscribers; new terms apply to new signups.',
       saveUpdateBtn: 'Save Updates',
       createPlanSubmitBtn: 'Create Plan',
 
@@ -3124,10 +3267,12 @@ export default {
       activeSubscribersLabel: 'Active Subscribers on this version',
       activeSubscribersValue: '{count} Members',
       retentionRateLabel: 'Retention Rate',
-      versionProtectNotice: 'When you modify policies and select "Create new version", all {count} active subscribers retain their existing benefits until their subscription expires.',
+      versionProtectNotice:
+        'When you modify policies and select "Create new version", all {count} active subscribers retain their existing benefits until their subscription expires.',
       currentPerksSnapshotTitle: 'Current Version Perks ({version}):',
       archivePlanBtn: 'Archive Plan',
-      archivePlanConfirm: 'Are you sure you want to archive plan {name}? Current active members will keep their benefits until expiry.',
+      archivePlanConfirm:
+        'Are you sure you want to archive plan {name}? Current active members will keep their benefits until expiry.',
       closeBtn: 'Close',
 
       // Notices & Errors
@@ -3147,7 +3292,8 @@ export default {
     exceptions: {
       title: 'Financial Exceptions & Ledger Audit',
       liveMonitoring: 'LIVE MONITORING',
-      subtitle: 'Investigate payment anomalies, handle gateway mismatch overrides, and maintain immutable SHA-256 audit logs.',
+      subtitle:
+        'Investigate payment anomalies, handle gateway mismatch overrides, and maintain immutable SHA-256 audit logs.',
       searchPlaceholder: 'Search TXN Code, UID, Customer Name...',
       exportBtn: 'Export Report',
       exporting: 'Exporting...',
@@ -3238,9 +3384,11 @@ export default {
       clearSign: 'Clear Signature',
       autoSign: 'Auto-Sign',
       signatureVerified: 'Valid Digital Signature',
-      legalCommitment: 'I certify that this override complies with organizational risk policies and accept personal accountability for this decision.',
+      legalCommitment:
+        'I certify that this override complies with organizational risk policies and accept personal accountability for this decision.',
       signAndRecordBtn: 'Sign & Record to Ledger',
-      overrideSuccessMsg: 'Successfully applied override and logged to ledger for transaction {ref}.',
+      overrideSuccessMsg:
+        'Successfully applied override and logged to ledger for transaction {ref}.',
       overrideErrorMsg: 'Unable to apply override. Please check again.',
 
       // Audit Sidebar
@@ -3297,14 +3445,16 @@ export default {
     },
     reconciliation: {
       title: 'Financial Reconciliation & Anomaly Detection',
-      subtitle: 'Automated 3-way reconciliation across Aura Internal Ledger, Payment Gateways (PSP), and Bank Settlement Accounts.',
+      subtitle:
+        'Automated 3-way reconciliation across Aura Internal Ledger, Payment Gateways (PSP), and Bank Settlement Accounts.',
       liveSync: 'NAPAS & PSP: ONLINE 100%',
       syncNow: 'Sync Now',
       syncing: 'Syncing...',
       syncSuccess: 'Full reconciliation sync with Payment Gateways has been triggered!',
       autoResolveSuccess: 'AI safely auto-reconciled minor variances!',
       exportReportTitle: 'Revenue Reconciliation Report',
-      exportingMsg: 'Generating {format} reconciliation report... The file will download automatically.',
+      exportingMsg:
+        'Generating {format} reconciliation report... The file will download automatically.',
       exportedMsg: 'Successfully exported {fileName}',
       loadError: 'Failed to load financial reconciliation data.',
       detailError: 'Failed to load reconciliation run details.',
@@ -3323,8 +3473,10 @@ export default {
       kpiPayoutSubtitle: '142 completed · 2 held',
 
       // Alert Banner
-      alertBannerTitle: 'Detected {count} financial variances requiring attention before settlement cycle',
-      alertBannerDesc: 'Includes: Delayed Napas247 Webhook transactions, partner gateway fee rounding discrepancies, and pending variances.',
+      alertBannerTitle:
+        'Detected {count} financial variances requiring attention before settlement cycle',
+      alertBannerDesc:
+        'Includes: Delayed Napas247 Webhook transactions, partner gateway fee rounding discrepancies, and pending variances.',
       autoResolveSafeBtn: 'Auto-Resolve Safe Discrepancies',
       openInvestigationBtn: 'Open Investigation',
 
@@ -3356,7 +3508,8 @@ export default {
 
       // Data Grid Table
       gridTitle: '3-Way Multi-Source Reconciliation Grid',
-      gridSubtitle: 'Direct multi-source comparison across Aura Booking Ledger, PSP Webhook, and Bank Settlement flow.',
+      gridSubtitle:
+        'Direct multi-source comparison across Aura Booking Ledger, PSP Webhook, and Bank Settlement flow.',
       countBadge: '{count} recorded runs',
       thTxn: 'TXN / Run Code',
       thChannel: 'Channel & Partner',
@@ -3423,10 +3576,13 @@ export default {
       tagBankSettled: 'Settled',
       diagCardTitle: 'Root-Cause Discrepancy Diagnostic',
       confidenceLabel: 'Confidence: {score}%',
-      diagDefaultText: 'System Diagnostic: Customer scanned QR code successfully and PSP confirmed receipt. However, the Napas247 forwarding to the bank account experienced latency due to network maintenance at 06:40. Funds arrived at 07:10 (after morning statement batch).',
-      diagSuccessText: 'All financial flows between Aura Ledger, PSP Gateway, and Bank Settlement matched 100%. No technical anomalies or webhook delays detected.',
+      diagDefaultText:
+        'System Diagnostic: Customer scanned QR code successfully and PSP confirmed receipt. However, the Napas247 forwarding to the bank account experienced latency due to network maintenance at 06:40. Funds arrived at 07:10 (after morning statement batch).',
+      diagSuccessText:
+        'All financial flows between Aura Ledger, PSP Gateway, and Bank Settlement matched 100%. No technical anomalies or webhook delays detected.',
       diagRecTitle: 'Recommended Action:',
-      diagRecMismatch: 'Confirm "Auto-Resolve" to clear the variance, recognize revenue, and safely update settlement balance without waiting for afternoon batch.',
+      diagRecMismatch:
+        'Confirm "Auto-Resolve" to clear the variance, recognize revenue, and safely update settlement balance without waiting for afternoon batch.',
       diagRecMatched: 'System has verified the ledger integrity. No manual intervention required.',
       auditNotesLabel: 'Audit Notes / Resolution Signature:',
       auditNotesPlaceholder: 'Enter resolution rationale or bank trace reference code...',
@@ -3438,7 +3594,8 @@ export default {
       title: 'KYC Verification & Facility Onboarding',
       breadcrumb: 'Platform Admin / Facility Legal Verification',
       badge: 'VERIFICATION PORTAL',
-      subtitle: 'Verify legal entities, tax ID, national identity, and NAPAS beneficiary bank accounts prior to exchange launch',
+      subtitle:
+        'Verify legal entities, tax ID, national identity, and NAPAS beneficiary bank accounts prior to exchange launch',
       searchPlaceholder: 'Search KYC ID, Facility, National ID, Tax ID...',
       exportBtn: 'Export Report',
       exporting: 'Exporting...',
@@ -3513,7 +3670,8 @@ export default {
       sec1Match100: '100% Match',
       sec1DbMatched: 'Civil Registry Matched',
       sec1FaceSelfie: 'Portrait Verified',
-      sec1Banner: 'AI OCR Confidence Score: {score}%. Data matches National Public Service Portal records perfectly.',
+      sec1Banner:
+        'AI OCR Confidence Score: {score}%. Data matches National Public Service Portal records perfectly.',
 
       // Document Section 2: GPKD
       sec2Title: '2. Business Registration License (GPKD)',
@@ -3522,7 +3680,8 @@ export default {
       sec2LegalName: 'Legal Name on License',
       sec2BrandName: 'Operating Brand Name',
       sec2TaxStatus: 'Tax Status (Tax Authority)',
-      sec2Banner: 'Operating brand name differs from registered legal name. Badminton business code (9311) verified: Compliant.',
+      sec2Banner:
+        'Operating brand name differs from registered legal name. Badminton business code (9311) verified: Compliant.',
 
       // Document Section 3: NAPAS
       sec3Title: '3. Beneficiary Account Validation (NAPAS 24/7)',
@@ -3558,10 +3717,12 @@ export default {
 
       // Reason Templates
       reasonCccdBlurry: 'National ID image is blurry, cropped, or illegible',
-      reasonNameMismatch: 'Operating brand name completely mismatches business registration license',
+      reasonNameMismatch:
+        'Operating brand name completely mismatches business registration license',
       reasonBankMismatch: 'Beneficiary bank account name does not match registered legal entity',
       reasonMissingLease: 'Missing facility lease agreement or court operating authorization',
-      reasonTaxSuspended: 'Enterprise Tax ID is currently marked as suspended / inactive by authorities',
+      reasonTaxSuspended:
+        'Enterprise Tax ID is currently marked as suspended / inactive by authorities',
 
       // Modals
       inspectModalTitle: 'Original Document Inspector & Audit',
@@ -3580,11 +3741,13 @@ export default {
       title: 'Dispute Resolution Center',
       breadcrumb: 'Operations Admin / Arbitration & Compensation',
       badge: 'ARBITRATION PORTAL',
-      subtitle: 'Resolve claims, examine tri-party evidence, and issue digitally signed compensation rulings',
+      subtitle:
+        'Resolve claims, examine tri-party evidence, and issue digitally signed compensation rulings',
       searchPlaceholder: 'Search by #DSP, #BK, Customer name, Facility...',
       exportPdfBtn: 'Export Case Dossier (PDF)',
       exportingPdf: 'Exporting PDF...',
-      selectDisputePrompt: 'Please select a dispute case from the list to investigate and arbitrate.',
+      selectDisputePrompt:
+        'Please select a dispute case from the list to investigate and arbitrate.',
       refreshBtn: 'Refresh',
       filterAll: 'All',
       filterStatus: 'Status',
@@ -3692,7 +3855,8 @@ export default {
     },
     org: {
       pageTitle: 'Organization & Enterprise Profile',
-      pageSubtitle: 'Manage legal corporate entity, affiliated venues, executive team permissions, and automation policies',
+      pageSubtitle:
+        'Manage legal corporate entity, affiliated venues, executive team permissions, and automation policies',
       refreshBtn: 'Refresh',
       switchOrgLabel: 'Current Organization / Branch:',
       selectOrgPlaceholder: 'Select organization...',
@@ -3711,7 +3875,8 @@ export default {
       tabMembers: 'Executive Team ({count})',
       tabPolicies: 'Policies & Automation',
       profileTitle: 'Corporate Profile & Brand Identity',
-      profileSubtitle: 'Legal entity details, support contacts, and brand identity displayed across the platform',
+      profileSubtitle:
+        'Legal entity details, support contacts, and brand identity displayed across the platform',
       orgNameLabel: 'Company / Chain Name:',
       slugLabel: 'System Identifier (Slug):',
       taxCodeLabel: 'Tax Identification Number (Tax ID):',
@@ -3726,7 +3891,8 @@ export default {
       logoUrlPlaceholder: 'https://example.com/logo.png',
       saveOrgBtn: 'Save Corporate Profile',
       membersTitle: 'Corporate Management Team & Staff',
-      membersSubtitle: 'Manage multi-tier permissions for venue managers, front-desk cashiers, and ground staff',
+      membersSubtitle:
+        'Manage multi-tier permissions for venue managers, front-desk cashiers, and ground staff',
       inviteEmailPlaceholder: 'Enter staff or manager email to invite...',
       roleOwner: 'Organization Owner',
       roleManager: 'Facility Manager',
@@ -3749,7 +3915,8 @@ export default {
       confirmBtn: 'Confirm',
       noMembersFound: 'No team members found',
       venuesTitle: 'Affiliated Facilities & Venues',
-      venuesSubtitle: 'All sports complexes and athletic facilities operating under this corporate entity',
+      venuesSubtitle:
+        'All sports complexes and athletic facilities operating under this corporate entity',
       searchVenuesPlaceholder: 'Search venues by name, address...',
       filterAllVenues: 'All statuses',
       courtsScale: '{count} courts',
@@ -3757,13 +3924,16 @@ export default {
       statusInactive: 'Inactive',
       manageVenueBtn: 'Manage Venue',
       noVenuesFound: 'No affiliated venues found',
-      noVenuesSub: 'This organization currently has no venues affiliated or matching the search filter',
+      noVenuesSub:
+        'This organization currently has no venues affiliated or matching the search filter',
       policiesTitle: 'Operating Policies & Automation',
       policiesSubtitle: 'Configure booking rules and marketplace transfer fees',
       autoApproveTitle: 'Automatic Booking Approval (Auto-Approve)',
-      autoApproveDesc: 'Orders paid via VietQR or card are automatically confirmed and locked on the schedule without manual staff review.',
+      autoApproveDesc:
+        'Orders paid via VietQR or card are automatically confirmed and locked on the schedule without manual staff review.',
       resaleFeeLabel: 'P2P Slot Resale Marketplace Fee (%):',
-      resaleFeeDesc: 'Platform fee percentage retained when players resell their reservation slot on the marketplace.',
+      resaleFeeDesc:
+        'Platform fee percentage retained when players resell their reservation slot on the marketplace.',
       savePoliciesBtn: 'Save Policy Configuration',
     },
     nav: {
@@ -3807,7 +3977,8 @@ export default {
   about: {
     badge: 'OUR STORY & VISION',
     title: 'Defining a New Benchmark for High-Performance Athletics.',
-    subtitle: 'Aura Court merges international standard playing surfaces (BWF, USA Pickleball, FIFA Turf) with smart IoT, automated VAR replay, and real-time booking technology — delivering peak training and match conditions for every athlete.',
+    subtitle:
+      'Aura Court merges international standard playing surfaces (BWF, USA Pickleball, FIFA Turf) with smart IoT, automated VAR replay, and real-time booking technology — delivering peak training and match conditions for every athlete.',
     bookCourtBtn: 'Book an Experience Slot',
     exploreFeaturesBtn: 'Explore Club Features',
     stats: {
@@ -3832,27 +4003,36 @@ export default {
     pillars: {
       badge: '4 INNOVATIVE PILLARS',
       title: 'The Signature Aura Court Experience',
-      subtitle: 'Every dimension of Aura Court is meticulously crafted to elevate performance and athletic comfort.',
+      subtitle:
+        'Every dimension of Aura Court is meticulously crafted to elevate performance and athletic comfort.',
       p1Title: 'International Standard Courts',
-      p1Desc: '5-layer BWF badminton mats, USA Pickleball acrylic surfaces, and non-abrasive FIFA 5v5 turf.',
+      p1Desc:
+        '5-layer BWF badminton mats, USA Pickleball acrylic surfaces, and non-abrasive FIFA 5v5 turf.',
       p2Title: 'Smart-Court 4.0 Technology',
-      p2Desc: 'Automated AI rally highlight generation, in-app instant VAR playback, and queue-free check-ins.',
+      p2Desc:
+        'Automated AI rally highlight generation, in-app instant VAR playback, and queue-free check-ins.',
       p3Title: '10-Second Booking & Split-Bill',
-      p3Desc: 'Real-time live availability, instant reservation, and automated Group Split Bill via individual QR codes.',
+      p3Desc:
+        'Real-time live availability, instant reservation, and automated Group Split Bill via individual QR codes.',
       p4Title: '5-Star Hospitality & Amenities',
-      p4Desc: 'Private showers with hot water, Smart Lockers, sports nutrition cafe, and spacious parking facilities.',
+      p4Desc:
+        'Private showers with hot water, Smart Lockers, sports nutrition cafe, and spacious parking facilities.',
     },
     values: {
       badge: 'CORE VALUES',
       title: 'Commitments Defining Aura Court',
       v1Title: 'Precision',
-      v1Desc: 'Absolute precision from court dimensions and surface elasticity to millisecond real-time slot sync.',
+      v1Desc:
+        'Absolute precision from court dimensions and surface elasticity to millisecond real-time slot sync.',
       v2Title: 'Passion',
-      v2Desc: 'Promoting healthy athletic competition, partnering with local clubs, and hosting community leagues.',
+      v2Desc:
+        'Promoting healthy athletic competition, partnering with local clubs, and hosting community leagues.',
       v3Title: 'Innovation',
-      v3Desc: 'Continually advancing booking systems, AI match analysis, and community ELO leaderboards.',
+      v3Desc:
+        'Continually advancing booking systems, AI match analysis, and community ELO leaderboards.',
       v4Title: 'Transparency',
-      v4Desc: 'Clear transparent rates with zero hidden fees and fair operational policies protecting players.',
+      v4Desc:
+        'Clear transparent rates with zero hidden fees and fair operational policies protecting players.',
     },
     sports: {
       badge: 'SPORTS DISCIPLINES',
@@ -3860,11 +4040,14 @@ export default {
       badminton: 'Badminton',
       badmintonDesc: '5.0mm BWF tournament mats, standard bounce, and maximum slip protection.',
       pickleball: 'Pickleball Pro',
-      pickleballDesc: 'Indoor & outdoor glare-resistant acrylic courts with USA Pickleball certified nets.',
+      pickleballDesc:
+        'Indoor & outdoor glare-resistant acrylic courts with USA Pickleball certified nets.',
       football: 'Futsal Football',
-      footballDesc: 'Premium artificial turf with soft rubber infill and smart drainage for all-weather play.',
+      footballDesc:
+        'Premium artificial turf with soft rubber infill and smart drainage for all-weather play.',
       tableTennis: 'Table Tennis',
-      tableTennisDesc: 'ITTF Olympic-grade Double Fish tables with shock-absorbent sand-grain flooring.',
+      tableTennisDesc:
+        'ITTF Olympic-grade Double Fish tables with shock-absorbent sand-grain flooring.',
     },
     cta: {
       title: 'Ready to Elevate Your Performance with Aura Court?',
@@ -3882,9 +4065,11 @@ export default {
   },
   seo: {
     homeTitle: 'Aura Court · Online Sports Court Booking',
-    homeDesc: 'Check live court availability, choose preferred time slots, and book sports venues in seconds.',
+    homeDesc:
+      'Check live court availability, choose preferred time slots, and book sports venues in seconds.',
     aboutTitle: 'About Aura Court · Professional Sports Facilities & Tech',
-    aboutDesc: 'Discover our mission, international tournament-grade courts, and real-time reservation platform.',
+    aboutDesc:
+      'Discover our mission, international tournament-grade courts, and real-time reservation platform.',
     loginTitle: 'Sign In · Aura Court',
     loginDesc: 'Log in to your Aura Court account to manage bookings and payments.',
     registerTitle: 'Create Account · Aura Court',
@@ -3902,35 +4087,43 @@ export default {
     courtsTitle: 'Sports Courts Directory · Aura Court',
     courtsDesc: 'Browse sporting courts, compare pricing, and reserve available slots.',
     courtDetailTitle: 'Court Details · Aura Court',
-    courtDetailDesc: 'Detailed specifications, surface grade, amenities, and available slots at Aura Court.',
+    courtDetailDesc:
+      'Detailed specifications, surface grade, amenities, and available slots at Aura Court.',
     scheduleTitle: 'Court Schedule & Timeslots · Aura Court',
     scheduleDesc: 'View live visual availability schedules and book slots by date at Aura Court.',
     courtDirectionsTitle: 'Venue Directions & Map · Aura Court',
-    courtDirectionsDesc: 'View full address, navigation instructions, and Google Maps location for Aura Court.',
+    courtDirectionsDesc:
+      'View full address, navigation instructions, and Google Maps location for Aura Court.',
     bookingTitle: 'My Bookings & Orders · Aura Court',
     bookingDesc: 'Manage reservations, view digital check-in QR codes, and track booking statuses.',
     walletTitle: 'My Wallet & Venue Top-Up · Aura Court',
-    walletDesc: 'Manage wallet balance, perform quick top-ups, and review transaction history across venues.',
+    walletDesc:
+      'Manage wallet balance, perform quick top-ups, and review transaction history across venues.',
     resaleTitle: 'Court Resale & Slot Transfer Marketplace · Aura Court',
-    resaleDesc: 'Discover transferred slots from members or list your upcoming reserved slot for resale.',
+    resaleDesc:
+      'Discover transferred slots from members or list your upcoming reserved slot for resale.',
     recurringBookingTitle: 'Recurring Bookings & Fixed Schedules · Aura Court',
-    recurringBookingDesc: 'Secure prime slots every week across monthly or quarterly cycles with guaranteed availability.',
+    recurringBookingDesc:
+      'Secure prime slots every week across monthly or quarterly cycles with guaranteed availability.',
     paymentCycleDetailTitle: 'Billing Cycle Details · Aura Court',
     paymentCycleDetailDesc: 'Track recurring payment milestones, invoices, and scheduled matches.',
     tournamentsTitle: 'Tournaments & Championships · Aura Court',
-    tournamentsDesc: 'Explore open amateur and semi-pro tournaments and competitions at Aura Court.',
+    tournamentsDesc:
+      'Explore open amateur and semi-pro tournaments and competitions at Aura Court.',
     tournamentBracketTitle: 'Tournament Bracket & Match Trees · Aura Court',
     tournamentBracketDesc: 'View tournament brackets, knockout rounds, and seeded matchups.',
     tournamentLiveTitle: 'Live Scores & Match Feed · Aura Court',
     tournamentLiveDesc: 'Follow real-time scores, set results, and live game progression.',
     matchmakingTitle: 'Matchmaking & Community Sparring · Aura Court',
-    matchmakingDesc: 'Connect with players of similar skill rating and join friendly sparring matches.',
+    matchmakingDesc:
+      'Connect with players of similar skill rating and join friendly sparring matches.',
     createMatchTitle: 'Create New Match · Aura Court',
     createMatchDesc: 'Host an open or private match, invite friends, and recruit local players.',
     paymentTitle: 'Checkout & Payment · Aura Court',
     paymentDesc: 'Secure automated payments and instant reservation confirmation via QR banking.',
     splitBillTitle: 'Group Bill Splitting & Settlements · Aura Court',
-    splitBillDesc: 'Split court fees equally or by played time with individual attendee payment QR codes.',
+    splitBillDesc:
+      'Split court fees equally or by played time with individual attendee payment QR codes.',
     dropInBillTitle: 'Drop-in Session Bill & Settlements · Aura Court',
     dropInBillDesc: 'View and finalize court fee and shuttlecock breakdown for drop-in sessions.',
     profileTitle: 'User Profile & Settings · Aura Court',
@@ -3938,7 +4131,8 @@ export default {
     notificationsTitle: 'Notifications Inbox · Aura Court',
     notificationsDesc: 'View court confirmations, match reminders, and system notifications.',
     adminTitle: 'Aura Control Management Suite · Aura Court',
-    adminDesc: 'Operational control center for facilities, courts, finances, and staff permissions.',
+    adminDesc:
+      'Operational control center for facilities, courts, finances, and staff permissions.',
     adminManageTitle: 'Court Management · Aura Control',
     adminScheduleTitle: 'Operating Hours & Maintenance · Aura Control',
     adminVenuesTitle: 'Venues & Facilities · Aura Control',

@@ -57,7 +57,6 @@ onUnmounted(() => {
     <div class="aura-glow-bg" aria-hidden="true"></div>
 
     <div class="container legal-container">
-      
       <!-- Top Hero Header -->
       <div class="legal-header">
         <div class="legal-badge">
@@ -99,7 +98,6 @@ onUnmounted(() => {
 
       <!-- Main Content Layout -->
       <div class="legal-grid">
-        
         <!-- Sticky Sidebar Navigation -->
         <aside class="legal-sidebar">
           <div class="sidebar-sticky-card">
@@ -137,7 +135,6 @@ onUnmounted(() => {
 
         <!-- Main Document Body -->
         <main class="legal-body">
-          
           <!-- Section 1 -->
           <section id="collection" class="content-card">
             <div class="section-head">
@@ -148,23 +145,34 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Khi bạn đăng ký tài khoản Aura ID và tương tác với hệ thống Aura Court, chúng tôi thu thập các thông tin tối thiểu cần thiết để phục vụ công tác điều phối sân và giao dịch:
+                Khi bạn đăng ký tài khoản Aura ID và tương tác với hệ thống Aura Court, chúng tôi
+                thu thập các thông tin tối thiểu cần thiết để phục vụ công tác điều phối sân và giao
+                dịch:
               </p>
               <div class="data-types-grid">
                 <div class="data-card">
                   <span class="material-symbols-outlined d-icon">person</span>
                   <h5>Thông tin tài khoản Aura ID</h5>
-                  <p>Họ tên, địa chỉ email, số điện thoại đăng ký và mật khẩu được mã hóa một chiều chuẩn Bcrypt cao cấp.</p>
+                  <p>
+                    Họ tên, địa chỉ email, số điện thoại đăng ký và mật khẩu được mã hóa một chiều
+                    chuẩn Bcrypt cao cấp.
+                  </p>
                 </div>
                 <div class="data-card">
                   <span class="material-symbols-outlined d-icon">receipt_long</span>
                   <h5>Thông tin lịch thi đấu</h5>
-                  <p>Lịch sử các khung giờ đã đặt, tên sân (Tiêu chuẩn/VIP), ngày giờ thi đấu, trạng thái thanh toán và mã QR check-in.</p>
+                  <p>
+                    Lịch sử các khung giờ đã đặt, tên sân (Tiêu chuẩn/VIP), ngày giờ thi đấu, trạng
+                    thái thanh toán và mã QR check-in.
+                  </p>
                 </div>
                 <div class="data-card">
                   <span class="material-symbols-outlined d-icon">devices</span>
                   <h5>Thông tin kỹ thuật &amp; Thiết bị</h5>
-                  <p>Địa chỉ IP, loại trình duyệt, nhật ký truy cập nhằm bảo vệ an ninh phòng chống gian lận và tối ưu giao diện.</p>
+                  <p>
+                    Địa chỉ IP, loại trình duyệt, nhật ký truy cập nhằm bảo vệ an ninh phòng chống
+                    gian lận và tối ưu giao diện.
+                  </p>
                 </div>
               </div>
             </div>
@@ -181,10 +189,22 @@ onUnmounted(() => {
             <div class="section-text">
               <p>Dữ liệu của hội viên chỉ được sử dụng cho các mục đích dịch vụ chính đáng:</p>
               <ul>
-                <li><strong>Điều phối &amp; Khóa sân tức thì:</strong> Tự động khóa khung giờ, tạo mã QR nhận sân và quản lý luồng check-in tại quầy lễ tân.</li>
-                <li><strong>Xác nhận giao dịch thanh toán:</strong> Tự động đối soát chuyển khoản ngân hàng qua cổng bảo mật SePay / VietQR trong vài giây.</li>
-                <li><strong>Thông báo thông minh:</strong> Gửi thông báo nhắc lịch thi đấu, xác nhận hoàn tiền ví Aura Wallet hoặc cảnh báo thay đổi lịch thi đấu giải.</li>
-                <li><strong>Nâng cao chất lượng dịch vụ:</strong> Thống kê tần suất sử dụng để điều chỉnh ánh sáng, bảo dưỡng mặt thảm BWF và nâng cấp tiện ích.</li>
+                <li>
+                  <strong>Điều phối &amp; Khóa sân tức thì:</strong> Tự động khóa khung giờ, tạo mã
+                  QR nhận sân và quản lý luồng check-in tại quầy lễ tân.
+                </li>
+                <li>
+                  <strong>Xác nhận giao dịch thanh toán:</strong> Tự động đối soát chuyển khoản ngân
+                  hàng qua cổng bảo mật SePay / VietQR trong vài giây.
+                </li>
+                <li>
+                  <strong>Thông báo thông minh:</strong> Gửi thông báo nhắc lịch thi đấu, xác nhận
+                  hoàn tiền ví Aura Wallet hoặc cảnh báo thay đổi lịch thi đấu giải.
+                </li>
+                <li>
+                  <strong>Nâng cao chất lượng dịch vụ:</strong> Thống kê tần suất sử dụng để điều
+                  chỉnh ánh sáng, bảo dưỡng mặt thảm BWF và nâng cấp tiện ích.
+                </li>
               </ul>
             </div>
           </section>
@@ -199,28 +219,44 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Aura Court áp dụng các tiêu chuẩn bảo mật tài chính ngân hàng nghiêm ngặt nhất nhằm bảo vệ an toàn 100% cho mọi giao dịch:
+                Aura Court áp dụng các tiêu chuẩn bảo mật tài chính ngân hàng nghiêm ngặt nhất nhằm
+                bảo vệ an toàn 100% cho mọi giao dịch:
               </p>
               <div class="security-pillars">
                 <div class="pillar-item">
-                  <div class="pillar-check"><span class="material-symbols-outlined">check_circle</span></div>
+                  <div class="pillar-check">
+                    <span class="material-symbols-outlined">check_circle</span>
+                  </div>
                   <div>
                     <strong>Không lưu trữ thông tin thẻ nhạy cảm:</strong>
-                    <p>Aura Court <em>không bao giờ</em> lưu trữ mật khẩu ngân hàng, mã OTP hoặc số thẻ CVV/CVC của khách hàng trên máy chủ.</p>
+                    <p>
+                      Aura Court <em>không bao giờ</em> lưu trữ mật khẩu ngân hàng, mã OTP hoặc số
+                      thẻ CVV/CVC của khách hàng trên máy chủ.
+                    </p>
                   </div>
                 </div>
                 <div class="pillar-item">
-                  <div class="pillar-check"><span class="material-symbols-outlined">check_circle</span></div>
+                  <div class="pillar-check">
+                    <span class="material-symbols-outlined">check_circle</span>
+                  </div>
                   <div>
                     <strong>Đối soát tự động độc lập qua SePay / VietQR:</strong>
-                    <p>Giao dịch quét mã QR VietQR được xử lý qua hệ thống đối soát trung gian bảo mật SePay đạt chuẩn an toàn tài chính quốc tế.</p>
+                    <p>
+                      Giao dịch quét mã QR VietQR được xử lý qua hệ thống đối soát trung gian bảo
+                      mật SePay đạt chuẩn an toàn tài chính quốc tế.
+                    </p>
                   </div>
                 </div>
                 <div class="pillar-item">
-                  <div class="pillar-check"><span class="material-symbols-outlined">check_circle</span></div>
+                  <div class="pillar-check">
+                    <span class="material-symbols-outlined">check_circle</span>
+                  </div>
                   <div>
                     <strong>Mã hóa đường truyền TLS 1.3:</strong>
-                    <p>Toàn bộ dữ liệu truyền tải giữa thiết bị của bạn và hệ thống máy chủ Aura Court được mã hóa đầu cuối với chứng chỉ SSL/TLS 256-bit cấp cao.</p>
+                    <p>
+                      Toàn bộ dữ liệu truyền tải giữa thiết bị của bạn và hệ thống máy chủ Aura
+                      Court được mã hóa đầu cuối với chứng chỉ SSL/TLS 256-bit cấp cao.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -237,11 +273,20 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Chúng tôi tuyệt đối <strong>không bán, cho thuê hoặc thương mại hóa dữ liệu cá nhân</strong> của bạn cho bất kỳ đối tác quảng cáo nào. Dữ liệu chỉ được chia sẻ trong phạm vi cần thiết:
+                Chúng tôi tuyệt đối
+                <strong>không bán, cho thuê hoặc thương mại hóa dữ liệu cá nhân</strong> của bạn cho
+                bất kỳ đối tác quảng cáo nào. Dữ liệu chỉ được chia sẻ trong phạm vi cần thiết:
               </p>
               <ul>
-                <li><strong>Cổng thanh toán &amp; Ngân hàng liên kết:</strong> Cung cấp mã đơn hàng và số tiền giao dịch để đối soát thành công đơn đặt sân.</li>
-                <li><strong>Yêu cầu pháp lý bắt buộc:</strong> Chỉ cung cấp khi có văn bản yêu cầu chính thức từ cơ quan quản lý nhà nước có thẩm quyền theo quy định của pháp luật Việt Nam.</li>
+                <li>
+                  <strong>Cổng thanh toán &amp; Ngân hàng liên kết:</strong> Cung cấp mã đơn hàng và
+                  số tiền giao dịch để đối soát thành công đơn đặt sân.
+                </li>
+                <li>
+                  <strong>Yêu cầu pháp lý bắt buộc:</strong> Chỉ cung cấp khi có văn bản yêu cầu
+                  chính thức từ cơ quan quản lý nhà nước có thẩm quyền theo quy định của pháp luật
+                  Việt Nam.
+                </li>
               </ul>
             </div>
           </section>
@@ -255,27 +300,39 @@ onUnmounted(() => {
               <h2>5. Quyền của người dùng với dữ liệu cá nhân</h2>
             </div>
             <div class="section-text">
-              <p>Hội viên có toàn quyền kiểm soát thông tin cá nhân của mình tại Aura Court bất kỳ lúc nào:</p>
+              <p>
+                Hội viên có toàn quyền kiểm soát thông tin cá nhân của mình tại Aura Court bất kỳ
+                lúc nào:
+              </p>
               <div class="rights-list">
                 <div class="right-item">
                   <span class="material-symbols-outlined">visibility</span>
                   <div>
                     <strong>Quyền truy cập &amp; Xem lại:</strong>
-                    <p>Dễ dàng xem toàn bộ thông tin tài khoản, danh sách giao dịch và lịch sử đặt sân trong trang Hồ sơ cá nhân.</p>
+                    <p>
+                      Dễ dàng xem toàn bộ thông tin tài khoản, danh sách giao dịch và lịch sử đặt
+                      sân trong trang Hồ sơ cá nhân.
+                    </p>
                   </div>
                 </div>
                 <div class="right-item">
                   <span class="material-symbols-outlined">edit</span>
                   <div>
                     <strong>Quyền chỉnh sửa &amp; Cập nhật:</strong>
-                    <p>Cập nhật số điện thoại, đổi mật khẩu và tùy chọn nhận thông báo trong mục cài đặt tài khoản.</p>
+                    <p>
+                      Cập nhật số điện thoại, đổi mật khẩu và tùy chọn nhận thông báo trong mục cài
+                      đặt tài khoản.
+                    </p>
                   </div>
                 </div>
                 <div class="right-item">
                   <span class="material-symbols-outlined">delete_forever</span>
                   <div>
                     <strong>Quyền yêu cầu xóa dữ liệu:</strong>
-                    <p>Gửi yêu cầu đóng tài khoản Aura ID vĩnh viễn và ẩn toàn bộ dữ liệu lịch sử khỏi hệ thống công khai.</p>
+                    <p>
+                      Gửi yêu cầu đóng tài khoản Aura ID vĩnh viễn và ẩn toàn bộ dữ liệu lịch sử
+                      khỏi hệ thống công khai.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -292,12 +349,22 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Aura Court sử dụng Cookie kỹ thuật và Local Storage nhằm mang lại trải nghiệm duyệt web mượt mà:
+                Aura Court sử dụng Cookie kỹ thuật và Local Storage nhằm mang lại trải nghiệm duyệt
+                web mượt mà:
               </p>
               <ul>
-                <li><strong>Phiên đăng nhập an toàn (Session Cookie):</strong> Lưu giữ token xác thực an toàn giữa các lượt truy cập mà không yêu cầu đăng nhập lại liên tục.</li>
-                <li><strong>Tùy chỉnh giao diện:</strong> Ghi nhớ chế độ hiển thị Sáng / Tối (Light / Dark Mode) và ngôn ngữ ưa thích (Tiếng Việt / English).</li>
-                <li><strong>Phòng chống tấn công (CSRF Token):</strong> Bảo vệ form đặt sân và quy trình thanh toán khỏi các tấn công giả mạo yêu cầu chéo trang.</li>
+                <li>
+                  <strong>Phiên đăng nhập an toàn (Session Cookie):</strong> Lưu giữ token xác thực
+                  an toàn giữa các lượt truy cập mà không yêu cầu đăng nhập lại liên tục.
+                </li>
+                <li>
+                  <strong>Tùy chỉnh giao diện:</strong> Ghi nhớ chế độ hiển thị Sáng / Tối (Light /
+                  Dark Mode) và ngôn ngữ ưa thích (Tiếng Việt / English).
+                </li>
+                <li>
+                  <strong>Phòng chống tấn công (CSRF Token):</strong> Bảo vệ form đặt sân và quy
+                  trình thanh toán khỏi các tấn công giả mạo yêu cầu chéo trang.
+                </li>
               </ul>
             </div>
           </section>
@@ -312,7 +379,9 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Thông tin hồ sơ hội viên được lưu trữ trong suốt thời gian bạn duy trì tài khoản tại Aura Court. Nhật ký giao dịch và chứng từ thanh toán được lưu trữ bảo mật tối thiểu 12 tháng phục vụ công tác đối soát kế toán trước khi được lưu trữ nén bảo mật.
+                Thông tin hồ sơ hội viên được lưu trữ trong suốt thời gian bạn duy trì tài khoản tại
+                Aura Court. Nhật ký giao dịch và chứng từ thanh toán được lưu trữ bảo mật tối thiểu
+                12 tháng phục vụ công tác đối soát kế toán trước khi được lưu trữ nén bảo mật.
               </p>
             </div>
           </section>
@@ -327,7 +396,8 @@ onUnmounted(() => {
             </div>
             <div class="section-text">
               <p>
-                Nếu có bất kỳ thắc mắc nào liên quan đến chính sách quyền riêng tư hoặc muốn thực hiện quyền yêu cầu bảo mật thông tin, xin vui lòng liên hệ:
+                Nếu có bất kỳ thắc mắc nào liên quan đến chính sách quyền riêng tư hoặc muốn thực
+                hiện quyền yêu cầu bảo mật thông tin, xin vui lòng liên hệ:
               </p>
               <div class="contact-card-box">
                 <div class="c-item">
@@ -347,9 +417,7 @@ onUnmounted(() => {
               </div>
             </div>
           </section>
-
         </main>
-
       </div>
     </div>
   </div>
@@ -370,14 +438,24 @@ onUnmounted(() => {
   width: 1000px;
   max-width: 90vw;
   height: 500px;
-  background: radial-gradient(circle at center, rgba(201, 161, 90, 0.12) 0%, rgba(107, 45, 63, 0.08) 45%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(201, 161, 90, 0.12) 0%,
+    rgba(107, 45, 63, 0.08) 45%,
+    transparent 70%
+  );
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
 }
 
 :global(html.dark .aura-glow-bg) {
-  background: radial-gradient(circle at center, rgba(216, 180, 110, 0.15) 0%, rgba(68, 26, 38, 0.25) 50%, transparent 75%);
+  background: radial-gradient(
+    circle at center,
+    rgba(216, 180, 110, 0.15) 0%,
+    rgba(68, 26, 38, 0.25) 50%,
+    transparent 75%
+  );
 }
 
 .legal-container {
@@ -400,7 +478,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   background: rgba(201, 161, 90, 0.12);
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   padding: 6px 16px;
   border-radius: 999px;
   font-size: 11.5px;
@@ -430,7 +508,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .legal-title) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .legal-subtitle {
@@ -478,7 +556,7 @@ onUnmounted(() => {
 
 .doc-tab.active {
   background: var(--surface, #ffffff);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
 }
 
@@ -493,7 +571,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .doc-tab:hover:not(.active)) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .legal-meta-row {
@@ -518,7 +596,7 @@ onUnmounted(() => {
 
 .meta-item .material-symbols-outlined {
   font-size: 18px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 :global(html.dark .meta-item .material-symbols-outlined) {
@@ -568,13 +646,13 @@ onUnmounted(() => {
 }
 
 :global(html.dark .sidebar-title) {
-  color: #FAF7F3;
+  color: #faf7f3;
   border-color: #382f35;
 }
 
 .sidebar-title .material-symbols-outlined {
   font-size: 18px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark .sidebar-title .material-symbols-outlined) {
@@ -616,12 +694,12 @@ onUnmounted(() => {
 
 :global(html.dark .nav-link-btn:hover) {
   background: #262024;
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .nav-link-btn.active {
-  background: var(--accent-container, #FAF2E3);
-  color: var(--on-accent-container, #684F17);
+  background: var(--accent-container, #faf2e3);
+  color: var(--on-accent-container, #684f17);
   font-weight: 700;
 }
 
@@ -661,7 +739,7 @@ onUnmounted(() => {
   height: 40px;
   border-radius: 50%;
   background: var(--surface, #ffffff);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   border: 1px solid var(--border, #e8e1d7);
   display: grid;
   place-items: center;
@@ -683,7 +761,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .sidebar-support-box h4) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .sidebar-support-box p {
@@ -704,7 +782,7 @@ onUnmounted(() => {
   gap: 6px;
   width: 100%;
   padding: 8px 14px;
-  background: var(--accent, #C9A15A);
+  background: var(--accent, #c9a15a);
   color: #1c1618;
   border-radius: 10px;
   font-size: 13px;
@@ -763,7 +841,7 @@ onUnmounted(() => {
   height: 44px;
   border-radius: 12px;
   background: rgba(201, 161, 90, 0.12);
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   border: 1px solid rgba(201, 161, 90, 0.3);
   display: grid;
   place-items: center;
@@ -789,7 +867,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .section-head h2) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .section-text {
@@ -840,7 +918,9 @@ onUnmounted(() => {
   border: 1px solid var(--border, #e8e1d7);
   border-radius: 14px;
   padding: 18px 16px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .data-card:hover {
@@ -859,7 +939,7 @@ onUnmounted(() => {
 
 .d-icon {
   font-size: 26px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   margin-bottom: 8px;
   display: block;
 }
@@ -876,7 +956,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .data-card h5) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .data-card p {
@@ -931,7 +1011,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .pillar-item strong) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .pillar-item p {
@@ -970,7 +1050,7 @@ onUnmounted(() => {
 
 .right-item .material-symbols-outlined {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -987,7 +1067,7 @@ onUnmounted(() => {
 }
 
 :global(html.dark .right-item strong) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .right-item p {
@@ -1026,7 +1106,7 @@ onUnmounted(() => {
 
 .c-item .material-symbols-outlined {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -1043,13 +1123,13 @@ onUnmounted(() => {
 }
 
 :global(html.dark .c-item strong) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .c-item a,
 .c-item span {
   font-size: 13.5px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   text-decoration: none;
   font-weight: 600;
 }

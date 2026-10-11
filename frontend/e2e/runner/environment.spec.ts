@@ -9,7 +9,6 @@ import {
   validateDatabaseTarget,
   validateFrontendRuntimeConfig,
 } from './preflight.ts'
-import type { E2EFixturesPayload } from './types.ts'
 import { validateDatabaseForTeardown, validateManifestForTeardown } from './teardown.ts'
 import { E2EIsolatedEnvironment } from './environment.ts'
 import {
@@ -31,10 +30,16 @@ import {
 
 test('Preflight: validates environment safety', () => {
   const prodViolations = validateEnvironment({ APP_ENV: 'production' })
-  assert.ok(prodViolations.some((v) => v.includes('CRITICAL')), 'Should flag production as critical')
+  assert.ok(
+    prodViolations.some((v) => v.includes('CRITICAL')),
+    'Should flag production as critical',
+  )
 
   const stagingViolations = validateEnvironment({ APP_ENV: 'staging' })
-  assert.ok(stagingViolations.some((v) => v.includes('CRITICAL')), 'Should flag staging as critical')
+  assert.ok(
+    stagingViolations.some((v) => v.includes('CRITICAL')),
+    'Should flag staging as critical',
+  )
 
   const emptyViolations = validateEnvironment({})
   assert.ok(emptyViolations.length > 0, 'Should reject undefined APP_ENV')
@@ -51,7 +56,7 @@ test('Preflight: validates database target safety', () => {
   })
   assert.ok(
     remoteViolations.some((v) => v.includes('DB_REMOTE_TARGET')),
-    'Should reject remote database host'
+    'Should reject remote database host',
   )
 
   // 2. Production database rejection
@@ -61,17 +66,17 @@ test('Preflight: validates database target safety', () => {
   })
   assert.ok(
     prodDbViolations.some((v) => v.includes('CRITICAL')),
-    'Should reject production database "booking"'
+    'Should reject production database "booking"',
   )
 
   // 3. Strict rejection of shared PHPUnit database
   const phpunitDbViolations = validateDatabaseTarget(
     { host: '127.0.0.1', database: 'booking_test' },
-    { strict: true }
+    { strict: true },
   )
   assert.ok(
     phpunitDbViolations.some((v) => v.includes('DB_SHARED_PHPUNIT')),
-    'Should reject "booking_test" in strict mode'
+    'Should reject "booking_test" in strict mode',
   )
 
   // 4. Missing _test suffix rejection
@@ -81,13 +86,13 @@ test('Preflight: validates database target safety', () => {
   })
   assert.ok(
     nonTestViolations.some((v) => v.includes('DB_NAMING')),
-    'Should require _test suffix'
+    'Should require _test suffix',
   )
 
   // 5. Valid isolated database acceptance
   const validViolations = validateDatabaseTarget(
     { host: '127.0.0.1', database: 'booking_e2e_run123_test' },
-    { strict: true, expectedDbName: 'booking_e2e_run123_test' }
+    { strict: true, expectedDbName: 'booking_e2e_run123_test' },
   )
   assert.equal(validViolations.length, 0, 'Should accept valid isolated database')
 
@@ -99,7 +104,7 @@ test('Preflight: validates database target safety', () => {
   })
   assert.ok(
     remoteUrlViolations.some((v) => v.includes('DB_URL_REMOTE')),
-    'Should reject remote DB_URL'
+    'Should reject remote DB_URL',
   )
 
   const prodUrlViolations = validateDatabaseTarget({
@@ -109,7 +114,7 @@ test('Preflight: validates database target safety', () => {
   })
   assert.ok(
     prodUrlViolations.some((v) => v.includes('CRITICAL')),
-    'Should reject production DB_URL'
+    'Should reject production DB_URL',
   )
 })
 
@@ -123,19 +128,19 @@ test('Preflight: validates frontend runtime-config override', () => {
     fs.writeFileSync(
       path.join(publicDir, 'runtime-config.json'),
       JSON.stringify({ apiUrl: 'https://production-api.auracourt.vn' }),
-      'utf-8'
+      'utf-8',
     )
     const violations = validateFrontendRuntimeConfig(tempDir, 'http://127.0.0.1:8010')
     assert.ok(
       violations.some((v) => v.includes('FRONTEND_API_OVERRIDE')),
-      'Should reject external API url in runtime-config.json'
+      'Should reject external API url in runtime-config.json',
     )
 
     // 2. Empty string should be accepted (defaults to isolated Vite proxy / VITE_API_URL)
     fs.writeFileSync(
       path.join(publicDir, 'runtime-config.json'),
       JSON.stringify({ apiUrl: '' }),
-      'utf-8'
+      'utf-8',
     )
     const validViolations = validateFrontendRuntimeConfig(tempDir, 'http://127.0.0.1:8010')
     assert.equal(validViolations.length, 0, 'Should accept empty apiUrl')
@@ -147,19 +152,19 @@ test('Preflight: validates frontend runtime-config override', () => {
 test('Teardown: refuses to drop protected databases', () => {
   assert.throws(
     () => validateDatabaseForTeardown('booking', 'run123'),
-    /CRITICAL: Refusing to drop protected database/
+    /CRITICAL: Refusing to drop protected database/,
   )
   assert.throws(
     () => validateDatabaseForTeardown('booking_test', 'run123'),
-    /CRITICAL: Refusing to drop protected database/
+    /CRITICAL: Refusing to drop protected database/,
   )
   assert.throws(
     () => validateDatabaseForTeardown('postgres', 'run123'),
-    /CRITICAL: Refusing to drop protected database/
+    /CRITICAL: Refusing to drop protected database/,
   )
   assert.throws(
     () => validateDatabaseForTeardown('booking_e2e_other_run_test', 'run123'),
-    /does not match manifest run ID/
+    /does not match manifest run ID/,
   )
 
   // Should succeed for the exact owned run database
@@ -175,12 +180,17 @@ test('Teardown: validates manifest integrity before cleanup', () => {
         createdAt: new Date().toISOString(),
         tempDir: '/tmp/booking-e2e/bad run ID!@#',
         storagePath: '/tmp/booking-e2e/bad run ID!@#/storage',
-        database: { name: 'booking_e2e_bad run ID!@#_test', host: '127.0.0.1', port: 5432, user: 'ziet' },
+        database: {
+          name: 'booking_e2e_bad run ID!@#_test',
+          host: '127.0.0.1',
+          port: 5432,
+          user: 'ziet',
+        },
         backend: { port: 8010, url: 'http://127.0.0.1:8010' },
         frontend: { port: 4180, url: 'http://127.0.0.1:4180' },
         status: 'ready',
       }),
-    /Invalid runId/
+    /Invalid runId/,
   )
 
   // 2. Mismatched or non-canonical tempDir
@@ -191,12 +201,17 @@ test('Teardown: validates manifest integrity before cleanup', () => {
         createdAt: new Date().toISOString(),
         tempDir: '/etc/unsafe',
         storagePath: '/etc/unsafe/storage',
-        database: { name: 'booking_e2e_validrun123_test', host: '127.0.0.1', port: 5432, user: 'ziet' },
+        database: {
+          name: 'booking_e2e_validrun123_test',
+          host: '127.0.0.1',
+          port: 5432,
+          user: 'ziet',
+        },
         backend: { port: 8010, url: 'http://127.0.0.1:8010' },
         frontend: { port: 4180, url: 'http://127.0.0.1:4180' },
         status: 'ready',
       }),
-    /does not equal canonical path/
+    /does not equal canonical path/,
   )
 
   // 3. Remote database host in manifest
@@ -208,12 +223,17 @@ test('Teardown: validates manifest integrity before cleanup', () => {
         createdAt: new Date().toISOString(),
         tempDir: canonicalTemp,
         storagePath: path.join(canonicalTemp, 'storage'),
-        database: { name: 'booking_e2e_validrun123_test', host: '100.64.0.15', port: 5432, user: 'ziet' },
+        database: {
+          name: 'booking_e2e_validrun123_test',
+          host: '100.64.0.15',
+          port: 5432,
+          user: 'ziet',
+        },
         backend: { port: 8010, url: 'http://127.0.0.1:8010' },
         frontend: { port: 4180, url: 'http://127.0.0.1:4180' },
         status: 'ready',
       }),
-    /is not local loopback/
+    /is not local loopback/,
   )
 })
 
@@ -231,10 +251,18 @@ test('Task 2.2 Canary: Preflight rejects wrong targets without mutating data', (
     execFileSync(
       'psql',
       [
-        '-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', canaryDb,
-        '-c', "CREATE TABLE canary_marker (id serial primary key, val text); INSERT INTO canary_marker (val) VALUES ('canary_unmodified_marker');"
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        canaryDb,
+        '-c',
+        "CREATE TABLE canary_marker (id serial primary key, val text); INSERT INTO canary_marker (val) VALUES ('canary_unmodified_marker');",
       ],
-      { encoding: 'utf-8' }
+      { encoding: 'utf-8' },
     )
   } catch (err) {
     console.warn('Could not setup canary database:', err)
@@ -244,10 +272,18 @@ test('Task 2.2 Canary: Preflight rejects wrong targets without mutating data', (
       return execFileSync(
         'psql',
         [
-          '-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', canaryDb,
-          '-tAc', "SELECT val FROM canary_marker WHERE val = 'canary_unmodified_marker';"
+          '-h',
+          '127.0.0.1',
+          '-p',
+          '5432',
+          '-U',
+          'ziet',
+          '-d',
+          canaryDb,
+          '-tAc',
+          "SELECT val FROM canary_marker WHERE val = 'canary_unmodified_marker';",
         ],
-        { encoding: 'utf-8' }
+        { encoding: 'utf-8' },
       ).trim()
     } catch {
       return ''
@@ -255,41 +291,31 @@ test('Task 2.2 Canary: Preflight rejects wrong targets without mutating data', (
   }
 
   const beforeVal = queryMarkerVal()
-  assert.equal(beforeVal, 'canary_unmodified_marker', 'Canary marker must exist before rejected preflight')
+  assert.equal(
+    beforeVal,
+    'canary_unmodified_marker',
+    'Canary marker must exist before rejected preflight',
+  )
 
   try {
     // Run backend inspection against forbidden production database
     assert.throws(() => {
-      execFileSync(
-        'php',
-        [
-          'artisan',
-          'e2e:inspect-target',
-          '--strict',
-          '--expected-db=booking',
-        ],
-        {
-          cwd: backendDir,
-          env: {
-            ...process.env,
-            APP_ENV: 'production',
-            DB_DATABASE: 'booking',
-          },
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }
-      )
+      execFileSync('php', ['artisan', 'e2e:inspect-target', '--strict', '--expected-db=booking'], {
+        cwd: backendDir,
+        env: {
+          ...process.env,
+          APP_ENV: 'production',
+          DB_DATABASE: 'booking',
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
     }, 'Should exit with non-zero when target is production/booking')
 
     // Run backend inspection against forbidden remote DB_URL
     assert.throws(() => {
       execFileSync(
         'php',
-        [
-          'artisan',
-          'e2e:inspect-target',
-          '--strict',
-          '--expected-db=booking_e2e_canary_test',
-        ],
+        ['artisan', 'e2e:inspect-target', '--strict', '--expected-db=booking_e2e_canary_test'],
         {
           cwd: backendDir,
           env: {
@@ -298,19 +324,27 @@ test('Task 2.2 Canary: Preflight rejects wrong targets without mutating data', (
             DB_URL: 'postgres://ziet:pass@100.64.0.15:5432/booking_e2e_canary_test',
           },
           stdio: ['ignore', 'pipe', 'pipe'],
-        }
+        },
       )
     }, 'Should exit with non-zero when DB_URL points to remote host')
 
     // Verify data in the owned canary database is 100% UNCHANGED
     const afterVal = queryMarkerVal()
-    assert.equal(afterVal, beforeVal, 'Canary marker must be identical before and after rejected preflight')
+    assert.equal(
+      afterVal,
+      beforeVal,
+      'Canary marker must be identical before and after rejected preflight',
+    )
   } finally {
     if (canaryDbCreated) {
       try {
-        execFileSync('dropdb', ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '--if-exists', canaryDb], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-        })
+        execFileSync(
+          'dropdb',
+          ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '--if-exists', canaryDb],
+          {
+            stdio: ['ignore', 'pipe', 'pipe'],
+          },
+        )
       } catch {
         // Ignore cleanup
       }
@@ -364,7 +398,7 @@ test('Task 2.3: Interruption via SIGTERM cleanly tears down resources without to
 
     assert.ok(
       childStdout.includes('CHILD_READY:'),
-      `Child runner should reach ready state. stdout: ${childStdout}, stderr: ${childStderr}`
+      `Child runner should reach ready state. stdout: ${childStdout}, stderr: ${childStderr}`,
     )
 
     const targetDbName = `booking_e2e_${interruptRunId}_test`
@@ -372,8 +406,19 @@ test('Task 2.3: Interruption via SIGTERM cleanly tears down resources without to
     // Verify database exists while child is running
     const dbCheckBefore = execFileSync(
       'psql',
-      ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = '${targetDbName}'`],
-      { encoding: 'utf-8' }
+      [
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        'postgres',
+        '-tAc',
+        `SELECT 1 FROM pg_database WHERE datname = '${targetDbName}'`,
+      ],
+      { encoding: 'utf-8' },
     ).trim()
     assert.equal(dbCheckBefore, '1', 'Dedicated database should exist while child is running')
 
@@ -388,24 +433,50 @@ test('Task 2.3: Interruption via SIGTERM cleanly tears down resources without to
     // Verify dedicated database was cleaned up
     const dbCheckAfter = execFileSync(
       'psql',
-      ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = '${targetDbName}'`],
-      { encoding: 'utf-8' }
+      [
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        'postgres',
+        '-tAc',
+        `SELECT 1 FROM pg_database WHERE datname = '${targetDbName}'`,
+      ],
+      { encoding: 'utf-8' },
     ).trim()
     assert.equal(dbCheckAfter, '', 'Dedicated database should be dropped upon SIGTERM interruption')
 
     // Verify owned external database still exists and was untouched
     const externalDbCheck = execFileSync(
       'psql',
-      ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = '${externalDb}'`],
-      { encoding: 'utf-8' }
+      [
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        'postgres',
+        '-tAc',
+        `SELECT 1 FROM pg_database WHERE datname = '${externalDb}'`,
+      ],
+      { encoding: 'utf-8' },
     ).trim()
     assert.equal(externalDbCheck, '1', 'External database must remain untouched')
   } finally {
     if (externalDbCreated) {
       try {
-        execFileSync('dropdb', ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '--if-exists', externalDb], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-        })
+        execFileSync(
+          'dropdb',
+          ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '--if-exists', externalDb],
+          {
+            stdio: ['ignore', 'pipe', 'pipe'],
+          },
+        )
       } catch {
         // Ignore cleanup
       }
@@ -439,15 +510,30 @@ test('Tasks 2.1 & 2.3: Full isolated environment lifecycle (frontend + backend)'
     // Task 2.4: Verify seeded fixtures
     assert.ok(manifest.fixtures, 'Manifest should contain seeded fixtures')
     const fixtures = manifest.fixtures
-    assert.ok((fixtures.organizations.org1?.venue1A?.courts?.length ?? 0) >= 2, 'Org 1 Venue 1A has courts')
-    assert.ok((fixtures.organizations.org1?.venue1B?.courts?.length ?? 0) >= 1, 'Org 1 Venue 1B has court')
-    assert.ok((fixtures.organizations.org2?.venue2?.courts?.length ?? 0) >= 1, 'Org 2 Venue 2 has court')
+    assert.ok(
+      (fixtures.organizations.org1?.venue1A?.courts?.length ?? 0) >= 2,
+      'Org 1 Venue 1A has courts',
+    )
+    assert.ok(
+      (fixtures.organizations.org1?.venue1B?.courts?.length ?? 0) >= 1,
+      'Org 1 Venue 1B has court',
+    )
+    assert.ok(
+      (fixtures.organizations.org2?.venue2?.courts?.length ?? 0) >= 1,
+      'Org 2 Venue 2 has court',
+    )
     assert.ok(fixtures.users.foreignOwner?.id, 'Foreign owner exists')
     assert.ok(fixtures.users.unverifiedCustomer?.id, 'Unverified customer exists')
     assert.ok(fixtures.users.restrictedCustomer?.id, 'Restricted customer exists')
     // Verify storage path is isolated in tempDir
-    assert.ok(fs.existsSync(path.join(manifest.storagePath, 'framework', 'sessions')), 'Sessions dir exists')
-    assert.ok(fs.existsSync(path.join(manifest.storagePath, 'framework', 'cache')), 'Cache dir exists')
+    assert.ok(
+      fs.existsSync(path.join(manifest.storagePath, 'framework', 'sessions')),
+      'Sessions dir exists',
+    )
+    assert.ok(
+      fs.existsSync(path.join(manifest.storagePath, 'framework', 'cache')),
+      'Cache dir exists',
+    )
 
     // Verify backend responds to healthcheck
     const healthRes = await fetch(`${manifest.backend.url}/up`)
@@ -460,8 +546,19 @@ test('Tasks 2.1 & 2.3: Full isolated environment lifecycle (frontend + backend)'
     // Verify database actually exists in postgres
     const dbCheck = execFileSync(
       'psql',
-      ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = '${manifest.database.name}'`],
-      { encoding: 'utf-8' }
+      [
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        'postgres',
+        '-tAc',
+        `SELECT 1 FROM pg_database WHERE datname = '${manifest.database.name}'`,
+      ],
+      { encoding: 'utf-8' },
     ).trim()
     assert.equal(dbCheck, '1', 'Dedicated database should exist in PostgreSQL')
 
@@ -476,8 +573,19 @@ test('Tasks 2.1 & 2.3: Full isolated environment lifecycle (frontend + backend)'
     // Verify database was dropped
     const dbAfterCheck = execFileSync(
       'psql',
-      ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`],
-      { encoding: 'utf-8' }
+      [
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        'postgres',
+        '-tAc',
+        `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`,
+      ],
+      { encoding: 'utf-8' },
     ).trim()
     assert.equal(dbAfterCheck, '', 'Dedicated database should be dropped during teardown')
 
@@ -514,8 +622,19 @@ test('Tasks 2.1 & 2.3: Failure during startup cleans up all resources without le
     // Verify database was dropped
     const dbCheck = execFileSync(
       'psql',
-      ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = 'booking_e2e_${failingRunId}_test'`],
-      { encoding: 'utf-8' }
+      [
+        '-h',
+        '127.0.0.1',
+        '-p',
+        '5432',
+        '-U',
+        'ziet',
+        '-d',
+        'postgres',
+        '-tAc',
+        `SELECT 1 FROM pg_database WHERE datname = 'booking_e2e_${failingRunId}_test'`,
+      ],
+      { encoding: 'utf-8' },
     ).trim()
     assert.equal(dbCheck, '', 'Database should be cleaned up on startup failure')
     assert.equal(fs.existsSync(env.tempDir), false, 'Temp dir should be removed on startup failure')
@@ -537,7 +656,11 @@ test('Task 2.4: Seeded fixtures satisfy non-demo, two organizations, sibling ven
     // 1. Two organizations & sibling venues structure
     assert.ok(fixtures.organizations?.org1?.id, 'Org 1 exists')
     assert.ok(fixtures.organizations?.org2?.id, 'Org 2 exists')
-    assert.notEqual(fixtures.organizations.org1.id, fixtures.organizations.org2.id, 'Org 1 and Org 2 must be distinct')
+    assert.notEqual(
+      fixtures.organizations.org1.id,
+      fixtures.organizations.org2.id,
+      'Org 1 and Org 2 must be distinct',
+    )
 
     const venue1A = fixtures.organizations.org1.venue1A
     const venue1B = fixtures.organizations.org1.venue1B
@@ -637,8 +760,16 @@ test('Task 2.4: Seeded fixtures satisfy non-demo, two organizations, sibling ven
     assert.equal(checks.v2_ready, true, 'Venue 2 must be ready per real readiness policies')
 
     assert.equal(checks.manager_can_manage_1A, true, 'Manager must be able to manage Venue 1A')
-    assert.equal(checks.manager_can_manage_1B, false, 'Manager must be denied managing sibling Venue 1B (sibling venue denial)')
-    assert.equal(checks.manager_can_manage_2, false, 'Manager must be denied managing foreign Venue 2 (foreign tenant denial)')
+    assert.equal(
+      checks.manager_can_manage_1B,
+      false,
+      'Manager must be denied managing sibling Venue 1B (sibling venue denial)',
+    )
+    assert.equal(
+      checks.manager_can_manage_2,
+      false,
+      'Manager must be denied managing foreign Venue 2 (foreign tenant denial)',
+    )
 
     assert.equal(checks.owner_can_manage_1A, true, 'Owner 1 can manage Venue 1A')
     assert.equal(checks.owner_can_manage_1B, true, 'Owner 1 can manage sibling Venue 1B')
@@ -646,7 +777,11 @@ test('Task 2.4: Seeded fixtures satisfy non-demo, two organizations, sibling ven
 
     assert.equal(checks.unverified_email, true, 'Unverified customer must have unverified email')
     assert.equal(checks.unverified_phone, true, 'Unverified customer must have unverified phone')
-    assert.equal(checks.restricted_suspended, true, 'Restricted customer must have status=suspended')
+    assert.equal(
+      checks.restricted_suspended,
+      true,
+      'Restricted customer must have status=suspended',
+    )
 
     assert.equal(checks.org1_partner_approved, true, 'Org 1 partner status must be approved')
     assert.equal(checks.org1_has_subscription, true, 'Org 1 must have active subscription')
@@ -852,7 +987,11 @@ test('Task 2.5: Independent tests run without execution order dependency', async
 
     // Scenario B: Prepares Stock B and Points B
     const runScenarioB = () => {
-      const stockB = arrangePosStock(manifest, { testKey: 'scenario_b', price: 30000, stockQuantity: 20 })
+      const stockB = arrangePosStock(manifest, {
+        testKey: 'scenario_b',
+        price: 30000,
+        stockQuantity: 20,
+      })
       const customer = manifest.fixtures?.users.customer
       const pointsB = grantLoyaltyPoints(manifest, { userId: customer?.id, points: 75 })
       return { stockB, pointsB }
@@ -868,7 +1007,11 @@ test('Task 2.5: Independent tests run without execution order dependency', async
     assert.equal(resB.pointsB.granted_points, 75)
 
     // Order 2: Reverse execution on fresh isolated scenarios without collision
-    const resB2 = arrangePosStock(manifest, { testKey: 'scenario_b2', price: 35000, stockQuantity: 15 })
+    const resB2 = arrangePosStock(manifest, {
+      testKey: 'scenario_b2',
+      price: 35000,
+      stockQuantity: 15,
+    })
     const resA2 = arrangeCourt(manifest, { testKey: 'scenario_a2', price: 95000 })
 
     assert.equal(resB2.stock_quantity, 15)
@@ -969,7 +1112,11 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
       code: bookingData.attempt_reference,
       referenceCode: bookingData.attempt_reference,
     })
-    assert.equal(webhookRes.statusCode, 200, 'Webhook endpoint must accept valid signed event with HTTP 200')
+    assert.equal(
+      webhookRes.statusCode,
+      200,
+      'Webhook endpoint must accept valid signed event with HTTP 200',
+    )
     // 3. Verify real receipt processor transitioned booking, slots, attempt, and receipt
     const verifyScript = `
       require "vendor/autoload.php";
@@ -1008,7 +1155,11 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
       attempt_status: string
       receipt_status: string
     }
-    assert.equal(outcome.booking_status, 'confirmed', 'Booking must be confirmed after real receipt processing')
+    assert.equal(
+      outcome.booking_status,
+      'confirmed',
+      'Booking must be confirmed after real receipt processing',
+    )
     assert.equal(outcome.slot_status, 'confirmed', 'Booking slot must transition to confirmed')
     assert.equal(outcome.attempt_status, 'paid', 'Owner payment attempt must transition to paid')
     assert.equal(outcome.receipt_status, 'allocated', 'Owner payment receipt must be allocated')
@@ -1039,7 +1190,11 @@ test('Task 2.6: Invalid webhook signature is rejected with HTTP 401 without muta
       tamperSignature: true, // Corrupts signature to sha256=000...
     })
 
-    assert.equal(webhookRes.statusCode, 401, 'Endpoint must reject tampered signature with HTTP 401')
+    assert.equal(
+      webhookRes.statusCode,
+      401,
+      'Endpoint must reject tampered signature with HTTP 401',
+    )
   } finally {
     if (env.manifest) {
       await env.stop()
@@ -1173,7 +1328,11 @@ test('Task 2.6: Duplicate webhook event delivery is idempotent and creates no do
     })
 
     const result = JSON.parse(verifyOut) as { receipt_count: number }
-    assert.equal(result.receipt_count, 1, 'Only one receipt must exist for the duplicated provider event')
+    assert.equal(
+      result.receipt_count,
+      1,
+      'Only one receipt must exist for the duplicated provider event',
+    )
   } finally {
     if (env.manifest) {
       await env.stop()
@@ -1196,7 +1355,10 @@ test('Task 2.6: Runner enforces zero external network egress and blocks producti
 
     const paidRes = await fetch(`${manifest.backend.url}/api/v1/paid`, { method: 'POST' })
     assert.notEqual(paidRes.status, 200, 'Production paid shortcut endpoint must not be exposed')
-    assert.ok(paidRes.status === 404 || paidRes.status === 405, 'Paid shortcut route must fail closed')
+    assert.ok(
+      paidRes.status === 404 || paidRes.status === 405,
+      'Paid shortcut route must fail closed',
+    )
 
     // Verify external network egress attempt is refused/fails closed
     await assert.rejects(async () => {
@@ -1235,7 +1397,10 @@ test('Task 2.7: Actor credentials and storage state are managed outside git and 
       assert.ok(cred.password, `Password must exist for role ${role}`)
 
       const authPath = getActorAuthStatePath(manifest, role)
-      assert.ok(authPath.startsWith(manifest.storagePath), `Auth path must reside inside ephemeral storage dir`)
+      assert.ok(
+        authPath.startsWith(manifest.storagePath),
+        `Auth path must reside inside ephemeral storage dir`,
+      )
 
       // Must pass safe location assertion
       assert.doesNotThrow(() => {
@@ -1296,21 +1461,26 @@ test('Task 2.7: Actor session authentication and reuse with real persistence', a
 
     // Authenticate customer session via HTTP
     const csrfHeaders: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
-    const csrfRes = await fetch(`${manifest.backend.url}/sanctum/csrf-cookie`, { headers: csrfHeaders })
+    const csrfRes = await fetch(`${manifest.backend.url}/sanctum/csrf-cookie`, {
+      headers: csrfHeaders,
+    })
     assert.equal(csrfRes.status, 204, 'CSRF cookie must be established')
     const rawCookies = csrfRes.headers.getSetCookie?.() || []
-    const xsrfCookie = rawCookies.find((c) => c.startsWith('XSRF-TOKEN='))?.split(';')[0]?.split('=')[1]
+    const xsrfCookie = rawCookies
+      .find((c) => c.startsWith('XSRF-TOKEN='))
+      ?.split(';')[0]
+      ?.split('=')[1]
     const sessionCookie = rawCookies.find((c) => c.includes('session'))?.split(';')[0]
 
     const loginHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     const cookieHeaderParts: string[] = []
     if (xsrfCookie) {
@@ -1389,8 +1559,16 @@ test('R01 Verification: Helper subprocess environment strips inherited DB_URL an
     try {
       const canonicalEnv = (await import('./test-data.ts')).getCanonicalBackendEnv(dummyManifest)
       assert.equal(canonicalEnv.DB_URL, '', 'Canonical backend env must wipe out DB_URL')
-      assert.equal(canonicalEnv.DATABASE_URL, '', 'Canonical backend env must wipe out DATABASE_URL')
-      assert.equal(canonicalEnv.DB_DATABASE, dummyManifest.database.name, 'Effective DB must be manifest DB')
+      assert.equal(
+        canonicalEnv.DATABASE_URL,
+        '',
+        'Canonical backend env must wipe out DATABASE_URL',
+      )
+      assert.equal(
+        canonicalEnv.DB_DATABASE,
+        dummyManifest.database.name,
+        'Effective DB must be manifest DB',
+      )
     } finally {
       if (prevDbUrl !== undefined) process.env.DB_URL = prevDbUrl
       else delete process.env.DB_URL
@@ -1410,14 +1588,21 @@ test('R01 Verification: Helper subprocess environment strips inherited DB_URL an
 
     const { executeGuardedBackendPhp } = await import('./test-data.ts')
     assert.throws(() => {
-      executeGuardedBackendPhp(mismatchManifest, 'echo json_encode(["status" => "should_not_reach"]);')
+      executeGuardedBackendPhp(
+        mismatchManifest,
+        'echo json_encode(["status" => "should_not_reach"]);',
+      )
     }, /CRITICAL TARGET MISMATCH|CRITICAL TARGET CONNECTION FAILED|nonexistent_target/)
   } finally {
     if (foreignDbCreated) {
       try {
-        execFileSync('dropdb', ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '--if-exists', foreignDb], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-        })
+        execFileSync(
+          'dropdb',
+          ['-h', '127.0.0.1', '-p', '5432', '-U', 'ziet', '--if-exists', foreignDb],
+          {
+            stdio: ['ignore', 'pipe', 'pipe'],
+          },
+        )
       } catch {}
     }
   }
@@ -1448,12 +1633,18 @@ test('R04 Verification: Dynamic port fallback when 4180 is occupied & remote cal
   }
 
   // 2. Reject remote caller URL
-  const unsafeUrls = ['http://example.com:4180', 'https://production.auracourt.vn', 'http://192.168.1.50:4180']
+  const unsafeUrls = [
+    'http://example.com:4180',
+    'https://production.auracourt.vn',
+    'http://192.168.1.50:4180',
+  ]
   for (const unsafeUrl of unsafeUrls) {
     assert.throws(() => {
       const parsed = new URL(unsafeUrl)
       if (!['127.0.0.1', 'localhost', '::1'].includes(parsed.hostname)) {
-        throw new Error(`CRITICAL: Prohibited remote PLAYWRIGHT_BASE_URL="${unsafeUrl}". Must target local loopback.`)
+        throw new Error(
+          `CRITICAL: Prohibited remote PLAYWRIGHT_BASE_URL="${unsafeUrl}". Must target local loopback.`,
+        )
       }
     }, /CRITICAL: Prohibited remote/)
   }

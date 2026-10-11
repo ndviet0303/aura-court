@@ -7,17 +7,28 @@ import type { SplitGroup } from '../types/split'
 function isSplitGroup(value: unknown): value is SplitGroup {
   if (!value || typeof value !== 'object') return false
   const group = value as Partial<SplitGroup>
-  return Number.isSafeInteger(group.id) && Number.isSafeInteger(group.expected_amount)
-    && Number.isSafeInteger(group.paid_amount)
-    && typeof group.status === 'string'
-    && typeof group.expires_at === 'string' && Number.isFinite(Date.parse(group.expires_at))
-    && !!group.reservation && typeof group.reservation.code === 'string'
-    && group.reservation.total_amount === group.expected_amount
-    && Array.isArray(group.shares) && group.shares.length >= 2
-    && group.shares.every((share) =>
-      Number.isSafeInteger(share.id) && Number.isSafeInteger(share.share_number)
-      && Number.isSafeInteger(share.amount) && share.amount > 0 && typeof share.status === 'string')
-    && group.shares.reduce((total, share) => total + share.amount, 0) === group.expected_amount
+  return (
+    Number.isSafeInteger(group.id) &&
+    Number.isSafeInteger(group.expected_amount) &&
+    Number.isSafeInteger(group.paid_amount) &&
+    typeof group.status === 'string' &&
+    typeof group.expires_at === 'string' &&
+    Number.isFinite(Date.parse(group.expires_at)) &&
+    !!group.reservation &&
+    typeof group.reservation.code === 'string' &&
+    group.reservation.total_amount === group.expected_amount &&
+    Array.isArray(group.shares) &&
+    group.shares.length >= 2 &&
+    group.shares.every(
+      (share) =>
+        Number.isSafeInteger(share.id) &&
+        Number.isSafeInteger(share.share_number) &&
+        Number.isSafeInteger(share.amount) &&
+        share.amount > 0 &&
+        typeof share.status === 'string',
+    ) &&
+    group.shares.reduce((total, share) => total + share.amount, 0) === group.expected_amount
+  )
 }
 
 export function useGroupSplitBill() {

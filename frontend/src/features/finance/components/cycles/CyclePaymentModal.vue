@@ -59,14 +59,16 @@ const emit = defineEmits<{
 
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <AuraButton
-          variant="outline"
-          size="md"
-          @click="emit('close')"
-        >
+        <AuraButton variant="outline" size="md" @click="emit('close')">
           <span>Đóng</span>
         </AuraButton>
-        <AuraButton v-if="!paymentAttempt || paymentAttempt.status === 'expired'" variant="outline" size="md" :disabled="refreshing" @click="emit('refresh')">
+        <AuraButton
+          v-if="!paymentAttempt || paymentAttempt.status === 'expired'"
+          variant="outline"
+          size="md"
+          :disabled="refreshing"
+          @click="emit('refresh')"
+        >
           <span>{{ refreshing ? 'Đang cập nhật...' : 'Cập nhật trạng thái' }}</span>
         </AuraButton>
       </div>

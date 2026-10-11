@@ -12,6 +12,13 @@ class OutboxMessage extends Model
 {
     use BelongsToTenant;
 
-    protected function casts(): array { return ['payload' => 'array', 'available_at' => 'datetime', 'locked_at' => 'datetime', 'published_at' => 'datetime']; }
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
+    protected function casts(): array
+    {
+        return ['payload' => 'array', 'available_at' => 'datetime', 'locked_at' => 'datetime', 'published_at' => 'datetime'];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 }

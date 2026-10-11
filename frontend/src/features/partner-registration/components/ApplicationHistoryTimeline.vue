@@ -40,7 +40,8 @@ function formatDate(dateStr?: string): string {
           class="timeline-dot"
           :class="{
             'dot-approve': item.decision === 'approve',
-            'dot-supplement': item.decision === 'revision_required' || item.decision === 'supplement',
+            'dot-supplement':
+              item.decision === 'revision_required' || item.decision === 'supplement',
             'dot-reject': item.decision === 'reject',
           }"
         ></div>
@@ -51,11 +52,18 @@ function formatDate(dateStr?: string): string {
               class="decision-badge"
               :class="{
                 'badge-approve': item.decision === 'approve',
-                'badge-supplement': item.decision === 'revision_required' || item.decision === 'supplement',
+                'badge-supplement':
+                  item.decision === 'revision_required' || item.decision === 'supplement',
                 'badge-reject': item.decision === 'reject',
               }"
             >
-              {{ item.decision === 'approve' ? 'Phê duyệt' : item.decision === 'revision_required' || item.decision === 'supplement' ? 'Yêu cầu bổ sung' : 'Từ chối' }}
+              {{
+                item.decision === 'approve'
+                  ? 'Phê duyệt'
+                  : item.decision === 'revision_required' || item.decision === 'supplement'
+                    ? 'Yêu cầu bổ sung'
+                    : 'Từ chối'
+              }}
             </span>
             <time class="timeline-time">{{ formatDate(item.created_at) }}</time>
           </div>
@@ -64,7 +72,10 @@ function formatDate(dateStr?: string): string {
             {{ item.reason }}
           </p>
 
-          <div v-if="item.feedback_fields && Object.keys(item.feedback_fields).length > 0" class="timeline-feedback-box">
+          <div
+            v-if="item.feedback_fields && Object.keys(item.feedback_fields).length > 0"
+            class="timeline-feedback-box"
+          >
             <span class="feedback-heading">Trường thông tin cần lưu ý:</span>
             <ul class="feedback-fields-list">
               <li v-for="(msg, field) in item.feedback_fields" :key="field">

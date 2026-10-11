@@ -24,7 +24,6 @@ const {
   movementSearch,
   categories,
   products,
-  movements,
   filteredProducts,
   filteredMovements,
   kpis,
@@ -211,7 +210,9 @@ const {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .fade-enter-from,

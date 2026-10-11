@@ -16,16 +16,15 @@ const emit = defineEmits<{
     <div class="partner-section-header">
       <div>
         <h3 class="section-title">Vận Động Viên Tìm Bạn Đấu & Ghép Cặp</h3>
-        <p class="section-sub">Tìm kiếm bạn chơi thể thao phù hợp trình độ và khung giờ để tập luyện hoặc thi đấu giải đôi.</p>
+        <p class="section-sub">
+          Tìm kiếm bạn chơi thể thao phù hợp trình độ và khung giờ để tập luyện hoặc thi đấu giải
+          đôi.
+        </p>
       </div>
     </div>
 
     <div class="partner-grid">
-      <article
-        v-for="p in partners"
-        :key="p.id"
-        class="partner-card"
-      >
+      <article v-for="p in partners" :key="p.id" class="partner-card">
         <div class="partner-card-header">
           <div class="partner-avatar-wrap">
             <span class="avatar-fallback">{{ p.name.charAt(0) }}</span>
@@ -49,12 +48,16 @@ const emit = defineEmits<{
         <div class="partner-info-box">
           <div class="info-line">
             <span class="material-symbols-outlined info-ico">location_on</span>
-            <span class="info-text">{{ p.city }} · Thường chơi tại: {{ p.favorite_venues.join(', ') }}</span>
+            <span class="info-text"
+              >{{ p.city }} · Thường chơi tại: {{ p.favorite_venues.join(', ') }}</span
+            >
           </div>
 
           <div class="info-line">
             <span class="material-symbols-outlined info-ico">sports_score</span>
-            <span class="info-text font-mono">Đã tham gia {{ p.matches_played }} trận giao lưu</span>
+            <span class="info-text font-mono"
+              >Đã tham gia {{ p.matches_played }} trận giao lưu</span
+            >
           </div>
         </div>
 
@@ -115,7 +118,9 @@ const emit = defineEmits<{
   border-radius: 18px;
   border: 1px solid var(--outline);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .partner-card:hover {

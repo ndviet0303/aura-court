@@ -7,8 +7,8 @@ use App\Domain\Partner\DTOs\ReviewPartnerApplicationData;
 use App\Models\HostKyc;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class PartnerApplicationReviewActionTest extends TestCase
@@ -172,7 +172,7 @@ class PartnerApplicationReviewActionTest extends TestCase
             expectedVersion: 1
         );
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         $this->reviewAction->execute($dto);
     }
 }

@@ -4,8 +4,8 @@
 
 :root {
   /* Background & Surfaces (Warm Ivory / Linen) */
-  --bg: #FAF7F3;
-  --background: #FAF7F3;
+  --bg: #faf7f3;
+  --background: #faf7f3;
   --surface: #ffffff;
   --soft: #f0eae1;
   --surface-subtle: #f7f3ed;
@@ -18,23 +18,23 @@
   --input-bg: transparent;
 
   /* Primary Brand (Deep Velvet Burgundy) */
-  --primary: #6B2D3F;
+  --primary: #6b2d3f;
   --primary-hover: #562332;
-  --primary-container: #F8E8EC;
+  --primary-container: #f8e8ec;
   --on-primary: #ffffff;
   --on-primary-container: #4e1827;
 
   /* Accent Gold (Antique Champagne Gold) */
-  --accent: #C9A15A;
+  --accent: #c9a15a;
   --accent-hover: #b88e45;
-  --accent-container: #FAF2E3;
-  --on-accent: #2A1704;
-  --on-accent-container: #684F17;
+  --accent-container: #faf2e3;
+  --on-accent: #2a1704;
+  --on-accent-container: #684f17;
 
   /* Legacy Aliases for seamless backward compatibility */
-  --pink: #C9A15A;
-  --pink-dark: #6B2D3F;
-  --pink-light: #F8E8EC;
+  --pink: #c9a15a;
+  --pink-dark: #6b2d3f;
+  --pink-light: #f8e8ec;
 
   --mint: #d9f0e4;
   --coral: #ffdad6;
@@ -50,9 +50,9 @@
   --purple-bg: #f3e5f5;
   --purple-text: #7b1fa2;
   --live-bg: rgba(201, 161, 90, 0.2);
-  --live-text: #6B2D3F;
-  --live-border: #C9A15A;
-  --nav-active-bg: #6B2D3F;
+  --live-text: #6b2d3f;
+  --live-border: #c9a15a;
+  --nav-active-bg: #6b2d3f;
   --nav-active-text: #ffffff;
 
   /* Semantic aliases used by feature pages */
@@ -79,8 +79,8 @@ html.dark {
   --surface: #1e191c;
   --soft: #30292e;
   --surface-subtle: #262024;
-  --ink: #FAF7F3;
-  --foreground: #FAF7F3;
+  --ink: #faf7f3;
+  --foreground: #faf7f3;
   --muted: #a89fa4;
   --outline: #4d4049;
   --mint: #1c382b;
@@ -91,22 +91,22 @@ html.dark {
   --input-bg: #262024;
 
   /* Primary Brand (Luminous Rose-Velvet) */
-  --primary: #E58E9F;
+  --primary: #e58e9f;
   --primary-hover: #f0a3b2;
   --primary-container: #441a26;
   --on-primary: #1c0a10;
   --on-primary-container: #ffd5df;
 
   /* Accent Gold (Radiant Gold) */
-  --accent: #D8B46E;
+  --accent: #d8b46e;
   --accent-hover: #e5c382;
   --accent-container: #3b2e15;
   --on-accent: #1c1202;
   --on-accent-container: #fae6be;
 
   /* Legacy Aliases in Dark Mode */
-  --pink: #D8B46E;
-  --pink-dark: #E58E9F;
+  --pink: #d8b46e;
+  --pink-dark: #e58e9f;
   --pink-light: #441a26;
 
   /* Semantic status tokens in Dark Mode */
@@ -119,13 +119,13 @@ html.dark {
   --purple-bg: rgba(123, 31, 162, 0.25);
   --purple-text: #c084fc;
   --live-bg: rgba(216, 180, 110, 0.18);
-  --live-text: #D8B46E;
-  --live-border: #D8B46E;
-  --nav-active-bg: #E58E9F;
+  --live-text: #d8b46e;
+  --live-border: #d8b46e;
+  --nav-active-bg: #e58e9f;
   --nav-active-text: #1c0a10;
 
   /* Semantic aliases used by feature pages */
-  --on-surface: #FAF7F3;
+  --on-surface: #faf7f3;
   --on-surface-variant: #c4b9be;
   --surface-bright: #2b2428;
   --surface-container: #262024;
@@ -159,7 +159,7 @@ html.dark {
 
 .btn-primary,
 button.btn-primary {
-  background-color: var(--primary, #6B2D3F) !important;
+  background-color: var(--primary, #6b2d3f) !important;
   color: var(--on-primary, #ffffff) !important;
   box-shadow: 0 4px 14px rgba(107, 45, 63, 0.25);
 }
@@ -173,7 +173,7 @@ button.btn-primary:hover {
 
 html.dark .btn-primary,
 html.dark button.btn-primary {
-  background-color: var(--primary, #E58E9F) !important;
+  background-color: var(--primary, #e58e9f) !important;
   color: var(--on-primary, #1c0a10) !important;
   font-weight: 800 !important;
   box-shadow: 0 4px 18px rgba(229, 142, 159, 0.35) !important;
@@ -193,7 +193,9 @@ html.dark button.btn-primary:hover {
   flex-direction: column;
   background-color: var(--bg);
   color: var(--ink);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .site-main {

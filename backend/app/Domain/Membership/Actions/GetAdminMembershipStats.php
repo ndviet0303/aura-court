@@ -22,8 +22,13 @@ class GetAdminMembershipStats
         $monthlyRecurringRevenue = (int) $activeMemberships->sum(function ($m) {
             $price = $m->plan?->price ?? 0;
             $cycle = $m->plan?->benefits['billing_cycle'] ?? 'monthly';
-            if ($cycle === 'yearly') return (int) round($price / 12);
-            if ($cycle === 'quarterly') return (int) round($price / 3);
+            if ($cycle === 'yearly') {
+                return (int) round($price / 12);
+            }
+            if ($cycle === 'quarterly') {
+                return (int) round($price / 3);
+            }
+
             return (int) $price;
         });
 

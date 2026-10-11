@@ -8,7 +8,7 @@ import { getActorCredentials } from './runner/auth.ts'
 
 test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mật @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')
@@ -17,7 +17,9 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     })
   })
 
-  test('7.1.1: Đăng ký tài khoản -> trạng thái chờ xác thực -> bền vững sau khi F5', async ({ page }) => {
+  test('7.1.1: Đăng ký tài khoản -> trạng thái chờ xác thực -> bền vững sau khi F5', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const uniqueId = `${Date.now()}_${Math.floor(Math.random() * 10000)}`
     const regEmail = `new_athlete_${uniqueId}@auracourt.test`
@@ -28,7 +30,9 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     await page.goto('/register', { waitUntil: 'domcontentloaded' })
 
     // 2. Fill registration form
-    const nameInput = page.locator('input[name="name"], input[placeholder*="tên" i], input[placeholder*="name" i]').first()
+    const nameInput = page
+      .locator('input[name="name"], input[placeholder*="tên" i], input[placeholder*="name" i]')
+      .first()
     const emailInput = page.locator('input[type="email"], input[name="email"]').first()
     const passwordInputs = page.locator('input[type="password"]')
     const passwordInput = passwordInputs.first()
@@ -48,24 +52,31 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 4. Reload page to prove persistence across refresh
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.user-dropdown-trigger .user-name')).toHaveText(regName, { timeout: 15000 })
+    await expect(page.locator('.user-dropdown-trigger .user-name')).toHaveText(regName, {
+      timeout: 15000,
+    })
 
     // 5. Authoritative check: user exists, role is customer, email_verified_at is null
-    const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isRemoteProd =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
       const cookies = await page.context().cookies()
       const xsrfCookie = cookies.find((c) => c.name === 'XSRF-TOKEN')
       const headers: Record<string, string> = {
-        'Accept': 'application/json',
-        'Origin': manifest.frontend.url,
-        'Referer': manifest.frontend.url,
+        Accept: 'application/json',
+        Origin: manifest.frontend.url,
+        Referer: manifest.frontend.url,
       }
       if (xsrfCookie) {
         headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
       }
       const meRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/me`, { headers })
       expect(meRes.status()).toBe(200)
-      const me = (await meRes.json()) as { name?: string; role?: string; email_verified_at?: string | null }
+      const me = (await meRes.json()) as {
+        name?: string
+        role?: string
+        email_verified_at?: string | null
+      }
       expect(me.role).toBe('customer')
       expect(me.email_verified_at ?? null).toBeNull()
       expect(me.name).toBe(regName)
@@ -98,11 +109,13 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
           'name' => $user?->name,
         ]);
       `
-      const userState = JSON.parse(execFileSync('php', ['-r', dbCheckScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      })) as {
+      const userState = JSON.parse(
+        execFileSync('php', ['-r', dbCheckScript], {
+          cwd: backendDir,
+          env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+          encoding: 'utf-8',
+        }),
+      ) as {
         exists: boolean
         role: string
         is_verified: boolean
@@ -116,9 +129,12 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     }
   })
 
-  test('7.1.2: Xác thực email qua link -> từ chối link sai/hết hạn -> kích hoạt thành công', async ({ page }) => {
+  test('7.1.2: Xác thực email qua link -> từ chối link sai/hết hạn -> kích hoạt thành công', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
-    const isDbProtected = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isDbProtected =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (isDbProtected) {
       test.skip(true, 'Yêu cầu cấu hình database để sinh signed link và kiểm tra DB trực tiếp')
       return
@@ -171,11 +187,13 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
         'invalid_hash_url' => str_replace(sha1($user->getEmailForVerification()), 'badhash1234567890badhash1234567890', $validUrl),
       ]);
     `
-    const urls = JSON.parse(execFileSync('php', ['-r', createScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const urls = JSON.parse(
+      execFileSync('php', ['-r', createScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       user_id: number
       valid_url: string
       expired_url: string
@@ -183,8 +201,12 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     }
 
     const isHttps = manifest.backend.url.startsWith('https://')
-    const badHashUrl = isHttps ? urls.invalid_hash_url.replace(/^http:\/\//, 'https://') : urls.invalid_hash_url
-    const expiredUrl = isHttps ? urls.expired_url.replace(/^http:\/\//, 'https://') : urls.expired_url
+    const badHashUrl = isHttps
+      ? urls.invalid_hash_url.replace(/^http:\/\//, 'https://')
+      : urls.invalid_hash_url
+    const expiredUrl = isHttps
+      ? urls.expired_url.replace(/^http:\/\//, 'https://')
+      : urls.expired_url
     const validUrl = isHttps ? urls.valid_url.replace(/^http:\/\//, 'https://') : urls.valid_url
 
     // 1. Negative test: Invalid hash returns 403
@@ -211,23 +233,29 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
       $user?->delete();
       echo json_encode(['is_verified' => $isVerified]);
     `
-    const verifyState = JSON.parse(execFileSync('php', ['-r', verifyCheckScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { is_verified: boolean }
+    const verifyState = JSON.parse(
+      execFileSync('php', ['-r', verifyCheckScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { is_verified: boolean }
 
     expect(verifyState.is_verified).toBe(true)
   })
 
-  test('7.1.3: Gửi lại email xác thực -> thành công cho tài khoản chưa xác thực -> từ chối khi đã xác thực', async ({ page }) => {
+  test('7.1.3: Gửi lại email xác thực -> thành công cho tài khoản chưa xác thực -> từ chối khi đã xác thực', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     let unverifiedCustomer = getActorCredentials(manifest, 'unverifiedCustomer')
 
     // 1. Ensure unverified customer exists and can authenticate
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(unverifiedCustomer.email)
-    await page.locator('input[type="password"], input[name="password"]').fill(unverifiedCustomer.password)
+    await page
+      .locator('input[type="password"], input[name="password"]')
+      .fill(unverifiedCustomer.password)
     await page.locator('button[type="submit"]').click()
 
     const hasLoginError = await page
@@ -241,7 +269,10 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
       const tempEmail = `unverified_${uniqueSuffix}@auracourt.test`
       const tempPassword = 'Password123!'
       await page.goto('/register', { waitUntil: 'domcontentloaded' })
-      await page.locator('input[name="name"], #reg-name, input[placeholder*="tên" i]').first().fill('VĐV Chưa Xác Thực')
+      await page
+        .locator('input[name="name"], #reg-name, input[placeholder*="tên" i]')
+        .first()
+        .fill('VĐV Chưa Xác Thực')
       await page.locator('input[type="email"], input[name="email"], #reg-email').fill(tempEmail)
       await page.locator('#reg-password, input[type="password"]').first().fill(tempPassword)
       await page.locator('#reg-password-confirm, input[type="password"]').nth(1).fill(tempPassword)
@@ -254,17 +285,20 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     const cookies = await page.context().cookies()
     const xsrfCookie = cookies.find((c) => c.name === 'XSRF-TOKEN')
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     if (xsrfCookie) {
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
     }
 
-    const resendRes = await page.request.post(`${manifest.backend.url}/api/v1/auth/email/verification-notification`, {
-      headers,
-    })
+    const resendRes = await page.request.post(
+      `${manifest.backend.url}/api/v1/auth/email/verification-notification`,
+      {
+        headers,
+      },
+    )
     expect([200, 202]).toContain(resendRes.status())
     const resendData = await resendRes.json()
     expect(resendData).toBeDefined()
@@ -275,32 +309,40 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     const verifiedCustomer = getActorCredentials(manifest, 'customer')
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(verifiedCustomer.email)
-    await page.locator('input[type="password"], input[name="password"]').fill(verifiedCustomer.password)
+    await page
+      .locator('input[type="password"], input[name="password"]')
+      .fill(verifiedCustomer.password)
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     const cookiesVerified = await page.context().cookies()
     const xsrfCookieVerified = cookiesVerified.find((c) => c.name === 'XSRF-TOKEN')
     const headersVerified: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     if (xsrfCookieVerified) {
       headersVerified['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookieVerified.value)
     }
 
     // 4. Calling resend on verified user acknowledges already verified
-    const alreadyVerifiedRes = await page.request.post(`${manifest.backend.url}/api/v1/auth/email/verification-notification`, {
-      headers: headersVerified,
-    })
+    const alreadyVerifiedRes = await page.request.post(
+      `${manifest.backend.url}/api/v1/auth/email/verification-notification`,
+      {
+        headers: headersVerified,
+      },
+    )
     const alreadyVerifiedData = (await alreadyVerifiedRes.json()) as { message?: string }
     expect(alreadyVerifiedData.message).toMatch(/đã được xác thực|already verified/i)
   })
 
-  test('7.1.4: Quên mật khẩu -> sinh token -> đặt lại mật khẩu mới -> đăng nhập với mật khẩu mới', async ({ page }) => {
+  test('7.1.4: Quên mật khẩu -> sinh token -> đặt lại mật khẩu mới -> đăng nhập với mật khẩu mới', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
-    const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isRemoteProd =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
       test.skip(true, 'Yêu cầu môi trường database cục bộ để sinh token và kiểm tra DB trực tiếp')
       return
@@ -350,8 +392,9 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     // 1. Visit /forgot-password and submit email
     await page.goto('/forgot-password', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(resetEmail)
-    const forgotResponse = page.waitForResponse(response =>
-      response.url().endsWith('/auth/forgot-password') && response.request().method() === 'POST',
+    const forgotResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/auth/forgot-password') && response.request().method() === 'POST',
     )
     await page.locator('button[type="submit"]').click()
     expect((await forgotResponse).status()).toBe(200)
@@ -381,16 +424,23 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     expect(token).toBeTruthy()
 
     // 3. Negative test: Bad token rejected on reset
-    await page.goto(`/reset-password?token=invalid_token_12345&email=${encodeURIComponent(resetEmail)}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(
+      `/reset-password?token=invalid_token_12345&email=${encodeURIComponent(resetEmail)}`,
+      { waitUntil: 'domcontentloaded' },
+    )
     const pwdInputs = page.locator('input[type="password"]')
     await pwdInputs.first().fill(newPassword)
     await pwdInputs.nth(1).fill(newPassword)
     await page.locator('button[type="submit"]').click()
 
-    await expect(page.locator('.alert-danger, .error, [role="alert"]').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.alert-danger, .error, [role="alert"]').first()).toBeVisible({
+      timeout: 10000,
+    })
 
     // 4. Positive test: Valid token resets password successfully
-    await page.goto(`/reset-password?token=${token}&email=${encodeURIComponent(resetEmail)}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`/reset-password?token=${token}&email=${encodeURIComponent(resetEmail)}`, {
+      waitUntil: 'domcontentloaded',
+    })
     const validPwdInputs = page.locator('input[type="password"]')
     await validPwdInputs.first().fill(newPassword)
     await validPwdInputs.nth(1).fill(newPassword)
@@ -404,7 +454,9 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     await page.locator('input[type="email"], input[name="email"]').fill(resetEmail)
     await page.locator('input[type="password"], input[name="password"]').fill(oldPassword)
     await page.locator('button[type="submit"]').click()
-    await expect(page.locator('.alert-danger, .error, [role="alert"]').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.alert-danger, .error, [role="alert"]').first()).toBeVisible({
+      timeout: 10000,
+    })
 
     // 6. New password logs in successfully
     await page.locator('input[type="password"], input[name="password"]').fill(newPassword)
@@ -417,7 +469,9 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     await expect(page).not.toHaveURL(/\/login/)
   })
 
-  test('7.1.5: Quản lý hồ sơ cá nhân & hồ sơ thể thao -> cập nhật -> bền vững sau khi F5', async ({ page }) => {
+  test('7.1.5: Quản lý hồ sơ cá nhân & hồ sơ thể thao -> cập nhật -> bền vững sau khi F5', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
@@ -430,7 +484,12 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 2. Navigate to /profile
     await page.goto('/profile', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('h1, h2').filter({ hasText: /hồ sơ|profile/i }).first()).toBeVisible({ timeout: 15000 })
+    await expect(
+      page
+        .locator('h1, h2')
+        .filter({ hasText: /hồ sơ|profile/i })
+        .first(),
+    ).toBeVisible({ timeout: 15000 })
 
     // 3. Update profile via UI or API
     const updatedName = `Pro Athlete ${Date.now()}`
@@ -439,9 +498,9 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     const cookies = await page.context().cookies()
     const xsrfCookie = cookies.find((c) => c.name === 'XSRF-TOKEN')
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     if (xsrfCookie) {
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
@@ -455,7 +514,11 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
       headers,
     })
     expect([200, 201]).toContain(updateRes.status())
-    const updateData = (await updateRes.json()) as { name?: string; phone?: string; data?: { name?: string; phone?: string } }
+    const updateData = (await updateRes.json()) as {
+      name?: string
+      phone?: string
+      data?: { name?: string; phone?: string }
+    }
     const actualName = updateData.name || updateData.data?.name
     expect(actualName).toBe(updatedName)
 
@@ -465,7 +528,8 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     await expect(page.locator('#profile-phone')).toHaveValue(updatedPhone)
 
     // 5. Authoritative verification: user record persisted
-    const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isRemoteProd =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
       const meRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/me`, { headers })
       expect(meRes.status()).toBe(200)
@@ -495,18 +559,22 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
         $user = User::where('email', '${customer.email}')->firstOrFail();
         echo json_encode(['name' => $user->name, 'phone' => $user->phone]);
       `
-      const persistedState = JSON.parse(execFileSync('php', ['-r', dbCheckScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      })) as { name: string; phone: string }
+      const persistedState = JSON.parse(
+        execFileSync('php', ['-r', dbCheckScript], {
+          cwd: backendDir,
+          env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+          encoding: 'utf-8',
+        }),
+      ) as { name: string; phone: string }
 
       expect(persistedState.name).toBe(updatedName)
       expect(persistedState.phone).toBe(updatedPhone)
     }
   })
 
-  test('7.1.6: Hợp đồng OAuth (adapter test) -> từ chối tài khoản bị hạn chế -> hoàn thiện thông tin VĐV', async ({ page }) => {
+  test('7.1.6: Hợp đồng OAuth (adapter test) -> từ chối tài khoản bị hạn chế -> hoàn thiện thông tin VĐV', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const backendEnv = {
       APP_ENV: 'testing',
@@ -521,14 +589,17 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
     // 1. Query OAuth redirect endpoint for google
-    const redirectRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/google/redirect`)
+    const redirectRes = await page.request.get(
+      `${manifest.backend.url}/api/v1/auth/google/redirect`,
+    )
     expect(redirectRes.status()).toBe(200)
     const redirectData = await redirectRes.json()
     // When credentials not set, returns labeled demo_mode / message without crash
     expect(redirectData).toBeDefined()
 
     // 2. Negative test: Restricted customer denied on OAuth callback
-    const isRemoteProd = manifest.database.name === 'production_protected' || !manifest.database.host
+    const isRemoteProd =
+      manifest.database.name === 'production_protected' || !manifest.database.host
     if (!isRemoteProd) {
       const restrictedCustomer = manifest.fixtures?.users.restrictedCustomer
       if (!restrictedCustomer) {
@@ -550,16 +621,24 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
           'is_restricted' => $user->isRestricted(),
         ]);
       `
-      const restrictedState = JSON.parse(execFileSync('php', ['-r', restrictedCheckScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      })) as { is_restricted: boolean }
+      const restrictedState = JSON.parse(
+        execFileSync('php', ['-r', restrictedCheckScript], {
+          cwd: backendDir,
+          env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+          encoding: 'utf-8',
+        }),
+      ) as { is_restricted: boolean }
 
       expect(restrictedState.is_restricted).toBe(true)
     }
     // Visiting login with account_restricted query displays locked alert
-    await page.goto('/login?error=account_restricted&msg=' + encodeURIComponent('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'), { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('text=/khóa|hạn chế|restricted/i').first()).toBeVisible({ timeout: 10000 })
+    await page.goto(
+      '/login?error=account_restricted&msg=' +
+        encodeURIComponent('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'),
+      { waitUntil: 'domcontentloaded' },
+    )
+    await expect(page.locator('text=/khóa|hạn chế|restricted/i').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 })

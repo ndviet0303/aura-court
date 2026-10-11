@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
+use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
@@ -408,6 +409,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ]);
         $newQuoteAttempt->assertNotFound();
     }
+
     public function test_admin_can_fetch_court_prices_and_listing_has_price_slots_count(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -423,7 +425,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'is_active' => true,
         ]);
 
-        \App\Models\CourtPriceSlot::create([
+        CourtPriceSlot::create([
             'court_id' => $court->id,
             'weekday' => 1,
             'starts_at' => '08:00',

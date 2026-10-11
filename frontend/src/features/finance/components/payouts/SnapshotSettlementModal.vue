@@ -10,7 +10,7 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -45,7 +45,7 @@ watch(
       periodStart.value = formatDateISO(prev)
       periodEnd.value = formatDateISO(now)
     }
-  }
+  },
 )
 
 function handleFormSubmit() {
@@ -78,27 +78,22 @@ function handleFormSubmit() {
             <!-- Period Start DatePicker -->
             <div class="form-group">
               <label class="form-label">{{ t('admin.payouts.periodStartLabel') }}</label>
-              <DatePicker
-                v-model="periodStart"
-                :max="periodEnd"
-                placeholder="YYYY-MM-DD"
-              />
+              <DatePicker v-model="periodStart" :max="periodEnd" placeholder="YYYY-MM-DD" />
             </div>
 
             <!-- Period End DatePicker -->
             <div class="form-group">
               <label class="form-label">{{ t('admin.payouts.periodEndLabel') }}</label>
-              <DatePicker
-                v-model="periodEnd"
-                :min="periodStart"
-                placeholder="YYYY-MM-DD"
-              />
+              <DatePicker v-model="periodEnd" :min="periodStart" placeholder="YYYY-MM-DD" />
             </div>
           </div>
 
           <div class="info-notice">
             <span class="material-symbols-outlined icon-16 text-pink">verified</span>
-            <span>Chu kỳ đối soát tuân thủ quy tắc D+2 để đảm bảo các giao dịch nạp và đặt sân được xác thực hoàn tất.</span>
+            <span
+              >Chu kỳ đối soát tuân thủ quy tắc D+2 để đảm bảo các giao dịch nạp và đặt sân được xác
+              thực hoàn tất.</span
+            >
           </div>
         </div>
 

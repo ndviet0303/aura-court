@@ -30,7 +30,7 @@ class LegacyInventoryVerificationTest extends TestCase
 
         // Create a legacy booking without metadata
         $booking1Id = DB::table('bookings')->insertGetId([
-            'code' => 'BKG-' . uniqid(),
+            'code' => 'BKG-'.uniqid(),
             'user_id' => $owner1->id,
             'court_id' => $fixture['org1']['court1']->id,
             'status' => 'confirmed',
@@ -41,7 +41,7 @@ class LegacyInventoryVerificationTest extends TestCase
 
         // Create a direct_owner_v1 booking with metadata
         $booking2Id = DB::table('bookings')->insertGetId([
-            'code' => 'BKG-' . uniqid(),
+            'code' => 'BKG-'.uniqid(),
             'user_id' => $owner1->id,
             'court_id' => $fixture['org1']['court2']->id,
             'status' => 'confirmed',

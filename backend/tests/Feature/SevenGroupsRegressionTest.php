@@ -3,21 +3,17 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\CashShift;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PosOrder;
 use App\Models\PosProduct;
 use App\Models\PriceRule;
 use App\Models\Reservation;
-use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
-use App\Models\WalletTransaction;
-use Illuminate\Database\QueryException;
+use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -85,7 +81,7 @@ class SevenGroupsRegressionTest extends TestCase
         $this->assertSame('held', $reservation->status);
 
         // When wallet is funded, confirmation succeeds and debits the wallet atomically:
-        $walletService = app(\App\Services\Payment\WalletPaymentService::class);
+        $walletService = app(WalletPaymentService::class);
         $walletService->credit($wallet, 500000, 'test_topup', 1, 'Topup for confirm');
 
         $confirmPaidRes = $this->actingAs($customer)->withHeaders($headers + ['Idempotency-Key' => 'confirm-paid-1'])

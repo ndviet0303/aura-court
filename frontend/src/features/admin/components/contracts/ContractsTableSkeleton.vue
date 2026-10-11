@@ -8,11 +8,7 @@ defineProps<{
 
 <template>
   <div class="contracts-skeleton-body">
-    <div
-      v-for="i in (rows || 5)"
-      :key="i"
-      class="contract-skeleton-row"
-    >
+    <div v-for="i in rows || 5" :key="i" class="contract-skeleton-row">
       <div class="cust-col">
         <SkeletonLoader height="16px" width="75%" />
         <SkeletonLoader height="12px" width="50%" class="mt-1" />
@@ -62,7 +58,10 @@ defineProps<{
   border-bottom: 0;
 }
 
-.cust-col, .court-col, .schedule-col, .price-col {
+.cust-col,
+.court-col,
+.schedule-col,
+.price-col {
   display: flex;
   flex-direction: column;
 }

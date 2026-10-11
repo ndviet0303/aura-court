@@ -52,7 +52,9 @@ const emit = defineEmits<{
         >
           <span class="material-symbols-outlined tab-icon">shopping_bag</span>
           <span>{{ $t('resale.findSlotsTab') }}</span>
-          <span v-if="activeListingsCount > 0" class="tab-count-badge">{{ activeListingsCount }}</span>
+          <span v-if="activeListingsCount > 0" class="tab-count-badge">{{
+            activeListingsCount
+          }}</span>
         </button>
 
         <button
@@ -65,7 +67,9 @@ const emit = defineEmits<{
         >
           <span class="material-symbols-outlined tab-icon">sell</span>
           <span>{{ $t('resale.myPassTab') }}</span>
-          <span v-if="eligibleSlotsCount > 0" class="tab-count-badge gold">{{ eligibleSlotsCount }}</span>
+          <span v-if="eligibleSlotsCount > 0" class="tab-count-badge gold">{{
+            eligibleSlotsCount
+          }}</span>
         </button>
 
         <button
@@ -132,7 +136,7 @@ const emit = defineEmits<{
   gap: 6px;
   font-size: 11.5px;
   font-weight: 800;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   letter-spacing: 0.08em;
 }
 
@@ -178,7 +182,7 @@ const emit = defineEmits<{
 
 .icon-trust {
   font-size: 14px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .hero-tabs-wrap {
@@ -225,13 +229,13 @@ const emit = defineEmits<{
 
 .tab-btn.active {
   background: var(--surface);
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   box-shadow: 0 2px 10px rgba(107, 45, 63, 0.08);
 }
 
 html.dark .tab-btn.active {
   background: var(--surface);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
@@ -240,12 +244,12 @@ html.dark .tab-btn.active {
   font-weight: 800;
   padding: 1px 6px;
   border-radius: 999px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
 }
 
 .tab-count-badge.gold {
-  background: var(--accent, #C9A15A);
+  background: var(--accent, #c9a15a);
   color: #1c1618;
 }
 
@@ -264,8 +268,8 @@ html.dark .tab-btn.active {
 }
 
 .btn-refresh:hover:not(:disabled) {
-  color: var(--primary, #6B2D3F);
-  border-color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
+  border-color: var(--primary, #6b2d3f);
 }
 
 .spinning {
@@ -273,8 +277,12 @@ html.dark .tab-btn.active {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {

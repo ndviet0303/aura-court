@@ -4,6 +4,7 @@ namespace App\Services\Infrastructure;
 
 use App\Models\ElevatedAuditLog;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
 
@@ -17,9 +18,9 @@ class ElevatedAccessService
         string $purpose,
         ?int $organizationId,
         callable $callback
-        ): mixed {
+    ): mixed {
         if (! $actor->isPlatformAdmin()) {
-            throw new \Illuminate\Auth\Access\AuthorizationException('Only platform administrators can perform elevated actions.');
+            throw new AuthorizationException('Only platform administrators can perform elevated actions.');
         }
 
         $ip = Request::ip();
@@ -36,7 +37,7 @@ class ElevatedAccessService
         try {
             return $callback();
         } catch (\Throwable $e) {
-            $outcome = 'failed: ' . $e->getMessage();
+            $outcome = 'failed: '.$e->getMessage();
             $metadata['exception'] = [
                 'class' => get_class($e),
                 'message' => $e->getMessage(),

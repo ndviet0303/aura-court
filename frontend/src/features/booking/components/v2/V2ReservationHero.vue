@@ -92,7 +92,7 @@ const emit = defineEmits<{
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--primary, #6B2D3F) 0%, var(--accent, #C9A15A) 100%);
+  background: linear-gradient(90deg, var(--primary, #6b2d3f) 0%, var(--accent, #c9a15a) 100%);
 }
 
 .hero-content {
@@ -109,7 +109,7 @@ const emit = defineEmits<{
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   text-transform: uppercase;
 }
 
@@ -179,9 +179,18 @@ const emit = defineEmits<{
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.6; }
-  100% { transform: scale(0.95); opacity: 1; }
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
 }
 
 .stat-pill.confirmed {
@@ -233,7 +242,9 @@ const emit = defineEmits<{
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 800px) {

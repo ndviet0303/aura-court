@@ -25,8 +25,10 @@ const sportTag = computed(() => {
 const sportIcon = computed(() => {
   const type = props.court.sport_zone?.sport_type?.toLowerCase() || ''
   const name = props.court.name.toLowerCase()
-  if (type === 'basketball' || name.includes('bóng rổ') || name.includes('basketball')) return 'sports_basketball'
-  if (type.startsWith('football') || name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
+  if (type === 'basketball' || name.includes('bóng rổ') || name.includes('basketball'))
+    return 'sports_basketball'
+  if (type.startsWith('football') || name.includes('bóng đá') || name.includes('football'))
+    return 'sports_soccer'
   if (type === 'table_tennis' || name.includes('bóng bàn')) return 'table_restaurant'
   if (type === 'volleyball' || name.includes('bóng chuyền')) return 'sports_volleyball'
   return 'sports_tennis'
@@ -82,7 +84,8 @@ function handleImageError(event: Event) {
         <div class="pricing-box">
           <span class="p-lbl">{{ $t('courts.fromPrice') }}</span>
           <strong class="p-val text-pink font-mono">
-            {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }} <small class="p-unit">/h</small>
+            {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }}
+            <small class="p-unit">/h</small>
           </strong>
         </div>
 
@@ -110,7 +113,10 @@ function handleImageError(event: Event) {
   background: var(--surface);
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .court-card-item:hover {

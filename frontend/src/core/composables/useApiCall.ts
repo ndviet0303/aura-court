@@ -8,7 +8,7 @@ export function useApiCall<T, Args extends unknown[]>(
     defaultErrorMessage?: string
     onSuccess?: (data: T) => void
     onError?: (error: unknown) => void
-  } = {}
+  } = {},
 ) {
   const loading = ref(options.initialLoading ?? false)
   const error = ref<string | null>(null)

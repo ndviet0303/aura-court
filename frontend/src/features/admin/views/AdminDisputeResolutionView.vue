@@ -55,7 +55,11 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
   { value: 'double_booking', label: t('admin.disputes.typeDoubleBooking'), icon: 'event_busy' },
   { value: 'match_stake', label: t('admin.disputes.typeMatchStake'), icon: 'sports_kabaddi' },
   { value: 'resale_fraud', label: t('admin.disputes.typeResaleFraud'), icon: 'gavel' },
-  { value: 'equipment_damage', label: t('admin.disputes.typeEquipmentDamage'), icon: 'sports_tennis' },
+  {
+    value: 'equipment_damage',
+    label: t('admin.disputes.typeEquipmentDamage'),
+    icon: 'sports_tennis',
+  },
   { value: 'tournament_score', label: t('admin.disputes.typeTournamentScore'), icon: 'scoreboard' },
   { value: 'other', label: t('admin.disputes.typeOther'), icon: 'help' },
 ])
@@ -116,7 +120,9 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
           :title="t('admin.disputes.refreshBtn')"
           @click="loadData"
         >
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }"
+            >refresh</span
+          >
         </AuraButton>
 
         <!-- Export PDF Button -->
@@ -130,7 +136,9 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': isExporting }">
             {{ isExporting ? 'sync' : 'picture_as_pdf' }}
           </span>
-          <span>{{ isExporting ? t('admin.disputes.exportingPdf') : t('admin.disputes.exportPdfBtn') }}</span>
+          <span>{{
+            isExporting ? t('admin.disputes.exportingPdf') : t('admin.disputes.exportPdfBtn')
+          }}</span>
         </AuraButton>
       </div>
     </header>
@@ -140,11 +148,7 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
       <div v-if="showAdvancedFilters" class="advanced-filter-panel">
         <div class="filter-col">
           <label class="filter-label">{{ t('admin.disputes.filterSeverity') }}</label>
-          <SelectDropdown
-            v-model="filterSeverity"
-            :options="severityOptions"
-            variant="bordered"
-          />
+          <SelectDropdown v-model="filterSeverity" :options="severityOptions" variant="bordered" />
         </div>
 
         <div class="filter-col">
@@ -158,18 +162,11 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
 
         <div class="filter-col">
           <label class="filter-label">{{ t('admin.disputes.filterDate') }}</label>
-          <DatePicker
-            v-model="filterDate"
-            :placeholder="t('admin.disputes.filterDate')"
-          />
+          <DatePicker v-model="filterDate" :placeholder="t('admin.disputes.filterDate')" />
         </div>
 
         <div class="filter-col filter-actions-col">
-          <button
-            type="button"
-            class="btn-reset-filters"
-            @click="resetFilters"
-          >
+          <button type="button" class="btn-reset-filters" @click="resetFilters">
             <span class="material-symbols-outlined icon-16">restart_alt</span>
             <span>{{ t('admin.disputes.resetFilters') }}</span>
           </button>
@@ -473,16 +470,24 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
   color: var(--outline);
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .fade-enter-active,

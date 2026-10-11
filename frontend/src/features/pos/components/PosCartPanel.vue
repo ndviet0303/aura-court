@@ -49,8 +49,8 @@ const quickCashScrollRef = ref<HTMLElement | null>(null)
 
 function cycleItemVat(idx: number, currentVat: number) {
   let next = 0.08
-  if (Math.abs(currentVat - 0.08) < 0.001) next = 0.10
-  else if (Math.abs(currentVat - 0.10) < 0.001) next = 0
+  if (Math.abs(currentVat - 0.08) < 0.001) next = 0.1
+  else if (Math.abs(currentVat - 0.1) < 0.001) next = 0
   else if (currentVat === 0) next = 0.08
   emit('updateItemVat', idx, next)
 }
@@ -120,7 +120,11 @@ function handleCourtChange(val: string | number) {
           <div v-if="selectedCustomer" class="cust-info">
             <span class="cust-label-prefix">{{ t('admin.pos.customer') }}:</span>
             <strong class="cust-name">{{ selectedCustomer.name }}</strong>
-            <span class="cust-tier">({{ selectedCustomer.tier }} -{{ Math.round(selectedCustomer.discount_rate * 100) }}%)</span>
+            <span class="cust-tier"
+              >({{ selectedCustomer.tier }} -{{
+                Math.round(selectedCustomer.discount_rate * 100)
+              }}%)</span
+            >
           </div>
           <div v-else class="cust-info">
             <span class="cust-placeholder">{{ t('admin.pos.walkInCustomer') }}</span>
@@ -144,16 +148,14 @@ function handleCourtChange(val: string | number) {
         <div class="tab-banner-left">
           <span class="material-symbols-outlined tab-icon">receipt_long</span>
           <div>
-            <span class="tab-label">{{ t('admin.pos.unpaidCourtTab') || 'Tab sân chưa trả:' }} </span>
+            <span class="tab-label"
+              >{{ t('admin.pos.unpaidCourtTab') || 'Tab sân chưa trả:' }}
+            </span>
             <strong class="tab-amount">{{ formatMoney(activeTab.total_amount) }}</strong>
             <span class="tab-count"> ({{ activeTab.items?.length || 0 }} món)</span>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-settle-tab"
-          @click="emit('settleTab', activeTab.id)"
-        >
+        <button type="button" class="btn-settle-tab" @click="emit('settleTab', activeTab.id)">
           {{ t('admin.pos.settleTabBtn') || 'Thanh toán Tab' }}
         </button>
       </div>
@@ -168,11 +170,7 @@ function handleCourtChange(val: string | number) {
       </div>
 
       <div v-else class="cart-items-list">
-        <div
-          v-for="(item, idx) in cart"
-          :key="idx"
-          class="cart-item-row"
-        >
+        <div v-for="(item, idx) in cart" :key="idx" class="cart-item-row">
           <div class="item-primary-info">
             <div class="item-name-wrap">
               <h5 class="item-name">{{ item.product.name }}</h5>
@@ -202,30 +200,20 @@ function handleCourtChange(val: string | number) {
                 -
               </button>
               <span class="qty-num">{{ item.rental_hours || 1 }}h</span>
-              <button
-                type="button"
-                class="qty-btn"
-                @click="emit('updateRentalHours', idx, 1)"
-              >
+              <button type="button" class="qty-btn" @click="emit('updateRentalHours', idx, 1)">
                 +
               </button>
             </div>
 
             <div class="item-qty-stepper">
-              <button
-                type="button"
-                class="qty-btn"
-                @click="emit('updateQuantity', idx, -1)"
-              >
-                <span class="material-symbols-outlined icon-14" v-if="item.quantity === 1">delete</span>
+              <button type="button" class="qty-btn" @click="emit('updateQuantity', idx, -1)">
+                <span class="material-symbols-outlined icon-14" v-if="item.quantity === 1"
+                  >delete</span
+                >
                 <span v-else>-</span>
               </button>
               <span class="qty-num">{{ item.quantity }}</span>
-              <button
-                type="button"
-                class="qty-btn"
-                @click="emit('updateQuantity', idx, 1)"
-              >
+              <button type="button" class="qty-btn" @click="emit('updateQuantity', idx, 1)">
                 +
               </button>
             </div>
@@ -256,7 +244,12 @@ function handleCourtChange(val: string | number) {
               min="0"
               max="100"
               class="discount-input"
-              @input="emit('update:customDiscountPercent', Number(($event.target as HTMLInputElement).value || 0))"
+              @input="
+                emit(
+                  'update:customDiscountPercent',
+                  Number(($event.target as HTMLInputElement).value || 0),
+                )
+              "
             />
             <span class="unit-pct">%</span>
           </div>
@@ -284,7 +277,7 @@ function handleCourtChange(val: string | number) {
                 type="button"
                 class="vat-pill-btn"
                 title="Đặt tất cả món thành 10% VAT"
-                @click="emit('applyBulkTax', 0.10)"
+                @click="emit('applyBulkTax', 0.1)"
               >
                 10%
               </button>
@@ -293,15 +286,13 @@ function handleCourtChange(val: string | number) {
         </div>
 
         <div v-if="discountAmount > 0" class="calc-row discount-row">
-          <span class="calc-label">{{ t('admin.pos.discountSummary', { percent: discountPercent }) }}</span>
+          <span class="calc-label">{{
+            t('admin.pos.discountSummary', { percent: discountPercent })
+          }}</span>
           <span class="calc-val text-green">-{{ formatMoney(discountAmount) }}</span>
         </div>
 
-        <div
-          v-for="b in vatBreakdown"
-          :key="b.rate"
-          class="calc-row vat-row"
-        >
+        <div v-for="b in vatBreakdown" :key="b.rate" class="calc-row vat-row">
           <span class="calc-label">{{ t('admin.pos.vatSummary', { percent: b.percent }) }}</span>
           <span class="calc-val">+{{ formatMoney(b.amount) }}</span>
         </div>
@@ -365,15 +356,13 @@ function handleCourtChange(val: string | number) {
             step="1000"
             class="cash-tendered-input"
             :placeholder="formatMoney(grandTotal)"
-            @input="emit('update:cashTendered', Number(($event.target as HTMLInputElement).value || 0))"
+            @input="
+              emit('update:cashTendered', Number(($event.target as HTMLInputElement).value || 0))
+            "
           />
         </div>
 
-        <div
-          ref="quickCashScrollRef"
-          class="quick-cash-chips"
-          @wheel.passive="onQuickCashWheel"
-        >
+        <div ref="quickCashScrollRef" class="quick-cash-chips" @wheel.passive="onQuickCashWheel">
           <button
             v-for="sug in quickCashSuggestions"
             :key="sug"
@@ -421,7 +410,13 @@ function handleCourtChange(val: string | number) {
           @click="emit('checkout')"
         >
           <span class="material-symbols-outlined icon-20">check_circle</span>
-          <span>{{ processingCheckout ? t('admin.pos.checkoutProcessing') : (paymentMethod === 'court_tab' ? (t('admin.pos.recordToTab') || 'Ghi vào Tab Sân') : t('admin.pos.checkoutBtn')) }}</span>
+          <span>{{
+            processingCheckout
+              ? t('admin.pos.checkoutProcessing')
+              : paymentMethod === 'court_tab'
+                ? t('admin.pos.recordToTab') || 'Ghi vào Tab Sân'
+                : t('admin.pos.checkoutBtn')
+          }}</span>
         </button>
       </div>
     </div>

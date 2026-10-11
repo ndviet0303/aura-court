@@ -43,7 +43,9 @@ const {
           </span>
         </div>
         <h1 class="page-title">Live Score & Tỉ Số Trực Tiếp</h1>
-        <p class="page-sub">Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.</p>
+        <p class="page-sub">
+          Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.
+        </p>
       </div>
 
       <div class="header-actions">
@@ -70,7 +72,14 @@ const {
     <div v-if="loading" class="live-skeleton-stack">
       <!-- Selector Row Skeleton -->
       <div class="selector-skeleton-row">
-        <SkeletonLoader v-for="i in 4" :key="i" type="rect" width="180px" height="46px" rounded="12px" />
+        <SkeletonLoader
+          v-for="i in 4"
+          :key="i"
+          type="rect"
+          width="180px"
+          height="46px"
+          rounded="12px"
+        />
       </div>
 
       <!-- Main Scoreboard Skeleton Card -->
@@ -107,11 +116,25 @@ const {
       <div class="live-analytics-grid">
         <div class="skeleton-box-card">
           <SkeletonLoader type="rect" width="260px" height="22px" rounded="6px" />
-          <SkeletonLoader v-for="j in 5" :key="j" type="rect" width="100%" height="38px" rounded="8px" />
+          <SkeletonLoader
+            v-for="j in 5"
+            :key="j"
+            type="rect"
+            width="100%"
+            height="38px"
+            rounded="8px"
+          />
         </div>
         <div class="skeleton-box-card">
           <SkeletonLoader type="rect" width="220px" height="22px" rounded="6px" />
-          <SkeletonLoader v-for="k in 4" :key="k" type="rect" width="100%" height="46px" rounded="10px" />
+          <SkeletonLoader
+            v-for="k in 4"
+            :key="k"
+            type="rect"
+            width="100%"
+            height="46px"
+            rounded="10px"
+          />
         </div>
       </div>
     </div>
@@ -123,7 +146,8 @@ const {
       </div>
       <h4 class="empty-title">Hiện Chưa Có Trận Đấu Nào Đang Diễn Ra</h4>
       <p class="empty-sub">
-        Các trận đấu trực tiếp sẽ xuất hiện tại đây ngay khi ban tổ chức và trọng tài cập nhật điểm số.
+        Các trận đấu trực tiếp sẽ xuất hiện tại đây ngay khi ban tổ chức và trọng tài cập nhật điểm
+        số.
       </p>
     </div>
 
@@ -136,11 +160,7 @@ const {
       />
 
       <!-- Main Scoreboard Display -->
-      <LiveMatchScoreboard
-        v-if="activeMatch"
-        :match="activeMatch"
-        :point-state="pointState"
-      />
+      <LiveMatchScoreboard v-if="activeMatch" :match="activeMatch" :point-state="pointState" />
 
       <!-- Umpire Controls (when activated) -->
       <LiveUmpireControlPanel

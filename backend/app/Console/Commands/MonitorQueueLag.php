@@ -21,6 +21,7 @@ class MonitorQueueLag extends Command
             $observability->alert('queue_lag', ['queue' => $queue, 'depth' => $size]);
         }
         $this->line("{$queue}: {$size}");
+
         return self::SUCCESS;
     }
 }

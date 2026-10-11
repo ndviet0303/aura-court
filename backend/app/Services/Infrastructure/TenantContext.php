@@ -3,19 +3,20 @@
 namespace App\Services\Infrastructure;
 
 use App\Models\Organization;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class TenantContext
 {
     private ?Organization $currentOrganization = null;
+
     private bool $elevated = false;
+
     private ?string $elevatedPurpose = null;
 
     public function setOrganization(?Organization $organization): void
     {
         $this->currentOrganization = $organization;
-        
+
         // If connected to PostgreSQL with RLS, set transaction session variable
         if ($organization && DB::connection()->getDriverName() === 'pgsql') {
             DB::statement("SET LOCAL app.current_organization_id = '{$organization->id}'");
@@ -58,6 +59,7 @@ class TenantContext
         $previous = $this->currentOrganization;
         try {
             $this->setOrganization($organization);
+
             return $callback($organization);
         } finally {
             $this->setOrganization($previous);
@@ -74,12 +76,14 @@ class TenantContext
     public function scopedCacheKey(string $key): string
     {
         $orgId = $this->getOrganizationId() ?? 'global';
+
         return "tenant:{$orgId}:{$key}";
     }
 
     public function scopedChannelName(string $channel): string
     {
         $orgId = $this->getOrganizationId() ?? 'global';
+
         return "private-tenant.{$orgId}.{$channel}";
     }
 }

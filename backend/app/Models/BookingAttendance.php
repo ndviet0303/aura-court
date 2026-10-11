@@ -24,9 +24,13 @@ class BookingAttendance extends Model
     use BelongsToTenant;
 
     public const STATUS_CHECKED_IN = 'checked_in';
+
     public const STATUS_CHECKED_OUT = 'checked_out';
+
     public const STATUS_NO_SHOW = 'no_show';
+
     public const STATUS_AWAITING_INSPECTION = 'awaiting_inspection';
+
     protected function casts(): array
     {
         return [

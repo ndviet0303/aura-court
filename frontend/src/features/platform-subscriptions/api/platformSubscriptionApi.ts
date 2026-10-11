@@ -16,55 +16,57 @@ export const platformSubscriptionApi = {
   },
 
   getCurrentSubscription: async (organizationId: number): Promise<CurrentSubscriptionResponse> => {
-    return api.get<CurrentSubscriptionResponse>(`/partner/organizations/${organizationId}/subscription/current`)
+    return api.get<CurrentSubscriptionResponse>(
+      `/partner/organizations/${organizationId}/subscription/current`,
+    )
   },
 
   selectPlan: async (
     organizationId: number,
-    payload: SelectPlanPayload
+    payload: SelectPlanPayload,
   ): Promise<{ data: PlanSelectionSnapshot; message: string }> => {
     return api.post<{ data: PlanSelectionSnapshot; message: string }>(
       `/partner/organizations/${organizationId}/subscription/select-plan`,
-      payload
+      payload,
     )
   },
 
   activateTrial: async (
     organizationId: number,
-    payload: ActivateTrialPayload
+    payload: ActivateTrialPayload,
   ): Promise<{ data: PlatformSubscription; message: string }> => {
     return api.post<{ data: PlatformSubscription; message: string }>(
       `/partner/organizations/${organizationId}/subscription/activate-trial`,
-      payload
+      payload,
     )
   },
 
   initiatePayment: async (
     organizationId: number,
-    payload: InitiatePaymentPayload
+    payload: InitiatePaymentPayload,
   ): Promise<{ data: PaymentAttempt; message: string }> => {
     return api.post<{ data: PaymentAttempt; message: string }>(
       `/partner/organizations/${organizationId}/subscription/initiate-payment`,
-      payload
+      payload,
     )
   },
 
   cancelRenewal: async (
-    organizationId: number
+    organizationId: number,
   ): Promise<{ data: PlatformSubscription; message: string }> => {
     return api.post<{ data: PlatformSubscription; message: string }>(
       `/partner/organizations/${organizationId}/subscription/cancel-renewal`,
-      {}
+      {},
     )
   },
 
   renew: async (
     organizationId: number,
-    payload: Pick<InitiatePaymentPayload, 'return_url' | 'cancel_url'>
+    payload: Pick<InitiatePaymentPayload, 'return_url' | 'cancel_url'>,
   ): Promise<{ data: PaymentAttempt; message: string }> => {
     return api.post<{ data: PaymentAttempt; message: string }>(
       `/partner/organizations/${organizationId}/subscription/renew`,
-      payload
+      payload,
     )
   },
 }

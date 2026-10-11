@@ -31,6 +31,7 @@ class PilotAcceptanceService
             $results[$name] = $result;
             $passed = $passed && $result['status'] === 'passed';
         }
+
         return AcceptanceRun::create(['phase' => 'phase-1', 'status' => $passed ? 'passed' : 'blocked', 'suites' => array_keys($suites), 'results' => $results, 'started_at' => $startedAt, 'completed_at' => now()]);
     }
 
@@ -48,6 +49,7 @@ class PilotAcceptanceService
         $process->setTimeout(3600);
         try {
             $exitCode = $process->run();
+
             return ['status' => $exitCode === 0 ? 'passed' : 'failed', 'exit_code' => $exitCode, 'output' => substr($process->getOutput().$process->getErrorOutput(), -20000)];
         } catch (\Throwable $exception) {
             return ['status' => 'blocked', 'error' => $exception->getMessage()];

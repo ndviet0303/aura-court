@@ -18,6 +18,13 @@ class Account extends Model
         return ['is_system' => 'boolean', 'metadata' => 'array'];
     }
 
-    public function organization(): BelongsTo { return $this->belongsTo(Organization::class); }
-    public function entries(): HasMany { return $this->hasMany(JournalEntry::class); }
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function entries(): HasMany
+    {
+        return $this->hasMany(JournalEntry::class);
+    }
 }

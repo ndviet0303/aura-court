@@ -136,8 +136,8 @@ const containerClass = computed(() => {
 
 .ring-outer {
   border-color: rgba(201, 161, 90, 0.25);
-  border-top-color: var(--primary, #6B2D3F);
-  border-right-color: var(--accent, #C9A15A);
+  border-top-color: var(--primary, #6b2d3f);
+  border-right-color: var(--accent, #c9a15a);
   animation: aura-spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
   box-shadow: 0 0 16px rgba(107, 45, 63, 0.15);
 }
@@ -145,8 +145,8 @@ const containerClass = computed(() => {
 .ring-inner {
   inset: 5px;
   border-color: transparent;
-  border-bottom-color: var(--accent, #C9A15A);
-  border-left-color: var(--primary, #6B2D3F);
+  border-bottom-color: var(--accent, #c9a15a);
+  border-left-color: var(--primary, #6b2d3f);
   animation: aura-spin-reverse 1.4s linear infinite;
   opacity: 0.85;
 }
@@ -244,7 +244,8 @@ const containerClass = computed(() => {
 }
 
 @keyframes aura-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(0.92);
   }
   50% {
@@ -253,7 +254,9 @@ const containerClass = computed(() => {
 }
 
 @keyframes dot-jump {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: translateY(0);
     opacity: 0.3;
   }

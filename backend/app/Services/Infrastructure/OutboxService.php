@@ -29,6 +29,7 @@ class OutboxService
         if ($message->wasRecentlyCreated && ! $message->published_at) {
             ProcessOutboxMessage::dispatch($message->id);
         }
+
         return $message;
     }
 
@@ -43,6 +44,7 @@ class OutboxService
                 return null;
             }
             $locked->update(['status' => 'processing', 'locked_at' => now(), 'attempts' => $locked->attempts + 1]);
+
             return $locked;
         });
     }
@@ -68,6 +70,7 @@ class OutboxService
     private function isDuplicate(QueryException $exception): bool
     {
         $message = strtolower($exception->getMessage());
+
         return str_contains($message, 'outbox_messages') && (str_contains($message, 'unique') || str_contains($message, 'duplicate'));
     }
 }

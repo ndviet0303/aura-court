@@ -7,15 +7,26 @@ import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
 
 describe('CouponManagerModal', () => {
   it('creates a campaign coupon with its built-in customer group and limits', async () => {
-    const venues: Venue[] = [{ id: 3, name: 'West Club', slug: 'west-club', address: null, google_maps_url: null, is_active: true }]
-    const courts: Court[] = [{
-      id: 8,
-      name: 'Court 8',
-      slug: 'court-8',
-      venue_id: 3,
-      venue: venues[0]!,
-      is_active: true,
-    }]
+    const venues: Venue[] = [
+      {
+        id: 3,
+        name: 'West Club',
+        slug: 'west-club',
+        address: null,
+        google_maps_url: null,
+        is_active: true,
+      },
+    ]
+    const courts: Court[] = [
+      {
+        id: 8,
+        name: 'Court 8',
+        slug: 'court-8',
+        venue_id: 3,
+        venue: venues[0]!,
+        is_active: true,
+      },
+    ]
     const wrapper = mount(CouponManagerModal, {
       props: { show: true, coupons: [], venues, courts },
       global: { plugins: [i18n] },

@@ -31,6 +31,7 @@ class MatchBill extends Model
     use BelongsToTenant;
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_FINALIZED = 'finalized';
 
     protected function casts(): array

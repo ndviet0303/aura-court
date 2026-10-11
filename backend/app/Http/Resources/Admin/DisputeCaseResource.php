@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Admin;
 
 use App\Models\DisputeCase;
+use App\Models\OwnerRefundObligation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -61,11 +62,11 @@ class DisputeCaseResource extends JsonResource
             'decision_history' => $this->decision_history ?? [],
             'decision_version' => (int) ($this->decision_version ?? 1),
             'refund_obligation_id' => $this->refund_obligation_id,
-            'payment_completed' => $this->refundObligation?->status === \App\Models\OwnerRefundObligation::STATUS_ACKNOWLEDGED,
+            'payment_completed' => $this->refundObligation?->status === OwnerRefundObligation::STATUS_ACKNOWLEDGED,
             'refund_obligation_status' => $this->refundObligation?->status ?? ($this->refund_obligation_id ? 'approved' : null),
-            'has_pending_execution' => $this->refund_obligation_id !== null && !in_array($this->refundObligation?->status, [
-                \App\Models\OwnerRefundObligation::STATUS_ACKNOWLEDGED,
-                \App\Models\OwnerRefundObligation::STATUS_REJECTED,
+            'has_pending_execution' => $this->refund_obligation_id !== null && ! in_array($this->refundObligation?->status, [
+                OwnerRefundObligation::STATUS_ACKNOWLEDGED,
+                OwnerRefundObligation::STATUS_REJECTED,
             ], true),
             'reopened_at' => $this->reopened_at?->toIso8601String(),
             'reopened_by' => $this->reopened_by,

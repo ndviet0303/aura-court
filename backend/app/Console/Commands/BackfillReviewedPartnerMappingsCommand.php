@@ -11,7 +11,6 @@ use App\Models\PartnerReviewHistory;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
 use App\Models\Venue;
-use App\Models\VenuePublicationRevision;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -41,6 +40,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
         $filePath = $this->option('file');
         if (! $filePath || ! file_exists($filePath)) {
             $this->error("Valid --file parameter required. File not found: {$filePath}");
+
             return self::FAILURE;
         }
 
@@ -48,6 +48,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
         $json = json_decode($content, true);
         if (! is_array($json) || ! isset($json['mappings']) || ! is_array($json['mappings'])) {
             $this->error("Invalid JSON format. Expected root object with 'mappings' array.");
+
             return self::FAILURE;
         }
 
@@ -77,6 +78,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
                 if (! $orgId) {
                     $results['skipped']++;
                     $results['errors'][] = "Row #{$index}: missing organization_id";
+
                     continue;
                 }
 
@@ -84,12 +86,14 @@ class BackfillReviewedPartnerMappingsCommand extends Command
                 if (! $org) {
                     $results['skipped']++;
                     $results['errors'][] = "Row #{$index}: organization #{$orgId} not found";
+
                     continue;
                 }
 
                 if ($decision === 'unresolved') {
                     $results['unresolved']++;
                     $this->line("Organization #{$orgId} marked UNRESOLVED - skipped mutation.");
+
                     continue;
                 }
 
@@ -109,6 +113,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
                         'decision' => 'needs_supplement',
                         'reviewer_notes' => $notes,
                     ]);
+
                     continue;
                 }
 
@@ -225,6 +230,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
         } catch (\Throwable $e) {
             DB::rollBack();
             $this->error("Backfill failed with exception: {$e->getMessage()}");
+
             return self::FAILURE;
         }
 
@@ -235,6 +241,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
         $this->line("- Supplement Requested: {$results['supplement_requested']}");
         $this->line("- Unresolved (Untouched): {$results['unresolved']}");
         $this->line("- Skipped / Errors: {$results['skipped']}");
+
         return self::SUCCESS;
     }
 
@@ -247,6 +254,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
         $existingKyc = HostKyc::where('organization_id', $org->id)->first();
         if ($existingKyc) {
             $org->update(['source_kyc_id' => $existingKyc->id]);
+
             return (int) $existingKyc->id;
         }
 
@@ -255,13 +263,13 @@ class BackfillReviewedPartnerMappingsCommand extends Command
         $kyc = HostKyc::create([
             'organization_id' => $org->id,
             'user_id' => $owner?->id ?? $reviewerId ?? 1,
-            'kyc_code' => 'KYC-MIGRATION-' . $org->id,
+            'kyc_code' => 'KYC-MIGRATION-'.$org->id,
             'status' => $status,
             'business_type' => 'enterprise',
             'business_name' => $org->name,
             'legal_name' => $org->name,
             'tax_code' => $org->tax_code ?? '0100000000',
-            'representative_name' => $org->name . ' Representative',
+            'representative_name' => $org->name.' Representative',
             'id_card_number' => '001090000000',
             'bank_name' => 'Vietcombank',
             'bank_code' => 'VCB',

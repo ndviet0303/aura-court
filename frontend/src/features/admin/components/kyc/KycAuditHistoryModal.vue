@@ -74,9 +74,7 @@ function getActionBadgeClass(action: string): string {
                     <span class="author-name">{{ log.reviewer_name }}</span>
                   </div>
 
-                  <p v-if="log.notes" class="timeline-notes">
-                    "{{ log.notes }}"
-                  </p>
+                  <p v-if="log.notes" class="timeline-notes">"{{ log.notes }}"</p>
 
                   <div v-if="log.rejection_reason" class="timeline-reason">
                     <span class="material-symbols-outlined icon-16">warning</span>
@@ -193,10 +191,18 @@ function getActionBadgeClass(action: string): string {
   font-size: 13px;
 }
 
-.icon-36 { font-size: 36px; }
-.icon-22 { font-size: 22px; }
-.icon-18 { font-size: 18px; }
-.icon-16 { font-size: 16px; }
+.icon-36 {
+  font-size: 36px;
+}
+.icon-22 {
+  font-size: 22px;
+}
+.icon-18 {
+  font-size: 18px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
 .timeline-list {
   display: flex;
@@ -225,10 +231,18 @@ function getActionBadgeClass(action: string): string {
   border: 2px solid var(--surface, #ffffff);
 }
 
-.timeline-marker.badge-success { background: #10b981; }
-.timeline-marker.badge-danger { background: #ef4444; }
-.timeline-marker.badge-warning { background: #f59e0b; }
-.timeline-marker.badge-info { background: #3b82f6; }
+.timeline-marker.badge-success {
+  background: #10b981;
+}
+.timeline-marker.badge-danger {
+  background: #ef4444;
+}
+.timeline-marker.badge-warning {
+  background: #f59e0b;
+}
+.timeline-marker.badge-info {
+  background: #3b82f6;
+}
 
 .timeline-content {
   background: var(--surface-container-low, #f8f9fa);
@@ -253,10 +267,22 @@ function getActionBadgeClass(action: string): string {
   border-radius: 999px;
 }
 
-.action-badge.badge-success { background: #d1fae5; color: #059669; }
-.action-badge.badge-danger { background: #fee2e2; color: #dc2626; }
-.action-badge.badge-warning { background: #fef3c7; color: #d97706; }
-.action-badge.badge-info { background: #e0f2fe; color: #0284c7; }
+.action-badge.badge-success {
+  background: #d1fae5;
+  color: #059669;
+}
+.action-badge.badge-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.action-badge.badge-warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+.action-badge.badge-info {
+  background: #e0f2fe;
+  color: #0284c7;
+}
 
 .timeline-time {
   font-size: 11px;
@@ -269,8 +295,13 @@ function getActionBadgeClass(action: string): string {
   gap: 4px;
 }
 
-.author-label { color: var(--muted, #817476); }
-.author-name { font-weight: 700; color: var(--ink, #191c1d); }
+.author-label {
+  color: var(--muted, #817476);
+}
+.author-name {
+  font-weight: 700;
+  color: var(--ink, #191c1d);
+}
 
 .timeline-notes {
   font-size: 13px;

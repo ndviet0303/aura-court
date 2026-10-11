@@ -6,8 +6,6 @@ use App\Models\Journal;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Tournament;
-use App\Models\TournamentEvent;
-use App\Models\TournamentFixture;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentStanding;
 use App\Models\User;
@@ -22,12 +20,19 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
     use RefreshDatabase;
 
     private Organization $organization;
+
     private User $owner;
+
     private User $player1;
+
     private User $player2;
+
     private User $player3;
+
     private WalletAccount $wallet1;
+
     private WalletAccount $wallet2;
+
     private WalletAccount $wallet3;
 
     protected function setUp(): void
@@ -36,7 +41,7 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
 
         $this->organization = Organization::create([
             'name' => 'Aura Championship Tenant',
-            'slug' => 'aura-champ-' . uniqid(),
+            'slug' => 'aura-champ-'.uniqid(),
         ]);
 
         config([
@@ -103,7 +108,7 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
     {
         return [
             'X-Organization-ID' => (string) $this->organization->id,
-            'Idempotency-Key' => $keyPrefix . uniqid(),
+            'Idempotency-Key' => $keyPrefix.uniqid(),
         ];
     }
 

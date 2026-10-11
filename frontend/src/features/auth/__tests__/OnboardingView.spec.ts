@@ -30,7 +30,13 @@ describe('OnboardingView', () => {
   })
   it('renders role selector cards and defaults to customer', async () => {
     const auth = useAuthStore()
-    auth.user = { id: 1, name: 'Test User', email: 'test@example.com', role: 'customer', onboarded: false }
+    auth.user = {
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'customer',
+      onboarded: false,
+    }
     auth.loaded = true
 
     const wrapper = mount(OnboardingView, {
@@ -47,7 +53,13 @@ describe('OnboardingView', () => {
 
   it('shows court owner fields when clicking court owner card', async () => {
     const auth = useAuthStore()
-    auth.user = { id: 1, name: 'Test User', email: 'test@example.com', role: 'customer', onboarded: false }
+    auth.user = {
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'customer',
+      onboarded: false,
+    }
     auth.loaded = true
 
     const wrapper = mount(OnboardingView, {
@@ -75,11 +87,17 @@ describe('OnboardingView', () => {
         phone: '0901234567',
         venueAddress: '123 Kha Vạn Cân, TP. Thủ Đức',
         courtsCount: 6,
-      })
+      }),
     )
 
     const auth = useAuthStore()
-    auth.user = { id: 1, name: 'Test User', email: 'test@example.com', role: 'customer', onboarded: false }
+    auth.user = {
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'customer',
+      onboarded: false,
+    }
     auth.loaded = true
 
     const wrapper = mount(OnboardingView, {
@@ -92,12 +110,20 @@ describe('OnboardingView', () => {
     expect(wrapper.find('#o-name').exists()).toBe(true)
     expect((wrapper.find('#o-name').element as HTMLInputElement).value).toBe('CLB Cầu Lông Thủ Đức')
     expect((wrapper.find('#o-phone').element as HTMLInputElement).value).toBe('0901234567')
-    expect((wrapper.find('#o-address').element as HTMLInputElement).value).toBe('123 Kha Vạn Cân, TP. Thủ Đức')
+    expect((wrapper.find('#o-address').element as HTMLInputElement).value).toBe(
+      '123 Kha Vạn Cân, TP. Thủ Đức',
+    )
   })
 
   it('stores partner intent when completing onboarding as court owner', async () => {
     const auth = useAuthStore()
-    auth.user = { id: 1, name: 'Test User', email: 'test@example.com', role: 'customer', onboarded: false }
+    auth.user = {
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'customer',
+      onboarded: false,
+    }
     auth.loaded = true
     auth.completeOnboarding = vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
@@ -114,7 +140,7 @@ describe('OnboardingView', () => {
         accountType: 'court_owner',
         organizationName: 'Aura Arena',
         phone: '0987654321',
-      })
+      }),
     )
 
     const wrapper = mount(OnboardingView, {

@@ -109,7 +109,6 @@ describe('PaymentCycleDetailView', () => {
     expect(wrapper.text()).toContain('Lịch Sử & Danh Sách Buổi Thi Đấu')
   })
 
-
   it('does not offer a bank account or paid status when no verified attempt is available', async () => {
     const wrapper = mount(PaymentCycleDetailView, { global: { plugins: [i18n] } })
     await flushPromises()
@@ -192,7 +191,13 @@ describe('PaymentCycleDetailView', () => {
             due_at: '2026-10-25T00:00:00Z',
             amount: 1101600,
             status: 'pending',
-            series: { id: 10, court_id: 1, frequency: 'weekly', status: 'active', court: { id: 1, name: 'VIP 01' } },
+            series: {
+              id: 10,
+              court_id: 1,
+              frequency: 'weekly',
+              status: 'active',
+              court: { id: 1, name: 'VIP 01' },
+            },
           },
           occurrences: [],
           payment_attempt: {
@@ -223,7 +228,9 @@ describe('PaymentCycleDetailView', () => {
     // Direct-owner path: the verified-receipt panel replaces the client "confirm transfer" button.
     expect(wrapper.find('[data-testid="owner-payment-instructions"]').exists()).toBe(true)
     expect(wrapper.find('.btn-confirm-pay').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="owner-payment-qr"]').attributes('src')).toBe('https://qr.example/rec-101')
+    expect(wrapper.find('[data-testid="owner-payment-qr"]').attributes('src')).toBe(
+      'https://qr.example/rec-101',
+    )
 
     const getCallsBefore = vi.mocked(apiV2.get).mock.calls.length
     await wrapper.find('[data-testid="owner-payment-refresh"]').trigger('click')

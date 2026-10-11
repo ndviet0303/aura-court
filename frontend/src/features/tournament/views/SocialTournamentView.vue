@@ -8,7 +8,6 @@ import SocialPartnerFinderModal from '../components/social/SocialPartnerFinderMo
 
 const {
   loading,
-  activeTab,
   searchQuery,
   notice,
   error,
@@ -30,16 +29,14 @@ const {
           </AuraButton>
         </div>
         <h1 class="page-title">Ghép Kèo Giao Lưu & Tìm Bạn Thi Đấu</h1>
-        <p class="page-sub">Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh giải.</p>
+        <p class="page-sub">
+          Tìm kiếm bạn chơi thể thao cùng trình độ, tạo kèo thi đấu giao lưu hoặc tìm đồng đội đánh
+          giải.
+        </p>
       </div>
 
       <div class="header-actions">
-        <AuraButton
-          variant="primary"
-          size="md"
-          icon="group_add"
-          @click="showPartnerFinder = true"
-        >
+        <AuraButton variant="primary" size="md" icon="group_add" @click="showPartnerFinder = true">
           Tìm Bạn Ghép Đôi
         </AuraButton>
       </div>
@@ -111,7 +108,6 @@ const {
       />
     </div>
 
-
     <!-- Modals -->
     <SocialJoinModal
       :show="!!selectedMatchForJoin"
@@ -120,13 +116,9 @@ const {
       @confirm="joinMatch"
     />
 
-    <SocialPartnerFinderModal
-      :show="showPartnerFinder"
-      @close="showPartnerFinder = false"
-    />
+    <SocialPartnerFinderModal :show="showPartnerFinder" @close="showPartnerFinder = false" />
   </main>
 </template>
-
 
 <style scoped>
 .social-tournament-view {
@@ -217,14 +209,15 @@ const {
   color: var(--ink);
   font-size: 13.5px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input:focus {
   border-color: var(--primary, #db2777);
   box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
 }
-
 
 .matches-grid {
   display: grid;
@@ -278,4 +271,3 @@ const {
   padding: 10px 0;
 }
 </style>
-

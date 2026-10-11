@@ -3,7 +3,6 @@
 namespace Tests\Feature\RuntimeExecution;
 
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
-use App\Jobs\ProcessOutboxMessage;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\Organization;
@@ -14,16 +13,16 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
-use App\Notifications\AuraBookingNotification;
-use App\Services\Booking\OrdinaryCheckoutService;
-use App\Services\Infrastructure\OutboxDispatcher;
 use App\Services\Infrastructure\OutboxService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\Payment\ProviderEventHandler;
 use App\Services\Payment\ProviderWebhookService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -33,6 +32,7 @@ use Tests\TestCase;
 class SyncQueueAndRecoveryRegressionTest extends TestCase
 {
     use RefreshDatabase;
+
     public static bool $executedFlag = false;
 
     protected function setUp(): void
@@ -46,8 +46,10 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
     public function test_sync_queue_executes_immediately_without_worker(): void
     {
         self::$executedFlag = false;
-        dispatch(new class {
-            public function handle(): void {
+        dispatch(new class
+        {
+            public function handle(): void
+            {
                 SyncQueueAndRecoveryRegressionTest::$executedFlag = true;
             }
         });
@@ -116,7 +118,7 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
                 '/booking'
             );
         } catch (\Throwable $e) {
-            $this->fail('DurableNotificationService should not throw secondary mail delivery failure: ' . $e->getMessage());
+            $this->fail('DurableNotificationService should not throw secondary mail delivery failure: '.$e->getMessage());
         }
 
         $this->assertNotNull($outboxMessage);
@@ -193,7 +195,7 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
 
         // Enqueue without auto-dispatch to test failure incrementation
         $message = OutboxMessage::create([
-            'message_key' => 'exhaustion.test.' . uniqid(),
+            'message_key' => 'exhaustion.test.'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'test.exhaustion',
             'payload' => ['user_id' => $user->id, 'title' => 'Test', 'body' => 'Body'],
@@ -219,7 +221,7 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
 
         // Stale message: status 'processing' with locked_at 10 minutes ago
         $message = OutboxMessage::create([
-            'message_key' => 'stale.claim.' . uniqid(),
+            'message_key' => 'stale.claim.'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'test.stale',
             'payload' => ['user_id' => $user->id, 'channels' => ['database'], 'title' => 'Stale Test', 'body' => 'Body'],
@@ -399,7 +401,7 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
 
         // Message 1 will fail (user non-existent)
         $msg1 = OutboxMessage::create([
-            'message_key' => 'fail.item.' . uniqid(),
+            'message_key' => 'fail.item.'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'test.fail',
             'payload' => ['user_id' => 999999, 'channels' => ['database'], 'title' => 'Fail', 'body' => 'Fail'],
@@ -410,7 +412,7 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
 
         // Message 2 should succeed
         $msg2 = OutboxMessage::create([
-            'message_key' => 'succeed.item.' . uniqid(),
+            'message_key' => 'succeed.item.'.uniqid(),
             'channel' => 'notification',
             'event_type' => 'test.succeed',
             'payload' => ['user_id' => $userB->id, 'channels' => ['database'], 'title' => 'Succeed', 'body' => 'Succeed'],
@@ -488,14 +490,14 @@ class SyncQueueAndRecoveryRegressionTest extends TestCase
 
     public function test_host_style_schedule_run_tick_executes_successfully(): void
     {
-        $exitCode = \Illuminate\Support\Facades\Artisan::call('schedule:run');
+        $exitCode = Artisan::call('schedule:run');
         $this->assertSame(0, $exitCode, 'Artisan schedule:run tick must exit with 0 code in sync mode.');
     }
 }
 
-class TestAfterCommitJob implements \Illuminate\Contracts\Queue\ShouldQueue
+class TestAfterCommitJob implements ShouldQueue
 {
-    use \Illuminate\Foundation\Bus\Dispatchable, \Illuminate\Queue\InteractsWithQueue, \Illuminate\Queue\SerializesModels;
+    use Dispatchable, \Illuminate\Queue\InteractsWithQueue, \Illuminate\Queue\SerializesModels;
 
     public bool $afterCommit = true;
 

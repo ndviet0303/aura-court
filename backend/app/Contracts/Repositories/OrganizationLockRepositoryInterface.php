@@ -3,6 +3,7 @@
 namespace App\Contracts\Repositories;
 
 use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\User;
 
 interface OrganizationLockRepositoryInterface
@@ -15,7 +16,7 @@ interface OrganizationLockRepositoryInterface
 
     public function createOrganization(array $attributes): Organization;
 
-    public function addMember(Organization $org, int $userId, string $role, string $status = 'active'): \App\Models\OrganizationMember;
+    public function addMember(Organization $org, int $userId, string $role, string $status = 'active'): OrganizationMember;
 
     public function findBySourceKycId(int $sourceKycId): ?Organization;
 

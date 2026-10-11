@@ -4,8 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\CashShift;
 use App\Models\Organization;
-use App\Models\PosOrder;
-use App\Models\PosProduct;
 use App\Models\ShiftReconciliation;
 use App\Models\User;
 use Carbon\Carbon;

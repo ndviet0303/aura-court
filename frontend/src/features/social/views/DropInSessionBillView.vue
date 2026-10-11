@@ -59,7 +59,7 @@ async function handleSaveDraft() {
 
 async function handleFinalize() {
   const confirmed = window.confirm(
-    'Bạn có chắc chắn muốn chốt bảng chi phí này? Sau khi chốt, dữ liệu sẽ ở chế độ chỉ đọc và không thể sửa đổi.'
+    'Bạn có chắc chắn muốn chốt bảng chi phí này? Sau khi chốt, dữ liệu sẽ ở chế độ chỉ đọc và không thể sửa đổi.',
   )
   if (!confirmed) return
   await finalizeBill(matchId.value)
@@ -70,7 +70,12 @@ async function handleFinalize() {
   <main class="drop-in-bill-page">
     <div class="container">
       <div class="top-nav-bar">
-        <AuraButton variant="ghost" size="sm" icon="arrow_back" @click="router.push('/matchmaking')">
+        <AuraButton
+          variant="ghost"
+          size="sm"
+          icon="arrow_back"
+          @click="router.push('/matchmaking')"
+        >
           Quay Lại Kèo Giao Lưu
         </AuraButton>
       </div>
@@ -82,7 +87,8 @@ async function handleFinalize() {
             <div>
               <h1 class="page-title">Bảng Chi Phí Buổi Giao Lưu Cầu Lông</h1>
               <span v-if="currentMatch" class="page-sub">
-                {{ currentMatch.title }} · {{ currentMatch.venue_name }}{{ currentMatch.court_name ? ' (' + currentMatch.court_name + ')' : '' }}
+                {{ currentMatch.title }} · {{ currentMatch.venue_name
+                }}{{ currentMatch.court_name ? ' (' + currentMatch.court_name + ')' : '' }}
               </span>
             </div>
           </div>
@@ -112,12 +118,25 @@ async function handleFinalize() {
 
           <div v-else>
             <!-- Case 1: Session still active -->
-            <div v-if="currentMatch && currentMatch.status !== 'ended' && currentMatch.status !== 'completed'" class="session-active-card">
+            <div
+              v-if="
+                currentMatch &&
+                currentMatch.status !== 'ended' &&
+                currentMatch.status !== 'completed'
+              "
+              class="session-active-card"
+            >
               <span class="material-symbols-outlined state-icon">sports_score</span>
               <h3>Buổi chơi đang diễn ra hoặc chưa kết thúc</h3>
               <p>Bảng chi phí thực tế chỉ có thể được tạo và chốt sau khi buổi chơi kết thúc.</p>
-              <div v-if="isHost" style="margin-top: 16px;">
-                <AuraButton variant="primary" size="md" icon="stop_circle" :loading="submitting" @click="handleEndSession">
+              <div v-if="isHost" style="margin-top: 16px">
+                <AuraButton
+                  variant="primary"
+                  size="md"
+                  icon="stop_circle"
+                  :loading="submitting"
+                  @click="handleEndSession"
+                >
                   Kết Thúc Buổi Chơi Ngay
                 </AuraButton>
               </div>
@@ -140,9 +159,13 @@ async function handleFinalize() {
                   <span class="material-symbols-outlined item-ico">stadium</span>
                   <div class="item-info">
                     <span class="label">Tiền Sân Thực Tế</span>
-                    <div class="value font-mono highlight">{{ formatCurrency(currentBill.court_subtotal) }}</div>
+                    <div class="value font-mono highlight">
+                      {{ formatCurrency(currentBill.court_subtotal) }}
+                    </div>
                     <span class="sub font-mono">
-                      {{ currentBill.court_duration_minutes }} phút ({{ (currentBill.court_duration_minutes / 60).toFixed(1) }}h) × {{ formatCurrency(currentBill.court_hourly_rate) }}/h
+                      {{ currentBill.court_duration_minutes }} phút ({{
+                        (currentBill.court_duration_minutes / 60).toFixed(1)
+                      }}h) × {{ formatCurrency(currentBill.court_hourly_rate) }}/h
                     </span>
                   </div>
                 </div>
@@ -151,9 +174,12 @@ async function handleFinalize() {
                   <span class="material-symbols-outlined item-ico">sports_tennis</span>
                   <div class="item-info">
                     <span class="label">Tiền Cầu Thực Tế</span>
-                    <div class="value font-mono highlight">{{ formatCurrency(currentBill.shuttlecock_subtotal) }}</div>
+                    <div class="value font-mono highlight">
+                      {{ formatCurrency(currentBill.shuttlecock_subtotal) }}
+                    </div>
                     <span class="sub font-mono">
-                      {{ currentBill.shuttlecock_count }} quả × {{ formatCurrency(currentBill.shuttlecock_unit_price) }}/quả
+                      {{ currentBill.shuttlecock_count }} quả ×
+                      {{ formatCurrency(currentBill.shuttlecock_unit_price) }}/quả
                     </span>
                   </div>
                 </div>
@@ -162,17 +188,22 @@ async function handleFinalize() {
               <div class="total-summary-card">
                 <div class="total-row">
                   <span>Tổng chi phí thực tế (Sân + Cầu):</span>
-                  <span class="total-val font-mono">{{ formatCurrency(currentBill.total_amount) }}</span>
+                  <span class="total-val font-mono">{{
+                    formatCurrency(currentBill.total_amount)
+                  }}</span>
                 </div>
                 <div class="divisor-row">
                   <span>Số người chia phí thực tế:</span>
-                  <span class="font-mono"><strong>{{ currentBill.actual_headcount }}</strong> người</span>
+                  <span class="font-mono"
+                    ><strong>{{ currentBill.actual_headcount }}</strong> người</span
+                  >
                 </div>
                 <div class="share-row">
                   <div class="share-col">
                     <span class="share-label">Phần mỗi người:</span>
                     <span v-if="currentBill.is_approximate" class="share-hint">
-                      (Phép chia lẻ: {{ formatCurrency(currentBill.total_amount) }} ÷ {{ currentBill.actual_headcount }} người)
+                      (Phép chia lẻ: {{ formatCurrency(currentBill.total_amount) }} ÷
+                      {{ currentBill.actual_headcount }} người)
                     </span>
                   </div>
                   <div class="share-price font-mono">
@@ -185,7 +216,8 @@ async function handleFinalize() {
               <div class="transparency-notice">
                 <span class="material-symbols-outlined">info</span>
                 <span>
-                  Bảng chi phí này được chốt trên thực tế sử dụng. Không bao gồm nước uống hoặc phụ kiện ngoài. Hệ thống không tự động thu tiền hay trừ ví Aura.
+                  Bảng chi phí này được chốt trên thực tế sử dụng. Không bao gồm nước uống hoặc phụ
+                  kiện ngoài. Hệ thống không tự động thu tiền hay trừ ví Aura.
                 </span>
               </div>
             </div>
@@ -203,47 +235,87 @@ async function handleFinalize() {
                   <span class="material-symbols-outlined">edit_note</span>
                   <div>
                     <h3>Nhập Chi Phí Thực Tế Sau Buổi Chơi</h3>
-                    <p>Chỉ áp dụng cho tiền sân và tiền cầu lông. Nước, đá, quấn cán thanh toán riêng tại quầy.</p>
+                    <p>
+                      Chỉ áp dụng cho tiền sân và tiền cầu lông. Nước, đá, quấn cán thanh toán riêng
+                      tại quầy.
+                    </p>
                   </div>
                 </div>
 
                 <div class="inputs-grid">
                   <div class="form-group">
                     <label class="label">Số người chia phí thực tế:</label>
-                    <input v-model.number="actualHeadcount" type="number" min="1" class="input font-mono" required />
+                    <input
+                      v-model.number="actualHeadcount"
+                      type="number"
+                      min="1"
+                      class="input font-mono"
+                      required
+                    />
                     <span class="hint">Đã trừ người vắng, cộng thêm khách vãng lai (walk-in)</span>
                   </div>
 
                   <div class="form-group">
                     <label class="label">Thời gian chơi thực tế (phút):</label>
-                    <input v-model.number="courtDurationMinutes" type="number" min="1" class="input font-mono" required />
+                    <input
+                      v-model.number="courtDurationMinutes"
+                      type="number"
+                      min="1"
+                      class="input font-mono"
+                      required
+                    />
                     <span class="hint">{{ (courtDurationMinutes / 60).toFixed(1) }} giờ</span>
                   </div>
 
                   <div class="form-group">
                     <label class="label">Đơn giá sân (VNĐ/giờ):</label>
-                    <input v-model.number="courtHourlyRate" type="number" min="0" step="1000" class="input font-mono" required />
+                    <input
+                      v-model.number="courtHourlyRate"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      class="input font-mono"
+                      required
+                    />
                   </div>
 
                   <div class="form-group">
                     <label class="label">Số quả cầu đã dùng:</label>
-                    <input v-model.number="shuttlecockCount" type="number" min="0" step="1" class="input font-mono" required />
+                    <input
+                      v-model.number="shuttlecockCount"
+                      type="number"
+                      min="0"
+                      step="1"
+                      class="input font-mono"
+                      required
+                    />
                   </div>
 
                   <div class="form-group">
                     <label class="label">Đơn giá cầu (VNĐ/quả):</label>
-                    <input v-model.number="shuttlecockUnitPrice" type="number" min="0" step="1000" class="input font-mono" required />
+                    <input
+                      v-model.number="shuttlecockUnitPrice"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      class="input font-mono"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div class="preview-card">
                   <div class="preview-line">
                     <span>Tiền sân:</span>
-                    <span class="font-mono"><strong>{{ formatCurrency(courtSubtotal) }}</strong></span>
+                    <span class="font-mono"
+                      ><strong>{{ formatCurrency(courtSubtotal) }}</strong></span
+                    >
                   </div>
                   <div class="preview-line">
                     <span>Tiền cầu:</span>
-                    <span class="font-mono"><strong>{{ formatCurrency(shuttlecockSubtotal) }}</strong></span>
+                    <span class="font-mono"
+                      ><strong>{{ formatCurrency(shuttlecockSubtotal) }}</strong></span
+                    >
                   </div>
                   <div class="divider"></div>
                   <div class="preview-line preview-total">
@@ -260,10 +332,23 @@ async function handleFinalize() {
                 </div>
 
                 <div class="btn-row">
-                  <AuraButton type="button" variant="secondary" size="md" icon="save" :loading="submitting" @click="handleSaveDraft">
+                  <AuraButton
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    icon="save"
+                    :loading="submitting"
+                    @click="handleSaveDraft"
+                  >
                     Lưu Bản Nháp
                   </AuraButton>
-                  <AuraButton type="submit" variant="primary" size="md" icon="lock" :loading="submitting">
+                  <AuraButton
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    icon="lock"
+                    :loading="submitting"
+                  >
                     Chốt Bảng Chi Phí (Chỉ Đọc)
                   </AuraButton>
                 </div>
@@ -343,11 +428,22 @@ async function handleFinalize() {
   margin-bottom: 20px;
 }
 
-.alert-success { background: #e8f5e9; color: #2e7d32; }
-.alert-warning { background: #fff8e1; color: #f57f17; }
-.alert-error { background: #ffebee; color: #c62828; }
+.alert-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.alert-warning {
+  background: #fff8e1;
+  color: #f57f17;
+}
+.alert-error {
+  background: #ffebee;
+  color: #c62828;
+}
 
-.loading-box, .session-active-card, .waiting-box {
+.loading-box,
+.session-active-card,
+.waiting-box {
   text-align: center;
   padding: 48px 24px;
   color: #666;
@@ -364,8 +460,12 @@ async function handleFinalize() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .finalized-badge-row {
@@ -434,7 +534,8 @@ async function handleFinalize() {
   margin-bottom: 20px;
 }
 
-.total-row, .divisor-row {
+.total-row,
+.divisor-row {
   display: flex;
   justify-content: space-between;
   font-size: 16px;

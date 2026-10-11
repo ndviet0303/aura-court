@@ -46,14 +46,14 @@ class AuraBookingNotification extends Notification implements ShouldQueue
             if (str_starts_with($this->actionUrl, 'http://') || str_starts_with($this->actionUrl, 'https://')) {
                 $actionFullUrl = $this->actionUrl;
             } else {
-                $actionFullUrl = $publicDomain . '/' . ltrim($this->actionUrl, '/');
+                $actionFullUrl = $publicDomain.'/'.ltrim($this->actionUrl, '/');
             }
         }
 
-        $logoUrl = $publicDomain . '/aura/badge-logo.png';
+        $logoUrl = $publicDomain.'/aura/badge-logo.png';
 
         return (new MailMessage)
-            ->subject($this->title . ' · Aura Court')
+            ->subject($this->title.' · Aura Court')
             ->view('emails.booking-notification', [
                 'user' => $notifiable,
                 'title' => $this->title,

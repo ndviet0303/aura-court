@@ -57,7 +57,7 @@ const hasActiveFilters = computed(() => {
     (props.productFilter && props.productFilter !== 'all') ||
     props.dateFrom ||
     props.dateTo ||
-    props.search
+    props.search,
   )
 })
 
@@ -210,9 +210,18 @@ function isPositive(m: StockMovement): boolean {
           <span class="material-symbols-outlined empty-icon">history</span>
           <h4 class="empty-title">{{ t('common.noData') }}</h4>
           <p class="empty-desc">
-            {{ hasActiveFilters ? t('admin.inventory.noMatchingMovements') : t('admin.inventory.noMovementsRecordedYet') }}
+            {{
+              hasActiveFilters
+                ? t('admin.inventory.noMatchingMovements')
+                : t('admin.inventory.noMovementsRecordedYet')
+            }}
           </p>
-          <AuraButton v-if="hasActiveFilters" variant="outline" size="sm" @click="emit('resetFilters')">
+          <AuraButton
+            v-if="hasActiveFilters"
+            variant="outline"
+            size="sm"
+            @click="emit('resetFilters')"
+          >
             {{ t('common.reset') }}
           </AuraButton>
         </div>
@@ -222,7 +231,9 @@ function isPositive(m: StockMovement): boolean {
           <div v-for="m in movements" :key="m.id" class="movement-row">
             <!-- Timestamp -->
             <div class="col-time">
-              <span class="font-mono time-val">{{ m.created_at ? formatDateTime(m.created_at) : '' }}</span>
+              <span class="font-mono time-val">{{
+                m.created_at ? formatDateTime(m.created_at) : ''
+              }}</span>
             </div>
 
             <!-- Product info -->
@@ -249,7 +260,10 @@ function isPositive(m: StockMovement): boolean {
 
             <!-- Balance After -->
             <div class="col-balance">
-              <span v-if="m.balance_after !== null && m.balance_after !== undefined" class="balance-val font-mono">
+              <span
+                v-if="m.balance_after !== null && m.balance_after !== undefined"
+                class="balance-val font-mono"
+              >
                 {{ m.balance_after }} {{ m.unit }}
               </span>
               <span v-else class="text-muted font-mono">-</span>
@@ -259,8 +273,12 @@ function isPositive(m: StockMovement): boolean {
             <div class="col-meta note-user">
               <span class="note-text">{{ m.note || t('admin.inventory.noNote') }}</span>
               <div class="meta-sub-row">
-                <span v-if="m.reference_code" class="ref-code font-mono">#{{ m.reference_code }}</span>
-                <span class="user-sub">{{ t('admin.inventory.performerSub', { user: m.created_by_name || 'Admin' }) }}</span>
+                <span v-if="m.reference_code" class="ref-code font-mono"
+                  >#{{ m.reference_code }}</span
+                >
+                <span class="user-sub">{{
+                  t('admin.inventory.performerSub', { user: m.created_by_name || 'Admin' })
+                }}</span>
               </div>
             </div>
           </div>
@@ -325,7 +343,9 @@ function isPositive(m: StockMovement): boolean {
   border-radius: 12px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-input-wrap:focus-within {
@@ -456,11 +476,26 @@ function isPositive(m: StockMovement): boolean {
   letter-spacing: 0.03em;
 }
 
-.type-in { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-.type-out { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
-.type-adjust { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.type-sale { background: rgba(219, 39, 119, 0.12); color: var(--pink-dark, #db2777); }
-.type-default { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
+.type-in {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+.type-out {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+.type-adjust {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+.type-sale {
+  background: rgba(219, 39, 119, 0.12);
+  color: var(--pink-dark, #db2777);
+}
+.type-default {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+}
 
 .qty-val {
   font-size: 15px;
@@ -474,9 +509,15 @@ function isPositive(m: StockMovement): boolean {
   margin-left: 2px;
 }
 
-.text-green { color: #10b981; }
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-muted { color: var(--muted); }
+.text-green {
+  color: #10b981;
+}
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-muted {
+  color: var(--muted);
+}
 
 .balance-val {
   font-size: 13.5px;
@@ -514,10 +555,18 @@ function isPositive(m: StockMovement): boolean {
   color: var(--muted);
 }
 
-.icon-12 { font-size: 12px; }
-.icon-16 { font-size: 16px; }
+.icon-12 {
+  font-size: 12px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
-.flex-col-gap { display: flex; flex-direction: column; gap: 4px; }
+.flex-col-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 /* Empty state */
 .empty-state {

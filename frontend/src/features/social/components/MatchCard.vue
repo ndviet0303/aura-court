@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { SocialMatch } from '../types/social'
-
-const { t } = useI18n()
 
 const props = defineProps<{
   match: SocialMatch
@@ -33,15 +30,33 @@ const isFull = computed(() => {
       <div class="sport-badge">
         <span class="material-symbols-outlined sport-ico">{{ match.sport_icon }}</span>
         <span class="sport-name">{{ match.sport_name }}</span>
-        <span v-if="match.is_owner_hosted" class="owner-session-badge" style="margin-left: 6px; padding: 2px 6px; background: #8b263e; color: #fff; border-radius: 4px; font-size: 11px; font-weight: 700;">
+        <span
+          v-if="match.is_owner_hosted"
+          class="owner-session-badge"
+          style="
+            margin-left: 6px;
+            padding: 2px 6px;
+            background: #8b263e;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+          "
+        >
           Chủ sân · {{ match.category || 'Vãng lai' }}
         </span>
         <span v-if="match.game_format" class="format-dot">·</span>
         <span v-if="match.game_format" class="format-txt">{{ match.game_format }}</span>
       </div>
       <div class="slots-status-badge" :class="{ full: isFull, open: !isFull }">
-        <span class="material-symbols-outlined status-ico">{{ isFull ? 'check_circle' : 'group_add' }}</span>
-        <span>{{ isFull ? $t('matchmaking.fullBadge') : $t('matchmaking.slotsStatusNeed', { count: remainingSlots }) }}</span>
+        <span class="material-symbols-outlined status-ico">{{
+          isFull ? 'check_circle' : 'group_add'
+        }}</span>
+        <span>{{
+          isFull
+            ? $t('matchmaking.fullBadge')
+            : $t('matchmaking.slotsStatusNeed', { count: remainingSlots })
+        }}</span>
       </div>
     </div>
 
@@ -53,18 +68,30 @@ const isFull = computed(() => {
 
       <div class="host-profile-row">
         <div class="host-avatar-box">
-          <img v-if="match.host_avatar" :src="match.host_avatar" :alt="match.host_name" class="avatar-img" />
+          <img
+            v-if="match.host_avatar"
+            :src="match.host_avatar"
+            :alt="match.host_name"
+            class="avatar-img"
+          />
           <span v-else class="avatar-fallback">{{ match.host_name.charAt(0).toUpperCase() }}</span>
         </div>
         <div class="host-text-col">
           <div class="host-name-row">
             <span class="host-name">{{ match.host_name }}</span>
-            <span v-if="match.host_reputation" class="reputation-badge" :title="$t('matchmaking.reputationScoreTitle')">
+            <span
+              v-if="match.host_reputation"
+              class="reputation-badge"
+              :title="$t('matchmaking.reputationScoreTitle')"
+            >
               <span class="material-symbols-outlined rep-ico">verified</span>
               {{ match.host_reputation }}%
             </span>
           </div>
-          <span class="host-sub">{{ match.is_owner_hosted ? 'Chủ cơ sở tổ chức' : $t('matchmaking.hostLabel') }} · {{ match.city }}</span>
+          <span class="host-sub"
+            >{{ match.is_owner_hosted ? 'Chủ cơ sở tổ chức' : $t('matchmaking.hostLabel') }} ·
+            {{ match.city }}</span
+          >
         </div>
       </div>
 
@@ -87,17 +114,32 @@ const isFull = computed(() => {
           <div class="meta-item">
             <span class="material-symbols-outlined meta-ico">signal_cellular_alt</span>
             <span v-if="match.is_owner_hosted" class="meta-val">
-              Trình độ: <strong>{{ (match.skill_levels && match.skill_levels.length) ? match.skill_levels.join(', ') : 'Giao lưu' }}</strong>
+              Trình độ:
+              <strong>{{
+                match.skill_levels && match.skill_levels.length
+                  ? match.skill_levels.join(', ')
+                  : 'Giao lưu'
+              }}</strong>
             </span>
-            <span v-else class="meta-val">Level {{ match.min_skill || 1 }} - {{ match.max_skill || 5 }}</span>
+            <span v-else class="meta-val"
+              >Level {{ match.min_skill || 1 }} - {{ match.max_skill || 5 }}</span
+            >
           </div>
 
           <div class="meta-item">
             <span class="material-symbols-outlined meta-ico">payments</span>
             <span v-if="match.is_owner_hosted" class="meta-val font-mono highlight">
-              {{ match.cost_per_person ? 'Ước tính ' + formatCurrency(match.cost_per_person) : 'Chia đều sau buổi' }}
+              {{
+                match.cost_per_person
+                  ? 'Ước tính ' + formatCurrency(match.cost_per_person)
+                  : 'Chia đều sau buổi'
+              }}
             </span>
-            <span v-else class="meta-val font-mono highlight">{{ match.cost_per_person ? formatCurrency(match.cost_per_person) : $t('matchmaking.freeCost') }}</span>
+            <span v-else class="meta-val font-mono highlight">{{
+              match.cost_per_person
+                ? formatCurrency(match.cost_per_person)
+                : $t('matchmaking.freeCost')
+            }}</span>
           </div>
         </div>
       </div>
@@ -105,7 +147,9 @@ const isFull = computed(() => {
       <div class="slots-visualizer">
         <div class="slots-header">
           <span class="slots-label">{{ $t('matchmaking.joinedListLabel') }}</span>
-          <span class="slots-count font-mono">{{ match.joined_count }} / {{ match.required_participants }}</span>
+          <span class="slots-count font-mono"
+            >{{ match.joined_count }} / {{ match.required_participants }}</span
+          >
         </div>
 
         <div class="slots-track">
@@ -116,12 +160,22 @@ const isFull = computed(() => {
             :class="{
               filled: idx <= match.joined_count,
               host: !match.is_owner_hosted && idx === 1,
-              empty: idx > match.joined_count
+              empty: idx > match.joined_count,
             }"
-            :title="idx <= match.joined_count ? (match.participants[idx - 1]?.name || $t('matchmaking.slotFilledTitle')) : $t('matchmaking.slotEmptyTitle')"
+            :title="
+              idx <= match.joined_count
+                ? match.participants[idx - 1]?.name || $t('matchmaking.slotFilledTitle')
+                : $t('matchmaking.slotEmptyTitle')
+            "
           >
-            <span v-if="!match.is_owner_hosted && idx === 1" class="material-symbols-outlined bubble-ico">crown</span>
-            <span v-else-if="idx <= match.joined_count" class="material-symbols-outlined bubble-ico">person</span>
+            <span
+              v-if="!match.is_owner_hosted && idx === 1"
+              class="material-symbols-outlined bubble-ico"
+              >crown</span
+            >
+            <span v-else-if="idx <= match.joined_count" class="material-symbols-outlined bubble-ico"
+              >person</span
+            >
             <span v-else class="material-symbols-outlined bubble-ico">add</span>
           </div>
         </div>
@@ -131,15 +185,27 @@ const isFull = computed(() => {
     <!-- Footer Actions -->
     <div class="card-footer">
       <AuraButton
-        v-if="match.is_owner_hosted && (match.is_host || match.status === 'ended' || match.status === 'completed' || match.is_joined)"
+        v-if="
+          match.is_owner_hosted &&
+          (match.is_host ||
+            match.status === 'ended' ||
+            match.status === 'completed' ||
+            match.is_joined)
+        "
         variant="secondary"
         size="md"
         icon="receipt_long"
         block
-        style="margin-bottom: 8px;"
+        style="margin-bottom: 8px"
         @click="emit('view-bill', match)"
       >
-        {{ (match.status === 'ended' || match.status === 'completed') ? 'Xem bảng chi phí' : (match.is_host ? 'Quản lý buổi / Chốt bill' : 'Chi tiết buổi') }}
+        {{
+          match.status === 'ended' || match.status === 'completed'
+            ? 'Xem bảng chi phí'
+            : match.is_host
+              ? 'Quản lý buổi / Chốt bill'
+              : 'Chi tiết buổi'
+        }}
       </AuraButton>
 
       <AuraButton
@@ -173,7 +239,13 @@ const isFull = computed(() => {
         :disabled="isFull"
         @click="emit('join', match)"
       >
-        {{ isFull ? $t('matchmaking.matchFullBtn') : (match.is_owner_hosted ? 'Đăng ký tham gia buổi' : $t('matchmaking.joinThisMatchBtn')) }}
+        {{
+          isFull
+            ? $t('matchmaking.matchFullBtn')
+            : match.is_owner_hosted
+              ? 'Đăng ký tham gia buổi'
+              : $t('matchmaking.joinThisMatchBtn')
+        }}
       </AuraButton>
     </div>
   </article>
@@ -189,7 +261,10 @@ const isFull = computed(() => {
   border: 1px solid var(--outline);
   border-radius: 18px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .match-card:hover {

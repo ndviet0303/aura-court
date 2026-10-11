@@ -20,7 +20,9 @@ export function getEcho(): Echo<any> {
     return echoInstance
   }
 
-  const host = import.meta.env.VITE_REVERB_HOST || (typeof window !== 'undefined' ? window.location.hostname : 'localhost')
+  const host =
+    import.meta.env.VITE_REVERB_HOST ||
+    (typeof window !== 'undefined' ? window.location.hostname : 'localhost')
   const port = import.meta.env.VITE_REVERB_PORT ? Number(import.meta.env.VITE_REVERB_PORT) : 8080
   const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
   const key = import.meta.env.VITE_REVERB_APP_KEY || 'fwmpeywmrzxzbs8w8cke'

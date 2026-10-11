@@ -19,9 +19,13 @@ class NewRepositoriesAndLocksIntegrationTest extends TestCase
     use RefreshDatabase;
 
     private HostKycRepositoryInterface $kycRepo;
+
     private PlatformPlanRepositoryInterface $planRepo;
+
     private PlatformSubscriptionRepositoryInterface $subRepo;
+
     private VenueLifecycleRepositoryInterface $venueRepo;
+
     private OrganizationLockRepositoryInterface $lockRepo;
 
     protected function setUp(): void

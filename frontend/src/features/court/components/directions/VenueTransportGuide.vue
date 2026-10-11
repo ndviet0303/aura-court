@@ -65,7 +65,9 @@ defineProps<{
         <span class="material-symbols-outlined cs-icon">support_agent</span>
         <div class="cs-text">
           <strong class="cs-title">Cần trợ giúp chỉ đường tức thì?</strong>
-          <span class="cs-desc">Liên hệ hotline lễ tân trực tiếp tại cơ sở để được hỗ trợ đón tiếp.</span>
+          <span class="cs-desc"
+            >Liên hệ hotline lễ tân trực tiếp tại cơ sở để được hỗ trợ đón tiếp.</span
+          >
         </div>
       </div>
       <a href="tel:0988123456" class="btn-hotline">

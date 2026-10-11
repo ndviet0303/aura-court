@@ -46,16 +46,16 @@ const emit = defineEmits<{
         <div class="booking-schedule-brief">
           <div v-for="s in booking.slots" :key="s.starts_at" class="schedule-line">
             <span class="material-symbols-outlined sched-icon">schedule</span>
-            <span class="font-mono">{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at.slice(11, 16) }}</span>
+            <span class="font-mono"
+              >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at.slice(11, 16) }}</span
+            >
             <span class="sched-date">({{ s.starts_at.slice(0, 10) }})</span>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-done" type="button" @click="emit('close')">
-          Đóng
-        </button>
+        <button class="btn-done" type="button" @click="emit('close')">Đóng</button>
       </div>
     </div>
   </div>
@@ -106,7 +106,7 @@ const emit = defineEmits<{
 
 .header-icon {
   font-size: 22px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .modal-title {
@@ -166,7 +166,7 @@ const emit = defineEmits<{
 .code-pill {
   font-size: 11px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   background: var(--primary-container, rgba(107, 45, 63, 0.08));
   padding: 3px 8px;
   border-radius: 6px;
@@ -237,7 +237,7 @@ const emit = defineEmits<{
   padding: 9px 22px;
   border-radius: 10px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #fff);
   font-size: 13px;
   font-weight: 700;

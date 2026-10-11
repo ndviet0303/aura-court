@@ -3,9 +3,14 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown, DatePicker, type DropdownOption } from '@/shared/components'
 import type { SettlementRecord } from '../../types/finance'
-import { getProviderFee, getHistoricalCommission, getTotalDeduction, getNetPayable } from '../../composables/useAdminPayouts'
+import {
+  getProviderFee,
+  getHistoricalCommission,
+  getTotalDeduction,
+  getNetPayable,
+} from '../../composables/useAdminPayouts'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     settlements: SettlementRecord[]
     loading?: boolean
@@ -18,7 +23,7 @@ const props = withDefaults(
     searchQuery: '',
     selectedStatusFilter: 'all',
     selectedDateFilter: '',
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -182,13 +187,15 @@ function resetFilters() {
 
             <td>
               <div class="fee-cell-content">
-                <span class="fee-val text-red">
-                  -{{ formatMoney(getTotalDeduction(s)) }}
-                </span>
+                <span class="fee-val text-red"> -{{ formatMoney(getTotalDeduction(s)) }} </span>
                 <div class="fee-sub-breakdown text-11 text-muted">
-                  <span class="provider-fee-tag">{{ t('admin.payouts.providerFee') }}: {{ formatMoney(getProviderFee(s)) }}</span>
+                  <span class="provider-fee-tag"
+                    >{{ t('admin.payouts.providerFee') }}:
+                    {{ formatMoney(getProviderFee(s)) }}</span
+                  >
                   <span v-if="getHistoricalCommission(s) > 0" class="hist-comm-tag">
-                    • {{ t('admin.payouts.historicalCommission') }}: {{ formatMoney(getHistoricalCommission(s)) }}
+                    • {{ t('admin.payouts.historicalCommission') }}:
+                    {{ formatMoney(getHistoricalCommission(s)) }}
                   </span>
                 </div>
               </div>
@@ -525,12 +532,29 @@ function resetFilters() {
   border-radius: 4px;
 }
 
-.sk-period { width: 140px; }
-.sk-amount { width: 90px; }
-.sk-fee { width: 75px; }
-.sk-date { width: 85px; }
-.sk-pill { width: 75px; height: 22px; border-radius: 999px; }
-.sk-btn { width: 80px; height: 28px; border-radius: 6px; margin-left: auto; }
+.sk-period {
+  width: 140px;
+}
+.sk-amount {
+  width: 90px;
+}
+.sk-fee {
+  width: 75px;
+}
+.sk-date {
+  width: 85px;
+}
+.sk-pill {
+  width: 75px;
+  height: 22px;
+  border-radius: 999px;
+}
+.sk-btn {
+  width: 80px;
+  height: 28px;
+  border-radius: 6px;
+  margin-left: auto;
+}
 
 .skeleton-shimmer {
   position: relative;
@@ -558,7 +582,11 @@ function resetFilters() {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>

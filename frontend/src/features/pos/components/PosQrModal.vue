@@ -25,7 +25,11 @@ const qrData = computed(() => {
 })
 
 const orderCode = computed(() => {
-  return props.order?.payment_reference || props.order?.metadata?.receipt?.order_code || `POS-${props.order?.id || ''}`
+  return (
+    props.order?.payment_reference ||
+    props.order?.metadata?.receipt?.order_code ||
+    `POS-${props.order?.id || ''}`
+  )
 })
 
 const amount = computed(() => {
@@ -96,20 +100,10 @@ const qrUrl = computed(() => {
       </div>
 
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn-cancel"
-          :disabled="loading"
-          @click="emit('cancel')"
-        >
+        <button type="button" class="btn-cancel" :disabled="loading" @click="emit('cancel')">
           {{ t('admin.pos.qrCancelBtn') }}
         </button>
-        <button
-          type="button"
-          class="btn-confirm"
-          :disabled="loading"
-          @click="emit('confirm')"
-        >
+        <button type="button" class="btn-confirm" :disabled="loading" @click="emit('confirm')">
           <span v-if="loading" class="material-symbols-outlined spin">progress_activity</span>
           <span v-else class="material-symbols-outlined">check_circle</span>
           <span>{{ t('admin.pos.qrConfirmReceivedBtn') }}</span>
@@ -338,7 +332,8 @@ const qrUrl = computed(() => {
   background: #0369a1;
 }
 
-.btn-confirm:disabled, .btn-cancel:disabled {
+.btn-confirm:disabled,
+.btn-cancel:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -348,7 +343,11 @@ const qrUrl = computed(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

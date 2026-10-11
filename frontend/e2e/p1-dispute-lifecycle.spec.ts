@@ -32,7 +32,8 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
   const org1Id = manifest.fixtures?.organizations.org1.id
   const venue1Id = manifest.fixtures?.organizations.org1.venue1A?.id
   const court1Id = manifest.fixtures?.organizations.org1.venue1A?.courts[0]
-  if (!org1Id || !venue1Id || !court1Id) throw new Error('Current dispute fixtures require an organization, venue and court.')
+  if (!org1Id || !venue1Id || !court1Id)
+    throw new Error('Current dispute fixtures require an organization, venue and court.')
   test('9.5.1: Tiếp nhận khiếu nại, tự động phân loại & Chống trùng lặp (FR-COM-17, FR-COM-18)', async () => {
     const intakeScript = `
       require "vendor/autoload.php";
@@ -96,11 +97,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       ]);
     `
 
-    const intakeResult = JSON.parse(execFileSync('php', ['-r', intakeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const intakeResult = JSON.parse(
+      execFileSync('php', ['-r', intakeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       dispute_id: number
       dispute_code: string
       status: string
@@ -170,11 +173,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       ]);
     `
 
-    const scopingResult = JSON.parse(execFileSync('php', ['-r', scopingScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { stranger_party_denied: boolean; foreign_org_denied: boolean }
+    const scopingResult = JSON.parse(
+      execFileSync('php', ['-r', scopingScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { stranger_party_denied: boolean; foreign_org_denied: boolean }
 
     expect(scopingResult.stranger_party_denied).toBe(true)
     expect(scopingResult.foreign_org_denied).toBe(true)
@@ -242,11 +247,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       ]);
     `
 
-    const evidenceResult = JSON.parse(execFileSync('php', ['-r', evidenceScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const evidenceResult = JSON.parse(
+      execFileSync('php', ['-r', evidenceScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       dispute_id: number
       new_status: string
       evidence_count: number
@@ -328,11 +335,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       ]);
     `
 
-    const remedyResult = JSON.parse(execFileSync('php', ['-r', remedyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const remedyResult = JSON.parse(
+      execFileSync('php', ['-r', remedyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       dispute_status: string
       obligation_id: number
       obligation_amount: number
@@ -441,11 +450,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       ]);
     `
 
-    const gateResult = JSON.parse(execFileSync('php', ['-r', gateScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const gateResult = JSON.parse(
+      execFileSync('php', ['-r', gateScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       can_close_before_settlement: boolean
       can_close_after_settlement: boolean
       reopened_status: string
@@ -460,7 +471,9 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
     expect(gateResult.history_count).toBe(1)
   })
 
-  test('9.5.6: Giao diện quản trị khiếu nại & Duy trì sau F5 (/admin/disputes)', async ({ page }) => {
+  test('9.5.6: Giao diện quản trị khiếu nại & Duy trì sau F5 (/admin/disputes)', async ({
+    page,
+  }) => {
     // 1. Arrange a dispute in the system
     const arrangeScript = `
       require "vendor/autoload.php";
@@ -500,11 +513,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       ]);
     `
 
-    const arrangeData = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { dispute_id: number; dispute_code: string }
+    const arrangeData = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { dispute_id: number; dispute_code: string }
 
     expect(arrangeData.dispute_id).toBeGreaterThan(0)
     expect(arrangeData.dispute_code).toContain('DSP-UI-')

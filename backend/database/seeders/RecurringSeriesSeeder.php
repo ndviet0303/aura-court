@@ -7,7 +7,6 @@ use App\Models\MonthlyInvoice;
 use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
 use App\Models\User;
-use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -110,7 +109,7 @@ class RecurringSeriesSeeder extends Seeder
                 ['phone' => $sc['phone']],
                 [
                     'name' => $sc['customer_name'],
-                    'email' => 'contract_user_' . ($idx + 1) . '@auracontrol.vn',
+                    'email' => 'contract_user_'.($idx + 1).'@auracontrol.vn',
                     'password' => bcrypt('password123'),
                     'role' => 'customer',
                     'email_verified_at' => $now,
@@ -135,7 +134,7 @@ class RecurringSeriesSeeder extends Seeder
                 'total_amount' => $totalAmount,
                 'next_invoice_due_at' => $now->copy()->addDays(5),
                 'metadata' => [
-                    'contract_code' => 'CTR-2026-00' . ($idx + 1),
+                    'contract_code' => 'CTR-2026-00'.($idx + 1),
                     'customer_name' => $sc['customer_name'],
                     'phone' => $sc['phone'],
                     'deposit_amount' => $sc['deposit_amount'],
@@ -172,14 +171,14 @@ class RecurringSeriesSeeder extends Seeder
                 if ($m === 0) {
                     $invoiceStatus = 'paid';
                     $paidAt = $dueAt->copy()->subDay();
-                    $payRef = 'REC-2026-' . strtoupper(Str::random(6));
+                    $payRef = 'REC-2026-'.strtoupper(Str::random(6));
                 } elseif ($m === 1) {
                     if ($sc['has_overdue']) {
                         $invoiceStatus = 'overdue';
                     } else {
                         $invoiceStatus = 'paid';
                         $paidAt = $dueAt->copy();
-                        $payRef = 'REC-2026-' . strtoupper(Str::random(6));
+                        $payRef = 'REC-2026-'.strtoupper(Str::random(6));
                     }
                 } else {
                     $invoiceStatus = 'pending';

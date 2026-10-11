@@ -6,7 +6,12 @@ import { platformSubscriptionApi } from '../api/platformSubscriptionApi'
 import PlanCatalogCard from '../components/PlanCatalogCard.vue'
 import SubscriptionStatusCard from '../components/SubscriptionStatusCard.vue'
 import PlatformSubscriptionView from '../views/PlatformSubscriptionView.vue'
-import type { CurrentSubscriptionResponse, PaymentAttempt, PlatformPlan, PlatformSubscription } from '../types'
+import type {
+  CurrentSubscriptionResponse,
+  PaymentAttempt,
+  PlatformPlan,
+  PlatformSubscription,
+} from '../types'
 
 vi.mock('../api/platformSubscriptionApi', () => ({
   platformSubscriptionApi: {
@@ -85,7 +90,9 @@ const succeededAttempt: PaymentAttempt = {
   created_at: '2026-09-24T00:00:00Z',
 }
 
-function currentResponse(overrides: Partial<CurrentSubscriptionResponse> = {}): CurrentSubscriptionResponse {
+function currentResponse(
+  overrides: Partial<CurrentSubscriptionResponse> = {},
+): CurrentSubscriptionResponse {
   return {
     data: subscription,
     has_active_subscription: true,
@@ -93,7 +100,14 @@ function currentResponse(overrides: Partial<CurrentSubscriptionResponse> = {}): 
     trial_eligible: false,
     can_take_bookings: true,
     payment_attempt: null,
-    quotas: { venues_count: 1, max_venues: 5, courts_count: 4, max_courts: 25, staff_count: 2, max_staff: 15 },
+    quotas: {
+      venues_count: 1,
+      max_venues: 5,
+      courts_count: 4,
+      max_courts: 25,
+      staff_count: 2,
+      max_staff: 15,
+    },
     ...overrides,
   }
 }
@@ -103,7 +117,9 @@ describe('usePlatformSubscription', () => {
 
   it('fetches the public plan catalog and persisted subscription status', async () => {
     vi.mocked(platformSubscriptionApi.getPlans).mockResolvedValueOnce({ data: [plan] })
-    vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValueOnce(currentResponse())
+    vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValueOnce(
+      currentResponse(),
+    )
 
     const composable = usePlatformSubscription()
     expect(await composable.fetchPlans()).toEqual([plan])
@@ -115,7 +131,7 @@ describe('usePlatformSubscription', () => {
 
   it('refreshes persisted status on a payment return without confirming from the browser', async () => {
     vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValueOnce(
-      currentResponse({ payment_attempt: succeededAttempt })
+      currentResponse({ payment_attempt: succeededAttempt }),
     )
 
     const composable = usePlatformSubscription()
@@ -142,17 +158,27 @@ describe('usePlatformSubscription', () => {
       },
       message: 'Selected',
     })
-    vi.mocked(platformSubscriptionApi.initiatePayment).mockResolvedValueOnce({ data: pendingAttempt, message: 'Pending' })
-    vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValueOnce(currentResponse({
-      data: null,
-      has_active_subscription: false,
-      can_take_bookings: false,
-      trial_eligible: true,
-      payment_attempt: pendingAttempt,
-    }))
+    vi.mocked(platformSubscriptionApi.initiatePayment).mockResolvedValueOnce({
+      data: pendingAttempt,
+      message: 'Pending',
+    })
+    vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValueOnce(
+      currentResponse({
+        data: null,
+        has_active_subscription: false,
+        can_take_bookings: false,
+        trial_eligible: true,
+        payment_attempt: pendingAttempt,
+      }),
+    )
 
     const composable = usePlatformSubscription()
-    await composable.initiatePayment(2, plan, 'https://app.example/subscription?payment_return=1', 'https://app.example/subscription?payment_cancelled=1')
+    await composable.initiatePayment(
+      2,
+      plan,
+      'https://app.example/subscription?payment_return=1',
+      'https://app.example/subscription?payment_cancelled=1',
+    )
 
     expect(platformSubscriptionApi.selectPlan).toHaveBeenCalledWith(2, {
       plan_id: 1,
@@ -178,7 +204,9 @@ describe('PlanCatalogCard.vue', () => {
     expect(wrapper.text()).toContain('2026.3')
     expect(wrapper.text()).toContain('Điều khoản đã được phê duyệt.')
 
-    const trialButton = wrapper.findAll('button').find((button) => button.text().includes('Dùng thử 14 ngày'))
+    const trialButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Dùng thử 14 ngày'))
     await trialButton?.trigger('click')
     expect(wrapper.emitted('selectTrial')?.[0]?.[0]).toEqual(plan)
   })
@@ -207,20 +235,24 @@ describe('PlatformSubscriptionView.vue', () => {
   it('shows the server payment QR and status after returning from checkout', async () => {
     vi.mocked(platformSubscriptionApi.getPlans).mockResolvedValueOnce({ data: [plan] })
     const pendingAttempt = { ...succeededAttempt, status: 'pending' }
-    vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValue(currentResponse({
-      data: null,
-      has_active_subscription: false,
-      can_take_bookings: false,
-      trial_eligible: true,
-      payment_attempt: pendingAttempt,
-    }))
+    vi.mocked(platformSubscriptionApi.getCurrentSubscription).mockResolvedValue(
+      currentResponse({
+        data: null,
+        has_active_subscription: false,
+        can_take_bookings: false,
+        trial_eligible: true,
+        payment_attempt: pendingAttempt,
+      }),
+    )
 
     const wrapper = mount(PlatformSubscriptionView)
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrapper.text()).toContain('SUB-PAY-20260924-1234ABCD')
     expect(wrapper.text()).toContain('Đang chờ xác minh')
-    expect(wrapper.find('img[alt="Mã QR thanh toán thuê bao"]').attributes('src')).toBe(pendingAttempt.qr_code)
+    expect(wrapper.find('img[alt="Mã QR thanh toán thuê bao"]').attributes('src')).toBe(
+      pendingAttempt.qr_code,
+    )
     expect(platformSubscriptionApi.getCurrentSubscription).toHaveBeenCalledWith(2)
   })
 })

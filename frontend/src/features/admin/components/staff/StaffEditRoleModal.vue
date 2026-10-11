@@ -13,7 +13,7 @@ const props = withDefaults(
   }>(),
   {
     saving: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -48,7 +48,7 @@ watch(
       selectedStatus.value = val.status || 'active'
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function handleSave() {

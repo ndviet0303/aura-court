@@ -23,6 +23,6 @@ export const reconciliationApi = {
   autoResolve: (payload?: { run_id?: number; scope?: string; notes?: string }) =>
     apiV2.post<{ success: boolean; resolved_count: number; message: string }>(
       '/finance/reconciliation/auto-resolve',
-      payload || {}
+      payload || {},
     ),
 }

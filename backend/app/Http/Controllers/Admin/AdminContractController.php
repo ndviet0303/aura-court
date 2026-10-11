@@ -44,7 +44,6 @@ class AdminContractController extends Controller
         return response()->json($result);
     }
 
-
     public function show(Request $request, int $id): JsonResponse
     {
         $contract = $this->contracts->findById($id);
@@ -75,7 +74,6 @@ class AdminContractController extends Controller
 
         return response()->json($contract);
     }
-
 
     public function exportCsv(Request $request): StreamedResponse
     {

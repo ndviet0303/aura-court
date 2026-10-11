@@ -54,7 +54,7 @@ class BackfillReviewedPartnerMappingsCommandTest extends TestCase
             'partner_status' => 'pending_verification',
         ]);
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'mappings_') . '.json';
+        $tempFile = tempnam(sys_get_temp_dir(), 'mappings_').'.json';
         file_put_contents($tempFile, json_encode([
             'mappings' => [
                 [

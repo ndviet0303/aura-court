@@ -2,7 +2,6 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import { resolveLocalizedText } from '@/i18n'
 import type { Court, Venue } from '@/features/court/types/court'
 
 export interface ShiftTime {
@@ -80,9 +79,11 @@ export function useAdminSchedule() {
     return 'ended'
   }
 
-  const selectedVenue = computed(() => selectedVenueFilter.value === 'all'
-    ? null
-    : venues.value.find((venue) => venue.id === selectedVenueFilter.value) || null)
+  const selectedVenue = computed(() =>
+    selectedVenueFilter.value === 'all'
+      ? null
+      : venues.value.find((venue) => venue.id === selectedVenueFilter.value) || null,
+  )
 
   async function loadCalendarSettings() {
     const venue = selectedVenue.value
@@ -93,7 +94,10 @@ export function useAdminSchedule() {
     }
 
     try {
-      const courtId = typeof selectedScheduleCourtId.value === 'number' ? selectedScheduleCourtId.value : undefined
+      const courtId =
+        typeof selectedScheduleCourtId.value === 'number'
+          ? selectedScheduleCourtId.value
+          : undefined
       const [scheduleResponse, exceptionResponse] = await Promise.all([
         adminApi.getOperatingSchedule(venue.organization_id, venue.id, courtId),
         adminApi.getScheduleExceptions(venue.organization_id, venue.id, courtId),
@@ -118,7 +122,10 @@ export function useAdminSchedule() {
         name: exception.name,
         type: exception.type,
         court_id: exception.court_id,
-        hours: (exception.intervals || []).map((interval: any) => `${interval.start} - ${interval.end}`).join(', ') || undefined,
+        hours:
+          (exception.intervals || [])
+            .map((interval: any) => `${interval.start} - ${interval.end}`)
+            .join(', ') || undefined,
       }))
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('admin.schedule.loadError'))
@@ -160,7 +167,7 @@ export function useAdminSchedule() {
         const allBlocks: MaintenanceBlock[] = []
         courts.value.forEach((court: any) => {
           const rawBlocks = court.blocks || []
-          const blockList = Array.isArray(rawBlocks) ? rawBlocks : (rawBlocks.data || [])
+          const blockList = Array.isArray(rawBlocks) ? rawBlocks : rawBlocks.data || []
           blockList.forEach((b: any) => {
             allBlocks.push({
               id: b.id,
@@ -237,12 +244,21 @@ export function useAdminSchedule() {
         return
       }
       await adminApi.saveOperatingSchedule(venue.organization_id, venue.id, {
-        ...(typeof selectedScheduleCourtId.value === 'number' ? { court_id: selectedScheduleCourtId.value } : {}),
+        ...(typeof selectedScheduleCourtId.value === 'number'
+          ? { court_id: selectedScheduleCourtId.value }
+          : {}),
         timezone: venue.timezone || 'Asia/Ho_Chi_Minh',
-        weekly_hours: Object.fromEntries(weeklySchedule.value.map((day) => [String(day.id), {
-          closed: !day.isOpen,
-          intervals: day.isOpen ? day.shifts.map((shift) => ({ start: shift.start, end: shift.end })) : [],
-        }])),
+        weekly_hours: Object.fromEntries(
+          weeklySchedule.value.map((day) => [
+            String(day.id),
+            {
+              closed: !day.isOpen,
+              intervals: day.isOpen
+                ? day.shifts.map((shift) => ({ start: shift.start, end: shift.end }))
+                : [],
+            },
+          ]),
+        ),
       })
       if (notify) {
         showNotice(t('admin.schedule.saveNotice'))
@@ -254,7 +270,12 @@ export function useAdminSchedule() {
     }
   }
 
-  async function addDowntime(block: { court_id: number; starts_at: string; ends_at: string; reason: string }) {
+  async function addDowntime(block: {
+    court_id: number
+    starts_at: string
+    ends_at: string
+    reason: string
+  }) {
     loading.value = true
     try {
       const created = await adminApi.createBlock(block.court_id, {
@@ -312,23 +333,31 @@ export function useAdminSchedule() {
     }
   }
 
-  async function addSpecialDate(item: { date: string; name: string; type: SpecialDateItem['type']; hours?: string }) {
+  async function addSpecialDate(item: {
+    date: string
+    name: string
+    type: SpecialDateItem['type']
+    hours?: string
+  }) {
     const venue = selectedVenue.value
     if (!venue?.organization_id) {
       error.value = t('admin.schedule.selectVenueToSave')
       return
     }
-    const intervals = item.hours?.split(',').map((range) => {
-      const match = range.trim().match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/)
-      return match ? { start: match[1], end: match[2] } : null
-    }) || []
+    const intervals =
+      item.hours?.split(',').map((range) => {
+        const match = range.trim().match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/)
+        return match ? { start: match[1], end: match[2] } : null
+      }) || []
     if (item.hours && intervals.some((interval) => interval === null)) {
       error.value = t('admin.schedule.invalidHours')
       return
     }
     try {
       await adminApi.saveScheduleException(venue.organization_id, venue.id, {
-        ...(typeof selectedScheduleCourtId.value === 'number' ? { court_id: selectedScheduleCourtId.value } : {}),
+        ...(typeof selectedScheduleCourtId.value === 'number'
+          ? { court_id: selectedScheduleCourtId.value }
+          : {}),
         exception_date: item.date,
         name: item.name,
         type: item.type,
@@ -359,13 +388,15 @@ export function useAdminSchedule() {
     selectedScheduleCourtId.value = 'venue'
     void loadCalendarSettings()
   })
-  watch(selectedScheduleCourtId, () => { void loadCalendarSettings() })
+  watch(selectedScheduleCourtId, () => {
+    void loadCalendarSettings()
+  })
 
   // Filtered computed values
   const filteredCourts = computed(() => {
     if (selectedVenueFilter.value === 'all') return courts.value
     return courts.value.filter(
-      (c) => c.venue_id === selectedVenueFilter.value || c.venue?.id === selectedVenueFilter.value
+      (c) => c.venue_id === selectedVenueFilter.value || c.venue?.id === selectedVenueFilter.value,
     )
   })
 

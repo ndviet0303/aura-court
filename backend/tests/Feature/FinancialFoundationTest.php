@@ -2,13 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcessOutboxMessage;
+use App\Models\Booking;
+use App\Models\Court;
 use App\Models\FinanceException;
 use App\Models\Organization;
 use App\Models\ProviderEvent;
-use App\Jobs\ProcessOutboxMessage;
+use App\Models\User;
+use App\Models\Venue;
+use App\Services\Finance\FinancialPostingService;
 use App\Services\Finance\LedgerService;
-use App\Services\Infrastructure\OutboxService;
 use App\Services\Finance\ReconciliationService;
+use App\Services\Infrastructure\OutboxService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use InvalidArgumentException;
@@ -101,13 +106,13 @@ class FinancialFoundationTest extends TestCase
     public function test_wallet_booking_payment_and_refund_journals_are_balanced(): void
     {
         $organization = Organization::create(['name' => 'Wallet Finance Org', 'slug' => 'wallet-fin-'.uniqid()]);
-        $venue = \App\Models\Venue::create(['organization_id' => $organization->id, 'name' => 'Wallet Venue', 'slug' => 'wallet-venue-'.uniqid(), 'is_active' => true]);
-        $court = \App\Models\Court::create(['venue_id' => $venue->id, 'name' => 'Court 1', 'is_active' => true]);
-        $user = \App\Models\User::factory()->create();
-        $booking = \App\Models\Booking::create(['code' => 'BKWALLETFIN01', 'user_id' => $user->id, 'court_id' => $court->id, 'total_amount' => 200000, 'status' => 'confirmed']);
+        $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Wallet Venue', 'slug' => 'wallet-venue-'.uniqid(), 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Court 1', 'is_active' => true]);
+        $user = User::factory()->create();
+        $booking = Booking::create(['code' => 'BKWALLETFIN01', 'user_id' => $user->id, 'court_id' => $court->id, 'total_amount' => 200000, 'status' => 'confirmed']);
         $payment = $booking->payments()->create(['provider' => 'wallet', 'external_transaction_id' => 'w-tx-1', 'amount' => 200000, 'status' => 'paid']);
 
-        $financials = app(\App\Services\Finance\FinancialPostingService::class);
+        $financials = app(FinancialPostingService::class);
         $paymentJournal = $financials->postWalletBookingPayment($booking->load('court.venue'), $payment, 1);
 
         $this->assertSame(200000, $paymentJournal->total_debit);

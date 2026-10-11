@@ -17,6 +17,7 @@ class TriggerReconciliation
     public function execute(Organization $organization, TriggerReconciliationData $data): ReconciliationRun
     {
         $runDate = $data->runDate ? Carbon::parse($data->runDate) : Carbon::today();
+
         return $this->reconciliationService->run($organization, $runDate);
     }
 }

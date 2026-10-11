@@ -15,10 +15,17 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
   test('3.4.1: Tìm kiếm cơ sở và điều hướng tới chi tiết sân và bảng lịch', async ({ page }) => {
     // 1. Visit /courts catalog
     await page.goto('/courts', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('h1, h2').filter({ hasText: /sân|court/i }).first()).toBeVisible({ timeout: 20000 })
+    await expect(
+      page
+        .locator('h1, h2')
+        .filter({ hasText: /sân|court/i })
+        .first(),
+    ).toBeVisible({ timeout: 20000 })
 
     // Court cards are rendered
-    const detailBtn = page.locator('.btn-detail, a:has-text("Chi tiết"), a:has-text("Detail")').first()
+    const detailBtn = page
+      .locator('.btn-detail, a:has-text("Chi tiết"), a:has-text("Detail")')
+      .first()
     await expect(detailBtn).toBeVisible({ timeout: 20000 })
 
     // 2. Click detail button to navigate to detail
@@ -31,7 +38,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await expect(bookNowBtn).toBeVisible({ timeout: 15000 })
     await bookNowBtn.click()
     await expect(page).toHaveURL(/.*\/schedule/, { timeout: 15000 })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
   })
 
   test('3.4.2: Chọn slot, đổi ngày và đổi sân hủy bỏ lựa chọn cũ', async ({ page }) => {
@@ -40,7 +49,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     const courtId = venue1A?.courts?.[0] || 1
     // 1. Open schedule page
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     // Select future date on the carousel to get available slots
     const dateCards = page.locator('.date-carousel .date-card-btn')
@@ -63,7 +74,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await expect(dayAfterTomorrow).toHaveClass(/active/, { timeout: 10000 })
 
     // Stale selection MUST be discarded on date switch
-    await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({
+      timeout: 10000,
+    })
     await expect(page.locator('.slots-grid .slot-cell-btn.is-selected')).toHaveCount(0)
 
     // 4. Select a slot on the new date
@@ -72,7 +85,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await newSlotList.click()
     await expect(summaryCard.locator('.badge-count')).toContainText(/1/, { timeout: 10000 })
     // Switch court via court selector
-    const otherCourtBtn = page.locator('.court-selector-container .court-card-btn:not(.active)').first()
+    const otherCourtBtn = page
+      .locator('.court-selector-container .court-card-btn:not(.active)')
+      .first()
     await expect(otherCourtBtn).toBeVisible({ timeout: 10000 })
     const otherCourtName = await otherCourtBtn.locator('.c-name').innerText()
     await otherCourtBtn.click()
@@ -80,7 +95,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await expect(page.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({ timeout: 20000 })
 
     // Stale selection MUST be discarded on court switch
-    await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.schedule-summary-card .badge-count')).not.toBeVisible({
+      timeout: 10000,
+    })
     await expect(page.locator('.slots-grid .slot-cell-btn.is-selected')).toHaveCount(0)
   })
 
@@ -136,7 +153,7 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
 
     // 2. Query Court 1-A-1 availability: 11:00 slot is booked/unavailable
     const court1Res = await page.request.get(
-      `${manifest.backend.url}/api/v1/availability?court_id=${court1A1Id}&date=${future.dateString}`
+      `${manifest.backend.url}/api/v1/availability?court_id=${court1A1Id}&date=${future.dateString}`,
     )
     expect(court1Res.ok()).toBe(true)
     const court1Slots = (await court1Res.json()) as Array<{ startsAt: string; available: boolean }>
@@ -145,7 +162,7 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
 
     // 3. Query Court 1-A-2 availability: 11:00 slot is completely AVAILABLE (independent inventory isolation)
     const court2Res = await page.request.get(
-      `${manifest.backend.url}/api/v1/availability?court_id=${court1A2Id}&date=${future.dateString}`
+      `${manifest.backend.url}/api/v1/availability?court_id=${court1A2Id}&date=${future.dateString}`,
     )
     expect(court2Res.ok()).toBe(true)
     const court2Slots = (await court2Res.json()) as Array<{ startsAt: string; available: boolean }>
@@ -154,7 +171,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
 
     // 4. Verify in the UI: Court 1-A-2 schedule shows slots available on future date
     await page.goto(`/courts/${court1A2Id}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const futureDateBtn = dateCards.nth(3)
@@ -166,14 +185,18 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     await expect(slotList.first()).toBeVisible({ timeout: 20000 })
   })
 
-  test('3.4.4: Phản hồi API đến muộn ngoài thứ tự không ghi đè dữ liệu hiển thị hiện tại', async ({ page }) => {
+  test('3.4.4: Phản hồi API đến muộn ngoài thứ tự không ghi đè dữ liệu hiển thị hiện tại', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
     const court = arrangeCourt(manifest, { testKey: '3_4_4_late', venueId: venue1A?.id })
     const courtId = court.court_id
 
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     const dateCards = page.locator('.date-carousel .date-card-btn')
     const count = await dateCards.count()
@@ -243,7 +266,9 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     expect(countAfter).toBe(countBefore)
 
     // 2. Sentinel price from date1 (999999) MUST NOT be present under any locale formatting (999.999 or 999,999)
-    const stalePriceSlot = page.locator('.slots-grid .s-price').filter({ hasText: /999[.,]999|999999/ })
+    const stalePriceSlot = page
+      .locator('.slots-grid .s-price')
+      .filter({ hasText: /999[.,]999|999999/ })
     await expect(stalePriceSlot).toHaveCount(0)
 
     // 3. Current card remains date2

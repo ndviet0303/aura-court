@@ -1,4 +1,5 @@
-export type ContractStatus = 'active' | 'confirmed' | 'overdue' | 'pending' | 'completed' | 'cancelled' | 'draft'
+export type ContractStatus =
+  'active' | 'confirmed' | 'overdue' | 'pending' | 'completed' | 'cancelled' | 'draft'
 
 export interface ContractOccurrence {
   id: number
@@ -62,4 +63,3 @@ export interface ContractsApiResponse {
   total: number
   stats: ContractStats
 }
-

@@ -2,16 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\Court;
 use App\Models\MatchInvitation;
-use App\Models\MatchParticipation;
 use App\Models\MatchPost;
-use App\Models\ModerationRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PlayerProfile;
 use App\Models\QualifyingActivity;
-use App\Models\ReputationDispute;
+use App\Models\Reservation;
 use App\Models\User;
+use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,10 +19,15 @@ class SocialDiscoveryAndReputationTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $creator;
+
     private User $playerA;
+
     private User $playerB;
+
     private User $stranger;
+
     private User $moderator;
 
     protected function setUp(): void
@@ -32,7 +36,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Social League',
-            'slug' => 'aura-league-' . uniqid(),
+            'slug' => 'aura-league-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -156,7 +160,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Query discovery with city 'Hà Nội': should return M1 only (M2 wrong city, M3 full)
         $resHanoi = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('disc-hn-'))
-            ->getJson('/api/v2/social/matches?city=' . urlencode('Hà Nội'));
+            ->getJson('/api/v2/social/matches?city='.urlencode('Hà Nội'));
         $resHanoi->assertOk();
         $matches = collect($resHanoi->json('matches'));
         $this->assertTrue($matches->contains('id', $m1->id));
@@ -261,18 +265,18 @@ class SocialDiscoveryAndReputationTest extends TestCase
 
     public function test_reputation_activity_and_dispute_lifecycle(): void
     {
-        $venue = \App\Models\Venue::create([
+        $venue = Venue::create([
             'organization_id' => $this->tenant->id,
             'name' => 'Aura Stadium',
-            'slug' => 'aura-stadium-' . uniqid(),
+            'slug' => 'aura-stadium-'.uniqid(),
             'status' => 'active',
         ]);
-        $court = \App\Models\Court::create([
+        $court = Court::create([
             'venue_id' => $venue->id,
             'name' => 'Court 1',
             'is_active' => true,
         ]);
-        $res1 = \App\Models\Reservation::create([
+        $res1 = Reservation::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->playerA->id,
             'court_id' => $court->id,
@@ -280,7 +284,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
             'status' => 'confirmed',
             'total_amount' => 100000,
         ]);
-        $res2 = \App\Models\Reservation::create([
+        $res2 = Reservation::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->playerA->id,
             'court_id' => $court->id,

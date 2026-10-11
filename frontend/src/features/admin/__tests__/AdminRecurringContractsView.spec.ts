@@ -43,7 +43,14 @@ describe('AdminRecurringContractsView', () => {
       deposit_amount: 5000000,
       status: 'active',
       payment_cycles: [
-        { id: 101, cycle_name: 'Kỳ 01/2026', due_date: '05/01/2026', amount: 4800000, status: 'paid', invoice_code: 'INV-2026-0101' },
+        {
+          id: 101,
+          cycle_name: 'Kỳ 01/2026',
+          due_date: '05/01/2026',
+          amount: 4800000,
+          status: 'paid',
+          invoice_code: 'INV-2026-0101',
+        },
       ],
     },
     {
@@ -61,7 +68,14 @@ describe('AdminRecurringContractsView', () => {
       deposit_amount: 5000000,
       status: 'overdue',
       payment_cycles: [
-        { id: 201, cycle_name: 'Kỳ 02/2026', due_date: '05/02/2026', amount: 5200000, status: 'overdue', invoice_code: 'INV-2026-0202' },
+        {
+          id: 201,
+          cycle_name: 'Kỳ 02/2026',
+          due_date: '05/02/2026',
+          amount: 5200000,
+          status: 'overdue',
+          invoice_code: 'INV-2026-0202',
+        },
       ],
     },
     {
@@ -138,7 +152,9 @@ describe('AdminRecurringContractsView', () => {
     await flushPromises()
 
     // Click "Quá hạn thanh toán" tab
-    const overdueTab = wrapper.findAll('.tab-pill').find((btn) => btn.text().includes('Quá hạn thanh toán'))
+    const overdueTab = wrapper
+      .findAll('.tab-pill')
+      .find((btn) => btn.text().includes('Quá hạn thanh toán'))
     expect(overdueTab).toBeDefined()
     await overdueTab?.trigger('click')
 
@@ -177,5 +193,4 @@ describe('AdminRecurringContractsView', () => {
     expect(wrapper.find('.modal-card').exists()).toBe(true)
     expect(wrapper.text()).toContain('Lịch Sử Các Kỳ Hóa Đơn Hàng Tháng')
   })
-
 })

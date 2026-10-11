@@ -23,12 +23,19 @@ class CanonicalReportingAndExportTest extends TestCase
     use RefreshDatabase;
 
     private User $platformAdmin;
+
     private User $ownerAlpha;
+
     private User $customer;
+
     private Organization $orgAlpha;
+
     private Organization $orgBeta;
+
     private Venue $venueAlpha;
+
     private Venue $venueBeta;
+
     private Court $courtAlpha;
 
     protected function setUp(): void
@@ -56,14 +63,14 @@ class CanonicalReportingAndExportTest extends TestCase
 
         $this->orgAlpha = Organization::create([
             'name' => 'Org Alpha',
-            'slug' => 'org-alpha-' . uniqid(),
+            'slug' => 'org-alpha-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
 
         $this->orgBeta = Organization::create([
             'name' => 'Org Beta',
-            'slug' => 'org-beta-' . uniqid(),
+            'slug' => 'org-beta-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
@@ -78,7 +85,7 @@ class CanonicalReportingAndExportTest extends TestCase
         $this->venueAlpha = Venue::create([
             'organization_id' => $this->orgAlpha->id,
             'name' => ['vi' => 'Sân Alpha', 'en' => 'Alpha Stadium'],
-            'slug' => 'alpha-' . uniqid(),
+            'slug' => 'alpha-'.uniqid(),
             'address' => '123 Alpha Street',
             'status' => 'published',
             'is_active' => true,
@@ -87,7 +94,7 @@ class CanonicalReportingAndExportTest extends TestCase
         $this->venueBeta = Venue::create([
             'organization_id' => $this->orgBeta->id,
             'name' => ['vi' => 'Sân Beta', 'en' => 'Beta Stadium'],
-            'slug' => 'beta-' . uniqid(),
+            'slug' => 'beta-'.uniqid(),
             'address' => '456 Beta Street',
             'status' => 'published',
             'is_active' => true,
@@ -138,7 +145,7 @@ class CanonicalReportingAndExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?from=' . now()->startOfMonth()->toDateString() . '&to=' . now()->endOfMonth()->toDateString());
+            ->getJson('/api/v1/admin/reports?from='.now()->startOfMonth()->toDateString().'&to='.now()->endOfMonth()->toDateString());
 
         $response->assertOk();
         $response->assertJsonPath('bookings', 1);
@@ -190,7 +197,7 @@ class CanonicalReportingAndExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?from=' . now()->startOfMonth()->toDateString() . '&to=' . now()->endOfMonth()->toDateString());
+            ->getJson('/api/v1/admin/reports?from='.now()->startOfMonth()->toDateString().'&to='.now()->endOfMonth()->toDateString());
 
         $response->assertOk();
         $response->assertJsonPath('bookings', 1);
@@ -235,7 +242,7 @@ class CanonicalReportingAndExportTest extends TestCase
             'venue_id' => $this->venueAlpha->id,
             'payer_id' => $this->customer->id,
             'reference_code' => 'REF-NET-050',
-            'idempotency_key' => 'IDEM-REF-NET-' . uniqid(),
+            'idempotency_key' => 'IDEM-REF-NET-'.uniqid(),
             'request_fingerprint' => hash('sha256', uniqid()),
             'slot_ids' => [1],
             'gross_amount' => 50000,
@@ -252,7 +259,7 @@ class CanonicalReportingAndExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id=' . $this->venueAlpha->id);
+            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id);
 
         $response->assertOk();
         $response->assertJsonPath('booking_revenue', 300000);
@@ -292,7 +299,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // 1. Venue owner inspects reports: platform_fees is 0, owner_revenue does NOT include 600k
         $ownerResponse = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id=' . $this->venueAlpha->id);
+            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id);
 
         $ownerResponse->assertOk();
         $ownerResponse->assertJsonPath('owner_revenue', 300000);
@@ -302,7 +309,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // 2. Platform admin inspects reports: platform_fees is 600k, owner_revenue remains 300k
         $adminResponse = $this->actingAs($this->platformAdmin)
-            ->getJson('/api/v1/admin/reports?venue_id=' . $this->venueAlpha->id);
+            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id);
 
         $adminResponse->assertOk();
         $adminResponse->assertJsonPath('owner_revenue', 300000);
@@ -319,11 +326,11 @@ class CanonicalReportingAndExportTest extends TestCase
     {
         // 1. Non-platform admin tries to query unauthorized venue Beta -> 403 Forbidden
         $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id=' . $this->venueBeta->id)
+            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueBeta->id)
             ->assertStatus(403);
 
         $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports/csv?venue_id=' . $this->venueBeta->id)
+            ->getJson('/api/v1/admin/reports/csv?venue_id='.$this->venueBeta->id)
             ->assertStatus(403);
 
         // 2. Events inside vs outside date range
@@ -351,7 +358,7 @@ class CanonicalReportingAndExportTest extends TestCase
         $oldBooking->forceFill(['created_at' => now()->subMonths(3)])->save();
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id=' . $this->venueAlpha->id . '&from=' . $currentFrom . '&to=' . $currentTo);
+            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id.'&from='.$currentFrom.'&to='.$currentTo);
 
         $response->assertOk();
         $response->assertJsonPath('bookings', 1);
@@ -406,7 +413,7 @@ class CanonicalReportingAndExportTest extends TestCase
             'venue_id' => $this->venueAlpha->id,
             'payer_id' => $this->customer->id,
             'reference_code' => 'REF-STREAM-050',
-            'idempotency_key' => 'IDEM-STREAM-' . uniqid(),
+            'idempotency_key' => 'IDEM-STREAM-'.uniqid(),
             'request_fingerprint' => hash('sha256', uniqid()),
             'slot_ids' => [1],
             'gross_amount' => 50000,
@@ -435,7 +442,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // Test platform admin CSV download
         $response = $this->actingAs($this->platformAdmin)
-            ->get('/api/admin/reports/csv?venue_id=' . $this->venueAlpha->id);
+            ->get('/api/admin/reports/csv?venue_id='.$this->venueAlpha->id);
 
         $response->assertOk();
         $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
@@ -495,7 +502,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // Also test as Venue Owner: should NOT contain platform_subscription row
         $ownerExport = $this->actingAs($this->ownerAlpha)
-            ->get('/api/v1/admin/reports.csv?venue_id=' . $this->venueAlpha->id);
+            ->get('/api/v1/admin/reports.csv?venue_id='.$this->venueAlpha->id);
 
         $ownerExport->assertOk();
         $ownerLines = array_filter(explode("\n", trim($ownerExport->streamedContent())));

@@ -78,7 +78,6 @@ export function usePaymentCycleDetail(invoiceId: number | string) {
   )
   onScopeDispose(stopPolling)
 
-
   function printInvoice() {
     window.print()
   }

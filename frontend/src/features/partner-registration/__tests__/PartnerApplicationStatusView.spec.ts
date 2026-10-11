@@ -23,7 +23,9 @@ describe('PartnerApplicationStatusView', () => {
       id: 1,
       decision: ['revision_required', 'supplementation_requested'].includes(status)
         ? 'revision_required'
-        : status === 'rejected' ? 'reject' : 'approve',
+        : status === 'rejected'
+          ? 'reject'
+          : 'approve',
       reason: 'Thông báo từ chuyên viên thẩm định.',
       reapplication_allowed: true,
       application_version: 1,
@@ -91,7 +93,9 @@ describe('PartnerApplicationStatusView', () => {
       fieldErrors: ref({}) as any,
       isDraft: computed(() => status === 'draft') as any,
       isPendingReview: computed(() => ['pending', 'pending_review'].includes(status)) as any,
-      isSupplementationRequested: computed(() => ['revision_required', 'supplementation_requested'].includes(status)) as any,
+      isSupplementationRequested: computed(() =>
+        ['revision_required', 'supplementation_requested'].includes(status),
+      ) as any,
       isApproved: computed(() => status === 'approved') as any,
       isRejected: computed(() => status === 'rejected') as any,
       clearErrors: vi.fn(),

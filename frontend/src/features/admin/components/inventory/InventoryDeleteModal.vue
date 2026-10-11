@@ -34,12 +34,22 @@ const { t } = useI18n()
 
       <div class="modal-body">
         <p class="confirm-message">
-          {{ t('admin.inventory.deleteConfirmMsg', { name: resolveLocalizedText(product.name), sku: product.sku }) }}
+          {{
+            t('admin.inventory.deleteConfirmMsg', {
+              name: resolveLocalizedText(product.name),
+              sku: product.sku,
+            })
+          }}
         </p>
         <div v-if="product.stock_quantity > 0" class="stock-warning-box">
           <span class="material-symbols-outlined icon-18 text-yellow">warning</span>
           <span class="warning-text">
-            {{ t('admin.inventory.deleteWithStockWarning', { stock: product.stock_quantity, unit: product.unit }) }}
+            {{
+              t('admin.inventory.deleteWithStockWarning', {
+                stock: product.stock_quantity,
+                unit: product.unit,
+              })
+            }}
           </span>
         </div>
       </div>
@@ -47,7 +57,9 @@ const { t } = useI18n()
       <div class="modal-footer">
         <AuraButton variant="outline" @click="emit('close')">{{ t('common.cancel') }}</AuraButton>
         <AuraButton variant="danger" :disabled="saving" @click="emit('confirm')">
-          <span v-if="saving" class="material-symbols-outlined icon-16 spin-anim">progress_activity</span>
+          <span v-if="saving" class="material-symbols-outlined icon-16 spin-anim"
+            >progress_activity</span
+          >
           <span>{{ saving ? t('common.processing') : t('common.delete') }}</span>
         </AuraButton>
       </div>
@@ -98,8 +110,12 @@ const { t } = useI18n()
   font-size: 28px;
 }
 
-.text-red { color: #ef4444; }
-.text-yellow { color: #f59e0b; }
+.text-red {
+  color: #ef4444;
+}
+.text-yellow {
+  color: #f59e0b;
+}
 
 .modal-title {
   margin: 0;
@@ -162,15 +178,23 @@ const { t } = useI18n()
   background: var(--surface-secondary, rgba(0, 0, 0, 0.015));
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 .spin-anim {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

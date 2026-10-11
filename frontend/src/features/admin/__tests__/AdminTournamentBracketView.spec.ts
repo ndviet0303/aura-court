@@ -204,9 +204,7 @@ describe('AdminTournamentBracketView', () => {
     await actionBtn?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(
-      expect.stringContaining('/regenerate')
-    )
+    expect(apiV2.post).toHaveBeenCalledWith(expect.stringContaining('/regenerate'))
   })
 
   it('opens match details modal and saves updated match score', async () => {
@@ -298,10 +296,7 @@ describe('AdminTournamentBracketView', () => {
     await checkinBtns[1]?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(
-      expect.stringContaining('/check-in'),
-      expect.anything()
-    )
+    expect(apiV2.post).toHaveBeenCalledWith(expect.stringContaining('/check-in'), expect.anything())
   })
 
   it('opens and interacts with QR code scanner modal', async () => {

@@ -117,7 +117,15 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
       },
     ]
 
@@ -142,13 +150,29 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
       },
       {
         id: 2,
         name: 'Sân 02',
         slug: 'san-02',
-        venue: { id: 2, name: 'Aura Landmark', slug: 'aura-landmark', address: 'Bình Thạnh', google_maps_url: null, is_active: true, share_url: '' },
+        venue: {
+          id: 2,
+          name: 'Aura Landmark',
+          slug: 'aura-landmark',
+          address: 'Bình Thạnh',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
       },
     ]
 
@@ -179,15 +203,45 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Cầu Lông 01',
         slug: 'san-cau-long-01',
-        sport_zone: { id: 1, venue_id: 1, name: 'Khu Cầu Lông', sport_type: 'badminton', slot_duration: 60, is_active: true },
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
+        sport_zone: {
+          id: 1,
+          venue_id: 1,
+          name: 'Khu Cầu Lông',
+          sport_type: 'badminton',
+          slot_duration: 60,
+          is_active: true,
+        },
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
       },
       {
         id: 2,
         name: 'Sân Pickleball Pro',
         slug: 'san-pickleball-pro',
-        sport_zone: { id: 2, venue_id: 1, name: 'Khu Pickleball', sport_type: 'pickleball', slot_duration: 60, is_active: true },
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
+        sport_zone: {
+          id: 2,
+          venue_id: 1,
+          name: 'Khu Pickleball',
+          sport_type: 'pickleball',
+          slot_duration: 60,
+          is_active: true,
+        },
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
       },
     ]
 
@@ -214,15 +268,35 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Giá Rẻ',
         slug: 'san-gia-re',
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
-        price_slots: [{ id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 80000 }],
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
+        price_slots: [
+          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 80000 },
+        ],
       },
       {
         id: 2,
         name: 'Sân Cao Cấp VIP',
         slug: 'san-cao-cap-vip',
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
-        price_slots: [{ id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 250000 }],
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
+        price_slots: [
+          { id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 250000 },
+        ],
       },
     ]
 
@@ -233,10 +307,14 @@ describe('CourtsView', () => {
     })
 
     // Open Price dropdown (second dropdown)
-    const priceDropdown = wrapper.find('[data-testid="price-dropdown-wrap"] .custom-dropdown-trigger')
+    const priceDropdown = wrapper.find(
+      '[data-testid="price-dropdown-wrap"] .custom-dropdown-trigger',
+    )
     await priceDropdown.trigger('click')
 
-    const under100kItem = wrapper.findAll('.dropdown-item').find((it) => it.text().includes('100.000'))
+    const under100kItem = wrapper
+      .findAll('.dropdown-item')
+      .find((it) => it.text().includes('100.000'))
     await under100kItem?.trigger('click')
 
     expect(wrapper.findAll('.court-card-item').length).toBe(1)
@@ -260,15 +338,35 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Giá 200k',
         slug: 'san-200k',
-        venue: { id: 1, name: 'Aura Club', slug: 'aura', address: null, google_maps_url: null, is_active: true, share_url: '' },
-        price_slots: [{ id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 200000 }],
+        venue: {
+          id: 1,
+          name: 'Aura Club',
+          slug: 'aura',
+          address: null,
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
+        price_slots: [
+          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 200000 },
+        ],
       },
       {
         id: 2,
         name: 'Sân Giá 90k',
         slug: 'san-90k',
-        venue: { id: 1, name: 'Aura Club', slug: 'aura', address: null, google_maps_url: null, is_active: true, share_url: '' },
-        price_slots: [{ id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 90000 }],
+        venue: {
+          id: 1,
+          name: 'Aura Club',
+          slug: 'aura',
+          address: null,
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
+        price_slots: [
+          { id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 90000 },
+        ],
       },
     ]
 
@@ -282,7 +380,9 @@ describe('CourtsView', () => {
     const sortDropdown = wrapper.find('[data-testid="sort-dropdown-wrap"] .custom-dropdown-trigger')
     await sortDropdown.trigger('click')
 
-    const sortAscItem = wrapper.findAll('.dropdown-item').find((it) => it.text().includes('Thấp đến Cao') || it.text().includes('Low to High'))
+    const sortAscItem = wrapper
+      .findAll('.dropdown-item')
+      .find((it) => it.text().includes('Thấp đến Cao') || it.text().includes('Low to High'))
     await sortAscItem?.trigger('click')
 
     const renderedCards = wrapper.findAll('.court-card-item')
@@ -298,7 +398,15 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Test',
         slug: 'san-test',
-        venue: { id: 1, name: 'Aura Thảo Điền', slug: 'aura-thao-dien', address: 'Quận 2', google_maps_url: null, is_active: true, share_url: '' },
+        venue: {
+          id: 1,
+          name: 'Aura Thảo Điền',
+          slug: 'aura-thao-dien',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
       },
     ]
 

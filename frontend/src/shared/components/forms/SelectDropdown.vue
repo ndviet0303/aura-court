@@ -25,7 +25,7 @@ const props = withDefaults(
     ariaLabel: 'Dropdown',
     variant: 'inline',
     align: 'left',
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -50,7 +50,7 @@ const selectedOption = computed(() => {
 })
 
 const displayLabel = computed(() => {
-  return selectedOption.value?.label || (props.placeholder || '')
+  return selectedOption.value?.label || props.placeholder || ''
 })
 
 function toggle() {
@@ -105,9 +105,7 @@ onBeforeUnmount(() => {
           {{ displayLabel }}
         </span>
       </div>
-      <span class="material-symbols-outlined dropdown-arrow" aria-hidden="true">
-        expand_more
-      </span>
+      <span class="material-symbols-outlined dropdown-arrow" aria-hidden="true"> expand_more </span>
     </button>
 
     <transition name="dropdown-fade">
@@ -123,7 +121,9 @@ onBeforeUnmount(() => {
           @click="selectOption(item.value)"
         >
           <div class="item-text-wrap">
-            <span v-if="item.icon" class="material-symbols-outlined item-icon">{{ item.icon }}</span>
+            <span v-if="item.icon" class="material-symbols-outlined item-icon">{{
+              item.icon
+            }}</span>
             <div class="item-labels-box">
               <span class="item-label">{{ item.label }}</span>
               <span v-if="item.sublabel" class="item-sublabel">{{ item.sublabel }}</span>
@@ -218,7 +218,9 @@ onBeforeUnmount(() => {
 .dropdown-arrow {
   font-size: 20px;
   color: var(--muted);
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
   flex-shrink: 0;
   line-height: 1;
 }
@@ -250,7 +252,9 @@ onBeforeUnmount(() => {
   background: var(--surface, #1e293b);
   border: 1px solid var(--outline, rgba(255, 255, 255, 0.15));
   border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.12);
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -357,7 +361,9 @@ onBeforeUnmount(() => {
 /* Animations */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .dropdown-fade-enter-from,

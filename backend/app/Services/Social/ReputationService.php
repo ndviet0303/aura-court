@@ -10,6 +10,7 @@ use App\Models\PlayerProfile;
 use App\Models\QualifyingActivity;
 use App\Models\ReputationDispute;
 use App\Models\Reservation;
+use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +33,7 @@ class ReputationService
                 'reservation', 'reservations' => Reservation::class,
                 'match_post', 'match', 'matches' => MatchPost::class,
                 'match_participation' => MatchParticipation::class,
-                'tournament' => \App\Models\Tournament::class,
+                'tournament' => Tournament::class,
                 default => null,
             };
         }
@@ -81,6 +82,7 @@ class ReputationService
                 ['organization_id' => $organizationId, 'user_id' => $user->id, 'source_type' => $sourceType, 'source_id' => $sourceId, 'type' => $type],
                 ['score_delta' => self::DELTAS[$type], 'verified_by' => $verifiedBy, 'qualifies_at' => now()]
             );
+
             return $this->recalculate($user, $organizationId);
         });
     }
@@ -89,6 +91,7 @@ class ReputationService
     {
         $activities = QualifyingActivity::query()->where('organization_id', $organizationId)->where('user_id', $user->id)->latest('qualifies_at')->limit(20)->get();
         $score = max(0, min(100, 60 + (int) $activities->sum('score_delta')));
+
         return PlayerProfile::updateOrCreate(['organization_id' => $organizationId, 'user_id' => $user->id], ['reputation_score' => $score]);
     }
 
@@ -96,12 +99,14 @@ class ReputationService
     {
         $activity = QualifyingActivity::query()->where('organization_id', $organizationId)->findOrFail($activityId);
         abort_unless($activity->user_id === $user->id, 403);
+
         return ReputationDispute::create(['organization_id' => $organizationId, 'user_id' => $user->id, 'qualifying_activity_id' => $activity->id, 'filed_by' => $user->id, 'status' => 'open', 'reason' => $reason]);
     }
 
     public function resolveDispute(ReputationDispute $dispute, User $moderator, string $decision, string $resolution): ReputationDispute
     {
         abort_unless(in_array($decision, ['upheld', 'rejected'], true), 422);
+
         return DB::transaction(function () use ($dispute, $moderator, $decision, $resolution): ReputationDispute {
             abort_unless($dispute->status === 'open', 409);
             $dispute->update(['status' => 'resolved', 'decision' => $decision, 'decided_by' => $moderator->id, 'resolution' => $resolution, 'decided_at' => now()]);

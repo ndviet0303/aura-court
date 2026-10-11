@@ -29,13 +29,18 @@ export interface MinimalUser {
  */
 export function isSafeInternalRedirect(
   url: string | null | undefined,
-  userOrRole?: string | MinimalUser
+  userOrRole?: string | MinimalUser,
 ): boolean {
   if (!url || typeof url !== 'string') return false
   const trimmed = url.trim()
 
   // Must be an internal path starting with a single '/'
-  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.startsWith('/\\') || trimmed.startsWith('\\')) {
+  if (
+    !trimmed.startsWith('/') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('/\\') ||
+    trimmed.startsWith('\\')
+  ) {
     return false
   }
 
@@ -56,7 +61,9 @@ export function isSafeInternalRedirect(
   const userObj = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole : null
   const roleStr = typeof userOrRole === 'string' ? userOrRole : userObj?.role
   const userCaps =
-    typeof userObj?.capabilities === 'object' && userObj?.capabilities !== null && !Array.isArray(userObj.capabilities)
+    typeof userObj?.capabilities === 'object' &&
+    userObj?.capabilities !== null &&
+    !Array.isArray(userObj.capabilities)
       ? (userObj.capabilities as Record<string, unknown>)
       : null
   const isPlatformAdmin = roleStr === 'admin' || userCaps?.is_platform_admin === true
@@ -107,7 +114,7 @@ export function isSafeInternalRedirect(
  */
 export function resolveAuthDestination(
   user: MinimalUser | null | undefined,
-  redirectCandidate?: string | null
+  redirectCandidate?: string | null,
 ): string | null {
   if (!user) return null
 
@@ -137,7 +144,9 @@ export function resolveAuthDestination(
 
 function getDefaultDestination(user: MinimalUser): string {
   const userCaps =
-    typeof user.capabilities === 'object' && user.capabilities !== null && !Array.isArray(user.capabilities)
+    typeof user.capabilities === 'object' &&
+    user.capabilities !== null &&
+    !Array.isArray(user.capabilities)
       ? (user.capabilities as Record<string, unknown>)
       : null
   if (user.role === 'admin' || userCaps?.is_platform_admin === true) {
@@ -166,7 +175,10 @@ function getDefaultDestination(user: MinimalUser): string {
     }
     return '/partner-registration'
   }
-  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') {
+  if (
+    typeof window !== 'undefined' &&
+    localStorage.getItem('aura_partner_intent') === 'court_owner'
+  ) {
     return '/partner-registration'
   }
   return '/'

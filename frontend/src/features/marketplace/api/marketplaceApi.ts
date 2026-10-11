@@ -19,6 +19,5 @@ export const marketplaceApi = {
   withdrawListing: (listingId: number | string) =>
     apiV2.post(`/marketplace/listings/${listingId}/withdraw`),
 
-  getUserReservations: <T = any>() =>
-    apiV2.get<T>('/reservations'),
+  getUserReservations: <T = any>() => apiV2.get<T>('/reservations'),
 }

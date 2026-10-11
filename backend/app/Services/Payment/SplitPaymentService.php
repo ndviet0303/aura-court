@@ -12,7 +12,7 @@ use App\Models\Reservation;
 use App\Models\SplitGroup;
 use App\Models\SplitShare;
 use App\Models\User;
-use App\Services\Booking\LegacyBookingBackfillService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use App\Services\Reservation\ReservationService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;

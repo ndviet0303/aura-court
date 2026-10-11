@@ -10,7 +10,7 @@ withDefaults(
   }>(),
   {
     loading: false,
-  }
+  },
 )
 
 const { t } = useI18n()
@@ -115,7 +115,10 @@ const { t } = useI18n()
   flex-direction: column;
   gap: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .kpi-card:hover {
@@ -211,4 +214,3 @@ const { t } = useI18n()
   color: #dc2626;
 }
 </style>
-

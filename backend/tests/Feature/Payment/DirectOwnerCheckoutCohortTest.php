@@ -11,22 +11,17 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
-use App\Models\PlatformPlan;
-use App\Models\PlatformSubscription;
 use App\Models\PointLedger;
 use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
-use App\Models\ReservationEntitlement;
+use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
-use App\Models\User;
 use App\Services\Payment\OwnerPaymentAttemptService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class DirectOwnerCheckoutCohortTest extends TestCase

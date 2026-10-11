@@ -228,7 +228,9 @@ export function useRecurringBooking() {
 
   const estimatedTotalAmount = computed(() => {
     if (preview.value) return preview.value.total_amount
-    return Math.round(localSessionCountEstimate.value * sessionDurationHours.value * hourlyRate.value)
+    return Math.round(
+      localSessionCountEstimate.value * sessionDurationHours.value * hourlyRate.value,
+    )
   })
 
   // Aggregated all invoices from seriesList
@@ -244,7 +246,9 @@ export function useRecurringBooking() {
         }
       }
     }
-    return list.sort((a, b) => new Date(b.period_start).getTime() - new Date(a.period_start).getTime())
+    return list.sort(
+      (a, b) => new Date(b.period_start).getTime() - new Date(a.period_start).getTime(),
+    )
   })
 
   function toggleWeekday(dayId: number) {
@@ -283,7 +287,7 @@ export function useRecurringBooking() {
           seriesList.value = (seriesRes as Record<string, any>).data
         }
       }
-    } catch (err: unknown) {
+    } catch {
       // Graceful fallback for offline/development
     } finally {
       loading.value = false
@@ -355,9 +359,7 @@ export function useRecurringBooking() {
       if (status === 409) {
         partialConflict.value = null
         await fetchPreview()
-        return /xem tr/i.test(message)
-          ? { kind: 'drift' }
-          : { kind: 'conflict', message }
+        return /xem tr/i.test(message) ? { kind: 'drift' } : { kind: 'conflict', message }
       }
       return { kind: 'error', message }
     } finally {

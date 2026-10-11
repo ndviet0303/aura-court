@@ -73,7 +73,7 @@ defineProps<{
   left: 0;
   width: 5px;
   height: 100%;
-  background: linear-gradient(180deg, var(--primary, #6B2D3F) 0%, var(--accent, #C9A15A) 100%);
+  background: linear-gradient(180deg, var(--primary, #6b2d3f) 0%, var(--accent, #c9a15a) 100%);
 }
 
 .hero-left {
@@ -89,7 +89,7 @@ defineProps<{
   gap: 6px;
   font-size: 11px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   background: var(--primary-container, rgba(107, 45, 63, 0.08));
   padding: 4px 10px;
   border-radius: 6px;
@@ -136,7 +136,7 @@ defineProps<{
 .stat-num {
   font-size: 14px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .stat-lbl {
@@ -160,7 +160,7 @@ defineProps<{
   padding: 11px 20px;
   border-radius: 12px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #fff);
   font-size: 13.5px;
   font-weight: 700;
@@ -195,8 +195,8 @@ defineProps<{
 
 .btn-action-secondary:hover {
   background: var(--surface-subtle, rgba(0, 0, 0, 0.04));
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
 }
 
 .btn-action-primary .material-symbols-outlined,
@@ -213,7 +213,8 @@ defineProps<{
     flex-direction: row;
     flex-wrap: wrap;
   }
-  .btn-action-primary, .btn-action-secondary {
+  .btn-action-primary,
+  .btn-action-secondary {
     flex: 1 1 calc(50% - 6px);
   }
 }

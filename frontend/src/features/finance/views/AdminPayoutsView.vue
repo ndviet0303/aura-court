@@ -67,27 +67,15 @@ onMounted(() => {
 
       <div class="header-actions">
         <!-- Refresh Button -->
-        <AuraButton
-          variant="secondary"
-          size="sm"
-          :disabled="loading"
-          @click="loadData"
-        >
-          <span
-            class="material-symbols-outlined icon-18"
-            :class="{ 'spin-icon': loading }"
-          >
+        <AuraButton variant="secondary" size="sm" :disabled="loading" @click="loadData">
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">
             refresh
           </span>
           <span>{{ t('admin.payouts.refreshBtn') }}</span>
         </AuraButton>
 
         <!-- Snapshot Settlement Button -->
-        <AuraButton
-          variant="secondary"
-          size="sm"
-          @click="showSnapshotModal = true"
-        >
+        <AuraButton variant="secondary" size="sm" @click="showSnapshotModal = true">
           <span class="material-symbols-outlined icon-18">camera_alt</span>
           <span>{{ t('admin.payouts.snapshotSettlementBtn') }}</span>
         </AuraButton>
@@ -390,8 +378,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes slideIn {

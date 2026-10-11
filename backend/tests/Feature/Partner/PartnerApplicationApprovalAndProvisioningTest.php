@@ -9,6 +9,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class PartnerApplicationApprovalAndProvisioningTest extends TestCase
@@ -168,7 +169,7 @@ class PartnerApplicationApprovalAndProvisioningTest extends TestCase
             expectedVersion: 1 // Stale!
         );
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         $this->approveAction->execute($dtoStale);
     }
 }

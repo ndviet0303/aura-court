@@ -13,7 +13,6 @@ import BookingCancelModal from '../components/history/BookingCancelModal.vue'
 import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 
 const {
-  bookings,
   activeTab,
   searchQuery,
   error,
@@ -60,10 +59,7 @@ onMounted(() => {
 <template>
   <div class="user-booking-view-page">
     <!-- Header Hero Banner -->
-    <BookingHistoryHero
-      :total-count="totalCount"
-      :upcoming-count="upcomingCount"
-    />
+    <BookingHistoryHero :total-count="totalCount" :upcoming-count="upcomingCount" />
 
     <!-- Feedback Alerts -->
     <div v-if="notice" class="alert-pill-success">
@@ -133,12 +129,7 @@ onMounted(() => {
     </div>
 
     <!-- QR Check-in Pass Modal -->
-    <BookingQrCheckInModal
-      :show="showQrModal"
-      :booking="qrBooking"
-      @close="closeQr"
-    />
-
+    <BookingQrCheckInModal :show="showQrModal" :booking="qrBooking" @close="closeQr" />
 
     <!-- Review Rating Modal -->
     <BookingReviewModal
@@ -237,7 +228,12 @@ onMounted(() => {
 .skeleton-line {
   height: 20px;
   border-radius: 6px;
-  background: linear-gradient(90deg, var(--surface-subtle) 25%, var(--border) 50%, var(--surface-subtle) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-subtle) 25%,
+    var(--border) 50%,
+    var(--surface-subtle) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -257,8 +253,12 @@ onMounted(() => {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .empty-state-card {
@@ -300,7 +300,7 @@ onMounted(() => {
   gap: 8px;
   padding: 10px 22px;
   border-radius: 12px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: var(--on-primary, #fff);
   font-size: 13.5px;
   font-weight: 700;

@@ -7,8 +7,14 @@ import { verifyTestGate } from './verify-gate.ts'
 
 test('Gate Verifier: accepts clean run with 24+ passing tests', () => {
   const tmpXml = path.join(os.tmpdir(), `junit_clean_${Date.now()}.xml`)
-  const testcases = Array.from({ length: 24 }, (_, i) => `<testcase name="Test ${i}" time="0.1" />`).join('\n')
-  fs.writeFileSync(tmpXml, `<testsuites tests="24" failures="0" errors="0" skipped="0">\n<testsuite tests="24">\n${testcases}\n</testsuite>\n</testsuites>`)
+  const testcases = Array.from(
+    { length: 24 },
+    (_, i) => `<testcase name="Test ${i}" time="0.1" />`,
+  ).join('\n')
+  fs.writeFileSync(
+    tmpXml,
+    `<testsuites tests="24" failures="0" errors="0" skipped="0">\n<testsuite tests="24">\n${testcases}\n</testsuite>\n</testsuites>`,
+  )
 
   try {
     const res = verifyTestGate({ junitPath: tmpXml, minTests: 24 })
@@ -22,7 +28,10 @@ test('Gate Verifier: accepts clean run with 24+ passing tests', () => {
 
 test('Gate Verifier: rejects zero-selection or insufficient test count', () => {
   const tmpXml = path.join(os.tmpdir(), `junit_short_${Date.now()}.xml`)
-  fs.writeFileSync(tmpXml, `<testsuites tests="5" failures="0" errors="0" skipped="0"><testsuite tests="5"></testsuite></testsuites>`)
+  fs.writeFileSync(
+    tmpXml,
+    `<testsuites tests="5" failures="0" errors="0" skipped="0"><testsuite tests="5"></testsuite></testsuites>`,
+  )
 
   try {
     const res = verifyTestGate({ junitPath: tmpXml, minTests: 24 })
@@ -41,7 +50,7 @@ test('Gate Verifier: rejects critical skipped tests', () => {
       <testsuite tests="24">
         <testcase name="Skipped Test"><skipped message="Skipped by test.skip"/></testcase>
       </testsuite>
-    </testsuites>`
+    </testsuites>`,
   )
 
   try {
@@ -62,13 +71,17 @@ test('Gate Verifier: rejects flaky retry-only pass', () => {
         <testcase name="Flaky Test Journey 1" time="0.5"><failure>Initial fail</failure></testcase>
         <testcase name="Flaky Test Journey 1" time="0.4" />
       </testsuite>
-    </testsuites>`
+    </testsuites>`,
   )
 
   try {
     const res = verifyTestGate({ junitPath: tmpXml, minTests: 24 })
     assert.equal(res.passed, false)
-    assert.ok(res.violations.some((v) => v.includes('FLAKY_RETRY_DETECTED') || v.includes('TEST_FAILURES_DETECTED')))
+    assert.ok(
+      res.violations.some(
+        (v) => v.includes('FLAKY_RETRY_DETECTED') || v.includes('TEST_FAILURES_DETECTED'),
+      ),
+    )
   } finally {
     fs.rmSync(tmpXml, { force: true })
   }

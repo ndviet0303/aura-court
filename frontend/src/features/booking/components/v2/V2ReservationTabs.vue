@@ -140,7 +140,7 @@ const emit = defineEmits<{
 
 .tab-btn.active .tab-badge {
   background: var(--primary-container, rgba(107, 45, 63, 0.1));
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 .tab-badge.held-badge {
@@ -185,7 +185,7 @@ const emit = defineEmits<{
 }
 
 .search-input:focus {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
 }
 

@@ -35,30 +35,15 @@ onMounted(() => {
   <main class="payment-cycle-detail-view">
     <!-- Top Navigation Bar / Breadcrumb -->
     <nav class="detail-nav-bar" aria-label="Breadcrumb">
-      <AuraButton
-        variant="ghost"
-        size="sm"
-        icon="arrow_back"
-        to="/recurring-booking?tab=invoices"
-      >
+      <AuraButton variant="ghost" size="sm" icon="arrow_back" to="/recurring-booking?tab=invoices">
         <span>Danh Sách Hóa Đơn Kỳ</span>
       </AuraButton>
 
       <div class="nav-actions">
-        <AuraButton
-          variant="outline"
-          size="sm"
-          icon="share"
-          @click="copyInvoiceLink"
-        >
+        <AuraButton variant="outline" size="sm" icon="share" @click="copyInvoiceLink">
           <span>Chia Sẻ</span>
         </AuraButton>
-        <AuraButton
-          variant="outline"
-          size="sm"
-          icon="print"
-          @click="printInvoice"
-        >
+        <AuraButton variant="outline" size="sm" icon="print" @click="printInvoice">
           <span>In Bảng Kê</span>
         </AuraButton>
       </div>
@@ -71,7 +56,10 @@ onMounted(() => {
       </div>
       <div class="header-titles">
         <h1 class="page-title">Chi Tiết Kỳ Thanh Toán Hợp Đồng Đặt Sân</h1>
-        <p class="page-sub">Theo dõi bảng kê các buổi chơi và trạng thái thanh toán theo thông tin chủ sân đã xác minh.</p>
+        <p class="page-sub">
+          Theo dõi bảng kê các buổi chơi và trạng thái thanh toán theo thông tin chủ sân đã xác
+          minh.
+        </p>
       </div>
     </header>
 
@@ -108,12 +96,19 @@ onMounted(() => {
         <span class="material-symbols-outlined empty-icon">receipt_long</span>
       </div>
       <h3 class="empty-title">Không Thể Tải Hóa Đơn Kỳ #{{ invoiceId }}</h3>
-      <p class="empty-sub">Hóa đơn không tồn tại hoặc bạn không có quyền truy cập vào thông tin này.</p>
+      <p class="empty-sub">
+        Hóa đơn không tồn tại hoặc bạn không có quyền truy cập vào thông tin này.
+      </p>
       <div class="empty-actions">
         <AuraButton variant="primary" size="md" icon="refresh" @click="loadInvoice">
           <span>Thử Lại</span>
         </AuraButton>
-        <AuraButton variant="outline" size="md" icon="arrow_back" to="/recurring-booking?tab=invoices">
+        <AuraButton
+          variant="outline"
+          size="md"
+          icon="arrow_back"
+          to="/recurring-booking?tab=invoices"
+        >
           <span>Quay Lại Danh Sách</span>
         </AuraButton>
       </div>
@@ -129,10 +124,7 @@ onMounted(() => {
       />
 
       <!-- Occurrences List -->
-      <CycleOccurrencesTable
-        :occurrences="occurrences"
-        :invoice="invoice"
-      />
+      <CycleOccurrencesTable :occurrences="occurrences" :invoice="invoice" />
     </div>
 
     <!-- Payment Modal -->

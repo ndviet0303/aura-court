@@ -27,6 +27,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $orgId);
         $walletService->credit($wallet, $balance, 'test_topup', 1, 'Fund for test');
+
         return $user;
     }
 

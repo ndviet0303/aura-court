@@ -85,10 +85,12 @@ const { t } = useI18n()
             <span class="dot-online"></span> {{ t('auth.tagInstantBooking') }}
           </span>
           <span class="trust-tag">
-            <span class="material-symbols-outlined tag-icon">verified_user</span> {{ t('auth.tagMoneyBack') }}
+            <span class="material-symbols-outlined tag-icon">verified_user</span>
+            {{ t('auth.tagMoneyBack') }}
           </span>
           <span class="trust-tag">
-            <span class="material-symbols-outlined tag-icon">leaderboard</span> {{ t('auth.tagLeaderboard') }}
+            <span class="material-symbols-outlined tag-icon">leaderboard</span>
+            {{ t('auth.tagLeaderboard') }}
           </span>
         </div>
       </div>
@@ -98,7 +100,12 @@ const { t } = useI18n()
 
 <style scoped>
 .brand-panel {
-  background: linear-gradient(145deg, rgba(201, 161, 90, 0.12) 0%, rgba(107, 45, 63, 0.05) 50%, #FAF7F3 100%);
+  background: linear-gradient(
+    145deg,
+    rgba(201, 161, 90, 0.12) 0%,
+    rgba(107, 45, 63, 0.05) 50%,
+    #faf7f3 100%
+  );
   border-right: 1px solid var(--border, #ebdccb);
   padding: 44px 38px;
   display: flex;
@@ -109,7 +116,12 @@ const { t } = useI18n()
 }
 
 html.dark .brand-panel {
-  background: linear-gradient(145deg, rgba(74, 29, 43, 0.5) 0%, rgba(30, 25, 28, 0.95) 50%, #171315 100%);
+  background: linear-gradient(
+    145deg,
+    rgba(74, 29, 43, 0.5) 0%,
+    rgba(30, 25, 28, 0.95) 50%,
+    #171315 100%
+  );
   border-color: #382f35;
 }
 
@@ -119,7 +131,12 @@ html.dark .brand-panel {
   left: -20%;
   width: 280px;
   height: 280px;
-  background: radial-gradient(circle, rgba(223, 186, 114, 0.25) 0%, rgba(107, 45, 63, 0.2) 60%, transparent 80%);
+  background: radial-gradient(
+    circle,
+    rgba(223, 186, 114, 0.25) 0%,
+    rgba(107, 45, 63, 0.2) 60%,
+    transparent 80%
+  );
   filter: blur(50px);
   pointer-events: none;
 }
@@ -193,7 +210,7 @@ html.dark .brand-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6B2D3F;
+  color: #6b2d3f;
   flex-shrink: 0;
   box-shadow: 0 3px 10px rgba(107, 45, 63, 0.06);
 }
@@ -271,7 +288,7 @@ html.dark .avatar-circle {
 
 .av-1 {
   background: #fbe8ec;
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 .av-2 {
@@ -292,7 +309,7 @@ html.dark .avatar-circle {
   margin-left: 8px;
   font-size: 11px;
   font-weight: 800;
-  color: #6B2D3F;
+  color: #6b2d3f;
   background: rgba(107, 45, 63, 0.1);
   padding: 2px 8px;
   border-radius: 999px;
@@ -368,7 +385,7 @@ html.dark .trust-tag {
 
 .tag-icon {
   font-size: 13px;
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .tag-icon {
@@ -389,4 +406,3 @@ html.dark .tag-icon {
   }
 }
 </style>
-

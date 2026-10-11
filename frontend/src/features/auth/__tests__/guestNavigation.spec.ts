@@ -383,7 +383,6 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       expect(router.currentRoute.value.path).toBe('/register')
     })
 
-
     it('restores valid customer session on direct URL entry or reload to /login and redirects to home', async () => {
       const auth = useAuthStore()
       auth.user = null
@@ -520,7 +519,9 @@ describe('Guest Navigation and Auth Destination Rules', () => {
     })
 
     it('exercises authStore.resendVerification and delegates to authApi.resendVerification', async () => {
-      const resendSpy = vi.spyOn(authApi, 'resendVerification').mockResolvedValue({ message: 'Verification sent' })
+      const resendSpy = vi
+        .spyOn(authApi, 'resendVerification')
+        .mockResolvedValue({ message: 'Verification sent' })
       const auth = useAuthStore()
       await auth.resendVerification()
       expect(resendSpy).toHaveBeenCalledTimes(1)

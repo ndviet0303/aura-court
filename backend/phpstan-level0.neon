@@ -1,0 +1,12 @@
+# Shared settings. CI also runs this file on its own at level 0 with no baseline,
+# so a crash-class finding can never be absorbed into phpstan-baseline.neon.
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+
+parameters:
+    paths:
+        - app/
+    level: 0
+    parseModelCastsMethod: true
+    reportIgnoresWithoutComments: true

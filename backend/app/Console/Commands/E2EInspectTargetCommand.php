@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class E2EInspectTargetCommand extends Command
 {
@@ -29,7 +28,7 @@ class E2EInspectTargetCommand extends Command
         $cacheStore = (string) config('cache.default');
         $dbConnection = (string) config('database.default');
         $dbConfig = config("database.connections.{$dbConnection}") ?? [];
-        $rawUrl = (string) ($dbConfig['url'] ?? env('DB_URL') ?? env('DATABASE_URL') ?? '');
+        $rawUrl = (string) ($dbConfig['url'] ?? '');
 
         // Resolve effective config as processed by Laravel DatabaseManager
         try {
@@ -56,7 +55,7 @@ class E2EInspectTargetCommand extends Command
 
         // 2. Cache safety: Configuration must not be cached (can conceal overrides)
         if ($isConfigCached) {
-            $violations[] = "CONFIGURATION_CACHED: Cached configuration is active; test overrides cannot be trusted.";
+            $violations[] = 'CONFIGURATION_CACHED: Cached configuration is active; test overrides cannot be trusted.';
         }
 
         // 3. Database connection: Must be postgres
@@ -127,7 +126,7 @@ class E2EInspectTargetCommand extends Command
                     $violations[] = "DB_ACTUAL_REMOTE_IP: Connected PostgreSQL server IP '{$actualServerIp}' is not local loopback.";
                 }
             } catch (\Throwable $e) {
-                $violations[] = "DB_CONNECTION_FAILED: Unable to connect to database '{$dbName}': " . $e->getMessage();
+                $violations[] = "DB_CONNECTION_FAILED: Unable to connect to database '{$dbName}': ".$e->getMessage();
             }
         }
         $report = [
@@ -152,11 +151,13 @@ class E2EInspectTargetCommand extends Command
 
         if (! empty($violations)) {
             $this->output->writeln(json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-            $this->error("E2E preflight inspection failed with " . count($violations) . " violation(s).");
+            $this->error('E2E preflight inspection failed with '.count($violations).' violation(s).');
+
             return self::FAILURE;
         }
 
         $this->output->writeln(json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
         return self::SUCCESS;
     }
 }

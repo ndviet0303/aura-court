@@ -76,11 +76,13 @@ describe('BusinessInfoStep', () => {
     const saveBtn = wrapper.find('button[type="button"]')
     await saveBtn.trigger('click')
 
-    expect(save).toHaveBeenCalledWith(expect.objectContaining({
-      business_name: 'CLB The Thao Hoang Gia',
-      business_type: 'company',
-      expected_version: 1,
-    }))
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        business_name: 'CLB The Thao Hoang Gia',
+        business_type: 'company',
+        expected_version: 1,
+      }),
+    )
   })
 
   it('renders field errors inline', () => {
@@ -96,6 +98,35 @@ describe('BusinessInfoStep', () => {
     })
 
     expect(wrapper.text()).toContain('Mã số thuế không hợp lệ.')
+  })
+
+  it('saves edits made in the address and bank sections', async () => {
+    const save = vi.fn().mockResolvedValue(true)
+    const wrapper = mount(BusinessInfoStep, {
+      props: {
+        application: baseMockApp,
+        fieldErrors: {},
+        saving: false,
+        save,
+      },
+    })
+
+    await wrapper.find('input#ward').setValue('Phuong 1')
+    await wrapper.find('input#bank_account_number').setValue('987654321')
+    await wrapper.find('input#bank_account_holder').setValue('tran thi c')
+    expect(wrapper.find<HTMLInputElement>('input#bank_account_holder').element.value).toBe(
+      'TRAN THI C',
+    )
+
+    await wrapper.find('.btn-save-draft').trigger('click')
+
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ward: 'Phuong 1',
+        bank_account_number: '987654321',
+        bank_account_holder: 'TRAN THI C',
+      }),
+    )
   })
 
   it('renders 5 grouped sections and handles bank select and sports chips', async () => {
@@ -122,8 +153,12 @@ describe('BusinessInfoStep', () => {
     const bankSelect = wrapper.find<HTMLSelectElement>('select#bank_select')
     expect(bankSelect.exists()).toBe(true)
     await bankSelect.setValue('MB')
-    expect((wrapper.find<HTMLInputElement>('input#bank_code').element as HTMLInputElement).value).toBe('MB')
-    expect((wrapper.find<HTMLInputElement>('input#bank_name').element as HTMLInputElement).value).toContain('MBBank')
+    expect(
+      (wrapper.find<HTMLInputElement>('input#bank_code').element as HTMLInputElement).value,
+    ).toBe('MB')
+    expect(
+      (wrapper.find<HTMLInputElement>('input#bank_name').element as HTMLInputElement).value,
+    ).toContain('MBBank')
 
     // Sports chip click
     const chips = wrapper.findAll('.sport-chip-btn')
@@ -131,7 +166,9 @@ describe('BusinessInfoStep', () => {
     const pickleballChip = chips.find((c) => c.text().includes('Pickleball'))
     expect(pickleballChip).toBeDefined()
     await pickleballChip!.trigger('click')
-    expect((wrapper.find<HTMLInputElement>('input#sports').element as HTMLInputElement).value).toContain('Pickleball')
+    expect(
+      (wrapper.find<HTMLInputElement>('input#sports').element as HTMLInputElement).value,
+    ).toContain('Pickleball')
   })
 })
 

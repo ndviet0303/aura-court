@@ -12,14 +12,16 @@ function getBackendEnv(manifest: any) {
 
 test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đổi tài khoản & Lưu giữ snapshot @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')
     })
   })
 
-  test('7.5.1: Hướng dẫn khi thiếu kết nối nhận tiền & Chặn công khai cơ sở chưa sẵn sàng', async ({ page }) => {
+  test('7.5.1: Hướng dẫn khi thiếu kết nối nhận tiền & Chặn công khai cơ sở chưa sẵn sàng', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -50,11 +52,13 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       echo json_encode(['id' => $venue->id, 'slug' => $venue->slug]);
     `
 
-    const created = JSON.parse(execFileSync('php', ['-r', createVenueScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { id: number; slug: string }
+    const created = JSON.parse(
+      execFileSync('php', ['-r', createVenueScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { id: number; slug: string }
 
     // 2. Log in as owner and navigate to /admin/venues
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -68,7 +72,10 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     // 3. Find venue card and open readiness modal
     const venueCard = page.locator('.venue-admin-card', { hasText: created.slug })
     await expect(venueCard).toBeVisible({ timeout: 10000 })
-    await venueCard.locator('button:has-text("Điều kiện"), button:has-text("Readiness"), .btn-action-sm').first().click()
+    await venueCard
+      .locator('button:has-text("Điều kiện"), button:has-text("Readiness"), .btn-action-sm')
+      .first()
+      .click()
 
     // 4. Modal and OwnerReceivingConnectionPanel are displayed
     const panel = page.locator('[data-testid="owner-receiving-connection-panel"]')
@@ -85,7 +92,9 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(readinessModal).toContainText('điều kiện còn thiếu')
   })
 
-  test('7.5.2: Tạo kết nối nhận tiền, đổi thông tin xác thực (HMAC & API token) qua giao diện', async ({ page }) => {
+  test('7.5.2: Tạo kết nối nhận tiền, đổi thông tin xác thực (HMAC & API token) qua giao diện', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -116,11 +125,13 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       echo json_encode(['id' => $venue->id, 'slug' => $venue->slug]);
     `
 
-    const created = JSON.parse(execFileSync('php', ['-r', createVenueScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { id: number; slug: string }
+    const created = JSON.parse(
+      execFileSync('php', ['-r', createVenueScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { id: number; slug: string }
 
     // 2. Log in as owner and navigate to /admin/venues
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
@@ -134,7 +145,10 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     // 3. Open readiness modal
     const venueCard = page.locator('.venue-admin-card', { hasText: created.slug })
     await expect(venueCard).toBeVisible({ timeout: 10000 })
-    await venueCard.locator('button:has-text("Điều kiện"), button:has-text("Readiness"), .btn-action-sm').first().click()
+    await venueCard
+      .locator('button:has-text("Điều kiện"), button:has-text("Readiness"), .btn-action-sm')
+      .first()
+      .click()
 
     const panel = page.locator('[data-testid="owner-receiving-connection-panel"]')
     await expect(panel).toBeVisible({ timeout: 10000 })
@@ -152,14 +166,18 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(panel.locator('[data-testid="receiving-connection-status"]')).toBeVisible()
 
     // 6. Rotate HMAC secret via UI
-    await panel.locator('[data-testid="hmac-secret-input"]').fill('new_secret_key_v2_1234567890abcdef_32chars')
+    await panel
+      .locator('[data-testid="hmac-secret-input"]')
+      .fill('new_secret_key_v2_1234567890abcdef_32chars')
     await panel.locator('[data-testid="save-hmac-secret"]').click()
 
     // Success notice appears
     await expect(panel.locator('.bg-emerald-50')).toBeVisible({ timeout: 10000 })
 
     // 7. Open Query API details and rotate API token
-    await panel.locator('details').evaluate((el: HTMLDetailsElement) => { el.open = true })
+    await panel.locator('details').evaluate((el: HTMLDetailsElement) => {
+      el.open = true
+    })
     await panel.locator('details input').first().fill('ACC_SEPAY_998877')
     await panel.locator('[data-testid="sepay-api-token-input"]').fill('A'.repeat(64))
     await panel.locator('[data-testid="save-sepay-api-token"]').click()
@@ -168,25 +186,39 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(panel.locator('text=connection_created').first()).toBeVisible()
 
     // 9. Re-query API to confirm query_api_configured and provider_account_id persisted
-    const refreshedConn = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      return await api.get(`/partner/organizations/${orgId}/venues/${venueId}/receiving-connection`)
-    }, { orgId, venueId: created.id }) as { data: { id: number; query_api_configured: boolean; provider_account_id: string } }
+    const refreshedConn = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        return await api.get(
+          `/partner/organizations/${orgId}/venues/${venueId}/receiving-connection`,
+        )
+      },
+      { orgId, venueId: created.id },
+    )) as { data: { id: number; query_api_configured: boolean; provider_account_id: string } }
 
     expect(refreshedConn.data.query_api_configured).toBe(true)
     expect(refreshedConn.data.provider_account_id).toBe('ACC_SEPAY_998877')
 
     // 10. Query evidence endpoint to prove api_token_rotated and credential_rotated are persisted
-    const evidenceRes = await withE2EApi(page, async ({ api }, { orgId, venueId, connId }) => {
-      return await api.get(`/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/evidence`)
-    }, { orgId, venueId: created.id, connId: refreshedConn.data.id }) as {
+    const evidenceRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId, connId }) => {
+        return await api.get(
+          `/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/evidence`,
+        )
+      },
+      { orgId, venueId: created.id, connId: refreshedConn.data.id },
+    )) as {
       data: Array<{ id: number; event_type: string; credential_version: number }>
     }
 
-    expect(evidenceRes.data.some(e => e.event_type === 'api_token_rotated')).toBe(true)
-    expect(evidenceRes.data.some(e => e.event_type === 'credential_rotated')).toBe(true)
+    expect(evidenceRes.data.some((e) => e.event_type === 'api_token_rotated')).toBe(true)
+    expect(evidenceRes.data.some((e) => e.event_type === 'credential_rotated')).toBe(true)
   })
 
-  test('7.5.3: Sự kiện xác thực nhận tiền từ webhook & Chọn kết nối đánh dấu cơ sở sẵn sàng', async ({ page }) => {
+  test('7.5.3: Sự kiện xác thực nhận tiền từ webhook & Chọn kết nối đánh dấu cơ sở sẵn sàng', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -244,11 +276,13 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { venue_id: number; venue_slug: string; rc_id: number; routing_id: string }
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { venue_id: number; venue_slug: string; rc_id: number; routing_id: string }
 
     // 2. Exercise real signed inbound webhook to verify the receiving connection
     const crypto = await import('node:crypto')
@@ -260,16 +294,24 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       transferType: 'in',
       transferAmount: 50000,
     })
-    const signature = 'sha256=' + crypto.createHmac('sha256', 'verified_secret_123').update(`${timestamp}.${rawBody}`).digest('hex')
+    const signature =
+      'sha256=' +
+      crypto
+        .createHmac('sha256', 'verified_secret_123')
+        .update(`${timestamp}.${rawBody}`)
+        .digest('hex')
 
-    const webhookRes = await page.request.post(`${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.routing_id}`, {
-      headers: {
-        'X-SePay-Timestamp': timestamp,
-        'X-SePay-Signature': signature,
-        'Content-Type': 'application/json',
+    const webhookRes = await page.request.post(
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.routing_id}`,
+      {
+        headers: {
+          'X-SePay-Timestamp': timestamp,
+          'X-SePay-Signature': signature,
+          'Content-Type': 'application/json',
+        },
+        data: rawBody,
       },
-      data: rawBody,
-    })
+    )
 
     expect(webhookRes.ok()).toBe(true)
     const webhookData = await webhookRes.json()
@@ -286,7 +328,10 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     // 3. Open readiness modal
     const venueCard = page.locator('.venue-admin-card', { hasText: arranged.venue_slug })
     await expect(venueCard).toBeVisible({ timeout: 10000 })
-    await venueCard.locator('button:has-text("Điều kiện"), button:has-text("Readiness"), .btn-action-sm').first().click()
+    await venueCard
+      .locator('button:has-text("Điều kiện"), button:has-text("Readiness"), .btn-action-sm')
+      .first()
+      .click()
 
     const panel = page.locator('[data-testid="owner-receiving-connection-panel"]')
     await expect(panel).toBeVisible({ timeout: 10000 })
@@ -300,7 +345,9 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await selectBtn.click()
 
     // 6. Selected badge appears in UI
-    await expect(panel.locator('[data-testid="selected-receiver-badge"]')).toBeVisible({ timeout: 10000 })
+    await expect(panel.locator('[data-testid="selected-receiver-badge"]')).toBeVisible({
+      timeout: 10000,
+    })
 
     // 7. Verify backend state updated
     const verifyScript = `
@@ -317,16 +364,20 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       ]);
     `
 
-    const verifyState = JSON.parse(execFileSync('php', ['-r', verifyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { matches: boolean }
+    const verifyState = JSON.parse(
+      execFileSync('php', ['-r', verifyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { matches: boolean }
 
     expect(verifyState.matches).toBe(true)
   })
 
-  test('7.5.4: Lưu giữ snapshot thông tin nhận tiền của lượt thanh toán khi chủ sân đổi tài khoản ngân hàng', async ({ page }) => {
+  test('7.5.4: Lưu giữ snapshot thông tin nhận tiền của lượt thanh toán khi chủ sân đổi tài khoản ngân hàng', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const customer = getActorCredentials(manifest, 'customer')
@@ -405,11 +456,13 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       ]);
     `
 
-    const attemptResult = JSON.parse(execFileSync('php', ['-r', attemptScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const attemptResult = JSON.parse(
+      execFileSync('php', ['-r', attemptScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       venue_id: number
       attempt_id: number
       connection_id: number
@@ -428,11 +481,18 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    const rotateRes = await withE2EApi(page, async ({ api }, { orgId, venueId, connId }) => {
-      return await api.post(`/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/credential`, {
-        hmac_secret: 'brand_new_secret_after_attempt_was_created',
-      })
-    }, { orgId, venueId: attemptResult.venue_id, connId: attemptResult.connection_id }) as { data: { credential_version: number } }
+    const rotateRes = (await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId, connId }) => {
+        return await api.post(
+          `/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/credential`,
+          {
+            hmac_secret: 'brand_new_secret_after_attempt_was_created',
+          },
+        )
+      },
+      { orgId, venueId: attemptResult.venue_id, connId: attemptResult.connection_id },
+    )) as { data: { credential_version: number } }
 
     expect(rotateRes.data.credential_version).toBe(attemptResult.initial_version + 1)
 
@@ -455,11 +515,13 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       ]);
     `
 
-    const verifyExec = JSON.parse(execFileSync('php', ['-r', verifyRetentionScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const verifyExec = JSON.parse(
+      execFileSync('php', ['-r', verifyRetentionScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       attempt_version: number
       snapshot_version: number
       snapshot_conn_id: number
@@ -471,7 +533,9 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     expect(verifyExec.snapshot_conn_id).toBe(attemptResult.connection_id)
   })
 
-  test('7.5.5: Người dùng không được phân quyền bị từ chối chỉnh sửa kết nối nhận tiền', async ({ page }) => {
+  test('7.5.5: Người dùng không được phân quyền bị từ chối chỉnh sửa kết nối nhận tiền', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const orgId = manifest.fixtures?.organizations.org1?.id
@@ -488,34 +552,45 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Customer attempts to create receiving connection: 403 Forbidden
-    const deniedCreate = await withE2EApi(page, async ({ api }, { orgId, venueId }) => {
-      try {
-        await api.post(`/partner/organizations/${orgId}/venues/${venueId}/receiving-connection`, {
-          bank_code: 'MBBank',
-          account_name: 'HACKER ACCOUNT',
-          account_number: '9999999999',
-          legal_owner_confirmed: true,
-        })
-        return false
-      } catch (err: any) {
-        return err.status === 403 || err.response?.status === 403
-      }
-    }, { orgId, venueId })
+    const deniedCreate = await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId }) => {
+        try {
+          await api.post(`/partner/organizations/${orgId}/venues/${venueId}/receiving-connection`, {
+            bank_code: 'MBBank',
+            account_name: 'HACKER ACCOUNT',
+            account_number: '9999999999',
+            legal_owner_confirmed: true,
+          })
+          return false
+        } catch (err: any) {
+          return err.status === 403 || err.response?.status === 403
+        }
+      },
+      { orgId, venueId },
+    )
 
     expect(deniedCreate).toBe(true)
 
     // 3. Customer attempts to rotate credentials on existing connection: 403 Forbidden
     const connId = venue.receivingConnectionId || 1
-    const deniedRotate = await withE2EApi(page, async ({ api }, { orgId, venueId, connId }) => {
-      try {
-        await api.post(`/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/credential`, {
-          hmac_secret: 'unauthorized_hack',
-        })
-        return false
-      } catch (err: any) {
-        return err.status === 403 || err.response?.status === 403
-      }
-    }, { orgId, venueId, connId })
+    const deniedRotate = await withE2EApi(
+      page,
+      async ({ api }, { orgId, venueId, connId }) => {
+        try {
+          await api.post(
+            `/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/credential`,
+            {
+              hmac_secret: 'unauthorized_hack',
+            },
+          )
+          return false
+        } catch (err: any) {
+          return err.status === 403 || err.response?.status === 403
+        }
+      },
+      { orgId, venueId, connId },
+    )
 
     expect(deniedRotate).toBe(true)
   })

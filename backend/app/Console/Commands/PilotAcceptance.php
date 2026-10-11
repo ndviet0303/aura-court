@@ -15,6 +15,7 @@ class PilotAcceptance extends Command
     {
         $run = $acceptance->run((bool) $this->option('include-load'), (bool) $this->option('include-recovery'));
         $this->line(json_encode($run->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
         return $run->status === 'passed' ? self::SUCCESS : self::FAILURE;
     }
 }

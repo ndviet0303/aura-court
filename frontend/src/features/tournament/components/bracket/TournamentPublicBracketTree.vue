@@ -184,8 +184,6 @@ function handleSelectMatch(match: BracketMatch) {
   </div>
 </template>
 
-
-
 <style scoped>
 .bracket-tree-wrapper {
   display: grid;
@@ -317,11 +315,19 @@ function handleSelectMatch(match: BracketMatch) {
 }
 
 @keyframes pulse-dot {
-  0% { transform: scale(0.9); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.5; }
-  100% { transform: scale(0.9); opacity: 1; }
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
 }
-
 
 .player-slot {
   display: flex;
@@ -400,4 +406,3 @@ function handleSelectMatch(match: BracketMatch) {
   max-width: 420px;
 }
 </style>
-

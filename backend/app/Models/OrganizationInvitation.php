@@ -11,8 +11,11 @@ class OrganizationInvitation extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_ACCEPTED = 'accepted';
+
     public const STATUS_REVOKED = 'revoked';
+
     public const STATUS_EXPIRED = 'expired';
 
     protected $fillable = [

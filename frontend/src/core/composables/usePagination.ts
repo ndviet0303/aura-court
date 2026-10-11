@@ -11,9 +11,7 @@ export function usePagination(options: PaginationOptions = {}) {
   const pageSize = ref(options.pageSize ?? 10)
   const totalItems = ref(options.totalItems ?? 0)
 
-  const totalPages = computed(() =>
-    Math.max(1, Math.ceil(totalItems.value / pageSize.value))
-  )
+  const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / pageSize.value)))
 
   const hasNextPage = computed(() => currentPage.value < totalPages.value)
   const hasPrevPage = computed(() => currentPage.value > 1)

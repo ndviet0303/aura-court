@@ -7,7 +7,6 @@ use App\Models\Journal;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosOrder;
-use App\Models\PosPayment;
 use App\Models\PosProduct;
 use App\Models\StockMovement;
 use App\Models\User;
@@ -19,10 +18,15 @@ class PosIntegratedAcceptanceTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $cashier1;
+
     private User $cashier2;
+
     private CashShift $shift1;
+
     private CashShift $shift2;
+
     private PosProduct $product;
 
     protected function setUp(): void
@@ -31,7 +35,7 @@ class PosIntegratedAcceptanceTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Arena Acceptance',
-            'slug' => 'aura-acc-' . uniqid(),
+            'slug' => 'aura-acc-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -93,7 +97,7 @@ class PosIntegratedAcceptanceTest extends TestCase
             'cash_tendered' => 500000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'err-stock-' . uniqid(),
+            'Idempotency-Key' => 'err-stock-'.uniqid(),
         ]);
 
         $outOfStockRes->assertStatus(409)
@@ -116,7 +120,7 @@ class PosIntegratedAcceptanceTest extends TestCase
             'cash_tendered' => 50000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'err-shift-' . uniqid(),
+            'Idempotency-Key' => 'err-shift-'.uniqid(),
         ]);
 
         $closedShiftRes->assertStatus(409)
@@ -135,7 +139,7 @@ class PosIntegratedAcceptanceTest extends TestCase
             'offline' => true, // Offline draft flag
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'draft-off-' . uniqid(),
+            'Idempotency-Key' => 'draft-off-'.uniqid(),
         ]);
 
         $offlineRes->assertStatus(409)
@@ -210,14 +214,14 @@ class PosIntegratedAcceptanceTest extends TestCase
         // Cashier 1 checks out the last remaining unit
         $res1 = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', $payload, [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'race-cashier-1-' . uniqid(),
+            'Idempotency-Key' => 'race-cashier-1-'.uniqid(),
         ]);
         $res1->assertCreated();
 
         // Cashier 2 attempts to checkout at the same time
         $res2 = $this->actingAs($this->cashier2)->postJson('/api/v2/pos/orders', $payload, [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'race-cashier-2-' . uniqid(),
+            'Idempotency-Key' => 'race-cashier-2-'.uniqid(),
         ]);
         $res2->assertStatus(409)
             ->assertJsonFragment(['message' => "Insufficient stock for {$this->product->sku}."]);
@@ -236,7 +240,7 @@ class PosIntegratedAcceptanceTest extends TestCase
             'cash_tendered' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'receipt-reload-' . uniqid(),
+            'Idempotency-Key' => 'receipt-reload-'.uniqid(),
         ]);
 
         $checkoutRes->assertCreated();

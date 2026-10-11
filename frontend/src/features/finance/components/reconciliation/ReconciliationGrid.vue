@@ -28,7 +28,9 @@ function formatCurrency(amount: number): string {
     <div class="grid-header">
       <div class="header-left">
         <h2 class="grid-title">{{ t('admin.reconciliation.gridTitle') }}</h2>
-        <span class="count-badge">{{ t('admin.reconciliation.countBadge', { count: items.length }) }}</span>
+        <span class="count-badge">{{
+          t('admin.reconciliation.countBadge', { count: items.length })
+        }}</span>
       </div>
       <div class="grid-subtitle">
         {{ t('admin.reconciliation.gridSubtitle') }}
@@ -67,8 +69,12 @@ function formatCurrency(amount: number): string {
               <td class="text-right"><div class="skeleton-cell w-20 h-4 ml-auto"></div></td>
               <td class="text-right"><div class="skeleton-cell w-20 h-4 ml-auto"></div></td>
               <td class="text-right"><div class="skeleton-cell w-16 h-4 ml-auto"></div></td>
-              <td class="text-center"><div class="skeleton-cell w-24 h-5 mx-auto rounded-full"></div></td>
-              <td class="text-center"><div class="skeleton-cell w-12 h-5 mx-auto rounded"></div></td>
+              <td class="text-center">
+                <div class="skeleton-cell w-24 h-5 mx-auto rounded-full"></div>
+              </td>
+              <td class="text-center">
+                <div class="skeleton-cell w-12 h-5 mx-auto rounded"></div>
+              </td>
               <td class="text-right"><div class="skeleton-cell w-20 h-7 ml-auto rounded"></div></td>
             </tr>
           </template>
@@ -94,7 +100,9 @@ function formatCurrency(amount: number): string {
             <!-- TXN Code -->
             <td>
               <div class="txn-code-wrap">
-                <span class="txn-code">{{ item.txnCode || item.details?.txnCode || `REC-${item.id}` }}</span>
+                <span class="txn-code">{{
+                  item.txnCode || item.details?.txnCode || `REC-${item.id}`
+                }}</span>
                 <span class="txn-date">{{ item.run_date }}</span>
               </div>
             </td>
@@ -102,7 +110,9 @@ function formatCurrency(amount: number): string {
             <!-- Channel -->
             <td>
               <div class="channel-info">
-                <span class="channel-name">{{ item.channel || item.details?.channel || 'VietQR Pro' }}</span>
+                <span class="channel-name">{{
+                  item.channel || item.details?.channel || 'VietQR Pro'
+                }}</span>
                 <span v-if="item.details?.customer" class="customer-preview">
                   {{ item.details.customer }}
                 </span>
@@ -162,9 +172,13 @@ function formatCurrency(amount: number): string {
               <span
                 class="risk-pill"
                 :class="{
-                  'risk-high': (item.riskLevel || item.details?.riskLevel) === 'high' || (item.riskLevel || item.details?.riskLevel) === 'critical',
+                  'risk-high':
+                    (item.riskLevel || item.details?.riskLevel) === 'high' ||
+                    (item.riskLevel || item.details?.riskLevel) === 'critical',
                   'risk-med': (item.riskLevel || item.details?.riskLevel) === 'medium',
-                  'risk-low': (item.riskLevel || item.details?.riskLevel) === 'low' || !(item.riskLevel || item.details?.riskLevel),
+                  'risk-low':
+                    (item.riskLevel || item.details?.riskLevel) === 'low' ||
+                    !(item.riskLevel || item.details?.riskLevel),
                 }"
               >
                 {{
@@ -180,11 +194,7 @@ function formatCurrency(amount: number): string {
             <!-- Actions -->
             <td class="text-right">
               <div class="action-btn-group">
-                <button
-                  class="btn-investigate"
-                  type="button"
-                  @click="emit('investigate', item)"
-                >
+                <button class="btn-investigate" type="button" @click="emit('investigate', item)">
                   <span class="material-symbols-outlined">analytics</span>
                   {{ t('admin.reconciliation.btnInvestigate') }}
                 </button>
@@ -515,25 +525,62 @@ function formatCurrency(amount: number): string {
   animation: shimmer 1.5s infinite;
 }
 
-.w-12 { width: 48px; }
-.w-16 { width: 64px; }
-.w-20 { width: 80px; }
-.w-24 { width: 96px; }
-.w-28 { width: 112px; }
-.w-36 { width: 144px; }
-.h-3 { height: 12px; }
-.h-4 { height: 16px; }
-.h-5 { height: 20px; }
-.h-7 { height: 28px; }
-.mt-1 { margin-top: 4px; }
-.ml-auto { margin-left: auto; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.rounded { border-radius: 6px; }
-.rounded-full { border-radius: 999px; }
+.w-12 {
+  width: 48px;
+}
+.w-16 {
+  width: 64px;
+}
+.w-20 {
+  width: 80px;
+}
+.w-24 {
+  width: 96px;
+}
+.w-28 {
+  width: 112px;
+}
+.w-36 {
+  width: 144px;
+}
+.h-3 {
+  height: 12px;
+}
+.h-4 {
+  height: 16px;
+}
+.h-5 {
+  height: 20px;
+}
+.h-7 {
+  height: 28px;
+}
+.mt-1 {
+  margin-top: 4px;
+}
+.ml-auto {
+  margin-left: auto;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.rounded {
+  border-radius: 6px;
+}
+.rounded-full {
+  border-radius: 999px;
+}
 
 @keyframes shimmer {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 </style>

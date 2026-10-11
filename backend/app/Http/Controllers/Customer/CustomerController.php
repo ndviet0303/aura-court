@@ -15,9 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
-    public function __construct(private readonly TenantContext $tenantContext)
-    {
-    }
+    public function __construct(private readonly TenantContext $tenantContext) {}
 
     private function resolveOrganization(Request $request): Organization
     {

@@ -72,7 +72,7 @@ export function useAdminDisputes() {
           item.complainant?.name?.toLowerCase().includes(kw) ||
           item.respondent?.name?.toLowerCase().includes(kw) ||
           item.facility?.name?.toLowerCase().includes(kw) ||
-          (item.bookingId && String(item.bookingId).includes(kw))
+          (item.bookingId && String(item.bookingId).includes(kw)),
       )
     }
 
@@ -83,10 +83,7 @@ export function useAdminDisputes() {
     loading.value = true
     error.value = null
     try {
-      const [list, statsData] = await Promise.all([
-        disputeApi.getDisputes(),
-        disputeApi.getStats(),
-      ])
+      const [list, statsData] = await Promise.all([disputeApi.getDisputes(), disputeApi.getStats()])
       disputes.value = list
       stats.value = statsData
 

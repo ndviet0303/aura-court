@@ -3,19 +3,14 @@
 namespace Tests\Feature\Readiness;
 
 use App\Models\Booking;
-use App\Models\CashShift;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\DisputeCase;
-use App\Models\FeedComment;
 use App\Models\FeedPost;
 use App\Models\FeedReport;
 use App\Models\FinanceException;
-use App\Models\ModerationRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\OwnerPaymentAttempt;
-use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
 use App\Models\PosProduct;
 use App\Models\PriceRule;
@@ -24,17 +19,12 @@ use App\Models\ReconciliationRun;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
-use App\Models\SplitGroup;
-use App\Models\SplitShare;
-use App\Models\SportZone;
 use App\Models\Tournament;
-use App\Models\TournamentFixture;
 use App\Models\TournamentGrant;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Models\WalletAccount;
-use App\Services\Booking\BookingService;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\POS\PosService;
@@ -215,9 +205,9 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $response = $this->actingAs($fixture['payer'])
             ->withHeaders([
                 'X-Organization-ID' => (string) $fixture['organization']->id,
-                'Idempotency-Key' => 'split-pay-unverified-' . uniqid(),
+                'Idempotency-Key' => 'split-pay-unverified-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-shares/' . $share->id . '/pay', [
+            ->postJson('/api/v2/split-shares/'.$share->id.'/pay', [
                 'amount' => 100000,
                 'payment_reference' => 'UNVERIFIED-FAKE-PROVIDER-REF-999',
             ]);
@@ -247,9 +237,9 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $response = $this->actingAs($fixture['payer'])
             ->withHeaders([
                 'X-Organization-ID' => (string) $fixture['organization']->id,
-                'Idempotency-Key' => 'split-pay-expired-' . uniqid(),
+                'Idempotency-Key' => 'split-pay-expired-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-shares/' . $share->id . '/pay', [
+            ->postJson('/api/v2/split-shares/'.$share->id.'/pay', [
                 'amount' => 100000,
                 'payment_reference' => 'ANY-REF',
             ]);
@@ -292,7 +282,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         // 1. Negative product price in product management -> 422
         $badProductRes = $this->actingAs($cashier)->postJson('/api/v2/pos/products', [
-            'sku' => 'NEG-PRICE-' . uniqid(),
+            'sku' => 'NEG-PRICE-'.uniqid(),
             'name' => 'Negative Price Drink',
             'price' => -15000,
         ], ['X-Organization-Id' => $org->id]);
@@ -319,7 +309,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'payment_method' => 'cash',
         ], [
             'X-Organization-Id' => $org->id,
-            'Idempotency-Key' => 'bad-order-' . uniqid(),
+            'Idempotency-Key' => 'bad-order-'.uniqid(),
         ]);
         $badOrderRes1->assertStatus(422);
 
@@ -329,7 +319,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'payment_method' => 'cash',
         ], [
             'X-Organization-Id' => $org->id,
-            'Idempotency-Key' => 'empty-order-' . uniqid(),
+            'Idempotency-Key' => 'empty-order-'.uniqid(),
         ]);
         $badOrderRes2->assertStatus(422);
     }
@@ -356,7 +346,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'payment_method' => 'qr',
         ], [
             'X-Organization-Id' => $org->id,
-            'Idempotency-Key' => 'pending-qr-' . uniqid(),
+            'Idempotency-Key' => 'pending-qr-'.uniqid(),
         ]);
         $orderRes->assertCreated();
 
@@ -365,7 +355,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'declared_cash' => 100000,
         ], [
             'X-Organization-Id' => $org->id,
-            'Idempotency-Key' => 'close-fail-' . uniqid(),
+            'Idempotency-Key' => 'close-fail-'.uniqid(),
         ]);
         $failClose->assertStatus(409);
         $this->assertStringContainsString('without disposition', $failClose->json('message'));
@@ -386,7 +376,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'reason' => 'Midday change float',
         ], [
             'X-Organization-Id' => $org->id,
-            'Idempotency-Key' => 'cash-in-' . uniqid(),
+            'Idempotency-Key' => 'cash-in-'.uniqid(),
         ]);
         $this->assertTrue(in_array($cashInRes->status(), [200, 201], true));
 
@@ -397,12 +387,12 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'reason' => 'Emergency mop replacement',
         ], [
             'X-Organization-Id' => $org->id,
-            'Idempotency-Key' => 'cash-out-' . uniqid(),
+            'Idempotency-Key' => 'cash-out-'.uniqid(),
         ]);
         $this->assertTrue(in_array($cashOutRes->status(), [200, 201], true));
 
         // Expected cash: 100,000 + 50,000 - 20,000 = 130,000
-        $closeKey = 'close-shift-balanced-' . uniqid();
+        $closeKey = 'close-shift-balanced-'.uniqid();
         $closeRes = $this->actingAs($cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 130000,
             'note' => 'Shift balanced',
@@ -446,7 +436,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'required_participants' => 4,
         ], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'past-match-' . uniqid(),
+            'Idempotency-Key' => 'past-match-'.uniqid(),
         ]);
         $pastRes->assertStatus(422);
 
@@ -460,7 +450,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'required_participants' => 4,
         ], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'bad-skill-' . uniqid(),
+            'Idempotency-Key' => 'bad-skill-'.uniqid(),
         ]);
         $skillRes->assertStatus(422);
     }
@@ -554,7 +544,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'score' => ['p1' => 21, 'p2' => 18],
         ], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'score-unauth-' . uniqid(),
+            'Idempotency-Key' => 'score-unauth-'.uniqid(),
         ]);
 
         $response->assertStatus(403);
@@ -572,7 +562,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'score' => ['p1' => 21, 'p2' => 14],
         ], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'score-official-' . uniqid(),
+            'Idempotency-Key' => 'score-official-'.uniqid(),
         ]);
         $scoreRes->assertOk();
 
@@ -584,7 +574,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         // 2. Finalize tournament
         $finRes = $this->actingAs($owner)->postJson("/api/v2/tournaments/{$tourney->id}/finalize", [], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'fin-' . uniqid(),
+            'Idempotency-Key' => 'fin-'.uniqid(),
         ]);
         $finRes->assertOk();
         $this->assertSame('finalized', $tourney->fresh()->status);
@@ -597,7 +587,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'reason' => 'Attempting post-finalization edit',
         ], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'score-locked-' . uniqid(),
+            'Idempotency-Key' => 'score-locked-'.uniqid(),
         ]);
         $lockRes->assertStatus(409);
     }
@@ -663,8 +653,8 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'organization_id' => $org->id,
             'venue_id' => $venue->id,
             'payer_id' => $customer->id,
-            'reference_code' => 'OBL-DISP-' . uniqid(),
-            'idempotency_key' => 'IDEM-OBL-' . uniqid(),
+            'reference_code' => 'OBL-DISP-'.uniqid(),
+            'idempotency_key' => 'IDEM-OBL-'.uniqid(),
             'request_fingerprint' => hash('sha256', uniqid()),
             'slot_ids' => [1],
             'gross_amount' => 150000,
@@ -684,7 +674,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'organization_id' => $org->id,
             'venue_id' => $venue->id,
             'user_id' => $customer->id,
-            'dispute_code' => 'DSP-' . strtoupper(uniqid()),
+            'dispute_code' => 'DSP-'.strtoupper(uniqid()),
             'booking_id' => $booking->id,
             'dispute_type' => 'court_quality',
             'status' => 'resolved',
@@ -745,7 +735,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         $exception = FinanceException::create([
             'organization_id' => $org->id,
-            'reference' => 'reconciliation:' . now()->toDateString(),
+            'reference' => 'reconciliation:'.now()->toDateString(),
             'type' => 'reconciliation_mismatch',
             'severity' => 'critical',
             'amount' => 150000,
@@ -772,7 +762,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'note' => 'Cố gắng bypass D47 bằng note thủ công',
         ], [
             'X-Organization-Id' => (string) $org->id,
-            'Idempotency-Key' => 'manual-resolve-note-only-' . uniqid(),
+            'Idempotency-Key' => 'manual-resolve-note-only-'.uniqid(),
         ]);
 
         $manualResolveRes->assertStatus(422)
@@ -795,7 +785,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         Booking::create([
             'court_id' => $courtA->id,
             'user_id' => $customer->id,
-            'code' => 'BK-CSV-' . strtoupper(uniqid()),
+            'code' => 'BK-CSV-'.strtoupper(uniqid()),
             'status' => 'confirmed',
             'total_amount' => 250000,
             'created_at' => now(),
@@ -803,12 +793,12 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         // 1. Owner A attempts to export reports of unauthorized Venue B -> 403 Forbidden
         $unauthExport = $this->actingAs($ownerA)
-            ->getJson('/api/v1/admin/reports/csv?venue_id=' . $venueB->id);
+            ->getJson('/api/v1/admin/reports/csv?venue_id='.$venueB->id);
         $unauthExport->assertStatus(403);
 
         // 2. Owner A exports reports of authorized Venue A -> 200 OK Streaming CSV
         $authExport = $this->actingAs($ownerA)
-            ->get('/api/v1/admin/reports/csv?venue_id=' . $venueA->id);
+            ->get('/api/v1/admin/reports/csv?venue_id='.$venueA->id);
         $authExport->assertOk();
 
         // Verify real streamed CSV content with headers and non-empty rows
@@ -832,15 +822,15 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $org = Organization::create([
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
 
         $venue = Venue::create([
             'organization_id' => $org->id,
-            'name' => $name . ' Venue',
-            'slug' => Str::slug($name) . '-venue-' . uniqid(),
+            'name' => $name.' Venue',
+            'slug' => Str::slug($name).'-venue-'.uniqid(),
             'status' => 'published',
             'is_active' => true,
         ]);
@@ -865,7 +855,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $organization = Organization::create([
             'name' => 'Split Org',
-            'slug' => 'split-org-' . uniqid(),
+            'slug' => 'split-org-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
@@ -880,7 +870,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $venue = Venue::create([
             'organization_id' => $organization->id,
             'name' => 'Split Venue',
-            'slug' => 'split-venue-' . uniqid(),
+            'slug' => 'split-venue-'.uniqid(),
             'status' => 'published',
             'is_active' => true,
         ]);
@@ -912,7 +902,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'effective_from' => now(),
         ]);
         $connection->setAccountDetails('Split Owner', '0987654321');
-        $connection->webhook_secret_ciphertext = Crypt::encryptString('whsec_' . Str::random(48));
+        $connection->webhook_secret_ciphertext = Crypt::encryptString('whsec_'.Str::random(48));
         $connection->save();
         $venue->forceFill(['current_receiving_connection_id' => $connection->id])->save();
 
@@ -934,7 +924,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'organization_id' => $fixture['organization']->id,
             'user_id' => $fixture['host']->id,
             'court_id' => $fixture['court']->id,
-            'code' => 'RSV-SPLIT-' . Str::upper(Str::random(8)),
+            'code' => 'RSV-SPLIT-'.Str::upper(Str::random(8)),
             'status' => 'held',
             'currency' => 'VND',
             'total_amount' => $amount,
@@ -973,14 +963,14 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $org = Organization::create([
             'name' => 'POS Org',
-            'slug' => 'pos-org-' . uniqid(),
+            'slug' => 'pos-org-'.uniqid(),
             'status' => 'active',
         ]);
 
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'POS Arena',
-            'slug' => 'pos-arena-' . uniqid(),
+            'slug' => 'pos-arena-'.uniqid(),
             'status' => 'published',
             'is_active' => true,
         ]);
@@ -1008,14 +998,14 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $org = Organization::create([
             'name' => 'Social Org',
-            'slug' => 'social-org-' . uniqid(),
+            'slug' => 'social-org-'.uniqid(),
             'status' => 'active',
         ]);
 
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Social Stadium',
-            'slug' => 'social-stadium-' . uniqid(),
+            'slug' => 'social-stadium-'.uniqid(),
             'status' => 'published',
             'is_active' => true,
             'timezone' => 'Asia/Ho_Chi_Minh',
@@ -1034,7 +1024,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $org = Organization::create([
             'name' => 'Tournament Org',
-            'slug' => 'tourney-org-' . uniqid(),
+            'slug' => 'tourney-org-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -1071,7 +1061,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $org = Organization::create([
             'name' => 'Dispute Org',
-            'slug' => 'disp-org-' . uniqid(),
+            'slug' => 'disp-org-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
@@ -1085,7 +1075,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Dispute Arena',
-            'slug' => 'disp-venue-' . uniqid(),
+            'slug' => 'disp-venue-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -1114,7 +1104,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     private function createCompletedBooking(User $customer, Court $court, Carbon $endedAt): Booking
     {
         $booking = Booking::create([
-            'code' => 'BK-' . strtoupper(uniqid()),
+            'code' => 'BK-'.strtoupper(uniqid()),
             'user_id' => $customer->id,
             'court_id' => $court->id,
             'total_amount' => 200000,
@@ -1137,7 +1127,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         $org = Organization::create([
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
@@ -1159,8 +1149,8 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         $venue = Venue::create([
             'organization_id' => $org->id,
-            'name' => $name . ' Stadium',
-            'slug' => Str::slug($name) . '-venue-' . uniqid(),
+            'name' => $name.' Stadium',
+            'slug' => Str::slug($name).'-venue-'.uniqid(),
             'status' => 'published',
             'is_active' => true,
         ]);

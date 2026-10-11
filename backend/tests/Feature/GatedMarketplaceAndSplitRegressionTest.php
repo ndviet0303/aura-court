@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\EntitlementTransfer;
 use App\Models\FinanceException;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\Reservation;
-use App\Models\ReservationEntitlement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\SplitPaymentService;
@@ -110,6 +108,29 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         ])->assertStatus(404);
     }
 
+    public function test_listings_fall_back_to_a_public_organization_when_tenant_resolution_fails(): void
+    {
+        config(['features.flags.marketplace_slot_resale' => true]);
+        // With no active organization, organization() aborts and listings() takes its public fallback.
+        Organization::query()->update(['status' => 'suspended']);
+        $suspended = Organization::create([
+            'name' => 'Org Suspended',
+            'slug' => 'org-suspended-'.uniqid(),
+            'status' => 'suspended',
+            'partner_status' => 'approved',
+        ]);
+        $browser = User::factory()->create();
+
+        $this->actingAs($browser)
+            ->getJson('/api/v2/marketplace/listings?organization_id='.$suspended->id)
+            ->assertOk()
+            ->assertJsonPath('data', []);
+        $this->actingAs($browser)
+            ->getJson('/api/v2/marketplace/listings')
+            ->assertOk()
+            ->assertJsonPath('data', []);
+    }
+
     public function test_split_payment_service_regression_shares_validation(): void
     {
         [$organization, $customer, $court, $reservation] = $this->setupTenantAndReservation(enablePilot: false);
@@ -121,6 +142,7 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
             ['amount' => 50000],
         ]);
     }
+
     public function test_marketplace_resale_and_successful_entitlement_transfer(): void
     {
         [$organization, $seller, $court, $reservation] = $this->setupTenantAndReservation(enablePilot: false);

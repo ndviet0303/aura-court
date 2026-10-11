@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\UtcDateTime;
+use App\Events\CourtStatusUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ class CourtBlock extends Model
         static::saved(function (CourtBlock $block): void {
             $court = $block->court ?? Court::find($block->court_id);
             if ($court && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
+                CourtStatusUpdated::dispatch(
                     venueId: (int) $court->venue_id,
                     courtId: (int) $court->id,
                     status: 'maintenance',
@@ -32,7 +33,7 @@ class CourtBlock extends Model
         static::deleted(function (CourtBlock $block): void {
             $court = $block->court ?? Court::find($block->court_id);
             if ($court && $court->venue_id) {
-                \App\Events\CourtStatusUpdated::dispatch(
+                CourtStatusUpdated::dispatch(
                     venueId: (int) $court->venue_id,
                     courtId: (int) $court->id,
                     status: 'available',

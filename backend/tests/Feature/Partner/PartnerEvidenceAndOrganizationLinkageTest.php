@@ -108,7 +108,7 @@ class PartnerEvidenceAndOrganizationLinkageTest extends TestCase
 
         $org = Organization::create([
             'name' => 'Sport Club A',
-            'slug' => 'sport-club-a-' . substr(uniqid(), -5),
+            'slug' => 'sport-club-a-'.substr(uniqid(), -5),
             'status' => 'active',
             'partner_status' => 'approved',
             'partner_status_changed_at' => now(),
@@ -124,7 +124,7 @@ class PartnerEvidenceAndOrganizationLinkageTest extends TestCase
 
         Organization::create([
             'name' => 'Sport Club A Duplicate',
-            'slug' => 'sport-club-a-dup-' . substr(uniqid(), -5),
+            'slug' => 'sport-club-a-dup-'.substr(uniqid(), -5),
             'status' => 'active',
             'partner_status' => 'approved',
             'source_kyc_id' => $kyc->id,

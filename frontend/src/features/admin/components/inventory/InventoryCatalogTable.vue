@@ -43,13 +43,15 @@ const categoryOptions = computed<DropdownOption[]>(() => {
     services: 'room_service',
   }
 
-  props.categories.filter((c) => c !== 'all').forEach((cat) => {
-    list.push({
-      value: cat,
-      label: getCategoryOptionLabel(cat),
-      icon: knownIcons[cat] || 'category',
+  props.categories
+    .filter((c) => c !== 'all')
+    .forEach((cat) => {
+      list.push({
+        value: cat,
+        label: getCategoryOptionLabel(cat),
+        icon: knownIcons[cat] || 'category',
+      })
     })
-  })
 
   return list
 })
@@ -215,9 +217,18 @@ function calculateMargin(price: number, cost: number): number {
           <span class="material-symbols-outlined empty-icon">inventory_2</span>
           <h4 class="empty-title">{{ t('common.noData') }}</h4>
           <p class="empty-desc">
-            {{ hasActiveFilters ? t('admin.inventory.noMatchingProducts') : t('admin.inventory.noProductsCreatedYet') }}
+            {{
+              hasActiveFilters
+                ? t('admin.inventory.noMatchingProducts')
+                : t('admin.inventory.noProductsCreatedYet')
+            }}
           </p>
-          <AuraButton v-if="hasActiveFilters" variant="outline" size="sm" @click="emit('resetFilters')">
+          <AuraButton
+            v-if="hasActiveFilters"
+            variant="outline"
+            size="sm"
+            @click="emit('resetFilters')"
+          >
             {{ t('common.reset') }}
           </AuraButton>
           <AuraButton v-else variant="primary" size="sm" @click="emit('addProduct')">
@@ -232,7 +243,9 @@ function calculateMargin(price: number, cost: number): number {
             <!-- 1. Product Avatar & Info -->
             <div class="col-prod p-name-sku">
               <div class="p-avatar-box" :class="getCategoryThemeClass(p.category)">
-                <span class="material-symbols-outlined p-avatar-icon">{{ getCategoryIcon(p.category) }}</span>
+                <span class="material-symbols-outlined p-avatar-icon">{{
+                  getCategoryIcon(p.category)
+                }}</span>
               </div>
               <div class="p-text-meta">
                 <strong class="p-name" :title="p.name">{{ resolveLocalizedText(p.name) }}</strong>
@@ -246,7 +259,9 @@ function calculateMargin(price: number, cost: number): number {
             <!-- 2. Category Pill -->
             <div class="col-cat">
               <span class="p-cat-tag" :class="getCategoryThemeClass(p.category)">
-                <span class="material-symbols-outlined icon-14">{{ getCategoryIcon(p.category) }}</span>
+                <span class="material-symbols-outlined icon-14">{{
+                  getCategoryIcon(p.category)
+                }}</span>
                 <span>{{ getCategoryShortLabel(p.category) }}</span>
               </span>
             </div>
@@ -255,10 +270,14 @@ function calculateMargin(price: number, cost: number): number {
             <div class="col-price p-prices">
               <div class="price-main-row">
                 <strong class="price-val font-mono">{{ formatCurrency(p.price) }}</strong>
-                <span v-if="p.price > p.cost" class="margin-badge font-mono">+{{ calculateMargin(p.price, p.cost) }}%</span>
+                <span v-if="p.price > p.cost" class="margin-badge font-mono"
+                  >+{{ calculateMargin(p.price, p.cost) }}%</span
+                >
                 <span class="vat-badge font-mono">VAT {{ p.tax_rate ?? 8 }}%</span>
               </div>
-              <span class="cost-sub font-mono">{{ t('admin.inventory.costSubLabel', { amount: formatCurrency(p.cost) }) }}</span>
+              <span class="cost-sub font-mono">{{
+                t('admin.inventory.costSubLabel', { amount: formatCurrency(p.cost) })
+              }}</span>
             </div>
 
             <!-- 4. Stock Info & Status Alert -->
@@ -266,19 +285,41 @@ function calculateMargin(price: number, cost: number): number {
               <div class="stock-qty-row">
                 <strong
                   class="stock-qty font-mono"
-                  :class="p.stock_quantity === 0 ? 'text-red' : p.stock_quantity <= p.min_stock ? 'text-yellow' : 'text-green'"
+                  :class="
+                    p.stock_quantity === 0
+                      ? 'text-red'
+                      : p.stock_quantity <= p.min_stock
+                        ? 'text-yellow'
+                        : 'text-green'
+                  "
                 >
                   {{ p.stock_quantity }} {{ p.unit }}
                 </strong>
                 <span
                   class="stock-status-pill"
-                  :class="p.stock_quantity === 0 ? 'pill-out' : p.stock_quantity <= p.min_stock ? 'pill-low' : 'pill-in'"
+                  :class="
+                    p.stock_quantity === 0
+                      ? 'pill-out'
+                      : p.stock_quantity <= p.min_stock
+                        ? 'pill-low'
+                        : 'pill-in'
+                  "
                 >
-                  ● {{ p.stock_quantity === 0 ? t('admin.inventory.outOfStockOption') : p.stock_quantity <= p.min_stock ? t('admin.inventory.lowStockOption') : t('admin.inventory.inStockOption') }}
+                  ●
+                  {{
+                    p.stock_quantity === 0
+                      ? t('admin.inventory.outOfStockOption')
+                      : p.stock_quantity <= p.min_stock
+                        ? t('admin.inventory.lowStockOption')
+                        : t('admin.inventory.inStockOption')
+                  }}
                 </span>
               </div>
 
-              <span v-if="p.stock_quantity <= p.min_stock && p.stock_quantity > 0" class="min-alert">
+              <span
+                v-if="p.stock_quantity <= p.min_stock && p.stock_quantity > 0"
+                class="min-alert"
+              >
                 <span class="material-symbols-outlined icon-12">warning</span>
                 <span>{{ t('admin.inventory.belowMinAlert', { min: p.min_stock }) }}</span>
               </span>
@@ -632,9 +673,15 @@ function calculateMargin(price: number, cost: number): number {
   font-weight: 800;
 }
 
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
 
 .stock-status-pill {
   font-size: 10px;
@@ -736,15 +783,38 @@ function calculateMargin(price: number, cost: number): number {
   background: rgba(239, 68, 68, 0.08);
 }
 
-.icon-12 { font-size: 12px; }
-.icon-14 { font-size: 14px; }
-.icon-15 { font-size: 15px; }
-.icon-16 { font-size: 16px; }
-.text-right { text-align: right; }
+.icon-12 {
+  font-size: 12px;
+}
+.icon-14 {
+  font-size: 14px;
+}
+.icon-15 {
+  font-size: 15px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.text-right {
+  text-align: right;
+}
 
-.flex-center-gap { display: flex; align-items: center; gap: 10px; }
-.flex-col-gap { display: flex; flex-direction: column; gap: 4px; }
-.flex-end-gap { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.flex-center-gap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.flex-col-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.flex-end-gap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
 
 /* Empty state */
 .empty-state {

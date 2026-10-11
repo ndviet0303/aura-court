@@ -24,11 +24,17 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
     use RefreshDatabase;
 
     private Organization $org;
+
     private Venue $venue;
+
     private Court $court;
+
     private User $owner;
+
     private User $customer;
+
     private MatchService $matchService;
+
     private CourtCommitmentConflictService $conflictService;
 
     protected function setUp(): void
@@ -42,7 +48,7 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
 
         $this->org = Organization::create([
             'name' => 'Badminton Hub',
-            'slug' => 'badminton-hub-' . uniqid(),
+            'slug' => 'badminton-hub-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -51,7 +57,7 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
         $this->venue = Venue::create([
             'organization_id' => $this->org->id,
             'name' => 'Badminton Center Q7',
-            'slug' => 'badminton-center-q7-' . uniqid(),
+            'slug' => 'badminton-center-q7-'.uniqid(),
             'address' => 'District 7, TP.HCM',
             'timezone' => 'Asia/Ho_Chi_Minh',
             'is_active' => true,
@@ -61,18 +67,18 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
         $this->court = Court::create([
             'venue_id' => $this->venue->id,
             'name' => 'Court 1',
-            'slug' => 'court-1-' . uniqid(),
+            'slug' => 'court-1-'.uniqid(),
             'is_active' => true,
         ]);
 
         $this->owner = User::factory()->create([
             'name' => 'Facility Owner',
-            'email' => 'owner_' . uniqid() . '@example.com',
+            'email' => 'owner_'.uniqid().'@example.com',
         ]);
 
         $this->customer = User::factory()->create([
             'name' => 'Player One',
-            'email' => 'player_' . uniqid() . '@example.com',
+            'email' => 'player_'.uniqid().'@example.com',
         ]);
 
         OrganizationMember::create([
@@ -314,7 +320,7 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
             'organization_id' => $this->org->id,
             'user_id' => $this->customer->id,
             'court_id' => $this->court->id,
-            'code' => 'RSV-' . uniqid(),
+            'code' => 'RSV-'.uniqid(),
             'status' => 'confirmed',
             'total_amount' => 200000,
             'channel' => 'v2_online',

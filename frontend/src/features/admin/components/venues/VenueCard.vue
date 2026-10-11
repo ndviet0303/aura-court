@@ -24,7 +24,9 @@ const { t } = useI18n()
         <div class="venue-name-row">
           <h3 class="venue-title">{{ resolveLocalizedText(venue.name) }}</h3>
           <span class="status-chip" :class="venue.is_active ? 'chip-active' : 'chip-maintenance'">
-            {{ venue.is_active ? t('admin.venues.statusActive') : t('admin.venues.statusInactive') }}
+            {{
+              venue.is_active ? t('admin.venues.statusActive') : t('admin.venues.statusInactive')
+            }}
           </span>
         </div>
         <p class="venue-address">
@@ -47,11 +49,7 @@ const { t } = useI18n()
 
     <!-- Sport Zones Tags if available -->
     <div v-if="venue.sport_zones && venue.sport_zones.length > 0" class="venue-zones-row">
-      <span
-        v-for="zone in venue.sport_zones"
-        :key="zone.id"
-        class="zone-tag"
-      >
+      <span v-for="zone in venue.sport_zones" :key="zone.id" class="zone-tag">
         {{ resolveLocalizedText(zone.name) }}
       </span>
     </div>
@@ -113,7 +111,10 @@ const { t } = useI18n()
   border-radius: 16px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .venue-admin-card:hover {
@@ -269,7 +270,10 @@ const { t } = useI18n()
 
 .slider {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: #cbd5e1;
   transition: 0.2s;
   border-radius: 24px;
@@ -277,7 +281,7 @@ const { t } = useI18n()
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 18px;
   width: 18px;
   left: 3px;
@@ -285,7 +289,7 @@ const { t } = useI18n()
   background-color: white;
   transition: 0.2s;
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 input:checked + .slider {

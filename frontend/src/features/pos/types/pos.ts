@@ -1,12 +1,5 @@
 export type ProductCategory =
-  | 'all'
-  | 'drinks'
-  | 'nutrition'
-  | 'equipment'
-  | 'rental'
-  | 'services'
-  | 'membership'
-  | string
+  'all' | 'drinks' | 'nutrition' | 'equipment' | 'rental' | 'services' | 'membership' | string
 
 export interface Product {
   id: number
@@ -90,7 +83,13 @@ export interface PosShift {
 export interface Draft {
   id: string
   name: string
-  items: Array<{ product_id: number; quantity: number; rental_hours?: number; product_name?: string; price?: number }>
+  items: Array<{
+    product_id: number
+    quantity: number
+    rental_hours?: number
+    product_name?: string
+    price?: number
+  }>
   reservation_id?: number | null
   customer_id?: number | null
   customer_name?: string

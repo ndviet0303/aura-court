@@ -2,15 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\Payment\PaymentInstruction;
-use App\Contracts\Payment\PaymentIntentRequest;
-use App\Contracts\Payment\PaymentIntentResponse;
 use App\Contracts\Payment\PaymentProviderInterface;
-use App\Contracts\Payment\PayoutInstruction;
 use App\Contracts\Payment\PayoutStatusResponse;
 use App\Contracts\Payment\PayoutSubmissionResponse;
-use App\Contracts\Payment\RefundInstruction;
-use App\Contracts\Payment\RefundResponse;
 use App\Models\Beneficiary;
 use App\Models\Booking;
 use App\Models\Court;
@@ -27,10 +21,8 @@ use App\Services\Finance\FinancialPostingService;
 use App\Services\Finance\LedgerService;
 use App\Services\Finance\PayoutService;
 use App\Services\Finance\ReconciliationService;
-use App\Services\Finance\SettlementService;
 use App\Services\Payment\PaymentProviderManager;
 use App\Services\Payment\ProviderOperationService;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -41,7 +33,9 @@ class PayoutLifecycleThresholdEligibilityReconciliationTest extends TestCase
     use RefreshDatabase;
 
     private Organization $organization;
+
     private User $owner;
+
     private Beneficiary $beneficiary;
 
     protected function setUp(): void
@@ -50,7 +44,7 @@ class PayoutLifecycleThresholdEligibilityReconciliationTest extends TestCase
 
         $this->organization = Organization::create([
             'name' => 'Aura Arena Finance Org',
-            'slug' => 'aura-finance-' . uniqid(),
+            'slug' => 'aura-finance-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -274,7 +268,7 @@ class PayoutLifecycleThresholdEligibilityReconciliationTest extends TestCase
         ProviderEvent::create([
             'organization_id' => $this->organization->id,
             'provider' => 'payos',
-            'event_id' => 'rec-event-' . uniqid(),
+            'event_id' => 'rec-event-'.uniqid(),
             'type' => 'payment.status',
             'status' => 'PAID',
             'amount' => 1000000,
@@ -287,7 +281,7 @@ class PayoutLifecycleThresholdEligibilityReconciliationTest extends TestCase
         app(LedgerService::class)->post([
             'organization_id' => $this->organization->id,
             'event_type' => 'wallet.deposit',
-            'event_id' => 'dep-' . uniqid(),
+            'event_id' => 'dep-'.uniqid(),
         ], [
             ['account_id' => $accounts['cash_clearing']->id, 'side' => 'debit', 'amount' => 800000],
             ['account_id' => $accounts['wallet_liability']->id, 'side' => 'credit', 'amount' => 800000],
@@ -336,7 +330,7 @@ class PayoutLifecycleThresholdEligibilityReconciliationTest extends TestCase
         $venue = Venue::create([
             'organization_id' => $this->organization->id,
             'name' => 'Aura Court 1',
-            'slug' => 'aura-court-1-' . uniqid(),
+            'slug' => 'aura-court-1-'.uniqid(),
             'is_active' => true,
         ]);
         $court = Court::create([

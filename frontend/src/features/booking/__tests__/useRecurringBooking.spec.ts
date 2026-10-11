@@ -32,8 +32,24 @@ function previewFixture(): RecurringSeriesPreview {
     total_amount: 300000,
     truncated_by: null,
     occurrences: [
-      { index: 1, starts_at: '2026-10-05T11:00:00Z', ends_at: '2026-10-05T13:00:00Z', weekday: 1, price: 150000, conflict: false, conflict_reason: null },
-      { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', weekday: 3, price: 150000, conflict: false, conflict_reason: null },
+      {
+        index: 1,
+        starts_at: '2026-10-05T11:00:00Z',
+        ends_at: '2026-10-05T13:00:00Z',
+        weekday: 1,
+        price: 150000,
+        conflict: false,
+        conflict_reason: null,
+      },
+      {
+        index: 2,
+        starts_at: '2026-10-07T11:00:00Z',
+        ends_at: '2026-10-07T13:00:00Z',
+        weekday: 3,
+        price: 150000,
+        conflict: false,
+        conflict_reason: null,
+      },
     ],
   }
 }
@@ -104,7 +120,12 @@ describe('useRecurringBooking submit', () => {
       held_count: 1,
       revised_total: 150000,
       excluded: [
-        { index: 2, starts_at: '2026-10-07T11:00:00Z', ends_at: '2026-10-07T13:00:00Z', conflict_reason: 'Đã có người đặt' },
+        {
+          index: 2,
+          starts_at: '2026-10-07T11:00:00Z',
+          ends_at: '2026-10-07T13:00:00Z',
+          conflict_reason: 'Đã có người đặt',
+        },
       ],
     }
     vi.mocked(bookingApi.createRecurringSeries)

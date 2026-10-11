@@ -1,5 +1,10 @@
 import { apiV2 } from '@/core/api/client'
-import type { DisputeCase, DisputeStats, DisputeFilterParams, ArbitrateDisputePayload } from '../types/dispute'
+import type {
+  DisputeCase,
+  DisputeStats,
+  DisputeFilterParams,
+  ArbitrateDisputePayload,
+} from '../types/dispute'
 
 function transformDisputeCase(raw: any): DisputeCase {
   return {
@@ -21,7 +26,9 @@ function transformDisputeCase(raw: any): DisputeCase {
       id: raw.complainant?.id,
       name: raw.complainant?.name || raw.complainant_name || 'Khách hàng',
       tier: raw.complainant?.tier || raw.complainant_tier || 'Hạng Bạc',
-      reputationScore: Number(raw.complainant?.reputation_score ?? raw.complainant?.reputationScore ?? 90),
+      reputationScore: Number(
+        raw.complainant?.reputation_score ?? raw.complainant?.reputationScore ?? 90,
+      ),
       phone: raw.complainant?.phone || raw.complainant_phone || '',
       avatar: raw.complainant?.avatar || '',
     },
@@ -29,13 +36,19 @@ function transformDisputeCase(raw: any): DisputeCase {
       id: raw.respondent?.id,
       name: raw.respondent?.name || raw.respondent_name || 'Bị đơn',
       tier: raw.respondent?.tier || raw.respondent_tier || 'Hạng Đồng',
-      reputationScore: Number(raw.respondent?.reputation_score ?? raw.respondent?.reputationScore ?? 85),
+      reputationScore: Number(
+        raw.respondent?.reputation_score ?? raw.respondent?.reputationScore ?? 85,
+      ),
       phone: raw.respondent?.phone || raw.respondent_phone || '',
       avatar: raw.respondent?.avatar || '',
     },
     facility: {
       name: raw.facility?.name || raw.facility_name || 'Cơ sở thể thao',
-      operatorName: raw.facility?.operator_name || raw.facility?.operatorName || raw.facility_operator_name || '',
+      operatorName:
+        raw.facility?.operator_name ||
+        raw.facility?.operatorName ||
+        raw.facility_operator_name ||
+        '',
     },
     timelineEvents: (raw.timeline_events || raw.timelineEvents || []).map((ev: any) => ({
       time: ev.time,
@@ -55,12 +68,22 @@ function transformDisputeCase(raw: any): DisputeCase {
       status: cm.status,
       label: cm.label,
     })),
-    aiAnalysis: raw.ai_analysis || raw.aiAnalysis ? {
-      faultRateFacility: Number(raw.ai_analysis?.fault_rate_facility ?? raw.aiAnalysis?.faultRateFacility ?? 0),
-      faultRateUser: Number(raw.ai_analysis?.fault_rate_user ?? raw.aiAnalysis?.faultRateUser ?? 0),
-      rootCause: raw.ai_analysis?.root_cause || raw.aiAnalysis?.rootCause || '',
-      recommendationSummary: raw.ai_analysis?.recommendation_summary || raw.aiAnalysis?.recommendationSummary || '',
-    } : undefined,
+    aiAnalysis:
+      raw.ai_analysis || raw.aiAnalysis
+        ? {
+            faultRateFacility: Number(
+              raw.ai_analysis?.fault_rate_facility ?? raw.aiAnalysis?.faultRateFacility ?? 0,
+            ),
+            faultRateUser: Number(
+              raw.ai_analysis?.fault_rate_user ?? raw.aiAnalysis?.faultRateUser ?? 0,
+            ),
+            rootCause: raw.ai_analysis?.root_cause || raw.aiAnalysis?.rootCause || '',
+            recommendationSummary:
+              raw.ai_analysis?.recommendation_summary ||
+              raw.aiAnalysis?.recommendationSummary ||
+              '',
+          }
+        : undefined,
     resolutionDecision: raw.resolution_decision || raw.resolutionDecision,
     refundMethod: raw.refund_method || raw.refundMethod,
     refundAmount: Number(raw.refund_amount ?? raw.refundAmount ?? 0),
@@ -85,7 +108,9 @@ function transformDisputeStats(raw: any): DisputeStats {
     awaitingReplyCount: Number(raw?.awaiting_reply_count ?? raw?.awaitingReplyCount ?? 0),
     resolvedCount: Number(raw?.resolved_count ?? raw?.resolvedCount ?? 0),
     criticalSlaCount: Number(raw?.critical_sla_count ?? raw?.criticalSlaCount ?? 0),
-    avgResolutionTimeMinutes: Number(raw?.avg_resolution_time_minutes ?? raw?.avgResolutionTimeMinutes ?? 18.5),
+    avgResolutionTimeMinutes: Number(
+      raw?.avg_resolution_time_minutes ?? raw?.avgResolutionTimeMinutes ?? 18.5,
+    ),
     consensusRate: Number(raw?.consensus_rate ?? raw?.consensusRate ?? 98.2),
   }
 }
@@ -95,7 +120,8 @@ export const disputeApi = {
     const query = new URLSearchParams()
     if (params?.status && params.status !== 'all') query.set('status', params.status)
     if (params?.severity && params.severity !== 'all') query.set('severity', params.severity)
-    if (params?.disputeType && params.disputeType !== 'all') query.set('dispute_type', params.disputeType)
+    if (params?.disputeType && params.disputeType !== 'all')
+      query.set('dispute_type', params.disputeType)
     if (params?.search) query.set('search', params.search)
     if (params?.perPage) query.set('per_page', String(params.perPage))
 
@@ -117,7 +143,7 @@ export const disputeApi = {
 
   arbitrateDispute: async (
     id: number,
-    payload: ArbitrateDisputePayload
+    payload: ArbitrateDisputePayload,
   ): Promise<{ message: string; data: DisputeCase }> => {
     const body = {
       decision: payload.decision,
@@ -132,7 +158,7 @@ export const disputeApi = {
     }
     const res = await apiV2.post<{ message: string; data: any }>(
       `/admin/disputes/${id}/arbitrate`,
-      body
+      body,
     )
     return {
       message: res.message,

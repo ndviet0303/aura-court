@@ -85,7 +85,7 @@ class AutoResolveReconciliation
             $targetRunId = $data->runId ?: $run?->id;
             $query->where(function ($q) use ($targetRunId, $runDate) {
                 $q->whereJsonContains('links->reconciliation_run_id', $targetRunId)
-                  ->orWhere('reference', "reconciliation:{$runDate->toDateString()}");
+                    ->orWhere('reference', "reconciliation:{$runDate->toDateString()}");
             });
         }
 

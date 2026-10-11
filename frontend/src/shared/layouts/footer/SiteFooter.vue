@@ -37,11 +37,21 @@ import { RouterLink } from 'vue-router'
         <div class="footer-col">
           <h3 class="col-title">{{ $t('common.footer.explore') }}</h3>
           <ul class="col-links">
-            <li><RouterLink to="/">{{ $t('nav.home') }}</RouterLink></li>
-            <li><RouterLink to="/courts">{{ $t('nav.courts') }}</RouterLink></li>
-            <li><RouterLink to="/booking">{{ $t('nav.booking') }}</RouterLink></li>
-            <li><RouterLink to="/resale">{{ $t('nav.resale') }}</RouterLink></li>
-            <li><RouterLink to="/about">{{ $t('nav.about') }}</RouterLink></li>
+            <li>
+              <RouterLink to="/">{{ $t('nav.home') }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/courts">{{ $t('nav.courts') }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/booking">{{ $t('nav.booking') }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/resale">{{ $t('nav.resale') }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/about">{{ $t('nav.about') }}</RouterLink>
+            </li>
           </ul>
         </div>
 
@@ -49,10 +59,20 @@ import { RouterLink } from 'vue-router'
         <div class="footer-col">
           <h3 class="col-title">{{ $t('common.footer.support') }}</h3>
           <ul class="col-links">
-            <li><RouterLink to="/terms#court-rules">{{ $t('common.footer.courtRules') }}</RouterLink></li>
-            <li><RouterLink to="/terms#refund-policy">{{ $t('common.footer.refundPolicy') }}</RouterLink></li>
-            <li><RouterLink to="/terms">{{ $t('common.footer.termsOfService') }}</RouterLink></li>
-            <li><RouterLink to="/privacy">{{ $t('common.footer.privacyPolicy') }}</RouterLink></li>
+            <li>
+              <RouterLink to="/terms#court-rules">{{ $t('common.footer.courtRules') }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/terms#refund-policy">{{
+                $t('common.footer.refundPolicy')
+              }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/terms">{{ $t('common.footer.termsOfService') }}</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/privacy">{{ $t('common.footer.privacyPolicy') }}</RouterLink>
+            </li>
           </ul>
         </div>
 
@@ -79,7 +99,12 @@ import { RouterLink } from 'vue-router'
             <a href="javascript:void(0)" class="social-btn" title="Facebook" aria-label="Facebook">
               <span class="material-symbols-outlined">public</span>
             </a>
-            <a href="javascript:void(0)" class="social-btn" title="Zalo / Chat" aria-label="Zalo / Chat">
+            <a
+              href="javascript:void(0)"
+              class="social-btn"
+              title="Zalo / Chat"
+              aria-label="Zalo / Chat"
+            >
               <span class="material-symbols-outlined">chat</span>
             </a>
             <a href="javascript:void(0)" class="social-btn" title="Chia sẻ" aria-label="Share">
@@ -99,9 +124,13 @@ import { RouterLink } from 'vue-router'
           </span>
         </div>
         <div class="bottom-links">
-          <RouterLink to="/terms" class="footer-bottom-link">{{ $t('common.footer.termsOfService') }}</RouterLink>
+          <RouterLink to="/terms" class="footer-bottom-link">{{
+            $t('common.footer.termsOfService')
+          }}</RouterLink>
           <span class="divider">·</span>
-          <RouterLink to="/privacy" class="footer-bottom-link">{{ $t('common.footer.privacyPolicy') }}</RouterLink>
+          <RouterLink to="/privacy" class="footer-bottom-link">{{
+            $t('common.footer.privacyPolicy')
+          }}</RouterLink>
         </div>
       </div>
     </div>
@@ -116,7 +145,9 @@ import { RouterLink } from 'vue-router'
   position: relative;
   z-index: 10;
   width: 100%;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 :global(html.dark .site-footer) {
@@ -160,13 +191,15 @@ import { RouterLink } from 'vue-router'
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: #FAF7F3;
+  background: #faf7f3;
   border: 1px solid #ebdccb;
   display: grid;
   place-items: center;
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
   flex-shrink: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .footer-brand:hover .brand-icon-box {
@@ -206,7 +239,7 @@ import { RouterLink } from 'vue-router'
 }
 
 :global(html.dark .brand-name) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .brand-subtitle {
@@ -249,7 +282,7 @@ import { RouterLink } from 'vue-router'
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 650;
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   width: fit-content;
 }
 
@@ -261,7 +294,7 @@ import { RouterLink } from 'vue-router'
 
 .icon-clock {
   font-size: 16px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 :global(html.dark .icon-clock) {
@@ -278,7 +311,7 @@ import { RouterLink } from 'vue-router'
   padding: 5px 12px;
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
 }
 
 :global(html.dark .bwf-badge) {
@@ -289,7 +322,7 @@ import { RouterLink } from 'vue-router'
 
 .icon-shield {
   font-size: 15px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 :global(html.dark .icon-shield) {
@@ -307,7 +340,7 @@ import { RouterLink } from 'vue-router'
 }
 
 :global(html.dark .col-title) {
-  color: #FAF7F3;
+  color: #faf7f3;
 }
 
 .col-links {
@@ -323,12 +356,14 @@ import { RouterLink } from 'vue-router'
   text-decoration: none;
   font-size: 13.5px;
   color: var(--muted, #6e6668);
-  transition: color 0.18s ease, transform 0.18s ease;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
   display: inline-block;
 }
 
 .col-links a:hover {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   transform: translateX(3px);
 }
 
@@ -365,7 +400,7 @@ import { RouterLink } from 'vue-router'
 }
 
 .contact-link:hover {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark .contact-link:hover) {
@@ -374,7 +409,7 @@ import { RouterLink } from 'vue-router'
 
 .contact-icon {
   font-size: 18px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   flex-shrink: 0;
 }
 
@@ -404,15 +439,15 @@ import { RouterLink } from 'vue-router'
 }
 
 .social-btn:hover {
-  background: var(--accent-container, #FAF2E3);
-  color: var(--on-accent-container, #684F17);
+  background: var(--accent-container, #faf2e3);
+  color: var(--on-accent-container, #684f17);
   border-color: rgba(201, 161, 90, 0.4);
   transform: translateY(-2px);
 }
 
 :global(html.dark .social-btn) {
   background: #262024;
-  color: #FAF7F3;
+  color: #faf7f3;
   border-color: #382f35;
 }
 
@@ -460,7 +495,7 @@ import { RouterLink } from 'vue-router'
   align-items: center;
   gap: 5px;
   background: rgba(201, 161, 90, 0.12);
-  color: var(--on-accent-container, #684F17);
+  color: var(--on-accent-container, #684f17);
   border: 1px solid rgba(201, 161, 90, 0.35);
   padding: 3px 11px;
   border-radius: 999px;
@@ -476,7 +511,7 @@ import { RouterLink } from 'vue-router'
 
 .icon-demo {
   font-size: 14px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 :global(html.dark .icon-demo) {
@@ -506,7 +541,7 @@ import { RouterLink } from 'vue-router'
 }
 
 .footer-bottom-link:hover {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
 }
 
 :global(html.dark .footer-bottom-link) {

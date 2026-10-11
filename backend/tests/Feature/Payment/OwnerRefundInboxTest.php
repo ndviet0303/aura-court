@@ -4,10 +4,10 @@ namespace Tests\Feature\Payment;
 
 use App\Models\Coupon;
 use App\Models\Court;
-use App\Models\OwnerPaymentReceipt;
-use App\Models\OwnerRefundObligation;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\OwnerPaymentReceipt;
+use App\Models\OwnerRefundObligation;
 use App\Models\PointLedger;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;

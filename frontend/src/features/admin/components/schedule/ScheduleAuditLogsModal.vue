@@ -37,7 +37,9 @@ function formatAuditAction(action: string): string {
       <div class="modal-header">
         <div class="title-with-icon">
           <span class="material-symbols-outlined card-title-icon">history</span>
-          <h3 class="modal-title modal-title-text">{{ t('admin.schedule.auditLogsModalTitle') }}</h3>
+          <h3 class="modal-title modal-title-text">
+            {{ t('admin.schedule.auditLogsModalTitle') }}
+          </h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
@@ -55,7 +57,11 @@ function formatAuditAction(action: string): string {
               <div class="log-meta">
                 <strong class="log-action">{{ formatAuditAction(log.action) }}</strong>
                 <span class="log-performer">
-                  {{ t('admin.schedule.performerLabel', { user: log.user?.name || log.actor || t('admin.schedule.systemUser') }) }}
+                  {{
+                    t('admin.schedule.performerLabel', {
+                      user: log.user?.name || log.actor || t('admin.schedule.systemUser'),
+                    })
+                  }}
                 </span>
               </div>
             </div>

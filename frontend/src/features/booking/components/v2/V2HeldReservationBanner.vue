@@ -30,20 +30,24 @@ const emit = defineEmits<{
     <div class="banner-info-col">
       <div class="held-eyebrow">
         <span class="badge-held">{{ t('v2Reservations.heldBanner.badge') }}</span>
-        <span class="code font-mono">{{ t('v2Reservations.heldBanner.orderCode', { code: reservation.code }) }}</span>
+        <span class="code font-mono">{{
+          t('v2Reservations.heldBanner.orderCode', { code: reservation.code })
+        }}</span>
       </div>
       <h3 class="held-title">
-        {{ reservation.court?.name || 'Aura Court' }} · {{ reservation.court?.venue?.name || 'Aura Sports Club' }}
+        {{ reservation.court?.name || 'Aura Court' }} ·
+        {{ reservation.court?.venue?.name || 'Aura Sports Club' }}
       </h3>
       <div class="held-meta">
-        <span v-if="reservation.slots && reservation.slots.length && reservation.slots[0]" class="meta-item">
+        <span
+          v-if="reservation.slots && reservation.slots.length && reservation.slots[0]"
+          class="meta-item"
+        >
           <span class="material-symbols-outlined meta-icon">schedule</span>
           <span class="font-mono">
             {{ formatTimeSlot(reservation.slots[0].starts_at, reservation.slots[0].ends_at) }}
           </span>
-          <span class="meta-date">
-            ({{ formatDate(reservation.slots[0].starts_at) }})
-          </span>
+          <span class="meta-date"> ({{ formatDate(reservation.slots[0].starts_at) }}) </span>
         </span>
         <span class="meta-item price">
           <span class="material-symbols-outlined meta-icon">payments</span>
@@ -67,10 +71,17 @@ const emit = defineEmits<{
         :disabled="confirmingCode === reservation.code"
         @click="emit('confirm', reservation)"
       >
-        <span class="material-symbols-outlined" :class="{ spinning: confirmingCode === reservation.code }">
+        <span
+          class="material-symbols-outlined"
+          :class="{ spinning: confirmingCode === reservation.code }"
+        >
           {{ confirmingCode === reservation.code ? 'refresh' : 'check_circle' }}
         </span>
-        <span>{{ confirmingCode === reservation.code ? t('v2Reservations.heldBanner.confirming') : t('v2Reservations.heldBanner.confirmBtn') }}</span>
+        <span>{{
+          confirmingCode === reservation.code
+            ? t('v2Reservations.heldBanner.confirming')
+            : t('v2Reservations.heldBanner.confirmBtn')
+        }}</span>
       </button>
     </div>
   </div>
@@ -164,7 +175,7 @@ const emit = defineEmits<{
 }
 
 .meta-item.price strong {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-size: 14.5px;
 }
 

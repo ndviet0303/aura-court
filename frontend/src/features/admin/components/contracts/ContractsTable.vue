@@ -81,7 +81,9 @@ const venueOptions = computed<DropdownOption[]>(() => [
             :options="venueOptions"
             variant="bordered"
             :aria-label="t('admin.contracts.allVenues')"
-            @update:model-value="(val) => emit('update:selectedVenueId', val !== '' ? Number(val) : undefined)"
+            @update:model-value="
+              (val) => emit('update:selectedVenueId', val !== '' ? Number(val) : undefined)
+            "
           />
         </div>
 
@@ -130,11 +132,7 @@ const venueOptions = computed<DropdownOption[]>(() => [
 
       <!-- Table Body -->
       <div v-else class="table-body">
-        <div
-          v-for="c in contracts"
-          :key="c.id"
-          class="contract-row"
-        >
+        <div v-for="c in contracts" :key="c.id" class="contract-row">
           <div class="cust-col">
             <strong class="cust-name">{{ c.customer_name }}</strong>
             <span class="contract-code font-mono">{{ c.contract_code }} · {{ c.phone }}</span>
@@ -151,8 +149,12 @@ const venueOptions = computed<DropdownOption[]>(() => [
           </div>
 
           <div class="price-col">
-            <strong class="text-pink font-mono">{{ formatCurrency(c.total_monthly_amount) }}</strong>
-            <span class="deposit-sub">{{ t('admin.contracts.depositLabel', { amount: formatCurrency(c.deposit_amount) }) }}</span>
+            <strong class="text-pink font-mono">{{
+              formatCurrency(c.total_monthly_amount)
+            }}</strong>
+            <span class="deposit-sub">{{
+              t('admin.contracts.depositLabel', { amount: formatCurrency(c.deposit_amount) })
+            }}</span>
           </div>
 
           <div class="status-col">
@@ -164,7 +166,8 @@ const venueOptions = computed<DropdownOption[]>(() => [
                 'tag-cancelled': c.status === 'cancelled',
               }"
             >
-              ● {{
+              ●
+              {{
                 c.status === 'active' || c.status === 'confirmed'
                   ? t('admin.contracts.activeEffective')
                   : c.status === 'overdue'
@@ -326,7 +329,10 @@ const venueOptions = computed<DropdownOption[]>(() => [
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
 }
 
-.cust-col, .court-col, .schedule-col, .price-col {
+.cust-col,
+.court-col,
+.schedule-col,
+.price-col {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -342,7 +348,10 @@ const venueOptions = computed<DropdownOption[]>(() => [
   color: var(--ink);
 }
 
-.contract-code, .venue-sub, .time-slot, .deposit-sub {
+.contract-code,
+.venue-sub,
+.time-slot,
+.deposit-sub {
   font-size: 11px;
   color: var(--muted);
 }
@@ -367,9 +376,18 @@ const venueOptions = computed<DropdownOption[]>(() => [
   width: fit-content;
 }
 
-.tag-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.tag-overdue { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.tag-cancelled { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
+.tag-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+.tag-overdue {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+.tag-cancelled {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
 
 .actions-col {
   display: flex;
@@ -438,10 +456,12 @@ const venueOptions = computed<DropdownOption[]>(() => [
 }
 
 @media (max-width: 1024px) {
-  .table-header, .contract-row {
+  .table-header,
+  .contract-row {
     grid-template-columns: 1.8fr 1.4fr 1.2fr 1fr 100px;
   }
-  .schedule-col, .table-header span:nth-child(3) {
+  .schedule-col,
+  .table-header span:nth-child(3) {
     display: none;
   }
 }

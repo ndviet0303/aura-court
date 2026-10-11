@@ -40,7 +40,15 @@ describe('CreateMatchView', () => {
             id: 1,
             name: 'Sân VIP 1',
             sport_type: 'badminton',
-            venue: { id: 1, name: 'Aura Central', slug: 'aura-central', address: '123 Le Loi', google_maps_url: null, is_active: true, share_url: '' },
+            venue: {
+              id: 1,
+              name: 'Aura Central',
+              slug: 'aura-central',
+              address: '123 Le Loi',
+              google_maps_url: null,
+              is_active: true,
+              share_url: '',
+            },
           },
         ]
       }
@@ -76,17 +84,17 @@ describe('CreateMatchView', () => {
     })
     await flushPromises()
 
-    const pickleballBtn = wrapper.findAll('.sport-card').find((b) => b.text().includes('Pickleball'))
+    const pickleballBtn = wrapper
+      .findAll('.sport-card')
+      .find((b) => b.text().includes('Pickleball'))
     expect(pickleballBtn).toBeDefined()
     await pickleballBtn?.trigger('click')
 
     expect(pickleballBtn?.classes()).toContain('active')
 
     const quickPill = wrapper.find('.quick-pill')
-    if (quickPill.exists()) {
-      await quickPill.trigger('click')
-      expect(quickPill.classes()).toContain('active')
-    }
+    await quickPill.trigger('click')
+    expect(quickPill.classes()).toContain('active')
   })
 
   it('submits match successfully and triggers redirect', async () => {
@@ -124,7 +132,7 @@ describe('CreateMatchView', () => {
       return []
     })
 
-    vi.mocked(apiV2.post).mockImplementation(async (url: string, payload: any) => {
+    vi.mocked(apiV2.post).mockImplementation(async (url: string) => {
       if (url === '/social/matches') {
         return { match: { id: 777, title: 'Match Test 8.2' } }
       }
@@ -192,7 +200,9 @@ describe('CreateMatchView', () => {
     expect(wrapper.text()).toContain('TBY (Trung bình yếu)')
 
     // Select skill label TBY
-    const tbyBtn = wrapper.findAll('.owner-session-toggle-box button').find((b) => b.text().includes('TBY'))
+    const tbyBtn = wrapper
+      .findAll('.owner-session-toggle-box button')
+      .find((b) => b.text().includes('TBY'))
     expect(tbyBtn).toBeDefined()
     await tbyBtn?.trigger('click')
     await flushPromises()
@@ -216,7 +226,7 @@ describe('CreateMatchView', () => {
         is_owner_hosted: true,
         category: expect.stringMatching(/giao lưu|đánh vãng lai/),
         skill_levels: expect.arrayContaining(['TB']),
-      })
+      }),
     )
   })
 })

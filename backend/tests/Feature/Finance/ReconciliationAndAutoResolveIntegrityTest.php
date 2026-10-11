@@ -29,9 +29,13 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
     use RefreshDatabase;
 
     private Organization $organization;
+
     private Venue $venue;
+
     private ReceivingConnection $connection;
+
     private ReceivingConnectionEvidence $evidence;
+
     private User $owner;
 
     protected function setUp(): void
@@ -158,6 +162,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
             'allocated_at' => now(),
         ]);
     }
+
     private function createRefundObligation(OwnerPaymentAttempt $attempt, int $amount, string $status = OwnerRefundObligation::STATUS_ACKNOWLEDGED): OwnerRefundObligation
     {
         return OwnerRefundObligation::create([
@@ -370,7 +375,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
 
         $headers = [
             'X-Organization-Id' => $this->organization->id,
-            'Idempotency-Key' => 'manual-gate-' . uniqid(),
+            'Idempotency-Key' => 'manual-gate-'.uniqid(),
         ];
 
         // 1. Attempt note-only resolution (cannot bypass D47)
@@ -397,7 +402,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
                 'reason' => 'Giải trình kiểm toán thủ công kèm chứng từ nhưng chưa sửa dữ liệu',
                 'evidence_reference' => 'EVID-MANUAL-GATE-999',
             ],
-            array_merge($headers, ['Idempotency-Key' => 'manual-gate-' . uniqid()])
+            array_merge($headers, ['Idempotency-Key' => 'manual-gate-'.uniqid()])
         );
 
         $prematureResponse->assertStatus(422);
@@ -416,7 +421,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
                 'reason' => 'Đã xác minh đối chiếu sao kê ngân hàng và phân bổ hoàn tất',
                 'evidence_reference' => 'EVID-MANUAL-GATE-999',
             ],
-            array_merge($headers, ['Idempotency-Key' => 'manual-gate-' . uniqid()])
+            array_merge($headers, ['Idempotency-Key' => 'manual-gate-'.uniqid()])
         );
 
         $successResponse->assertOk();

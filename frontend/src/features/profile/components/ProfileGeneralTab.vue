@@ -27,13 +27,6 @@ const availableSports = [
   { id: 'football', name: 'Bóng Đá Futsal', icon: 'sports_soccer' },
 ]
 
-const playLevels = [
-  { id: 'beginner', title: 'Mới bắt đầu', desc: 'Mới làm quen môn thể thao, thi đấu rèn luyện sức khỏe cơ bản.' },
-  { id: 'intermediate', title: 'Phong trào', desc: 'Chơi đều đặn 1-3 năm, có bộ kỹ thuật cơ bản và độ bền tốt.' },
-  { id: 'advanced', title: 'Bán chuyên', desc: 'Thi đấu giải phong trào, kỹ chiến thuật và thể lực vững vàng.' },
-  { id: 'pro', title: 'Chuyên nghiệp', desc: 'Vận động viên thi đấu chuyên nghiệp hoặc huấn luyện viên.' },
-]
-
 function toggleSport(sportId: string) {
   const current = [...props.favoriteSports]
   const index = current.indexOf(sportId)
@@ -208,12 +201,7 @@ function toggleSport(sportId: string) {
 
       <!-- Actions -->
       <div class="form-actions-bar">
-        <AuraButton
-          type="submit"
-          variant="primary"
-          :loading="saving"
-          :disabled="saving"
-        >
+        <AuraButton type="submit" variant="primary" :loading="saving" :disabled="saving">
           <template #icon>
             <span class="material-symbols-outlined">save</span>
           </template>
@@ -259,7 +247,7 @@ html.dark .profile-tab-card {
 
 .title-icon {
   font-size: 26px;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   margin-top: 2px;
 }
 
@@ -359,7 +347,7 @@ html.dark .form-input {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.12);
 }
 
@@ -406,7 +394,7 @@ html.dark .level-card {
 }
 
 .level-card:hover {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
 }
 
 html.dark .level-card:hover {
@@ -488,7 +476,7 @@ html.dark .sport-chip-btn {
 }
 
 .sport-chip-btn:hover {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
 }
 
 html.dark .sport-chip-btn:hover {
@@ -496,8 +484,8 @@ html.dark .sport-chip-btn:hover {
 }
 
 .sport-chip-btn.is-active {
-  background: #6B2D3F;
-  border-color: #6B2D3F;
+  background: #6b2d3f;
+  border-color: #6b2d3f;
   color: #ffffff;
 }
 

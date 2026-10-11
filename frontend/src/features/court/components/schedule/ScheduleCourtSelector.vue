@@ -25,7 +25,8 @@ function scrollCourts(direction: 'left' | 'right') {
 function getCourtTypeTag(c: Court): string {
   if (c.sport_zone?.name) return c.sport_zone.name
   if (c.name.toLowerCase().includes('vip')) return 'Sân VIP'
-  if (c.name.toLowerCase().includes('bwf') || c.name.toLowerCase().includes('thảm')) return 'Thảm BWF'
+  if (c.name.toLowerCase().includes('bwf') || c.name.toLowerCase().includes('thảm'))
+    return 'Thảm BWF'
   if (c.name.toLowerCase().includes('khán đài')) return 'Khán Đài'
   return 'Tiêu chuẩn'
 }

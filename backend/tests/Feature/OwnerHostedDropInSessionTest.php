@@ -6,16 +6,11 @@ use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
-use App\Models\CourtPriceSlot;
-use App\Models\MatchBill;
 use App\Models\MatchPost;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\Reservation;
-use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,15 +19,25 @@ class OwnerHostedDropInSessionTest extends TestCase
     use RefreshDatabase;
 
     private Organization $orgA;
+
     private Organization $orgB;
+
     private Venue $venueA;
+
     private Court $courtA;
+
     private User $ownerA;
+
     private User $managerA;
+
     private User $staffA;
+
     private User $ownerB;
+
     private User $player1;
+
     private User $player2;
+
     private User $stranger;
 
     protected function setUp(): void
@@ -41,13 +46,13 @@ class OwnerHostedDropInSessionTest extends TestCase
 
         $this->orgA = Organization::create([
             'name' => 'Sân Cầu Lông A',
-            'slug' => 'san-cau-long-a-' . uniqid(),
+            'slug' => 'san-cau-long-a-'.uniqid(),
             'status' => 'active',
         ]);
 
         $this->orgB = Organization::create([
             'name' => 'Sân Cầu Lông B',
-            'slug' => 'san-cau-long-b-' . uniqid(),
+            'slug' => 'san-cau-long-b-'.uniqid(),
             'status' => 'active',
         ]);
 
@@ -59,7 +64,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $this->venueA = Venue::create([
             'organization_id' => $this->orgA->id,
             'name' => 'Cơ sở A',
-            'slug' => 'co-so-a-' . uniqid(),
+            'slug' => 'co-so-a-'.uniqid(),
             'address' => '123 Đường Cầu Lông, TP.HCM',
             'is_active' => true,
             'status' => 'active',
@@ -68,7 +73,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $this->courtA = Court::create([
             'venue_id' => $this->venueA->id,
             'name' => 'Sân 1',
-            'slug' => 'san-1-' . uniqid(),
+            'slug' => 'san-1-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -94,12 +99,13 @@ class OwnerHostedDropInSessionTest extends TestCase
     {
         $this->actingAs($user, 'sanctum');
         $org = $org ?? $this->orgA;
+
         return [
-            'Authorization' => 'Bearer ' . $user->createToken('test')->plainTextToken,
+            'Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken,
             'X-Organization-Id' => (string) $org->id,
             'X-Organization-ID' => (string) $org->id,
-            'Idempotency-Key' => 'idem-' . uniqid(),
-            'X-Idempotency-Key' => 'idem-' . uniqid(),
+            'Idempotency-Key' => 'idem-'.uniqid(),
+            'X-Idempotency-Key' => 'idem-'.uniqid(),
             'Accept' => 'application/json',
         ];
     }
@@ -273,7 +279,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             'organization_id' => $this->orgA->id,
             'user_id' => $this->player1->id,
             'court_id' => $this->courtA->id,
-            'code' => 'BK-' . uniqid(),
+            'code' => 'BK-'.uniqid(),
             'status' => 'confirmed',
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
@@ -355,7 +361,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $this->assertFalse($matchesNewbie->contains('id', $s2->id));
 
         // Filter for category 'đánh vãng lai'
-        $resCat = $this->getJson('/api/v2/social/matches?category=' . urlencode('đánh vãng lai'), $this->headersFor($this->player1));
+        $resCat = $this->getJson('/api/v2/social/matches?category='.urlencode('đánh vãng lai'), $this->headersFor($this->player1));
         $resCat->assertStatus(200);
         $matchesCat = collect($resCat->json('matches'));
         $this->assertTrue($matchesCat->contains('id', $s1->id));

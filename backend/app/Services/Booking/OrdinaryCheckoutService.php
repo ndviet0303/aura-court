@@ -10,6 +10,7 @@ use App\Domain\Booking\DTOs\CreateBookingData;
 use App\Domain\Partner\Services\PartnerRolloutService;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Booking;
+use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\IdempotencyRecord;
 use App\Models\Organization;

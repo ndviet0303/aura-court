@@ -12,7 +12,9 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     })
   })
 
-  test('8.6.1: Nhóm thanh toán trực tiếp bị chặn nạp ví chung với mã lỗi 409 DIRECT_OWNER_PAYMENTS_ENABLED', async ({ page }) => {
+  test('8.6.1: Nhóm thanh toán trực tiếp bị chặn nạp ví chung với mã lỗi 409 DIRECT_OWNER_PAYMENTS_ENABLED', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -66,7 +68,9 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     expect(depositRes.status()).toBe(409)
     const errBody = await depositRes.json()
     expect(errBody.code).toBe('DIRECT_OWNER_PAYMENTS_ENABLED')
-    expect(errBody.message).toContain('Pooled wallet top-ups are disabled for this direct-payment cohort')
+    expect(errBody.message).toContain(
+      'Pooled wallet top-ups are disabled for this direct-payment cohort',
+    )
 
     // 3. UI Check: Select the same tenant wallet, then attempt its prohibited top-up.
     await page.context().clearCookies()
@@ -80,19 +84,27 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
 
     await expect(page.locator('.wallet-view-page')).toBeVisible({ timeout: 10000 })
     // Click deposit button to open modal
-    const depositBtn = page.locator('button:has-text("Nạp Tiền"), .btn-primary:has-text("Nạp")').first()
+    const depositBtn = page
+      .locator('button:has-text("Nạp Tiền"), .btn-primary:has-text("Nạp")')
+      .first()
     await depositBtn.click()
 
     // In modal, click proceed / continue
-    const proceedBtn = page.locator('.modal-backdrop button.btn-primary, .deposit-modal button.btn-primary').first()
+    const proceedBtn = page
+      .locator('.modal-backdrop button.btn-primary, .deposit-modal button.btn-primary')
+      .first()
     if (await proceedBtn.isVisible()) {
       await proceedBtn.click()
       // Error banner or toast displayed
-      await expect(page.locator('.alert-pill-error, .text-danger, .error-message').first()).toBeVisible({ timeout: 10000 })
+      await expect(
+        page.locator('.alert-pill-error, .text-danger, .error-message').first(),
+      ).toBeVisible({ timeout: 10000 })
     }
   })
 
-  test('8.6.2: Bảo toàn số dư ví cũ: Lịch sử giao dịch & số dư được giữ nguyên, không tự động trừ', async ({ page }) => {
+  test('8.6.2: Bảo toàn số dư ví cũ: Lịch sử giao dịch & số dư được giữ nguyên, không tự động trừ', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -147,11 +159,13 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       ]);
     `
 
-    const arranged = JSON.parse(execFileSync('php', ['-r', arrangeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const arranged = JSON.parse(
+      execFileSync('php', ['-r', arrangeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       wallet_id: number
       balance: number
       reference: string
@@ -335,11 +349,13 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       ]);
     `
 
-    const refundResult = JSON.parse(execFileSync('php', ['-r', directRefundScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const refundResult = JSON.parse(
+      execFileSync('php', ['-r', directRefundScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       initial_balance: number
       final_balance: number
       obligation_status: string
@@ -437,11 +453,13 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       ]);
     `
 
-    const checkoutResult = JSON.parse(execFileSync('php', ['-r', directCheckoutScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const checkoutResult = JSON.parse(
+      execFileSync('php', ['-r', directCheckoutScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       booking_id: number
       payment_model: string
       status: string

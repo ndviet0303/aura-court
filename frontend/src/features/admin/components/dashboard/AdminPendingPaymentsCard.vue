@@ -23,7 +23,9 @@ function formatMoney(amount: number): string {
     <div class="card-header">
       <div class="title-with-icon">
         <span class="material-symbols-outlined card-title-icon">credit_card</span>
-        <h3 class="title">{{ t('admin.dashboard.pendingManualPayments', { count: payments.length }) }}</h3>
+        <h3 class="title">
+          {{ t('admin.dashboard.pendingManualPayments', { count: payments.length }) }}
+        </h3>
       </div>
       <span class="sub">{{ t('admin.dashboard.reconcileBankTransfers') }}</span>
     </div>
@@ -50,8 +52,15 @@ function formatMoney(amount: number): string {
       <div v-for="p in payments" :key="p.id" class="pay-item">
         <div class="p-info">
           <strong class="font-mono text-pink">{{ formatMoney(p.amount) }}</strong>
-          <span class="transfer-code font-mono">{{ t('admin.dashboard.transferContent', { code: p.transfer_code }) }}</span>
-          <span class="booking-ref">{{ t('admin.dashboard.bookingRef', { code: p.booking?.code || '', customer: p.booking?.user?.name || t('admin.dashboard.walkInCustomer') }) }}</span>
+          <span class="transfer-code font-mono">{{
+            t('admin.dashboard.transferContent', { code: p.transfer_code })
+          }}</span>
+          <span class="booking-ref">{{
+            t('admin.dashboard.bookingRef', {
+              code: p.booking?.code || '',
+              customer: p.booking?.user?.name || t('admin.dashboard.walkInCustomer'),
+            })
+          }}</span>
         </div>
 
         <button type="button" class="btn-verify" @click="emit('verify', p)">
@@ -230,7 +239,11 @@ function formatMoney(amount: number): string {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>

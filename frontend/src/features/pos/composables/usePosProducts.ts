@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { posApi } from '../api/posApi'
 import type { Product, ProductCategory } from '../types/pos'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -13,16 +13,25 @@ export function usePosProducts() {
   const categories = [
     { key: 'all', labelKey: 'admin.pos.catAll', label: 'Tất Cả', icon: 'grid_view' },
     { key: 'drinks', labelKey: 'admin.pos.catDrinks', label: 'Nước Giải Khát', icon: 'local_cafe' },
-    { key: 'nutrition', labelKey: 'admin.pos.catNutrition', label: 'Dinh Dưỡng', icon: 'nutrition' },
-    { key: 'equipment', labelKey: 'admin.pos.catEquipment', label: 'Dụng Cụ & Phụ Kiện', icon: 'sports_tennis' },
+    {
+      key: 'nutrition',
+      labelKey: 'admin.pos.catNutrition',
+      label: 'Dinh Dưỡng',
+      icon: 'nutrition',
+    },
+    {
+      key: 'equipment',
+      labelKey: 'admin.pos.catEquipment',
+      label: 'Dụng Cụ & Phụ Kiện',
+      icon: 'sports_tennis',
+    },
     { key: 'rental', labelKey: 'admin.pos.catRental', label: 'Cho Thuê', icon: 'schedule' },
     { key: 'services', labelKey: 'admin.pos.catServices', label: 'Dịch Vụ Sân', icon: 'build' },
   ]
 
   const filteredProducts = computed(() => {
     return products.value.filter((prod) => {
-      const matchCat =
-        selectedCategory.value === 'all' || prod.category === selectedCategory.value
+      const matchCat = selectedCategory.value === 'all' || prod.category === selectedCategory.value
       const q = searchQuery.value.trim().toLowerCase()
       if (!q) return matchCat
 
@@ -40,12 +49,19 @@ export function usePosProducts() {
       const remote = await posApi.getProducts()
       if (Array.isArray(remote)) {
         products.value = remote.map((item: any) => {
-          const category = (item.metadata?.category || item.category || 'equipment') as ProductCategory
+          const category = (item.metadata?.category ||
+            item.category ||
+            'equipment') as ProductCategory
           let defaultVat = 0.08
           if (category === 'equipment' || category === 'membership') {
-            defaultVat = 0.10
+            defaultVat = 0.1
           }
-          const vatRate = item.vat_rate !== undefined ? Number(item.vat_rate) : (item.metadata?.vat_rate !== undefined ? Number(item.metadata.vat_rate) : defaultVat)
+          const vatRate =
+            item.vat_rate !== undefined
+              ? Number(item.vat_rate)
+              : item.metadata?.vat_rate !== undefined
+                ? Number(item.metadata.vat_rate)
+                : defaultVat
 
           return {
             id: item.id,

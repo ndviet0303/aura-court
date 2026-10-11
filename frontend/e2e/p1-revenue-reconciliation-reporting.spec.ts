@@ -34,7 +34,8 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
   const venue1Id = org1?.venue1A?.id
   const court1Id = org1?.venue1A?.courts[0]
   const venue2Id = org2?.venue2?.id
-  if (!org1Id || !org2Id || !venue1Id || !court1Id || !venue2Id) throw new Error('Revenue fixtures require the current organizations, venues and court.')
+  if (!org1Id || !org2Id || !venue1Id || !court1Id || !venue2Id)
+    throw new Error('Revenue fixtures require the current organizations, venues and court.')
 
   test('9.6.1: Hai dòng tiền độc lập & Phân bổ doanh thu chuẩn xác (FR-PAY-14, FR-PAY-15, FR-PAY-16)', async () => {
     const reportScript = `
@@ -126,11 +127,13 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       ]);
     `
 
-    const reportResult = JSON.parse(execFileSync('php', ['-r', reportScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const reportResult = JSON.parse(
+      execFileSync('php', ['-r', reportScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       owner_report_owner_revenue: number
       owner_report_platform_fees: number
       owner_report_booking_revenue: number
@@ -197,11 +200,13 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       ]);
     `
 
-    const scopingResult = JSON.parse(execFileSync('php', ['-r', scopingScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { report_denied: boolean; csv_denied: boolean }
+    const scopingResult = JSON.parse(
+      execFileSync('php', ['-r', scopingScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { report_denied: boolean; csv_denied: boolean }
 
     expect(scopingResult.report_denied).toBe(true)
     expect(scopingResult.csv_denied).toBe(true)
@@ -293,11 +298,13 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       ]);
     `
 
-    const csvResult = JSON.parse(execFileSync('php', ['-r', csvScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const csvResult = JSON.parse(
+      execFileSync('php', ['-r', csvScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       header: string[]
       total_rows: number
       has_owner_rows: boolean
@@ -483,11 +490,13 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       ]);
     `
 
-    const reconResult = JSON.parse(execFileSync('php', ['-r', reconScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const reconResult = JSON.parse(
+      execFileSync('php', ['-r', reconScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       initial_run_status: string
       note_only_blocked: boolean
       resolved_success: boolean
@@ -505,7 +514,9 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
     expect(reconResult.final_mismatch_amount).toBe(0)
   })
 
-  test('9.6.5: Giao diện đối soát tài chính admin & Duy trì sau F5 (/admin/reconciliation)', async ({ page }) => {
+  test('9.6.5: Giao diện đối soát tài chính admin & Duy trì sau F5 (/admin/reconciliation)', async ({
+    page,
+  }) => {
     // 1. Admin logs in
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.fill('input[type="email"], input[name="email"]', admin.email)

@@ -51,7 +51,10 @@ function formatMoney(amount?: number): string {
           <div class="summary-details">
             <div class="detail-row">
               <span class="material-symbols-outlined detail-ico">location_on</span>
-              <span>{{ match.venue_name }} {{ match.court_name ? `(${match.court_name})` : '' }} - {{ match.city }}</span>
+              <span
+                >{{ match.venue_name }} {{ match.court_name ? `(${match.court_name})` : '' }} -
+                {{ match.city }}</span
+              >
             </div>
 
             <div class="detail-row">
@@ -61,7 +64,10 @@ function formatMoney(amount?: number): string {
 
             <div class="detail-row">
               <span class="material-symbols-outlined detail-ico">person</span>
-              <span>Chủ phòng: <strong>{{ match.host_name }}</strong> (Uy tín: {{ match.host_reputation }}%)</span>
+              <span
+                >Chủ phòng: <strong>{{ match.host_name }}</strong> (Uy tín:
+                {{ match.host_reputation }}%)</span
+              >
             </div>
           </div>
         </div>
@@ -72,7 +78,9 @@ function formatMoney(amount?: number): string {
             <span class="fee-lbl">Dự kiến chi phí phần bạn:</span>
             <span class="fee-val font-mono">{{ formatMoney(match.cost_per_person) }}</span>
           </div>
-          <span class="fee-mode">{{ match.split_bill_mode || 'Chia đều tiền sân & chia bill trực tiếp sau trận' }}</span>
+          <span class="fee-mode">{{
+            match.split_bill_mode || 'Chia đều tiền sân & chia bill trực tiếp sau trận'
+          }}</span>
         </div>
 
         <!-- Community Guidelines Note -->
@@ -80,19 +88,18 @@ function formatMoney(amount?: number): string {
           <span class="material-symbols-outlined note-ico">info</span>
           <div class="note-text">
             <strong>Quy định văn hóa giao lưu Aura Court:</strong>
-            <p>Vui lòng đến trước 10 phút để khởi động. Trong trường hợp có việc đột xuất không thể tham gia, hãy báo cho chủ phòng trước tối thiểu 2 tiếng để nhường chỗ cho vận động viên khác.</p>
+            <p>
+              Vui lòng đến trước 10 phút để khởi động. Trong trường hợp có việc đột xuất không thể
+              tham gia, hãy báo cho chủ phòng trước tối thiểu 2 tiếng để nhường chỗ cho vận động
+              viên khác.
+            </p>
           </div>
         </div>
       </div>
 
       <!-- Footer Actions -->
       <div class="modal-footer">
-        <AuraButton
-          variant="ghost"
-          size="md"
-          :disabled="processing"
-          @click="emit('close')"
-        >
+        <AuraButton variant="ghost" size="md" :disabled="processing" @click="emit('close')">
           Huỷ bỏ
         </AuraButton>
 

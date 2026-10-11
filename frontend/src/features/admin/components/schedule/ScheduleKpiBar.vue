@@ -79,7 +79,9 @@ const { t } = useI18n()
   border-radius: 14px;
   border: 1px solid var(--outline);
   background: var(--surface);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .kpi-card:hover {
@@ -111,9 +113,15 @@ const { t } = useI18n()
   font-weight: 800;
 }
 
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-pink { color: var(--pink-dark, #db2777); }
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
 
 .mt-2 {
   margin-top: 6px;

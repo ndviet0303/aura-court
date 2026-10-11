@@ -27,7 +27,11 @@ export function useAdminManageCourts() {
   function activeOrganizationId(): number | undefined {
     const user = auth.user
     if (!user) return undefined
-    if (user.capabilities && typeof user.capabilities === 'object' && !Array.isArray(user.capabilities)) {
+    if (
+      user.capabilities &&
+      typeof user.capabilities === 'object' &&
+      !Array.isArray(user.capabilities)
+    ) {
       const activeOrgId = user.capabilities.active_organization_id
       if (typeof activeOrgId === 'number') return activeOrgId
     }
@@ -76,24 +80,33 @@ export function useAdminManageCourts() {
 
   const filteredCourts = computed(() => {
     return courts.value.filter((c) => {
-      const matchVenue = selectedVenueFilter.value === 'all' || c.venue?.id === selectedVenueFilter.value
+      const matchVenue =
+        selectedVenueFilter.value === 'all' || c.venue?.id === selectedVenueFilter.value
       const matchStatus =
         statusFilter.value === 'all' ||
         (statusFilter.value === 'active' ? c.is_active !== false : c.is_active === false)
       const matchSearch =
         !searchQuery.value.trim() ||
         resolveLocalizedText(c.name).toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        resolveLocalizedText(c.venue?.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+        resolveLocalizedText(c.venue?.name || '')
+          .toLowerCase()
+          .includes(searchQuery.value.toLowerCase())
       return matchVenue && matchStatus && matchSearch
     })
   })
 
   const totalCourtsCount = computed(() => courts.value.length)
   const activeCourtsCount = computed(() => courts.value.filter((c) => c.is_active !== false).length)
-  const totalBlocksCount = computed(() => courts.value.reduce((sum, c) => sum + (c.blocks?.length || 0), 0))
+  const totalBlocksCount = computed(() =>
+    courts.value.reduce((sum, c) => sum + (c.blocks?.length || 0), 0),
+  )
 
   const venueFilterOptions = computed(() => [
-    { value: 'all', label: t('admin.manage.allVenuesFilter', { count: venues.value.length }), icon: 'domain' },
+    {
+      value: 'all',
+      label: t('admin.manage.allVenuesFilter', { count: venues.value.length }),
+      icon: 'domain',
+    },
     ...venues.value.map((v) => ({
       value: v.id,
       label: resolveLocalizedText(v.name),
@@ -137,7 +150,9 @@ export function useAdminManageCourts() {
       courts.value = loadedCourts || []
       venues.value = loadedVenues || []
       sportZones.value = loadedZones || []
-      coupons.value = Array.isArray(loadedCoupons) ? loadedCoupons : (loadedCoupons as { data: Coupon[] })?.data || []
+      coupons.value = Array.isArray(loadedCoupons)
+        ? loadedCoupons
+        : (loadedCoupons as { data: Coupon[] })?.data || []
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('admin.manage.loadDataError'))
     } finally {
@@ -151,10 +166,14 @@ export function useAdminManageCourts() {
     try {
       if (nextStatus) {
         await adminApi.updateCourt(court.id, { is_active: true })
-        notice.value = t('admin.manage.statusOpenedNotice', { name: resolveLocalizedText(court.name) })
+        notice.value = t('admin.manage.statusOpenedNotice', {
+          name: resolveLocalizedText(court.name),
+        })
       } else {
         await adminApi.deleteCourt(court.id)
-        notice.value = t('admin.manage.statusClosedNotice', { name: resolveLocalizedText(court.name) })
+        notice.value = t('admin.manage.statusClosedNotice', {
+          name: resolveLocalizedText(court.name),
+        })
       }
       await load()
     } catch (cause: unknown) {

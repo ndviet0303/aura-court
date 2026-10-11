@@ -52,9 +52,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
         created_at: '2026-09-09T08:00:00.000Z',
         user: { name: 'Alice Tester' },
         reactions_counts: { like: 3 },
-        comments: [
-          { id: 101, user_id: 2, content: 'Tuyệt vời quá!', user: { name: 'Bob' } },
-        ],
+        comments: [{ id: 101, user_id: 2, content: 'Tuyệt vời quá!', user: { name: 'Bob' } }],
       },
       {
         id: 11,
@@ -121,9 +119,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
     } as any)
 
     vi.mocked(socialApi.getFriendRequests).mockResolvedValue({
-      incoming: [
-        { id: 60, requester: { id: 3, name: 'Charlie', email: 'charlie@test.vn' } },
-      ],
+      incoming: [{ id: 60, requester: { id: 3, name: 'Charlie', email: 'charlie@test.vn' } }],
       outgoing: [],
     } as any)
 
@@ -152,15 +148,12 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
 
     expect(socialApi.acceptFriendRequest).toHaveBeenCalledWith(60)
 
-    // 4. Send request to new user
-    const userIdInput = wrapper.find('.user-id-input')
-    if (userIdInput.exists()) {
-      await userIdInput.setValue(4)
-      const sendReqBtn = wrapper.find('.btn-send-req')
-      await sendReqBtn.trigger('click')
-      await flushPromises()
-      expect(socialApi.sendFriendRequest).toHaveBeenCalledWith(4)
-    }
+    // 4. Back on the friends sub-tab, send a request to a new user
+    await wrapper.findAll('.subtab-btn')[0]!.trigger('click')
+    await wrapper.find('.user-id-input').setValue(4)
+    await wrapper.find('.btn-send-req').trigger('click')
+    await flushPromises()
+    expect(socialApi.sendFriendRequest).toHaveBeenCalledWith(4)
   })
 
   it('SocialModerationModal: reviews pending reports and enforces audit reason for hide/restore', async () => {
@@ -207,7 +200,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
     expect(socialApi.hideFeedItem).toHaveBeenCalledWith(
       'post',
       11,
-      'Vi phạm chính sách thương mại và spam'
+      'Vi phạm chính sách thương mại và spam',
     )
   })
 })

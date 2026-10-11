@@ -38,11 +38,16 @@ function openPassModal(ath: Participant) {
   showPassModal.value = true
 }
 
+function openQrScanner() {
+  showQrScannerModal.value = true
+  scannedAthlete.value = null
+}
+
 function handleScanCode() {
   const code = scanCodeInput.value.trim().toLowerCase()
   if (!code) return
   const found = props.athletes.find(
-    (p: Participant) => p.qrCode?.toLowerCase() === code || p.name.toLowerCase().includes(code)
+    (p: Participant) => p.qrCode?.toLowerCase() === code || p.name.toLowerCase().includes(code),
   )
   if (found) {
     scannedAthlete.value = found
@@ -63,10 +68,7 @@ function handleScanCode() {
       </div>
 
       <div class="checkin-actions-bar">
-        <AuraButton
-          variant="secondary"
-          @click="showQrScannerModal = true; scannedAthlete = null"
-        >
+        <AuraButton variant="secondary" @click="openQrScanner">
           <span class="material-symbols-outlined icon-16">qr_code_scanner</span>
           <span>{{ t('admin.tournaments.scanQrBtn') }}</span>
         </AuraButton>
@@ -184,8 +186,12 @@ function handleScanCode() {
         <div class="ath-info-col">
           <div class="ath-title-row">
             <h4 class="ath-name">{{ resolveLocalizedText(ath.name) }}</h4>
-            <span v-if="ath.seed" class="ath-seed-tag font-mono">{{ t('admin.tournaments.seedLabel', { seed: ath.seed }) }}</span>
-            <span class="ath-category-tag">{{ ath.category || t('admin.tournaments.defaultCategory') }}</span>
+            <span v-if="ath.seed" class="ath-seed-tag font-mono">{{
+              t('admin.tournaments.seedLabel', { seed: ath.seed })
+            }}</span>
+            <span class="ath-category-tag">{{
+              ath.category || t('admin.tournaments.defaultCategory')
+            }}</span>
           </div>
 
           <div class="ath-meta-details">
@@ -214,8 +220,14 @@ function handleScanCode() {
             size="sm"
             @click="emit('toggleCheckIn', ath)"
           >
-            <span class="material-symbols-outlined icon-14">{{ ath.checkedIn ? 'check' : 'how_to_reg' }}</span>
-            <span>{{ ath.checkedIn ? t('admin.tournaments.checkedInBadge') : t('admin.tournaments.checkInBtn') }}</span>
+            <span class="material-symbols-outlined icon-14">{{
+              ath.checkedIn ? 'check' : 'how_to_reg'
+            }}</span>
+            <span>{{
+              ath.checkedIn
+                ? t('admin.tournaments.checkedInBadge')
+                : t('admin.tournaments.checkInBtn')
+            }}</span>
           </AuraButton>
         </div>
       </div>
@@ -236,7 +248,9 @@ function handleScanCode() {
             <span class="material-symbols-outlined card-title-icon">qr_code_scanner</span>
             <h3 class="modal-title">{{ t('admin.tournaments.qrScannerModalTitle') }}</h3>
           </div>
-          <button type="button" class="modal-close-btn" @click="showQrScannerModal = false">✕</button>
+          <button type="button" class="modal-close-btn" @click="showQrScannerModal = false">
+            ✕
+          </button>
         </div>
         <div class="modal-body scanner-body">
           <div class="camera-preview-box">
@@ -244,7 +258,7 @@ function handleScanCode() {
             <div class="scanner-frame-target"></div>
           </div>
           <p class="scan-hint">{{ t('admin.tournaments.scanHint') }}</p>
-          
+
           <div class="scan-input-row">
             <input
               v-model="scanCodeInput"
@@ -260,15 +274,29 @@ function handleScanCode() {
 
           <div v-if="scannedAthlete" class="qr-scan-feedback-box">
             <span class="alert-pill">✓ {{ t('admin.tournaments.scanSuccessAlert') }}</span>
-            <strong>{{ resolveLocalizedText(scannedAthlete.name) }} ({{ scannedAthlete.club || t('admin.tournaments.freeAgentClub') }})</strong>
-            <p class="font-mono">{{ t('admin.tournaments.passCodeLabel', { code: scannedAthlete.qrCode || scannedAthlete.id }) }}</p>
+            <strong
+              >{{ resolveLocalizedText(scannedAthlete.name) }} ({{
+                scannedAthlete.club || t('admin.tournaments.freeAgentClub')
+              }})</strong
+            >
+            <p class="font-mono">
+              {{
+                t('admin.tournaments.passCodeLabel', {
+                  code: scannedAthlete.qrCode || scannedAthlete.id,
+                })
+              }}
+            </p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Digital Pass Modal -->
-    <div v-if="showPassModal && selectedPassAthlete" class="modal-backdrop" @click.self="showPassModal = false">
+    <div
+      v-if="showPassModal && selectedPassAthlete"
+      class="modal-backdrop"
+      @click.self="showPassModal = false"
+    >
       <div class="modal-card modal-pass-card">
         <div class="modal-header">
           <div class="title-with-icon">
@@ -314,7 +342,9 @@ function handleScanCode() {
                 </div>
                 <div class="pass-club-text">
                   <span class="material-symbols-outlined icon-14">corporate_fare</span>
-                  <span>{{ selectedPassAthlete.club || t('admin.tournaments.freeAgentClub') }}</span>
+                  <span>{{
+                    selectedPassAthlete.club || t('admin.tournaments.freeAgentClub')
+                  }}</span>
                 </div>
               </div>
 
@@ -370,14 +400,23 @@ function handleScanCode() {
                   <rect x="90" y="104" width="6" height="6" fill="#0f172a" />
                   <rect x="104" y="104" width="6" height="6" fill="#0f172a" />
                 </svg>
-                <span class="pass-qr-code font-mono">{{ selectedPassAthlete.qrCode || `ATH-${selectedPassAthlete.id}` }}</span>
+                <span class="pass-qr-code font-mono">{{
+                  selectedPassAthlete.qrCode || `ATH-${selectedPassAthlete.id}`
+                }}</span>
               </div>
 
-              <div class="pass-status-pill" :class="{ 'is-checked': selectedPassAthlete.checkedIn }">
+              <div
+                class="pass-status-pill"
+                :class="{ 'is-checked': selectedPassAthlete.checkedIn }"
+              >
                 <span class="material-symbols-outlined icon-14">
                   {{ selectedPassAthlete.checkedIn ? 'verified' : 'pending_actions' }}
                 </span>
-                <span>{{ selectedPassAthlete.checkedIn ? t('admin.tournaments.checkedInBadge') : t('admin.tournaments.pendingAthletes') }}</span>
+                <span>{{
+                  selectedPassAthlete.checkedIn
+                    ? t('admin.tournaments.checkedInBadge')
+                    : t('admin.tournaments.pendingAthletes')
+                }}</span>
               </div>
             </div>
           </div>
@@ -515,8 +554,12 @@ function handleScanCode() {
   font-size: 18px;
 }
 
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
 
 .checkin-filter-toolbar {
   display: flex;
@@ -694,7 +737,9 @@ function handleScanCode() {
   color: var(--muted);
 }
 
-.meta-club, .meta-phone, .meta-time {
+.meta-club,
+.meta-phone,
+.meta-time {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -842,7 +887,9 @@ function handleScanCode() {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(219, 39, 119, 0.12);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(219, 39, 119, 0.12);
 }
 
 .pass-top-glow {
@@ -1024,11 +1071,20 @@ function handleScanCode() {
   border-color: rgba(16, 185, 129, 0.4);
 }
 
-.icon-16 { font-size: 16px; }
-.icon-14 { font-size: 14px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-14 {
+  font-size: 14px;
+}
 
 @keyframes scan {
-  0%, 100% { top: 10%; }
-  50% { top: 85%; }
+  0%,
+  100% {
+    top: 10%;
+  }
+  50% {
+    top: 85%;
+  }
 }
 </style>

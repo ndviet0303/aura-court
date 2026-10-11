@@ -83,7 +83,9 @@ const {
           :title="t('admin.kyc.refresh')"
           @click="fetchQueue"
         >
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }"
+            >refresh</span
+          >
         </AuraButton>
 
         <!-- Export Report Button -->
@@ -350,16 +352,25 @@ const {
   gap: 12px;
 }
 
-.icon-48 { font-size: 48px; color: var(--muted, #817476); }
-.icon-18 { font-size: 18px; }
-.icon-14 { font-size: 14px; }
+.icon-48 {
+  font-size: 48px;
+  color: var(--muted, #817476);
+}
+.icon-18 {
+  font-size: 18px;
+}
+.icon-14 {
+  font-size: 14px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .fade-enter-active,
@@ -371,4 +382,3 @@ const {
   opacity: 0;
 }
 </style>
-

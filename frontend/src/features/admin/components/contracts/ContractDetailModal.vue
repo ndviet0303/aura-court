@@ -43,7 +43,8 @@ function formatDate(dateStr?: string | null): string {
                 'tag-cancelled': contract.status === 'cancelled',
               }"
             >
-              ● {{
+              ●
+              {{
                 contract.status === 'active' || contract.status === 'confirmed'
                   ? t('admin.contracts.activeEffective')
                   : contract.status === 'overdue'
@@ -62,7 +63,9 @@ function formatDate(dateStr?: string | null): string {
           <div class="meta-item">
             <span class="meta-lbl">{{ t('admin.contracts.customerClubLabel') }}</span>
             <strong class="text-ink">{{ contract.customer_name }}</strong>
-            <span class="sub-txt font-mono">{{ contract.phone }} {{ contract.email ? `· ${contract.email}` : '' }}</span>
+            <span class="sub-txt font-mono"
+              >{{ contract.phone }} {{ contract.email ? `· ${contract.email}` : '' }}</span
+            >
           </div>
 
           <div class="meta-item">
@@ -74,13 +77,19 @@ function formatDate(dateStr?: string | null): string {
           <div class="meta-item">
             <span class="meta-lbl">{{ t('admin.contracts.scheduleAndSlotLabel') }}</span>
             <strong class="text-ink">{{ contract.weekday }}</strong>
-            <span class="sub-txt font-mono">{{ contract.time_slot }} ({{ contract.frequency }})</span>
+            <span class="sub-txt font-mono"
+              >{{ contract.time_slot }} ({{ contract.frequency }})</span
+            >
           </div>
 
           <div class="meta-item">
             <span class="meta-lbl">{{ t('admin.contracts.contractTermLabel') }}</span>
-            <strong class="font-mono text-ink">{{ formatDate(contract.start_date) }} - {{ formatDate(contract.end_date) }}</strong>
-            <span class="sub-txt text-pink font-mono font-bold">{{ formatCurrency(contract.total_monthly_amount) }} / tháng</span>
+            <strong class="font-mono text-ink"
+              >{{ formatDate(contract.start_date) }} - {{ formatDate(contract.end_date) }}</strong
+            >
+            <span class="sub-txt text-pink font-mono font-bold"
+              >{{ formatCurrency(contract.total_monthly_amount) }} / tháng</span
+            >
           </div>
         </div>
 
@@ -105,17 +114,17 @@ function formatDate(dateStr?: string | null): string {
               {{ t('admin.contracts.noInvoicesYet') }}
             </div>
 
-            <div
-              v-for="(cycle, idx) in contract.invoices"
-              :key="cycle.id"
-              class="cycle-row"
-            >
+            <div v-for="(cycle, idx) in contract.invoices" :key="cycle.id" class="cycle-row">
               <div class="cycle-period">
                 <strong>{{ t('admin.contracts.cycleLabel', { index: idx + 1 }) }}</strong>
-                <span class="period-sub font-mono">{{ formatDate(cycle.period_start) }} - {{ formatDate(cycle.period_end) }}</span>
+                <span class="period-sub font-mono"
+                  >{{ formatDate(cycle.period_start) }} - {{ formatDate(cycle.period_end) }}</span
+                >
               </div>
 
-              <span class="font-mono">{{ cycle.status === 'zero_payable' ? '—' : formatDate(cycle.due_at) }}</span>
+              <span class="font-mono">{{
+                cycle.status === 'zero_payable' ? '—' : formatDate(cycle.due_at)
+              }}</span>
               <strong class="text-pink font-mono">{{ formatCurrency(cycle.amount) }}</strong>
 
               <div>
@@ -124,10 +133,14 @@ function formatDate(dateStr?: string | null): string {
                   :class="{
                     paid: cycle.status === 'paid',
                     overdue: cycle.status === 'overdue',
-                    pending: cycle.status === 'pending' || cycle.status === 'guaranteed' || cycle.status === 'zero_payable',
+                    pending:
+                      cycle.status === 'pending' ||
+                      cycle.status === 'guaranteed' ||
+                      cycle.status === 'zero_payable',
                   }"
                 >
-                  ● {{
+                  ●
+                  {{
                     cycle.status === 'paid'
                       ? t('admin.contracts.statusPaid')
                       : cycle.status === 'zero_payable'
@@ -148,18 +161,28 @@ function formatDate(dateStr?: string | null): string {
                   <span class="material-symbols-outlined icon-14 text-green">check_circle</span>
                   <span>{{ formatDate(cycle.paid_at) }}</span>
                 </span>
-                <span v-else-if="cycle.status === 'zero_payable'" class="text-muted">{{ t('admin.contracts.statusZeroPayable') }}</span>
-                <span v-else class="text-muted">{{ t('admin.contracts.awaitingVerifiedReceipt') }}</span>
+                <span v-else-if="cycle.status === 'zero_payable'" class="text-muted">{{
+                  t('admin.contracts.statusZeroPayable')
+                }}</span>
+                <span v-else class="text-muted">{{
+                  t('admin.contracts.awaitingVerifiedReceipt')
+                }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Occurrences List Section -->
-        <div v-if="contract.occurrences && contract.occurrences.length > 0" class="section-box mt-4">
+        <div
+          v-if="contract.occurrences && contract.occurrences.length > 0"
+          class="section-box mt-4"
+        >
           <div class="section-hdr">
             <span class="material-symbols-outlined sec-icon">calendar_month</span>
-            <h4 class="sec-title">{{ t('admin.contracts.occurrencesTitle') }} ({{ contract.occurrences.length }} {{ t('admin.contracts.sessions') }})</h4>
+            <h4 class="sec-title">
+              {{ t('admin.contracts.occurrencesTitle') }} ({{ contract.occurrences.length }}
+              {{ t('admin.contracts.sessions') }})
+            </h4>
           </div>
 
           <div class="occurrences-grid">
@@ -396,9 +419,18 @@ function formatDate(dateStr?: string | null): string {
   display: inline-block;
 }
 
-.cycle-status.paid { color: #10b981; background: rgba(16, 185, 129, 0.1); }
-.cycle-status.overdue { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
-.cycle-status.pending { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.cycle-status.paid {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+.cycle-status.overdue {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+.cycle-status.pending {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
 
 .receipt-code {
   font-size: 11px;
@@ -478,9 +510,18 @@ function formatDate(dateStr?: string | null): string {
   display: inline-block;
 }
 
-.tag-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.tag-overdue { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.tag-cancelled { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
+.tag-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+.tag-overdue {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+.tag-cancelled {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
 
 .modal-footer {
   display: flex;
@@ -508,9 +549,19 @@ function formatDate(dateStr?: string | null): string {
   font-size: 12px;
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.mt-1 { margin-top: 4px; }
-.mt-4 { margin-top: 16px; }
-.text-right { text-align: right; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.mt-1 {
+  margin-top: 4px;
+}
+.mt-4 {
+  margin-top: 16px;
+}
+.text-right {
+  text-align: right;
+}
 </style>

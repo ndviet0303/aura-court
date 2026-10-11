@@ -38,7 +38,10 @@ const filters = [
       >
         <span class="material-symbols-outlined filter-ico">{{ f.icon }}</span>
         <span>{{ $t(`notifications.filters.${f.id}`) }}</span>
-        <span class="count-badge font-mono" :class="{ 'has-unread': f.id === 'unread' && counts.unread > 0 }">
+        <span
+          class="count-badge font-mono"
+          :class="{ 'has-unread': f.id === 'unread' && counts.unread > 0 }"
+        >
           {{ counts[f.id] }}
         </span>
       </button>
@@ -88,7 +91,7 @@ html.dark .filter-pill-btn {
 }
 
 .filter-pill-btn:hover {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   color: var(--ink, #1c1618);
 }
 
@@ -98,8 +101,8 @@ html.dark .filter-pill-btn:hover {
 }
 
 .filter-pill-btn.is-active {
-  background: var(--primary, #6B2D3F);
-  border-color: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
+  border-color: var(--primary, #6b2d3f);
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(107, 45, 63, 0.2);
 }

@@ -23,12 +23,16 @@ describe('SEO & Bilingual Routes', () => {
 
       // Verify that the title key exists in both locales
       const viTitle = i18n.global.t(titleKey!)
-      expect(viTitle, `Missing VI translation for ${titleKey} on route ${route.path}`).not.toBe(titleKey)
+      expect(viTitle, `Missing VI translation for ${titleKey} on route ${route.path}`).not.toBe(
+        titleKey,
+      )
       expect(viTitle.length).toBeGreaterThan(0)
 
       setAppLocale('en')
       const enTitle = i18n.global.t(titleKey!)
-      expect(enTitle, `Missing EN translation for ${titleKey} on route ${route.path}`).not.toBe(titleKey)
+      expect(enTitle, `Missing EN translation for ${titleKey} on route ${route.path}`).not.toBe(
+        titleKey,
+      )
       expect(enTitle.length).toBeGreaterThan(0)
 
       setAppLocale('vi')
@@ -48,14 +52,18 @@ describe('SEO & Bilingual Routes', () => {
     setAppLocale('vi')
     applySeo(mockRoute)
     expect(document.title).toBe(vi.seo.tournamentsTitle)
-    const metaDescVi = document.head.querySelector<HTMLMetaElement>('meta[name="description"]')?.content
+    const metaDescVi = document.head.querySelector<HTMLMetaElement>(
+      'meta[name="description"]',
+    )?.content
     expect(metaDescVi).toBe(vi.seo.tournamentsDesc)
 
     // Test in English
     setAppLocale('en')
     applySeo(mockRoute)
     expect(document.title).toBe(en.seo.tournamentsTitle)
-    const metaDescEn = document.head.querySelector<HTMLMetaElement>('meta[name="description"]')?.content
+    const metaDescEn = document.head.querySelector<HTMLMetaElement>(
+      'meta[name="description"]',
+    )?.content
     expect(metaDescEn).toBe(en.seo.tournamentsDesc)
   })
 

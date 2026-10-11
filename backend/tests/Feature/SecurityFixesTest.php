@@ -74,7 +74,7 @@ class SecurityFixesTest extends TestCase
             'app.frontend_url' => 'http://localhost:5173',
         ]);
 
-        $longAvatar = 'https://lh3.googleusercontent.com/a/' . str_repeat('ACg8ocK-UjWd8GVQUF8pU6T3urOWLuZOcZJVAMi9JQCJZJ3f4pBTkFBr-gcD2ZUCfGMGBQ-kCXtbZqzF2l5wwJARs42Wy3i', 5) . '=s96-c';
+        $longAvatar = 'https://lh3.googleusercontent.com/a/'.str_repeat('ACg8ocK-UjWd8GVQUF8pU6T3urOWLuZOcZJVAMi9JQCJZJ3f4pBTkFBr-gcD2ZUCfGMGBQ-kCXtbZqzF2l5wwJARs42Wy3i', 5).'=s96-c';
 
         $provider = Mockery::mock(AbstractProvider::class);
         $provider->shouldReceive('redirectUrl')

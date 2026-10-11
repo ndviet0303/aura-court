@@ -134,7 +134,7 @@ const showPassword = ref(false)
 .forgot-link {
   font-size: 12.5px;
   font-weight: 600;
-  color: #6B2D3F;
+  color: #6b2d3f;
   text-decoration: none;
   transition: opacity 0.15s ease;
 }
@@ -186,7 +186,7 @@ html.dark .custom-input {
 }
 
 .custom-input:focus {
-  border-color: #6B2D3F;
+  border-color: #6b2d3f;
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.15);
 }
 
@@ -196,7 +196,7 @@ html.dark .custom-input:focus {
 }
 
 .custom-input:focus ~ .input-icon {
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .custom-input:focus ~ .input-icon {
@@ -242,7 +242,7 @@ html.dark .custom-input:focus ~ .input-icon {
 .custom-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #6B2D3F;
+  accent-color: #6b2d3f;
   cursor: pointer;
 }
 
@@ -258,7 +258,7 @@ html.dark .custom-checkbox {
 .auth-submit-btn {
   margin-top: 6px;
   height: 48px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -303,6 +303,8 @@ html.dark .custom-checkbox {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

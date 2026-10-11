@@ -1,0 +1,7 @@
+# Mechanical formatting commits, skipped by git blame. Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style(backend): apply Pint (laravel preset) to the whole backend
+897118f43b185f4a8e95dff472a3110ca0b85aea
+# style(frontend): apply Prettier to src, e2e and root configs
+d426dfcd931621c6091123b8efa4c583cdfd9c3b

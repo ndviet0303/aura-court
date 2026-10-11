@@ -12,12 +12,10 @@ use App\Models\PosProduct;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\ServiceTab;
-use App\Models\ServiceTabItem;
 use App\Models\StockMovement;
 use App\Models\TenantCustomer;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\WalletAccount;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\POS\ServiceTabService;
 use Carbon\Carbon;
@@ -29,12 +27,19 @@ class ServiceTabAndStockReservationTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $cashier;
+
     private User $staff;
+
     private User $customer;
+
     private Venue $venue;
+
     private Court $court;
+
     private PosProduct $waterProduct;
+
     private PosProduct $gripProduct;
 
     protected function setUp(): void
@@ -43,7 +48,7 @@ class ServiceTabAndStockReservationTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Court Arena',
-            'slug' => 'aura-arena-' . uniqid(),
+            'slug' => 'aura-arena-'.uniqid(),
             'status' => 'active',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
@@ -86,7 +91,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         $this->venue = Venue::create([
             'organization_id' => $this->tenant->id,
             'name' => 'Aura Arena District 7',
-            'slug' => 'aura-d7-' . uniqid(),
+            'slug' => 'aura-d7-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -136,7 +141,7 @@ class ServiceTabAndStockReservationTest extends TestCase
             'organization_id' => $this->tenant->id,
             'user_id' => $this->customer->id,
             'court_id' => $this->court->id,
-            'code' => 'RES-' . strtoupper(uniqid()),
+            'code' => 'RES-'.strtoupper(uniqid()),
             'status' => 'confirmed',
             'currency' => 'VND',
             'total_amount' => 180000,
@@ -161,7 +166,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         return CashShift::create([
             'organization_id' => $this->tenant->id,
             'cashier_id' => $this->cashier->id,
-            'shift_code' => 'SHIFT-' . strtoupper(uniqid()),
+            'shift_code' => 'SHIFT-'.strtoupper(uniqid()),
             'opened_at' => now(),
             'opening_cash' => 500000,
             'expected_cash' => 500000,

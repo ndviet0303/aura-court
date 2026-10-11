@@ -37,14 +37,25 @@ function formatMoney(val: number): string {
           <h4>AURA COURT SYSTEM</h4>
           <p class="receipt-sub">{{ t('admin.pos.receiptSubtitle') }}</p>
           <p class="receipt-time">{{ receipt.created_at }}</p>
-          <p class="receipt-code">{{ t('admin.pos.receiptOrderCode') }}: <strong>{{ receipt.order_code }}</strong></p>
+          <p class="receipt-code">
+            {{ t('admin.pos.receiptOrderCode') }}: <strong>{{ receipt.order_code }}</strong>
+          </p>
         </div>
 
         <div class="receipt-meta-info">
-          <p>{{ t('admin.pos.receiptCashier') }}: <strong>{{ receipt.cashier_name }}</strong></p>
-          <p v-if="receipt.customer_name">{{ t('admin.pos.receiptCustomer') }}: <strong>{{ receipt.customer_name }}</strong></p>
-          <p v-if="receipt.court_info">{{ t('admin.pos.receiptCourt') }}: <strong>{{ receipt.court_info }}</strong></p>
-          <p>{{ t('admin.pos.receiptMethod') }}: <strong>{{ receipt.payment_method.toUpperCase() }}</strong></p>
+          <p>
+            {{ t('admin.pos.receiptCashier') }}: <strong>{{ receipt.cashier_name }}</strong>
+          </p>
+          <p v-if="receipt.customer_name">
+            {{ t('admin.pos.receiptCustomer') }}: <strong>{{ receipt.customer_name }}</strong>
+          </p>
+          <p v-if="receipt.court_info">
+            {{ t('admin.pos.receiptCourt') }}: <strong>{{ receipt.court_info }}</strong>
+          </p>
+          <p>
+            {{ t('admin.pos.receiptMethod') }}:
+            <strong>{{ receipt.payment_method.toUpperCase() }}</strong>
+          </p>
         </div>
 
         <hr class="receipt-divider" />
@@ -55,14 +66,12 @@ function formatMoney(val: number): string {
             <span>{{ t('admin.pos.receiptHdrQty') }}</span>
             <span>{{ t('admin.pos.receiptHdrTotal') }}</span>
           </div>
-          <div
-            v-for="(item, idx) in receipt.items"
-            :key="idx"
-            class="receipt-item-line"
-          >
+          <div v-for="(item, idx) in receipt.items" :key="idx" class="receipt-item-line">
             <span class="item-name">
               {{ item.name }}
-              <small v-if="item.vat_rate !== undefined" class="receipt-item-vat">({{ Math.round(item.vat_rate * 100) }}% VAT)</small>
+              <small v-if="item.vat_rate !== undefined" class="receipt-item-vat"
+                >({{ Math.round(item.vat_rate * 100) }}% VAT)</small
+              >
             </span>
             <span class="item-qty">x{{ item.quantity }}</span>
             <span class="item-tot">{{ formatMoney(item.total) }}</span>
@@ -81,11 +90,7 @@ function formatMoney(val: number): string {
             <span>-{{ formatMoney(receipt.discount_amount) }}</span>
           </div>
           <template v-if="receipt.vat_breakdown && receipt.vat_breakdown.length > 0">
-            <div
-              v-for="b in receipt.vat_breakdown"
-              :key="b.rate"
-              class="calc-row"
-            >
+            <div v-for="b in receipt.vat_breakdown" :key="b.rate" class="calc-row">
               <span>{{ t('admin.pos.receiptVat', { percent: b.percent }) }}:</span>
               <span>+{{ formatMoney(b.amount) }}</span>
             </div>

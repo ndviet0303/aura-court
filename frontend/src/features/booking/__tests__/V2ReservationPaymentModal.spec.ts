@@ -22,7 +22,8 @@ const pendingPayment = {
   expires_at: '2026-09-25T12:30:00Z',
   paid_at: null,
   receiver: { bank_code: 'MBBank', account_name: 'Venue Owner', account_number: '0123456789' },
-  qr_url: 'https://img.vietqr.io/image/MB-0123456789-compact2.png?amount=100000&addInfo=ACRESV41TESTCODE',
+  qr_url:
+    'https://img.vietqr.io/image/MB-0123456789-compact2.png?amount=100000&addInfo=ACRESV41TESTCODE',
 }
 
 describe('V2ReservationPaymentModal', () => {
@@ -51,8 +52,12 @@ describe('V2ReservationPaymentModal', () => {
     await flushPromises()
 
     expect(bookingApi.createReservationPayment).toHaveBeenCalledWith('RSV-PAY-41')
-    expect(wrapper.get('[data-testid="reservation-payment-qr"]').attributes('src')).toBe(pendingPayment.qr_url)
-    expect(wrapper.get('[data-testid="reservation-payment-status"]').text()).toContain('Waiting for verified bank transfer')
+    expect(wrapper.get('[data-testid="reservation-payment-qr"]').attributes('src')).toBe(
+      pendingPayment.qr_url,
+    )
+    expect(wrapper.get('[data-testid="reservation-payment-status"]').text()).toContain(
+      'Waiting for verified bank transfer',
+    )
     expect(wrapper.text()).toContain('0123456789')
     expect(wrapper.text()).toContain('ACRESV41TESTCODE')
 
@@ -64,14 +69,18 @@ describe('V2ReservationPaymentModal', () => {
     await flushPromises()
 
     expect(bookingApi.getReservationPayment).toHaveBeenCalledWith('RSV-PAY-41')
-    expect(wrapper.get('[data-testid="reservation-payment-status"]').text()).toContain('Payment verified. Reservation confirmed.')
+    expect(wrapper.get('[data-testid="reservation-payment-status"]').text()).toContain(
+      'Payment verified. Reservation confirmed.',
+    )
     expect(wrapper.find('[data-testid="reservation-payment-qr"]').exists()).toBe(false)
     expect(wrapper.emitted('paid')).toHaveLength(1)
     wrapper.unmount()
   })
 
   it('does not show a bank QR when the server cannot start a verified payment', async () => {
-    vi.mocked(bookingApi.createReservationPayment).mockRejectedValueOnce(new Error('No selected verified account.'))
+    vi.mocked(bookingApi.createReservationPayment).mockRejectedValueOnce(
+      new Error('No selected verified account.'),
+    )
     const wrapper = mount(V2ReservationPaymentModal, {
       props: {
         show: true,

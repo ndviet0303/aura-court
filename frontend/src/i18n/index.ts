@@ -32,7 +32,7 @@ export const i18n = createI18n({
 
 export function setAppLocale(locale: AppLocale): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (i18n.global.locale as any).value = locale
+  ;(i18n.global.locale as any).value = locale
   localStorage.setItem(STORAGE_KEY, locale)
   document.documentElement.lang = locale
 }
@@ -136,18 +136,24 @@ export function resolveLocalizedText(value: unknown, targetLocale?: AppLocale): 
   if (typeof value === 'object') {
     const obj = value as Record<string, any>
     const resolved = obj[loc] || obj['vi'] || obj['en'] || Object.values(obj)[0] || ''
-    return typeof resolved === 'string' && (resolved.trim().startsWith('{') || resolved.trim().startsWith('"{'))
+    return typeof resolved === 'string' &&
+      (resolved.trim().startsWith('{') || resolved.trim().startsWith('"{'))
       ? resolveLocalizedText(resolved, loc)
       : String(resolved)
   }
   if (typeof value === 'string') {
     const trimmed = value.trim()
-    if ((trimmed.startsWith('{') || trimmed.startsWith('"{')) && (trimmed.includes('vi') || trimmed.includes('en'))) {
+    if (
+      (trimmed.startsWith('{') || trimmed.startsWith('"{')) &&
+      (trimmed.includes('vi') || trimmed.includes('en'))
+    ) {
       try {
-        const unescaped = trimmed.startsWith('"{') && trimmed.endsWith('}"') ? JSON.parse(trimmed) : trimmed
+        const unescaped =
+          trimmed.startsWith('"{') && trimmed.endsWith('}"') ? JSON.parse(trimmed) : trimmed
         const parsed = typeof unescaped === 'string' ? JSON.parse(unescaped) : unescaped
         if (parsed && typeof parsed === 'object') {
-          const resolved = parsed[loc] || parsed['vi'] || parsed['en'] || Object.values(parsed)[0] || trimmed
+          const resolved =
+            parsed[loc] || parsed['vi'] || parsed['en'] || Object.values(parsed)[0] || trimmed
           return resolveLocalizedText(resolved, loc)
         }
       } catch {

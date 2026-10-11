@@ -30,7 +30,9 @@ function formatMoney(amount: number): string {
       </div>
 
       <div class="hdr-count">
-        <span class="count-tag font-mono">{{ $t('wallet.availableCards', { count: wallets.length }) }}</span>
+        <span class="count-tag font-mono">{{
+          $t('wallet.availableCards', { count: wallets.length })
+        }}</span>
       </div>
     </div>
 
@@ -97,7 +99,9 @@ function formatMoney(amount: number): string {
             <span class="material-symbols-outlined">add</span>
           </div>
           <strong class="add-title">Liên Kết Cụm Sân Mới</strong>
-          <p class="add-desc">Kích hoạt ví trả trước hoặc nhập mã thẻ hội viên tại cơ sở khác thuộc chuỗi Aura.</p>
+          <p class="add-desc">
+            Kích hoạt ví trả trước hoặc nhập mã thẻ hội viên tại cơ sở khác thuộc chuỗi Aura.
+          </p>
         </div>
       </div>
     </div>
@@ -136,7 +140,7 @@ function formatMoney(amount: number): string {
 }
 
 .hdr-icon {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   font-size: 22px;
 }
 
@@ -178,7 +182,9 @@ function formatMoney(amount: number): string {
   color: #ffffff;
   overflow: hidden;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -292,7 +298,7 @@ function formatMoney(amount: number): string {
 
 .pin-icon {
   font-size: 13px;
-  color: #C9A15A;
+  color: #c9a15a;
 }
 
 .card-number-display {
@@ -377,7 +383,7 @@ function formatMoney(amount: number): string {
 }
 
 .pass-btn-primary {
-  background: var(--accent, #C9A15A);
+  background: var(--accent, #c9a15a);
   color: #1c1202;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -419,7 +425,7 @@ function formatMoney(amount: number): string {
 }
 
 .add-pass-card:hover {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   background: var(--surface);
   transform: translateY(-2px);
 }
@@ -440,7 +446,7 @@ function formatMoney(amount: number): string {
   height: 44px;
   border-radius: 50%;
   background: var(--surface);
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
   border: 1px solid var(--border);
   font-size: 20px;
   box-shadow: var(--shadow-sm);

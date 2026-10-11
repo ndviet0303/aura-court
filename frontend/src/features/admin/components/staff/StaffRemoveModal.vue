@@ -11,7 +11,7 @@ const props = withDefaults(
   }>(),
   {
     saving: false,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -45,7 +45,9 @@ function handleConfirm() {
 
         <div class="member-target-card">
           <strong class="target-name">{{ member.name }}</strong>
-          <span class="target-role">{{ member.role }} • UID: #{{ member.userId || member.id }}</span>
+          <span class="target-role"
+            >{{ member.role }} • UID: #{{ member.userId || member.id }}</span
+          >
         </div>
       </div>
 

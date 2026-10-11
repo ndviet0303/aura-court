@@ -125,7 +125,9 @@ describe('DropInSessionBillModal', () => {
     expect(wrapper.text()).toContain('Buổi chơi đang diễn ra hoặc chưa kết thúc')
     expect(wrapper.text()).toContain('Kết Thúc Buổi Chơi Ngay')
 
-    const endBtn = wrapper.findAll('button').find((b) => b.text().includes('Kết Thúc Buổi Chơi Ngay'))
+    const endBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Kết Thúc Buổi Chơi Ngay'))
     expect(endBtn).toBeDefined()
     await endBtn?.trigger('click')
     await flushPromises()
@@ -173,7 +175,7 @@ describe('DropInSessionBillModal', () => {
         actual_headcount: expect.any(Number),
         court_duration_minutes: expect.any(Number),
         court_hourly_rate: expect.any(Number),
-      })
+      }),
     )
   })
 
@@ -203,7 +205,9 @@ describe('DropInSessionBillModal', () => {
   })
 
   it('displays real API error without fallback to mock demo bill', async () => {
-    vi.mocked(apiV2.get).mockRejectedValueOnce(new Error('403 Forbidden: Bạn không có quyền truy cập'))
+    vi.mocked(apiV2.get).mockRejectedValueOnce(
+      new Error('403 Forbidden: Bạn không có quyền truy cập'),
+    )
 
     const wrapper = mount(DropInSessionBillModal, {
       props: {

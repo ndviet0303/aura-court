@@ -15,7 +15,9 @@ class FeedReport extends Model
     use BelongsToTenant, HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_RESOLVED = 'resolved';
+
     public const STATUS_DISMISSED = 'dismissed';
 
     protected function casts(): array

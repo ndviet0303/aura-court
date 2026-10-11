@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+
 class OrganizationController extends Controller
 {
     public function __construct(
@@ -45,6 +46,7 @@ class OrganizationController extends Controller
 
         return response()->json(['organization' => $organization]);
     }
+
     public function capabilities(Request $request, ?Organization $organization = null): JsonResponse
     {
         $targetOrg = $organization ?? $this->tenantContext->getOrganization();
@@ -170,7 +172,7 @@ class OrganizationController extends Controller
 
         $data = $request->validate([
             'email' => 'required|email',
-            'role' => 'required|string|in:' . implode(',', OrganizationMember::VALID_ROLES),
+            'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
             'venue_id' => 'nullable|integer',
             'venue_ids' => 'nullable|array',
             'venue_ids.*' => 'integer',
@@ -183,7 +185,7 @@ class OrganizationController extends Controller
             $targetUser = User::create([
                 'name' => ucfirst($namePart),
                 'email' => $data['email'],
-                'password' => bcrypt(\Illuminate\Support\Str::random(24)),
+                'password' => bcrypt(Str::random(24)),
                 'role' => 'customer',
                 'password_set' => false,
             ]);
@@ -224,7 +226,7 @@ class OrganizationController extends Controller
         abort_if($member->organization_id !== $organization->id, 404);
 
         $data = $request->validate([
-            'role' => 'required|string|in:' . implode(',', OrganizationMember::VALID_ROLES),
+            'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
             'status' => 'sometimes|string|in:active,suspended',
             'venue_id' => 'nullable|integer',
             'venue_ids' => 'nullable|array',
@@ -366,7 +368,7 @@ class OrganizationController extends Controller
 
         $data = $request->validate([
             'email' => 'required|email',
-            'role' => 'required|string|in:' . implode(',', OrganizationMember::VALID_ROLES),
+            'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
             'venue_id' => 'nullable|integer',
             'venue_ids' => 'nullable|array',
             'venue_ids.*' => 'integer',

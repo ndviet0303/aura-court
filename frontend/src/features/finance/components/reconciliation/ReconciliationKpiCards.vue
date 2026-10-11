@@ -76,7 +76,9 @@ function formatCurrency(amount?: number): string {
             <span class="material-symbols-outlined icon-type">account_balance</span>
             <span class="card-label">{{ t('admin.reconciliation.kpiSettlementTitle') }}</span>
           </div>
-          <span v-if="stats.mismatch_total > 0" class="material-symbols-outlined status-icon-warn">error</span>
+          <span v-if="stats.mismatch_total > 0" class="material-symbols-outlined status-icon-warn"
+            >error</span
+          >
           <span v-else class="material-symbols-outlined status-icon-ok">check_circle</span>
         </div>
         <div class="card-value" :class="{ 'text-error': stats.mismatch_total > 0 }">
@@ -147,7 +149,10 @@ function formatCurrency(amount?: number): string {
   flex-direction: column;
   gap: 10px;
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .kpi-card:hover {
@@ -302,8 +307,14 @@ function formatCurrency(amount?: number): string {
 }
 
 @keyframes shimmer {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 </style>

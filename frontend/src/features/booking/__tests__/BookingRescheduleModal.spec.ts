@@ -3,7 +3,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 import { bookingApi } from '../api/bookingApi'
 import { i18n } from '@/i18n'
-import type { ChangeableBooking, ReschedulePreview, RescheduleResult } from '../types/reservationChanges'
+import type {
+  ChangeableBooking,
+  ReschedulePreview,
+  RescheduleResult,
+} from '../types/reservationChanges'
 import type { Court } from '@/features/court/types/court'
 
 vi.mock('../api/bookingApi', () => ({
@@ -25,14 +29,23 @@ vi.mock('@/core/api/client', () => ({
 const booking: ChangeableBooking = {
   code: 'BK-RESCHED-1',
   status: 'confirmed',
-  slots: [{ id: 1, starts_at: '2099-09-01T18:00:00Z', ends_at: '2099-09-01T19:00:00Z', unit_price: 200000 }],
+  slots: [
+    {
+      id: 1,
+      starts_at: '2099-09-01T18:00:00Z',
+      ends_at: '2099-09-01T19:00:00Z',
+      unit_price: 200000,
+    },
+  ],
 }
 
 function basePreview(overrides: Partial<ReschedulePreview>): ReschedulePreview {
   return {
     reservation_code: 'BK-RESCHED-1',
     new_court_id: 2,
-    slots: [{ starts_at: '2099-09-02T18:00:00Z', ends_at: '2099-09-02T19:00:00Z', unit_price: 200000 }],
+    slots: [
+      { starts_at: '2099-09-02T18:00:00Z', ends_at: '2099-09-02T19:00:00Z', unit_price: 200000 },
+    ],
     policy_version: 3,
     deadline_at: '2099-08-30T18:00:00Z',
     original_paid_amount: 200000,
@@ -77,7 +90,11 @@ describe('BookingRescheduleModal', () => {
 
   it('shows the extra-payment case (more expensive) with the amount due', async () => {
     vi.mocked(bookingApi.previewReschedule).mockResolvedValue({
-      data: basePreview({ new_total_amount: 320000, change_fee_amount: 20000, extra_payment_amount: 140000 }),
+      data: basePreview({
+        new_total_amount: 320000,
+        change_fee_amount: 20000,
+        extra_payment_amount: 140000,
+      }),
     })
     const wrapper = await preview()
 
@@ -117,7 +134,10 @@ describe('BookingRescheduleModal', () => {
   })
 
   it('surfaces a 409 replacement-time conflict as an error without altering the original', async () => {
-    vi.mocked(bookingApi.previewReschedule).mockRejectedValueOnce({ status: 409, message: 'conflict' })
+    vi.mocked(bookingApi.previewReschedule).mockRejectedValueOnce({
+      status: 409,
+      message: 'conflict',
+    })
     const wrapper = mountModal()
     await flushPromises()
     await wrapper.get('[data-testid="reschedule-preview-btn"]').trigger('click')
@@ -128,7 +148,9 @@ describe('BookingRescheduleModal', () => {
     expect(wrapper.get('[data-testid="reschedule-error"]').text()).toContain('sân thay thế')
     expect(wrapper.find('[data-testid="reschedule-preview"]').exists()).toBe(false)
     // Submit is disabled and no request is created.
-    expect(wrapper.get('[data-testid="reschedule-submit-btn"]').attributes('disabled')).toBeDefined()
+    expect(
+      wrapper.get('[data-testid="reschedule-submit-btn"]').attributes('disabled'),
+    ).toBeDefined()
     expect(bookingApi.createRescheduleRequest).not.toHaveBeenCalled()
     wrapper.unmount()
   })
@@ -146,7 +168,13 @@ describe('BookingRescheduleModal', () => {
         court_id: 2,
         total_amount: 320000,
         hold_expires_at: '2099-09-01T18:30:00Z',
-        slots: [{ starts_at: '2099-09-02T18:00:00Z', ends_at: '2099-09-02T19:00:00Z', unit_price: 320000 }],
+        slots: [
+          {
+            starts_at: '2099-09-02T18:00:00Z',
+            ends_at: '2099-09-02T19:00:00Z',
+            unit_price: 320000,
+          },
+        ],
       },
       change: null,
       payment_attempt: null,
@@ -166,12 +194,16 @@ describe('BookingRescheduleModal', () => {
     await flushPromises()
 
     expect(bookingApi.createRescheduleRequest).toHaveBeenCalledTimes(2)
-    const firstKey = vi.mocked(bookingApi.createRescheduleRequest).mock.calls[0]?.[1].idempotency_key
-    const secondKey = vi.mocked(bookingApi.createRescheduleRequest).mock.calls[1]?.[1].idempotency_key
+    const firstKey = vi.mocked(bookingApi.createRescheduleRequest).mock.calls[0]?.[1]
+      .idempotency_key
+    const secondKey = vi.mocked(bookingApi.createRescheduleRequest).mock.calls[1]?.[1]
+      .idempotency_key
     expect(firstKey).toBe('idem-1')
     expect(secondKey).toBe('idem-1')
     // Result status is shown truthfully (held replacement, not "completed").
-    expect(wrapper.get('[data-testid="reschedule-result-status"]').text()).toContain('pending_reschedule')
+    expect(wrapper.get('[data-testid="reschedule-result-status"]').text()).toContain(
+      'pending_reschedule',
+    )
     wrapper.unmount()
   })
 
@@ -182,7 +214,9 @@ describe('BookingRescheduleModal', () => {
     })
     const wrapper = await preview()
 
-    expect(wrapper.get('[data-testid="reschedule-case-extra"]').text()).toContain('Extra payment due')
+    expect(wrapper.get('[data-testid="reschedule-case-extra"]').text()).toContain(
+      'Extra payment due',
+    )
     wrapper.unmount()
   })
 })

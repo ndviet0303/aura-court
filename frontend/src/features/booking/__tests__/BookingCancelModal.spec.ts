@@ -29,9 +29,24 @@ const booking: ChangeableBooking = {
   code: 'BK-CANCEL-1',
   status: 'confirmed',
   slots: [
-    { id: 1, starts_at: '2099-09-01T18:00:00Z', ends_at: '2099-09-01T19:00:00Z', unit_price: 200000 },
-    { id: 2, starts_at: '2099-09-01T19:00:00Z', ends_at: '2099-09-01T20:00:00Z', unit_price: 200000 },
-    { id: 3, starts_at: '2099-09-01T20:00:00Z', ends_at: '2099-09-01T21:00:00Z', unit_price: 200000 },
+    {
+      id: 1,
+      starts_at: '2099-09-01T18:00:00Z',
+      ends_at: '2099-09-01T19:00:00Z',
+      unit_price: 200000,
+    },
+    {
+      id: 2,
+      starts_at: '2099-09-01T19:00:00Z',
+      ends_at: '2099-09-01T20:00:00Z',
+      unit_price: 200000,
+    },
+    {
+      id: 3,
+      starts_at: '2099-09-01T20:00:00Z',
+      ends_at: '2099-09-01T21:00:00Z',
+      unit_price: 200000,
+    },
   ],
 }
 
@@ -107,7 +122,12 @@ describe('BookingCancelModal', () => {
 
   it('previews a whole-scope quote with the fee-type label and refund amount', async () => {
     vi.mocked(bookingApi.getRefundQuote).mockResolvedValue({
-      data: baseQuote({ fee_type: 'fixed', fee_value: 30000, fee_amount: 30000, refund_amount: 570000 }),
+      data: baseQuote({
+        fee_type: 'fixed',
+        fee_value: 30000,
+        fee_amount: 30000,
+        refund_amount: 570000,
+      }),
     })
     const wrapper = await quoteWhole()
 
@@ -158,7 +178,12 @@ describe('BookingCancelModal', () => {
 
     // refund == 0: no recipient needed, submit proceeds without one.
     vi.mocked(bookingApi.getRefundQuote).mockResolvedValue({
-      data: baseQuote({ fee_type: 'fixed', fee_value: 600000, fee_amount: 600000, refund_amount: 0 }),
+      data: baseQuote({
+        fee_type: 'fixed',
+        fee_value: 600000,
+        fee_amount: 600000,
+        refund_amount: 0,
+      }),
     })
     vi.mocked(bookingApi.createRefundRequest).mockResolvedValue({
       data: baseObligation({ refund_amount: 0 }),
@@ -177,7 +202,12 @@ describe('BookingCancelModal', () => {
 
   it('blocks submit when the reason is empty', async () => {
     vi.mocked(bookingApi.getRefundQuote).mockResolvedValue({
-      data: baseQuote({ fee_type: 'fixed', fee_value: 600000, fee_amount: 600000, refund_amount: 0 }),
+      data: baseQuote({
+        fee_type: 'fixed',
+        fee_value: 600000,
+        fee_amount: 600000,
+        refund_amount: 0,
+      }),
     })
     const wrapper = await quoteWhole()
     // Reason left blank.
@@ -191,7 +221,12 @@ describe('BookingCancelModal', () => {
 
   it('reuses the same idempotency_key when a submit is retried after a failure', async () => {
     vi.mocked(bookingApi.getRefundQuote).mockResolvedValue({
-      data: baseQuote({ fee_type: 'fixed', fee_value: 600000, fee_amount: 600000, refund_amount: 0 }),
+      data: baseQuote({
+        fee_type: 'fixed',
+        fee_value: 600000,
+        fee_amount: 600000,
+        refund_amount: 0,
+      }),
     })
     vi.mocked(bookingApi.createRefundRequest)
       .mockRejectedValueOnce({ status: 500, message: 'boom' })
@@ -215,7 +250,12 @@ describe('BookingCancelModal', () => {
 
   it('renders the truthful requested status (never "completed") with the not-verified hint', async () => {
     vi.mocked(bookingApi.getRefundQuote).mockResolvedValue({
-      data: baseQuote({ fee_type: 'fixed', fee_value: 600000, fee_amount: 600000, refund_amount: 0 }),
+      data: baseQuote({
+        fee_type: 'fixed',
+        fee_value: 600000,
+        fee_amount: 600000,
+        refund_amount: 0,
+      }),
     })
     vi.mocked(bookingApi.createRefundRequest).mockResolvedValue({
       data: baseObligation({ status: 'requested' }),
@@ -237,7 +277,12 @@ describe('BookingCancelModal', () => {
   it('renders English strings when the locale is switched', async () => {
     ;(i18n.global.locale as unknown as { value: string }).value = 'en'
     vi.mocked(bookingApi.getRefundQuote).mockResolvedValue({
-      data: baseQuote({ fee_type: 'fixed', fee_value: 30000, fee_amount: 30000, refund_amount: 570000 }),
+      data: baseQuote({
+        fee_type: 'fixed',
+        fee_value: 30000,
+        fee_amount: 30000,
+        refund_amount: 570000,
+      }),
     })
     const wrapper = await quoteWhole()
 

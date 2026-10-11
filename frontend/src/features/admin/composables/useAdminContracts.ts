@@ -65,7 +65,8 @@ export function useAdminContracts() {
 
     return {
       id: item.id,
-      contract_code: item.contract_code || meta.contract_code || `CTR-2026-${String(item.id).padStart(4, '0')}`,
+      contract_code:
+        item.contract_code || meta.contract_code || `CTR-2026-${String(item.id).padStart(4, '0')}`,
       customer_name: item.customer_name || meta.customer_name || user.name || 'Khách hàng HĐ',
       phone: item.phone || meta.phone || user.phone || '—',
       email: item.email || user.email,
@@ -73,12 +74,19 @@ export function useAdminContracts() {
       court_name: item.court_name || court.name || 'Sân tiêu chuẩn',
       venue_name: item.venue_name || venue.name || 'Cơ sở chính',
       venue_id: item.venue_id || venue.id,
-      time_slot: item.time_slot || meta.time_slot || `${item.starts_at ? new Date(item.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '18:00'} - 20:00`,
+      time_slot:
+        item.time_slot ||
+        meta.time_slot ||
+        `${item.starts_at ? new Date(item.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '18:00'} - 20:00`,
       weekday: item.weekday || meta.weekday || 'Thứ 2, 4, 6',
       frequency: item.frequency || 'weekly',
-      start_date: item.start_date || (item.starts_at ? String(item.starts_at).substring(0, 10) : '2026-01-01'),
-      end_date: item.end_date || (item.ends_at ? String(item.ends_at).substring(0, 10) : '2026-12-31'),
-      total_monthly_amount: item.total_monthly_amount ?? meta.monthly_amount ?? (invoices[0]?.amount || 4800000),
+      start_date:
+        item.start_date ||
+        (item.starts_at ? String(item.starts_at).substring(0, 10) : '2026-01-01'),
+      end_date:
+        item.end_date || (item.ends_at ? String(item.ends_at).substring(0, 10) : '2026-12-31'),
+      total_monthly_amount:
+        item.total_monthly_amount ?? meta.monthly_amount ?? (invoices[0]?.amount || 4800000),
       deposit_amount: item.deposit_amount ?? meta.deposit_amount ?? 5000000,
       status,
       occurrences_count: item.occurrence_count || item.occurrences_count || occurrences.length,
@@ -104,7 +112,7 @@ export function useAdminContracts() {
         rawStats.value = contractsRes.stats
       }
 
-      venues.value = Array.isArray(venuesRes) ? venuesRes : ((venuesRes as any)?.data || [])
+      venues.value = Array.isArray(venuesRes) ? venuesRes : (venuesRes as any)?.data || []
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải danh sách hợp đồng định kỳ.')
     } finally {
@@ -114,11 +122,20 @@ export function useAdminContracts() {
 
   const stats = computed<ContractStats>(() => {
     return {
-      active_contracts: rawStats.value.active_contracts || contracts.value.filter((c) => c.status === 'active' || c.status === 'confirmed').length,
+      active_contracts:
+        rawStats.value.active_contracts ||
+        contracts.value.filter((c) => c.status === 'active' || c.status === 'confirmed').length,
       total_contracts: rawStats.value.total_contracts || contracts.value.length,
-      mrr_amount: rawStats.value.mrr_amount || contracts.value.filter((c) => c.status === 'active' || c.status === 'confirmed').reduce((sum, c) => sum + c.total_monthly_amount, 0),
-      overdue_cycles: rawStats.value.overdue_cycles || contracts.value.filter((c) => c.status === 'overdue').length,
-      prime_time_utilization: rawStats.value.prime_time_utilization || (contracts.value.length > 0 ? 94 : 0),
+      mrr_amount:
+        rawStats.value.mrr_amount ||
+        contracts.value
+          .filter((c) => c.status === 'active' || c.status === 'confirmed')
+          .reduce((sum, c) => sum + c.total_monthly_amount, 0),
+      overdue_cycles:
+        rawStats.value.overdue_cycles ||
+        contracts.value.filter((c) => c.status === 'overdue').length,
+      prime_time_utilization:
+        rawStats.value.prime_time_utilization || (contracts.value.length > 0 ? 94 : 0),
     }
   })
 
@@ -145,7 +162,6 @@ export function useAdminContracts() {
     })
   })
 
-
   async function cancelContract(contractId: number, reason?: string) {
     actionLoading.value = true
     error.value = ''
@@ -163,7 +179,6 @@ export function useAdminContracts() {
     }
   }
 
-
   function exportExcel() {
     window.open('/api/v1/admin/contracts.csv', '_blank')
     showNotice('Đang tải xuống tệp danh sách hợp đồng định kỳ...')
@@ -180,7 +195,6 @@ export function useAdminContracts() {
     selectedContract.value = contract
     showDetailModal.value = true
   }
-
 
   onMounted(() => {
     loadData()

@@ -69,7 +69,10 @@ const isOwner = computed(() => {
     userAny.role === 'venue_manager' ||
     userAny.capabilities?.can_manage_venues === true ||
     (Array.isArray(userAny.organizations) &&
-      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+      userAny.organizations.some(
+        (o: any) =>
+          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+      ))
   )
 })
 
@@ -78,7 +81,11 @@ const hasPartnerIntentOrApp = computed(() => {
   if (!userAny) return false
   if (isOwner.value) return false
   if (userAny.capabilities?.has_partner_application === true) return true
-  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  if (
+    typeof window !== 'undefined' &&
+    localStorage.getItem('aura_partner_intent') === 'court_owner'
+  )
+    return true
   return false
 })
 
@@ -109,7 +116,9 @@ const partnerRoute = computed(() => {
         @click.stop="toggleMenu('booking')"
       >
         <span>{{ $t('nav.bookingGroup') }}</span>
-        <span class="material-symbols-outlined nav-dropdown-arrow" aria-hidden="true">expand_more</span>
+        <span class="material-symbols-outlined nav-dropdown-arrow" aria-hidden="true"
+          >expand_more</span
+        >
       </button>
       <Transition name="nav-dropdown-fade">
         <div v-if="openMenu === 'booking'" class="nav-dropdown-menu" role="menu">
@@ -150,7 +159,9 @@ const partnerRoute = computed(() => {
         @click.stop="toggleMenu('community')"
       >
         <span>{{ $t('nav.community') }}</span>
-        <span class="material-symbols-outlined nav-dropdown-arrow" aria-hidden="true">expand_more</span>
+        <span class="material-symbols-outlined nav-dropdown-arrow" aria-hidden="true"
+          >expand_more</span
+        >
       </button>
       <Transition name="nav-dropdown-fade">
         <div v-if="openMenu === 'community'" class="nav-dropdown-menu" role="menu">
@@ -158,15 +169,30 @@ const partnerRoute = computed(() => {
             <span class="material-symbols-outlined">swap_horiz</span>
             <span>{{ $t('nav.resale') }}</span>
           </RouterLink>
-          <RouterLink to="/tournaments" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+          <RouterLink
+            to="/tournaments"
+            class="nav-dropdown-item"
+            role="menuitem"
+            @click="closeMenu"
+          >
             <span class="material-symbols-outlined">emoji_events</span>
             <span>{{ $t('nav.tournaments') }}</span>
           </RouterLink>
-          <RouterLink to="/matchmaking" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+          <RouterLink
+            to="/matchmaking"
+            class="nav-dropdown-item"
+            role="menuitem"
+            @click="closeMenu"
+          >
             <span class="material-symbols-outlined">sports_tennis</span>
             <span>{{ $t('nav.matchmaking') }}</span>
           </RouterLink>
-          <RouterLink to="/matchmaking/create" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+          <RouterLink
+            to="/matchmaking/create"
+            class="nav-dropdown-item"
+            role="menuitem"
+            @click="closeMenu"
+          >
             <span class="material-symbols-outlined">add_circle</span>
             <span>{{ $t('nav.createMatch') }}</span>
           </RouterLink>
@@ -175,7 +201,11 @@ const partnerRoute = computed(() => {
     </div>
 
     <!-- About -->
-    <RouterLink to="/about" class="nav-pill-link" :class="{ active: (route?.path || '') === '/about' }">
+    <RouterLink
+      to="/about"
+      class="nav-pill-link"
+      :class="{ active: (route?.path || '') === '/about' }"
+    >
       {{ $t('nav.about') }}
     </RouterLink>
 
@@ -205,7 +235,12 @@ const partnerRoute = computed(() => {
       class="nav-pill-link"
       :class="{ active: (route?.path || '').startsWith('/partner') }"
     >
-      {{ (auth.user as any)?.capabilities?.partner_application_status === 'submitted' || (auth.user as any)?.capabilities?.partner_application_status === 'in_review' ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}
+      {{
+        (auth.user as any)?.capabilities?.partner_application_status === 'submitted' ||
+        (auth.user as any)?.capabilities?.partner_application_status === 'in_review'
+          ? 'Hồ sơ đối tác'
+          : 'Thiết lập cụm sân'
+      }}
     </RouterLink>
   </nav>
 </template>
@@ -219,7 +254,9 @@ const partnerRoute = computed(() => {
   border: 1px solid var(--outline, #ebdccb);
   border-radius: 9999px;
   padding: 4px 6px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 html.dark .nav-pill-container {
@@ -295,7 +332,9 @@ html.dark .nav-dropdown-menu {
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   text-decoration: none;
 }
 
@@ -304,7 +343,7 @@ html.dark .nav-dropdown-item {
 }
 
 .nav-dropdown-item .material-symbols-outlined {
-  color: #6B2D3F;
+  color: #6b2d3f;
   font-size: 19px;
 }
 
@@ -314,8 +353,8 @@ html.dark .nav-dropdown-item .material-symbols-outlined {
 
 .nav-dropdown-item:hover,
 .nav-dropdown-item.router-link-active {
-  background: #FAF7F3;
-  color: #6B2D3F;
+  background: #faf7f3;
+  color: #6b2d3f;
 }
 
 html.dark .nav-dropdown-item:hover,
@@ -325,7 +364,7 @@ html.dark .nav-dropdown-item.router-link-active {
 }
 
 .nav-pill-link:hover {
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .nav-pill-link:hover {
@@ -334,7 +373,7 @@ html.dark .nav-pill-link:hover {
 
 .nav-pill-link.active,
 .nav-pill-link.router-link-exact-active {
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff !important;
   font-weight: 700;
   box-shadow: 0 3px 12px rgba(107, 45, 63, 0.3);
@@ -342,7 +381,7 @@ html.dark .nav-pill-link:hover {
 
 html.dark .nav-pill-link.active,
 html.dark .nav-pill-link.router-link-exact-active {
-  background: linear-gradient(135deg, #6B2D3F 0%, #4A1D2B 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #4a1d2b 100%);
   color: #ffffff !important;
   border: 1px solid rgba(223, 186, 114, 0.25);
   box-shadow: 0 3px 12px rgba(107, 45, 63, 0.45);
@@ -351,7 +390,9 @@ html.dark .nav-pill-link.router-link-exact-active {
 /* Dropdown Fade & Slide Animation */
 .nav-dropdown-fade-enter-active,
 .nav-dropdown-fade-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-dropdown-fade-enter-from,

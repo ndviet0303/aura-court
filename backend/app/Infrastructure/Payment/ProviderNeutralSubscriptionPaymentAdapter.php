@@ -17,12 +17,12 @@ class ProviderNeutralSubscriptionPaymentAdapter implements SubscriptionPaymentAd
     {
         // Deterministic sandbox behavior for automated tests and sandbox configurations
         $isTesting = app()->environment('testing');
-        $hasLiveCredentials = !empty(config('services.payos.client_id'))
-            && !str_contains((string) config('services.payos.client_id'), 'dummy')
-            && !str_contains((string) config('services.payos.client_id'), 'test');
+        $hasLiveCredentials = ! empty(config('services.payos.client_id'))
+            && ! str_contains((string) config('services.payos.client_id'), 'dummy')
+            && ! str_contains((string) config('services.payos.client_id'), 'test');
 
-        if ($isTesting || !$hasLiveCredentials) {
-            $sandboxRef = 'SANDBOX-' . strtoupper(substr(md5($attempt->reference_code), 0, 10));
+        if ($isTesting || ! $hasLiveCredentials) {
+            $sandboxRef = 'SANDBOX-'.strtoupper(substr(md5($attempt->reference_code), 0, 10));
             $sandboxUrl = url("/payment/sandbox-checkout?ref={$attempt->reference_code}");
 
             return [

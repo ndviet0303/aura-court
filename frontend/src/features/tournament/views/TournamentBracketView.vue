@@ -50,7 +50,11 @@ const {
               <SkeletonLoader type="rect" width="140px" height="22px" rounded="6px" />
             </div>
             <div class="skeleton-matches-stack">
-              <div v-for="m in (col === 1 ? 4 : col === 2 ? 2 : 1)" :key="m" class="skeleton-match-card">
+              <div
+                v-for="m in col === 1 ? 4 : col === 2 ? 2 : 1"
+                :key="m"
+                class="skeleton-match-card"
+              >
                 <div class="skeleton-meta-line">
                   <SkeletonLoader type="rect" width="100px" height="12px" rounded="4px" />
                   <SkeletonLoader type="rect" width="48px" height="12px" rounded="4px" />
@@ -85,10 +89,7 @@ const {
       />
 
       <!-- Group Standings View -->
-      <TournamentGroupStandingsTable
-        v-else
-        :standings="groupStandings"
-      />
+      <TournamentGroupStandingsTable v-else :standings="groupStandings" />
     </main>
 
     <!-- Match Detail Modal -->

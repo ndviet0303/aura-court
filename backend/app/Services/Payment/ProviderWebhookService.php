@@ -2,11 +2,9 @@
 
 namespace App\Services\Payment;
 
-use App\Services\Infrastructure\ObservabilityService;
-
-use App\Contracts\Payment\WebhookEvent;
 use App\Jobs\ProcessProviderEvent;
 use App\Models\ProviderEvent;
+use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -65,6 +63,7 @@ class ProviderWebhookService
 
         if ($record->processed_at) {
             app(ObservabilityService::class)->metric('webhook.duplicate', 1, ['provider' => $providerName]);
+
             return ['duplicate' => true, 'eventId' => $record->event_id, 'status' => $record->status];
         }
 
@@ -93,6 +92,7 @@ class ProviderWebhookService
     private function isDuplicate(QueryException $exception): bool
     {
         $message = strtolower($exception->getMessage());
+
         return str_contains($message, 'provider_events') && (str_contains($message, 'unique') || str_contains($message, 'duplicate'));
     }
 }

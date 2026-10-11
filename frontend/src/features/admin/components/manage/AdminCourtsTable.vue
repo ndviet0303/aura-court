@@ -39,7 +39,7 @@ watch(
   () => [props.courts, props.searchQuery, props.selectedVenueFilter, props.statusFilter],
   () => {
     currentPage.value = 1
-  }
+  },
 )
 
 const paginatedCourts = computed(() => {
@@ -87,7 +87,9 @@ function goToPage(page: number) {
           <SelectDropdown
             :model-value="selectedVenueFilter"
             :options="venueFilterOptions"
-            @update:model-value="emit('update:selectedVenueFilter', $event === 'all' ? 'all' : Number($event))"
+            @update:model-value="
+              emit('update:selectedVenueFilter', $event === 'all' ? 'all' : Number($event))
+            "
           />
         </div>
 
@@ -95,7 +97,9 @@ function goToPage(page: number) {
           <SelectDropdown
             :model-value="statusFilter"
             :options="statusFilterOptions"
-            @update:model-value="emit('update:statusFilter', $event as 'all' | 'active' | 'inactive')"
+            @update:model-value="
+              emit('update:statusFilter', $event as 'all' | 'active' | 'inactive')
+            "
           />
         </div>
 
@@ -163,7 +167,11 @@ function goToPage(page: number) {
             class="status-chip"
             :class="court.is_active !== false ? 'chip-active' : 'chip-inactive'"
           >
-            {{ court.is_active !== false ? t('admin.manage.statusOpen') : t('admin.manage.statusClosed') }}
+            {{
+              court.is_active !== false
+                ? t('admin.manage.statusOpen')
+                : t('admin.manage.statusClosed')
+            }}
           </span>
 
           <span v-if="court.sport_zone" class="zone-chip">
@@ -180,17 +188,29 @@ function goToPage(page: number) {
             </span>
           </div>
 
-          <p class="court-desc">{{ resolveLocalizedText(court.description) || t('admin.manage.standardDesc') }}</p>
+          <p class="court-desc">
+            {{ resolveLocalizedText(court.description) || t('admin.manage.standardDesc') }}
+          </p>
 
           <div v-if="court.surface_type || court.capacity" class="court-specs">
-            <span v-if="court.surface_type" class="spec-badge">{{ t(`admin.manage.surface${court.surface_type.charAt(0).toUpperCase()}${court.surface_type.slice(1)}`) }}</span>
-            <span v-if="court.capacity" class="spec-badge">{{ t('admin.manage.courtCapacityValue', { count: court.capacity }) }}</span>
+            <span v-if="court.surface_type" class="spec-badge">{{
+              t(
+                `admin.manage.surface${court.surface_type.charAt(0).toUpperCase()}${court.surface_type.slice(1)}`,
+              )
+            }}</span>
+            <span v-if="court.capacity" class="spec-badge">{{
+              t('admin.manage.courtCapacityValue', { count: court.capacity })
+            }}</span>
           </div>
 
           <div class="court-stats-row">
             <span class="stat-badge">
               <span class="material-symbols-outlined icon-14">schedule</span>
-              <span>{{ t('admin.manage.priceSlotsCount', { count: court.price_slots_count ?? court.price_slots?.length ?? 0 }) }}</span>
+              <span>{{
+                t('admin.manage.priceSlotsCount', {
+                  count: court.price_slots_count ?? court.price_slots?.length ?? 0,
+                })
+              }}</span>
             </span>
             <span class="stat-badge text-yellow">
               <span class="material-symbols-outlined icon-14">build</span>
@@ -229,10 +249,16 @@ function goToPage(page: number) {
             <button
               type="button"
               class="btn-court-action btn-toggle"
-              :title="court.is_active !== false ? t('admin.manage.statusClosed') : t('admin.manage.statusOpen')"
+              :title="
+                court.is_active !== false
+                  ? t('admin.manage.statusClosed')
+                  : t('admin.manage.statusOpen')
+              "
               @click="emit('toggleStatus', court)"
             >
-              <span class="material-symbols-outlined icon-16">{{ court.is_active !== false ? 'pause' : 'play_arrow' }}</span>
+              <span class="material-symbols-outlined icon-16">{{
+                court.is_active !== false ? 'pause' : 'play_arrow'
+              }}</span>
             </button>
           </div>
         </div>
@@ -341,7 +367,7 @@ function goToPage(page: number) {
 }
 
 .court-search-input:focus {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   background: var(--surface);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
 }
@@ -413,7 +439,7 @@ function goToPage(page: number) {
 
 .filter-dropdown-wrap :deep(.custom-dropdown.open .custom-dropdown-trigger),
 .filter-dropdown-wrap :deep(.custom-dropdown-trigger:hover) {
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   background: var(--surface);
 }
 
@@ -437,14 +463,14 @@ function goToPage(page: number) {
 }
 
 :global(html.dark) .add-court-btn {
-  background-color: var(--primary, #6B2D3F) !important;
-  color: #FAF7F3 !important;
+  background-color: var(--primary, #6b2d3f) !important;
+  color: #faf7f3 !important;
   border: 1px solid rgba(201, 161, 90, 0.35) !important;
   box-shadow: 0 4px 14px rgba(107, 45, 63, 0.4) !important;
 }
 
 :global(html.dark) .add-court-btn:hover {
-  background-color: #8B3A52 !important;
+  background-color: #8b3a52 !important;
   border-color: var(--accent, #c9a15a) !important;
 }
 
@@ -676,8 +702,8 @@ function goToPage(page: number) {
 }
 
 .btn-court-action:hover {
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
   background: var(--surface);
 }
 
@@ -797,8 +823,12 @@ function goToPage(page: number) {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 /* Pagination Styling */
 .courts-pagination-bar {
@@ -883,5 +913,4 @@ function goToPage(page: number) {
   border-color: var(--pink-dark, #db2777);
   color: #fff;
 }
-
 </style>

@@ -20,4 +20,3 @@ Broadcast::channel('venue.{venueId}', function (User $user, int $venueId) {
 
     return $user->hasRoleInOrganization($venue->organization_id, ['owner', 'admin', 'manager', 'cashier', 'staff']);
 });
-

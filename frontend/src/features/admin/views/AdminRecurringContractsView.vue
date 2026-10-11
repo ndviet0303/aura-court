@@ -43,7 +43,9 @@ const {
 
       <div class="header-actions">
         <AuraButton variant="secondary" :disabled="loading" @click="loadData">
-          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }">refresh</span>
+          <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': loading }"
+            >refresh</span
+          >
           <span>{{ t('admin.contracts.refreshBtn') }}</span>
         </AuraButton>
         <AuraButton variant="outline" @click="exportExcel">
@@ -88,7 +90,6 @@ const {
       @close="showDetailModal = false"
       @cancel-contract="(id) => cancelContract(id)"
     />
-
   </div>
 </template>
 
@@ -172,15 +173,23 @@ const {
   font-weight: 600;
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

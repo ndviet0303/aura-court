@@ -2,12 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\User;
-use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;

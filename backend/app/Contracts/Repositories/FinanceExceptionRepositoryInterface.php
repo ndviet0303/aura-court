@@ -5,7 +5,6 @@ namespace App\Contracts\Repositories;
 use App\Models\FinanceException;
 use App\Models\Organization;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 interface FinanceExceptionRepositoryInterface
 {

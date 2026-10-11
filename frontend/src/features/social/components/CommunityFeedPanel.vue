@@ -124,7 +124,11 @@ async function submitReport() {
   if (!reportingItem.value || !reportReason.value.trim()) return
   submittingReport.value = true
   try {
-    await socialApi.reportFeedItem(reportingItem.value.type, reportingItem.value.id, reportReason.value.trim())
+    await socialApi.reportFeedItem(
+      reportingItem.value.type,
+      reportingItem.value.id,
+      reportReason.value.trim(),
+    )
     notice.value = 'Đã gửi báo cáo vi phạm tới ban quản trị.'
     reportingItem.value = null
     reportReason.value = ''
@@ -249,31 +253,19 @@ onMounted(() => {
 
         <!-- Reactions Bar -->
         <div class="post-reactions-bar">
-          <button
-            type="button"
-            class="btn-reaction"
-            @click="handleReact('post', post.id, 'like')"
-          >
+          <button type="button" class="btn-reaction" @click="handleReact('post', post.id, 'like')">
             👍 Thích
             <span v-if="post.reactions_counts?.like" class="count-badge">
               {{ post.reactions_counts.like }}
             </span>
           </button>
-          <button
-            type="button"
-            class="btn-reaction"
-            @click="handleReact('post', post.id, 'love')"
-          >
+          <button type="button" class="btn-reaction" @click="handleReact('post', post.id, 'love')">
             ❤️ Thả tim
             <span v-if="post.reactions_counts?.love" class="count-badge">
               {{ post.reactions_counts.love }}
             </span>
           </button>
-          <button
-            type="button"
-            class="btn-reaction"
-            @click="handleReact('post', post.id, 'fire')"
-          >
+          <button type="button" class="btn-reaction" @click="handleReact('post', post.id, 'fire')">
             🔥 Chiến
             <span v-if="post.reactions_counts?.fire" class="count-badge">
               {{ post.reactions_counts.fire }}

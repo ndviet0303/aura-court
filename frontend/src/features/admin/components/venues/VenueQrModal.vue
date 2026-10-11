@@ -57,7 +57,7 @@ watch(
       generateQr()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 async function handleCopyLink() {
@@ -84,7 +84,11 @@ function handleDownloadQr() {
 </script>
 
 <template>
-  <div v-if="show && venue" class="modal-backdrop modal-overlay-backdrop" @click.self="emit('close')">
+  <div
+    v-if="show && venue"
+    class="modal-backdrop modal-overlay-backdrop"
+    @click.self="emit('close')"
+  >
     <div class="modal-card modal-sm">
       <div class="modal-header">
         <div class="title-with-icon">
@@ -104,12 +108,7 @@ function handleDownloadQr() {
           <div v-if="generating" class="qr-loading">
             <span class="material-symbols-outlined spinner-icon">progress_activity</span>
           </div>
-          <img
-            v-else-if="qrDataUrl"
-            :src="qrDataUrl"
-            alt="Venue QR Code"
-            class="qr-image"
-          />
+          <img v-else-if="qrDataUrl" :src="qrDataUrl" alt="Venue QR Code" class="qr-image" />
         </div>
 
         <!-- Share URL display with copy button -->
@@ -138,11 +137,7 @@ function handleDownloadQr() {
         <AuraButton variant="secondary" @click="emit('close')">
           {{ t('common.close') }}
         </AuraButton>
-        <AuraButton
-          variant="primary"
-          :disabled="!qrDataUrl"
-          @click="handleDownloadQr"
-        >
+        <AuraButton variant="primary" :disabled="!qrDataUrl" @click="handleDownloadQr">
           <span class="material-symbols-outlined icon-18">download</span>
           <span>{{ t('admin.venues.downloadQrBtn') }}</span>
         </AuraButton>
@@ -281,8 +276,12 @@ function handleDownloadQr() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .share-url-container {
@@ -355,6 +354,10 @@ function handleDownloadQr() {
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
 }
 
-.icon-16 { font-size: 16px; }
-.icon-18 { font-size: 18px; }
+.icon-16 {
+  font-size: 16px;
+}
+.icon-18 {
+  font-size: 18px;
+}
 </style>

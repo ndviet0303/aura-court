@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { SelectDropdown, DatePicker, TimePicker, type DropdownOption } from '@/shared/components'
 import type { Court } from '@/features/court/types/court'
 
-const props = defineProps<{
+defineProps<{
   courts: Court[]
   courtOptions: DropdownOption[]
   selectedVenueName: string
@@ -288,7 +288,9 @@ const todayMin = computed(() => {
   font-weight: 600;
   outline: none;
   font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .styled-input:focus {

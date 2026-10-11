@@ -41,11 +41,13 @@ const emit = defineEmits<{
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #FAF7F3;
+  background: #faf7f3;
   border: 1px solid #ebdccb;
   display: grid;
   place-items: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   box-shadow: 0 2px 8px rgba(107, 45, 63, 0.08);
   flex-shrink: 0;
 }

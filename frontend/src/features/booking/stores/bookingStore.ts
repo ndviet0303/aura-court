@@ -51,13 +51,19 @@ export const useBookingStore = defineStore('booking', () => {
     try {
       const res = await bookingApi.getAvailability(courtId, date)
       // Guard at commit point: ONLY mutate slots if this generation is still active
-      if (currentGeneration !== availabilityRequestId || activeAvailabilityContext !== requestContext) {
+      if (
+        currentGeneration !== availabilityRequestId ||
+        activeAvailabilityContext !== requestContext
+      ) {
         return []
       }
       slots.value = res
       return res
     } catch (cause) {
-      if (currentGeneration !== availabilityRequestId || activeAvailabilityContext !== requestContext) {
+      if (
+        currentGeneration !== availabilityRequestId ||
+        activeAvailabilityContext !== requestContext
+      ) {
         return []
       }
       slots.value = []
@@ -78,10 +84,6 @@ export const useBookingStore = defineStore('booking', () => {
     if (index >= 0) selectedSlots.value.splice(index, 1)
     else selectedSlots.value.push(slot)
     selectedSlots.value.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-  }
-
-  function persistPayment() {
-    if (payment.value) sessionStorage.setItem(paymentStorageKey, JSON.stringify(payment.value))
   }
 
   function restorePayment() {

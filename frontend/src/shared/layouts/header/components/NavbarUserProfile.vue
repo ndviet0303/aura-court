@@ -42,7 +42,10 @@ const isOwner = computed(() => {
     userAny.role === 'venue_manager' ||
     userAny.capabilities?.can_manage_venues === true ||
     (Array.isArray(userAny.organizations) &&
-      userAny.organizations.some((o: any) => o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager')))
+      userAny.organizations.some(
+        (o: any) =>
+          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+      ))
   )
 })
 
@@ -51,7 +54,11 @@ const hasPartnerIntentOrApp = computed(() => {
   if (!userAny) return false
   if (isOwner.value) return false
   if (userAny.capabilities?.has_partner_application === true) return true
-  if (typeof window !== 'undefined' && localStorage.getItem('aura_partner_intent') === 'court_owner') return true
+  if (
+    typeof window !== 'undefined' &&
+    localStorage.getItem('aura_partner_intent') === 'court_owner'
+  )
+    return true
   return false
 })
 
@@ -156,7 +163,10 @@ onBeforeUnmount(() => {
         <img :src="defaultAvatarUrl" :alt="userName" class="user-avatar-img" />
       </div>
 
-      <span class="material-symbols-outlined chevron-icon" :class="{ 'is-rotated': isDropdownOpen }">
+      <span
+        class="material-symbols-outlined chevron-icon"
+        :class="{ 'is-rotated': isDropdownOpen }"
+      >
         expand_more
       </span>
     </button>
@@ -192,7 +202,9 @@ onBeforeUnmount(() => {
           <div class="wallet-balance-display">
             <div class="balance-meta">
               <span class="balance-sub">Số dư khả dụng</span>
-              <strong class="balance-amount font-mono">{{ formatCurrency(displayedBalance) }}</strong>
+              <strong class="balance-amount font-mono">{{
+                formatCurrency(displayedBalance)
+              }}</strong>
             </div>
             <span class="material-symbols-outlined wallet-arrow-icon">chevron_right</span>
           </div>
@@ -249,7 +261,11 @@ onBeforeUnmount(() => {
             @click="closeDropdown"
           >
             <span class="material-symbols-outlined item-ico">storefront</span>
-            <span class="item-label">{{ partnerStatus === 'submitted' || partnerStatus === 'in_review' ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}</span>
+            <span class="item-label">{{
+              partnerStatus === 'submitted' || partnerStatus === 'in_review'
+                ? 'Hồ sơ đối tác'
+                : 'Thiết lập cụm sân'
+            }}</span>
           </RouterLink>
         </div>
 
@@ -345,7 +361,10 @@ onBeforeUnmount(() => {
         <span class="material-symbols-outlined">person</span>
       </div>
 
-      <span class="material-symbols-outlined chevron-icon" :class="{ 'is-rotated': isDropdownOpen }">
+      <span
+        class="material-symbols-outlined chevron-icon"
+        :class="{ 'is-rotated': isDropdownOpen }"
+      >
         expand_more
       </span>
     </button>
@@ -491,7 +510,7 @@ html.dark .user-name {
   padding: 2px 7px;
   border-radius: 5px;
   background: rgba(107, 45, 63, 0.08);
-  color: #6B2D3F;
+  color: #6b2d3f;
   border: 1px solid rgba(107, 45, 63, 0.18);
   text-transform: uppercase;
   margin-top: 2px;
@@ -512,7 +531,7 @@ html.dark .user-badge {
   border-radius: 999px;
   overflow: hidden;
   background: #f8e8ec;
-  border: 1.5px solid #6B2D3F;
+  border: 1.5px solid #6b2d3f;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -578,7 +597,7 @@ html.dark .user-dropdown-menu {
   height: 42px;
   border-radius: 999px;
   object-fit: cover;
-  border: 1.5px solid #6B2D3F;
+  border: 1.5px solid #6b2d3f;
   flex-shrink: 0;
 }
 
@@ -672,7 +691,9 @@ html.dark .dropdown-wallet-card:hover {
 .wallet-arrow-icon {
   font-size: 18px;
   color: var(--muted, #6e6668);
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .dropdown-wallet-card:hover .wallet-arrow-icon {
@@ -822,7 +843,7 @@ html.dark .dropdown-item {
 
 .dropdown-item .item-ico {
   font-size: 19px;
-  color: #6B2D3F;
+  color: #6b2d3f;
   flex-shrink: 0;
   transition: color 0.16s ease;
 }
@@ -833,8 +854,8 @@ html.dark .dropdown-item .item-ico {
 
 .dropdown-item:hover,
 .dropdown-item.router-link-active {
-  background: #FAF7F3;
-  color: #6B2D3F;
+  background: #faf7f3;
+  color: #6b2d3f;
 }
 
 html.dark .dropdown-item:hover,
@@ -907,7 +928,7 @@ html.dark .pref-label {
 
 .pref-icon {
   font-size: 17px;
-  color: #6B2D3F;
+  color: #6b2d3f;
 }
 
 html.dark .pref-icon {
@@ -955,7 +976,7 @@ html.dark .pref-segment-btn {
 }
 
 .pref-segment-btn.active {
-  background: #6B2D3F;
+  background: #6b2d3f;
   color: #ffffff;
   box-shadow: 0 1px 4px rgba(107, 45, 63, 0.25);
 }
@@ -1009,7 +1030,7 @@ html.dark .guest-menu-subtitle {
   width: 100%;
   padding: 8px 14px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #6B2D3F 0%, #52212F 100%);
+  background: linear-gradient(135deg, #6b2d3f 0%, #52212f 100%);
   color: #ffffff;
   text-decoration: none;
   font-size: 13px;
@@ -1027,7 +1048,9 @@ html.dark .guest-menu-subtitle {
 /* Dropdown Animation */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
-  transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dropdown-fade-enter-from,

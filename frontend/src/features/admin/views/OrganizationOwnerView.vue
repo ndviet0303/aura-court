@@ -26,7 +26,6 @@ const {
   timezoneOptions,
   currencyOptions,
   totalVenuesCount,
-  activeVenuesCount,
   totalCourtsCount,
   totalMembersCount,
   ownersCount,

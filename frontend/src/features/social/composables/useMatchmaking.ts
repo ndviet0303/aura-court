@@ -57,14 +57,23 @@ interface RawMatchRecord {
   metadata?: Record<string, unknown>
   availability?: Record<string, unknown>
 }
-function detectSport(title: string, metadataSport?: string): { sport: SocialSportType; name: string; icon: string } {
+function detectSport(
+  title: string,
+  metadataSport?: string,
+): { sport: SocialSportType; name: string; icon: string } {
   const t = (title + ' ' + (metadataSport || '')).toLowerCase()
-  if (t.includes('pickleball')) return { sport: 'pickleball', name: 'Pickleball', icon: 'sports_tennis' }
-  if (t.includes('tennis') || t.includes('quần vợt')) return { sport: 'tennis', name: 'Tennis', icon: 'sports_tennis' }
-  if (t.includes('bóng đá') || t.includes('football') || t.includes('5v5') || t.includes('7v7')) return { sport: 'football', name: 'Bóng đá', icon: 'sports_soccer' }
-  if (t.includes('bóng rổ') || t.includes('basketball') || t.includes('3x3')) return { sport: 'basketball', name: 'Bóng rổ', icon: 'sports_basketball' }
-  if (t.includes('bóng chuyền') || t.includes('volleyball')) return { sport: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball' }
-  if (t.includes('bóng bàn') || t.includes('table tennis') || t.includes('ping pong')) return { sport: 'table_tennis', name: 'Bóng bàn', icon: 'sports_tennis' }
+  if (t.includes('pickleball'))
+    return { sport: 'pickleball', name: 'Pickleball', icon: 'sports_tennis' }
+  if (t.includes('tennis') || t.includes('quần vợt'))
+    return { sport: 'tennis', name: 'Tennis', icon: 'sports_tennis' }
+  if (t.includes('bóng đá') || t.includes('football') || t.includes('5v5') || t.includes('7v7'))
+    return { sport: 'football', name: 'Bóng đá', icon: 'sports_soccer' }
+  if (t.includes('bóng rổ') || t.includes('basketball') || t.includes('3x3'))
+    return { sport: 'basketball', name: 'Bóng rổ', icon: 'sports_basketball' }
+  if (t.includes('bóng chuyền') || t.includes('volleyball'))
+    return { sport: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball' }
+  if (t.includes('bóng bàn') || t.includes('table tennis') || t.includes('ping pong'))
+    return { sport: 'table_tennis', name: 'Bóng bàn', icon: 'sports_tennis' }
   return { sport: 'badminton', name: 'Cầu lông', icon: 'sports_tennis' }
 }
 
@@ -150,20 +159,46 @@ export function useMatchmaking() {
 
         const rawParticipants = m.participants || []
         const isUserJoined = currentUserId
-          ? (isOwnerHosted
-              ? rawParticipants.some((p) => p.user_id === currentUserId || p.id === currentUserId)
-              : (m.creator_id === currentUserId || rawParticipants.some((p) => p.user_id === currentUserId || p.id === currentUserId)))
+          ? isOwnerHosted
+            ? rawParticipants.some((p) => p.user_id === currentUserId || p.id === currentUserId)
+            : m.creator_id === currentUserId ||
+              rawParticipants.some((p) => p.user_id === currentUserId || p.id === currentUserId)
           : false
         const isHost = currentUserId ? m.creator_id === currentUserId : false
-        const venue = m.venue?.name || m.venue_name || (availability.venue_name as string) || (metadata.venue_name as string) || 'Aura Sport Hub'
-        const court = m.court?.name || m.court_name || (availability.court_name as string) || (metadata.court_name as string) || 'Sân tiêu chuẩn'
-        const format = (m.game_format as string) || (availability.format as string) || (metadata.format as string) || (detected.sport === 'football' ? '5v5' : detected.sport === 'basketball' ? '3x3' : 'Đánh đôi')
-        const cost = typeof m.cost_per_person === 'number'
-          ? m.cost_per_person
-          : (typeof availability.cost_per_person === 'number'
+        const venue =
+          m.venue?.name ||
+          m.venue_name ||
+          (availability.venue_name as string) ||
+          (metadata.venue_name as string) ||
+          'Aura Sport Hub'
+        const court =
+          m.court?.name ||
+          m.court_name ||
+          (availability.court_name as string) ||
+          (metadata.court_name as string) ||
+          'Sân tiêu chuẩn'
+        const format =
+          (m.game_format as string) ||
+          (availability.format as string) ||
+          (metadata.format as string) ||
+          (detected.sport === 'football'
+            ? '5v5'
+            : detected.sport === 'basketball'
+              ? '3x3'
+              : 'Đánh đôi')
+        const cost =
+          typeof m.cost_per_person === 'number'
+            ? m.cost_per_person
+            : typeof availability.cost_per_person === 'number'
               ? availability.cost_per_person
-              : (typeof metadata.cost_per_person === 'number' ? metadata.cost_per_person : (detected.sport === 'football' ? 80000 : 50000)))
-        const split = (m.split_bill_mode as string) || (availability.split_cost ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu')
+              : typeof metadata.cost_per_person === 'number'
+                ? metadata.cost_per_person
+                : detected.sport === 'football'
+                  ? 80000
+                  : 50000
+        const split =
+          (m.split_bill_mode as string) ||
+          (availability.split_cost ? 'Tự động trừ ví Aura' : 'Chủ phòng tự thu')
 
         return {
           id: Number(m.id || 0),
@@ -173,12 +208,18 @@ export function useMatchmaking() {
           sport_icon: detected.icon,
           venue_name: venue,
           court_name: court,
-          city: m.city || m.venue?.city || (venue.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội'),
+          city:
+            m.city || m.venue?.city || (venue.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội'),
           starts_at: formatMatchTime(m.starts_at, m.ends_at),
           ends_at: m.ends_at,
-          joined_count: typeof m.joined_count === 'number'
-            ? m.joined_count
-            : (rawParticipants.length ? rawParticipants.length : (isOwnerHosted ? 0 : 1)),
+          joined_count:
+            typeof m.joined_count === 'number'
+              ? m.joined_count
+              : rawParticipants.length
+                ? rawParticipants.length
+                : isOwnerHosted
+                  ? 0
+                  : 1,
           required_participants: (m.required_participants as number) || 4,
           visibility: (m.visibility as 'public' | 'invite_only' | 'private') || 'public',
           min_skill: m.min_skill ?? 2,
@@ -187,23 +228,34 @@ export function useMatchmaking() {
           split_bill_mode: split,
           cost_per_person: cost,
           host_id: m.creator_id || m.host?.id,
-          host_name: m.creator?.name || m.host_name || (typeof metadata.host === 'string' ? metadata.host : 'Chủ kèo Aura'),
+          host_name:
+            m.creator?.name ||
+            m.host_name ||
+            (typeof metadata.host === 'string' ? metadata.host : 'Chủ kèo Aura'),
           host_avatar: m.creator?.avatar_url || m.host_avatar,
           host_reputation: m.host_reputation || 98,
           host_level: m.host_level || 'Hạng Bán Chuyên',
-          description: m.description || (typeof availability.description === 'string' ? availability.description : undefined) || `Tìm bạn chơi giao lưu nâng cao kỹ năng, tôn trọng văn hóa thi đấu fair-play tại ${venue}.`,
-          status: (m.status === 'ended' || m.status === 'completed' || m.status === 'cancelled')
-            ? (m.status as 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled' | 'ended')
-            : (((typeof m.joined_count === 'number' ? m.joined_count : rawParticipants.length) >= ((m.required_participants as number) || 4)) ? 'full' : 'open'),
-          participants: rawParticipants.length > 0
-            ? rawParticipants.map((p) => ({
-                id: (p.id || p.user_id || 1) as number,
-                name: (p.name || p.user?.name || `VĐV #${p.id || 1}`) as string,
-                avatar: p.avatar || p.user?.avatar_url,
-                skill_level: (p.skill_level as number) || 3,
-                is_host: !isOwnerHosted && p.user_id === m.creator_id,
-              }))
-            : (isOwnerHosted
+          description:
+            m.description ||
+            (typeof availability.description === 'string' ? availability.description : undefined) ||
+            `Tìm bạn chơi giao lưu nâng cao kỹ năng, tôn trọng văn hóa thi đấu fair-play tại ${venue}.`,
+          status:
+            m.status === 'ended' || m.status === 'completed' || m.status === 'cancelled'
+              ? (m.status as 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled' | 'ended')
+              : (typeof m.joined_count === 'number' ? m.joined_count : rawParticipants.length) >=
+                  ((m.required_participants as number) || 4)
+                ? 'full'
+                : 'open',
+          participants:
+            rawParticipants.length > 0
+              ? rawParticipants.map((p) => ({
+                  id: (p.id || p.user_id || 1) as number,
+                  name: (p.name || p.user?.name || `VĐV #${p.id || 1}`) as string,
+                  avatar: p.avatar || p.user?.avatar_url,
+                  skill_level: (p.skill_level as number) || 3,
+                  is_host: !isOwnerHosted && p.user_id === m.creator_id,
+                }))
+              : isOwnerHosted
                 ? []
                 : [
                     {
@@ -213,7 +265,7 @@ export function useMatchmaking() {
                       skill_level: (m.min_skill as number) || 3,
                       is_host: true,
                     },
-                  ]),
+                  ],
           is_joined: isUserJoined,
           is_host: isHost,
           is_owner_hosted: isOwnerHosted,
@@ -332,7 +384,10 @@ export function useMatchmaking() {
       }
 
       // City filter
-      if (selectedCity.value !== 'all' && !m.city.toLowerCase().includes(selectedCity.value.toLowerCase())) {
+      if (
+        selectedCity.value !== 'all' &&
+        !m.city.toLowerCase().includes(selectedCity.value.toLowerCase())
+      ) {
         return false
       }
       // Category filter
@@ -359,7 +414,8 @@ export function useMatchmaking() {
       // Search query
       const q = searchQuery.value.trim().toLowerCase()
       if (q) {
-        const matchText = `${m.title} ${m.venue_name} ${m.court_name || ''} ${m.host_name} ${m.sport_name}`.toLowerCase()
+        const matchText =
+          `${m.title} ${m.venue_name} ${m.court_name || ''} ${m.host_name} ${m.sport_name}`.toLowerCase()
         if (!matchText.includes(q)) return false
       }
 

@@ -9,7 +9,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     })
   })
 
-  test('3.2.1: Luồng đăng nhập trình duyệt -> giữ trang chuyển hướng -> F5 giữ phiên -> đăng xuất', async ({ page }) => {
+  test('3.2.1: Luồng đăng nhập trình duyệt -> giữ trang chuyển hướng -> F5 giữ phiên -> đăng xuất', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
@@ -25,14 +27,20 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     // 3. Return path followed: redirected to /wallet
     await expect(page).not.toHaveURL(/\/login/, { timeout: 20000 })
     await expect(page).toHaveURL((url) => url.pathname === '/wallet', { timeout: 20000 })
-    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({
+      timeout: 20000,
+    })
 
     // 4. Reload page preserves session persistence
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL((url) => url.pathname === '/wallet', { timeout: 15000 })
-    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({
+      timeout: 15000,
+    })
     // 5. Logout cleans up session and restores guard via UI
-    const userTrigger = page.locator('.user-dropdown-trigger, .user-profile-trigger, .user-avatar-btn').first()
+    const userTrigger = page
+      .locator('.user-dropdown-trigger, .user-profile-trigger, .user-avatar-btn')
+      .first()
     await expect(userTrigger).toBeVisible({ timeout: 15000 })
     await userTrigger.click()
     const logoutBtn = page.locator('.dropdown-item.logout-item').first()
@@ -44,18 +52,24 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await expect(page).toHaveURL(/.*login.*redirect=.*wallet/, { timeout: 15000 })
   })
 
-  test('3.2.2: Chuyển hướng khách vãng lai và kiểm tra lỗi khi nhập sai mật khẩu', async ({ page }) => {
+  test('3.2.2: Chuyển hướng khách vãng lai và kiểm tra lỗi khi nhập sai mật khẩu', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
     // 1. Negative path: submitting invalid credentials
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.locator('input[type="email"], input[name="email"]').fill('invalid_user_' + Date.now() + '@example.test')
+    await page
+      .locator('input[type="email"], input[name="email"]')
+      .fill('invalid_user_' + Date.now() + '@example.test')
     await page.locator('input[type="password"], input[name="password"]').fill('WrongPassword123!@#')
     await page.locator('button[type="submit"].auth-submit-btn').click()
 
     // Error feedback is rendered without crashing
-    await expect(page.locator('[role="alert"], .error-banner, .auth-error, .text-danger').first()).toBeVisible({ timeout: 10000 })
+    await expect(
+      page.locator('[role="alert"], .error-banner, .auth-error, .text-danger').first(),
+    ).toBeVisible({ timeout: 10000 })
     await expect(page).toHaveURL(/.*login/)
 
     // 2. Perform valid login
@@ -92,7 +106,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
       const unique = Date.now()
       await page.goto('/register', { waitUntil: 'domcontentloaded' })
       await page.locator('input[name="name"], #reg-name').fill('Unverified Customer')
-      await page.locator('input[type="email"], input[name="email"], #reg-email').fill(`unverified_${unique}@demo.auracourt.vn`)
+      await page
+        .locator('input[type="email"], input[name="email"], #reg-email')
+        .fill(`unverified_${unique}@demo.auracourt.vn`)
       const pw = 'Password123!'
       await page.locator('#reg-password, input[name="password"]').fill(pw)
       await page.locator('#reg-password-confirm, input[name="password_confirmation"]').fill(pw)
@@ -109,9 +125,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     const cookies = await page.context().cookies()
     const xsrfCookie = cookies.find((c) => c.name === 'XSRF-TOKEN')
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     if (xsrfCookie) {
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
@@ -144,11 +160,17 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
 
     // User must remain on login and see account restricted message
     await expect(page).toHaveURL(/.*login/)
-    const errorBox = page.locator('[role="alert"], .error-banner, .auth-error, .text-danger').first()
+    const errorBox = page
+      .locator('[role="alert"], .error-banner, .auth-error, .text-danger')
+      .first()
     await expect(errorBox).toBeVisible({ timeout: 10000 })
-    await expect(errorBox).toContainText(/không có quyền|khóa|hạn chế|restricted|forbidden|không hợp lệ|không đúng/i)
+    await expect(errorBox).toContainText(
+      /không có quyền|khóa|hạn chế|restricted|forbidden|không hợp lệ|không đúng/i,
+    )
   })
-  test('3.3.1: Ranh giới phân quyền: Platform Admin vs Chủ sân (Owner) vs Khách hàng', async ({ browser }) => {
+  test('3.3.1: Ranh giới phân quyền: Platform Admin vs Chủ sân (Owner) vs Khách hàng', async ({
+    browser,
+  }) => {
     test.slow()
     const manifest = getTestManifest()
     const admin = getActorCredentials(manifest, 'admin')
@@ -208,7 +230,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await custCtx.close()
   })
 
-  test('3.3.2: Phân quyền vận hành cơ sở: Quản lý (Manager) vs Thu ngân (Cashier) vs Nhân viên (Staff)', async ({ browser }) => {
+  test('3.3.2: Phân quyền vận hành cơ sở: Quản lý (Manager) vs Thu ngân (Cashier) vs Nhân viên (Staff)', async ({
+    browser,
+  }) => {
     const manifest = getTestManifest()
     const manager = getActorCredentials(manifest, 'manager1')
     const cashier = getActorCredentials(manifest, 'cashier1')
@@ -273,7 +297,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await stfCtx.close()
   })
 
-  test('3.3.3: Cách ly đa tổ chức (Multi-tenant): Từ chối truy cập và sửa đổi dữ liệu tổ chức khác', async ({ page }) => {
+  test('3.3.3: Cách ly đa tổ chức (Multi-tenant): Từ chối truy cập và sửa đổi dữ liệu tổ chức khác', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const foreignOwner = getActorCredentials(manifest, 'owner2')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
@@ -292,20 +318,23 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     const cookies = await page.context().cookies()
     const xsrfCookie = cookies.find((c) => c.name === 'XSRF-TOKEN')
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     if (xsrfCookie) {
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
     }
 
-    const patchRes = await page.request.patch(`${manifest.backend.url}/api/v1/admin/venues/${venue1AId}`, {
-      data: {
-        phone: '0909999999',
+    const patchRes = await page.request.patch(
+      `${manifest.backend.url}/api/v1/admin/venues/${venue1AId}`,
+      {
+        data: {
+          phone: '0909999999',
+        },
+        headers,
       },
-      headers,
-    })
+    )
 
     // Foreign tenant mutation must be rejected with 403
     expect(patchRes.status()).toBe(403)
@@ -313,7 +342,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     expect(body.message).toMatch(/unauthorized|không có quyền|permission|access required/i)
   })
 
-  test('3.3.4: Cách ly cơ sở cùng tổ chức: Từ chối quản lý truy cập cơ sở anh em không được phân quyền', async ({ page }) => {
+  test('3.3.4: Cách ly cơ sở cùng tổ chức: Từ chối quản lý truy cập cơ sở anh em không được phân quyền', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const manager1 = getActorCredentials(manifest, 'manager1')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
@@ -333,21 +364,24 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     const cookies = await page.context().cookies()
     const xsrfCookie = cookies.find((c) => c.name === 'XSRF-TOKEN')
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Origin': manifest.frontend.url,
-      'Referer': manifest.frontend.url,
+      Accept: 'application/json',
+      Origin: manifest.frontend.url,
+      Referer: manifest.frontend.url,
     }
     if (xsrfCookie) {
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
     }
 
     // 2. Mutation on Sibling Venue 1-B must be rejected with 403
-    const siblingRes = await page.request.patch(`${manifest.backend.url}/api/v1/admin/venues/${venue1BId}`, {
-      data: {
-        phone: '0908888888',
+    const siblingRes = await page.request.patch(
+      `${manifest.backend.url}/api/v1/admin/venues/${venue1BId}`,
+      {
+        data: {
+          phone: '0908888888',
+        },
+        headers,
       },
-      headers,
-    })
+    )
     expect([200, 403]).toContain(siblingRes.status())
     if (siblingRes.status() === 403) {
       const bodySibling = (await siblingRes.json()) as { message?: string }
@@ -355,12 +389,15 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     }
 
     // 3. Mutation on Assigned Venue 1-A must succeed with 200
-    const assignedRes = await page.request.patch(`${manifest.backend.url}/api/v1/admin/venues/${venue1AId}`, {
-      data: {
-        phone: '0901000005',
+    const assignedRes = await page.request.patch(
+      `${manifest.backend.url}/api/v1/admin/venues/${venue1AId}`,
+      {
+        data: {
+          phone: '0901000005',
+        },
+        headers,
       },
-      headers,
-    })
+    )
     expect(assignedRes.status()).toBe(200)
   })
 })

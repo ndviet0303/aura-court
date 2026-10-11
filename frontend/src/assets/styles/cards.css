@@ -82,7 +82,7 @@
 }
 
 .feature-icon {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-family: 'Material Symbols Outlined';
   font-size: 25px;
 }
@@ -108,7 +108,9 @@
   display: block;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm, 0 4px 16px rgba(107, 45, 63, 0.06));
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s ease;
 }
 
 .hero-mosaic img:hover {
@@ -131,7 +133,7 @@ html.dark .hero-mosaic img {
 
 .access-card {
   border-radius: 22px;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   border: 1px solid rgba(201, 161, 90, 0.35);
   display: grid;
   place-items: center;
@@ -140,7 +142,9 @@ html.dark .hero-mosaic img {
   padding: 16px;
   box-sizing: border-box;
   box-shadow: 0 8px 24px rgba(107, 45, 63, 0.28);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s ease;
 }
 
 .access-card:hover {
@@ -152,7 +156,7 @@ html.dark .hero-mosaic img {
   font-size: 32px;
   font-weight: 800;
   display: block;
-  color: #F2D9A8;
+  color: #f2d9a8;
   letter-spacing: -0.02em;
   line-height: 1.1;
   margin-bottom: 4px;
@@ -161,7 +165,7 @@ html.dark .hero-mosaic img {
 .access-card span {
   font-size: 11.5px;
   font-weight: 700;
-  color: #E8CBA0;
+  color: #e8cba0;
   opacity: 0.9;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -169,16 +173,16 @@ html.dark .hero-mosaic img {
 }
 
 html.dark .access-card {
-  background: #3B1822;
+  background: #3b1822;
   border-color: rgba(229, 142, 159, 0.35);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 html.dark .access-card strong {
-  color: #FAE6BE;
+  color: #fae6be;
 }
 
 html.dark .access-card span {
-  color: #D8B46E;
+  color: #d8b46e;
   opacity: 0.95;
 }

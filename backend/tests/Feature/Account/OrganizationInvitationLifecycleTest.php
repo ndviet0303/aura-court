@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Account;
 
-use App\Models\ElevatedAuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMember;

@@ -37,16 +37,16 @@
 }
 
 .hero h1 em {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-style: normal;
-  background: linear-gradient(135deg, var(--primary, #6B2D3F) 0%, #8b3a52 100%);
+  background: linear-gradient(135deg, var(--primary, #6b2d3f) 0%, #8b3a52 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline;
 }
 
 html.dark .hero h1 em {
-  background: linear-gradient(135deg, #E58E9F 0%, #f7a8b8 100%);
+  background: linear-gradient(135deg, #e58e9f 0%, #f7a8b8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -246,7 +246,7 @@ html.dark .hero h1 em {
 }
 
 .slot:hover:not(:disabled):not(.selected) {
-  border-color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(201, 161, 90, 0.15);
 }
@@ -359,7 +359,9 @@ html.dark .slot.selected small {
   max-width: min(580px, calc(100vw - 40px)) !important;
   background: #ffffff;
   border: 1.5px solid rgba(201, 161, 90, 0.45);
-  box-shadow: 0 16px 40px rgba(107, 45, 63, 0.18), 0 4px 14px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 16px 40px rgba(107, 45, 63, 0.18),
+    0 4px 14px rgba(0, 0, 0, 0.08);
   border-radius: 9999px;
   padding: 8px 12px 8px 20px;
   display: flex !important;
@@ -382,8 +384,8 @@ html.dark .slot.selected small {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background: var(--primary-container, #f8e8ec);
+  color: var(--primary, #6b2d3f);
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12.5px;
@@ -410,7 +412,7 @@ html.dark .slot.selected small {
 .floating-booking .dock-total-val {
   font-size: 16px;
   font-weight: 800;
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-family: monospace, ui-monospace, sans-serif;
   letter-spacing: -0.02em;
 }
@@ -487,15 +489,17 @@ body.dark .floating-booking,
 :root.dark .floating-booking {
   background: #1e191c !important;
   border: 1.5px solid rgba(216, 180, 110, 0.5) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 4px 14px rgba(216, 180, 110, 0.25) !important;
-  color: #FAF7F3 !important;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.75),
+    0 4px 14px rgba(216, 180, 110, 0.25) !important;
+  color: #faf7f3 !important;
 }
 
 html.dark .floating-booking .dock-badge,
 html[data-theme='dark'] .floating-booking .dock-badge,
 :root.dark .floating-booking .dock-badge {
   background: rgba(68, 26, 38, 0.85) !important;
-  color: #E58E9F !important;
+  color: #e58e9f !important;
   border-color: rgba(229, 142, 159, 0.3) !important;
 }
 
@@ -508,7 +512,7 @@ html[data-theme='dark'] .floating-booking .dock-total-lbl,
 html.dark .floating-booking .dock-total-val,
 html[data-theme='dark'] .floating-booking .dock-total-val,
 :root.dark .floating-booking .dock-total-val {
-  color: #D8B46E !important;
+  color: #d8b46e !important;
   text-shadow: 0 0 12px rgba(216, 180, 110, 0.35);
 }
 
@@ -588,13 +592,19 @@ html[data-theme='dark'] .floating-dock-error,
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    opacity 0.25s ease,
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .slide-up-enter-from,
@@ -737,7 +747,7 @@ html[data-theme='dark'] .floating-dock-error,
   text-transform: uppercase;
 }
 
-.not-found>*:not(.not-found-art) {
+.not-found > *:not(.not-found-art) {
   position: relative;
   z-index: 1;
   max-width: 500px;
@@ -778,7 +788,7 @@ html[data-theme='dark'] .floating-dock-error,
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--primary-container, #F8E8EC);
+  background: var(--primary-container, #f8e8ec);
   color: var(--on-primary-container, #4e1827);
   font-size: 13px;
   line-height: 1.45;
@@ -816,12 +826,12 @@ html[data-theme='dark'] .floating-dock-error,
 }
 
 .admin-nav-item.active {
-  background: var(--primary-container, #F8E8EC);
-  color: var(--primary, #6B2D3F);
+  background: var(--primary-container, #f8e8ec);
+  color: var(--primary, #6b2d3f);
   font-weight: 600;
 }
 
 html.dark .admin-nav-item.active {
   background: var(--primary-container, #441a26);
-  color: var(--primary, #E58E9F);
+  color: var(--primary, #e58e9f);
 }

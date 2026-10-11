@@ -26,7 +26,7 @@ watch(
   () => props.shift.declared_cash,
   (val) => {
     if (val != null) declaredCash.value = val
-  }
+  },
 )
 
 const liveVariance = computed(() => {
@@ -68,7 +68,9 @@ function handleSubmit() {
           </div>
           <div class="snap-box">
             <span class="snap-lbl">{{ t('admin.shifts.cashDropsTally') }}</span>
-            <strong class="font-mono text-red">-{{ formatCurrency(shift.cash_drops_total) }}</strong>
+            <strong class="font-mono text-red"
+              >-{{ formatCurrency(shift.cash_drops_total) }}</strong
+            >
           </div>
           <div class="snap-box highlight-snap">
             <span class="snap-lbl">{{ t('admin.shifts.expectedInDrawer') }}</span>
@@ -85,24 +87,27 @@ function handleSubmit() {
               <span>{{ t('admin.shifts.openCalculator') }}</span>
             </button>
           </div>
-          <CurrencyInput
-            v-model="declaredCash"
-            size="md"
-            placeholder="0"
-          />
+          <CurrencyInput v-model="declaredCash" size="md" placeholder="0" />
         </div>
 
         <!-- Realtime Variance Indicator -->
         <div class="variance-alert-card" :class="{ 'has-diff': liveVariance !== 0 }">
           <div class="var-left">
-            <span class="material-symbols-outlined var-icon" :class="liveVariance === 0 ? 'text-green' : liveVariance < 0 ? 'text-red' : 'text-yellow'">
+            <span
+              class="material-symbols-outlined var-icon"
+              :class="
+                liveVariance === 0 ? 'text-green' : liveVariance < 0 ? 'text-red' : 'text-yellow'
+              "
+            >
               {{ liveVariance === 0 ? 'check_circle' : 'warning' }}
             </span>
             <div class="var-texts">
               <span class="var-title">{{ t('admin.shifts.shiftVarianceAmount') }}</span>
               <strong
                 class="font-mono var-val"
-                :class="liveVariance === 0 ? 'text-green' : liveVariance < 0 ? 'text-red' : 'text-yellow'"
+                :class="
+                  liveVariance === 0 ? 'text-green' : liveVariance < 0 ? 'text-red' : 'text-yellow'
+                "
               >
                 {{ liveVariance > 0 ? '+' : '' }}{{ formatCurrency(liveVariance) }}
               </strong>
@@ -112,7 +117,13 @@ function handleSubmit() {
             class="status-tag"
             :class="liveVariance === 0 ? 'tag-green' : liveVariance < 0 ? 'tag-red' : 'tag-yellow'"
           >
-            {{ liveVariance === 0 ? t('admin.shifts.balancedCash') : liveVariance < 0 ? t('admin.shifts.shortCash') : t('admin.shifts.overCash') }}
+            {{
+              liveVariance === 0
+                ? t('admin.shifts.balancedCash')
+                : liveVariance < 0
+                  ? t('admin.shifts.shortCash')
+                  : t('admin.shifts.overCash')
+            }}
           </span>
         </div>
 
@@ -132,15 +143,8 @@ function handleSubmit() {
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.close') }}
         </AuraButton>
-        <AuraButton
-          variant="primary"
-          :disabled="saving || declaredCash < 0"
-          @click="handleSubmit"
-        >
-          <span
-            class="material-symbols-outlined icon-16"
-            :class="{ 'spin-icon': saving }"
-          >
+        <AuraButton variant="primary" :disabled="saving || declaredCash < 0" @click="handleSubmit">
+          <span class="material-symbols-outlined icon-16" :class="{ 'spin-icon': saving }">
             lock
           </span>
           <span>{{ t('admin.shifts.confirmCloseShift') }}</span>
@@ -377,11 +381,21 @@ function handleSubmit() {
   color: #ef4444;
 }
 
-.text-pink { color: var(--pink-dark, #db2777); }
-.text-green { color: #10b981; }
-.text-yellow { color: #f59e0b; }
-.text-red { color: #ef4444; }
-.text-ink { color: var(--ink); }
+.text-pink {
+  color: var(--pink-dark, #db2777);
+}
+.text-green {
+  color: #10b981;
+}
+.text-yellow {
+  color: #f59e0b;
+}
+.text-red {
+  color: #ef4444;
+}
+.text-ink {
+  color: var(--ink);
+}
 
 .modal-footer {
   display: flex;
@@ -391,16 +405,24 @@ function handleSubmit() {
   border-top: 1px solid var(--outline);
 }
 
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
 
 .spin-icon {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 :global(html.dark) .modal-card {

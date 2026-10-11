@@ -3,9 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\CourtStatusUpdated;
-use App\Models\CashShift;
 use App\Models\Court;
-use App\Models\Journal;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosOrder;
@@ -18,7 +16,6 @@ use App\Models\StockMovement;
 use App\Models\TenantCustomer;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -29,13 +26,21 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
     use RefreshDatabase;
 
     private Organization $tenant;
+
     private User $cashier;
+
     private User $staff;
+
     private User $manager;
+
     private User $customer;
+
     private Venue $venue;
+
     private Court $court;
+
     private PosProduct $drink;
+
     private PosProduct $accessory;
 
     protected function setUp(): void
@@ -44,7 +49,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
 
         $this->tenant = Organization::create([
             'name' => 'Aura Central Stadium',
-            'slug' => 'aura-central-' . uniqid(),
+            'slug' => 'aura-central-'.uniqid(),
             'status' => 'active',
             'settings' => ['timezone' => 'Asia/Ho_Chi_Minh'],
         ]);
@@ -95,7 +100,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         $this->venue = Venue::create([
             'organization_id' => $this->tenant->id,
             'name' => 'Aura Grand Stadium',
-            'slug' => 'aura-grand-' . uniqid(),
+            'slug' => 'aura-grand-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -174,7 +179,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
             'organization_id' => $this->tenant->id,
             'user_id' => $this->customer->id,
             'court_id' => $this->court->id,
-            'code' => 'RES-JOURNEY-' . strtoupper(uniqid()),
+            'code' => 'RES-JOURNEY-'.strtoupper(uniqid()),
             'status' => 'confirmed',
             'currency' => 'VND',
             'total_amount' => 200000,

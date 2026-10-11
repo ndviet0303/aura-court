@@ -24,13 +24,19 @@ class MatchParticipation extends Model
     use BelongsToTenant;
 
     public const STATUS_JOINED = 'joined';
+
     public const STATUS_PENDING_APPROVAL = 'pending_approval';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_WITHDRAWN = 'withdrawn';
 
     public const ATTENDANCE_PRESENT = 'present';
+
     public const ATTENDANCE_LATE = 'late';
+
     public const ATTENDANCE_ABSENT = 'absent';
+
     public const ATTENDANCE_WITHDRAWN = 'withdrawn';
 
     public const VALID_ATTENDANCE_STATUSES = [
@@ -49,7 +55,18 @@ class MatchParticipation extends Model
         ];
     }
 
-    public function post(): BelongsTo { return $this->belongsTo(MatchPost::class, 'match_post_id'); }
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function attendanceRecorder(): BelongsTo { return $this->belongsTo(User::class, 'attendance_recorded_by'); }
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(MatchPost::class, 'match_post_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function attendanceRecorder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'attendance_recorded_by');
+    }
 }

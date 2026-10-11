@@ -19,7 +19,9 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
     await expect(page.locator('main, section').first()).toBeVisible({ timeout: 10000 })
   })
 
-  test('10.3.2: Trang pháp lý: Điều khoản dịch vụ & Chính sách bảo mật (SUP-08)', async ({ page }) => {
+  test('10.3.2: Trang pháp lý: Điều khoản dịch vụ & Chính sách bảo mật (SUP-08)', async ({
+    page,
+  }) => {
     // 1. Terms of Service (/terms)
     await page.goto('/terms', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('h1, h2, .page-title').first()).toBeVisible({ timeout: 10000 })
@@ -29,9 +31,13 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
     await expect(page.locator('h1, h2, .page-title').first()).toBeVisible({ timeout: 10000 })
   })
 
-  test('10.3.3: Trang giới thiệu: Về chúng tôi, Tầm nhìn & Liên hệ (/about) (SUP-08)', async ({ page }) => {
+  test('10.3.3: Trang giới thiệu: Về chúng tôi, Tầm nhìn & Liên hệ (/about) (SUP-08)', async ({
+    page,
+  }) => {
     await page.goto('/about', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('h1, h2, .about-title, .page-title').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('h1, h2, .about-title, .page-title').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('10.3.4: Đường dẫn tùy biến 404 & Điều hướng về trang chủ (SUP-08)', async ({ page }) => {
@@ -39,11 +45,15 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
     await page.goto('/non-existent-page-url-xyz-404', { waitUntil: 'domcontentloaded' })
 
     // Verify 404 page elements
-    const notFoundSection = page.locator('.not-found, .page-shell.not-found, [class*="not-found"]').first()
+    const notFoundSection = page
+      .locator('.not-found, .page-shell.not-found, [class*="not-found"]')
+      .first()
     await expect(notFoundSection).toBeVisible({ timeout: 10000 })
 
     // Verify presence of return home button
-    const backHomeBtn = page.locator('a[href="/"], .btn:has-text("Trang chủ"), a:has-text("Home")').first()
+    const backHomeBtn = page
+      .locator('a[href="/"], .btn:has-text("Trang chủ"), a:has-text("Home")')
+      .first()
     await expect(backHomeBtn).toBeVisible({ timeout: 10000 })
 
     // Click return home and verify navigation
@@ -53,7 +63,9 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
     expect(page.url()).not.toContain('non-existent')
   })
 
-  test('10.3.5: Trang chỉ đường tới cơ sở & Thao tác bản đồ GPS / Maps (SUP-07)', async ({ page }) => {
+  test('10.3.5: Trang chỉ đường tới cơ sở & Thao tác bản đồ GPS / Maps (SUP-07)', async ({
+    page,
+  }) => {
     // Navigate to directions page for the seeded venue
     await page.goto(`/courts/${venueSlug}/directions`, { waitUntil: 'domcontentloaded' })
 
@@ -62,7 +74,9 @@ test.describe('P2: Smoke Điều hướng công khai, Pháp lý & Chỉ đườn
     await expect(directionsContent).toBeVisible({ timeout: 15000 })
 
     // Verify action buttons (Copy address, Open Maps, Share location)
-    const mapActionBtn = page.locator('button:has-text("Bản đồ"), button:has-text("Google Maps"), button:has-text("Chỉ đường"), button:has-text("Sao chép")')
+    const mapActionBtn = page.locator(
+      'button:has-text("Bản đồ"), button:has-text("Google Maps"), button:has-text("Chỉ đường"), button:has-text("Sao chép")',
+    )
     await expect(mapActionBtn.first()).toBeVisible({ timeout: 10000 })
   })
 })

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Subscription;
 
-use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;

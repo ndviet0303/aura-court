@@ -5,7 +5,7 @@ import { AuraButton } from '@/shared/components'
 
 const props = defineProps<{
   show: boolean
-  slot: UserBookingSlot | null
+  bookingSlot: UserBookingSlot | null
   askingPrice: number
   processing?: boolean
 }>()
@@ -21,13 +21,12 @@ function formatMoney(amount: number): string {
 }
 
 function setDiscountPreset(percent: number) {
-  if (!props.slot?.originalPrice) return
-  const discounted = Math.round((props.slot.originalPrice * (1 - percent / 100)) / 10000) * 10000
-  emit('update:askingPrice', discounted)
+  const price = props.bookingSlot?.originalPrice
+  if (price) emit('update:askingPrice', Math.round((price * (1 - percent / 100)) / 10000) * 10000)
 }
 
 const feeAmount = computed(() => {
-  return Math.round((props.askingPrice * 0.05))
+  return Math.round(props.askingPrice * 0.05)
 })
 
 const estimatedPayout = computed(() => {
@@ -36,7 +35,7 @@ const estimatedPayout = computed(() => {
 </script>
 
 <template>
-  <div v-if="show && slot" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="show && bookingSlot" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <!-- Modal Header -->
       <div class="modal-header">
@@ -53,24 +52,24 @@ const estimatedPayout = computed(() => {
       <div class="modal-body">
         <!-- Target Slot Summary -->
         <div class="slot-summary-card">
-          <strong class="slot-court">{{ slot.courtName }}</strong>
+          <strong class="slot-court">{{ bookingSlot.courtName }}</strong>
           <div class="slot-meta-row">
             <span class="meta-item">
               <span class="material-symbols-outlined icon-14">location_on</span>
-              <span>{{ slot.venueName }}</span>
+              <span>{{ bookingSlot.venueName }}</span>
             </span>
             <span class="meta-item">
               <span class="material-symbols-outlined icon-14">calendar_today</span>
-              <span>{{ slot.dateStr }}</span>
+              <span>{{ bookingSlot.dateStr }}</span>
             </span>
             <span class="meta-item highlight">
               <span class="material-symbols-outlined icon-14">schedule</span>
-              <span class="font-mono">{{ slot.timeSlot }}</span>
+              <span class="font-mono">{{ bookingSlot.timeSlot }}</span>
             </span>
           </div>
           <div class="slot-price-row">
             <span class="orig-label">Giá bạn đã thanh toán:</span>
-            <strong class="orig-val font-mono">{{ formatMoney(slot.originalPrice) }}</strong>
+            <strong class="orig-val font-mono">{{ formatMoney(bookingSlot.originalPrice) }}</strong>
           </div>
         </div>
 
@@ -78,14 +77,14 @@ const estimatedPayout = computed(() => {
         <div class="form-group">
           <label class="form-label">
             <span>Đặt giá muốn chuyển nhượng (₫):</span>
-            <span class="max-hint">(Tối đa: {{ formatMoney(slot.originalPrice) }})</span>
+            <span class="max-hint">(Tối đa: {{ formatMoney(bookingSlot.originalPrice) }})</span>
           </label>
           <div class="price-input-wrap">
             <input
               :value="askingPrice"
               type="number"
               min="10000"
-              :max="slot.originalPrice"
+              :max="bookingSlot.originalPrice"
               step="10000"
               class="form-input font-mono"
               @input="emit('update:askingPrice', Number(($event.target as HTMLInputElement).value))"
@@ -96,27 +95,11 @@ const estimatedPayout = computed(() => {
           <!-- Quick Discount Presets -->
           <div class="preset-chips">
             <span class="preset-label">Gợi ý giảm giá nhanh:</span>
-            <button
-              type="button"
-              class="chip-btn"
-              @click="setDiscountPreset(10)"
-            >
-              -10%
-            </button>
-            <button
-              type="button"
-              class="chip-btn popular"
-              @click="setDiscountPreset(20)"
-            >
+            <button type="button" class="chip-btn" @click="setDiscountPreset(10)">-10%</button>
+            <button type="button" class="chip-btn popular" @click="setDiscountPreset(20)">
               -20% (Bán nhanh)
             </button>
-            <button
-              type="button"
-              class="chip-btn"
-              @click="setDiscountPreset(30)"
-            >
-              -30%
-            </button>
+            <button type="button" class="chip-btn" @click="setDiscountPreset(30)">-30%</button>
           </div>
         </div>
 
@@ -140,21 +123,20 @@ const estimatedPayout = computed(() => {
         <div class="policy-notice">
           <span class="material-symbols-outlined notice-icon">info</span>
           <p class="notice-text">
-            Suất chơi sẽ được hiển thị công khai trên chợ. Bạn có thể rút tin bất cứ lúc nào trước khi có người mua.
+            Suất chơi sẽ được hiển thị công khai trên chợ. Bạn có thể rút tin bất cứ lúc nào trước
+            khi có người mua.
           </p>
         </div>
       </div>
 
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <AuraButton variant="secondary" size="md" @click="emit('close')">
-          Huỷ
-        </AuraButton>
+        <AuraButton variant="secondary" size="md" @click="emit('close')"> Huỷ </AuraButton>
         <AuraButton
           variant="gold"
           size="md"
           :loading="processing"
-          :disabled="askingPrice <= 0 || (slot ? askingPrice > slot.originalPrice : false)"
+          :disabled="askingPrice <= 0 || askingPrice > bookingSlot.originalPrice"
           icon="publish"
           @click="emit('confirm')"
         >
@@ -192,8 +174,14 @@ const estimatedPayout = computed(() => {
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modal-header {
@@ -212,7 +200,7 @@ const estimatedPayout = computed(() => {
 
 .modal-icon {
   font-size: 22px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .modal-title {
@@ -277,12 +265,12 @@ const estimatedPayout = computed(() => {
 }
 
 .meta-item.highlight {
-  color: var(--primary, #6B2D3F);
+  color: var(--primary, #6b2d3f);
   font-weight: 700;
 }
 
 html.dark .meta-item.highlight {
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .icon-14 {
@@ -348,7 +336,7 @@ html.dark .meta-item.highlight {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
   box-shadow: 0 0 0 3px rgba(107, 45, 63, 0.1);
 }
 
@@ -386,14 +374,14 @@ html.dark .meta-item.highlight {
 }
 
 .chip-btn:hover {
-  border-color: var(--primary, #6B2D3F);
-  color: var(--primary, #6B2D3F);
+  border-color: var(--primary, #6b2d3f);
+  color: var(--primary, #6b2d3f);
 }
 
 .chip-btn.popular {
   background: rgba(201, 161, 90, 0.1);
-  border-color: var(--accent, #C9A15A);
-  color: var(--accent, #C9A15A);
+  border-color: var(--accent, #c9a15a);
+  color: var(--accent, #c9a15a);
   font-weight: 700;
 }
 
@@ -442,7 +430,7 @@ html.dark .meta-item.highlight {
 
 .notice-icon {
   font-size: 18px;
-  color: var(--accent, #C9A15A);
+  color: var(--accent, #c9a15a);
 }
 
 .notice-text {
@@ -479,7 +467,7 @@ html.dark .meta-item.highlight {
   padding: 10px 22px;
   border-radius: 12px;
   border: 0;
-  background: var(--primary, #6B2D3F);
+  background: var(--primary, #6b2d3f);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 700;
@@ -502,7 +490,11 @@ html.dark .meta-item.highlight {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

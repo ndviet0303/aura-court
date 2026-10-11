@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Venue;
 
-use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Booking;
 use App\Models\BookingSlot;
+use App\Models\Court;
+use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;

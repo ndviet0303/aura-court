@@ -105,7 +105,7 @@ class ResolveFinanceException
             $updated = $this->exceptions->update($exception, $attributes);
 
             // Append immutable audit log
-            $hash = '0x' . strtoupper(substr(hash('sha256', "exception_{$exception->id}_user_{$data->userId}_" . now()->toIso8601String()), 0, 8));
+            $hash = '0x'.strtoupper(substr(hash('sha256', "exception_{$exception->id}_user_{$data->userId}_".now()->toIso8601String()), 0, 8));
 
             $this->auditLogs->create([
                 'user_id' => $data->userId,

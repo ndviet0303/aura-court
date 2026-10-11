@@ -5,17 +5,20 @@ import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import type { Court, Venue } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
 
-const props = withDefaults(defineProps<{
-  show: boolean
-  coupons: Coupon[]
-  venues?: Venue[]
-  courts?: Court[]
-  saving?: boolean
-}>(), {
-  venues: () => [],
-  courts: () => [],
-})
-const { show, coupons, venues, courts, saving } = toRefs(props)
+const props = withDefaults(
+  defineProps<{
+    show: boolean
+    coupons: Coupon[]
+    venues?: Venue[]
+    courts?: Court[]
+    saving?: boolean
+  }>(),
+  {
+    venues: () => [],
+    courts: () => [],
+  },
+)
+const { show, coupons, venues, saving } = toRefs(props)
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -66,7 +69,11 @@ const endsAt = ref('')
 const canCombineWithMembership = ref(true)
 const venueScopeId = ref<number | null>(null)
 const courtScopeId = ref<number | null>(null)
-const scopedCourts = computed(() => props.courts.filter((court) => !venueScopeId.value || (court.venue_id ?? court.venue?.id) === venueScopeId.value))
+const scopedCourts = computed(() =>
+  props.courts.filter(
+    (court) => !venueScopeId.value || (court.venue_id ?? court.venue?.id) === venueScopeId.value,
+  ),
+)
 
 watch(venueScopeId, () => {
   if (courtScopeId.value && !scopedCourts.value.some((court) => court.id === courtScopeId.value)) {
@@ -89,7 +96,9 @@ function beginEdit(coupon: Coupon) {
   code.value = coupon.code
   campaignName.value = coupon.campaign?.name || coupon.code
   campaignDescription.value = coupon.campaign?.description || ''
-  eligibilityGroup.value = (coupon.campaign?.eligibility_group || coupon.eligibility_group || 'all_customers') as CouponFormPayload['eligibility_group']
+  eligibilityGroup.value = (coupon.campaign?.eligibility_group ||
+    coupon.eligibility_group ||
+    'all_customers') as CouponFormPayload['eligibility_group']
   discountType.value = coupon.discount_type
   discountValue.value = coupon.discount_value
   maxDiscount.value = coupon.max_discount ?? null
@@ -180,7 +189,13 @@ function cancelEdit() {
           <div class="coupon-inputs-grid">
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.campaignNameLabel') }}</label>
-              <input v-model="campaignName" type="text" class="form-input" maxlength="120" data-testid="promotion-campaign-name" />
+              <input
+                v-model="campaignName"
+                type="text"
+                class="form-input"
+                maxlength="120"
+                data-testid="promotion-campaign-name"
+              />
             </div>
 
             <div class="form-group">
@@ -204,16 +219,28 @@ function cancelEdit() {
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.targetGroupLabel') }}</label>
-              <select v-model="eligibilityGroup" class="form-input" data-testid="promotion-customer-group">
+              <select
+                v-model="eligibilityGroup"
+                class="form-input"
+                data-testid="promotion-customer-group"
+              >
                 <option value="all_customers">{{ t('admin.manage.groupAllCustomers') }}</option>
-                <option value="first_time_customers">{{ t('admin.manage.groupFirstTimeCustomers') }}</option>
-                <option value="returning_customers">{{ t('admin.manage.groupReturningCustomers') }}</option>
+                <option value="first_time_customers">
+                  {{ t('admin.manage.groupFirstTimeCustomers') }}
+                </option>
+                <option value="returning_customers">
+                  {{ t('admin.manage.groupReturningCustomers') }}
+                </option>
               </select>
             </div>
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.promotionVenueScopeLabel') }}</label>
-              <select v-model.number="venueScopeId" class="form-input" data-testid="promotion-venue-scope">
+              <select
+                v-model.number="venueScopeId"
+                class="form-input"
+                data-testid="promotion-venue-scope"
+              >
                 <option :value="null">{{ t('admin.manage.promotionAllVenues') }}</option>
                 <option v-for="venue in venues" :key="venue.id" :value="venue.id">
                   {{ resolveLocalizedText(venue.name) }}
@@ -223,7 +250,12 @@ function cancelEdit() {
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.promotionCourtScopeLabel') }}</label>
-              <select v-model.number="courtScopeId" class="form-input" :disabled="!venueScopeId" data-testid="promotion-court-scope">
+              <select
+                v-model.number="courtScopeId"
+                class="form-input"
+                :disabled="!venueScopeId"
+                data-testid="promotion-court-scope"
+              >
                 <option :value="null">{{ t('admin.manage.promotionAllCourts') }}</option>
                 <option v-for="court in scopedCourts" :key="court.id" :value="court.id">
                   {{ resolveLocalizedText(court.name) }}
@@ -238,7 +270,12 @@ function cancelEdit() {
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.maxDiscountLabel') }}</label>
-              <input v-model.number="maxDiscount" type="number" min="0" class="form-input font-mono" />
+              <input
+                v-model.number="maxDiscount"
+                type="number"
+                min="0"
+                class="form-input font-mono"
+              />
             </div>
 
             <div class="form-group">
@@ -248,17 +285,33 @@ function cancelEdit() {
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.usageLimitLabel') }}</label>
-              <input v-model.number="usageLimit" type="number" min="1" class="form-input font-mono" data-testid="promotion-usage-limit" />
+              <input
+                v-model.number="usageLimit"
+                type="number"
+                min="1"
+                class="form-input font-mono"
+                data-testid="promotion-usage-limit"
+              />
             </div>
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.startsAtLabel') }}</label>
-              <input v-model="startsAt" type="datetime-local" class="form-input" data-testid="promotion-starts-at" />
+              <input
+                v-model="startsAt"
+                type="datetime-local"
+                class="form-input"
+                data-testid="promotion-starts-at"
+              />
             </div>
 
             <div class="form-group">
               <label class="form-label">{{ t('admin.manage.endsAtLabel') }}</label>
-              <input v-model="endsAt" type="datetime-local" class="form-input" data-testid="promotion-ends-at" />
+              <input
+                v-model="endsAt"
+                type="datetime-local"
+                class="form-input"
+                data-testid="promotion-ends-at"
+              />
             </div>
 
             <label class="coupon-combine-toggle">
@@ -268,7 +321,12 @@ function cancelEdit() {
 
             <div class="form-group span-2">
               <label class="form-label">{{ t('admin.manage.campaignDescriptionLabel') }}</label>
-              <textarea v-model="campaignDescription" class="form-input" rows="2" maxlength="4000" />
+              <textarea
+                v-model="campaignDescription"
+                class="form-input"
+                rows="2"
+                maxlength="4000"
+              />
             </div>
 
             <button
@@ -278,15 +336,23 @@ function cancelEdit() {
               data-testid="promotion-save"
               @click="handleSave"
             >
-              <span class="material-symbols-outlined icon-16">{{ editingCoupon ? 'save' : 'add' }}</span>
-              <span>{{ editingCoupon ? t('admin.manage.updateCouponBtn') : t('admin.manage.createCouponBtn') }}</span>
+              <span class="material-symbols-outlined icon-16">{{
+                editingCoupon ? 'save' : 'add'
+              }}</span>
+              <span>{{
+                editingCoupon
+                  ? t('admin.manage.updateCouponBtn')
+                  : t('admin.manage.createCouponBtn')
+              }}</span>
             </button>
           </div>
         </div>
 
         <!-- Coupons Table List -->
         <div class="coupons-table-wrap">
-          <h4 class="form-sub-title">{{ t('admin.manage.promotionCodesList', { count: coupons.length }) }}</h4>
+          <h4 class="form-sub-title">
+            {{ t('admin.manage.promotionCodesList', { count: coupons.length }) }}
+          </h4>
           <div class="coupons-list">
             <div v-for="c in coupons" :key="c.id" class="coupon-item-row">
               <div class="coupon-identity">
@@ -294,19 +360,44 @@ function cancelEdit() {
                 <span class="coupon-code-badge font-mono">{{ c.code }}</span>
               </div>
               <div class="coupon-meta">
-                <strong v-if="c.discount_type === 'percent'">{{ t('admin.manage.discountPercentText', { value: c.discount_value }) }}</strong>
-                <strong v-else>{{ t('admin.manage.discountFixedText', { value: formatCurrency(c.discount_value) }) }}</strong>
-                <span class="font-mono">{{ t('admin.manage.usedCountText', { used: c.usage_count ?? 0, limit: c.usage_limit || '∞' }) }}</span>
-                <span v-if="c.campaign?.eligibility_group">{{ t(`admin.manage.group.${c.campaign.eligibility_group}`) }}</span>
+                <strong v-if="c.discount_type === 'percent'">{{
+                  t('admin.manage.discountPercentText', { value: c.discount_value })
+                }}</strong>
+                <strong v-else>{{
+                  t('admin.manage.discountFixedText', { value: formatCurrency(c.discount_value) })
+                }}</strong>
+                <span class="font-mono">{{
+                  t('admin.manage.usedCountText', {
+                    used: c.usage_count ?? 0,
+                    limit: c.usage_limit || '∞',
+                  })
+                }}</span>
+                <span v-if="c.campaign?.eligibility_group">{{
+                  t(`admin.manage.group.${c.campaign.eligibility_group}`)
+                }}</span>
               </div>
-              <span class="coupon-status" :class="`status-${c.status || (c.is_active ? 'active' : 'suspended')}`">
-                {{ t(`admin.manage.promotionStatus.${c.status || (c.is_active ? 'active' : 'suspended')}`) }}
+              <span
+                class="coupon-status"
+                :class="`status-${c.status || (c.is_active ? 'active' : 'suspended')}`"
+              >
+                {{
+                  t(
+                    `admin.manage.promotionStatus.${c.status || (c.is_active ? 'active' : 'suspended')}`,
+                  )
+                }}
               </span>
               <span v-if="c.campaign" class="coupon-status" :class="`status-${c.campaign.status}`">
-                {{ t('admin.manage.campaignStatusLabel') }}: {{ t(`admin.manage.promotionStatus.${c.campaign.status}`) }}
+                {{ t('admin.manage.campaignStatusLabel') }}:
+                {{ t(`admin.manage.promotionStatus.${c.campaign.status}`) }}
               </span>
               <div class="coupon-actions">
-                <button type="button" class="btn-cancel-edit" :disabled="saving || c.status === 'retired'" :data-testid="`promotion-edit-${c.id}`" @click="beginEdit(c)">
+                <button
+                  type="button"
+                  class="btn-cancel-edit"
+                  :disabled="saving || c.status === 'retired'"
+                  :data-testid="`promotion-edit-${c.id}`"
+                  @click="beginEdit(c)"
+                >
                   {{ t('common.edit') }}
                 </button>
                 <button
@@ -316,7 +407,9 @@ function cancelEdit() {
                   :disabled="saving"
                   :data-testid="`promotion-activate-coupon-${c.id}`"
                   @click="emit('transitionCoupon', c, 'activate')"
-                >{{ t('admin.manage.activatePromotion') }}</button>
+                >
+                  {{ t('admin.manage.activatePromotion') }}
+                </button>
                 <button
                   v-if="c.status === 'active'"
                   type="button"
@@ -324,7 +417,9 @@ function cancelEdit() {
                   :disabled="saving"
                   :data-testid="`promotion-suspend-coupon-${c.id}`"
                   @click="emit('transitionCoupon', c, 'suspend')"
-                >{{ t('admin.manage.suspendPromotion') }}</button>
+                >
+                  {{ t('admin.manage.suspendPromotion') }}
+                </button>
                 <button
                   v-if="c.status !== 'retired'"
                   type="button"
@@ -332,15 +427,21 @@ function cancelEdit() {
                   :disabled="saving"
                   :data-testid="`promotion-retire-coupon-${c.id}`"
                   @click="emit('transitionCoupon', c, 'retire')"
-                >{{ t('admin.manage.retirePromotion') }}</button>
+                >
+                  {{ t('admin.manage.retirePromotion') }}
+                </button>
                 <button
-                  v-if="c.campaign && c.campaign.status !== 'active' && c.campaign.status !== 'retired'"
+                  v-if="
+                    c.campaign && c.campaign.status !== 'active' && c.campaign.status !== 'retired'
+                  "
                   type="button"
                   class="btn-cancel-edit"
                   :disabled="saving"
                   :data-testid="`promotion-activate-campaign-${c.campaign.id}`"
                   @click="emit('transitionCampaign', c.campaign.id, 'activate')"
-                >{{ t('admin.manage.activateCampaign') }}</button>
+                >
+                  {{ t('admin.manage.activateCampaign') }}
+                </button>
                 <button
                   v-if="c.campaign?.status === 'active'"
                   type="button"
@@ -348,7 +449,9 @@ function cancelEdit() {
                   :disabled="saving"
                   :data-testid="`promotion-suspend-campaign-${c.campaign.id}`"
                   @click="emit('transitionCampaign', c.campaign.id, 'suspend')"
-                >{{ t('admin.manage.suspendCampaign') }}</button>
+                >
+                  {{ t('admin.manage.suspendCampaign') }}
+                </button>
                 <button
                   v-if="c.campaign && c.campaign.status !== 'retired'"
                   type="button"
@@ -356,7 +459,9 @@ function cancelEdit() {
                   :disabled="saving"
                   :data-testid="`promotion-retire-campaign-${c.campaign.id}`"
                   @click="emit('transitionCampaign', c.campaign.id, 'retire')"
-                >{{ t('admin.manage.retireCampaign') }}</button>
+                >
+                  {{ t('admin.manage.retireCampaign') }}
+                </button>
               </div>
             </div>
           </div>
@@ -364,7 +469,9 @@ function cancelEdit() {
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" @click="emit('close')">{{ t('common.close') }}</button>
+        <button type="button" class="btn-cancel" @click="emit('close')">
+          {{ t('common.close') }}
+        </button>
       </div>
     </div>
   </div>
@@ -481,10 +588,18 @@ function cancelEdit() {
   font-weight: 700;
 }
 
-.status-active { color: #10b981; }
-.status-draft { color: #64748b; }
-.status-suspended { color: #d97706; }
-.status-retired { color: #6b7280; }
+.status-active {
+  color: #10b981;
+}
+.status-draft {
+  color: #64748b;
+}
+.status-suspended {
+  color: #d97706;
+}
+.status-retired {
+  color: #6b7280;
+}
 
 .coupon-actions {
   flex-wrap: wrap;

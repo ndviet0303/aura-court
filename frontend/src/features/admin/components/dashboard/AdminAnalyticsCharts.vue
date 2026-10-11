@@ -35,9 +35,23 @@ const hourlyData = computed(() => {
   }
 
   const standardHours = [
-    '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
-    '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-    '18:00', '19:00', '20:00', '21:00', '22:00',
+    '06:00',
+    '07:00',
+    '08:00',
+    '09:00',
+    '10:00',
+    '11:00',
+    '12:00',
+    '13:00',
+    '14:00',
+    '15:00',
+    '16:00',
+    '17:00',
+    '18:00',
+    '19:00',
+    '20:00',
+    '21:00',
+    '22:00',
   ]
 
   const maxVal = Math.max(...Object.values(map), 1)
@@ -54,12 +68,10 @@ const hourlyData = computed(() => {
   })
 })
 
-const totalHourlyBookings = computed(() => {
-  return hourlyData.value.reduce((acc, h) => acc + h.bookings, 0)
-})
-
 const peakHourItem = computed(() => {
-  const sorted = [...hourlyData.value].filter((h) => h.bookings > 0).sort((a, b) => b.bookings - a.bookings)
+  const sorted = [...hourlyData.value]
+    .filter((h) => h.bookings > 0)
+    .sort((a, b) => b.bookings - a.bookings)
   return sorted[0] || null
 })
 
@@ -79,7 +91,10 @@ const maxCourtBookings = computed(() => {
             <h3 class="title">{{ t('admin.dashboard.performanceAnalytics') }}</h3>
             <span v-if="peakHourItem" class="peak-badge">
               <span class="material-symbols-outlined icon-14">bolt</span>
-              Khung giờ cao điểm: <strong>{{ peakHourItem.hour }}</strong> ({{ peakHourItem.bookings }} lượt)
+              Khung giờ cao điểm: <strong>{{ peakHourItem.hour }}</strong> ({{
+                peakHourItem.bookings
+              }}
+              lượt)
             </span>
           </div>
         </div>
@@ -136,7 +151,10 @@ const maxCourtBookings = computed(() => {
             <div v-if="h.isPeak" class="peak-crown"></div>
           </div>
         </div>
-        <span class="bar-val font-mono" :class="{ 'text-muted': h.bookings === 0, 'text-pink': h.bookings > 0 }">
+        <span
+          class="bar-val font-mono"
+          :class="{ 'text-muted': h.bookings === 0, 'text-pink': h.bookings > 0 }"
+        >
           {{ h.bookings }}
         </span>
         <span class="bar-lbl font-mono">{{ h.hour }}</span>
@@ -152,7 +170,9 @@ const maxCourtBookings = computed(() => {
 
       <div v-else class="court-util-list">
         <div v-for="c in report.byCourt" :key="c.court_id" class="court-util-row">
-          <strong class="c-name">{{ resolveLocalizedText(c.court?.name) || `Sân #${c.court_id}` }}</strong>
+          <strong class="c-name">{{
+            resolveLocalizedText(c.court?.name) || `Sân #${c.court_id}`
+          }}</strong>
           <div class="progress-bar-wrap">
             <div
               class="progress-fill"
@@ -160,7 +180,7 @@ const maxCourtBookings = computed(() => {
             ></div>
           </div>
           <div class="c-meta">
-            <span>{{ t('admin.dashboard.bookingsCount', { count: c.bookings }) }}</span> · 
+            <span>{{ t('admin.dashboard.bookingsCount', { count: c.bookings }) }}</span> ·
             <strong class="text-pink">{{ formatCurrency(c.revenue || 0) }}</strong>
           </div>
         </div>
@@ -430,8 +450,12 @@ const maxCourtBookings = computed(() => {
 }
 
 @keyframes shimmer-wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 600px) {

@@ -91,7 +91,13 @@ function formatExpiry(value: string): string {
         <li v-for="share in group.shares" :key="share.id" data-testid="split-share">
           <div>
             <strong>{{ t('splitBill.shareNumber', { number: share.share_number }) }}</strong>
-            <p>{{ share.status === 'expired' ? t('splitBill.shareExpired') : t('splitBill.pendingEvidence') }}</p>
+            <p>
+              {{
+                share.status === 'expired'
+                  ? t('splitBill.shareExpired')
+                  : t('splitBill.pendingEvidence')
+              }}
+            </p>
           </div>
           <strong>{{ formatMoney(share.amount) }}</strong>
         </li>
@@ -121,7 +127,9 @@ function formatExpiry(value: string): string {
   align-items: center;
 }
 
-a { color: var(--primary, #e58e9f); }
+a {
+  color: var(--primary, #e58e9f);
+}
 
 .refresh-button {
   padding: 8px 14px;
@@ -132,20 +140,33 @@ a { color: var(--primary, #e58e9f); }
   cursor: pointer;
 }
 
-.refresh-button:disabled { opacity: 0.6; cursor: wait; }
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
 
-h1 { font-size: 24px; }
-h2 { font-size: 18px; }
-header p, dt, li p { color: var(--muted, #9e939a); }
+h1 {
+  font-size: 24px;
+}
+h2 {
+  font-size: 18px;
+}
+header p,
+dt,
+li p {
+  color: var(--muted, #9e939a);
+}
 
-.group-card, .empty-state {
+.group-card,
+.empty-state {
   padding: 20px;
   border: 1px solid var(--border, #382f35);
   border-radius: 14px;
   background: var(--surface, #1e191c);
 }
 
-.alert, .evidence-warning {
+.alert,
+.evidence-warning {
   padding: 12px 16px;
   border-radius: 10px;
   background: rgba(245, 158, 11, 0.12);
@@ -158,8 +179,15 @@ header p, dt, li p { color: var(--muted, #9e939a); }
   gap: 16px;
 }
 
-dd { margin: 6px 0 0; font-weight: 700; overflow-wrap: anywhere; }
-.shares-list { list-style: none; padding: 0; }
+dd {
+  margin: 6px 0 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.shares-list {
+  list-style: none;
+  padding: 0;
+}
 .shares-list li {
   display: flex;
   justify-content: space-between;

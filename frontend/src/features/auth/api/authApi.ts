@@ -53,8 +53,7 @@ export const authApi = {
   changePassword: (payload: ChangePasswordPayload) =>
     api.patch<{ message?: string }>('/profile/password', payload),
 
-  resendVerification: () =>
-    api.post<{ message?: string }>('/auth/email/verification-notification'),
+  resendVerification: () => api.post<{ message?: string }>('/auth/email/verification-notification'),
 
   logout: () => api.post('/auth/logout'),
 }

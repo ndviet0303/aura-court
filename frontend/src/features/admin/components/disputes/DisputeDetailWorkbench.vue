@@ -80,10 +80,19 @@ function onWheel(e: WheelEvent) {
               'status-resolved': item.status === 'resolved',
             }"
           >
-            {{ item.status === 'resolved' ? t('admin.disputes.badgeArbitrated') : t('admin.disputes.badgeInvestigating') }}
+            {{
+              item.status === 'resolved'
+                ? t('admin.disputes.badgeArbitrated')
+                : t('admin.disputes.badgeInvestigating')
+            }}
           </span>
           <span class="reference-tag">
-            {{ t('admin.disputes.dossierRef', { code: item.disputeCode, ref: item.bookingId ? `BK-${item.bookingId}` : 'BK-99482' }) }}
+            {{
+              t('admin.disputes.dossierRef', {
+                code: item.disputeCode,
+                ref: item.bookingId ? `BK-${item.bookingId}` : 'BK-99482',
+              })
+            }}
           </span>
         </div>
         <h2 class="dispute-title">{{ item.title }}</h2>
@@ -112,7 +121,10 @@ function onWheel(e: WheelEvent) {
           <span class="party-role">{{ t('admin.disputes.roleComplainant') }}</span>
           <p class="party-name">{{ item.complainant.name }}</p>
           <span class="party-badge text-gold">
-            {{ item.complainant.tier || 'Hạng Vàng' }} • {{ t('admin.disputes.reputationScore', { score: item.complainant.reputationScore || 95 }) }}
+            {{ item.complainant.tier || 'Hạng Vàng' }} •
+            {{
+              t('admin.disputes.reputationScore', { score: item.complainant.reputationScore || 95 })
+            }}
           </span>
         </div>
       </div>
@@ -126,7 +138,10 @@ function onWheel(e: WheelEvent) {
           <span class="party-role">{{ t('admin.disputes.roleRespondent') }}</span>
           <p class="party-name">{{ item.respondent.name }}</p>
           <span class="party-badge text-diamond">
-            {{ item.respondent.tier || 'Hạng Kim Cương' }} • {{ t('admin.disputes.reputationScore', { score: item.respondent.reputationScore || 90 }) }}
+            {{ item.respondent.tier || 'Hạng Kim Cương' }} •
+            {{
+              t('admin.disputes.reputationScore', { score: item.respondent.reputationScore || 90 })
+            }}
           </span>
         </div>
       </div>
@@ -152,7 +167,7 @@ function onWheel(e: WheelEvent) {
         ref="evidenceTabsRef"
         class="evidence-nav-tabs"
         :class="{ 'is-dragging': isMouseDown }"
-        style="scrollbar-width: none;"
+        style="scrollbar-width: none"
         @mousedown="onMouseDown"
         @mousemove="onMouseMove"
         @mouseup="onMouseUp"
@@ -196,11 +211,7 @@ function onWheel(e: WheelEvent) {
           <span>Chưa có sự kiện kỹ thuật nào được ghi nhận.</span>
         </div>
         <div v-else class="timeline-container">
-          <div
-            v-for="(event, idx) in item.timelineEvents"
-            :key="idx"
-            class="timeline-item"
-          >
+          <div v-for="(event, idx) in item.timelineEvents" :key="idx" class="timeline-item">
             <div class="timeline-dot" :class="'dot-' + event.type"></div>
             <div class="timeline-content">
               <div class="event-title-row">
@@ -220,7 +231,7 @@ function onWheel(e: WheelEvent) {
           <span class="material-symbols-outlined">forum</span>
           <span>Chưa có tin nhắn đối chất giữa các bên.</span>
         </div>
-        <div v-else class="chat-container" style="scrollbar-width: none;">
+        <div v-else class="chat-container" style="scrollbar-width: none">
           <div
             v-for="(msg, idx) in item.chatMessages"
             :key="idx"
@@ -259,7 +270,9 @@ function onWheel(e: WheelEvent) {
             :class="'node-' + court.status"
           >
             <span class="court-node-name">{{ court.name }}</span>
-            <span v-if="court.status === 'conflict'" class="material-symbols-outlined node-icon">warning</span>
+            <span v-if="court.status === 'conflict'" class="material-symbols-outlined node-icon"
+              >warning</span
+            >
             <span class="court-node-label">{{ court.label }}</span>
           </div>
         </div>
@@ -285,7 +298,8 @@ function onWheel(e: WheelEvent) {
           <strong>{{ t('admin.disputes.rootCauseLabel') }}</strong> {{ item.aiAnalysis.rootCause }}
         </p>
         <div class="analysis-recommendation">
-          <strong>{{ t('admin.disputes.recommendationLabel') }}</strong> {{ item.aiAnalysis.recommendationSummary }}
+          <strong>{{ t('admin.disputes.recommendationLabel') }}</strong>
+          {{ item.aiAnalysis.recommendationSummary }}
         </div>
       </div>
     </div>
@@ -447,7 +461,7 @@ function onWheel(e: WheelEvent) {
 }
 
 .text-gold {
-  color: var(--accent, #D8B46E);
+  color: var(--accent, #d8b46e);
 }
 
 .text-diamond {
@@ -561,10 +575,18 @@ function onWheel(e: WheelEvent) {
   flex-shrink: 0;
 }
 
-.dot-primary { background: var(--primary); }
-.dot-warning { background: var(--warning-text, #fb923c); }
-.dot-error { background: var(--error-text, #f87171); }
-.dot-success { background: var(--success-text, #4ade80); }
+.dot-primary {
+  background: var(--primary);
+}
+.dot-warning {
+  background: var(--warning-text, #fb923c);
+}
+.dot-error {
+  background: var(--error-text, #f87171);
+}
+.dot-success {
+  background: var(--success-text, #4ade80);
+}
 
 .timeline-content {
   background: var(--surface);
@@ -718,8 +740,13 @@ function onWheel(e: WheelEvent) {
 }
 
 @keyframes pulseConflict {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
 }
 
 .node-available {
@@ -732,8 +759,12 @@ function onWheel(e: WheelEvent) {
   font-weight: 800;
 }
 
-.node-conflict .court-node-name { color: var(--error-text, #f87171); }
-.node-available .court-node-name { color: var(--success-text, #4ade80); }
+.node-conflict .court-node-name {
+  color: var(--error-text, #f87171);
+}
+.node-available .court-node-name {
+  color: var(--success-text, #4ade80);
+}
 
 .node-icon {
   font-size: 26px;

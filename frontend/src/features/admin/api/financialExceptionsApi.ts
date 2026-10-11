@@ -22,13 +22,18 @@ export const financialExceptionsApi = {
     if (params?.per_page) query.set('per_page', String(params.per_page))
 
     const qs = query.toString()
-    return apiV2.get<{ data: FinancialException[]; meta?: unknown }>(`/finance/exceptions${qs ? `?${qs}` : ''}`)
+    return apiV2.get<{ data: FinancialException[]; meta?: unknown }>(
+      `/finance/exceptions${qs ? `?${qs}` : ''}`,
+    )
   },
 
   getStats: () => apiV2.get<{ stats: ExceptionStats }>('/finance/exceptions/stats'),
 
   resolveException: (id: number | string, payload: ResolveExceptionPayload) =>
-    apiV2.post<{ message: string; exception: FinancialException }>(`/finance/exceptions/${id}/resolve`, payload),
+    apiV2.post<{ message: string; exception: FinancialException }>(
+      `/finance/exceptions/${id}/resolve`,
+      payload,
+    ),
 
   getAuditLogs: (action?: string, perPage: number = 50) => {
     const query = new URLSearchParams()

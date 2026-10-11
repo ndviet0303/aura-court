@@ -32,7 +32,7 @@ function isPeakHour(slot: AvailabilitySlot): boolean {
         timeZone: 'Asia/Ho_Chi_Minh',
         hour: '2-digit',
         hour12: false,
-      })
+      }),
     )
     return hour >= 17 && hour <= 21
   } catch {
@@ -42,13 +42,15 @@ function isPeakHour(slot: AvailabilitySlot): boolean {
 
 const availableCount = computed(() => props.slots.filter((s) => s.available).length)
 
-const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; icon: string }>>(() => [
-  { key: 'all', label: t('schedule.filterAll'), icon: 'schedule' },
-  { key: 'morning', label: t('schedule.filterMorning'), icon: 'wb_sunny' },
-  { key: 'afternoon', label: t('schedule.filterAfternoon'), icon: 'partly_cloudy_day' },
-  { key: 'evening', label: t('schedule.filterEvening'), icon: 'nights_stay' },
-  { key: 'peak', label: t('schedule.filterPeak'), icon: 'local_fire_department' },
-])
+const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; icon: string }>>(
+  () => [
+    { key: 'all', label: t('schedule.filterAll'), icon: 'schedule' },
+    { key: 'morning', label: t('schedule.filterMorning'), icon: 'wb_sunny' },
+    { key: 'afternoon', label: t('schedule.filterAfternoon'), icon: 'partly_cloudy_day' },
+    { key: 'evening', label: t('schedule.filterEvening'), icon: 'nights_stay' },
+    { key: 'peak', label: t('schedule.filterPeak'), icon: 'local_fire_department' },
+  ],
+)
 </script>
 
 <template>
@@ -62,7 +64,9 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
         <div class="title-col">
           <h3 class="section-title">{{ $t('schedule.slotsSectionTitle') }}</h3>
           <span class="available-badge">
-            {{ $t('schedule.slotsAvailableCount', { available: availableCount, total: slots.length }) }}
+            {{
+              $t('schedule.slotsAvailableCount', { available: availableCount, total: slots.length })
+            }}
           </span>
         </div>
       </div>
@@ -117,10 +121,18 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
 
     <!-- Status Legend -->
     <div class="section-legend">
-      <div class="legend-item"><span class="box-legend available"></span> {{ $t('schedule.legendAvailable') }}</div>
-      <div class="legend-item"><span class="box-legend selected"></span> {{ $t('schedule.legendSelected') }}</div>
-      <div class="legend-item"><span class="box-legend peak"></span> {{ $t('schedule.legendPeak') }}</div>
-      <div class="legend-item"><span class="box-legend occupied"></span> {{ $t('schedule.legendOccupied') }}</div>
+      <div class="legend-item">
+        <span class="box-legend available"></span> {{ $t('schedule.legendAvailable') }}
+      </div>
+      <div class="legend-item">
+        <span class="box-legend selected"></span> {{ $t('schedule.legendSelected') }}
+      </div>
+      <div class="legend-item">
+        <span class="box-legend peak"></span> {{ $t('schedule.legendPeak') }}
+      </div>
+      <div class="legend-item">
+        <span class="box-legend occupied"></span> {{ $t('schedule.legendOccupied') }}
+      </div>
     </div>
 
     <!-- Loading Skeleton -->
@@ -597,9 +609,15 @@ const filterButtons = computed<Array<{ key: ScheduleTimeFilter; label: string; i
 }
 
 @keyframes pulseShimmer {
-  0% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.4; }
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.4;
+  }
 }
 
 .empty-slots {

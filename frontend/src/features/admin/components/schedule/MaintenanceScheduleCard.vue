@@ -36,7 +36,11 @@ function formatTimeDisplay(startsAt: string, endsAt: string) {
         <p class="sub">{{ t('admin.schedule.maintenanceSub') }}</p>
       </div>
 
-      <AuraButton variant="primary" class="btn-schedule-downtime btn-schedule-downtime-cta" @click="emit('scheduleDowntime')">
+      <AuraButton
+        variant="primary"
+        class="btn-schedule-downtime btn-schedule-downtime-cta"
+        @click="emit('scheduleDowntime')"
+      >
         <span class="material-symbols-outlined icon-16">add_moderator</span>
         <span>{{ t('admin.schedule.scheduleDowntimeBtn') }}</span>
       </AuraButton>
@@ -231,7 +235,8 @@ function formatTimeDisplay(startsAt: string, endsAt: string) {
   color: #6b7280;
 }
 
-.block-court, .block-time {
+.block-court,
+.block-time {
   display: inline-flex;
   align-items: center;
   gap: 6px;

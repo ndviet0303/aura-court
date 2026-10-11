@@ -13,7 +13,9 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     })
   })
 
-  test('9.2.1: Tạo bài viết trên bảng tin & Duy trì sau khi F5 (FR-COM-20, SUP-03)', async ({ page }) => {
+  test('9.2.1: Tạo bài viết trên bảng tin & Duy trì sau khi F5 (FR-COM-20, SUP-03)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -57,10 +59,14 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const reloadedFeedTab = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(reloadedFeedTab).toBeVisible({ timeout: 10000 })
     await reloadedFeedTab.click()
-    await expect(page.locator('.feed-post-card', { hasText: uniquePostText })).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.feed-post-card', { hasText: uniquePostText })).toBeVisible({
+      timeout: 15000,
+    })
   })
 
-  test('9.2.2: Bình luận bài viết: thêm bình luận, tăng bộ đếm, duy trì sau F5 & xóa bình luận', async ({ page }) => {
+  test('9.2.2: Bình luận bài viết: thêm bình luận, tăng bộ đếm, duy trì sau F5 & xóa bình luận', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -77,18 +83,26 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
 
     // 2. Create post via socialApi to have stable test fixture
     const postContent = `Bài viết thử nghiệm bình luận và thảo luận - ${Date.now()}`
-    const postRes = await withE2EApi(page, async ({ apiV2 }, content) => {
-      return await apiV2.post('/social/feed', { content, audience: 'organization' })
-    }, postContent)
+    const postRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, content) => {
+        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      },
+      postContent,
+    )
 
     const postId = (postRes as any)?.post?.id
     expect(postId).toBeDefined()
 
     // 3. Add comment to the post via socialApi
     const commentContent = `Bình luận thảo luận chuyên sâu số 1 - ${Date.now()}`
-    const commentRes = await withE2EApi(page, async ({ apiV2 }, { pid, text }) => {
-      return await apiV2.post('/social/feed/' + (pid) + '/comments', { content: text })
-    }, { pid: postId, text: commentContent })
+    const commentRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, { pid, text }) => {
+        return await apiV2.post('/social/feed/' + pid + '/comments', { content: text })
+      },
+      { pid: postId, text: commentContent },
+    )
 
     expect(commentRes).toBeDefined()
     const commentId = (commentRes as any)?.comment?.id
@@ -110,12 +124,18 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const feedTabAfter = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(feedTabAfter).toBeVisible({ timeout: 10000 })
     await feedTabAfter.click()
-    await expect(page.locator('.feed-post-card', { hasText: postContent })).toContainText(commentContent)
+    await expect(page.locator('.feed-post-card', { hasText: postContent })).toContainText(
+      commentContent,
+    )
 
     // 6. Delete comment via socialApi
-    const deleteRes = await withE2EApi(page, async ({ apiV2 }, cid) => {
-      return await apiV2.delete('/social/feed/comments/' + (cid))
-    }, commentId)
+    const deleteRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, cid) => {
+        return await apiV2.delete('/social/feed/comments/' + cid)
+      },
+      commentId,
+    )
     expect(deleteRes).toBeDefined()
 
     // 7. Verify comment is removed after reload
@@ -123,10 +143,14 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const feedTabFinal = page.locator('button[role="tab"]', { hasText: /bảng tin/i }).first()
     await expect(feedTabFinal).toBeVisible({ timeout: 10000 })
     await feedTabFinal.click()
-    await expect(page.locator('.feed-post-card', { hasText: postContent })).not.toContainText(commentContent)
+    await expect(page.locator('.feed-post-card', { hasText: postContent })).not.toContainText(
+      commentContent,
+    )
   })
 
-  test('9.2.3: Thả biểu cảm bài viết: bật/tắt reaction, cập nhật số lượng & duy trì', async ({ page }) => {
+  test('9.2.3: Thả biểu cảm bài viết: bật/tắt reaction, cập nhật số lượng & duy trì', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1
@@ -143,29 +167,45 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
 
     // 2. Create post
     const postContent = `Bài viết thử nghiệm reaction biểu cảm - ${Date.now()}`
-    const postRes = await withE2EApi(page, async ({ apiV2 }, content) => {
-      return await apiV2.post('/social/feed', { content, audience: 'organization' })
-    }, postContent)
+    const postRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, content) => {
+        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      },
+      postContent,
+    )
     const postId = (postRes as any)?.post?.id
 
     // 3. React with 'like' -> verify action: 'added'
-    const reactLike1 = await withE2EApi(page, async ({ apiV2 }, pid) => {
-      return await apiV2.post(('post') === 'post' ? '/social/feed/' + (pid) + '/react' : '/social/feed/comments/' + (pid) + '/react', { type: 'like' })
-    }, postId)
+    const reactLike1 = await withE2EApi(
+      page,
+      async ({ apiV2 }, pid) => {
+        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'like' })
+      },
+      postId,
+    )
     expect((reactLike1 as any)?.action).toBe('added')
     expect((reactLike1 as any)?.counts?.like).toBe(1)
 
     // 4. React with 'like' again -> verify action: 'removed' (toggle off)
-    const reactLike2 = await withE2EApi(page, async ({ apiV2 }, pid) => {
-      return await apiV2.post(('post') === 'post' ? '/social/feed/' + (pid) + '/react' : '/social/feed/comments/' + (pid) + '/react', { type: 'like' })
-    }, postId)
+    const reactLike2 = await withE2EApi(
+      page,
+      async ({ apiV2 }, pid) => {
+        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'like' })
+      },
+      postId,
+    )
     expect((reactLike2 as any)?.action).toBe('removed')
     expect((reactLike2 as any)?.counts?.like || 0).toBe(0)
 
     // 5. React with 'fire' -> count is 1
-    const reactFire = await withE2EApi(page, async ({ apiV2 }, pid) => {
-      return await apiV2.post(('post') === 'post' ? '/social/feed/' + (pid) + '/react' : '/social/feed/comments/' + (pid) + '/react', { type: 'fire' })
-    }, postId)
+    const reactFire = await withE2EApi(
+      page,
+      async ({ apiV2 }, pid) => {
+        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'fire' })
+      },
+      postId,
+    )
     expect((reactFire as any)?.action).toBe('added')
     expect((reactFire as any)?.counts?.fire).toBe(1)
 
@@ -178,7 +218,9 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await expect(postCard).toBeVisible({ timeout: 15000 })
   })
 
-  test('9.2.4: Báo cáo nội dung vi phạm: gửi báo cáo bài viết & xác thực lưu trữ database', async ({ page }) => {
+  test('9.2.4: Báo cáo nội dung vi phạm: gửi báo cáo bài viết & xác thực lưu trữ database', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -227,9 +269,13 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
 
     const postContent = `Bài viết có dấu hiệu quảng cáo spam - ${Date.now()}`
-    const postRes = await withE2EApi(page, async ({ apiV2 }, content) => {
-      return await apiV2.post('/social/feed', { content, audience: 'organization' })
-    }, postContent)
+    const postRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, content) => {
+        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      },
+      postContent,
+    )
     const postId = (postRes as any)?.post?.id
     // 2. Customer 2 logs in and reports the post
     await withE2EApi(page, async ({ authApi }) => authApi.logout())
@@ -240,16 +286,24 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
-    const reportRes = await withE2EApi(page, async ({ apiV2 }, pid) => {
-      return await apiV2.post(('post') === 'post' ? '/social/feed/' + (pid) + '/report' : '/social/feed/comments/' + (pid) + '/report', { reason: 'Spam liên tục và vi phạm quy định cộng đồng' })
-    }, postId)
+    const reportRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, pid) => {
+        return await apiV2.post('/social/feed/' + pid + '/report', {
+          reason: 'Spam liên tục và vi phạm quy định cộng đồng',
+        })
+      },
+      postId,
+    )
 
     expect(reportRes).toBeDefined()
     expect((reportRes as any)?.report?.status).toBe('pending')
     expect((reportRes as any)?.report?.reason).toContain('Spam liên tục')
   })
 
-  test('9.2.5: Kiểm duyệt nội dung: quản lý ẩn bài viết kèm lý do kiểm toán & khách không được kiểm duyệt (FR-COM-20)', async ({ page }) => {
+  test('9.2.5: Kiểm duyệt nội dung: quản lý ẩn bài viết kèm lý do kiểm toán & khách không được kiểm duyệt (FR-COM-20)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const manager = getActorCredentials(manifest, 'manager1')
@@ -278,15 +332,19 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     const toxicPostContent = `Nội dung độc hại vi phạm chính sách - ${Date.now()}`
-    const postRes = await withE2EApi(page, async ({ apiV2 }, content) => {
-      return await apiV2.post('/social/feed', { content, audience: 'organization' })
-    }, toxicPostContent)
+    const postRes = await withE2EApi(
+      page,
+      async ({ apiV2 }, content) => {
+        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      },
+      toxicPostContent,
+    )
     const postId = (postRes as any)?.post?.id
 
     // 2. Negative Authorization: Customer attempts to call moderation endpoint -> 403 Forbidden
     const customerModerationDenied = await withE2EApi(page, async ({ apiV2 }) => {
       try {
-        await apiV2.get('/social/feed/reports?status=' + ('pending'))
+        await apiV2.get('/social/feed/reports?status=' + 'pending')
         return false
       } catch (err: any) {
         return err?.status === 403 || err?.response?.status === 403
@@ -338,11 +396,13 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
       ]);
     `
 
-    const hideResult = JSON.parse(execFileSync('php', ['-r', hideScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { is_hidden: boolean; has_audit_record: boolean; action: string; reason: string }
+    const hideResult = JSON.parse(
+      execFileSync('php', ['-r', hideScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { is_hidden: boolean; has_audit_record: boolean; action: string; reason: string }
 
     expect(hideResult.is_hidden).toBe(true)
     expect(hideResult.has_audit_record).toBe(true)

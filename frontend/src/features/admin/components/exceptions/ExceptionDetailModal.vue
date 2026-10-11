@@ -4,7 +4,7 @@ import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { FinancialException } from '../../types/exceptions'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   item: FinancialException | null
 }>()
@@ -46,13 +46,20 @@ function localizeDescription(item: FinancialException): string {
     return t(`admin.exceptions.descriptions.${item.type}`)
   }
   const desc = resolveLocalizedText(item.description)
-  if (desc.includes('Vượt hạn mức') || desc.includes('Deposit limit')) return t('admin.exceptions.descriptions.limit_exceeded')
-  if (desc.includes('Lệch đối soát') || desc.includes('settlement mismatch')) return t('admin.exceptions.descriptions.settlement_mismatch')
-  if (desc.includes('Hoàn tiền hủy') || desc.includes('cancellation refund')) return t('admin.exceptions.descriptions.late_refund')
-  if (desc.includes('săn voucher') || desc.includes('voucher hunting')) return t('admin.exceptions.descriptions.voucher_hunting')
-  if (desc.includes('Lệch cọc') || desc.includes('deposit hold mismatch')) return t('admin.exceptions.descriptions.deposit_hold_mismatch')
-  if (desc.includes('Trùng lặp') || desc.includes('Duplicate QR')) return t('admin.exceptions.descriptions.duplicate_charge')
-  if (desc.includes('ngập sân') || desc.includes('court flooding')) return t('admin.exceptions.descriptions.court_flooded_refund')
+  if (desc.includes('Vượt hạn mức') || desc.includes('Deposit limit'))
+    return t('admin.exceptions.descriptions.limit_exceeded')
+  if (desc.includes('Lệch đối soát') || desc.includes('settlement mismatch'))
+    return t('admin.exceptions.descriptions.settlement_mismatch')
+  if (desc.includes('Hoàn tiền hủy') || desc.includes('cancellation refund'))
+    return t('admin.exceptions.descriptions.late_refund')
+  if (desc.includes('săn voucher') || desc.includes('voucher hunting'))
+    return t('admin.exceptions.descriptions.voucher_hunting')
+  if (desc.includes('Lệch cọc') || desc.includes('deposit hold mismatch'))
+    return t('admin.exceptions.descriptions.deposit_hold_mismatch')
+  if (desc.includes('Trùng lặp') || desc.includes('Duplicate QR'))
+    return t('admin.exceptions.descriptions.duplicate_charge')
+  if (desc.includes('ngập sân') || desc.includes('court flooding'))
+    return t('admin.exceptions.descriptions.court_flooded_refund')
   return desc
 }
 
@@ -60,18 +67,23 @@ function localizeShift(shift?: string, type?: string): string {
   if (!shift && !type) return '--'
   const text = shift || type || ''
   if (text.includes('Sáng') || text.includes('Morning')) return t('admin.exceptions.shifts.morning')
-  if (text.includes('Chiều') || text.includes('Afternoon')) return t('admin.exceptions.shifts.afternoon')
+  if (text.includes('Chiều') || text.includes('Afternoon'))
+    return t('admin.exceptions.shifts.afternoon')
   if (text.includes('Tối') || text.includes('Evening')) return t('admin.exceptions.shifts.evening')
-  if (type && te(`admin.exceptions.descriptions.${type}`)) return t(`admin.exceptions.descriptions.${type}`)
+  if (type && te(`admin.exceptions.descriptions.${type}`))
+    return t(`admin.exceptions.descriptions.${type}`)
   return text
 }
 
 function localizeMemberTier(tier?: string): string {
   if (!tier) return ''
   if (tier.includes('Vàng') || tier.includes('Gold')) return t('admin.exceptions.memberTiers.gold')
-  if (tier.includes('Kim Cương') || tier.includes('Diamond')) return t('admin.exceptions.memberTiers.diamond')
-  if (tier.includes('Bạc') || tier.includes('Silver')) return t('admin.exceptions.memberTiers.silver')
-  if (tier.includes('vãng lai') || tier.includes('Guest')) return t('admin.exceptions.memberTiers.guest')
+  if (tier.includes('Kim Cương') || tier.includes('Diamond'))
+    return t('admin.exceptions.memberTiers.diamond')
+  if (tier.includes('Bạc') || tier.includes('Silver'))
+    return t('admin.exceptions.memberTiers.silver')
+  if (tier.includes('vãng lai') || tier.includes('Guest'))
+    return t('admin.exceptions.memberTiers.guest')
   if (tier.includes('mới') || tier.includes('New')) return t('admin.exceptions.memberTiers.new')
   return tier
 }
@@ -103,15 +115,21 @@ function localizeMemberTier(tier?: string): string {
                   }"
                 >
                   <span class="material-symbols-outlined icon-14">
-                    {{ item.severity === 'critical' ? 'warning' : item.severity === 'medium' ? 'priority_high' : 'info' }}
+                    {{
+                      item.severity === 'critical'
+                        ? 'warning'
+                        : item.severity === 'medium'
+                          ? 'priority_high'
+                          : 'info'
+                    }}
                   </span>
                   <span>
                     {{
                       item.severity === 'critical'
                         ? t('admin.exceptions.riskHigh')
                         : item.severity === 'medium'
-                        ? t('admin.exceptions.riskMedium')
-                        : t('admin.exceptions.riskLow')
+                          ? t('admin.exceptions.riskMedium')
+                          : t('admin.exceptions.riskLow')
                     }}
                   </span>
                 </span>
@@ -147,7 +165,11 @@ function localizeMemberTier(tier?: string): string {
                         {{ item.status === 'resolved' ? 'done_all' : 'pending_actions' }}
                       </span>
                       <span>
-                        {{ item.status === 'resolved' ? t('admin.exceptions.statusDone') : t('admin.exceptions.statusPending') }}
+                        {{
+                          item.status === 'resolved'
+                            ? t('admin.exceptions.statusDone')
+                            : t('admin.exceptions.statusPending')
+                        }}
                       </span>
                     </span>
                   </span>
@@ -158,7 +180,9 @@ function localizeMemberTier(tier?: string): string {
                 </div>
                 <div class="meta-item">
                   <span class="meta-label">{{ t('admin.exceptions.hdrTimeAndShift') }}</span>
-                  <span class="meta-value">{{ localizeShift(item.metadata?.shift, item.type) }}</span>
+                  <span class="meta-value">{{
+                    localizeShift(item.metadata?.shift, item.type)
+                  }}</span>
                 </div>
               </div>
             </section>
@@ -196,11 +220,15 @@ function localizeMemberTier(tier?: string): string {
                 <div class="grid-2col pt-2 border-top">
                   <div class="meta-item">
                     <span class="meta-label">{{ t('admin.exceptions.paymentChannel') }}</span>
-                    <span class="meta-value font-mono font-medium">{{ item.metadata?.gateway || 'VietQR Pro' }}</span>
+                    <span class="meta-value font-mono font-medium">{{
+                      item.metadata?.gateway || 'VietQR Pro'
+                    }}</span>
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">{{ t('admin.exceptions.courtVenue') }}</span>
-                    <span class="meta-value">{{ item.metadata?.court || 'Cụm Sân Thể Thao Aura' }}</span>
+                    <span class="meta-value">{{
+                      item.metadata?.court || 'Cụm Sân Thể Thao Aura'
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -214,19 +242,34 @@ function localizeMemberTier(tier?: string): string {
               </h4>
               <div class="user-profile-box">
                 <div class="user-avatar-initial">
-                  {{ getUserInitials(item.metadata?.user?.name || item.resolver?.name || t('admin.schedule.systemUser')) }}
+                  {{
+                    getUserInitials(
+                      item.metadata?.user?.name ||
+                        item.resolver?.name ||
+                        t('admin.schedule.systemUser'),
+                    )
+                  }}
                 </div>
                 <div class="user-profile-info">
                   <div class="user-title-row">
                     <span class="user-fullname">
-                      {{ resolveLocalizedText(item.metadata?.user?.name || item.resolver?.name || t('admin.schedule.systemUser')) }}
+                      {{
+                        resolveLocalizedText(
+                          item.metadata?.user?.name ||
+                            item.resolver?.name ||
+                            t('admin.schedule.systemUser'),
+                        )
+                      }}
                     </span>
                     <span v-if="item.metadata?.user?.tier" class="tier-badge">
                       {{ localizeMemberTier(item.metadata.user.tier) }}
                     </span>
                   </div>
                   <div class="user-meta-sub font-mono">
-                    <span>{{ item.metadata?.user?.id || (item.resolver?.id ? `UID-${item.resolver.id}` : 'UID-442') }}</span>
+                    <span>{{
+                      item.metadata?.user?.id ||
+                      (item.resolver?.id ? `UID-${item.resolver.id}` : 'UID-442')
+                    }}</span>
                     <span>·</span>
                     <span>{{ item.resolver?.email || 'customer.account@aura.vn' }}</span>
                   </div>
@@ -240,9 +283,17 @@ function localizeMemberTier(tier?: string): string {
                 <span class="material-symbols-outlined icon-16">verified</span>
                 <span>{{ t('admin.exceptions.statusDone') }}</span>
               </h4>
-              <p class="resolution-note font-mono">{{ item.resolution || t('admin.exceptions.overrideSuccessMsg', { ref: item.reference }) }}</p>
+              <p class="resolution-note font-mono">
+                {{
+                  item.resolution ||
+                  t('admin.exceptions.overrideSuccessMsg', { ref: item.reference })
+                }}
+              </p>
               <div class="resolution-meta font-mono">
-                <span>{{ t('admin.exceptions.hdrTimeAndShift') }}: {{ formatDateTime(item.resolved_at) }}</span>
+                <span
+                  >{{ t('admin.exceptions.hdrTimeAndShift') }}:
+                  {{ formatDateTime(item.resolved_at) }}</span
+                >
               </div>
             </section>
           </div>
@@ -481,7 +532,9 @@ function localizeMemberTier(tier?: string): string {
 .border-top {
   border-top: 1px solid var(--outline, #e1e3e4);
 }
-.pt-2 { padding-top: 8px; }
+.pt-2 {
+  padding-top: 8px;
+}
 
 .user-profile-box {
   display: flex;
@@ -577,9 +630,18 @@ function localizeMemberTier(tier?: string): string {
   font-weight: 700;
 }
 
-.risk-critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.risk-medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-.risk-low { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+.risk-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.risk-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+.risk-low {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
 
 .status-pill {
   display: inline-flex;
@@ -600,16 +662,34 @@ function localizeMemberTier(tier?: string): string {
   color: #10b981;
 }
 
-.text-primary { color: var(--primary, #78555e); }
-.text-critical { color: #ba1a1a; }
-.text-success { color: #10b981; }
-.text-ink { color: var(--ink, #191c1d); }
-.text-muted { color: var(--muted, #817476); }
+.text-primary {
+  color: var(--primary, #78555e);
+}
+.text-critical {
+  color: #ba1a1a;
+}
+.text-success {
+  color: #10b981;
+}
+.text-ink {
+  color: var(--ink, #191c1d);
+}
+.text-muted {
+  color: var(--muted, #817476);
+}
 
-.icon-12 { font-size: 12px; }
-.icon-14 { font-size: 14px; }
-.icon-16 { font-size: 16px; }
-.icon-22 { font-size: 22px; }
+.icon-12 {
+  font-size: 12px;
+}
+.icon-14 {
+  font-size: 14px;
+}
+.icon-16 {
+  font-size: 16px;
+}
+.icon-22 {
+  font-size: 22px;
+}
 
 /* Modal pop transition */
 .modal-pop-enter-active,

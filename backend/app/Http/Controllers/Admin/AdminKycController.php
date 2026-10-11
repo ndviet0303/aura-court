@@ -44,7 +44,7 @@ class AdminKycController extends Controller
     {
         $record = $this->kycRepository->findById($id);
 
-        if (!$record) {
+        if (! $record) {
             return response()->json(['message' => 'Hồ sơ KYC không tồn tại.'], 404);
         }
 

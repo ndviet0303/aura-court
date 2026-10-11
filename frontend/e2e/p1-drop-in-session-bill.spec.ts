@@ -121,11 +121,13 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
       ]);
     `
 
-    const result = JSON.parse(execFileSync('php', ['-r', testScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const result = JSON.parse(
+      execFileSync('php', ['-r', testScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       rejected_premature: boolean
       session_ended: boolean
       rejected_auxiliary: boolean
@@ -237,11 +239,13 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
       ]);
     `
 
-    const finalResult = JSON.parse(execFileSync('php', ['-r', finalizeScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as {
+    const finalResult = JSON.parse(
+      execFileSync('php', ['-r', finalizeScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as {
       match_id: number
       bill_status: string
       total_amount: number
@@ -259,7 +263,9 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
     expect(finalResult.conflict_rejected).toBe(true)
   })
 
-  test('9.3.3: Xác minh giao diện /social/sessions/:id/bill & Duy trì dữ liệu sau F5 (SUP-05)', async ({ page }) => {
+  test('9.3.3: Xác minh giao diện /social/sessions/:id/bill & Duy trì dữ liệu sau F5 (SUP-05)', async ({
+    page,
+  }) => {
     const manifest = getTestManifest()
     const owner = getActorCredentials(manifest, 'owner1')
     const customer = getActorCredentials(manifest, 'customer')
@@ -328,11 +334,13 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
       echo json_encode(['match_id' => $match->id]);
     `
 
-    const sessionData = JSON.parse(execFileSync('php', ['-r', arrangeSessionScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { match_id: number }
+    const sessionData = JSON.parse(
+      execFileSync('php', ['-r', arrangeSessionScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { match_id: number }
 
     // 2. Customer (participant) logs in
     await page.context().clearCookies()
@@ -343,7 +351,9 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 3. Navigate to /social/sessions/:id/bill
-    await page.goto(`/social/sessions/${sessionData.match_id}/bill`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`/social/sessions/${sessionData.match_id}/bill`, {
+      waitUntil: 'domcontentloaded',
+    })
 
     // 4. Verify Finalized State & Transparency Numbers
     await expect(page.locator('.badge-finalized')).toBeVisible({ timeout: 15000 })
@@ -440,11 +450,13 @@ test.describe('P1: Hóa đơn buổi giao lưu tại sân do chủ sân tổ ch�
       echo json_encode(['denied' => $denied]);
     `
 
-    const privacyResult = JSON.parse(execFileSync('php', ['-r', privacyScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })) as { denied: boolean }
+    const privacyResult = JSON.parse(
+      execFileSync('php', ['-r', privacyScript], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      }),
+    ) as { denied: boolean }
 
     expect(privacyResult.denied).toBe(true)
   })

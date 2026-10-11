@@ -159,7 +159,9 @@ describe('AdminKycVerificationView', () => {
 
     await flushPromises()
 
-    const approveBtn = wrapper.findAll('button').find((b) => b.text().includes('Phê duyệt & Kích hoạt'))
+    const approveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Phê duyệt & Kích hoạt'))
     expect(approveBtn).toBeDefined()
     expect(approveBtn?.exists()).toBe(true)
 
@@ -169,4 +171,3 @@ describe('AdminKycVerificationView', () => {
     expect(wrapper.text()).toContain('Hồ sơ KYC đã được phê duyệt và kích hoạt chủ sân thành công.')
   })
 })
-

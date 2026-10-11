@@ -18,7 +18,7 @@ class PartnerRolloutServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PartnerRolloutService();
+        $this->service = new PartnerRolloutService;
     }
 
     public function test_should_enforce_checks_cohorts_and_aspects(): void
@@ -37,7 +37,7 @@ class PartnerRolloutServiceTest extends TestCase
         $this->assertFalse($this->service->shouldEnforce(30, 'registration'));
 
         // 3. Organization instance
-        $org = new Organization();
+        $org = new Organization;
         $org->id = 20;
         $this->assertTrue($this->service->shouldEnforce($org, 'registration'));
     }
@@ -47,7 +47,7 @@ class PartnerRolloutServiceTest extends TestCase
         Log::spy();
         Config::set('partner.shadow_mode', true);
 
-        $venue = new Venue();
+        $venue = new Venue;
         $venue->id = 55;
         $venue->organization_id = 12;
 
@@ -69,7 +69,7 @@ class PartnerRolloutServiceTest extends TestCase
         Log::spy();
         Config::set('partner.shadow_mode', false);
 
-        $venue = new Venue();
+        $venue = new Venue;
         $venue->id = 55;
 
         $this->service->recordShadowComparison($venue, 'booking_creation', true, false);

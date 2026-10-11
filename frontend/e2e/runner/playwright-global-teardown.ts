@@ -47,14 +47,17 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
 
 function sanitizeConfiguredArtifacts(config: FullConfig): void {
   sanitizeAllTestArtifacts()
-  const directories = new Set(config.projects.map(project => project.outputDir))
+  const directories = new Set(config.projects.map((project) => project.outputDir))
   const files = new Set<string>()
   for (const [name, options] of config.reporter) {
-    if (name === 'html' && options?.outputFolder) directories.add(path.resolve(options.outputFolder))
+    if (name === 'html' && options?.outputFolder)
+      directories.add(path.resolve(options.outputFolder))
     if (name === 'junit' && options?.outputFile) files.add(path.resolve(options.outputFile))
   }
-  if (process.env.PLAYWRIGHT_HTML_OUTPUT_DIR) directories.add(path.resolve(process.env.PLAYWRIGHT_HTML_OUTPUT_DIR))
-  if (process.env.PLAYWRIGHT_JUNIT_OUTPUT_FILE) files.add(path.resolve(process.env.PLAYWRIGHT_JUNIT_OUTPUT_FILE))
+  if (process.env.PLAYWRIGHT_HTML_OUTPUT_DIR)
+    directories.add(path.resolve(process.env.PLAYWRIGHT_HTML_OUTPUT_DIR))
+  if (process.env.PLAYWRIGHT_JUNIT_OUTPUT_FILE)
+    files.add(path.resolve(process.env.PLAYWRIGHT_JUNIT_OUTPUT_FILE))
   for (const directory of directories) sanitizeDirectory(directory)
   for (const file of files) {
     if (fs.existsSync(file)) fs.writeFileSync(file, sanitizeText(fs.readFileSync(file, 'utf8')))

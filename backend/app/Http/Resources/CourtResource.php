@@ -11,6 +11,7 @@ class CourtResource extends JsonResource
     {
         $data = parent::toArray($request);
         $data['timezone'] = $this->timezone;
+
         return $data;
     }
 }

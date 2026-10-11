@@ -8,7 +8,6 @@ use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\PlatformSubscription;
-use App\Models\Venue;
 use Illuminate\Console\Command;
 
 class ReconcileLegacyPartnersCommand extends Command
@@ -119,7 +118,7 @@ class ReconcileLegacyPartnersCommand extends Command
             );
 
             $this->newLine();
-            $this->info("Reconciliation Summary:");
+            $this->info('Reconciliation Summary:');
             $this->line("- Total Organizations: {$summary['total_organizations']}");
             $this->line("- Missing Approved Application: {$summary['missing_application_evidence']}");
             $this->line("- Missing Platform Subscription: {$summary['missing_platform_subscriptions']}");

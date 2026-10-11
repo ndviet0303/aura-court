@@ -27,12 +27,7 @@ const emit = defineEmits<{
       </div>
 
       <div class="hero-actions">
-        <AuraButton
-          to="/matchmaking/create"
-          variant="primary"
-          size="md"
-          icon="add_circle"
-        >
+        <AuraButton to="/matchmaking/create" variant="primary" size="md" icon="add_circle">
           {{ $t('matchmaking.createMatchBtn') }}
         </AuraButton>
 
@@ -179,7 +174,9 @@ const emit = defineEmits<{
   border-radius: 14px;
   background: var(--surface-container, rgba(0, 0, 0, 0.02));
   border: 1px solid var(--outline);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .stat-card:hover {

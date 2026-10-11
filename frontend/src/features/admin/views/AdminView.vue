@@ -17,7 +17,6 @@ const {
   notice,
   error,
   report,
-  bookings,
   payments,
   datePreset,
   from,

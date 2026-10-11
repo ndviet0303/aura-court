@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { SelectDropdown, DatePicker } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 
-const props = defineProps<{
+defineProps<{
   activeTab: 'today' | 'yesterday' | '7days' | 'month' | 'custom'
   dateFrom: string
   dateTo: string
@@ -104,12 +104,7 @@ const riskOptions = computed<DropdownOption[]>(() => [
       </div>
 
       <div class="quick-actions-group">
-        <button
-          class="btn-sync"
-          type="button"
-          :disabled="syncing"
-          @click="emit('sync')"
-        >
+        <button class="btn-sync" type="button" :disabled="syncing" @click="emit('sync')">
           <span class="material-symbols-outlined" :class="{ 'spin-anim': syncing }">sync</span>
           {{ syncing ? t('admin.reconciliation.syncing') : t('admin.reconciliation.syncNow') }}
         </button>
@@ -318,8 +313,12 @@ const riskOptions = computed<DropdownOption[]>(() => [
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-export {

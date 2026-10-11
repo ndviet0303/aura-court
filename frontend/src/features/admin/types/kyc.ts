@@ -113,4 +113,3 @@ export interface DocumentInspectPayload {
   imageUrl: string
   docMeta?: Record<string, string | number>
 }
-

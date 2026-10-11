@@ -5,7 +5,6 @@ namespace App\Domain\Admin\Actions;
 use App\Contracts\Repositories\CourtPriceSlotRepositoryInterface;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
-use Illuminate\Database\Eloquent\Collection;
 
 class ManageCourtPrices
 {
