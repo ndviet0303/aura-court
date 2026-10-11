@@ -4,10 +4,9 @@ import {
   resolveErrorDescriptor,
   isRawInfrastructureMessage,
   isUnverifiedEmailError,
-  translateMessage,
   ERROR_CODE_MAP,
 } from '../errorMessage'
-import { setAppLocale, i18n } from '@/i18n'
+import { setAppLocale } from '@/i18n'
 import { useErrorModal } from '@/core/composables/useErrorModal'
 
 describe('errorMessage and resolveErrorDescriptor (Tasks 4.1, 4.2, 4.3)', () => {

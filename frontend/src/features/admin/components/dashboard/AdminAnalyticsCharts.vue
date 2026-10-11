@@ -68,10 +68,6 @@ const hourlyData = computed(() => {
   })
 })
 
-const totalHourlyBookings = computed(() => {
-  return hourlyData.value.reduce((acc, h) => acc + h.bookings, 0)
-})
-
 const peakHourItem = computed(() => {
   const sorted = [...hourlyData.value]
     .filter((h) => h.bookings > 0)

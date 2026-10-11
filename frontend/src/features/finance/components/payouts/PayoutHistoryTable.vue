@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown, DatePicker, type DropdownOption } from '@/shared/components'
 import type { PayoutRecord } from '../../types/finance'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     payouts: PayoutRecord[]
     loading?: boolean

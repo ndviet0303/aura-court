@@ -6,7 +6,6 @@ import { E2EIsolatedEnvironment } from './environment.ts'
 import { startProductionEnvironment } from './production.ts'
 
 declare global {
-  // eslint-disable-next-line no-var
   var __E2E_ENVIRONMENT__: E2EIsolatedEnvironment | undefined
 }
 

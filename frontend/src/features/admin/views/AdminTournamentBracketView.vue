@@ -40,8 +40,6 @@ const {
   matches,
   participants,
   liveMatch,
-  showNotice,
-  showError,
   toggleAthleteCheckIn,
   incrementScoreA,
   decrementScoreA,

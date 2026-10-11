@@ -5,7 +5,7 @@ import { AuraButton } from '@/shared/components'
 
 const props = defineProps<{
   show: boolean
-  slot: UserBookingSlot | null
+  bookingSlot: UserBookingSlot | null
   askingPrice: number
   processing?: boolean
 }>()
@@ -21,9 +21,8 @@ function formatMoney(amount: number): string {
 }
 
 function setDiscountPreset(percent: number) {
-  if (!props.slot?.originalPrice) return
-  const discounted = Math.round((props.slot.originalPrice * (1 - percent / 100)) / 10000) * 10000
-  emit('update:askingPrice', discounted)
+  const price = props.bookingSlot?.originalPrice
+  if (price) emit('update:askingPrice', Math.round((price * (1 - percent / 100)) / 10000) * 10000)
 }
 
 const feeAmount = computed(() => {
@@ -36,7 +35,7 @@ const estimatedPayout = computed(() => {
 </script>
 
 <template>
-  <div v-if="show && slot" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="show && bookingSlot" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-md">
       <!-- Modal Header -->
       <div class="modal-header">
@@ -53,24 +52,24 @@ const estimatedPayout = computed(() => {
       <div class="modal-body">
         <!-- Target Slot Summary -->
         <div class="slot-summary-card">
-          <strong class="slot-court">{{ slot.courtName }}</strong>
+          <strong class="slot-court">{{ bookingSlot.courtName }}</strong>
           <div class="slot-meta-row">
             <span class="meta-item">
               <span class="material-symbols-outlined icon-14">location_on</span>
-              <span>{{ slot.venueName }}</span>
+              <span>{{ bookingSlot.venueName }}</span>
             </span>
             <span class="meta-item">
               <span class="material-symbols-outlined icon-14">calendar_today</span>
-              <span>{{ slot.dateStr }}</span>
+              <span>{{ bookingSlot.dateStr }}</span>
             </span>
             <span class="meta-item highlight">
               <span class="material-symbols-outlined icon-14">schedule</span>
-              <span class="font-mono">{{ slot.timeSlot }}</span>
+              <span class="font-mono">{{ bookingSlot.timeSlot }}</span>
             </span>
           </div>
           <div class="slot-price-row">
             <span class="orig-label">Giá bạn đã thanh toán:</span>
-            <strong class="orig-val font-mono">{{ formatMoney(slot.originalPrice) }}</strong>
+            <strong class="orig-val font-mono">{{ formatMoney(bookingSlot.originalPrice) }}</strong>
           </div>
         </div>
 
@@ -78,14 +77,14 @@ const estimatedPayout = computed(() => {
         <div class="form-group">
           <label class="form-label">
             <span>Đặt giá muốn chuyển nhượng (₫):</span>
-            <span class="max-hint">(Tối đa: {{ formatMoney(slot.originalPrice) }})</span>
+            <span class="max-hint">(Tối đa: {{ formatMoney(bookingSlot.originalPrice) }})</span>
           </label>
           <div class="price-input-wrap">
             <input
               :value="askingPrice"
               type="number"
               min="10000"
-              :max="slot.originalPrice"
+              :max="bookingSlot.originalPrice"
               step="10000"
               class="form-input font-mono"
               @input="emit('update:askingPrice', Number(($event.target as HTMLInputElement).value))"
@@ -137,7 +136,7 @@ const estimatedPayout = computed(() => {
           variant="gold"
           size="md"
           :loading="processing"
-          :disabled="askingPrice <= 0 || (slot ? askingPrice > slot.originalPrice : false)"
+          :disabled="askingPrice <= 0 || askingPrice > bookingSlot.originalPrice"
           icon="publish"
           @click="emit('confirm')"
         >

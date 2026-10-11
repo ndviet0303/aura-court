@@ -180,7 +180,7 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
           env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
           encoding: 'utf-8',
         })
-      } catch (err) {
+      } catch {
         // Ignore cleanup failure
       }
       await contextA.close()

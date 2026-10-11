@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
 import type { Court, AvailabilitySlot } from '../../types/court'
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
 

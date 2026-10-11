@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { HealthTrendPoint } from '../../types/reconciliation'
 
-const props = defineProps<{
+defineProps<{
   healthTrend: HealthTrendPoint[]
   matchRate: number
   loading?: boolean

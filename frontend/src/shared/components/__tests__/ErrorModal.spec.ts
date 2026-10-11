@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import ErrorModal from '../feedback/ErrorModal.vue'
@@ -69,7 +69,7 @@ describe('ErrorModal (Tasks 4.1, 4.2, 4.4)', () => {
   it('dynamically updates titles, buttons, code badges, and messages when locale changes while open', async () => {
     setAppLocale('vi')
 
-    const wrapper = mount(ErrorModal, {
+    mount(ErrorModal, {
       attachTo: container,
       props: {
         open: true,

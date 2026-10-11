@@ -134,7 +134,7 @@ describe('CreateMatchView', () => {
       return []
     })
 
-    vi.mocked(apiV2.post).mockImplementation(async (url: string, payload: any) => {
+    vi.mocked(apiV2.post).mockImplementation(async (url: string) => {
       if (url === '/social/matches') {
         return { match: { id: 777, title: 'Match Test 8.2' } }
       }

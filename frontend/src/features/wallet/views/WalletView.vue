@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { useWallet, type VenueWallet } from '../composables/useWallet'
+import { useWallet } from '../composables/useWallet'
 
 import WalletTotalBalanceCard from '../components/WalletTotalBalanceCard.vue'
 import VenueWalletsList from '../components/VenueWalletsList.vue'
@@ -33,7 +33,6 @@ const {
   cardName,
   quickAmounts,
   wallets,
-  transactions,
   totalBalance,
   totalPoints,
   filteredTransactions,

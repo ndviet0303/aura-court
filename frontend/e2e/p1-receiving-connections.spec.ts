@@ -12,7 +12,7 @@ function getBackendEnv(manifest: any) {
 
 test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đổi tài khoản & Lưu giữ snapshot @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')

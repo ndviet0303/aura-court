@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown } from '@/shared/components'
 
-const props = defineProps<{
+defineProps<{
   selectedReason: string
   customReason: string
   isSubmitting: boolean

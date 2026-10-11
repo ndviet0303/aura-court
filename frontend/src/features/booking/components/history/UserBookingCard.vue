@@ -35,9 +35,6 @@ function formatDate(iso: string): string {
 
 const isConfirmed = computed(() => props.booking.status === 'confirmed')
 const isPendingPayment = computed(() => props.booking.status === 'pending_payment')
-const isCancelled = computed(() =>
-  ['cancelled', 'expired', 'refunded'].includes(props.booking.status),
-)
 
 const statusMeta = computed(() => {
   if (isConfirmed.value) {

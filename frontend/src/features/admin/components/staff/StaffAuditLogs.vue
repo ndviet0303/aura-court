@@ -5,7 +5,7 @@ import { AuraButton, DatePicker, SelectDropdown, type DropdownOption } from '@/s
 import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 import type { AuditLogItem } from '../../composables/useAdminStaff'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     logs: AuditLogItem[]
     searchQuery?: string

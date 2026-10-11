@@ -1,10 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
-import type {
-  InventoryProduct,
-  StockMovement,
-  ProductFormPayload,
-  StockActionPayload,
-} from '../types/inventory'
+import type { InventoryProduct, StockMovement, ProductFormPayload } from '../types/inventory'
 import { inventoryApi } from '../api/inventoryApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 

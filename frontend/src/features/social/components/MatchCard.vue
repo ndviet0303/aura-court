@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { SocialMatch } from '../types/social'
-
-const { t } = useI18n()
 
 const props = defineProps<{
   match: SocialMatch

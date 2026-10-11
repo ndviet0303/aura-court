@@ -1,5 +1,5 @@
 import { api } from '@/core/api/client'
-import type { VenueWallet, SpendWalletPayload } from '../types/wallet'
+import type { SpendWalletPayload } from '../types/wallet'
 
 export const walletApi = {
   getWallet: (organizationId?: number) =>

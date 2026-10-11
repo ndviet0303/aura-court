@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import type { PaymentInfo, Booking } from '../types/booking'
 import type { Court } from '@/features/court/types/court'
-
-const { t } = useI18n()
 
 const props = defineProps<{
   payment: PaymentInfo

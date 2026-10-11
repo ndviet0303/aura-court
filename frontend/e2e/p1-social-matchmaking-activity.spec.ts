@@ -154,7 +154,7 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     // 3. Create and publish activity via socialApi with full validation
     const createResult = await withE2EApi(
       page,
-      async ({ apiV2 }, { title, date, orgId, venueId }) => {
+      async ({ apiV2 }, { title, date }) => {
         return await apiV2.post('/social/matches', {
           title,
           sport_type: 'badminton',
@@ -264,9 +264,7 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     })
   })
 
-  test('9.1.4: Mời thi đấu, tham gia hoạt động & Giới hạn số lượng người chơi (FR-COM-05, FR-COM-06)', async ({
-    page,
-  }) => {
+  test('9.1.4: Mời thi đấu, tham gia hoạt động & Giới hạn số lượng người chơi (FR-COM-05, FR-COM-06)', async () => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')
@@ -456,9 +454,7 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     expect(overCapacityResult.rejected).toBe(true)
   })
 
-  test('9.1.5: Chốt danh sách, điểm danh có mặt/vắng mặt & Cập nhật điểm uy tín (FR-COM-07, FR-COM-08, FR-COM-16)', async ({
-    page,
-  }) => {
+  test('9.1.5: Chốt danh sách, điểm danh có mặt/vắng mặt & Cập nhật điểm uy tín (FR-COM-07, FR-COM-08, FR-COM-16)', async () => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const customer2 = getActorCredentials(manifest, 'customer2')

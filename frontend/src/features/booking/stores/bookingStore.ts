@@ -86,10 +86,6 @@ export const useBookingStore = defineStore('booking', () => {
     selectedSlots.value.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
   }
 
-  function persistPayment() {
-    if (payment.value) sessionStorage.setItem(paymentStorageKey, JSON.stringify(payment.value))
-  }
-
   function restorePayment() {
     if (payment.value) return payment.value
     try {

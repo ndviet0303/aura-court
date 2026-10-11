@@ -103,9 +103,7 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Inject 403 Forbidden on restricted action and track invocation
-    let adminRequestAttempted = false
     await page.route('**/api/v1/admin/**', (route) => {
-      adminRequestAttempted = true
       route.fulfill({
         status: 403,
         contentType: 'application/json',

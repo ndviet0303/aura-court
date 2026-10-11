@@ -325,7 +325,7 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       auth.user = adminUser
       auth.loaded = true
 
-      const wrapper = mount(AdminShiftReconciliationView, {
+      mount(AdminShiftReconciliationView, {
         global: {
           plugins: [i18n],
         },

@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown, DatePicker, type DropdownOption } from '@/shared/components'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   saving?: boolean
 }>()

@@ -6,7 +6,7 @@ import { SelectDropdown, DatePicker, SkeletonLoader, AuraButton } from '@/shared
 import type { DropdownOption } from '@/shared/components'
 import type { FinancialException, ExceptionFilterTab } from '../../types/exceptions'
 
-const props = defineProps<{
+defineProps<{
   items: FinancialException[]
   activeTab: ExceptionFilterTab
   totalCount: number

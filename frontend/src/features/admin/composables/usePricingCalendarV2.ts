@@ -2,12 +2,7 @@ import { ref, computed } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Venue, SportZone, Court } from '@/features/court/types/court'
-import type {
-  PriceRuleItem,
-  PriceRuleFormPayload,
-  PriceQuoteResponse,
-  PriceRuleType,
-} from '../types/pricing'
+import type { PriceRuleItem, PriceRuleFormPayload, PriceQuoteResponse } from '../types/pricing'
 
 export function usePricingCalendarV2() {
   const loading = ref(false)
@@ -267,7 +262,6 @@ export function usePricingCalendarV2() {
     applyingPreset.value = true
     error.value = ''
     try {
-      const selectedCourt = courts.value.find((c) => c.id === targetCourtId)
       const baseCourtPrice = 120000
 
       const rulePresets: Record<string, PriceRuleFormPayload[]> = {

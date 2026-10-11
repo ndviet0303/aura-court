@@ -247,7 +247,7 @@ const {
 
     <MarketplaceSellModal
       :show="isSellModalOpen"
-      :slot="selectedSlotToSell"
+      :booking-slot="selectedSlotToSell"
       :asking-price="askingPriceInput"
       :processing="processingAction"
       @close="isSellModalOpen = false"

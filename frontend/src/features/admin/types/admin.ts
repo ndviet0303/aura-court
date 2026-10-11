@@ -1,5 +1,4 @@
-import type { Court, Venue, SportZone, PriceSlot, CourtBlock } from '@/features/court/types/court'
-import type { Booking, Refund, Coupon } from '@/features/booking/types/booking'
+import type { Court } from '@/features/court/types/court'
 import type { User } from '@/core/types/common'
 
 export type CourtForm = {

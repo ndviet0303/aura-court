@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { SelectDropdown, DatePicker, TimePicker, type DropdownOption } from '@/shared/components'
 import type { Court } from '@/features/court/types/court'
 
-const props = defineProps<{
+defineProps<{
   courts: Court[]
   courtOptions: DropdownOption[]
   selectedVenueName: string

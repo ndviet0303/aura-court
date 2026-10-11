@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { Booking } from '../../types/booking'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   booking: Booking | null
   rating: number

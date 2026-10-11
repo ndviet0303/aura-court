@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { SelectDropdown, DatePicker } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 
-const props = defineProps<{
+defineProps<{
   activeTab: 'today' | 'yesterday' | '7days' | 'month' | 'custom'
   dateFrom: string
   dateTo: string

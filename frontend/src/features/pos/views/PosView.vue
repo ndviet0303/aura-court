@@ -27,7 +27,6 @@ const {
   fetchFailed: capabilityFetchFailed,
   error: capabilityError,
   fetchCapabilities,
-  loaded: capabilitiesLoaded,
 } = useTenantCapabilities()
 const { t } = useI18n()
 const auth = useAuthStore()

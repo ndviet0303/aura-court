@@ -9,7 +9,7 @@ import { createE2EApiClient } from './runner/api-client.ts'
 
 test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt & Cấp quyền @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')

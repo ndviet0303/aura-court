@@ -24,7 +24,6 @@ const {
   movementSearch,
   categories,
   products,
-  movements,
   filteredProducts,
   filteredMovements,
   kpis,

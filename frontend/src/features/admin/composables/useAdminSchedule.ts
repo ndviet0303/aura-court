@@ -2,7 +2,6 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import { resolveLocalizedText } from '@/i18n'
 import type { Court, Venue } from '@/features/court/types/court'
 
 export interface ShiftTime {

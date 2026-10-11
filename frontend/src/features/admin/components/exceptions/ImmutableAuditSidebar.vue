@@ -61,7 +61,7 @@ function localizeAuditAction(action: string): string {
   return action
 }
 
-function localizeAuditDetails(details: string, log: AuditLog): string {
+function localizeAuditDetails(details: string): string {
   if (!details) return ''
   const norm = details.toLowerCase().replace(/[\s.-]+/g, '_')
   const key = `admin.exceptions.auditDetails.${norm}`
@@ -135,7 +135,7 @@ function localizeAuditDetails(details: string, log: AuditLog): string {
               {{ localizeAuditAction(log.action) }}
             </div>
             <div class="timeline-details">
-              {{ localizeAuditDetails(log.details, log) }}
+              {{ localizeAuditDetails(log.details) }}
             </div>
             <div class="timeline-hash font-mono">
               <span class="text-muted">{{ t('admin.exceptions.hashLabel') }}</span>

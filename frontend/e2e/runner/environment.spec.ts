@@ -9,7 +9,6 @@ import {
   validateDatabaseTarget,
   validateFrontendRuntimeConfig,
 } from './preflight.ts'
-import type { E2EFixturesPayload } from './types.ts'
 import { validateDatabaseForTeardown, validateManifestForTeardown } from './teardown.ts'
 import { E2EIsolatedEnvironment } from './environment.ts'
 import {

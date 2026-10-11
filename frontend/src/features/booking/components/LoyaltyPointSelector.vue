@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLoyaltyPreview } from '../composables/useLoyaltyPreview'
 import { formatCurrency } from '@/i18n'
@@ -29,8 +29,6 @@ const emit = defineEmits<{
 
 const {
   balance,
-  policy,
-  pointsSelected,
   discountVnd,
   remainingPayableVnd,
   maxUsablePoints,
@@ -39,8 +37,6 @@ const {
   noPolicy,
   idempotencyKey,
   hasPoints,
-  hasPolicy,
-  isAvailable,
   fetchPreview,
   clearPoints: resetPoints,
   setQuickPoints,

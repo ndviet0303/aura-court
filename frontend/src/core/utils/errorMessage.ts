@@ -250,7 +250,7 @@ export function resolveErrorDescriptor(
     const err = error as Record<string, any>
     const code = (err.code as string | number) || null
     const status = (err.status as number) || null
-    let rawMsg = err.message || err.data?.message || err.response?.data?.message || ''
+    const rawMsg = err.message || err.data?.message || err.response?.data?.message || ''
     const isRaw = isRawInfrastructureMessage(String(rawMsg))
 
     // Extract validation details if available

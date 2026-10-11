@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { VenueWallet } from '../composables/useWallet'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   wallet: VenueWallet | null
 }>()

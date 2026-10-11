@@ -10,7 +10,7 @@ import {
   getNetPayable,
 } from '../../composables/useAdminPayouts'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     settlements: SettlementRecord[]
     loading?: boolean

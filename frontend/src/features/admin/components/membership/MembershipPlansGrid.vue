@@ -4,7 +4,7 @@ import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { MembershipPlan } from '../../types/membership'
 
-const props = defineProps<{
+defineProps<{
   plans: MembershipPlan[]
   loading?: boolean
 }>()

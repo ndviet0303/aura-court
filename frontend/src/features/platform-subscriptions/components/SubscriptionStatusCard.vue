@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PlatformSubscription } from '../types'
 
-const props = defineProps<{
+defineProps<{
   subscription: PlatformSubscription
   canTakeBookings: boolean
   quotas?: {

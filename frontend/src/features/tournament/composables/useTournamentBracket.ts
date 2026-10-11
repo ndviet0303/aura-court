@@ -309,7 +309,7 @@ export function useTournamentBracket() {
           finalMatch.value = null
         }
       }
-    } catch (e: unknown) {
+    } catch {
       quarterMatches.value = []
       semiMatches.value = []
       finalMatch.value = null

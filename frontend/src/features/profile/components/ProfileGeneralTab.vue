@@ -27,29 +27,6 @@ const availableSports = [
   { id: 'football', name: 'Bóng Đá Futsal', icon: 'sports_soccer' },
 ]
 
-const playLevels = [
-  {
-    id: 'beginner',
-    title: 'Mới bắt đầu',
-    desc: 'Mới làm quen môn thể thao, thi đấu rèn luyện sức khỏe cơ bản.',
-  },
-  {
-    id: 'intermediate',
-    title: 'Phong trào',
-    desc: 'Chơi đều đặn 1-3 năm, có bộ kỹ thuật cơ bản và độ bền tốt.',
-  },
-  {
-    id: 'advanced',
-    title: 'Bán chuyên',
-    desc: 'Thi đấu giải phong trào, kỹ chiến thuật và thể lực vững vàng.',
-  },
-  {
-    id: 'pro',
-    title: 'Chuyên nghiệp',
-    desc: 'Vận động viên thi đấu chuyên nghiệp hoặc huấn luyện viên.',
-  },
-]
-
 function toggleSport(sportId: string) {
   const current = [...props.favoriteSports]
   const index = current.indexOf(sportId)

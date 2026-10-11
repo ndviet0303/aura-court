@@ -1,4 +1,4 @@
-import { api, apiV2 } from '@/core/api/client'
+import { apiV2 } from '@/core/api/client'
 import type {
   SettlementRecord,
   PayoutRecord,

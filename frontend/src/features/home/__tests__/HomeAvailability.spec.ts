@@ -192,7 +192,7 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
   })
 
   it('Task 8.1 & 8.3: Switching to Court B shows 19:00–20:00 and 20:00–21:00 available under heading identifying Court B', async () => {
-    vi.spyOn(bookingApi, 'getAvailability').mockImplementation(async (courtId, date) => {
+    vi.spyOn(bookingApi, 'getAvailability').mockImplementation(async (courtId) => {
       if (courtId === 1) return courtASlotsDate1
       if (courtId === 2) return courtBSlotsDate1
       return []

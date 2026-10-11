@@ -168,7 +168,7 @@ function buildHeaders(
   defaultIdempotent = false,
 ): Record<string, string> {
   const headers: Record<string, string> = {
-    ...((options?.headers as Record<string, string>) || {}),
+    ...(options?.headers as Record<string, string>),
   }
   if (options?.idempotencyKey) {
     headers['Idempotency-Key'] = options.idempotencyKey

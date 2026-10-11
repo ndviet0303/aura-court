@@ -13,7 +13,6 @@ import BookingCancelModal from '../components/history/BookingCancelModal.vue'
 import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 
 const {
-  bookings,
   activeTab,
   searchQuery,
   error,

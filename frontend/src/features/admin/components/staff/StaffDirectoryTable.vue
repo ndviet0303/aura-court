@@ -7,7 +7,7 @@ import SelectDropdown, { type DropdownOption } from '@/shared/components/forms/S
 import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 import type { StaffMember, VenueOption } from '../../composables/useAdminStaff'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     staff: StaffMember[]
     venues?: VenueOption[]

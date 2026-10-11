@@ -399,7 +399,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(paidState.stock).toBe(24)
 
     // 10. Idempotency verification: re-confirming already completed order does NOT decrement stock again
-    const retryAttempt = await withE2EApi(
+    await withE2EApi(
       page,
       async ({ apiV2 }, oId) => {
         try {

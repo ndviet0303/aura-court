@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText, formatSlotRange } from '@/i18n'
 import type { Court } from '@/features/court/types/court'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   court: Court | null
   saving?: boolean

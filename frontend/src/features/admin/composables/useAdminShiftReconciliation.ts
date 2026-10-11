@@ -123,7 +123,7 @@ export function useAdminShiftReconciliation() {
       (raw.declared_cash != null && raw.expected_cash != null
         ? raw.declared_cash - raw.expected_cash
         : 0)
-    let reconStatus =
+    const reconStatus =
       raw.reconciliation?.status ||
       (raw.status === 'open' ? 'open' : rawVariance === 0 ? 'matched' : 'exception')
 

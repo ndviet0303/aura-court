@@ -8,7 +8,7 @@ import { getActorCredentials } from './runner/auth.ts'
 
 test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mật @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')

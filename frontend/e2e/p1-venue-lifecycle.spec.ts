@@ -17,7 +17,7 @@ function getBackendEnv(manifest: any) {
 
 test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đợi công khai & Lịch ngoại lệ @p1', () => {
   test.beforeEach(async ({ page }) => {
-    const manifest = getTestManifest()
+    getTestManifest() // fails fast on a manifest from another target
 
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')

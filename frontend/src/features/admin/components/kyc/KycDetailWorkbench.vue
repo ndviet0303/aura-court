@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { DocumentInspectPayload, HostKyc, KycBusinessType } from '../../types/kyc'
-import { SkeletonLoader } from '@/shared/components'
 
 const props = withDefaults(
   defineProps<{

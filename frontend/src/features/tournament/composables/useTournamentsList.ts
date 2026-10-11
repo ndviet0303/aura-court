@@ -1,5 +1,4 @@
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import type {
   TournamentItem,
   CircuitLeaderboardItem,
@@ -10,7 +9,6 @@ import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 
 export function useTournamentsList() {
-  const router = useRouter()
   const auth = useAuthStore()
 
   const activeTab = ref<'all' | 'open' | 'ongoing' | 'completed' | 'my'>('all')

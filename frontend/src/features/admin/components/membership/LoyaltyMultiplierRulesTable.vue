@@ -4,7 +4,7 @@ import { resolveLocalizedText } from '@/i18n'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { MultiplierRule } from '../../types/membership'
 
-const props = defineProps<{
+defineProps<{
   rules: MultiplierRule[]
   loading?: boolean
 }>()

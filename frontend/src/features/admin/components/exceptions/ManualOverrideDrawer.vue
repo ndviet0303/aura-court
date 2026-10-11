@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import { SelectDropdown, AuraButton } from '@/shared/components'

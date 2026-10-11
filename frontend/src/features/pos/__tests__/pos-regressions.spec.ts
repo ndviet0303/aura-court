@@ -5,7 +5,7 @@ import PosView from '../views/PosView.vue'
 import PosCustomerModal from '../components/PosCustomerModal.vue'
 import { i18n } from '@/i18n'
 import { posApi } from '../api/posApi'
-import { api, apiV2 } from '@/core/api/client'
+import { apiV2 } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {}, params: {} }),

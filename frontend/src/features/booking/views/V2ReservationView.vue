@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useV2Reservations } from '../composables/useV2Reservations'
 import type { V2Reservation } from '../types/v2Reservation'

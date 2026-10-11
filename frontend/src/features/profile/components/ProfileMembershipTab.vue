@@ -18,29 +18,6 @@ const discountPercent = computed(() => {
   if (props.membership?.plan?.discount_percent) return props.membership.plan.discount_percent
   return 10
 })
-
-const perks = [
-  {
-    icon: 'percent',
-    title: 'Giảm giá trực tiếp khi đặt sân',
-    desc: 'Tự động áp dụng chiết khấu khi thanh toán mọi khung giờ tiêu chuẩn.',
-  },
-  {
-    icon: 'event_available',
-    title: 'Ưu tiên giữ chỗ sớm 7 ngày',
-    desc: 'Mở khóa lịch thi đấu trước các thành viên phổ thông.',
-  },
-  {
-    icon: 'support_agent',
-    title: 'Hỗ trợ khách hàng ưu tiên',
-    desc: 'Được phục vụ ưu tiên bởi đội ngũ chăm sóc khách hàng Aura Court.',
-  },
-  {
-    icon: 'water_drop',
-    title: 'Tiện ích nước uống & khăn thể thao',
-    desc: 'Nhận nước khoáng điện giải miễn phí tại quầy lễ tân cụm sân.',
-  },
-]
 </script>
 
 <template>

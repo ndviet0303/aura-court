@@ -2,7 +2,7 @@
 import type { User } from '@/core/types/common'
 import { AuraButton } from '@/shared/components'
 
-const props = defineProps<{
+defineProps<{
   user: User | null
   currentPassword: string
   newPassword: string

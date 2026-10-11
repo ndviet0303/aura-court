@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringSeries } from '../../types/recurring'
 
-const props = defineProps<{
+defineProps<{
   seriesList: RecurringSeries[]
   loading?: boolean
 }>()

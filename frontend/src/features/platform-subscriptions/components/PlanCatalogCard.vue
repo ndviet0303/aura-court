@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PlatformPlan } from '../types'
 
-const props = defineProps<{
+defineProps<{
   plan: PlatformPlan
   trialEligible: boolean
   isCurrentPlan?: boolean

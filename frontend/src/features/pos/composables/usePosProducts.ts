@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { posApi } from '../api/posApi'
 import type { Product, ProductCategory } from '../types/pos'
 import { errorMessage } from '@/core/utils/errorMessage'

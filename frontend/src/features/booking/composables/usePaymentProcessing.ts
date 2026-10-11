@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -11,7 +11,6 @@ import type { TournamentItem } from '@/features/tournament/types/tournament'
 
 export function usePaymentProcessing() {
   const route = useRoute()
-  const router = useRouter()
   const store = useBookingStore()
   const auth = useAuthStore()
 

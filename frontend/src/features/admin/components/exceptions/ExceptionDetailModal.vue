@@ -4,7 +4,7 @@ import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { FinancialException } from '../../types/exceptions'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   item: FinancialException | null
 }>()

@@ -1,5 +1,4 @@
 import type { AvailabilitySlot } from '@/features/court/types/court'
-import { formatTime } from '@/i18n'
 
 /**
  * Gets the current or provided date string (YYYY-MM-DD) in the venue's local timezone (default: Asia/Ho_Chi_Minh).

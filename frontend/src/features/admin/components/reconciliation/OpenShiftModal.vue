@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatCurrency } from '@/i18n'
 import { AuraButton, CurrencyInput } from '@/shared/components'
 
 defineProps<{

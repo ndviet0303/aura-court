@@ -4,7 +4,7 @@ import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import type { DenominationCount } from '../../composables/useAdminShiftReconciliation'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   denominations: DenominationCount[]
   totalCash: number

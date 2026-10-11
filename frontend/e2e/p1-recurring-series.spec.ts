@@ -805,9 +805,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     expect(postPaymentState.series_status).toBe('pending')
   })
 
-  test("8.1.5: Overdue cycle release: overdue grace expiration releases only that period's occurrences", async ({
-    page,
-  }) => {
+  test("8.1.5: Overdue cycle release: overdue grace expiration releases only that period's occurrences", async () => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
     const org1 = manifest.fixtures?.organizations.org1

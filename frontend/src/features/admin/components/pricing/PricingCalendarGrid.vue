@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency, resolveLocalizedText } from '@/i18n'
-import { AuraButton, SelectDropdown } from '@/shared/components'
+import { SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 import type { PriceRuleItem } from '../../types/pricing'
 import type { Court, Venue } from '@/features/court/types/court'

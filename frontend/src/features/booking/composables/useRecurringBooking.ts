@@ -287,7 +287,7 @@ export function useRecurringBooking() {
           seriesList.value = (seriesRes as Record<string, any>).data
         }
       }
-    } catch (err: unknown) {
+    } catch {
       // Graceful fallback for offline/development
     } finally {
       loading.value = false

@@ -8,7 +8,6 @@ import SocialPartnerFinderModal from '../components/social/SocialPartnerFinderMo
 
 const {
   loading,
-  activeTab,
   searchQuery,
   notice,
   error,

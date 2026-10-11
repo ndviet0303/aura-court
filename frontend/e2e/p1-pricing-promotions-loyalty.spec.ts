@@ -778,7 +778,7 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
           env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
           encoding: 'utf-8',
         })
-      } catch (err) {
+      } catch {
         // Ignore cleanup failure
       }
     }

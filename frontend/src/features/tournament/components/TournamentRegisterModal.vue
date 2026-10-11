@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { AuraButton } from '@/shared/components'
 import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   tournament: TournamentItem | null
   loading?: boolean

@@ -5,7 +5,6 @@ import type { TournamentItem } from '../types/tournament'
 import { usePaymentProcessing } from '@/features/booking/composables/usePaymentProcessing'
 import { tournamentApi } from '../api/tournamentApi'
 import { useAuthStore } from '@/stores/auth'
-import { apiV2, api } from '@/core/api/client'
 
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({

@@ -18,7 +18,7 @@ const props = withDefaults(
     courts: () => [],
   },
 )
-const { show, coupons, venues, courts, saving } = toRefs(props)
+const { show, coupons, venues, saving } = toRefs(props)
 
 const emit = defineEmits<{
   (e: 'close'): void

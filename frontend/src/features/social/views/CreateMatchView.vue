@@ -10,7 +10,6 @@ import MatchInviteNetworkCard from '../components/match/MatchInviteNetworkCard.v
 import MatchLivePreviewCard from '../components/match/MatchLivePreviewCard.vue'
 
 const {
-  loading,
   submitting,
   notice,
   error,
