@@ -27,7 +27,8 @@
         <env name="CACHE_STORE" value="array"/>
         <!-- Use the same PostgreSQL driver as production, but isolate test data. -->
         <env name="DB_CONNECTION" value="pgsql" force="true"/>
-        <env name="DB_HOST" value="127.0.0.1" force="true"/>
+        <!-- Not forced: CI points DB_HOST at its Postgres service; the forced database name keeps the safety guard. -->
+        <env name="DB_HOST" value="127.0.0.1"/>
         <env name="DB_DATABASE" value="booking_test" force="true"/>
         <env name="DB_URL" value="" force="true"/>
         <!-- Pin config/features.php defaults so a local .env.testing cannot change them; tests opt in with config(). -->
