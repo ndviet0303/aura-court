@@ -27,9 +27,20 @@
         <env name="CACHE_STORE" value="array"/>
         <!-- Use the same PostgreSQL driver as production, but isolate test data. -->
         <env name="DB_CONNECTION" value="pgsql" force="true"/>
-        <env name="DB_HOST" value="127.0.0.1" force="true"/>
+        <!-- Not forced: CI points DB_HOST at its Postgres service; the forced database name keeps the safety guard. -->
+        <env name="DB_HOST" value="127.0.0.1"/>
         <env name="DB_DATABASE" value="booking_test" force="true"/>
         <env name="DB_URL" value="" force="true"/>
+        <!-- Pin config/features.php defaults so a local .env.testing cannot change them; tests opt in with config(). -->
+        <env name="FEATURE_V2_RESERVATIONS" value="true" force="true"/>
+        <env name="FEATURE_ORGANIZATION_TENANCY" value="true" force="true"/>
+        <env name="FEATURE_MARKETPLACE_PAYOUTS" value="false" force="true"/>
+        <env name="FEATURE_MARKETPLACE_SPLIT_PAYMENTS" value="false" force="true"/>
+        <env name="FEATURE_MARKETPLACE_SLOT_RESALE" value="false" force="true"/>
+        <env name="FEATURE_SOCIAL_TOURNAMENTS" value="false" force="true"/>
+        <env name="FEATURE_TENANT_POS_WALLET" value="false" force="true"/>
+        <env name="FEATURE_DIRECT_OWNER_PAYMENTS" value="false" force="true"/>
+        <env name="PILOT_ORGANIZATION_IDS" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

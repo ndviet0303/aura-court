@@ -436,6 +436,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
     public function test_scenario_5_marketplace_transfer_concurrent_purchases_yields_exactly_one_winner(): void
     {
         $fixture = $this->setupTenantWithReceivingConnection();
+        config(['features.flags.marketplace_slot_resale' => true]);
         $org = $fixture['organization'];
         $seller = $fixture['payer'];
         $buyer1 = User::factory()->create(['email_verified_at' => now()]);

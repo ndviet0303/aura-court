@@ -78,6 +78,37 @@ backend_static:
     - vendor/bin/phpstan analyse --no-progress --memory-limit=1G
     - vendor/bin/phpunit tests/Unit/Architecture
 
+backend_test:
+  stage: validate
+  image: composer:2
+  services:
+    - name: postgres:17-alpine
+      alias: postgres
+  rules: *validate_rules
+  variables:
+    # Throwaway service credentials; phpunit.xml forces DB_DATABASE=booking_test, CI only points DB_HOST at the service.
+    POSTGRES_DB: booking_test
+    POSTGRES_USER: booking
+    POSTGRES_PASSWORD: booking
+    DB_HOST: postgres
+    DB_USERNAME: booking
+    DB_PASSWORD: booking
+    COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
+  cache:
+    key:
+      files:
+        - backend/composer.lock
+    paths:
+      - .composer-cache/
+  script:
+    - "echo \"=== Backend Test (full PHPUnit suite on PostgreSQL) ===\""
+    - install-php-extensions pdo_pgsql gd
+    - cd backend
+    - cp .env.example .env
+    - composer install --no-interaction --prefer-dist
+    - php artisan key:generate
+    - vendor/bin/phpunit
+
 build_and_deploy:
   stage: build
   image: docker:latest
@@ -85,6 +116,7 @@ build_and_deploy:
   needs:
     - frontend_check
     - backend_static
+    - backend_test
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"'
       when: never
