@@ -64,10 +64,16 @@
     - Xoá code chết lộ ra khi sửa, ví dụ `persistPayment` (lời gọi đã bị bỏ từ refactor `f6fa328`).
     - Bỏ thêm một `eslint-disable` thừa trong `e2e/runner/playwright-global-setup.ts`.
     - Một callback test được gõ kiểu, nên `no-explicit-any` còn 507.
-- [ ] 3.4 Sửa test có điều kiện và biểu thức hằng:
+- [x] 3.4 Sửa test có điều kiện và biểu thức hằng:
   - 12 `vitest/no-conditional-expect`;
   - 4 `no-constant-condition` trong `e2e/` (dạng `('post') === 'post' ? ...`).
-- [ ] 3.5 Kết quả mong đợi:
+  - Đã làm:
+    - Còn 9 `no-conditional-expect`, vì 3 cái kia nằm trong spec scoped cũ đã xoá ở `c71fe28`.
+    - Bỏ guard `if (...exists())` quanh các expect. Có 3 test xanh giả: phần tử không tồn tại nên expect chưa từng chạy.
+      - `ProfileView` (2 test): selector cũ `#prof-name` và `.save-profile-btn` không còn. Đổi sang `#profile-name` và submit form. Thêm kiểm tra thông báo thành công, và kiểm tra không gọi API khi thiếu tên.
+      - `SocialConnectionsPanel`: ô nhập ID chỉ có ở tab Bạn bè, nên test quay lại tab này trước khi gửi lời mời.
+    - 4 biểu thức hằng: chỉ giữ nhánh luôn chạy (`/social/feed/{id}/react` và `/report`).
+- [x] 3.5 Kết quả mong đợi:
   - `npx oxlint .` báo 0 lỗi;
   - `npx eslint .` chỉ còn `@typescript-eslint/no-explicit-any` (507; lúc đề xuất là 508, xem 3.3).
 

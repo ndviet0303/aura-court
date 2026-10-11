@@ -148,15 +148,12 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
 
     expect(socialApi.acceptFriendRequest).toHaveBeenCalledWith(60)
 
-    // 4. Send request to new user
-    const userIdInput = wrapper.find('.user-id-input')
-    if (userIdInput.exists()) {
-      await userIdInput.setValue(4)
-      const sendReqBtn = wrapper.find('.btn-send-req')
-      await sendReqBtn.trigger('click')
-      await flushPromises()
-      expect(socialApi.sendFriendRequest).toHaveBeenCalledWith(4)
-    }
+    // 4. Back on the friends sub-tab, send a request to a new user
+    await wrapper.findAll('.subtab-btn')[0]!.trigger('click')
+    await wrapper.find('.user-id-input').setValue(4)
+    await wrapper.find('.btn-send-req').trigger('click')
+    await flushPromises()
+    expect(socialApi.sendFriendRequest).toHaveBeenCalledWith(4)
   })
 
   it('SocialModerationModal: reviews pending reports and enforces audit reason for hide/restore', async () => {

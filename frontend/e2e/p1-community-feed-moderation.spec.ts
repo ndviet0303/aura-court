@@ -180,12 +180,7 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const reactLike1 = await withE2EApi(
       page,
       async ({ apiV2 }, pid) => {
-        return await apiV2.post(
-          'post' === 'post'
-            ? '/social/feed/' + pid + '/react'
-            : '/social/feed/comments/' + pid + '/react',
-          { type: 'like' },
-        )
+        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'like' })
       },
       postId,
     )
@@ -196,12 +191,7 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const reactLike2 = await withE2EApi(
       page,
       async ({ apiV2 }, pid) => {
-        return await apiV2.post(
-          'post' === 'post'
-            ? '/social/feed/' + pid + '/react'
-            : '/social/feed/comments/' + pid + '/react',
-          { type: 'like' },
-        )
+        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'like' })
       },
       postId,
     )
@@ -212,12 +202,7 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const reactFire = await withE2EApi(
       page,
       async ({ apiV2 }, pid) => {
-        return await apiV2.post(
-          'post' === 'post'
-            ? '/social/feed/' + pid + '/react'
-            : '/social/feed/comments/' + pid + '/react',
-          { type: 'fire' },
-        )
+        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'fire' })
       },
       postId,
     )
@@ -304,12 +289,9 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const reportRes = await withE2EApi(
       page,
       async ({ apiV2 }, pid) => {
-        return await apiV2.post(
-          'post' === 'post'
-            ? '/social/feed/' + pid + '/report'
-            : '/social/feed/comments/' + pid + '/report',
-          { reason: 'Spam liên tục và vi phạm quy định cộng đồng' },
-        )
+        return await apiV2.post('/social/feed/' + pid + '/report', {
+          reason: 'Spam liên tục và vi phạm quy định cộng đồng',
+        })
       },
       postId,
     )

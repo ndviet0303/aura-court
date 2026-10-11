@@ -123,20 +123,17 @@ describe('AdminScheduleView', () => {
     await flushPromises()
 
     const firstDay = wrapper.findAll('.day-row-container')[0]!
-    expect(firstDay).toBeDefined()
-    if (firstDay) {
-      expect(firstDay.findAll('.shift-time-chip').length).toBe(0)
-      await firstDay.find('.day-toggle-btn').trigger('click')
-      const addShiftBtn = firstDay.find('.btn-add-shift-link')
-      await addShiftBtn.trigger('click')
-      expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
-      await addShiftBtn.trigger('click')
-      expect(firstDay.findAll('.shift-time-chip').length).toBe(2)
+    expect(firstDay.findAll('.shift-time-chip').length).toBe(0)
+    await firstDay.find('.day-toggle-btn').trigger('click')
+    const addShiftBtn = firstDay.find('.btn-add-shift-link')
+    await addShiftBtn.trigger('click')
+    expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
+    await addShiftBtn.trigger('click')
+    expect(firstDay.findAll('.shift-time-chip').length).toBe(2)
 
-      const removeShiftBtn = firstDay.find('.btn-delete-shift')
-      await removeShiftBtn.trigger('click')
-      expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
-    }
+    const removeShiftBtn = firstDay.find('.btn-delete-shift')
+    await removeShiftBtn.trigger('click')
+    expect(firstDay.findAll('.shift-time-chip').length).toBe(1)
   })
 
   it('saves weekly hours to the venue API and reloads the persisted schedule', async () => {

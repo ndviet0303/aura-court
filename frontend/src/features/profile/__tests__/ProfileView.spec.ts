@@ -173,20 +173,15 @@ describe('ProfileView', () => {
     await flushPromises()
 
     // Trigger form submit
-    const nameInput = wrapper.find('#prof-name')
-    if (nameInput.exists()) {
-      await nameInput.setValue('Nguyen Van Updated')
-    }
-    const saveBtn = wrapper.find('.save-profile-btn')
-    if (saveBtn.exists()) {
-      await saveBtn.trigger('click')
-      await flushPromises()
-      expect(profileApi.updateProfile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'Nguyen Van Updated',
-        }),
-      )
-    }
+    await wrapper.find('#profile-name').setValue('Nguyen Van Updated')
+    await wrapper.find('form.profile-edit-form').trigger('submit')
+    await flushPromises()
+    expect(profileApi.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Nguyen Van Updated',
+      }),
+    )
+    expect(wrapper.text()).toContain('Cập nhật thông tin hồ sơ thành công.')
   })
 
   it('displays actionable validation error when profile update fails', async () => {
@@ -207,13 +202,10 @@ describe('ProfileView', () => {
     })
     await flushPromises()
 
-    const saveBtn = wrapper.find('.save-profile-btn')
-    if (saveBtn.exists()) {
-      await saveBtn.trigger('click')
-      await flushPromises()
-      // Notice actionable error
-      expect(wrapper.text()).toContain('Vui lòng nhập họ và tên')
-    }
+    await wrapper.find('form.profile-edit-form').trigger('submit')
+    await flushPromises()
+    expect(profileApi.updateProfile).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Vui lòng nhập họ và tên')
   })
 
   it('reloads fresh profile on mount via auth.load(true)', async () => {

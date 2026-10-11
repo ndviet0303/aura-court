@@ -93,10 +93,8 @@ describe('CreateMatchView', () => {
     expect(pickleballBtn?.classes()).toContain('active')
 
     const quickPill = wrapper.find('.quick-pill')
-    if (quickPill.exists()) {
-      await quickPill.trigger('click')
-      expect(quickPill.classes()).toContain('active')
-    }
+    await quickPill.trigger('click')
+    expect(quickPill.classes()).toContain('active')
   })
 
   it('submits match successfully and triggers redirect', async () => {
