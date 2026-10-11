@@ -172,15 +172,15 @@ class CreateBooking
 CI (`backend_static`) runs these in check-only mode, with no database:
 
 1. `vendor/bin/pint --test`
-2. `vendor/bin/phpstan analyse -c phpstan-level0.neon`: level 0 with no baseline.
-3. `vendor/bin/phpstan analyse`: level 5 with `phpstan-baseline.neon`.
+2. `vendor/bin/phpstan analyse -c phpstan-level0.neon --memory-limit=1G`: level 0 with no baseline.
+3. `vendor/bin/phpstan analyse --memory-limit=1G`: level 5 with `phpstan-baseline.neon`.
 4. `vendor/bin/phpunit tests/Unit/Architecture`
 
 **PHPStan baseline.** `phpstan-baseline.neon` records the existing level-5 findings. It only shrinks.
 
 - New findings fail. Fix them; never regenerate the baseline to absorb them.
 - Level-0 findings (unknown classes, functions or methods, wrong argument counts, undefined variables) never go into the baseline. The level-0 run ignores the baseline, so it fails on them anyway.
-- When you fix baselined findings, PHPStan fails on the unmatched entries. If those are the only failures, run `vendor/bin/phpstan analyse --generate-baseline` and commit the smaller file.
+- When you fix baselined findings, PHPStan fails on the unmatched entries. If those are the only failures, run `vendor/bin/phpstan analyse --memory-limit=1G --generate-baseline` and commit the smaller file.
 - A justified exception gets an inline `// @phpstan-ignore <identifier> (reason)`. The reason is required.
 
 **Architecture check.** `tests/Unit/Architecture/BackendArchitectureTest.php` checks every file in `app/` against these limits:
