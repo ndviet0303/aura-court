@@ -203,3 +203,11 @@
 - [x] 7.5 Chạy `openspec validate add-static-analysis-gates --strict`, rồi cập nhật số liệu cuối vào `design.md`: số entry baseline, suppressions và allowlist.
   - Đã làm: đếm lại từ file. Baseline PHPStan có 769 entry, gồm 1.021 lỗi. Suppressions có 507 `no-explicit-any` trong 112 file. Allowlist frontend 172 entry, backend 121 entry.
   - Design ghi rõ 508 → 507 và lý do con số model-query lúc đề xuất cao hơn. Validate `--strict` pass.
+- [x] 7.6 Cache phần tải của Composer trong `backend_static` để rút ngắn `composer install`.
+  - Đã làm: đặt `COMPOSER_CACHE_DIR` = `$CI_PROJECT_DIR/.composer-cache` và cache thư mục đó, key theo nội dung `backend/composer.lock`. Đây đúng là ví dụ GitLab trong docs Composer.
+  - Không cache `vendor/`: docs Composer khuyên cache bản tải, vì mỗi lần chạy vẫn cài lại từ lock và không dính `vendor/` cũ.
+  - Số liệu từ log pipeline 2935239682: tải mất 38 s trong 44 s, giải nén 3 s, autoload 3 s. Vậy khi cache có sẵn, job tiết kiệm khoảng 35 s.
+  - Thử local với cùng lock (bỏ scripts và autoload): cache trống thì in 135 dòng `Downloading` và mất 57 s; cache có sẵn thì không in dòng `Downloading` nào và mất 4,7 s.
+  - `cache:` ở mức job thay cho cache global `.docker/cache` (chỉ `build_and_deploy` dùng). Nhờ vậy job backend không còn "Failed to extract cache" và không còn tải lên cache rỗng.
+  - Cache miss chỉ có nghĩa là tải đầy đủ như trước. Static check không đọc cache này, nên vẫn đúng spec "không phụ thuộc runtime service".
+- [ ] 7.7 Kiểm cache trên MR: pipeline đầu sau 7.6 có "Created cache" cho key mới; lần chạy lại `backend_static` có "Successfully extracted cache" và `composer install` không còn dòng `Downloading`. Ghi thời gian `composer install` và thời gian job mới.

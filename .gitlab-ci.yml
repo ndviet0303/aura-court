@@ -56,6 +56,16 @@ backend_static:
   stage: validate
   image: composer:2
   rules: *validate_rules
+  variables:
+    COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
+  # Keeps Composer's downloads, most of the install time, not vendor/, so every run still installs from composer.lock.
+  # Replaces the global .docker/cache, which only build_and_deploy needs.
+  cache:
+    key:
+      files:
+        - backend/composer.lock
+    paths:
+      - .composer-cache/
   script:
     - "echo \"=== Step 2: Backend Static Checks (Pint, PHPStan, Architecture) ===\""
     - cd backend

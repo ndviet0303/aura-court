@@ -210,6 +210,8 @@ Alternatives considered:
 
 Both PHPStan runs pass `--memory-limit=1G`. On a cold result cache, which is every CI run, the largest of 8 workers peaked at 188 MB, above PHP's common 128M default. A local run passes only while its result cache is warm.
 
+The job caches Composer's download cache (`COMPOSER_CACHE_DIR`), keyed on the content of `backend/composer.lock`, as the Composer docs recommend. It does not cache `vendor/`, so every run still installs from the lock. On the first pipeline, downloads took about 38 of the 44 s `composer install`. The checks never read this cache: a miss only means a full download. The job-level `cache:` also replaces the inherited global `.docker/cache`, which only `build_and_deploy` uses.
+
 **`frontend_check`** changes:
 - add `oxlint .`, `eslint .` and `format:check`, all without `--fix` or cache;
 - use `build-only`, because type-check already ran;
@@ -234,7 +236,7 @@ Alternatives considered:
 - **Someone regenerates a baseline to hide new debt.** → The level-0 run blocks crash-class findings. Baseline diffs are visible in review. The regeneration commands are documented in the agent rules.
 - **Allowlisted files can regrow up to their ceiling.** → Accepted. Burn-down changes lower ceilings explicitly.
 - **507 suppressed `any` and 1,021 baselined errors can feel permanent.** → Follow-up changes per domain, each reducing the counts.
-- **CI gets about 3 minutes slower, not the estimated 1–1.5.** → The macOS runner runs one job at a time, so `backend_static` (206 s) ran after `frontend_check` (285 s) instead of beside it. Setting the runner's concurrency to 2 would overlap the two jobs. A Composer cache would shorten the 44 s `composer install`.
+- **CI gets about 3 minutes slower, not the estimated 1–1.5.** → The macOS runner runs one job at a time, so `backend_static` (206 s) ran after `frontend_check` (285 s) instead of beside it. Setting the runner's concurrency to 2 would overlap the two jobs. The Composer download cache (§7) removes about 35 s of that time once the cache is warm.
 
 ## Migration Plan
 
