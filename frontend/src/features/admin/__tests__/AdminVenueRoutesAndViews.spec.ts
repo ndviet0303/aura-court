@@ -8,6 +8,7 @@ import { api, apiV2 } from '@/core/api/client'
 import { i18n } from '@/i18n'
 import AdminVenuesView from '../views/AdminVenuesView.vue'
 import AdminManageView from '../views/AdminManageView.vue'
+import CourtFormModal from '../components/manage/CourtFormModal.vue'
 import AdminStaffView from '../views/AdminStaffView.vue'
 import AdminScheduleView from '../views/AdminScheduleView.vue'
 import AdminShiftReconciliationView from '../views/AdminShiftReconciliationView.vue'
@@ -283,6 +284,56 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
       expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(wrapper.find('.alert-pill-error').exists()).toBe(false)
+    })
+
+    it('AdminManageView keeps court form edits in the view and saves them', async () => {
+      const auth = useAuthStore()
+      auth.user = adminUser
+      auth.loaded = true
+      vi.mocked(api.post).mockResolvedValueOnce({ id: 2 })
+
+      const wrapper = mount(AdminManageView, {
+        global: {
+          plugins: [i18n],
+          stubs: {
+            RouterLink: { template: '<a><slot /></a>' },
+          },
+        },
+      })
+      await flushPromises()
+      const modal = wrapper.findComponent(CourtFormModal)
+
+      // Cancel saves nothing, and reopening starts from a fresh form.
+      await wrapper.find('.add-court-btn').trigger('click')
+      await modal.find('input[type="text"]').setValue('Draft court')
+      await modal.find('input[type="number"]').setValue('5')
+      await modal.find('input[type="number"]').setValue('')
+      expect(modal.emitted('update:capacity')).toEqual([[5], [null]])
+      await modal.find('.btn-cancel').trigger('click')
+      expect(modal.find('.modal-backdrop').exists()).toBe(false)
+      await wrapper.find('.add-court-btn').trigger('click')
+      expect(modal.find<HTMLInputElement>('input[type="text"]').element.value).toBe('')
+
+      await modal.find('input[type="text"]').setValue('Court 9')
+      await modal.find('input[type="number"]').setValue('8')
+      await modal.find('input[type="checkbox"]').setValue(false)
+      const tag = modal.find('.tag-btn')
+      const tagLabel = tag.text().replace(/^\+\s*/, '')
+      await tag.trigger('click')
+      await modal.find('.preset-thumb-btn').trigger('click')
+      await modal.find('.btn-primary').trigger('click')
+      await flushPromises()
+
+      expect(api.post).toHaveBeenCalledWith('/admin/courts', {
+        name: 'Court 9',
+        venue_id: 1,
+        sport_zone_id: null,
+        surface_type: null,
+        capacity: 8,
+        is_active: false,
+        description: tagLabel,
+        image_url: '/courts/football-mini-turf.jpg',
+      })
     })
 
     it('AdminStaffView loads venues through v1 and associates staff with venues', async () => {

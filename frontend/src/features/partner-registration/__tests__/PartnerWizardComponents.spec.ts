@@ -100,6 +100,35 @@ describe('BusinessInfoStep', () => {
     expect(wrapper.text()).toContain('Mã số thuế không hợp lệ.')
   })
 
+  it('saves edits made in the address and bank sections', async () => {
+    const save = vi.fn().mockResolvedValue(true)
+    const wrapper = mount(BusinessInfoStep, {
+      props: {
+        application: baseMockApp,
+        fieldErrors: {},
+        saving: false,
+        save,
+      },
+    })
+
+    await wrapper.find('input#ward').setValue('Phuong 1')
+    await wrapper.find('input#bank_account_number').setValue('987654321')
+    await wrapper.find('input#bank_account_holder').setValue('tran thi c')
+    expect(wrapper.find<HTMLInputElement>('input#bank_account_holder').element.value).toBe(
+      'TRAN THI C',
+    )
+
+    await wrapper.find('.btn-save-draft').trigger('click')
+
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ward: 'Phuong 1',
+        bank_account_number: '987654321',
+        bank_account_holder: 'TRAN THI C',
+      }),
+    )
+  })
+
   it('renders 5 grouped sections and handles bank select and sports chips', async () => {
     const save = vi.fn().mockResolvedValue(true)
     const wrapper = mount(BusinessInfoStep, {

@@ -289,7 +289,14 @@ async function handleNext() {
     </div>
 
     <!-- SECTION 2: Địa chỉ & Vị trí Cơ sở -->
-    <BusinessAddressSection :values="values" :field-errors="fieldErrors" />
+    <BusinessAddressSection
+      v-model:address-line="values.address_line"
+      v-model:ward="values.ward"
+      v-model:district="values.district"
+      v-model:city="values.city"
+      v-model:postal-code="values.postal_code"
+      :field-errors="fieldErrors"
+    />
 
     <!-- SECTION 3: Người đại diện & Pháp lý -->
     <div class="form-section-card">
@@ -365,7 +372,10 @@ async function handleNext() {
 
     <!-- SECTION 4: Tài khoản Ngân hàng nhận thanh toán -->
     <BusinessBankSection
-      :values="values"
+      v-model:bank-name="values.bank_name"
+      v-model:bank-code="values.bank_code"
+      v-model:bank-account-number="values.bank_account_number"
+      v-model:bank-account-holder="values.bank_account_holder"
       :field-errors="fieldErrors"
       :selected-bank-code="selectedBankCode"
       @bank-change="onBankChange"

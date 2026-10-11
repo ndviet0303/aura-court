@@ -180,6 +180,7 @@ Alternatives considered:
 **Timing.** Ceilings are measured after the format commits, because Prettier added about 7% to `.vue` line counts.
 - The frontend spec lands right after the Prettier commit, not in step 5. The old scoped spec fails on formatted code: two files grew past its limits, and its line-based router regex misses wrapped `component: () =>` lines.
 - Keeping the old spec green would mean raising its limits or allowlisting files in a file about to be deleted.
+- The allowlist stays a draft until this change merges. When a fix this change specifies grows an allowlisted file, the fix's commit re-measures that file, because a ceiling is the file's value when the requirement lands. In the planned task order the allowlist would have been measured after those fixes anyway. Task 3.2 re-measured 3 files this way.
 
 **Cleanup.** Delete both scripts and the old scoped frontend spec. Rename the backend test to drop "Scoped".
 

@@ -37,22 +37,39 @@
 
 ## 3. Sửa lint frontend
 
-- [ ] 3.1 Tắt `vitest/require-mock-type-parameters` trong `.oxlintrc.json`.
+- [x] 3.1 Tắt `vitest/require-mock-type-parameters` trong `.oxlintrc.json`.
 - [ ] 3.2 Bỏ mutate prop trong `CourtFormModal.vue`, `BusinessAddressSection.vue`, `BusinessBankSection.vue`:
   - mỗi field được sửa dùng một `defineModel`;
   - parent (`AdminManageView.vue`, `BusinessInfoStep.vue`) bind bằng `v-model:<field>`;
   - giữ nguyên hành vi lưu/huỷ;
   - thêm hoặc cập nhật unit test.
-- [ ] 3.3 Sửa các lỗi nhỏ còn lại:
+  - Đã làm: hai field dùng tuỳ chọn `set` của `defineModel`:
+    - `bank_account_holder` viết hoa trong `set`, thay cho handler `@input`. Handler cũ đọc model trước khi parent kịp cập nhật, nên sẽ làm mất ký tự vừa gõ.
+    - `capacity` đổi ô trống (`''`) thành `null`, để prop luôn đúng kiểu `number | null`. Payload lưu không đổi, vì `saveCourt` vốn đổi giá trị falsy thành `null`.
+  - Test mới:
+    - form sân qua `AdminManageView`: huỷ, mở lại, rồi lưu;
+    - field địa chỉ và ngân hàng qua `BusinessInfoStep`.
+    - Bỏ một trong hai `set` thì test tương ứng fail.
+  - Ceiling: mỗi field thêm một dòng `v-model` ở parent, nên 3 file vượt ceiling và được đo lại trong cùng commit (design §6, Timing):
+    - `AdminManageView` từ 322 lên 329;
+    - `BusinessInfoStep` từ 459 lên 469;
+    - `CourtFormModal` từ 457 lên 463.
+- [x] 3.3 Sửa các lỗi nhỏ còn lại:
   - 61 ESLint `@typescript-eslint/no-unused-vars` và 50 oxlint `no-unused-vars`;
   - 2 `prefer-const`, 2 `@typescript-eslint/no-empty-object-type`;
   - 1 `vue/no-deprecated-slot-attribute`, 1 `unicorn/no-useless-fallback-in-spread`.
+  - Đã làm (commit `18ae500`):
+    - Hai tool báo trùng nhau, còn 104 chỗ unused-var phải sửa.
+    - Prop `slot` của `MarketplaceSellModal` đổi thành `bookingSlot`. Lý do: `:slot` trên component bị hiểu là slot attribute đã deprecated.
+    - Xoá code chết lộ ra khi sửa, ví dụ `persistPayment` (lời gọi đã bị bỏ từ refactor `f6fa328`).
+    - Bỏ thêm một `eslint-disable` thừa trong `e2e/runner/playwright-global-setup.ts`.
+    - Một callback test được gõ kiểu, nên `no-explicit-any` còn 507.
 - [ ] 3.4 Sửa test có điều kiện và biểu thức hằng:
   - 12 `vitest/no-conditional-expect`;
   - 4 `no-constant-condition` trong `e2e/` (dạng `('post') === 'post' ? ...`).
 - [ ] 3.5 Kết quả mong đợi:
   - `npx oxlint .` báo 0 lỗi;
-  - `npx eslint .` chỉ còn `@typescript-eslint/no-explicit-any` (508).
+  - `npx eslint .` chỉ còn `@typescript-eslint/no-explicit-any` (507; lúc đề xuất là 508, xem 3.3).
 
 ## 4. Baseline cho nợ còn lại
 

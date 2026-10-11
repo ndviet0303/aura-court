@@ -24,15 +24,17 @@ const POPULAR_BANKS: BankOption[] = [
 ]
 
 defineProps<{
-  values: {
-    bank_name: string
-    bank_code: string
-    bank_account_number: string
-    bank_account_holder: string
-  }
   fieldErrors: Record<string, string[]>
   selectedBankCode: string
 }>()
+
+const bankName = defineModel<string>('bankName', { required: true })
+const bankCode = defineModel<string>('bankCode', { required: true })
+const bankAccountNumber = defineModel<string>('bankAccountNumber', { required: true })
+const bankAccountHolder = defineModel<string>('bankAccountHolder', {
+  required: true,
+  set: (value) => value.toUpperCase(),
+})
 
 const emit = defineEmits<{
   (e: 'bankChange', event: Event): void
@@ -74,7 +76,7 @@ const emit = defineEmits<{
         >
         <input
           id="bank_name"
-          v-model="values.bank_name"
+          v-model="bankName"
           type="text"
           placeholder="Ví dụ: MBBank"
           class="form-input"
@@ -87,7 +89,7 @@ const emit = defineEmits<{
         >
         <input
           id="bank_code"
-          v-model="values.bank_code"
+          v-model="bankCode"
           type="text"
           placeholder="MB, VCB, TCB..."
           class="form-input"
@@ -100,7 +102,7 @@ const emit = defineEmits<{
         >
         <input
           id="bank_account_number"
-          v-model="values.bank_account_number"
+          v-model="bankAccountNumber"
           type="text"
           placeholder="Nhập số tài khoản nhận tiền"
           class="form-input"
@@ -115,11 +117,10 @@ const emit = defineEmits<{
         >
         <input
           id="bank_account_holder"
-          v-model="values.bank_account_holder"
+          v-model="bankAccountHolder"
           type="text"
           placeholder="NGUYEN VAN A"
           class="form-input"
-          @input="values.bank_account_holder = values.bank_account_holder.toUpperCase()"
         />
         <p v-if="fieldErrors.bank_account_holder" class="field-error-msg">
           {{ fieldErrors.bank_account_holder[0] }}

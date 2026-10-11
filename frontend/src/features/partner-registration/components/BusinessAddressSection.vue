@@ -1,14 +1,11 @@
 <script setup lang="ts">
-defineProps<{
-  values: {
-    address_line: string
-    ward: string
-    district: string
-    city: string
-    postal_code: string
-  }
-  fieldErrors: Record<string, string[]>
-}>()
+defineProps<{ fieldErrors: Record<string, string[]> }>()
+
+const addressLine = defineModel<string>('addressLine', { required: true })
+const ward = defineModel<string>('ward', { required: true })
+const district = defineModel<string>('district', { required: true })
+const city = defineModel<string>('city', { required: true })
+const postalCode = defineModel<string>('postalCode', { required: true })
 </script>
 
 <template>
@@ -29,7 +26,7 @@ defineProps<{
         >
         <input
           id="address_line"
-          v-model="values.address_line"
+          v-model="addressLine"
           type="text"
           placeholder="Ví dụ: 123 Kha Vạn Cân..."
           autocomplete="street-address"
@@ -43,7 +40,7 @@ defineProps<{
         <label for="ward" class="field-label">Phường / Xã</label>
         <input
           id="ward"
-          v-model="values.ward"
+          v-model="ward"
           type="text"
           placeholder="Phường Linh Chiểu"
           class="form-input"
@@ -54,7 +51,7 @@ defineProps<{
         <label for="district" class="field-label">Quận / Huyện</label>
         <input
           id="district"
-          v-model="values.district"
+          v-model="district"
           type="text"
           placeholder="Thành phố Thủ Đức"
           class="form-input"
@@ -67,7 +64,7 @@ defineProps<{
         >
         <input
           id="city"
-          v-model="values.city"
+          v-model="city"
           type="text"
           placeholder="TP. Hồ Chí Minh"
           autocomplete="address-level1"
@@ -79,7 +76,7 @@ defineProps<{
         <label for="postal_code" class="field-label">Mã bưu chính</label>
         <input
           id="postal_code"
-          v-model="values.postal_code"
+          v-model="postalCode"
           type="text"
           placeholder="700000"
           class="form-input"
