@@ -61,6 +61,11 @@ function handleDoneTournament() {
   }
 }
 
+function handleViewSchedule() {
+  store.clearPayment()
+  router.push('/booking')
+}
+
 function retryDirectPayment() {
   const code = booking.value?.code
   if (code) void createDirectPaymentAttempt(code)
@@ -217,7 +222,7 @@ function retryDirectPayment() {
               </AuraButton>
             </template>
             <template v-else>
-              <AuraButton variant="primary" size="md" icon="calendar_month" @click="store.clearPayment(); router.push('/booking')">
+              <AuraButton variant="primary" size="md" icon="calendar_month" @click="handleViewSchedule">
                 {{ $t('payment.viewScheduleCta') }}
               </AuraButton>
             </template>

@@ -165,6 +165,12 @@ function showNotice(msg: string) {
   }, 4000)
 }
 
+function selectCustomer(customer: CustomerProfile) {
+  selectedCustomer.value = customer
+  showCustomerModal.value = false
+  showNotice(t('admin.pos.selectedCustomerNotice', { name: customer.name }))
+}
+
 function showError(msg: string) {
   notice.value = ''
   error.value = msg
@@ -628,7 +634,7 @@ onUnmounted(() => {
       :show="showCustomerModal"
       :customer-database="customerDatabase"
       @close="showCustomerModal = false"
-      @select="selectedCustomer = $event; showCustomerModal = false; showNotice(t('admin.pos.selectedCustomerNotice', { name: $event.name }))"
+      @select="selectCustomer"
     />
 
     <PosCustomItemModal

@@ -38,6 +38,11 @@ function openPassModal(ath: Participant) {
   showPassModal.value = true
 }
 
+function openQrScanner() {
+  showQrScannerModal.value = true
+  scannedAthlete.value = null
+}
+
 function handleScanCode() {
   const code = scanCodeInput.value.trim().toLowerCase()
   if (!code) return
@@ -65,7 +70,7 @@ function handleScanCode() {
       <div class="checkin-actions-bar">
         <AuraButton
           variant="secondary"
-          @click="showQrScannerModal = true; scannedAthlete = null"
+          @click="openQrScanner"
         >
           <span class="material-symbols-outlined icon-16">qr_code_scanner</span>
           <span>{{ t('admin.tournaments.scanQrBtn') }}</span>

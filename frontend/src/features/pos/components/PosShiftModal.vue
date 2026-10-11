@@ -77,6 +77,16 @@ async function loadHistory() {
   }
 }
 
+function showHistory() {
+  activeTab.value = 'history'
+  loadHistory()
+}
+
+function startReview(shiftId: number) {
+  reviewingShiftId.value = shiftId
+  reviewStatus.value = 'approved'
+}
+
 function handleOpen() {
   emit('openShift', openingCash.value)
 }
@@ -133,7 +143,7 @@ async function handleReviewReconciliation(shiftId: number) {
           type="button"
           class="tab-btn"
           :class="{ active: activeTab === 'history' }"
-          @click="activeTab = 'history'; loadHistory()"
+          @click="showHistory"
         >
           <span class="material-symbols-outlined icon-18">history</span>
           <span>{{ t('admin.pos.tabShiftHistory') }}</span>
@@ -317,7 +327,7 @@ async function handleReviewReconciliation(shiftId: number) {
                         v-if="s.status === 'closed' && s.reconciliation?.status !== 'approved'"
                         type="button"
                         class="btn-review"
-                        @click="reviewingShiftId = s.id; reviewStatus = 'approved'"
+                        @click="startReview(s.id)"
                       >
                         {{ t('admin.pos.btnReview') }}
                       </button>

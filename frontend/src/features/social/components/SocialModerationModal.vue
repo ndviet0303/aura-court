@@ -32,6 +32,11 @@ async function loadReports() {
   }
 }
 
+function filterByStatus(status: 'pending' | 'resolved' | 'all') {
+  selectedStatus.value = status
+  loadReports()
+}
+
 async function handleHide(report: any) {
   if (!auditReason.value.trim()) {
     error.value = 'Vui lòng nhập lý do kiểm duyệt để ẩn nội dung vi phạm.'
@@ -100,7 +105,7 @@ onMounted(() => {
             type="button"
             class="filter-pill"
             :class="{ active: selectedStatus === 'pending' }"
-            @click="selectedStatus = 'pending'; loadReports()"
+            @click="filterByStatus('pending')"
           >
             Chờ xử lý
           </button>
@@ -108,7 +113,7 @@ onMounted(() => {
             type="button"
             class="filter-pill"
             :class="{ active: selectedStatus === 'resolved' }"
-            @click="selectedStatus = 'resolved'; loadReports()"
+            @click="filterByStatus('resolved')"
           >
             Đã xử lý
           </button>
@@ -116,7 +121,7 @@ onMounted(() => {
             type="button"
             class="filter-pill"
             :class="{ active: selectedStatus === 'all' }"
-            @click="selectedStatus = 'all'; loadReports()"
+            @click="filterByStatus('all')"
           >
             Tất cả
           </button>
