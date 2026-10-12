@@ -161,8 +161,7 @@ class PosController extends Controller
         $organization = $this->organization($request);
         $query = StockMovement::where('organization_id', $organization->id)
             ->with(['product', 'creator:id,name,email'])
-            ->latest('created_at')
-            ->latest('id');
+            ->latest('created_at')->latest('id');
 
         if ($request->filled('type') && $request->type !== 'all') {
             $type = $request->type;
