@@ -456,4 +456,46 @@ class TenantCustomerRelationshipTest extends TestCase
         $this->assertSame(0, $custC['loyalty_points']);
         $this->assertTrue($custC['is_guest']);
     }
+
+    public function test_customer_directory_reads_require_staff_role_and_membership(): void
+    {
+        $org = Organization::create(['name' => 'Aura Guarded', 'slug' => 'aura-guarded-'.uniqid()]);
+        $otherOrg = Organization::create(['name' => 'Aura Other', 'slug' => 'aura-other-'.uniqid()]);
+
+        $member = fn (Organization $o, string $role) => tap(User::factory()->create(), fn (User $u) => OrganizationMember::create([
+            'organization_id' => $o->id,
+            'user_id' => $u->id,
+            'role' => $role,
+            'status' => 'active',
+        ]));
+        $staff = $member($org, OrganizationMember::ROLE_STAFF);
+        $customerMember = $member($org, OrganizationMember::ROLE_CUSTOMER);
+        $otherStaff = $member($otherOrg, OrganizationMember::ROLE_STAFF);
+        $stranger = User::factory()->create();
+
+        $customer = TenantCustomer::create([
+            'organization_id' => $org->id,
+            'name' => 'Private Customer',
+            'phone' => '0900000001',
+            'is_guest' => true,
+            'status' => 'active',
+        ]);
+
+        $get = fn (User $user, Organization $o, string $uri) => $this->actingAs($user)
+            ->withHeader('X-Organization-ID', (string) $o->id)
+            ->getJson($uri);
+
+        $get($staff, $org, '/api/v2/customers')->assertOk()->assertJsonCount(1, 'customers');
+        $get($staff, $org, "/api/v2/customers/{$customer->id}")->assertOk()->assertJsonPath('customer.id', $customer->id);
+
+        foreach (['/api/v2/customers', "/api/v2/customers/{$customer->id}"] as $uri) {
+            $get($customerMember, $org, $uri)->assertForbidden();
+            $get($otherStaff, $org, $uri)->assertForbidden()->assertJsonPath('code', 'ORGANIZATION_ACCESS_DENIED');
+            $get($stranger, $org, $uri)->assertForbidden()->assertJsonPath('code', 'ORGANIZATION_ACCESS_DENIED');
+        }
+
+        // Staff of another tenant reading through their own tenant cannot reach this tenant's customer.
+        $get($otherStaff, $otherOrg, "/api/v2/customers/{$customer->id}")->assertNotFound();
+        $get($otherStaff, $otherOrg, '/api/v2/customers')->assertOk()->assertJsonCount(0, 'customers');
+    }
 }
