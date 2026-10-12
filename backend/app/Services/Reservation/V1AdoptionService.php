@@ -10,6 +10,8 @@ use Carbon\CarbonInterface;
 
 class V1AdoptionService
 {
+    public function __construct(private readonly LegacyBookingBackfillService $backfill) {}
+
     public function capture(CarbonInterface $start, CarbonInterface $end): V1AdoptionSnapshot
     {
         $bookings = Booking::whereBetween('created_at', [$start, $end]);
@@ -27,7 +29,20 @@ class V1AdoptionService
     {
         $exists = $approvedChangePath && is_file(base_path('../'.$approvedChangePath.'/proposal.md')) && is_file(base_path('../'.$approvedChangePath.'/tasks.md'));
         $latest = V1AdoptionSnapshot::latest()->first();
+        $audit = $this->backfill->audit();
 
-        return ['ready' => (bool) ($exists && $latest), 'approved_change_present' => $exists, 'adoption_snapshot_present' => (bool) $latest, 'message' => $exists ? 'Separate approved change and adoption evidence found.' : 'A separate approved v1 retirement change is required before retirement.'];
+        return [
+            'ready' => (bool) ($exists && $latest && $audit['valid']),
+            'approved_change_present' => $exists,
+            'adoption_snapshot_present' => (bool) $latest,
+            'legacy_mapping_valid' => $audit['valid'],
+            'unmapped_bookings' => array_merge($audit['orphans'], $audit['collisions'], $audit['pending']),
+            'message' => match (true) {
+                ! $exists => 'A separate approved v1 retirement change is required before retirement.',
+                ! $latest => 'V1 adoption evidence is required before retirement.',
+                ! $audit['valid'] => 'Every legacy booking must map to exactly one reservation before retirement.',
+                default => 'Separate approved change, adoption evidence and complete legacy mappings found.',
+            },
+        ];
     }
 }

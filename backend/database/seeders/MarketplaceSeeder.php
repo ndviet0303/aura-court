@@ -143,6 +143,9 @@ class MarketplaceSeeder extends Seeder
 
             $startsAt = $now->copy()->addDays($sample['days_ahead'])->setHour($sample['start_hour'])->setMinute(0)->setSecond(0);
             $endsAt = $now->copy()->addDays($sample['days_ahead'])->setHour($sample['end_hour'])->setMinute(0)->setSecond(0);
+            if ($this->overlapsActiveSlot($court->id, $startsAt, $endsAt)) {
+                continue;
+            }
 
             $res = Reservation::create([
                 'organization_id' => $org->id,
@@ -195,11 +198,10 @@ class MarketplaceSeeder extends Seeder
 
         // Seed 2 eligible entitlements for demo user (user@example.com) to test the Sell feature!
         $demoUser = User::where('email', 'user@example.com')->first();
-        if ($demoUser) {
-            $court = $courts->first();
-            $startsAt1 = $now->copy()->addDays(2)->setHour(18)->setMinute(0)->setSecond(0);
-            $endsAt1 = $now->copy()->addDays(2)->setHour(20)->setMinute(0)->setSecond(0);
-
+        $court = $courts->first();
+        $startsAt1 = $now->copy()->addDays(2)->setHour(18)->setMinute(0)->setSecond(0);
+        $endsAt1 = $now->copy()->addDays(2)->setHour(20)->setMinute(0)->setSecond(0);
+        if ($demoUser && ! $this->overlapsActiveSlot($court->id, $startsAt1, $endsAt1)) {
             $res1 = Reservation::create([
                 'organization_id' => $org->id,
                 'user_id' => $demoUser->id,
@@ -233,5 +235,16 @@ class MarketplaceSeeder extends Seeder
                 'status' => 'active',
             ]);
         }
+    }
+
+    /** Seeded bookings (and their V2 mirrors) may already hold this court time; reservation_slots_no_overlap would reject it. */
+    private function overlapsActiveSlot(int $courtId, Carbon $startsAt, Carbon $endsAt): bool
+    {
+        return ReservationSlot::withoutGlobalScope('tenant_isolation')
+            ->where('court_id', $courtId)
+            ->whereIn('status', ['held', 'confirmed'])
+            ->where('starts_at', '<', $endsAt->copy()->utc())
+            ->where('ends_at', '>', $startsAt->copy()->utc())
+            ->exists();
     }
 }

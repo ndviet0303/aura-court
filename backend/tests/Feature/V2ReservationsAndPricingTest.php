@@ -597,6 +597,67 @@ class V2ReservationsAndPricingTest extends TestCase
         $this->assertDatabaseHas('price_quotes', ['id' => $q2Id, 'total_amount' => 240000, 'rule_version' => 2, 'status' => 'accepted']);
     }
 
+    public function test_reservation_lookup_follows_its_owner_across_organizations_but_not_other_operators(): void
+    {
+        [$orgA, $customer] = $this->tenant();
+        [$orgB, , $courtB] = $this->tenant();
+        OrganizationMember::create(['organization_id' => $orgB->id, 'user_id' => $customer->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
+        $operatorA = User::factory()->create(['email_verified_at' => now()]);
+        OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $operatorA->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
+        PriceRule::create(['organization_id' => $orgB->id, 'court_id' => $courtB->id, 'type' => 'base', 'price' => 150000]);
+        $date = now(config('app.timezone'))->addDays(4)->setTime(9, 0);
+        $code = $this->actingAs($customer)->withHeaders(['X-Organization-ID' => (string) $orgB->id, 'Idempotency-Key' => 'cross-org-hold'])
+            ->postJson('/api/v2/reservations', ['court_id' => $courtB->id, 'slots' => [$date->toIso8601String()]])
+            ->assertCreated()->json('reservation.code');
+        $headersA = ['X-Organization-ID' => (string) $orgA->id];
+
+        $this->actingAs($customer)->withHeaders($headersA)->getJson("/api/v2/reservations/{$code}")
+            ->assertOk()
+            ->assertJsonPath('reservation.organization_id', $orgB->id)
+            ->assertJsonCount(1, 'reservation.slots')
+            ->assertJsonCount(1, 'reservation.entitlements');
+        $this->actingAs($customer)->withHeaders($headersA)->getJson("/api/v2/reservations/{$code}/payment")
+            ->assertOk()->assertJsonPath('reservation.code', $code);
+        $this->actingAs($operatorA)->withHeaders($headersA)->getJson("/api/v2/reservations/{$code}")->assertNotFound();
+    }
+
+    public function test_checkout_rejects_a_quote_from_another_organization_context(): void
+    {
+        [$orgA, $customer] = $this->tenant();
+        [$orgB, , $courtB] = $this->tenant();
+        OrganizationMember::create(['organization_id' => $orgB->id, 'user_id' => $customer->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
+        PriceRule::create(['organization_id' => $orgB->id, 'court_id' => $courtB->id, 'type' => 'base', 'price' => 150000]);
+        $this->fundWallet($customer, $orgA->id);
+        $this->fundWallet($customer, $orgB->id);
+        $date = now(config('app.timezone'))->addDays(4)->setTime(10, 0);
+        $quote = $this->actingAs($customer)->withHeaders(['X-Organization-ID' => (string) $orgB->id, 'Idempotency-Key' => 'cross-org-quote'])
+            ->postJson('/api/v2/price-quotes', ['court_id' => $courtB->id, 'slots' => [$date->toIso8601String()]])
+            ->assertCreated()->json('quote');
+
+        $this->actingAs($customer)->withHeaders(['X-Organization-ID' => (string) $orgA->id, 'Idempotency-Key' => 'cross-org-checkout'])
+            ->postJson('/api/v2/reservations/checkout', ['quote_token' => $quote['quote_token']])
+            ->assertNotFound();
+
+        $this->assertDatabaseCount('reservations', 0);
+        $this->assertDatabaseHas('price_quotes', ['id' => $quote['id'], 'status' => 'open']);
+    }
+
+    public function test_reservation_detail_of_a_legacy_mirror_carries_its_mapping(): void
+    {
+        [$organization, $user, $court] = $this->tenant();
+        $booking = Booking::create(['code' => 'BK-DEEP-001', 'user_id' => $user->id, 'court_id' => $court->id, 'total_amount' => 120000, 'status' => 'pending_payment', 'payment_expires_at' => now()->addMinutes(10)]);
+        BookingSlot::create(['booking_id' => $booking->id, 'court_id' => $court->id, 'starts_at' => now()->addDays(2)->setTime(9, 0), 'ends_at' => now()->addDays(2)->setTime(10, 0), 'unit_price' => 120000, 'status' => 'held']);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
+
+        $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id])
+            ->getJson('/api/v2/reservations/LEGACY-BK-DEEP-001')
+            ->assertOk()
+            ->assertJsonPath('reservation.code', 'LEGACY-BK-DEEP-001')
+            ->assertJsonPath('reservation.legacy_mapping.0.legacy_code', 'BK-DEEP-001')
+            ->assertJsonPath('reservation.legacy_mapping.0.legacy_status', 'pending_payment')
+            ->assertJsonMissingPath('reservation.legacy_mapping.0.source_checksum');
+    }
+
     /** @return array{0:Organization,1:User,2:Court} */
     private function tenant(): array
     {

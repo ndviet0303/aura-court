@@ -181,6 +181,17 @@ const router = createRouter({
       },
     },
     {
+      path: '/reservations/:code?',
+      name: 'reservations',
+      component: () => import('@/features/booking/views/V2ReservationView.vue'),
+      meta: {
+        auth: true,
+        titleKey: 'seo.reservationsTitle',
+        descriptionKey: 'seo.reservationsDesc',
+        indexable: false,
+      },
+    },
+    {
       path: '/wallet',
       name: 'wallet',
       component: () => import('@/features/wallet/views/WalletView.vue'),

@@ -129,7 +129,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
     public function findById(int $id, ?User $user = null): ?DisputeCase
     {
         $query = DisputeCase::query()
-            ->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator']);
+            ->with($this->relations());
 
         if ($user) {
             $this->applyUserScope($query, $user);
@@ -141,7 +141,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
     public function findByCode(string $code, ?User $user = null): ?DisputeCase
     {
         $query = DisputeCase::query()
-            ->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator'])
+            ->with($this->relations())
             ->where('dispute_code', $code);
 
         if ($user) {
@@ -161,7 +161,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
         ?int $organizationId = null,
         ?int $venueId = null
     ): LengthAwarePaginator {
-        $query = DisputeCase::query()->with(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator']);
+        $query = DisputeCase::query()->with($this->relations());
 
         if ($user) {
             $this->applyUserScope($query, $user, $organizationId, $venueId);
@@ -236,6 +236,14 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
     {
         $dispute->update($attributes);
 
-        return $dispute->fresh(['organization', 'venue', 'booking', 'complainant', 'respondent', 'arbitrator']);
+        return $dispute->fresh($this->relations());
+    }
+
+    /** Dispute visibility is decided by applyUserScope, so the reservation is loaded across tenants. */
+    private function relations(): array
+    {
+        $unscoped = fn ($q) => $q->withoutGlobalScope('tenant_isolation');
+
+        return ['organization', 'venue', 'booking', 'reservation' => $unscoped, 'reservation.legacyMapping' => $unscoped, 'complainant', 'respondent', 'arbitrator'];
     }
 }

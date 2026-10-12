@@ -17,7 +17,7 @@ vi.mock('vue-router', () => ({
 
 vi.mock('../api/bookingApi', () => ({
   bookingApi: {
-    list: vi.fn(),
+    getMyReservations: vi.fn(),
     getPayment: vi.fn(),
     submitReview: vi.fn(),
     getPaymentStatus: vi.fn(),
@@ -77,18 +77,18 @@ describe('Payment & History Authoritative Integration', () => {
   })
 
   it('Booking history loads authoritative state and does not expose cancellation controls', async () => {
-    vi.mocked(bookingApi.list).mockResolvedValue({
+    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({
       data: [
         {
           id: 1,
-          code: 'BK-HISTORY-TEST',
+          code: 'RSV-HISTORY-TEST',
           status: 'confirmed',
           total_amount: 200000,
           slots: [{ id: 1, starts_at: '2026-10-10T10:00:00Z', ends_at: '2026-10-10T11:00:00Z' }],
         } as any,
         {
           id: 2,
-          code: 'BK-HISTORICAL-CANCELLED',
+          code: 'RSV-HISTORICAL-CANCELLED',
           status: 'cancelled',
           total_amount: 150000,
           slots: [{ id: 2, starts_at: '2026-09-01T10:00:00Z', ends_at: '2026-09-01T11:00:00Z' }],

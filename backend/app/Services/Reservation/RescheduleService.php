@@ -200,7 +200,7 @@ class RescheduleService
             });
         } catch (QueryException $exception) {
             $message = strtolower($exception->getMessage());
-            if (str_contains($message, 'reservation_entitlements_active_unique')
+            if (Str::contains($message, ['reservation_entitlements_active_unique', 'reservation_slots_no_overlap'])
                 || (str_contains($message, 'reservation_entitlements') && str_contains($message, 'unique'))) {
                 abort(409, 'The selected court-time is no longer available.');
             }

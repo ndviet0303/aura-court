@@ -61,7 +61,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
@@ -109,10 +108,10 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     )
     await checkoutBtn.click()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 25000 })
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
     const paymentResponse = await paymentResponsePromise
     const paymentBody = (await paymentResponse.json()) as {
-      booking: { code: string; status: string }
+      reservation: { code: string; status: string }
       payment_attempt: {
         id: number
         amount: number
@@ -122,10 +121,10 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         }
       }
     }
-    const bookingCode = paymentBody.booking.code
+    const reservationCode = paymentBody.reservation.code
     const attempt = paymentBody.payment_attempt
 
-    // 4. Confirm the booking via synthetic verified webhook
+    // 4. Confirm the reservation via synthetic verified webhook
     const sendWebhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: `whsec_e2e_1a_${manifest.runId}`,
@@ -136,34 +135,29 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     })
     expect(sendWebhookRes.statusCode).toBe(200)
 
-    // Authoritative check: booking and reservation are confirmed, and get reservation ID & slot ID
+    // Authoritative check: the reservation is confirmed; get its slot IDs
     const getBookingDetailsScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
-      use App\\Models\\LegacyBookingMapping;
       use App\\Models\\Reservation;
       use App\\Models\\WalletAccount;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
-      $mapping = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
-      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
-      $slots = $reservation->slots()->orderBy('id')->get();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
+      $slots = $reservation->slots()->withoutGlobalScope('tenant_isolation')->orderBy('id')->get();
       $slot1 = $slots->first();
       $slot2 = $slots->count() > 1 ? $slots->get(1) : $slot1;
-      $wallet = WalletAccount::where('user_id', $booking->user_id)->where('organization_id', ${orgId})->first();
+      $wallet = WalletAccount::where('user_id', $reservation->user_id)->where('organization_id', ${orgId})->first();
 
       echo json_encode([
-        'booking_status' => $booking->status,
         'reservation_id' => $reservation->id,
         'reservation_code' => $reservation->code,
         'reservation_status' => $reservation->status,
         'slot_id' => $slot1->id,
         'slot_2_id' => $slot2->id,
-        'total_amount' => (int) $booking->total_amount,
+        'total_amount' => (int) $reservation->total_amount,
         'wallet_balance' => $wallet ? (int) $wallet->balance : 0,
       ]);
     `
@@ -173,7 +167,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       encoding: 'utf-8',
     })
     const details = JSON.parse(detailsOut) as {
-      booking_status: string
       reservation_id: number
       reservation_code: string
       reservation_status: string
@@ -183,18 +176,29 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       wallet_balance: number
     }
 
-    expect(details.booking_status).toBe('confirmed')
     expect(details.reservation_status).toBe('confirmed')
+    expect(details.slot_2_id).not.toBe(details.slot_id)
     expect(details.wallet_balance).toBe(initialWalletBalance) // Direct-owner checkout preserves existing wallet balance
 
-    // 5. Customer requests Refund Quote via API
-    const quoteJson = (await withE2EApi(
-      page,
-      async ({ api }, { reservationCode, slotId }) => {
-        return await api.get(`/bookings/${reservationCode}/refund-quote?slot_ids[]=${slotId}`)
-      },
-      { reservationCode: details.reservation_code, slotId: details.slot_id },
-    )) as {
+    // 5. Customer opens the cancel modal on /booking and quotes a partial refund of slot 1
+    await page.goto('/booking', { waitUntil: 'domcontentloaded' })
+    const card = page.locator('.user-booking-card').filter({ hasText: `#${reservationCode}` })
+    await expect(card).toBeVisible({ timeout: 20000 })
+    await card.locator('[data-testid="booking-cancel-btn"]').click()
+    const cancelModal = page.locator('[data-testid="cancel-modal"]')
+    await expect(cancelModal).toBeVisible({ timeout: 10000 })
+    await cancelModal.locator('[data-testid="cancel-scope-partial"]').check()
+    await cancelModal.locator(`[data-testid="cancel-slot-${details.slot_id}"]`).check()
+
+    const quoteResponsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/api/v2/reservations/${reservationCode}/refund-quote`) &&
+        res.request().method() === 'GET',
+    )
+    await cancelModal.locator('[data-testid="cancel-quote-btn"]').click()
+    const quoteResponse = await quoteResponsePromise
+    expect(quoteResponse.status()).toBe(200)
+    const quoteJson = (await quoteResponse.json()) as {
       data: {
         reservation_code: string
         calculation: {
@@ -205,6 +209,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         }
       }
     }
+    await expect(cancelModal.locator('[data-testid="cancel-quote"]')).toBeVisible()
 
     expect(quoteJson.data).toBeDefined()
     expect(quoteJson.data.calculation.gross_amount).toBe(100000)
@@ -213,24 +218,23 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(quoteJson.data.calculation.fee_amount).toBe(
       quoteJson.data.calculation.gross_amount - quoteJson.data.calculation.refund_amount,
     )
-    // 6. Customer submits Refund Request
-    const idempotencyKey = `ref_req_${Date.now()}`
-    const refundRequestJson = (await withE2EApi(
-      page,
-      async ({ api }, { reservationCode, slotId, key }) => {
-        return await api.post(`/bookings/${reservationCode}/refund-requests`, {
-          slot_ids: [slotId],
-          reason: 'Khách hàng yêu cầu hủy lịch bận đột xuất',
-          idempotency_key: key,
-          recipient: {
-            bank_code: 'MBBank',
-            account_name: 'Customer Test',
-            account_number: '0987654321',
-          },
-        })
-      },
-      { reservationCode: details.reservation_code, slotId: details.slot_id, key: idempotencyKey },
-    )) as {
+
+    // 6. Customer submits the refund request from the modal
+    await cancelModal
+      .locator('[data-testid="cancel-reason"]')
+      .fill('Khách hàng yêu cầu hủy lịch bận đột xuất')
+    await cancelModal.locator('[data-testid="cancel-recipient-bank"]').fill('MBBank')
+    await cancelModal.locator('[data-testid="cancel-recipient-name"]').fill('Customer Test')
+    await cancelModal.locator('[data-testid="cancel-recipient-number"]').fill('0987654321')
+    const refundResponsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/api/v2/reservations/${reservationCode}/refund-requests`) &&
+        res.request().method() === 'POST',
+    )
+    await cancelModal.locator('[data-testid="cancel-submit-btn"]').click()
+    const refundResponse = await refundResponsePromise
+    expect(refundResponse.status()).toBe(201)
+    const refundRequestJson = (await refundResponse.json()) as {
       data: {
         id: number
         status: string
@@ -238,6 +242,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         reference_code: string
       }
     }
+    await expect(cancelModal.locator('[data-testid="cancel-result-status"]')).toBeVisible()
 
     expect(refundRequestJson.data).toBeDefined()
     expect(refundRequestJson.data.status).toBe('requested')
@@ -418,7 +423,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
@@ -508,8 +512,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     expect(attempt).toBeDefined()
     expect(attempt?.transfer_content).toBeTruthy()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/, { timeout: 25000 })
-    const initialBookingCode = page.url().split('/payment/')[1]?.split('?')[0]
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
+    const initialBookingCode = page.url().split('/reservations/')[1]?.split('?')[0]
     expect(initialBookingCode).toBeTruthy()
 
     // Confirm initial booking via webhook
@@ -525,8 +529,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     })
     expect(initialWebhookRes.statusCode).toBe(200)
 
-    // Refresh payment status if on owner payment page
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
+    // The reservation payment modal polls until the webhook lands
+    await expect(page.locator('[data-testid="reservation-payment-status"]')).toHaveClass(
+      /status-paid/,
+      { timeout: 15000 },
+    )
     // Navigate to /bookings
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('.user-booking-card', { hasText: initialBookingCode })).toBeVisible({
@@ -764,8 +771,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const timeoutAttempt = timeoutPaymentBody.payment_attempt || timeoutPaymentBody.payment
     expect(timeoutAttempt).toBeDefined()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/, { timeout: 25000 })
-    const timeoutInitialBookingCode = page.url().split('/payment/')[1]?.split('?')[0]
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
+    const timeoutInitialBookingCode = page.url().split('/reservations/')[1]?.split('?')[0]
     expect(timeoutInitialBookingCode).toBeTruthy()
 
     // Confirm booking via webhook
@@ -780,8 +787,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       transactionDate: formatVietnamDate(new Date()),
     })
 
-    // Refresh if on owner payment page
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
+    // The reservation payment modal polls until the webhook lands
+    await expect(page.locator('[data-testid="reservation-payment-status"]')).toHaveClass(
+      /status-paid/,
+      { timeout: 15000 },
+    )
 
     // Go to /bookings, find the booking card, click reschedule
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
@@ -940,8 +950,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const expAttempt = expPaymentBody.payment_attempt || expPaymentBody.payment
     expect(expAttempt).toBeDefined()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/, { timeout: 25000 })
-    const expBookingCode = page.url().split('/payment/')[1]?.split('?')[0]
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
+    const expBookingCode = page.url().split('/reservations/')[1]?.split('?')[0]
     expect(expBookingCode).toBeTruthy()
 
     // Confirm initial 180k booking via webhook
@@ -957,8 +967,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     })
     expect(expWebhookRes.statusCode).toBe(200)
 
-    // Refresh payment status if on owner payment page
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
+    // The reservation payment modal polls until the webhook lands
+    await expect(page.locator('[data-testid="reservation-payment-status"]')).toHaveClass(
+      /status-paid/,
+      { timeout: 15000 },
+    )
 
     // Navigate to /bookings and find the 180,000 VND booking
     await page.goto('/bookings', { waitUntil: 'domcontentloaded' })
@@ -1127,7 +1140,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 

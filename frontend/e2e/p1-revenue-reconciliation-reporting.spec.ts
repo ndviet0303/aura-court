@@ -59,16 +59,30 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
       $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
 
-      // 1. Confirmed booking: 300,000 VND
-      Booking::create([
+      // 1. Confirmed V1 booking: 300,000 VND, with its slot, mapped to a reservation as the backfill does.
+      // A dedicated court keeps the confirmed slot clear of the reservation_slots_no_overlap constraint.
+      $canonCourt = Court::create([
+        'venue_id' => $venue->id,
+        'name' => 'Sân Canon ' . strtoupper(uniqid()),
+        'court_number' => 'CANON-' . strtoupper(uniqid()),
+        'surface_type' => 'vinyl',
+        'is_active' => true,
+      ]);
+      $canonBooking = Booking::create([
         'code' => 'BK-CANON-' . strtoupper(uniqid()),
         'user_id' => $ownerUser->id,
-        'organization_id' => ${org1Id},
-        'court_id' => $court->id,
+        'court_id' => $canonCourt->id,
         'status' => 'confirmed',
         'total_amount' => 300000,
-        'created_at' => Carbon::now(),
       ]);
+      $canonBooking->slots()->create([
+        'court_id' => $canonCourt->id,
+        'starts_at' => Carbon::now()->addDays(3)->setTime(9, 0)->utc(),
+        'ends_at' => Carbon::now()->addDays(3)->setTime(10, 0)->utc(),
+        'unit_price' => 300000,
+        'status' => 'confirmed',
+      ]);
+      app(\\App\\Services\\Reservation\\LegacyBookingBackfillService::class)->backfillBooking($canonBooking);
 
       // 2. POS order: 150,000 VND
       PosOrder::create([

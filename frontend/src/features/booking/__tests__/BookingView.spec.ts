@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import BookingView from '@/features/booking/views/BookingView.vue'
 import { bookingApi } from '@/features/booking/api/bookingApi'
 import { i18n } from '@/i18n'
-import type { Booking } from '@/features/booking/types/booking'
+import type { V2Reservation } from '@/features/booking/types/v2Reservation'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({
@@ -17,17 +17,16 @@ vi.mock('vue-router', () => ({
   }),
   RouterLink: {
     props: ['to'],
-    template: '<a :href="to"><slot /></a>',
+    template: '<a :href="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>',
   },
 }))
 
 const mockBookings = [
   {
     id: 101,
-    code: 'BK-20260831-01',
+    code: 'RSV-20260831-01',
     status: 'confirmed',
     total_amount: 300000,
-    discount_amount: 50000,
     court: {
       id: 1,
       name: 'Sân VIP A1 (Thảm Yonex)',
@@ -45,8 +44,9 @@ const mockBookings = [
   },
   {
     id: 102,
-    code: 'BK-20260831-02',
-    status: 'pending_payment',
+    code: 'RSV-20260831-02',
+    status: 'held',
+    payment_model: 'direct_owner_v1',
     total_amount: 200000,
     court: {
       id: 2,
@@ -65,7 +65,7 @@ const mockBookings = [
   },
   {
     id: 103,
-    code: 'BK-20260820-03',
+    code: 'RSV-20260820-03',
     status: 'cancelled',
     total_amount: 150000,
     court: {
@@ -92,7 +92,7 @@ describe('BookingView (/booking)', () => {
   })
 
   it('renders booking hero header and loads booking cards list', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
     })
 
@@ -109,13 +109,13 @@ describe('BookingView (/booking)', () => {
 
     const cards = wrapper.findAll('.user-booking-card')
     expect(cards.length).toBe(3)
-    expect(cards[0]?.text()).toContain('#BK-20260831-01')
+    expect(cards[0]?.text()).toContain('#RSV-20260831-01')
     expect(cards[0]?.text()).toContain('Sân VIP A1')
     expect(cards[0]?.text()).toContain('ĐÃ XÁC NHẬN')
   })
 
   it('filters by status tabs (upcoming, completed, cancelled)', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
     })
 
@@ -128,7 +128,7 @@ describe('BookingView (/booking)', () => {
     const tabs = wrapper.findAll('.tab-btn')
     expect(tabs.length).toBe(4)
 
-    // Click "Sắp diễn ra" tab (both confirmed upcoming + pending_payment)
+    // Click "Sắp diễn ra" tab (both confirmed upcoming + held)
     await tabs[1]?.trigger('click')
     await flushPromises()
     expect(wrapper.findAll('.user-booking-card').length).toBe(2)
@@ -138,11 +138,11 @@ describe('BookingView (/booking)', () => {
     await flushPromises()
     const cancelledCards = wrapper.findAll('.user-booking-card')
     expect(cancelledCards.length).toBe(1)
-    expect(cancelledCards[0]?.text()).toContain('#BK-20260820-03')
+    expect(cancelledCards[0]?.text()).toContain('#RSV-20260820-03')
   })
 
   it('filters bookings by search query', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
     })
 
@@ -162,7 +162,7 @@ describe('BookingView (/booking)', () => {
   })
 
   it('opens and closes QR Check-in modal', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
     })
 
@@ -189,8 +189,8 @@ describe('BookingView (/booking)', () => {
   })
 
   it('renders policy-aware cancel and reschedule controls on confirmed bookings and shows the policy notice', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
-      data: mockBookings as unknown as Booking[],
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
+      data: mockBookings as unknown as V2Reservation[],
     })
 
     const wrapper = mount(BookingView, {
@@ -217,7 +217,7 @@ describe('BookingView (/booking)', () => {
   })
 
   it('opens review modal and submits review', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
     })
     const reviewSpy = vi.spyOn(bookingApi, 'submitReview').mockResolvedValue({} as any)
@@ -242,14 +242,78 @@ describe('BookingView (/booking)', () => {
     await submitBtn.trigger('click')
     await flushPromises()
 
-    expect(reviewSpy).toHaveBeenCalledWith('BK-20260831-01', {
+    expect(reviewSpy).toHaveBeenCalledWith('RSV-20260831-01', {
       rating: 5,
       body: undefined,
     })
   })
 
+  it('shows a mapped legacy booking with its original code and status, and links held ones to the reservation', async () => {
+    const legacy = {
+      ...mockBookings[2],
+      id: 104,
+      code: 'LEGACY-BK-OLD-1',
+      status: 'legacy',
+      legacy_mapping: [
+        { id: 1, reservation_id: 104, legacy_code: 'BK-OLD-1', legacy_status: 'refunded' },
+      ],
+    }
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
+      data: [mockBookings[1], legacy] as unknown as V2Reservation[],
+    })
+
+    const wrapper = mount(BookingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const [held, legacyCard] = wrapper.findAll('.user-booking-card')
+    expect(legacyCard?.text()).toContain('#BK-OLD-1')
+    expect(legacyCard?.text()).not.toContain('LEGACY-')
+    expect(legacyCard?.text()).toContain('ĐÃ HOÀN TIỀN')
+    expect(legacyCard?.text()).not.toContain('Đánh Giá')
+    expect(held?.text()).toContain('CHỜ THANH TOÁN')
+    expect(JSON.parse(held?.find('.btn-card-pay').attributes('href') ?? '{}')).toEqual({
+      name: 'reservations',
+      params: { code: 'RSV-20260831-02' },
+    })
+    expect(held?.text()).not.toContain('Đánh Giá')
+
+    await wrapper.findAll('.tab-btn')[3]?.trigger('click')
+    expect(wrapper.findAll('.user-booking-card').map((c) => c.text())).toEqual([
+      expect.stringContaining('#BK-OLD-1'),
+    ])
+  })
+
+  it('offers a review on a mapped legacy booking the V1 rules allowed (no_show)', async () => {
+    const legacy = {
+      ...mockBookings[2],
+      id: 105,
+      code: 'LEGACY-BK-OLD-2',
+      status: 'legacy',
+      legacy_mapping: [
+        { id: 2, reservation_id: 105, legacy_code: 'BK-OLD-2', legacy_status: 'no_show' },
+      ],
+    }
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
+      data: [legacy] as unknown as V2Reservation[],
+    })
+    const reviewSpy = vi.spyOn(bookingApi, 'submitReview').mockResolvedValue({})
+
+    const wrapper = mount(BookingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const reviewBtn = wrapper
+      .findAll('.btn-card-secondary')
+      .find((b) => b.text().includes('Đánh Giá'))
+    await reviewBtn?.trigger('click')
+    expect(wrapper.find('.code-badge').text()).toContain('#BK-OLD-2')
+    await wrapper.find('.btn-submit').trigger('click')
+    await flushPromises()
+
+    expect(reviewSpy).toHaveBeenCalledWith('LEGACY-BK-OLD-2', { rating: 5, body: undefined })
+  })
+
   it('renders empty state when there are no bookings', async () => {
-    vi.spyOn(bookingApi, 'list').mockResolvedValue({
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: [],
     })
 

@@ -74,7 +74,11 @@ test.describe('Ma trận kiểm thử chấp nhận 7 phân hệ chức năng @s
     page,
   }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    const bookingLink = page.getByRole('link', { name: /Đặt sân|Book/i }).first()
+    // Chỉ tìm trong nội dung trang: footer render trước trang chủ, link footer trên mobile phải cuộn xuống cuối trang mới click được
+    const bookingLink = page
+      .getByRole('main')
+      .getByRole('link', { name: /Đặt sân|Book/i })
+      .first()
     await expect(bookingLink).toBeVisible()
     await bookingLink.click()
 

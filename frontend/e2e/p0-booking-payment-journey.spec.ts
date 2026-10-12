@@ -76,11 +76,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
     await checkoutBtn.click()
 
-    // 7. Verify navigation to payment page
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 25000 })
+    // 7. Verify navigation to the reservation, whose payment modal starts the attempt
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
     const paymentResponse = await paymentResponsePromise
     const paymentBody = (await paymentResponse.json()) as {
-      booking: { code: string; status: string }
+      reservation: { code: string; status: string }
       payment_attempt: {
         id: number
         amount: number
@@ -95,24 +95,24 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       }
     }
 
-    const bookingCode = paymentBody.booking.code
+    const reservationCode = paymentBody.reservation.code
     const attempt = paymentBody.payment_attempt
-    expect(bookingCode).toBeTruthy()
+    expect(page.url()).toContain(`/reservations/${reservationCode}`)
+    expect(paymentBody.reservation.status).toBe('held')
     expect(attempt.transfer_content).toBeTruthy()
     expect(attempt.amount).toBeGreaterThan(0)
     expect(attempt.receiver.account_number).toBeTruthy()
 
     // 8. Verify UI displays accurate payment instructions
-    const instructionsPanel = page.locator('[data-testid="owner-payment-instructions"]')
+    const instructionsPanel = page.locator('[data-testid="reservation-payment-modal"]')
     await expect(instructionsPanel).toBeVisible({ timeout: 20000 })
 
     // Status starts pending
-    await expect(page.locator('[data-testid="owner-payment-status"]')).toBeVisible({
-      timeout: 10000,
-    })
+    const paymentStatus = page.locator('[data-testid="reservation-payment-status"]')
+    await expect(paymentStatus).toHaveClass(/status-pending/, { timeout: 10000 })
 
     // QR code is rendered with valid URL
-    const qrImage = page.locator('[data-testid="owner-payment-qr"]')
+    const qrImage = page.locator('[data-testid="reservation-payment-qr"]')
     await expect(qrImage).toBeVisible({ timeout: 10000 })
     const qrSrc = await qrImage.getAttribute('src')
     expect(qrSrc).toBeTruthy()
@@ -140,13 +140,13 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
     expect(webhookRes.statusCode).toBe(200)
 
-    // Status transitions to paid
-    const paidBadge = page.locator('[data-testid="owner-payment-paid"]')
-    await expect(paidBadge).toBeVisible({ timeout: 15000 })
+    // Status transitions to paid (the modal polls the payment every 5 seconds)
+    await expect(paymentStatus).toHaveClass(/status-paid/, { timeout: 15000 })
 
-    // 11. Reload page: confirmed status must persist
+    // 11. Reload page: the confirmed reservation opens without a payment modal
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.status-badge.confirmed')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
 
     // 12. Query authoritative backend database to prove single booking and single payment allocation
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
@@ -160,7 +160,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
     const verifyScript = `
@@ -169,20 +168,18 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\Reservation;
       use App\\Models\\LegacyBookingMapping;
       use App\\Models\\OwnerPaymentReceipt;
       use App\\Models\\OwnerPaymentAllocation;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
-      $mapping = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
-      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
       $receipts = OwnerPaymentReceipt::where('payment_code', '${attempt.transfer_content}')->get();
       $allocations = OwnerPaymentAllocation::where('purpose_id', $reservation->code)->get();
 
       echo json_encode([
-        'booking_status' => $booking->status,
+        'legacy_mapping_count' => LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('reservation_id', $reservation->id)->count(),
+        'payment_model' => $reservation->payment_model,
         'reservation_status' => $reservation->status,
         'receipt_count' => $receipts->count(),
         'receipt_status' => $receipts->first()?->status,
@@ -197,14 +194,17 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
 
     const state = JSON.parse(verifyOut) as {
-      booking_status: string
+      legacy_mapping_count: number
+      payment_model: string
       reservation_status: string
       receipt_count: number
       receipt_status: string
       allocation_count: number
     }
 
-    expect(state.booking_status).toBe('confirmed')
+    // A native V2 reservation: no V1 booking behind it
+    expect(state.legacy_mapping_count).toBe(0)
+    expect(state.payment_model).toBe('direct_owner_v1')
     expect(state.reservation_status).toBe('confirmed')
     expect(state.receipt_count).toBe(1)
     expect(state.receipt_status).toBe('allocated')
@@ -262,10 +262,10 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     )
     await checkoutBtn.click()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 25000 })
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
     const paymentResponse = await paymentResponsePromise
     const paymentBody = (await paymentResponse.json()) as {
-      booking: { code: string; status: string }
+      reservation: { code: string; status: string }
       payment_attempt: {
         id: number
         amount: number
@@ -279,17 +279,24 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       }
     }
 
-    const bookingCode = paymentBody.booking.code
+    const reservationCode = paymentBody.reservation.code
     const attempt = paymentBody.payment_attempt
 
-    // 5. Verify unilateral client refresh without webhook does NOT confirm booking
-    const refreshBtn = page.locator('[data-testid="owner-payment-refresh"]')
+    // 5. Verify unilateral client refresh without webhook does NOT confirm the reservation
+    const refreshBtn = page.locator('[data-testid="refresh-payment-status"]')
     await expect(refreshBtn).toBeVisible({ timeout: 10000 })
+    const refreshResponse = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/reservations/${reservationCode}/payment`) &&
+        res.request().method() === 'GET',
+    )
     await refreshBtn.click()
+    await refreshResponse
 
-    // Paid badge MUST NOT be present
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toHaveCount(0)
-    await expect(page.locator('[data-testid="owner-payment-status"]')).toBeVisible()
+    // Paid status MUST NOT be shown
+    const paymentStatus = page.locator('[data-testid="reservation-payment-status"]')
+    await expect(paymentStatus).toHaveClass(/status-pending/)
+    await expect(paymentStatus).not.toHaveClass(/status-paid/)
 
     const secret = `whsec_e2e_1a_${manifest.runId}`
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
@@ -303,7 +310,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 6. Test invalid authentication (tampered HMAC signature): rejected with HTTP 401
@@ -355,23 +361,23 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
     expect(wrongRefRes.statusCode).toBe(200)
 
-    // Verify DB: booking still pending, exceptions recorded
+    // Verify DB: reservation still held, exceptions recorded
     const exceptionsScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
+      use App\\Models\\Reservation;
       use App\\Models\\OwnerPaymentReceipt;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
       $foreignReceipt = OwnerPaymentReceipt::where('payment_code', '${attempt.transfer_content}')->where('exception_code', 'foreign_receiver')->first();
       $partialReceipt = OwnerPaymentReceipt::where('payment_code', '${attempt.transfer_content}')->where('exception_code', 'partial_amount')->first();
       $unmatchedReceipt = OwnerPaymentReceipt::where('payment_code', '${unmatchedCode}')->where('exception_code', 'unmatched_reference')->first();
 
       echo json_encode([
-        'booking_status' => $booking->status,
+        'reservation_status' => $reservation->status,
         'foreign_status' => $foreignReceipt?->status,
         'partial_status' => $partialReceipt?->status,
         'unmatched_status' => $unmatchedReceipt?->status,
@@ -383,12 +389,12 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       encoding: 'utf-8',
     })
     const exceptionsState = JSON.parse(exceptionsOut) as {
-      booking_status: string
+      reservation_status: string
       foreign_status: string
       partial_status: string
       unmatched_status: string
     }
-    expect(exceptionsState.booking_status).toBe('pending_payment')
+    expect(exceptionsState.reservation_status).toBe('held')
     expect(exceptionsState.foreign_status).toBe('exception')
     expect(exceptionsState.partial_status).toBe('exception')
     expect(exceptionsState.unmatched_status).toBe('unmatched')
@@ -424,29 +430,25 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(res2.statusCode).toBe(200)
 
     // Automatic payment polling observes the verified receipt.
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toBeVisible({ timeout: 15000 })
+    await expect(paymentStatus).toHaveClass(/status-paid/, { timeout: 15000 })
 
-    // 11. Verify authoritative state: exactly 1 allocated receipt and 1 allocation for this booking
+    // 11. Verify authoritative state: exactly 1 allocated receipt and 1 allocation for this reservation
     const verifyScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\Reservation;
-      use App\\Models\\LegacyBookingMapping;
       use App\\Models\\OwnerPaymentReceipt;
       use App\\Models\\OwnerPaymentAllocation;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
-      $mapping = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
-      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
       $allocatedReceipts = OwnerPaymentReceipt::where('payment_code', '${attempt.transfer_content}')->where('status', 'allocated')->get();
       $allocations = OwnerPaymentAllocation::where('purpose_id', $reservation->code)->get();
 
       echo json_encode([
-        'booking_status' => $booking->status,
+        'reservation_status' => $reservation->status,
         'allocated_receipt_count' => $allocatedReceipts->count(),
         'allocation_count' => $allocations->count(),
       ]);
@@ -457,11 +459,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       encoding: 'utf-8',
     })
     const finalState = JSON.parse(verifyOut) as {
-      booking_status: string
+      reservation_status: string
       allocated_receipt_count: number
       allocation_count: number
     }
-    expect(finalState.booking_status).toBe('confirmed')
+    expect(finalState.reservation_status).toBe('confirmed')
     expect(finalState.allocated_receipt_count).toBe(1)
     expect(finalState.allocation_count).toBe(1)
   })
@@ -556,11 +558,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
 
       // 9. Evaluate race outcome: exactly ONE context transitions to payment; the other receives conflict error
       const page1PaymentPromise = page1
-        .waitForURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 15000 })
+        .waitForURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 15000 })
         .then(() => true)
         .catch(() => false)
       const page2PaymentPromise = page2
-        .waitForURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 15000 })
+        .waitForURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 15000 })
         .then(() => true)
         .catch(() => false)
 
@@ -570,8 +572,8 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       expect(page1Won !== page2Won).toBe(true)
 
       if (page1Won) {
-        // Page 1 is on payment page
-        await expect(page1.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+        // Page 1 is on its reservation with the payment modal open
+        await expect(page1.locator('[data-testid="reservation-payment-modal"]')).toBeVisible({
           timeout: 15000,
         })
         // Page 2 stays on schedule and displays conflict error
@@ -582,8 +584,8 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
           /người khác|không còn|no longer available|trùng|thay đổi/i,
         )
       } else {
-        // Page 2 is on payment page
-        await expect(page2.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+        // Page 2 is on its reservation with the payment modal open
+        await expect(page2.locator('[data-testid="reservation-payment-modal"]')).toBeVisible({
           timeout: 15000,
         })
         // Page 1 stays on schedule and displays conflict error
@@ -647,10 +649,10 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     )
     await checkoutBtn.click()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 25000 })
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
     const paymentResponse = await paymentResponsePromise
     const paymentBody = (await paymentResponse.json()) as {
-      booking: { code: string; status: string }
+      reservation: { code: string; status: string }
       payment_attempt: {
         id: number
         amount: number
@@ -663,13 +665,13 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       }
     }
 
-    const bookingCode = paymentBody.booking.code
+    const reservationCode = paymentBody.reservation.code
     const attempt = paymentBody.payment_attempt
 
     // 4. Force real expiry sweep via test-only CLI
-    const expireResult = expireHolds(manifest, { bookingCode, minutes: 45 })
+    const expireResult = expireHolds(manifest, { reservationCode, minutes: 45 })
     expect(expireResult.status).toBe('success')
-    expect(expireResult.backdated_bookings).toContain(bookingCode)
+    expect(expireResult.backdated_reservations).toContain(reservationCode)
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
     const backendEnv = {
       APP_ENV: 'testing',
@@ -681,24 +683,23 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
-    // 5. Verify backend released the hold: booking status is cancelled
+    // 5. Verify backend released the hold: reservation status is expired
     const checkExpiryScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
+      use App\\Models\\Reservation;
       use App\\Models\\OwnerPaymentAttempt;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
       $attempt = OwnerPaymentAttempt::where('reference', '${attempt.transfer_content}')->firstOrFail();
 
       echo json_encode([
-        'booking_status' => $booking->status,
+        'reservation_status' => $reservation->status,
         'attempt_status' => $attempt->status,
       ]);
     `
@@ -707,8 +708,11 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     })
-    const expiryState = JSON.parse(expiryOut) as { booking_status: string; attempt_status: string }
-    expect(expiryState.booking_status).toBe('expired')
+    const expiryState = JSON.parse(expiryOut) as {
+      reservation_status: string
+      attempt_status: string
+    }
+    expect(expiryState.reservation_status).toBe('expired')
     expect(expiryState.attempt_status).toBe('expired')
 
     // 6. Send late payment event (transactionDate > attempt.expires_at)
@@ -728,23 +732,19 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     })
     expect(lateWebhookRes.statusCode).toBe(200)
 
-    // 7. Verify authoritative state: late payment does NOT resurrect booking
+    // 7. Verify authoritative state: late payment does NOT resurrect the reservation
     const checkLateStateScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\Reservation;
-      use App\\Models\\LegacyBookingMapping;
       use App\\Models\\OwnerPaymentReceipt;
       use App\\Models\\OwnerPaymentAllocation;
       use App\\Models\\FinanceException;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
-      $mapping = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
-      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
       $lateReceipt = OwnerPaymentReceipt::where('payment_code', '${attempt.transfer_content}')->first();
       $allocations = OwnerPaymentAllocation::where('purpose_id', $reservation->code)->get();
       $financeException = FinanceException::withoutGlobalScopes()
@@ -753,7 +753,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
         ->first();
 
       echo json_encode([
-        'booking_status' => $booking->status,
         'reservation_status' => $reservation->status,
         'receipt_status' => $lateReceipt?->status,
         'receipt_exception' => $lateReceipt?->exception_code,
@@ -768,7 +767,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       encoding: 'utf-8',
     })
     const lateState = JSON.parse(lateStateOut) as {
-      booking_status: string
       reservation_status: string
       receipt_status: string
       receipt_exception: string
@@ -778,7 +776,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     }
 
     // Must NOT be resurrected
-    expect(lateState.booking_status).toBe('expired')
     expect(lateState.reservation_status).toBe('expired')
     // Receipt marked as exception (transfer_after_expiry)
     expect(lateState.receipt_status).toBe('late')
@@ -789,12 +786,12 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(lateState.finance_exception_status).toBe('open')
     expect(lateState.finance_exception_severity).toBe('high')
 
-    // 8. Verify UI does NOT show paid badge and displays error/expired conflict alert
+    // 8. Verify UI shows the reservation as expired and offers no payment
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('[data-testid="owner-payment-paid"]')).toHaveCount(0)
-    const alertBox = page.locator('.panel-error, [role="alert"], .status-expired').first()
-    await expect(alertBox).toBeVisible({ timeout: 10000 })
-    await expect(alertBox).toContainText(/thay đổi|xung đột|hết hạn|expired/i)
+    const expiredBadge = page.locator('.status-badge.expired')
+    await expect(expiredBadge).toBeVisible({ timeout: 10000 })
+    await expect(expiredBadge).toContainText(/hết hạn|expired/i)
+    await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
   })
 
   test('4.5: Xem trước coupon và điểm tích lũy không trừ trước, giữ nguyên sau F5 và chống tiêu điểm hai lần', async ({
@@ -838,7 +835,6 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
@@ -1053,33 +1049,36 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
     await checkoutBtn.click()
 
-    await expect(page).toHaveURL(/\/payment\/BK[A-Z0-9_-]+/i, { timeout: 20000 })
-    const bookingCode = page.url().split('/payment/')[1]?.split('?')[0]
-    expect(bookingCode).toBeTruthy()
-    await expect(page.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 20000 })
+    const reservationCode = page.url().split('/reservations/')[1]?.split('?')[0]
+    expect(reservationCode).toBeTruthy()
+    const paymentModal = page.locator('[data-testid="reservation-payment-modal"]')
+    await expect(paymentModal.locator('[data-testid="reservation-payment-qr"]')).toBeVisible({
       timeout: 25000,
     })
-    // Payment view reflects discounted payable (50,000 VND instead of 100,000 VND)
-    await expect(page.locator('body')).toContainText(/50\.000/i)
-    // Authoritative check: Hold creation debited points in PointLedger and recorded loyalty snapshot
+    // Payment modal asks for the discounted payable (50,000 VND instead of 100,000 VND)
+    await expect(paymentModal.locator('.payment-details')).toContainText(/50\.000/i)
+    // Authoritative check: checkout debited points in PointLedger and recorded the loyalty snapshot
     const postHoldStateScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\PointLedger;
+      use App\\Models\\Reservation;
 
-      $booking = Booking::withoutGlobalScope('tenant_isolation')->where('code', '${bookingCode}')->firstOrFail();
-      $metadata = $booking->metadata ?: [];
-      $loyaltySnapshot = $metadata['loyalty_snapshot'] ?? $booking->policy_snapshot['loyalty_snapshot'] ?? null;
-      $debit = PointLedger::where('user_id', ${customerId})->where('organization_id', ${orgId})->where('delta', -50)->first();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
+      $metadata = $reservation->metadata ?: [];
+      $loyaltySnapshot = $metadata['loyalty_snapshot'] ?? null;
+      $debit = PointLedger::where('user_id', ${customerId})->where('organization_id', ${orgId})
+        ->where('source_type', 'reservation')->where('source_id', $reservation->id)->where('delta', -50)->first();
 
       echo json_encode([
-        'total_amount' => (int) $booking->total_amount,
-        'loyalty_discount_amount' => (int) $booking->loyalty_discount_amount,
-        'loyalty_points_redeemed' => (int) $booking->loyalty_points_redeemed,
+        'status' => $reservation->status,
+        'total_amount' => (int) $reservation->total_amount,
+        'loyalty_discount_amount' => (int) ($metadata['loyalty_discount_amount'] ?? 0),
+        'loyalty_points_redeemed' => (int) ($metadata['loyalty_points_redeemed'] ?? 0),
         'has_loyalty_snapshot' => !empty($loyaltySnapshot),
         'points_spent_in_snapshot' => $loyaltySnapshot['points_spent'] ?? null,
         'has_debit_ledger' => $debit !== null,
@@ -1091,6 +1090,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       encoding: 'utf-8',
     })
     const holdState = JSON.parse(holdOut) as {
+      status: string
       total_amount: number
       loyalty_discount_amount: number
       loyalty_points_redeemed: number
@@ -1099,6 +1099,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       has_debit_ledger: boolean
     }
 
+    expect(holdState.status).toBe('held')
     expect(holdState.total_amount).toBe(50000)
     expect(holdState.loyalty_discount_amount).toBe(50000)
     expect(holdState.loyalty_points_redeemed).toBe(50)
@@ -1106,12 +1107,12 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(holdState.points_spent_in_snapshot).toBe(50)
     expect(holdState.has_debit_ledger).toBe(true)
 
-    // 7. Verify snapshot persistence after reload
+    // 7. Verify snapshot persistence after reload: the held reservation reopens its payment
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('[data-testid="owner-payment-instructions"]')).toBeVisible({
+    await expect(paymentModal.locator('[data-testid="reservation-payment-qr"]')).toBeVisible({
       timeout: 15000,
     })
-    await expect(page.locator('body')).toContainText(/50\.000/i)
+    await expect(paymentModal.locator('.payment-details')).toContainText(/50\.000/i)
 
     // 8. Protection against double consumption on invalid points or stale policy
     const future = getFuturePlayDate(4, 15)
@@ -1199,5 +1200,117 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     const cpnResult = JSON.parse(cpnBookingOut) as { coupon_discount: number; coupon_usage: number }
     expect(cpnResult.coupon_discount).toBe(20000)
     expect(cpnResult.coupon_usage).toBe(1)
+  })
+
+  test('4.5.1: Điểm tích lũy phủ toàn bộ giá -> đặt sân xác nhận ngay, không mở thanh toán (zero-payable)', async ({
+    page,
+  }) => {
+    const manifest = getTestManifest()
+    const customer = getActorCredentials(manifest, 'customer')
+    const venue1A = manifest.fixtures?.organizations.org1?.venue1A
+    const orgId = manifest.fixtures?.organizations.org1?.id
+    const customerId = manifest.fixtures?.users.customer?.id
+    if (!venue1A || !orgId || !customerId) {
+      throw new Error('E2E fixture missing: venue1A, organizationId or customer ID')
+    }
+
+    // 1. A 100,000 VND court and 100 points (1 point = 1,000 VND) cover the whole price
+    const court = arrangeCourt(manifest, {
+      testKey: '4_5_zero',
+      venueId: venue1A.id,
+      price: 100000,
+    })
+    grantLoyaltyPoints(manifest, { userId: customerId, organizationId: orgId, points: 100 })
+
+    // 2. Authenticate customer and pick a slot
+    await page.goto('/login', { waitUntil: 'domcontentloaded' })
+    await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
+    await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
+    await page.locator('button[type="submit"]').click()
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
+
+    await page.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
+      timeout: 20000,
+    })
+    const targetCard = page.locator('.date-carousel .date-card-btn').nth(2)
+    await targetCard.waitFor({ state: 'visible', timeout: 15000 })
+    await targetCard.click()
+    await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
+    const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
+    await expect(availableSlot).toBeVisible({ timeout: 25000 })
+    await availableSlot.click()
+
+    // 3. Redeem 100 points: the preview shows the full 100,000 VND discount
+    const loyaltyBox = page.locator('.loyalty-point-selector')
+    await expect(loyaltyBox).toBeVisible({ timeout: 15000 })
+    const pointsInput = loyaltyBox.locator('.loyalty-input')
+    await pointsInput.fill('100')
+    await pointsInput.press('Enter')
+    await expect(loyaltyBox.locator('.loyalty-breakdown .discount-value')).toContainText(
+      /100\.000/i,
+      { timeout: 10000 },
+    )
+
+    // 4. Checkout confirms at once: the reservation opens confirmed, with no payment modal
+    const checkoutBtn = page.locator('.schedule-summary-card .btn-checkout')
+    await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
+    await checkoutBtn.click()
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 20000 })
+    const reservationCode = page.url().split('/reservations/')[1]?.split('?')[0]
+    await expect(page.locator('.status-badge.confirmed')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
+
+    // 5. Authoritative check: confirmed, nothing payable, zero_payable recorded, no payment attempt
+    const state = JSON.parse(
+      execFileSync(
+        'php',
+        [
+          '-r',
+          `
+      require "vendor/autoload.php";
+      $app = require_once "bootstrap/app.php";
+      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
+      $kernel->bootstrap();
+
+      use App\\Models\\OwnerPaymentAttempt;
+      use App\\Models\\PointLedger;
+      use App\\Models\\Reservation;
+
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
+      echo json_encode([
+        'status' => $reservation->status,
+        'payment_model' => $reservation->payment_model,
+        'total_amount' => (int) $reservation->total_amount,
+        'zero_payable' => $reservation->metadata['zero_payable'] ?? null,
+        'loyalty_points_redeemed' => (int) ($reservation->metadata['loyalty_points_redeemed'] ?? 0),
+        'attempt_count' => OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', $reservation->code)->count(),
+        'debit_count' => PointLedger::where('source_type', 'reservation')->where('source_id', $reservation->id)->where('delta', -100)->count(),
+      ]);
+    `,
+        ],
+        {
+          cwd: path.resolve(import.meta.dirname, '../../backend'),
+          env: getCanonicalBackendEnv(manifest),
+          encoding: 'utf-8',
+        },
+      ),
+    ) as {
+      status: string
+      payment_model: string
+      total_amount: number
+      zero_payable: boolean | null
+      loyalty_points_redeemed: number
+      attempt_count: number
+      debit_count: number
+    }
+
+    expect(state.status).toBe('confirmed')
+    expect(state.payment_model).toBe('direct_owner_v1')
+    expect(state.total_amount).toBe(0)
+    expect(state.zero_payable).toBe(true)
+    expect(state.loyalty_points_redeemed).toBe(100)
+    expect(state.attempt_count).toBe(0)
+    expect(state.debit_count).toBe(1)
   })
 })

@@ -3,7 +3,7 @@ import os from 'node:os'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import type { RunManifest } from './types.ts'
+import type { E2EFixturesPayload, RunManifest } from './types.ts'
 
 /**
  * Reads the active RunManifest from the environment variable E2E_MANIFEST_PATH or pointer file.
@@ -231,6 +231,11 @@ export function getFuturePlayDate(
   }
 }
 
+/** Pilot-only features run for the two fixture organizations only, as production lists its pilots (D19). */
+export function pilotOrganizationIds(fixtures: E2EFixturesPayload): string {
+  return `${fixtures.organizations.org1.id},${fixtures.organizations.org2.id}`
+}
+
 export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, string> {
   const cleanProcessEnv = { ...process.env }
   delete cleanProcessEnv.DB_URL
@@ -256,6 +261,7 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
     APP_NAME: 'Aura Court E2E',
     APP_ENV: 'testing',
     APP_DEBUG: 'true',
+    BCRYPT_ROUNDS: '4',
     ...(realAppKey ? { APP_KEY: realAppKey } : {}),
     DB_CONNECTION: 'pgsql',
     DB_HOST: manifest.database.host,
@@ -263,6 +269,8 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
     DB_DATABASE: manifest.database.name,
     DB_USERNAME: manifest.database.user,
     DB_PASSWORD: manifest.database.password || '',
+    // Empty, not absent: Laravel would otherwise read DB_URL from backend/.env*, which beats DB_HOST/DB_DATABASE
+    DB_URL: '',
     DATABASE_URL: '',
     LARAVEL_STORAGE_PATH: manifest.storagePath,
     SESSION_DRIVER: 'file',
@@ -280,7 +288,7 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
     FEATURE_MARKETPLACE_SPLIT_PAYMENTS: 'true',
     FEATURE_MARKETPLACE_RESALE: 'true',
     FEATURE_MARKETPLACE_SLOT_RESALE: 'true',
-    PILOT_ORGANIZATION_IDS: '*',
+    PILOT_ORGANIZATION_IDS: manifest.fixtures ? pilotOrganizationIds(manifest.fixtures) : '',
     PAYOS_BASE_URL: 'http://127.0.0.1:9',
     SEPAY_API_V2_BASE_URL: 'http://127.0.0.1:9',
     SEPAY_API_KEY: 'test_sepay_api_key_e2e',

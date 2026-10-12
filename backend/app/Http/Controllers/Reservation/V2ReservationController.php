@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reservation;
 
 use App\Http\Controllers\Concerns\ResolvesV2Organization;
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\TenantCustomer;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\IdempotencyService;
+use App\Services\Infrastructure\TenantContext;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationService;
@@ -44,9 +46,12 @@ class V2ReservationController extends Controller
     public function show(Request $request, string $reservation)
     {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization->id, $reservation);
+        $record = $this->findReservation($request, $organization, $reservation);
 
-        return response()->json(['reservation' => $record->load(['court.venue', 'quote', 'slots', 'entitlements'])]);
+        // legacy_mapping lets a deep link to a V1 mirror show the original booking code and status.
+        $legacyMapping = fn ($q) => $q->withoutGlobalScope('tenant_isolation')->select('id', 'reservation_id', 'legacy_code', 'legacy_status');
+
+        return response()->json(['reservation' => $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping])]);
     }
 
     public function payment(
@@ -55,7 +60,7 @@ class V2ReservationController extends Controller
         ReservationPaymentService $payments
     ) {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization->id, $reservation);
+        $record = $this->findReservation($request, $organization, $reservation);
         abort_unless((int) $record->user_id === (int) $request->user()->id, 403);
         $attempt = $payments->latest($record);
 
@@ -72,7 +77,7 @@ class V2ReservationController extends Controller
         FeatureFlagService $features
     ) {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization->id, $reservation);
+        $record = $this->findReservation($request, $organization, $reservation);
         abort_unless((int) $record->user_id === (int) $request->user()->id, 403);
         $existing = $payments->latest($record);
         if ($existing && ($existing->status === 'paid' || ($existing->status === 'pending' && $existing->expires_at?->isFuture()))) {
@@ -81,7 +86,7 @@ class V2ReservationController extends Controller
                 'payment_attempt' => $payments->instructions($existing),
             ]);
         }
-        $features->assertEnabled('direct_owner_payments', $organization->id);
+        $features->assertEnabled('direct_owner_payments', $record->organization_id);
         $attempt = $payments->initiate($record, $request->user());
         $record->refresh();
 
@@ -199,7 +204,7 @@ class V2ReservationController extends Controller
     public function confirm(Request $request, string $reservation)
     {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization->id, $reservation);
+        $record = $this->findReservation($request, $organization, $reservation);
 
         return $this->idempotency->run($request, function () use ($record) {
             return response()->json(['reservation' => $this->reservations->confirm($record)]);
@@ -219,18 +224,26 @@ class V2ReservationController extends Controller
         return response()->json(['rules' => $query->orderBy('type')->orderBy('priority', 'desc')->get()]);
     }
 
-    private function findReservation(Request $request, int $organizationId, string $identifier): Reservation
+    /**
+     * The caller's own reservation in any organization, or any reservation of the context
+     * organization they operate. Binds the tenant context to the record's organization.
+     */
+    private function findReservation(Request $request, Organization $organization, string $identifier): Reservation
     {
-        $query = Reservation::query()->where('organization_id', $organizationId);
+        $operator = $this->isOrganizationOperator($request, $organization);
+        $query = Reservation::query()->withoutGlobalScope('tenant_isolation')
+            ->where(fn ($owned) => $owned->where('user_id', $request->user()->id)
+                ->when($operator, fn ($q) => $q->orWhere('organization_id', $organization->id)));
         if (ctype_digit($identifier)) {
             $query->whereKey((int) $identifier);
         } else {
             $query->where('code', $identifier);
         }
-        if (! $this->isOrganizationOperator($request, $this->organization($request))) {
-            $query->where('user_id', $request->user()->id);
-        }
+        $record = $query->firstOrFail();
+        $recordOrganization = $record->organization;
+        abort_unless($recordOrganization instanceof Organization, 404);
+        app(TenantContext::class)->setOrganization($recordOrganization);
 
-        return $query->firstOrFail();
+        return $record;
     }
 }

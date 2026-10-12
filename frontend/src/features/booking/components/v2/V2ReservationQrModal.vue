@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode } from '../../utils/reservation'
 
 const { t } = useI18n()
 
@@ -25,7 +26,7 @@ const emit = defineEmits<{
           <div>
             <h3 class="modal-title">{{ t('v2Reservations.modal.qrTitle') }}</h3>
             <span class="modal-subtitle font-mono">{{
-              t('v2Reservations.modal.reservationCode', { code: reservation.code })
+              t('v2Reservations.modal.reservationCode', { code: displayCode(reservation) })
             }}</span>
           </div>
         </div>
@@ -46,7 +47,7 @@ const emit = defineEmits<{
         <div class="qr-box">
           <img
             :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=AURA_V2_RESERVATION_${reservation.code}&margin=8`"
-            :alt="`Aura QR #${reservation.code}`"
+            :alt="`Aura QR #${displayCode(reservation)}`"
             class="qr-image"
           />
           <span class="qr-instruction">

@@ -3,7 +3,8 @@ import path from 'node:path'
 import os from 'node:os'
 import net from 'node:net'
 import crypto from 'node:crypto'
-import { spawn, execFileSync, type ChildProcess } from 'node:child_process'
+import { spawn, execFile, type ChildProcess } from 'node:child_process'
+import { promisify } from 'node:util'
 import type { RunManifest, E2EFixturesPayload } from './types.ts'
 import {
   validateEnvironment,
@@ -13,6 +14,9 @@ import {
   runBackendPreflightCommand,
 } from './preflight.ts'
 import { teardownEnvironment, registerExitHandlers } from './teardown.ts'
+import { pilotOrganizationIds } from './test-data.ts'
+
+const execFileAsync = promisify(execFile)
 
 export interface EnvironmentOptions {
   runId?: string
@@ -74,6 +78,17 @@ export async function waitForHttp(url: string, timeoutMs: number = 20000): Promi
 }
 
 /**
+ * Resolves once the child process has exited and been reaped, or after timeoutMs.
+ */
+function waitForExit(child: ChildProcess, timeoutMs: number): Promise<void> {
+  const { promise, resolve } = Promise.withResolvers<void>()
+  if (child.exitCode !== null || child.signalCode !== null) resolve()
+  child.once('exit', () => resolve())
+  const timer = setTimeout(resolve, timeoutMs)
+  return promise.finally(() => clearTimeout(timer))
+}
+
+/**
  * Main E2E isolated environment manager.
  */
 export class E2EIsolatedEnvironment {
@@ -96,6 +111,7 @@ export class E2EIsolatedEnvironment {
   public frontendProc?: ChildProcess
   private backendLogFd: number | null = null
   private frontendLogFd: number | null = null
+  private frontendBuild: AbortController | null = null
 
   constructor(options: EnvironmentOptions = {}) {
     this.options = options
@@ -173,11 +189,15 @@ export class E2EIsolatedEnvironment {
 
     // 5. Create isolated PostgreSQL database
     try {
-      execFileSync(
-        'createdb',
-        ['-h', this.dbHost, '-p', String(this.dbPort), '-U', this.dbUser, this.dbName],
-        { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf-8' },
-      )
+      await execFileAsync('createdb', [
+        '-h',
+        this.dbHost,
+        '-p',
+        String(this.dbPort),
+        '-U',
+        this.dbUser,
+        this.dbName,
+      ])
     } catch (err) {
       throw new Error(
         `Failed to create isolated database "${this.dbName}": ${(err as Error).message}`,
@@ -255,12 +275,35 @@ export class E2EIsolatedEnvironment {
 
     // 8. Wrap all subsequent setup steps in try/catch to ensure complete failure teardown
     try {
+      // Build the frontend against this backend while the database is prepared: `vite preview` of a
+      // build loads pages several times faster than the dev server. Development mode loads the same
+      // env files the dev server did, so .env.production can never point the bundle at production.
+      const viteCli = path.join(this.frontendDir, 'node_modules', 'vite', 'bin', 'vite.js')
+      const distDir = path.join(this.tempDir, 'dist')
+      let frontendBuilt: Promise<unknown> | undefined
+      if (!options.skipFrontend) {
+        this.frontendBuild = new AbortController()
+        frontendBuilt = execFileAsync(
+          process.execPath,
+          [viteCli, 'build', '--mode', 'development', '--outDir', distDir, '--emptyOutDir'],
+          {
+            cwd: this.frontendDir,
+            env: { ...process.env, VITE_API_URL: backendUrl },
+            signal: this.frontendBuild.signal,
+          },
+        )
+        // Awaited once the backend is up; this only keeps an earlier setup failure from crashing the runner.
+        frontendBuilt.catch(() => {})
+      }
+
       const backendEnv: Record<string, string> = {
         APP_NAME: 'Aura Court E2E',
         CACHE_PREFIX: 'aura-court-e2e-cache-',
         APP_ENV: 'testing',
         APP_DEBUG: 'true',
         APP_URL: backendUrl,
+        // Same as phpunit.xml: cost-12 hashing makes every seeded user and login cost seconds under parallel load
+        BCRYPT_ROUNDS: '4',
         CORS_ALLOWED_ORIGINS: frontendUrl,
         SANCTUM_STATEFUL_DOMAINS: `127.0.0.1:${frontendPort},localhost:${frontendPort}`,
         PHP_CLI_SERVER_WORKERS: '4',
@@ -287,7 +330,8 @@ export class E2EIsolatedEnvironment {
         FEATURE_MARKETPLACE_SPLIT_PAYMENTS: 'true',
         FEATURE_MARKETPLACE_RESALE: 'true',
         FEATURE_MARKETPLACE_SLOT_RESALE: 'true',
-        PILOT_ORGANIZATION_IDS: '*',
+        // Set to the seeded fixture organizations below, before the server starts (D19).
+        PILOT_ORGANIZATION_IDS: '',
         SEPAY_API_KEY: 'test_sepay_api_key_e2e',
         SEPAY_HMAC_SECRET: 'test_sepay_hmac_secret_e2e',
         SEPAY_BANK: 'TPBank',
@@ -314,11 +358,9 @@ export class E2EIsolatedEnvironment {
 
       // Run migrations on dedicated database
       try {
-        execFileSync('php', ['artisan', 'migrate', '--force'], {
+        await execFileAsync('php', ['artisan', 'migrate', '--force'], {
           cwd: this.backendDir,
           env: { ...process.env, ...backendEnv },
-          stdio: ['ignore', 'pipe', 'pipe'],
-          encoding: 'utf-8',
         })
       } catch (err) {
         throw new Error(`Database migration failed: ${(err as Error).message}`)
@@ -326,7 +368,7 @@ export class E2EIsolatedEnvironment {
 
       // Seed non-demo multi-organization fixtures satisfying real business rules
       try {
-        const seedOutput = execFileSync(
+        const { stdout: seedOutput } = await execFileAsync(
           'php',
           [
             'artisan',
@@ -334,15 +376,11 @@ export class E2EIsolatedEnvironment {
             `--run-id=${this.runId}`,
             `--credentials-json=${JSON.stringify(credentials)}`,
           ],
-          {
-            cwd: this.backendDir,
-            env: { ...process.env, ...backendEnv },
-            stdio: ['ignore', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          },
+          { cwd: this.backendDir, env: { ...process.env, ...backendEnv } },
         )
         const fixtures = JSON.parse(seedOutput) as E2EFixturesPayload
         this.manifest.fixtures = fixtures
+        backendEnv.PILOT_ORGANIZATION_IDS = pilotOrganizationIds(fixtures)
         this.persistManifest()
       } catch (err: any) {
         const detail = (err?.stderr || '') + (err?.stdout || '') + (err?.message || '')
@@ -357,7 +395,8 @@ export class E2EIsolatedEnvironment {
           cwd: this.backendDir,
           env: { ...process.env, ...backendEnv },
           stdio: ['ignore', this.backendLogFd, this.backendLogFd],
-          detached: false,
+          // Own process group: PHP's built-in server workers outlive a signal sent to `artisan serve` alone.
+          detached: true,
         },
       )
 
@@ -370,21 +409,32 @@ export class E2EIsolatedEnvironment {
         throw new Error(`Backend failed to respond at ${backendUrl}/up within 15 seconds.`)
       }
 
-      // Spawn owned frontend process if not skipped
-      if (!options.skipFrontend) {
+      // Serve the built frontend
+      if (frontendBuilt) {
+        try {
+          await frontendBuilt
+        } catch (err) {
+          throw new Error(`Frontend build failed: ${(err as Error).message}`)
+        }
         this.frontendLogFd = fs.openSync(
           path.join(this.storageDir, 'logs', 'frontend-vite.log'),
           'a',
         )
         this.frontendProc = spawn(
-          'npx',
-          ['vite', '--host', '127.0.0.1', '--port', String(frontendPort), '--strictPort'],
+          process.execPath,
+          [
+            viteCli,
+            'preview',
+            '--outDir',
+            distDir,
+            '--host',
+            '127.0.0.1',
+            '--port',
+            String(frontendPort),
+            '--strictPort',
+          ],
           {
             cwd: this.frontendDir,
-            env: {
-              ...process.env,
-              VITE_API_URL: backendUrl,
-            },
             stdio: ['ignore', this.frontendLogFd, this.frontendLogFd],
             detached: false,
           },
@@ -419,6 +469,9 @@ export class E2EIsolatedEnvironment {
       this.unregisterExitHandlers = null
     }
 
+    this.frontendBuild?.abort()
+    this.frontendBuild = null
+
     // Close log file descriptors if open
     if (this.backendLogFd !== null) {
       try {
@@ -438,10 +491,13 @@ export class E2EIsolatedEnvironment {
       this.frontendLogFd = null
     }
 
-    // Kill in-memory process handles directly as first line of defense
-    if (this.backendProc) {
+    // Kill in-memory process handles directly as first line of defense, then wait for them to exit
+    const exits: Promise<void>[] = []
+    if (this.backendProc?.pid) {
+      exits.push(waitForExit(this.backendProc, 5000))
       try {
-        this.backendProc.kill('SIGTERM')
+        // The whole group: PHP's built-in server workers outlive a signal to `artisan serve` alone.
+        process.kill(-this.backendProc.pid, 'SIGTERM')
       } catch {
         // Ignore
       }
@@ -449,6 +505,7 @@ export class E2EIsolatedEnvironment {
     }
 
     if (this.frontendProc) {
+      exits.push(waitForExit(this.frontendProc, 5000))
       try {
         this.frontendProc.kill('SIGTERM')
       } catch {
@@ -456,6 +513,7 @@ export class E2EIsolatedEnvironment {
       }
       this.frontendProc = undefined
     }
+    await Promise.all(exits)
 
     if (this.manifest) {
       await teardownEnvironment(this.manifest, options)

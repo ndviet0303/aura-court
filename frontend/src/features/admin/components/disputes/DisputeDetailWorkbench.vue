@@ -90,7 +90,7 @@ function onWheel(e: WheelEvent) {
             {{
               t('admin.disputes.dossierRef', {
                 code: item.disputeCode,
-                ref: item.bookingId ? `BK-${item.bookingId}` : 'BK-99482',
+                ref: item.reservationCode || (item.bookingId ? `BK-${item.bookingId}` : '—'),
               })
             }}
           </span>

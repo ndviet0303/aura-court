@@ -119,7 +119,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
                 'starts_at' => $slotStart,
                 'ends_at' => $slotEnd,
                 'unit_price' => $unitPrice,
-                'status' => $status,
+                'status' => $status === 'pending_payment' ? 'held' : $status,
             ]);
         }
 

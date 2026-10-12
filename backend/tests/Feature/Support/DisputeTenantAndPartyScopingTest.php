@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Support;
 
+use App\Models\Court;
 use App\Models\DisputeCase;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -247,5 +249,27 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $filteredCodes = collect($resFiltered->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-A-GLOBAL', $filteredCodes);
         $this->assertNotContains('DSP-B-GLOBAL', $filteredCodes);
+    }
+
+    /**
+     * A multi-organization owner listing under one organization context still sees the
+     * reservation code of a dispute that belongs to their other organization.
+     */
+    public function test_dispute_queue_shows_reservation_code_across_the_owners_organizations(): void
+    {
+        [$orgA, $owner, $venueA] = $this->createTenant('Tenant Alpha', 'tenant-alpha');
+        [$orgB, , $venueB] = $this->createTenant('Tenant Beta', 'tenant-beta');
+        OrganizationMember::create(['organization_id' => $orgB->id, 'user_id' => $owner->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
+        $customer = $this->createCustomerUser('rsv-customer@test.local');
+        $court = Court::create(['venue_id' => $venueB->id, 'name' => 'Court Beta', 'is_active' => true]);
+        $reservation = Reservation::create(['organization_id' => $orgB->id, 'user_id' => $customer->id, 'court_id' => $court->id, 'code' => 'RSV-BETA-1', 'status' => 'completed', 'currency' => 'VND', 'total_amount' => 100000, 'payment_model' => 'direct_owner_v1']);
+        $this->createDispute($orgB, $venueB, $customer, $owner, 'DSP-BETA-RSV')->update(['reservation_id' => $reservation->id]);
+
+        $res = $this->actingAs($owner)->getJson('/api/v2/admin/disputes', ['X-Organization-Id' => (string) $orgA->id]);
+
+        $res->assertOk();
+        $row = collect($res->json('data'))->firstWhere('dispute_code', 'DSP-BETA-RSV');
+        $this->assertSame($reservation->id, $row['reservation_id']);
+        $this->assertSame('RSV-BETA-1', $row['reservation_code']);
     }
 }

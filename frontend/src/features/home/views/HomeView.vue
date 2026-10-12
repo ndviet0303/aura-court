@@ -304,14 +304,8 @@ async function submit() {
   loading.value = true
   error.value = ''
   try {
-    const result = await store.createBooking(
-      undefined,
-      undefined,
-      loyaltyPayload.value?.loyalty_points,
-      loyaltyPayload.value?.loyalty_policy_version,
-      loyaltyPayload.value?.idempotency_key,
-    )
-    router.push('/payment/' + result.booking.code)
+    const reservation = await store.checkoutReservation(loyaltyPayload.value)
+    router.push({ name: 'reservations', params: { code: reservation.code } })
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
   } finally {

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { bookingApi, type ReservationPaymentAttempt } from '../../api/bookingApi'
 import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode } from '../../utils/reservation'
 
 const props = defineProps<{
   show: boolean
@@ -103,7 +104,7 @@ onUnmounted(stopPolling)
           <h3 id="reservation-payment-title" class="modal-title">
             {{ t('v2Reservations.payment.title') }}
           </h3>
-          <p class="modal-subtitle font-mono">{{ reservation.code }}</p>
+          <p class="modal-subtitle font-mono">{{ displayCode(reservation) }}</p>
         </div>
         <button
           type="button"

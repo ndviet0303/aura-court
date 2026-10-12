@@ -32,7 +32,7 @@ class LegacyBookingBackfillService
         $orphans = [];
         $collisions = [];
         $mappedCount = 0;
-        $pendingCount = 0;
+        $pending = [];
 
         foreach ($bookings as $booking) {
             $venueOrgId = $booking->court?->venue?->organization_id;
@@ -69,7 +69,7 @@ class LegacyBookingBackfillService
                     $mappedCount++;
                 }
             } else {
-                $pendingCount++;
+                $pending[] = ['legacy_booking_id' => $booking->id, 'code' => $booking->code, 'reason' => 'No reservation mapping yet'];
             }
         }
 
@@ -83,7 +83,8 @@ class LegacyBookingBackfillService
             'organization_id' => $organizationId,
             'legacy_bookings_total' => $totalBookings,
             'mapped_count' => $mappedCount,
-            'pending_count' => $pendingCount,
+            'pending_count' => count($pending),
+            'pending' => $pending,
             'orphan_count' => count($orphans),
             'orphans' => $orphans,
             'collision_count' => count($collisions),
@@ -92,24 +93,24 @@ class LegacyBookingBackfillService
             'mapped_total_amount' => (int) $mappings->sum('legacy_total_amount'),
             'legacy_slots' => $legacySlotCount,
             'mapped_slots' => $slotMappingsCount,
-            'valid' => count($orphans) === 0 && count($collisions) === 0 && $pendingCount === 0,
+            'valid' => count($orphans) === 0 && count($collisions) === 0 && $pending === [],
         ];
     }
 
     public function backfill(?int $organizationId = null, bool $dryRun = false): array
     {
+        $audit = $this->audit($organizationId);
         if ($dryRun) {
-            $audit = $this->audit($organizationId);
             $audit['created'] = 0;
             $audit['existing'] = $audit['mapped_count'];
 
             return $audit;
         }
 
-        $audit = $this->audit($organizationId);
-        $orphanIds = collect($audit['orphans'])->pluck('legacy_booking_id')->all();
-
-        $query = Booking::query()->with(['court.venue', 'slots'])->orderBy('id');
+        // Orphans and checksum collisions are reported, never mapped or thrown.
+        $orphans = $audit['orphans'];
+        $skipIds = collect($orphans)->merge($audit['collisions'])->pluck('legacy_booking_id')->all();
+        $query = Booking::query()->with(['court.venue', 'slots'])->whereNotIn('id', $skipIds)->orderBy('id');
         if ($organizationId !== null) {
             $query->whereHas('court.venue', fn ($venue) => $venue->where('organization_id', $organizationId));
         }
@@ -119,28 +120,24 @@ class LegacyBookingBackfillService
         $existing = 0;
 
         foreach ($bookings as $booking) {
-            if (in_array($booking->id, $orphanIds, true)) {
-                continue;
-            }
-
-            $mapping = LegacyBookingMapping::query()->where('legacy_booking_id', $booking->id)->first();
-            if ($mapping) {
-                $this->assertMapping($booking, $mapping);
+            if (LegacyBookingMapping::query()->where('legacy_booking_id', $booking->id)->exists()) {
                 $existing++;
 
                 continue;
             }
 
-            $this->mapBooking($booking);
-            $created++;
+            try {
+                $this->mapBooking($booking);
+                $created++;
+            } catch (\RuntimeException $e) { // QueryException included: one bad booking must not abort the run.
+                $orphans[] = ['legacy_booking_id' => $booking->id, 'code' => $booking->code, 'reason' => 'Mapping failed: '.$e->getMessage()];
+            }
         }
 
-        $result = $this->validate($organizationId);
-        $result['dry_run'] = false;
-        $result['created'] = $created;
-        $result['existing'] = $existing;
-        $result['orphan_count'] = count($audit['orphans']);
-        $result['orphans'] = $audit['orphans'];
+        $result = array_merge($this->validate($organizationId), ['dry_run' => false, 'created' => $created, 'existing' => $existing]);
+        $result['valid'] = $result['valid'] && $audit['collisions'] === []; // orphans already break the counts
+        $result['orphan_count'] = count($orphans);
+        $result['orphans'] = $orphans;
         $result['collision_count'] = count($audit['collisions']);
         $result['collisions'] = $audit['collisions'];
 
@@ -188,14 +185,14 @@ class LegacyBookingBackfillService
 
     public function syncProjection(Booking $booking): void
     {
-        $mapping = LegacyBookingMapping::query()->where('legacy_booking_id', $booking->id)->first();
+        $mapping = LegacyBookingMapping::query()->withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->first();
         if (! $mapping) {
             return;
         }
 
         $mapping->forceFill([
             'legacy_status' => $booking->status,
-            'source_checksum' => $this->bookingChecksum($booking),
+            'source_checksum' => $this->bookingChecksum($booking->load('slots')), // callers may hold a stale slots relation
         ])->save();
     }
 
@@ -254,7 +251,8 @@ class LegacyBookingBackfillService
         $reservationStatus = $booking->status === 'pending_payment' ? 'held' : ($booking->status === 'confirmed' ? 'confirmed' : 'legacy');
 
         return DB::transaction(function () use ($booking, $organizationId, $checksum, $active, $reservationStatus): LegacyBookingMapping {
-            $reservation = Reservation::create([
+            $reservation = Reservation::forceCreate([
+                'created_at' => $booking->created_at,
                 'organization_id' => $organizationId,
                 'user_id' => $booking->user_id,
                 'court_id' => $booking->court_id,

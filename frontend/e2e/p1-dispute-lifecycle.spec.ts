@@ -1,9 +1,21 @@
 import { getCanonicalBackendEnv } from './runner/test-data.ts'
-import { test, expect } from '@playwright/test'
-import { getTestManifest } from './runner/test-data.ts'
+import { test, expect, type Page } from '@playwright/test'
+import { arrangeCourt, getTestManifest } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
+import { withE2EApi } from './runner/with-api.ts'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
+
+type DisputeData = {
+  id: number
+  dispute_code: string
+  status: string
+  severity: string
+  reservation_id: number | null
+  booking_id: number | null
+  evidence: unknown[]
+  timeline_events: { event: string }[]
+}
 
 test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi hoàn & Xem xét lại @p1', () => {
   test.beforeEach(async ({ page }) => {
@@ -34,272 +46,267 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
   const court1Id = manifest.fixtures?.organizations.org1.venue1A?.courts[0]
   if (!org1Id || !venue1Id || !court1Id)
     throw new Error('Current dispute fixtures require an organization, venue and court.')
-  test('9.5.1: Tiếp nhận khiếu nại, tự động phân loại & Chống trùng lặp (FR-COM-17, FR-COM-18)', async () => {
-    const intakeScript = `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
-      $kernel->bootstrap();
 
-      use App\\Models\\Booking;
-      use App\\Models\\Court;
-      use App\\Models\\DisputeCase;
-      use App\\Models\\User;
-      use App\\Models\\Venue;
-      use Carbon\\Carbon;
-
-      $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
-      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
-
-      $booking = Booking::create([
-        'code' => 'BK-DSP-' . strtoupper(uniqid()),
-        'user_id' => $alice->id,
-        'organization_id' => ${org1Id},
-        'court_id' => $court->id,
-        'status' => 'confirmed',
-        'total_amount' => 200000,
-        'starts_at' => now()->addDay(),
-        'ends_at' => now()->addDay()->addHour(),
-      ]);
-
-      $controller = app(\\App\\Http\\Controllers\\Admin\\AdminDisputeController::class);
-
-      // 1. Initial intake via controller: court_quality without evidence auto-classifies as awaiting_evidence
-      $req = \\Illuminate\\Http\\Request::create('/api/v1/disputes', 'POST', [
-        'booking_id' => $booking->id,
-        'title' => 'Mặt sân trơn trượt ngập nước mưa',
-        'summary' => 'Mặt sân trơn trượt ngập nước mưa không thể thi đấu an toàn.',
-        'dispute_type' => 'court_quality',
-        'severity' => 'high',
-      ]);
-      $req->setUserResolver(fn () => $alice);
-      $res = $controller->store($req);
-      $disputeData = $res->getData(true)['data'] ?? [];
-
-      // 2. Duplicate check: submitting second dispute for same booking returns 409 Conflict
-      $dupReq = \\Illuminate\\Http\\Request::create('/api/v1/disputes', 'POST', [
-        'booking_id' => $booking->id,
-        'title' => 'Khiếu nại trùng lặp',
-        'summary' => 'Nộp lại khiếu nại cho cùng booking.',
-        'dispute_type' => 'court_quality',
-        'severity' => 'medium',
-      ]);
-      $dupReq->setUserResolver(fn () => $alice);
-      $dupRes = $controller->store($dupReq);
-
-      echo json_encode([
-        'dispute_id' => $disputeData['id'] ?? null,
-        'dispute_code' => $disputeData['dispute_code'] ?? null,
-        'status' => $disputeData['status'] ?? null,
-        'severity' => $disputeData['severity'] ?? null,
-        'duplicate_status' => $dupRes->getStatusCode(),
-      ]);
-    `
-
-    const intakeResult = JSON.parse(
-      execFileSync('php', ['-r', intakeScript], {
+  const runPhp = <T>(script: string): T =>
+    JSON.parse(
+      execFileSync('php', ['-r', script], {
         cwd: backendDir,
         env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
         encoding: 'utf-8',
       }),
-    ) as {
-      dispute_id: number
-      dispute_code: string
-      status: string
-      severity: string
-      duplicate_status: number
-    }
+    ) as T
 
-    expect(intakeResult.dispute_id).toBeGreaterThan(0)
-    expect(intakeResult.status).toBe('awaiting_evidence')
-    expect(intakeResult.severity).toBe('high')
-    expect(intakeResult.duplicate_status).toBe(409)
-  })
-  test('9.5.2: Từ chối bên ngoài và cách ly dữ liệu tổ chức khác (FR-COM-17, FR-COM-19)', async () => {
-    const scopingScript = `
+  // A confirmed V2 reservation for the customer on its own court, the rows checkout writes (D-e2e).
+  const arrangeReservation = (testKey: string) => {
+    const court = arrangeCourt(manifest, { testKey, venueId: venue1Id, price: 200000 })
+    return runPhp<{ reservation_id: number; reservation_code: string; court_id: number }>(`
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
-      use App\\Models\\Court;
-      use App\\Models\\DisputeCase;
+      use App\\Models\\Reservation;
+      use App\\Models\\ReservationEntitlement;
+      use App\\Models\\ReservationSlot;
       use App\\Models\\User;
-      use App\\Models\\Venue;
-      use App\\Policies\\DisputeCasePolicy;
+      use Illuminate\\Support\\Str;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $stranger = User::where('email', '${customer2.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
-      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
-
-      $booking = Booking::create([
-        'code' => 'BK-SEC-' . strtoupper(uniqid()),
-        'user_id' => $alice->id,
+      $startsAt = now()->addDay()->setTime(10, 0)->utc();
+      $endsAt = $startsAt->copy()->addHour();
+      $reservation = Reservation::create([
         'organization_id' => ${org1Id},
-        'court_id' => $court->id,
+        'user_id' => $alice->id,
+        'court_id' => ${court.court_id},
+        'code' => 'RSV' . Str::upper(Str::random(13)),
         'status' => 'confirmed',
+        'currency' => 'VND',
         'total_amount' => 200000,
-        'starts_at' => now()->addDay(),
-        'ends_at' => now()->addDay()->addHour(),
+        'confirmed_at' => now(),
+        'payment_model' => 'direct_owner_v1',
+      ]);
+      $slot = ReservationSlot::create([
+        'organization_id' => ${org1Id},
+        'reservation_id' => $reservation->id,
+        'court_id' => ${court.court_id},
+        'starts_at' => $startsAt,
+        'ends_at' => $endsAt,
+        'unit_price' => 200000,
+        'status' => 'confirmed',
+        'snapshot' => ['starts_at' => $startsAt->toIso8601String(), 'ends_at' => $endsAt->toIso8601String(), 'unit_price' => 200000],
+      ]);
+      ReservationEntitlement::create([
+        'organization_id' => ${org1Id},
+        'reservation_id' => $reservation->id,
+        'reservation_slot_id' => $slot->id,
+        'user_id' => $alice->id,
+        'court_id' => ${court.court_id},
+        'starts_at' => $startsAt,
+        'ends_at' => $endsAt,
+        'amount' => 200000,
+        'status' => 'active',
       ]);
 
-      $controller = app(\\App\\Http\\Controllers\\Admin\\AdminDisputeController::class);
-      $req = \\Illuminate\\Http\\Request::create('/api/v1/disputes', 'POST', [
-        'booking_id' => $booking->id,
-        'title' => 'Tranh chấp kiểm tra bảo mật cách ly',
-        'summary' => 'Nội dung tóm tắt tranh chấp bảo mật cách ly tenant và foreign party.',
-        'dispute_type' => 'court_quality',
+      echo json_encode([
+        'reservation_id' => $reservation->id,
+        'reservation_code' => $reservation->code,
+        'court_id' => ${court.court_id},
       ]);
-      $req->setUserResolver(fn () => $alice);
-      $disputeId = $controller->store($req)->getData(true)['data']['id'];
+    `)
+  }
+
+  // Customers have no dispute UI, so the complainant files over HTTP like any API client (D28).
+  const loginAsCustomer = (page: Page) =>
+    withE2EApi(page, ({ authApi }) =>
+      authApi.login({ email: customer1.email, password: customer1.password }),
+    )
+
+  const fileDispute = (page: Page, payload: Record<string, unknown>) =>
+    withE2EApi(
+      page,
+      async ({ api }, body) => {
+        try {
+          const res = await api.post<{ data: DisputeData }>('/disputes', body)
+          return { status: 201, data: res.data }
+        } catch (err) {
+          const status = (err as { status?: unknown } | null)?.status
+          if (typeof status === 'number') return { status, data: null }
+          throw err
+        }
+      },
+      payload,
+    )
+
+  const disputeRow = (disputeId: number) =>
+    runPhp<{
+      reservation_id: number | null
+      booking_id: number | null
+      complainant_email: string
+    }>(`
+      require "vendor/autoload.php";
+      $app = require_once "bootstrap/app.php";
+      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
+      $kernel->bootstrap();
+
+      $dispute = App\\Models\\DisputeCase::withoutGlobalScopes()->with('complainant')->findOrFail(${disputeId});
+      echo json_encode([
+        'reservation_id' => $dispute->reservation_id,
+        'booking_id' => $dispute->booking_id,
+        'complainant_email' => $dispute->complainant?->email,
+      ]);
+    `)
+
+  test('9.5.1: Tiếp nhận khiếu nại, tự động phân loại & Chống trùng lặp (FR-COM-17, FR-COM-18)', async ({
+    page,
+  }) => {
+    const reservation = arrangeReservation('9_5_1_dispute')
+    await loginAsCustomer(page)
+
+    // 1. court_quality without evidence auto-classifies as awaiting_evidence
+    const filed = await fileDispute(page, {
+      reservation_id: reservation.reservation_id,
+      title: 'Mặt sân trơn trượt ngập nước mưa',
+      summary: 'Mặt sân trơn trượt ngập nước mưa không thể thi đấu an toàn.',
+      dispute_type: 'court_quality',
+      severity: 'high',
+    })
+    expect(filed.status).toBe(201)
+    expect(filed.data?.id).toBeGreaterThan(0)
+    expect(filed.data?.status).toBe('awaiting_evidence')
+    expect(filed.data?.severity).toBe('high')
+    expect(filed.data?.reservation_id).toBe(reservation.reservation_id)
+
+    // 2. A second open dispute for the same reservation and complainant is rejected with 409
+    const duplicate = await fileDispute(page, {
+      reservation_id: reservation.reservation_id,
+      title: 'Khiếu nại trùng lặp',
+      summary: 'Nộp lại khiếu nại cho cùng lượt đặt sân.',
+      dispute_type: 'court_quality',
+      severity: 'medium',
+    })
+    expect(duplicate.status).toBe(409)
+
+    // 3. Authoritative row: the dispute points at the reservation, not a V1 booking
+    const row = disputeRow(filed.data!.id)
+    expect(row.reservation_id).toBe(reservation.reservation_id)
+    expect(row.booking_id).toBeNull()
+    expect(row.complainant_email).toBe(customer1.email)
+  })
+
+  test('9.5.2: Từ chối bên ngoài và cách ly dữ liệu tổ chức khác (FR-COM-17, FR-COM-19)', async ({
+    page,
+  }) => {
+    const reservation = arrangeReservation('9_5_2_dispute')
+    await loginAsCustomer(page)
+    const filed = await fileDispute(page, {
+      reservation_id: reservation.reservation_id,
+      title: 'Tranh chấp kiểm tra bảo mật cách ly',
+      summary: 'Nội dung tóm tắt tranh chấp bảo mật cách ly tenant và foreign party.',
+      dispute_type: 'court_quality',
+    })
+    expect(filed.status).toBe(201)
+    const disputeId = filed.data!.id
+
+    const scopingResult = runPhp<{ stranger_party_denied: boolean; foreign_org_denied: boolean }>(`
+      require "vendor/autoload.php";
+      $app = require_once "bootstrap/app.php";
+      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
+      $kernel->bootstrap();
+
+      use App\\Models\\User;
+
+      $stranger = User::where('email', '${customer2.email}')->firstOrFail();
+      $controller = app(\\App\\Http\\Controllers\\Admin\\AdminDisputeController::class);
 
       // 1. Stranger (customer2) accesses dispute via show: rejected with 404
-      $reqStranger = \\Illuminate\\Http\\Request::create("/api/v1/disputes/{$disputeId}", 'GET');
+      $reqStranger = \\Illuminate\\Http\\Request::create("/api/v1/disputes/${disputeId}", 'GET');
       $reqStranger->setUserResolver(fn () => $stranger);
-      $resStranger = $controller->show($reqStranger, $disputeId);
+      $resStranger = $controller->show($reqStranger, ${disputeId});
 
       // 2. Foreign organization owner (Org 2 owner) accesses dispute: rejected with 404
       $ownerB = User::where('email', '${getActorCredentials(manifest, 'owner2').email}')->first() ?: $stranger;
-      $reqForeign = \\Illuminate\\Http\\Request::create("/api/v1/disputes/{$disputeId}", 'GET');
+      $reqForeign = \\Illuminate\\Http\\Request::create("/api/v1/disputes/${disputeId}", 'GET');
       $reqForeign->setUserResolver(fn () => $ownerB);
-      $resForeign = $controller->show($reqForeign, $disputeId);
+      $resForeign = $controller->show($reqForeign, ${disputeId});
 
       echo json_encode([
         'stranger_party_denied' => $resStranger->getStatusCode() === 404,
         'foreign_org_denied' => $resForeign->getStatusCode() === 404,
       ]);
-    `
-
-    const scopingResult = JSON.parse(
-      execFileSync('php', ['-r', scopingScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      }),
-    ) as { stranger_party_denied: boolean; foreign_org_denied: boolean }
+    `)
 
     expect(scopingResult.stranger_party_denied).toBe(true)
     expect(scopingResult.foreign_org_denied).toBe(true)
   })
 
-  test('9.5.3: Tải lên bằng chứng & Chuyển trạng thái sang điều tra (FR-COM-19, FR-COM-20)', async () => {
-    const evidenceScript = `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
-      $kernel->bootstrap();
+  test('9.5.3: Tải lên bằng chứng & Chuyển trạng thái sang điều tra (FR-COM-19, FR-COM-20)', async ({
+    page,
+  }) => {
+    const reservation = arrangeReservation('9_5_3_dispute')
+    await loginAsCustomer(page)
+    const filed = await fileDispute(page, {
+      reservation_id: reservation.reservation_id,
+      title: 'Tranh chấp bổ sung bằng chứng',
+      summary: 'Tóm tắt tranh chấp kiểm tra nộp bằng chứng hợp lệ.',
+      dispute_type: 'court_quality',
+      severity: 'high',
+    })
+    expect(filed.status).toBe(201)
+    expect(filed.data?.status).toBe('awaiting_evidence')
 
-      use App\\Models\\Booking;
-      use App\\Models\\Court;
-      use App\\Models\\DisputeCase;
-      use App\\Models\\User;
-      use App\\Models\\Venue;
-      use Carbon\\Carbon;
+    // Complainant submits evidence over HTTP
+    const updated = await withE2EApi(
+      page,
+      ({ api }, disputeId) =>
+        api.post<{ data: DisputeData }>(`/disputes/${disputeId}/evidence`, {
+          explanation: 'Hình ảnh chụp vết nứt trên mặt sân gây nguy hiểm cho VĐV.',
+          evidence: [
+            { url: 'https://storage.auracourt.test/disputes/court_crack.jpg', type: 'image' },
+          ],
+        }),
+      filed.data!.id,
+    )
 
-      $alice = User::where('email', '${customer1.email}')->firstOrFail();
-      $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
-      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
-
-      $booking = Booking::create([
-        'code' => 'BK-EVD-' . strtoupper(uniqid()),
-        'user_id' => $alice->id,
-        'organization_id' => ${org1Id},
-        'court_id' => $court->id,
-        'status' => 'confirmed',
-        'total_amount' => 200000,
-        'starts_at' => now()->addDay(),
-        'ends_at' => now()->addDay()->addHour(),
-      ]);
-
-      $controller = app(\\App\\Http\\Controllers\\Admin\\AdminDisputeController::class);
-      $storeReq = \\Illuminate\\Http\\Request::create('/api/v1/disputes', 'POST', [
-        'booking_id' => $booking->id,
-        'title' => 'Tranh chấp bổ sung bằng chứng',
-        'summary' => 'Tóm tắt tranh chấp kiểm tra nộp bằng chứng hợp lệ.',
-        'dispute_type' => 'court_quality',
-        'severity' => 'high',
-      ]);
-      $storeReq->setUserResolver(fn () => $alice);
-      $disputeId = $storeReqDisputeId = $controller->store($storeReq)->getData(true)['data']['id'];
-
-      // Complainant submits evidence via controller
-      $evidenceReq = \\Illuminate\\Http\\Request::create("/api/v1/disputes/{$disputeId}/evidence", 'POST', [
-        'explanation' => 'Hình ảnh chụp vết nứt trên mặt sân gây nguy hiểm cho VĐV.',
-        'evidence' => [
-          ['url' => 'https://storage.auracourt.test/disputes/court_crack.jpg', 'type' => 'image'],
-        ],
-      ]);
-      $evidenceReq->setUserResolver(fn () => $alice);
-      $evidenceRes = $controller->submitEvidence($evidenceReq, $disputeId);
-      $updatedData = $evidenceRes->getData(true)['data'] ?? [];
-
-      $events = $updatedData['timeline_events'] ?? [];
-      $lastEvent = end($events);
-
-      echo json_encode([
-        'dispute_id' => $disputeId,
-        'new_status' => $updatedData['status'] ?? null,
-        'evidence_count' => count($updatedData['evidence'] ?? []),
-        'last_event' => $lastEvent['event'] ?? 'evidence_submitted',
-      ]);
-    `
-
-    const evidenceResult = JSON.parse(
-      execFileSync('php', ['-r', evidenceScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      }),
-    ) as {
-      dispute_id: number
-      new_status: string
-      evidence_count: number
-      last_event: string
-    }
-
-    expect(evidenceResult.new_status).toBe('investigating')
-    expect(evidenceResult.evidence_count).toBe(1)
-    expect(evidenceResult.last_event).toBe('evidence_submitted')
+    expect(updated.data.status).toBe('investigating')
+    expect(updated.data.evidence).toHaveLength(1)
+    expect(updated.data.timeline_events.at(-1)?.event).toBe('evidence_submitted')
+    expect(updated.data.reservation_id).toBe(reservation.reservation_id)
   })
 
   test('9.5.4: Phán quyết & Nghĩa vụ bồi hoàn: Không báo hoàn tất tài chính sớm (FR-COM-21, FR-COM-22)', async () => {
-    const remedyScript = `
+    const reservation = arrangeReservation('9_5_4_dispute')
+    const remedyResult = runPhp<{
+      dispute_status: string
+      obligation_id: number
+      obligation_amount: number
+      obligation_status: string
+      obligation_reservation_id: number | null
+      payment_completed: boolean
+    }>(`
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\Court;
       use App\\Models\\DisputeCase;
       use App\\Models\\OwnerRefundObligation;
       use App\\Models\\User;
       use App\\Models\\Venue;
-      use Carbon\\Carbon;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
       $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
-      $court = Court::where('venue_id', $venue->id)->findOrFail(${court1Id});
+      $court = Court::where('venue_id', $venue->id)->findOrFail(${reservation.court_id});
       $admin = User::where('email', '${admin.email}')->firstOrFail();
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
-
-      $booking = Booking::create([
-        'code' => 'BK-REM-' . strtoupper(uniqid()),
-        'user_id' => $alice->id,
-        'organization_id' => ${org1Id},
-        'court_id' => $court->id,
-        'status' => 'confirmed',
-        'total_amount' => 200000,
-      ]);
 
       $dispute = DisputeCase::create([
         'dispute_code' => 'DSP-REM-' . strtoupper(uniqid()),
         'organization_id' => ${org1Id},
         'venue_id' => $venue->id,
-        'booking_id' => $booking->id,
+        'reservation_id' => ${reservation.reservation_id},
+        'reference_type' => 'reservation',
+        'reference_id' => ${reservation.reservation_id},
         'court_name' => $court->name,
         'facility_name' => $venue->name,
         'facility_operator_name' => 'Aura Court 1',
@@ -331,27 +338,15 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
         'obligation_id' => $obligation->id,
         'obligation_amount' => $obligation->amount,
         'obligation_status' => $obligation->fresh()->status,
+        'obligation_reservation_id' => $obligation->reservation_id,
         'payment_completed' => false,
       ]);
-    `
-
-    const remedyResult = JSON.parse(
-      execFileSync('php', ['-r', remedyScript], {
-        cwd: backendDir,
-        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-        encoding: 'utf-8',
-      }),
-    ) as {
-      dispute_status: string
-      obligation_id: number
-      obligation_amount: number
-      obligation_status: string
-      payment_completed: boolean
-    }
+    `)
 
     expect(remedyResult.dispute_status).toBe('resolved')
     expect(remedyResult.obligation_status).toBe('approved')
     expect(remedyResult.obligation_amount).toBe(150000)
+    expect(remedyResult.obligation_reservation_id).toBe(reservation.reservation_id)
     // CRITICAL: Financial completion MUST NOT be reported prematurely before owner executes refund
     expect(remedyResult.payment_completed).toBe(false)
   })

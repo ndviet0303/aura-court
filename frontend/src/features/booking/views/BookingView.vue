@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUserBookings } from '../composables/useUserBookings'
-import type { Booking } from '../types/booking'
+import type { V2Reservation } from '../types/v2Reservation'
 
 import BookingHistoryHero from '../components/history/BookingHistoryHero.vue'
 import BookingHistoryTabs from '../components/history/BookingHistoryTabs.vue'
@@ -38,13 +38,13 @@ const {
   submitReview,
 } = useUserBookings()
 
-const cancelBooking = ref<Booking | null>(null)
-const rescheduleBooking = ref<Booking | null>(null)
+const cancelBooking = ref<V2Reservation | null>(null)
+const rescheduleBooking = ref<V2Reservation | null>(null)
 
-function openCancel(b: Booking) {
+function openCancel(b: V2Reservation) {
   cancelBooking.value = b
 }
-function openReschedule(b: Booking) {
+function openReschedule(b: V2Reservation) {
   rescheduleBooking.value = b
 }
 function onChangeApplied() {

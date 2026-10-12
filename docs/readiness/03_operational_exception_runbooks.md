@@ -150,7 +150,6 @@
 ### Active Capability Flags
 | Flag Name | Scope | Default | Description | Entry Gate | Exit Gate |
 |---|---|---|---|---|---|
-| `v2_reservations_enabled` | Global | `true` | V2 reservation and pricing engine | Full parity regression pass | Rollback to legacy mappings verified |
 | `organization_tenancy_enforced` | Global | `true` | Multi-tenant isolation and role matrix | TenantIsolation tests pass | No cross-tenant access in audit logs |
 | `tenant_pos_and_wallet` | Pilot-only | `false` | POS checkout, inventory, wallet payments, shift reconciliation | Balanced posting, no client-side receipts, stock atomicity | Zero unmapped orders, cash drawers reconciled |
 | `social_matchmaking_tournaments` | Pilot-only | `false` | Social feed, friendships, matchmaking, tournament registration/brackets | Audience isolation, wallet entry fee debit, idempotent retry | No unmoderated flagged posts, bracket integrity confirmed |
@@ -162,6 +161,7 @@
 1. **Pilot Admission**: Organization must be enumerated in `PILOT_ORGANIZATION_IDS` and achieve passing readiness checks.
 2. **Package Promotion**: All regression suites (`tests/Feature`, `type-check`, `playwright`) must be green.
 3. **Emergency Disablement**: Setting flag to `false` disables specialized routes while preserving all committed financial and operational history.
+4. **V2 reservations**: not flag-gated. Roll back a reservation release by redeploying the previous backend and frontend release.
 
 ---
 

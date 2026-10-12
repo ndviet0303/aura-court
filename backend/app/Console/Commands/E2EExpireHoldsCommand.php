@@ -110,8 +110,8 @@ class E2EExpireHoldsCommand extends Command
                     $reservation->update(['hold_expires_at' => $targetTime]);
                     $backdatedReservations[] = $reservation->code;
 
-                    OwnerPaymentAttempt::where('purpose', 'reservation')
-                        ->where('purpose_id', (string) $reservation->id)
+                    OwnerPaymentAttempt::where('purpose', 'booking')
+                        ->where('purpose_id', $reservation->code)
                         ->update(['expires_at' => $targetTime]);
                 }
             }

@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { apiOrigin } from '@/core/api/client'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -20,16 +20,34 @@ export interface AdminReport {
   }[]
 }
 
-export interface AdminBooking {
+// Item of GET v2/admin/reservations (C4).
+export interface AdminReservation {
   id: number
   code: string
   status: string
   total_amount: number
   created_at?: string
-  user?: { name?: string; email?: string }
+  user?: { name?: string; email?: string } | null
   court?: { id?: number; name: string }
   slots?: { starts_at: string; ends_at?: string; status?: string }[]
+  legacy_mapping?: { legacy_code: string; legacy_status: string }[]
 }
+
+export const RESERVATION_STATUSES = [
+  'held',
+  'confirmed',
+  'in_use',
+  'completed',
+  'cancelled',
+  'expired',
+  'disputed',
+  'legacy',
+] as const
+
+// A V1 mirror shows its original booking code and status, never its LEGACY-* code.
+export const reservationCode = (r: AdminReservation) => r.legacy_mapping?.[0]?.legacy_code ?? r.code
+export const reservationStatus = (r: AdminReservation) =>
+  r.status === 'legacy' ? (r.legacy_mapping?.[0]?.legacy_status ?? r.status) : r.status
 
 export interface ReviewPayment {
   id: number
@@ -59,7 +77,7 @@ export function useAdminDashboard() {
     byCourt: [],
   })
 
-  const bookings = ref<AdminBooking[]>([])
+  const bookings = ref<AdminReservation[]>([])
   const payments = ref<ReviewPayment[]>([])
 
   const datePreset = ref<'today' | '7days' | 'thisMonth' | 'custom'>('thisMonth')
@@ -104,17 +122,15 @@ export function useAdminDashboard() {
     }
   }
 
+  // Status is filtered by the server; search covers the loaded page.
   const filteredBookings = computed(() => {
-    return bookings.value.filter((b) => {
-      const matchSearch =
-        !searchFilter.value ||
-        b.code?.toLowerCase().includes(searchFilter.value.toLowerCase()) ||
-        (b.user?.name || '').toLowerCase().includes(searchFilter.value.toLowerCase())
-
-      const matchStatus = !statusFilter.value || b.status === statusFilter.value
-
-      return matchSearch && matchStatus
-    })
+    const kw = searchFilter.value.toLowerCase()
+    return bookings.value.filter(
+      (b) =>
+        !kw ||
+        reservationCode(b).toLowerCase().includes(kw) ||
+        (b.user?.name || '').toLowerCase().includes(kw),
+    )
   })
 
   async function loadData() {
@@ -123,20 +139,17 @@ export function useAdminDashboard() {
     try {
       const [resReport, resBookings, resPayments] = await Promise.allSettled([
         adminApi.getReports<AdminReport>(`from=${from.value}&to=${to.value}`),
-        adminApi.getBookings<{ data: AdminBooking[] } | AdminBooking[]>(),
+        adminApi.getReservations<{ data: AdminReservation[] }>({
+          status: statusFilter.value || undefined,
+        }),
         adminApi.getPayments<ReviewPayment[]>(),
       ])
 
       if (resReport.status === 'fulfilled' && resReport.value) {
         report.value = resReport.value
       }
-      if (resBookings.status === 'fulfilled') {
-        const bData = resBookings.value
-        if (Array.isArray(bData)) {
-          bookings.value = bData
-        } else if (bData && Array.isArray((bData as { data: AdminBooking[] }).data)) {
-          bookings.value = (bData as { data: AdminBooking[] }).data
-        }
+      if (resBookings.status === 'fulfilled' && Array.isArray(resBookings.value?.data)) {
+        bookings.value = resBookings.value.data
       }
       if (resPayments.status === 'fulfilled' && Array.isArray(resPayments.value)) {
         payments.value = resPayments.value
@@ -154,6 +167,8 @@ export function useAdminDashboard() {
       if (notice.value === msg) notice.value = ''
     }, 4000)
   }
+
+  watch(statusFilter, () => loadData())
 
   onMounted(() => {
     applyPreset('thisMonth')

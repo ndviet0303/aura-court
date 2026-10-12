@@ -13,6 +13,8 @@ function transformDisputeCase(raw: any): DisputeCase {
     organization_id: raw.organization_id,
     venueId: raw.venue_id || raw.venueId,
     bookingId: raw.booking_id || raw.bookingId,
+    reservationId: raw.reservation_id ?? undefined,
+    reservationCode: raw.reservation_code ?? undefined,
     courtName: raw.court_name || raw.courtName || '',
     disputeType: raw.dispute_type || raw.disputeType || 'other',
     severity: raw.severity || 'medium',

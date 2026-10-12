@@ -11,11 +11,13 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosProduct;
 use App\Models\Reservation;
+use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
@@ -44,6 +46,24 @@ class LegacyBookingAuditAndBackfillTest extends TestCase
         ]);
 
         return $booking;
+    }
+
+    public function test_backfill_aligns_a_mirror_that_was_mapped_before_it_kept_the_booking_created_at(): void
+    {
+        $org = Organization::create(['name' => 'Org Drift', 'slug' => 'org-drift-'.uniqid()]);
+        $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Drift Arena', 'slug' => 'drift-'.uniqid()]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Court 1']);
+        $booking = $this->createLegacyBooking($venue, $court, User::factory()->create());
+        $reservationId = app(LegacyBookingBackfillService::class)->backfillBooking($booking)->reservation_id;
+        DB::table('reservations')->where('id', $reservationId)->update(['created_at' => now()->addMonth()]);
+
+        $this->artisan('v2:backfill-legacy-bookings', ['--organization' => $org->id, '--dry-run' => true])->expectsOutputToContain('"created_at_drift": 1')->assertExitCode(0);
+        $this->artisan('v2:backfill-legacy-bookings', ['--organization' => $org->id])->expectsOutputToContain('"created_at_aligned": 1')->assertExitCode(0);
+        $this->assertSame(
+            $booking->fresh()->created_at->toDateTimeString(),
+            Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($reservationId)->created_at->toDateTimeString(),
+        );
+        $this->artisan('v2:backfill-legacy-bookings', ['--organization' => $org->id, '--audit' => true])->expectsOutputToContain('"created_at_drift": 0')->assertExitCode(0);
     }
 
     public function test_audit_and_dry_run_reports_counts_orphans_and_collisions_without_writing_records(): void
@@ -161,6 +181,92 @@ class LegacyBookingAuditAndBackfillTest extends TestCase
         $this->assertSame(1, $audit['collision_count']);
         $this->assertSame($booking->id, $audit['collisions'][0]['legacy_booking_id']);
         $this->assertStringContainsString('checksum mismatch', $audit['collisions'][0]['reason']);
+    }
+
+    public function test_backfill_reports_collisions_instead_of_throwing(): void
+    {
+        $org = Organization::create(['name' => 'Org Gamma 2', 'slug' => 'org-gamma2-'.uniqid()]);
+        $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Gamma 2 Center', 'slug' => 'gamma2-'.uniqid()]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Gamma 2 Court 1']);
+        $booking = $this->createLegacyBooking($venue, $court, User::factory()->create(), 120000);
+        $backfill = app(LegacyBookingBackfillService::class);
+        $backfill->backfill($org->id);
+        $booking->update(['total_amount' => 999999]);
+
+        $result = $backfill->backfill($org->id);
+
+        $this->assertSame(0, $result['created']);
+        $this->assertSame(0, $result['existing']);
+        $this->assertSame([$booking->id], array_column($result['collisions'], 'legacy_booking_id'));
+        $this->assertFalse($result['valid']);
+        $this->artisan('v2:backfill-legacy-bookings', ['--organization' => $org->id])->assertExitCode(1);
+    }
+
+    public function test_mapping_failure_becomes_an_orphan_and_the_run_continues(): void
+    {
+        $org = Organization::create(['name' => 'Org Zeta', 'slug' => 'org-zeta-'.uniqid()]);
+        $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Zeta Arena', 'slug' => 'zeta-'.uniqid()]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Zeta Court']);
+        $user = User::factory()->create();
+        // The first booking's slot overlaps a confirmed V2 slot, so its mirror violates reservation_slots_no_overlap.
+        $blocked = $this->createLegacyBooking($venue, $court, $user, 150000);
+        $slot = $blocked->slots()->firstOrFail();
+        $reservation = Reservation::create([
+            'organization_id' => $org->id, 'user_id' => $user->id, 'court_id' => $court->id, 'code' => 'RSV-ZETA-'.uniqid(),
+            'status' => 'confirmed', 'currency' => 'VND', 'total_amount' => 150000, 'payment_model' => 'legacy_wallet_v1',
+        ]);
+        ReservationSlot::create([
+            'organization_id' => $org->id, 'reservation_id' => $reservation->id, 'court_id' => $court->id,
+            'starts_at' => $slot->starts_at, 'ends_at' => $slot->ends_at, 'unit_price' => 150000, 'status' => 'confirmed',
+        ]);
+        $mappable = $this->createLegacyBooking($venue, Court::create(['venue_id' => $venue->id, 'name' => 'Zeta Court 2']), $user, 90000);
+
+        $result = app(LegacyBookingBackfillService::class)->backfill($org->id);
+
+        $this->assertSame(1, $result['created']);
+        $this->assertSame([$blocked->id], array_column($result['orphans'], 'legacy_booking_id'));
+        $this->assertStringStartsWith('Mapping failed: ', $result['orphans'][0]['reason']);
+        $this->assertStringContainsString('reservation_slots_no_overlap', $result['orphans'][0]['reason']);
+        $this->assertFalse(LegacyBookingMapping::where('legacy_booking_id', $blocked->id)->exists());
+        $this->assertFalse(Reservation::where('code', 'LEGACY-'.$blocked->code)->exists());
+        $this->assertTrue(LegacyBookingMapping::where('legacy_booking_id', $mappable->id)->exists());
+    }
+
+    public function test_mirror_reservation_keeps_the_booking_created_at(): void
+    {
+        $org = Organization::create(['name' => 'Org Eta', 'slug' => 'org-eta-'.uniqid()]);
+        $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Eta Arena', 'slug' => 'eta-'.uniqid()]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Eta Court']);
+        $booking = $this->createLegacyBooking($venue, $court, User::factory()->create());
+        DB::table('bookings')->where('id', $booking->id)->update(['created_at' => '2026-09-01 08:30:00']);
+
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking->fresh());
+
+        $reservationId = LegacyBookingMapping::where('legacy_booking_id', $booking->id)->value('reservation_id');
+        $this->assertSame('2026-09-01 08:30:00', Reservation::findOrFail($reservationId)->created_at->format('Y-m-d H:i:s'));
+    }
+
+    public function test_real_backfill_run_relinks_reviews_and_disputes_written_by_booking_id(): void
+    {
+        $org = Organization::create(['name' => 'Org Theta', 'slug' => 'org-theta-'.uniqid()]);
+        $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Theta Arena', 'slug' => 'theta-'.uniqid()]);
+        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Theta Court']);
+        $user = User::factory()->create();
+        $booking = $this->createLegacyBooking($venue, $court, $user);
+        DB::table('reviews')->insert(['user_id' => $user->id, 'court_id' => $court->id, 'booking_id' => $booking->id, 'rating' => 5, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('dispute_cases')->insert(['dispute_code' => 'DSP-RELINK-1', 'booking_id' => $booking->id, 'court_name' => 'Theta Court', 'dispute_type' => 'billing', 'title' => 'Charge', 'summary' => 'Charged twice', 'complainant_name' => 'A', 'respondent_name' => 'B', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->assertSame(0, Artisan::call('v2:backfill-legacy-bookings', ['--dry-run' => true]));
+        $this->assertArrayNotHasKey('reviews_relinked', json_decode(Artisan::output(), true));
+
+        $this->assertSame(0, Artisan::call('v2:backfill-legacy-bookings'));
+        $output = json_decode(Artisan::output(), true);
+
+        $this->assertSame(1, $output['reviews_relinked']);
+        $this->assertSame(1, $output['disputes_relinked']);
+        $reservationId = LegacyBookingMapping::where('legacy_booking_id', $booking->id)->value('reservation_id');
+        $this->assertSame($reservationId, (int) DB::table('reviews')->value('reservation_id'));
+        $this->assertSame($reservationId, (int) DB::table('dispute_cases')->value('reservation_id'));
     }
 
     public function test_no_numerical_id_coincidence_fallback_in_resolution_and_pos(): void

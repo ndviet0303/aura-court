@@ -9,12 +9,12 @@ Tài liệu hướng dẫn vận hành, kiểm thử cục bộ (Local), cấu h
 Bộ kiểm thử Playwright hoạt động trên cơ chế **Ephemeral Target Isolation** nhằm đảm bảo tính lặp lại (determinism), an toàn dữ liệu và độc lập tuyệt đối giữa các lần chạy:
 
 1. **Định danh phiên chạy (`runId`)**:
-   Mỗi lần chạy sinh một `runId` duy nhất dạng timestamp + random hex (ví dụ: `1790760007212_52871052`).
+   Mỗi môi trường cô lập sinh một `runId` duy nhất dạng timestamp + random hex (ví dụ: `1790760007212_52871052`).
 2. **Cơ sở dữ liệu PostgreSQL riêng biệt**:
    Runner tự động khởi tạo database chuyên biệt: `booking_e2e_<runId>_test`. Toàn bộ migration Laravel được thực thi trên database này. Database mặc định (`booking`, `booking_test`) được bảo vệ nghiêm ngặt: bất kỳ hành vi ghi nào vào database được bảo vệ sẽ bị chặn đứng (fail-closed).
 3. **Tiến trình Backend & Frontend chuyên dụng**:
-   - Backend PHP Artisan chạy trên cổng ngẫu nhiên khả dụng (`127.0.0.1:<backendPort>`).
-   - Frontend Vite dev server chạy trên cổng ngẫu nhiên khả dụng (`127.0.0.1:<frontendPort>`).
+   - Backend PHP Artisan chạy trên cổng ngẫu nhiên khả dụng (`127.0.0.1:<backendPort>`), trong process group riêng để teardown dừng cả các worker của PHP built-in server.
+   - Frontend được build riêng cho backend đó (`vite build --mode development` với `VITE_API_URL=<backendUrl>`) rồi phục vụ bằng `vite preview` trên cổng ngẫu nhiên khả dụng (`127.0.0.1:<frontendPort>`). Bản build tải trang nhanh hơn dev server nhiều lần.
    - Session driver: `database` (lưu trữ session bền vững qua HTTP, không dùng `array` session).
 4. **Dữ liệu mẫu phi demo (Non-Demo Deterministic Fixtures)**:
    Không dùng tài khoản demo hoặc số dư cố định. Dữ liệu được seed tự động qua command `php artisan e2e:seed-fixtures --run-id=<runId>` bao gồm:
@@ -22,7 +22,9 @@ Bộ kiểm thử Playwright hoạt động trên cơ chế **Ephemeral Target I
    - 3 Cơ sở (Venue 1-A, Venue 1-B, Venue 2).
    - Các tài khoản người dùng đầy đủ vai trò: `owner1`, `owner2` (Foreign Owner), `manager1`, `cashier1`, `staff1`, `customer`, `customer2`, `unverifiedCustomer`, `restrictedCustomer`, và `admin`.
 5. **Thu hồi tài nguyên an toàn (Teardown & Signal Handling)**:
-   Khi suite kết thúc (thành công, thất bại, hoặc bị ngắt qua `SIGINT`/`SIGTERM`), runner giải phóng tiến trình frontend/backend và drop database `booking_e2e_<runId>_test`.
+   Khi suite kết thúc (thành công, thất bại, hoặc bị ngắt qua `SIGINT`/`SIGTERM`), runner giải phóng tiến trình frontend/backend và drop database `booking_e2e_<runId>_test` của mọi môi trường.
+6. **Chạy song song (một môi trường cho mỗi worker)**:
+   Local mặc định chạy 4 worker. Global setup dựng đồng thời một môi trường cô lập đầy đủ (database, backend, frontend) cho mỗi worker; mỗi worker dùng môi trường theo `TEST_PARALLEL_INDEX` nên không chia sẻ dữ liệu. Đổi số worker bằng `--workers=N` (ví dụ `--workers=1` để chạy tuần tự). `E2E_TARGET=prod` luôn chạy 1 worker.
 
 ---
 
@@ -76,11 +78,12 @@ npx playwright test --project smoke-chromium --project smoke-firefox --project s
 ```
 
 ### 3.5. Chạy toàn bộ kiểm thử hồi quy (Full Regression Suite)
-Chạy toàn bộ các test `@p0`, `@p1`, `@p2`, `@smoke`:
+Chạy mỗi test đúng một lần: 9 Khu trên Chromium cộng smoke trên Firefox, WebKit và Mobile:
 ```bash
 cd frontend
-npx playwright test
+npm run test:e2e
 ```
+Không chạy `npx playwright test` trần (không kèm `--project`): các project phân tầng `p0`, `p1`, `p2`, `smoke-chromium` chọn lại đúng các test của 9 Khu nên mọi test Chromium bị chạy hai lần (350 thay vì 192 test).
 
 ---
 
@@ -121,9 +124,10 @@ npx playwright show-report
 ```
 
 ### 5.2. Đọc Playwright Trace khi test thất bại
-Mọi lần chạy test thất bại đều tự động lưu file `trace.zip` trong `frontend/test-results/<tên-test>/trace.zip`. Mở trace để xem toàn bộ thao tác DOM, network calls, console logs và ảnh chụp từng khung hình:
+Chạy cục bộ mặc định không ghi trace vì ghi trace cho mọi test làm cả suite chậm gấp đôi. Test thất bại vẫn lưu ảnh chụp màn hình và `error-context.md` trong `frontend/test-results/<tên-test>/`. CI (khi biến `CI` được đặt) vẫn tự lưu `trace.zip` cho mọi test thất bại. Cần trace khi chạy cục bộ thì chạy lại riêng test đó với `--trace on`, rồi mở trace để xem toàn bộ thao tác DOM, network calls, console logs và ảnh chụp từng khung hình:
 ```bash
 cd frontend
+npx playwright test e2e/<tên-file>.spec.ts:<dòng> --project="Khu*" --workers=1 --trace on
 npx playwright show-trace test-results/<tên-thư-mục-test>/trace.zip
 ```
 

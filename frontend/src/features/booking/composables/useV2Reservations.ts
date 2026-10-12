@@ -1,12 +1,20 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { bookingApi } from '../api/bookingApi'
 import type { Court } from '@/features/court/types/court'
 import type { V2Reservation, V2PriceQuote } from '../types/v2Reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n, formatCurrency } from '@/i18n'
+import {
+  displayCode,
+  displayStatus,
+  loyaltyFields,
+  type LoyaltySelection,
+} from '../utils/reservation'
 
 const t = (key: string, params?: Record<string, any>) => i18n.global.t(key, params || {})
 export function useV2Reservations() {
+  const route = useRoute()
   const courts = ref<Court[]>([])
   const reservations = ref<V2Reservation[]>([])
   const selectedCourtId = ref<number | null>(null)
@@ -108,7 +116,7 @@ export function useV2Reservations() {
     try {
       const [courtsRes, resRes] = await Promise.allSettled([
         bookingApi.getCourts(),
-        bookingApi.getReservations<{ data?: V2Reservation[]; current_page?: number }>(),
+        bookingApi.getMyReservations(),
       ])
 
       if (courtsRes.status === 'fulfilled' && Array.isArray(courtsRes.value)) {
@@ -118,16 +126,7 @@ export function useV2Reservations() {
         }
       }
 
-      if (resRes.status === 'fulfilled') {
-        const payload = resRes.value
-        if (Array.isArray(payload)) {
-          reservations.value = payload
-        } else if (payload && Array.isArray(payload.data)) {
-          reservations.value = payload.data
-        } else {
-          reservations.value = []
-        }
-      }
+      if (resRes.status === 'fulfilled') reservations.value = resRes.value?.data ?? []
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('v2Reservations.messages.loadError'))
     } finally {
@@ -185,25 +184,26 @@ export function useV2Reservations() {
       holdingReservation.value = false
     }
   }
-  async function checkoutReservation(loyaltyPayload?: any) {
+  async function checkoutReservation(loyaltyPayload?: LoyaltySelection) {
     if (!activeQuote.value) return
     holdingReservation.value = true
     error.value = ''
     notice.value = ''
 
     try {
-      const res: any = await bookingApi.checkoutReservation({
-        quote_token: activeQuote.value.quote_token,
-        loyalty_points: loyaltyPayload?.loyalty_points,
-        loyalty_policy_version: loyaltyPayload?.loyalty_policy_version,
-        idempotency_key: loyaltyPayload?.idempotency_key,
-      })
-      const reservation = res?.reservation || res?.data?.reservation
-      const code = reservation?.code || ''
+      const { reservation } = await bookingApi.checkoutReservation(
+        {
+          quote_token: activeQuote.value.quote_token,
+          court_id: selectedCourtId.value ?? undefined,
+          ...loyaltyFields(loyaltyPayload),
+        },
+        loyaltyPayload?.idempotency_key,
+      )
+      const code = reservation.code
       activeQuote.value = null
       clearInterval(quoteTimerInterval)
       await loadData()
-      if (reservation?.status === 'held' && reservation?.payment_model === 'direct_owner_v1') {
+      if (needsPayment(reservation)) {
         notice.value = t('v2Reservations.messages.checkoutPending', { code })
         activeTab.value = 'held'
         openPayment(reservation)
@@ -225,7 +225,7 @@ export function useV2Reservations() {
 
     try {
       await bookingApi.confirmReservation(reservation.code)
-      notice.value = t('v2Reservations.messages.confirmSuccess', { code: reservation.code })
+      notice.value = t('v2Reservations.messages.confirmSuccess', { code: displayCode(reservation) })
       await loadData()
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('v2Reservations.messages.confirmError'))
@@ -238,14 +238,14 @@ export function useV2Reservations() {
     let list = reservations.value
 
     if (activeTab.value !== 'all') {
-      list = list.filter((r) => r.status === activeTab.value)
+      list = list.filter((r) => displayStatus(r) === activeTab.value)
     }
 
     if (searchQuery.value.trim()) {
       const q = searchQuery.value.toLowerCase().trim()
       list = list.filter(
         (r) =>
-          r.code?.toLowerCase().includes(q) ||
+          displayCode(r).toLowerCase().includes(q) ||
           r.court?.name?.toLowerCase().includes(q) ||
           r.court?.venue?.name?.toLowerCase().includes(q),
       )
@@ -255,14 +255,11 @@ export function useV2Reservations() {
   })
 
   const totalCount = computed(() => reservations.value.length)
-  const heldCount = computed(() => reservations.value.filter((r) => r.status === 'held').length)
-  const confirmedCount = computed(
-    () => reservations.value.filter((r) => r.status === 'confirmed').length,
-  )
-  const cancelledCount = computed(
-    () =>
-      reservations.value.filter((r) => r.status === 'cancelled' || r.status === 'expired').length,
-  )
+  const countBy = (...statuses: string[]) =>
+    reservations.value.filter((r) => statuses.includes(displayStatus(r))).length
+  const heldCount = computed(() => countBy('held'))
+  const confirmedCount = computed(() => countBy('confirmed'))
+  const cancelledCount = computed(() => countBy('cancelled', 'expired'))
 
   const activeHeldReservation = computed(() => reservations.value.find((r) => r.status === 'held'))
 
@@ -292,8 +289,26 @@ export function useV2Reservations() {
     selectedReservationForPayment.value = null
   }
 
-  onMounted(() => {
-    loadData()
+  function needsPayment(r: V2Reservation) {
+    return r.status === 'held' && r.payment_model === 'direct_owner_v1'
+  }
+
+  // Deep link /reservations/:code opens the reservation, plus its payment when still payable.
+  async function openFromRoute() {
+    const code = route.params.code
+    if (typeof code !== 'string' || !code) return
+    try {
+      const { reservation } = await bookingApi.getReservation(code)
+      openDetails(reservation)
+      if (needsPayment(reservation)) openPayment(reservation)
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('v2Reservations.messages.loadError'))
+    }
+  }
+
+  onMounted(async () => {
+    await loadData()
+    await openFromRoute()
   })
 
   onUnmounted(() => {

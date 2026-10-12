@@ -3,19 +3,20 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
-import type { Booking } from '../../types/booking'
+import type { V2Reservation } from '../../types/v2Reservation'
+import { canReview, displayCode, displayStatus } from '../../utils/reservation'
 
 const { t, locale } = useI18n()
 
 const props = defineProps<{
-  booking: Booking
+  booking: V2Reservation
 }>()
 
 const emit = defineEmits<{
-  (e: 'review', booking: Booking): void
-  (e: 'qr', booking: Booking): void
-  (e: 'cancel', booking: Booking): void
-  (e: 'reschedule', booking: Booking): void
+  (e: 'review', booking: V2Reservation): void
+  (e: 'qr', booking: V2Reservation): void
+  (e: 'cancel', booking: V2Reservation): void
+  (e: 'reschedule', booking: V2Reservation): void
 }>()
 
 function formatDate(iso: string): string {
@@ -33,8 +34,9 @@ function formatDate(iso: string): string {
   }
 }
 
-const isConfirmed = computed(() => props.booking.status === 'confirmed')
-const isPendingPayment = computed(() => props.booking.status === 'pending_payment')
+const status = computed(() => displayStatus(props.booking))
+const isConfirmed = computed(() => status.value === 'confirmed')
+const isPendingPayment = computed(() => status.value === 'held')
 
 const statusMeta = computed(() => {
   if (isConfirmed.value) {
@@ -43,7 +45,7 @@ const statusMeta = computed(() => {
   if (isPendingPayment.value) {
     return { label: t('booking.statusPending'), icon: 'schedule', class: 'status-pending' }
   }
-  if (props.booking.status === 'refunded') {
+  if (status.value === 'refunded') {
     return {
       label: t('booking.statusRefunded'),
       icon: 'currency_exchange',
@@ -68,12 +70,12 @@ const sportLabel = computed(() => {
 </script>
 
 <template>
-  <div class="user-booking-card" :class="`border-${booking.status}`">
+  <div class="user-booking-card" :class="`border-${status}`">
     <!-- Card Top Header -->
     <div class="card-header">
       <div class="header-main">
         <div class="code-and-type">
-          <span class="booking-code font-mono">#{{ booking.code }}</span>
+          <span class="booking-code font-mono">#{{ displayCode(booking) }}</span>
           <span class="sport-badge font-mono">{{ sportLabel.toUpperCase() }}</span>
         </div>
         <h3 class="court-name">
@@ -114,7 +116,7 @@ const sportLabel = computed(() => {
         <div class="slot-time-col">
           <span class="material-symbols-outlined slot-icon">schedule</span>
           <span class="slot-time font-mono"
-            >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at.slice(11, 16) }}</span
+            >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span
           >
         </div>
         <div class="slot-date-col">
@@ -124,23 +126,6 @@ const sportLabel = computed(() => {
         <div class="slot-price-col">
           <span class="slot-price font-mono">{{ formatCurrency(s.unit_price) }}</span>
         </div>
-      </div>
-
-      <div v-if="booking.discount_amount && booking.discount_amount > 0" class="discount-row">
-        <span class="discount-label"
-          >{{ $t('payment.couponDiscount') }} ({{ booking.coupon?.code || 'COUPON' }}):</span
-        >
-        <span class="discount-value font-mono">-{{ formatCurrency(booking.discount_amount) }}</span>
-      </div>
-
-      <div
-        v-if="booking.membership_discount_amount && booking.membership_discount_amount > 0"
-        class="discount-row"
-      >
-        <span class="discount-label">{{ $t('payment.memberDiscount') }}:</span>
-        <span class="discount-value font-mono"
-          >-{{ formatCurrency(booking.membership_discount_amount) }}</span
-        >
       </div>
 
       <div
@@ -167,7 +152,11 @@ const sportLabel = computed(() => {
 
       <div class="actions-group">
         <!-- Pay Now (if pending) -->
-        <RouterLink v-if="isPendingPayment" :to="`/payment/${booking.code}`" class="btn-card-pay">
+        <RouterLink
+          v-if="isPendingPayment"
+          :to="{ name: 'reservations', params: { code: booking.code } }"
+          class="btn-card-pay"
+        >
           <span class="material-symbols-outlined">payments</span>
           <span>{{ $t('booking.payNowBtn') }}</span>
         </RouterLink>
@@ -189,9 +178,9 @@ const sportLabel = computed(() => {
           <span>{{ $t('booking.splitBillBtn') }}</span>
         </RouterLink>
 
-        <!-- Review (if confirmed) -->
+        <!-- Review (same eligibility as POST /reviews) -->
         <button
-          v-if="isConfirmed"
+          v-if="canReview(booking)"
           type="button"
           class="btn-card-secondary"
           @click="emit('review', booking)"

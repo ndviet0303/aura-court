@@ -12,17 +12,22 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
     return
   }
   const pointerPath = path.join(os.tmpdir(), 'aura_e2e_active_manifest.txt')
-  const env = globalThis.__E2E_ENVIRONMENT__
-  if (env) {
-    await env.stop()
-    globalThis.__E2E_ENVIRONMENT__ = undefined
+  const environments = globalThis.__E2E_ENVIRONMENTS__
+  if (environments) {
+    const stopped = await Promise.allSettled(environments.map((env) => env.stop()))
+    globalThis.__E2E_ENVIRONMENTS__ = undefined
+    const failure = stopped.find((result) => result.status === 'rejected')
+    if (failure) throw failure.reason
   } else {
-    // Fallback: read run manifest from E2E_MANIFEST_PATH or pointer file if global state lost across processes
-    let manifestPath = process.env.E2E_MANIFEST_PATH
-    if ((!manifestPath || !fs.existsSync(manifestPath)) && fs.existsSync(pointerPath)) {
-      manifestPath = fs.readFileSync(pointerPath, 'utf-8').trim()
+    // Fallback: read run manifests from E2E_MANIFEST_PATHS or pointer file if global state lost across processes
+    const manifestPaths = (process.env.E2E_MANIFEST_PATHS || process.env.E2E_MANIFEST_PATH || '')
+      .split(path.delimiter)
+      .filter((manifestPath) => manifestPath && fs.existsSync(manifestPath))
+    if (manifestPaths.length === 0 && fs.existsSync(pointerPath)) {
+      manifestPaths.push(fs.readFileSync(pointerPath, 'utf-8').trim())
     }
-    if (manifestPath && fs.existsSync(manifestPath)) {
+    for (const manifestPath of manifestPaths) {
+      if (!fs.existsSync(manifestPath)) continue
       try {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as RunManifest
         await teardownEnvironment(manifest)

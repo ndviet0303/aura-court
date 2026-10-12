@@ -47,6 +47,20 @@ export type V2ReservationEntitlement = {
   expires_at?: string
 }
 
+export type V2LegacyMapping = {
+  id: number
+  reservation_id: number
+  legacy_code: string
+  legacy_status: string
+}
+
+export type V2ReservationReview = {
+  id: number
+  reservation_id: number
+  rating: number
+  body?: string | null
+}
+
 export type V2Reservation = {
   id: number
   code: string
@@ -65,6 +79,8 @@ export type V2Reservation = {
   loyalty_snapshot?: any
   net_payable?: number
   payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1' | string | null
+  legacy_mapping?: V2LegacyMapping[]
+  review?: V2ReservationReview | null
 }
 
 export type V2PriceQuotePayload = {
@@ -79,5 +95,4 @@ export type V2HoldReservationPayload = {
   slots?: string[]
   loyalty_points?: number
   loyalty_policy_version?: number
-  idempotency_key?: string
 }

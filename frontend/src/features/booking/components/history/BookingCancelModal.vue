@@ -11,14 +11,10 @@ import type {
   RefundRecipient,
 } from '../../types/reservationChanges'
 
-const props = withDefaults(
-  defineProps<{
-    show: boolean
-    booking: ChangeableBooking | null
-    v2?: boolean
-  }>(),
-  { v2: false },
-)
+const props = defineProps<{
+  show: boolean
+  booking: ChangeableBooking | null
+}>()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -92,7 +88,7 @@ async function runQuote() {
   quoting.value = true
   error.value = ''
   try {
-    const res = await bookingApi.getRefundQuote(props.booking.code, ids, props.v2)
+    const res = await bookingApi.getRefundQuote(props.booking.code, ids)
     quote.value = res.data
   } catch (cause: unknown) {
     quote.value = null
@@ -132,7 +128,7 @@ async function submit() {
   submitting.value = true
   error.value = ''
   try {
-    const res = await bookingApi.createRefundRequest(props.booking.code, payload, props.v2)
+    const res = await bookingApi.createRefundRequest(props.booking.code, payload)
     obligation.value = res.data
     emit('updated')
   } catch (cause: unknown) {

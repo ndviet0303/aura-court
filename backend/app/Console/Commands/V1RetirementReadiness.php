@@ -7,9 +7,9 @@ use Illuminate\Console\Command;
 
 class V1RetirementReadiness extends Command
 {
-    protected $signature = 'v1:retirement-readiness {--approved-change= : Relative path under openspec/changes for a separate approved retirement change}';
+    protected $signature = 'v1:retirement-readiness {--approved-change= : Repository-relative path of a separate approved retirement change, e.g. openspec/changes/retire-v1-booking}';
 
-    protected $description = 'Block v1 retirement until adoption evidence and a separate approved change exist';
+    protected $description = 'Block v1 retirement until adoption evidence, complete legacy booking mappings and a separate approved change exist';
 
     public function handle(V1AdoptionService $service): int
     {

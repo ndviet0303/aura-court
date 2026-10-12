@@ -4,6 +4,7 @@ import UserBookingCard from '../components/history/UserBookingCard.vue'
 import PaymentSummaryCard from '../components/PaymentSummaryCard.vue'
 import { i18n, setAppLocale } from '@/i18n'
 import type { Booking, PaymentInfo } from '../types/booking'
+import type { V2Reservation } from '../types/v2Reservation'
 
 describe('BookingDetailLoyalty (Task 7.3 & 7.4)', () => {
   const mockBookingWithLoyalty: Booking = {
@@ -30,6 +31,18 @@ describe('BookingDetailLoyalty (Task 7.3 & 7.4)', () => {
         unit_price: 200000,
       },
     ],
+  }
+
+  // The history card renders reservations (GET v2/me/reservations).
+  const mockReservationWithLoyalty: V2Reservation = {
+    id: 42,
+    code: 'RSV-LOYALTY-001',
+    status: 'confirmed',
+    total_amount: 195000,
+    loyalty_discount_amount: 5000,
+    loyalty_points_redeemed: 100,
+    court: mockBookingWithLoyalty.court,
+    slots: mockBookingWithLoyalty.slots,
   }
 
   const mockPaymentInfo: PaymentInfo = {
@@ -59,7 +72,7 @@ describe('BookingDetailLoyalty (Task 7.3 & 7.4)', () => {
   it('renders persisted points redeemed and loyalty reduction in UserBookingCard', () => {
     const wrapper = mount(UserBookingCard, {
       props: {
-        booking: mockBookingWithLoyalty,
+        booking: mockReservationWithLoyalty,
       },
       global: globalOptions,
     })
@@ -71,8 +84,8 @@ describe('BookingDetailLoyalty (Task 7.3 & 7.4)', () => {
   })
 
   it('does not render loyalty discount row in UserBookingCard when no points were used', () => {
-    const ordinaryBooking: Booking = {
-      ...mockBookingWithLoyalty,
+    const ordinaryBooking: V2Reservation = {
+      ...mockReservationWithLoyalty,
       loyalty_discount_amount: 0,
       loyalty_points_redeemed: 0,
       total_amount: 200000,
@@ -114,7 +127,7 @@ describe('BookingDetailLoyalty (Task 7.3 & 7.4)', () => {
 
     const wrapper = mount(UserBookingCard, {
       props: {
-        booking: mockBookingWithLoyalty,
+        booking: mockReservationWithLoyalty,
       },
       global: globalOptions,
     })

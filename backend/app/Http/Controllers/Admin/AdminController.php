@@ -16,12 +16,9 @@ use App\Domain\Admin\Actions\UpdateVenue;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
-use App\Models\LegacyBookingMapping;
-use App\Models\LegacyBookingSlotMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
@@ -33,6 +30,7 @@ use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
 use App\Services\Infrastructure\AuditLogger;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -220,10 +218,7 @@ class AdminController extends Controller
     public function bookings(Request $request)
     {
         $user = $request->user();
-        $filters = [
-            'status' => $request->status,
-            'date' => $request->date,
-        ];
+        $filters = ['status' => $request->status, 'date' => $request->date];
 
         if ($user && ! $user->isPlatformAdmin()) {
             $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
@@ -413,6 +408,7 @@ class AdminController extends Controller
         abort_unless($booking->status === 'confirmed', 409, 'Booking không ở trạng thái có thể đánh dấu no-show.');
         abort_unless($booking->slots()->where('starts_at', '>', now()->utc())->doesntExist(), 409, 'Chưa kết thúc toàn bộ khung giờ.');
         $this->bookings->updateStatus($booking, 'no_show');
+        app(LegacyBookingBackfillService::class)->syncProjection($booking->fresh()); // Phase A readers use the mirror
         $this->audits->record($request, 'booking.no_show', $booking);
 
         return $booking->fresh(['court', 'slots']);
@@ -428,21 +424,14 @@ class AdminController extends Controller
         $scopedVenueIds = $data['scoped_venue_ids'];
         $canonicalBookings = $data['canonical_bookings'];
 
-        $confirmedSlots = BookingSlot::query()
-            ->where('status', 'confirmed')
-            ->whereBetween('starts_at', [$from->copy()->utc(), $to->copy()->utc()])
+        // A V1 mirror slot is 'legacy' if its booking was inactive at backfill; V1 kept the slots of these statuses booked.
+        $allConfirmedSlots = ReservationSlot::withoutGlobalScope('tenant_isolation')
+            ->leftJoin('legacy_booking_mappings as lbm', 'lbm.reservation_id', '=', 'reservation_slots.reservation_id')
+            ->where(fn ($q) => $q->where('reservation_slots.status', 'confirmed')
+                ->orWhere(fn ($legacy) => $legacy->where('reservation_slots.status', 'legacy')->whereIn('lbm.legacy_status', ['no_show', 'completed', 'in_use'])))
+            ->whereBetween('reservation_slots.starts_at', [$from->copy()->utc(), $to->copy()->utc()])
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
-            ->get();
-
-        $confirmedReservationSlots = ReservationSlot::query()
-            ->where('status', 'confirmed')
-            ->whereBetween('starts_at', [$from->copy()->utc(), $to->copy()->utc()])
-            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
-            ->get();
-
-        $mappedReservationSlotIds = LegacyBookingSlotMapping::pluck('reservation_slot_id')->all();
-        $unmappedReservationSlots = $confirmedReservationSlots->reject(fn ($s) => in_array($s->id, $mappedReservationSlotIds, true));
-        $allConfirmedSlots = $confirmedSlots->concat($unmappedReservationSlots);
+            ->get(['reservation_slots.*']);
 
         $capacity = 0;
         foreach (CarbonPeriod::create($from->copy()->startOfDay(), '1 day', $to->copy()->startOfDay()) as $day) {
@@ -461,7 +450,7 @@ class AdminController extends Controller
         $byCourt = $canonicalBookings
             ->groupBy('court_id')
             ->map(function ($items, $courtId) {
-                $court = $items->first()['court'] ?? ($courtId ? Court::find($courtId) : null);
+                $court = $items->first()->court;
 
                 return [
                     'court_id' => (int) $courtId,
@@ -530,23 +519,23 @@ class AdminController extends Controller
 
         $csvRows = collect();
 
-        // 1. Canonical bookings
-        foreach ($data['canonical_bookings'] as $cb) {
-            $court = $cb['court'];
+        // 1. Bookings: reservations, a V1 mirror shown with its V1 code
+        foreach ($data['canonical_bookings'] as $reservation) {
+            $court = $reservation->court;
             $venueOrCourt = $court?->name ?: ($court?->venue?->name ?: 'N/A');
-            $customer = $cb['user']?->email ?: ($cb['user']?->name ?: 'N/A');
+            $customer = $reservation->user?->email ?: ($reservation->user?->name ?: 'N/A');
 
             $csvRows->push([
-                'code' => (string) $cb['code'],
+                'code' => (string) ($reservation->legacy_code ?? $reservation->code),
                 'source_type' => 'booking',
                 'customer' => $customer,
                 'venue_or_court' => $venueOrCourt,
                 'receiver_type' => 'owner',
-                'status' => (string) $cb['status'],
-                'gross_amount' => (int) $cb['total_amount'],
+                'status' => (string) ($reservation->status === 'legacy' ? $reservation->legacy_status : $reservation->status),
+                'gross_amount' => (int) $reservation->total_amount,
                 'refund_amount' => 0,
-                'net_amount' => (int) $cb['total_amount'],
-                'created_at' => $cb['created_at'] ? Carbon::parse($cb['created_at'])->toIso8601String() : null,
+                'net_amount' => (int) $reservation->total_amount,
+                'created_at' => $reservation->created_at?->toIso8601String(),
             ]);
         }
 
@@ -659,152 +648,15 @@ class AdminController extends Controller
             $scopedVenueIds = [(int) $request->input('venue_id')];
         }
 
-        // 1. Query V1 bookings and V2 reservations confirmed records
-        $v1Bookings = Booking::with(['court.venue', 'user'])
-            ->where('status', 'confirmed')
-            ->whereBetween('created_at', [$from, $to])
+        // 1. Bookings are reservations. A 'legacy' mirror counts by its V1 status, any other mirror by its own: V1 writers keep it current, and a V1 no-show stays confirmed as in V2.
+        $canonicalBookings = Reservation::withoutGlobalScope('tenant_isolation')
+            ->with(['court.venue', 'user'])
+            ->leftJoin('legacy_booking_mappings as lbm', 'lbm.reservation_id', '=', 'reservations.id')
+            ->select(['reservations.*', 'lbm.legacy_code', 'lbm.legacy_status'])
+            ->whereRaw("CASE WHEN reservations.status = 'legacy' THEN lbm.legacy_status ELSE reservations.status END = 'confirmed'")
+            ->whereBetween('reservations.created_at', [$from, $to])
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
             ->get();
-
-        $v2Reservations = Reservation::with(['court.venue', 'user'])
-            ->where('status', 'confirmed')
-            ->whereBetween('created_at', [$from, $to])
-            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
-            ->get();
-
-        // Load legacy mappings to link V1 and V2 records
-        $v1Ids = $v1Bookings->pluck('id')->filter()->all();
-        $v2Ids = $v2Reservations->pluck('id')->filter()->all();
-
-        $legacyMappings = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')
-            ->where(function ($q) use ($v1Ids, $v2Ids) {
-                $q->whereIn('legacy_booking_id', $v1Ids)
-                    ->orWhereIn('reservation_id', $v2Ids);
-            })
-            ->get();
-
-        $mappingByReservationId = [];
-        $mappingByLegacyBookingId = [];
-        $mappingByLegacyCode = [];
-
-        foreach ($legacyMappings as $m) {
-            if ($m->reservation_id && $m->legacy_booking_id) {
-                $mappingByReservationId[$m->reservation_id] = $m->legacy_booking_id;
-                $mappingByLegacyBookingId[$m->legacy_booking_id] = $m->reservation_id;
-            }
-            if ($m->legacy_code && $m->legacy_booking_id) {
-                $mappingByLegacyCode[$m->legacy_code] = $m->legacy_booking_id;
-            }
-        }
-
-        $v1ById = $v1Bookings->keyBy('id');
-        $v1ByCode = $v1Bookings->keyBy('code');
-
-        $mergedV1BookingIds = [];
-        $canonicalBookings = collect();
-
-        foreach ($v2Reservations as $res) {
-            $matchedBooking = null;
-
-            // 1. Authoritative check 1: $mappingByReservationId[$res->id] -> match to $v1ById[$legacyBookingId]
-            if (isset($mappingByReservationId[$res->id])) {
-                $legacyBookingId = $mappingByReservationId[$res->id];
-                if (isset($v1ById[$legacyBookingId])) {
-                    $matchedBooking = $v1ById[$legacyBookingId];
-                }
-            }
-
-            // 2. Authoritative check 2: $mappingByLegacyCode[$res->code] -> match to $v1ById[$legacyBookingId]
-            if (! $matchedBooking && isset($mappingByLegacyCode[$res->code])) {
-                $legacyBookingId = $mappingByLegacyCode[$res->code];
-                if (isset($v1ById[$legacyBookingId])) {
-                    $matchedBooking = $v1ById[$legacyBookingId];
-                }
-            }
-
-            // 3. Fallbacks: metadata booking_id or identical code
-            if (! $matchedBooking) {
-                $bId = data_get($res->metadata, 'booking_id') ?? data_get($res->metadata, 'legacy_booking_id');
-                if ($bId && isset($v1ById[$bId])) {
-                    $matchedBooking = $v1ById[$bId];
-                }
-            }
-
-            if (! $matchedBooking && isset($v1ByCode[$res->code])) {
-                $matchedBooking = $v1ByCode[$res->code];
-            }
-
-            if (! $matchedBooking) {
-                $matchedBooking = $v1Bookings->first(function ($b) use ($res) {
-                    return data_get($b->metadata, 'reservation_id') == $res->id
-                        || data_get($b->metadata, 'reservation_code') === $res->code;
-                });
-            }
-
-            if ($matchedBooking) {
-                $mergedV1BookingIds[$matchedBooking->id] = true;
-                $canonicalBookings->push([
-                    'id' => 'v2_'.$res->id,
-                    'code' => $res->code ?: $matchedBooking->code,
-                    'status' => 'confirmed',
-                    'total_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
-                    'court_id' => $res->court_id ?: $matchedBooking->court_id,
-                    'court' => $res->court ?: $matchedBooking->court,
-                    'user' => $res->user ?: $matchedBooking->user,
-                    'created_at' => $res->created_at ?: $matchedBooking->created_at,
-                    'source_type' => 'booking',
-                    'receiver_type' => 'owner',
-                    'gross_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
-                    'refund_amount' => 0,
-                    'net_amount' => (int) ($res->total_amount ?: $matchedBooking->total_amount),
-                ]);
-            } else {
-                $canonicalBookings->push([
-                    'id' => 'v2_'.$res->id,
-                    'code' => $res->code,
-                    'status' => $res->status,
-                    'total_amount' => (int) $res->total_amount,
-                    'court_id' => $res->court_id,
-                    'court' => $res->court,
-                    'user' => $res->user,
-                    'created_at' => $res->created_at,
-                    'source_type' => 'booking',
-                    'receiver_type' => 'owner',
-                    'gross_amount' => (int) $res->total_amount,
-                    'refund_amount' => 0,
-                    'net_amount' => (int) $res->total_amount,
-                ]);
-            }
-        }
-
-        foreach ($v1Bookings as $b) {
-            // 1. If in $mergedV1BookingIds, skip
-            if (isset($mergedV1BookingIds[$b->id])) {
-                continue;
-            }
-
-            // 2. If isset($mappingByLegacyBookingId[$b->id]) and $v2Reservations->contains('id', $mappingByLegacyBookingId[$b->id]), skip
-            if (isset($mappingByLegacyBookingId[$b->id]) && $v2Reservations->contains('id', $mappingByLegacyBookingId[$b->id])) {
-                continue;
-            }
-
-            // 3. Otherwise push as standalone canonical booking
-            $canonicalBookings->push([
-                'id' => 'v1_'.$b->id,
-                'code' => $b->code,
-                'status' => $b->status,
-                'total_amount' => (int) $b->total_amount,
-                'court_id' => $b->court_id,
-                'court' => $b->court,
-                'user' => $b->user,
-                'created_at' => $b->created_at,
-                'source_type' => 'booking',
-                'receiver_type' => 'owner',
-                'gross_amount' => (int) $b->total_amount,
-                'refund_amount' => 0,
-                'net_amount' => (int) $b->total_amount,
-            ]);
-        }
 
         // 2. Query POS Orders (status in ['completed', 'paid'])
         $posOrdersQuery = PosOrder::query()

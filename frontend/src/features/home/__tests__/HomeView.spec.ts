@@ -1,12 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import HomeView from '../views/HomeView.vue'
 import { i18n, setAppLocale } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/stores/auth'
+import { bookingApi } from '@/features/booking/api/bookingApi'
+import type { V2Reservation } from '@/features/booking/types/v2Reservation'
+import type { Court } from '@/features/court/types/court'
+
+const mockPush = vi.hoisted(() => vi.fn())
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
   useRoute: () => ({ path: '/', query: {} }),
   RouterLink: {
     template: '<a><slot /></a>',
@@ -93,5 +99,34 @@ describe('HomeView i18n & rendering', () => {
     expect(text).toContain('Time Slot')
     expect(text).toContain('Live Availability')
     expect(text).toContain('International Standard Sports Experience')
+  })
+
+  it('checks out the selected slots through V2 and opens the reservation', async () => {
+    const court = { id: 7, name: 'Sân 7', slug: 'san-7' } as Court
+    const slot = {
+      startsAt: '2099-09-22T17:00:00+07:00',
+      endsAt: '2099-09-22T18:00:00+07:00',
+      price: 120000,
+      available: true,
+    }
+    vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([court])
+    vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([slot])
+    const checkout = vi.spyOn(bookingApi, 'checkoutReservation').mockResolvedValue({
+      reservation: { code: 'RSV-HOME-1', status: 'confirmed' } as V2Reservation,
+    })
+    useAuthStore().user = { id: 1, name: 'Player', email: 'p@example.com', role: 'customer' }
+
+    const wrapper = mount(HomeView, {
+      global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
+    })
+    await flushPromises()
+    useBookingStore().toggle(slot)
+    await flushPromises()
+    await wrapper.find('.btn-floating-proceed').trigger('click')
+    await flushPromises()
+
+    // No loyalty selection: no key, so the client generates its own Idempotency-Key.
+    expect(checkout).toHaveBeenCalledWith({ court_id: 7, slots: [slot.startsAt] }, undefined)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-HOME-1' } })
   })
 })

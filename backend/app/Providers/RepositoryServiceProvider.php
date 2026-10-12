@@ -19,6 +19,7 @@ use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\RefundRepositoryInterface;
+use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
@@ -41,6 +42,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionReposit
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRefundRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
@@ -61,6 +63,7 @@ class RepositoryServiceProvider extends ServiceProvider
         CourtPriceSlotRepositoryInterface::class => EloquentCourtPriceSlotRepository::class,
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
         BookingRepositoryInterface::class => EloquentBookingRepository::class,
+        ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         RefundRepositoryInterface::class => EloquentRefundRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,

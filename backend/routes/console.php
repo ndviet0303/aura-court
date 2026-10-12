@@ -106,6 +106,13 @@ Schedule::command('platform:process-expired-subscriptions')
     ->hourly()
     ->onFailure($reportScheduleFailure('subscriptions:process-expired'));
 
+// 4d. V1 retirement evidence: trailing 30-day adoption snapshot for the retire-v1-booking gate
+Schedule::command('v1:adoption-snapshot --days=30')
+    ->name('v1:adoption-snapshot')
+    ->withoutOverlapping(30)
+    ->dailyAt('01:00')
+    ->onFailure($reportScheduleFailure('v1:adoption-snapshot'));
+
 // 5. Queue depth monitoring only when running asynchronous queue drivers (omitted in sync mode)
 if (config('queue.default') !== 'sync') {
     Schedule::command('monitor:queue-lag')

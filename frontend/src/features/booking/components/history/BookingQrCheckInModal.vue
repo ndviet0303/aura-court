@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { Booking } from '../../types/booking'
+import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode } from '../../utils/reservation'
 
 defineProps<{
   show: boolean
-  booking: Booking | null
+  booking: V2Reservation | null
 }>()
 
 const emit = defineEmits<{
@@ -31,13 +32,13 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined loc-icon">location_on</span>
             {{ booking.court?.venue?.name || 'Aura Badminton Center' }}
           </span>
-          <span class="code-pill font-mono">MÃ ĐƠN: #{{ booking.code }}</span>
+          <span class="code-pill font-mono">MÃ ĐƠN: #{{ displayCode(booking) }}</span>
         </div>
 
         <div class="qr-container">
           <img
-            :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=AURA_BOOKING_${booking.code}&margin=10`"
-            :alt="`QR Check-in ${booking.code}`"
+            :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=AURA_BOOKING_${displayCode(booking)}&margin=10`"
+            :alt="`QR Check-in ${displayCode(booking)}`"
             class="qr-image"
           />
           <span class="qr-caption">Xuất trình mã này tại quầy lễ tân hoặc máy quét cửa</span>
@@ -47,7 +48,7 @@ const emit = defineEmits<{
           <div v-for="s in booking.slots" :key="s.starts_at" class="schedule-line">
             <span class="material-symbols-outlined sched-icon">schedule</span>
             <span class="font-mono"
-              >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at.slice(11, 16) }}</span
+              >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span
             >
             <span class="sched-date">({{ s.starts_at.slice(0, 10) }})</span>
           </div>

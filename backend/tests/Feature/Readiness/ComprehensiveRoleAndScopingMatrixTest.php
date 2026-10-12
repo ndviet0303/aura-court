@@ -14,6 +14,7 @@ use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -239,6 +240,17 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
                 (string) $this->orgBeta->id,
             ],
         ]);
+    }
+
+    /** Reports read reservations, so a V1 booking needs a slot and its legacy mirror. */
+    private function mappedBooking(Court $court, User $customer, string $code, int $amount): Booking
+    {
+        $booking = Booking::create(['court_id' => $court->id, 'user_id' => $customer->id, 'code' => $code, 'status' => 'confirmed', 'total_amount' => $amount]);
+        $start = now()->addDay()->setTime(10, 0)->utc();
+        $booking->slots()->create(['court_id' => $court->id, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'unit_price' => $amount, 'status' => 'confirmed']);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
+
+        return $booking;
     }
 
     private function createCustomerUser(string $email, string $name = 'Customer User'): User
@@ -834,13 +846,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
      */
     public function test_matrix_6_owner_can_export_reports_for_their_own_venues(): void
     {
-        Booking::create([
-            'court_id' => $this->courtAlpha->id,
-            'user_id' => $this->customerAlice->id,
-            'code' => 'BK-ALPHA-REV-100',
-            'status' => 'confirmed',
-            'total_amount' => 150000,
-        ]);
+        $this->mappedBooking($this->courtAlpha, $this->customerAlice, 'BK-ALPHA-REV-100', 150000);
 
         // 1. JSON report query for authorized venue
         $jsonRes = $this->actingAs($this->ownerAlpha)
@@ -892,22 +898,10 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
     public function test_matrix_6_export_includes_only_records_within_authorized_venue_scope(): void
     {
         // Booking 1 in Venue Alpha (Org Alpha)
-        $bookingAlpha = Booking::create([
-            'court_id' => $this->courtAlpha->id,
-            'user_id' => $this->customerAlice->id,
-            'code' => 'BK-ALPHA-SCOPED-001',
-            'status' => 'confirmed',
-            'total_amount' => 200000,
-        ]);
+        $this->mappedBooking($this->courtAlpha, $this->customerAlice, 'BK-ALPHA-SCOPED-001', 200000);
 
         // Booking 2 in Venue Beta (Org Beta)
-        $bookingBeta = Booking::create([
-            'court_id' => $this->courtBeta->id,
-            'user_id' => $this->customerBob->id,
-            'code' => 'BK-BETA-SCOPED-002',
-            'status' => 'confirmed',
-            'total_amount' => 350000,
-        ]);
+        $this->mappedBooking($this->courtBeta, $this->customerBob, 'BK-BETA-SCOPED-002', 350000);
 
         // 1. Export with explicit venue_id = Venue Alpha
         $exportAlpha = $this->actingAs($this->ownerAlpha)

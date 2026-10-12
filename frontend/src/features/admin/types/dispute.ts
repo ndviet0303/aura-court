@@ -54,6 +54,8 @@ export interface DisputeCase {
   organization_id?: number
   venueId?: number
   bookingId?: number
+  reservationId?: number
+  reservationCode?: string
   courtName: string
   disputeType: DisputeType
   severity: DisputeSeverity

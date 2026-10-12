@@ -2,7 +2,6 @@
 
 namespace App\Services\Booking;
 
-use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\MembershipEntitlement;
@@ -186,23 +185,19 @@ class DiscountService
             return false;
         }
 
-        $hasSuccessfulBooking = Booking::query()
+        $successful = ['confirmed', 'in_use', 'completed'];
+        $allTenants = fn ($mapping) => $mapping->withoutGlobalScope('tenant_isolation');
+        // A 'legacy' mirror counts by its V1 status, any other reservation by its own (same rule as the report).
+        $hasSuccessfulBooking = Reservation::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->where('organization_id', $organizationId)
             ->where('user_id', $user->id)
-            ->whereIn('status', ['confirmed', 'in_use', 'completed'])
-            ->whereHas('court', fn ($query) => $query
-                ->when($courtId !== null, fn ($scope) => $scope->whereKey($courtId))
-                ->whereHas('venue', fn ($scope) => $scope
-                    ->where('organization_id', $organizationId)
-                    ->when($venueId !== null, fn ($venueScope) => $venueScope->whereKey($venueId))))
-            ->exists()
-            || Reservation::query()
-                ->withoutGlobalScope('tenant_isolation')
-                ->where('organization_id', $organizationId)
-                ->where('user_id', $user->id)
-                ->whereIn('status', ['confirmed', 'in_use', 'completed'])
-                ->when($courtId !== null, fn ($query) => $query->where('court_id', $courtId))
-                ->when($venueId !== null, fn ($query) => $query->whereHas('court', fn ($scope) => $scope->where('venue_id', $venueId)))
-                ->exists();
+            ->where(fn ($query) => $query
+                ->whereIn('status', $successful)
+                ->orWhere(fn ($legacy) => $legacy->where('status', 'legacy')->whereHas('legacyMapping', fn ($mapping) => $allTenants($mapping)->whereIn('legacy_status', $successful))))
+            ->when($courtId !== null, fn ($query) => $query->where('court_id', $courtId))
+            ->when($venueId !== null, fn ($query) => $query->whereHas('court', fn ($scope) => $scope->where('venue_id', $venueId)))
+            ->exists();
 
         return $group === Coupon::GROUP_RETURNING ? $hasSuccessfulBooking : ! $hasSuccessfulBooking;
     }

@@ -209,17 +209,18 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       LARAVEL_STORAGE_PATH: manifest.storagePath,
     }
 
-    // 1. Arrange an existing confirmed booking booked at historical price of 100,000 VND
+    // 1. Arrange an existing confirmed V2 reservation booked at historical price of 100,000 VND
     const arrangeBookingScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
-      use App\\Models\\BookingSlot;
       use App\\Models\\Court;
       use App\\Models\\PriceRule;
+      use App\\Models\\Reservation;
+      use App\\Models\\ReservationEntitlement;
+      use App\\Models\\ReservationSlot;
       use App\\Models\\User;
       use Illuminate\\Support\\Str;
 
@@ -246,37 +247,53 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
         'version' => 1,
       ]);
 
-      $bookingCode = 'BK-HIST-' . Str::upper(Str::random(6));
-      $booking = Booking::create([
-        'code' => $bookingCode,
+      // Same rows OrdinaryCheckoutService writes: reservation, slot with a price snapshot, entitlement.
+      $startsAt = now()->addDays(5)->setTime(14, 0)->utc();
+      $endsAt = $startsAt->copy()->addHour();
+      $reservation = Reservation::create([
+        'organization_id' => ${orgId},
         'user_id' => $customerUser->id,
         'court_id' => $court->id,
-        'total_amount' => 100000,
-        'discount_amount' => 0,
+        'code' => 'RSV' . Str::upper(Str::random(13)),
         'status' => 'confirmed',
-        'payment_model' => 'direct_owner',
-        'price_snapshot' => [
+        'currency' => 'VND',
+        'total_amount' => 100000,
+        'confirmed_at' => now(),
+        'payment_model' => 'direct_owner_v1',
+      ]);
+      $slot = ReservationSlot::create([
+        'organization_id' => ${orgId},
+        'reservation_id' => $reservation->id,
+        'court_id' => $court->id,
+        'starts_at' => $startsAt,
+        'ends_at' => $endsAt,
+        'unit_price' => 100000,
+        'status' => 'confirmed',
+        'snapshot' => [
+          'starts_at' => $startsAt->toIso8601String(),
+          'ends_at' => $endsAt->toIso8601String(),
           'unit_price' => 100000,
-          'subtotal' => 100000,
           'rule_id' => $rule->id,
           'rule_version' => 1,
         ],
       ]);
-
-      $slot = BookingSlot::create([
-        'booking_id' => $booking->id,
+      ReservationEntitlement::create([
+        'organization_id' => ${orgId},
+        'reservation_id' => $reservation->id,
+        'reservation_slot_id' => $slot->id,
+        'user_id' => $customerUser->id,
         'court_id' => $court->id,
-        'starts_at' => now()->addDays(5)->setTime(14, 0)->utc(),
-        'ends_at' => now()->addDays(5)->setTime(15, 0)->utc(),
-        'unit_price' => 100000,
-        'status' => 'booked',
+        'starts_at' => $startsAt,
+        'ends_at' => $endsAt,
+        'amount' => 100000,
+        'status' => 'active',
       ]);
 
       echo json_encode([
         'court_id' => $court->id,
-        'booking_id' => $booking->id,
-        'booking_code' => $bookingCode,
-        'initial_price' => $booking->total_amount,
+        'reservation_id' => $reservation->id,
+        'reservation_code' => $reservation->code,
+        'initial_price' => $reservation->total_amount,
       ]);
     `
 
@@ -286,39 +303,44 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
         env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
         encoding: 'utf-8',
       }),
-    ) as { court_id: number; booking_id: number; booking_code: string; initial_price: number }
+    ) as {
+      court_id: number
+      reservation_id: number
+      reservation_code: string
+      initial_price: number
+    }
 
     expect(arrangedBooking.initial_price).toBe(100000)
 
-    // 2. Owner later increases court price rules: updates base price to 250,000 VND and adds peak 350,000 VND
+    // 2. Owner later increases court price rules: updates base price to 250,000 VND
     const updatePricesScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
-      use App\\Models\\BookingSlot;
       use App\\Models\\Court;
       use App\\Models\\PriceRule;
+      use App\\Models\\Reservation;
+      use App\\Models\\ReservationSlot;
       use App\\Services\\Reservation\\PriceQuoteService;
 
       $courtId = ${arrangedBooking.court_id};
       // Update base price rule to 250,000 VND
       $baseRule = PriceRule::where('court_id', $courtId)->where('type', 'base')->first();
       $baseRule->update(['price' => 250000, 'version' => $baseRule->version + 1]);
-      // Verify existing booking unchanged
-      $existingBooking = Booking::findOrFail(${arrangedBooking.booking_id});
-      $existingSlot = BookingSlot::where('booking_id', ${arrangedBooking.booking_id})->first();
+      // Verify existing reservation unchanged
+      $existing = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail(${arrangedBooking.reservation_id});
+      $existingSlot = ReservationSlot::withoutGlobalScope('tenant_isolation')->where('reservation_id', $existing->id)->firstOrFail();
 
       // Query new quote for future slot on this court
       $court = Court::findOrFail($courtId);
       $newQuote = app(PriceQuoteService::class)->priceSnapshots($court, [now()->addDays(6)->setTime(14, 0)->utc()->toIso8601String()], 60);
 
       echo json_encode([
-        'existing_booking_total' => $existingBooking->total_amount,
+        'existing_reservation_total' => $existing->total_amount,
         'existing_slot_unit_price' => $existingSlot->unit_price,
-        'existing_price_snapshot' => $existingBooking->price_snapshot,
+        'existing_slot_snapshot' => $existingSlot->snapshot,
         'new_slot_price' => $newQuote[0]['unit_price'],
       ]);
     `
@@ -330,16 +352,16 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
         encoding: 'utf-8',
       }),
     ) as {
-      existing_booking_total: number
+      existing_reservation_total: number
       existing_slot_unit_price: number
-      existing_price_snapshot: any
+      existing_slot_snapshot: { unit_price: number }
       new_slot_price: number
     }
 
-    // Historical booking price MUST NOT CHANGE (immutability)
-    expect(verification.existing_booking_total).toBe(100000)
+    // Historical reservation price MUST NOT CHANGE (immutability)
+    expect(verification.existing_reservation_total).toBe(100000)
     expect(verification.existing_slot_unit_price).toBe(100000)
-    expect(verification.existing_price_snapshot.unit_price).toBe(100000)
+    expect(verification.existing_slot_snapshot.unit_price).toBe(100000)
 
     // New quote reflects updated pricing
     expect(verification.new_slot_price).toBe(250000)

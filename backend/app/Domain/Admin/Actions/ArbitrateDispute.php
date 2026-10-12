@@ -66,8 +66,12 @@ class ArbitrateDispute
                 }
 
                 if (! $obligation) {
-                    $orgId = $dispute->organization_id ?? $dispute->booking?->court?->venue?->organization_id;
-                    $venueId = $dispute->venue_id ?? $dispute->booking?->court?->venue_id;
+                    // OwnerRefundService reads slot_ids as slots of reservation_id (mirror slots for a mapped booking),
+                    // so only a dispute without a reservation falls back to its historical booking.
+                    $source = $dispute->reservation_id ? $dispute->reservation : $dispute->booking;
+                    $court = $source?->court;
+                    $orgId = $dispute->organization_id ?? $court?->venue?->organization_id;
+                    $venueId = $dispute->venue_id ?? $court?->venue_id;
                     if (! $venueId && $orgId) {
                         $venueId = Venue::where('organization_id', $orgId)->value('id');
                     }
@@ -77,7 +81,7 @@ class ArbitrateDispute
                         ?? ($orgId ? $this->disputeRepository->findRespondentIdForOrganization($orgId) : null)
                         ?? $data->reviewerId;
 
-                    $slotIds = $dispute->booking?->slots()->pluck('id')->all() ?? [];
+                    $slotIds = $source?->slots()->withoutGlobalScope('tenant_isolation')->pluck('id')->all() ?? [];
                     $recipientData = [
                         'name' => $dispute->complainant_name ?? 'Complainant',
                         'user_id' => $dispute->complainant_id,
@@ -88,6 +92,7 @@ class ArbitrateDispute
                         'organization_id' => $orgId,
                         'venue_id' => $venueId,
                         'booking_id' => $dispute->booking_id,
+                        'reservation_id' => $dispute->reservation_id,
                         'payer_id' => $payerId,
                         'reference_code' => 'REF-DSP-'.strtoupper(Str::random(10)),
                         'idempotency_key' => "dispute_refund_{$dispute->id}_v{$currentVersion}",

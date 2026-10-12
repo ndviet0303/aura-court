@@ -108,16 +108,6 @@ export type Refund = {
   booking: Booking & { user?: User }
 }
 
-export type CreateBookingPayload = {
-  court_id: number | null
-  slots: string[]
-  coupon_code?: string
-  quote_token?: string
-  loyalty_points?: number
-  loyalty_policy_version?: number
-  idempotency_key?: string
-}
-
 export type CardDetails = {
   cardNumber?: string
   cardExpiry?: string

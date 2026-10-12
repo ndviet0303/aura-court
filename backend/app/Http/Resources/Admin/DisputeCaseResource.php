@@ -23,6 +23,9 @@ class DisputeCaseResource extends JsonResource
             'organization_id' => $this->organization_id,
             'venue_id' => $this->venue_id,
             'booking_id' => $this->booking_id,
+            'reservation_id' => $this->reservation_id,
+            // Display rule: a legacy mirror shows its original booking code, never LEGACY-<code>.
+            'reservation_code' => data_get($this->reservation, 'legacyMapping.0.legacy_code') ?? $this->reservation?->getAttribute('code'),
             'reference_type' => $this->reference_type,
             'reference_id' => $this->reference_id,
             'duplicate_of_id' => $this->duplicate_of_id,

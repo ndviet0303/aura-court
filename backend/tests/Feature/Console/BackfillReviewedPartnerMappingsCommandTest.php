@@ -37,7 +37,7 @@ class BackfillReviewedPartnerMappingsCommandTest extends TestCase
         $org1 = Organization::create([
             'name' => 'Verified Club',
             'slug' => 'verified-club',
-            'partner_status' => 'pending_verification',
+            'partner_status' => 'pending',
         ]);
         $venue1 = Venue::create([
             'organization_id' => $org1->id,
@@ -51,7 +51,7 @@ class BackfillReviewedPartnerMappingsCommandTest extends TestCase
         $org2 = Organization::create([
             'name' => 'Unresolved Club',
             'slug' => 'unresolved-club',
-            'partner_status' => 'pending_verification',
+            'partner_status' => 'pending',
         ]);
 
         $tempFile = tempnam(sys_get_temp_dir(), 'mappings_').'.json';
@@ -82,7 +82,7 @@ class BackfillReviewedPartnerMappingsCommandTest extends TestCase
             ])->assertSuccessful()
                 ->expectsOutputToContain('Running in DRY-RUN mode')
                 ->expectsOutputToContain('Dry-run complete. Changes rolled back successfully.');
-            $this->assertSame('pending_verification', $org1->fresh()->partner_status);
+            $this->assertSame('pending', $org1->fresh()->partner_status);
             $this->assertSame('draft', $venue1->fresh()->status);
             $this->assertSame(0, PlatformSubscription::count());
 
@@ -97,7 +97,7 @@ class BackfillReviewedPartnerMappingsCommandTest extends TestCase
             $this->assertSame('approved', $org1->fresh()->partner_status);
             $this->assertSame('published', $venue1->fresh()->status);
             $this->assertTrue((bool) $venue1->fresh()->is_active);
-            $this->assertSame('pending_verification', $org2->fresh()->partner_status);
+            $this->assertSame('pending', $org2->fresh()->partner_status);
 
             $this->assertSame(1, PlatformSubscription::where('organization_id', $org1->id)->count());
             $this->assertSame(1, PartnerReviewHistory::count());

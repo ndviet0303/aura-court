@@ -42,6 +42,16 @@ class ScheduledCallbackResolutionTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_v1_adoption_snapshot_is_scheduled_daily_over_thirty_days(): void
+    {
+        $event = collect(app(Schedule::class)->events())
+            ->first(fn ($e) => ($e->description ?? null) === 'v1:adoption-snapshot');
+
+        $this->assertNotNull($event, 'v1:adoption-snapshot must be registered.');
+        $this->assertStringContainsString('v1:adoption-snapshot --days=30', $event->command);
+        $this->assertSame('0 1 * * *', $event->expression);
+    }
+
     public function test_failing_scheduled_invocation_emits_observable_alert(): void
     {
         $spy = new class extends ObservabilityService

@@ -4,7 +4,6 @@ import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export interface TenantCapabilities {
-  v2_reservations_enabled?: boolean
   organization_tenancy_enforced?: boolean
   marketplace_payouts?: boolean
   marketplace_split_payments?: boolean
@@ -22,7 +21,6 @@ export interface CapabilitiesResponse {
 }
 
 const defaultCapabilities: TenantCapabilities = {
-  v2_reservations_enabled: true,
   organization_tenancy_enforced: true,
 }
 

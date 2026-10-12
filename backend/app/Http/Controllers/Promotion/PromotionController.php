@@ -6,8 +6,6 @@ use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Models\Court;
-use App\Models\Membership;
-use App\Models\MembershipPlan;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PromotionCampaign;
@@ -755,25 +753,5 @@ class PromotionController extends Controller
         if ($startsAt && $endsAt && Carbon::parse($endsAt)->lt(Carbon::parse($startsAt))) {
             throw ValidationException::withMessages([$field => 'The end date must be on or after the start date.']);
         }
-    }
-
-    public function plans()
-    {
-        return MembershipPlan::where('is_active', true)->orderBy('discount_percent', 'desc')->get();
-    }
-
-    public function storePlan(Request $request)
-    {
-        $data = $request->validate(['name' => 'required|string|max:80|unique:membership_plans,name', 'description' => 'nullable|string', 'discount_percent' => 'required|integer|min:0|max:100', 'is_active' => 'boolean']);
-
-        return response()->json(MembershipPlan::create($data), 201);
-    }
-
-    public function assignMembership(Request $request)
-    {
-        $data = $request->validate(['user_id' => 'required|integer|exists:users,id', 'membership_plan_id' => 'required|integer|exists:membership_plans,id', 'starts_at' => 'required|date', 'ends_at' => 'required|date|after:starts_at']);
-        Membership::where('user_id', $data['user_id'])->where('status', 'active')->update(['status' => 'replaced']);
-
-        return response()->json(Membership::create($data + ['status' => 'active'])->load(['user:id,name,email', 'plan']), 201);
     }
 }

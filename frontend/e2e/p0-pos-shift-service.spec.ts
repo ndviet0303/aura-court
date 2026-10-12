@@ -33,7 +33,6 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
     const cleanShiftScript = `
       require "vendor/autoload.php";
@@ -70,7 +69,6 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 1. Arrange a dedicated POS product with known stock for deterministic testing
@@ -238,7 +236,6 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 1. Arrange a dedicated product with 25 in stock
@@ -574,7 +571,6 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // Arrange a dedicated product for creating an unresolved pending order during shift
@@ -815,7 +811,6 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       DB_PASSWORD: manifest.database.password || '',
       LARAVEL_STORAGE_PATH: manifest.storagePath,
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '*',
     }
 
     // 1. Arrange a confirmed court reservation for testing check-in and court service tab

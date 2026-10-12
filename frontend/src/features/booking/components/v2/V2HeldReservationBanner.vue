@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode } from '../../utils/reservation'
 
 const { t } = useI18n()
 defineProps<{
@@ -31,7 +32,7 @@ const emit = defineEmits<{
       <div class="held-eyebrow">
         <span class="badge-held">{{ t('v2Reservations.heldBanner.badge') }}</span>
         <span class="code font-mono">{{
-          t('v2Reservations.heldBanner.orderCode', { code: reservation.code })
+          t('v2Reservations.heldBanner.orderCode', { code: displayCode(reservation) })
         }}</span>
       </div>
       <h3 class="held-title">
