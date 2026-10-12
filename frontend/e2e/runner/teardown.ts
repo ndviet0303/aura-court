@@ -72,6 +72,18 @@ export function validateManifestForTeardown(manifest: RunManifest): void {
 }
 
 /**
+ * Signals the process group led by `pid`: the backend runs in its own group so its PHP server
+ * workers, which outlive their parent, are stopped with it.
+ */
+function signalProcessGroup(pid: number, signal: NodeJS.Signals): void {
+  try {
+    process.kill(-pid, signal)
+  } catch {
+    // Not a group leader, or the group already exited
+  }
+}
+
+/**
  * Safely terminates a process by PID, escalating from SIGTERM to SIGKILL if necessary.
  * If expectedKeywords are provided, verifies the process command line matches to prevent PID reuse killing unrelated processes.
  */
@@ -132,6 +144,7 @@ export async function terminateProcess(
   } catch {
     return false
   }
+  signalProcessGroup(pid, 'SIGTERM')
 
   for (const cPid of childPids) {
     try {
@@ -151,6 +164,7 @@ export async function terminateProcess(
       await promise
     } catch {
       // Process has terminated
+      signalProcessGroup(pid, 'SIGKILL')
       for (const cPid of childPids) {
         try {
           process.kill(cPid, 'SIGKILL')
@@ -168,6 +182,7 @@ export async function terminateProcess(
   } catch {
     // Process already terminated
   }
+  signalProcessGroup(pid, 'SIGKILL')
   for (const cPid of childPids) {
     try {
       process.kill(cPid, 'SIGKILL')
@@ -315,6 +330,8 @@ export async function teardownEnvironment(
   manifest.completedAt = new Date().toISOString()
 }
 
+const pendingExitCleanups = new Set<Promise<void>>()
+
 /**
  * Registers process lifecycle exit handlers to guarantee teardown on unexpected exit.
  */
@@ -338,12 +355,13 @@ export function registerExitHandlers(manifestGetter: () => RunManifest | null): 
     }
   }
 
-  const sigintListener = () => {
-    handler('SIGINT').finally(() => process.exit(130))
+  // Each parallel environment registers a listener for the same signal: exit once all have torn down.
+  const exitAfterCleanups = (cleanup: Promise<void>, code: number) => {
+    pendingExitCleanups.add(cleanup)
+    setImmediate(() => Promise.allSettled(pendingExitCleanups).finally(() => process.exit(code)))
   }
-  const sigtermListener = () => {
-    handler('SIGTERM').finally(() => process.exit(143))
-  }
+  const sigintListener = () => exitAfterCleanups(handler('SIGINT'), 130)
+  const sigtermListener = () => exitAfterCleanups(handler('SIGTERM'), 143)
 
   process.once('SIGINT', sigintListener)
   process.once('SIGTERM', sigtermListener)

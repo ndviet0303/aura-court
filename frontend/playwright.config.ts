@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
 import { getAvailablePort } from './e2e/runner/environment.ts'
 
@@ -25,6 +27,17 @@ if (isProd) {
   effectiveBaseUrl = prodUrl
   process.env.PLAYWRIGHT_BASE_URL = effectiveBaseUrl
 } else {
+  // Mỗi worker dùng môi trường cô lập riêng do global setup dựng (lane = parallel index của worker)
+  const laneManifestPath = process.env.E2E_MANIFEST_PATHS?.split(path.delimiter)[
+    Number(process.env.TEST_PARALLEL_INDEX)
+  ]
+  if (laneManifestPath) {
+    process.env.E2E_MANIFEST_PATH = laneManifestPath
+    process.env.PLAYWRIGHT_BASE_URL = JSON.parse(
+      fs.readFileSync(laneManifestPath, 'utf-8'),
+    ).frontend.url
+  }
+
   // Chế độ Local: R04 - Bảo vệ an toàn, chỉ cho phép loopback cục bộ
   const callerBaseUrl = process.env.PLAYWRIGHT_BASE_URL
   if (callerBaseUrl) {
@@ -52,7 +65,8 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   testIgnore: ['**/runner/**'],
   timeout: 60000,
-  workers: 1,
+  // Local: mỗi worker có DB + backend + frontend riêng nên chạy song song an toàn. Prod dùng chung một môi trường.
+  workers: isProd ? 1 : 4,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   failOnFlakyTests: true,
@@ -78,7 +92,8 @@ export default defineConfig({
     timezoneId: 'Asia/Ho_Chi_Minh',
     locale: 'vi-VN',
     trace: {
-      mode: 'retain-on-failure',
+      // Local: ghi trace cho mọi test làm cả suite chậm gấp đôi khi chạy song song; cần trace thì chạy lại test lỗi với --trace on
+      mode: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
       sources: false,
       attachments: false,
       screenshots: true,

@@ -256,6 +256,7 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
     APP_NAME: 'Aura Court E2E',
     APP_ENV: 'testing',
     APP_DEBUG: 'true',
+    BCRYPT_ROUNDS: '4',
     ...(realAppKey ? { APP_KEY: realAppKey } : {}),
     DB_CONNECTION: 'pgsql',
     DB_HOST: manifest.database.host,
@@ -263,6 +264,8 @@ export function getCanonicalBackendEnv(manifest: RunManifest): Record<string, st
     DB_DATABASE: manifest.database.name,
     DB_USERNAME: manifest.database.user,
     DB_PASSWORD: manifest.database.password || '',
+    // Empty, not absent: Laravel would otherwise read DB_URL from backend/.env*, which beats DB_HOST/DB_DATABASE
+    DB_URL: '',
     DATABASE_URL: '',
     LARAVEL_STORAGE_PATH: manifest.storagePath,
     SESSION_DRIVER: 'file',

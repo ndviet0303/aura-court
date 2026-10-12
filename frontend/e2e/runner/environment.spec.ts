@@ -597,6 +597,10 @@ test('Tasks 2.1 & 2.3: Full isolated environment lifecycle (frontend + backend)'
     assert.throws(() => {
       process.kill(frontendPid!, 0)
     }, 'Frontend process should be terminated')
+    const leftoverServers = execFileSync('ps', ['-Ao', 'command'], { encoding: 'utf-8' })
+      .split('\n')
+      .filter((command) => command.includes(`-S 127.0.0.1:${manifest.backend.port} `))
+    assert.deepEqual(leftoverServers, [], 'PHP built-in server workers should be terminated')
 
     // Verify temp directory was removed
     assert.equal(fs.existsSync(tempDir), false, 'Temp dir should be removed on completion')
