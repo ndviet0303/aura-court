@@ -93,6 +93,8 @@ php artisan demo:issue --admin  # tài khoản quản trị
 
 Lệnh chỉ in thông tin một lần để gửi riêng cho người trải nghiệm. Không commit tài khoản hoặc mật khẩu vào Git.
 
+Mật khẩu của tài khoản do `php artisan db:seed` tạo chỉ đọc từ `SEED_ADMIN_PASSWORD`, `SEED_DEMO_ADMIN_PASSWORD` và `SEED_DEMO_PASSWORD` (xem `backend/.env.example`). Khi `APP_ENV` khác `local`/`testing`, seed dừng với lỗi nếu thiếu biến; ở local, để trống thì tài khoản seed nhận mật khẩu ngẫu nhiên.
+
 ## Cấu hình backend production
 
 Các biến dưới đây được nhập trong Portainer Stack Environment hoặc file env riêng trên máy chủ. Không commit giá trị bí mật.
