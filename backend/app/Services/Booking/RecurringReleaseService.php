@@ -15,13 +15,14 @@ use App\Services\Payment\OwnerPaymentAttemptService;
 use App\Services\Payment\OwnerRefundService;
 use App\Services\Reservation\ReservationService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 /**
- * Returns recurring occurrences to inventory. Shared by the overdue sweep (one unpaid period) and
- * contract cancellation (every future occurrence; verified paid value becomes an owner refund obligation).
+ * Returns recurring occurrences to inventory. Shared by the overdue sweep (one unpaid period), contract cancellation
+ * (verified paid value becomes an owner refund obligation) and the repair of cancels made by the pre-fix admin path.
  */
 class RecurringReleaseService
 {
@@ -41,7 +42,8 @@ class RecurringReleaseService
             if ($occurrence->reservation) {
                 $this->reservations->release($occurrence->reservation, 'cancelled');
             }
-            $occurrence->update(['status' => 'released', 'released_at' => now()]);
+            // A repair keeps the time the old admin cancel marked the occurrence released.
+            $occurrence->update(['status' => 'released', 'released_at' => $occurrence->released_at ?? now()]);
             $released++;
         }
 
@@ -66,35 +68,84 @@ class RecurringReleaseService
      */
     public function cancelSeries(int $seriesId, User $actor, string $reason): void
     {
-        // Lock attempts before the series, as the payment path does, so a racing receipt cannot deadlock.
-        $this->expirePendingAttempts($seriesId, MonthlyInvoice::query()->where('recurring_series_id', $seriesId)->pluck('id')->all());
-        $series = RecurringSeries::query()->whereKey($seriesId)->lockForUpdate()->firstOrFail();
+        $series = $this->lockSeries($seriesId);
         if ($series->status === 'cancelled') {
             return; // A repeated cancel must not release or refund twice.
         }
 
-        $invoices = MonthlyInvoice::query()->where('recurring_series_id', $seriesId)->lockForUpdate()->get();
-        $released = $series->occurrences()->where('starts_at', '>', now())->whereIn('status', ['held', 'confirmed'])
-            ->with('reservation')->lockForUpdate()->get();
+        $this->close($series, $series->occurrences()->whereIn('status', ['held', 'confirmed']), $actor, $reason, [
+            'cancelled_at' => now()->toIso8601String(),
+            'cancel_reason' => $reason,
+            'cancelled_by' => $actor->id,
+        ]);
+    }
+
+    /**
+     * Finish a cancel made by the pre-fix admin path, which marked future occurrences released but kept their
+     * reservations, open invoices and attempts. Same caller contract as cancelSeries; null once nothing is left.
+     *
+     * @return array{past_live: int, released: int, voided: int, refunds: int, refund_amount: int}|null
+     */
+    public function repairLegacyCancel(int $seriesId, User $actor): ?array
+    {
+        $metadata = RecurringSeries::query()->whereKey($seriesId)->value('metadata');
+        if (! data_get($metadata, 'cancelled_at')) {
+            return null; // Only contracts an admin cancelled: a live contract's payment attempts must stay open.
+        }
+
+        $series = $this->lockSeries($seriesId);
+        $stranded = $series->occurrences()->where('status', 'released')
+            ->whereHas('reservation', fn ($q) => $q->whereIn('status', ['held', 'confirmed']));
+        if (! (clone $stranded)->where('starts_at', '>', now())->exists()) {
+            return null;
+        }
+
+        // Sessions that started since the old cancel kept a valid booking and may have been played: report, never refund.
+        $pastLive = (clone $stranded)->where('starts_at', '<=', now())->count();
+        $reason = (string) (data_get($series->metadata, 'cancel_reason') ?: 'Admin huỷ theo yêu cầu');
+
+        return ['past_live' => $pastLive] + $this->close($series, $stranded, $actor, $reason, [
+            'repaired_at' => now()->toIso8601String(),
+            'repaired_by' => $actor->id,
+        ]);
+    }
+
+    private function lockSeries(int $seriesId): RecurringSeries
+    {
+        // Lock attempts before the series, as the payment path does, so a racing receipt cannot deadlock.
+        $this->expirePendingAttempts($seriesId, MonthlyInvoice::query()->where('recurring_series_id', $seriesId)->pluck('id')->all());
+
+        return RecurringSeries::query()->whereKey($seriesId)->lockForUpdate()->firstOrFail();
+    }
+
+    /**
+     * Release the given occurrences that have not started, void open invoices whose period has not started,
+     * turn verified paid value into owner refund obligations and mark the series cancelled.
+     *
+     * @param  HasMany<RecurringOccurrence, RecurringSeries>  $occurrences
+     * @return array{released: int, voided: int, refunds: int, refund_amount: int}
+     */
+    private function close(RecurringSeries $series, HasMany $occurrences, User $actor, string $reason, array $metadata): array
+    {
+        $invoices = MonthlyInvoice::query()->where('recurring_series_id', $series->id)->lockForUpdate()->get();
+        $released = $occurrences->where('starts_at', '>', now())->with('reservation')->lockForUpdate()->get();
         $this->releaseOccurrences($released);
 
-        foreach ($invoices as $invoice) {
-            $started = $series->occurrences()->whereBetween('starts_at', $this->period($invoice))->where('starts_at', '<=', now())->exists();
-            if (in_array($invoice->status, ['pending', 'guaranteed'], true) && ! $started) {
-                $invoice->update(['status' => 'cancelled']);
-            }
-        }
+        $voided = $invoices->filter(fn (MonthlyInvoice $invoice) => in_array($invoice->status, ['pending', 'guaranteed'], true)
+            && ! $series->occurrences()->whereBetween('starts_at', $this->period($invoice))->where('starts_at', '<=', now())->exists());
+        $voided->each->update(['status' => 'cancelled']);
 
         $refundIds = $this->recordPaidValue($series, $invoices, $released, $actor, $reason);
         $series->update([
             'status' => 'cancelled',
-            'metadata' => array_merge($series->metadata ?? [], [
-                'cancelled_at' => now()->toIso8601String(),
-                'cancel_reason' => $reason,
-                'cancelled_by' => $actor->id,
-                'refund_obligation_ids' => $refundIds,
+            'metadata' => array_merge($series->metadata ?? [], $metadata, [
+                'refund_obligation_ids' => array_merge(data_get($series->metadata, 'refund_obligation_ids', []), $refundIds),
             ]),
         ]);
+
+        $refundAmount = (int) OwnerRefundObligation::query()->whereIn('id', $refundIds)->sum('amount');
+
+        return ['released' => $released->count(), 'voided' => $voided->count(), 'refunds' => count($refundIds), 'refund_amount' => $refundAmount];
     }
 
     /**

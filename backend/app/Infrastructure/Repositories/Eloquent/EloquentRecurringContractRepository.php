@@ -6,6 +6,7 @@ use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Models\RecurringSeries;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class EloquentRecurringContractRepository implements RecurringContractRepositoryInterface
 {
@@ -69,6 +70,20 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
                 'occurrences' => fn ($q) => $q->withoutGlobalScope('tenant_isolation')->with('reservation')->orderBy('starts_at'),
             ])
             ->find($id);
+    }
+
+    public function legacyCancelRepairCandidates(): Collection
+    {
+        return RecurringSeries::query()
+            ->withoutGlobalScope('tenant_isolation')
+            ->whereNotNull('metadata->cancelled_at')
+            ->whereHas('occurrences', fn ($q) => $q->withoutGlobalScope('tenant_isolation')
+                ->where('status', 'released')
+                ->where('starts_at', '>', now())
+                ->whereHas('reservation', fn ($rq) => $rq->withoutGlobalScope('tenant_isolation')->whereIn('status', ['held', 'confirmed'])))
+            ->with('organization')
+            ->orderBy('id')
+            ->get();
     }
 
     public function getStats(?int $venueId = null): array

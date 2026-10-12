@@ -550,7 +550,7 @@ class RecurringSeriesService
                 $released += $this->releases->releaseOccurrences($occurrences);
                 // Expire the period's still-pending payment attempt(s) so no stale hold lingers.
                 $this->releases->expirePendingAttempts($series->id, [$locked->id]);
-                $series->update(['status' => 'delinquent']);
+                $series->update(['status' => $series->status === 'cancelled' ? 'cancelled' : 'delinquent']); // An admin cancel stays final.
             });
         });
 

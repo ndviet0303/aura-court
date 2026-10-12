@@ -3111,13 +3111,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 3
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$metadata\.$#'
-			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
@@ -3187,19 +3181,7 @@ parameters:
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:currentBookingPolicy\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:occurrences\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: app/Services/Booking/RecurringSeriesService.php
