@@ -137,7 +137,7 @@ class Organization extends Model
             'id',
             'id',
             'user_id'
-        )->where('organization_members.role', 'owner');
+        )->where('organization_members.role', OrganizationMember::ROLE_ORGANIZATION_OWNER);
     }
 
     public function hasMember(int $userId, ?string $role = null): bool
