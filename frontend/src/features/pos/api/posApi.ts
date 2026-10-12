@@ -1,4 +1,5 @@
 import { apiV2 } from '@/core/api/client'
+import { venueClockRange } from '@/core/utils/venueTime'
 import type { Product, PosShift, CustomerProfile, CourtReservation } from '../types/pos'
 
 export const posApi = {
@@ -193,7 +194,7 @@ export const posApi = {
           customerName = customerName.vi || customerName.en || Object.values(customerName)[0]
         }
         const timeSlot = r.slots?.[0]
-          ? `${r.slots[0].starts_at?.slice(11, 16) || ''} - ${r.slots[r.slots.length - 1]?.ends_at?.slice(11, 16) || ''}`
+          ? venueClockRange(r.slots[0].starts_at, r.slots[r.slots.length - 1]?.ends_at)
           : r.time_slot || '18:00 - 20:00'
 
         return {

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
+import { VENUE_TIME_ZONE, venueClockRange } from '@/core/utils/venueTime'
 import type { V2Reservation } from '../../types/v2Reservation'
 import { canReview, displayCode, displayStatus } from '../../utils/reservation'
 
@@ -24,6 +25,7 @@ function formatDate(iso: string): string {
   try {
     const d = new Date(iso)
     return d.toLocaleDateString(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
+      timeZone: VENUE_TIME_ZONE,
       weekday: 'short',
       day: '2-digit',
       month: '2-digit',
@@ -115,9 +117,7 @@ const sportLabel = computed(() => {
       <div v-for="s in booking.slots" :key="s.starts_at" class="slot-item">
         <div class="slot-time-col">
           <span class="material-symbols-outlined slot-icon">schedule</span>
-          <span class="slot-time font-mono"
-            >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span
-          >
+          <span class="slot-time font-mono">{{ venueClockRange(s.starts_at, s.ends_at) }}</span>
         </div>
         <div class="slot-date-col">
           <span class="material-symbols-outlined slot-icon">calendar_today</span>

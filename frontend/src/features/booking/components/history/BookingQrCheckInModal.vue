@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { V2Reservation } from '../../types/v2Reservation'
 import { displayCode } from '../../utils/reservation'
+import { venueClockRange, venueDate } from '@/core/utils/venueTime'
 
 defineProps<{
   show: boolean
@@ -47,10 +48,8 @@ const emit = defineEmits<{
         <div class="booking-schedule-brief">
           <div v-for="s in booking.slots" :key="s.starts_at" class="schedule-line">
             <span class="material-symbols-outlined sched-icon">schedule</span>
-            <span class="font-mono"
-              >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span
-            >
-            <span class="sched-date">({{ s.starts_at.slice(0, 10) }})</span>
+            <span class="font-mono">{{ venueClockRange(s.starts_at, s.ends_at) }}</span>
+            <span class="sched-date">({{ venueDate(s.starts_at) }})</span>
           </div>
         </div>
       </div>

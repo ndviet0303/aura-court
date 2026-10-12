@@ -60,6 +60,8 @@ describe('V2ReservationPaymentModal', () => {
     )
     expect(wrapper.text()).toContain('0123456789')
     expect(wrapper.text()).toContain('ACRESV41TESTCODE')
+    // Expiry follows the app locale on the venue clock: 12:30Z is 19:30 in Vietnam.
+    expect(wrapper.text().replace(/\s/g, ' ')).toContain('expire at 09/25/2026, 07:30 PM.')
 
     vi.mocked(bookingApi.getReservationPayment).mockResolvedValueOnce({
       reservation: { code: 'RSV-PAY-41', status: 'confirmed' },
