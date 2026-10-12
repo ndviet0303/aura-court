@@ -6,153 +6,103 @@ use App\Models\CashShift;
 use App\Models\Organization;
 use App\Models\ShiftReconciliation;
 use App\Models\User;
+use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
+/**
+ * POS cash shifts at the venues where the POS staff work. Only roles allowed to open shifts appear
+ * (cashier, venue manager, owner; never staff). Closed shifts start with zero sales: PosSalesSeeder adds
+ * each shift's cash sales to expected/declared cash, so the counted variance below stays as reviewed.
+ */
 class CashShiftSeeder extends Seeder
 {
     public function run(): void
     {
-        $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
-        $now = Carbon::now($timezone);
+        $now = Carbon::now(config('app.timezone', 'Asia/Ho_Chi_Minh'))->startOfMinute();
+        $today = $now->copy()->startOfDay();
 
-        $org = Organization::where('slug', 'aura-badminton-club')->first() ?? Organization::first();
-        if (! $org) {
-            return;
-        }
+        $shifts = [
+            // [org slug, venue slug, cashier, opened day, open, close, opening cash, variance, status, close note, reviewer, review note]
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subMonths(13), '14:00', '22:00', 1000000, 0, 'matched', 'Bàn giao két đủ.', null, null],
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subDays(8), '14:00', '22:05', 1000000, 0, 'matched', 'Bàn giao két đủ, đã niêm phong.', null, null],
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subDays(7), '14:00', '22:10', 1000000, 0, 'matched', null, null, null],
+            ['aura-badminton-club', 'aura-court', 'manager.caugiay@demo.auracourt.vn', $today->copy()->subDays(6), '14:00', '22:00', 1000000, 0, 'matched', 'Quản lý trực thay ca thu ngân nghỉ phép.', null, null],
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subDays(5), '14:00', '22:05', 1000000, 20000, 'approved', 'Thừa 20.000₫ do khách không lấy tiền thối.', 'manager.caugiay@demo.auracourt.vn', 'Đã duyệt: nhập quỹ lẻ của quầy.'],
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subDays(4), '14:00', '22:15', 1000000, 0, 'matched', null, null, null],
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subDays(3), '14:00', '22:00', 1000000, 0, 'matched', 'Bàn giao két đủ.', null, null],
+            ['aura-badminton-club', 'aura-court', 'manager.caugiay@demo.auracourt.vn', $today->copy()->subDays(2), '14:00', '22:10', 1000000, 0, 'matched', null, null, null],
+            ['aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn', $today->copy()->subDay(), '14:00', '22:05', 1000000, -50000, 'exception', 'Thiếu 50.000₫ khi kiểm két cuối ca, đang đối chiếu camera quầy.', null, null],
+            ['hoang-gia-sports', 'hoang-gia-phu-my-hung', 'owner.hoanggia@demo.auracourt.vn', $today->copy()->subDays(3), '15:00', '21:30', 500000, 0, 'matched', 'Chủ sân tự đứng quầy, két đủ.', null, null],
+            ['hoang-gia-sports', 'hoang-gia-phu-my-hung', 'owner.hoanggia@demo.auracourt.vn', $today->copy()->subDay(), '15:00', '21:30', 500000, 0, 'matched', null, null, null],
+        ];
 
-        $adminUser = User::where('role', 'admin')->first() ?? User::first();
-        if (! $adminUser) {
-            return;
-        }
+        foreach ($shifts as [$orgSlug, $venueSlug, $cashierEmail, $day, $open, $close, $openingCash, $variance, $status, $note, $reviewerEmail, $reviewNote]) {
+            [$org, $venueId, $cashier] = $this->context($orgSlug, $venueSlug, $cashierEmail);
+            if (! $org || ! $cashier) {
+                continue;
+            }
+            $openedAt = $day->copy()->setTimeFromTimeString($open);
+            $closedAt = $day->copy()->setTimeFromTimeString($close);
+            $reviewer = $reviewerEmail ? User::where('email', $reviewerEmail)->first() : null;
 
-        // Active Open Shift (Today)
-        $activeShift = CashShift::updateOrCreate(
-            [
+            $shift = CashShift::firstOrNew(['organization_id' => $org->id, 'cashier_id' => $cashier->id, 'opened_at' => $openedAt]);
+            $shift->forceFill([
+                'venue_id' => $venueId,
+                'register_id' => null,
+                'opening_cash' => $openingCash,
+                'expected_cash' => $openingCash,
+                'declared_cash' => $openingCash + $variance,
+                'variance' => $variance,
+                'status' => 'closed',
+                'closed_at' => $closedAt,
+                'cash_movements' => [],
+                'created_at' => $openedAt,
+                'updated_at' => $closedAt,
+            ])->save();
+
+            $reviewedAt = $reviewer ? $closedAt->copy()->addDay()->setTime(9, 15) : null;
+            ShiftReconciliation::firstOrNew(['cash_shift_id' => $shift->id])->forceFill([
                 'organization_id' => $org->id,
-                'status' => 'open',
-            ],
-            [
-                'cashier_id' => $adminUser->id,
+                'variance' => $variance,
+                'status' => $status,
+                // Review decisions are appended to the close note, as PosController::reviewShift does.
+                'note' => $reviewNote ? trim(($note ?? '').' | '.$reviewNote, ' |') : $note,
+                'reviewed_by' => $reviewer?->id,
+                'reviewed_at' => $reviewedAt,
+                'created_at' => $closedAt,
+                'updated_at' => $reviewedAt ?? $closedAt,
+            ])->save();
+        }
+
+        // Today's open shift for the cashier; one open shift per cashier is enforced by PosService::openShift.
+        [$org, $venueId, $cashier] = $this->context('aura-badminton-club', 'aura-court', 'cashier@demo.auracourt.vn');
+        if ($org && $cashier) {
+            $openedAt = $now->gte($today->copy()->setTime(8, 0)) ? $today->copy()->setTime(7, 0) : $now->copy()->subHour();
+            CashShift::firstOrNew(['organization_id' => $org->id, 'cashier_id' => $cashier->id, 'status' => 'open'])->forceFill([
+                'venue_id' => $venueId,
+                'register_id' => null,
                 'opening_cash' => 1000000,
-                'expected_cash' => 1000000,
+                // Like PosService::openShift: stored as 0, the shift endpoints compute it live while open.
+                'expected_cash' => 0,
                 'declared_cash' => null,
                 'variance' => null,
-                'opened_at' => $now->copy()->startOfDay()->addHours(7),
+                'opened_at' => $openedAt,
                 'closed_at' => null,
-            ]
-        );
+                'cash_movements' => [],
+                'created_at' => $openedAt,
+                'updated_at' => $openedAt,
+            ])->save();
+        }
+    }
 
-        // Past Shift 1: Matched (Yesterday Evening)
-        $shift1 = CashShift::updateOrCreate(
-            [
-                'organization_id' => $org->id,
-                'opened_at' => $now->copy()->subDay()->startOfDay()->addHours(14),
-            ],
-            [
-                'cashier_id' => $adminUser->id,
-                'opening_cash' => 1000000,
-                'expected_cash' => 2450000,
-                'declared_cash' => 2450000,
-                'variance' => 0,
-                'status' => 'closed',
-                'closed_at' => $now->copy()->subDay()->startOfDay()->addHours(22)->addMinutes(30),
-            ]
-        );
-        ShiftReconciliation::updateOrCreate(
-            ['cash_shift_id' => $shift1->id],
-            [
-                'organization_id' => $org->id,
-                'variance' => 0,
-                'status' => 'matched',
-                'note' => 'Kiểm đếm khớp 100%, bàn giao két niêm phong đầy đủ.',
-                'reviewed_by' => $adminUser->id,
-                'reviewed_at' => $now->copy()->subDay()->startOfDay()->addHours(23),
-            ]
-        );
-
-        // Past Shift 2: Approved Variance (2 Days Ago)
-        $shift2 = CashShift::updateOrCreate(
-            [
-                'organization_id' => $org->id,
-                'opened_at' => $now->copy()->subDays(2)->startOfDay()->addHours(6),
-            ],
-            [
-                'cashier_id' => $adminUser->id,
-                'opening_cash' => 1000000,
-                'expected_cash' => 3120000,
-                'declared_cash' => 3140000,
-                'variance' => 20000,
-                'status' => 'closed',
-                'closed_at' => $now->copy()->subDays(2)->startOfDay()->addHours(14),
-            ]
-        );
-        ShiftReconciliation::updateOrCreate(
-            ['cash_shift_id' => $shift2->id],
-            [
-                'organization_id' => $org->id,
-                'variance' => 20000,
-                'status' => 'approved',
-                'note' => 'Khách bo tiền lẻ thừa không lấy lại. Quản lý đã duyệt nhập quỹ dự phòng.',
-                'reviewed_by' => $adminUser->id,
-                'reviewed_at' => $now->copy()->subDays(2)->startOfDay()->addHours(15)->addMinutes(30),
-            ]
-        );
-
-        // Past Shift 3: Shortage Exception (3 Days Ago)
-        $shift3 = CashShift::updateOrCreate(
-            [
-                'organization_id' => $org->id,
-                'opened_at' => $now->copy()->subDays(3)->startOfDay()->addHours(14),
-            ],
-            [
-                'cashier_id' => $adminUser->id,
-                'opening_cash' => 1000000,
-                'expected_cash' => 4500000,
-                'declared_cash' => 4450000,
-                'variance' => -50000,
-                'status' => 'closed',
-                'closed_at' => $now->copy()->subDays(3)->startOfDay()->addHours(22),
-            ]
-        );
-        ShiftReconciliation::updateOrCreate(
-            ['cash_shift_id' => $shift3->id],
-            [
-                'organization_id' => $org->id,
-                'variance' => -50000,
-                'status' => 'exception',
-                'note' => 'Thối nhầm tiền thừa cho khách mua ống cầu lông buổi tối. Đang chờ đối soát camera.',
-                'reviewed_by' => null,
-                'reviewed_at' => null,
-            ]
-        );
-
-        // Past Shift 4: Morning Matched (4 Days Ago)
-        $shift4 = CashShift::updateOrCreate(
-            [
-                'organization_id' => $org->id,
-                'opened_at' => $now->copy()->subDays(4)->startOfDay()->addHours(6),
-            ],
-            [
-                'cashier_id' => $adminUser->id,
-                'opening_cash' => 500000,
-                'expected_cash' => 1850000,
-                'declared_cash' => 1850000,
-                'variance' => 0,
-                'status' => 'closed',
-                'closed_at' => $now->copy()->subDays(4)->startOfDay()->addHours(14),
-            ]
-        );
-        ShiftReconciliation::updateOrCreate(
-            ['cash_shift_id' => $shift4->id],
-            [
-                'organization_id' => $org->id,
-                'variance' => 0,
-                'status' => 'matched',
-                'note' => 'Bàn giao ca sáng hoàn tất 100%.',
-                'reviewed_by' => $adminUser->id,
-                'reviewed_at' => $now->copy()->subDays(4)->startOfDay()->addHours(14)->addMinutes(15),
-            ]
-        );
+    /** @return array{0: ?Organization, 1: ?int, 2: ?User} */
+    private function context(string $orgSlug, string $venueSlug, string $cashierEmail): array
+    {
+        return [
+            Organization::where('slug', $orgSlug)->first(),
+            Venue::where('slug', $venueSlug)->value('id'),
+            User::where('email', $cashierEmail)->first(),
+        ];
     }
 }
