@@ -11,7 +11,7 @@ import {
   loyaltyFields,
   type LoyaltySelection,
 } from '../utils/reservation'
-import { venueClock } from '../utils/venueTime'
+import { venueClock } from '@/core/utils/venueTime'
 
 const t = (key: string, params?: Record<string, any>) => i18n.global.t(key, params || {})
 export function useV2Reservations() {

@@ -33,11 +33,16 @@ describe('venue time helpers', () => {
     // 23:30 UTC on Oct 11 is 06:30 on Oct 12 in Vietnam.
     expect(venueClock('2026-10-11T23:30:00Z')).toBe('06:30')
     expect(venueDate('2026-10-11T23:30:00Z')).toBe('2026-10-12')
+    // 17:00 UTC on Oct 31 is midnight on Nov 1 in Vietnam (00:00, not 24:00).
+    expect(venueClock('2026-10-31T17:00:00.000000Z')).toBe('00:00')
+    expect(venueDate('2026-10-31T17:00:00.000000Z')).toBe('2026-11-01')
   })
 
   it('keeps offset-less datetimes as venue wall-clock time', () => {
     expect(venueClock('2026-10-12 10:00:00')).toBe('10:00')
+    expect(venueClock('2026-10-12T10:00:00')).toBe('10:00')
     expect(venueDate('2026-10-12 10:00:00')).toBe('2026-10-12')
+    expect(venueDate('2026-10-12')).toBe('2026-10-12')
   })
 
   it('returns an empty string for missing or invalid values', () => {
