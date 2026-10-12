@@ -17,24 +17,15 @@ class CustomerController extends Controller
 {
     public function __construct(private readonly TenantContext $tenantContext) {}
 
-    private function resolveOrganization(Request $request): Organization
+    // Tenant comes only from ResolveTenantContext, which rejects non-members of the requested organization.
+    private function resolveOrganization(): Organization
     {
-        $organization = $this->tenantContext->getOrganization();
-
-        if (! $organization && $request->header('X-Organization-ID')) {
-            $organization = Organization::find((int) $request->header('X-Organization-ID'));
-        }
-
-        if (! $organization) {
-            abort(400, 'Organization context required.');
-        }
-
-        return $organization;
+        return $this->tenantContext->getOrganization() ?? abort(400, 'Organization context required.');
     }
 
     public function index(Request $request): JsonResponse
     {
-        $org = $this->resolveOrganization($request);
+        $org = $this->resolveOrganization();
 
         $query = TenantCustomer::where('organization_id', $org->id)->with('user');
 
@@ -115,7 +106,7 @@ class CustomerController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $org = $this->resolveOrganization($request);
+        $org = $this->resolveOrganization();
 
         $validated = $request->validate([
             'name' => 'required|string|max:160',
@@ -173,9 +164,9 @@ class CustomerController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, TenantCustomer $customer): JsonResponse
+    public function show(TenantCustomer $customer): JsonResponse
     {
-        $org = $this->resolveOrganization($request);
+        $org = $this->resolveOrganization();
 
         if ($customer->organization_id !== $org->id) {
             abort(404, 'Customer not found.');

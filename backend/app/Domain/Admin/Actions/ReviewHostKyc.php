@@ -28,7 +28,7 @@ class ReviewHostKyc
 
         if ($data->decision === 'approve') {
             $dto = new ReviewPartnerApplicationData(
-                reviewerId: $data->reviewerId ?? 1,
+                reviewerId: $data->reviewerId,
                 kycId: $data->kycId,
                 decision: 'approve',
                 reason: $data->reviewerNotes ?? 'Phê duyệt hồ sơ đối tác',
@@ -44,7 +44,7 @@ class ReviewHostKyc
 
         $mappedDecision = $data->decision === 'request_supplement' ? 'revision_required' : 'reject';
         $dto = new ReviewPartnerApplicationData(
-            reviewerId: $data->reviewerId ?? 1,
+            reviewerId: $data->reviewerId,
             kycId: $data->kycId,
             decision: $mappedDecision,
             reason: $data->rejectionReason ?: ($data->reviewerNotes ?: 'Thẩm định hồ sơ đối tác'),

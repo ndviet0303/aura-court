@@ -7,6 +7,7 @@ namespace Tests\Feature\Console;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,7 @@ class ReconcileLegacyPartnersCommandTest extends TestCase
             'slug' => 'legacy-club',
             'partner_status' => 'pending',
         ]);
-        $org->users()->attach($owner->id, ['role' => 'owner', 'status' => 'active']);
+        $org->users()->attach($owner->id, ['role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Legacy Venue',
@@ -60,6 +61,10 @@ class ReconcileLegacyPartnersCommandTest extends TestCase
         $this->artisan('partner:reconcile-legacy')
             ->assertSuccessful()
             ->expectsOutputToContain('Starting read-only legacy partner and venue reconciliation audit...')
+            ->expectsTable(
+                ['Org ID', 'Name', 'Owner ID', 'Approved App', 'Active Sub', 'Venues', 'Unverified Published', 'Future Bookings'],
+                [[$org->id, 'Legacy Club', $owner->id, 'NO', 'NO', 1, 1, 1]]
+            )
             ->expectsOutputToContain('Missing Approved Application: 1')
             ->expectsOutputToContain('Missing Platform Subscription: 1')
             ->expectsOutputToContain('Venues Missing Approved Publication Revision: 1')

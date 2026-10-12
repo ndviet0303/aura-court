@@ -23,17 +23,10 @@ const { t } = useI18n()
         <span class="kpi-label">{{ t('admin.membership.kpiTotalMembers') }}</span>
         <div v-if="loading" class="kpi-skel-wrap">
           <SkeletonLoader height="22px" width="110px" />
-          <SkeletonLoader height="12px" width="80px" />
         </div>
-        <template v-else>
-          <strong class="kpi-value">{{
-            t('admin.membership.kpiTotalMembersCount', { count: stats.totalVipMembers })
-          }}</strong>
-          <span class="kpi-trend positive">
-            <span class="material-symbols-outlined icon-14">trending_up</span>
-            {{ t('admin.membership.kpiTotalMembersTrend') }}
-          </span>
-        </template>
+        <strong v-else class="kpi-value">{{
+          t('admin.membership.kpiTotalMembersCount', { count: stats.totalVipMembers })
+        }}</strong>
       </div>
     </div>
 
@@ -46,17 +39,10 @@ const { t } = useI18n()
         <span class="kpi-label">{{ t('admin.membership.kpiMrr') }}</span>
         <div v-if="loading" class="kpi-skel-wrap">
           <SkeletonLoader height="22px" width="130px" />
-          <SkeletonLoader height="12px" width="90px" />
         </div>
-        <template v-else>
-          <strong class="kpi-value text-rose">{{
-            formatCurrency(stats.monthlyRecurringRevenue)
-          }}</strong>
-          <span class="kpi-trend positive">
-            <span class="material-symbols-outlined icon-14">autorenew</span>
-            {{ t('admin.membership.kpiMrrTrend') }}
-          </span>
-        </template>
+        <strong v-else class="kpi-value text-rose">{{
+          formatCurrency(stats.monthlyRecurringRevenue)
+        }}</strong>
       </div>
     </div>
 
@@ -69,18 +55,11 @@ const { t } = useI18n()
         <span class="kpi-label">{{ t('admin.membership.kpiPointsIssued') }}</span>
         <div v-if="loading" class="kpi-skel-wrap">
           <SkeletonLoader height="22px" width="110px" />
-          <SkeletonLoader height="12px" width="80px" />
         </div>
-        <template v-else>
-          <strong class="kpi-value"
-            >{{ stats.totalPointsIssued.toLocaleString() }}
-            <span class="unit-sub">{{ t('admin.membership.pointsUnit') }}</span></strong
-          >
-          <span class="kpi-trend neutral">
-            <span class="material-symbols-outlined icon-14">percent</span>
-            {{ t('admin.membership.kpiPointsIssuedTrend') }}
-          </span>
-        </template>
+        <strong v-else class="kpi-value"
+          >{{ stats.totalPointsIssued.toLocaleString() }}
+          <span class="unit-sub">{{ t('admin.membership.pointsUnit') }}</span></strong
+        >
       </div>
     </div>
 
@@ -217,9 +196,6 @@ const { t } = useI18n()
 }
 .kpi-trend.positive {
   color: #10b981;
-}
-.kpi-trend.neutral {
-  color: var(--muted);
 }
 .kpi-skel-wrap {
   display: flex;

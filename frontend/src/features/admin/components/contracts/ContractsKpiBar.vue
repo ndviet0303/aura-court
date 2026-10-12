@@ -28,7 +28,6 @@ const { t } = useI18n()
         <strong class="kpi-value">{{
           t('admin.contracts.activeContractsCount', { count: stats.active_contracts })
         }}</strong>
-        <span class="kpi-trend text-green">{{ t('admin.contracts.activeTrend') }}</span>
       </template>
     </div>
 
@@ -44,7 +43,6 @@ const { t } = useI18n()
       </div>
       <template v-else>
         <strong class="kpi-value text-pink">{{ formatCurrency(stats.mrr_amount) }}</strong>
-        <span class="kpi-trend">{{ t('admin.contracts.mrrContribution') }}</span>
       </template>
     </div>
 
@@ -65,29 +63,13 @@ const { t } = useI18n()
         <span class="kpi-trend text-red">{{ t('admin.contracts.overdueWarning') }}</span>
       </template>
     </div>
-
-    <!-- Prime Time Utilization -->
-    <div class="kpi-card">
-      <div class="kpi-top-row">
-        <span class="material-symbols-outlined kpi-icon text-green">bolt</span>
-        <span class="kpi-label">{{ t('admin.contracts.primeTimeUtilization') }}</span>
-      </div>
-      <div v-if="loading" class="kpi-skeleton-wrap">
-        <SkeletonLoader height="26px" width="40%" />
-        <SkeletonLoader height="14px" width="60%" class="mt-1" />
-      </div>
-      <template v-else>
-        <strong class="kpi-value text-green">{{ stats.prime_time_utilization }}%</strong>
-        <span class="kpi-trend">{{ t('admin.contracts.primeTimeHours') }}</span>
-      </template>
-    </div>
   </div>
 </template>
 
 <style scoped>
 .contracts-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
 
@@ -139,9 +121,6 @@ const { t } = useI18n()
 
 .text-pink {
   color: var(--pink-dark, #db2777);
-}
-.text-green {
-  color: #10b981;
 }
 .text-yellow {
   color: #f59e0b;

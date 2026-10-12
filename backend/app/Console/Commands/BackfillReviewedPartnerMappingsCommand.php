@@ -258,7 +258,7 @@ class BackfillReviewedPartnerMappingsCommand extends Command
             return (int) $existingKyc->id;
         }
 
-        $owner = $org->users()->wherePivot('role', 'owner')->first();
+        $owner = $org->owner;
 
         $kyc = HostKyc::create([
             'organization_id' => $org->id,

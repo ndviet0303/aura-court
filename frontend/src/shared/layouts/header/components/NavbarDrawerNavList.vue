@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { isPartnerApplicationUnderReview } from '@/core/utils/partnerApplicationStatus'
 
 const emit = defineEmits<{
   (e: 'navigate'): void
@@ -78,14 +79,13 @@ const hasPartnerIntentOrApp = computed(() => {
   return false
 })
 
-const partnerRoute = computed(() => {
-  const userAny = auth.user as any
-  const status = userAny?.capabilities?.partner_application_status
-  if (status === 'submitted' || status === 'in_review') {
-    return '/partner/application-status'
-  }
-  return '/partner-registration'
-})
+const isUnderReview = computed(() =>
+  isPartnerApplicationUnderReview((auth.user as any)?.capabilities?.partner_application_status),
+)
+
+const partnerRoute = computed(() =>
+  isUnderReview.value ? '/partner/application-status' : '/partner-registration',
+)
 </script>
 
 <template>
@@ -227,19 +227,9 @@ const partnerRoute = computed(() => {
       >
         <div class="nav-row-main">
           <span class="material-symbols-outlined row-icon">storefront</span>
-          <span class="row-label">{{
-            (auth.user as any)?.capabilities?.partner_application_status === 'submitted' ||
-            (auth.user as any)?.capabilities?.partner_application_status === 'in_review'
-              ? 'Hồ sơ đối tác'
-              : 'Thiết lập cụm sân'
-          }}</span>
+          <span class="row-label">{{ isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}</span>
         </div>
-        <span class="drawer-admin-tag">{{
-          (auth.user as any)?.capabilities?.partner_application_status === 'submitted' ||
-          (auth.user as any)?.capabilities?.partner_application_status === 'in_review'
-            ? 'CHỜ DUYỆT'
-            : 'ĐỐI TÁC'
-        }}</span>
+        <span class="drawer-admin-tag">{{ isUnderReview ? 'CHỜ DUYỆT' : 'ĐỐI TÁC' }}</span>
       </RouterLink>
     </nav>
   </div>

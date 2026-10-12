@@ -25,7 +25,8 @@ export interface ReconciliationRun {
 
 export interface HealthTrendPoint {
   date: string
-  status: string
+  /** null when no reconciliation run exists for that day */
+  status: string | null
   provider_total: number
   journal_total: number
   settlement_total: number
@@ -39,8 +40,8 @@ export interface ReconciliationStats {
   payout_total: number
   mismatch_total: number
   open_alerts_count: number
-  match_rate: number
-  last_reconciled_at: string
+  match_rate: number | null
+  last_reconciled_at: string | null
   sync_status: string
   health_trend: HealthTrendPoint[]
 }

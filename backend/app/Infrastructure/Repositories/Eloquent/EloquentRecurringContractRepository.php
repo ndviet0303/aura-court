@@ -111,7 +111,6 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
             'total_contracts' => $allSeries->count(),
             'mrr_amount' => $mrrAmount,
             'overdue_cycles' => $overdueCount,
-            'prime_time_utilization' => $activeCount > 0 ? 94 : 0,
         ];
     }
 

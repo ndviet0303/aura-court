@@ -68,18 +68,16 @@ const { t } = useI18n()
         </div>
       </div>
 
-      <!-- Card 4: Consensus Rate -->
+      <!-- Card 4: Resolved -->
       <div class="kpi-card">
-        <div class="kpi-icon-wrap icon-consensus">
-          <span class="material-symbols-outlined">handshake</span>
+        <div class="kpi-icon-wrap icon-resolved">
+          <span class="material-symbols-outlined">task_alt</span>
         </div>
         <div class="kpi-content">
-          <span class="kpi-label">{{ t('admin.disputes.kpiConsensus') }}</span>
+          <span class="kpi-label">{{ t('admin.disputes.kpiResolved') }}</span>
           <div class="kpi-value-row">
-            <span class="kpi-value text-consensus">{{ stats.consensusRate }}%</span>
-            <span class="kpi-sub">{{
-              t('admin.disputes.kpiConsensusSub', { count: stats.resolvedCount })
-            }}</span>
+            <span class="kpi-value text-resolved">{{ stats.resolvedCount }}</span>
+            <span class="kpi-sub">{{ t('admin.disputes.kpiResolvedSub') }}</span>
           </div>
         </div>
       </div>
@@ -143,7 +141,7 @@ const { t } = useI18n()
   color: var(--error-text, #f87171);
 }
 
-.icon-consensus {
+.icon-resolved {
   background: var(--success-bg, rgba(46, 125, 50, 0.25));
   color: var(--success-text, #4ade80);
 }
@@ -189,7 +187,7 @@ const { t } = useI18n()
   color: var(--error-text, #f87171);
 }
 
-.text-consensus {
+.text-resolved {
   color: var(--success-text, #4ade80);
 }
 

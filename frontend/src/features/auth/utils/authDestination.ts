@@ -1,4 +1,5 @@
 import type { UserRole } from '@/core/types/common'
+import { isPartnerApplicationUnderReview } from '@/core/utils/partnerApplicationStatus'
 
 export interface MinimalUser {
   role?: UserRole | string
@@ -169,8 +170,7 @@ function getDefaultDestination(user: MinimalUser): string {
     return '/pos'
   }
   if (userCaps?.has_partner_application === true) {
-    const status = userCaps?.partner_application_status
-    if (status === 'submitted' || status === 'in_review') {
+    if (isPartnerApplicationUnderReview(userCaps?.partner_application_status)) {
       return '/partner/application-status'
     }
     return '/partner-registration'

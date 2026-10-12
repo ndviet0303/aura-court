@@ -8,6 +8,7 @@ import type {
   SubmitApplicationPayload,
 } from '../types'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { isPartnerApplicationUnderReview } from '@/core/utils/partnerApplicationStatus'
 
 export function usePartnerRegistration() {
   const application = ref<PartnerApplication | null>(null)
@@ -20,9 +21,7 @@ export function usePartnerRegistration() {
   const fieldErrors = ref<Record<string, string[]>>({})
 
   const isDraft = computed(() => application.value?.status === 'draft')
-  const isPendingReview = computed(() =>
-    ['pending', 'pending_review'].includes(application.value?.status ?? ''),
-  )
+  const isPendingReview = computed(() => isPartnerApplicationUnderReview(application.value?.status))
   const isSupplementationRequested = computed(() =>
     ['revision_required', 'supplementation_requested'].includes(application.value?.status ?? ''),
   )

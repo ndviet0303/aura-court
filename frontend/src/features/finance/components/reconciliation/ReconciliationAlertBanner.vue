@@ -23,9 +23,6 @@ const { t } = useI18n()
         <div class="banner-title">
           {{ t('admin.reconciliation.alertBannerTitle', { count: alertsCount }) }}
         </div>
-        <p class="banner-desc">
-          {{ t('admin.reconciliation.alertBannerDesc') }}
-        </p>
       </div>
     </div>
 
@@ -105,13 +102,6 @@ const { t } = useI18n()
   font-size: 14.5px;
   font-weight: 700;
   color: #ba1a1a;
-}
-
-.banner-desc {
-  font-size: 13px;
-  color: var(--ink, #4f4446);
-  margin: 0;
-  opacity: 0.9;
 }
 
 .banner-actions {

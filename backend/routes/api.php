@@ -415,9 +415,11 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         Route::delete('organizations/{organization}/members/{member}', [OrganizationController::class, 'removeMember']);
         Route::get('capabilities', [OrganizationController::class, 'capabilities']);
         Route::get('organizations/{organization}/capabilities', [OrganizationController::class, 'capabilities']);
-        Route::get('customers', [CustomerController::class, 'index']);
-        Route::post('customers', [CustomerController::class, 'store'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier');
-        Route::get('customers/{customer}', [CustomerController::class, 'show']);
+        Route::middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier')->group(function () {
+            Route::get('customers', [CustomerController::class, 'index']);
+            Route::post('customers', [CustomerController::class, 'store']);
+            Route::get('customers/{customer}', [CustomerController::class, 'show']);
+        });
 
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
@@ -614,11 +616,14 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::get('finance/reconciliation/runs/{id}', [FinancialReconciliationController::class, 'show']);
             Route::post('finance/reconciliation/trigger', [FinancialReconciliationController::class, 'trigger']);
             Route::post('finance/reconciliation/auto-resolve', [FinancialReconciliationController::class, 'autoResolve']);
+        });
+
+        // Host KYC is cross-tenant PII and partner approval: platform admin only, like v1 admin/kyc.
+        Route::middleware(['admin'])->group(function () {
             Route::get('admin/kyc', [AdminKycController::class, 'index']);
             Route::get('admin/kyc/stats', [AdminKycController::class, 'stats']);
             Route::get('admin/kyc/{id}', [AdminKycController::class, 'show']);
             Route::post('admin/kyc/{id}/review', [AdminKycController::class, 'review']);
-
         });
 
         Route::middleware([RequireOrganizationRole::class.':organization_owner,venue_manager'])->group(function () {

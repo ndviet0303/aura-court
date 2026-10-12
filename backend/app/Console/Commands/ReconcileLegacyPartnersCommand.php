@@ -86,7 +86,7 @@ class ReconcileLegacyPartnersCommand extends Command
             $records[] = [
                 'organization_id' => $org->id,
                 'name' => $org->name,
-                'owner_id' => $org->owner?->id ?? $org->users()->wherePivot('role', 'owner')->value('users.id'),
+                'owner_id' => $org->owner?->id,
                 'has_approved_application' => $hasApplication ? 'YES' : 'NO',
                 'has_active_subscription' => $hasSubscription ? 'YES' : 'NO',
                 'venues_count' => $org->venues->count(),
