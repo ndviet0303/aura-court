@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { isPartnerApplicationUnderReview } from '@/core/utils/partnerApplicationStatus'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -89,14 +90,13 @@ const hasPartnerIntentOrApp = computed(() => {
   return false
 })
 
-const partnerRoute = computed(() => {
-  const userAny = auth.user as any
-  const status = userAny?.capabilities?.partner_application_status
-  if (status === 'submitted' || status === 'in_review') {
-    return '/partner/application-status'
-  }
-  return '/partner-registration'
-})
+const isUnderReview = computed(() =>
+  isPartnerApplicationUnderReview((auth.user as any)?.capabilities?.partner_application_status),
+)
+
+const partnerRoute = computed(() =>
+  isUnderReview.value ? '/partner/application-status' : '/partner-registration',
+)
 </script>
 
 <template>
@@ -235,12 +235,7 @@ const partnerRoute = computed(() => {
       class="nav-pill-link"
       :class="{ active: (route?.path || '').startsWith('/partner') }"
     >
-      {{
-        (auth.user as any)?.capabilities?.partner_application_status === 'submitted' ||
-        (auth.user as any)?.capabilities?.partner_application_status === 'in_review'
-          ? 'Hồ sơ đối tác'
-          : 'Thiết lập cụm sân'
-      }}
+      {{ isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}
     </RouterLink>
   </nav>
 </template>

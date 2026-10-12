@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { isPartnerApplicationUnderReview } from '@/core/utils/partnerApplicationStatus'
 import { getAvatarUrl } from '@/lib/avatar'
 
 const emit = defineEmits<{
@@ -48,16 +49,15 @@ const hasPartnerIntentOrApp = computed(() => {
   return false
 })
 
-const partnerStatus = computed(() => {
-  const userAny = auth.user as any
-  return userAny?.capabilities?.partner_application_status || ''
-})
+const isUnderReview = computed(() =>
+  isPartnerApplicationUnderReview((auth.user as any)?.capabilities?.partner_application_status),
+)
 
 const userRoleBadge = computed(() => {
   if (auth.user?.role === 'admin') return 'ADMIN'
   if (isOwner.value) return 'CHỦ SÂN'
   if (hasPartnerIntentOrApp.value) {
-    if (partnerStatus.value === 'submitted' || partnerStatus.value === 'in_review') {
+    if (isUnderReview.value) {
       return 'CHỜ DUYỆT'
     }
     return 'ĐỐI TÁC'

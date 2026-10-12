@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import Navbar from '../header/Navbar.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useBookingStore } from '@/stores/booking'
 
 const mockPush = vi.fn<() => void>()
 
@@ -15,7 +16,8 @@ vi.mock('vue-router', () => ({
     query: {},
   }),
   RouterLink: {
-    template: '<a><slot /></a>',
+    props: ['to'],
+    template: '<a :href="to"><slot /></a>',
   },
 }))
 
@@ -106,4 +108,49 @@ describe('Navbar', () => {
     await wrapper.vm.$nextTick()
     expect(document.querySelector('.mobile-drawer-panel')).toBeNull()
   })
+
+  it.each([
+    ['pending', true],
+    ['flagged', true],
+    ['draft', false],
+    ['revision_required', false],
+  ])(
+    'routes a partner applicant with %s status to the matching entry',
+    async (status, underReview) => {
+      const auth = useAuthStore()
+      auth.loading = false
+      auth.loaded = true
+      auth.user = {
+        id: 2,
+        name: 'Applicant',
+        email: 'applicant@example.com',
+        role: 'customer',
+        email_verified_at: '2026-01-01',
+        capabilities: { has_partner_application: true, partner_application_status: status },
+      }
+      vi.spyOn(useBookingStore(), 'fetchWalletBalance').mockResolvedValue(undefined as never)
+      const href = underReview ? '/partner/application-status' : '/partner-registration'
+      const label = underReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân'
+      const badge = underReview ? 'CHỜ DUYỆT' : 'ĐỐI TÁC'
+
+      const wrapper = createWrapper()
+      const desktopLink = wrapper.find(`.nav-pill-container a[href="${href}"]`)
+      expect(desktopLink.text()).toBe(label)
+      expect(wrapper.find('.user-badge').text()).toBe(badge)
+
+      await wrapper.find('.user-dropdown-trigger').trigger('click')
+      const dropdownItem = wrapper.find('.dropdown-item.admin-item')
+      expect(dropdownItem.attributes('href')).toBe(href)
+      expect(dropdownItem.text()).toContain(label)
+
+      await wrapper.find('.mobile-menu-btn').trigger('click')
+      expect(document.querySelector('.drawer-badge')?.textContent).toBe(badge)
+      const drawerRow = document.querySelector('.drawer-nav-row.admin-row')
+      expect(drawerRow?.getAttribute('href')).toBe(href)
+      expect(drawerRow?.querySelector('.row-label')?.textContent).toBe(label)
+      expect(drawerRow?.querySelector('.drawer-admin-tag')?.textContent).toBe(badge)
+
+      wrapper.unmount()
+    },
+  )
 })
