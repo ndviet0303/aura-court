@@ -8,7 +8,7 @@ class ReviewHostKycRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->isPlatformAdmin() === true;
     }
 
     public function rules(): array
