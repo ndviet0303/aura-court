@@ -1138,8 +1138,6 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'phone_verified_at' => now(),
         ]);
 
-        $org->update(['user_id' => $owner->id]);
-
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $owner->id,

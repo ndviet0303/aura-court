@@ -97,7 +97,6 @@ class DisputeLifecycleAndModerationTest extends TestCase
         ]);
 
         $owner = $this->createCustomerUser("owner_{$slug}@test.local", "Owner {$name}");
-        $org->update(['user_id' => $owner->id]);
 
         OrganizationMember::create([
             'organization_id' => $org->id,
@@ -720,5 +719,189 @@ class DisputeLifecycleAndModerationTest extends TestCase
             ->getJson("/api/v1/disputes/{$disputeTenantA->id}");
         $ownerAView->assertOk()
             ->assertJsonPath('data.dispute_code', 'DSP-TENANT-A');
+    }
+
+    /**
+     * Test 9: A customer's dispute names the venue's active owner as respondent, who is told of the case,
+     * can answer with evidence, cannot arbitrate it, and is notified of the decision.
+     */
+    public function test_filed_dispute_names_venue_owner_as_notified_respondent(): void
+    {
+        $booking = $this->createBooking($this->customerAlice, $this->courtA);
+
+        $fileRes = $this->actingAs($this->customerAlice)
+            ->postJson('/api/v1/disputes', [
+                'title' => 'Sân ngập nước không được đổi giờ',
+                'summary' => 'Sân bị ngập nước và chủ sân không hỗ trợ đổi giờ chơi.',
+                'dispute_type' => 'court_quality',
+                'severity' => 'high',
+                'booking_id' => $booking->id,
+            ]);
+
+        $fileRes->assertCreated()
+            ->assertJsonPath('data.respondent.id', $this->ownerA->id);
+        $disputeId = $fileRes->json('data.id');
+        $this->assertDatabaseHas('dispute_cases', ['id' => $disputeId, 'respondent_id' => $this->ownerA->id]);
+        $this->assertEquals(['dispute.evidence_requested'], $this->customerAlice->notifications()->get()->pluck('data.event')->all());
+        $this->assertEquals(['dispute.filed'], $this->ownerA->notifications()->get()->pluck('data.event')->all());
+
+        $this->actingAs($this->ownerA)
+            ->postJson("/api/v1/disputes/{$disputeId}/evidence", [
+                'explanation' => 'Sân đã được thoát nước trước giờ chơi.',
+                'evidence' => [['url' => 'https://storage.local/drained.jpg', 'type' => 'image']],
+            ])
+            ->assertOk();
+
+        $this->actingAs($this->ownerA)
+            ->postJson("/api/v1/disputes/{$disputeId}/arbitrate", [
+                'decision' => 'dismiss',
+                'notes' => 'Chủ sân tự bác bỏ khiếu nại.',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Conflict of interest: Reviewer cannot arbitrate a dispute in which they are an involved party.');
+
+        $this->actingAs($this->platformAdmin)
+            ->postJson("/api/v1/admin/disputes/{$disputeId}/arbitrate", [
+                'decision' => 'resolve',
+                'notes' => 'Chấp thuận khiếu nại về chất lượng sân.',
+            ])
+            ->assertOk();
+
+        $this->assertContains('dispute.arbitrated', $this->ownerA->notifications()->get()->pluck('data.event'));
+    }
+
+    /**
+     * Test 10: A refund judgment on a dispute stored without a respondent charges the organization's active owner.
+     */
+    public function test_refund_judgment_without_respondent_charges_active_organization_owner(): void
+    {
+        $activeOwner = $this->replaceOwner($this->tenantA, $this->ownerA);
+        $booking = $this->createBooking($this->customerAlice, $this->courtA);
+        $dispute = $this->createDisputeCase(
+            $this->tenantA,
+            $this->venueA,
+            $this->customerAlice,
+            $this->ownerA,
+            'investigating',
+            'DSP-NO-RESPONDENT',
+            $booking
+        );
+        $dispute->update(['respondent_id' => null]);
+
+        $this->actingAs($this->platformAdmin)
+            ->postJson("/api/v1/admin/disputes/{$dispute->id}/arbitrate", [
+                'decision' => 'resolve_and_refund',
+                'refund_amount' => 150000,
+                'refund_method' => 'owner_direct',
+                'notes' => 'Hoàn tiền cho khách do sân lỗi.',
+            ])
+            ->assertOk();
+
+        $obligation = OwnerRefundObligation::findOrFail($dispute->fresh()->refund_obligation_id);
+        $this->assertEquals($activeOwner->id, $obligation->payer_id);
+    }
+
+    /**
+     * Test 11: The respondent backfill names the active owner on disputes filed over HTTP and leaves other rows alone.
+     */
+    public function test_respondent_backfill_names_active_organization_owner(): void
+    {
+        $activeOwnerB = $this->replaceOwner($this->tenantB, $this->ownerB);
+        $bookingA = $this->createBooking($this->customerAlice, $this->courtA);
+        $bookingB = $this->createBooking($this->customerBob, $this->courtB);
+        $disputeA = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerAlice, $this->ownerA, 'pending', 'DSP-LEGACY-A', $bookingA);
+        $disputeB = $this->createDisputeCase($this->tenantB, $this->venueB, $this->customerBob, $this->ownerB, 'pending', 'DSP-LEGACY-B', $bookingB);
+        $answered = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerBob, $this->stranger, 'pending', 'DSP-ANSWERED', $bookingA);
+        $seeded = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerBob, $this->ownerA, 'pending', 'DSP-SEEDED');
+        DisputeCase::whereKey([$disputeA->id, $disputeB->id, $seeded->id])->update(['respondent_id' => null]);
+
+        (require database_path('migrations/2026_10_12_000001_backfill_dispute_case_respondents.php'))->up();
+
+        $this->assertEquals($this->ownerA->id, $disputeA->fresh()->respondent_id);
+        $this->assertEquals($activeOwnerB->id, $disputeB->fresh()->respondent_id);
+        $this->assertEquals($this->stranger->id, $answered->fresh()->respondent_id);
+        $this->assertNull($seeded->fresh()->respondent_id);
+    }
+
+    /**
+     * Test 12: A named respondent who no longer owns the venue loses the case; the owner after handover answers it.
+     */
+    public function test_suspended_respondent_loses_access_to_organization_dispute(): void
+    {
+        $dispute = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerAlice, $this->ownerA, 'pending', 'DSP-FORMER-OWNER');
+        $activeOwner = $this->replaceOwner($this->tenantA, $this->ownerA);
+
+        $this->actingAs($this->ownerA)->getJson("/api/v1/disputes/{$dispute->id}")->assertStatus(404);
+        $this->assertNotContains(
+            'DSP-FORMER-OWNER',
+            collect($this->actingAs($this->ownerA)->getJson('/api/v1/disputes')->json('data'))->pluck('dispute_code')
+        );
+        $this->actingAs($this->ownerA)
+            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+                'explanation' => 'Tôi không còn quản lý cơ sở này.',
+            ])
+            ->assertStatus(403);
+
+        $this->actingAs($activeOwner)
+            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+                'explanation' => 'Chủ mới tiếp nhận và phản hồi khiếu nại.',
+                'evidence' => [['url' => 'https://storage.local/handover.jpg', 'type' => 'image']],
+            ])
+            ->assertOk();
+    }
+
+    /**
+     * Test 13: A respondent demoted to venue manager can still read the case but can no longer answer or reopen it.
+     */
+    public function test_demoted_respondent_cannot_answer_or_reopen_organization_dispute(): void
+    {
+        $dispute = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerAlice, $this->ownerA, 'resolved', 'DSP-DEMOTED-OWNER');
+        OrganizationMember::where('organization_id', $this->tenantA->id)
+            ->where('user_id', $this->ownerA->id)
+            ->update(['role' => OrganizationMember::ROLE_VENUE_MANAGER]);
+
+        $this->actingAs($this->ownerA)->getJson("/api/v1/disputes/{$dispute->id}")->assertOk();
+        $this->actingAs($this->ownerA)
+            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+                'evidence' => [['url' => 'https://storage.local/late.jpg', 'type' => 'image']],
+            ])
+            ->assertStatus(403);
+        $this->actingAs($this->ownerA)
+            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+                'reason' => 'Có chứng cứ mới về tình trạng sân.',
+                'material_evidence' => [['url' => 'https://storage.local/new.jpg', 'type' => 'image']],
+            ])
+            ->assertStatus(403);
+        $this->assertSame('resolved', $dispute->fresh()->status);
+    }
+
+    /**
+     * Suspends the organization's current owner and adds a later, active one. A venue manager and a
+     * platform admin holding owner membership join first, so lookups must skip them by role, not by order.
+     */
+    private function replaceOwner(Organization $org, User $owner): User
+    {
+        OrganizationMember::where('organization_id', $org->id)->where('user_id', $owner->id)->update(['status' => 'suspended']);
+        OrganizationMember::create([
+            'organization_id' => $org->id,
+            'user_id' => $this->createCustomerUser("manager_{$org->slug}@test.local", "Manager {$org->name}")->id,
+            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'status' => 'active',
+        ]);
+        OrganizationMember::create([
+            'organization_id' => $org->id,
+            'user_id' => $this->platformAdmin->id,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
+            'status' => 'active',
+        ]);
+        $newOwner = $this->createCustomerUser("new_owner_{$org->slug}@test.local", "New Owner {$org->name}");
+        OrganizationMember::create([
+            'organization_id' => $org->id,
+            'user_id' => $newOwner->id,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
+            'status' => 'active',
+        ]);
+
+        return $newOwner;
     }
 }

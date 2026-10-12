@@ -27,6 +27,12 @@ interface DisputeRepositoryInterface
 
     public function userCanAccess(DisputeCase $dispute, User $user): bool;
 
+    /** Whether the user answers the dispute: any active owner of its organization, otherwise its named respondent. */
+    public function isRespondent(DisputeCase $dispute, User $user): bool;
+
+    /** The user who answers disputes filed against an organization: its earliest active owner who is not platform staff. */
+    public function findRespondentIdForOrganization(int $organizationId): ?int;
+
     public function create(array $attributes): DisputeCase;
 
     public function update(DisputeCase $dispute, array $attributes): DisputeCase;

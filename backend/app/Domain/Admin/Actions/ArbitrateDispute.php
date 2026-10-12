@@ -6,8 +6,6 @@ use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Domain\Admin\DTOs\ArbitrateDisputeData;
 use App\Models\DisputeCase;
-use App\Models\Organization;
-use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
 use App\Models\Venue;
 use App\Services\Infrastructure\OutboxService;
@@ -74,10 +72,9 @@ class ArbitrateDispute
                         $venueId = Venue::where('organization_id', $orgId)->value('id');
                     }
 
+                    // organizations has no user_id column: the owner comes from organization_members.
                     $payerId = $dispute->respondent_id
-                        ?? $dispute->booking?->court?->venue?->organization?->user_id
-                        ?? Organization::whereKey($orgId)->value('user_id')
-                        ?? OrganizationMember::where('organization_id', $orgId)->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)->value('user_id')
+                        ?? ($orgId ? $this->disputeRepository->findRespondentIdForOrganization($orgId) : null)
                         ?? $data->reviewerId;
 
                     $slotIds = $dispute->booking?->slots()->pluck('id')->all() ?? [];

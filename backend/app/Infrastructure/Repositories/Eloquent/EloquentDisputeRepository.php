@@ -17,7 +17,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
         }
 
         // 1. Party in the dispute
-        if ((int) $dispute->complainant_id === (int) $user->id || (int) $dispute->respondent_id === (int) $user->id) {
+        if ((int) $dispute->complainant_id === (int) $user->id || $this->isRespondent($dispute, $user)) {
             return true;
         }
         // 2. Assigned reviewer
@@ -41,6 +41,28 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
         }
 
         return false;
+    }
+
+    public function isRespondent(DisputeCase $dispute, User $user): bool
+    {
+        // An organization answers through whoever owns it now; respondent_id only records who was told.
+        return $dispute->organization_id
+            ? $user->hasRoleInOrganization($dispute->organization_id, [OrganizationMember::ROLE_ORGANIZATION_OWNER])
+            : (int) $dispute->respondent_id === (int) $user->id;
+    }
+
+    public function findRespondentIdForOrganization(int $organizationId): ?int
+    {
+        $userId = OrganizationMember::query()
+            ->where('organization_id', $organizationId)
+            ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)
+            ->where('status', 'active')
+            // Platform staff must stay free to arbitrate, so they never answer for a venue.
+            ->whereHas('user', fn ($q) => $q->whereNotIn('role', ['admin', 'platform_admin']))
+            ->orderBy('id')
+            ->value('user_id');
+
+        return $userId === null ? null : (int) $userId;
     }
 
     public function applyUserScope($query, ?User $user, ?int $organizationId = null, ?int $venueId = null)
@@ -80,8 +102,9 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
 
         return $query->where(function ($q) use ($user, $orgIds, $managedVenueIds, $isFullOrgOwner, $organizationId, $venueId) {
             // Party in dispute
+            // An organization's respondent sees its cases through the owner clause below, which tracks current grants.
             $q->where('complainant_id', $user->id)
-                ->orWhere('respondent_id', $user->id)
+                ->orWhere(fn ($r) => $r->where('respondent_id', $user->id)->whereNull('organization_id'))
                 ->orWhere('assigned_reviewer_id', $user->id);
             // Organization owner / venue manager
             if (! empty($orgIds)) {

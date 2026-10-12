@@ -83,7 +83,6 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         ]);
 
         $this->ownerAlpha = $this->createCustomerUser('owner.alpha@test.local', 'Owner Alpha');
-        $this->orgAlpha->update(['user_id' => $this->ownerAlpha->id]);
 
         OrganizationMember::create([
             'organization_id' => $this->orgAlpha->id,
@@ -165,7 +164,6 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         ]);
 
         $this->ownerBeta = $this->createCustomerUser('owner.beta@test.local', 'Owner Beta');
-        $this->orgBeta->update(['user_id' => $this->ownerBeta->id]);
 
         OrganizationMember::create([
             'organization_id' => $this->orgBeta->id,
