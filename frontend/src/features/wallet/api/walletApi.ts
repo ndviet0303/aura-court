@@ -9,6 +9,7 @@ export const walletApi = {
       balance: number
       currency: string
       points: number
+      membership_tier: string | null
       transactions: any[]
     }>('/wallet', {
       params: organizationId === undefined ? undefined : { organization_id: organizationId },

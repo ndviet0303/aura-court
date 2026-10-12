@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
 use App\Services\Finance\FinancialPostingService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
@@ -33,6 +34,12 @@ class WalletPaymentService
             ['organization_id' => $organizationId, 'user_id' => $userId, 'currency' => 'VND'],
             ['balance' => 0, 'status' => 'active']
         );
+    }
+
+    /** @return Collection<int, WalletTransaction> */
+    public function recentTransactions(WalletAccount $wallet): Collection
+    {
+        return $wallet->transactions()->latest('id')->take(20)->get();
     }
 
     public function debit(WalletAccount $wallet, int $amount, string $sourceType, int $sourceId, ?string $reference = null): WalletTransaction

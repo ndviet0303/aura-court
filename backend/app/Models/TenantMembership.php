@@ -18,6 +18,7 @@ class TenantMembership extends Model
         return ['plan_version' => 'integer', 'starts_at' => 'datetime', 'ends_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<TenantMembershipPlan, $this> */
     public function plan(): BelongsTo
     {
         return $this->belongsTo(TenantMembershipPlan::class, 'plan_id');

@@ -43,6 +43,7 @@ describe('Wallet Deposit and Balance Management', () => {
       balance: 750000,
       currency: 'VND',
       points: 750,
+      membership_tier: null,
       transactions: [
         {
           id: 1,
@@ -72,6 +73,7 @@ describe('Wallet Deposit and Balance Management', () => {
       balance: 100000,
       currency: 'VND',
       points: 100,
+      membership_tier: null,
       transactions: [],
     })
 
@@ -118,6 +120,7 @@ describe('Wallet Deposit and Balance Management', () => {
       balance: 200000,
       currency: 'VND',
       points: 200,
+      membership_tier: null,
       transactions: [],
     })
 
@@ -173,6 +176,7 @@ describe('Wallet Deposit and Balance Management', () => {
         balance: 200000,
         currency: 'VND',
         points: 200,
+        membership_tier: null,
         transactions: [],
       })
       .mockResolvedValueOnce({
@@ -181,6 +185,7 @@ describe('Wallet Deposit and Balance Management', () => {
         balance: 500000,
         currency: 'VND',
         points: 500,
+        membership_tier: null,
         transactions: [],
       })
 
@@ -235,6 +240,7 @@ describe('Wallet Deposit and Balance Management', () => {
       balance: 500000,
       currency: 'VND',
       points: 0,
+      membership_tier: null,
       transactions: [],
     })
     vi.mocked(walletApi.initiateDeposit).mockRejectedValue({
