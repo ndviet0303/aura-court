@@ -142,7 +142,6 @@ export function useWallet(organizationId?: number) {
       const res = await walletApi.getWallet(organizationId)
       const userName = auth.user?.name || 'AURA MEMBER'
       const realBal = typeof res?.balance === 'number' ? res.balance : 0
-      const realPts = typeof res?.points === 'number' ? res.points : Math.floor(realBal / 1000)
 
       wallets.value = [
         {
@@ -153,11 +152,10 @@ export function useWallet(organizationId?: number) {
           card_number: `AUR-9902-${String(auth.user?.id || 1).padStart(4, '0')}`,
           address: 'Toàn bộ hệ thống cơ sở Aura Court',
           balance: realBal,
-          points: realPts,
+          points: res.points,
           is_active: true,
           currency: res?.currency || 'VND',
-          member_tier: 'gold',
-          tier_label: 'Gold Athlete',
+          tier_label: res.membership_tier,
           accent_theme: 'burgundy',
           card_holder: userName,
           expiry_date: '12/2028',
