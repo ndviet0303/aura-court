@@ -202,7 +202,7 @@ class DiscountService
         return $group === Coupon::GROUP_RETURNING ? $hasSuccessfulBooking : ! $hasSuccessfulBooking;
     }
 
-    private function activeMembership(int $userId, ?int $organizationId): ?TenantMembership
+    public function activeMembership(int $userId, ?int $organizationId): ?TenantMembership
     {
         if ($organizationId === null) {
             return null;

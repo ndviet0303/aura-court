@@ -17,6 +17,7 @@ class WalletAccount extends Model
         return ['balance' => 'integer'];
     }
 
+    /** @return HasMany<WalletTransaction, $this> */
     public function transactions(): HasMany
     {
         return $this->hasMany(WalletTransaction::class, 'wallet_account_id');
