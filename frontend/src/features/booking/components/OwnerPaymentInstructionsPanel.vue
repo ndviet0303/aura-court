@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { ReservationPaymentAttempt } from '../api/bookingApi'
 
-const { t } = useI18n()
+const { t, d } = useI18n()
 
 defineProps<{
   attempt: ReservationPaymentAttempt | null
@@ -90,7 +90,7 @@ const emit = defineEmits<{
       <p v-if="attempt.expires_at && attempt.status === 'pending'" class="panel-expiry">
         {{
           t('v2Reservations.payment.expiresAt', {
-            time: new Date(attempt.expires_at).toLocaleString(),
+            time: d(new Date(attempt.expires_at), 'datetime'),
           })
         }}
       </p>

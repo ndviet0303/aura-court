@@ -178,6 +178,8 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
     const receiptModal = wrapper.find('.receipt-printable')
     expect(receiptModal.exists()).toBe(true)
     expect(receiptModal.text()).toContain('POS-SERVER-42')
+    // Receipt time follows the app locale on the venue clock: 10:00Z is 17:00 in Vietnam.
+    expect(receiptModal.get('.receipt-time').text().replace(/\s/g, ' ')).toBe('17:00 09/09/2026')
   })
 
   it('uses stable idempotency key on checkout retry after rejection', async () => {

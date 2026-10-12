@@ -56,7 +56,7 @@ const discountPercent = computed(() => {
             {{ $t('wallet.activeCard') }}
           </span>
           <span v-if="membership?.ends_at" class="expiry-text">
-            {{ $t('profile.vipExpires') }}: {{ new Date(membership.ends_at).toLocaleDateString() }}
+            {{ $t('profile.vipExpires') }}: {{ $d(new Date(membership.ends_at), 'date') }}
           </span>
           <span v-else class="expiry-text">
             {{ $t('profile.vipTier') }}

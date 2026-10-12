@@ -219,7 +219,7 @@ onMounted(() => {
                   </span>
                   {{ post.audience === 'friends' ? 'Chỉ bạn bè' : 'Toàn CLB' }}
                 </span>
-                <span class="post-time">{{ new Date(post.created_at).toLocaleDateString() }}</span>
+                <span class="post-time">{{ $d(new Date(post.created_at)) }}</span>
               </div>
             </div>
           </div>
