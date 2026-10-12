@@ -111,7 +111,9 @@ function formatFrequency(freq?: string): string {
                   ? 'ĐƯỢC BẢO LÃNH (CHƯA THANH TOÁN)'
                   : invoice.status === 'overdue'
                     ? 'QUÁ HẠN THANH TOÁN'
-                    : 'CHỜ THANH TOÁN'
+                    : invoice.status === 'cancelled'
+                      ? 'ĐÃ HUỶ'
+                      : 'CHỜ THANH TOÁN'
           }}
         </span>
       </div>

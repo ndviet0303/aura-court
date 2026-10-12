@@ -3,11 +3,9 @@
 namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
-use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 
 class EloquentRecurringContractRepository implements RecurringContractRepositoryInterface
 {
@@ -102,7 +100,7 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
         $overdueCount = 0;
         foreach ($allSeries as $series) {
             $overdueCount += $series->invoices->filter(function ($inv) {
-                return $inv->status === 'overdue' || ($inv->status === 'pending' && $inv->due_at && Carbon::parse($inv->due_at)->isPast());
+                return $inv->status === 'overdue' || ($inv->status === 'pending' && Carbon::parse($inv->due_at)->isPast());
             })->count();
         }
 
@@ -113,27 +111,5 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
             'overdue_cycles' => $overdueCount,
             'prime_time_utilization' => $activeCount > 0 ? 94 : 0,
         ];
-    }
-
-    public function cancelContract(int $id, ?string $reason = null): RecurringSeries
-    {
-        return DB::transaction(function () use ($id, $reason) {
-            $series = RecurringSeries::withoutGlobalScope('tenant_isolation')->findOrFail($id);
-            $series->update([
-                'status' => 'cancelled',
-                'metadata' => array_merge($series->metadata ?? [], [
-                    'cancelled_at' => now()->toIso8601String(),
-                    'cancel_reason' => $reason,
-                ]),
-            ]);
-
-            // Release future occurrences
-            RecurringOccurrence::withoutGlobalScope('tenant_isolation')
-                ->where('recurring_series_id', $series->id)
-                ->where('starts_at', '>', now())
-                ->update(['status' => 'released', 'released_at' => now()]);
-
-            return $series->fresh(['court.venue', 'user', 'invoices', 'occurrences']);
-        });
     }
 }

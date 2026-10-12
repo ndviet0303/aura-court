@@ -159,7 +159,9 @@ function openInvoiceDetail(inv: RecurringInvoice) {
                     ? 'Được bảo lãnh (chưa thanh toán)'
                     : inv.status === 'overdue'
                       ? 'Quá hạn'
-                      : 'Chờ thanh toán'
+                      : inv.status === 'cancelled'
+                        ? 'Đã huỷ'
+                        : 'Chờ thanh toán'
             }}
           </span>
         </div>

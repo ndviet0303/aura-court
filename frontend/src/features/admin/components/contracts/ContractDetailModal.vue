@@ -149,7 +149,9 @@ function formatDate(dateStr?: string | null): string {
                           ? t('admin.contracts.statusGuaranteed')
                           : cycle.status === 'overdue'
                             ? t('admin.contracts.statusOverdue')
-                            : t('admin.contracts.statusUnpaid')
+                            : cycle.status === 'cancelled'
+                              ? t('admin.contracts.statusCancelled')
+                              : t('admin.contracts.statusUnpaid')
                   }}
                 </span>
               </div>
@@ -164,6 +166,7 @@ function formatDate(dateStr?: string | null): string {
                 <span v-else-if="cycle.status === 'zero_payable'" class="text-muted">{{
                   t('admin.contracts.statusZeroPayable')
                 }}</span>
+                <span v-else-if="cycle.status === 'cancelled'" class="text-muted">—</span>
                 <span v-else class="text-muted">{{
                   t('admin.contracts.awaitingVerifiedReceipt')
                 }}</span>

@@ -202,7 +202,9 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
                       ? 'Đã đóng'
                       : inv.status === 'overdue'
                         ? 'Quá hạn'
-                        : 'Chờ thanh toán'
+                        : inv.status === 'cancelled'
+                          ? 'Đã huỷ'
+                          : 'Chờ thanh toán'
                   }}
                 </span>
 
