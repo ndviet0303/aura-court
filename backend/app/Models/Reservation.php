@@ -150,6 +150,11 @@ class Reservation extends Model
         return $this->hasMany(ServiceTab::class);
     }
 
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
+
     public function isDisputed(): bool
     {
         if ($this->status === 'disputed' || (bool) data_get($this->metadata, 'is_disputed', false)) {
@@ -164,7 +169,7 @@ class Reservation extends Model
         return DisputeCase::query()
             ->withoutGlobalScope('tenant_isolation')
             ->where(function ($q) use ($legacyBookingId) {
-                $q->where('booking_id', $this->id);
+                $q->where('reservation_id', $this->id);
                 if ($legacyBookingId) {
                     $q->orWhere('booking_id', $legacyBookingId);
                 }

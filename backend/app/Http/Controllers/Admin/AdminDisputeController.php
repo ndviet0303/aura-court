@@ -11,15 +11,13 @@ use App\Domain\Admin\DTOs\DisputeFilterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ArbitrateDisputeRequest;
 use App\Http\Requests\Admin\ListDisputeRequest;
+use App\Http\Requests\Admin\StoreDisputeRequest;
 use App\Http\Resources\Admin\DisputeCaseResource;
-use App\Models\Booking;
 use App\Models\DisputeCase;
-use App\Models\LegacyBookingMapping;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
-use App\Models\ReservationEntitlement;
+use App\Models\Reservation;
 use App\Services\Infrastructure\OutboxService;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -103,48 +101,30 @@ class AdminDisputeController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreDisputeRequest $request): JsonResponse
     {
         $user = $request->user();
+        $data = $request->validated();
 
-        $data = $request->validate([
-            'title' => 'required|string|max:190',
-            'summary' => 'required|string|min:10',
-            'dispute_type' => 'required|in:booking_cancellation,court_quality,payment_issue,no_show_conflict,other',
-            'severity' => 'nullable|in:low,medium,high,urgent',
-            'booking_id' => 'nullable|integer|exists:bookings,id',
-            'evidence' => 'nullable|array',
-            'amount_disputed' => 'nullable|integer|min:0',
-            'reference_type' => 'nullable|string|max:32',
-            'reference_id' => 'nullable|integer',
-        ]);
+        $reservation = null;
+        if (! empty($data['reservation_id'])) {
+            $reservation = Reservation::query()->withoutGlobalScope('tenant_isolation')
+                ->with(['court.venue.organization', 'slots', 'legacyMapping' => fn ($q) => $q->withoutGlobalScope('tenant_isolation')])
+                ->findOrFail($data['reservation_id']);
 
-        $booking = null;
-        if (! empty($data['booking_id'])) {
-            $booking = Booking::with(['court.venue.organization', 'slots'])->findOrFail($data['booking_id']);
-
-            // Party check
-            $isBookingOwner = (int) $booking->user_id === (int) $user->id;
-            $hasEntitlement = false;
-            if (! $isBookingOwner) {
-                $reservationIds = LegacyBookingMapping::where('legacy_booking_id', $booking->id)->pluck('reservation_id');
-                $hasEntitlement = ReservationEntitlement::query()
-                    ->where('user_id', $user->id)
-                    ->whereIn('reservation_id', $reservationIds)
-                    ->exists();
-            }
-
-            abort_unless($isBookingOwner || $hasEntitlement, 403, 'Unauthorized booking party.');
-            // Filing window check: If booking ended > 30 days ago, abort 422
-            $latestSlotEnd = $booking->slots->max('ends_at');
-            $bookingEndedAt = $latestSlotEnd ? Carbon::parse($latestSlotEnd) : $booking->created_at;
-            if ($bookingEndedAt && $bookingEndedAt->isBefore(now()->subDays(30))) {
+            // Party check: the reservation owner or an entitlement holder on it
+            $isParty = (int) $reservation->user_id === (int) $user->id
+                || $reservation->entitlements()->where('user_id', $user->id)->exists();
+            abort_unless($isParty, 403, 'Unauthorized booking party.');
+            // Filing window check: If the reservation ended > 30 days ago, abort 422
+            $endedAt = $reservation->ends_at ?? $reservation->created_at;
+            if ($endedAt && $endedAt->isBefore(now()->subDays(30))) {
                 abort(422, 'Filing window has expired for this booking.');
             }
 
-            // Duplicate check: If an open dispute already exists for this booking_id and complainant, reject with 409
+            // Duplicate check: If an open dispute already exists for this reservation and complainant, reject with 409
             $existingDispute = DisputeCase::query()
-                ->where('booking_id', $booking->id)
+                ->where('reservation_id', $reservation->id)
                 ->where('complainant_id', $user->id)
                 ->whereIn('status', ['pending', 'investigating', 'awaiting_evidence', 'awaiting_response'])
                 ->first();
@@ -177,7 +157,7 @@ class AdminDisputeController extends Controller
         }
 
         $disputeCode = 'DSP-'.strtoupper(Str::random(10));
-        $court = $booking?->court;
+        $court = $reservation?->court;
         $venue = $court?->venue;
         $org = $venue?->organization;
 
@@ -185,9 +165,10 @@ class AdminDisputeController extends Controller
             'dispute_code' => $disputeCode,
             'organization_id' => $org?->id,
             'venue_id' => $venue?->id,
-            'booking_id' => $booking?->id,
-            'reference_type' => $booking ? 'booking' : ($data['reference_type'] ?? 'booking'),
-            'reference_id' => $booking ? $booking->id : ($data['reference_id'] ?? null),
+            'booking_id' => $reservation?->legacyMapping->value('legacy_booking_id'),
+            'reservation_id' => $reservation?->id,
+            'reference_type' => $reservation ? 'reservation' : ($data['reference_type'] ?? 'booking'),
+            'reference_id' => $reservation ? $reservation->id : ($data['reference_id'] ?? null),
             'court_name' => $court?->name ?? 'N/A',
             'facility_name' => $venue?->name ?? 'N/A',
             'facility_operator_name' => $org?->name,
@@ -197,7 +178,7 @@ class AdminDisputeController extends Controller
             'summary' => $data['summary'],
             'status' => $status,
             'sla_deadline' => $slaDeadline,
-            'amount_disputed' => (int) ($data['amount_disputed'] ?? $booking?->total_amount ?? 0),
+            'amount_disputed' => (int) ($data['amount_disputed'] ?? $reservation?->total_amount ?? 0),
             'currency' => 'VND',
             'complainant_id' => $user->id,
             'complainant_name' => $user->name,
@@ -242,7 +223,7 @@ class AdminDisputeController extends Controller
 
         return response()->json([
             'message' => 'Dispute filed successfully.',
-            'data' => DisputeCaseResource::make($dispute),
+            'data' => DisputeCaseResource::make($dispute->setRelation('reservation', $reservation)),
         ], 201);
     }
 

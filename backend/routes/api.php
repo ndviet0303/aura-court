@@ -33,7 +33,9 @@ use App\Http\Controllers\Payment\OwnerRefundController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Promotion\PromotionController;
+use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\LegacyBookingAdapterController;
+use App\Http\Controllers\Reservation\MyReservationController;
 use App\Http\Controllers\Reservation\RescheduleController;
 use App\Http\Controllers\Reservation\V2PriceRuleController;
 use App\Http\Controllers\Reservation\V2ReservationController;
@@ -427,6 +429,8 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
         // Reservation commands are the canonical v2 write path. Each command
         // controller delegates to IdempotencyService and persists its outcome.
         Route::get('reservations', [V2ReservationController::class, 'index']);
+        Route::get('me/reservations', MyReservationController::class);
+        Route::get('admin/reservations', AdminReservationController::class)->middleware('venue_admin');
         Route::post('price-quotes', [V2ReservationController::class, 'quote']);
         Route::get('price-rules', [V2PriceRuleController::class, 'index']);
         Route::get('pricing/calendar', [V2ReservationController::class, 'pricingCalendar']);

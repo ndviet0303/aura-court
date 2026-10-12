@@ -13,6 +13,8 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OutboxMessage;
 use App\Models\OwnerRefundObligation;
+use App\Models\Reservation;
+use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
 use Carbon\Carbon;
@@ -145,6 +147,33 @@ class DisputeLifecycleAndModerationTest extends TestCase
         ]);
 
         return $booking;
+    }
+
+    private function createReservation(User $user, Court $court, Carbon $endedAt): Reservation
+    {
+        $organizationId = $court->venue->organization_id;
+        $reservation = Reservation::create([
+            'organization_id' => $organizationId,
+            'user_id' => $user->id,
+            'court_id' => $court->id,
+            'code' => 'RSV-'.strtoupper(uniqid()),
+            'status' => 'completed',
+            'currency' => 'VND',
+            'total_amount' => 300000,
+            'payment_model' => 'direct_owner_v1',
+        ]);
+        ReservationSlot::create([
+            'organization_id' => $organizationId,
+            'reservation_id' => $reservation->id,
+            'court_id' => $court->id,
+            'starts_at' => (clone $endedAt)->subHour(),
+            'ends_at' => $endedAt,
+            'unit_price' => 300000,
+            'status' => 'confirmed',
+            'snapshot' => [],
+        ]);
+
+        return $reservation;
     }
 
     private function createDisputeCase(
@@ -345,33 +374,33 @@ class DisputeLifecycleAndModerationTest extends TestCase
     }
 
     /**
-     * Test 3: Party intake: booking party scope, deadline check (>30 days -> 422),
+     * Test 3: Party intake: reservation party scope, deadline check (>30 days -> 422),
      * duplicate detection (409), and incomplete filing -> awaiting_evidence.
      */
     public function test_party_intake_scope_deadline_duplicate_and_awaiting_evidence(): void
     {
-        // 1. Booking ended 35 days ago (> 30 days)
-        $expiredBooking = $this->createBooking($this->customerAlice, $this->courtA, now()->subDays(35));
+        // 1. Reservation ended 35 days ago (> 30 days)
+        $expiredReservation = $this->createReservation($this->customerAlice, $this->courtA, now()->subDays(35));
 
         $lateRes = $this->actingAs($this->customerAlice)
             ->postJson('/api/v1/disputes', [
                 'title' => 'Khiếu nại đặt sân quá hạn',
                 'summary' => 'Nội dung tóm tắt khiếu nại đã quá hạn 30 ngày theo quy định.',
                 'dispute_type' => 'court_quality',
-                'booking_id' => $expiredBooking->id,
+                'reservation_id' => $expiredReservation->id,
             ]);
         $lateRes->assertStatus(422)
             ->assertJsonFragment(['message' => 'Filing window has expired for this booking.']);
 
-        // 2. Stranger tries to file dispute for Alice's booking -> 403 Unauthorized
-        $validBooking = $this->createBooking($this->customerAlice, $this->courtA, now()->subDays(5));
+        // 2. Stranger tries to file dispute for Alice's reservation -> 403 Unauthorized
+        $validReservation = $this->createReservation($this->customerAlice, $this->courtA, now()->subDays(5));
 
         $unauthRes = $this->actingAs($this->stranger)
             ->postJson('/api/v1/disputes', [
                 'title' => 'Người lạ cố tình khiếu nại',
                 'summary' => 'Tóm tắt nội dung khiếu nại hợp lệ về độ dài.',
                 'dispute_type' => 'court_quality',
-                'booking_id' => $validBooking->id,
+                'reservation_id' => $validReservation->id,
             ]);
         $unauthRes->assertStatus(403);
 
@@ -382,7 +411,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
                 'summary' => 'Mặt sân trơn trượt ngập nước mưa không thể thi đấu an toàn.',
                 'dispute_type' => 'court_quality',
                 'severity' => 'high',
-                'booking_id' => $validBooking->id,
+                'reservation_id' => $validReservation->id,
                 'evidence' => [],
             ]);
 
@@ -395,6 +424,8 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $this->assertEquals(['photos_or_video', 'detailed_statement'], $createdDispute->requested_evidence);
         $this->assertEquals($this->tenantA->id, $createdDispute->organization_id);
         $this->assertEquals($this->venueA->id, $createdDispute->venue_id);
+        $this->assertEquals($validReservation->id, $createdDispute->reservation_id);
+        $this->assertSame('reservation', $createdDispute->reference_type);
 
         // Outbox notification enqueued for evidence request
         $this->assertDatabaseHas('outbox_messages', [
@@ -402,19 +433,20 @@ class DisputeLifecycleAndModerationTest extends TestCase
             'aggregate_id' => $createdDispute->id,
         ]);
 
-        // 4. Duplicate check: Trying to file another dispute for same booking while one is active -> 409
+        // 4. Duplicate check: Trying to file another dispute for same reservation while one is active -> 409
         $dupRes = $this->actingAs($this->customerAlice)
             ->postJson('/api/v1/disputes', [
                 'title' => 'Gửi trùng khiếu nại cho cùng booking',
                 'summary' => 'Tóm tắt nội dung khiếu nại trùng lặp cho đơn đặt sân.',
                 'dispute_type' => 'payment_issue',
-                'booking_id' => $validBooking->id,
+                'reservation_id' => $validReservation->id,
             ]);
 
         $dupRes->assertStatus(409)
             ->assertJsonFragment([
                 'message' => 'A dispute is already active for this booking.',
                 'dispute_id' => $createdDispute->id,
+                'existing_dispute_id' => $createdDispute->id,
             ]);
     }
 

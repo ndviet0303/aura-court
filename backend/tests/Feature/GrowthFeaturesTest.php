@@ -15,6 +15,7 @@ use App\Notifications\AuraBookingNotification;
 use App\Services\Booking\BookingService;
 use App\Services\Booking\DiscountService;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -135,13 +136,14 @@ class GrowthFeaturesTest extends TestCase
     public function test_completed_booking_can_be_reviewed_and_calendar_downloaded(): void
     {
         $user = User::factory()->create();
-        $court = Court::create(['name' => 'Sân Đánh Giá', 'is_active' => true]);
+        $court = Court::create(['venue_id' => Venue::firstOrFail()->id, 'name' => 'Sân Đánh Giá', 'is_active' => true]);
         $start = Carbon::now()->subDays(2)->setTime(10, 0);
         $booking = Booking::create(['code' => 'BKREVIEW001', 'user_id' => $user->id, 'court_id' => $court->id, 'total_amount' => 120000, 'status' => 'confirmed']);
         $booking->slots()->create(['court_id' => $court->id, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'unit_price' => 120000, 'status' => 'confirmed']);
+        $mapping = app(LegacyBookingBackfillService::class)->backfillBooking($booking);
 
-        $this->actingAs($user)->postJson('/api/v1/reviews', ['booking_code' => $booking->code, 'rating' => 5, 'body' => 'Rất tốt'])->assertCreated();
-        $this->assertDatabaseHas('reviews', ['booking_id' => $booking->id, 'rating' => 5]);
+        $this->actingAs($user)->postJson('/api/v1/reviews', ['reservation_code' => $mapping->reservation->code, 'rating' => 5, 'body' => 'Rất tốt'])->assertCreated();
+        $this->assertDatabaseHas('reviews', ['reservation_id' => $mapping->reservation_id, 'booking_id' => $booking->id, 'rating' => 5]);
         $this->actingAs($user)->get('/api/v1/bookings/'.$booking->code.'/calendar.ics')->assertOk()->assertHeader('Content-Type', 'text/calendar; charset=UTF-8')->assertSee('BEGIN:VCALENDAR');
     }
 

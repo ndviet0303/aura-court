@@ -717,7 +717,7 @@ class OrdinaryCheckoutService
     {
         $query = PriceQuote::query()
             ->withoutGlobalScope('tenant_isolation')
-            ->where('user_id', $userId)
+            ->where('user_id', $userId)->where('organization_id', $organizationId)
             ->where('status', 'open');
 
         if (! empty($data['quote_token'])) {

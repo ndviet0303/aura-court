@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'court_id', 'booking_id', 'rating', 'body', 'is_published'])]
+#[Fillable(['user_id', 'court_id', 'booking_id', 'reservation_id', 'rating', 'body', 'is_published'])]
 class Review extends Model
 {
     protected function casts(): array
@@ -27,5 +27,10 @@ class Review extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 }

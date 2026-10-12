@@ -235,20 +235,18 @@ function onChangeApplied() {
       @paid="loadData"
     />
 
-    <!-- Cancellation / partial-cancel refund modal (v2 endpoints) -->
+    <!-- Cancellation / partial-cancel refund modal -->
     <BookingCancelModal
       :show="!!cancelReservation"
       :booking="cancelReservation"
-      :v2="true"
       @close="cancelReservation = null"
       @updated="onChangeApplied"
     />
 
-    <!-- Reschedule modal (v2 endpoints) -->
+    <!-- Reschedule modal -->
     <BookingRescheduleModal
       :show="!!rescheduleReservation"
       :booking="rescheduleReservation"
-      :v2="true"
       @close="rescheduleReservation = null"
       @updated="onChangeApplied"
     />

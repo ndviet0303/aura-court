@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText, formatSlotRange, formatCurrency } from '@/i18n'
-import type { AdminBooking } from '../../composables/useAdminDashboard'
+import {
+  RESERVATION_STATUSES,
+  reservationCode,
+  reservationStatus,
+  type AdminReservation,
+} from '../../composables/useAdminDashboard'
 
 defineProps<{
-  bookings: AdminBooking[]
+  bookings: AdminReservation[]
   search: string
   status: string
   loading?: boolean
@@ -21,9 +26,17 @@ function getStatusLabel(status?: string): string {
   switch (status) {
     case 'confirmed':
       return t('admin.dashboard.statusConfirmed')
-    case 'pending':
+    case 'held':
     case 'pending_payment':
       return t('admin.dashboard.statusPending')
+    case 'in_use':
+      return t('admin.dashboard.statusInUse')
+    case 'completed':
+      return t('admin.dashboard.statusCompleted')
+    case 'disputed':
+      return t('admin.dashboard.statusDisputed')
+    case 'legacy':
+      return t('admin.dashboard.statusLegacy')
     case 'cancelled':
       return t('admin.dashboard.statusCancelled')
     case 'expired':
@@ -66,12 +79,9 @@ function getStatusLabel(status?: string): string {
           @change="emit('update:status', ($event.target as HTMLSelectElement).value)"
         >
           <option value="">{{ t('admin.dashboard.allStatuses') }}</option>
-          <option value="confirmed">{{ t('admin.dashboard.statusConfirmed') }}</option>
-          <option value="pending_payment">{{ t('admin.dashboard.statusPending') }}</option>
-          <option value="cancelled">{{ t('admin.dashboard.statusCancelled') }}</option>
-          <option value="expired">{{ t('admin.dashboard.statusExpired') }}</option>
-          <option value="no_show">{{ t('admin.dashboard.statusNoShow') }}</option>
-          <option value="refund_pending">{{ t('admin.dashboard.statusRefundPending') }}</option>
+          <option v-for="s in RESERVATION_STATUSES" :key="s" :value="s">
+            {{ getStatusLabel(s) }}
+          </option>
         </select>
       </div>
     </div>
@@ -106,7 +116,7 @@ function getStatusLabel(status?: string): string {
         <!-- Real Rows -->
         <div v-else-if="bookings.length > 0" class="table-body">
           <div v-for="b in bookings" :key="b.id" class="booking-row">
-            <strong class="font-mono text-pink">{{ b.code }}</strong>
+            <strong class="font-mono text-pink">{{ reservationCode(b) }}</strong>
             <div class="user-col">
               <strong>{{ b.user?.name || t('admin.dashboard.walkInCustomer') }}</strong>
               <span class="email-sub">{{ b.user?.email }}</span>
@@ -118,7 +128,9 @@ function getStatusLabel(status?: string): string {
               </span>
             </div>
             <strong class="font-mono">{{ formatCurrency(b.total_amount) }}</strong>
-            <span class="status-pill" :class="b.status">{{ getStatusLabel(b.status) }}</span>
+            <span class="status-pill" :class="reservationStatus(b)">
+              {{ getStatusLabel(reservationStatus(b)) }}
+            </span>
           </div>
         </div>
 
@@ -272,7 +284,7 @@ function getStatusLabel(status?: string): string {
   color: #10b981;
 }
 
-.status-pill.pending,
+.status-pill.held,
 .status-pill.pending_payment {
   background: rgba(245, 158, 11, 0.12);
   color: #f59e0b;

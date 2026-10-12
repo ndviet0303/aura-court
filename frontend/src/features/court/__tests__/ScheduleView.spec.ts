@@ -4,8 +4,10 @@ import { setActivePinia, createPinia } from 'pinia'
 import ScheduleView from '@/features/court/views/ScheduleView.vue'
 import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/stores/auth'
 import { courtApi } from '../api/courtApi'
 import { bookingApi } from '@/features/booking/api/bookingApi'
+import type { V2Reservation } from '@/features/booking/types/v2Reservation'
 
 const mockRoute = vi.hoisted(() => ({
   params: { slug: 'san-1-tham-bwf-cau-giay' },
@@ -15,7 +17,7 @@ const mockRoute = vi.hoisted(() => ({
 
 vi.mock('../api/courtApi', () => ({ courtApi: { getBySlug: vi.fn() } }))
 vi.mock('@/features/booking/api/bookingApi', () => ({
-  bookingApi: { getAvailability: vi.fn(), getCourts: vi.fn(), create: vi.fn() },
+  bookingApi: { getAvailability: vi.fn(), getCourts: vi.fn(), checkoutReservation: vi.fn() },
 }))
 
 const mockPush = vi.fn()
@@ -209,6 +211,38 @@ describe('ScheduleView', () => {
     expect(bookingApi.getAvailability).not.toHaveBeenCalled()
     await wrapper.findAll('.btn-quick')[0]!.trigger('click')
     expect(store.selectedSlots).toEqual([])
-    expect(bookingApi.create).not.toHaveBeenCalled()
+    expect(bookingApi.checkoutReservation).not.toHaveBeenCalled()
+  })
+
+  it('checks out the selected slots through V2 and opens the reservation', async () => {
+    useAuthStore().user = { id: 1, name: 'Player', email: 'p@example.com', role: 'customer' }
+    vi.mocked(bookingApi.checkoutReservation).mockResolvedValue({
+      reservation: { code: 'RSV-NEW-1', status: 'held' } as V2Reservation,
+    })
+
+    const wrapper = mount(ScheduleView, {
+      global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
+    })
+    await flushPromises()
+    await wrapper.findAll('.btn-quick')[0]!.trigger('click')
+    wrapper.findComponent({ name: 'LoyaltyPointSelector' }).vm.$emit('change', {
+      loyalty_points: 50,
+      loyalty_policy_version: 2,
+      idempotency_key: 'loy-key-1',
+    })
+    await wrapper.find('.btn-checkout').trigger('click')
+    await flushPromises()
+
+    // The selector's stable key travels as the Idempotency-Key request option, not in the body.
+    expect(bookingApi.checkoutReservation).toHaveBeenCalledWith(
+      {
+        court_id: 1,
+        slots: [mockSlots[0]!.startsAt],
+        loyalty_points: 50,
+        loyalty_policy_version: 2,
+      },
+      'loy-key-1',
+    )
+    expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-NEW-1' } })
   })
 })

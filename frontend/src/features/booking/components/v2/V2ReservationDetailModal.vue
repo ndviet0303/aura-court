@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode, displayStatus } from '../../utils/reservation'
 
 const { t } = useI18n()
 defineProps<{
@@ -27,7 +28,7 @@ const emit = defineEmits<{
           <div>
             <h3 class="modal-title">{{ t('v2Reservations.modal.detailsTitle') }}</h3>
             <span class="modal-subtitle font-mono">{{
-              t('v2Reservations.modal.reservationCode', { code: reservation.code })
+              t('v2Reservations.modal.reservationCode', { code: displayCode(reservation) })
             }}</span>
           </div>
         </div>
@@ -50,7 +51,7 @@ const emit = defineEmits<{
           <div class="info-group">
             <span class="info-label">{{ t('v2Reservations.modal.statusLabel') }}</span>
             <span class="status-badge" :class="reservation.status">
-              {{ reservation.status }}
+              {{ displayStatus(reservation) }}
             </span>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { i18n } from '@/i18n'
 import { bookingApi } from '../api/bookingApi'
 import type { Booking, PaymentInfo } from '../types/booking'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
+import { loyaltyFields, type LoyaltySelection } from '../utils/reservation'
 
 const paymentStorageKey = 'aura-court-payment'
 
@@ -137,24 +138,17 @@ export const useBookingStore = defineStore('booking', () => {
     sessionStorage.removeItem(paymentStorageKey)
   }
 
-  async function createBooking(
-    couponCode?: string,
-    quoteToken?: string,
-    loyaltyPoints?: number,
-    loyaltyPolicyVersion?: number | null,
-    idempotencyKey?: string,
-  ) {
-    const result = await bookingApi.create({
-      court_id: selectedCourt.value,
-      slots: selectedSlots.value.map((slot) => slot.startsAt),
-      coupon_code: couponCode || undefined,
-      quote_token: quoteToken || undefined,
-      loyalty_points: loyaltyPoints !== undefined && loyaltyPoints > 0 ? loyaltyPoints : undefined,
-      loyalty_policy_version: loyaltyPolicyVersion ?? undefined,
-      idempotency_key: idempotencyKey,
-    })
-    current.value = result.booking
-    return result
+  // V2 checkout of the selected slots; the server prices them in the same transaction.
+  async function checkoutReservation(loyalty?: LoyaltySelection) {
+    const { reservation } = await bookingApi.checkoutReservation(
+      {
+        court_id: selectedCourt.value ?? undefined,
+        slots: selectedSlots.value.map((slot) => slot.startsAt),
+        ...loyaltyFields(loyalty),
+      },
+      loyalty?.idempotency_key,
+    )
+    return reservation
   }
 
   async function refreshPaymentStatus() {
@@ -185,7 +179,7 @@ export const useBookingStore = defineStore('booking', () => {
     loadCourts,
     loadAvailability,
     toggle,
-    createBooking,
+    checkoutReservation,
     applyCoupon,
     restorePayment,
     loadPayment,

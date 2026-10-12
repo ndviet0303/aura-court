@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/features/auth/api/authApi'
-import type { V2PriceQuote } from '@/features/booking/types/v2Reservation'
+import type { LoyaltySelection } from '@/features/booking/utils/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
 import { courtApi } from '../api/courtApi'
@@ -35,8 +35,6 @@ export function useCourtSchedule() {
   const notice = ref('')
   const loading = ref(false)
   const checkoutLoading = ref(false)
-  const quoteLoading = ref(false)
-  const activeQuote = ref<V2PriceQuote | null>(null)
 
   const court = computed<Court | null>(
     () => store.courts.find((c: Court) => c.id === selectedCourtId.value) || null,
@@ -238,7 +236,7 @@ export function useCourtSchedule() {
     }
   }
 
-  async function proceedToBooking(loyaltyPayload?: any) {
+  async function proceedToBooking(loyaltyPayload?: LoyaltySelection) {
     if (
       loading.value ||
       !court.value ||
@@ -254,18 +252,8 @@ export function useCourtSchedule() {
     checkoutLoading.value = true
     error.value = ''
     try {
-      const result = await store.createBooking(
-        undefined,
-        activeQuote.value?.quote_token,
-        loyaltyPayload?.loyalty_points,
-        loyaltyPayload?.loyalty_policy_version,
-        loyaltyPayload?.idempotency_key,
-      )
-      if (result?.booking?.code) {
-        router.push(`/payment/${result.booking.code}`)
-      } else {
-        router.push('/booking')
-      }
+      const reservation = await store.checkoutReservation(loyaltyPayload)
+      router.push({ name: 'reservations', params: { code: reservation.code } })
     } catch (cause) {
       error.value = errorMessage(cause, 'Không thể khởi tạo đơn đặt sân. Vui lòng thử lại.')
     } finally {
@@ -311,8 +299,6 @@ export function useCourtSchedule() {
     carouselDays,
     totalPrice,
     totalHours,
-    activeQuote,
-    quoteLoading,
     error,
     notice,
     loading,

@@ -28,6 +28,7 @@ use App\Models\WalletAccount;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\POS\PosService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use App\Services\Tournament\TournamentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -600,41 +601,41 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         [$org, $venue, $court, $customer] = $this->createDisputeFixture();
 
-        // Booking ended 35 days ago (> 30 days window)
-        $expiredBooking = $this->createCompletedBooking($customer, $court, now()->subDays(35));
+        // Reservation ended 35 days ago (> 30 days window)
+        $expiredReservation = $this->createCompletedReservation($org, $customer, $court, now()->subDays(35));
 
         $res = $this->actingAs($customer)->postJson('/api/v1/disputes', [
             'title' => 'Expired Booking Dispute',
             'summary' => 'Nội dung tóm tắt khiếu nại đã quá hạn 30 ngày theo quy định pháp lý.',
             'dispute_type' => 'court_quality',
-            'booking_id' => $expiredBooking->id,
+            'reservation_id' => $expiredReservation->id,
         ]);
 
         $res->assertStatus(422)
             ->assertJsonFragment(['message' => 'Filing window has expired for this booking.']);
     }
 
-    public function test_module_6_dispute_409_on_duplicate_dispute_for_same_booking(): void
+    public function test_module_6_dispute_409_on_duplicate_dispute_for_same_reservation(): void
     {
         [$org, $venue, $court, $customer] = $this->createDisputeFixture();
-        $booking = $this->createCompletedBooking($customer, $court, now()->subDays(5));
+        $reservation = $this->createCompletedReservation($org, $customer, $court, now()->subDays(5));
 
         // First dispute filing -> 201 Created
         $res1 = $this->actingAs($customer)->postJson('/api/v1/disputes', [
             'title' => 'Sân chất lượng kém',
             'summary' => 'Mặt sân trơn trượt ngập nước không thi đấu được an toàn.',
             'dispute_type' => 'court_quality',
-            'booking_id' => $booking->id,
+            'reservation_id' => $reservation->id,
         ]);
         $res1->assertStatus(201);
         $disputeId = $res1->json('data.id');
 
-        // Second dispute filing for exact same booking while first is active -> 409 Conflict
+        // Second dispute filing for exact same reservation while first is active -> 409 Conflict
         $res2 = $this->actingAs($customer)->postJson('/api/v1/disputes', [
             'title' => 'Khiếu nại trùng lặp',
             'summary' => 'Cố gắng tạo thêm hồ sơ khiếu nại thứ hai cho cùng một đơn đặt sân.',
             'dispute_type' => 'payment_issue',
-            'booking_id' => $booking->id,
+            'reservation_id' => $reservation->id,
         ]);
 
         $res2->assertStatus(409)
@@ -782,7 +783,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         // Create an active booking in Venue A so the export has real rows
         $customer = User::factory()->create(['email' => 'csvcustomer@aura.local']);
         $courtA = $venueA->courts()->firstOrFail();
-        Booking::create([
+        $booking = Booking::create([
             'court_id' => $courtA->id,
             'user_id' => $customer->id,
             'code' => 'BK-CSV-'.strtoupper(uniqid()),
@@ -790,6 +791,10 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'total_amount' => 250000,
             'created_at' => now(),
         ]);
+        // Reports read reservations: give the V1 booking a slot and its legacy mirror.
+        $start = now()->addDay()->setTime(10, 0)->utc();
+        $booking->slots()->create(['court_id' => $courtA->id, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'unit_price' => 250000, 'status' => 'confirmed']);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
 
         // 1. Owner A attempts to export reports of unauthorized Venue B -> 403 Forbidden
         $unauthExport = $this->actingAs($ownerA)
@@ -1121,6 +1126,32 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         return $booking;
+    }
+
+    private function createCompletedReservation(Organization $org, User $customer, Court $court, Carbon $endedAt): Reservation
+    {
+        $reservation = Reservation::create([
+            'organization_id' => $org->id,
+            'user_id' => $customer->id,
+            'court_id' => $court->id,
+            'code' => 'RSV-'.strtoupper(uniqid()),
+            'status' => 'completed',
+            'currency' => 'VND',
+            'total_amount' => 200000,
+            'payment_model' => 'direct_owner_v1',
+        ]);
+        ReservationSlot::create([
+            'organization_id' => $org->id,
+            'reservation_id' => $reservation->id,
+            'court_id' => $court->id,
+            'starts_at' => (clone $endedAt)->subHour(),
+            'ends_at' => $endedAt,
+            'unit_price' => 200000,
+            'status' => 'confirmed',
+            'snapshot' => [],
+        ]);
+
+        return $reservation;
     }
 
     private function createFinanceFixture(string $name = 'Finance Org'): array

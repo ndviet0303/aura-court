@@ -19,6 +19,8 @@ import {
   arrangePosStock,
   expireHolds,
   sendSyntheticPaymentWebhook,
+  getCanonicalBackendEnv,
+  pilotOrganizationIds,
 } from './test-data.ts'
 import {
   getActorCredentials,
@@ -665,6 +667,11 @@ test('Task 2.4: Seeded fixtures satisfy non-demo, two organizations, sibling ven
       fixtures.organizations.org2.id,
       'Org 1 and Org 2 must be distinct',
     )
+    // D19: pilot-only features cover exactly the two fixture organizations, never '*'.
+    assert.equal(
+      getCanonicalBackendEnv(manifest).PILOT_ORGANIZATION_IDS,
+      `${fixtures.organizations.org1.id},${fixtures.organizations.org2.id}`,
+    )
 
     const venue1A = fixtures.organizations.org1.venue1A
     const venue1B = fixtures.organizations.org1.venue1B
@@ -1050,7 +1057,7 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
       SESSION_DRIVER: 'file',
       CACHE_STORE: 'file',
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '1,2',
+      PILOT_ORGANIZATION_IDS: pilotOrganizationIds(manifest.fixtures!),
     }
 
     // 1. Create booking and payment attempt in backend
@@ -1228,7 +1235,7 @@ test('Task 2.6: Duplicate webhook event delivery is idempotent and creates no do
       SESSION_DRIVER: 'file',
       CACHE_STORE: 'file',
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
-      PILOT_ORGANIZATION_IDS: '1,2',
+      PILOT_ORGANIZATION_IDS: pilotOrganizationIds(manifest.fixtures!),
     }
 
     const createScript = `

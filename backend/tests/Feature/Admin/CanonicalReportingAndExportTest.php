@@ -14,6 +14,7 @@ use App\Models\Reservation;
 use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
@@ -215,13 +216,7 @@ class CanonicalReportingAndExportTest extends TestCase
     public function test_report_combines_pos_orders_and_owner_refunds_with_net_calculation(): void
     {
         // 1. Confirmed booking: 300k
-        Booking::create([
-            'court_id' => $this->courtAlpha->id,
-            'user_id' => $this->customer->id,
-            'code' => 'BK-NET-300',
-            'status' => 'confirmed',
-            'total_amount' => 300000,
-        ]);
+        $this->mappedBooking('BK-NET-300', 300000);
 
         // 2. POS order: 150k
         PosOrder::create([
@@ -278,13 +273,7 @@ class CanonicalReportingAndExportTest extends TestCase
     public function test_report_keeps_platform_subscriptions_separate_from_owner_revenue(): void
     {
         // Owner booking: 300k
-        Booking::create([
-            'court_id' => $this->courtAlpha->id,
-            'user_id' => $this->customer->id,
-            'code' => 'BK-SEP-300',
-            'status' => 'confirmed',
-            'total_amount' => 300000,
-        ]);
+        $this->mappedBooking('BK-SEP-300', 300000);
 
         // Platform subscription attempt: 600k
         PlatformPaymentAttempt::create([
@@ -338,24 +327,19 @@ class CanonicalReportingAndExportTest extends TestCase
         $currentTo = now()->endOfMonth()->toDateString();
 
         // Inside current range: 200k
-        Booking::create([
-            'court_id' => $this->courtAlpha->id,
-            'user_id' => $this->customer->id,
-            'code' => 'BK-IN-RANGE',
-            'status' => 'confirmed',
-            'total_amount' => 200000,
-            'created_at' => now(),
-        ]);
+        $this->mappedBooking('BK-IN-RANGE', 200000);
 
         // Outside date range (3 months ago): 500k
-        $oldBooking = Booking::create([
+        $oldReservation = Reservation::create([
+            'organization_id' => $this->orgAlpha->id,
             'court_id' => $this->courtAlpha->id,
             'user_id' => $this->customer->id,
-            'code' => 'BK-OLD-OUT',
+            'code' => 'RSV-OLD-OUT',
             'status' => 'confirmed',
+            'currency' => 'VND',
             'total_amount' => 500000,
         ]);
-        $oldBooking->forceFill(['created_at' => now()->subMonths(3)])->save();
+        $oldReservation->forceFill(['created_at' => now()->subMonths(3)])->save();
 
         $response = $this->actingAs($this->ownerAlpha)
             ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id.'&from='.$currentFrom.'&to='.$currentTo);
@@ -511,5 +495,52 @@ class CanonicalReportingAndExportTest extends TestCase
 
         $this->assertCount(3, $ownerRows);
         $this->assertNull(collect($ownerRows)->firstWhere(1, 'platform_subscription'));
+    }
+
+    /**
+     * A 'legacy' mirror is counted by its mapping status, any other mirror by its own: a V1 no-show keeps its
+     * mirror confirmed, as a V2 no-show does. Mirrors are shown with their V1 code (display rule).
+     */
+    public function test_report_uses_mapping_status_and_v1_code_for_mapped_mirrors(): void
+    {
+        $this->mappedBooking('BK-MIRROR-OK', 250000);
+        $noShow = $this->mappedBooking('BK-MIRROR-NOSHOW', 300000);
+        $noShow->forceFill(['status' => 'no_show'])->save();
+        app(LegacyBookingBackfillService::class)->syncProjection($noShow->fresh('slots'));
+        $this->mappedBooking('BK-MIRROR-GONE', 400000, 'cancelled');
+        $this->assertSame('legacy', Reservation::withoutGlobalScope('tenant_isolation')->where('code', 'LEGACY-BK-MIRROR-GONE')->value('status'));
+
+        $this->actingAs($this->ownerAlpha)
+            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id)
+            ->assertOk()
+            ->assertJsonPath('bookings', 2)
+            ->assertJsonPath('booking_revenue', 550000);
+
+        $csv = $this->actingAs($this->ownerAlpha)
+            ->get('/api/v1/admin/reports.csv?venue_id='.$this->venueAlpha->id)
+            ->assertOk()
+            ->streamedContent();
+        $rows = array_map('str_getcsv', array_slice(array_filter(explode("\n", trim($csv))), 1));
+
+        $actual = array_map(fn ($row) => [$row[0], $row[1], $row[5], $row[6]], $rows);
+        sort($actual);
+        $this->assertSame([['BK-MIRROR-NOSHOW', 'booking', 'confirmed', '300000'], ['BK-MIRROR-OK', 'booking', 'confirmed', '250000']], $actual);
+    }
+
+    /** A V1 booking as it exists after the backfill gate: one slot and a reservation mirror. */
+    private function mappedBooking(string $code, int $amount, string $status = 'confirmed'): Booking
+    {
+        $booking = Booking::create([
+            'court_id' => $this->courtAlpha->id,
+            'user_id' => $this->customer->id,
+            'code' => $code,
+            'status' => $status,
+            'total_amount' => $amount,
+        ]);
+        $start = now()->addDays(Booking::count())->setTime(10, 0)->utc();
+        $booking->slots()->create(['court_id' => $this->courtAlpha->id, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'unit_price' => $amount, 'status' => 'confirmed']);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
+
+        return $booking;
     }
 }

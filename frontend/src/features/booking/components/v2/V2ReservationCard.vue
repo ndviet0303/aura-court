@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode, displayStatus } from '../../utils/reservation'
 
 const { t } = useI18n()
 defineProps<{
@@ -24,13 +25,12 @@ const emit = defineEmits<{
     <!-- Card Header -->
     <div class="card-header">
       <div class="code-and-venue">
-        <span class="booking-code font-mono">#{{ reservation.code }}</span>
+        <span class="booking-code font-mono">#{{ displayCode(reservation) }}</span>
         <span class="court-venue-name">
           {{ reservation.court?.venue?.name || 'Aura Badminton & Sports Club' }}
         </span>
       </div>
 
-      <!-- Status Badge -->
       <div class="status-pill-badge" :class="reservation.status">
         <span v-if="reservation.status === 'held'" class="pulse-indicator-small"></span>
         <span
@@ -47,7 +47,7 @@ const emit = defineEmits<{
                 ? t('v2Reservations.card.statusConfirmed')
                 : reservation.status === 'cancelled'
                   ? t('v2Reservations.card.statusCancelled')
-                  : reservation.status
+                  : displayStatus(reservation)
           }}
         </span>
       </div>

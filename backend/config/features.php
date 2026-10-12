@@ -3,7 +3,6 @@
 return [
     'pilot_organizations' => array_values(array_filter(array_map('trim', explode(',', (string) env('PILOT_ORGANIZATION_IDS', ''))))),
     'flags' => [
-        'v2_reservations_enabled' => env('FEATURE_V2_RESERVATIONS', true),
         'organization_tenancy_enforced' => env('FEATURE_ORGANIZATION_TENANCY', true),
         'marketplace_payouts' => env('FEATURE_MARKETPLACE_PAYOUTS', false),
         'marketplace_split_payments' => env('FEATURE_MARKETPLACE_SPLIT_PAYMENTS', env('FEATURE_MARKETPLACE_SPLIT', false)),

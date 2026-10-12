@@ -12,15 +12,10 @@ import type {
   RefundRecipient,
 } from '../../types/reservationChanges'
 
-const props = withDefaults(
-  defineProps<{
-    show: boolean
-    booking: ChangeableBooking | null
-    // When true the modal targets the v2 reservation endpoints (apiV2).
-    v2?: boolean
-  }>(),
-  { v2: false },
-)
+const props = defineProps<{
+  show: boolean
+  booking: ChangeableBooking | null
+}>()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -105,11 +100,10 @@ async function runPreview() {
   // Do not clear a prior preview until we know the outcome; a conflict must not
   // wipe the customer's context, and the original booking is never altered here.
   try {
-    const res = await bookingApi.previewReschedule(
-      props.booking.code,
-      { court_id: Number(courtId.value), slots: [iso] },
-      props.v2,
-    )
+    const res = await bookingApi.previewReschedule(props.booking.code, {
+      court_id: Number(courtId.value),
+      slots: [iso],
+    })
     preview.value = res.data
   } catch (cause: unknown) {
     preview.value = null
@@ -148,7 +142,7 @@ async function submit() {
   submitting.value = true
   error.value = ''
   try {
-    const res = await bookingApi.createRescheduleRequest(props.booking.code, payload, props.v2)
+    const res = await bookingApi.createRescheduleRequest(props.booking.code, payload)
     result.value = res.data
     emit('updated')
   } catch (cause: unknown) {

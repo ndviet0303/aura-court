@@ -14,6 +14,7 @@ import {
   runBackendPreflightCommand,
 } from './preflight.ts'
 import { teardownEnvironment, registerExitHandlers } from './teardown.ts'
+import { pilotOrganizationIds } from './test-data.ts'
 
 const execFileAsync = promisify(execFile)
 
@@ -329,7 +330,8 @@ export class E2EIsolatedEnvironment {
         FEATURE_MARKETPLACE_SPLIT_PAYMENTS: 'true',
         FEATURE_MARKETPLACE_RESALE: 'true',
         FEATURE_MARKETPLACE_SLOT_RESALE: 'true',
-        PILOT_ORGANIZATION_IDS: '*',
+        // Set to the seeded fixture organizations below, before the server starts (D19).
+        PILOT_ORGANIZATION_IDS: '',
         SEPAY_API_KEY: 'test_sepay_api_key_e2e',
         SEPAY_HMAC_SECRET: 'test_sepay_hmac_secret_e2e',
         SEPAY_BANK: 'TPBank',
@@ -378,6 +380,7 @@ export class E2EIsolatedEnvironment {
         )
         const fixtures = JSON.parse(seedOutput) as E2EFixturesPayload
         this.manifest.fixtures = fixtures
+        backendEnv.PILOT_ORGANIZATION_IDS = pilotOrganizationIds(fixtures)
         this.persistManifest()
       } catch (err: any) {
         const detail = (err?.stderr || '') + (err?.stdout || '') + (err?.message || '')

@@ -17,6 +17,7 @@ class DisputeCase extends Model
         'organization_id',
         'venue_id',
         'booking_id',
+        'reservation_id',
         'reference_type',
         'reference_id',
         'duplicate_of_id',
@@ -103,6 +104,11 @@ class DisputeCase extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function complainant(): BelongsTo

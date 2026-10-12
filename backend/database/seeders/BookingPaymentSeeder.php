@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Review;
 use App\Models\User;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -27,10 +28,17 @@ class BookingPaymentSeeder extends Seeder
             return;
         }
 
+        $backfill = app(LegacyBookingBackfillService::class);
         $createdBookings = [];
         $operatingHours = [6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
         foreach (range(1, 72) as $number) {
+            $code = sprintf('DEMO-BK-%03d', $number);
+            // Never rewrite a seeded booking: a changed booking would no longer match its reservation mapping.
+            if (Booking::where('code', $code)->exists()) {
+                continue;
+            }
+
             $court = $courts[($number - 1) % $courts->count()];
             $customer = $customers[($number - 1) % $customers->count()];
 
@@ -50,9 +58,10 @@ class BookingPaymentSeeder extends Seeder
             }
 
             $slotCount = ($number % 4 === 0) ? 2 : 1;
+            $hour = min($hour, 22 - $slotCount); // consecutive slots that end by 22:00; never two slots at one time
 
             $starts = collect(range(0, $slotCount - 1))->map(
-                fn (int $offset) => $now->copy()->startOfDay()->addDays($dayOffset)->setTime(min($hour + $offset, 21), 0)
+                fn (int $offset) => $now->copy()->startOfDay()->addDays($dayOffset)->setTime($hour + $offset, 0)
             );
 
             $status = match ($number % 12) {
@@ -82,7 +91,6 @@ class BookingPaymentSeeder extends Seeder
             });
 
             $total = $prices->sum();
-            $code = sprintf('DEMO-BK-%03d', $number);
             $createdAt = $starts->first()->copy()->subHours(rand(2, 24));
 
             $booking = Booking::updateOrCreate(
@@ -99,8 +107,6 @@ class BookingPaymentSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]
             );
-
-            $createdBookings[] = ['booking' => $booking, 'court' => $court, 'user' => $customer, 'status' => $status];
 
             foreach ($starts as $slotIndex => $start) {
                 $slotStatus = match ($status) {
@@ -120,6 +126,10 @@ class BookingPaymentSeeder extends Seeder
                     ]
                 );
             }
+
+            // Every seeded booking gets its reservation mirror, like checkoutV1 does.
+            $mapping = $backfill->backfillBooking($booking);
+            $createdBookings[] = ['booking' => $booking, 'reservation_id' => $mapping->reservation_id, 'court' => $court, 'user' => $customer, 'status' => $status];
 
             $paymentStatus = match ($status) {
                 'confirmed', 'no_show', 'refunded' => 'paid',
@@ -179,8 +189,9 @@ class BookingPaymentSeeder extends Seeder
                 $comment = $reviewComments[$reviewIndex % count($reviewComments)];
 
                 Review::updateOrCreate(
-                    ['booking_id' => $item['booking']->id],
+                    ['reservation_id' => $item['reservation_id']],
                     [
+                        'booking_id' => $item['booking']->id,
                         'user_id' => $item['user']->id,
                         'court_id' => $item['court']->id,
                         'rating' => $rating,

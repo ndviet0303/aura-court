@@ -21,7 +21,7 @@
   },
   "e2e/p1-pricing-promotions-loyalty.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 5
+      "count": 4
     }
   },
   "e2e/p1-receiving-connections.spec.ts": {
@@ -306,7 +306,7 @@
   },
   "src/features/booking/composables/useV2Reservations.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/booking/types/booking.ts": {
@@ -332,11 +332,6 @@
   "src/features/court/composables/useCourtDetail.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/features/court/composables/useCourtSchedule.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/features/finance/api/financeApi.ts": {

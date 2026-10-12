@@ -16,4 +16,4 @@ Run `hardening:drill peak-load` against the pilot configuration and run `hardeni
 
 The on-call handover must include the image digest, migration batch, PostgreSQL/Redis owners, PayOS/KYC and payout escalation owners, alert routing, feature-flag rollback commands, RPO/RTO evidence, reconciliation exception procedure, and the `/api/v1` compatibility owner.
 
-`v1:retirement-readiness` remains a hard stop until a separate approved change under `openspec/changes/` contains its proposal and task artifacts plus a recent adoption snapshot.
+`v1:retirement-readiness` remains a hard stop until a separate approved change under `openspec/changes/` contains its proposal and task artifacts plus a recent adoption snapshot, and every V1 booking has a complete, non-drifted legacy mapping (`legacy_mapping_valid`). Bookings that block it are listed in `unmapped_bookings` with their reason.

@@ -72,6 +72,7 @@ export function useAdminDisputes() {
           item.complainant?.name?.toLowerCase().includes(kw) ||
           item.respondent?.name?.toLowerCase().includes(kw) ||
           item.facility?.name?.toLowerCase().includes(kw) ||
+          item.reservationCode?.toLowerCase().includes(kw) ||
           (item.bookingId && String(item.bookingId).includes(kw)),
       )
     }

@@ -6,7 +6,6 @@ use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Domain\Admin\DTOs\ArbitrateDisputeData;
 use App\Models\DisputeCase;
-use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
 use App\Models\Venue;
@@ -68,19 +67,22 @@ class ArbitrateDispute
                 }
 
                 if (! $obligation) {
-                    $orgId = $dispute->organization_id ?? $dispute->booking?->court?->venue?->organization_id;
-                    $venueId = $dispute->venue_id ?? $dispute->booking?->court?->venue_id;
+                    // OwnerRefundService reads slot_ids as slots of reservation_id (mirror slots for a mapped booking),
+                    // so only a dispute without a reservation falls back to its historical booking.
+                    $source = $dispute->reservation_id ? $dispute->reservation : $dispute->booking;
+                    $court = $source?->court;
+                    $orgId = $dispute->organization_id ?? $court?->venue?->organization_id;
+                    $venueId = $dispute->venue_id ?? $court?->venue_id;
                     if (! $venueId && $orgId) {
                         $venueId = Venue::where('organization_id', $orgId)->value('id');
                     }
 
+                    // organizations has no user_id column: the owner comes from organization_members.
                     $payerId = $dispute->respondent_id
-                        ?? $dispute->booking?->court?->venue?->organization?->user_id
-                        ?? Organization::whereKey($orgId)->value('user_id')
                         ?? OrganizationMember::where('organization_id', $orgId)->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)->value('user_id')
                         ?? $data->reviewerId;
 
-                    $slotIds = $dispute->booking?->slots()->pluck('id')->all() ?? [];
+                    $slotIds = $source?->slots()->withoutGlobalScope('tenant_isolation')->pluck('id')->all() ?? [];
                     $recipientData = [
                         'name' => $dispute->complainant_name ?? 'Complainant',
                         'user_id' => $dispute->complainant_id,
@@ -91,6 +93,7 @@ class ArbitrateDispute
                         'organization_id' => $orgId,
                         'venue_id' => $venueId,
                         'booking_id' => $dispute->booking_id,
+                        'reservation_id' => $dispute->reservation_id,
                         'payer_id' => $payerId,
                         'reference_code' => 'REF-DSP-'.strtoupper(Str::random(10)),
                         'idempotency_key' => "dispute_refund_{$dispute->id}_v{$currentVersion}",

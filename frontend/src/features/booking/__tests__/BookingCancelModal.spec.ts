@@ -132,7 +132,7 @@ describe('BookingCancelModal', () => {
     const wrapper = await quoteWhole()
 
     // Whole scope quotes every slot on the booking.
-    expect(bookingApi.getRefundQuote).toHaveBeenCalledWith('BK-CANCEL-1', [1, 2, 3], false)
+    expect(bookingApi.getRefundQuote).toHaveBeenCalledWith('BK-CANCEL-1', [1, 2, 3])
     const preview = wrapper.get('[data-testid="cancel-quote"]')
     // Fixed-fee type is labelled, and the refund amount comes from the quote.
     expect(preview.text()).toContain('Phí cố định')
@@ -152,7 +152,7 @@ describe('BookingCancelModal', () => {
     await wrapper.get('[data-testid="cancel-quote-btn"]').trigger('click')
     await flushPromises()
 
-    expect(bookingApi.getRefundQuote).toHaveBeenCalledWith('BK-CANCEL-1', [1, 3], false)
+    expect(bookingApi.getRefundQuote).toHaveBeenCalledWith('BK-CANCEL-1', [1, 3])
     expect(wrapper.find('[data-testid="cancel-quote"]').exists()).toBe(true)
 
     // Changing the selection invalidates the captured quote.

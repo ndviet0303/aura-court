@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Booking } from '../../types/booking'
+import type { V2Reservation } from '../../types/v2Reservation'
+import { displayCode } from '../../utils/reservation'
 
 defineProps<{
   show: boolean
-  booking: Booking | null
+  booking: V2Reservation | null
   rating: number
   body: string
   submitting?: boolean
@@ -40,7 +41,7 @@ const hoveredRating = ref<number | null>(null)
             <span class="material-symbols-outlined loc-icon">location_on</span>
             {{ booking.court?.venue?.name || 'Aura Badminton Center' }}
           </span>
-          <span class="code-badge font-mono">Đơn: #{{ booking.code }}</span>
+          <span class="code-badge font-mono">Đơn: #{{ displayCode(booking) }}</span>
         </div>
 
         <div class="rating-section">

@@ -1,6 +1,6 @@
 import { api, apiV2 } from '@/core/api/client'
 import type { Court, Venue, SportZone, PriceSlot, CourtBlock } from '@/features/court/types/court'
-import type { Booking, Coupon } from '@/features/booking/types/booking'
+import type { Coupon } from '@/features/booking/types/booking'
 import type { CourtForm, PriceForm, BlockForm, VenueForm } from '../types/admin'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
@@ -90,13 +90,16 @@ export const adminApi = {
   deleteBlock: (courtId: number, blockId: number) =>
     api.delete(`/admin/courts/${courtId}/blocks/${blockId}`),
 
-  // Bookings & Payments
-  getBookings: <T = { data: Booking[] } | Booking[]>(query?: string) =>
-    api.get<T>(`/admin/bookings${query ? `?${query}` : ''}`),
+  // Reservations & Payments
+  getReservations: <T = unknown>(params?: {
+    status?: string
+    date?: string
+    venue_id?: number
+    page?: number
+  }) => apiV2.get<T>('/admin/reservations', { params }),
   getPayments: <T = any>() => api.get<T>('/admin/payments'),
   updatePayment: (paymentId: number | string, payload: { status: string }) =>
     api.patch(`/admin/payments/${paymentId}`, payload),
-  markNoShow: (bookingId: number | string) => api.patch(`/admin/bookings/${bookingId}/no-show`, {}),
 
   // Coupons
   getCoupons: <T = Coupon[]>(organizationId?: number) =>

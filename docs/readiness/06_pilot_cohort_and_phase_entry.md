@@ -27,13 +27,14 @@ Every capability is gated by an independently reversible feature flag with stric
 
 | Feature Flag Key | Capability Scope | Default State | Responsible Owner | Emergency Rollback Action |
 |---|---|---|---|---|
-| `v2_reservations_enabled` | `/api/v2` reservation write path | `ENABLED_PILOT_ONLY` | Principal Architect | Reverts traffic to `/api/v1` compatibility mode |
 | `organization_tenancy_enforced` | Multi-tenant RLS & authorization | `ENABLED` | Principal Architect | Fails open with audit alert or maintenance mode |
 | `marketplace_payouts` | Automated bank payouts | `PILOT_ONLY` | Head of Finance | Halts payout batch worker immediately |
 | `marketplace_split_payments` | Split group payments | `DISABLED` (Phase 2) | Engineering Lead | Cancels pending split creation |
 | `marketplace_slot_resale` | Secondary slot transfers | `DISABLED` (Phase 2) | Engineering Lead | Disables listing creation |
 | `social_matchmaking_tournaments` | Social matchmaking & brackets | `DISABLED` (Phase 3) | Product Lead | Reverts to manual tournament entry |
 | `tenant_pos_and_wallet` | POS checkout & wallet liability | `DISABLED` (Phase 4) | Product Lead | Falls back to external POS reconciliation |
+
+The `/api/v2` reservation path is always on and has no flag. Rolling back a release of the V1 retirement (`openspec/changes/retire-v1-booking`) means redeploying the previous backend and frontend release; no flag switches traffic back to `/api/v1`.
 
 ---
 
