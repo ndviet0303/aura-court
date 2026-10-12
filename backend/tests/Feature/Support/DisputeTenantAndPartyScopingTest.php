@@ -152,9 +152,10 @@ class DisputeTenantAndPartyScopingTest extends TestCase
     }
 
     /**
-     * Customer scoping: Customer only sees disputes where they are party (complainant or respondent)
+     * Customer scoping: a customer only sees disputes where they are an active party. An organization's dispute
+     * is answered by the organization's current owners, so a customer named as its respondent does not see it.
      */
-    public function test_customer_only_sees_disputes_where_they_are_complainant_or_respondent(): void
+    public function test_customer_only_sees_disputes_where_they_are_an_active_party(): void
     {
         [$orgA, $ownerA, $venueA] = $this->createTenant('Tenant Alpha', 'tenant-alpha');
 
@@ -178,6 +179,12 @@ class DisputeTenantAndPartyScopingTest extends TestCase
 
         // Alice CANNOT view Bob & Carol's dispute
         $this->actingAs($alice)->getJson("/api/v1/disputes/{$disputeCarol->id}")->assertStatus(404);
+
+        // Bob sees the dispute he filed, but not the venue's case that merely names him as respondent
+        $bobCodes = collect($this->actingAs($bob)->getJson('/api/v1/disputes')->json('data'))->pluck('dispute_code')->toArray();
+        $this->assertContains('DSP-BOB-CAROL', $bobCodes);
+        $this->assertNotContains('DSP-ALICE-BOB', $bobCodes);
+        $this->actingAs($bob)->getJson("/api/v1/disputes/{$disputeAlice->id}")->assertStatus(404);
     }
 
     /**

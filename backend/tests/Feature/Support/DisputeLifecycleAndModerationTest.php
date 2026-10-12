@@ -824,7 +824,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
     }
 
     /**
-     * Test 12: A named respondent who no longer owns the venue loses the case; the owner after handover answers it.
+     * Test 12: A named respondent who no longer owns the venue loses the case; the owner after handover answers and reopens it.
      */
     public function test_suspended_respondent_loses_access_to_organization_dispute(): void
     {
@@ -848,6 +848,15 @@ class DisputeLifecycleAndModerationTest extends TestCase
                 'evidence' => [['url' => 'https://storage.local/handover.jpg', 'type' => 'image']],
             ])
             ->assertOk();
+
+        $dispute->update(['status' => 'dismissed']);
+        $this->actingAs($activeOwner)
+            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+                'reason' => 'Chủ mới có chứng cứ mới sau quyết định.',
+                'material_evidence' => [['url' => 'https://storage.local/after-handover.jpg', 'type' => 'image']],
+            ])
+            ->assertOk();
+        $this->assertSame('reopened', $dispute->fresh()->status);
     }
 
     /**
