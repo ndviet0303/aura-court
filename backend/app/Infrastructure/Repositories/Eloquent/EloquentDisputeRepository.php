@@ -222,8 +222,6 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
             'awaiting_reply_count' => $awaitingReply,
             'resolved_count' => $resolved,
             'critical_sla_count' => $critical,
-            'avg_resolution_time_minutes' => 18.5,
-            'consensus_rate' => 98.2,
         ];
     }
 

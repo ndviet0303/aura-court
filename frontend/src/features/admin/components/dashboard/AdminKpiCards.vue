@@ -34,7 +34,6 @@ function formatMoney(amount: number): string {
           <span class="kpi-title">{{ t('admin.dashboard.totalRevenue') }}</span>
         </div>
         <strong class="kpi-value text-pink">{{ formatMoney(report.revenue) }}</strong>
-        <span class="kpi-sub text-green">{{ t('admin.dashboard.revenueTrend') }}</span>
       </div>
 
       <div class="kpi-card">
@@ -53,8 +52,8 @@ function formatMoney(amount: number): string {
           <span class="material-symbols-outlined kpi-icon text-green">trending_up</span>
           <span class="kpi-title">{{ t('admin.dashboard.occupancyRate') }}</span>
         </div>
-        <strong class="kpi-value text-green">{{ report.occupancyRate || 85 }}%</strong>
-        <span class="kpi-sub">{{ t('admin.dashboard.avgWeeklyOccupancy') }}</span>
+        <strong class="kpi-value text-green">{{ report.occupancyRate ?? 0 }}%</strong>
+        <span class="kpi-sub">{{ t('admin.dashboard.occupancyPeriod') }}</span>
       </div>
 
       <div class="kpi-card">

@@ -48,10 +48,6 @@ const {
             <span class="material-symbols-outlined header-icon">account_balance</span>
             <h1 class="page-title">{{ t('admin.reconciliation.title') }}</h1>
           </div>
-          <span class="live-sync-badge">
-            <span class="live-dot"></span>
-            {{ t('admin.reconciliation.liveSync') }}
-          </span>
         </div>
         <p class="page-sub">
           {{ t('admin.reconciliation.subtitle') }}
@@ -112,7 +108,7 @@ const {
       @auto-resolve="autoResolveSafe"
     />
 
-    <!-- Health Analytics & Live Recon Log -->
+    <!-- Health Analytics -->
     <ReconciliationHealthAnalytics
       :health-trend="stats.health_trend"
       :match-rate="stats.match_rate"
@@ -173,26 +169,6 @@ const {
   font-weight: 800;
   color: var(--ink);
   margin: 0;
-}
-
-.live-sync-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  padding: 3px 10px;
-  border-radius: 999px;
-  letter-spacing: 0.04em;
-}
-
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10b981;
 }
 
 .page-sub {

@@ -37,8 +37,8 @@ export function useFinancialReconciliation() {
     payout_total: 0,
     mismatch_total: 0,
     open_alerts_count: 0,
-    match_rate: 100,
-    last_reconciled_at: new Date().toISOString(),
+    match_rate: null,
+    last_reconciled_at: null,
     sync_status: 'synced',
     health_trend: [],
   })

@@ -26,7 +26,7 @@ export function useAdminKyc() {
   const stats = ref<KycStats>({
     pending_count: 0,
     ai_confidence_rate: 0,
-    avg_processing_time_minutes: 0,
+    avg_processing_time_minutes: null,
     flagged_count: 0,
     approved_count: 0,
     needs_supplement_count: 0,

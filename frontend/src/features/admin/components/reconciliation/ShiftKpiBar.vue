@@ -8,7 +8,7 @@ defineProps<{
   todayCash: number
   todayDigital: number
   totalVariance: number
-  matchRate: number
+  matchRate: number | null
   loading?: boolean
 }>()
 
@@ -114,7 +114,9 @@ const { t } = useI18n()
       <div v-if="loading" class="stat-skeleton-wrap">
         <SkeletonLoader type="rect" height="24px" width="80px" />
       </div>
-      <strong v-else class="stat-value text-purple font-mono"> {{ matchRate }}% </strong>
+      <strong v-else class="stat-value text-purple font-mono">
+        {{ matchRate === null ? '—' : `${matchRate}%` }}
+      </strong>
       <span class="stat-trend text-purple">
         <span class="material-symbols-outlined icon-14">task_alt</span>
         <span>{{ t('admin.shifts.approvedReconciliation') }}</span>

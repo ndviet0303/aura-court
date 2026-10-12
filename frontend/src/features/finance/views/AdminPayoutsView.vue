@@ -104,15 +104,7 @@ onMounted(() => {
     </div>
 
     <!-- Settlement Metrics KPI Cards with Skeletons -->
-    <PayoutMetricsBar
-      :gross="metrics.gross"
-      :fee="metrics.fee"
-      :net="metrics.net"
-      :paid="metrics.paid"
-      :provider-fee="metrics.providerFee"
-      :commission="metrics.commission"
-      :loading="loading"
-    />
+    <PayoutMetricsBar v-bind="metrics" :loading="loading" />
 
     <!-- Beneficiary Account Card with Skeleton -->
     <BeneficiaryCard

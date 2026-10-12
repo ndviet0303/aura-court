@@ -167,8 +167,12 @@ class AdminMembershipTest extends TestCase
         $statsRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
             ->getJson('/api/v2/admin/memberships/stats');
 
+        // A plan without members or ledger rows must report real zeros, not placeholder figures.
         $statsRes->assertOk()
-            ->assertJsonStructure(['totalVipMembers', 'monthlyRecurringRevenue', 'totalPointsIssued', 'redemptionRatePercent']);
-
+            ->assertJsonStructure(['totalVipMembers', 'monthlyRecurringRevenue', 'totalPointsIssued', 'redemptionRatePercent'])
+            ->assertJsonPath('totalVipMembers', 0)
+            ->assertJsonPath('monthlyRecurringRevenue', 0)
+            ->assertJsonPath('totalPointsIssued', 0)
+            ->assertJsonPath('redemptionRatePercent', 0);
     }
 }

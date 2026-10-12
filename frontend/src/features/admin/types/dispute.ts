@@ -97,8 +97,6 @@ export interface DisputeStats {
   awaitingReplyCount: number
   resolvedCount: number
   criticalSlaCount: number
-  avgResolutionTimeMinutes: number
-  consensusRate: number
 }
 
 export interface DisputeFilterParams {

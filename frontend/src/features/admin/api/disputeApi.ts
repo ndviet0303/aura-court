@@ -110,10 +110,6 @@ function transformDisputeStats(raw: any): DisputeStats {
     awaitingReplyCount: Number(raw?.awaiting_reply_count ?? raw?.awaitingReplyCount ?? 0),
     resolvedCount: Number(raw?.resolved_count ?? raw?.resolvedCount ?? 0),
     criticalSlaCount: Number(raw?.critical_sla_count ?? raw?.criticalSlaCount ?? 0),
-    avgResolutionTimeMinutes: Number(
-      raw?.avg_resolution_time_minutes ?? raw?.avgResolutionTimeMinutes ?? 18.5,
-    ),
-    consensusRate: Number(raw?.consensus_rate ?? raw?.consensusRate ?? 98.2),
   }
 }
 
