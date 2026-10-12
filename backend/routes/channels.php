@@ -14,9 +14,16 @@ Broadcast::channel('venue.{venueId}', function (User $user, int $venueId) {
     }
 
     $venue = Venue::find($venueId);
-    if (! $venue) {
+    if (! $venue?->organization_id) {
         return false;
     }
 
-    return $user->hasRoleInOrganization($venue->organization_id, ['owner', 'admin', 'manager', 'cashier', 'staff']);
+    $member = $user->organizationMembers()
+        ->where('organization_id', $venue->organization_id)
+        ->where('status', 'active')
+        ->first();
+
+    // Owners reach every venue; other members only their venue scope, where an empty scope means all venues.
+    return $member?->isStaff() === true
+        && ($member->isOwner() || $member->venue_ids === [] || in_array($venue->id, $member->venue_ids, true));
 });
