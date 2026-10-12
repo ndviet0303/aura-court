@@ -113,23 +113,7 @@ class WalletDepositController extends Controller
         $reference = 'DEP-'.strtoupper(Str::random(8)).'-'.$user->id;
         $idempotencyKey ??= $reference;
 
-        $bank = 'TPBank';
-        $accountNumber = '83403032005';
-        $accountName = 'AURA COURT';
-        $code = "ORD NAP {$user->id} {$reference}";
         $amount = (int) $validated['amount'];
-
-        $qrUrl = "https://img.vietqr.io/image/{$bank}-{$accountNumber}-compact2.png?amount={$amount}&addInfo="
-            .urlencode($code).'&accountName='.urlencode($accountName);
-
-        $transferInfo = [
-            'bank' => $bank,
-            'account_number' => $accountNumber,
-            'account_name' => $accountName,
-            'code' => $code,
-            'amount' => $amount,
-            'qr_url' => $qrUrl,
-        ];
 
         $intent = PaymentIntent::create([
             'organization_id' => (int) $orgId,
@@ -143,12 +127,34 @@ class WalletDepositController extends Controller
             'metadata' => [
                 'type' => 'wallet_deposit',
                 'wallet_account_id' => $wallet->id,
-                'transfer_code' => $code,
-                'memo' => $code,
-                'transfer_info' => $transferInfo,
             ],
             'expires_at' => now()->addHours(24),
         ]);
+
+        // SePay detects payment codes as prefix + digits, so the memo is ORD{intent id}.
+        $bank = 'TPBank';
+        $accountNumber = '83403032005';
+        $accountName = 'AURA COURT';
+        $code = 'ORD'.$intent->id;
+
+        $qrUrl = "https://img.vietqr.io/image/{$bank}-{$accountNumber}-compact2.png?amount={$amount}&addInfo="
+            .urlencode($code).'&accountName='.urlencode($accountName);
+
+        $transferInfo = [
+            'bank' => $bank,
+            'account_number' => $accountNumber,
+            'account_name' => $accountName,
+            'code' => $code,
+            'amount' => $amount,
+            'qr_url' => $qrUrl,
+        ];
+
+        $intent->update(['metadata' => [
+            ...$intent->metadata,
+            'transfer_code' => $code,
+            'memo' => $code,
+            'transfer_info' => $transferInfo,
+        ]]);
 
         return response()->json([
             'id' => $intent->id,
