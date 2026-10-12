@@ -1,18 +1,33 @@
 import { apiV2 } from '@/core/api/client'
 import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
 
+// Backend lifecycle (draft/open/ready/in_progress/finalized) -> the card/tab vocabulary.
+const STATUS_LABELS: Record<string, TournamentItem['status']> = {
+  draft: 'upcoming',
+  ready: 'upcoming',
+  in_progress: 'ongoing',
+  finalized: 'completed',
+}
+
+// settings.start_date/end_date are plain Y-m-d strings; format without Date to avoid timezone shifts.
+const formatDay = (ymd: string) => ymd.slice(0, 10).split('-').reverse().join('/')
+
 function mapRawTournament(t: any): TournamentItem {
   const settings = t.settings || {}
   const sport = settings.sport || t.sport || 'badminton'
   const maxSlots = settings.max_participants || t.max_slots || t.max_participants || 16
-  const currentSlots = t.participants_count ?? t.current_slots ?? 8
+  const currentSlots = t.participants_count ?? t.current_slots ?? t.participants?.length ?? 8
   const prizePool = settings.prize_pool || t.prize_pool || '15.000.000 ₫'
-  const venue = t.venue?.name || t.venue || 'Aura Sport Arena'
-  const city = t.venue?.city || t.city || 'Hồ Chí Minh'
+  const venue = settings.venue || t.venue?.name || t.venue || 'Aura Sport Arena'
+  const city = settings.city || t.venue?.city || t.city || 'Hồ Chí Minh'
 
   let formattedDates = t.dates
   if (!formattedDates) {
-    if (t.starts_at) {
+    if (settings.start_date) {
+      formattedDates = settings.end_date
+        ? `${formatDay(settings.start_date)} - ${formatDay(settings.end_date)}`
+        : formatDay(settings.start_date)
+    } else if (t.starts_at) {
       const date = new Date(t.starts_at)
       formattedDates = `${date.toLocaleDateString('vi-VN')} - ${date.getDate() + 2}/${date.getMonth() + 1}/${date.getFullYear()}`
     } else {
@@ -21,7 +36,7 @@ function mapRawTournament(t: any): TournamentItem {
   }
 
   // Curated sports cover images
-  let imageUrl = t.image_url
+  let imageUrl = settings.image_url || t.image_url
   if (!imageUrl) {
     if (sport === 'pickleball') {
       imageUrl = '/courts/pickleball-neon.jpg'
@@ -40,6 +55,7 @@ function mapRawTournament(t: any): TournamentItem {
     name: t.name || 'Giải Đấu Aura Circuit 2026',
     slug: t.slug || `tournament-${t.id}`,
     category:
+      settings.category ||
       t.category ||
       (sport === 'pickleball'
         ? 'Pickleball Đôi Open'
@@ -48,9 +64,11 @@ function mapRawTournament(t: any): TournamentItem {
           : 'Tennis Open'),
     sport,
     format: t.format || 'single_elimination',
-    status: t.status || 'open',
+    status: STATUS_LABELS[t.status] || t.status || 'open',
     prize_pool: prizePool,
     dates: formattedDates,
+    start_date: settings.start_date,
+    end_date: settings.end_date,
     venue,
     city,
     court_name: t.court_name,
@@ -59,6 +77,7 @@ function mapRawTournament(t: any): TournamentItem {
     entry_fee: settings.entry_fee || t.entry_fee || '300.000 ₫ / VĐV',
     image_url: imageUrl,
     description:
+      settings.description ||
       t.description ||
       `Giải đấu chính thức thuộc hệ thống Aura Circuit 2026, tích lũy điểm thưởng và tranh cúp vô địch Master Cup.`,
     version: t.version || 1,

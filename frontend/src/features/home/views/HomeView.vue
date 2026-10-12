@@ -352,11 +352,11 @@ onMounted(async () => {
     </div>
     <div class="hero-mosaic">
       <div>
-        <img class="short" src="/aura/court-1.jpg" alt="Aura Court" />
-        <img class="tall" src="/aura/court-2.jpg" alt="Aura Court Floor" style="margin-top: 12px" />
+        <img class="short" src="/aura/hero-football.jpg" alt="Football Pitch" />
+        <img class="tall" src="/aura/hero-tennis.jpg" alt="Tennis Court" style="margin-top: 12px" />
       </div>
       <div>
-        <img class="tall" src="/aura/court-3.jpg" alt="Badminton Player" />
+        <img class="tall" src="/aura/hero-pickleball.jpg" alt="Pickleball Court" />
         <div class="access-card" style="margin-top: 12px">
           <div>
             <strong>{{ t('home.open247') }}</strong>

@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import NotificationsView from '../views/NotificationsView.vue'
 import { i18n } from '@/i18n'
 import { notificationApi } from '../api/notificationApi'
+import { getNotificationMeta } from '../composables/useNotificationList'
 
 vi.mock('vue-router', () => ({
   RouterLink: {
@@ -91,5 +92,15 @@ describe('NotificationsView', () => {
 
     expect(wrapper.find('.empty-state-card').exists()).toBe(true)
     expect(wrapper.find('.empty-title').text()).toContain('Hộp thư thông báo trống')
+  })
+})
+
+describe('getNotificationMeta', () => {
+  it('maps the event names the backend sends', () => {
+    expect(getNotificationMeta('booking_expiring').badgeText).toBe('SẮP HẾT HẠN GIỮ CHỖ')
+    expect(getNotificationMeta('booking_expired').badgeText).toBe('LỊCH ĐÃ HỦY')
+    expect(getNotificationMeta('payment_confirmed').category).toBe('payment')
+    expect(getNotificationMeta('social.friendship_request').category).toBe('social')
+    expect(getNotificationMeta('booking.created').badgeText).toBe('GIỮ CHỖ SÂN')
   })
 })

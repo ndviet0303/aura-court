@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Facades\Cache;
 
 class Organization extends Model
@@ -128,7 +129,8 @@ class Organization extends Model
             ->withTimestamps();
     }
 
-    public function owner()
+    /** @return HasOneThrough<User, OrganizationMember, $this> */
+    public function owner(): HasOneThrough
     {
         return $this->hasOneThrough(
             User::class,

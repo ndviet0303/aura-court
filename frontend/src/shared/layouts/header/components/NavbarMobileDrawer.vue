@@ -85,7 +85,7 @@ watch(
             </div>
           </div>
           <div class="drawer-subtext">
-            <span>Aura Court · Precision Badminton Hub</span>
+            <span>Aura Court · Multi-Sport Hub</span>
           </div>
         </div>
       </aside>

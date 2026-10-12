@@ -11,6 +11,7 @@ import {
   loyaltyFields,
   type LoyaltySelection,
 } from '../utils/reservation'
+import { venueClock } from '../utils/venueTime'
 
 const t = (key: string, params?: Record<string, any>) => i18n.global.t(key, params || {})
 export function useV2Reservations() {
@@ -71,14 +72,8 @@ export function useV2Reservations() {
 
   const formatTimeSlot = (startsAt: string, endsAt?: string) => {
     if (!startsAt) return ''
-    const start =
-      (startsAt.includes('T') ? startsAt.split('T')[1]?.slice(0, 5) : startsAt.slice(11, 16)) ||
-      '00:00'
-    if (endsAt) {
-      const end =
-        (endsAt.includes('T') ? endsAt.split('T')[1]?.slice(0, 5) : endsAt.slice(11, 16)) || '00:00'
-      return `${start} - ${end}`
-    }
+    const start = venueClock(startsAt) || '00:00'
+    if (endsAt) return `${start} - ${venueClock(endsAt) || '00:00'}`
     const parts = start.split(':').map(Number)
     const h = parts[0] ?? 0
     const m = parts[1] ?? 0

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useMatchmaking } from '../composables/useMatchmaking'
-import { useAuthStore } from '@/stores/auth'
 import { SkeletonLoader, AuraButton } from '@/shared/components'
 
 import MatchmakingHero from '../components/MatchmakingHero.vue'
@@ -15,13 +14,8 @@ import SocialModerationModal from '../components/SocialModerationModal.vue'
 import DropInSessionBillModal from '../components/DropInSessionBillModal.vue'
 import type { SocialMatch } from '../types/social'
 
-const auth = useAuthStore()
 const showModModal = ref(false)
 const selectedMatchForBill = ref<SocialMatch | null>(null)
-const canModerate = computed(() => {
-  const role = (auth.user?.role as string) || ''
-  return role === 'admin' || role === 'organization_owner' || role === 'venue_manager'
-})
 const {
   loading,
   processing,
@@ -44,6 +38,7 @@ const {
   joinMatch,
   resetFilters,
   showNotice,
+  canModerate,
 } = useMatchmaking()
 </script>
 

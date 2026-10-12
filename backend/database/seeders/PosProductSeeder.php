@@ -4,161 +4,130 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use App\Models\PosProduct;
+use App\Models\StockMovement;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
+/**
+ * Per-organization POS catalogs, shaped like PosService::createProduct writes them: metadata carries
+ * category/unit/min_stock/supplier/tax_rate (vat_rate mirrors tax_rate for the POS screen) and every
+ * stocked product gets its "initial_stock" movement. Sales and restocks are seeded by PosSalesSeeder.
+ */
 class PosProductSeeder extends Seeder
 {
     public function run(): void
     {
-        $org = Organization::where('slug', 'aura-badminton-club')->first() ?? Organization::first();
-        if (! $org) {
-            return;
-        }
+        // The catalog predates the oldest seeded POS sale (about 13 months ago, see PosSalesSeeder).
+        $setupAt = Carbon::now(config('app.timezone', 'Asia/Ho_Chi_Minh'))->startOfDay()->subMonths(14)->setTime(8, 30);
 
-        $products = [
-            [
-                'sku' => 'POS-POCARI-500',
-                'barcode' => '8935001701011',
-                'name' => 'Nước bù khoáng Pocari Sweat 500ml',
-                'description' => 'Bù điện giải và ion thiết yếu nhanh chóng khi vận động cường độ cao.',
-                'price' => 15000,
-                'cost' => 10000,
-                'stock_quantity' => 120,
-            ],
-            [
-                'sku' => 'POS-REVIVE-500',
-                'barcode' => '8935001701028',
-                'name' => 'Nước ngọt thể thao Revive Chanh Muối 500ml',
-                'description' => 'Cung cấp năng lượng tức thì và giải tỏa cơn khát.',
-                'price' => 15000,
-                'cost' => 9500,
-                'stock_quantity' => 95,
-            ],
-            [
-                'sku' => 'POS-REDBULL-250',
-                'barcode' => '8935001701035',
-                'name' => 'Nước tăng lực Red Bull Thái Lan 250ml',
-                'description' => 'Bật năng lượng, bứt phá giới hạn trong từng séc đấu.',
-                'price' => 20000,
-                'cost' => 13500,
-                'stock_quantity' => 80,
-            ],
-            [
-                'sku' => 'POS-LAVIE-500',
-                'barcode' => '8935001701042',
-                'name' => 'Nước khoáng thiên nhiên LaVie 500ml',
-                'description' => 'Nước khoáng thanh khiết nguyên bản từ thiên nhiên.',
-                'price' => 10000,
-                'cost' => 5000,
-                'stock_quantity' => 200,
-            ],
-            [
-                'sku' => 'POS-COCO-330',
-                'barcode' => '8935001701059',
-                'name' => 'Nước dừa tươi nguyên chất Vietcoco 330ml',
-                'description' => 'Nước dừa tươi 100% giàu kali và chất điện giải tự nhiên.',
-                'price' => 25000,
-                'cost' => 16000,
-                'stock_quantity' => 60,
-            ],
-            [
-                'sku' => 'POS-GUGEL-32',
-                'barcode' => '8935001701066',
-                'name' => 'Gel năng lượng GU Energy Gel (Vị Cam/Dâu)',
-                'description' => 'Nạp carbohydrate và chất điện giải tức thì cho VĐV.',
-                'price' => 45000,
-                'cost' => 30000,
-                'stock_quantity' => 45,
-            ],
-            [
-                'sku' => 'POS-PROBAR-60',
-                'barcode' => '8935001701073',
-                'name' => 'Thanh bánh ngũ cốc Protein Bar 60g',
-                'description' => 'Cung cấp 20g Protein hỗ trợ phục hồi cơ bắp.',
-                'price' => 40000,
-                'cost' => 26000,
-                'stock_quantity' => 50,
-            ],
-            [
-                'sku' => 'POS-YONEX-GRIP',
-                'barcode' => '8935001701080',
-                'name' => 'Quấn cán vợt Yonex Super Grap AC102EX',
-                'description' => 'Chống trơn trượt thấm hút mồ hôi số 1 thế giới.',
-                'price' => 35000,
-                'cost' => 22000,
-                'stock_quantity' => 150,
-            ],
-            [
-                'sku' => 'POS-YONEX-AS50',
-                'barcode' => '8935001701097',
-                'name' => 'Ống cầu lông Yonex Aerosensa AS-50 (12 quả)',
-                'description' => 'Cầu lông thi đấu quốc tế cao cấp nhất của Yonex.',
-                'price' => 780000,
-                'cost' => 650000,
-                'stock_quantity' => 30,
-            ],
-            [
-                'sku' => 'POS-VINASTAR-BLUE',
-                'barcode' => '8935001701103',
-                'name' => 'Ống cầu lông VinaStar Xanh (12 quả)',
-                'description' => 'Cầu lông phong trào bền bỉ, đường bay đầm tay và chuẩn xác.',
-                'price' => 260000,
-                'cost' => 210000,
-                'stock_quantity' => 85,
-            ],
-            [
-                'sku' => 'POS-WILSON-USOPEN',
-                'barcode' => '8935001701110',
-                'name' => 'Hộp bóng Tennis Wilson US Open (3 quả)',
-                'description' => 'Bóng tennis chính thức của giải US Open Grand Slam.',
-                'price' => 140000,
-                'cost' => 105000,
-                'stock_quantity' => 40,
-            ],
-            [
-                'sku' => 'POS-FRANKLIN-X40',
-                'barcode' => '8935001701127',
-                'name' => 'Hộp bóng Pickleball Franklin X-40 Outdoor (3 quả)',
-                'description' => 'Bóng thi đấu pickleball ngoài trời bền bỉ được USAP chứng nhận.',
-                'price' => 160000,
-                'cost' => 115000,
-                'stock_quantity' => 50,
-            ],
-            [
-                'sku' => 'POS-WRISTBAND-YNX',
-                'barcode' => '8935001701134',
-                'name' => 'Băng đeo cổ tay thấm mồ hôi Yonex',
-                'description' => 'Chất liệu cotton co giãn cao cấp, thấm hút mồ hôi cực nhanh.',
-                'price' => 65000,
-                'cost' => 40000,
-                'stock_quantity' => 70,
-            ],
-            [
-                'sku' => 'POS-SOCKS-AURA',
-                'barcode' => '8935001701141',
-                'name' => 'Tất thể thao dệt cổ cao Aura Elite Cushion',
-                'description' => 'Đệm bàn chân êm ái, chống phồng rộp và khử mùi kháng khuẩn.',
-                'price' => 50000,
-                'cost' => 25000,
-                'stock_quantity' => 100,
-            ],
-        ];
+        foreach ($this->catalogs() as $slug => [$ownerEmail, $products]) {
+            $org = Organization::where('slug', $slug)->first();
+            if (! $org) {
+                continue;
+            }
+            $ownerId = User::where('email', $ownerEmail)->value('id');
 
-        foreach ($products as $prod) {
-            PosProduct::updateOrCreate(
-                ['sku' => $prod['sku']],
-                [
-                    'organization_id' => $org->id,
-                    'barcode' => $prod['barcode'],
-                    'name' => $prod['name'],
-                    'description' => $prod['description'],
-                    'price' => $prod['price'],
-                    'cost' => $prod['cost'],
-                    'stock_quantity' => $prod['stock_quantity'],
+            foreach ($products as [$sku, $barcode, $name, $category, $unit, $price, $cost, $stock, $minStock, $supplier, $description]) {
+                $taxRate = in_array($category, ['drinks', 'nutrition'], true) ? 8 : 10;
+                $metadata = [
+                    'category' => $category,
+                    'unit' => $unit,
+                    'min_stock' => $minStock,
+                    'supplier' => $supplier,
+                    'tax_rate' => $taxRate,
+                    'vat_rate' => $taxRate / 100,
+                ];
+                if ($category === 'rental') {
+                    // Hire items return to the shelf, so selling an hour must not consume stock.
+                    $metadata += ['is_rental' => true, 'track_stock' => false];
+                }
+
+                $product = PosProduct::firstOrNew(['organization_id' => $org->id, 'sku' => $sku]);
+                $isNew = ! $product->exists;
+                $product->forceFill([
+                    'barcode' => $barcode,
+                    'name' => $name,
+                    'description' => $description,
+                    'price' => $price,
+                    'cost' => $cost,
+                    'stock_quantity' => $isNew ? $stock : $product->stock_quantity,
                     'is_active' => true,
-                    'metadata' => ['category' => 'Retail', 'brand' => 'Aura Pro'],
-                ]
-            );
+                    'metadata' => $metadata,
+                    'created_at' => $isNew ? $setupAt : $product->created_at,
+                    'updated_at' => $setupAt,
+                ])->save();
+
+                if ($isNew && $stock > 0) {
+                    (new StockMovement)->forceFill([
+                        'organization_id' => $org->id,
+                        'product_id' => $product->id,
+                        'type' => 'in',
+                        'quantity_delta' => $stock,
+                        'unit_cost' => $cost,
+                        'reference_type' => 'initial_stock',
+                        'reference_id' => null,
+                        'created_by' => $ownerId,
+                        'metadata' => [
+                            'note' => 'Khởi tạo tồn kho ban đầu',
+                            'balance_after' => $stock,
+                            'product_name' => $name,
+                            'product_sku' => $sku,
+                            'unit' => $unit,
+                        ],
+                        'created_at' => $setupAt,
+                        'updated_at' => $setupAt,
+                    ])->save();
+                }
+            }
         }
+    }
+
+    /**
+     * [sku, barcode, name, category, unit, price, cost, initial stock, min stock, supplier, description]
+     *
+     * @return array<string, array{0: string, 1: list<array>}>
+     */
+    private function catalogs(): array
+    {
+        return [
+            'aura-badminton-club' => ['owner@demo.auracourt.vn', [
+                ['POS-LAVIE-500', '8935001701042', 'Nước suối LaVie 500ml', 'drinks', 'chai', 10000, 5000, 240, 48, 'NPP nước giải khát Minh Phát', 'Nước khoáng thiên nhiên, ướp lạnh tại quầy.'],
+                ['POS-REVIVE-500', '8935001701028', 'Revive Chanh Muối 500ml', 'drinks', 'chai', 15000, 9500, 120, 24, 'NPP nước giải khát Minh Phát', 'Nước uống bổ sung ion, bù nước sau trận.'],
+                ['POS-POCARI-500', '8935001701011', 'Pocari Sweat 500ml', 'drinks', 'chai', 18000, 12000, 72, 24, 'NPP nước giải khát Minh Phát', 'Nước bù điện giải cho buổi chơi cường độ cao.'],
+                ['POS-REDBULL-250', '8935001701035', 'Nước tăng lực Red Bull 250ml', 'drinks', 'lon', 20000, 11000, 48, 24, 'NPP nước giải khát Minh Phát', 'Lon 250ml, ướp lạnh.'],
+                ['POS-COCO-330', '8935001701059', 'Nước dừa Vietcoco 330ml', 'drinks', 'hộp', 25000, 15000, 48, 12, 'Công ty Vietcoco', 'Nước dừa nguyên chất, giàu kali.'],
+                ['POS-CAPHE-SUADA', '8935001701158', 'Cà phê sữa đá (chai 330ml)', 'drinks', 'chai', 25000, 12000, 12, 10, 'Xưởng cà phê Phương Vy', 'Cà phê phin pha sẵn mỗi sáng, giao theo ngày.'],
+                ['POS-CHUOI-GIA', null, 'Chuối già Nam Mỹ (quả)', 'nutrition', 'quả', 8000, 4000, 20, 15, 'Vựa trái cây Long Biên', 'Bổ sung năng lượng nhanh giữa hiệp.'],
+                ['POS-OISHI-40', '8935001701165', 'Snack Oishi tôm cay 40g', 'nutrition', 'gói', 10000, 6000, 40, 20, 'NPP bánh kẹo Hoàng Long', 'Snack ăn nhẹ tại quầy.'],
+                ['POS-PROBAR-60', '8935001701073', 'Thanh protein ngũ cốc 60g', 'nutrition', 'thanh', 40000, 26000, 30, 10, 'NPP bánh kẹo Hoàng Long', '20g protein, hỗ trợ phục hồi cơ.'],
+                ['POS-GUGEL-32', '8935001701066', 'Gel năng lượng GU Energy 32g', 'nutrition', 'gói', 45000, 30000, 16, 10, 'NPP dinh dưỡng thể thao Fitlife', 'Nạp carbohydrate nhanh cho trận dài.'],
+                ['POS-YONEX-AS50', '8935001701097', 'Ống cầu lông Yonex Aerosensa AS-50 (12 quả)', 'equipment', 'ống', 780000, 650000, 8, 4, 'NPP Yonex miền Bắc', 'Cầu lông lông vũ thi đấu.'],
+                ['POS-VINASTAR-12', '8935001701103', 'Ống cầu lông VinaStar xanh (12 quả)', 'equipment', 'ống', 260000, 210000, 40, 10, 'Cầu lông VinaStar', 'Cầu phong trào, bền, đường bay ổn định.'],
+                ['POS-YONEX-GRIP', '8935001701080', 'Quấn cán vợt Yonex AC102EX', 'equipment', 'cuộn', 40000, 25000, 120, 20, 'NPP Yonex miền Bắc', 'Quấn cán chống trơn, thấm mồ hôi.'],
+                ['POS-FRANKLIN-X40', '8935001701127', 'Bóng pickleball Franklin X-40 (hộp 3 quả)', 'equipment', 'hộp', 220000, 165000, 30, 6, 'NPP Pickleball Việt', 'Bóng thi đấu ngoài trời chuẩn USAP.'],
+                ['POS-WILSON-USOPEN', '8935001701110', 'Bóng tennis Wilson US Open (hộp 3 quả)', 'equipment', 'hộp', 150000, 110000, 36, 6, 'NPP Wilson Việt Nam', 'Bóng tennis mặt cứng.'],
+                ['POS-WRISTBAND-YNX', '8935001701134', 'Băng chặn mồ hôi cổ tay Yonex', 'equipment', 'chiếc', 65000, 40000, 40, 8, 'NPP Yonex miền Bắc', 'Cotton co giãn, thấm hút nhanh.'],
+                ['POS-SOCKS-AURA', '8935001701141', 'Tất thể thao cổ cao Aura', 'equipment', 'đôi', 50000, 25000, 60, 12, 'Xưởng dệt Phú Thịnh', 'Đệm bàn chân, chống phồng rộp.'],
+                ['POS-BONGBAN-DF3', '8935001701189', 'Bóng bàn Double Fish 3 sao (hộp 3 quả)', 'equipment', 'hộp', 45000, 30000, 30, 6, 'NPP bóng bàn Thành Long', 'Bóng thi đấu 40+, nhựa ABS.'],
+                ['POS-RENT-BMT', null, 'Thuê vợt cầu lông Yonex Astrox (giờ)', 'rental', 'giờ', 30000, 0, 16, 4, null, 'Vợt căng sẵn 10,5kg, đổi tại quầy.'],
+                ['POS-RENT-PKB', null, 'Thuê vợt pickleball Joola (giờ)', 'rental', 'giờ', 40000, 0, 12, 4, null, 'Vợt carbon, kèm bóng tập.'],
+                ['POS-RENT-TNS', null, 'Thuê vợt tennis Wilson Clash (giờ)', 'rental', 'giờ', 50000, 0, 12, 4, null, 'Vợt 100 sq.in, phù hợp người mới.'],
+                ['POS-RENT-BALL', null, 'Thuê bóng đá/bóng rổ (giờ)', 'rental', 'giờ', 20000, 0, 12, 4, null, 'Bóng size 5 hoặc size 7, nhận tại quầy.'],
+                ['POS-SVC-DANLUOI', null, 'Đan lưới vợt cầu lông (cước Yonex BG65)', 'services', 'lượt', 120000, 70000, 15, 5, 'Thợ đan vợt tại quầy', 'Lấy trong ngày, mức căng theo yêu cầu.'],
+                ['POS-SVC-TUDO', null, 'Thuê tủ đồ cá nhân (lượt)', 'services', 'lượt', 10000, 0, 30, 5, null, 'Tủ khóa có mã, dùng trong ngày.'],
+            ]],
+            'hoang-gia-sports' => ['owner.hoanggia@demo.auracourt.vn', [
+                ['HG-LAVIE-500', '8935001701042', 'Nước suối LaVie 500ml', 'drinks', 'chai', 10000, 5200, 120, 24, 'NPP nước giải khát Phú Mỹ', 'Nước khoáng ướp lạnh.'],
+                ['HG-REVIVE-500', '8935001701028', 'Revive Chanh Muối 500ml', 'drinks', 'chai', 15000, 9800, 72, 12, 'NPP nước giải khát Phú Mỹ', 'Bù ion sau trận.'],
+                ['HG-POCARI-500', '8935001701011', 'Pocari Sweat 500ml', 'drinks', 'chai', 18000, 12300, 72, 12, 'NPP nước giải khát Phú Mỹ', 'Nước bù điện giải.'],
+                ['HG-CAPHE-SUADA', '8935001701158', 'Cà phê sữa đá (chai 330ml)', 'drinks', 'chai', 25000, 12000, 30, 8, 'Cà phê Ba Ngàn Quận 7', 'Pha sẵn mỗi sáng.'],
+                ['HG-FRANKLIN-X40', '8935001701127', 'Bóng pickleball Franklin X-40 (hộp 3 quả)', 'equipment', 'hộp', 220000, 168000, 24, 6, 'NPP Pickleball Việt', 'Bóng thi đấu ngoài trời.'],
+                ['HG-WILSON-USOPEN', '8935001701110', 'Bóng tennis Wilson US Open (hộp 3 quả)', 'equipment', 'hộp', 150000, 112000, 24, 6, 'NPP Wilson Việt Nam', 'Bóng tennis mặt cứng.'],
+                ['HG-GRIP-WILSON', '8935001701172', 'Quấn cán Wilson Pro Overgrip', 'equipment', 'cuộn', 45000, 28000, 60, 12, 'NPP Wilson Việt Nam', 'Quấn cán mỏng cho vợt tennis và pickleball.'],
+                ['HG-RENT-PKB', null, 'Thuê vợt pickleball (giờ)', 'rental', 'giờ', 40000, 0, 12, 4, null, 'Vợt composite, kèm bóng tập.'],
+                ['HG-RENT-BALL', null, 'Thuê bóng đá sân 5 (giờ)', 'rental', 'giờ', 20000, 0, 12, 4, null, 'Bóng size 4 cho sân 5 người.'],
+            ]],
+        ];
     }
 }

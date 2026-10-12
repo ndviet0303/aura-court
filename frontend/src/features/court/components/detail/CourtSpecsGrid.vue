@@ -2,22 +2,40 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+const props = defineProps<{ sportType?: string }>()
 const { t } = useI18n()
 
-const specs = computed(() => [
-  { icon: 'layers', label: t('courtDetail.specMat'), val: t('courtDetail.specMatDesc') },
-  { icon: 'height', label: t('courtDetail.specCeiling'), val: t('courtDetail.specCeilingDesc') },
-  {
-    icon: 'lightbulb',
-    label: t('courtDetail.specLighting'),
-    val: t('courtDetail.specLightingDesc'),
-  },
-  {
-    icon: 'mode_fan',
-    label: t('courtDetail.specVentilation'),
-    val: t('courtDetail.specVentilationDesc'),
-  },
-])
+// Playing surface per sport; badminton and unknown sports keep the BWF mat copy.
+const SURFACES: Record<string, [string, string]> = {
+  pickleball: ['courtDetail.surfacePickleball', 'courtDetail.surfacePickleballDesc'],
+  tennis: ['courtDetail.surfaceTennis', 'courtDetail.surfaceTennisDesc'],
+  football_5v5: ['courtDetail.surfaceFootball', 'courtDetail.surfaceFootballDesc'],
+  football_7v7: ['courtDetail.surfaceFootball', 'courtDetail.surfaceFootballDesc'],
+  basketball: ['courtDetail.surfaceBasketball', 'courtDetail.surfaceBasketballDesc'],
+  volleyball: ['courtDetail.surfaceVolleyball', 'courtDetail.surfaceVolleyballDesc'],
+  table_tennis: ['courtDetail.surfaceTableTennis', 'courtDetail.surfaceTableTennisDesc'],
+}
+
+const specs = computed(() => {
+  const [surface, surfaceDesc] = SURFACES[props.sportType?.toLowerCase() ?? ''] ?? [
+    'courtDetail.specMat',
+    'courtDetail.specMatDesc',
+  ]
+  return [
+    { icon: 'layers', label: t(surface), val: t(surfaceDesc) },
+    { icon: 'height', label: t('courtDetail.specCeiling'), val: t('courtDetail.specCeilingDesc') },
+    {
+      icon: 'lightbulb',
+      label: t('courtDetail.specLighting'),
+      val: t('courtDetail.specLightingDesc'),
+    },
+    {
+      icon: 'mode_fan',
+      label: t('courtDetail.specVentilation'),
+      val: t('courtDetail.specVentilationDesc'),
+    },
+  ]
+})
 </script>
 
 <template>
