@@ -50,7 +50,7 @@ function formatMoney(amount: number): string {
             <span class="chip-line horizontal"></span>
           </div>
           <div class="card-badges">
-            <span class="tier-pill font-mono">{{ w.tier_label.toUpperCase() }}</span>
+            <span v-if="w.tier_label" class="tier-pill">{{ w.tier_label.toUpperCase() }}</span>
             <span class="material-symbols-outlined contactless-icon">contactless</span>
           </div>
         </div>

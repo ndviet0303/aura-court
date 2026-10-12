@@ -1,4 +1,3 @@
-export type MemberTier = 'standard' | 'silver' | 'gold' | 'diamond'
 export type CardAccentTheme = 'burgundy' | 'gold' | 'navy' | 'emerald'
 export type TransactionType = 'booking' | 'topup' | 'pos' | 'refund'
 export type PaymentMethodType = 'sepay' | 'stripe'
@@ -21,8 +20,8 @@ export interface VenueWallet {
   points: number
   is_active: boolean
   currency: string
-  member_tier: MemberTier
-  tier_label: string
+  /** Active tenant membership plan name; null when the customer has no active membership. */
+  tier_label: string | null
   accent_theme: CardAccentTheme
   card_holder: string
   expiry_date?: string

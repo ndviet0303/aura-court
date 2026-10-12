@@ -187,18 +187,6 @@ parameters:
 			path: app/Domain/Membership/Actions/GetAdminMembershipPlans.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$benefits\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Membership/Actions/GetAdminMembershipStats.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Membership/Actions/GetAdminMembershipStats.php
-
-		-
 			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
 			identifier: greater.alwaysTrue
 			count: 1
@@ -955,18 +943,6 @@ parameters:
 			path: app/Http/Controllers/Court/CourtController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Customer/CustomerController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\TenantCustomer\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Customer/CustomerController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$account_holder\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1477,12 +1453,6 @@ parameters:
 			path: app/Http/Controllers/Promotion/PromotionController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$benefits\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Promotion/PromotionController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$court_id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -1496,12 +1466,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Promotion/PromotionController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Promotion/PromotionController.php

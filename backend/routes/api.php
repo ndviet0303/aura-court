@@ -45,6 +45,7 @@ use App\Http\Controllers\Social\SocialController;
 use App\Http\Controllers\Subscription\PlatformPlanController;
 use App\Http\Controllers\Subscription\PlatformSubscriptionController;
 use App\Http\Controllers\Tournament\TournamentController;
+use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Wallet\WalletDepositController;
 use App\Http\Controllers\Webhook\ProviderWebhookController;
 use App\Http\Controllers\Webhook\ReceivingConnectionWebhookController;
@@ -240,20 +241,7 @@ Route::prefix('v1')->group(function () {
             return response()->json($user->fresh());
         });
         Route::patch('profile/password', [AuthController::class, 'changePassword']);
-        Route::get('wallet', function (Request $request, WalletPaymentService $walletService) {
-            $orgId = $request->query('organization_id') ? (int) $request->query('organization_id') : null;
-            $wallet = $walletService->getOrCreateWallet($request->user()->id, $orgId);
-            $transactions = $wallet->transactions()->latest('id')->take(20)->get();
-
-            return response()->json([
-                'id' => $orgId ? "wallet-org-{$wallet->organization_id}" : 'wallet-main',
-                'organization_id' => $wallet->organization_id,
-                'balance' => $wallet->balance,
-                'currency' => $wallet->currency,
-                'points' => (int) ($wallet->balance / 1000),
-                'transactions' => $transactions,
-            ]);
-        });
+        Route::get('wallet', [WalletController::class, 'show']);
         Route::get('wallet/balance', function (Request $request, WalletPaymentService $walletService) {
             $orgId = $request->query('organization_id') ? (int) $request->query('organization_id') : null;
             $wallet = $walletService->getOrCreateWallet($request->user()->id, $orgId);
