@@ -278,10 +278,11 @@ class TenantWalletDepositTest extends TestCase
         ])->assertCreated()->json();
 
         $intent = PaymentIntent::where('reference', $init['reference'])->firstOrFail();
+        $this->assertSame("ORD{$intent->id}", $init['transfer_info']['code']);
 
         $payload = [
             'id' => 'tx-sepay-dep-1',
-            'code' => "ORD NAP {$user->id} {$intent->reference}",
+            'code' => "ORD{$intent->id}",
             'transferAmount' => 250000,
             'transferType' => 'in',
         ];

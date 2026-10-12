@@ -63,9 +63,14 @@ class ProcessQrPayment
                     return;
                 }
             }
-            // Look for PaymentIntent first by reference pattern e.g. DEP-ABC12345-1
+            // Look for PaymentIntent first: wallet top-up memo ORD{intent id}, or legacy DEP-ABC12345-1
             $intent = null;
-            if (preg_match('/DEP-([0-9a-zA-Z\-_]+)/i', $rawContent, $mDep)) {
+            if (preg_match('/\bORD\s*(\d{1,11})\b/i', $rawContent, $mOrd)) {
+                $intent = PaymentIntent::whereKey((int) $mOrd[1])
+                    ->whereJsonContains('metadata->type', 'wallet_deposit')
+                    ->first();
+            }
+            if (! $intent && preg_match('/DEP-([0-9a-zA-Z\-_]+)/i', $rawContent, $mDep)) {
                 $intent = PaymentIntent::where('reference', $mDep[0])
                     ->orWhere('idempotency_key', $mDep[0])
                     ->first();
