@@ -34,7 +34,8 @@ local; khi seed môi trường công khai, đặt giá trị riêng và gửi ri
 | Hoàng Gia Sports (`hoang-gia-sports`) | Phú Mỹ Hưng, Quận 7 (TP.HCM) | 4 sân pickleball, tennis, bóng đá 5 người; gói PLATFORM_STARTER |
 
 Các tính năng pilot (bán lại slot, chia tiền, payout, POS và ví, giải đấu và ghép trận, thanh toán trực tiếp cho chủ sân)
-chỉ bật cho tổ chức có id trong `PILOT_ORGANIZATION_IDS`.
+chỉ bật cho tổ chức có id trong `PILOT_ORGANIZATION_IDS`. Image production (CI `build_and_deploy`) đặt cohort là 1 và 2,
+bật bán lại slot, chia tiền, POS và ví, giải đấu và ghép trận; payout và thanh toán trực tiếp cho chủ sân vẫn tắt.
 
 ## Tài khoản theo vai trò
 
@@ -74,6 +75,3 @@ chỉ bật cho tổ chức có id trong `PILOT_ORGANIZATION_IDS`.
   giá"). Thẻ "Giờ cao điểm" và "Ngày lễ & ngoại lệ" chỉ đếm quy tắc giá riêng nên bằng 0.
 - Chi trả: "Thực nhận" đã trừ tiền hoàn cho khách, nhưng thẻ "Khấu trừ & phí" chỉ cộng phí cổng và hoa hồng nên hiện 0 ₫.
 - Ngoại lệ tài chính và hàng đợi xuất bản cơ sở để trống: đối soát khớp hết, không có cơ sở nào chờ duyệt.
-- Vài dòng phụ trên thẻ KPI là chữ cố định của giao diện, không tính từ dữ liệu: "Tăng 12% so với tháng trước", "Đóng góp
-  65% tổng doanh thu", "Lấp đầy giờ vàng 94%" (hợp đồng), "+14.2% so với tháng trước" (hội viên), "Tỷ lệ đồng thuận
-  98.2%" (khiếu nại), "1,842 giao dịch", "142 lệnh hoàn tất" (đối soát). Đừng trình bày chúng như số liệu thật.
