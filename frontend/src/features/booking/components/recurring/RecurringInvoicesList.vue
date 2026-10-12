@@ -26,6 +26,14 @@ function formatDate(d: string): string {
   return d.slice(0, 10)
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  paid: 'Đã thanh toán',
+  zero_payable: 'Không cần thanh toán (0 ₫)',
+  guaranteed: 'Được bảo lãnh (chưa thanh toán)',
+  overdue: 'Quá hạn',
+  cancelled: 'Đã huỷ',
+}
+
 function openInvoiceDetail(inv: RecurringInvoice) {
   const key = inv.uuid || inv.id
   router.push(`/recurring-booking/cycles/${key}`)
@@ -150,19 +158,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             }"
           >
             ●
-            {{
-              inv.status === 'paid'
-                ? 'Đã thanh toán'
-                : inv.status === 'zero_payable'
-                  ? 'Không cần thanh toán (0 ₫)'
-                  : inv.status === 'guaranteed'
-                    ? 'Được bảo lãnh (chưa thanh toán)'
-                    : inv.status === 'overdue'
-                      ? 'Quá hạn'
-                      : inv.status === 'cancelled'
-                        ? 'Đã huỷ'
-                        : 'Chờ thanh toán'
-            }}
+            {{ STATUS_LABELS[inv.status] ?? 'Chờ thanh toán' }}
           </span>
         </div>
 
