@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringSeries } from '../../types/recurring'
-import { venueClock, venueDate } from '../../utils/venueTime'
+import { venueClock, venueDate } from '@/core/utils/venueTime'
 
 defineProps<{
   seriesList: RecurringSeries[]
