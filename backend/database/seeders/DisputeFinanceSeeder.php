@@ -2,869 +2,1011 @@
 
 namespace Database\Seeders;
 
+use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Models\AuditLog;
 use App\Models\Beneficiary;
+use App\Models\CourtPriceSlot;
 use App\Models\DisputeCase;
 use App\Models\FinanceException;
+use App\Models\HostKyc;
+use App\Models\Journal;
 use App\Models\Organization;
+use App\Models\OrganizationMember;
+use App\Models\OwnerRefundObligation;
+use App\Models\Payment;
 use App\Models\Payout;
+use App\Models\ProviderEvent;
 use App\Models\ReconciliationRun;
+use App\Models\Refund;
+use App\Models\Reservation;
 use App\Models\Settlement;
+use App\Models\TenantMembership;
 use App\Models\User;
+use App\Services\Finance\FinancialPostingService;
+use App\Services\Finance\PayoutService;
+use App\Services\Finance\ReconciliationService;
+use App\Services\Finance\SettlementService;
 use Carbon\Carbon;
+use Database\Seeders\Concerns\KeepsWakingHours;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Crypt;
+use RuntimeException;
 
+/**
+ * Disputes on real past reservations, the finance trail derived from the seeded payments and refunds
+ * (provider events, journals, weekly settlements, payouts, reconciliation runs and their exceptions),
+ * and a few audit log entries on real records.
+ */
 class DisputeFinanceSeeder extends Seeder
 {
+    use KeepsWakingHours;
+
+    // Documentation-range addresses (RFC 5737).
+    private const ADMIN_IP = '203.0.113.15';
+
+    private const ADMIN_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15';
+
+    /** Bank-transfer providers whose payments reach the platform account. */
+    private const TRANSFER_PROVIDERS = ['sepay', 'payos'];
+
+    private Carbon $now;
+
+    private ?User $arbitrator = null;
+
+    /** Rejected transfers whose money arrived and is still owed back to the customer. */
+    private Collection $held;
+
     public function run(): void
     {
-        $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
-        $now = Carbon::now($timezone);
+        $this->now = Carbon::now(config('app.timezone', 'Asia/Ho_Chi_Minh'))->startOfMinute();
+        $this->arbitrator = User::where('email', 'admin@auracourt.vn')->first();
 
-        $org = Organization::where('slug', 'aura-badminton-club')->first() ?? Organization::first();
-        if (! $org) {
-            return;
+        $this->seedDisputes();
+        $this->seedFinance();
+        $this->seedAuditTrail();
+    }
+
+    /**
+     * Disputes filed on real past paid reservations, shaped like AdminDisputeController::store and
+     * ArbitrateDispute write them: complainant = the reservation's customer, respondent = the
+     * organization's active non-admin owner.
+     */
+    private function seedDisputes(): void
+    {
+        $customerIds = User::whereIn('email', $this->customerEmails())->pluck('id');
+        $paidBookingIds = Payment::where('status', 'paid')->where('received_at', '<=', $this->now)->pluck('booking_id')->filter();
+        // The app accepts a dispute until 30 days after the reservation ended.
+        $candidates = Reservation::query()
+            ->with(['court.venue.organization', 'user', 'slots', 'legacyMapping'])
+            ->whereIn('user_id', $customerIds)
+            ->whereHas('legacyMapping', fn ($q) => $q->whereIn('legacy_status', ['confirmed', 'completed'])->whereIn('legacy_booking_id', $paidBookingIds))
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Reservation $r): bool => $r->ends_at !== null && $r->ends_at->lt($this->now) && $r->ends_at->gt($this->now->copy()->subDays(29)))
+            ->sortBy(fn (Reservation $r): string => sprintf('%012d-%08d', $this->now->getTimestamp() - $r->ends_at->getTimestamp(), $r->id))
+            ->values();
+
+        $usedReservations = [];
+        $usedUsers = [];
+        foreach ($this->disputeSpecs() as $spec) {
+            $reservation = null;
+            foreach ([[$spec['age'], $spec['org'] ?? null], [$spec['age'], null], [[0, 29], null]] as [[$minDays, $maxDays], $orgSlug]) {
+                $reservation = $candidates->first(fn (Reservation $r): bool => ! in_array($r->id, $usedReservations, true)
+                    && ! in_array($r->user_id, $usedUsers, true)
+                    && ($orgSlug === null || $r->court->venue->organization->slug === $orgSlug)
+                    && $r->ends_at->lte($this->now->copy()->subDays($minDays))
+                    && $r->ends_at->gte($this->now->copy()->subDays($maxDays)));
+                if ($reservation) {
+                    break;
+                }
+            }
+            if (! $reservation) {
+                $this->command?->warn("DisputeFinanceSeeder: no past paid reservation left for {$spec['code']}, skipped.");
+
+                continue;
+            }
+            $usedReservations[] = $reservation->id;
+            $usedUsers[] = $reservation->user_id;
+            $this->seedDispute($spec, $reservation);
+        }
+    }
+
+    private function seedDispute(array $spec, Reservation $reservation): void
+    {
+        $tz = config('app.timezone', 'Asia/Ho_Chi_Minh');
+        $court = $reservation->court;
+        $venue = $court->venue;
+        $org = $venue->organization;
+        $customer = $reservation->user;
+        $respondentId = app(DisputeRepositoryInterface::class)->findRespondentIdForOrganization($org->id);
+        $respondent = $respondentId ? User::find($respondentId) : null;
+        $operator = $this->venueOperator($org->id, $venue->id) ?? $respondent;
+
+        $startsAt = $reservation->starts_at->copy()->setTimezone($tz);
+        $endsAt = $reservation->ends_at->copy()->setTimezone($tz);
+        $total = (int) $reservation->total_amount;
+        $decision = $spec['decision'] ?? null;
+
+        // Every step happens between the end of play and now, in order, whatever the reservation's age.
+        $filedAt = $endsAt->copy()->addSeconds((int) min($spec['file_after_hours'] * 3600, ($this->now->getTimestamp() - $endsAt->getTimestamp()) / 2))->startOfMinute();
+        $filedAt = $this->awake($filedAt, $endsAt, $endsAt->copy()->addSeconds(intdiv($this->now->getTimestamp() - $endsAt->getTimestamp(), 2)));
+        $arbitratedAt = match ($decision) {
+            // Decided yesterday, so the owner's 7-day refund deadline stays ahead through the demo.
+            'resolve_and_refund' => $this->awake($this->now->copy()->subDay(), $filedAt),
+            'dismiss' => $this->awake($filedAt->copy()->addSeconds((int) (($this->now->getTimestamp() - $filedAt->getTimestamp()) * 0.6))->startOfMinute(), $filedAt),
+            default => null,
+        };
+        $span = $arbitratedAt ?? $this->now;
+        $at = fn (float $fraction): Carbon => $this->awake($filedAt->copy()->addSeconds((int) (($span->getTimestamp() - $filedAt->getTimestamp()) * $fraction))->startOfMinute(), $filedAt, $span);
+
+        $amountDisputed = match ($spec['amount']) {
+            'total' => $total,
+            'quarter_hour' => (int) (round((int) $reservation->slots->first()->unit_price / 4 / 5000) * 5000),
+            default => (int) (floor($total * $spec['amount'] / 1000) * 1000),
+        };
+        $refundAmount = isset($spec['refund_ratio']) ? (int) (floor($total * $spec['refund_ratio'] / 1000) * 1000) : null;
+        $dueAt = $decision === 'resolve_and_refund' ? $arbitratedAt->copy()->addDays(7) : null;
+        $membershipPlan = $this->membershipPlanName($org->id, $customer->id, $filedAt);
+
+        $vars = [
+            '{court}' => $court->getTranslation('name', 'vi'),
+            '{venue}' => $venue->getTranslation('name', 'vi'),
+            '{date}' => $startsAt->format('d/m'),
+            '{slot}' => $startsAt->format('H:i').'-'.$endsAt->format('H:i'),
+            '{customer}' => $customer->name,
+            '{operator}' => $operator?->name ?? $org->name,
+            '{refund}' => number_format((int) $refundAmount, 0, ',', '.').'₫',
+            '{due}' => $dueAt?->format('d/m/Y') ?? '',
+        ];
+        $text = fn (string $value): string => strtr($value, $vars);
+        $actors = ['customer' => $customer, 'operator' => $operator, 'arbitrator' => $this->arbitrator];
+
+        $dispute = DisputeCase::firstOrNew(['dispute_code' => $spec['code']]);
+        $dispute->forceFill([
+            'organization_id' => $org->id,
+            'venue_id' => $venue->id,
+            'booking_id' => $reservation->legacyMapping->value('legacy_booking_id'),
+            'reservation_id' => $reservation->id,
+            'reference_type' => 'reservation',
+            'reference_id' => $reservation->id,
+            'court_name' => $vars['{court}'],
+            'facility_name' => $vars['{venue}'],
+            'facility_operator_name' => $org->name,
+            'dispute_type' => $spec['type'],
+            'severity' => $spec['severity'],
+            'title' => $text($spec['title']),
+            'summary' => $text($spec['summary']),
+            'status' => $spec['status'],
+            // Open cases keep a day-scale SLA so nothing turns overdue during a demo.
+            'sla_deadline' => $decision ? $filedAt->copy()->addDays(3) : $this->now->copy()->addDays($spec['sla_days'])->startOfHour(),
+            'amount_disputed' => $amountDisputed,
+            'currency' => 'VND',
+            'complainant_id' => $customer->id,
+            'complainant_name' => $customer->name,
+            'complainant_tier' => $membershipPlan ?? 'Khách hàng',
+            'complainant_reputation_score' => 100,
+            'complainant_phone' => $customer->phone,
+            'respondent_id' => $respondentId,
+            'respondent_name' => $org->name,
+            'respondent_tier' => 'Đối tác Aura',
+            'respondent_reputation_score' => 100,
+            'respondent_phone' => $respondent?->phone,
+            'requested_evidence' => $spec['requested_evidence'] ?? null,
+            'court_map_context' => $this->courtMap($reservation, $spec),
+            'ai_analysis' => [
+                'fault_rate_facility' => $spec['fault_facility'],
+                'fault_rate_user' => 100 - $spec['fault_facility'],
+                'root_cause' => $text($spec['root_cause']),
+                'recommendation_summary' => $text($spec['recommendation']),
+            ],
+            'decision_history' => [],
+            'decision_version' => 1,
+            'created_at' => $filedAt,
+            'updated_at' => $filedAt,
+        ])->save();
+
+        $obligation = $decision === 'resolve_and_refund'
+            ? $this->refundObligation($dispute, $reservation, $respondentId, (int) $refundAmount, $arbitratedAt, $text($spec['arbitrator_notes']))
+            : null;
+
+        $events = [];
+        foreach ($spec['timeline'] as [$when, $code, $title, $description, $type, $actor, $extra]) {
+            $time = $when === 'arbitration' ? $arbitratedAt : ($when === 0.0 ? $filedAt : $at($when));
+            $actorUser = $actor ? $actors[$actor] : null;
+            $extra = match ($code) {
+                'dispute_arbitrated' => ['decision' => $decision, 'version' => 1, 'refund_obligation_id' => $obligation?->id],
+                'refund_task_created' => [
+                    'task_type' => 'owner_refund_execution',
+                    'obligation_id' => $obligation?->id,
+                    'status' => 'pending_financial_evidence',
+                    'responsible_actor_id' => $obligation?->payer_id,
+                    'amount' => $refundAmount,
+                    'due_at' => $dueAt?->toIso8601String(),
+                    'payment_completed' => false,
+                ],
+                default => $extra,
+            };
+            // App keys (event, actor, timestamp) plus the display keys the admin workbench renders.
+            $events[] = [
+                'event' => $code,
+                'actor_id' => $actorUser?->id,
+                'actor_name' => $actorUser?->name,
+                ...$extra,
+                'time' => $time->format('d/m H:i'),
+                'title' => $title,
+                'description' => $text($description),
+                'type' => $type,
+                'timestamp' => $time->toIso8601String(),
+            ];
+        }
+        $chat = [];
+        foreach ($spec['chat'] as [$when, $role, $message]) {
+            $sender = $role === 'complainant' ? $customer->name : ($operator?->name ?? $org->name);
+            $chat[] = [
+                'sender' => $sender,
+                'role' => $role,
+                'avatar' => $this->initials($sender),
+                'message' => $text($message),
+                'time' => ($when === 0.0 ? $filedAt : $at($when))->format('H:i'),
+            ];
+        }
+        $evidence = [];
+        foreach ($spec['evidence'] as [$when, $by, $explanation, $items]) {
+            $evidence[] = [
+                'submitted_by' => $actors[$by]?->id,
+                'submitted_by_name' => $actors[$by]?->name,
+                'is_private' => false,
+                'explanation' => $text($explanation),
+                'items' => $items,
+                'submitted_at' => ($when === 0.0 ? $filedAt : $at($when))->toIso8601String(),
+            ];
         }
 
-        // 1. Dispute Cases
-        $disputeCases = [
+        $dispute->forceFill([
+            'timeline_events' => $events,
+            'chat_messages' => $chat,
+            'evidence' => $evidence,
+            'resolution_decision' => $decision,
+            'refund_method' => $spec['refund_method'] ?? null,
+            'refund_amount' => $refundAmount,
+            'compensation_type' => $spec['compensation_type'] ?? null,
+            'compensation_value' => $spec['compensation_value'] ?? null,
+            'penalty_notes' => isset($spec['penalty_notes']) ? $text($spec['penalty_notes']) : null,
+            'penalty_points' => $spec['penalty_points'] ?? null,
+            'arbitrated_by' => $decision ? $this->arbitrator?->id : null,
+            'arbitrated_at' => $arbitratedAt,
+            'arbitrator_notes' => $decision ? $text($spec['arbitrator_notes']) : null,
+            'refund_obligation_id' => $obligation?->id,
+            'updated_at' => Carbon::parse(end($events)['timestamp']),
+        ])->save();
+
+        if ($decision && $this->arbitrator) {
+            $this->audit($this->arbitrator, "dispute.{$decision}", $dispute, $arbitratedAt, [
+                'dispute_code' => $dispute->dispute_code,
+                'reservation_code' => $reservation->code,
+                'old_values' => ['status' => $spec['status_before_decision']],
+                'new_values' => [
+                    'status' => $spec['status'],
+                    'decision' => $decision,
+                    'refund_amount' => $refundAmount,
+                    'refund_method' => $dispute->refund_method,
+                    'refund_obligation_id' => $obligation?->id,
+                ],
+                'reason' => $dispute->arbitrator_notes,
+            ]);
+        }
+    }
+
+    /** The refund task ArbitrateDispute opens on resolve_and_refund: the owner still has to transfer the money. */
+    private function refundObligation(DisputeCase $dispute, Reservation $reservation, ?int $respondentId, int $amount, Carbon $arbitratedAt, string $reason): ?OwnerRefundObligation
+    {
+        if (! $this->arbitrator || $amount <= 0) {
+            return null;
+        }
+
+        $key = "dispute_refund_{$dispute->id}_v1";
+        $obligation = OwnerRefundObligation::firstOrNew(['organization_id' => $dispute->organization_id, 'idempotency_key' => $key]);
+        $obligation->forceFill([
+            'venue_id' => $dispute->venue_id,
+            'booking_id' => $dispute->booking_id,
+            'reservation_id' => $reservation->id,
+            'payer_id' => $respondentId ?? $this->arbitrator->id,
+            'reference_code' => 'REF-'.$dispute->dispute_code,
+            'request_fingerprint' => hash('sha256', $key),
+            'slot_ids' => $reservation->slots->pluck('id')->all(),
+            'gross_amount' => $amount,
+            'fee_amount' => 0,
+            'amount' => $amount,
+            'currency' => 'VND',
+            'status' => OwnerRefundObligation::STATUS_APPROVED,
+            'reason' => $reason,
+            'policy_snapshot' => ['dispute_code' => $dispute->dispute_code, 'arbitrated_at' => $arbitratedAt->toIso8601String()],
+            'recipient_ciphertext' => Crypt::encryptString(json_encode([
+                'name' => $dispute->complainant_name,
+                'user_id' => $dispute->complainant_id,
+                'phone' => $dispute->complainant_phone,
+            ], JSON_THROW_ON_ERROR)),
+            'due_at' => $arbitratedAt->copy()->addDays(7),
+            'requested_at' => $arbitratedAt,
+            'approved_at' => $arbitratedAt,
+            'requested_by' => $this->arbitrator->id,
+            'approved_by' => $this->arbitrator->id,
+            'created_at' => $arbitratedAt,
+            'updated_at' => $arbitratedAt,
+        ])->save();
+
+        return $obligation;
+    }
+
+    /** The manager scoped to this venue, else one covering every venue of the organization. */
+    private function venueOperator(int $organizationId, int $venueId): ?User
+    {
+        return OrganizationMember::with('user')
+            ->where('organization_id', $organizationId)
+            ->where('role', OrganizationMember::ROLE_VENUE_MANAGER)
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (OrganizationMember $m): bool => $m->venue_ids === [] || in_array($venueId, $m->venue_ids, true))
+            ->sortBy(fn (OrganizationMember $m): int => $m->venue_ids === [] ? 1 : 0)
+            ->first()?->user;
+    }
+
+    /** @return array<int, array{name: string, status: string, label: string}> */
+    private function courtMap(Reservation $reservation, array $spec): array
+    {
+        return $reservation->court->venue->courts()
+            ->where('sport_zone_id', $reservation->court->sport_zone_id)
+            ->orderBy('id')
+            ->get()
+            ->sortBy(fn ($court): int => $court->id === $reservation->court_id ? 0 : 1)
+            ->take(3)
+            ->sortBy('id')
+            ->map(fn ($court): array => [
+                'name' => $court->getTranslation('name', 'vi'),
+                'status' => $court->id === $reservation->court_id ? $spec['map_status'] : 'available',
+                'label' => $court->id === $reservation->court_id ? $spec['map_label'] : 'Hoạt động bình thường',
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Timeline rows are [when, event, title, description, UI type, actor, extra app keys]; `when` is a
+     * fraction of the time between filing and the decision (or now), or 'arbitration'.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function disputeSpecs(): array
+    {
+        return [
             [
-                'dispute_code' => 'DSP-8924',
-                'court_name' => 'Sân số 4 (Phú Thọ)',
-                'dispute_type' => 'double_booking',
-                'severity' => 'critical',
-                'title' => 'Xung đột Trùng Lịch Sân số 4',
-                'summary' => 'Hệ thống ghi nhận đặt qua App của Alex Lawson và nhân viên quầy chèn tay lịch của Trần Quốc Bảo lúc 19:00.',
+                'code' => 'DSP-7QK2M9XA4B',
+                'status' => 'pending',
+                'type' => 'court_quality',
+                'severity' => 'medium',
+                'age' => [0, 4],
+                'file_after_hours' => 3,
+                'sla_days' => 3,
+                'amount' => 0.3,
+                'title' => 'Đèn chiếu sáng chập chờn tại {court}',
+                'summary' => 'Khách phản ánh dàn đèn LED giữa sân nhấp nháy liên tục trong ca {slot} ngày {date}, khó quan sát khi thi đấu. Khách đề nghị hoàn 30% tiền sân.',
+                'map_status' => 'maintenance',
+                'map_label' => 'Chờ kiểm tra đèn',
+                'fault_facility' => 70,
+                'root_cause' => 'Bộ nguồn đèn LED khu vực giữa {court} có dấu hiệu xuống cấp; chưa có biên bản bảo trì gần đây.',
+                'recommendation' => 'Yêu cầu {venue} gửi nhật ký bảo trì đèn. Nếu xác nhận lỗi thiết bị, chấp nhận hoàn 30% tiền sân.',
+                'timeline' => [
+                    [0.0, 'dispute_filed', 'Khách gửi khiếu nại', '{customer} gửi khiếu nại kèm ảnh và video dàn đèn {court}.', 'primary', 'customer', ['status' => 'pending']],
+                ],
+                'chat' => [
+                    [0.0, 'complainant', 'Đèn giữa sân nhấp nháy suốt ca {slot}, cả nhóm phải dừng nhiều lần. Mong cơ sở xem lại và hỗ trợ một phần tiền sân.'],
+                ],
+                'evidence' => [
+                    [0.0, 'customer', 'Ảnh và video quay lúc đèn nhấp nháy trong ca {slot}.', [
+                        ['type' => 'photo', 'name' => 'den-san-nhap-nhay.jpg'],
+                        ['type' => 'video', 'name' => 'clip-den-15-giay.mp4'],
+                    ]],
+                ],
+            ],
+            [
+                'code' => 'DSP-3HX8RT2KQM',
                 'status' => 'investigating',
-                'sla_deadline' => $now->copy()->addMinutes(15),
-                'amount_disputed' => 360000,
-                'currency' => 'VND',
-                'complainant_name' => 'Alex Lawson',
-                'complainant_tier' => 'Hạng Vàng',
-                'complainant_reputation_score' => 98,
-                'complainant_phone' => '0909 *** 892',
-                'respondent_name' => 'Trần Quốc Bảo',
-                'respondent_tier' => 'Hạng Kim Cương',
-                'respondent_reputation_score' => 96,
-                'respondent_phone' => '0912 *** 341',
-                'facility_name' => 'Cụm Sân Cầu Lông Phú Thọ',
-                'facility_operator_name' => 'Lê Hoàng Long (Trưởng ca trực)',
-                'timeline_events' => [
-                    [
-                        'time' => '20 Thg 10, 18:30:15',
-                        'title' => 'Thanh toán đặt sân thành công',
-                        'description' => 'Alex Lawson thanh toán thành công đơn qua PayOS (Slot 19:00 - 21:00 Sân 4).',
-                        'type' => 'primary',
-                    ],
-                    [
-                        'time' => '20 Thg 10, 18:45:22',
-                        'title' => 'Cảnh báo: Độ trễ Webhook Facility API',
-                        'description' => 'Độ trễ đồng bộ 45 giây từ đối tác khiến trạng thái slot chưa cập nhật kịp thời trên bảng lễ tân.',
-                        'type' => 'warning',
-                    ],
-                ],
-                'chat_messages' => [
-                    [
-                        'sender' => 'Alex Lawson',
-                        'role' => 'complainant',
-                        'avatar' => 'AL',
-                        'message' => 'Tôi đã đến sân lúc 18:55 nhưng sân số 4 đang có nhóm khác đánh. Lễ tân bảo họ có lịch đặt cố định.',
-                        'time' => '19:05',
-                    ],
-                ],
-                'court_map_context' => [
-                    ['name' => 'Sân 3', 'status' => 'occupied', 'label' => 'Đang đánh'],
-                    ['name' => 'Sân 4', 'status' => 'conflict', 'label' => 'Xung Đột'],
-                    ['name' => 'Sân 7', 'status' => 'available', 'label' => 'Trống - Có thể Đổi'],
-                ],
-                'ai_analysis' => [
-                    'fault_rate_facility' => 100,
-                    'fault_rate_user' => 0,
-                    'root_cause' => 'Độ trễ Webhook đồng bộ kết hợp thao tác ghi đè thủ công tại quầy của nhân viên cơ sở.',
-                    'recommendation_summary' => 'Hoàn 100% tiền (360.000 ₫) vào Ví nội bộ cho Alex Lawson + Tặng Voucher 20% + Đổi Sân 7 cho Trần Quốc Bảo.',
-                ],
-            ],
-            [
-                'dispute_code' => 'DSP-8921',
-                'court_name' => 'Sân Tân Bình Sport - Court 2',
-                'dispute_type' => 'match_stake',
+                'type' => 'no_show_conflict',
                 'severity' => 'high',
-                'title' => 'Tranh chấp Tiền cọc Kèo Giao Lưu Matchmaking',
-                'summary' => 'Đối thủ đơn nam tự ý bỏ cuộc giữa chừng ở Set 3 nhưng không chịu xác nhận hủy cọc trên ví nội bộ.',
-                'status' => 'pending',
-                'sla_deadline' => $now->copy()->addHours(2),
-                'amount_disputed' => 200000,
-                'currency' => 'VND',
-                'complainant_name' => 'Vũ Minh Tuấn',
-                'complainant_tier' => 'Hạng Bạc',
-                'complainant_reputation_score' => 92,
-                'complainant_phone' => '0938 *** 112',
-                'respondent_name' => 'Hoàng Nam',
-                'respondent_tier' => 'Hạng Đồng',
-                'respondent_reputation_score' => 84,
-                'respondent_phone' => '0977 *** 554',
-                'facility_name' => 'Sân Cầu Lông Tân Bình Sport',
-                'facility_operator_name' => 'Trần Thị Bích (Quản lý sân)',
-                'timeline_events' => [
-                    [
-                        'time' => '22 Thg 10, 20:00:00',
-                        'title' => 'Bắt đầu trận đấu Matchmaking',
-                        'description' => 'Hai bên xác nhận vào sân số 2 theo kèo cọc giao lưu 200.000 ₫ mỗi bên.',
-                        'type' => 'primary',
-                    ],
-                    [
-                        'time' => '22 Thg 10, 20:35:10',
-                        'title' => 'Bị đơn rời sân bất ngờ',
-                        'description' => 'Hoàng Nam xin tạm dừng ở Set 3 (tỷ số 15-18) và rời sân không trở lại.',
-                        'type' => 'warning',
-                    ],
+                'age' => [1, 7],
+                'file_after_hours' => 2,
+                'sla_days' => 2,
+                'amount' => 'total',
+                // Filed without evidence, so intake asked for it (awaiting_evidence) before the investigation.
+                'requested_evidence' => ['photos_or_video', 'detailed_statement'],
+                'title' => 'Đến sân nhưng {court} đang có nhóm khác sử dụng',
+                'summary' => 'Khách đến đúng giờ {slot} ngày {date} nhưng sân đang có nhóm khách vãng lai do quầy xếp nhầm lịch. Khách chờ 25 phút mới được vào sân và yêu cầu hoàn toàn bộ tiền sân.',
+                'map_status' => 'conflict',
+                'map_label' => 'Trùng lịch',
+                'fault_facility' => 80,
+                'root_cause' => 'Lễ tân nhận khách vãng lai vào {court} mà không kiểm tra lịch đặt trực tuyến của khung giờ {slot}.',
+                'recommendation' => 'Đối chiếu nhật ký check-in tại quầy với lịch đặt; nếu xác nhận lỗi xếp sân, hoàn tiền tương ứng thời gian chờ và nhắc nhở ca trực.',
+                'timeline' => [
+                    [0.0, 'dispute_filed', 'Khách gửi khiếu nại', '{customer} báo {court} đang có nhóm khác sử dụng khi đến nhận sân. Hệ thống yêu cầu bổ sung ảnh và tường trình.', 'primary', 'customer', ['status' => 'awaiting_evidence']],
+                    [0.3, 'evidence_submitted', 'Khách bổ sung chứng cứ', 'Ảnh chụp sân lúc đến và mã QR nhận sân; hồ sơ chuyển sang điều tra.', 'primary', 'customer', ['is_private' => false, 'has_explanation' => true]],
+                    [0.7, 'evidence_submitted', 'Cơ sở gửi giải trình', '{operator} gửi nhật ký check-in tại quầy ca {slot}.', 'warning', 'operator', ['is_private' => false, 'has_explanation' => true]],
                 ],
-                'chat_messages' => [
-                    [
-                        'sender' => 'Vũ Minh Tuấn',
-                        'role' => 'complainant',
-                        'avatar' => 'MT',
-                        'message' => 'Bạn Nam tự ý bỏ về khi đang đánh Set 3, yêu cầu trọng tài hệ thống giải ngân tiền cọc thắng trận cho tôi.',
-                        'time' => '20:45',
-                    ],
-                    [
-                        'sender' => 'Hoàng Nam',
-                        'role' => 'respondent',
-                        'avatar' => 'HN',
-                        'message' => 'Tôi bị đau cổ chân nên xin nghỉ chứ không phải cố tình bỏ giải. Đề nghị hòa cọc.',
-                        'time' => '20:50',
-                    ],
+                'chat' => [
+                    [0.0, 'complainant', 'Tôi đến đúng giờ nhưng sân đã có nhóm khác, quầy bảo chờ họ đánh xong.'],
+                    [0.7, 'facility', 'Ca trực xếp nhầm khách vãng lai vào sân. Cơ sở xin lỗi và chờ kết luận của Aura.'],
                 ],
-                'court_map_context' => [
-                    ['name' => 'Sân 1', 'status' => 'occupied', 'label' => 'Đang đánh'],
-                    ['name' => 'Sân 2', 'status' => 'conflict', 'label' => 'Bỏ cuộc'],
-                    ['name' => 'Sân 3', 'status' => 'available', 'label' => 'Trống'],
-                ],
-                'ai_analysis' => [
-                    'fault_rate_facility' => 0,
-                    'fault_rate_user' => 100,
-                    'root_cause' => 'Bỏ trận đấu giao lưu có đặt cọc không có lý do chính đáng và không có xác nhận y tế.',
-                    'recommendation_summary' => 'Xử thua kỹ thuật cho Hoàng Nam, giải ngân 200.000 ₫ tiền cọc cho Vũ Minh Tuấn và trừ 15 điểm uy tín đối thủ.',
+                'evidence' => [
+                    [0.3, 'customer', 'Ảnh sân lúc đến và mã QR nhận sân.', [
+                        ['type' => 'photo', 'name' => 'san-co-nguoi-choi.jpg'],
+                        ['type' => 'screenshot', 'name' => 'ma-qr-nhan-san.png'],
+                    ]],
+                    [0.7, 'operator', 'Nhật ký check-in tại quầy ca {slot}.', [
+                        ['type' => 'document', 'name' => 'nhat-ky-check-in.pdf'],
+                    ]],
                 ],
             ],
             [
-                'dispute_code' => 'DSP-8918',
-                'court_name' => 'Sân Cầu Lông Aura Q7 - Sân 1',
-                'dispute_type' => 'resale_fraud',
-                'severity' => 'critical',
-                'title' => 'Thị trường Nhượng suất - Hủy QR sau khi nhận tiền',
-                'summary' => 'Bên bán đã nhận 450.000 ₫ tiền chuyển khoản P2P nhưng bấm hủy lệnh trên chợ nhượng suất và khóa mã QR vào sân.',
-                'status' => 'pending',
-                'sla_deadline' => $now->copy()->addMinutes(30),
-                'amount_disputed' => 450000,
-                'currency' => 'VND',
-                'complainant_name' => 'Nguyễn Thành Long',
-                'complainant_tier' => 'Hạng Vàng',
-                'complainant_reputation_score' => 95,
-                'complainant_phone' => '0988 *** 992',
-                'respondent_name' => 'Lê Hữu Đức',
-                'respondent_tier' => 'Hạng Mới',
-                'respondent_reputation_score' => 60,
-                'respondent_phone' => '0903 *** 121',
-                'facility_name' => 'Sân Cầu Lông Aura Q7',
-                'facility_operator_name' => 'Phạm Minh Tuấn (Lễ tân ca 2)',
-                'timeline_events' => [
-                    [
-                        'time' => '23 Thg 10, 16:10:00',
-                        'title' => 'Tạo giao dịch nhượng suất P2P',
-                        'description' => 'Lê Hữu Đức đăng bán lại slot sân 1 ngày 23/10 giá 450.000 ₫.',
-                        'type' => 'primary',
-                    ],
-                    [
-                        'time' => '23 Thg 10, 16:15:22',
-                        'title' => 'Xác nhận chuyển khoản VietQR',
-                        'description' => 'Nguyễn Thành Long chuyển thành công 450.000 ₫ có mã giao dịch VCB.',
-                        'type' => 'success',
-                    ],
-                    [
-                        'time' => '23 Thg 10, 16:18:00',
-                        'title' => 'Hủy lệnh bất thường',
-                        'description' => 'Lê Hữu Đức bấm hủy giao dịch và không chuyển giao QR Pass.',
-                        'type' => 'error',
-                    ],
-                ],
-                'chat_messages' => [
-                    [
-                        'sender' => 'Nguyễn Thành Long',
-                        'role' => 'complainant',
-                        'avatar' => 'TL',
-                        'message' => 'Tôi đã gửi ảnh biên lai ngân hàng rồi nhưng bên bán hủy lệnh và chặn tin nhắn.',
-                        'time' => '16:20',
-                    ],
-                ],
-                'court_map_context' => [
-                    ['name' => 'Sân 1', 'status' => 'conflict', 'label' => 'Gian lận P2P'],
-                    ['name' => 'Sân 2', 'status' => 'available', 'label' => 'Trống'],
-                ],
-                'ai_analysis' => [
-                    'fault_rate_facility' => 0,
-                    'fault_rate_user' => 100,
-                    'root_cause' => 'Hành vi gian lận chiếm đoạt tiền chuyển khoản P2P trên sàn nhượng suất.',
-                    'recommendation_summary' => 'Khóa vĩnh viễn tài khoản Lê Hữu Đức, hoàn 450.000 ₫ từ quỹ bảo hiểm P2P cho Nguyễn Thành Long.',
-                ],
-            ],
-            [
-                'dispute_code' => 'DSP-8915',
-                'court_name' => 'Sân Bình Thạnh - Quầy Dịch Vụ',
-                'dispute_type' => 'equipment_damage',
-                'severity' => 'medium',
-                'title' => 'Tranh chấp Phí bồi thường Vợt Yonex Astrox 100ZZ',
-                'summary' => 'Sân yêu cầu đền 1.850.000 ₫ do gãy khung vợt thuê cao cấp, khách khiếu nại vợt đã có vết nứt từ trước.',
+                'code' => 'DSP-9TW4ZC7NHE',
                 'status' => 'awaiting_response',
-                'sla_deadline' => $now->copy()->addDays(1),
-                'amount_disputed' => 1850000,
-                'currency' => 'VND',
-                'complainant_name' => 'Phạm Quốc Anh',
-                'complainant_tier' => 'Hạng Vàng',
-                'complainant_reputation_score' => 97,
-                'complainant_phone' => '0933 *** 771',
-                'respondent_name' => 'Sân Cầu Lông Aura Bình Thạnh',
-                'respondent_tier' => 'Đối tác Kim Cương',
-                'respondent_reputation_score' => 99,
-                'respondent_phone' => '028 3844 ***',
-                'facility_name' => 'Sân Cầu Lông Aura Bình Thạnh',
-                'facility_operator_name' => 'Nguyễn Hữu Tài (Kỹ thuật dụng cụ)',
-                'timeline_events' => [
-                    [
-                        'time' => '24 Thg 10, 17:00:00',
-                        'title' => 'Thuê vợt Yonex Astrox 100ZZ',
-                        'description' => 'Khách thuê vợt mã YNX-08 tại quầy, có chụp ảnh biên bản bàn giao sơ bộ.',
-                        'type' => 'primary',
-                    ],
-                    [
-                        'time' => '24 Thg 10, 19:10:00',
-                        'title' => 'Trả vợt gãy khung tại góc 2h',
-                        'description' => 'Nhân viên lập biên bản sự cố và tạm giữ cọc 1.850.000 ₫.',
-                        'type' => 'warning',
-                    ],
-                ],
-                'chat_messages' => [
-                    [
-                        'sender' => 'Phạm Quốc Anh',
-                        'role' => 'complainant',
-                        'avatar' => 'QA',
-                        'message' => 'Lúc tôi nhận vợt đã thấy có vết rạn nhỏ ở gen số 4, vừa chạm cầu nhẹ đã nứt to ra. Đề nghị chia sẻ 50% chi phí.',
-                        'time' => '19:25',
-                    ],
-                    [
-                        'sender' => 'Sân Bình Thạnh',
-                        'role' => 'facility',
-                        'avatar' => 'BT',
-                        'message' => 'Vợt YNX-08 mới đan cước 11.5kg lần đầu, không có tiền sử nứt khung trước đó.',
-                        'time' => '19:40',
-                    ],
-                ],
-                'court_map_context' => [
-                    ['name' => 'Sân 3', 'status' => 'available', 'label' => 'Hoạt động bình thường'],
-                ],
-                'ai_analysis' => [
-                    'fault_rate_facility' => 40,
-                    'fault_rate_user' => 60,
-                    'root_cause' => 'Va chạm trong quá trình chơi kết hợp độ hao mòn tự nhiên của khung vợt thuê.',
-                    'recommendation_summary' => 'Thỏa thuận chia sẻ chi phí: Khách bồi thường 50% (925.000 ₫), hoàn trả 925.000 ₫ tiền cọc cho khách.',
-                ],
-            ],
-            [
-                'dispute_code' => 'DSP-8902',
-                'court_name' => 'Sân Phú Nhuận - Sân VIP',
-                'dispute_type' => 'tournament_score',
-                'severity' => 'low',
-                'title' => 'Trọng tài nhập sai tỷ số vòng loại giải Aura Open',
-                'summary' => 'Trọng tài nhập ngược tỷ số Set 2 khiến vận động viên bị loại oan khỏi nhánh thắng.',
-                'status' => 'resolved',
-                'sla_deadline' => $now->copy()->subDays(1),
-                'amount_disputed' => 100000,
-                'currency' => 'VND',
-                'complainant_name' => 'Đặng Hữu Tài',
-                'complainant_tier' => 'Hạng Kim Cương',
-                'complainant_reputation_score' => 99,
-                'complainant_phone' => '0918 *** 443',
-                'respondent_name' => 'Mai Văn Toàn (Trọng tài)',
-                'respondent_tier' => 'Trọng tài Cấp 2',
-                'respondent_reputation_score' => 94,
-                'respondent_phone' => '0908 *** 332',
-                'facility_name' => 'Sân Cầu Lông Phú Nhuận',
-                'facility_operator_name' => 'Ban Trọng Tài Aura Tournaments',
-                'timeline_events' => [
-                    [
-                        'time' => '25 Thg 10, 09:30:00',
-                        'title' => 'Ghi nhận biên bản tỷ số',
-                        'description' => 'Tỷ số thực tế Set 2 là 21-19 nghiêng về Đặng Hữu Tài nhưng nhập 19-21.',
-                        'type' => 'warning',
-                    ],
-                    [
-                        'time' => '25 Thg 10, 10:15:00',
-                        'title' => 'Kiểm tra VAR camera sân VIP',
-                        'description' => 'Ban chuyên môn đối chiếu video và xác nhận kết quả nhập sai sót.',
-                        'type' => 'success',
-                    ],
-                ],
-                'chat_messages' => [
-                    [
-                        'sender' => 'Đặng Hữu Tài',
-                        'role' => 'complainant',
-                        'avatar' => 'HT',
-                        'message' => 'Đã có video ghi hình đầy đủ điểm cuối, mong ban tổ chức điều chỉnh lại nhánh đấu.',
-                        'time' => '09:45',
-                    ],
-                ],
-                'court_map_context' => [
-                    ['name' => 'Sân VIP', 'status' => 'available', 'label' => 'Đã hiệu chỉnh'],
-                ],
-                'ai_analysis' => [
-                    'fault_rate_facility' => 100,
-                    'fault_rate_user' => 0,
-                    'root_cause' => 'Sai sót nhập liệu của trọng tài bàn tại vòng loại giải đấu.',
-                    'recommendation_summary' => 'Hiệu chỉnh kết quả 21-19, phục hồi nhánh thắng cho Đặng Hữu Tài và nhắc nhở trọng tài Mai Văn Toàn.',
-                ],
-                'resolution_decision' => 'resolve',
-                'refund_method' => 'none',
-                'refund_amount' => 0,
-                'arbitrated_at' => $now->copy()->subHours(12),
-                'arbitrator_notes' => 'Đã xem xét video VAR và đính chính kết quả trên bảng xếp hạng giải đấu.',
-            ],
-        ];
-
-        foreach ($disputeCases as $dispData) {
-            DisputeCase::updateOrCreate(
-                ['dispute_code' => $dispData['dispute_code']],
-                array_merge($dispData, [
-                    'organization_id' => $org->id,
-                ])
-            );
-        }
-
-        // 2. Finance Exceptions
-        $financeExceptions = [
-            [
-                'reference' => 'TXN-88291A',
-                'type' => 'limit_exceeded',
-                'severity' => 'critical',
-                'status' => 'open',
-                'amount' => 4500000,
-                'currency' => 'VND',
-                'description' => 'Vượt hạn mức nạp 24h từ tài khoản hội viên Vàng',
-                'detected_at' => $now->copy()->subHours(3),
-                'due_at' => $now->copy()->addHours(21),
-                'metadata' => [
-                    'shift' => 'Ca Sáng (06:00 - 14:00)',
-                    'user' => ['name' => 'Lê Văn B.', 'id' => 'UID-442', 'tier' => 'Hội viên Vàng'],
-                    'reason' => 'Vượt hạn mức nạp 24h',
-                    'court' => 'Sân Cầu Lông Aura Q7',
-                    'gateway' => 'VietQR Pro (MBBank)',
-                    'expected_amount' => 2000000,
-                    'actual_amount' => 4500000,
-                ],
-            ],
-            [
-                'reference' => 'TXN-88290B',
-                'type' => 'settlement_mismatch',
+                'type' => 'payment_issue',
                 'severity' => 'medium',
-                'status' => 'open',
-                'amount' => 12000000,
-                'currency' => 'VND',
-                'description' => 'Lệch đối soát VietQR giữa cổng thanh toán và sổ cái',
-                'detected_at' => $now->copy()->subHours(4),
-                'due_at' => $now->copy()->addHours(20),
-                'metadata' => [
-                    'shift' => 'Ca Sáng (06:00 - 14:00)',
-                    'user' => ['name' => 'Trần Thị C.', 'id' => 'UID-119', 'tier' => 'Khách vãng lai'],
-                    'reason' => 'Lệch đối soát VietQR',
-                    'court' => 'Sân Cầu Lông Aura Phú Nhuận',
-                    'gateway' => 'VietQR (Napas 247)',
-                    'expected_amount' => 12000000,
-                    'actual_amount' => 11000000,
+                'org' => 'hoang-gia-sports',
+                'age' => [1, 10],
+                'file_after_hours' => 5,
+                'sla_days' => 2,
+                'amount' => 'quarter_hour',
+                'title' => 'Bị thu phụ phí 15 phút quá giờ tại {court}',
+                'summary' => 'Khách cho biết nhóm rời sân đúng {slot} ngày {date} nhưng vẫn bị quầy thu phụ phí 15 phút. Aura đã yêu cầu cơ sở giải trình.',
+                'map_status' => 'available',
+                'map_label' => 'Hoạt động bình thường',
+                'fault_facility' => 50,
+                'root_cause' => 'Chưa xác định: cần đối chiếu giờ check-out thực tế với lịch đặt sân.',
+                'recommendation' => 'Chờ {venue} gửi giờ check-out và hóa đơn phụ phí trước khi phán quyết.',
+                'timeline' => [
+                    [0.0, 'dispute_filed', 'Khách gửi khiếu nại', '{customer} khiếu nại khoản phụ phí 15 phút quá giờ.', 'primary', 'customer', ['status' => 'pending']],
+                    [0.4, 'response_requested', 'Yêu cầu cơ sở phản hồi', 'Aura đề nghị {venue} gửi giờ check-out và hóa đơn phụ phí.', 'warning', 'arbitrator', []],
+                ],
+                'chat' => [
+                    [0.0, 'complainant', 'Nhóm tôi rời sân đúng giờ nhưng vẫn bị thu thêm 15 phút. Nhờ Aura kiểm tra giúp.'],
+                ],
+                'evidence' => [
+                    [0.0, 'customer', 'Ảnh hóa đơn phụ phí tại quầy.', [
+                        ['type' => 'photo', 'name' => 'hoa-don-phu-phi.jpg'],
+                    ]],
                 ],
             ],
             [
-                'reference' => 'TXN-88289C',
-                'type' => 'late_refund',
-                'severity' => 'low',
-                'status' => 'open',
-                'amount' => 2150000,
-                'currency' => 'VND',
-                'description' => 'Hoàn tiền hủy sân quá 48h',
-                'detected_at' => $now->copy()->subHours(6),
-                'due_at' => $now->copy()->addHours(18),
-                'metadata' => [
-                    'shift' => 'Ca Sáng (06:00 - 14:00)',
-                    'user' => ['name' => 'Minh Quân', 'id' => 'UID-992', 'tier' => 'Hội viên Kim Cương'],
-                    'reason' => 'Hoàn tiền hủy sân quá 48h',
-                    'court' => 'Sân Cầu Lông Aura Tân Bình',
-                    'gateway' => 'Ví Điện Tử MoMo',
-                    'expected_amount' => 2150000,
-                    'actual_amount' => 2150000,
-                ],
-            ],
-            [
-                'reference' => 'TXN-88288D',
-                'type' => 'voucher_hunting',
-                'severity' => 'critical',
-                'status' => 'open',
-                'amount' => 50000000,
-                'currency' => 'VND',
-                'description' => 'Bất thường Nạp/Rút: Nghi vấn tạo lệnh ảo săn voucher',
-                'detected_at' => $now->copy()->subHours(8),
-                'due_at' => $now->copy()->addHours(16),
-                'metadata' => [
-                    'shift' => 'Ca Chiều (14:00 - 22:00)',
-                    'user' => ['name' => 'Nguyễn Hoàng Nam', 'id' => 'UID-8831', 'tier' => 'Tài khoản mới'],
-                    'reason' => 'Bất thường nạp rút liên tiếp',
-                    'court' => 'Sân Cầu Lông Aura Q7',
-                    'gateway' => 'Chuyển khoản VCB',
-                    'expected_amount' => 0,
-                    'actual_amount' => 50000000,
-                ],
-            ],
-            [
-                'reference' => 'TXN-88287E',
-                'type' => 'deposit_hold_mismatch',
-                'severity' => 'medium',
-                'status' => 'open',
-                'amount' => 500000,
-                'currency' => 'VND',
-                'description' => 'Lệch cọc giữ chỗ: Timeout cổng thanh toán giữ sân',
-                'detected_at' => $now->copy()->subHours(10),
-                'due_at' => $now->copy()->addHours(14),
-                'metadata' => [
-                    'shift' => 'Ca Tối (22:00 - 06:00)',
-                    'user' => ['name' => 'Đỗ Tuấn Kiệt', 'id' => 'UID-512', 'tier' => 'Hội viên Bạc'],
-                    'reason' => 'Lệch tiền cọc giữ sân cuối tuần',
-                    'court' => 'Sân Cầu Lông Aura Bình Thạnh',
-                    'gateway' => 'ZaloPay Gateway',
-                    'expected_amount' => 500000,
-                    'actual_amount' => 0,
-                ],
-            ],
-            [
-                'reference' => 'TXN-88286F',
-                'type' => 'duplicate_charge',
-                'severity' => 'low',
-                'status' => 'open',
-                'amount' => 1200000,
-                'currency' => 'VND',
-                'description' => 'Trùng lặp giao dịch quét mã QR Momo 2 lần liên tiếp',
-                'detected_at' => $now->copy()->subHours(12),
-                'due_at' => $now->copy()->addHours(12),
-                'metadata' => [
-                    'shift' => 'Ca Sáng (06:00 - 14:00)',
-                    'user' => ['name' => 'Phạm Thu Hà', 'id' => 'UID-330', 'tier' => 'Hội viên Vàng'],
-                    'reason' => 'Trùng lặp quét mã 2 lần',
-                    'court' => 'Sân Cầu Lông Aura Q7',
-                    'gateway' => 'MoMo QR',
-                    'expected_amount' => 600000,
-                    'actual_amount' => 1200000,
-                ],
-            ],
-            [
-                'reference' => 'TXN-88285G',
-                'type' => 'court_flooded_refund',
-                'severity' => 'low',
+                'code' => 'DSP-5MB8VJ3RDP',
                 'status' => 'resolved',
-                'amount' => 3600000,
-                'currency' => 'VND',
-                'description' => 'Hoàn tiền do sự cố ngập sân đột xuất tại cụm sân Bình Thạnh',
-                'detected_at' => $now->copy()->subHours(16),
-                'due_at' => $now->copy()->addHours(8),
-                'resolved_at' => $now->copy()->subHours(1),
-                'resolution' => 'Đã can thiệp hoàn tiền vào ví hội viên do sự cố bất khả kháng ngập sân.',
-                'metadata' => [
-                    'shift' => 'Ca Tối (18:00 - 22:00)',
-                    'user' => ['name' => 'Hoàng Văn Thái', 'id' => 'UID-704', 'tier' => 'Hội viên Kim Cương'],
-                    'reason' => 'Sự cố thời tiết ngập sân',
-                    'court' => 'Sân Cầu Lông Aura Bình Thạnh',
-                    'gateway' => 'Ví Aura Pay',
-                    'expected_amount' => 3600000,
-                    'actual_amount' => 3600000,
+                'status_before_decision' => 'pending',
+                'decision' => 'resolve_and_refund',
+                'refund_method' => 'payos_bank',
+                'refund_ratio' => 0.5,
+                'compensation_type' => 'none',
+                'compensation_value' => 'Không bồi thường thêm',
+                'penalty_notes' => 'Nhắc nhở {venue} kiểm tra máy phát dự phòng định kỳ hằng tháng.',
+                'penalty_points' => 1,
+                'type' => 'court_quality',
+                'severity' => 'high',
+                'age' => [5, 25],
+                'file_after_hours' => 2,
+                'amount' => 'total',
+                'title' => 'Mất điện 40 phút trong ca chơi tại {court}',
+                'summary' => 'Cụm sân mất điện khoảng 40 phút trong ca {slot} ngày {date}. Khách đề nghị hoàn tiền phần thời gian không sử dụng được.',
+                'map_status' => 'available',
+                'map_label' => 'Đã khắc phục',
+                'fault_facility' => 100,
+                'root_cause' => 'Sự cố aptomat tổng tại {venue}, máy phát dự phòng khởi động chậm.',
+                'recommendation' => 'Chấp nhận hoàn 50% tiền sân; yêu cầu cơ sở kiểm tra định kỳ máy phát dự phòng.',
+                'arbitrator_notes' => 'Nhật ký vận hành của {venue} xác nhận mất điện 40 phút. Chấp nhận hoàn 50% tiền sân ({refund}); cơ sở chuyển khoản cho khách và gửi chứng từ trước {due}.',
+                'timeline' => [
+                    [0.0, 'dispute_filed', 'Khách gửi khiếu nại', '{customer} báo mất điện trong ca {slot}.', 'primary', 'customer', ['status' => 'pending']],
+                    [0.4, 'evidence_submitted', 'Cơ sở xác nhận sự cố', '{operator} gửi nhật ký vận hành xác nhận mất điện 40 phút.', 'warning', 'operator', ['is_private' => false, 'has_explanation' => true]],
+                    ['arbitration', 'dispute_arbitrated', 'Phán quyết hoàn tiền', 'Aura chấp nhận khiếu nại, cơ sở hoàn 50% tiền sân ({refund}) cho khách.', 'success', 'arbitrator', []],
+                    ['arbitration', 'refund_task_created', 'Chờ cơ sở chuyển hoàn', '{venue} cần chuyển {refund} cho khách và gửi chứng từ trước {due}.', 'warning', null, []],
+                ],
+                'chat' => [
+                    [0.0, 'complainant', 'Sân mất điện gần 40 phút, cả nhóm phải ngồi chờ. Mong được hoàn lại phần tiền này.'],
+                    [0.4, 'facility', 'Cơ sở xác nhận sự cố aptomat tổng và sẽ hoàn tiền theo phán quyết.'],
+                ],
+                'evidence' => [
+                    [0.0, 'customer', 'Ảnh sân tối đèn trong ca {slot}.', [
+                        ['type' => 'photo', 'name' => 'san-mat-dien.jpg'],
+                    ]],
+                    [0.4, 'operator', 'Nhật ký vận hành và ảnh tủ điện sau sự cố.', [
+                        ['type' => 'document', 'name' => 'nhat-ky-van-hanh.pdf'],
+                        ['type' => 'photo', 'name' => 'tu-dien-tong.jpg'],
+                    ]],
+                ],
+            ],
+            [
+                'code' => 'DSP-2LN6YF8GWS',
+                'status' => 'dismissed',
+                'status_before_decision' => 'pending',
+                'decision' => 'dismiss',
+                'type' => 'other',
+                'severity' => 'low',
+                'age' => [6, 28],
+                'file_after_hours' => 4,
+                'amount' => 0.5,
+                'title' => 'Yêu cầu hoàn tiền 30 phút do đến muộn tại {court}',
+                'summary' => 'Khách đến muộn 30 phút so với ca {slot} ngày {date} vì kẹt xe và đề nghị hoàn tiền phần thời gian không chơi.',
+                'map_status' => 'available',
+                'map_label' => 'Hoạt động bình thường',
+                'fault_facility' => 0,
+                'root_cause' => 'Khách đến muộn; sân vẫn được giữ trống cho khách trong suốt khung giờ đã đặt.',
+                'recommendation' => 'Bác yêu cầu hoàn tiền theo chính sách đặt sân.',
+                'arbitrator_notes' => 'Khung giờ {slot} đã được giữ riêng cho khách; việc đến muộn không thuộc trách nhiệm của cơ sở nên không hoàn tiền.',
+                'timeline' => [
+                    [0.0, 'dispute_filed', 'Khách gửi khiếu nại', '{customer} đề nghị hoàn tiền 30 phút đến muộn.', 'primary', 'customer', ['status' => 'pending']],
+                    [0.4, 'evidence_submitted', 'Cơ sở gửi giải trình', '{operator} gửi giờ check-in thực tế của khách.', 'primary', 'operator', ['is_private' => false, 'has_explanation' => true]],
+                    ['arbitration', 'dispute_arbitrated', 'Bác khiếu nại', 'Aura bác yêu cầu hoàn tiền theo chính sách đặt sân.', 'error', 'arbitrator', []],
+                ],
+                'chat' => [
+                    [0.0, 'complainant', 'Tôi bị kẹt xe nên đến muộn 30 phút, mong sân hoàn lại phần thời gian không chơi.'],
+                    [0.4, 'facility', 'Sân được giữ trống cho khách suốt khung giờ đã đặt, cơ sở không có lỗi trong trường hợp này.'],
+                ],
+                'evidence' => [
+                    [0.4, 'operator', 'Giờ check-in thực tế tại quầy.', [
+                        ['type' => 'document', 'name' => 'gio-check-in.pdf'],
+                    ]],
                 ],
             ],
         ];
+    }
 
-        $allOrgs = Organization::all();
-        if ($allOrgs->isEmpty() && $org) {
-            $allOrgs = collect([$org]);
-        }
+    /**
+     * The finance trail of the seeded payments, written through the finance services so every total
+     * is computed the way the app computes it. Platform commission is retired and the provider fee
+     * comes from config (0 bps in the demo), so journals and settlements carry neither.
+     */
+    private function seedFinance(): void
+    {
+        $posting = app(FinancialPostingService::class);
+        $pendingRefundBookings = Refund::where('status', 'pending')->pluck('booking_id');
+        $received = Payment::with(['booking.court.venue', 'booking.user'])
+            ->whereIn('provider', self::TRANSFER_PROVIDERS)
+            ->whereNotNull('received_at')
+            ->where('received_at', '<=', $this->now)
+            ->where(fn ($q) => $q->where('status', 'paid')
+                ->orWhere(fn ($q) => $q->where('status', 'rejected')->whereIn('booking_id', $pendingRefundBookings)))
+            ->orderBy('received_at')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Payment $payment): bool => $payment->booking?->court?->venue !== null)
+            ->values();
+        // Rejected on review after the transfer arrived: the money stays unbooked until the refund goes out.
+        $this->held = $received->where('status', 'rejected')->values();
 
-        foreach ($allOrgs as $currentOrg) {
-            foreach ($financeExceptions as $fEx) {
-                FinanceException::updateOrCreate(
-                    [
-                        'reference' => $fEx['reference'],
-                        'organization_id' => $currentOrg->id,
-                    ],
-                    array_merge($fEx, [
-                        'organization_id' => $currentOrg->id,
-                    ])
-                );
+        foreach ($received as $payment) {
+            $this->providerEvent($payment);
+            if ($payment->status === 'paid') {
+                $this->at($payment->received_at, fn () => $posting->postLegacyBookingPayment($payment->booking, $payment));
             }
         }
 
-        // 2b. Audit Logs for Immutable Ledger
-        $adminUser = User::where('email', 'like', '%admin%')->first() ?? User::first();
-        $auditLogs = [
-            [
-                'user_id' => $adminUser?->id,
-                'action' => 'finance_exception.resolve',
-                'auditable_type' => FinanceException::class,
-                'auditable_id' => 1,
-                'ip_address' => '118.69.182.45',
-                'user_agent' => 'Aura-Admin-Client/2.0',
-                'metadata' => [
-                    'action_type' => 'Duyệt hoàn tiền',
-                    'reference' => 'TXN-99412B',
-                    'amount' => 3600000,
-                    'author_name' => 'Admin_Sarah',
-                    'author_role' => 'Risk Lead',
-                    'resolution' => 'Đã can thiệp hoàn tiền cho TXN-99412B do sự cố ngập sân tại Bình Thạnh.',
-                    'audit_hash' => '0x8F92A1B4',
-                    'type' => 'override',
-                ],
-                'created_at' => $now->copy()->subMinutes(25),
+        $refunds = Refund::where('status', 'processed')
+            ->whereNotNull('processed_at')
+            ->where('processed_at', '<=', $this->now)
+            ->orderBy('processed_at')
+            ->orderBy('id')
+            ->get();
+        foreach ($refunds as $refund) {
+            // Only money the ledger collected can go back out through it.
+            $payment = $received->first(fn (Payment $p): bool => (int) $p->booking_id === (int) $refund->booking_id
+                && $p->status === 'paid'
+                && $p->received_at->lte($refund->processed_at));
+            $organizationId = $payment?->booking->court->venue->organization_id;
+            if (! $payment || Journal::where('organization_id', $organizationId)->where('event_type', 'refund')->where('event_id', "refund:booking-refund:{$refund->id}")->exists()) {
+                continue;
+            }
+            $this->at($refund->processed_at, fn () => $posting->postRefund($organizationId, $payment->booking->code, (int) $refund->amount, "booking-refund:{$refund->id}", [
+                'booking_id' => $refund->booking_id,
+                'payment_id' => $payment->id,
+                'refund_id' => $refund->id,
+            ]));
+        }
+
+        foreach (Organization::where('status', 'active')->orderBy('id')->get() as $org) {
+            $this->settleAndReconcile($org, $this->beneficiary($org));
+            $this->describeMismatches($org);
+            $this->verifyFinance($org, $received->filter(fn (Payment $p): bool => (int) $p->booking->court->venue->organization_id === $org->id));
+        }
+    }
+
+    /** The verified provider notification of a transfer that reached the platform account. */
+    private function providerEvent(Payment $payment): void
+    {
+        $at = $payment->received_at;
+        ProviderEvent::firstOrNew([
+            'provider' => $payment->provider,
+            'event_id' => $payment->external_transaction_id ?: "payment-{$payment->id}",
+        ])->forceFill([
+            'organization_id' => $payment->booking->court->venue->organization_id,
+            'type' => 'payment.status',
+            'status' => 'PAID',
+            'reference' => $payment->booking->code,
+            'provider_payment_id' => $payment->external_transaction_id,
+            'amount' => (int) $payment->amount,
+            'currency' => 'VND',
+            // The SePay webhook fields ProcessQrPayment reads; no account numbers.
+            'payload' => [
+                'transactionDate' => $at->format('Y-m-d H:i:s'),
+                'transferType' => 'in',
+                'transferAmount' => (int) $payment->amount,
+                'code' => $payment->transfer_code,
+                'content' => trim($payment->transfer_code.' thanh toan dat san'),
+                'referenceCode' => $payment->external_transaction_id,
             ],
-            [
-                'user_id' => $adminUser?->id,
-                'action' => 'finance_exception.flag',
-                'auditable_type' => FinanceException::class,
-                'auditable_id' => 2,
-                'ip_address' => '118.69.182.45',
-                'user_agent' => 'Aura-Admin-Client/2.0',
-                'metadata' => [
-                    'action_type' => 'Gắn cờ cảnh báo',
-                    'reference' => 'UID-8831',
-                    'amount' => 50000000,
-                    'author_name' => 'Risk_Officer_Tuan',
-                    'author_role' => 'Risk Analyst',
-                    'resolution' => 'Gắn cờ UID-8831 do hành vi tạo lệnh nạp rút ảo săn voucher.',
-                    'audit_hash' => '0x3B17C89E',
-                    'type' => 'flag',
-                ],
-                'created_at' => $now->copy()->subMinutes(55),
+            // Marked processed so the provider-event recovery job leaves it alone.
+            'verified_at' => $at,
+            'processed_at' => $at,
+            'attempts' => 1,
+            'created_at' => $at,
+            'updated_at' => $at,
+        ])->save();
+    }
+
+    /** The payout account from the organization's approved KYC, stored the way BeneficiaryService keeps a PayOS-verified one. */
+    private function beneficiary(Organization $org): ?Beneficiary
+    {
+        $kyc = HostKyc::where('organization_id', $org->id)
+            ->where('status', 'approved')
+            ->whereNotNull('reviewed_at')
+            ->where('reviewed_at', '<=', $this->now)
+            ->where('bank_code', '<>', '')
+            ->orderByDesc('reviewed_at')
+            ->first();
+        $account = preg_replace('/\D/', '', (string) $kyc?->bank_account_number);
+        if (! $kyc || $account === '') {
+            $this->command?->warn("DisputeFinanceSeeder: {$org->slug} has no approved KYC bank account, payouts skipped.");
+
+            return null;
+        }
+
+        $verifiedAt = $this->clamp($kyc->reviewed_at->copy()->addDay()->setTime(10, 15), $kyc->reviewed_at, $this->now);
+        $beneficiaryId = 'bnf_'.substr(hash('sha256', "{$org->id}:{$kyc->bank_code}:{$account}"), 0, 20);
+        $holder = $kyc->bank_account_holder;
+        $beneficiary = Beneficiary::firstOrNew([
+            'organization_id' => $org->id,
+            'provider' => 'payos',
+            'bank_code' => $kyc->bank_code,
+            'account_number' => $account,
+        ]);
+        $beneficiary->forceFill([
+            'provider_beneficiary_id' => $beneficiaryId,
+            'account_holder' => $holder,
+            'tax_id' => $kyc->tax_code ?: $org->tax_code,
+            'status' => 'verified',
+            'verified_at' => $verifiedAt,
+            'verification_payload' => [
+                'provider' => 'payos',
+                'verified' => true,
+                'bankCode' => $kyc->bank_code,
+                'accountNumber' => $account,
+                'accountHolder' => $holder,
+                'providerBeneficiaryId' => $beneficiaryId,
+                'failureCode' => null,
+                'raw' => ['code' => '00', 'desc' => 'success', 'data' => ['verified' => true, 'accountName' => $holder, 'beneficiaryId' => $beneficiaryId]],
             ],
-            [
-                'user_id' => null,
-                'action' => 'finance_exception.block',
-                'auditable_type' => FinanceException::class,
-                'auditable_id' => 3,
-                'ip_address' => '127.0.0.1',
-                'user_agent' => 'System-Sentinel/1.0',
-                'metadata' => [
-                    'action_type' => 'Tự động chặn',
-                    'reference' => 'TXN-88288D',
-                    'amount' => 50000000,
-                    'author_name' => 'System_Sentinel',
-                    'author_role' => 'Security Guard',
-                    'resolution' => 'Tự động chặn giao dịch nạp 50.000.000 ₫ do vượt hạn mức ngày.',
-                    'audit_hash' => '0x7D42E9F1',
-                    'type' => 'block',
+            'created_at' => $verifiedAt,
+            'updated_at' => $verifiedAt,
+        ])->save();
+
+        return $beneficiary;
+    }
+
+    /**
+     * Weekly settlements, payouts and the nightly reconciliation runs, replayed in time order so each
+     * step only sees what existed when it ran. A week is snapshotted after it closes, so no nightly
+     * run includes a settlement (runs match settlements on period_start).
+     */
+    private function settleAndReconcile(Organization $org, ?Beneficiary $beneficiary): void
+    {
+        $settlements = app(SettlementService::class);
+        $reconciliation = app(ReconciliationService::class);
+        $today = $this->now->copy()->startOfDay();
+        $delay = (int) config('finance.settlement_delay_days', 2);
+
+        // Closed Monday-Sunday weeks that have journals.
+        $weeks = [];
+        $first = Journal::where('organization_id', $org->id)->min('posted_at');
+        for ($start = $first ? Carbon::parse($first)->startOfWeek(Carbon::MONDAY) : $today->copy(); $start->copy()->addDays(6)->lt($today); $start->addWeek()) {
+            $end = $start->copy()->addDays(6);
+            if (Journal::where('organization_id', $org->id)->whereBetween('posted_at', [$start, $end->copy()->endOfDay()])->exists()) {
+                $weeks[] = [$start->copy(), $end];
+            }
+        }
+        $eligible = array_keys(array_filter($weeks, fn (array $week): bool => $week[1]->copy()->endOfDay()->addDays($delay)->lt($this->now)));
+        // The owner has not asked for the latest eligible week yet, so it stays open for a payout.
+        $waiting = $eligible === [] ? null : max($eligible);
+
+        $steps = [];
+        foreach ($weeks as $i => [$start, $end]) {
+            // Finance closes the week on Monday morning.
+            $steps[] = [$this->notAfterNow($end->copy()->addDay()->setTime(9, 0)), 0, fn () => $settlements->snapshot($org, $start, $end)];
+            if (in_array($i, $eligible, true)) {
+                // Payout requested the morning after the D+2 hold ends; settled within the morning.
+                $requestAt = $end->copy()->addDays($delay + 1)->setTime(9, 0);
+                $pay = $i !== $waiting && $requestAt->copy()->addHours(3)->lte($this->now);
+                $steps[] = [$this->notAfterNow($requestAt), 1, fn () => $this->payout($org, $start, $end, $pay ? $beneficiary : null, $requestAt)];
+            }
+        }
+        for ($day = $today->copy()->subDays(30); $day->lte($today); $day->addDay()) {
+            $runDate = $day->copy();
+            // The nightly run checks the finished day at 01:00; today's run is the one an admin just triggered.
+            $runAt = $runDate->equalTo($today) ? $this->now->copy() : $this->notAfterNow($runDate->copy()->addDay()->setTime(1, 0));
+            $steps[] = [$runAt, 2, fn () => ReconciliationRun::where('organization_id', $org->id)->whereDate('run_date', $runDate)->exists()
+                ? null
+                : $reconciliation->run($org, $runDate)];
+        }
+
+        usort($steps, fn (array $a, array $b): int => [$a[0]->getTimestamp(), $a[1]] <=> [$b[0]->getTimestamp(), $b[1]]);
+        foreach ($steps as [$at, , $step]) {
+            $this->at($at, $step);
+        }
+    }
+
+    /** Pays an eligible week out through PayoutService, or only refreshes its eligibility when no payout is due. */
+    private function payout(Organization $org, Carbon $start, Carbon $end, ?Beneficiary $beneficiary, Carbon $requestAt): void
+    {
+        $settlement = Settlement::where('organization_id', $org->id)->whereDate('period_start', $start)->whereDate('period_end', $end)->firstOrFail();
+        if (! $beneficiary || $settlement->tenant_payable < (int) config('finance.minimum_payout', 500000) || $settlement->payouts()->exists()) {
+            app(SettlementService::class)->refreshEligibility($settlement);
+
+            return;
+        }
+
+        $payouts = app(PayoutService::class);
+        $payout = $payouts->createDraft($settlement, $beneficiary);
+        $payout = $this->at($requestAt->copy()->addMinutes(40), fn () => $payouts->approve($payout));
+        // Submit and status sync call the live provider, so the transfer's outcome is recorded directly.
+        $submittedAt = $requestAt->copy()->addHour();
+        $paidAt = $submittedAt->copy()->addHours(2);
+        $this->at($paidAt, fn () => $payout->forceFill([
+            'provider' => 'payos',
+            'provider_payout_id' => 'po_'.substr(hash('sha256', "payout:{$payout->idempotency_key}"), 0, 20),
+            'status' => 'paid',
+            'submitted_at' => $submittedAt,
+            'paid_at' => $paidAt,
+        ])->save());
+    }
+
+    /**
+     * The exceptions screen reads its display fields (shift, customer, court, gateway, expected and
+     * actual amounts) from the metadata, so the run details the service stored there gain the held
+     * transfers behind the mismatch.
+     */
+    private function describeMismatches(Organization $org): void
+    {
+        $exceptions = FinanceException::where('organization_id', $org->id)
+            ->where('type', 'reconciliation_mismatch')
+            ->where('status', 'open')
+            ->orderBy('id')
+            ->get();
+        foreach ($exceptions as $exception) {
+            $day = Carbon::parse(substr((string) $exception->reference, strlen('reconciliation:')));
+            $held = $this->held
+                ->filter(fn (Payment $p): bool => (int) $p->booking->court->venue->organization_id === $org->id && $p->received_at->isSameDay($day))
+                ->sortBy([['amount', 'desc'], ['id', 'asc']])
+                ->values();
+            $main = $held->first();
+            if (! $main) {
+                continue;
+            }
+            $run = ReconciliationRun::find($exception->links['reconciliation_run_id'] ?? 0);
+            $customer = $main->booking->user;
+            $court = $main->booking->court;
+            $total = (int) $held->sum('amount');
+
+            $exception->timestamps = false;
+            $exception->forceFill(['metadata' => [
+                ...($exception->metadata ?? []),
+                'shift' => $this->shiftLabel($main->received_at),
+                'user' => [
+                    'name' => $customer?->name,
+                    'id' => $customer ? "UID-{$customer->id}" : null,
+                    'tier' => ($customer ? $this->membershipPlanName($org->id, $customer->id, $main->received_at) : null) ?? 'Khách hàng',
                 ],
-                'created_at' => $now->copy()->subHours(1)->subMinutes(15),
-            ],
-            [
-                'user_id' => $adminUser?->id,
-                'action' => 'finance_exception.unlock',
-                'auditable_type' => FinanceException::class,
-                'auditable_id' => 4,
-                'ip_address' => '118.69.182.45',
-                'user_agent' => 'Aura-Admin-Client/2.0',
-                'metadata' => [
-                    'action_type' => 'Mở khóa hoàn cọc',
-                    'reference' => 'TXN-88287E',
-                    'amount' => 500000,
-                    'author_name' => 'Admin_Duc',
-                    'author_role' => 'Operations Lead',
-                    'resolution' => 'Mở khóa hoàn cọc 500.000 ₫ sau khi xác minh biên lai ngân hàng.',
-                    'audit_hash' => '0x12A9F450',
-                    'type' => 'unlock',
-                ],
-                'created_at' => $now->copy()->subHours(2)->subMinutes(10),
-            ],
+                'court' => $court->venue->getTranslation('name', 'vi').' - '.$court->getTranslation('name', 'vi'),
+                'gateway' => 'SePay (VietQR)',
+                'expected_amount' => (int) $run?->journal_total,
+                'actual_amount' => (int) $run?->provider_total,
+                'reason' => $held->count() === 1
+                    ? "Đã nhận {$this->money($total)} chuyển khoản cho {$main->booking->code} nhưng thanh toán bị từ chối khi duyệt; khoản hoàn cho khách đang chờ xử lý nên chưa ghi sổ."
+                    : "{$held->count()} khoản chuyển khoản ({$this->money($total)}) đã về tài khoản nhưng thanh toán bị từ chối khi duyệt; các khoản hoàn cho khách đang chờ xử lý nên chưa ghi sổ.",
+                'held_payments' => $held->map(fn (Payment $p): array => [
+                    'payment_id' => $p->id,
+                    'booking_code' => $p->booking->code,
+                    'amount' => (int) $p->amount,
+                    'received_at' => $p->received_at->toIso8601String(),
+                ])->all(),
+            ]])->save();
+        }
+    }
+
+    /** Fails the seed when the finance trail stops adding up. */
+    private function verifyFinance(Organization $org, Collection $received): void
+    {
+        $fail = fn (string $what) => throw new RuntimeException("DisputeFinanceSeeder self-check failed for {$org->slug}: {$what}");
+
+        $paid = (int) $received->where('status', 'paid')->sum('amount');
+        $collected = (int) Journal::where('organization_id', $org->id)->where('event_type', 'booking.payment')->sum('total_credit');
+        if ($collected !== $paid) {
+            $fail("booking.payment journals total {$collected}, paid payments {$paid}");
+        }
+        if ((int) ProviderEvent::where('organization_id', $org->id)->sum('amount') !== (int) $received->sum('amount')) {
+            $fail('provider events do not match the received transfers');
+        }
+        foreach (Settlement::where('organization_id', $org->id)->get() as $settlement) {
+            if ($settlement->commission_amount !== 0
+                || $settlement->tenant_payable !== $settlement->gross_amount - $settlement->refund_amount - $settlement->provider_fee_amount
+                || ($settlement->snapshot['tenant_payable'] ?? null) !== $settlement->tenant_payable
+                || $settlement->snapshotted_at->gt($this->now)) {
+                $fail("settlement {$settlement->period_start->toDateString()}");
+            }
+        }
+        foreach (Payout::with('settlement')->where('organization_id', $org->id)->get() as $payout) {
+            if ($payout->status !== 'paid'
+                || $payout->amount !== $payout->settlement->tenant_payable
+                || $payout->created_at->lt($payout->settlement->eligible_at)
+                || ! ($payout->approved_at->lte($payout->submitted_at) && $payout->submitted_at->lte($payout->paid_at) && $payout->paid_at->lte($this->now))) {
+                $fail("payout {$payout->id}");
+            }
+        }
+        $held = $this->held->filter(fn (Payment $p): bool => (int) $p->booking->court->venue->organization_id === $org->id);
+        $flagged = 0;
+        foreach (ReconciliationRun::where('organization_id', $org->id)->get() as $run) {
+            $heldThatDay = (int) $held->filter(fn (Payment $p): bool => $p->received_at->isSameDay($run->run_date))->sum('amount');
+            $flagged += $heldThatDay;
+            if ($run->mismatch_amount !== $heldThatDay || $run->provider_total - $run->journal_total !== $heldThatDay || $run->completed_at->gt($this->now)) {
+                $fail("reconciliation run {$run->run_date->toDateString()}");
+            }
+        }
+        if ((int) FinanceException::where('organization_id', $org->id)->where('type', 'reconciliation_mismatch')->where('status', 'open')->sum('amount') !== $flagged) {
+            $fail('open reconciliation exceptions do not match the held transfers');
+        }
+    }
+
+    /** A few admin and owner actions for the audit log screens, each on a real record. */
+    private function seedAuditTrail(): void
+    {
+        $tz = config('app.timezone', 'Asia/Ho_Chi_Minh');
+
+        // Partner KYC approvals, as ApprovePartnerApplication records them.
+        $kycs = HostKyc::with('organization')
+            ->where('status', 'approved')
+            ->whereNotNull('organization_id')
+            ->whereNotNull('reviewed_at')
+            ->where('reviewed_at', '<=', $this->now)
+            ->orderBy('reviewed_at')
+            ->get();
+        foreach ($kycs as $kyc) {
+            $this->audit(User::find($kyc->reviewed_by) ?? $this->arbitrator, 'kyc.reviewed.approved', $kyc, $kyc->reviewed_at, [
+                'organization_id' => $kyc->organization_id,
+                'organization_name' => $kyc->organization?->name,
+                'owner_user_id' => $kyc->user_id,
+            ]);
+        }
+
+        // The manual-review rejections behind the refunds still owed (AdminController::reviewPayment).
+        foreach ($this->held as $payment) {
+            $payload = $payment->payload ?? [];
+            $reviewedAt = isset($payload['reviewed_at']) ? Carbon::parse($payload['reviewed_at'])->setTimezone($tz) : $this->officeHours($payment->received_at->copy()->addMinutes(20));
+            $reviewer = isset($payload['reviewed_by']) ? User::find($payload['reviewed_by']) : null;
+            $this->audit($reviewer ?? $this->arbitrator, 'payment.reviewed', $payment, $this->clamp($reviewedAt, $payment->received_at, $this->now), ['status' => 'rejected']);
+        }
+
+        // Owners re-pricing their dearest slot (AdminController::updatePrice), logged at the slot's last change.
+        $owners = [
+            ['aura-badminton-club', 'owner@demo.auracourt.vn', '198.51.100.24', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'],
+            ['hoang-gia-sports', 'owner.hoanggia@demo.auracourt.vn', '198.51.100.87', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1'],
         ];
-
-        foreach ($auditLogs as $log) {
-            AuditLog::firstOrCreate(
-                [
-                    'action' => $log['action'],
-                    'auditable_id' => $log['auditable_id'],
-                    'metadata->audit_hash' => $log['metadata']['audit_hash'],
-                ],
-                $log
-            );
+        foreach ($owners as [$slug, $email, $ip, $userAgent]) {
+            $owner = User::where('email', $email)->first();
+            $organizationId = Organization::where('slug', $slug)->value('id');
+            $slot = CourtPriceSlot::whereHas('court.venue', fn ($q) => $q->where('organization_id', $organizationId))
+                ->where('is_active', true)
+                ->orderByDesc('price')
+                ->orderBy('id')
+                ->first();
+            if (! $owner || ! $slot) {
+                continue;
+            }
+            $this->audit($owner, 'price.updated', $slot, $this->clamp($slot->updated_at, $slot->created_at, $this->now), [
+                'court_id' => $slot->court_id,
+                'fields' => ['price'],
+            ], $ip, $userAgent);
         }
+    }
 
-        // 3. Multi-Day & Multi-Channel Reconciliation Runs
-        $reconRuns = [
-            [
-                'run_date' => $now->toDateString(),
-                'status' => 'mismatch',
-                'provider_total' => 842560000,
-                'journal_total' => 842560000,
-                'settlement_total' => 841160000,
-                'payout_total' => 318400000,
-                'mismatch_amount' => 1400000,
-                'started_at' => $now->copy()->subHours(1),
-                'completed_at' => $now,
-                'details' => [
-                    'channel' => 'VietQR Pro (MBBank)',
-                    'txnCode' => 'TXN-88291A',
-                    'riskLevel' => 'high',
-                    'statusLabel' => 'Lệch Quyết Toán',
-                    'reason' => 'Webhook Napas delay lúc 06:42:15, tài khoản trung gian chưa ghi có settlement.',
-                    'court' => 'Sân Cầu Lông Aura Q7 - Sân VIP 1',
-                    'customer' => 'Trần Minh Quang (UID-8821)',
-                ],
-            ],
-            [
-                'run_date' => $now->copy()->subDays(1)->toDateString(),
-                'status' => 'matched',
-                'provider_total' => 789400000,
-                'journal_total' => 789400000,
-                'settlement_total' => 789400000,
-                'payout_total' => 295000000,
-                'mismatch_amount' => 0,
-                'started_at' => $now->copy()->subDays(1)->setTime(6, 0),
-                'completed_at' => $now->copy()->subDays(1)->setTime(6, 15),
-                'details' => [
-                    'channel' => 'MoMo Business',
-                    'txnCode' => 'TXN-88288D',
-                    'riskLevel' => 'low',
-                    'statusLabel' => 'Đã Khớp 100%',
-                    'reason' => 'Tất cả 1,420 giao dịch khớp hoàn toàn với sổ cái.',
-                    'court' => 'Sân Cầu Lông Aura Tân Bình',
-                    'customer' => 'Nguyễn Hoàng Nam (UID-8831)',
-                ],
-            ],
-            [
-                'run_date' => $now->copy()->subDays(2)->toDateString(),
-                'status' => 'matched',
-                'provider_total' => 912000000,
-                'journal_total' => 912000000,
-                'settlement_total' => 912000000,
-                'payout_total' => 340000000,
-                'mismatch_amount' => 0,
-                'started_at' => $now->copy()->subDays(2)->setTime(6, 0),
-                'completed_at' => $now->copy()->subDays(2)->setTime(6, 12),
-                'details' => [
-                    'channel' => 'VNPay QR',
-                    'txnCode' => 'TXN-88285C',
-                    'riskLevel' => 'low',
-                    'statusLabel' => 'Đã Khớp 100%',
-                    'reason' => 'Khớp đối soát tự động chu kỳ T+1.',
-                    'court' => 'Sân Cầu Lông Aura Bình Thạnh',
-                    'customer' => 'Phạm Thu Hà (UID-330)',
-                ],
-            ],
-            [
-                'run_date' => $now->copy()->subDays(3)->toDateString(),
-                'status' => 'mismatch',
-                'provider_total' => 654000000,
-                'journal_total' => 654000000,
-                'settlement_total' => 653990000,
-                'payout_total' => 240000000,
-                'mismatch_amount' => 10000,
-                'started_at' => $now->copy()->subDays(3)->setTime(6, 0),
-                'completed_at' => $now->copy()->subDays(3)->setTime(6, 20),
-                'details' => [
-                    'channel' => 'ZaloPay',
-                    'txnCode' => 'TXN-88279B',
-                    'riskLevel' => 'medium',
-                    'statusLabel' => 'Lệch Làm Tròn Phí',
-                    'reason' => 'Chênh lệch 10.000 ₫ do làm tròn phí đối tác cổng thanh toán.',
-                    'court' => 'Sân Cầu Lông Aura Phú Thọ',
-                    'customer' => 'Đỗ Tuấn Kiệt (UID-512)',
-                ],
-            ],
-            [
-                'run_date' => $now->copy()->subDays(4)->toDateString(),
-                'status' => 'matched',
-                'provider_total' => 820000000,
-                'journal_total' => 820000000,
-                'settlement_total' => 820000000,
-                'payout_total' => 310000000,
-                'mismatch_amount' => 0,
-                'started_at' => $now->copy()->subDays(4)->setTime(6, 0),
-                'completed_at' => $now->copy()->subDays(4)->setTime(6, 14),
-                'details' => [
-                    'channel' => 'VietQR Pro (MBBank)',
-                    'txnCode' => 'TXN-88264A',
-                    'riskLevel' => 'low',
-                    'statusLabel' => 'Đã Khớp 100%',
-                    'reason' => 'Khớp đối chiếu sao kê ngân hàng MT940.',
-                    'court' => 'Sân Cầu Lông Aura Q7',
-                    'customer' => 'Lê Hoàng Long (UID-102)',
-                ],
-            ],
-            [
-                'run_date' => $now->copy()->subDays(5)->toDateString(),
-                'status' => 'matched',
-                'provider_total' => 745000000,
-                'journal_total' => 745000000,
-                'settlement_total' => 745000000,
-                'payout_total' => 280000000,
-                'mismatch_amount' => 0,
-                'started_at' => $now->copy()->subDays(5)->setTime(6, 0),
-                'completed_at' => $now->copy()->subDays(5)->setTime(6, 10),
-                'details' => [
-                    'channel' => 'Stripe',
-                    'txnCode' => 'TXN-88250X',
-                    'riskLevel' => 'low',
-                    'statusLabel' => 'Đã Khớp 100%',
-                    'reason' => 'Thẻ quốc tế Visa/Mastercard đã quyết toán về VCB.',
-                    'court' => 'Sân Cầu Lông Aura Tân Bình',
-                    'customer' => 'Alex Lawson (UID-402)',
-                ],
-            ],
-            [
-                'run_date' => $now->copy()->subDays(6)->toDateString(),
-                'status' => 'matched',
-                'provider_total' => 690000000,
-                'journal_total' => 690000000,
-                'settlement_total' => 690000000,
-                'payout_total' => 260000000,
-                'mismatch_amount' => 0,
-                'started_at' => $now->copy()->subDays(6)->setTime(6, 0),
-                'completed_at' => $now->copy()->subDays(6)->setTime(6, 11),
-                'details' => [
-                    'channel' => 'VietQR Pro (MBBank)',
-                    'txnCode' => 'TXN-88241Y',
-                    'riskLevel' => 'low',
-                    'statusLabel' => 'Đã Khớp 100%',
-                    'reason' => 'Khớp đối soát tự động.',
-                    'court' => 'Sân Cầu Lông Aura Q7',
-                    'customer' => 'Vũ Minh Tuấn (UID-319)',
-                ],
-            ],
-        ];
+    private function audit(?User $user, string $action, $model, Carbon $at, array $metadata, string $ip = self::ADMIN_IP, string $userAgent = self::ADMIN_UA): void
+    {
+        AuditLog::firstOrNew([
+            'action' => $action,
+            'auditable_type' => $model::class,
+            'auditable_id' => $model->getKey(),
+        ])->forceFill([
+            'user_id' => $user?->id,
+            'ip_address' => $ip,
+            'user_agent' => $userAgent,
+            'metadata' => $metadata,
+            'created_at' => $at,
+            'updated_at' => $at,
+        ])->save();
+    }
 
-        foreach ($reconRuns as $rRun) {
-            ReconciliationRun::updateOrCreate(
-                ['organization_id' => $org->id, 'run_date' => $rRun['run_date']],
-                $rRun
-            );
+    private function membershipPlanName(int $organizationId, int $userId, Carbon $at): ?string
+    {
+        return TenantMembership::with('plan')
+            ->where('organization_id', $organizationId)
+            ->where('user_id', $userId)
+            ->where('starts_at', '<=', $at)
+            ->where('ends_at', '>=', $at)
+            ->orderByDesc('ends_at')
+            ->first()?->plan?->name;
+    }
+
+    /** The counter shift a moment falls in, worded the way the exceptions screen matches it. */
+    private function shiftLabel(Carbon $at): string
+    {
+        return match (true) {
+            $at->hour >= 6 && $at->hour < 12 => 'Sáng (06:00 - 12:00)',
+            $at->hour >= 12 && $at->hour < 18 => 'Chiều (12:00 - 18:00)',
+            default => 'Tối (18:00 - 06:00)',
+        };
+    }
+
+    /** The first moment at or after $time when the back office works (08:00-22:00). */
+    private function officeHours(Carbon $time): Carbon
+    {
+        return match (true) {
+            $time->hour < 8 => $time->copy()->setTime(8, $time->minute),
+            $time->hour >= 22 => $time->copy()->addDay()->setTime(8, $time->minute),
+            default => $time->copy(),
+        };
+    }
+
+    private function money(int $amount): string
+    {
+        return number_format($amount, 0, ',', '.').'₫';
+    }
+
+    /** Runs $callback with the clock at $at so services and Eloquent timestamps record that moment. */
+    private function at(Carbon $at, callable $callback): mixed
+    {
+        $previous = Carbon::getTestNow();
+        Carbon::setTestNow($at);
+        try {
+            return $callback();
+        } finally {
+            Carbon::setTestNow($previous);
         }
+    }
 
-        // 4. Beneficiaries, Settlements, and Payouts
-        $allOrgs = Organization::whereIn('id', [1, 2])->get();
-        if ($allOrgs->isEmpty()) {
-            $allOrgs = collect([$org]);
-        }
+    /** A copy of $time moved inside [$min, $max] (Carbon's min/max return one of the operands, not a copy). */
+    private function clamp(Carbon $time, Carbon $min, Carbon $max): Carbon
+    {
+        return ($time->lt($min) ? $min : ($time->gt($max) ? $max : $time))->copy();
+    }
 
-        foreach ($allOrgs as $currentOrg) {
-            $beneficiary = Beneficiary::updateOrCreate(
-                ['organization_id' => $currentOrg->id, 'account_number' => '0071000888999'],
-                [
-                    'provider' => 'payos',
-                    'provider_beneficiary_id' => 'ben_vcb_'.$currentOrg->id,
-                    'bank_code' => 'VCB',
-                    'account_holder' => 'CONG TY CP THE THAO AURA',
-                    'tax_id' => '0317892110',
-                    'status' => 'verified',
-                    'verified_at' => $now->copy()->subMonths(1),
-                    'verification_payload' => ['napas_verified' => true, 'score' => 100],
-                ]
-            );
+    private function notAfterNow(Carbon $time): Carbon
+    {
+        return $time->lte($this->now) ? $time : $this->now->copy();
+    }
 
-            // Settlement 1 (Settled / Eligible in the past)
-            $settlement1 = Settlement::firstOrCreate(
-                [
-                    'organization_id' => $currentOrg->id,
-                    'period_start' => $now->copy()->subDays(30)->toDateString(),
-                    'period_end' => $now->copy()->subDays(16)->toDateString(),
-                ],
-                [
-                    'eligible_at' => $now->copy()->subDays(14),
-                    'gross_amount' => 45000000,
-                    'refund_amount' => 0,
-                    'provider_fee_amount' => 900000,
-                    'commission_amount' => 1350000,
-                    'tenant_payable' => 42750000,
-                    'currency' => 'VND',
-                    'status' => 'eligible',
-                    'snapshot' => [
-                        'gross_amount' => 45000000,
-                        'refund_amount' => 0,
-                        'provider_fee_amount' => 900000,
-                        'commission_amount' => 1350000,
-                        'tenant_payable' => 42750000,
-                        'captured_at' => $now->copy()->subDays(14)->toIso8601String(),
-                    ],
-                    'snapshotted_at' => $now->copy()->subDays(14),
-                ]
-            );
+    private function initials(string $name): string
+    {
+        $parts = preg_split('/\s+/u', trim($name)) ?: [];
 
-            // Settlement 2 (Eligible recently)
-            $settlement2 = Settlement::firstOrCreate(
-                [
-                    'organization_id' => $currentOrg->id,
-                    'period_start' => $now->copy()->subDays(15)->toDateString(),
-                    'period_end' => $now->copy()->subDays(1)->toDateString(),
-                ],
-                [
-                    'eligible_at' => $now->copy()->addDay(),
-                    'gross_amount' => 58500000,
-                    'refund_amount' => 500000,
-                    'provider_fee_amount' => 1170000,
-                    'commission_amount' => 0,
-                    'tenant_payable' => 56830000,
-                    'currency' => 'VND',
-                    'status' => 'eligible',
-                    'snapshot' => [
-                        'gross_amount' => 58500000,
-                        'refund_amount' => 500000,
-                        'provider_fee_amount' => 1170000,
-                        'commission_amount' => 0,
-                        'tenant_payable' => 56830000,
-                        'captured_at' => $now->copy()->subDays(1)->toIso8601String(),
-                    ],
-                    'snapshotted_at' => $now->copy()->subDays(1),
-                ]
-            );
+        return mb_strtoupper(mb_substr((string) reset($parts), 0, 1).mb_substr((string) end($parts), 0, 1));
+    }
 
-            // Payout 1: Paid
-            Payout::updateOrCreate(
-                [
-                    'organization_id' => $currentOrg->id,
-                    'idempotency_key' => "settlement:{$settlement1->id}:payout",
-                ],
-                [
-                    'settlement_id' => $settlement1->id,
-                    'beneficiary_id' => $beneficiary->id,
-                    'amount' => $settlement1->tenant_payable,
-                    'currency' => 'VND',
-                    'provider' => 'payos',
-                    'provider_payout_id' => 'pout_vcb_001_'.$currentOrg->id,
-                    'status' => 'paid',
-                    'settlement_snapshot' => $settlement1->snapshot,
-                    'approved_at' => $now->copy()->subDays(13),
-                    'submitted_at' => $now->copy()->subDays(13)->addMinutes(10),
-                    'paid_at' => $now->copy()->subDays(13)->addMinutes(30),
-                ]
-            );
-
-            // Payout 2: Approved
-            Payout::updateOrCreate(
-                [
-                    'organization_id' => $currentOrg->id,
-                    'idempotency_key' => "settlement:{$settlement2->id}:payout",
-                ],
-                [
-                    'settlement_id' => $settlement2->id,
-                    'beneficiary_id' => $beneficiary->id,
-                    'amount' => $settlement2->tenant_payable,
-                    'currency' => 'VND',
-                    'provider' => 'payos',
-                    'provider_payout_id' => null,
-                    'status' => 'approved',
-                    'settlement_snapshot' => $settlement2->snapshot,
-                    'approved_at' => $now->copy()->subHours(5),
-                    'submitted_at' => null,
-                    'paid_at' => null,
-                ]
-            );
-        }
+    /** @return array<int, string> */
+    private function customerEmails(): array
+    {
+        return ['user@example.com', ...array_map(fn (int $n): string => sprintf('khach%02d@demo.auracourt.vn', $n), range(1, 24))];
     }
 }

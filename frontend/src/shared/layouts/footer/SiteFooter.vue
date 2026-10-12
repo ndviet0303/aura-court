@@ -15,7 +15,7 @@ import { RouterLink } from 'vue-router'
             </div>
             <div class="brand-title-box">
               <span class="brand-name">Aura Court</span>
-              <span class="brand-subtitle">Badminton &amp; Sports Club</span>
+              <span class="brand-subtitle">Multi-Sport Club</span>
             </div>
           </RouterLink>
           <p class="brand-tagline">
@@ -28,7 +28,7 @@ import { RouterLink } from 'vue-router'
             </div>
             <div class="bwf-badge">
               <span class="material-symbols-outlined icon-shield">verified</span>
-              <span>BWF Standard</span>
+              <span>Pro Standard</span>
             </div>
           </div>
         </div>

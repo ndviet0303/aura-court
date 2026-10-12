@@ -71,10 +71,25 @@ export const socialApi = {
 
   respondInvitation: (invitationId: number | string, status: 'accepted' | 'declined') =>
     apiV2.post(`/social/invitations/${invitationId}/respond`, { status }),
-  getFeed: (page = 1) =>
-    apiV2.get<{ data: any[]; current_page: number; last_page: number }>(
+  // The list returns reaction rows; the feed badges read per-type counts, the shape reactFeedItem returns.
+  getFeed: async (page = 1) => {
+    const res = await apiV2.get<{ data: any[]; current_page: number; last_page: number }>(
       `/social/feed?page=${page}`,
-    ),
+    )
+    const data = (res?.data || []).map((post) => ({
+      ...post,
+      reactions_counts:
+        post.reactions_counts ??
+        (post.reactions || []).reduce(
+          (counts: Record<string, number>, r: { reaction_type: string }) => {
+            counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1
+            return counts
+          },
+          {},
+        ),
+    }))
+    return { ...res, data }
+  },
 
   createFeedPost: (payload: { content: string; audience?: 'organization' | 'friends' }) =>
     apiV2.post<{ post: any; message: string }>('/social/feed', payload),

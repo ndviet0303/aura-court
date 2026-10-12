@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
-use App\Models\Organization;
 use App\Models\PriceRule;
 use App\Models\SportZone;
 use App\Models\Venue;
@@ -19,7 +18,6 @@ class SportZoneCourtSeeder extends Seeder
         $now = Carbon::now($timezone);
         $timestamp = $now->toDateTimeString();
 
-        $org = Organization::where('slug', 'aura-badminton-club')->first() ?? Organization::first();
         $venues = Venue::all()->keyBy('slug');
 
         if ($venues->isEmpty()) {
@@ -76,7 +74,7 @@ class SportZoneCourtSeeder extends Seeder
                 'key' => 'qn-football-7v7',
                 'name' => 'Khu Sân Bóng Đá 7v7 Quần Ngựa',
                 'sport_type' => 'football_7v7',
-                'slot_duration' => 90,
+                'slot_duration' => 60,
                 'description' => 'Sân bóng 7 người kích thước chuẩn 50x30m, thoát nước siêu nhanh',
             ],
             [
@@ -180,6 +178,32 @@ class SportZoneCourtSeeder extends Seeder
                 'sport_type' => 'pickleball',
                 'slot_duration' => 60,
                 'description' => 'Sân pickleball tầng thượng thoáng đãng ngắm trọn Landmark 81 lung linh về đêm',
+            ],
+
+            // Venue 6: Hoàng Gia Sports Phú Mỹ Hưng (second tenant)
+            [
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'key' => 'pmh-pickleball',
+                'name' => 'Khu Sân Pickleball Phú Mỹ Hưng',
+                'sport_type' => 'pickleball',
+                'slot_duration' => 60,
+                'description' => 'Hai sân pickleball ngoài trời có mái che, mặt sân acrylic chuẩn thi đấu',
+            ],
+            [
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'key' => 'pmh-tennis',
+                'name' => 'Khu Sân Tennis Phú Mỹ Hưng',
+                'sport_type' => 'tennis',
+                'slot_duration' => 60,
+                'description' => 'Sân tennis mặt cứng cạnh hồ bán nguyệt, có đèn chiếu sáng thi đấu buổi tối',
+            ],
+            [
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'key' => 'pmh-football-5v5',
+                'name' => 'Khu Sân Bóng Đá Mini Phú Mỹ Hưng',
+                'sport_type' => 'football_5v5',
+                'slot_duration' => 60,
+                'description' => 'Sân bóng đá 5 người cỏ nhân tạo thế hệ mới, khán đài nhỏ cho người xem',
             ],
         ];
 
@@ -509,7 +533,60 @@ class SportZoneCourtSeeder extends Seeder
                 'base_price' => 160000,
                 'sport_type' => 'pickleball',
             ],
+
+            // Hoàng Gia Sports Phú Mỹ Hưng (4 sân)
+            [
+                'name' => 'Sân Pickleball PMH 1 - Mái Che',
+                'slug' => 'san-pickleball-pmh-1',
+                'description' => 'Sân pickleball có mái che chống nắng mưa, phù hợp chơi cả ngày tại Phú Mỹ Hưng.',
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'zone_key' => 'pmh-pickleball',
+                'image_url' => '/courts/pickleball-1.jpg',
+                'base_price' => 140000,
+                'sport_type' => 'pickleball',
+            ],
+            [
+                'name' => 'Sân Pickleball PMH 2 - Thi Đấu',
+                'slug' => 'san-pickleball-pmh-2',
+                'description' => 'Sân pickleball tiêu chuẩn thi đấu, lưới kéo cáp và đèn LED 600 Lux.',
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'zone_key' => 'pmh-pickleball',
+                'image_url' => '/courts/pickleball-2.jpg',
+                'base_price' => 150000,
+                'sport_type' => 'pickleball',
+            ],
+            [
+                'name' => 'Sân Tennis PMH - Hồ Bán Nguyệt',
+                'slug' => 'san-tennis-pmh-ho-ban-nguyet',
+                'description' => 'Sân tennis mặt cứng view hồ Bán Nguyệt, có huấn luyện viên kèm theo yêu cầu.',
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'zone_key' => 'pmh-tennis',
+                'image_url' => '/courts/tennis-2.jpg',
+                'base_price' => 240000,
+                'sport_type' => 'tennis',
+            ],
+            [
+                'name' => 'Sân Bóng Đá Mini PMH',
+                'slug' => 'san-bong-da-mini-pmh',
+                'description' => 'Sân bóng đá 5 người cỏ nhân tạo thế hệ mới, có khán đài và phòng thay đồ.',
+                'venue_slug' => 'hoang-gia-phu-my-hung',
+                'zone_key' => 'pmh-football-5v5',
+                'image_url' => '/courts/football-1.jpg',
+                'base_price' => 360000,
+                'sport_type' => 'football_5v5',
+            ],
         ];
+
+        // Round-robin by sport so the first courts by id (homepage grid) show a mix of sports.
+        $bySport = collect($courtDefs)->groupBy('sport_type');
+        $courtDefs = [];
+        for ($i = 0; $i < $bySport->max(fn ($defs) => $defs->count()); $i++) {
+            foreach ($bySport as $defs) {
+                if (isset($defs[$i])) {
+                    $courtDefs[] = $defs[$i];
+                }
+            }
+        }
 
         foreach ($courtDefs as $def) {
             if (! isset($venues[$def['venue_slug']]) || ! isset($sportZones[$def['zone_key']])) {
@@ -562,12 +639,12 @@ class SportZoneCourtSeeder extends Seeder
             }
             CourtPriceSlot::upsert($priceRows, ['court_id', 'weekday', 'starts_at'], ['ends_at', 'price', 'is_active', 'updated_at']);
 
-            // Create V2 PriceRules
-            if ($org) {
+            // Court-level base price: PriceQuoteService prefers the hourly slots above and falls back to this.
+            if ($venue->organization_id) {
                 PriceRule::updateOrCreate(
-                    ['court_id' => $court->id, 'type' => 'standard', 'weekday' => 1],
+                    ['court_id' => $court->id, 'type' => 'base', 'weekday' => null],
                     [
-                        'organization_id' => $org->id,
+                        'organization_id' => $venue->organization_id,
                         'venue_id' => $venue->id,
                         'sport_zone_id' => $zone->id,
                         'price' => $basePrice,

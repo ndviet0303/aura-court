@@ -6,6 +6,7 @@ import SocialConnectionsPanel from '../components/SocialConnectionsPanel.vue'
 import SocialModerationModal from '../components/SocialModerationModal.vue'
 import { socialApi } from '../api/socialApi'
 import { useAuthStore } from '@/stores/auth'
+import { i18n } from '@/i18n'
 
 vi.mock('../api/socialApi', () => ({
   socialApi: {
@@ -76,7 +77,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
       message: 'Comment added',
     })
 
-    const wrapper = mount(CommunityFeedPanel)
+    const wrapper = mount(CommunityFeedPanel, { global: { plugins: [i18n] } })
     await flushPromises()
 
     // 1. Verifies posts loaded and audience badges displayed

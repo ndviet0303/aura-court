@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringSeries } from '../../types/recurring'
+import { venueClock, venueDate } from '../../utils/venueTime'
 
 defineProps<{
   seriesList: RecurringSeries[]
@@ -16,11 +17,6 @@ const router = useRouter()
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
-
-function formatDate(d: string): string {
-  if (!d) return ''
-  return d.slice(0, 10)
 }
 
 function formatFrequency(freq: string): string {
@@ -152,15 +148,14 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
           <div class="metric-item">
             <span class="metric-label">Khung giờ</span>
             <span class="metric-value font-mono">
-              {{ s.starts_at ? s.starts_at.slice(11, 16) : '18:00' }} -
-              {{ s.ends_at ? s.ends_at.slice(11, 16) : '20:00' }}
+              {{ venueClock(s.starts_at) }} - {{ venueClock(s.ends_at) }}
             </span>
           </div>
 
           <div class="metric-item">
             <span class="metric-label">Thời hạn áp dụng</span>
             <span class="metric-value">
-              {{ formatDate(s.starts_at) }} ➔ {{ formatDate(s.ends_at) }}
+              {{ venueDate(s.starts_at) }} ➔ {{ venueDate(s.ends_at) }}
             </span>
           </div>
 
@@ -188,7 +183,7 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
             <div v-for="inv in s.invoices" :key="inv.id" class="invoice-item-card">
               <div class="inv-info">
                 <span class="inv-period">
-                  Kỳ: {{ formatDate(inv.period_start) }} ➔ {{ formatDate(inv.period_end) }}
+                  Kỳ: {{ venueDate(inv.period_start) }} ➔ {{ venueDate(inv.period_end) }}
                 </span>
                 <span class="inv-amount font-mono">{{ formatMoney(inv.amount) }}</span>
               </div>
@@ -227,8 +222,8 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
           </div>
           <div class="occ-chips-row">
             <span v-for="occ in s.occurrences.slice(0, 5)" :key="occ.id" class="occ-pill">
-              Buổi {{ occ.sequence }}: {{ formatDate(occ.starts_at) }} ({{
-                occ.starts_at.slice(11, 16)
+              Buổi {{ occ.sequence }}: {{ venueDate(occ.starts_at) }} ({{
+                venueClock(occ.starts_at)
               }})
             </span>
             <span v-if="s.occurrences.length > 5" class="occ-more">

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringInvoice, InvoiceStatus } from '../../types/recurring'
+import { venueDate } from '../../utils/venueTime'
 
 const props = defineProps<{
   invoices: RecurringInvoice[]
@@ -19,11 +20,6 @@ const filteredInvoices = computed(() => {
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-}
-
-function formatDate(d: string): string {
-  if (!d) return ''
-  return d.slice(0, 10)
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -177,14 +173,14 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             <div class="inv-col">
               <span class="col-lbl">Kỳ thanh toán</span>
               <span class="col-val"
-                >{{ formatDate(inv.period_start) }} ➔ {{ formatDate(inv.period_end) }}</span
+                >{{ venueDate(inv.period_start) }} ➔ {{ venueDate(inv.period_end) }}</span
               >
             </div>
 
             <div class="inv-col">
               <span class="col-lbl">Hạn thanh toán</span>
               <span class="col-val">{{
-                inv.status === 'zero_payable' ? 'Không áp dụng' : formatDate(inv.due_at)
+                inv.status === 'zero_payable' ? 'Không áp dụng' : venueDate(inv.due_at)
               }}</span>
             </div>
 

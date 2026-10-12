@@ -1,6 +1,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { socialApi } from '../api/socialApi'
 import { useAuthStore } from '@/stores/auth'
+import { i18n } from '@/i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type {
   SocialMatch,
@@ -64,6 +65,14 @@ function detectSport(
   const t = (title + ' ' + (metadataSport || '')).toLowerCase()
   if (t.includes('pickleball'))
     return { sport: 'pickleball', name: 'Pickleball', icon: 'sports_tennis' }
+  // Before tennis: metadata 'table_tennis' also contains 'tennis'.
+  if (
+    t.includes('bóng bàn') ||
+    t.includes('table_tennis') ||
+    t.includes('table tennis') ||
+    t.includes('ping pong')
+  )
+    return { sport: 'table_tennis', name: 'Bóng bàn', icon: 'sports_tennis' }
   if (t.includes('tennis') || t.includes('quần vợt'))
     return { sport: 'tennis', name: 'Tennis', icon: 'sports_tennis' }
   if (t.includes('bóng đá') || t.includes('football') || t.includes('5v5') || t.includes('7v7'))
@@ -72,9 +81,20 @@ function detectSport(
     return { sport: 'basketball', name: 'Bóng rổ', icon: 'sports_basketball' }
   if (t.includes('bóng chuyền') || t.includes('volleyball'))
     return { sport: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball' }
-  if (t.includes('bóng bàn') || t.includes('table tennis') || t.includes('ping pong'))
-    return { sport: 'table_tennis', name: 'Bóng bàn', icon: 'sports_tennis' }
   return { sport: 'badminton', name: 'Cầu lông', icon: 'sports_tennis' }
+}
+
+const PLAY_LEVEL_KEYS: Record<string, string> = {
+  beginner: 'profile.levelBeginner',
+  intermediate: 'profile.levelIntermediate',
+  advanced: 'profile.levelAdvanced',
+  pro: 'profile.levelPro',
+}
+
+/** users.play_level is a word (beginner…pro), not a number. */
+export function playLevelLabel(level?: string | null): string {
+  const key = level ? PLAY_LEVEL_KEYS[level] : undefined
+  return key ? i18n.global.t(key) : ''
 }
 
 export function formatMatchTime(startsAtStr?: string, endsAtStr?: string): string {
@@ -128,6 +148,16 @@ export function useMatchmaking() {
   // Data
   const matches = ref<SocialMatch[]>([])
   const partners = ref<PartnerPlayer[]>([])
+
+  // Mirrors the feed report routes: platform admins plus active organization owners and venue managers.
+  const canModerate = computed(
+    () =>
+      auth.user?.role === 'admin' ||
+      (auth.user?.organizations ?? []).some(
+        (o) =>
+          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+      ),
+  )
 
   const stats = computed<MatchmakingStats>(() => {
     const total = matches.value.length
@@ -491,5 +521,6 @@ export function useMatchmaking() {
     joinMatch,
     resetFilters,
     showNotice,
+    canModerate,
   }
 }

@@ -23,7 +23,7 @@ const emit = defineEmits<{
     </div>
     <div class="brand-text">
       <span class="brand-title">Aura Court</span>
-      <span v-if="showSubtitle" class="brand-subtitle">Badminton & Sports</span>
+      <span v-if="showSubtitle" class="brand-subtitle">Multi-Sport Club</span>
     </div>
   </RouterLink>
 </template>
