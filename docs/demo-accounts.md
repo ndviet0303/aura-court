@@ -68,8 +68,6 @@ bật bán lại slot, chia tiền, POS và ví, giải đấu và ghép trận;
   công nhưng giao dịch bị rollback, tải lại trang sẽ không thấy thay đổi. Cần thao tác lưu thật thì dùng `admin@auracourt.vn`.
 - Thông báo trong ứng dụng được seed thẳng vào bảng `notifications`; seed không gửi email. Trên server có scheduler và
   queue chạy thật, job hết hạn giữ chỗ có thể gửi email tới `khach03`, `khach06`, `khach13@demo.auracourt.vn`.
-- Trang Ví: "Điểm Aura" là số dư ví chia 1.000 (quy tắc của API `/wallet`), không phải sổ điểm thưởng. Điểm thưởng thật
-  hiện ở bước chọn dùng điểm khi thanh toán.
 - Lịch hoạt động: chọn một cơ sở để thấy giờ mở cửa 06:00-23:00. Chế độ "Tất cả cơ sở" hiện cả tuần "Tạm đóng".
 - Ma trận giá: giá giờ vàng (17:00-22:00, +25%) và cuối tuần (+20%) nằm trong bảng giá theo giờ của từng sân (nút "Bảng
   giá"). Thẻ "Giờ cao điểm" và "Ngày lễ & ngoại lệ" chỉ đếm quy tắc giá riêng nên bằng 0.
