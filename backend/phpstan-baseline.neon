@@ -51,18 +51,12 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$court\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Domain/Admin/Actions/ArbitrateDispute.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:slots\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Domain/Admin/Actions/ArbitrateDispute.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>user_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Domain/Admin/Actions/ArbitrateDispute.php
 

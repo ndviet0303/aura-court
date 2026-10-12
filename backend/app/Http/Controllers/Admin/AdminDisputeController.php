@@ -6,6 +6,7 @@ use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Domain\Admin\Actions\ArbitrateDispute;
 use App\Domain\Admin\Actions\GetDisputeQueue;
 use App\Domain\Admin\Actions\GetDisputeStats;
+use App\Domain\Admin\Actions\NotifyDisputeFiled;
 use App\Domain\Admin\DTOs\ArbitrateDisputeData;
 use App\Domain\Admin\DTOs\DisputeFilterData;
 use App\Http\Controllers\Controller;
@@ -18,7 +19,6 @@ use App\Models\LegacyBookingMapping;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
 use App\Models\ReservationEntitlement;
-use App\Services\Infrastructure\OutboxService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class AdminDisputeController extends Controller
         private readonly GetDisputeStats $getStats,
         private readonly ArbitrateDispute $arbitrateDispute,
         private readonly DisputeRepositoryInterface $disputeRepository,
-        private readonly OutboxService $outbox,
+        private readonly NotifyDisputeFiled $notifyDisputeFiled,
     ) {}
 
     public function index(ListDisputeRequest $request): AnonymousResourceCollection
@@ -203,7 +203,7 @@ class AdminDisputeController extends Controller
             'complainant_name' => $user->name,
             'complainant_phone' => $user->phone,
             'complainant_reputation_score' => 100,
-            'respondent_id' => $org?->user_id,
+            'respondent_id' => $org ? $this->disputeRepository->findRespondentIdForOrganization($org->id) : null,
             'respondent_name' => $org?->name ?? 'Venue Partner',
             'respondent_reputation_score' => 100,
             'evidence' => $evidence ?: [],
@@ -219,26 +219,7 @@ class AdminDisputeController extends Controller
             ],
         ]);
 
-        if ($status === 'awaiting_evidence') {
-            $this->outbox->enqueue([
-                'organization_id' => $dispute->organization_id,
-                'message_key' => "dispute_evidence_requested:{$dispute->id}:".now()->timestamp,
-                'channel' => 'notification',
-                'event_type' => 'dispute.evidence_requested',
-                'aggregate_type' => DisputeCase::class,
-                'aggregate_id' => $dispute->id,
-            ], [
-                'user_id' => $user->id,
-                'recipient_id' => $user->id,
-                'dispute_id' => $dispute->id,
-                'dispute_code' => $dispute->dispute_code,
-                'requested_evidence' => $requestedEvidence,
-                'sla_deadline' => $slaDeadline->toIso8601String(),
-                'title' => 'Yêu cầu bổ sung chứng cứ',
-                'body' => 'Hồ sơ tranh chấp của bạn cần bổ sung chứng cứ xác thực.',
-                'message' => 'Hồ sơ tranh chấp cần bổ sung tài liệu minh chứng trước thời hạn.',
-            ]);
-        }
+        $this->notifyDisputeFiled->execute($dispute);
 
         return response()->json([
             'message' => 'Dispute filed successfully.',
@@ -256,7 +237,7 @@ class AdminDisputeController extends Controller
         }
 
         $isComplainant = (int) $user->id === (int) $dispute->complainant_id;
-        $isRespondent = (int) $user->id === (int) $dispute->respondent_id;
+        $isRespondent = $this->disputeRepository->isRespondent($dispute, $user);
         $isAdmin = $user->isPlatformAdmin();
         abort_unless($isComplainant || $isRespondent || $isAdmin, 403, 'Chỉ các bên liên quan mới có thể cung cấp chứng cứ.');
 
@@ -398,7 +379,7 @@ class AdminDisputeController extends Controller
             return response()->json(['message' => 'Hồ sơ tranh chấp không tồn tại.'], 404);
         }
 
-        $isParty = ($user->id === $dispute->complainant_id || $user->id === $dispute->respondent_id);
+        $isParty = ($user->id === $dispute->complainant_id || $this->disputeRepository->isRespondent($dispute, $user));
         $isAdmin = $user->isPlatformAdmin();
         abort_unless($isParty || $isAdmin, 403, 'Unauthorized to reopen dispute.');
 
