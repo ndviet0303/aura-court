@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
+use RuntimeException;
 
 /**
  * Demo accounts for every platform and organization role.
@@ -38,8 +39,8 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $this->now = Carbon::now(config('app.timezone', 'Asia/Ho_Chi_Minh'));
-        $this->demoPassword = Hash::make(env('SEED_DEMO_PASSWORD', 'Demo12345!'));
-        $adminPassword = Hash::make(env('SEED_ADMIN_PASSWORD', 'Admin@123456'));
+        $this->demoPassword = $this->hashedPassword('SEED_DEMO_PASSWORD');
+        $adminPassword = $this->hashedPassword('SEED_ADMIN_PASSWORD');
 
         $org = Organization::where('slug', 'aura-badminton-club')->firstOrFail();
         $partner = Organization::where('slug', 'hoang-gia-sports')->firstOrFail();
@@ -50,8 +51,7 @@ class UserSeeder extends Seeder
         $admins = [
             ['admin@auracourt.vn', 'Quản trị hệ thống Aura', '0988888888', $adminPassword],
             [env('SEED_ADMIN_EMAIL', 'admin@example.com'), 'Quản trị viên', '0912345678', $adminPassword],
-            ['soicuteeee@gmail.com', 'Zịt', '0987654321', Hash::make('Admin@123456')],
-            [env('SEED_DEMO_ADMIN_EMAIL', 'demo-20260811@demo.auracourt.vn'), 'Quản trị demo', null, Hash::make(env('SEED_DEMO_ADMIN_PASSWORD', 'Admin@123456'))],
+            [env('SEED_DEMO_ADMIN_EMAIL', 'demo-20260811@demo.auracourt.vn'), 'Quản trị demo', null, $this->hashedPassword('SEED_DEMO_ADMIN_PASSWORD')],
         ];
         foreach ($admins as [$email, $name, $phone, $password]) {
             $admin = $this->user($email, [
@@ -63,10 +63,6 @@ class UserSeeder extends Seeder
             ], 180);
             $this->member($org, $admin, OrganizationMember::ROLE_ORGANIZATION_OWNER, ['*']);
         }
-
-        $walletService = app(WalletPaymentService::class);
-        $soicute = User::where('email', 'soicuteeee@gmail.com')->firstOrFail();
-        $this->topUp($walletService, $soicute, $org, 1000000000, 1, 'Admin nạp 1 tỷ đồng khởi tạo');
 
         // 2. Flagship club staff, from owner down to a cashier limited to the Cầu Giấy venue.
         $owner = $this->user('owner@demo.auracourt.vn', ['name' => 'Trần Quốc Bảo', 'phone' => '0902222333', 'play_level' => 'advanced'], 75);
@@ -89,9 +85,9 @@ class UserSeeder extends Seeder
         $this->member($partner, $partnerOwner, OrganizationMember::ROLE_ORGANIZATION_OWNER, ['*']);
 
         // 4. Customers with wallet balance so wallet checkout works out of the box.
+        $walletService = app(WalletPaymentService::class);
         $demoUser = $this->user('user@example.com', [
             'name' => 'Nguyễn Minh Anh',
-            'password' => Hash::make('Password@123456'),
             'phone' => '0901234567',
             'play_level' => 'intermediate',
         ], 120);
@@ -186,11 +182,11 @@ class UserSeeder extends Seeder
         );
     }
 
-    private function topUp(WalletPaymentService $wallets, User $user, Organization $org, int $target, ?int $sourceId = null, string $reference = 'Nạp ví demo'): void
+    private function topUp(WalletPaymentService $wallets, User $user, Organization $org, int $target): void
     {
         $wallet = $wallets->getOrCreateWallet($user->id, $org->id);
         if ($wallet->balance < $target) {
-            $wallets->credit($wallet, $target - $wallet->balance, 'manual_seed', $sourceId ?? $user->id, $reference);
+            $wallets->credit($wallet, $target - $wallet->balance, 'manual_seed', $user->id, 'Nạp ví demo');
         }
     }
 
@@ -215,5 +211,24 @@ class UserSeeder extends Seeder
             ])->save();
         }
         $venue->update(['current_receiving_connection_id' => $connection->id]);
+    }
+
+    /**
+     * Seeded accounts never fall back to a committed password: outside local/testing a missing
+     * value aborts the seed; locally the accounts get a random password until the key is set.
+     */
+    private function hashedPassword(string $key): string
+    {
+        $password = env($key);
+
+        if (blank($password)) {
+            if (! app()->environment('local', 'testing')) {
+                throw new RuntimeException("{$key} is not set. Seeding accounts with APP_ENV=".app()->environment().' requires SEED_ADMIN_PASSWORD, SEED_DEMO_ADMIN_PASSWORD and SEED_DEMO_PASSWORD (see backend/.env.example); there is no committed default.');
+            }
+
+            $password = Str::password();
+        }
+
+        return Hash::make($password);
     }
 }
