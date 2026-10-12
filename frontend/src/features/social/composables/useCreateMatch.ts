@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/core/api/client'
 import { socialApi } from '../api/socialApi'
+import { playLevelLabel } from './useMatchmaking'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court } from '@/features/court/types/court'
@@ -84,7 +85,7 @@ export function useCreateMatch() {
         id: f.id,
         name: f.name || 'Người chơi',
         avatar: f.avatar_url || '',
-        skill: f.play_level ? `Level ${f.play_level}.0` : 'Level 3.0',
+        skill: playLevelLabel(f.play_level),
         skillLevel: f.play_level || 3,
         reputation: 95,
         city: f.city || 'Hà Nội',

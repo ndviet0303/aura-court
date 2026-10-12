@@ -50,6 +50,15 @@ describe('useV2Reservations', () => {
     vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [] })
   })
 
+  it('shows slot times in venue time', () => {
+    const state = mountComposable()
+
+    expect(state.formatTimeSlot('2026-10-13T12:00:00.000000Z', '2026-10-13T13:00:00.000000Z')).toBe(
+      '19:00 - 20:00',
+    )
+    expect(state.formatTimeSlot('2026-10-13T12:30:00.000000Z')).toBe('19:30 - 20:30')
+  })
+
   it('loads the list from the caller-wide reservations endpoint', async () => {
     const legacy = reservation({ code: 'LEGACY-BK-1', status: 'legacy' })
     vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [legacy] })

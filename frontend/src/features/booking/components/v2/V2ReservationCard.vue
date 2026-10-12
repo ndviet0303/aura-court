@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import type { V2Reservation } from '../../types/v2Reservation'
 import { displayCode, displayStatus } from '../../utils/reservation'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 defineProps<{
   reservation: V2Reservation
   confirmingCode: string | null
@@ -27,7 +27,7 @@ const emit = defineEmits<{
       <div class="code-and-venue">
         <span class="booking-code font-mono">#{{ displayCode(reservation) }}</span>
         <span class="court-venue-name">
-          {{ reservation.court?.venue?.name || 'Aura Badminton & Sports Club' }}
+          {{ reservation.court?.venue?.name || 'Aura Sports Club' }}
         </span>
       </div>
 
@@ -43,11 +43,9 @@ const emit = defineEmits<{
           {{
             reservation.status === 'held'
               ? t('v2Reservations.card.statusHeld')
-              : reservation.status === 'confirmed'
-                ? t('v2Reservations.card.statusConfirmed')
-                : reservation.status === 'cancelled'
-                  ? t('v2Reservations.card.statusCancelled')
-                  : displayStatus(reservation)
+              : te(`common.status.${displayStatus(reservation)}`)
+                ? t(`common.status.${displayStatus(reservation)}`)
+                : displayStatus(reservation)
           }}
         </span>
       </div>

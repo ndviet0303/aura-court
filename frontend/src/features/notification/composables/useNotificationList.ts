@@ -43,9 +43,10 @@ export function getNotificationCategory(
 }
 
 export function getNotificationMeta(event?: string): NotificationMeta {
-  const ev = (event || '').toLowerCase()
+  // Backend events mix separators (booking_expired, social.match_invitation); match on one form.
+  const ev = (event || '').toLowerCase().replace(/\./g, '_')
 
-  if (ev.includes('booking.confirmed') || ev.includes('booking_paid')) {
+  if (ev.includes('booking_confirmed') || ev.includes('booking_paid')) {
     return {
       icon: 'task_alt',
       color: '#059669',
@@ -53,7 +54,7 @@ export function getNotificationMeta(event?: string): NotificationMeta {
       badgeText: 'ĐẶT SÂN THÀNH CÔNG',
     }
   }
-  if (ev.includes('booking.created')) {
+  if (ev.includes('booking_created')) {
     return {
       icon: 'calendar_month',
       color: '#db2777',
@@ -61,7 +62,7 @@ export function getNotificationMeta(event?: string): NotificationMeta {
       badgeText: 'GIỮ CHỖ SÂN',
     }
   }
-  if (ev.includes('booking.expiring') || ev.includes('expiring_soon')) {
+  if (ev.includes('booking_expiring') || ev.includes('expiring_soon')) {
     return {
       icon: 'alarm',
       color: '#d97706',
@@ -69,7 +70,7 @@ export function getNotificationMeta(event?: string): NotificationMeta {
       badgeText: 'SẮP HẾT HẠN GIỮ CHỖ',
     }
   }
-  if (ev.includes('booking.expired') || ev.includes('cancel')) {
+  if (ev.includes('booking_expired') || ev.includes('cancel')) {
     return { icon: 'event_busy', color: '#dc2626', category: 'booking', badgeText: 'LỊCH ĐÃ HỦY' }
   }
   if (ev.includes('waitlist')) {
@@ -80,7 +81,12 @@ export function getNotificationMeta(event?: string): NotificationMeta {
       badgeText: 'HÀNG ĐỢI SÂN TRỐNG',
     }
   }
-  if (ev.includes('payment.success') || ev.includes('sepay') || ev.includes('stripe')) {
+  if (
+    ev.includes('payment_success') ||
+    ev.includes('payment_confirmed') ||
+    ev.includes('sepay') ||
+    ev.includes('stripe')
+  ) {
     return {
       icon: 'payments',
       color: '#059669',
@@ -106,6 +112,9 @@ export function getNotificationMeta(event?: string): NotificationMeta {
   }
   if (ev.includes('matchmaking') || ev.includes('match')) {
     return { icon: 'groups', color: '#0284c7', category: 'social', badgeText: 'KÈO GIAO LƯU' }
+  }
+  if (ev.includes('friendship')) {
+    return { icon: 'person_add', color: '#0284c7', category: 'social', badgeText: 'KẾT BẠN' }
   }
   if (ev.includes('tournament')) {
     return { icon: 'emoji_events', color: '#d97706', category: 'social', badgeText: 'GIẢI ĐẤU' }

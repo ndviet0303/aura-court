@@ -162,7 +162,7 @@ onMounted(() => {
           </div>
           <div class="f-details">
             <strong class="f-name">{{ f.name }}</strong>
-            <span class="f-meta">{{ f.email || f.phone }} · Level {{ f.play_level || 3 }}.0</span>
+            <span class="f-meta">{{ f.email || f.phone }}</span>
           </div>
           <button
             type="button"

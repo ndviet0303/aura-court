@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import MatchmakingView from '../views/MatchmakingView.vue'
+import { playLevelLabel } from '../composables/useMatchmaking'
 import { i18n } from '@/i18n'
 import { apiV2 } from '@/core/api/client'
+import { useAuthStore } from '@/stores/auth'
 
 const pushMock = vi.fn()
 
@@ -165,5 +167,53 @@ describe('MatchmakingView', () => {
     await flushPromises()
 
     expect(apiV2.post).toHaveBeenCalledWith('/social/matches/1/join')
+  })
+
+  it('detects table tennis from metadata before tennis', async () => {
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) =>
+      url.startsWith('/social/matches')
+        ? {
+            matches: [
+              {
+                ...mockMatches[0],
+                id: 3,
+                title: 'Giao lưu tối thứ Sáu',
+                metadata: { sport: 'table_tennis' },
+              },
+            ],
+          }
+        : {},
+    )
+    const wrapper = mount(MatchmakingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const chip = wrapper.findAll('.sport-chip').find((c) => c.text().includes('Bóng bàn'))
+    await chip?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.match-card').length).toBe(1)
+  })
+
+  it('labels play levels by name', () => {
+    expect(playLevelLabel('intermediate')).toBe('Phong trào')
+    expect(playLevelLabel(null)).toBe('')
+    expect(playLevelLabel('unknown')).toBe('')
+  })
+
+  it('shows the moderation bar to organization owners, not to customers', async () => {
+    const auth = useAuthStore()
+    const customer = { id: 1, name: 'Owner', email: 'o@test.vn', role: 'customer' }
+    auth.user = customer
+    const customerView = mount(MatchmakingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    expect(customerView.find('.moderation-bar').exists()).toBe(false)
+
+    auth.user = {
+      ...customer,
+      organizations: [{ id: 2, role: 'organization_owner', status: 'active' }],
+    }
+    const ownerView = mount(MatchmakingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    expect(ownerView.find('.moderation-bar').exists()).toBe(true)
   })
 })
