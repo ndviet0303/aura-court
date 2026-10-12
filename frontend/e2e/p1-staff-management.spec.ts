@@ -53,6 +53,8 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       use App\\Models\\OrganizationInvitation;
       use App\\Models\\Organization;
       use App\\Models\\PlatformPlan;
+      use App\\Models\\PlatformSubscription;
+      use Illuminate\\Database\\QueryException;
       use Illuminate\\Support\\Facades\\DB;
 
       $organizationIds = json_decode('${JSON.stringify(temporaryOrganizationIds)}', true);
@@ -65,6 +67,8 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
         throw new RuntimeException('Staff cleanup refused an unowned organization.');
       }
       DB::table('venues')->whereIn('organization_id', $ownedOrganizations)->delete();
+      // Undo the arranged subscription; platform_subscriptions.organization_id is ON DELETE RESTRICT.
+      PlatformSubscription::whereIn('organization_id', $ownedOrganizations)->delete();
       Organization::whereIn('id', $ownedOrganizations)->delete();
       PlatformPlan::whereIn('id', $planIds)
         ->where('code', 'like', 'plan-quota-staff-${manifest.runId}-%')->delete();
@@ -73,7 +77,12 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       foreach ($testUsers as $tu) {
         OrganizationMember::where('user_id', $tu->id)->delete();
         OrganizationInvitation::where('email', $tu->email)->delete();
-        $tu->delete();
+        try {
+          $tu->delete();
+        } catch (QueryException $e) {
+          // Users referenced by RESTRICT history (elevated audit logs, wallets) stay in place.
+          if ($e->getCode() !== '23503') throw $e;
+        }
       }
       OrganizationInvitation::where('email', 'like', '%@staff-${manifest.runId.replaceAll('_', '-')}.auracourt.test')->delete();
     `
