@@ -287,9 +287,9 @@ export function useAdminShiftReconciliation() {
     return shiftHistory.value.reduce((sum, s) => sum + Math.abs(s.variance || 0), 0)
   })
 
-  const matchRatePercent = computed(() => {
+  const matchRatePercent = computed<number | null>(() => {
     const closedShifts = shiftHistory.value.filter((s) => s.status === 'closed')
-    if (closedShifts.length === 0) return 100
+    if (closedShifts.length === 0) return null
     const matchedCount = closedShifts.filter(
       (s) =>
         s.reconciliation_status === 'matched' ||

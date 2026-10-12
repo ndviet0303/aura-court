@@ -139,7 +139,8 @@ describe('AdminRecurringContractsView', () => {
     expect(wrapper.text()).toContain('Tổng Hợp Đồng Đang Chạy')
     expect(wrapper.text()).toContain('Doanh Thu Định Kỳ (MRR)')
     expect(wrapper.text()).toContain('Kỳ Thanh Toán Cần Xử Lý')
-    expect(wrapper.text()).toContain('Lấp Đầy Giờ Vàng')
+    // Prime-time utilization had no backing data, so its card is gone.
+    expect(wrapper.text()).not.toContain('Lấp Đầy Giờ Vàng')
     expect(wrapper.find('.btn-primary-pink').exists()).toBe(false)
   })
 

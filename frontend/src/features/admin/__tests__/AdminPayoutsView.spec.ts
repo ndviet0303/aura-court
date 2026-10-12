@@ -332,4 +332,43 @@ describe('AdminPayoutsView', () => {
     expect(wrapper.find('.fee-box').text()).not.toContain('600.000')
     expect(wrapper.find('.fee-box').text()).toContain('0% hoa hồng sàn')
   })
+
+  it('counts refunds as deductions so gross minus deductions equals net', async () => {
+    const customGet = async (url: string) => {
+      if (url.includes('/finance/settlements')) {
+        return {
+          data: [
+            {
+              id: 12,
+              period_start: '2026-09-01',
+              period_end: '2026-09-15',
+              gross_amount: 10000000,
+              provider_fee_amount: 100000,
+              commission_amount: 0,
+              refund_amount: 500000,
+              tenant_payable: 9400000,
+              status: 'eligible',
+            },
+          ],
+        }
+      }
+      return { data: [] }
+    }
+    vi.mocked(api.get).mockImplementation(customGet)
+    vi.mocked(apiV2.get).mockImplementation(customGet)
+
+    const wrapper = mount(AdminPayoutsView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const feeBox = wrapper.find('.fee-box').text()
+    expect(feeBox).toContain('-600.000')
+    expect(feeBox).toContain('Hoàn tiền: 500.000')
+    expect(wrapper.find('.net-box').text()).toContain('9.400.000')
+
+    await wrapper.findAll('.view-nav-btn')[1]?.trigger('click')
+    expect(wrapper.find('.fee-cell-content').text()).toContain('-600.000')
+    expect(wrapper.find('.fee-cell-content').text()).toContain('Hoàn tiền: 500.000')
+  })
 })

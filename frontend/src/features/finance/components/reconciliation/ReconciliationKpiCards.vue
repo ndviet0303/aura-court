@@ -45,10 +45,6 @@ function formatCurrency(amount?: number): string {
           <span class="material-symbols-outlined status-icon-ok">check_circle</span>
         </div>
         <div class="card-value">{{ formatCurrency(stats.provider_total) }}</div>
-        <div class="card-footer">
-          <span class="pulse-dot-green"></span>
-          <span class="footer-text">{{ t('admin.reconciliation.kpiPspSubtitle') }}</span>
-        </div>
       </div>
 
       <!-- Card 2: Sổ cái nội bộ -->
@@ -62,10 +58,6 @@ function formatCurrency(amount?: number): string {
           <span class="material-symbols-outlined status-icon-ok">verified</span>
         </div>
         <div class="card-value">{{ formatCurrency(stats.journal_total) }}</div>
-        <div class="card-footer">
-          <span class="pulse-dot-green"></span>
-          <span class="footer-text">{{ t('admin.reconciliation.kpiLedgerSubtitle') }}</span>
-        </div>
       </div>
 
       <!-- Card 3: Tài khoản quyết toán ngân hàng -->
@@ -91,7 +83,6 @@ function formatCurrency(amount?: number): string {
               stats.mismatch_total > 0
                 ? t('admin.reconciliation.kpiSettlementVariance', {
                     amount: formatCurrency(stats.mismatch_total),
-                    count: stats.open_alerts_count || 1,
                   })
                 : t('admin.reconciliation.kpiSettlementSubtitle')
             }}
@@ -110,10 +101,6 @@ function formatCurrency(amount?: number): string {
           <span class="material-symbols-outlined status-icon-ok">task_alt</span>
         </div>
         <div class="card-value">{{ formatCurrency(stats.payout_total) }}</div>
-        <div class="card-footer">
-          <span class="pulse-dot-green"></span>
-          <span class="footer-text">{{ t('admin.reconciliation.kpiPayoutSubtitle') }}</span>
-        </div>
       </div>
     </template>
   </div>

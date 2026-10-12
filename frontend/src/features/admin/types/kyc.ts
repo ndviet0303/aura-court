@@ -72,7 +72,8 @@ export interface HostKyc {
 export interface KycStats {
   pending_count: number
   ai_confidence_rate: number
-  avg_processing_time_minutes: number
+  /** null until at least one submission has been reviewed */
+  avg_processing_time_minutes: number | null
   flagged_count: number
   approved_count?: number
   needs_supplement_count?: number

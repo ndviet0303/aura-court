@@ -5,7 +5,7 @@ import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 defineProps<{
   totalStaff: number
   activeManagers: number
-  receptionistsOnline: number
+  receptionists: number
   systemRoles: number
   loading?: boolean
 }>()
@@ -27,10 +27,6 @@ const { t } = useI18n()
       <strong v-else class="stat-value">
         {{ t('admin.staff.totalStaffCount', { count: totalStaff }) }}
       </strong>
-      <span class="stat-trend text-green">
-        <span class="material-symbols-outlined icon-14">verified_user</span>
-        <span>{{ t('admin.staff.securityGuaranteed') }}</span>
-      </span>
     </div>
 
     <!-- Card 2: Active Managers -->
@@ -61,12 +57,8 @@ const { t } = useI18n()
         <SkeletonLoader type="rect" height="24px" width="110px" />
       </div>
       <strong v-else class="stat-value">
-        {{ t('admin.staff.receptionistsOnlineCount', { count: receptionistsOnline }) }}
+        {{ t('admin.staff.totalStaffCount', { count: receptionists }) }}
       </strong>
-      <span class="stat-trend text-green">
-        <span class="material-symbols-outlined icon-14">check_circle</span>
-        <span>{{ t('admin.staff.shiftsCovered') }}</span>
-      </span>
     </div>
 
     <!-- Card 4: System Roles -->

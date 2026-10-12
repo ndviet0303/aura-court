@@ -52,7 +52,6 @@ export interface ContractStats {
   total_contracts: number
   mrr_amount: number
   overdue_cycles: number
-  prime_time_utilization: number
 }
 
 export interface ContractsApiResponse {
