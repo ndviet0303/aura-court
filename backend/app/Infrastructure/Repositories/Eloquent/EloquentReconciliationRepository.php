@@ -121,7 +121,7 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
             ->where('status', 'matched')
             ->count();
 
-        $matchRate = $totalRunsCount > 0 ? round(($matchedRunsCount / $totalRunsCount) * 100, 2) : 99.82;
+        $matchRate = $totalRunsCount > 0 ? round(($matchedRunsCount / $totalRunsCount) * 100, 2) : null;
 
         // Recent 7 days health trend
         $healthTrend = [];
@@ -134,7 +134,7 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
 
             $healthTrend[] = [
                 'date' => $date,
-                'status' => $dayRun ? $dayRun->status : 'matched',
+                'status' => $dayRun?->status,
                 'provider_total' => $dayRun ? $dayRun->provider_total : 0,
                 'journal_total' => $dayRun ? $dayRun->journal_total : 0,
                 'settlement_total' => $dayRun ? $dayRun->settlement_total : 0,
@@ -143,14 +143,14 @@ class EloquentReconciliationRepository implements ReconciliationRepositoryInterf
         }
 
         return [
-            'provider_total' => $providerTotal > 0 ? $providerTotal : ($latestRun ? $latestRun->provider_total : 842560000),
-            'journal_total' => $journalTotal > 0 ? $journalTotal : ($latestRun ? $latestRun->journal_total : 842560000),
-            'settlement_total' => $settlementTotal > 0 ? $settlementTotal : ($latestRun ? $latestRun->settlement_total : 841160000),
-            'payout_total' => $payoutTotal > 0 ? $payoutTotal : ($latestRun ? $latestRun->payout_total : 318400000),
-            'mismatch_total' => abs(($providerTotal ?: 842560000) - ($settlementTotal ?: 841160000)),
-            'open_alerts_count' => $openExceptions > 0 ? $openExceptions : 3,
+            'provider_total' => $providerTotal > 0 ? $providerTotal : ($latestRun->provider_total ?? 0),
+            'journal_total' => $journalTotal > 0 ? $journalTotal : ($latestRun->journal_total ?? 0),
+            'settlement_total' => $settlementTotal > 0 ? $settlementTotal : ($latestRun->settlement_total ?? 0),
+            'payout_total' => $payoutTotal > 0 ? $payoutTotal : ($latestRun->payout_total ?? 0),
+            'mismatch_total' => abs($providerTotal - $settlementTotal),
+            'open_alerts_count' => $openExceptions,
             'match_rate' => $matchRate,
-            'last_reconciled_at' => $latestRun?->completed_at?->toIso8601String() ?? now()->toIso8601String(),
+            'last_reconciled_at' => $latestRun?->completed_at?->toIso8601String(),
             'sync_status' => 'synced',
             'health_trend' => $healthTrend,
         ];

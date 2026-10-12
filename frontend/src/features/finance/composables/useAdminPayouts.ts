@@ -24,8 +24,13 @@ export function getHistoricalCommission(s: SettlementRecord): number {
   return Number(s.platform_fee ?? 0)
 }
 
+export function getRefundAmount(s: SettlementRecord): number {
+  return Number(s.refund_amount ?? 0)
+}
+
+// tenant_payable is net of refunds too, so deductions must include them to reconcile gross → net.
 export function getTotalDeduction(s: SettlementRecord): number {
-  return getProviderFee(s) + getHistoricalCommission(s)
+  return getProviderFee(s) + getHistoricalCommission(s) + getRefundAmount(s)
 }
 
 export function getNetPayable(s: SettlementRecord): number {
@@ -78,13 +83,14 @@ export function useAdminPayouts() {
     const gross = settlements.value.reduce((sum, s) => sum + (s.gross_amount || 0), 0)
     const providerFee = settlements.value.reduce((sum, s) => sum + getProviderFee(s), 0)
     const commission = settlements.value.reduce((sum, s) => sum + getHistoricalCommission(s), 0)
-    const fee = providerFee + commission
+    const refunds = settlements.value.reduce((sum, s) => sum + getRefundAmount(s), 0)
+    const fee = providerFee + commission + refunds
     const net = settlements.value.reduce((sum, s) => sum + getNetPayable(s), 0)
     const paid = payouts.value
       .filter((p) => p.status === 'paid')
       .reduce((sum, p) => sum + (p.amount || 0), 0)
 
-    return { gross, fee, net, paid, providerFee, commission }
+    return { gross, fee, net, paid, providerFee, commission, refunds }
   })
 
   // Filtered lists

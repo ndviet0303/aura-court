@@ -99,7 +99,7 @@ async function handleConfirmRemove(memberId: number) {
     <StaffKpiBar
       :total-staff="stats.totalStaff"
       :active-managers="stats.activeManagers"
-      :receptionists-online="stats.receptionistsOnline"
+      :receptionists="stats.receptionists"
       :system-roles="stats.systemRoles"
       :loading="loading"
     />

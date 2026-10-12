@@ -80,7 +80,7 @@
   ["model-query", "Domain/Booking/Actions/NotifyExpiringBookings.php", 1],
   ["model-query", "Domain/Finance/Actions/AutoResolveReconciliation.php", 5],
   ["model-query", "Domain/Finance/Actions/ResolveFinanceException.php", 3],
-  ["model-query", "Domain/Membership/Actions/GetAdminMembershipStats.php", 5],
+  ["model-query", "Domain/Membership/Actions/GetAdminMembershipStats.php", 3],
   ["model-query", "Domain/Membership/Actions/GetAdminMembershipVersionHistory.php", 2],
   ["model-query", "Domain/Payment/Actions/ProcessQrPayment.php", 10],
   ["model-query", "Domain/Subscription/Actions/ConfirmSubscriptionPayment.php", 1],

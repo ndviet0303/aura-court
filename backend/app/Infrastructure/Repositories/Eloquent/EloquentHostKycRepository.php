@@ -102,11 +102,17 @@ class EloquentHostKycRepository implements HostKycRepositoryInterface
         $approved = HostKyc::query()->where('status', 'approved')->count();
         $revisionRequired = HostKyc::query()->whereIn('status', ['revision_required', 'needs_supplement'])->count();
         $avgConfidence = HostKyc::query()->avg('ai_ocr_score') ?: 0.0;
+        // A row resubmitted after its last review is back in the queue (reviewed_at < submitted_at), so it is skipped.
+        // ponytail: averages in PHP to stay DB-agnostic; move to a SQL aggregate if host_kycs reaches tens of thousands of rows.
+        $avgProcessingMinutes = HostKyc::query()
+            ->whereColumn('reviewed_at', '>=', 'submitted_at')
+            ->get(['submitted_at', 'reviewed_at'])
+            ->avg(fn (HostKyc $kyc) => $kyc->submitted_at->diffInMinutes($kyc->reviewed_at));
 
         return [
             'pending_count' => $pending,
             'ai_confidence_rate' => round($avgConfidence, 1),
-            'avg_processing_time_minutes' => 14.2,
+            'avg_processing_time_minutes' => $avgProcessingMinutes === null ? null : round($avgProcessingMinutes, 1),
             'flagged_count' => $flagged,
             'approved_count' => $approved,
             'needs_supplement_count' => $revisionRequired,

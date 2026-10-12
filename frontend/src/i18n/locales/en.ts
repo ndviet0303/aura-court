@@ -1514,11 +1514,10 @@ export default {
       pageSubtitle:
         'Real-time multi-venue revenue analytics, court utilization rates, and payment verification.',
       totalRevenue: 'Total Revenue',
-      revenueTrend: '↑ 14.2% vs last month',
       totalBookings: 'Total Bookings',
       confirmedBookings: '{count} confirmed bookings',
       occupancyRate: 'Court Occupancy Rate',
-      avgWeeklyOccupancy: 'Average weekly utilization',
+      occupancyPeriod: 'Over the selected date range',
       pendingRefunds: 'Refund Requests',
       awaitingAccounting: 'Awaiting accounting review',
       today: 'Today',
@@ -2286,14 +2285,10 @@ export default {
       exportExcel: 'Export Excel Report',
       activeContracts: 'Active Running Contracts',
       activeContractsCount: '{count} Contracts',
-      activeTrend: '↑ Up 12% vs last month',
       mrrLabel: 'Monthly Recurring Revenue (MRR)',
-      mrrContribution: '65% of total facility revenue',
       overdueCycles: 'Actionable Payment Cycles',
       overdueCount: '{count} Cycles pending',
       overdueWarning: 'Overdue payment',
-      primeTimeUtilization: 'Prime-Time Occupancy',
-      primeTimeHours: 'Slot 17:00 - 21:00',
       exportNotice: 'Exporting contracts to Excel...',
       allContracts: 'All Contracts',
       allVenues: 'All Venues',
@@ -2342,13 +2337,10 @@ export default {
       refreshBtn: 'Refresh',
       totalStaff: 'Total Staff',
       totalStaffCount: '{count} Members',
-      securityGuaranteed: '100% 2FA secured',
       activeManagers: 'Venue Managers',
       activeManagersCount: '{count} Managers',
       venuesOperational: 'Operational facilities',
       receptionistsOnline: 'Cashiers & Receptionists',
-      receptionistsOnlineCount: '{count} Online',
-      shiftsCovered: 'All shifts covered',
       systemRoles: 'System Roles',
       systemRolesCount: '{count} Role Groups',
       rbacDesc: 'Multi-tiered RBAC',
@@ -2470,6 +2462,7 @@ export default {
       feesSub: 'Provider fees (0% platform commission)',
       providerFee: 'Provider fee',
       historicalCommission: 'Historical commission',
+      refunds: 'Refunds',
       netSettlement: 'NET SETTLEMENT',
       netSub: 'Available for bank disbursement',
       totalPaid: 'TOTAL DISBURSED',
@@ -2665,7 +2658,6 @@ export default {
       overviewSub: 'Operational metrics, tournament financials, and bracket progress.',
       kpiTotalAthletes: 'Total Athletes',
       kpiAthletesVal: '{count} Athletes',
-      kpiAthletesTrend: '100% target reached',
       kpiPrizePool: 'Total Prize Pool',
       kpiCompletedMatches: 'Completed Matches',
       kpiMatchesVal: '{completed} / {total} Matches',
@@ -3147,11 +3139,8 @@ export default {
       // KPI stats
       kpiTotalMembers: 'Total VIP Members',
       kpiTotalMembersCount: '{count} Members',
-      kpiTotalMembersTrend: '+14.2% from last month',
       kpiMrr: 'Monthly Recurring Revenue (MRR)',
-      kpiMrrTrend: 'Auto-renewal rate 92%',
       kpiPointsIssued: 'Accumulated Reward Points',
-      kpiPointsIssuedTrend: 'Avg multiplier x1.6',
       kpiRedemptionRate: 'Redemption Rate',
       kpiRedemptionRateTrend: 'Beverage & court vouchers',
 
@@ -3451,7 +3440,6 @@ export default {
       title: 'Financial Reconciliation & Anomaly Detection',
       subtitle:
         'Automated 3-way reconciliation across Aura Internal Ledger, Payment Gateways (PSP), and Bank Settlement Accounts.',
-      liveSync: 'NAPAS & PSP: ONLINE 100%',
       syncNow: 'Sync Now',
       syncing: 'Syncing...',
       syncSuccess: 'Full reconciliation sync with Payment Gateways has been triggered!',
@@ -3467,20 +3455,14 @@ export default {
 
       // KPI Cards
       kpiPspTitle: 'PAYMENT GATEWAYS (PSP)',
-      kpiPspSubtitle: '1,842 transactions · Reconciled',
       kpiLedgerTitle: 'INTERNAL LEDGER',
-      kpiLedgerSubtitle: '100% Balanced status',
       kpiSettlementTitle: 'BANK SETTLEMENT',
-      kpiSettlementSubtitle: 'Matched with bank statements',
-      kpiSettlementVariance: 'Variance: -{amount} ({count} pending TXN)',
+      kpiSettlementSubtitle: 'Matches the payment gateway total',
+      kpiSettlementVariance: 'Variance: {amount}',
       kpiPayoutTitle: 'DISBURSED PAYOUTS',
-      kpiPayoutSubtitle: '142 completed · 2 held',
 
       // Alert Banner
-      alertBannerTitle:
-        'Detected {count} financial variances requiring attention before settlement cycle',
-      alertBannerDesc:
-        'Includes: Delayed Napas247 Webhook transactions, partner gateway fee rounding discrepancies, and pending variances.',
+      alertBannerTitle: '{count} open finance exceptions need attention',
       autoResolveSafeBtn: 'Auto-Resolve Safe Discrepancies',
       openInvestigationBtn: 'Open Investigation',
 
@@ -3534,21 +3516,12 @@ export default {
       statusLabelMatched: '100% Matched',
       statusLabelMismatch: 'Amount Variance',
 
-      // Health Analytics & Live Stream
+      // Health Analytics
       analyticsTrendTitle: 'Match Rate & Reconciliation Trend (7 Days)',
       matchRateAccuracy: 'Accuracy: {rate}%',
       legendMatched: '100% Matched (No Discrepancy)',
       legendMismatch: 'Discrepancy Requiring Action',
-      liveStreamTitle: 'Live Reconciliation Audit Stream',
-      liveBadge: 'REALTIME',
-      liveLogSyncTitle: 'Batch Sync Successful',
-      liveLogSyncDesc: 'Received MT940 statement from MBBank ({count} transactions matched).',
-      liveLogAutoTitle: 'Auto-Reconciliation Triggered',
-      liveLogAutoDesc: 'Automatically balanced fee discrepancy {amount} for {code}.',
-      liveLogWarnTitle: 'Webhook Latency Alert',
-      liveLogWarnDesc: 'Detected Napas247 webhook delay of -{amount} on {code}.',
-      liveLogStartTitle: 'T+0 Cycle Initialized',
-      liveLogStartDesc: 'Reconciliation engine triggered early morning cycle.',
+      legendNoRun: 'No reconciliation run',
 
       // Investigation Drawer
       drawerTitle: 'Transaction Reconciliation Details',
@@ -3782,7 +3755,7 @@ export default {
       typeTournamentScore: 'Tournament Score Error',
       typeOther: 'Other Claims',
       // Badges
-      badgeCriticalSla: 'CRITICAL - SLA 15M',
+      badgeCriticalSla: 'CRITICAL',
       badgeHighPriority: 'HIGH PRIORITY',
       badgeFraudSuspect: 'FRAUD SUSPECTED',
       badgeArbitrated: 'ARBITRATED',
@@ -3793,10 +3766,10 @@ export default {
       kpiPendingSub: 'cases',
       kpiInvestigating: 'Active Evidence Inquiry',
       kpiInvestigatingSub: 'under inquiry',
-      kpiCriticalSla: 'Critical (SLA < 15 mins)',
+      kpiCriticalSla: 'Open Critical Cases',
       kpiCriticalSlaSub: 'high priority',
-      kpiConsensus: 'Ruling Consensus Rate',
-      kpiConsensusSub: '{count} resolved',
+      kpiResolved: 'Resolved',
+      kpiResolvedSub: 'cases',
       // Workbench Header
       dossierRef: 'Dossier #{code} • Reference #{ref}',
       printDossier: 'Print Case Dossier',

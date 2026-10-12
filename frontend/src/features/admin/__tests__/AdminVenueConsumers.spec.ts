@@ -300,5 +300,12 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
 
       expect(error.value).not.toBe('')
     })
+
+    it('reports no match rate instead of 100% when no shift has been closed', async () => {
+      const { loadData, matchRatePercent } = useAdminShiftReconciliation()
+      await loadData()
+
+      expect(matchRatePercent.value).toBeNull()
+    })
   })
 })

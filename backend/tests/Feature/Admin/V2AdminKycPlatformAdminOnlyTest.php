@@ -109,4 +109,32 @@ class V2AdminKycPlatformAdminOnlyTest extends TestCase
             'reviewed_by' => $admin->id,
         ]);
     }
+
+    public function test_stats_average_processing_time_comes_from_review_timestamps(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'platform_admin']));
+
+        // Nothing reviewed yet: there is no average to report.
+        $this->getJson('/api/v2/admin/kyc/stats')
+            ->assertOk()
+            ->assertJsonPath('stats.avg_processing_time_minutes', null);
+
+        $this->kyc->update(['status' => 'approved', 'submitted_at' => '2026-10-01 10:00:00', 'reviewed_at' => '2026-10-01 10:30:00']);
+        $reviewedAfter45Minutes = ['status' => 'rejected', 'submitted_at' => '2026-10-01 10:00:00', 'reviewed_at' => '2026-10-01 10:45:00'];
+        $resubmittedAfterReview = ['status' => 'pending', 'submitted_at' => '2026-10-02 09:00:00', 'reviewed_at' => '2026-10-01 12:00:00'];
+        foreach ([$reviewedAfter45Minutes, $resubmittedAfterReview] as $i => $attributes) {
+            $applicant = User::factory()->create();
+            $this->kyc->replicate()->fill([
+                'kyc_code' => "KYC-V2-STATS-{$i}",
+                'user_id' => $applicant->id,
+                'current_user_id' => $applicant->id,
+                ...$attributes,
+            ])->save();
+        }
+
+        // (30 + 45) / 2; the resubmitted row is back in the queue and does not count.
+        $this->getJson('/api/v2/admin/kyc/stats')
+            ->assertOk()
+            ->assertJsonPath('stats.avg_processing_time_minutes', 37.5);
+    }
 }

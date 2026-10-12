@@ -65,8 +65,10 @@ const { t } = useI18n()
           <span class="material-symbols-outlined kpi-icon">speed</span>
         </div>
         <div class="kpi-value-row">
-          <span class="kpi-number">{{ stats.avg_processing_time_minutes }}</span>
-          <span class="kpi-unit">{{ t('admin.kyc.kpiAvgTimeUnit') }}</span>
+          <span class="kpi-number">{{ stats.avg_processing_time_minutes ?? '—' }}</span>
+          <span v-if="stats.avg_processing_time_minutes !== null" class="kpi-unit">{{
+            t('admin.kyc.kpiAvgTimeUnit')
+          }}</span>
         </div>
         <div class="kpi-desc">{{ t('admin.kyc.kpiAvgTimeDesc') }}</div>
       </div>

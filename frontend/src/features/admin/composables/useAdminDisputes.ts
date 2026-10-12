@@ -34,8 +34,6 @@ export function useAdminDisputes() {
     awaitingReplyCount: 0,
     resolvedCount: 0,
     criticalSlaCount: 0,
-    avgResolutionTimeMinutes: 18.5,
-    consensusRate: 98.2,
   })
 
   const disputes = ref<DisputeCase[]>([])

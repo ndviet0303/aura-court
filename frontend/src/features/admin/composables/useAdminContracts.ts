@@ -25,7 +25,6 @@ export function useAdminContracts() {
     total_contracts: 0,
     mrr_amount: 0,
     overdue_cycles: 0,
-    prime_time_utilization: 0,
   })
 
   function mapContract(item: any): RecurringContractItem {
@@ -134,8 +133,6 @@ export function useAdminContracts() {
       overdue_cycles:
         rawStats.value.overdue_cycles ||
         contracts.value.filter((c) => c.status === 'overdue').length,
-      prime_time_utilization:
-        rawStats.value.prime_time_utilization || (contracts.value.length > 0 ? 94 : 0),
     }
   })
 

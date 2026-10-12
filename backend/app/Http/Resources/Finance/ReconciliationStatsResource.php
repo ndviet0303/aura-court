@@ -16,7 +16,7 @@ class ReconciliationStatsResource extends JsonResource
             'payout_total' => (int) $this->resource['payout_total'],
             'mismatch_total' => (int) $this->resource['mismatch_total'],
             'open_alerts_count' => (int) $this->resource['open_alerts_count'],
-            'match_rate' => (float) $this->resource['match_rate'],
+            'match_rate' => isset($this->resource['match_rate']) ? (float) $this->resource['match_rate'] : null,
             'last_reconciled_at' => $this->resource['last_reconciled_at'],
             'sync_status' => $this->resource['sync_status'],
             'health_trend' => $this->resource['health_trend'] ?? [],

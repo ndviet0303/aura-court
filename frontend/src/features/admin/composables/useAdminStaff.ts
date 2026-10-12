@@ -273,8 +273,7 @@ export function useAdminStaff() {
     return {
       totalStaff: list.length,
       activeManagers: list.filter((s) => s.role === 'Manager' || s.role === 'Owner').length,
-      receptionistsOnline: list.filter((s) => s.role === 'Receptionist' || s.role === 'Staff')
-        .length,
+      receptionists: list.filter((s) => s.role === 'Receptionist' || s.role === 'Staff').length,
       systemRoles: 5,
     }
   })

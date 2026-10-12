@@ -6,6 +6,7 @@ import type { SettlementRecord } from '../../types/finance'
 import {
   getProviderFee,
   getHistoricalCommission,
+  getRefundAmount,
   getTotalDeduction,
   getNetPayable,
 } from '../../composables/useAdminPayouts'
@@ -189,13 +190,15 @@ function resetFilters() {
               <div class="fee-cell-content">
                 <span class="fee-val text-red"> -{{ formatMoney(getTotalDeduction(s)) }} </span>
                 <div class="fee-sub-breakdown text-11 text-muted">
-                  <span class="provider-fee-tag"
-                    >{{ t('admin.payouts.providerFee') }}:
-                    {{ formatMoney(getProviderFee(s)) }}</span
-                  >
+                  <span class="provider-fee-tag">
+                    {{ t('admin.payouts.providerFee') }}: {{ formatMoney(getProviderFee(s)) }}
+                  </span>
                   <span v-if="getHistoricalCommission(s) > 0" class="hist-comm-tag">
                     • {{ t('admin.payouts.historicalCommission') }}:
                     {{ formatMoney(getHistoricalCommission(s)) }}
+                  </span>
+                  <span v-if="getRefundAmount(s) > 0" class="hist-comm-tag">
+                    • {{ t('admin.payouts.refunds') }}: {{ formatMoney(getRefundAmount(s)) }}
                   </span>
                 </div>
               </div>
@@ -414,10 +417,7 @@ function resetFilters() {
   font-size: 12px;
 }
 
-.gross-val {
-  font-weight: 600;
-}
-
+.gross-val,
 .fee-val {
   font-weight: 600;
 }

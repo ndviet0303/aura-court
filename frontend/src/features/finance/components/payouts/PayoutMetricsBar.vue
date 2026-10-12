@@ -8,6 +8,7 @@ defineProps<{
   paid?: number
   providerFee?: number
   commission?: number
+  refunds?: number
   loading?: boolean
 }>()
 
@@ -57,9 +58,14 @@ function formatMoney(amount: number): string {
         </div>
         <strong class="m-val text-red">-{{ formatMoney(fee) }}</strong>
         <span class="m-sub text-muted">
-          <template v-if="commission && commission > 0">
-            {{ t('admin.payouts.providerFee') }}: {{ formatMoney(providerFee || 0) }} |
-            {{ t('admin.payouts.historicalCommission') }}: {{ formatMoney(commission) }}
+          <template v-if="commission || refunds">
+            {{ t('admin.payouts.providerFee') }}: {{ formatMoney(providerFee || 0) }}
+            <template v-if="commission">
+              | {{ t('admin.payouts.historicalCommission') }}: {{ formatMoney(commission) }}
+            </template>
+            <template v-if="refunds">
+              | {{ t('admin.payouts.refunds') }}: {{ formatMoney(refunds) }}
+            </template>
           </template>
           <template v-else>
             {{ t('admin.payouts.feesSub') }}

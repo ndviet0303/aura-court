@@ -337,8 +337,19 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $headers = ['X-Organization-Id' => $this->organization->id];
 
         $stats = $this->actingAs($this->owner)->getJson('/api/v2/finance/reconciliation/stats', $headers);
+        // An organization with no finance activity reports zeros and nulls, never placeholder figures.
         $stats->assertOk()
-            ->assertJsonStructure(['provider_total', 'journal_total', 'settlement_total', 'payout_total', 'sync_status']);
+            ->assertJsonStructure(['provider_total', 'journal_total', 'settlement_total', 'payout_total', 'sync_status'])
+            ->assertJsonPath('provider_total', 0)
+            ->assertJsonPath('journal_total', 0)
+            ->assertJsonPath('settlement_total', 0)
+            ->assertJsonPath('payout_total', 0)
+            ->assertJsonPath('mismatch_total', 0)
+            ->assertJsonPath('open_alerts_count', 0)
+            ->assertJsonPath('match_rate', null)
+            ->assertJsonPath('last_reconciled_at', null)
+            ->assertJsonCount(7, 'health_trend')
+            ->assertJsonPath('health_trend.6.status', null);
         $runs = $this->actingAs($this->owner)->getJson('/api/v2/finance/reconciliation/runs', $headers);
         $runs->assertOk()
             ->assertJsonStructure(['data']);

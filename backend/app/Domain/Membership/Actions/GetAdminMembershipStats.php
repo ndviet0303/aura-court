@@ -4,7 +4,6 @@ namespace App\Domain\Membership\Actions;
 
 use App\Models\PointLedger;
 use App\Models\TenantMembership;
-use App\Models\TenantMembershipPlan;
 
 class GetAdminMembershipStats
 {
@@ -32,15 +31,6 @@ class GetAdminMembershipStats
             return (int) $price;
         });
 
-        if ($monthlyRecurringRevenue === 0 && $totalVipMembers === 0) {
-            // If no active member entries in test DB, calculate from published plans as baseline
-            $plansSum = (int) TenantMembershipPlan::where('organization_id', $organizationId)
-                ->where('status', 'published')
-                ->sum('price');
-            $monthlyRecurringRevenue = max(0, $plansSum * 4);
-            $totalVipMembers = max(0, TenantMembershipPlan::where('organization_id', $organizationId)->count() * 8);
-        }
-
         $issuedPoints = (int) PointLedger::where('organization_id', $organizationId)
             ->where('delta', '>', 0)
             ->sum('delta');
@@ -49,16 +39,11 @@ class GetAdminMembershipStats
             ->where('delta', '<', 0)
             ->sum('delta'));
 
-        $totalPointsIssued = $issuedPoints > 0 ? $issuedPoints : 128450;
-        $redemptionRate = $totalPointsIssued > 0 && $redeemedPoints > 0
-            ? round(($redeemedPoints / $totalPointsIssued) * 100, 1)
-            : 34.8;
-
         return [
             'totalVipMembers' => $totalVipMembers,
             'monthlyRecurringRevenue' => $monthlyRecurringRevenue,
-            'totalPointsIssued' => $totalPointsIssued,
-            'redemptionRatePercent' => $redemptionRate,
+            'totalPointsIssued' => $issuedPoints,
+            'redemptionRatePercent' => $issuedPoints > 0 ? round(($redeemedPoints / $issuedPoints) * 100, 1) : 0,
         ];
     }
 }
