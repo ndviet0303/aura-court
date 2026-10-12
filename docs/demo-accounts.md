@@ -21,10 +21,11 @@ Tài liệu này không ghi mật khẩu (theo quy ước trong README). Seeder 
 |---|---|
 | `SEED_ADMIN_PASSWORD` | `admin@auracourt.vn`, `SEED_ADMIN_EMAIL` (mặc định `admin@example.com`) |
 | `SEED_DEMO_ADMIN_PASSWORD` | `SEED_DEMO_ADMIN_EMAIL` (mặc định `demo-20260811@demo.auracourt.vn`) |
-| `SEED_DEMO_PASSWORD` | mọi tài khoản `@demo.auracourt.vn` |
+| `SEED_DEMO_PASSWORD` | `user@example.com` và mọi tài khoản `@demo.auracourt.vn` |
 
-`user@example.com` và `soicuteeee@gmail.com` dùng mật khẩu cố định trong `UserSeeder`. Giá trị mặc định chỉ dành cho máy
-local; khi seed môi trường công khai, đặt giá trị riêng và gửi riêng cho người thuyết trình.
+Mã nguồn không có mật khẩu mặc định. Khi `APP_ENV` khác `local`/`testing`, seed dừng với lỗi nếu thiếu một trong ba biến;
+ở local, để trống thì tài khoản seed nhận mật khẩu ngẫu nhiên. Khi seed môi trường công khai, đặt giá trị riêng và gửi riêng
+cho người thuyết trình.
 
 ## Tổ chức
 

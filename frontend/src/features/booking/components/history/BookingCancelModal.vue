@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
+import { venueClockRange } from '@/core/utils/venueTime'
 import { errorMessage, idempotencyKey } from '@/core/api/client'
 import { bookingApi } from '../../api/bookingApi'
 import type {
@@ -226,9 +227,7 @@ watch(
                 :data-testid="`cancel-slot-${s.id}`"
                 @change="toggleSlot(s.id)"
               />
-              <span class="font-mono"
-                >{{ s.starts_at.slice(11, 16) }} - {{ s.ends_at?.slice(11, 16) }}</span
-              >
+              <span class="font-mono">{{ venueClockRange(s.starts_at, s.ends_at) }}</span>
               <span class="slot-price font-mono">{{ formatCurrency(s.unit_price) }}</span>
             </label>
           </div>

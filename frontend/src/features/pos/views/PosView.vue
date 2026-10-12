@@ -28,7 +28,7 @@ const {
   error: capabilityError,
   fetchCapabilities,
 } = useTenantCapabilities()
-const { t } = useI18n()
+const { t, d } = useI18n()
 const auth = useAuthStore()
 
 const {
@@ -130,8 +130,8 @@ async function handleSettleTab(tabId: number) {
       currentReceipt.value = {
         order_code: serverReceipt.order_code || `POS-${res?.order?.id || Date.now()}`,
         created_at: serverReceipt.created_at
-          ? new Date(serverReceipt.created_at).toLocaleString()
-          : new Date().toLocaleString(),
+          ? d(new Date(serverReceipt.created_at), 'datetime')
+          : d(new Date(), 'datetime'),
         cashier_name: serverReceipt.cashier_name || auth.user?.name || t('admin.pos.tblCashier'),
         customer_name: serverReceipt.customer_name || selectedCustomer.value?.name,
         court_info: serverReceipt.court_info,
@@ -235,7 +235,7 @@ function handleSaveDraft() {
   const draftId = `DRAFT-${Date.now().toString().slice(-4)}`
   drafts.value.push({
     id: draftId,
-    name: selectedCustomer.value?.name || `Draft ${new Date().toLocaleTimeString()}`,
+    name: selectedCustomer.value?.name || `Draft ${d(new Date(), 'time')}`,
     items: cart.value.map((c) => ({
       product_id: c.product.id,
       quantity: c.quantity,
@@ -246,7 +246,7 @@ function handleSaveDraft() {
     reservation_id: selectedReservationId.value,
     customer_id: selectedCustomer.value?.id,
     customer_name: selectedCustomer.value?.name,
-    saved_at: new Date().toLocaleTimeString(),
+    saved_at: d(new Date(), 'time'),
     total_amount: grandTotal.value,
   })
   clearCart()
@@ -349,8 +349,8 @@ async function handleCheckout() {
       ? {
           order_code: serverReceipt.order_code || `POS-${response?.order?.id || Date.now()}`,
           created_at: serverReceipt.created_at
-            ? new Date(serverReceipt.created_at).toLocaleString()
-            : new Date().toLocaleString(),
+            ? d(new Date(serverReceipt.created_at), 'datetime')
+            : d(new Date(), 'datetime'),
           cashier_name: serverReceipt.cashier_name || auth.user?.name || t('admin.pos.tblCashier'),
           customer_name: serverReceipt.customer_name || selectedCustomer.value?.name,
           court_info:
@@ -384,7 +384,7 @@ async function handleCheckout() {
         }
       : {
           order_code: `POS-${Date.now()}`,
-          created_at: new Date().toLocaleString(),
+          created_at: d(new Date(), 'datetime'),
           cashier_name: auth.user?.name || t('admin.pos.tblCashier'),
           customer_name: selectedCustomer.value?.name,
           court_info: activeReservations.value.find((r) => r.id === selectedReservationId.value)
@@ -436,7 +436,7 @@ async function handleConfirmQr() {
 
     currentReceipt.value = confirmedReceipt || {
       order_code: pendingQrOrder.value.payment_reference || `POS-${pendingQrOrder.value.id}`,
-      created_at: new Date().toLocaleString(),
+      created_at: d(new Date(), 'datetime'),
       cashier_name: auth.user?.name || 'Thu ngân',
       customer_name: selectedCustomer.value?.name,
       grand_total: pendingQrOrder.value.total_amount,

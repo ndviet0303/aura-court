@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { VENUE_TIME_ZONE, venueClock } from '@/core/utils/venueTime'
 import type { OccurrenceItem, MonthlyInvoiceData } from '../../types/finance'
 
 const props = defineProps<{
@@ -18,6 +19,7 @@ function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr)
     return d.toLocaleDateString('vi-VN', {
+      timeZone: VENUE_TIME_ZONE,
       weekday: 'short',
       day: '2-digit',
       month: '2-digit',
@@ -30,38 +32,10 @@ function formatDate(dateStr: string): string {
 
 function formatTimeRange(startStr: string, endStr: string): string {
   if (!startStr) return ''
-  try {
-    const startDate = new Date(startStr)
-    const startFormatted = startDate.toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
-
-    if (endStr) {
-      const endDate = new Date(endStr)
-      if (endDate.getTime() > startDate.getTime()) {
-        const endFormatted = endDate.toLocaleTimeString('vi-VN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        })
-        return `${startFormatted} ➔ ${endFormatted}`
-      }
-    }
-
-    const defaultEndDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000)
-    const endFormatted = defaultEndDate.toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
-    return `${startFormatted} ➔ ${endFormatted}`
-  } catch {
-    const start = startStr.length >= 16 ? startStr.slice(11, 16) : startStr
-    const end = endStr && endStr.length >= 16 ? endStr.slice(11, 16) : ''
-    return end ? `${start} ➔ ${end}` : start
-  }
+  const start = new Date(startStr).getTime()
+  // A missing or non-positive end shows the default 2h session.
+  const end = new Date(endStr).getTime() > start ? endStr : new Date(start + 2 * 60 * 60 * 1000)
+  return `${venueClock(startStr)} ➔ ${venueClock(end)}`
 }
 
 function calculateDurationHours(startStr: string, endStr: string): string {

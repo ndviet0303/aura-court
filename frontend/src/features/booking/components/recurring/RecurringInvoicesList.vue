@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringInvoice, InvoiceStatus } from '../../types/recurring'
-import { venueDate } from '../../utils/venueTime'
+import { venueDate } from '@/core/utils/venueTime'
 
 const props = defineProps<{
   invoices: RecurringInvoice[]
