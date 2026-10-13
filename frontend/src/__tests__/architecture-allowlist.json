@@ -101,7 +101,7 @@
   ],
   ["component-lines", "features/tournament/components/live/LiveFixturesSelector.vue", 493],
   ["component-lines", "features/tournament/components/live/LiveMatchScoreboard.vue", 416],
-  ["component-lines", "features/tournament/components/live/LiveUmpireControlPanel.vue", 780],
+  ["component-lines", "features/tournament/components/live/LiveUmpireControlPanel.vue", 772],
   ["component-lines", "features/wallet/components/VenueWalletsList.vue", 468],
   ["component-lines", "features/wallet/components/WalletDepositModal.vue", 899],
   ["component-lines", "features/wallet/components/WalletTransactionsTable.vue", 524],
