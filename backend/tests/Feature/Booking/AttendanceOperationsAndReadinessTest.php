@@ -230,8 +230,8 @@ class AttendanceOperationsAndReadinessTest extends TestCase
 
     public function test_check_in_validates_arrival_window_and_court_readiness(): void
     {
-        // Back-to-back slots on court1 must not overlap when the clock ticks between now() calls.
-        $this->freezeTime();
+        // Frozen at venue-local midday: back-to-back slots must not overlap, and +/-1h must stay on the same venue day.
+        Carbon::setTestNow(now('Asia/Ho_Chi_Minh')->setTime(12, 0));
         $fixture = $this->tenant();
         $tz = 'Asia/Ho_Chi_Minh';
         $attendanceService = app(AttendanceService::class);
@@ -396,6 +396,8 @@ class AttendanceOperationsAndReadinessTest extends TestCase
 
     public function test_checkout_moves_court_to_awaiting_inspection_and_staff_confirms_ready(): void
     {
+        // Venue-local midday, so the next-hour slot stays on the same venue day.
+        Carbon::setTestNow(now('Asia/Ho_Chi_Minh')->setTime(12, 0));
         $fixture = $this->tenant();
         $tz = 'Asia/Ho_Chi_Minh';
         $now = now($tz);
