@@ -125,6 +125,33 @@ describe('Task 1.2 Regression: Local tournament registration and payment confirm
     expect(payment.showSuccessModal.value).toBe(true)
   })
 
+  it('charges the published fee, and nothing when none is published', async () => {
+    for (const [entry_fee, amount] of [
+      ['300.000 ₫ / VĐV', 300000],
+      [undefined, 0],
+    ] as const) {
+      vi.mocked(tournamentApi.getById).mockResolvedValue({ ...sampleTournament, entry_fee })
+      const payment = usePaymentProcessing()
+      await payment.startTimers()
+
+      expect(payment.paymentAmount.value).toBe(amount)
+      expect(payment.payment.value?.amount).toBe(amount)
+    }
+  })
+
+  it('offers nothing to pay when the tournament cannot be loaded', async () => {
+    vi.mocked(tournamentApi.getById).mockRejectedValue(new Error('Not found'))
+    const payment = usePaymentProcessing()
+    await payment.startTimers()
+
+    expect(payment.tournament.value).toBeNull()
+    expect(payment.payment.value).toBeNull()
+    expect(payment.error.value).toBe('Not found')
+
+    await payment.handleWalletPay()
+    expect(tournamentApi.register).not.toHaveBeenCalled()
+  })
+
   it('Task 8.9 Fix: persisted tournament registration is preserved on reload from server participants', async () => {
     const tournamentWithParticipant: TournamentItem = {
       ...sampleTournament,

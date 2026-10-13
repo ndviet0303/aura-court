@@ -486,7 +486,7 @@
   },
   "src/features/tournament/composables/useTournamentBracket.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 19
+      "count": 18
     }
   },
   "src/features/tournament/composables/useTournamentsList.ts": {

@@ -56,24 +56,22 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
     <div v-if="isTournament" class="tourney-summary-meta">
       <div v-if="tournament?.image_url" class="tourney-mini-thumb">
         <img :src="tournament.image_url" :alt="tournament.name" class="thumb-img" />
-        <div class="thumb-badge">{{ tournament.category || tournament.sport }}</div>
+        <div v-if="tournament.category || tournament.sport" class="thumb-badge">
+          {{ tournament.category || tournament.sport }}
+        </div>
       </div>
 
       <div class="tourney-info-block">
         <h4 class="tourney-heading">
-          {{ tournament?.name || payment.title || 'Giải Đấu Aura Circuit' }}
+          {{ tournament?.name || payment.title }}
         </h4>
-        <div class="meta-row">
+        <div v-if="tournament?.venue" class="meta-row">
           <span class="material-symbols-outlined mini-ico">location_on</span>
-          <span
-            >{{ tournament?.venue || 'Aura Sport Complex' }} ({{
-              tournament?.city || 'TP. Hồ Chí Minh'
-            }})</span
-          >
+          <span>{{ tournament.venue }}{{ tournament.city ? ` (${tournament.city})` : '' }}</span>
         </div>
-        <div class="meta-row">
+        <div v-if="tournament?.dates" class="meta-row">
           <span class="material-symbols-outlined mini-ico">calendar_month</span>
-          <span>{{ tournament?.dates || 'Tháng 09/2026' }}</span>
+          <span>{{ tournament.dates }}</span>
         </div>
       </div>
 
@@ -113,16 +111,14 @@ const athleteDetails = computed(() => props.payment.athleteDetails)
       </div>
     </div>
 
-    <!-- Coupon Input Block -->
-    <div v-if="!directOwnerPayment" class="summary-coupon-block">
+    <!-- Coupon Input Block: bookings only, tournament entry has no coupons -->
+    <div v-if="!directOwnerPayment && !isTournament" class="summary-coupon-block">
       <div class="coupon-input-group">
         <input
           :value="couponCode"
           type="text"
           class="coupon-text-input"
-          :placeholder="
-            isTournament ? 'Nhập mã ưu đãi giải (Vd: AURA2026)...' : $t('payment.couponPlaceholder')
-          "
+          :placeholder="$t('payment.couponPlaceholder')"
           @input="emit('update:couponCode', ($event.target as HTMLInputElement).value)"
         />
         <button

@@ -66,4 +66,52 @@ describe('tournamentApi mapping', () => {
     expect(detail.current_slots).toBe(3)
     expect(detail.participants).toHaveLength(3)
   })
+
+  it('leaves values the API omits empty instead of inventing them', async () => {
+    vi.mocked(apiV2.get).mockResolvedValue({
+      tournament: {
+        id: 6,
+        name: 'E',
+        status: 'open',
+        // Model accessors: entry_fee is null without a published fee; max_participants is the enforced cap.
+        entry_fee: null,
+        max_participants: 16,
+        settings: {},
+        participants: [{ id: 7, seed: 1, user: { name: 'An' } }],
+      },
+    })
+
+    const detail = await tournamentApi.getById<TournamentItem>(6)
+
+    expect(detail).toMatchObject({
+      sport: undefined,
+      category: undefined,
+      prize_pool: undefined,
+      venue: undefined,
+      city: undefined,
+      description: undefined,
+      entry_fee: undefined,
+      dates: '',
+      max_slots: 16,
+      current_slots: 1,
+    })
+    expect(detail.participants?.[0]).toMatchObject({
+      name: 'An',
+      club: undefined,
+      level: undefined,
+      phone: undefined,
+      category: undefined,
+      avatar: undefined,
+    })
+  })
+
+  it('shows only the start day, in the venue timezone, when no end date is stored', async () => {
+    vi.mocked(apiV2.get).mockResolvedValue({
+      tournament: { id: 7, status: 'open', starts_at: '2026-10-14T20:00:00.000000Z', settings: {} },
+    })
+
+    const detail = await tournamentApi.getById<TournamentItem>(7)
+
+    expect(detail.dates).toBe('15/10/2026')
+  })
 })

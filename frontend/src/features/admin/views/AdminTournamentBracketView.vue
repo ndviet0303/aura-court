@@ -65,7 +65,7 @@ const tournamentOptions = computed<DropdownOption[]>(() => {
   return tournamentsList.value.map((item) => ({
     value: item.id,
     label: item.name,
-    sublabel: `${item.sport} · ${item.venue || 'Aura Court'}`,
+    sublabel: [item.sport, item.venue].filter(Boolean).join(' · '),
   }))
 })
 
@@ -74,7 +74,7 @@ function handleSelectMatch(match: FixtureMatch) {
   showScoreModal.value = true
 }
 
-async function handleSaveMatchScore(updated: FixtureMatch, p1Score?: number, p2Score?: number) {
+async function handleSaveMatchScore(updated: FixtureMatch, p1Score: number, p2Score: number) {
   const ok = await saveMatchScore(updated, p1Score, p2Score)
   if (ok) {
     showScoreModal.value = false
@@ -102,14 +102,14 @@ async function handleCreateTournament(payload: any) {
         <div v-if="loading" class="header-skeleton-subhead">
           <SkeletonLoader type="text" width="220px" height="14px" />
         </div>
-        <div v-else class="tournament-subhead">
+        <div v-else-if="tournament.id" class="tournament-subhead">
           <strong class="t-name">{{ tournament.name }}</strong>
-          <span class="t-badge">{{ tournament.category }}</span>
-          <span class="t-venue">
+          <span v-if="tournament.category" class="t-badge">{{ tournament.category }}</span>
+          <span v-if="tournament.venue" class="t-venue">
             <span class="material-symbols-outlined icon-14">location_on</span>
-            <span>{{ tournament.venue }} ({{ tournament.city }})</span>
+            <span>{{ tournament.venue }}{{ tournament.city ? ` (${tournament.city})` : '' }}</span>
           </span>
-          <span class="t-dates font-mono">
+          <span v-if="tournament.datesFormatted" class="t-dates font-mono">
             <span class="material-symbols-outlined icon-14">calendar_today</span>
             <span>{{ tournament.datesFormatted }}</span>
           </span>

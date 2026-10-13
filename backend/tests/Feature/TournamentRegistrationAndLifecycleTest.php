@@ -230,6 +230,35 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
         ]);
     }
 
+    public function test_creating_a_tournament_stores_only_the_settings_given(): void
+    {
+        $res = $this->actingAs($this->owner)
+            ->withHeaders($this->headers('create-'))
+            ->postJson('/api/v2/tournaments', [
+                'name' => 'Giải Phong Trào',
+                'format' => 'single_elimination',
+                'sport' => 'tennis',
+                'venue' => 'Sân Phú Nhuận',
+                // The organizer cleared the pre-filled fee.
+                'entry_fee' => '',
+            ]);
+
+        $res->assertCreated();
+        $res->assertJsonPath('tournament.entry_fee', null);
+        $res->assertJsonPath('tournament.max_participants', 16);
+        // No demo city, prize, fee, dates or category is filled in.
+        $tournament = Tournament::findOrFail($res->json('tournament.id'));
+        $this->assertEquals(['sport' => 'tennis', 'venue' => 'Sân Phú Nhuận', 'max_participants' => 16], $tournament->settings);
+
+        // With no published fee, entry is free.
+        $this->actingAs($this->player1)
+            ->withHeaders($this->headers('reg-unpriced-'))
+            ->postJson("/api/v2/tournaments/{$tournament->id}/register", ['name' => 'Alice'])
+            ->assertCreated()
+            ->assertJsonPath('receipt.entry_fee', 0);
+        $this->assertSame(500000, $this->wallet1->fresh()->balance);
+    }
+
     public function test_tournament_registration_is_idempotent_and_safe_on_retry(): void
     {
         $tournament = Tournament::create([

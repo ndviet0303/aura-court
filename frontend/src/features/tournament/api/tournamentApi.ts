@@ -1,4 +1,5 @@
 import { apiV2 } from '@/core/api/client'
+import { formatDate } from '@/i18n'
 import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
 
 // Backend lifecycle (draft/open/ready/in_progress/finalized) -> the card/tab vocabulary.
@@ -14,12 +15,12 @@ const formatDay = (ymd: string) => ymd.slice(0, 10).split('-').reverse().join('/
 
 function mapRawTournament(t: any): TournamentItem {
   const settings = t.settings || {}
-  const sport = settings.sport || t.sport || 'badminton'
-  const maxSlots = settings.max_participants || t.max_slots || t.max_participants || 16
-  const currentSlots = t.participants_count ?? t.current_slots ?? t.participants?.length ?? 8
-  const prizePool = settings.prize_pool || t.prize_pool || '15.000.000 ₫'
-  const venue = settings.venue || t.venue?.name || t.venue || 'Aura Sport Arena'
-  const city = settings.city || t.venue?.city || t.city || 'Hồ Chí Minh'
+  const sport = settings.sport || t.sport
+  const maxSlots = settings.max_participants || t.max_slots || t.max_participants
+  const currentSlots = t.participants_count ?? t.current_slots ?? t.participants?.length
+  const prizePool = settings.prize_pool || t.prize_pool
+  const venue = settings.venue || t.venue?.name || t.venue
+  const city = settings.city || t.venue?.city || t.city
 
   let formattedDates = t.dates
   if (!formattedDates) {
@@ -27,11 +28,9 @@ function mapRawTournament(t: any): TournamentItem {
       formattedDates = settings.end_date
         ? `${formatDay(settings.start_date)} - ${formatDay(settings.end_date)}`
         : formatDay(settings.start_date)
-    } else if (t.starts_at) {
-      const date = new Date(t.starts_at)
-      formattedDates = `${date.toLocaleDateString('vi-VN')} - ${date.getDate() + 2}/${date.getMonth() + 1}/${date.getFullYear()}`
     } else {
-      formattedDates = 'Tháng 09/2026'
+      // starts_at carries no end day, so show the start alone; nothing when neither is set.
+      formattedDates = t.starts_at ? formatDate(t.starts_at) : ''
     }
   }
 
@@ -52,19 +51,12 @@ function mapRawTournament(t: any): TournamentItem {
   return {
     id: t.id,
     uuid: t.uuid,
-    name: t.name || 'Giải Đấu Aura Circuit 2026',
+    name: t.name,
     slug: t.slug || `tournament-${t.id}`,
-    category:
-      settings.category ||
-      t.category ||
-      (sport === 'pickleball'
-        ? 'Pickleball Đôi Open'
-        : sport === 'badminton'
-          ? 'Cầu Lông Đơn Nam Nâng Cao'
-          : 'Tennis Open'),
+    category: settings.category || t.category,
     sport,
-    format: t.format || 'single_elimination',
-    status: STATUS_LABELS[t.status] || t.status || 'open',
+    format: t.format,
+    status: STATUS_LABELS[t.status] || t.status,
     prize_pool: prizePool,
     dates: formattedDates,
     start_date: settings.start_date,
@@ -74,13 +66,10 @@ function mapRawTournament(t: any): TournamentItem {
     court_name: t.court_name,
     current_slots: currentSlots,
     max_slots: maxSlots,
-    entry_fee: settings.entry_fee || t.entry_fee || '300.000 ₫ / VĐV',
+    entry_fee: settings.entry_fee,
     image_url: imageUrl,
-    description:
-      settings.description ||
-      t.description ||
-      `Giải đấu chính thức thuộc hệ thống Aura Circuit 2026, tích lũy điểm thưởng và tranh cúp vô địch Master Cup.`,
-    version: t.version || 1,
+    description: settings.description || t.description,
+    version: t.version,
     current_match: t.current_match,
     winner_team: t.winner_team,
     fixtures: (t.fixtures || []).map((f: any) => {
@@ -126,9 +115,9 @@ function mapRawTournament(t: any): TournamentItem {
 
       return {
         id: f.id,
-        round: f.round || 1,
-        position: f.position || 1,
-        status: f.status || 'pending',
+        round: f.round,
+        position: f.position,
+        status: f.status,
         court_name: f.court_name,
         court_id: f.court_id,
         scheduled_time: f.scheduled_time,
@@ -161,17 +150,14 @@ function mapRawTournament(t: any): TournamentItem {
       user_id: p.user_id,
       name: p.user?.name || p.name || `VĐV #${p.id}`,
       seed: p.seed,
-      club: p.club || 'Independent',
-      level: p.level || 'Hạng B',
-      phone: p.user?.phone || p.phone || '0901234567',
-      category: p.category || (sport === 'pickleball' ? 'Pickleball Đôi Open' : 'Đơn Nam Nâng Cao'),
+      club: p.club,
+      level: p.level,
+      phone: p.user?.phone || p.phone,
+      category: p.category,
       qr_code: p.qr_code || `ATH-${p.id}`,
       status: p.status || (p.checked_in ? 'checked_in' : 'pending'),
       checked_in: !!p.checked_in_at || p.status === 'checked_in' || !!p.checked_in,
-      avatar:
-        p.user?.avatar_url ||
-        p.avatar ||
-        `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80`,
+      avatar: p.user?.avatar_url || p.avatar,
     })),
     standings: t.standings || [],
   }

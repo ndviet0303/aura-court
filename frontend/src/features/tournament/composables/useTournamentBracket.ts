@@ -2,6 +2,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { getAvatarUrl } from '@/lib/avatar'
 
 export interface Player {
   name: string
@@ -28,10 +29,10 @@ export interface BracketMatch {
 }
 
 export interface GroupStanding {
-  rank: number
+  rank: number | null
   name: string
   avatar: string
-  club: string
+  club?: string
   isQualified: boolean
   mp: number
   w: number
@@ -44,10 +45,10 @@ export interface TournamentItem {
   id: number
   uuid?: string
   name: string
-  status: string
+  status?: string
   dates: string
   location: string
-  playersCount: number
+  playersCount?: number
   category?: string
   sport?: string
   format?: string
@@ -101,10 +102,11 @@ export function useTournamentBracket() {
           id: t.id,
           uuid: t.uuid,
           name: t.name,
-          status: t.status || 'open',
+          status: t.status,
           dates: t.dates,
           location: t.venue,
-          playersCount: t.max_slots || 16,
+          // Registered athletes, not the cap: the header says "N athletes competing".
+          playersCount: t.current_slots,
           category: t.category,
           sport: t.sport,
           format: t.format,
@@ -148,40 +150,26 @@ export function useTournamentBracket() {
       if (detail) {
         // 1. Map Standings from API
         if (Array.isArray(detail.standings) && detail.standings.length > 0) {
-          groupStandings.value = detail.standings.map((s: any) => ({
-            rank: s.rank || 1,
-            name: s.participant?.user?.name || s.participant?.name || `VĐV #${s.participant_id}`,
-            avatar:
-              s.participant?.user?.avatar_url ||
-              s.participant?.avatar ||
-              `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80`,
-            club: s.participant?.club || ((s.rank || 1) <= 2 ? 'Aura Elite Club' : 'VĐV Tự Do'),
-            isQualified: (s.rank || 1) <= 2,
-            mp: s.played || Number(s.wins || 0) + Number(s.losses || 0) || 1,
-            w: s.wins || 0,
-            l: s.losses || 0,
-            setsRatio: `${s.wins || 0}-${s.losses || 0}`,
-            points: s.points || 0,
-          }))
-        } else if (Array.isArray(detail.participants) && detail.participants.length > 0) {
-          // Generate default standings from participants
-          groupStandings.value = detail.participants.map((p: any, idx: number) => ({
-            rank: idx + 1,
-            name: p.name || (p.user ? p.user.name : `VĐV #${p.id}`),
-            avatar:
-              p.avatar ||
-              (p.user
-                ? p.user.avatar_url
-                : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80`),
-            club: p.club || (idx < 2 ? 'Aura Elite Club' : 'CLB Tự Do'),
-            isQualified: idx < 2,
-            mp: 3,
-            w: Math.max(0, 3 - idx),
-            l: Math.min(3, idx),
-            setsRatio: `${Math.max(0, 3 - idx)}-${Math.min(3, idx)}`,
-            points: Math.max(0, (8 - idx) * 350),
-          }))
+          groupStandings.value = detail.standings.map((s: any) => {
+            const name =
+              s.participant?.user?.name || s.participant?.name || `VĐV #${s.participant_id}`
+            return {
+              // Rank stays null until the server ranks the table; nobody qualifies before that.
+              rank: s.rank ?? null,
+              name,
+              avatar:
+                s.participant?.user?.avatar_url || s.participant?.avatar || getAvatarUrl(name),
+              club: s.participant?.club,
+              isQualified: !!s.rank && s.rank <= 2,
+              mp: s.played || 0,
+              w: s.wins || 0,
+              l: s.losses || 0,
+              setsRatio: `${s.wins || 0}-${s.losses || 0}`,
+              points: s.points || 0,
+            }
+          })
         } else {
+          // No standings rows yet: show the empty table rather than a made-up one.
           groupStandings.value = []
         }
 
@@ -208,79 +196,57 @@ export function useTournamentBracket() {
               }
             }
 
-            const p1Score =
-              scoreObj?.p1 ?? (f.winner_id && f.winner_id === f.participant_one_id ? 21 : 0)
-            const p2Score =
-              scoreObj?.p2 ?? (f.winner_id && f.winner_id === f.participant_two_id ? 21 : 0)
+            // No recorded score means no score shown, even for a decided fixture.
+            const p1Score: number | undefined = scoreObj?.p1
+            const p2Score: number | undefined = scoreObj?.p2
+            const p1Name =
+              p1?.name ||
+              p1?.user?.name ||
+              (f.participant_one_id ? `VĐV #${f.participant_one_id}` : 'Chờ xác định')
+            const p2Name =
+              p2?.name ||
+              p2?.user?.name ||
+              (f.participant_two_id ? `VĐV #${f.participant_two_id}` : 'Chờ xác định')
 
             const roundPrefix =
               round === 'quarter' ? 'Tứ kết' : round === 'semi' ? 'Bán kết' : 'Chung kết'
             const roundCode = round === 'quarter' ? 'QF' : round === 'semi' ? 'SF' : 'FINAL'
-
-            const defaultAvt1 =
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'
-            const defaultAvt2 =
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80'
 
             return {
               id: f.id,
               round,
               matchNumber: idx + 1,
               label: `${roundPrefix} ${idx + 1} (${roundCode}${idx + 1})`,
-              time: f.scheduled_at
-                ? new Date(f.scheduled_at).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '08:30',
-              court: f.court_name || `Sân A${(idx % 3) + 1}`,
+              // Fixtures carry no court or time yet; leave them empty rather than guess.
+              time: f.scheduled_time ?? '',
+              court: f.court_name ?? '',
               status: (f.status === 'completed'
                 ? 'final'
                 : f.status === 'ongoing'
                   ? 'live'
                   : 'scheduled') as any,
               player1: {
-                name:
-                  p1?.name ||
-                  (p1?.user
-                    ? p1.user.name
-                    : f.participant_one_id
-                      ? `VĐV #${f.participant_one_id}`
-                      : 'Chờ xác định'),
-                avatar: p1?.avatar || (p1?.user ? p1.user.avatar_url : defaultAvt1),
-                seed: p1?.seed ? `#${p1.seed}` : `#${idx * 2 + 1}`,
-                club: p1?.club || 'Aura Club',
+                name: p1Name,
+                avatar: p1?.avatar || p1?.user?.avatar_url || getAvatarUrl(p1Name),
+                seed: p1?.seed ? `#${p1.seed}` : undefined,
+                club: p1?.club,
                 score: p1Score,
                 isWinner: !!f.winner_id && f.winner_id === f.participant_one_id,
-                sets: scoreObj?.sets
-                  ? scoreObj.sets.map((s: any) => s.p1)
-                  : f.status === 'completed'
-                    ? [p1Score]
-                    : [0],
+                sets: scoreObj?.sets?.map((s: any) => s.p1) ?? [],
               },
               player2: {
-                name:
-                  p2?.name ||
-                  (p2?.user
-                    ? p2.user.name
-                    : f.participant_two_id
-                      ? `VĐV #${f.participant_two_id}`
-                      : 'Chờ xác định'),
-                avatar: p2?.avatar || (p2?.user ? p2.user.avatar_url : defaultAvt2),
-                seed: p2?.seed ? `#${p2.seed}` : `#${idx * 2 + 2}`,
-                club: p2?.club || 'CLB Tự Do',
+                name: p2Name,
+                avatar: p2?.avatar || p2?.user?.avatar_url || getAvatarUrl(p2Name),
+                seed: p2?.seed ? `#${p2.seed}` : undefined,
+                club: p2?.club,
                 score: p2Score,
                 isWinner: !!f.winner_id && f.winner_id === f.participant_two_id,
-                sets: scoreObj?.sets
-                  ? scoreObj.sets.map((s: any) => s.p2)
-                  : f.status === 'completed'
-                    ? [p2Score]
-                    : [0],
+                sets: scoreObj?.sets?.map((s: any) => s.p2) ?? [],
               },
             }
           }
 
-          const maxRound = Math.max(...detail.fixtures.map((f: any) => f.round || 1))
+          const maxRound = Math.max(...detail.fixtures.map((f: any) => f.round))
 
           if (maxRound <= 2) {
             // 4-player tournament: round 1 is SF, round 2 is Final

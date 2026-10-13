@@ -15,20 +15,6 @@ export interface MatchEvent {
   time: string
 }
 
-export interface MatchStats {
-  aces: [number, number]
-  winners: [number, number]
-  unforced_errors: [number, number]
-  first_serve_pct: [number, number]
-  break_points: [string, string]
-  max_consecutive_pts: [number, number]
-  net_points_won_pct: [number, number]
-  total_points_won: [number, number]
-  smash_speed_max: string
-  longest_rally: string
-  duration: string
-}
-
 export interface MatchFixture {
   id: number
   tournament_id: number
@@ -41,7 +27,6 @@ export interface MatchFixture {
     name: string
     avatar: string
     seed: string
-    club: string
     sets_won: number
     current_score: number
   }
@@ -49,15 +34,12 @@ export interface MatchFixture {
     name: string
     avatar: string
     seed: string
-    club: string
     sets_won: number
     current_score: number
   }
   current_set: number
   serving_player: 1 | 2
-  version: number
   sets_history: Array<{ set: number; p1: number; p2: number; winner?: 1 | 2 }>
-  stats: MatchStats
   winner?: 1 | 2
 }
 
@@ -71,7 +53,6 @@ interface MatchSnapshot {
   serving_player: 1 | 2
   status: 'live' | 'completed' | 'upcoming'
   sets_history: Array<{ set: number; p1: number; p2: number; winner?: 1 | 2 }>
-  stats: MatchStats
   events: MatchEvent[]
 }
 
@@ -82,7 +63,7 @@ export function useLiveScore() {
   const isUmpireMode = ref(false)
   const notice = ref('')
   const error = ref('')
-  const tournamentTitle = ref('Giải Đấu Aura Circuit')
+  const tournamentTitle = ref('')
 
   const fixtures = ref<MatchFixture[]>([])
   const selectedFixtureId = ref<number | null>(null)
@@ -133,33 +114,6 @@ export function useLiveScore() {
     return null
   })
 
-  function generateStats(p1Score: number, p2Score: number, round: number): MatchStats {
-    const p1Total = p1Score > 0 ? p1Score + Math.floor(round * 2) : 18
-    const p2Total = p2Score > 0 ? p2Score + Math.floor(round * 1.5) : 14
-    return {
-      aces: [Math.max(1, Math.floor(p1Total / 7)), Math.max(1, Math.floor(p2Total / 9))],
-      winners: [Math.max(3, Math.floor(p1Total * 0.45)), Math.max(2, Math.floor(p2Total * 0.38))],
-      unforced_errors: [
-        Math.max(2, Math.floor(p2Total * 0.25)),
-        Math.max(3, Math.floor(p1Total * 0.3)),
-      ],
-      first_serve_pct: [68 + (p1Score % 12), 64 + (p2Score % 15)],
-      break_points: [
-        `${Math.max(1, Math.floor(p1Total / 8))}/${Math.max(2, Math.floor(p1Total / 5))}`,
-        `${Math.max(0, Math.floor(p2Total / 10))}/${Math.max(1, Math.floor(p2Total / 7))}`,
-      ],
-      max_consecutive_pts: [
-        Math.max(3, Math.min(8, Math.floor(p1Total / 4))),
-        Math.max(2, Math.min(6, Math.floor(p2Total / 5))),
-      ],
-      net_points_won_pct: [72 + (p1Score % 14), 60 + (p2Score % 16)],
-      total_points_won: [p1Total, p2Total],
-      smash_speed_max: `${340 + ((p1Score * 7) % 65)} km/h`,
-      longest_rally: `${14 + ((p1Score + p2Score) % 18)} đường cầu`,
-      duration: `${24 + ((p1Score + p2Score) % 35)} phút`,
-    }
-  }
-
   function takeSnapshot(): MatchSnapshot | null {
     const m = activeMatch.value
     if (!m) return null
@@ -173,7 +127,6 @@ export function useLiveScore() {
       serving_player: m.serving_player,
       status: m.status,
       sets_history: JSON.parse(JSON.stringify(m.sets_history)),
-      stats: JSON.parse(JSON.stringify(m.stats)),
       events: JSON.parse(JSON.stringify(playEvents.value)),
     }
   }
@@ -190,7 +143,7 @@ export function useLiveScore() {
           const single = await tournamentApi.getById<any>(targetParam)
           if (single) {
             targetTourneys = [single]
-            tournamentTitle.value = single.name || 'Giải Đấu Aura Circuit'
+            tournamentTitle.value = single.name || ''
           }
         } catch {
           const tourneys = await tournamentApi.list<any[]>()
@@ -201,7 +154,7 @@ export function useLiveScore() {
           if (found) {
             const single = await tournamentApi.getById<any>(found.uuid || found.id)
             targetTourneys = single ? [single] : [found]
-            tournamentTitle.value = found.name || 'Giải Đấu Aura Circuit'
+            tournamentTitle.value = found.name || ''
           } else {
             targetTourneys = list.slice(0, 3)
           }
@@ -232,12 +185,10 @@ export function useLiveScore() {
                   scoreObj = null
                 }
               }
-              const p1Score =
-                scoreObj?.p1 ??
-                (f.winner_id === f.participant_one_id ? 21 : f.status === 'ongoing' ? 14 : 0)
-              const p2Score =
-                scoreObj?.p2 ??
-                (f.winner_id === f.participant_two_id ? 21 : f.status === 'ongoing' ? 11 : 0)
+              // Without a recorded score the board starts at 0-0, the count the umpire adds to.
+              const p1Score: number = scoreObj?.p1 ?? 0
+              const p2Score: number = scoreObj?.p2 ?? 0
+              const sets: MatchFixture['sets_history'] = scoreObj?.sets ?? []
               const p1Name =
                 p1?.name ||
                 p1?.user?.name ||
@@ -261,31 +212,28 @@ export function useLiveScore() {
                 id: f.id,
                 tournament_id: detail.id,
                 tournament_uuid: detail.uuid,
-                tournament_name: detail.name || 'Giải Đấu Aura',
-                court_label: f.court_name || `Sân A${f.position || 1}`,
-                round_label: `${roundLabel} ${f.position || 1}`,
+                tournament_name: detail.name,
+                // Fixtures carry no court yet; leave it empty rather than guess.
+                court_label: f.court_name ?? '',
+                round_label: f.position ? `${roundLabel} ${f.position}` : roundLabel,
                 status: statusVal,
                 player1: {
                   name: p1Name,
                   avatar: p1Avatar,
-                  seed: p1?.seed ? `Hạt giống #${p1.seed}` : `#${(f.position || 1) * 2 - 1}`,
-                  club: p1?.club || 'Aura Elite Club',
-                  sets_won: f.winner_id === f.participant_one_id ? 2 : 0,
+                  seed: p1?.seed ? `Hạt giống #${p1.seed}` : '',
+                  sets_won: sets.filter((s) => s.p1 > s.p2).length,
                   current_score: p1Score,
                 },
                 player2: {
                   name: p2Name,
                   avatar: p2Avatar,
-                  seed: p2?.seed ? `Hạt giống #${p2.seed}` : `#${(f.position || 1) * 2}`,
-                  club: p2?.club || 'CLB Tự Do',
-                  sets_won: f.winner_id === f.participant_two_id ? 2 : 0,
+                  seed: p2?.seed ? `Hạt giống #${p2.seed}` : '',
+                  sets_won: sets.filter((s) => s.p2 > s.p1).length,
                   current_score: p2Score,
                 },
                 current_set: 1,
                 serving_player: 1,
-                version: f.version || 1,
                 sets_history: scoreObj?.sets || [{ set: 1, p1: p1Score, p2: p2Score }],
-                stats: generateStats(p1Score, p2Score, f.round || 1),
               })
             }
           }
@@ -302,34 +250,9 @@ export function useLiveScore() {
       fixtures.value = sortedList
       if (sortedList.length > 0 && sortedList[0]) {
         selectedFixtureId.value = sortedList[0].id
-        const active = sortedList[0]
-        playEvents.value = [
-          {
-            id: 1,
-            player: active.player1.name,
-            action: 'Cú smash uy lực chéo sân ghi điểm trực tiếp',
-            score: `${active.player1.current_score} - ${active.player2.current_score}`,
-            type: 'winner',
-            time: '08:42',
-          },
-          {
-            id: 2,
-            player: active.player2.name,
-            action: 'Bỏ nhỏ tinh tế sát mép lưới thành công',
-            score: `${Math.max(0, active.player1.current_score - 1)} - ${active.player2.current_score}`,
-            type: 'winner',
-            time: '08:40',
-          },
-          {
-            id: 3,
-            player: active.player1.name,
-            action: 'Pha giao cầu điểm rơi chính xác',
-            score: `${Math.max(0, active.player1.current_score - 1)} - ${Math.max(0, active.player2.current_score - 1)}`,
-            type: 'ace',
-            time: '08:38',
-          },
-        ]
       }
+      // The API keeps no rally history; the ticker lists only what the umpire records here.
+      playEvents.value = []
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải điểm số trực tiếp.')
       fixtures.value = []
@@ -376,12 +299,9 @@ export function useLiveScore() {
     // Determine scoring player and opponent
     const scorer = playerIndex === 1 ? match.player1 : match.player2
     const opponent = playerIndex === 1 ? match.player2 : match.player1
-    const idx: 0 | 1 = playerIndex === 1 ? 0 : 1
-    const oppIdx: 0 | 1 = playerIndex === 1 ? 1 : 0
 
     scorer.current_score++
     match.serving_player = playerIndex
-    match.stats.total_points_won[idx] = (match.stats.total_points_won[idx] || 0) + 1
 
     // Build event description based on Badminton point action
     let actionDesc = 'Ghi điểm trực tiếp'
@@ -389,23 +309,15 @@ export function useLiveScore() {
 
     if (actionType === 'smash') {
       actionDesc = 'Cú smash uy lực chéo sân ghi điểm'
-      match.stats.winners[idx] = (match.stats.winners[idx] || 0) + 1
       eventType = 'winner'
     } else if (actionType === 'net') {
       actionDesc = 'Bỏ nhỏ / bắt lưới thành công'
-      match.stats.winners[idx] = (match.stats.winners[idx] || 0) + 1
-      match.stats.net_points_won_pct[idx] = Math.min(
-        100,
-        (match.stats.net_points_won_pct[idx] || 0) + 2,
-      )
       eventType = 'winner'
     } else if (actionType === 'ace') {
       actionDesc = 'Giao bóng ăn điểm trực tiếp (Ace)'
-      match.stats.aces[idx] = (match.stats.aces[idx] || 0) + 1
       eventType = 'ace'
     } else if (actionType === 'error') {
       actionDesc = `Đối thủ (${opponent.name}) đánh hỏng / ra ngoài`
-      match.stats.unforced_errors[oppIdx] = (match.stats.unforced_errors[oppIdx] || 0) + 1
       eventType = 'error'
     }
 
@@ -517,7 +429,6 @@ export function useLiveScore() {
     m.serving_player = prev.serving_player
     m.status = prev.status
     m.sets_history = prev.sets_history
-    m.stats = prev.stats
     playEvents.value = prev.events
 
     showNotice('Đã hoàn tác điểm số / hiệp đấu trước đó.')

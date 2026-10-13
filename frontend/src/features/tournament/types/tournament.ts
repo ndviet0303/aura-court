@@ -53,13 +53,13 @@ export interface TournamentItem {
   sport?: 'badminton' | 'pickleball' | 'tennis' | 'football_5v5' | string
   format: 'single_elimination' | 'round_robin' | 'double_elimination' | string
   status: 'open' | 'ongoing' | 'completed' | 'upcoming' | string
-  prize_pool: string
+  prize_pool?: string
   prize_pool_usd?: string
   dates: string
   start_date?: string
   end_date?: string
-  venue: string
-  city: string
+  venue?: string
+  city?: string
   court_name?: string
   current_slots: number
   max_slots: number
