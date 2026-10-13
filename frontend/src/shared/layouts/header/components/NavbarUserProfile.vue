@@ -98,7 +98,7 @@ const displayedBalance = computed(() => {
 
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
-  if (isDropdownOpen.value && auth.user) {
+  if (isDropdownOpen.value && auth.walletEnabled) {
     bookingStore.fetchWalletBalance().catch(() => {})
   }
 }
@@ -186,29 +186,31 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Luxury Wallet Card Highlight (Clickable to /wallet) -->
-        <RouterLink to="/wallet" class="dropdown-wallet-card" @click="closeDropdown">
-          <div class="wallet-card-header">
-            <div class="wallet-badge-pill">
-              <span class="material-symbols-outlined wallet-icon-glow">account_balance_wallet</span>
-              <span class="wallet-title-txt">VÍ AURA</span>
+        <template v-if="auth.walletEnabled">
+          <RouterLink to="/wallet" class="dropdown-wallet-card" @click="closeDropdown">
+            <div class="wallet-card-header">
+              <div class="wallet-badge-pill">
+                <span class="material-symbols-outlined wallet-icon-glow"
+                  >account_balance_wallet</span
+                >
+                <span class="wallet-title-txt">VÍ AURA</span>
+              </div>
+              <span class="btn-wallet-topup-luxury">
+                <span class="material-symbols-outlined icon-14">add</span>
+                <span>Nạp tiền</span>
+              </span>
             </div>
-            <span class="btn-wallet-topup-luxury">
-              <span class="material-symbols-outlined icon-14">add</span>
-              <span>Nạp tiền</span>
-            </span>
-          </div>
-
-          <div class="wallet-balance-display">
-            <div class="balance-meta">
-              <span class="balance-sub">Số dư khả dụng</span>
-              <strong class="balance-amount font-mono">{{
-                formatCurrency(displayedBalance)
-              }}</strong>
+            <div class="wallet-balance-display">
+              <div class="balance-meta">
+                <span class="balance-sub">Số dư khả dụng</span>
+                <strong class="balance-amount font-mono">{{
+                  formatCurrency(displayedBalance)
+                }}</strong>
+              </div>
+              <span class="material-symbols-outlined wallet-arrow-icon">chevron_right</span>
             </div>
-            <span class="material-symbols-outlined wallet-arrow-icon">chevron_right</span>
-          </div>
-        </RouterLink>
+          </RouterLink>
+        </template>
 
         <div class="dropdown-divider"></div>
 

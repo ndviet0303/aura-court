@@ -359,4 +359,36 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             ->assertJsonValidationErrors('coupon_code');
         $this->assertSame(0, (int) $coupon->fresh()->usage_count);
     }
+
+    public function test_direct_cohort_refuses_wallet_tender_and_wallet_endpoints_without_mutation(): void
+    {
+        config(['features.flags.direct_owner_payments' => true]);
+        $wallet = WalletAccount::create([
+            'organization_id' => $this->tenant->id,
+            'user_id' => $this->customer->id,
+            'balance' => 500000,
+            'currency' => 'VND',
+            'status' => 'active',
+        ]);
+        $headers = fn (): array => ['X-Organization-Id' => $this->tenant->id, 'Idempotency-Key' => uniqid('direct-wallet-')];
+        $order = ['customer_id' => $this->customer->id, 'items' => [['product_id' => $this->product->id, 'quantity' => 1]]];
+
+        $this->actingAs($this->cashier)->postJson('/api/pos/orders', $order + ['payment_method' => 'wallet'], $headers())
+            ->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+        $this->actingAs($this->cashier)->postJson('/api/pos/orders', $order + [
+            'payment_method' => 'mixed',
+            'allow_mixed_tender' => true,
+            'tenders' => [['method' => 'cash', 'amount' => 100000], ['method' => 'wallet', 'amount' => 62000]],
+        ], $headers())->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+        $this->actingAs($this->cashier)->postJson('/api/wallet/spend', ['amount' => 1000, 'reference' => 'direct-spend'], $headers())
+            ->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+        $this->actingAs($this->cashier)->postJson('/api/wallet/credit', [
+            'user_id' => $this->customer->id, 'amount' => 1000, 'source_type' => 'manual', 'source_id' => 1, 'reference' => 'direct-credit',
+        ], $headers())->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+
+        $this->assertSame(500000, (int) $wallet->fresh()->balance);
+        $this->assertSame(0, WalletTransaction::count());
+        $this->assertSame(0, PosOrder::count());
+        $this->assertSame(40, $this->product->fresh()->stock_quantity);
+    }
 }

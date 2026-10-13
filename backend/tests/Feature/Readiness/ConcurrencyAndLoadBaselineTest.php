@@ -5,6 +5,7 @@ namespace Tests\Feature\Readiness;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
+use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\OrdinaryCheckoutService;
@@ -79,6 +80,7 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
         $organization = Organization::create(['name' => 'Aura Arena Org', 'slug' => 'aura-arena-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Aura Arena', 'slug' => 'aura-arena', 'address' => '123 Main St', 'is_active' => true]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Court 2', 'is_active' => true]);
+        PriceRule::create(['organization_id' => $organization->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         $user = User::factory()->create();
 
         // Verify read availability and courts response

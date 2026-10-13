@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import ProfileMembershipTab from '../components/ProfileMembershipTab.vue'
 import { i18n } from '@/i18n'
 import type { Membership } from '@/core/types/common'
@@ -20,6 +21,8 @@ function mountTab(membership: Membership | null) {
 }
 
 describe('ProfileMembershipTab', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
   it('shows the active plan name, its entitled discount and expiry', () => {
     const card = mountTab(activeMembership).find('.tier-highlight-card')
 

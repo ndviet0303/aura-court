@@ -1303,6 +1303,8 @@ export default {
     ],
   },
   admin: {
+    featureUnavailable: 'Tính năng không khả dụng',
+    featureUnavailableDesc: 'Tính năng này chưa được bật cho tổ chức của bạn.',
     eyebrow: 'Quản trị hệ thống',
     title: 'Tổng quan quản trị',
     manageCourts: 'Quản lý sân',

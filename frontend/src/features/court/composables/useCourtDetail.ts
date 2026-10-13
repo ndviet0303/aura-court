@@ -65,16 +65,12 @@ export function useCourtDetail() {
     { immediate: true },
   )
 
-  const basePrice = computed(() => {
-    if (court.value?.price_slots && court.value.price_slots.length > 0) {
-      return court.value.price_slots[0]?.price || 120000
-    }
-    return 120000
-  })
+  // No invented price: a court without a configured price shows none.
+  const basePrice = computed(() => court.value?.price_slots?.[0]?.price ?? null)
 
-  const estimatedTotal = computed(() => {
-    return basePrice.value * selectedDuration.value
-  })
+  const estimatedTotal = computed(() =>
+    basePrice.value === null ? null : basePrice.value * selectedDuration.value,
+  )
 
   const durationOptions = [
     { value: 1.0, label: '1.0h' },

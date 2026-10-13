@@ -99,11 +99,18 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     expect(depositRes.status()).toBe(409)
     const errBody = await depositRes.json()
     expect(errBody.code).toBe('DIRECT_OWNER_PAYMENTS_ENABLED')
-    expect(errBody.message).toContain(
-      'Pooled wallet top-ups are disabled for this direct-payment cohort',
-    )
+    expect(errBody.message).toContain('Ví Aura không dùng được')
 
-    // 3. UI Check: Select the same tenant wallet, then attempt its prohibited top-up.
+    // 3. The server decides whether the customer still sees the wallet (`capabilities.wallet_enabled`):
+    // true while an active organization uses the legacy wallet or the customer holds a balance.
+    const meRes = await page.request.get(`${manifest.backend.url}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    expect(meRes.ok()).toBe(true)
+    const walletEnabled = (await meRes.json()).capabilities?.wallet_enabled
+    expect(typeof walletEnabled).toBe('boolean')
+
+    // 4. UI Check: Select the same tenant wallet, then attempt its prohibited top-up.
     await page.context().clearCookies()
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
@@ -112,6 +119,12 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     await page.goto(`/wallet?organization_id=${org1Id}`, { waitUntil: 'domcontentloaded' })
+    if (!walletEnabled) {
+      // Wallet off: no wallet entry point, and /wallet sends the customer home.
+      await expect(page).toHaveURL((url) => url.pathname === '/', { timeout: 15000 })
+      await expect(page.locator('.nav-wallet-pill')).toHaveCount(0)
+      return
+    }
 
     await expect(page.locator('.wallet-view-page')).toBeVisible({ timeout: 10000 })
     // Click deposit button to open modal
@@ -211,6 +224,8 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
+    // A remaining balance keeps the wallet entry point (`capabilities.wallet_enabled`) on.
+    await expect(page.locator('.nav-wallet-pill')).toBeVisible({ timeout: 15000 })
 
     await page.goto(`/wallet?organization_id=${org1Id}`, { waitUntil: 'domcontentloaded' })
 

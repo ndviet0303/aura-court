@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import type { Membership } from '@/core/types/common'
+import { useAuthStore } from '@/features/auth/stores/authStore'
 
 defineProps<{
   /** Active tenant membership from GET /membership; null when the customer has none. */
   membership: Membership | null
 }>()
+
+const auth = useAuthStore()
 </script>
 
 <template>
@@ -99,7 +102,7 @@ defineProps<{
 
     <!-- Quick Navigation -->
     <div class="tier-footer-cta">
-      <RouterLink to="/wallet" class="tier-cta-btn">
+      <RouterLink v-if="auth.walletEnabled" to="/wallet" class="tier-cta-btn">
         <span class="material-symbols-outlined">account_balance_wallet</span>
         <span>{{ $t('profile.scWalletTitle') }}</span>
       </RouterLink>

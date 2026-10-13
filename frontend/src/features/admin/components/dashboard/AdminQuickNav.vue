@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
 
 const { t } = useI18n()
+const { isPayoutsEnabled } = useTenantCapabilities()
 
 interface QuickNavItem {
   id: string
@@ -62,6 +65,10 @@ const navItems: QuickNavItem[] = [
     icon: 'account_tree',
   },
 ]
+// Payouts are a legacy finance page, shown only while marketplace_payouts is on.
+const shownItems = computed(() =>
+  navItems.filter((item) => item.id !== 'payouts' || isPayoutsEnabled.value),
+)
 </script>
 
 <template>
@@ -71,7 +78,7 @@ const navItems: QuickNavItem[] = [
       <h3 class="title">{{ t('admin.dashboard.quickNavTitle') }}</h3>
     </div>
     <div class="nav-grid">
-      <RouterLink v-for="item in navItems" :key="item.id" :to="item.path" class="nav-card-item">
+      <RouterLink v-for="item in shownItems" :key="item.id" :to="item.path" class="nav-card-item">
         <span class="material-symbols-outlined n-icon">{{ item.icon }}</span>
         <strong class="n-name">{{ t(item.labelKey) }}</strong>
         <span class="material-symbols-outlined n-arrow">arrow_forward</span>

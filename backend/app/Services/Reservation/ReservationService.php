@@ -15,6 +15,7 @@ use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Payment\ReservationPaymentService;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -187,6 +188,7 @@ class ReservationService
                     || ($reservation->splitGroup && (int) $reservation->splitGroup->paid_amount >= (int) $reservation->splitGroup->expected_amount)
                     || $reservation->recurringOccurrence()->exists();
                 if (! $isSpecialized) {
+                    app(WalletAvailabilityService::class)->assertAvailable((int) $reservation->organization_id);
                     $walletService = app(WalletPaymentService::class);
                     $wallet = $walletService->getOrCreateWallet($reservation->user_id, $reservation->organization_id);
                     if ((int) $wallet->balance < $totalAmount) {

@@ -142,22 +142,26 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 5. Ví và tài chính (design 8)
 
-- [ ] 5.1 Ở tổ chức thuộc cohort direct, server từ chối nạp ví (`WalletDepositController`) và mọi tender ví trước khi thay đổi dữ liệu. Áp dụng cho booking, POS, tab dịch vụ và giải đấu.
-- [ ] 5.2 `/me` thêm `capabilities.wallet_enabled`.
+- [x] 5.1 Ở tổ chức thuộc cohort direct, server từ chối nạp ví (`WalletDepositController`) và mọi tender ví trước khi thay đổi dữ liệu. Áp dụng cho booking, POS, tab dịch vụ và giải đấu.
+  - Ghi chú: một helper dùng chung `WalletAvailabilityService::assertAvailable` (409 `DIRECT_OWNER_PAYMENTS_ENABLED`, giữ mã cũ vì frontend/Playwright đang dùng; message đổi sang tiếng Việt). Mỗi file chỉ một lời gọi: `PosService::completeOrder` (tender `wallet` hoặc tender hỗn hợp có ví), `ServiceTabService::settleTab`, `TournamentService::register`/`addParticipant`, `ReservationService::confirm`. Thêm chặn ở `POST wallet/spend` và `wallet/credit` của POS (cũng là nạp/tiêu ví). Phần 6.5/6.7/8.5 sẽ sửa tiếp các file này. `TournamentService` gọn lại còn 718 dòng, hạ trần allowlist.
+- [x] 5.2 `/me` thêm `capabilities.wallet_enabled`.
   - Giá trị true khi còn ít nhất một tổ chức active dùng mô hình ví cũ, hoặc khi người dùng có số dư ví khác 0.
   - Các điểm vào ví sau đều theo capability này:
     - menu "Ví Aura" trong `NavbarDesktopNav.vue` và `NavbarDrawerNavList.vue`;
     - thẻ ví trong `NavbarUserProfile.vue` và `ProfileShortcutsTab.vue`;
     - `WalletPayButton.vue`;
     - route `/wallet`.
-- [ ] 5.3 `AdminLayout.vue`:
+  - Ghi chú: `WalletPayButton.vue` không còn (xóa ở 7d17ac5f khi bỏ V1). Gate thêm các điểm vào ví khác: pill số dư ở `Navbar.vue` (và chỉ gọi `fetchWalletBalance` khi bật), nút ví ở `NavbarDrawerUserCard.vue`, CTA ở `ProfileMembershipTab.vue`. Route `/wallet` chuyển về `home` khi tắt. Ẩn là mặc định: response login chưa có `capabilities`, nên ví ẩn đến khi `/me` nạp lại.
+- [x] 5.3 `AdminLayout.vue`:
   - Nhóm Tài chính (Rút tiền, Đối soát, Ngoại lệ, gồm cả "Phí & Hoa hồng") chỉ hiện khi `marketplace_payouts` bật.
   - Mở link trực tiếp thì hiện "tính năng không khả dụng", không hiện trang rỗng.
   - Thêm `direct_owner_payments` vào kiểu capability ở TS nếu còn thiếu.
-- [ ] 5.4 Test:
+  - Ghi chú: ba route tài chính có `meta.capability: 'marketplace_payouts'`; component mới `CapabilityRouteView.vue` thay `<RouterView />` trong layout, nạp capability và hiện "Tính năng không khả dụng" khi tắt. "Phí & Hoa hồng" nằm trong trang Rút tiền nên đi theo. Link nhanh Rút tiền ở `AdminQuickNav.vue` cũng ẩn theo cờ.
+- [x] 5.4 Test:
   - Backend: nạp ví và tender ví bị từ chối và số dư không đổi. `/me` trả đúng `wallet_enabled` trong cả hai trường hợp.
   - Frontend unit: menu ví và nhóm Tài chính ẩn hoặc hiện theo capability.
   - Playwright: sửa các spec đang giả định ví hoặc menu Tài chính hiện ra: `p1-legacy-wallet-direct-cohort`, `auth-journey-and-access-matrix`, `booking-access-loyalty-uat`, `p1-staff-management`, `seven-areas-acceptance`, `p1-revenue-reconciliation-reporting`.
+  - Ghi chú: chưa chạy Playwright (theo yêu cầu). Các spec dùng `/wallet` làm route bảo vệ mẫu chuyển sang `/profile`; trang tài chính trên stack e2e (`marketplace_payouts` tắt) được kiểm là "không khả dụng". `p1-legacy-wallet-direct-cohort` kiểm UI theo `wallet_enabled` từ `/api/auth/me`. `p1-staff-management` không giả định ví hay menu Tài chính nên không sửa.
 
 ## 6. QR ở POS về tài khoản chủ sân (design 4, 12)
 
@@ -293,13 +297,15 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 9. Chỉ công khai sân có giá (design 9)
 
-- [ ] 9.1 Tách query nạp rule giá trong `PriceQuoteService::priceSnapshots` thành một method dùng chung, và thêm predicate "sân có giá".
+- [x] 9.1 Tách query nạp rule giá trong `PriceQuoteService::priceSnapshots` thành một method dùng chung, và thêm predicate "sân có giá".
   - Một sân có giá khi có ít nhất một `PriceRule` active theo org, venue, zone hoặc court, hoặc một `CourtPriceSlot` active.
-- [ ] 9.2 Áp predicate:
+- [x] 9.2 Áp predicate:
   - `VerifyEffectiveBookingEligibility`: phủ trang chi tiết, lịch trống và booking mới.
   - `CourtController::index`: lọc bằng một query gộp, không N+1.
-- [ ] 9.3 Frontend bỏ giá dự phòng ở `useCourtDetail.ts` (dòng 70, 72), `CourtItemCard.vue` (dòng 87), `VenueCourtsGrid.vue` (dòng 12, 14) và `HomeView.vue` (dòng 601).
-- [ ] 9.4 Test:
+  - Ghi chú: `CourtPriceRuleService` (2 query cho mọi số sân) dùng chung cho `priceSnapshots`, eligibility (lý do `COURT_UNPRICED`, trả 404) và index. Lưu/xóa `PriceRule`/`CourtPriceSlot` tăng `courts_version` để cache danh sách công khai làm mới. Danh sách venue công khai và sân lồng trong venue chưa lọc theo giá (ngoài phạm vi 9.2).
+- [x] 9.3 Frontend bỏ giá dự phòng ở `useCourtDetail.ts` (dòng 70, 72), `CourtItemCard.vue` (dòng 87), `VenueCourtsGrid.vue` (dòng 12, 14) và `HomeView.vue` (dòng 601).
+  - Ghi chú: sân không có `price_slots` thì ẩn giá thay vì bịa giá. Giá 200000 trong `useResaleMarketplace.ts` để lại cho 7.8.
+- [x] 9.4 Test:
   - Sân không có rule bị ẩn khỏi danh sách và không đặt được.
   - Sân chỉ có rule cấp tổ chức vẫn hiện.
   - Số query của index không tăng theo số sân.

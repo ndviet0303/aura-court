@@ -84,7 +84,12 @@ const userRoleBadge = computed(() => {
           <span class="material-symbols-outlined">notifications</span>
           <span>{{ $t('nav.notifications') }}</span>
         </RouterLink>
-        <RouterLink to="/wallet" class="drawer-shortcut-btn" @click="emit('navigate')">
+        <RouterLink
+          v-if="auth.walletEnabled"
+          to="/wallet"
+          class="drawer-shortcut-btn"
+          @click="emit('navigate')"
+        >
           <span class="material-symbols-outlined">account_balance_wallet</span>
           <span>{{ $t('nav.wallet') }}</span>
         </RouterLink>

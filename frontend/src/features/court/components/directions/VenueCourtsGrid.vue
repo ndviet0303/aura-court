@@ -7,11 +7,9 @@ defineProps<{
   courts: Court[]
 }>()
 
-function getCourtPrice(c: Court): number {
-  if (c.price_slots && c.price_slots.length > 0) {
-    return c.price_slots[0]?.price || 100000
-  }
-  return 100000
+// No invented price: a court without a configured price shows none.
+function getCourtPrice(c: Court): number | null {
+  return c.price_slots?.[0]?.price ?? null
 }
 </script>
 
@@ -34,9 +32,9 @@ function getCourtPrice(c: Court): number {
           <strong class="court-name">{{ c.name }}</strong>
         </div>
 
-        <div class="card-price-row">
+        <div v-if="getCourtPrice(c) !== null" class="card-price-row">
           <span class="price-lbl">{{ $t('directions.priceFrom') }}</span>
-          <strong class="price-val font-mono">{{ formatCurrency(getCourtPrice(c)) }} /h</strong>
+          <strong class="price-val font-mono">{{ formatCurrency(getCourtPrice(c)!) }} /h</strong>
         </div>
 
         <div class="card-actions-row">

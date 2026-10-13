@@ -11,6 +11,7 @@ use App\Models\ServiceTabItem;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -21,6 +22,7 @@ class ServiceTabService
     public function __construct(
         private readonly FinancialPostingService $financials,
         private readonly WalletPaymentService $walletPayments,
+        private readonly WalletAvailabilityService $walletAvailability,
         private readonly LegacyBookingBackfillService $backfill,
     ) {}
 
@@ -244,6 +246,7 @@ class ServiceTabService
 
     public function settleTab(User $cashier, int $organizationId, int $tabId, array $paymentData): array
     {
+        $this->walletAvailability->assertAvailable($organizationId, ($paymentData['payment_method'] ?? 'cash') === 'wallet');
         // 1. Enforce active open shift for cashier
         $activeShift = CashShift::query()
             ->where('organization_id', $organizationId)
@@ -292,7 +295,7 @@ class ServiceTabService
                 : $reservation?->user;
 
             $cashTendered = null;
-            $changeDue = null;
+            $changeDue = 0;
 
             if ($method === 'cash') {
                 $cashTendered = (int) ($paymentData['cash_tendered'] ?? $totalAmount);
@@ -303,9 +306,6 @@ class ServiceTabService
                 $wallet = $this->walletPayments->getOrCreateWallet($customer->id, $organizationId);
                 abort_unless((int) $wallet->balance >= $totalAmount, 422, 'Số dư ví của khách hàng không đủ để thanh toán tab dịch vụ.');
                 $this->walletPayments->debit($wallet, $totalAmount, 'pos_tab_settlement', $tab->id, "Thanh toán tab dịch vụ #{$tab->id}");
-                $changeDue = 0;
-            } else {
-                $changeDue = 0;
             }
             $orderCode = 'TAB-POS-'.strtoupper(uniqid());
 

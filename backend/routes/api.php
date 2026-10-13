@@ -51,6 +51,7 @@ use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
 use App\Models\HostKyc;
 use App\Models\User;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
@@ -140,6 +141,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
                 'partner_status' => $primaryOrg?->partner_status ?? $latestKyc?->status,
                 'has_partner_application' => $latestKyc !== null,
                 'partner_application_status' => $latestKyc?->status,
+                'wallet_enabled' => app(WalletAvailabilityService::class)->enabledFor($user),
             ],
         ]));
     });

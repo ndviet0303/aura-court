@@ -614,4 +614,33 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
         $this->assertSame($tournament->fresh()->version, $pollRes->json('current_version'));
         $this->assertNotNull($pollRes->json('tournament.fixtures'));
     }
+
+    public function test_direct_cohort_refuses_wallet_entry_fees_without_mutation(): void
+    {
+        config(['features.flags.direct_owner_payments' => true]);
+        $tournament = Tournament::create([
+            'organization_id' => $this->organization->id,
+            'created_by' => $this->owner->id,
+            'name' => 'Direct Cohort Open',
+            'format' => 'single_elimination',
+            'status' => 'open',
+            'settings' => ['entry_fee' => 300000, 'max_participants' => 16],
+        ]);
+
+        $this->actingAs($this->player1)
+            ->withHeaders($this->headers('reg-direct-'))
+            ->postJson("/api/tournaments/{$tournament->id}/register")
+            ->assertConflict()
+            ->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+        $this->actingAs($this->owner)
+            ->withHeaders($this->headers('add-direct-'))
+            ->postJson("/api/tournaments/{$tournament->id}/participants", ['user_id' => $this->player2->id])
+            ->assertConflict()
+            ->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+
+        $this->assertSame(0, TournamentParticipant::where('tournament_id', $tournament->id)->count());
+        $this->assertSame(500000, $this->wallet1->fresh()->balance);
+        $this->assertSame(300000, $this->wallet2->fresh()->balance);
+        $this->assertSame(0, WalletTransaction::count());
+    }
 }

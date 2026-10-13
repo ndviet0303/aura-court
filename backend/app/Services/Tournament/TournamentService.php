@@ -10,6 +10,7 @@ use App\Models\TournamentStanding;
 use App\Models\User;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\OutboxService;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class TournamentService
     public function __construct(
         private readonly OutboxService $outbox,
         private readonly WalletPaymentService $walletPayment,
+        private readonly WalletAvailabilityService $walletAvailability,
         private readonly FinancialPostingService $financialPosting
     ) {}
 
@@ -136,14 +138,9 @@ class TournamentService
 
             $wallet = null;
             if ($entryFee > 0) {
+                $this->walletAvailability->assertAvailable((int) $tournament->organization_id);
                 $wallet = $this->walletPayment->getOrCreateWallet($user->id, $tournament->organization_id);
-                $this->walletPayment->debit(
-                    $wallet,
-                    $entryFee,
-                    'tournament_registration',
-                    $tournament->id,
-                    "Phí đăng ký giải đấu: {$tournament->name}"
-                );
+                $this->walletPayment->debit($wallet, $entryFee, 'tournament_registration', $tournament->id, "Phí đăng ký giải đấu: {$tournament->name}");
             }
 
             $maxSeed = (int) $tournament->participants()->max('seed');
@@ -246,14 +243,9 @@ class TournamentService
                     $waiverReason = $data['waiver_reason'] ?? null;
                     abort_if(empty($waiverReason) || ! is_string($waiverReason) || trim($waiverReason) === '', 422, 'Waiver reason is required when fee is waived.');
                 } else {
+                    $this->walletAvailability->assertAvailable((int) $tournament->organization_id);
                     $wallet = $this->walletPayment->getOrCreateWallet($targetUserId, $tournament->organization_id);
-                    $this->walletPayment->debit(
-                        $wallet,
-                        $entryFee,
-                        'tournament_registration',
-                        $tournament->id,
-                        "Phí đăng ký giải đấu: {$tournament->name}"
-                    );
+                    $this->walletPayment->debit($wallet, $entryFee, 'tournament_registration', $tournament->id, "Phí đăng ký giải đấu: {$tournament->name}");
                 }
             }
 

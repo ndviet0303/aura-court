@@ -528,7 +528,7 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
     expect(reconResult.final_mismatch_amount).toBe(0)
   })
 
-  test('9.6.5: Giao diện đối soát tài chính admin & Duy trì sau F5 (/admin/reconciliation)', async ({
+  test('9.6.5: Trang đối soát báo không khả dụng khi tắt marketplace_payouts & Duy trì sau F5 (/admin/reconciliation)', async ({
     page,
   }) => {
     // 1. Admin logs in
@@ -541,14 +541,17 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
     // 2. Navigate to /admin/reconciliation
     await page.goto('/admin/reconciliation', { waitUntil: 'domcontentloaded' })
 
-    // 3. Verify presence of reconciliation view elements
-    const pageTitle = page.locator('h1.page-title')
-    await expect(pageTitle).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('.financial-reconciliation-view')).toBeVisible({ timeout: 10000 })
+    // 3. The e2e stack leaves marketplace_payouts off: the direct link reports the feature as
+    // unavailable instead of an empty page, and the Finance group is absent from the sidebar.
+    const unavailable = page.locator('[data-testid="capability-unavailable"]')
+    await expect(unavailable).toBeVisible({ timeout: 15000 })
+    await expect(unavailable).toContainText('Tính năng không khả dụng')
+    await expect(page.locator('.financial-reconciliation-view')).toHaveCount(0)
+    await expect(page.locator('a[href="/admin/reconciliation"]')).toHaveCount(0)
 
     // 4. Reload persistence
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.financial-reconciliation-view')).toBeVisible({ timeout: 10000 })
-    await expect(pageTitle).toBeVisible({ timeout: 10000 })
+    await expect(unavailable).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.financial-reconciliation-view')).toHaveCount(0)
   })
 })

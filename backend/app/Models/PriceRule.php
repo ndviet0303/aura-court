@@ -6,11 +6,19 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 
 #[Fillable(['organization_id', 'venue_id', 'sport_zone_id', 'court_id', 'type', 'weekday', 'exception_date', 'starts_at', 'ends_at', 'price', 'version', 'priority', 'effective_from', 'effective_until', 'is_active', 'metadata'])]
 class PriceRule extends Model
 {
     use BelongsToTenant;
+
+    protected static function booted(): void
+    {
+        // The public court list is cached by courts_version and hides courts without a price.
+        static::saved(fn () => Cache::increment('courts_version'));
+        static::deleted(fn () => Cache::increment('courts_version'));
+    }
 
     protected function casts(): array
     {

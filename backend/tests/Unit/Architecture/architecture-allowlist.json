@@ -25,7 +25,7 @@
   ["class-lines", "Services/Social/CommunityFeedService.php", 331],
   ["class-lines", "Services/Social/MarketplaceService.php", 398],
   ["class-lines", "Services/Social/MatchService.php", 1085],
-  ["class-lines", "Services/Tournament/TournamentService.php", 726],
+  ["class-lines", "Services/Tournament/TournamentService.php", 718],
   ["controller-public-methods", "Http/Controllers/Admin/AdminController.php", 18],
   ["controller-public-methods", "Http/Controllers/Admin/AdminDisputeController.php", 9],
   ["controller-public-methods", "Http/Controllers/Admin/AdminMembershipController.php", 12],

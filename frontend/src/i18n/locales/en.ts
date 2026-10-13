@@ -1302,6 +1302,8 @@ export default {
     ],
   },
   admin: {
+    featureUnavailable: 'Feature unavailable',
+    featureUnavailableDesc: 'This feature is not enabled for your organization.',
     eyebrow: 'System Administration',
     title: 'Admin Overview',
     manageCourts: 'Manage Courts',

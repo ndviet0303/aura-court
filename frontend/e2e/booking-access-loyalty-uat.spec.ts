@@ -29,20 +29,19 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
       page.locator('input[name="password_confirmation"], input[id="register-password-confirm"]'),
     ).toBeVisible({ timeout: 15000 })
 
-    // 1.3 Unauthenticated access to protected route /wallet redirects to /login?redirect=/wallet
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/.*login.*redirect=.*wallet/, { timeout: 15000 })
+    // 1.3 Unauthenticated access to protected route /profile redirects to /login?redirect=/profile
+    // (the wallet is capability-gated, so it is not the probe here)
+    await page.goto('/profile', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/.*login.*redirect=.*profile/, { timeout: 15000 })
 
     // 1.4 Perform login as customer with non-demo credentials
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
     await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
     await page.locator('button[type="submit"].auth-submit-btn').click()
 
-    // 1.5 Successfully redirected to /wallet destination
-    await expect(page).toHaveURL(/.*wallet/, { timeout: 20000 })
-    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({
-      timeout: 20000,
-    })
+    // 1.5 Successfully redirected to /profile destination
+    await expect(page).toHaveURL(/.*profile/, { timeout: 20000 })
+    await expect(page.locator('.profile-view-page').first()).toBeVisible({ timeout: 20000 })
 
     // 1.6 Authenticated visitor visiting /login or /register is automatically redirected away
     await page.goto('/login', { waitUntil: 'domcontentloaded' })

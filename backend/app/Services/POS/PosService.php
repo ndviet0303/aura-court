@@ -28,6 +28,7 @@ use App\Models\WalletTransaction;
 use App\Services\Booking\DiscountService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Loyalty\LoyaltyPointService;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -41,6 +42,7 @@ class PosService
         private readonly LegacyBookingBackfillService $backfill,
         private readonly DiscountService $discounts,
         private readonly LoyaltyPointService $loyaltyPoints,
+        private readonly WalletAvailabilityService $walletAvailability,
     ) {}
 
     public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
@@ -378,6 +380,7 @@ class PosService
         abort_if((bool) ($data['offline'] ?? false), 409, 'Offline POS drafts cannot finalize payment or inventory.');
         $method = (string) ($data['payment_method'] ?? '');
         abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'mixed'], true), 422, 'Unsupported POS payment method.');
+        $this->walletAvailability->assertAvailable($organizationId, in_array('wallet', [$method, ...array_column((array) ($data['tenders'] ?? []), 'method')], true));
 
         if ($method === 'qr') {
             abort_unless($this->isQrProviderAvailable($organizationId), 422, 'QR payment provider verification is unavailable.');
@@ -388,14 +391,9 @@ class PosService
             ->where('status', 'open')
             ->first();
 
-        if (! empty($data['require_shift'])) {
-            abort_unless($activeShift !== null, 409, 'Cashier does not have an active open shift.');
-        }
+        abort_if(! empty($data['require_shift']) && $activeShift === null, 409, 'Cashier does not have an active open shift.');
 
-        $reservationId = null;
-        if (! empty($data['reservation_id'])) {
-            $reservationId = $this->backfill->resolveCanonicalReservationId((int) $data['reservation_id'], $organizationId);
-        }
+        $reservationId = empty($data['reservation_id']) ? null : $this->backfill->resolveCanonicalReservationId((int) $data['reservation_id'], $organizationId);
 
         return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift): PosOrder {
             $quote = $this->calculateQuote($organizationId, $data, $cashier);
@@ -1245,6 +1243,7 @@ class PosService
     public function spendWallet(int $organizationId, int $userId, int $amount, string $reference): WalletTransaction
     {
         abort_unless($amount > 0, 422);
+        $this->walletAvailability->assertAvailable($organizationId);
 
         return DB::transaction(function () use ($organizationId, $userId, $amount, $reference): WalletTransaction {
             $wallet = WalletAccount::firstOrCreate(['organization_id' => $organizationId, 'user_id' => $userId, 'currency' => 'VND'], ['balance' => 0, 'status' => 'active']);
@@ -1261,6 +1260,7 @@ class PosService
     public function creditWallet(int $organizationId, int $userId, int $amount, string $sourceType, int $sourceId, string $reference): WalletTransaction
     {
         abort_unless($amount > 0, 422);
+        $this->walletAvailability->assertAvailable($organizationId);
 
         return DB::transaction(function () use ($organizationId, $userId, $amount, $sourceType, $sourceId, $reference): WalletTransaction {
             $wallet = WalletAccount::firstOrCreate(['organization_id' => $organizationId, 'user_id' => $userId, 'currency' => 'VND'], ['balance' => 0, 'status' => 'active']);
