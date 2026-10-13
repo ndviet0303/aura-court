@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MatchFixture, PointActionType } from '../../composables/useLiveScore'
+import LiveResultConfirm from './LiveResultConfirm.vue'
 
 defineProps<{
   match: MatchFixture
@@ -14,6 +15,7 @@ const emit = defineEmits<{
   (e: 'switchSides'): void
   (e: 'penaltyCard', playerIndex: 1 | 2, card: 'yellow' | 'red'): void
   (e: 'triggerInterval', seconds: number): void
+  (e: 'submitResult'): void
 }>()
 </script>
 
@@ -214,7 +216,7 @@ const emit = defineEmits<{
           </div>
         </div>
 
-        <div v-if="match.status === 'completed'" class="completed-flag">🏆 ĐÃ KẾT THÚC</div>
+        <LiveResultConfirm :match="match" @confirm="emit('submitResult')" />
       </div>
 
       <!-- Player 2 Scoring Column -->
@@ -760,16 +762,6 @@ const emit = defineEmits<{
   border-color: rgba(219, 39, 119, 0.4);
   color: var(--pink-dark, #db2777);
   font-weight: 750;
-}
-
-.completed-flag {
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  padding: 4px 8px;
-  border-radius: 6px;
-  text-align: center;
 }
 
 @media (max-width: 900px) {

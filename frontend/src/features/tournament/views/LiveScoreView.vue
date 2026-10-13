@@ -20,6 +20,7 @@ const {
   pointState,
   intervalSeconds,
   addPoint,
+  submitResult,
   undoPoint,
   toggleServer,
   switchSides,
@@ -61,12 +62,10 @@ const {
     </header>
 
     <!-- Feedback Alerts -->
-    <transition name="fade">
-      <div v-if="notice" class="alert-pill-success" role="status">
-        <span class="material-symbols-outlined alert-ico">check_circle</span>
-        <span>{{ notice }}</span>
-      </div>
-    </transition>
+    <div v-if="notice" class="alert-pill-success" role="status">
+      <span class="material-symbols-outlined alert-ico">check_circle</span>
+      <span>{{ notice }}</span>
+    </div>
 
     <!-- Loading Skeleton State -->
     <div v-if="loading" class="live-skeleton-stack">
@@ -174,6 +173,7 @@ const {
         @switch-sides="switchSides"
         @penalty-card="penaltyCard"
         @trigger-interval="triggerInterval"
+        @submit-result="submitResult"
       />
 
       <!-- Analytics & Ticker Grid -->

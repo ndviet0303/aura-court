@@ -3,6 +3,7 @@ import { useRoute } from 'vue-router'
 import { tournamentApi } from '../api/tournamentApi'
 import { getAvatarUrl } from '@/lib/avatar'
 import { errorMessage } from '@/core/utils/errorMessage'
+import type { ApiError } from '@/core/types/api'
 
 export type PointActionType = 'point' | 'smash' | 'net' | 'ace' | 'error'
 
@@ -38,6 +39,7 @@ export interface MatchFixture {
   round_label: string
   status: 'live' | 'completed' | 'upcoming'
   player1: {
+    participant_id?: number
     name: string
     avatar: string
     seed: string
@@ -46,6 +48,7 @@ export interface MatchFixture {
     current_score: number
   }
   player2: {
+    participant_id?: number
     name: string
     avatar: string
     seed: string
@@ -55,10 +58,13 @@ export interface MatchFixture {
   }
   current_set: number
   serving_player: 1 | 2
-  version: number
+  // Last tournament version this page saw; the result is submitted against it.
+  tournament_version: number
   sets_history: Array<{ set: number; p1: number; p2: number; winner?: 1 | 2 }>
   stats: MatchStats
   winner?: 1 | 2
+  // A finished match whose result the server has not accepted yet.
+  pending_result?: { saving: boolean; error: string }
 }
 
 interface MatchSnapshot {
@@ -266,6 +272,7 @@ export function useLiveScore() {
                 round_label: `${roundLabel} ${f.position || 1}`,
                 status: statusVal,
                 player1: {
+                  participant_id: f.participant_one_id,
                   name: p1Name,
                   avatar: p1Avatar,
                   seed: p1?.seed ? `Hạt giống #${p1.seed}` : `#${(f.position || 1) * 2 - 1}`,
@@ -274,6 +281,7 @@ export function useLiveScore() {
                   current_score: p1Score,
                 },
                 player2: {
+                  participant_id: f.participant_two_id,
                   name: p2Name,
                   avatar: p2Avatar,
                   seed: p2?.seed ? `Hạt giống #${p2.seed}` : `#${(f.position || 1) * 2}`,
@@ -283,7 +291,7 @@ export function useLiveScore() {
                 },
                 current_set: 1,
                 serving_player: 1,
-                version: f.version || 1,
+                tournament_version: detail.version,
                 sets_history: scoreObj?.sets || [{ set: 1, p1: p1Score, p2: p2Score }],
                 stats: generateStats(p1Score, p2Score, f.round || 1),
               })
@@ -358,7 +366,7 @@ export function useLiveScore() {
   /**
    * Main Umpire Point Injection with Badminton Rules Engine
    */
-  async function addPoint(playerIndex: 1 | 2, actionType: PointActionType = 'point') {
+  function addPoint(playerIndex: 1 | 2, actionType: PointActionType = 'point') {
     if (!activeMatch.value) return
     const match = activeMatch.value
     if (match.status === 'completed') {
@@ -449,6 +457,7 @@ export function useLiveScore() {
       if (setWinnerPlayer.sets_won >= 2 || match.current_set >= 3) {
         match.status = 'completed'
         match.winner = setWinner
+        match.pending_result = { saving: false, error: '' }
         showNotice(
           `🏆 ${setWinnerPlayer.name} THẮNG CHUNG CUỘC (${match.player1.sets_won} - ${match.player2.sets_won})!`,
         )
@@ -486,21 +495,61 @@ export function useLiveScore() {
         })
       }
     }
+  }
 
-    // Sync optimistic score to API
+  function setTournamentVersion(tournamentId: number, version: number) {
+    for (const f of fixtures.value) {
+      if (f.tournament_id === tournamentId) f.tournament_version = version
+    }
+  }
+
+  /**
+   * Record the finished match through the official result endpoint. The spec has no per-point
+   * score command, so points stay on this screen until the umpire confirms the final result.
+   */
+  async function submitResult() {
+    const match = activeMatch.value
+    const pending = match?.pending_result
+    if (!match || match.status !== 'completed' || !pending || pending.saving) return
+
+    const expectedVersion = match.tournament_version
+    pending.saving = true
+    pending.error = ''
     try {
       await tournamentApi.scoreFixture(match.tournament_id, match.id, {
-        p1_score: match.player1.current_score,
-        p2_score: match.player2.current_score,
-        set: match.current_set,
+        expected_version: expectedVersion,
+        winner_id: (match.winner === 1 ? match.player1 : match.player2).participant_id,
+        // p1/p2 hold the deciding set's points and sets the full history, as the readers expect.
+        score: {
+          p1: match.player1.current_score,
+          p2: match.player2.current_score,
+          sets: match.sets_history,
+        },
       })
-    } catch {
-      // Retain state
+      match.pending_result = undefined
+      setTournamentVersion(match.tournament_id, expectedVersion + 1)
+      showNotice('Đã lưu kết quả trận đấu.')
+    } catch (e: unknown) {
+      pending.error = errorMessage(e, 'Không thể lưu kết quả trận đấu.')
+      // Another result moved the tournament version: resync it so confirming again can succeed.
+      // A failed resync needs no message; the next attempt reports its own error.
+      if ((e as ApiError)?.status === 409) {
+        const fresh = await tournamentApi.getById(match.tournament_id).catch(() => null)
+        if (fresh) setTournamentVersion(match.tournament_id, fresh.version)
+      }
+    } finally {
+      pending.saving = false
     }
   }
 
   function undoPoint() {
-    if (!activeMatch.value || undoStack.value.length === 0) {
+    const m = activeMatch.value
+    // Once the result is sent, only an official correction (with a reason) can change it.
+    if (m?.status === 'completed' && (!m.pending_result || m.pending_result.saving)) {
+      showNotice('Kết quả trận đấu đã được ghi nhận, không thể hoàn tác.')
+      return
+    }
+    if (!m || undoStack.value.length === 0) {
       showNotice('Không có thao tác nào để hoàn tác.')
       return
     }
@@ -508,7 +557,6 @@ export function useLiveScore() {
     const prev = undoStack.value.pop()
     if (!prev) return
 
-    const m = activeMatch.value
     m.current_set = prev.current_set
     m.player1.current_score = prev.p1_score
     m.player2.current_score = prev.p2_score
@@ -618,6 +666,7 @@ export function useLiveScore() {
     intervalSeconds,
     showNotice,
     addPoint,
+    submitResult,
     undoPoint,
     toggleServer,
     switchSides,
