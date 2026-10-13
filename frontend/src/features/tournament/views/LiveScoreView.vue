@@ -4,7 +4,6 @@ import { AuraButton, SkeletonLoader } from '@/shared/components'
 
 import LiveFixturesSelector from '../components/live/LiveFixturesSelector.vue'
 import LiveMatchScoreboard from '../components/live/LiveMatchScoreboard.vue'
-import LiveMatchStatsCard from '../components/live/LiveMatchStatsCard.vue'
 import LivePlayByPlayTicker from '../components/live/LivePlayByPlayTicker.vue'
 import LiveUmpireControlPanel from '../components/live/LiveUmpireControlPanel.vue'
 
@@ -43,9 +42,7 @@ const {
           </span>
         </div>
         <h1 class="page-title">Live Score & Tỉ Số Trực Tiếp</h1>
-        <p class="page-sub">
-          Cập nhật điểm số từng pha bóng, tốc độ và phân tích thống kê giải đấu theo thời gian thực.
-        </p>
+        <p class="page-sub">Cập nhật điểm số từng pha bóng theo thời gian thực.</p>
       </div>
 
       <div class="header-actions">
@@ -111,32 +108,6 @@ const {
           </div>
         </div>
       </div>
-
-      <!-- Analytics & Ticker Grid Skeleton -->
-      <div class="live-analytics-grid">
-        <div class="skeleton-box-card">
-          <SkeletonLoader type="rect" width="260px" height="22px" rounded="6px" />
-          <SkeletonLoader
-            v-for="j in 5"
-            :key="j"
-            type="rect"
-            width="100%"
-            height="38px"
-            rounded="8px"
-          />
-        </div>
-        <div class="skeleton-box-card">
-          <SkeletonLoader type="rect" width="220px" height="22px" rounded="6px" />
-          <SkeletonLoader
-            v-for="k in 4"
-            :key="k"
-            type="rect"
-            width="100%"
-            height="46px"
-            rounded="10px"
-          />
-        </div>
-      </div>
     </div>
 
     <!-- Empty Live State -->
@@ -176,11 +147,8 @@ const {
         @trigger-interval="triggerInterval"
       />
 
-      <!-- Analytics & Ticker Grid -->
-      <div v-if="activeMatch" class="live-analytics-grid">
-        <LiveMatchStatsCard :match="activeMatch" />
-        <LivePlayByPlayTicker :events="playEvents" />
-      </div>
+      <!-- Rally ticker: only what the umpire has recorded in this session -->
+      <LivePlayByPlayTicker v-if="playEvents.length" :events="playEvents" />
     </template>
   </main>
 </template>
@@ -263,18 +231,6 @@ const {
 
 .alert-ico {
   font-size: 18px;
-}
-
-.live-analytics-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 20px;
-}
-
-@media (max-width: 900px) {
-  .live-analytics-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .empty-live-card {
@@ -379,16 +335,6 @@ const {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-}
-
-.skeleton-box-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 20px;
-  border-radius: 18px;
-  background: var(--surface);
-  border: 1px solid var(--outline);
 }
 
 @media (max-width: 850px) {

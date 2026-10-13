@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { AuraButton } from '@/shared/components'
 import type { BracketMatch } from '../../composables/useTournamentBracket'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   match: BracketMatch | null
   tournamentId?: string | number | null
@@ -12,20 +11,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
-
-const matchStats = computed(() => {
-  if (!props.match) return null
-  const p1Score = props.match.player1.score || 0
-  const p2Score = props.match.player2.score || 0
-  return {
-    aces: [Math.max(1, Math.floor(p1Score / 7)), Math.max(1, Math.floor(p2Score / 8))],
-    winners: [Math.max(3, Math.floor(p1Score * 0.45)), Math.max(2, Math.floor(p2Score * 0.4))],
-    errors: [Math.max(1, Math.floor(p2Score * 0.25)), Math.max(2, Math.floor(p1Score * 0.3))],
-    smashSpeed: `${345 + ((p1Score * 6) % 55)} km/h`,
-    longestRally: `${14 + ((p1Score + p2Score) % 16)} đường cầu`,
-    duration: `${22 + ((p1Score + p2Score) % 30)} phút`,
-  }
-})
 </script>
 
 <template>
@@ -50,11 +35,11 @@ const matchStats = computed(() => {
       <!-- Modal Body -->
       <div class="modal-body">
         <div class="match-meta-bar">
-          <span class="meta-tag">
+          <span v-if="match.time" class="meta-tag">
             <span class="material-symbols-outlined mini-ico">schedule</span>
             {{ match.time }}
           </span>
-          <span class="meta-tag">
+          <span v-if="match.court" class="meta-tag">
             <span class="material-symbols-outlined mini-ico">location_on</span>
             {{ match.court }}
           </span>
@@ -82,16 +67,16 @@ const matchStats = computed(() => {
               <span v-if="match.player1.seed" class="seed-badge">{{ match.player1.seed }}</span>
             </div>
             <strong class="p-name">{{ match.player1.name }}</strong>
-            <span class="p-club">{{ match.player1.club || 'Aura Club' }}</span>
+            <span v-if="match.player1.club" class="p-club">{{ match.player1.club }}</span>
 
             <div
               class="score-display font-mono"
               :class="{ 'score-winner': match.player1.isWinner }"
             >
-              {{ match.player1.score }}
+              {{ match.player1.score ?? '—' }}
             </div>
 
-            <div v-if="match.player1.sets" class="sets-box">
+            <div v-if="match.player1.sets?.length" class="sets-box">
               <span v-for="(set, idx) in match.player1.sets" :key="idx" class="set-chip">
                 {{ set }}
               </span>
@@ -115,62 +100,19 @@ const matchStats = computed(() => {
               <span v-if="match.player2.seed" class="seed-badge">{{ match.player2.seed }}</span>
             </div>
             <strong class="p-name">{{ match.player2.name }}</strong>
-            <span class="p-club">{{ match.player2.club || 'Aura Club' }}</span>
+            <span v-if="match.player2.club" class="p-club">{{ match.player2.club }}</span>
 
             <div
               class="score-display font-mono"
               :class="{ 'score-winner': match.player2.isWinner }"
             >
-              {{ match.player2.score }}
+              {{ match.player2.score ?? '—' }}
             </div>
 
-            <div v-if="match.player2.sets" class="sets-box">
+            <div v-if="match.player2.sets?.length" class="sets-box">
               <span v-for="(set, idx) in match.player2.sets" :key="idx" class="set-chip">
                 {{ set }}
               </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Match Statistics Comparison Section -->
-        <div v-if="matchStats" class="modal-stats-section">
-          <div class="stats-sec-title">
-            <span class="material-symbols-outlined sec-ico">analytics</span>
-            <span>Chỉ Số Trận Đấu (Match Statistics)</span>
-          </div>
-
-          <div class="stats-mini-list">
-            <div class="mini-stat-row">
-              <span class="stat-p1 font-mono">{{ matchStats.aces[0] }}</span>
-              <span class="stat-lbl">Điểm Aces giao bóng</span>
-              <span class="stat-p2 font-mono">{{ matchStats.aces[1] }}</span>
-            </div>
-
-            <div class="mini-stat-row">
-              <span class="stat-p1 font-mono text-pink">{{ matchStats.winners[0] }}</span>
-              <span class="stat-lbl">Cú đánh Winners ghi điểm</span>
-              <span class="stat-p2 font-mono text-pink">{{ matchStats.winners[1] }}</span>
-            </div>
-
-            <div class="mini-stat-row">
-              <span class="stat-p1 font-mono text-red">{{ matchStats.errors[0] }}</span>
-              <span class="stat-lbl">Lỗi tự đánh hỏng (Errors)</span>
-              <span class="stat-p2 font-mono text-red">{{ matchStats.errors[1] }}</span>
-            </div>
-          </div>
-
-          <div class="mini-highlights-grid">
-            <div class="mini-hl">
-              <span class="hl-t">Tốc độ Smash tối đa</span>
-              <strong class="font-mono text-pink">{{ matchStats.smashSpeed }}</strong>
-            </div>
-            <div class="mini-hl">
-              <span class="hl-t">Pha cầu bền nhất</span>
-              <strong class="font-mono">{{ matchStats.longestRally }}</strong>
-            </div>
-            <div class="mini-hl">
-              <span class="hl-t">Thời lượng thi đấu</span>
-              <strong class="font-mono">{{ matchStats.duration }}</strong>
             </div>
           </div>
         </div>
@@ -427,89 +369,6 @@ const matchStats = computed(() => {
   font-weight: 900;
   color: var(--muted);
   opacity: 0.6;
-}
-
-/* Match Statistics Section */
-.modal-stats-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  border: 1px solid var(--outline);
-}
-
-.stats-sec-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.sec-ico {
-  font-size: 16px;
-  color: var(--pink-dark, #db2777);
-}
-
-.stats-mini-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mini-stat-row {
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  text-align: center;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--surface);
-}
-
-.stat-lbl {
-  color: var(--muted);
-  font-size: 11.5px;
-}
-
-.stat-p1 {
-  text-align: left;
-  font-weight: 750;
-}
-.stat-p2 {
-  text-align: right;
-  font-weight: 750;
-}
-
-.mini-highlights-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--outline);
-}
-
-.mini-hl {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 11px;
-}
-
-.hl-t {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.text-pink {
-  color: var(--pink-dark, #db2777);
-}
-.text-red {
-  color: #ef4444;
 }
 
 .modal-footer {
