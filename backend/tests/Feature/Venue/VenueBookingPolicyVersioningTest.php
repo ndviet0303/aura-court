@@ -54,17 +54,6 @@ class VenueBookingPolicyVersioningTest extends TestCase
                 'max_duration_minutes' => 240,
                 'require_continuity' => true,
             ],
-            'cancellation' => [
-                'deadline_hours' => 24,
-                'fee_type' => 'none',
-                'fee_value' => 0,
-                'refund_due_hours' => 48,
-            ],
-            'change' => [
-                'deadline_hours' => 12,
-                'fee_type' => 'percentage',
-                'fee_value' => 10,
-            ],
             'arrival' => [
                 'early_minutes' => 15,
                 'late_grace_minutes' => 10,
@@ -79,9 +68,7 @@ class VenueBookingPolicyVersioningTest extends TestCase
                 'cutoff_hours' => 2,
                 'max_consideration_percent' => 100,
                 'free_transfer_allowed' => false,
-                'seller_reimbursement_required' => true,
             ],
-            'ancillary_credit_policy' => 'refund',
         ];
     }
 
@@ -106,8 +93,8 @@ class VenueBookingPolicyVersioningTest extends TestCase
         $this->putJson("{$prefix}/booking-policy", ['settings' => $settings])
             ->assertCreated()
             ->assertJsonPath('data.version', 1)
-            ->assertJsonPath('data.settings.cancellation.fee_type', 'none')
-            ->assertJsonPath('data.settings.cancellation.fee_value', 0);
+            ->assertJsonPath('data.settings.transfer.cutoff_hours', 2)
+            ->assertJsonMissingPath('data.settings.cancellation');
 
         $settings['booking']['max_days_ahead'] = 90;
         $this->putJson("{$prefix}/booking-policy", ['settings' => $settings])
@@ -137,10 +124,19 @@ class VenueBookingPolicyVersioningTest extends TestCase
 
         $settings = $this->policySettings();
         $settings['booking']['min_duration_minutes'] = 300;
-        $settings['cancellation']['fee_type'] = 'percentage';
-        $settings['cancellation']['fee_value'] = 101;
         $this->putJson($url, ['settings' => $settings])
             ->assertUnprocessable();
+
+        // Cancellation, change and refund terms are no longer part of a booking policy.
+        foreach ([
+            ['cancellation' => ['deadline_hours' => 24, 'fee_type' => 'none', 'fee_value' => 0, 'refund_due_hours' => 48]],
+            ['change' => ['deadline_hours' => 12, 'fee_type' => 'none', 'fee_value' => 0]],
+            ['ancillary_credit_policy' => 'refund'],
+            ['transfer' => ['seller_reimbursement_required' => true] + $this->policySettings()['transfer']],
+        ] as $retired) {
+            $this->putJson($url, ['settings' => $retired + $this->policySettings()])
+                ->assertUnprocessable();
+        }
 
         $this->assertSame(0, VenueBookingPolicy::where('venue_id', $venue->id)->count());
     }

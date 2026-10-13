@@ -16,8 +16,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'review', booking: Reservation): void
   (e: 'qr', booking: Reservation): void
-  (e: 'cancel', booking: Reservation): void
-  (e: 'reschedule', booking: Reservation): void
 }>()
 
 function formatDate(iso: string): string {
@@ -193,29 +191,16 @@ const sportLabel = computed(() => {
           }}</span>
         </button>
 
-        <!-- Reschedule (if confirmed) -->
-        <button
+        <!-- Bookings are final: a confirmed booking can only be passed on via resale -->
+        <RouterLink
           v-if="isConfirmed"
-          type="button"
+          :to="{ name: 'resale-marketplace' }"
           class="btn-card-secondary"
-          data-testid="booking-reschedule-btn"
-          @click="emit('reschedule', booking)"
+          data-testid="booking-resale-btn"
         >
-          <span class="material-symbols-outlined">edit_calendar</span>
-          <span>{{ $t('booking.rescheduleBtn') }}</span>
-        </button>
-
-        <!-- Cancel / refund (if confirmed) -->
-        <button
-          v-if="isConfirmed"
-          type="button"
-          class="btn-card-secondary"
-          data-testid="booking-cancel-btn"
-          @click="emit('cancel', booking)"
-        >
-          <span class="material-symbols-outlined">cancel</span>
-          <span>{{ $t('booking.cancelBtn') }}</span>
-        </button>
+          <span class="material-symbols-outlined">sell</span>
+          <span>{{ $t('booking.resaleBtn') }}</span>
+        </RouterLink>
       </div>
     </div>
   </div>

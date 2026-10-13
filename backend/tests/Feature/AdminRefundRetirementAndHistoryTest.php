@@ -136,7 +136,7 @@ class AdminRefundRetirementAndHistoryTest extends TestCase
         ]);
     }
 
-    public function test_authorized_admin_can_access_historical_refunds_listing(): void
+    public function test_admin_refund_listing_is_retired_and_historical_rows_stay_stored(): void
     {
         [$org, $venue, $court] = $this->setupTenant();
         $customer = User::factory()->create(['role' => 'customer']);
@@ -149,58 +149,29 @@ class AdminRefundRetirementAndHistoryTest extends TestCase
             'status' => 'confirmed',
         ]);
 
-        Refund::create([
+        $pending = Refund::create([
             'booking_id' => $booking->id,
             'amount' => 100000,
             'status' => 'pending',
             'note' => 'Pending historical',
         ]);
 
-        Refund::create([
+        $completed = Refund::create([
             'booking_id' => $booking->id,
             'amount' => 50000,
             'status' => 'completed',
             'note' => 'Completed historical',
         ]);
 
-        $admin = User::factory()->create(['role' => 'admin']);
-        Sanctum::actingAs($admin);
+        // direct-owner-cutover removed the admin refund listing; the rows remain as history.
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $this->getJson('/api/admin/refunds')->assertNotFound();
 
-        $response = $this->getJson('/api/admin/refunds');
-        $response->assertOk();
-        $response->assertJsonStructure(['data', 'current_page', 'total']);
-        $this->assertGreaterThanOrEqual(2, $response->json('total'));
-    }
-
-    public function test_unauthorized_and_non_admin_users_cannot_access_admin_refunds(): void
-    {
-        [$org, $venue, $court] = $this->setupTenant();
-        $customer = User::factory()->create(['role' => 'customer']);
-
-        $booking = Booking::create([
-            'code' => 'BK-UNAUTH-01',
-            'user_id' => $customer->id,
-            'court_id' => $court->id,
-            'total_amount' => 100000,
-            'status' => 'confirmed',
-        ]);
-
-        $refund = Refund::create([
-            'booking_id' => $booking->id,
-            'amount' => 100000,
-            'status' => 'pending',
-        ]);
-
-        // 1. Unauthenticated request -> 401
-        $this->getJson('/api/admin/refunds')->assertUnauthorized();
-
-        // 2. Customer authenticated -> 403 Forbidden
         Sanctum::actingAs($customer);
-        $this->getJson('/api/admin/refunds')->assertForbidden();
+        $this->getJson('/api/admin/refunds')->assertNotFound();
+        $this->patchJson("/api/admin/refunds/{$pending->id}", ['status' => 'approved'])->assertNotFound();
 
-        // 3. Customer PATCH -> 404 (route is retired)
-        $this->patchJson("/api/admin/refunds/{$refund->id}", [
-            'status' => 'approved',
-        ])->assertNotFound();
+        $this->assertDatabaseHas('refunds', ['id' => $pending->id, 'amount' => 100000, 'status' => 'pending']);
+        $this->assertDatabaseHas('refunds', ['id' => $completed->id, 'amount' => 50000, 'status' => 'completed']);
     }
 }

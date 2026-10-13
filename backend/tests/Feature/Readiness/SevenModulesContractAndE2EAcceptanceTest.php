@@ -643,7 +643,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             ]);
     }
 
-    public function test_module_6_dispute_409_when_closing_with_unsettled_refund_obligation(): void
+    public function test_module_6_dispute_close_is_not_gated_on_a_historical_refund_obligation(): void
     {
         [$org, $venue, $court, $customer, $admin] = $this->createDisputeFixtureWithAdmin();
         $booking = $this->createCompletedBooking($customer, $court, now()->subDays(3));
@@ -684,28 +684,11 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'sla_deadline' => now()->addDays(1),
         ]);
 
-        // 1. Attempting to close while obligation is unsettled (approved) -> 409 Conflict
-        $closeFail = $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/close");
-        $closeFail->assertStatus(409)
-            ->assertJsonFragment([
-                'message' => 'Cannot close dispute: pending refund obligation must be executed or settled first.',
-            ]);
+        // Refunds are retired (direct-owner-cutover): an old unsettled obligation is history and does not block closing.
+        $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/close")->assertOk();
 
-        // Reload check: Status remains resolved
-        $this->assertSame('resolved', $dispute->fresh()->status);
-
-        // 2. Mark obligation as acknowledged (settled)
-        $obligation->update([
-            'status' => OwnerRefundObligation::STATUS_ACKNOWLEDGED,
-            'recipient_acknowledged_at' => now(),
-        ]);
-
-        // 3. Closing dispute now succeeds -> 200 OK
-        $closeSuccess = $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/close");
-        $closeSuccess->assertOk();
-
-        // Reload check: Dispute is closed
         $this->assertSame('closed', $dispute->fresh()->status);
+        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->fresh()->status);
 
         // 404 check: Non-existent dispute close
         $this->actingAs($admin)->postJson('/api/admin/disputes/999999/close')->assertNotFound();

@@ -88,7 +88,6 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
           },
         ]
       if (url.startsWith('/admin/sport-zones')) return []
-      if (url === '/admin/refunds') return []
       if (url === '/admin/coupons') return []
       if (url === '/admin/audit-logs') return { data: [] }
       if (url.includes('/members'))

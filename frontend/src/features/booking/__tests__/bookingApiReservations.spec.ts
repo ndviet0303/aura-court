@@ -37,33 +37,14 @@ describe('bookingApi reservation endpoints', () => {
     ])
   })
 
-  it('calls the reservation endpoints for refunds and reschedules', () => {
-    const slots = ['2099-01-01T10:00:00Z']
-    bookingApi.getRefundQuote('LEGACY-BK-1', [7, 8])
-    bookingApi.createRefundRequest('LEGACY-BK-1', {
-      slot_ids: [7],
-      reason: 'Bận',
-      idempotency_key: 'k1',
-    })
-    bookingApi.previewReschedule('RSV-1', { court_id: 2, slots })
-    bookingApi.createRescheduleRequest('RSV-1', { court_id: 2, slots, idempotency_key: 'k2' })
-
-    expect(api.get).toHaveBeenCalledWith(
-      '/reservations/LEGACY-BK-1/refund-quote?slot_ids[]=7&slot_ids[]=8',
-    )
-    expect(api.post).toHaveBeenCalledWith(
-      '/reservations/LEGACY-BK-1/refund-requests',
-      { slot_ids: [7], reason: 'Bận', idempotency_key: 'k1' },
-      { idempotencyKey: 'k1' },
-    )
-    expect(api.post).toHaveBeenCalledWith('/reservations/RSV-1/reschedule-preview', {
-      court_id: 2,
-      slots,
-    })
-    expect(api.post).toHaveBeenCalledWith(
-      '/reservations/RSV-1/reschedule-requests',
-      { court_id: 2, slots, idempotency_key: 'k2' },
-      { idempotencyKey: 'k2' },
-    )
+  it('exposes no cancellation, refund or reschedule calls', () => {
+    for (const name of [
+      'getRefundQuote',
+      'createRefundRequest',
+      'previewReschedule',
+      'createRescheduleRequest',
+    ]) {
+      expect(bookingApi).not.toHaveProperty(name)
+    }
   })
 })

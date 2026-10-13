@@ -16,7 +16,6 @@ use App\Http\Requests\Admin\StoreDisputeRequest;
 use App\Http\Resources\Admin\DisputeCaseResource;
 use App\Models\DisputeCase;
 use App\Models\OrganizationMember;
-use App\Models\OwnerRefundObligation;
 use App\Models\Reservation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -89,7 +88,6 @@ class AdminDisputeController extends Controller
         $updated = $this->arbitrateDispute->execute($dto);
 
         $messages = [
-            'resolve_and_refund' => 'Đã ban hành phán quyết và tạo nghĩa vụ hoàn tiền chờ chủ cơ sở thực hiện.',
             'resolve' => 'Đã ban hành phán quyết và giải quyết tranh chấp.',
             'dismiss' => 'Đã bác bỏ khiếu nại và lưu vết kiểm toán.',
             'investigate_further' => 'Đã chuyển trạng thái yêu cầu điều tra bổ sung.',
@@ -323,13 +321,6 @@ class AdminDisputeController extends Controller
             $isAuthorizedOwner = $dispute->organization_id
                 && $user->hasRoleInOrganization($dispute->organization_id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]);
             abort_unless($isAuthorizedOwner, 403, 'Bạn không có quyền đóng tranh chấp này.');
-        }
-
-        if ($dispute->refund_obligation_id) {
-            $obligation = OwnerRefundObligation::find($dispute->refund_obligation_id);
-            if ($obligation && ! in_array($obligation->status, ['acknowledged', 'rejected'], true)) {
-                abort(409, 'Cannot close dispute: pending refund obligation must be executed or settled first.');
-            }
         }
 
         $events = $dispute->timeline_events ?? [];

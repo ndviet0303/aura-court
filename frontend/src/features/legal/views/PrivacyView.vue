@@ -199,7 +199,7 @@ onUnmounted(() => {
                 </li>
                 <li>
                   <strong>Thông báo thông minh:</strong> Gửi thông báo nhắc lịch thi đấu, xác nhận
-                  hoàn tiền ví Aura Wallet hoặc cảnh báo thay đổi lịch thi đấu giải.
+                  thanh toán hoặc cảnh báo thay đổi lịch thi đấu giải.
                 </li>
                 <li>
                   <strong>Nâng cao chất lượng dịch vụ:</strong> Thống kê tần suất sử dụng để điều

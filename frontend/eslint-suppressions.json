@@ -4,11 +4,6 @@
       "count": 1
     }
   },
-  "e2e/p0-cancellation-refund-reschedule.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "e2e/p0-pos-shift-service.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 7

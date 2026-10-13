@@ -47,15 +47,6 @@ const permissionsMatrix: PermissionRow[] = [
     staff: true,
   },
   {
-    moduleKey: 'refundProcessing',
-    actionKey: 'refundProcessingDesc',
-    owner: true,
-    manager: true,
-    receptionist: false,
-    tech: false,
-    staff: false,
-  },
-  {
     moduleKey: 'maintenanceSchedule',
     actionKey: 'maintenanceScheduleDesc',
     owner: true,
@@ -109,7 +100,7 @@ const permissionsMatrix: PermissionRow[] = [
 
     <!-- Skeletons State -->
     <div v-if="loading" class="matrix-table-wrap">
-      <div v-for="i in 8" :key="i" class="matrix-row skeleton-matrix-row">
+      <div v-for="i in permissionsMatrix.length" :key="i" class="matrix-row skeleton-matrix-row">
         <SkeletonLoader type="rect" height="40px" />
       </div>
     </div>

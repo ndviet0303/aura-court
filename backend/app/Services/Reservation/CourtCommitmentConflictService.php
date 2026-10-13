@@ -35,7 +35,7 @@ class CourtCommitmentConflictService
         $this->abortOnConflicts($conflicts, 'Lịch hoạt động mới xung đột với các lượt đặt hiện có.');
     }
 
-    public function assertNoMatchPostConflict(int $courtId, Carbon|string $startsAt, Carbon|string $endsAt, ?int $excludeReservationId = null): void
+    public function assertNoMatchPostConflict(int $courtId, Carbon|string $startsAt, Carbon|string $endsAt): void
     {
         $startUtc = Carbon::parse($startsAt)->utc();
         $endUtc = Carbon::parse($endsAt)->utc();
@@ -45,15 +45,7 @@ class CourtCommitmentConflictService
             ->where('starts_at', '<', $endUtc)
             ->where('ends_at', '>', $startUtc)
             ->whereIn('status', ['open', 'active'])
-            ->where(function ($q) use ($excludeReservationId) {
-                $q->where('is_owner_hosted', true)
-                    ->orWhere(function ($sub) use ($excludeReservationId) {
-                        $sub->whereNull('reservation_id');
-                        if ($excludeReservationId !== null) {
-                            $sub->orWhere('reservation_id', '!=', $excludeReservationId);
-                        }
-                    });
-            })
+            ->where(fn ($q) => $q->where('is_owner_hosted', true)->orWhereNull('reservation_id'))
             ->exists();
 
         if ($hasConflict) {
@@ -61,11 +53,11 @@ class CourtCommitmentConflictService
         }
     }
 
-    public function assertBlockPreservesCommitments(Court $court, Carbon $startsAt, Carbon $endsAt, ?int $excludeReservationId = null): void
+    public function assertBlockPreservesCommitments(Court $court, Carbon $startsAt, Carbon $endsAt): void
     {
-        $this->assertNoMatchPostConflict($court->id, $startsAt, $endsAt, $excludeReservationId);
+        $this->assertNoMatchPostConflict($court->id, $startsAt, $endsAt);
 
-        $conflicts = $this->commitments([$court->id], Carbon::now('UTC'), $startsAt, $endsAt, $excludeReservationId)
+        $conflicts = $this->commitments([$court->id], Carbon::now('UTC'), $startsAt, $endsAt)
             ->pluck('reference')
             ->unique()
             ->values()
@@ -74,7 +66,7 @@ class CourtCommitmentConflictService
         $this->abortOnConflicts($conflicts, 'Khung giờ đóng sân bị trùng với các lịch đặt đã xác nhận.');
     }
 
-    private function commitments(array $courtIds, Carbon $notBefore, ?Carbon $overlapStart = null, ?Carbon $overlapEnd = null, ?int $excludeReservationId = null): Collection
+    private function commitments(array $courtIds, Carbon $notBefore, ?Carbon $overlapStart = null, ?Carbon $overlapEnd = null): Collection
     {
         $notBeforeUtc = $notBefore->copy()->utc();
         $overlapStartUtc = $overlapStart?->copy()->utc();
@@ -84,7 +76,6 @@ class CourtCommitmentConflictService
             ->whereIn('court_id', $courtIds)
             ->where('ends_at', '>', $overlapStartUtc ?? $notBeforeUtc)
             ->when($overlapEndUtc, fn ($query) => $query->where('starts_at', '<', $overlapEndUtc))
-            ->when($excludeReservationId !== null, fn ($query) => $query->where('reservation_id', '!=', $excludeReservationId))
             ->whereHas('reservation', fn ($query) => $query->whereIn('status', ['confirmed', 'held']))
             ->get()
             ->map(fn (ReservationSlot $slot): array => [

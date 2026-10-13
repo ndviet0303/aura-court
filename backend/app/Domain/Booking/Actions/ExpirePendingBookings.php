@@ -34,7 +34,7 @@ class ExpirePendingBookings
                 ->get(['id', 'code']);
             foreach ($reservationCandidates as $candidate) {
                 $attempt = OwnerPaymentAttempt::query()
-                    ->whereIn('purpose', ['booking', 'booking_change', 'recurring_period'])
+                    ->whereIn('purpose', ['booking', 'recurring_period'])
                     ->where('purpose_id', $candidate->code)
                     ->where('status', OwnerPaymentAttempt::STATUS_PENDING)
                     ->lockForUpdate()

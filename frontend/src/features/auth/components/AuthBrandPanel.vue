@@ -85,10 +85,6 @@ const { t } = useI18n()
             <span class="dot-online"></span> {{ t('auth.tagInstantBooking') }}
           </span>
           <span class="trust-tag">
-            <span class="material-symbols-outlined tag-icon">verified_user</span>
-            {{ t('auth.tagMoneyBack') }}
-          </span>
-          <span class="trust-tag">
             <span class="material-symbols-outlined tag-icon">leaderboard</span>
             {{ t('auth.tagLeaderboard') }}
           </span>

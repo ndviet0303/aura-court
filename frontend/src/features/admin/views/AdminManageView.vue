@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useAdminManageCourts } from '../composables/useAdminManageCourts'
 import { useAdminPricingMatrix } from '../composables/useAdminPricingMatrix'
 
@@ -11,16 +10,12 @@ import CourtFormModal from '../components/manage/CourtFormModal.vue'
 import CourtPricingModal from '../components/manage/CourtPricingModal.vue'
 import CourtBlockModal from '../components/manage/CourtBlockModal.vue'
 import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
-import AdminRefundsPanel from '../components/manage/AdminRefundsPanel.vue'
-
-const { t } = useI18n()
 
 // Courts and Main Operations Composable
 const {
   venues,
   courts,
   sportZones,
-  refunds,
   coupons,
   error,
   notice,
@@ -29,7 +24,6 @@ const {
   searchQuery,
   selectedVenueFilter,
   statusFilter,
-  activeTab,
   showCourtModal,
   editingCourtId,
   courtForm,
@@ -45,7 +39,6 @@ const {
   venueFilterOptions,
   statusFilterOptions,
   load,
-  loadRefunds,
   toggleCourtStatus,
   openCreateCourtModal,
   openEditCourtModal,
@@ -105,62 +98,25 @@ onMounted(() => {
     <div v-if="notice" class="alert-pill">{{ notice }}</div>
     <div v-if="error" class="alert-pill-error">{{ error }}</div>
 
-    <!-- Navigation Subtabs -->
-    <div class="manage-subtabs-row">
-      <button
-        type="button"
-        class="subtab-btn"
-        :class="{ active: activeTab === 'courts' }"
-        @click="activeTab = 'courts'"
-      >
-        <span class="material-symbols-outlined icon-18">grid_view</span>
-        <span>{{ t('admin.manage.tabCourts') }}</span>
-        <span class="tab-count-badge">{{ totalCourtsCount }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="subtab-btn"
-        :class="{ active: activeTab === 'refunds' }"
-        @click="activeTab = 'refunds'"
-      >
-        <span class="material-symbols-outlined icon-18">history</span>
-        <span>{{ t('admin.manage.tabRefunds') }}</span>
-        <span class="tab-count-badge">{{ refunds.length }}</span>
-      </button>
-    </div>
-
-    <!-- Tab 1: Courts Management Grid -->
-    <div v-if="activeTab === 'courts'">
-      <AdminCourtsTable
-        :courts="filteredCourts"
-        :venues="venues"
-        :selected-venue-filter="selectedVenueFilter"
-        :status-filter="statusFilter"
-        :search-query="searchQuery"
-        :venue-filter-options="venueFilterOptions"
-        :status-filter-options="statusFilterOptions"
-        :loading="loading"
-        @update:selected-venue-filter="selectedVenueFilter = $event"
-        @update:status-filter="statusFilter = $event"
-        @update:search-query="searchQuery = $event"
-        @create-court="openCreateCourtModal"
-        @edit-court="openEditCourtModal"
-        @open-price-modal="openPriceModal"
-        @open-block-modal="openBlockModal"
-        @toggle-status="toggleCourtStatus"
-      />
-    </div>
-
-    <!-- Tab 2: Refunds Management Panel -->
-    <div v-else>
-      <AdminRefundsPanel
-        :refunds="refunds"
-        :loading="loading"
-        :reload="loadRefunds"
-        @changed="loadRefunds"
-      />
-    </div>
+    <!-- Courts Management Grid -->
+    <AdminCourtsTable
+      :courts="filteredCourts"
+      :venues="venues"
+      :selected-venue-filter="selectedVenueFilter"
+      :status-filter="statusFilter"
+      :search-query="searchQuery"
+      :venue-filter-options="venueFilterOptions"
+      :status-filter-options="statusFilterOptions"
+      :loading="loading"
+      @update:selected-venue-filter="selectedVenueFilter = $event"
+      @update:status-filter="statusFilter = $event"
+      @update:search-query="searchQuery = $event"
+      @create-court="openCreateCourtModal"
+      @edit-court="openEditCourtModal"
+      @open-price-modal="openPriceModal"
+      @open-block-modal="openBlockModal"
+      @toggle-status="toggleCourtStatus"
+    />
 
     <!-- Modals -->
     <CourtFormModal
@@ -243,68 +199,6 @@ onMounted(() => {
   color: var(--ink);
 }
 
-.manage-subtabs-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  width: fit-content;
-}
-
-.subtab-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.subtab-btn:hover:not(.active) {
-  color: var(--ink);
-  background: var(--surface-subtle);
-}
-
-.subtab-btn.active {
-  background: var(--primary, #6b2d3f);
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(107, 45, 63, 0.25);
-}
-
-:global(html.dark) .subtab-btn.active {
-  background: #6b2d3f;
-  color: #faf7f3;
-  border-color: rgba(201, 161, 90, 0.3);
-  box-shadow: 0 2px 12px rgba(107, 45, 63, 0.45);
-}
-
-.tab-count-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--surface-subtle);
-  color: var(--muted);
-}
-
-.subtab-btn.active .tab-count-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-}
-
-:global(html.dark) .subtab-btn.active .tab-count-badge {
-  background: rgba(250, 247, 243, 0.15);
-  color: #faf7f3;
-}
 .alert-pill {
   padding: 8px 16px;
   border-radius: 8px;
@@ -321,9 +215,5 @@ onMounted(() => {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
-}
-
-.icon-18 {
-  font-size: 18px;
 }
 </style>

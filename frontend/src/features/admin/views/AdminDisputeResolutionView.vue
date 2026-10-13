@@ -230,7 +230,7 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
       </div>
     </div>
 
-    <!-- Slide-over Drawer for Arbitration & Refund -->
+    <!-- Slide-over Drawer for Arbitration -->
     <ArbitrationDrawer
       :show="isDrawerOpen"
       :item="selectedDispute"

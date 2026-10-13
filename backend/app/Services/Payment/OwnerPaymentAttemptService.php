@@ -12,7 +12,6 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
-use App\Services\Reservation\RescheduleService;
 use App\Services\Social\MarketplaceService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -26,7 +25,6 @@ class OwnerPaymentAttemptService
 
     private const PURPOSES = [
         'booking',
-        'booking_change',
         'recurring_period',
         'split_share',
         'pos_order',
@@ -278,7 +276,6 @@ class OwnerPaymentAttemptService
             $status = OwnerPaymentReceipt::STATUS_UNMATCHED;
             $exceptionCode = null;
             $bookingReservation = null;
-            $rescheduleReplacement = null;
             $recurringAttempt = null;
             $splitShareAttempt = null;
             $transferAttempt = null;
@@ -322,22 +319,6 @@ class OwnerPaymentAttemptService
                         $bookingReservation = null;
                         $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
                         $exceptionCode = 'reservation_hold_unavailable';
-                    }
-                } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && $attempt->purpose === 'booking_change') {
-                    $rescheduleReplacement = Reservation::query()
-                        ->withoutGlobalScope('tenant_isolation')
-                        ->where('organization_id', $attempt->organization_id)
-                        ->where('code', $attempt->purpose_id)
-                        ->lockForUpdate()
-                        ->first();
-                    if (! $rescheduleReplacement
-                        || (int) $rescheduleReplacement->user_id !== (int) $attempt->user_id
-                        || $rescheduleReplacement->payment_model !== 'direct_owner_v1'
-                        || $rescheduleReplacement->status !== 'held'
-                        || ! is_string(data_get($rescheduleReplacement->metadata, 'reschedule_of'))) {
-                        $rescheduleReplacement = null;
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'reschedule_replacement_unavailable';
                     }
                 } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && $attempt->purpose === 'recurring_period') {
                     if (app(RecurringSeriesService::class)->hasConfirmablePeriod($attempt)) {
@@ -403,9 +384,6 @@ class OwnerPaymentAttemptService
                     ])->save();
                     $bookingReservation->slots()->where('status', 'held')->update(['status' => 'confirmed']);
                     $bookingReservation->entitlements()->where('status', 'held')->update(['status' => 'active']);
-                }
-                if ($rescheduleReplacement) {
-                    app(RescheduleService::class)->commitSwap($rescheduleReplacement);
                 }
                 if ($recurringAttempt) {
                     app(RecurringSeriesService::class)->confirmPaidAttempt($allocation, $receipt->event_at);

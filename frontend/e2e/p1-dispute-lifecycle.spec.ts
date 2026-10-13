@@ -17,7 +17,7 @@ type DisputeData = {
   timeline_events: { event: string }[]
 }
 
-test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi hoàn & Xem xét lại @p1', () => {
+test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Phán quyết & Xem xét lại @p1', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')
@@ -273,15 +273,12 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
     expect(updated.data.reservation_id).toBe(reservation.reservation_id)
   })
 
-  test('9.5.4: Phán quyết & Nghĩa vụ bồi hoàn: Không báo hoàn tất tài chính sớm (FR-COM-21, FR-COM-22)', async () => {
+  test('9.5.4: Phán quyết không tạo nghĩa vụ hoàn tiền (FR-COM-21, FR-COM-22)', async () => {
     const reservation = arrangeReservation('9_5_4_dispute')
     const remedyResult = runPhp<{
       dispute_status: string
-      obligation_id: number
-      obligation_amount: number
-      obligation_status: string
-      obligation_reservation_id: number | null
-      payment_completed: boolean
+      refund_obligation_id: number | null
+      new_obligations: number
     }>(`
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
@@ -297,6 +294,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
       $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
       $court = Court::where('venue_id', $venue->id)->findOrFail(${reservation.court_id});
+      $obligationsBefore = OwnerRefundObligation::count();
       $admin = User::where('email', '${admin.email}')->firstOrFail();
       $ownerUser = User::where('email', '${owner.email}')->firstOrFail();
 
@@ -324,34 +322,26 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $action = app(\\App\\Domain\\Admin\\Actions\\ArbitrateDispute::class);
       $data = new \\App\\Domain\\Admin\\DTOs\\ArbitrateDisputeData(
         disputeId: $dispute->id,
-        decision: 'resolve_and_refund',
-        refundMethod: 'owner_direct',
-        refundAmount: 150000,
-        notes: 'Chấp thuận hoàn 150,000 VND theo phán quyết trọng tài',
+        decision: 'resolve',
+        notes: 'Ghi nhận phán quyết; khoản tiền do chủ sân xử lý ngoài hệ thống',
         reviewerId: $admin->id
       );
       $dispute = $action->execute($data);
-      $obligation = OwnerRefundObligation::findOrFail($dispute->refund_obligation_id);
 
       echo json_encode([
         'dispute_status' => $dispute->fresh()->status,
-        'obligation_id' => $obligation->id,
-        'obligation_amount' => $obligation->amount,
-        'obligation_status' => $obligation->fresh()->status,
-        'obligation_reservation_id' => $obligation->reservation_id,
-        'payment_completed' => false,
+        'refund_obligation_id' => $dispute->fresh()->refund_obligation_id,
+        'new_obligations' => OwnerRefundObligation::count() - $obligationsBefore,
       ]);
     `)
 
     expect(remedyResult.dispute_status).toBe('resolved')
-    expect(remedyResult.obligation_status).toBe('approved')
-    expect(remedyResult.obligation_amount).toBe(150000)
-    expect(remedyResult.obligation_reservation_id).toBe(reservation.reservation_id)
-    // CRITICAL: Financial completion MUST NOT be reported prematurely before owner executes refund
-    expect(remedyResult.payment_completed).toBe(false)
+    // Bookings are final: a judgment never creates a refund obligation
+    expect(remedyResult.refund_obligation_id).toBeNull()
+    expect(remedyResult.new_obligations).toBe(0)
   })
 
-  test('9.5.5: Bảo vệ cổng đóng hồ sơ, thực thi bồi hoàn & Yêu cầu xem xét lại (FR-COM-23, FR-COM-24)', async () => {
+  test('9.5.5: Đóng hồ sơ sau phán quyết & Yêu cầu xem xét lại (FR-COM-23, FR-COM-24)', async () => {
     const gateScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
@@ -359,10 +349,8 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $kernel->bootstrap();
 
       use App\\Models\\DisputeCase;
-      use App\\Models\\OwnerRefundObligation;
       use App\\Models\\User;
       use App\\Models\\Venue;
-      use Carbon\\Carbon;
 
       $alice = User::where('email', '${customer1.email}')->firstOrFail();
       $venue = Venue::where('organization_id', ${org1Id})->findOrFail(${venue1Id});
@@ -377,7 +365,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
         'facility_name' => $venue->name,
         'facility_operator_name' => 'Aura Court 1',
         'title' => 'Kiểm tra cổng đóng vụ việc và kháng nghị',
-        'summary' => 'Tóm tắt vụ việc kiểm tra cổng đóng khi chưa hoàn tất nghĩa vụ.',
+        'summary' => 'Tóm tắt vụ việc kiểm tra đóng hồ sơ sau phán quyết.',
         'complainant_id' => $alice->id,
         'complainant_name' => $alice->name,
         'respondent_id' => $ownerUser->id,
@@ -390,42 +378,21 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $action = app(\\App\\Domain\\Admin\\Actions\\ArbitrateDispute::class);
       $data = new \\App\\Domain\\Admin\\DTOs\\ArbitrateDisputeData(
         disputeId: $dispute->id,
-        decision: 'resolve_and_refund',
-        refundMethod: 'owner_direct',
-        refundAmount: 100000,
-        notes: 'Hoàn 100k',
+        decision: 'resolve',
+        notes: 'Đã giải quyết',
         reviewerId: $admin->id
       );
       $dispute = $action->execute($data);
-      $obligation = OwnerRefundObligation::findOrFail($dispute->refund_obligation_id);
 
       $controller = app(\\App\\Http\\Controllers\\Admin\\AdminDisputeController::class);
 
-      // 1. Close Gate: Can dispute be closed while obligation is still approved?
-      // Controller aborts with 409 Conflict if obligation is pending
+      // 1. No refund obligation gates the close: the judgment closes directly
       $closeReq = \\Illuminate\\Http\\Request::create("/api/admin/disputes/{$dispute->id}/close", 'POST');
       $closeReq->setUserResolver(fn () => $admin);
-
-      $closeBlocked = false;
-      try {
-        $controller->close($closeReq, $dispute->id);
-      } catch (\\Symfony\\Component\\HttpKernel\\Exception\\HttpException $e) {
-        if ($e->getStatusCode() === 409) {
-          $closeBlocked = true;
-        }
-      }
-
-      // 2. Owner settles obligation
-      $obligation->update([
-        'status' => OwnerRefundObligation::STATUS_ACKNOWLEDGED,
-        'recipient_acknowledged_at' => Carbon::now(),
-      ]);
-
-      // Close dispute now succeeds via controller
-      $closeRes = $controller->close($closeReq, $dispute->id);
+      $controller->close($closeReq, $dispute->id);
       $disputeClosed = ($dispute->fresh()->status === 'closed');
 
-      // 3. Reconsideration / Reopening: Complainant requests reopening with material evidence via controller
+      // 2. Reconsideration / Reopening: Complainant requests reopening with material evidence via controller
       $reopenReq = \\Illuminate\\Http\\Request::create("/api/disputes/{$dispute->id}/reopen", 'POST', [
         'reason' => 'Bổ sung video camera giám sát chứng minh thiệt hại nghiêm trọng hơn.',
         'material_evidence' => [
@@ -437,8 +404,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $reopenRes = $controller->reopen($reopenReq, $dispute->id);
 
       echo json_encode([
-        'can_close_before_settlement' => !$closeBlocked,
-        'can_close_after_settlement' => $disputeClosed,
+        'closed' => $disputeClosed,
         'reopened_status' => $dispute->fresh()->status,
         'decision_version' => $dispute->fresh()->decision_version,
         'history_count' => count($dispute->fresh()->decision_history),
@@ -452,15 +418,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
         encoding: 'utf-8',
       }),
     ) as {
-      can_close_before_settlement: boolean
-      can_close_after_settlement: boolean
+      closed: boolean
       reopened_status: string
       decision_version: number
       history_count: number
     }
 
-    expect(gateResult.can_close_before_settlement).toBe(false)
-    expect(gateResult.can_close_after_settlement).toBe(true)
+    expect(gateResult.closed).toBe(true)
     expect(gateResult.reopened_status).toBe('reopened')
     expect(gateResult.decision_version).toBe(2)
     expect(gateResult.history_count).toBe(1)

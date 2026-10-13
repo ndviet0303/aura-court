@@ -16,8 +16,6 @@ const emit = defineEmits<{
 
 const { t, locale } = useI18n()
 
-const selectedRefundMethod = ref<'wallet' | 'payos_bank' | 'partial_wallet' | 'none'>('wallet')
-const refundAmount = ref<number>(360000)
 const selectedGoodwill = ref<'voucher_20' | 'reputation_points' | 'none'>('voucher_20')
 const penaltyNotes = ref('')
 const penaltyPoints = ref(2)
@@ -27,15 +25,14 @@ watch(
   () => props.item,
   (newItem) => {
     if (newItem) {
-      refundAmount.value = newItem.amountDisputed || 360000
       penaltyNotes.value =
         locale.value === 'en'
           ? 'Operational reminder notice issued to shift operator regarding manual override error.'
           : 'Lập biên bản nhắc nhở ca trực do lỗi ghi đè thủ công không kiểm tra đối soát.'
       arbitratorNotes.value =
         locale.value === 'en'
-          ? 'Approved 100% refund to complainant due to facility webhook latency and front-desk conflict.'
-          : 'Chấp thuận hoàn 100% giá trị đặt sân cho nguyên đơn do lỗi hệ thống và thao tác của cơ sở.'
+          ? 'Dispute reviewed against facility evidence; resolution recorded.'
+          : 'Đã đối chiếu khiếu nại với bằng chứng của cơ sở và ghi nhận phán quyết.'
     }
   },
   { immediate: true },
@@ -52,9 +49,7 @@ function handleSubmit() {
   }
 
   emit('submit', {
-    decision: selectedRefundMethod.value === 'none' ? 'resolve' : 'resolve_and_refund',
-    refundMethod: selectedRefundMethod.value,
-    refundAmount: selectedRefundMethod.value === 'none' ? 0 : refundAmount.value,
+    decision: 'resolve',
     compensationType: selectedGoodwill.value,
     compensationValue: goodwillMap[selectedGoodwill.value],
     penaltyNotes: penaltyNotes.value,
@@ -125,18 +120,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Form 1: Refund Method -->
-        <div class="form-group">
-          <label class="form-label">{{ t('admin.disputes.refundMethodLabel') }}</label>
-          <select v-model="selectedRefundMethod" class="form-select">
-            <option value="wallet">{{ t('admin.disputes.refundOptWallet') }}</option>
-            <option value="payos_bank">{{ t('admin.disputes.refundOptBank') }}</option>
-            <option value="partial_wallet">{{ t('admin.disputes.refundOptPartial') }}</option>
-            <option value="none">{{ t('admin.disputes.refundOptNone') }}</option>
-          </select>
-        </div>
-
-        <!-- Form 2: Goodwill Compensation -->
+        <!-- Form 1: Goodwill Compensation -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.disputes.goodwillLabel') }}</label>
           <div class="radio-options">
@@ -179,7 +163,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Form 3: Facility Penalty Notes -->
+        <!-- Form 2: Facility Penalty Notes -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.disputes.penaltyNotesLabel') }}</label>
           <textarea
@@ -190,7 +174,7 @@ onBeforeUnmount(() => {
           ></textarea>
         </div>
 
-        <!-- Form 4: Arbitrator Notes -->
+        <!-- Form 3: Arbitrator Notes -->
         <div class="form-group">
           <label class="form-label">{{ t('admin.disputes.arbitratorNotesLabel') }}</label>
           <textarea

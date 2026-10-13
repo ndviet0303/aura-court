@@ -59,14 +59,14 @@
 
 ## 3. Bỏ hủy sân, hoàn tiền và dời lịch (design 7)
 
-- [ ] 3.1 Xóa route trong `routes/api.php`:
+- [x] 3.1 Xóa route trong `routes/api.php`:
   - v1: `bookings/{reservation}/refund-quote` và `refund-requests` (dòng 267–269), `reschedule-preview` và `reschedule-requests` (dòng 270–271).
   - v2: `reservations/{reservation}/refund-quote`, `refund-requests`, hộp thư `refund-requests` cùng approve, reject, report-execution, acknowledge, và `reschedule-preview`, `reschedule-requests` (dòng 435–444).
   - `admin/refunds` (dòng 367).
   - Xóa các `use` controller không còn dùng.
-- [ ] 3.2 Xóa `OwnerRefundService`, `OwnerRefundController`, `AdminController::refunds` và code chỉ chúng dùng.
+- [x] 3.2 Xóa `OwnerRefundService`, `OwnerRefundController`, `AdminController::refunds` và code chỉ chúng dùng.
   - Model và bảng hoàn tiền giữ lại làm lịch sử.
-- [ ] 3.3 Xóa dời lịch:
+- [x] 3.3 Xóa dời lịch:
   - `RescheduleService` và `RescheduleController`.
   - Purpose `booking_change`:
     - mục trong `OwnerPaymentAttemptService::PURPOSES`;
@@ -74,18 +74,22 @@
     - mục trong danh sách purpose của `ExpirePendingBookings` (dòng 106).
   - Không giữ handler cho attempt `booking_change` cũ. Prod không có attempt nào (kiểm tra ngày 2026-10-13), và seed cũng không tạo.
   - Tham số `excludeReservationId` và `excludeBookingSlotIds` của `SlotSelectionPolicy::assertAllowed`, cùng các nhánh lọc theo chúng. Sửa docblock cho hết nhắc tới reschedule.
-- [ ] 3.4 `RecurringReleaseService`:
+  - Ghi chú: `excludeBookingSlotIds` không còn tồn tại trong code. Tham số `excludeReservationId` chết tương ứng trong `CourtCommitmentConflictService` cũng bị xóa (chỉ dời lịch dùng).
+- [x] 3.4 `RecurringReleaseService`:
   - Xóa `repairLegacyCancel`, `recordPaidValue`, `refundAttempt`, action `RepairLegacyCancelledContracts` và lệnh `contracts:repair-legacy-cancel`.
   - `cancelSeries` (kết thúc hợp đồng) chỉ nhả các buổi chưa thanh toán. Buổi đã thanh toán vẫn giữ.
-- [ ] 3.5 `SplitPaymentService`:
+  - Ghi chú: "đã thanh toán" = kỳ thuộc hóa đơn `paid`. Hóa đơn `pending`/`guaranteed` của kỳ chưa bắt đầu bị hủy; không tạo FinanceException hay hoàn tiền.
+- [x] 3.5 `SplitPaymentService`:
   - Xóa `refundAllocations` (đang là code chết).
   - Nhóm chia tiền hết hạn ghi một `FinanceException` cho mỗi phần đã trả, không tạo nghĩa vụ hoàn tiền.
-- [ ] 3.6 `ArbitrateDispute`: bỏ quyết định `resolve_and_refund` ở request validation, action và resource.
-- [ ] 3.7 Chính sách cơ sở:
+  - Ghi chú: logic nằm ở service mới `SplitExpiredShareExceptions` (type `split_expired_paid_share`, reference `split-share:{id}`).
+- [x] 3.6 `ArbitrateDispute`: bỏ quyết định `resolve_and_refund` ở request validation, action và resource.
+  - Ghi chú: `refund_amount`/`refund_method` vẫn được nhận và lưu như phát hiện của phán quyết (không tạo nghĩa vụ). Resource bỏ các trường theo dõi hoàn tiền (`payment_completed`, `refund_obligation_status`, `has_pending_execution`), giữ `refund_obligation_id` làm lịch sử. `AdminDisputeController` bỏ chặn đóng case khi còn nghĩa vụ hoàn tiền, nếu không case cũ không bao giờ đóng được.
+- [x] 3.7 Chính sách cơ sở:
   - `StoreVenueBookingPolicyRequest` bỏ `cancellation`, `change`, `ancillary_credit_policy` và `transfer.seller_reimbursement_required`. Bỏ luôn vòng kiểm phí `['cancellation', 'change']` trong `withValidator`.
   - Readiness chỉ kiểm tra có chính sách hay không, nên không phải sửa.
   - Phiên bản chính sách và snapshot booking đã lưu giữ nguyên các khóa này làm lịch sử.
-- [ ] 3.8 Frontend:
+- [x] 3.8 Frontend:
   - Booking:
     - Xóa `BookingCancelModal.vue`, `BookingRescheduleModal.vue` và `BookingRescheduleModal.spec.ts`.
     - Bỏ nút hủy, nút dời lịch và luồng hoàn tiền trong `UserBookingCard.vue`, `BookingView.vue`, `V2ReservationView.vue` và `V2ReservationDetailModal.vue`. Booking đủ điều kiện hiện nút bán lại slot thay vào đó.
@@ -104,7 +108,8 @@
   - Test frontend:
     - Sửa `BookingView.spec.ts`, `V2ReservationDeepLink.spec.ts` và `bookingApiReservations.spec.ts`.
     - Bỏ các mục đã xóa khỏi `src/__tests__/architecture-allowlist.json`.
-- [ ] 3.9 Test backend:
+  - Ghi chú: nút bán lại là link tới route có sẵn `resale-marketplace` (`/resale`), chỉ hiện với booking đã xác nhận. ArbitrationDrawer bỏ luôn ô phương thức/số tiền hoàn. Bỏ thêm tag "Bảo chứng hoàn tiền" ở `AuthBrandPanel.vue` (hứa hoàn tiền).
+- [x] 3.9 Test backend:
   - Các route đã xóa (hoàn tiền và dời lịch, v1 và v2) trả 404 và không làm đổi dữ liệu.
   - Kết thúc hợp đồng vẫn giữ các buổi đã trả.
   - Nhóm chia tiền hết hạn tạo một exception cho mỗi phần đã trả.
@@ -113,11 +118,12 @@
     - Hiện danh sách gồm `BlockedCommandsInvariantsTest`, `ReservationSlotOverlapExclusionTest`, `SuspendedPartnerObligationsAndAuthorizationTest`, `BookingFlowsTest`, `OrdinaryWalletCheckoutTest`, `ComprehensiveConcurrencyAndRetryInvariantsTest` và `CommunityActivityAndReputationTest`.
     - Giữ các kiểm tra rằng lịch sử hoàn tiền cũ vẫn đọc được.
   - Bỏ các mục đã xóa khỏi `tests/Unit/Architecture/architecture-allowlist.json`. Ceiling chỉ được giảm.
-- [ ] 3.10 Playwright:
+- [x] 3.10 Playwright:
   - Xóa `p0-cancellation-refund-reschedule.spec.ts` và sửa mọi nơi tham chiếu tên file này.
   - `p0-booking-payment-journey` thêm kiểm tra: booking đã thanh toán không có nút hủy, hoàn tiền hay dời lịch, nhưng có nút bán lại.
   - Bỏ `resolve_and_refund` trong `p1-dispute-lifecycle`.
   - Sửa phần hoàn tiền và hủy sân trong `p0-booking-payment-journey`, `p1-split-payments`, `p1-venue-lifecycle`, `p1-partner-registration` và `p1-legacy-wallet-direct-cohort`.
+  - Ghi chú: chưa chạy Playwright. `p1-legacy-wallet-direct-cohort` 8.6.3 bị xóa vì gọi `OwnerRefundService`. `p1-partner-registration` không cần sửa. Tham chiếu trong `openspec/changes/archive/...` giữ nguyên vì là lịch sử đã lưu trữ.
 
 ## 4. Slot 1 giờ ở dữ liệu và chữ hiển thị (design 10)
 

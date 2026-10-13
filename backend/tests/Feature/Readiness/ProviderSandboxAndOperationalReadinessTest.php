@@ -3,8 +3,6 @@
 namespace Tests\Feature\Readiness;
 
 use App\Models\Booking;
-use App\Models\Coupon;
-use App\Models\Court;
 use App\Models\FinanceException;
 use App\Models\Journal;
 use App\Models\Organization;
@@ -12,7 +10,6 @@ use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
-use App\Models\OwnerRefundObligation;
 use App\Models\PhaseGateReview;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformPlan;
@@ -35,7 +32,7 @@ use Tests\TestCase;
 /**
  * Task 13.5 Acceptance Test:
  * Provider sandbox end-to-end for owner receipt and platform subscription,
- * manual setup/secret rotation/late receipt/refund evidence; missing capabilities
+ * manual setup/secret rotation/late receipt; missing capabilities
  * are explicitly recorded as blocked/manual and never marked production-ready.
  *
  * Operational Scenarios:
@@ -47,8 +44,6 @@ use Tests\TestCase;
  *    old secret is rejected with 401/403, webhook using new secret succeeds with 200.
  * 4. Late receipt handling: Receipt arriving for an expired attempt does not mark expired booking as paid;
  *    records receipt with status 'late' / 'unmatched', preventing corrupt state.
- * 5. Refund evidence verification: Owner refund obligation cannot be marked acknowledged without external
- *    proof (bank transaction reference / ciphertext / proof).
  * 6. Documenting blocked capabilities: Automated outbound bank disbursement (direct bank transfer API) is
  *    verified as NOT automated / manual-only; recorded as blocked/manual without claiming automated readiness.
  */
@@ -519,114 +514,6 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
     }
 
     /**
-     * Scenario 5: Refund evidence verification.
-     * Owner refund obligation cannot be marked acknowledged without external proof
-     * (bank transaction reference / ciphertext / proof).
-     */
-    public function test_refund_evidence_verification_requires_external_proof_before_acknowledgment(): void
-    {
-        $fixture = $this->createPaidDirectReservationFixture();
-        $owner = $fixture['owner'];
-        $payer = $fixture['payer'];
-        $reservation = $fixture['reservation'];
-        $slot = $fixture['slots']->first();
-
-        // 1. Payer creates refund request
-        Sanctum::actingAs($payer);
-        $requestPayload = [
-            'slot_ids' => [$slot->id],
-            'reason' => 'Customer schedule change refund',
-            'idempotency_key' => 'refund-e2e-evidence-01',
-            'recipient' => [
-                'bank_code' => 'MBBank',
-                'account_name' => 'Nguyen Van Payer',
-                'account_number' => '123456789012',
-            ],
-        ];
-
-        $refundCreated = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", $requestPayload)
-            ->assertCreated();
-
-        $refundId = (int) $refundCreated->json('data.id');
-        $obligation = OwnerRefundObligation::findOrFail($refundId);
-        $this->assertSame(OwnerRefundObligation::STATUS_REQUESTED, $obligation->status);
-
-        // 2. Owner approves the refund obligation
-        Sanctum::actingAs($owner);
-        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/refund-requests/{$refundId}/approve")
-            ->assertOk()
-            ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_APPROVED);
-
-        $obligation->refresh();
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->status);
-
-        // Negative check 5a: Payer tries to acknowledge BEFORE owner reports external transfer
-        Sanctum::actingAs($payer);
-        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/refund-requests/{$refundId}/acknowledge", ['accepted' => true])
-            ->assertStatus(409); // Conflict: Only reported owner transfer can be acknowledged
-
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->fresh()->status);
-
-        // Negative check 5b: Owner attempts to report execution with MISSING external proof / reference
-        Sanctum::actingAs($owner);
-        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/refund-requests/{$refundId}/report-execution", [
-                'transfer_reference' => '', // Empty proof
-                'evidence' => '',
-            ])
-            ->assertStatus(422);
-
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->fresh()->status);
-
-        // 3. Owner reports valid external bank transfer proof
-        $bankTransferRef = 'FT26270'.Str::upper(Str::random(10));
-        $proofDescription = 'Chuyển khoản qua ngân hàng MBBank tham chiếu '.$bankTransferRef;
-
-        $reportResponse = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/refund-requests/{$refundId}/report-execution", [
-                'transfer_reference' => $bankTransferRef,
-                'evidence' => $proofDescription,
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_OWNER_REPORTED)
-            ->assertJsonPath('data.execution_reference', $bankTransferRef);
-
-        $obligation->refresh();
-        $this->assertSame(OwnerRefundObligation::STATUS_OWNER_REPORTED, $obligation->status);
-        $this->assertSame($bankTransferRef, $obligation->execution_reference);
-        $this->assertNotNull($obligation->execution_evidence_ciphertext);
-        $decryptedEvidence = json_decode(Crypt::decryptString($obligation->execution_evidence_ciphertext), true);
-        $this->assertSame($bankTransferRef, $decryptedEvidence['transfer_reference']);
-        $this->assertSame($proofDescription, $decryptedEvidence['evidence']);
-
-        // 4. Now payer acknowledges with external proof verified
-        Sanctum::actingAs($payer);
-        $ackResponse = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/refund-requests/{$refundId}/acknowledge", [
-                'accepted' => true,
-                'note' => 'Received bank refund in full',
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_ACKNOWLEDGED);
-
-        $obligation->refresh();
-        $this->assertSame(OwnerRefundObligation::STATUS_ACKNOWLEDGED, $obligation->status);
-        $this->assertNotNull($obligation->recipient_acknowledged_at);
-
-        // Assert direct owner refund journal posted and zero platform custody
-        $journal = Journal::where('event_type', 'owner.direct_refund_acknowledged')
-            ->where('event_id', 'owner-refund:'.$obligation->id)
-            ->firstOrFail();
-        $this->assertSame('owner', $journal->ledger_entity);
-        $this->assertSame('direct_owner_v1', $journal->payment_model);
-        $this->assertSame((int) $obligation->amount, (int) $journal->total_debit);
-        $this->assertDatabaseCount('wallet_transactions', 0);
-    }
-
-    /**
      * Scenario 6: Documenting blocked capabilities.
      * Automated outbound bank disbursement (direct bank transfer API) is verified as NOT automated / manual-only.
      * The system records it as blocked/manual, and does not claim automated disbursement readiness.
@@ -820,162 +707,5 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         ]);
 
         return $reservation;
-    }
-
-    private function createPaidDirectReservationFixture(): array
-    {
-        $organization = Organization::create([
-            'name' => 'Refund Sandbox Club',
-            'slug' => 'refund-sandbox-'.Str::lower(Str::random(8)),
-            'status' => 'active',
-            'partner_status' => 'approved',
-        ]);
-
-        $owner = User::factory()->create(['email_verified_at' => now()]);
-        $payer = User::factory()->create(['email_verified_at' => now()]);
-
-        OrganizationMember::create([
-            'organization_id' => $organization->id,
-            'user_id' => $owner->id,
-            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
-            'status' => 'active',
-        ]);
-        OrganizationMember::create([
-            'organization_id' => $organization->id,
-            'user_id' => $payer->id,
-            'role' => OrganizationMember::ROLE_CUSTOMER,
-            'status' => 'active',
-        ]);
-
-        $venue = Venue::create([
-            'organization_id' => $organization->id,
-            'name' => 'Refund Sandbox Venue',
-            'slug' => 'refund-sandbox-venue-'.Str::lower(Str::random(8)),
-            'status' => 'published',
-            'is_active' => true,
-        ]);
-        $court = Court::create([
-            'venue_id' => $venue->id,
-            'name' => 'Sandbox Court 1',
-            'is_active' => true,
-        ]);
-
-        $coupon = Coupon::create([
-            'organization_id' => $organization->id,
-            'code' => 'SANDBOX10',
-            'discount_type' => 'percent',
-            'discount_value' => 10,
-            'usage_limit' => 10,
-            'usage_count' => 1,
-            'is_active' => true,
-        ]);
-
-        $reservation = Reservation::create([
-            'organization_id' => $organization->id,
-            'user_id' => $payer->id,
-            'court_id' => $court->id,
-            'code' => 'RSV-RF-SB-'.Str::upper(Str::random(8)),
-            'status' => 'held',
-            'currency' => 'VND',
-            'total_amount' => 100000,
-            'hold_expires_at' => now()->addMinutes(30),
-            'payment_model' => 'direct_owner_v1',
-            'metadata' => [
-                'coupon_id' => $coupon->id,
-                'booking_policy_snapshot' => [
-                    'version' => 1,
-                    'settings' => [
-                        'cancellation' => [
-                            'deadline_hours' => 24,
-                            'fee_type' => 'percentage',
-                            'fee_value' => 10,
-                            'refund_due_hours' => 48,
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        $slot = ReservationSlot::create([
-            'organization_id' => $organization->id,
-            'reservation_id' => $reservation->id,
-            'court_id' => $court->id,
-            'starts_at' => now()->addDays(3)->setTime(14, 0),
-            'ends_at' => now()->addDays(3)->setTime(15, 0),
-            'unit_price' => 100000,
-            'status' => 'held',
-        ]);
-
-        ReservationEntitlement::create([
-            'organization_id' => $organization->id,
-            'reservation_id' => $reservation->id,
-            'reservation_slot_id' => $slot->id,
-            'user_id' => $payer->id,
-            'court_id' => $court->id,
-            'starts_at' => $slot->starts_at,
-            'ends_at' => $slot->ends_at,
-            'amount' => 100000,
-            'status' => 'held',
-        ]);
-
-        $connection = new ReceivingConnection([
-            'organization_id' => $organization->id,
-            'venue_id' => $venue->id,
-            'owner_user_id' => $owner->id,
-            'provider' => 'sepay',
-            'routing_id' => (string) Str::uuid(),
-            'bank_code' => 'MBBank',
-            'status' => ReceivingConnection::STATUS_VERIFIED,
-            'credential_version' => 1,
-            'owner_attested_at' => now(),
-            'verified_at' => now(),
-            'effective_from' => now(),
-        ]);
-        $connection->setAccountDetails('Sandbox Refund Owner', '0555666777');
-        $secret = 'whsec_'.Str::random(48);
-        $connection->webhook_secret_ciphertext = Crypt::encryptString($secret);
-        $connection->save();
-        $venue->forceFill(['current_receiving_connection_id' => $connection->id])->save();
-
-        $attempt = app(OwnerPaymentAttemptService::class)->createAttempt(
-            $connection,
-            $payer,
-            'booking',
-            $reservation->code,
-            'ACRFSB'.Str::upper(Str::random(10)),
-            100000,
-            'VND',
-            now()->addMinutes(20),
-            'refund-sandbox-attempt-'.Str::uuid()
-        );
-
-        $payload = [
-            'id' => 'refund-sandbox-init-'.Str::uuid(),
-            'transactionDate' => now()->addSeconds(2)->toIso8601String(),
-            'accountNumber' => '0555666777',
-            'code' => $attempt->reference,
-            'content' => $attempt->reference,
-            'transferType' => 'in',
-            'transferAmount' => 100000,
-            'referenceCode' => 'BANK-RF-SB-TEST',
-            'currency' => 'VND',
-        ];
-
-        $this->sendSePayWebhook($connection, $secret, $payload)->assertOk();
-
-        $reservation->refresh();
-        $reservation->slots()->where('status', 'held')->update(['status' => 'confirmed']);
-        $reservation->entitlements()->where('status', 'held')->update(['status' => 'active']);
-
-        return [
-            'organization' => $organization,
-            'owner' => $owner,
-            'payer' => $payer,
-            'venue' => $venue,
-            'reservation' => $reservation->fresh(),
-            'slots' => collect([$slot]),
-            'coupon' => $coupon,
-            'attempt' => $attempt->fresh(),
-        ];
     }
 }

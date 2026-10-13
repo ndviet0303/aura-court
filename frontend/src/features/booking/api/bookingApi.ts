@@ -1,15 +1,6 @@
 import { api } from '@/core/api/client'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 import type {
-  RefundQuote,
-  RefundObligation,
-  CreateRefundRequestPayload,
-  ReschedulePreview,
-  ReschedulePreviewPayload,
-  RescheduleResult,
-  CreateReschedulePayload,
-} from '../types/reservationChanges'
-import type {
   RecurringSeriesPreview,
   RecurringSeriesPreviewPayload,
   CreateRecurringSeriesPayload,
@@ -106,34 +97,6 @@ export const bookingApi = {
   >(
     code: string,
   ) => api.get<T>(`/reservations/${code}/payment`),
-
-  // --- Cancellation / partial-cancel refund + reschedule (policy-aware flows, by reservation code) ---
-
-  getRefundQuote: <T = { data: RefundQuote }>(code: string, slotIds: number[]) => {
-    const query = slotIds.map((id) => `slot_ids[]=${encodeURIComponent(String(id))}`).join('&')
-    return api.get<T>(`/reservations/${code}/refund-quote?${query}`)
-  },
-
-  createRefundRequest: <T = { data: RefundObligation }>(
-    code: string,
-    payload: CreateRefundRequestPayload,
-  ) =>
-    api.post<T>(`/reservations/${code}/refund-requests`, payload, {
-      idempotencyKey: payload.idempotency_key,
-    }),
-
-  previewReschedule: <T = { data: ReschedulePreview }>(
-    code: string,
-    payload: ReschedulePreviewPayload,
-  ) => api.post<T>(`/reservations/${code}/reschedule-preview`, payload),
-
-  createRescheduleRequest: <T = { data: RescheduleResult }>(
-    code: string,
-    payload: CreateReschedulePayload,
-  ) =>
-    api.post<T>(`/reservations/${code}/reschedule-requests`, payload, {
-      idempotencyKey: payload.idempotency_key,
-    }),
 
   joinWaitlist: (payload: { court_id?: number; starts_at: string }) =>
     api.post('/waitlist', payload),

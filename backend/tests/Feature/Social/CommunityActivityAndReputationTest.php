@@ -409,7 +409,7 @@ class CommunityActivityAndReputationTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_customer_hosted_activity_linked_to_reservation_does_not_block_rescheduling(): void
+    public function test_customer_hosted_activity_linked_to_reservation_blocks_only_through_its_reservation(): void
     {
         $startsAt = now()->addDays(2)->setHour(14)->setMinute(0)->setSecond(0)->utc();
         $endsAt = now()->addDays(2)->setHour(16)->setMinute(0)->setSecond(0)->utc();
@@ -435,26 +435,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         $policy = app(SlotSelectionPolicy::class);
 
-        // 1. Rescheduling/updating the reservation for the same court and interval with excludeReservationId:
-        // Must NOT abort with 409 from MatchPost conflict
-        $policy->assertAllowed(
-            $this->court,
-            [
-                ['start' => $startsAt, 'end' => $endsAt],
-            ],
-            excludeReservationId: (int) $reservation->id,
-        );
-
-        // 2. Rescheduling to a modified/overlapping slot with excludeReservationId also succeeds without MatchPost conflict
-        $policy->assertAllowed(
-            $this->court,
-            [
-                ['start' => $startsAt->copy()->addMinutes(30), 'end' => $endsAt->copy()->subMinutes(30)],
-            ],
-            excludeReservationId: (int) $reservation->id,
-        );
-
-        // 3. A third-party new booking without excluding this reservation is blocked by the reservation's slot
+        // 1. A third-party new booking is blocked by the reservation's slot
         try {
             $policy->assertAllowed($this->court, [
                 ['start' => $startsAt, 'end' => $endsAt],
@@ -465,17 +446,11 @@ class CommunityActivityAndReputationTest extends TestCase
             $this->assertSame('The selected court-time is no longer available.', $e->getMessage());
         }
 
-        // 4. CourtCommitmentConflictService assertNoMatchPostConflict:
-        // A customer-hosted match linked to a reservation does NOT trigger MatchPost conflict
+        // 2. A customer-hosted match linked to a reservation does NOT trigger a MatchPost conflict of its own
         $conflicts = app(CourtCommitmentConflictService::class);
-        $conflicts->assertNoMatchPostConflict($this->court->id, $startsAt, $endsAt, excludeReservationId: (int) $reservation->id);
-        $conflicts->assertNoMatchPostConflict($this->court->id, $startsAt, $endsAt); // Also succeeds without exclude because is_owner_hosted = false with reservation_id
+        $conflicts->assertNoMatchPostConflict($this->court->id, $startsAt, $endsAt);
 
-        // 5. assertBlockPreservesCommitments with excludeReservationId:
-        // Excludes the reservation from both MatchPost and commitments checks
-        $conflicts->assertBlockPreservesCommitments($this->court, $startsAt, $endsAt, excludeReservationId: (int) $reservation->id);
-
-        // 6. Without excludeReservationId, assertBlockPreservesCommitments rejects with 409 from the underlying reservation commitment
+        // 3. assertBlockPreservesCommitments rejects with 409 from the underlying reservation commitment
         try {
             $conflicts->assertBlockPreservesCommitments($this->court, $startsAt, $endsAt);
             $this->fail('Expected assertBlockPreservesCommitments to reject due to reservation slot.');

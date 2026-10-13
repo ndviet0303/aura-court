@@ -188,7 +188,7 @@ describe('BookingView (/booking)', () => {
     expect(wrapper.find('.qr-image').exists()).toBe(false)
   })
 
-  it('renders policy-aware cancel and reschedule controls on confirmed bookings and shows the policy notice', async () => {
+  it('offers resale instead of cancel or reschedule on confirmed bookings', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as unknown as Reservation[],
     })
@@ -199,20 +199,20 @@ describe('BookingView (/booking)', () => {
 
     await flushPromises()
 
-    // 1. Confirmed booking card exposes cancel + reschedule controls
+    // 1. Confirmed booking card exposes resale only; bookings are final
     const confirmedCard = wrapper.findAll('.user-booking-card')[0]
-    expect(confirmedCard?.find('[data-testid="booking-cancel-btn"]').exists()).toBe(true)
-    expect(confirmedCard?.find('[data-testid="booking-reschedule-btn"]').exists()).toBe(true)
+    expect(confirmedCard?.find('[data-testid="booking-resale-btn"]').exists()).toBe(true)
+    expect(confirmedCard?.find('[data-testid="booking-cancel-btn"]').exists()).toBe(false)
+    expect(confirmedCard?.find('[data-testid="booking-reschedule-btn"]').exists()).toBe(false)
 
-    // 2. Policy notice is policy-aware, not an "unsupported" message
+    // 2. Policy notice names resale as the only remedy
     const policyNotice = wrapper.find('.policy-notice')
     expect(policyNotice.exists()).toBe(true)
-    expect(policyNotice.text()).toContain('theo chính sách của sân')
-    expect(wrapper.text()).not.toContain('không hỗ trợ hủy')
+    expect(policyNotice.text()).toContain('pass sân')
 
-    // 3. Cancelled booking card offers no cancel/reschedule controls
+    // 3. Cancelled booking card offers no resale
     const cancelledCard = wrapper.findAll('.user-booking-card')[2]
-    expect(cancelledCard?.find('[data-testid="booking-cancel-btn"]').exists()).toBe(false)
+    expect(cancelledCard?.find('[data-testid="booking-resale-btn"]').exists()).toBe(false)
     expect(cancelledCard?.text()).toContain('ĐÃ HỦY')
   })
 

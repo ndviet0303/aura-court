@@ -16,8 +16,7 @@ export function getNotificationCategory(
     ev.includes('booking') ||
     ev.includes('court') ||
     ev.includes('waitlist') ||
-    ev.includes('schedule') ||
-    ev.includes('reschedule')
+    ev.includes('schedule')
   ) {
     return 'booking'
   }

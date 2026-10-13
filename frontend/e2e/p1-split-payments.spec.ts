@@ -5,7 +5,7 @@ import { getActorCredentials } from './runner/auth.ts'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
-test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, Thiếu tiền & Nghĩa vụ hoàn trả @p1', () => {
+test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, Thiếu tiền & Hết hạn @p1', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')
@@ -848,7 +848,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     expect(finalCoveredState.s2_payer_id).toBe(finalCoveredState.host_id) // Paid by host!
   })
 
-  test('8.2.4: Nhóm chia tiền hết hạn: Nhóm chưa đủ tiền hết hạn -> giải phóng giữ chỗ, giữ nghĩa vụ hoàn cho người thực trả', async ({
+  test('8.2.4: Nhóm chia tiền hết hạn: Nhóm chưa đủ tiền hết hạn -> giải phóng giữ chỗ, ghi ngoại lệ tài chính cho phần đã trả', async ({
     page,
   }) => {
     const manifest = getTestManifest()
@@ -1043,6 +1043,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
+      use App\\Models\\FinanceException;
       use App\\Models\\OwnerPaymentAttempt;
       use App\\Models\\Reservation;
       use App\\Models\\SplitGroup;
@@ -1063,8 +1064,11 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       $s2 = SplitShare::find(${arranged.share2_id});
       $attempt2 = OwnerPaymentAttempt::where('purpose_id', 'split_group:' . $group->id . ':share:' . $s2->id)->first();
 
-      // Trace refund obligations
-      $refundAllocations = $service->refundAllocations($freshGroup);
+      // The paid share stays traceable as one finance exception, never a refund obligation
+      $s1Exceptions = FinanceException::withoutGlobalScopes()
+        ->where('type', 'split_expired_paid_share')
+        ->where('reference', 'split-share:' . $s1->id)
+        ->get();
 
       echo json_encode([
         'expired_count' => $expiredCount,
@@ -1073,9 +1077,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         's1_status' => $s1->status,
         's2_status' => $s2->status,
         'attempt2_status' => $attempt2?->status,
-        'has_s1_refund_obligation' => isset($refundAllocations[$s1->id]),
-        's1_refund_amount' => $refundAllocations[$s1->id]['amount'] ?? 0,
-        's1_refund_reference' => $refundAllocations[$s1->id]['payment_reference'] ?? null,
+        's1_exception_count' => $s1Exceptions->count(),
+        's1_exception_amount' => $s1Exceptions->first()?->amount ?? 0,
+        's1_exception_payment_reference' => $s1Exceptions->first()?->links['payment_reference'] ?? null,
       ]);
     `
 
@@ -1092,9 +1096,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       s1_status: string
       s2_status: string
       attempt2_status: string
-      has_s1_refund_obligation: boolean
-      s1_refund_amount: number
-      s1_refund_reference: string | null
+      s1_exception_count: number
+      s1_exception_amount: number
+      s1_exception_payment_reference: string | null
     }
 
     expect(expiredState.expired_count).toBe(1)
@@ -1103,11 +1107,11 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     expect(expiredState.s2_status).toBe('expired') // Unpaid share expired!
     expect(expiredState.attempt2_status).toBe('expired') // Unpaid attempt expired!
 
-    // Paid Share 1 is retained as a traceable refund obligation for the actual payer!
+    // Paid Share 1 stays traceable as one finance exception the owner settles outside the platform
     expect(expiredState.s1_status).toBe('paid')
-    expect(expiredState.has_s1_refund_obligation).toBe(true)
-    expect(expiredState.s1_refund_amount).toBe(100000)
-    expect(expiredState.s1_refund_reference).toBeDefined()
+    expect(expiredState.s1_exception_count).toBe(1)
+    expect(expiredState.s1_exception_amount).toBe(100000)
+    expect(expiredState.s1_exception_payment_reference).toBeTruthy()
   })
 
   test('8.2.5: Bảo mật: Mã tham chiếu chưa xác minh hoặc người lạ cố tình bù tiền bị từ chối', async () => {

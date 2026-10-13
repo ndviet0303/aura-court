@@ -22,6 +22,7 @@ class SplitPaymentService
     public function __construct(
         private readonly ReservationService $reservations,
         private readonly OwnerPaymentAttemptService $attempts,
+        private readonly SplitExpiredShareExceptions $expiredShares,
     ) {}
 
     public function create(Reservation $reservation, User $host, array $shares): SplitGroup
@@ -401,6 +402,7 @@ class SplitPaymentService
             }
 
             $group->shares()->where('status', 'pending')->update(['status' => 'expired']);
+            $this->expiredShares->record($group);
 
             $this->attempts->expirePendingForPurpose('split_share', 'split_group:'.$group->id.':coverage');
             foreach ($group->shares()->get() as $share) {
@@ -409,10 +411,5 @@ class SplitPaymentService
 
             return $group->fresh('shares', 'reservation');
         });
-    }
-
-    public function refundAllocations(SplitGroup $group): array
-    {
-        return $group->shares()->where('status', 'paid')->get()->mapWithKeys(fn (SplitShare $share) => [$share->id => ['payer_id' => $share->payer_id, 'amount' => $share->paid_amount, 'payment_reference' => $share->payment_reference]])->all();
     }
 }

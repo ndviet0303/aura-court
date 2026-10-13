@@ -17,7 +17,6 @@ use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
-use App\Contracts\Repositories\RefundRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
@@ -39,7 +38,6 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentRefundRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
@@ -62,7 +60,6 @@ class RepositoryServiceProvider extends ServiceProvider
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
-        RefundRepositoryInterface::class => EloquentRefundRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,
         AuditLogRepositoryInterface::class => EloquentAuditLogRepository::class,
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,

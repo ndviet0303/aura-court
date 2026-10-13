@@ -4,11 +4,13 @@ namespace Tests\Feature\Booking;
 
 use App\Models\Booking;
 use App\Models\BookingSlot;
+use App\Models\FinanceException;
 use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
+use App\Models\OwnerRefundObligation;
 use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
@@ -264,44 +266,48 @@ class SplitPaymentReceiptVerificationTest extends TestCase
         $this->assertSame($fixture['host']->id, $share2->fresh()->payer_id);
     }
 
-    public function test_expired_split_group_releases_hold_and_retains_paid_shares_as_refund_obligations(): void
+    public function test_expired_split_group_records_one_finance_exception_per_paid_share_without_refunds(): void
     {
         $fixture = $this->tenant();
         $reservation = $this->createHeldReservation($fixture, 200000);
         $group = app(SplitPaymentService::class)->create($reservation, $fixture['host'], [
-            ['amount' => 100000],
-            ['amount' => 100000],
+            ['amount' => 70000],
+            ['amount' => 70000],
+            ['amount' => 60000],
         ]);
 
-        $share1 = $group->shares->firstWhere('share_number', 1);
-        $attempt1 = OwnerPaymentAttempt::where('purpose_id', 'split_group:'.$group->id.':share:'.$share1->id)->firstOrFail();
-
-        // Only share 1 is paid
-        $this->sendOwnerPayment($fixture, $attempt1->reference, 100000, 'expired-share-1');
-        $this->assertSame('paid', $share1->fresh()->status);
+        // Shares 1 and 2 are paid; share 3 is not.
+        $paid = $group->shares->whereIn('share_number', [1, 2])->values();
+        foreach ($paid as $share) {
+            $attempt = OwnerPaymentAttempt::where('purpose_id', 'split_group:'.$group->id.':share:'.$share->id)->firstOrFail();
+            $this->sendOwnerPayment($fixture, $attempt->reference, 70000, 'expired-share-'.$share->share_number);
+            $this->assertSame('paid', $share->fresh()->status);
+        }
 
         // Fast-forward past expiry
         $group->update(['expires_at' => now()->subMinute()]);
         $reservation->update(['hold_expires_at' => now()->subMinute()]);
 
         $service = app(SplitPaymentService::class);
-        $expiredCount = $service->expireDue();
+        $this->assertSame(1, $service->expireDue());
+        $this->assertSame(0, $service->expireDue());
 
-        $this->assertSame(1, $expiredCount);
         $freshGroup = $group->fresh(['shares', 'reservation']);
         $this->assertSame('expired', $freshGroup->status);
         $this->assertSame('expired', $reservation->fresh()->status);
-        $this->assertSame('expired', $freshGroup->shares->firstWhere('share_number', 2)->status);
+        $this->assertSame('expired', $freshGroup->shares->firstWhere('share_number', 3)->status);
 
-        // Share 1 remains paid as a traceable refund obligation
+        // Received money stays traceable per payer for the owner to settle outside the platform; nothing is refunded.
+        $exceptions = FinanceException::where('type', 'split_expired_paid_share')->orderBy('id')->get();
+        $this->assertSame($paid->map(fn ($share) => 'split-share:'.$share->id)->all(), $exceptions->pluck('reference')->all());
+        $this->assertSame([70000, 70000], $exceptions->pluck('amount')->all());
+        $this->assertSame([(int) $fixture['organization']->id], $exceptions->pluck('organization_id')->unique()->values()->all());
+        $this->assertSame(0, OwnerRefundObligation::count());
         $this->assertSame('paid', $freshGroup->shares->firstWhere('share_number', 1)->status);
-        $allocations = $service->refundAllocations($freshGroup);
-        $this->assertArrayHasKey($share1->id, $allocations);
-        $this->assertSame(100000, $allocations[$share1->id]['amount']);
 
         // The attempt for unpaid share is expired
-        $attempt2 = OwnerPaymentAttempt::where('purpose_id', 'split_group:'.$group->id.':share:'.$freshGroup->shares->firstWhere('share_number', 2)->id)->firstOrFail();
-        $this->assertSame('expired', $attempt2->fresh()->status);
+        $attempt3 = OwnerPaymentAttempt::where('purpose_id', 'split_group:'.$group->id.':share:'.$freshGroup->shares->firstWhere('share_number', 3)->id)->firstOrFail();
+        $this->assertSame('expired', $attempt3->fresh()->status);
     }
 
     private function tenant(): array
@@ -337,12 +343,9 @@ class SplitPaymentReceiptVerificationTest extends TestCase
             'effective_at' => now(),
             'settings' => [
                 'booking' => ['hold_ttl_minutes' => 15, 'max_days_ahead' => 30, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240, 'require_continuity' => true],
-                'cancellation' => ['deadline_hours' => 24, 'fee_type' => 'percentage', 'fee_value' => 10, 'refund_due_hours' => 48],
-                'change' => ['deadline_hours' => 12, 'fee_type' => 'none', 'fee_value' => 0],
                 'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 10, 'no_show_after_minutes' => 30],
                 'recurring' => ['payment_policy' => 'per_period', 'conflict_policy' => 'all_or_nothing', 'overdue_release_hours' => 24],
-                'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false, 'seller_reimbursement_required' => true],
-                'ancillary_credit_policy' => 'refund',
+                'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false],
             ],
         ]);
 

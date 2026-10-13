@@ -145,8 +145,6 @@ export const disputeApi = {
   ): Promise<{ message: string; data: DisputeCase }> => {
     const body = {
       decision: payload.decision,
-      refund_method: payload.refundMethod,
-      refund_amount: payload.refundAmount,
       compensation_type: payload.compensationType,
       compensation_value: payload.compensationValue,
       penalty_notes: payload.penaltyNotes,

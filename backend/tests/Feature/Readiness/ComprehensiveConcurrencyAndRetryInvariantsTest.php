@@ -15,7 +15,6 @@ use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
-use App\Models\OwnerRefundObligation;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformPlan;
 use App\Models\PlatformProviderReceipt;
@@ -35,7 +34,6 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Services\Payment\OwnerPaymentAttemptService;
-use App\Services\Payment\OwnerRefundService;
 use App\Services\Payment\ProviderEventHandler;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
@@ -52,7 +50,7 @@ use Tests\TestCase;
 /**
  * Task 13.3 — Comprehensive Concurrency and Retry Invariants Acceptance Suite
  *
- * Verifies zero double effects across 9 concurrency and idempotent retry scenarios:
+ * Verifies zero double effects across 8 concurrency and idempotent retry scenarios:
  * 1. Court overlap: Contending attempts on the exact same court and slot.
  * 2. Points & Coupon use: Concurrent usage of the same coupon or user point balance.
  * 3. Final stock in POS: 1 unit remaining in inventory under concurrent purchases.
@@ -60,7 +58,6 @@ use Tests\TestCase;
  * 5. Marketplace transfer: Concurrent purchases for the same secondary listing.
  * 6. Recurring series invoice: Idempotent provider webhook replay for recurring invoice.
  * 7. Platform subscription: Duplicate webhook delivery for same provider transaction.
- * 8. Refund limit: Booking with total amount 200,000 VND under excess or concurrent refunds.
  * 9. Last tournament place: Tournament with max participants reaching capacity.
  */
 class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
@@ -710,103 +707,6 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
 
         // - Exactly 1 provider receipt recorded
         $this->assertSame(1, PlatformProviderReceipt::where('payment_attempt_id', $attempt->id)->count(), 'Receipt recorded exactly once.');
-    }
-
-    // =========================================================================
-    // SCENARIO 8: Refund Limit
-    // =========================================================================
-
-    public function test_scenario_8_refund_limit_and_concurrent_requests_capped_at_original_amount(): void
-    {
-        $fixture = $this->setupTenantWithReceivingConnection();
-        $payer = $fixture['payer'];
-        $org = $fixture['organization'];
-
-        // Booking with total amount 200,000 VND
-        $slotTime = now(config('app.timezone'))->addDays(3)->setTime(10, 0);
-        $reservation = $this->createConfirmedReservation($fixture, 200000, $slotTime);
-        $slot = $reservation->slots()->firstOrFail();
-        $this->assertSame(200000, $reservation->total_amount);
-
-        // Policy allows full refund (fee_type: none)
-        $policy = $fixture['venue']->currentBookingPolicy;
-        $policy->update([
-            'settings' => array_merge($policy->settings, [
-                'cancellation' => [
-                    'deadline_hours' => 24,
-                    'fee_type' => 'none',
-                    'fee_value' => 0,
-                    'refund_due_hours' => 48,
-                ],
-            ]),
-        ]);
-
-        $recipient = [
-            'bank_code' => 'MBBank',
-            'account_name' => 'Payer Refund Account',
-            'account_number' => '0987654321',
-        ];
-
-        // 1. Initial valid refund request for the 200,000 VND slot
-        $res1 = $this->actingAs($payer)
-            ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
-                'slot_ids' => [$slot->id],
-                'reason' => 'Customer schedule change',
-                'idempotency_key' => 'refund-req-initial-1',
-                'recipient' => $recipient,
-            ]);
-        $res1->assertCreated();
-        $this->assertSame(200000, (int) $res1->json('data.refund_amount'));
-
-        // 2. Concurrent refund request on the same slot / booking -> REJECTED with 409 conflict
-        $res2 = $this->actingAs($payer)
-            ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
-                'slot_ids' => [$slot->id],
-                'reason' => 'Duplicate refund request attempt',
-                'idempotency_key' => 'refund-req-duplicate-2',
-                'recipient' => $recipient,
-            ]);
-        $this->assertTrue(in_array($res2->status(), [409, 422], true), "Expected 409 or 422, got {$res2->status()}");
-
-        // 3. Attempting refund exceeding 200,000 VND (e.g. 300,000 VND reschedule difference) -> REJECTED
-        $refundService = app(OwnerRefundService::class);
-        try {
-            $refundService->requestForReschedule($reservation, $payer, 300000, $recipient, 'resched-excess-1', 'RES-NEW-CODE');
-            $this->fail('Expected refund exceeding received amount to be rejected.');
-        } catch (HttpException $e) {
-            $this->assertTrue(in_array($e->getStatusCode(), [409, 422], true));
-            $this->assertStringContainsString('exceeds the amount received', $e->getMessage());
-        }
-
-        // 4. Attempting reschedule refund difference with <= 0 amount -> REJECTED with 422
-        try {
-            $refundService->requestForReschedule($reservation, $payer, 0, $recipient, 'resched-zero-1', 'RES-NEW-CODE');
-            $this->fail('Expected zero refund difference to be rejected.');
-        } catch (HttpException $e) {
-            $this->assertSame(422, $e->getStatusCode());
-            $this->assertStringContainsString('greater than zero', $e->getMessage());
-        }
-
-        // 5. Attempting cash refund without recipient bank account -> REJECTED with 422
-        $resMissingRecipient = $this->actingAs($payer)
-            ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
-                'slot_ids' => [$slot->id],
-                'reason' => 'No bank account provided',
-                'idempotency_key' => 'refund-no-recipient-1',
-                'recipient' => [],
-            ]);
-        $this->assertSame(422, $resMissingRecipient->status());
-
-        // Invariants:
-        // - Total refunded obligations capped at original 200,000 VND amount
-        $totalRefundObligations = (int) OwnerRefundObligation::where('reservation_id', $reservation->id)->sum('amount');
-        $this->assertSame(200000, $totalRefundObligations, 'Total refund obligations must be capped at original 200,000 VND.');
-
-        // - Exactly 1 refund obligation created for this reservation
-        $this->assertSame(1, OwnerRefundObligation::where('reservation_id', $reservation->id)->count(), 'Exactly 1 refund obligation can be created.');
     }
 
     // =========================================================================

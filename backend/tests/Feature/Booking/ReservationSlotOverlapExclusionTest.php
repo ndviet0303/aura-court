@@ -79,31 +79,6 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         $this->assertSame(2, ReservationSlot::where('court_id', $fixture['court']->id)->whereIn('status', ['held', 'confirmed'])->count());
     }
 
-    public function test_replacement_held_for_an_extra_payment_and_its_original_both_block_competitors(): void
-    {
-        $fixture = $this->tenant(120);
-        $original = $this->bookAndConfirm($fixture, $this->at(3, 10), '12:00', 200000, 'orig');
-        $this->priceSlot($fixture, $this->at(4, 14), '16:00', 300000);
-
-        $data = $this->rescheduleRequest($fixture, $original->code, $this->at(4, 14), 'move')->assertCreated()->json('data');
-        $replacement = Reservation::where('code', $data['replacement']['code'])->firstOrFail();
-        $this->assertSame('held', $replacement->status);
-        $this->assertSame('confirmed', $original->fresh()->status);
-
-        // Both the protected original and the held replacement are exclusive at the store level.
-        foreach ([$original, $replacement] as $reservation) {
-            $slot = $reservation->slots()->firstOrFail();
-            $this->assertOverlapRejected($fixture, $slot->starts_at->copy()->addHour(), $slot->ends_at);
-        }
-
-        // The verified difference still commits the swap.
-        $attempt = OwnerPaymentAttempt::where('purpose', 'booking_change')->where('purpose_id', $replacement->code)->firstOrFail();
-        $this->sendOwnerPayment($fixture, $attempt->reference, 100000, 'diff-move');
-
-        $this->assertSame('cancelled', $original->fresh()->status);
-        $this->assertSame('confirmed', $replacement->fresh()->status);
-    }
-
     public function test_released_slots_no_longer_block_the_interval(): void
     {
         $fixture = $this->tenant(120);
@@ -210,22 +185,6 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         ]);
     }
 
-    private function rescheduleRequest(array $fixture, string $code, CarbonInterface $newStart, string $key, array $recipient = [])
-    {
-        $payload = [
-            'court_id' => $fixture['court']->id,
-            'slots' => [$newStart->toIso8601String()],
-            'idempotency_key' => $key,
-        ];
-        if ($recipient !== []) {
-            $payload['recipient'] = $recipient;
-        }
-
-        return $this->actingAs($fixture['payer'])
-            ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson("/api/reservations/{$code}/reschedule-requests", $payload);
-    }
-
     private function tenant(int $slotDuration): array
     {
         $organization = Organization::create([
@@ -275,12 +234,9 @@ class ReservationSlotOverlapExclusionTest extends TestCase
             'effective_at' => now(),
             'settings' => [
                 'booking' => ['hold_ttl_minutes' => 30, 'max_days_ahead' => 60, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240, 'require_continuity' => true],
-                'cancellation' => ['deadline_hours' => 24, 'fee_type' => 'percentage', 'fee_value' => 10, 'refund_due_hours' => 48],
-                'change' => ['deadline_hours' => 12, 'fee_type' => 'none', 'fee_value' => 0],
                 'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 10, 'no_show_after_minutes' => 30],
                 'recurring' => ['payment_policy' => 'per_period', 'conflict_policy' => 'all_or_nothing', 'overdue_release_hours' => 24],
-                'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false, 'seller_reimbursement_required' => true],
-                'ancillary_credit_policy' => 'refund',
+                'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false],
             ],
         ]);
         $connection = new ReceivingConnection([

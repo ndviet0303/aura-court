@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useReservations } from '../composables/useReservations'
-import type { Reservation } from '../types/reservation'
 
 const { t } = useI18n()
 
@@ -14,8 +12,6 @@ import ReservationCard from '../components/reservation/ReservationCard.vue'
 import ReservationDetailModal from '../components/reservation/ReservationDetailModal.vue'
 import ReservationQrModal from '../components/reservation/ReservationQrModal.vue'
 import ReservationPaymentModal from '../components/reservation/ReservationPaymentModal.vue'
-import BookingCancelModal from '../components/history/BookingCancelModal.vue'
-import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 
 const {
   courts,
@@ -60,23 +56,6 @@ const {
 function scrollToCalculator() {
   const el = document.getElementById('quote-calculator-section')
   if (el) el.scrollIntoView({ behavior: 'smooth' })
-}
-
-const cancelReservation = ref<Reservation | null>(null)
-const rescheduleReservation = ref<Reservation | null>(null)
-
-function openCancel(reservation: Reservation) {
-  closeDetails()
-  cancelReservation.value = reservation
-}
-function openReschedule(reservation: Reservation) {
-  closeDetails()
-  rescheduleReservation.value = reservation
-}
-function onChangeApplied() {
-  cancelReservation.value = null
-  rescheduleReservation.value = null
-  loadData()
 }
 </script>
 
@@ -213,8 +192,6 @@ function onChangeApplied() {
       :format-date="formatDate"
       :format-time-slot="formatTimeSlot"
       @close="closeDetails"
-      @cancel="openCancel"
-      @reschedule="openReschedule"
     />
 
     <!-- QR Pass Modal -->
@@ -231,22 +208,6 @@ function onChangeApplied() {
       :reservation="selectedReservationForPayment"
       @close="closePayment"
       @paid="loadData"
-    />
-
-    <!-- Cancellation / partial-cancel refund modal -->
-    <BookingCancelModal
-      :show="!!cancelReservation"
-      :booking="cancelReservation"
-      @close="cancelReservation = null"
-      @updated="onChangeApplied"
-    />
-
-    <!-- Reschedule modal -->
-    <BookingRescheduleModal
-      :show="!!rescheduleReservation"
-      :booking="rescheduleReservation"
-      @close="rescheduleReservation = null"
-      @updated="onChangeApplied"
     />
   </div>
 </template>
