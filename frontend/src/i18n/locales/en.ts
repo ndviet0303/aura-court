@@ -2647,6 +2647,8 @@ export default {
       scanSuccessAlert: 'Check-in successful',
       passCodeLabel: 'Pass ID: {code}',
       digitalPassModalTitle: 'Digital Athlete Credential Pass',
+      passSubtitle: 'OFFICIAL TOURNAMENT PASS',
+      passAthleteBadge: 'ATHLETE',
       liveMatchLabel: 'Live Match: {code}',
       testConflictBtn: 'Simulate Score Conflict',
       switchEndsBtn: 'Switch Ends',

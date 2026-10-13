@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import QRCode from 'qrcode'
 import { resolveLocalizedText } from '@/i18n'
 import type { Participant } from '../../types/tournamentAdmin'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 
 const props = defineProps<{
   athletes: Participant[]
+  tournamentName: string
   filterStatus: 'all' | 'pending' | 'checked_in' | 'no_show'
   searchQuery: string
   loading?: boolean
@@ -30,12 +32,19 @@ const { t } = useI18n()
 const showQrScannerModal = ref(false)
 const showPassModal = ref(false)
 const selectedPassAthlete = ref<Participant | null>(null)
+const passQrDataUrl = ref('')
 const scanCodeInput = ref('')
 const scannedAthlete = ref<Participant | null>(null)
 
-function openPassModal(ath: Participant) {
+const passCode = (ath: Participant) => ath.qrCode || `ATH-${ath.id}`
+
+async function openPassModal(ath: Participant) {
   selectedPassAthlete.value = ath
   showPassModal.value = true
+  passQrDataUrl.value = ''
+  const url = await QRCode.toDataURL(passCode(ath), { width: 200, margin: 2 })
+  // A pass opened meanwhile must never show this athlete's QR.
+  if (selectedPassAthlete.value === ath) passQrDataUrl.value = url
 }
 
 function openQrScanner() {
@@ -309,10 +318,12 @@ function handleScanCode() {
 
             <div class="pass-header-strip">
               <div class="pass-org-info">
-                <span class="pass-org-name font-mono">AURA CIRCUIT 2026</span>
-                <span class="pass-org-sub">OFFICIAL TOURNAMENT PASS</span>
+                <span class="pass-org-name font-mono">{{ tournamentName }}</span>
+                <span class="pass-org-sub">{{ t('admin.tournaments.passSubtitle') }}</span>
               </div>
-              <span class="pass-type-badge font-mono">ATHLETE</span>
+              <span class="pass-type-badge font-mono">{{
+                t('admin.tournaments.passAthleteBadge')
+              }}</span>
             </div>
 
             <div class="pass-badge-content">
@@ -332,7 +343,7 @@ function handleScanCode() {
                 <h3 class="pass-ath-name">{{ resolveLocalizedText(selectedPassAthlete.name) }}</h3>
                 <div class="pass-tags-row">
                   <span v-if="selectedPassAthlete.seed" class="pass-seed-tag">
-                    Hạt giống #{{ selectedPassAthlete.seed }}
+                    {{ t('admin.tournaments.seedLabel', { seed: selectedPassAthlete.seed }) }}
                   </span>
                   <span v-if="selectedPassAthlete.category" class="pass-category-tag">
                     {{ selectedPassAthlete.category }}
@@ -347,60 +358,17 @@ function handleScanCode() {
               </div>
 
               <div class="pass-qr-card">
-                <svg class="pass-qr-svg" viewBox="0 0 120 120" width="100" height="100">
-                  <rect width="120" height="120" fill="#ffffff" rx="8" />
-                  <rect x="10" y="10" width="30" height="30" fill="#0f172a" rx="4" />
-                  <rect x="16" y="16" width="18" height="18" fill="#ffffff" rx="2" />
-                  <rect x="21" y="21" width="8" height="8" fill="#0f172a" rx="1" />
-                  <rect x="80" y="10" width="30" height="30" fill="#0f172a" rx="4" />
-                  <rect x="86" y="16" width="18" height="18" fill="#ffffff" rx="2" />
-                  <rect x="91" y="21" width="8" height="8" fill="#0f172a" rx="1" />
-                  <rect x="10" y="80" width="30" height="30" fill="#0f172a" rx="4" />
-                  <rect x="16" y="86" width="18" height="18" fill="#ffffff" rx="2" />
-                  <rect x="21" y="91" width="8" height="8" fill="#0f172a" rx="1" />
-                  <rect x="48" y="14" width="6" height="6" fill="#0f172a" />
-                  <rect x="58" y="14" width="6" height="6" fill="#0f172a" />
-                  <rect x="68" y="14" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="24" width="6" height="6" fill="#0f172a" />
-                  <rect x="68" y="24" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="34" width="6" height="6" fill="#0f172a" />
-                  <rect x="58" y="34" width="6" height="6" fill="#0f172a" />
-                  <rect x="14" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="24" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="34" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="48" width="8" height="8" fill="#ec4899" rx="2" />
-                  <rect x="64" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="78" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="92" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="102" y="48" width="6" height="6" fill="#0f172a" />
-                  <rect x="14" y="58" width="6" height="6" fill="#0f172a" />
-                  <rect x="34" y="58" width="6" height="6" fill="#0f172a" />
-                  <rect x="58" y="58" width="6" height="6" fill="#0f172a" />
-                  <rect x="78" y="58" width="6" height="6" fill="#0f172a" />
-                  <rect x="98" y="58" width="6" height="6" fill="#0f172a" />
-                  <rect x="14" y="68" width="6" height="6" fill="#0f172a" />
-                  <rect x="24" y="68" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="68" width="6" height="6" fill="#0f172a" />
-                  <rect x="68" y="68" width="6" height="6" fill="#0f172a" />
-                  <rect x="88" y="68" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="80" width="6" height="6" fill="#0f172a" />
-                  <rect x="60" y="80" width="6" height="6" fill="#0f172a" />
-                  <rect x="80" y="80" width="6" height="6" fill="#0f172a" />
-                  <rect x="94" y="80" width="6" height="6" fill="#0f172a" />
-                  <rect x="104" y="80" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="92" width="6" height="6" fill="#0f172a" />
-                  <rect x="68" y="92" width="6" height="6" fill="#0f172a" />
-                  <rect x="80" y="92" width="6" height="6" fill="#0f172a" />
-                  <rect x="100" y="92" width="6" height="6" fill="#0f172a" />
-                  <rect x="48" y="104" width="6" height="6" fill="#0f172a" />
-                  <rect x="58" y="104" width="6" height="6" fill="#0f172a" />
-                  <rect x="78" y="104" width="6" height="6" fill="#0f172a" />
-                  <rect x="90" y="104" width="6" height="6" fill="#0f172a" />
-                  <rect x="104" y="104" width="6" height="6" fill="#0f172a" />
-                </svg>
-                <span class="pass-qr-code font-mono">{{
-                  selectedPassAthlete.qrCode || `ATH-${selectedPassAthlete.id}`
-                }}</span>
+                <img
+                  v-if="passQrDataUrl"
+                  :src="passQrDataUrl"
+                  :alt="
+                    t('admin.tournaments.passCodeLabel', { code: passCode(selectedPassAthlete) })
+                  "
+                  class="pass-qr-img"
+                  width="100"
+                  height="100"
+                />
+                <span class="pass-qr-code font-mono">{{ passCode(selectedPassAthlete) }}</span>
               </div>
 
               <div
@@ -903,6 +871,7 @@ function handleScanCode() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 14px 18px;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.02);
@@ -937,6 +906,7 @@ function handleScanCode() {
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1px;
+  flex-shrink: 0;
 }
 
 .pass-badge-content {
@@ -1038,7 +1008,7 @@ function handleScanCode() {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
-.pass-qr-svg {
+.pass-qr-img {
   display: block;
 }
 
