@@ -64,19 +64,20 @@ export function usePaymentProcessing() {
     return null
   })
 
+  // '—' marks a detail we do not have; never show a stand-in person.
   const playerDetails = computed(() => {
     if (isTournament.value && athleteInfo.value.name) {
       return {
         name: athleteInfo.value.name,
-        email: auth.user?.email || 'athlete@aura.com',
-        phone: athleteInfo.value.phone || '+84 (0) 90 123 4567',
+        email: auth.user?.email || '—',
+        phone: athleteInfo.value.phone || '—',
         partnerName: athleteInfo.value.partnerName || '',
       }
     }
     return {
-      name: auth.user?.name || 'Alexander Mitchell',
-      email: auth.user?.email || 'a.mitchell@aura.com',
-      phone: auth.user?.phone || '+84 (0) 90 123 4567',
+      name: auth.user?.name || '—',
+      email: auth.user?.email || '—',
+      phone: auth.user?.phone || '—',
       partnerName: '',
     }
   })
@@ -104,22 +105,10 @@ export function usePaymentProcessing() {
     couponSuccess.value = ''
 
     try {
-      if (isTournament.value) {
-        if (
-          couponCode.value.trim().toUpperCase() === 'AURA2026' ||
-          couponCode.value.trim().toUpperCase() === 'VIP'
-        ) {
-          if (store.payment) {
-            store.payment.amount = Math.max(0, store.payment.amount - 50000)
-            couponSuccess.value = 'Đã áp dụng giảm giá 50.000 ₫ lệ phí giải!'
-          }
-        } else {
-          couponError.value = 'Mã giảm giá không hợp lệ cho giải đấu này.'
-        }
-      } else {
-        await store.applyCoupon(couponCode.value.trim())
-        couponSuccess.value = 'Áp dụng mã giảm giá thành công!'
-      }
+      // Booking coupons only: tournament registration charges the published fee, so the
+      // summary card offers no coupon there.
+      await store.applyCoupon(couponCode.value.trim())
+      couponSuccess.value = 'Áp dụng mã giảm giá thành công!'
     } catch (e) {
       couponError.value = errorMessage(e, 'Mã giảm giá không hợp lệ hoặc đã hết hạn.')
     } finally {
@@ -136,11 +125,8 @@ export function usePaymentProcessing() {
     error.value = ''
     try {
       if (isTournament.value) {
-        const tourneyId =
-          tournament.value?.uuid ||
-          tournament.value?.id ||
-          (route.query.tournament_uuid as string) ||
-          (route.query.tournament_id as string)
+        // Only the loaded tournament, whose fee this page showed, may be charged.
+        const tourneyId = tournament.value?.uuid || tournament.value?.id
         if (!tourneyId) {
           throw new Error('Không tìm thấy thông tin giải đấu để đăng ký.')
         }
@@ -149,13 +135,8 @@ export function usePaymentProcessing() {
             athleteInfo.value.name ||
             (route.query.name as string) ||
             (route.query.athlete_name as string) ||
-            auth.user?.name ||
-            'Vận Động Viên Aura',
-          phone:
-            athleteInfo.value.phone ||
-            (route.query.phone as string) ||
-            auth.user?.phone ||
-            '0901234567',
+            auth.user?.name,
+          phone: athleteInfo.value.phone || (route.query.phone as string) || auth.user?.phone,
           partner:
             athleteInfo.value.partnerName ||
             (route.query.partner as string) ||
@@ -202,11 +183,10 @@ export function usePaymentProcessing() {
     }
   }
 
-  function parseFeeAmount(feeStr?: string): number {
-    if (!feeStr) return 300000
-    const cleaned = feeStr.replace(/[^\d]/g, '')
-    const parsed = parseInt(cleaned, 10)
-    return isNaN(parsed) || parsed <= 0 ? 300000 : parsed
+  // Same digits registration charges for a "300.000 ₫ / VĐV" fee; no fee means free entry.
+  function parseFeeAmount(fee?: string | number | null): number {
+    const digits = String(fee ?? '').replace(/\D/g, '')
+    return digits ? parseInt(digits, 10) : 0
   }
 
   async function initPaymentSession() {
@@ -224,53 +204,28 @@ export function usePaymentProcessing() {
         (codeParam && codeParam.startsWith('TRN-')) ||
         route.query.type === 'tournament'
       ) {
+        // Never let an earlier session stand in for this tournament, even if loading fails.
+        store.payment = null
         await loadBalance()
         const identifier =
           tourneyUuid || (codeParam ? codeParam.replace(/^TRN-/, '').split('-')[0] : '')
-
-        if (identifier) {
-          try {
-            const tourneyData = await tournamentApi.getById(identifier)
-            tournament.value = tourneyData
-          } catch {
-            tournament.value = {
-              id: 1,
-              name: 'Aura Tournament Championship 2026',
-              sport: 'badminton',
-              format: 'single_elimination',
-              status: 'open',
-              prize_pool: '15.000.000 ₫',
-              dates: 'Tháng 09/2026',
-              venue: 'Aura Sport Arena',
-              city: 'Hồ Chí Minh',
-              current_slots: 12,
-              max_slots: 16,
-              entry_fee: '300.000 ₫ / VĐV',
-              image_url:
-                'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop&q=80',
-              version: 1,
-            }
-          }
-        }
+        if (!identifier) throw new Error('Không tìm thấy thông tin giải đấu để đăng ký.')
+        // No stand-in tournament on failure: without the real one there is no fee to show.
+        const tourney = await tournamentApi.getById(identifier)
+        tournament.value = tourney
 
         athleteInfo.value = {
           name:
-            (route.query.name as string) ||
-            (route.query.athlete_name as string) ||
-            auth.user?.name ||
-            'Vận Động Viên Aura',
-          phone: (route.query.phone as string) || auth.user?.phone || '0901234567',
+            (route.query.name as string) || (route.query.athlete_name as string) || auth.user?.name,
+          phone: (route.query.phone as string) || auth.user?.phone || undefined,
           partnerName:
             (route.query.partner as string) || (route.query.partner_name as string) || undefined,
           notes: (route.query.notes as string) || undefined,
         }
 
-        const fee = parseFeeAmount(tournament.value?.entry_fee)
-        const tourneyIdNum = tournament.value?.id || 1
+        const fee = parseFeeAmount(tourney.entry_fee)
         const tourneyCode =
-          codeParam && /^ORD/i.test(codeParam)
-            ? codeParam.replace(/\s+/g, '')
-            : `ORD${tourneyIdNum}`
+          codeParam && /^ORD/i.test(codeParam) ? codeParam.replace(/\s+/g, '') : `ORD${tourney.id}`
 
         store.payment = {
           code: tourneyCode,
@@ -280,8 +235,8 @@ export function usePaymentProcessing() {
           qrUrl: '',
           expiresAt: '',
           type: 'tournament',
-          title: tournament.value?.name || 'Lệ Phí Giải Đấu Aura',
-          tournament: tournament.value,
+          title: tourney.name,
+          tournament: tourney,
           athleteDetails: athleteInfo.value,
         }
       } else if (codeParam && codeParam.startsWith('BK')) {

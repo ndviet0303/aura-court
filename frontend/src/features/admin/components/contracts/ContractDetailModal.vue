@@ -17,6 +17,14 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+const CYCLE_STATUS_KEYS: Record<string, string> = {
+  paid: 'admin.contracts.statusPaid',
+  zero_payable: 'admin.contracts.statusZeroPayable',
+  guaranteed: 'admin.contracts.statusGuaranteed',
+  overdue: 'admin.contracts.statusOverdue',
+  cancelled: 'admin.contracts.statusCancelled',
+}
+
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
@@ -140,17 +148,7 @@ function formatDate(dateStr?: string | null): string {
                   }"
                 >
                   ●
-                  {{
-                    cycle.status === 'paid'
-                      ? t('admin.contracts.statusPaid')
-                      : cycle.status === 'zero_payable'
-                        ? t('admin.contracts.statusZeroPayable')
-                        : cycle.status === 'guaranteed'
-                          ? t('admin.contracts.statusGuaranteed')
-                          : cycle.status === 'overdue'
-                            ? t('admin.contracts.statusOverdue')
-                            : t('admin.contracts.statusUnpaid')
-                  }}
+                  {{ t(CYCLE_STATUS_KEYS[cycle.status] ?? 'admin.contracts.statusUnpaid') }}
                 </span>
               </div>
 
@@ -164,6 +162,7 @@ function formatDate(dateStr?: string | null): string {
                 <span v-else-if="cycle.status === 'zero_payable'" class="text-muted">{{
                   t('admin.contracts.statusZeroPayable')
                 }}</span>
+                <span v-else-if="cycle.status === 'cancelled'" class="text-muted">—</span>
                 <span v-else class="text-muted">{{
                   t('admin.contracts.awaitingVerifiedReceipt')
                 }}</span>

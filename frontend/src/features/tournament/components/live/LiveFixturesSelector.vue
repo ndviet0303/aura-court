@@ -124,7 +124,7 @@ function formatName(name: string): string {
           <span v-else-if="f.status === 'completed'" class="status-pill completed"> KẾT THÚC </span>
           <span v-else class="status-pill scheduled"> SẮP ĐẤU </span>
 
-          <span class="court-badge">
+          <span v-if="f.court_label" class="court-badge">
             <span class="material-symbols-outlined mini-ico">location_on</span>
             {{ f.court_label }}
           </span>

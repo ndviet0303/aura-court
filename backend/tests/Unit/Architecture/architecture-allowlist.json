@@ -11,7 +11,7 @@
   ["class-lines", "Http/Controllers/Tournament/TournamentController.php", 329],
   ["class-lines", "Services/Attendance/AttendanceService.php", 621],
   ["class-lines", "Services/Booking/OrdinaryCheckoutService.php", 770],
-  ["class-lines", "Services/Booking/RecurringSeriesService.php", 812],
+  ["class-lines", "Services/Booking/RecurringSeriesService.php", 805],
   ["class-lines", "Services/Finance/FinancialPostingService.php", 588],
   ["class-lines", "Services/Finance/ReconciliationService.php", 535],
   ["class-lines", "Services/Loyalty/LoyaltyPointService.php", 316],

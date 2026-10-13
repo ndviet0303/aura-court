@@ -1,5 +1,10 @@
 import { ref, computed, onMounted } from 'vue'
-import type { Participant, FixtureMatch, TournamentAdminData } from '../types/tournamentAdmin'
+import type {
+  Participant,
+  FixtureMatch,
+  FixturePlayer,
+  TournamentAdminData,
+} from '../types/tournamentAdmin'
 import type { TournamentItem } from '@/features/tournament/types/tournament'
 import { tournamentApi } from '@/features/tournament/api/tournamentApi'
 import { getAvatarUrl } from '@/lib/avatar'
@@ -15,27 +20,8 @@ export function useTournamentBracketAdmin() {
   const tournamentsList = ref<TournamentItem[]>([])
   const selectedTournamentId = ref<number | null>(null)
 
-  const tournament = ref<TournamentAdminData>({
-    id: 1,
-    name: 'Aura Tournament',
-    category: 'Open Championship',
-    sport: 'badminton',
-    format: 'single_elimination',
-    status: 'open',
-    prizePool: '20.000.000 ₫',
-    prizePoolUsd: '$800',
-    startDate: '2026-08-15',
-    endDate: '2026-08-18',
-    datesFormatted: '15 - 18/08/2026',
-    venue: 'Aura Court 1',
-    city: 'TP. Hồ Chí Minh',
-    courtsAvailable: 4,
-    maxSlots: 16,
-    entryFee: '300.000 ₫ / VĐV',
-    description: 'Hệ thống giải đấu thể thao phong trào Aura Circuit.',
-    version: 1,
-    seedingRule: 'standard',
-  })
+  // id 0 means no tournament is loaded yet.
+  const tournament = ref<TournamentAdminData>({ id: 0, name: '', datesFormatted: '' })
 
   const currentWizardStep = ref<number>(3)
   const activeSubNav = ref<
@@ -130,62 +116,39 @@ export function useTournamentBracketAdmin() {
   const matches = ref<FixtureMatch[]>([])
 
   // Live Referee Console Match
+  function toLivePlayer(p: FixturePlayer | undefined, isServing: boolean) {
+    return {
+      id: p?.id,
+      name: p?.name ?? '',
+      club: p?.club ?? '',
+      seed: p?.seed,
+      score: p?.sets[0] ?? 0,
+      sets: p?.sets ?? [],
+      isServing,
+    }
+  }
+
   const liveMatch = ref({
-    fixtureId: 1,
-    matchCode: 'M-01',
-    courtName: 'Sân 1 - Sân Chính',
-    playerA: {
-      id: 1,
-      name: 'Vận động viên 1',
-      club: 'Aura Club',
-      seed: 1,
-      score: 0,
-      sets: [21, 19],
-      isServing: true,
-    },
-    playerB: {
-      id: 2,
-      name: 'Vận động viên 2',
-      club: 'Tự do',
-      seed: 2,
-      score: 0,
-      sets: [18, 21],
-      isServing: false,
-    },
+    fixtureId: undefined as number | undefined,
+    matchCode: '',
+    courtName: '',
+    playerA: toLivePlayer(undefined, true),
+    playerB: toLivePlayer(undefined, false),
     currentSet: 1,
     hasConflict: false,
-    conflictDesc: 'Xung đột đồng bộ tỷ số từ trọng tài phụ: 19-18 so với máy chủ 21-18.',
+    conflictDesc: 'Xung đột đồng bộ tỷ số từ trọng tài phụ.',
     isSwappedSides: false,
     penalties: [] as Array<{ player: string; type: string; reason: string; time: string }>,
   })
 
+  // Without fixtures the console empties instead of keeping another tournament's match.
   function syncLiveMatchFromFixtures() {
-    if (matches.value.length > 0) {
-      const active = matches.value.find((m) => m.status === 'live') || matches.value[0]
-      if (active) {
-        liveMatch.value.fixtureId = active.id
-        liveMatch.value.matchCode = `R${active.roundNumber}-M0${active.matchNumber}`
-        liveMatch.value.courtName = active.courtName || 'Sân 1'
-        liveMatch.value.playerA = {
-          id: active.player1?.id || 1,
-          name: active.player1?.name || 'VĐV 1',
-          club: active.player1?.club || 'Aura Club',
-          seed: active.player1?.seed || 1,
-          score: active.player1?.sets?.[0] || 0,
-          sets: active.player1?.sets || [21, 19],
-          isServing: true,
-        }
-        liveMatch.value.playerB = {
-          id: active.player2?.id || 2,
-          name: active.player2?.name || 'VĐV 2',
-          club: active.player2?.club || 'Tự do',
-          seed: active.player2?.seed || 2,
-          score: active.player2?.sets?.[0] || 0,
-          sets: active.player2?.sets || [18, 21],
-          isServing: false,
-        }
-      }
-    }
+    const active = matches.value.find((m) => m.status === 'live') || matches.value[0]
+    liveMatch.value.fixtureId = active?.id
+    liveMatch.value.matchCode = active ? `R${active.roundNumber}-M0${active.matchNumber}` : ''
+    liveMatch.value.courtName = active?.courtName ?? ''
+    liveMatch.value.playerA = toLivePlayer(active?.player1, true)
+    liveMatch.value.playerB = toLivePlayer(active?.player2, false)
   }
 
   function incrementScoreA() {
@@ -219,19 +182,20 @@ export function useTournamentBracketAdmin() {
   }
 
   async function saveRefereeScore() {
+    const { fixtureId, playerA, playerB } = liveMatch.value
+    const winnerId = playerA.score >= playerB.score ? playerA.id : playerB.id
+    if (!fixtureId || !winnerId) {
+      showError('Trận đấu chưa đủ hai vận động viên.')
+      return
+    }
     saving.value = true
     try {
-      const winnerId =
-        liveMatch.value.playerA.score >= liveMatch.value.playerB.score
-          ? liveMatch.value.playerA.id
-          : liveMatch.value.playerB.id
-
-      await tournamentApi.scoreFixture(tournament.value.id, liveMatch.value.fixtureId, {
+      await tournamentApi.scoreFixture(tournament.value.id, fixtureId, {
         expected_version: tournament.value.version,
         winner_id: winnerId,
         score: {
-          p1: liveMatch.value.playerA.score,
-          p2: liveMatch.value.playerB.score,
+          p1: playerA.score,
+          p2: playerB.score,
         },
       })
       showNotice(
@@ -258,18 +222,14 @@ export function useTournamentBracketAdmin() {
     }
   }
 
-  async function saveMatchScore(updated: FixtureMatch, scoreP1?: number, scoreP2?: number) {
+  // The modal only saves once both scores and a winner are entered.
+  async function saveMatchScore(updated: FixtureMatch, p1Score: number, p2Score: number) {
     saving.value = true
     try {
-      const p1Score = scoreP1 ?? updated.player1.sets[0] ?? 21
-      const p2Score = scoreP2 ?? updated.player2.sets[0] ?? 18
-      const winnerId =
-        updated.winnerId || (p1Score >= p2Score ? updated.player1.id : updated.player2.id)
-
-      if (winnerId) {
+      if (updated.winnerId) {
         await tournamentApi.scoreFixture(tournament.value.id, updated.id, {
           expected_version: tournament.value.version,
-          winner_id: winnerId,
+          winner_id: updated.winnerId,
           score: {
             p1: p1Score,
             p2: p2Score,
@@ -319,47 +279,42 @@ export function useTournamentBracketAdmin() {
       if (res) {
         tournament.value = {
           id: res.id,
-          name: res.name || 'Aura Tournament',
-          category: res.category || 'Open Championship',
-          sport: res.sport || 'badminton',
-          format: res.format || 'single_elimination',
-          status: res.status || 'open',
-          prizePool: res.prize_pool || '20.000.000 ₫',
-          prizePoolUsd: res.prize_pool_usd || '$800',
-          startDate: res.start_date || '2026-08-15',
-          endDate: res.end_date || '2026-08-18',
-          datesFormatted: res.dates || '15 - 18/08/2026',
-          venue: res.venue || 'Aura Sport Complex',
-          city: res.city || 'TP. Hồ Chí Minh',
-          courtsAvailable: res.courts_available || 4,
-          maxSlots: res.max_slots || 16,
-          entryFee: res.entry_fee || '300.000 ₫ / VĐV',
-          description: res.description || '',
-          version: res.version || 1,
-          seedingRule: 'standard',
+          name: res.name,
+          category: res.category,
+          sport: res.sport,
+          format: res.format,
+          status: res.status,
+          prizePool: res.prize_pool,
+          datesFormatted: res.dates,
+          venue: res.venue,
+          city: res.city,
+          maxSlots: res.max_slots,
+          entryFee: res.entry_fee,
+          description: res.description,
+          version: res.version,
         }
 
         participants.value = (res.participants || []).map((p: any) => ({
           id: p.id,
           seed: p.seed,
           name: p.user?.name || p.name || `VĐV #${p.id}`,
-          club: p.club || 'Aura Club',
-          level: p.level || 'Hạng B',
+          club: p.club,
+          level: p.level,
           avatar: p.avatar || getAvatarUrl(p.name || 'VĐV'),
           checkedIn: p.checked_in ?? false,
           status: p.checked_in ? 'checked_in' : 'pending',
-          paid: p.paid ?? true,
-          racketChecked: p.racket_checked ?? true,
-          warmupCourt: p.warmup_court || 'Sân 1',
+          paid: p.paid,
+          racketChecked: p.racket_checked,
+          warmupCourt: p.warmup_court,
           qrCode: p.qr_code || `ATH-${p.id}`,
-          phone: p.user?.phone || p.phone || '0901234567',
-          category: p.category || (res.sport === 'pickleball' ? 'Đôi Open' : 'Đơn Nam'),
+          phone: p.user?.phone || p.phone,
+          category: p.category,
         }))
 
         matches.value = (res.fixtures || [])
           .map((f: any) => ({
             id: f.id,
-            roundNumber: f.round || 1,
+            roundNumber: f.round,
             roundName:
               f.round === 1
                 ? 'Vòng 1'
@@ -368,12 +323,13 @@ export function useTournamentBracketAdmin() {
                   : f.round === 3
                     ? 'Bán Kết'
                     : 'Chung Kết',
-            position: f.position || 1,
-            matchNumber: f.position || 1,
-            courtName: f.court_name || `Sân ${f.court_id || f.position || 1}`,
-            courtId: f.court_id || 1,
-            scheduledTime: f.scheduled_time || '09:00',
-            status: f.status || 'pending',
+            position: f.position,
+            matchNumber: f.position,
+            // Fixtures carry no court or time yet; leave them empty rather than guess.
+            courtName: f.court_name ?? '',
+            courtId: f.court_id,
+            scheduledTime: f.scheduled_time ?? '',
+            status: f.status,
             player1: f.player1
               ? {
                   id: f.player1.id,
@@ -398,7 +354,7 @@ export function useTournamentBracketAdmin() {
           }))
           .sort(
             (a: FixtureMatch, b: FixtureMatch) =>
-              (a.roundNumber || 1) - (b.roundNumber || 1) || (a.position || 1) - (b.position || 1),
+              a.roundNumber - b.roundNumber || a.position - b.position,
           )
         syncLiveMatchFromFixtures()
       }

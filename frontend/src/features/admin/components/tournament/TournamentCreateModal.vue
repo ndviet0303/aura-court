@@ -18,7 +18,6 @@ const { t } = useI18n()
 const name = ref('')
 const sport = ref('badminton')
 const format = ref('single_elimination')
-const category = ref('')
 const venue = ref('Aura Sport Complex')
 const city = ref('TP. Hồ Chí Minh')
 const prizePool = ref('20.000.000 ₫')
@@ -56,9 +55,6 @@ function handleSubmit() {
     name: name.value.trim(),
     sport: sport.value,
     format: format.value,
-    category:
-      category.value.trim() ||
-      (sport.value === 'pickleball' ? 'Pickleball Open' : 'Cầu Lông Đơn Nam'),
     venue: venue.value.trim(),
     city: city.value.trim(),
     prize_pool: prizePool.value.trim(),

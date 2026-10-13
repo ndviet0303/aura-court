@@ -32,6 +32,12 @@ function formatFrequency(freq: string): string {
   }
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  paid: 'Đã đóng',
+  overdue: 'Quá hạn',
+  cancelled: 'Đã huỷ',
+}
+
 function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number | string) {
   const key = typeof inv === 'object' ? inv.uuid || inv.id : inv
   router.push(`/recurring-booking/cycles/${key}`)
@@ -192,13 +198,7 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
                   }"
                 >
                   ●
-                  {{
-                    inv.status === 'paid'
-                      ? 'Đã đóng'
-                      : inv.status === 'overdue'
-                        ? 'Quá hạn'
-                        : 'Chờ thanh toán'
-                  }}
+                  {{ STATUS_LABELS[inv.status] ?? 'Chờ thanh toán' }}
                 </span>
 
                 <AuraButton

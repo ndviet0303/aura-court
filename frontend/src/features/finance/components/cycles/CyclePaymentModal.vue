@@ -50,6 +50,9 @@ const emit = defineEmits<{
           <p v-else-if="invoice.status === 'zero_payable'">
             Kỳ này không phát sinh tiền phải chuyển; không có hướng dẫn chuyển khoản.
           </p>
+          <p v-else-if="invoice.status === 'cancelled'">
+            Kỳ này đã huỷ cùng hợp đồng; không cần chuyển khoản.
+          </p>
           <p v-else>
             Chưa có hướng dẫn chuyển khoản hợp lệ cho kỳ này. Không chuyển tiền theo số tài khoản
             khác; hãy cập nhật trạng thái hoặc liên hệ chủ sân.

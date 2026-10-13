@@ -17,11 +17,13 @@ class RecurringOccurrence extends Model
         return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'amount' => 'integer', 'released_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<RecurringSeries, $this> */
     public function series(): BelongsTo
     {
         return $this->belongsTo(RecurringSeries::class, 'recurring_series_id');
     }
 
+    /** @return BelongsTo<Reservation, $this> */
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);

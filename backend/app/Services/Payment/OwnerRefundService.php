@@ -648,7 +648,7 @@ class OwnerRefundService
         }
     }
 
-    private function recordEvidence(OwnerRefundObligation $refund, string $type, ?int $actorId, array $content): void
+    public function recordEvidence(OwnerRefundObligation $refund, string $type, ?int $actorId, array $content): void
     {
         $serialized = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         OwnerRefundEvidence::create([

@@ -82,7 +82,7 @@ const emit = defineEmits<{
           <div class="p-meta">
             <img :src="match.player1.avatar" :alt="match.player1.name" class="p-deck-avatar" />
             <div class="p-text">
-              <span class="p-seed">{{ match.player1.seed }} · {{ match.player1.club }}</span>
+              <span class="p-seed">{{ match.player1.seed }}</span>
               <strong class="p-name">{{ match.player1.name }}</strong>
             </div>
           </div>
@@ -225,7 +225,7 @@ const emit = defineEmits<{
           <div class="p-meta">
             <img :src="match.player2.avatar" :alt="match.player2.name" class="p-deck-avatar" />
             <div class="p-text">
-              <span class="p-seed">{{ match.player2.seed }} · {{ match.player2.club }}</span>
+              <span class="p-seed">{{ match.player2.seed }}</span>
               <strong class="p-name">{{ match.player2.name }}</strong>
             </div>
           </div>
