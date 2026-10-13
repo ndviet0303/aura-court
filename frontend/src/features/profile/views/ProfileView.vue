@@ -95,11 +95,7 @@ const {
         @save="updatePassword"
       />
 
-      <ProfileMembershipTab
-        v-else-if="activeTab === 'membership'"
-        :user="auth.user"
-        :membership="membership"
-      />
+      <ProfileMembershipTab v-else-if="activeTab === 'membership'" :membership="membership" />
 
       <ProfileShortcutsTab v-else-if="activeTab === 'shortcuts'" />
     </main>
