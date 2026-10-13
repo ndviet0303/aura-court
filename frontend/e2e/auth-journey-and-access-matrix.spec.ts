@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { getTestManifest } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
@@ -128,19 +129,24 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
       Accept: 'application/json',
       Origin: manifest.frontend.url,
       Referer: manifest.frontend.url,
+      'Idempotency-Key': randomUUID(),
     }
     if (xsrfCookie) {
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
     }
 
-    const checkoutRes = await page.request.post(`${manifest.backend.url}/api/v1/bookings`, {
-      data: {
-        court_id: courtId,
-        slots: [new Date(Date.now() + 86400000 * 3).toISOString().replace(/T.*/, 'T14:00:00.000Z')],
-        payment_model: 'direct_owner_v1',
+    const checkoutRes = await page.request.post(
+      `${manifest.backend.url}/api/reservations/checkout`,
+      {
+        data: {
+          court_id: courtId,
+          slots: [
+            new Date(Date.now() + 86400000 * 3).toISOString().replace(/T.*/, 'T14:00:00.000Z'),
+          ],
+        },
+        headers,
       },
-      headers,
-    })
+    )
 
     // Unverified customer must be rejected with 403 and verification requirement
     expect(checkoutRes.status()).toBe(403)
@@ -327,7 +333,7 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     }
 
     const patchRes = await page.request.patch(
-      `${manifest.backend.url}/api/v1/admin/venues/${venue1AId}`,
+      `${manifest.backend.url}/api/admin/venues/${venue1AId}`,
       {
         data: {
           phone: '0909999999',
@@ -374,7 +380,7 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
 
     // 2. Mutation on Sibling Venue 1-B must be rejected with 403
     const siblingRes = await page.request.patch(
-      `${manifest.backend.url}/api/v1/admin/venues/${venue1BId}`,
+      `${manifest.backend.url}/api/admin/venues/${venue1BId}`,
       {
         data: {
           phone: '0908888888',
@@ -390,7 +396,7 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
 
     // 3. Mutation on Assigned Venue 1-A must succeed with 200
     const assignedRes = await page.request.patch(
-      `${manifest.backend.url}/api/v1/admin/venues/${venue1AId}`,
+      `${manifest.backend.url}/api/admin/venues/${venue1AId}`,
       {
         data: {
           phone: '0901000005',

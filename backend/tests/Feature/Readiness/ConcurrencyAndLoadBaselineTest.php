@@ -7,10 +7,11 @@ use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Booking\BookingService;
+use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -47,16 +48,16 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
 
         $successCount = 0;
         $conflictCount = 0;
-        $bookingService = app(BookingService::class);
+        $checkout = app(OrdinaryCheckoutService::class);
 
         foreach ($users as $user) {
             try {
-                $booking = $bookingService->create($user->id, $court->id, [$isoSlot]);
-                if ($booking) {
-                    $successCount++;
+                $checkout->checkout($user, (int) $venue->organization_id, ['court_id' => $court->id, 'slots' => [$isoSlot]]);
+                $successCount++;
+            } catch (HttpException $e) {
+                if ($e->getStatusCode() === 409) {
+                    $conflictCount++;
                 }
-            } catch (\Throwable $e) {
-                $conflictCount++;
             }
         }
 
@@ -65,7 +66,7 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
         $this->assertEquals(99, $conflictCount, 'All 99 competing attempts must receive conflict exceptions.');
 
         // Invariant: Exactly one active held/confirmed slot in the database
-        $activeSlotsCount = DB::table('booking_slots')
+        $activeSlotsCount = DB::table('reservation_slots')
             ->where('court_id', $court->id)
             ->whereIn('status', ['held', 'confirmed'])
             ->count();
@@ -82,11 +83,11 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
 
         // Verify read availability and courts response
         for ($i = 0; $i < 5; $i++) {
-            $response = $this->actingAs($user)->getJson('/api/v1/courts');
+            $response = $this->actingAs($user)->getJson('/api/courts');
             $response->assertOk();
         }
 
-        $availabilityResponse = $this->actingAs($user)->getJson("/api/v1/availability?court_id={$court->id}&date=".now()->toDateString());
+        $availabilityResponse = $this->actingAs($user)->getJson("/api/availability?court_id={$court->id}&date=".now()->toDateString());
         $availabilityResponse->assertOk();
     }
 }

@@ -67,29 +67,29 @@ class UnifiedBookingEligibilityTest extends TestCase
         Sanctum::actingAs($customer);
 
         // 1. Public catalog must NOT disclose draft venue
-        $catalogRes = $this->getJson('/api/v1/venues');
+        $catalogRes = $this->getJson('/api/venues');
         $catalogRes->assertStatus(200);
         $this->assertEmpty(collect($catalogRes->json())->where('slug', 'secret-draft-venue'));
 
         // 2. Public venue detail by slug must return 404
-        $detailRes = $this->getJson('/api/v1/venues/secret-draft-venue');
+        $detailRes = $this->getJson('/api/venues/secret-draft-venue');
         $detailRes->assertStatus(404);
 
-        $this->getJson("/api/v1/courts/{$court->slug}")->assertNotFound();
-        $this->getJson("/api/v1/sport-zones/{$sportZone->id}")->assertNotFound();
+        $this->getJson("/api/courts/{$court->slug}")->assertNotFound();
+        $this->getJson("/api/sport-zones/{$sportZone->id}")->assertNotFound();
 
         // 3. Availability on draft court must return 404
-        $availRes = $this->getJson('/api/v1/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
+        $availRes = $this->getJson('/api/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
         $availRes->assertStatus(404);
 
         // 4. Direct booking attempt on draft court must fail with 404
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
         $bookRes->assertStatus(404);
-        $this->assertDatabaseMissing('bookings', ['court_id' => $court->id]);
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 
     public function test_cached_availability_after_suspension_refuses_new_booking(): void
@@ -137,34 +137,34 @@ class UnifiedBookingEligibilityTest extends TestCase
         Sanctum::actingAs($customer);
 
         // Warm public list caches before the partner changes state.
-        $this->getJson('/api/v1/venues')->assertOk()->assertJsonFragment(['slug' => 'public-venue']);
-        $this->getJson('/api/v1/courts')->assertOk()->assertJsonFragment(['id' => $court->id]);
-        $this->getJson('/api/v1/sport-zones')->assertOk()->assertJsonFragment(['id' => $sportZone->id]);
+        $this->getJson('/api/venues')->assertOk()->assertJsonFragment(['slug' => 'public-venue']);
+        $this->getJson('/api/courts')->assertOk()->assertJsonFragment(['id' => $court->id]);
+        $this->getJson('/api/sport-zones')->assertOk()->assertJsonFragment(['id' => $sportZone->id]);
 
         // Customer loaded availability earlier:
-        $availRes = $this->getJson('/api/v1/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
+        $availRes = $this->getJson('/api/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
         $availRes->assertStatus(200);
 
         // Partner organization gets suspended!
         $org->update(['partner_status' => 'suspended']);
 
-        $this->getJson('/api/v1/venues')->assertOk()->assertJsonMissing(['slug' => 'public-venue']);
-        $this->getJson('/api/v1/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
-        $this->getJson('/api/v1/sport-zones')->assertOk()->assertJsonMissing(['id' => $sportZone->id]);
-        $this->getJson('/api/v1/venues/public-venue')->assertNotFound();
-        $this->getJson("/api/v1/courts/{$court->slug}")->assertNotFound();
-        $this->getJson("/api/v1/sport-zones/{$sportZone->id}")->assertNotFound();
+        $this->getJson('/api/venues')->assertOk()->assertJsonMissing(['slug' => 'public-venue']);
+        $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
+        $this->getJson('/api/sport-zones')->assertOk()->assertJsonMissing(['id' => $sportZone->id]);
+        $this->getJson('/api/venues/public-venue')->assertNotFound();
+        $this->getJson("/api/courts/{$court->slug}")->assertNotFound();
+        $this->getJson("/api/sport-zones/{$sportZone->id}")->assertNotFound();
 
         // Customer attempts to submit booking with the previously-loaded slot
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
 
         // Must be rejected!
         $this->assertNotEquals(201, $bookRes->status());
-        $this->assertDatabaseMissing('bookings', ['court_id' => $court->id]);
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 
     public function test_expired_subscription_is_rechecked_on_cached_public_lists_and_quote(): void
@@ -212,22 +212,22 @@ class UnifiedBookingEligibilityTest extends TestCase
         ]);
         Sanctum::actingAs($customer);
 
-        $this->getJson('/api/v1/venues')->assertOk()->assertJsonFragment(['slug' => $venue->slug]);
-        $this->getJson('/api/v1/courts')->assertOk()->assertJsonFragment(['id' => $court->id]);
-        $this->getJson('/api/v1/sport-zones')->assertOk()->assertJsonFragment(['id' => $zone->id]);
-        $this->getJson("/api/v1/venues/{$venue->slug}")->assertOk();
+        $this->getJson('/api/venues')->assertOk()->assertJsonFragment(['slug' => $venue->slug]);
+        $this->getJson('/api/courts')->assertOk()->assertJsonFragment(['id' => $court->id]);
+        $this->getJson('/api/sport-zones')->assertOk()->assertJsonFragment(['id' => $zone->id]);
+        $this->getJson("/api/venues/{$venue->slug}")->assertOk();
 
         $this->travel(2)->days();
-        $this->getJson('/api/v1/venues')->assertOk()->assertJsonMissing(['slug' => $venue->slug]);
-        $this->getJson('/api/v1/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
-        $this->getJson('/api/v1/sport-zones')->assertOk()->assertJsonMissing(['id' => $zone->id]);
-        $this->getJson("/api/v1/venues/{$venue->slug}")->assertNotFound();
-        $this->getJson("/api/v1/courts/{$court->slug}")->assertNotFound();
-        $this->getJson("/api/v1/sport-zones/{$zone->id}")->assertNotFound();
+        $this->getJson('/api/venues')->assertOk()->assertJsonMissing(['slug' => $venue->slug]);
+        $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
+        $this->getJson('/api/sport-zones')->assertOk()->assertJsonMissing(['id' => $zone->id]);
+        $this->getJson("/api/venues/{$venue->slug}")->assertNotFound();
+        $this->getJson("/api/courts/{$court->slug}")->assertNotFound();
+        $this->getJson("/api/sport-zones/{$zone->id}")->assertNotFound();
         $this->assertSame('expired', $subscription->fresh()->status);
 
         $slot = now()->addDays(4)->setTime(8, 0)->toIso8601String();
-        $this->postJson('/api/v2/price-quotes', [
+        $this->postJson('/api/price-quotes', [
             'court_id' => $court->id,
             'slots' => [$slot],
         ], ['Idempotency-Key' => 'expired-public-quote'])

@@ -94,7 +94,7 @@ class PlatformRealTimeEntitlementAndExpiryTest extends TestCase
         Sanctum::actingAs($customer);
 
         // Attempting to book a court
-        $bookingRes = $this->postJson('/api/v1/bookings', [
+        $bookingRes = $this->withHeader('Idempotency-Key', 'expired-subscription-booking')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetSlot->toIso8601String()],
         ]);

@@ -41,23 +41,23 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
 
         // 1. Owner can access their organization details
         $this->actingAs($owner)
-            ->getJson("/api/v1/organizations/{$org->id}")
+            ->getJson("/api/organizations/{$org->id}")
             ->assertOk()
             ->assertJsonPath('organization.id', $org->id)
             ->assertJsonPath('organization.name', 'Aura Scoped Org');
 
         // 2. Owner can view members
         $this->actingAs($owner)
-            ->getJson("/api/v1/organizations/{$org->id}/members")
+            ->getJson("/api/organizations/{$org->id}/members")
             ->assertOk();
 
         // 3. Owner can access their scoped venue routes, but cannot access platform-admin routes
         $this->actingAs($owner)
-            ->getJson('/api/v1/admin/venues')
+            ->getJson('/api/admin/venues')
             ->assertOk();
 
         $this->actingAs($owner)
-            ->getJson('/api/v1/admin/kyc')
+            ->getJson('/api/admin/kyc')
             ->assertStatus(403);
     }
 
@@ -78,14 +78,14 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         // 1. Cashier can read POS products and shifts under their organization header
         $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/pos/products')
+            ->getJson('/api/pos/products')
             ->assertOk();
 
         // 2. Cashier cannot perform owner administration (e.g. member modifications)
         $targetUser = User::factory()->create();
         $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/v2/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/members", [
                 'email' => $targetUser->email,
                 'role' => 'staff',
             ])
@@ -102,13 +102,13 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         ]);
         $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/v2/pos/shifts/{$shift->id}/review", [
+            ->postJson("/api/pos/shifts/{$shift->id}/review", [
                 'status' => 'approved',
             ])
             ->assertStatus(403);
         // 4. Cashier cannot access platform-only routes
         $this->actingAs($cashier)
-            ->getJson('/api/v1/admin/venues')
+            ->getJson('/api/admin/venues')
             ->assertStatus(403);
     }
 
@@ -129,26 +129,26 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
 
         // 1. Pure customer cannot read org1
         $this->actingAs($pureCustomer)
-            ->getJson("/api/v1/organizations/{$org1->id}")
+            ->getJson("/api/organizations/{$org1->id}")
             ->assertStatus(403);
 
         // 2. Owner of Org2 cannot read Org1
         $this->actingAs($owner2)
-            ->getJson("/api/v1/organizations/{$org1->id}")
+            ->getJson("/api/organizations/{$org1->id}")
             ->assertStatus(403);
 
         // 3. Owner of Org2 cannot modify Org1
         $this->actingAs($owner2)
-            ->patchJson("/api/v1/organizations/{$org1->id}", ['name' => 'Unauthorized'])
+            ->patchJson("/api/organizations/{$org1->id}", ['name' => 'Unauthorized'])
             ->assertStatus(403);
 
         // 4. Owner of Org2 cannot fetch Org1 capabilities (v1 and v2 return 403)
         $this->actingAs($owner2)
-            ->getJson("/api/v1/organizations/{$org1->id}/capabilities")
+            ->getJson("/api/organizations/{$org1->id}/capabilities")
             ->assertStatus(403);
 
         $this->actingAs($owner2)
-            ->getJson("/api/v2/organizations/{$org1->id}/capabilities")
+            ->getJson("/api/organizations/{$org1->id}/capabilities")
             ->assertStatus(403);
     }
 
@@ -171,13 +171,13 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         // 1. POS route returns 404 (capability disabled)
         $this->actingAs($owner)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/pos/products')
+            ->getJson('/api/pos/products')
             ->assertStatus(404);
 
         // 2. Capabilities endpoint accurately reflects tenant_pos_and_wallet = false
         $this->actingAs($owner)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/capabilities')
+            ->getJson('/api/capabilities')
             ->assertOk()
             ->assertJsonPath('organization_id', $org->id)
             ->assertJsonPath('capabilities.tenant_pos_and_wallet', false);

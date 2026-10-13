@@ -20,7 +20,7 @@ class CapabilitiesWithoutV2ReservationsFlagTest extends TestCase
 
         $capabilities = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/capabilities')
+            ->getJson('/api/capabilities')
             ->assertOk()
             ->json('capabilities');
 

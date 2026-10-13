@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Attendance;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Models\Court;
 use App\Models\User;
@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(
         private readonly AttendanceService $attendance,

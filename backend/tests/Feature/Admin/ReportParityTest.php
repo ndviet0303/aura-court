@@ -21,6 +21,7 @@ use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -50,7 +51,7 @@ class ReportParityTest extends TestCase
     {
         $this->seedDataset();
 
-        $this->assertReport($this->actingAs($this->ownerA)->getJson('/api/v1/admin/reports?'.self::RANGE), [
+        $this->assertReport($this->actingAs($this->ownerA)->getJson('/api/admin/reports?'.self::RANGE), [
             'bookings' => 3, 'confirmed' => 3, 'revenue' => 580000, 'owner_revenue' => 580000, 'booking_revenue' => 530000,
             'pos_revenue' => 50000, 'owner_refunds' => 90000, 'net_owner_revenue' => 490000, 'platform_fees' => 0,
             'pendingRefunds' => 70000, 'occupancyRate' => 4.8,
@@ -59,7 +60,7 @@ class ReportParityTest extends TestCase
             ['name' => 'A2', 'bookings' => 1, 'revenue' => 150000],
         ]);
 
-        $this->assertReport($this->actingAs($this->platformAdmin)->getJson('/api/v1/admin/reports?'.self::RANGE), [
+        $this->assertReport($this->actingAs($this->platformAdmin)->getJson('/api/admin/reports?'.self::RANGE), [
             'bookings' => 5, 'confirmed' => 5, 'revenue' => 980000, 'owner_revenue' => 980000, 'booking_revenue' => 930000,
             'pos_revenue' => 50000, 'owner_refunds' => 140000, 'net_owner_revenue' => 840000, 'platform_fees' => 600000,
             'pendingRefunds' => 90000, 'occupancyRate' => 5.8,
@@ -69,7 +70,7 @@ class ReportParityTest extends TestCase
             ['name' => 'B1', 'bookings' => 2, 'revenue' => 400000],
         ]);
 
-        $this->assertReport($this->actingAs($this->platformAdmin)->getJson('/api/v1/admin/reports?'.self::RANGE.'&venue_id='.$this->venueB->id), [
+        $this->assertReport($this->actingAs($this->platformAdmin)->getJson('/api/admin/reports?'.self::RANGE.'&venue_id='.$this->venueB->id), [
             'bookings' => 2, 'confirmed' => 2, 'revenue' => 400000, 'owner_revenue' => 400000, 'booking_revenue' => 400000,
             'pos_revenue' => 0, 'owner_refunds' => 50000, 'net_owner_revenue' => 350000, 'platform_fees' => 0,
             'pendingRefunds' => 20000, 'occupancyRate' => 9.7,
@@ -77,7 +78,7 @@ class ReportParityTest extends TestCase
             ['name' => 'B1', 'bookings' => 2, 'revenue' => 400000],
         ]);
 
-        $this->assertCsv($this->actingAs($this->ownerA)->get('/api/v1/admin/reports.csv?'.self::RANGE), [
+        $this->assertCsv($this->actingAs($this->ownerA)->get('/api/admin/reports.csv?'.self::RANGE), [
             ['booking', 'customer@parity.local', 'A1', 'owner', 'confirmed', '180000', '0', '180000'],
             ['booking', 'customer@parity.local', 'A1', 'owner', 'confirmed', '200000', '0', '200000'],
             ['booking', 'customer@parity.local', 'A2', 'owner', 'confirmed', '150000', '0', '150000'],
@@ -110,7 +111,7 @@ class ReportParityTest extends TestCase
         [$orgB, $this->venueB, $b1] = $this->tenant('Org B', 'Venue B', ['B1'], [200000], ['10:00']);
         OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $this->ownerA->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
 
-        // V1 bookings through checkoutV1 (legacy-wallet cohort), each backfilled to a mirror reservation.
+        // V1 bookings as checkoutV1 wrote them (legacy-wallet cohort), each backfilled to a mirror reservation.
         $v1Confirmed = $this->checkoutV1($a1, ['2026-03-10 10:00', '2026-03-10 11:00']);
         $v1NoShow = $this->checkoutV1($a2, ['2026-03-10 10:00']);
         $v1Cancelled = $this->checkoutV1($a1, ['2026-03-11 10:00']);
@@ -126,11 +127,11 @@ class ReportParityTest extends TestCase
         $this->nativeReservation($orgA, $a2, 'held', [['2026-03-14 10:00', 150000]]);
         $rsvB = $this->nativeReservation($orgB, $b1, 'confirmed', [['2026-03-13 10:00', 200000]]);
 
-        // V1 cancellation through an approved owner refund (cancels booking, mirror and slots, syncs legacy_status).
+        // V1 cancellation through an approved owner refund: the mirror and its slots cancel, the frozen booking row stays.
         $mirror = $this->mirrorOf($v1Cancelled);
         $approved = $this->ownerRefund($mirror, 'requested', 100000, 90000, 'REF-PARITY-APPROVED', $v1Cancelled->id);
         app(OwnerRefundService::class)->approve($approved, $this->ownerA);
-        $this->assertSame('cancelled', $v1Cancelled->fresh()->status);
+        $this->assertSame('cancelled', $mirror->fresh()->status);
         $this->ownerRefund($rsvA, 'requested', 40000, 40000, 'REF-PARITY-REQUESTED');
         $this->ownerRefund($rsvB, 'acknowledged', 50000, 50000, 'REF-PARITY-ACK');
 
@@ -147,10 +148,10 @@ class ReportParityTest extends TestCase
             'currency' => 'VND', 'provider' => 'vnpay', 'status' => 'succeeded', 'paid_at' => now(),
         ]);
 
-        // V1 admin no-show after the slot ended: legacy_status follows, the mirror stays confirmed as a V2 no-show does.
-        $this->travelTo(Carbon::parse('2026-03-10 12:00', 'Asia/Ho_Chi_Minh'));
-        $this->actingAs($this->ownerA)->patchJson("/api/v1/admin/bookings/{$v1NoShow->id}/no-show")->assertOk();
-        $this->assertSame('no_show', $v1NoShow->fresh()->status);
+        // A V1 admin no-show made before Phase C: legacy_status followed, the mirror stayed confirmed as a V2 no-show does (I3, I14).
+        $v1NoShow->update(['status' => 'no_show']);
+        LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $v1NoShow->id)->update(['legacy_status' => 'no_show']);
+        $this->assertSame('confirmed', $this->mirrorOf($v1NoShow)->status);
         $this->assertSame(6, LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->count());
     }
 
@@ -179,14 +180,21 @@ class ReportParityTest extends TestCase
         return [$org, $venue, ...$courts];
     }
 
+    /** A confirmed legacy-wallet V1 booking as checkoutV1 wrote it, mirrored to its reservation. */
     private function checkoutV1(Court $court, array $localStarts): Booking
     {
-        $response = $this->actingAs($this->customer)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => array_map(fn (string $start) => Carbon::parse($start, 'Asia/Ho_Chi_Minh')->toIso8601String(), $localStarts),
-        ])->assertCreated()->assertJsonPath('booking.status', 'confirmed');
+        $price = (int) CourtPriceSlot::where('court_id', $court->id)->value('price');
+        $booking = Booking::create([
+            'court_id' => $court->id, 'user_id' => $this->customer->id, 'code' => 'BK'.strtoupper(Str::random(12)),
+            'status' => 'confirmed', 'total_amount' => $price * count($localStarts), 'payment_model' => 'legacy_wallet_v1',
+        ]);
+        foreach ($localStarts as $localStart) {
+            $start = Carbon::parse($localStart, 'Asia/Ho_Chi_Minh')->utc();
+            $booking->slots()->create(['court_id' => $court->id, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'unit_price' => $price, 'status' => 'confirmed']);
+        }
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
 
-        return Booking::findOrFail($response->json('booking.id'));
+        return $booking;
     }
 
     private function historicalBooking(Court $court, string $status, string $localStart, int $price): void

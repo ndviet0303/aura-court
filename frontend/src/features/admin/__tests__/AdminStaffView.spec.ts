@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminStaffView from '../views/AdminStaffView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/staff' }),
@@ -15,12 +15,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -88,12 +82,6 @@ describe('AdminStaffView', () => {
           { id: 1, name: 'Downtown Arena (Quận 1)', address: '12 Nguyễn Thị Minh Khai, Q.1' },
           { id: 2, name: 'Westside Courts (Bình Thạnh)', address: '48 Ung Văn Khiêm, Bình Thạnh' },
         ]
-      }
-      return { data: {} }
-    })
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') {
-        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
       }
       return { data: {} }
     })

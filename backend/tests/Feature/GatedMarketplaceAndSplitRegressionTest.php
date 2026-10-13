@@ -67,7 +67,7 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         $reservationResponse = $this->actingAs($customer)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => uniqid('res-'),
-        ])->postJson('/api/v2/reservations', [
+        ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ]);
@@ -76,7 +76,7 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         $confirmResponse = $this->actingAs($customer)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => uniqid('conf-'),
-        ])->postJson('/api/v2/reservations/'.$reservationResponse->json('reservation.code').'/confirm');
+        ])->postJson('/api/reservations/'.$reservationResponse->json('reservation.code').'/confirm');
         $confirmResponse->assertOk();
 
         $reservation = Reservation::where('code', $reservationResponse->json('reservation.code'))->firstOrFail();
@@ -91,19 +91,19 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         // 1. Split payment route returns 404
         $this->actingAs($customer)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
-        ])->postJson("/api/v2/reservations/{$reservation->id}/split", [
+        ])->postJson("/api/reservations/{$reservation->id}/split", [
             'shares' => [['amount' => 100000], ['amount' => 100000]],
         ])->assertStatus(404);
 
         // 2. Marketplace listings route returns 404
         $this->actingAs($customer)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
-        ])->getJson('/api/v2/marketplace/listings')->assertStatus(404);
+        ])->getJson('/api/marketplace/listings')->assertStatus(404);
 
         $entitlement = $reservation->entitlements()->firstOrFail();
         $this->actingAs($customer)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
-        ])->postJson("/api/v2/marketplace/entitlements/{$entitlement->id}/list", [
+        ])->postJson("/api/marketplace/entitlements/{$entitlement->id}/list", [
             'asking_price' => 200000,
         ])->assertStatus(404);
     }
@@ -122,11 +122,11 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         $browser = User::factory()->create();
 
         $this->actingAs($browser)
-            ->getJson('/api/v2/marketplace/listings?organization_id='.$suspended->id)
+            ->getJson('/api/marketplace/listings?organization_id='.$suspended->id)
             ->assertOk()
             ->assertJsonPath('data', []);
         $this->actingAs($browser)
-            ->getJson('/api/v2/marketplace/listings')
+            ->getJson('/api/marketplace/listings')
             ->assertOk()
             ->assertJsonPath('data', []);
     }

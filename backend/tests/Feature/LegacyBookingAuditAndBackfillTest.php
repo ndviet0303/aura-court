@@ -320,7 +320,7 @@ class LegacyBookingAuditAndBackfillTest extends TestCase
         $posFailRes = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
             ->withHeader('Idempotency-Key', uniqid('pos-fail-'))
-            ->postJson('/api/v2/pos/orders', [
+            ->postJson('/api/pos/orders', [
                 'items' => [
                     ['product_id' => $product->id, 'quantity' => 1],
                 ],
@@ -345,7 +345,7 @@ class LegacyBookingAuditAndBackfillTest extends TestCase
         $posSuccessRes = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
             ->withHeader('Idempotency-Key', uniqid('pos-success-'))
-            ->postJson('/api/v2/pos/orders', [
+            ->postJson('/api/pos/orders', [
                 'items' => [
                     ['product_id' => $product->id, 'quantity' => 1],
                 ],

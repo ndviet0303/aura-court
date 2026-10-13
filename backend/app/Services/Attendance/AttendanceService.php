@@ -3,7 +3,6 @@
 namespace App\Services\Attendance;
 
 use App\Events\CourtStatusUpdated;
-use App\Models\Booking;
 use App\Models\BookingAttendance;
 use App\Models\Court;
 use App\Models\CourtBlock;
@@ -14,17 +13,12 @@ use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\ServiceTab;
 use App\Models\User;
-use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
-    public function __construct(
-        private readonly LegacyBookingBackfillService $backfill,
-    ) {}
-
     public function resolveReservation(string|int $codeOrId, int $organizationId): Reservation
     {
         $raw = trim((string) $codeOrId);
@@ -75,28 +69,6 @@ class AttendanceService
 
         if ($mapping && $mapping->reservation) {
             return $mapping->reservation;
-        }
-
-        // 3. Check unmapped legacy booking that belongs to this tenant
-        $booking = Booking::query()
-            ->where(function ($q) use ($clean) {
-                $q->where('code', $clean);
-                if (is_numeric($clean)) {
-                    $q->orWhere('id', (int) $clean);
-                }
-            })
-            ->with(['court.venue', 'slots'])
-            ->first();
-
-        if ($booking) {
-            $bookingOrgId = $booking->court?->venue?->organization_id;
-            if ($bookingOrgId === $organizationId) {
-                $backfilledMapping = $this->backfill->backfillBooking($booking);
-                $reservation = Reservation::with(['court.venue', 'slots', 'user'])->find($backfilledMapping->reservation_id);
-                if ($reservation) {
-                    return $reservation;
-                }
-            }
         }
 
         // Protected details are not disclosed if belonging to another tenant or not found

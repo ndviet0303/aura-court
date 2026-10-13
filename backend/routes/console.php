@@ -1,8 +1,8 @@
 <?php
 
+use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Jobs\RunDailyReconciliation;
 use App\Models\Organization;
-use App\Services\Booking\BookingService;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
@@ -24,17 +24,11 @@ $reportScheduleFailure = static fn (string $task): Closure => static function ()
 };
 
 // 1. Booking lifecycle tasks with named task-level overlap protection
-Schedule::call(fn () => app(BookingService::class)->expirePending())
+Schedule::call(fn () => app(ExpirePendingBookings::class)->execute())
     ->name('booking:expire-pending')
     ->withoutOverlapping(10)
     ->everyMinute()
     ->onFailure($reportScheduleFailure('booking:expire-pending'));
-
-Schedule::call(fn () => app(BookingService::class)->notifyExpiring())
-    ->name('booking:notify-expiring')
-    ->withoutOverlapping(10)
-    ->everyMinute()
-    ->onFailure($reportScheduleFailure('booking:notify-expiring'));
 
 // 1b. Split-payment group expiry: release the held reservation and mark unpaid shares expired
 Schedule::call(fn () => app(SplitPaymentService::class)->expireDue())

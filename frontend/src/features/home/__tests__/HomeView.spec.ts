@@ -6,7 +6,7 @@ import { i18n, setAppLocale } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { bookingApi } from '@/features/booking/api/bookingApi'
-import type { V2Reservation } from '@/features/booking/types/v2Reservation'
+import type { Reservation } from '@/features/booking/types/reservation'
 import type { Court } from '@/features/court/types/court'
 
 const mockPush = vi.hoisted(() => vi.fn())
@@ -101,7 +101,7 @@ describe('HomeView i18n & rendering', () => {
     expect(text).toContain('International Standard Sports Experience')
   })
 
-  it('checks out the selected slots through V2 and opens the reservation', async () => {
+  it('checks out the selected slots and opens the reservation', async () => {
     const court = { id: 7, name: 'Sân 7', slug: 'san-7' } as Court
     const slot = {
       startsAt: '2099-09-22T17:00:00+07:00',
@@ -112,7 +112,7 @@ describe('HomeView i18n & rendering', () => {
     vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([court])
     vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([slot])
     const checkout = vi.spyOn(bookingApi, 'checkoutReservation').mockResolvedValue({
-      reservation: { code: 'RSV-HOME-1', status: 'confirmed' } as V2Reservation,
+      reservation: { code: 'RSV-HOME-1', status: 'confirmed' } as Reservation,
     })
     useAuthStore().user = { id: 1, name: 'Player', email: 'p@example.com', role: 'customer' }
 

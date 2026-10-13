@@ -6,10 +6,10 @@ import { useAdminManageCourts } from '../composables/useAdminManageCourts'
 import { useAdminVenues } from '../composables/useAdminVenues'
 import { useAdminStaff } from '../composables/useAdminStaff'
 import { useAdminSchedule } from '../composables/useAdminSchedule'
-import { usePricingCalendarV2 } from '../composables/usePricingCalendarV2'
+import { usePricingCalendar } from '../composables/usePricingCalendar'
 import { useOrganizationOwner } from '../composables/useOrganizationOwner'
 import { useAdminShiftReconciliation } from '../composables/useAdminShiftReconciliation'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type { Venue } from '@/features/court/types/court'
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof VueI18n>()
@@ -23,12 +23,6 @@ vi.mock('vue-i18n', async (importOriginal) => {
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -83,31 +77,20 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
       if (url.includes('/members')) return { members: [] }
       if (url === '/organizations') return { organizations: [{ id: 1, name: 'Org 1' }] }
       if (url.startsWith('/organizations/')) return { organization: { id: 1, name: 'Org 1' } }
-      return []
-    })
-
-    // If an undefined v2 route is called, it MUST throw an error
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') {
-        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
-      }
-      if (url === '/price-rules' || url === '/pricing/calendar') {
-        return { rules: [] }
-      }
+      if (url === '/price-rules' || url === '/pricing/calendar') return { rules: [] }
       return []
     })
   })
 
   describe('adminApi.getVenues endpoint routing and CRUD compatibility', () => {
-    it('calls the supported v1 /admin/venues endpoint and not v2', async () => {
+    it('calls the /admin/venues endpoint', async () => {
       const result = await adminApi.getVenues()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(result).toEqual(mockVenues)
     })
 
-    it('retains CRUD compatibility under v1 api', async () => {
+    it('retains CRUD compatibility', async () => {
       vi.mocked(api.post).mockResolvedValueOnce(mockVenues[0])
       vi.mocked(api.patch).mockResolvedValueOnce({ ...mockVenues[0], name: 'Updated Venue' })
       vi.mocked(api.delete).mockResolvedValueOnce({ message: 'Deleted' })
@@ -132,12 +115,11 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
   })
 
   describe('Caller: /admin/manage (useAdminManageCourts)', () => {
-    it('loads venues via v1 and populates state', async () => {
+    it('loads venues and populates state', async () => {
       const { venues, load, error } = useAdminManageCourts()
       await load()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(venues.value).toEqual(mockVenues)
       expect(error.value).toBe('')
     })
@@ -157,12 +139,11 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
   })
 
   describe('Caller: /admin/venues (useAdminVenues)', () => {
-    it('loads venues via v1 and populates state', async () => {
+    it('loads venues and populates state', async () => {
       const { venues, loadData, error } = useAdminVenues()
       await loadData()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(venues.value.length).toBe(2)
       expect(venues.value[0]?.name).toBe('Aura Center')
       expect(error.value).toBe('')
@@ -183,12 +164,11 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
   })
 
   describe('Caller: Staff (useAdminStaff)', () => {
-    it('loads venues via v1 and populates venuesList', async () => {
+    it('loads venues and populates venuesList', async () => {
       const { venuesList, loadStaffData, error } = useAdminStaff()
       await loadStaffData()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(venuesList.value.length).toBe(2)
       expect(error.value).toBe('')
     })
@@ -207,11 +187,10 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
   })
 
   describe('Caller: Schedule (useAdminSchedule)', () => {
-    it('loads venues via v1 and populates state', async () => {
+    it('loads venues and populates state', async () => {
       const { venues, loadData, error } = useAdminSchedule()
       await loadData()
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(venues.value).toEqual(mockVenues)
       expect(error.value).toBe('')
     })
@@ -228,13 +207,12 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
     })
   })
 
-  describe('Caller: Pricing (usePricingCalendarV2)', () => {
-    it('loads venues via v1 and populates state', async () => {
-      const { venues, loadData, error } = usePricingCalendarV2()
+  describe('Caller: Pricing (usePricingCalendar)', () => {
+    it('loads venues and populates state', async () => {
+      const { venues, loadData, error } = usePricingCalendar()
       await loadData()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(venues.value).toEqual(mockVenues)
       expect(error.value).toBe('')
     })
@@ -245,7 +223,7 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
         return []
       })
 
-      const { loadData, error } = usePricingCalendarV2()
+      const { loadData, error } = usePricingCalendar()
       await loadData()
 
       expect(error.value).not.toBe('')
@@ -272,19 +250,17 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
       await loadOrgData(1)
 
       expect(api.get).not.toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(currentOrg.value?.venues?.length).toBe(2)
       expect(error.value).toBe('')
     })
   })
 
   describe('Caller: Shift Reconciliation (useAdminShiftReconciliation)', () => {
-    it('loads venues via v1 and populates state', async () => {
+    it('loads venues and populates state', async () => {
       const { venuesList, loadData, error } = useAdminShiftReconciliation()
       await loadData()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(venuesList.value).toEqual(mockVenues)
       expect(error.value).toBe('')
     })

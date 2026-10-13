@@ -140,7 +140,7 @@ class ReservationDisputeTest extends TestCase
             ->json('data.id');
 
         $this->assertDatabaseHas('dispute_cases', ['id' => $id, 'reservation_id' => $reservationId, 'booking_id' => $booking->id]);
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->getJson("/api/v1/admin/disputes/{$id}")
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->getJson("/api/admin/disputes/{$id}")
             ->assertOk()
             ->assertJsonPath('data.reservation_code', $booking->code);
     }
@@ -165,7 +165,7 @@ class ReservationDisputeTest extends TestCase
             ->assertJsonPath('data.booking_id', $booking->id)
             ->json('data.id');
 
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->postJson("/api/v1/admin/disputes/{$disputeId}/arbitrate", [
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->postJson("/api/admin/disputes/{$disputeId}/arbitrate", [
             'decision' => 'resolve_and_refund',
             'refund_amount' => 100000,
             'refund_method' => 'owner_direct',
@@ -202,7 +202,7 @@ class ReservationDisputeTest extends TestCase
         ]);
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $this->actingAs($admin)->postJson("/api/v1/admin/disputes/{$dispute->id}/arbitrate", [
+        $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
             'decision' => 'resolve_and_refund',
             'refund_amount' => 100000,
             'refund_method' => 'owner_direct',
@@ -232,7 +232,7 @@ class ReservationDisputeTest extends TestCase
 
     private function file(User $user, array $payload): TestResponse
     {
-        return $this->actingAs($user)->postJson('/api/v1/disputes', $payload + [
+        return $this->actingAs($user)->postJson('/api/disputes', $payload + [
             'title' => 'Sân trơn trượt',
             'summary' => 'Mặt sân ngập nước, không thể thi đấu an toàn.',
             'dispute_type' => 'payment_issue',

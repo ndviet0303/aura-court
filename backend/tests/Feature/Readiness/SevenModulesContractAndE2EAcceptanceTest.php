@@ -72,7 +72,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
     public function test_module_1_core_booking_401_when_unauthenticated(): void
     {
-        $response = $this->postJson('/api/v1/bookings', [
+        $response = $this->postJson('/api/reservations/checkout', [
             'court_id' => 1,
             'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()],
         ]);
@@ -82,10 +82,11 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
     public function test_module_1_core_booking_422_when_invalid_date_or_court_format(): void
     {
+        [, , $court] = $this->createTenantWithCourt('Module 1 Validation Org');
         $user = User::factory()->create(['email_verified_at' => now()]);
 
         // Malformed court_id and slots
-        $res1 = $this->actingAs($user)->postJson('/api/v1/bookings', [
+        $res1 = $this->actingAs($user)->withHeader('Idempotency-Key', 'module-1-malformed')->postJson('/api/reservations/checkout', [
             'court_id' => 'not-a-valid-id',
             'slots' => 'not-an-array',
         ]);
@@ -93,8 +94,8 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             ->assertJsonValidationErrors(['court_id', 'slots']);
 
         // Malformed date strings inside slots array
-        $res2 = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => 999999,
+        $res2 = $this->actingAs($user)->withHeader('Idempotency-Key', 'module-1-bad-date')->postJson('/api/reservations/checkout', [
+            'court_id' => $court->id,
             'slots' => ['invalid-datetime-string'],
         ]);
         $res2->assertStatus(422);
@@ -124,14 +125,14 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $walletService->credit($wallet2, 500000, 'test_topup', 2, 'Topup 2');
 
         // User 1 books the slot successfully
-        $res1 = $this->actingAs($user1)->postJson('/api/v1/bookings', [
+        $res1 = $this->actingAs($user1)->withHeader('Idempotency-Key', 'module-1-first')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetDate->toIso8601String()],
         ]);
         $res1->assertCreated();
 
         // User 2 attempts to book the exact same slot -> 409 Conflict
-        $res2 = $this->actingAs($user2)->postJson('/api/v1/bookings', [
+        $res2 = $this->actingAs($user2)->withHeader('Idempotency-Key', 'module-1-second')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetDate->toIso8601String()],
         ]);
@@ -142,6 +143,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         [$org, $venue, $court] = $this->createTenantWithCourt('Module 1 Success Org');
         $user = User::factory()->create(['email_verified_at' => now()]);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
 
         $targetDate = now(config('app.timezone'))->addDays(4)->setTime(16, 0)->startOfHour();
         CourtPriceSlot::create([
@@ -159,32 +161,28 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         $initialBalance = (int) $wallet->fresh()->balance;
 
-        $res = $this->actingAs($user)->postJson('/api/v1/bookings', [
+        $res = $this->actingAs($user)->withHeader('Idempotency-Key', 'module-1-success')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetDate->toIso8601String()],
         ]);
         $res->assertCreated();
-        $code = $res->json('booking.code');
+        $code = $res->json('reservation.code');
         $this->assertNotEmpty($code);
 
         // Reload check: Database state
-        $booking = Booking::where('code', $code)->firstOrFail();
-        $this->assertSame('confirmed', $booking->fresh()->status);
-        $this->assertSame(200000, (int) $booking->fresh()->total_amount);
+        $reservation = Reservation::where('code', $code)->firstOrFail();
+        $this->assertSame('confirmed', $reservation->status);
+        $this->assertSame(200000, (int) $reservation->total_amount);
         $this->assertSame($initialBalance - 200000, (int) $wallet->fresh()->balance);
 
-        // Reload check: HTTP show endpoint returns confirmed booking
-        $showRes = $this->actingAs($user)->getJson("/api/v1/bookings/{$code}");
+        // Reload check: HTTP show endpoint returns the confirmed reservation
+        $showRes = $this->actingAs($user)->getJson("/api/reservations/{$code}");
         $showRes->assertOk()
-            ->assertJsonPath('status', 'confirmed')
-            ->assertJsonPath('code', $code);
+            ->assertJsonPath('reservation.status', 'confirmed')
+            ->assertJsonPath('reservation.code', $code);
 
-        // 404 check: Non-existent booking lookup returns 404
-        $this->actingAs($user)->getJson('/api/v1/bookings/BK-DOES-NOT-EXIST')->assertNotFound();
-
-        // 404 check: Retired cancellation endpoint returns 404 and does not mutate booking
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel")->assertNotFound();
-        $this->assertSame('confirmed', $booking->fresh()->status);
+        // 404 check: Non-existent reservation lookup returns 404
+        $this->actingAs($user)->getJson('/api/reservations/RSV-DOES-NOT-EXIST')->assertNotFound();
     }
 
     // =========================================================================
@@ -208,7 +206,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'split-pay-unverified-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-shares/'.$share->id.'/pay', [
+            ->postJson('/api/split-shares/'.$share->id.'/pay', [
                 'amount' => 100000,
                 'payment_reference' => 'UNVERIFIED-FAKE-PROVIDER-REF-999',
             ]);
@@ -240,7 +238,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'split-pay-expired-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-shares/'.$share->id.'/pay', [
+            ->postJson('/api/split-shares/'.$share->id.'/pay', [
                 'amount' => 100000,
                 'payment_reference' => 'ANY-REF',
             ]);
@@ -255,7 +253,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $futureMonday = now(config('app.timezone'))->addWeeks(3)->startOfWeek(Carbon::MONDAY)->setTime(9, 0);
 
         $res = $this->actingAs($fixture['host'])
-            ->postJson('/api/v2/recurring-series/preview', [
+            ->postJson('/api/recurring-series/preview', [
                 'court_id' => $fixture['court']->id,
                 'frequency' => 'weekly',
                 'weekdays' => [1, 3],
@@ -282,7 +280,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         [$org, $venue, $cashier] = $this->createPosTenantFixture();
 
         // 1. Negative product price in product management -> 422
-        $badProductRes = $this->actingAs($cashier)->postJson('/api/v2/pos/products', [
+        $badProductRes = $this->actingAs($cashier)->postJson('/api/pos/products', [
             'sku' => 'NEG-PRICE-'.uniqid(),
             'name' => 'Negative Price Drink',
             'price' => -15000,
@@ -303,7 +301,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // 2. Negative quantity in order items -> 422
-        $badOrderRes1 = $this->actingAs($cashier)->postJson('/api/v2/pos/orders', [
+        $badOrderRes1 = $this->actingAs($cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $product->id, 'quantity' => -2],
             ],
@@ -315,7 +313,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $badOrderRes1->assertStatus(422);
 
         // 3. Empty items array -> 422
-        $badOrderRes2 = $this->actingAs($cashier)->postJson('/api/v2/pos/orders', [
+        $badOrderRes2 = $this->actingAs($cashier)->postJson('/api/pos/orders', [
             'items' => [],
             'payment_method' => 'cash',
         ], [
@@ -340,7 +338,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // Create pending QR order
-        $orderRes = $this->actingAs($cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes = $this->actingAs($cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1],
             ],
@@ -352,7 +350,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $orderRes->assertCreated();
 
         // Attempting to close shift without disposition fails with 409
-        $failClose = $this->actingAs($cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
+        $failClose = $this->actingAs($cashier)->postJson("/api/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 100000,
         ], [
             'X-Organization-Id' => $org->id,
@@ -371,7 +369,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $shift = app(PosService::class)->openShift($cashier, $org->id, 100000, $venue->id, 'REG-03');
 
         // Cash In: +50,000 float
-        $cashInRes = $this->actingAs($cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/cash-movement", [
+        $cashInRes = $this->actingAs($cashier)->postJson("/api/pos/shifts/{$shift->id}/cash-movement", [
             'type' => 'cash_in',
             'amount' => 50000,
             'reason' => 'Midday change float',
@@ -382,7 +380,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $this->assertTrue(in_array($cashInRes->status(), [200, 201], true));
 
         // Cash Out: -20,000 cleaning supplies
-        $cashOutRes = $this->actingAs($cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/cash-movement", [
+        $cashOutRes = $this->actingAs($cashier)->postJson("/api/pos/shifts/{$shift->id}/cash-movement", [
             'type' => 'cash_out',
             'amount' => 20000,
             'reason' => 'Emergency mop replacement',
@@ -394,7 +392,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         // Expected cash: 100,000 + 50,000 - 20,000 = 130,000
         $closeKey = 'close-shift-balanced-'.uniqid();
-        $closeRes = $this->actingAs($cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
+        $closeRes = $this->actingAs($cashier)->postJson("/api/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 130000,
             'note' => 'Shift balanced',
         ], [
@@ -410,7 +408,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $this->assertSame(130000, (int) $shift->fresh()->expected_cash);
 
         // Network retry check: replaying exact same Idempotency-Key returns cached response
-        $retryRes = $this->actingAs($cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
+        $retryRes = $this->actingAs($cashier)->postJson("/api/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 130000,
             'note' => 'Shift balanced',
         ], [
@@ -430,7 +428,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         [$org, $venue, $owner, $customer] = $this->createSocialTenantFixture();
 
         // 1. Past start time -> 422
-        $pastRes = $this->actingAs($customer)->postJson('/api/v2/social/matches', [
+        $pastRes = $this->actingAs($customer)->postJson('/api/social/matches', [
             'title' => 'Past Match Activity',
             'starts_at' => now()->subDays(2)->toIso8601String(),
             'ends_at' => now()->subDays(2)->addHour()->toIso8601String(),
@@ -442,7 +440,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $pastRes->assertStatus(422);
 
         // 2. Inverted skill levels (min_skill > max_skill) -> 422
-        $skillRes = $this->actingAs($customer)->postJson('/api/v2/social/matches', [
+        $skillRes = $this->actingAs($customer)->postJson('/api/social/matches', [
             'title' => 'Invalid Skill Match',
             'starts_at' => now()->addDays(2)->toIso8601String(),
             'ends_at' => now()->addDays(2)->addHour()->toIso8601String(),
@@ -470,10 +468,10 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // 1. Unauthenticated -> 401
-        $this->postJson("/api/v2/social/feed/{$post->id}/hide")->assertUnauthorized();
+        $this->postJson("/api/social/feed/{$post->id}/hide")->assertUnauthorized();
 
         // 2. Customer without owner/venue_manager role -> 403
-        $unauthRes = $this->actingAs($customer)->postJson("/api/v2/social/feed/{$post->id}/hide", [], [
+        $unauthRes = $this->actingAs($customer)->postJson("/api/social/feed/{$post->id}/hide", [], [
             'X-Organization-Id' => (string) $org->id,
         ]);
         $unauthRes->assertStatus(403);
@@ -504,13 +502,13 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // Unreasoned dismissal (< 5 chars) -> 422
-        $badDismiss = $this->actingAs($owner)->postJson("/api/v2/social/feed/reports/{$report->id}/dismiss", [
+        $badDismiss = $this->actingAs($owner)->postJson("/api/social/feed/reports/{$report->id}/dismiss", [
             'reason' => 'no',
         ], ['X-Organization-Id' => (string) $org->id]);
         $badDismiss->assertStatus(422);
 
         // Reasoned moderation dismissal by owner -> 200 OK
-        $goodDismiss = $this->actingAs($owner)->postJson("/api/v2/social/feed/reports/{$report->id}/dismiss", [
+        $goodDismiss = $this->actingAs($owner)->postJson("/api/social/feed/reports/{$report->id}/dismiss", [
             'reason' => 'Content complies fully with community standards and court guidelines.',
         ], ['X-Organization-Id' => (string) $org->id]);
         $goodDismiss->assertOk();
@@ -539,7 +537,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $fixture = $tourney->fixtures()->first();
 
         // Stranger without organizer/official grant -> 403
-        $response = $this->actingAs($stranger)->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+        $response = $this->actingAs($stranger)->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
             'expected_version' => $tourney->version,
             'winner_id' => $fixture->participant_one_id,
             'score' => ['p1' => 21, 'p2' => 18],
@@ -557,7 +555,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $fixture = $tourney->fixtures()->first();
 
         // 1. Official score submission -> 200 OK
-        $scoreRes = $this->actingAs($official)->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+        $scoreRes = $this->actingAs($official)->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
             'expected_version' => $tourney->version,
             'winner_id' => $fixture->participant_one_id,
             'score' => ['p1' => 21, 'p2' => 14],
@@ -573,7 +571,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $this->assertSame('completed', $freshFixture->status);
 
         // 2. Finalize tournament
-        $finRes = $this->actingAs($owner)->postJson("/api/v2/tournaments/{$tourney->id}/finalize", [], [
+        $finRes = $this->actingAs($owner)->postJson("/api/tournaments/{$tourney->id}/finalize", [], [
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'fin-'.uniqid(),
         ]);
@@ -581,7 +579,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $this->assertSame('finalized', $tourney->fresh()->status);
 
         // 3. Modifying fixture of a finalized tournament returns 409 Conflict
-        $lockRes = $this->actingAs($owner)->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+        $lockRes = $this->actingAs($owner)->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
             'expected_version' => $tourney->fresh()->version,
             'winner_id' => $fixture->participant_two_id,
             'score' => ['p1' => 14, 'p2' => 21],
@@ -604,7 +602,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         // Reservation ended 35 days ago (> 30 days window)
         $expiredReservation = $this->createCompletedReservation($org, $customer, $court, now()->subDays(35));
 
-        $res = $this->actingAs($customer)->postJson('/api/v1/disputes', [
+        $res = $this->actingAs($customer)->postJson('/api/disputes', [
             'title' => 'Expired Booking Dispute',
             'summary' => 'Nội dung tóm tắt khiếu nại đã quá hạn 30 ngày theo quy định pháp lý.',
             'dispute_type' => 'court_quality',
@@ -621,7 +619,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $reservation = $this->createCompletedReservation($org, $customer, $court, now()->subDays(5));
 
         // First dispute filing -> 201 Created
-        $res1 = $this->actingAs($customer)->postJson('/api/v1/disputes', [
+        $res1 = $this->actingAs($customer)->postJson('/api/disputes', [
             'title' => 'Sân chất lượng kém',
             'summary' => 'Mặt sân trơn trượt ngập nước không thi đấu được an toàn.',
             'dispute_type' => 'court_quality',
@@ -631,7 +629,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $disputeId = $res1->json('data.id');
 
         // Second dispute filing for exact same reservation while first is active -> 409 Conflict
-        $res2 = $this->actingAs($customer)->postJson('/api/v1/disputes', [
+        $res2 = $this->actingAs($customer)->postJson('/api/disputes', [
             'title' => 'Khiếu nại trùng lặp',
             'summary' => 'Cố gắng tạo thêm hồ sơ khiếu nại thứ hai cho cùng một đơn đặt sân.',
             'dispute_type' => 'payment_issue',
@@ -687,7 +685,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // 1. Attempting to close while obligation is unsettled (approved) -> 409 Conflict
-        $closeFail = $this->actingAs($admin)->postJson("/api/v1/admin/disputes/{$dispute->id}/close");
+        $closeFail = $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/close");
         $closeFail->assertStatus(409)
             ->assertJsonFragment([
                 'message' => 'Cannot close dispute: pending refund obligation must be executed or settled first.',
@@ -703,14 +701,14 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // 3. Closing dispute now succeeds -> 200 OK
-        $closeSuccess = $this->actingAs($admin)->postJson("/api/v1/admin/disputes/{$dispute->id}/close");
+        $closeSuccess = $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/close");
         $closeSuccess->assertOk();
 
         // Reload check: Dispute is closed
         $this->assertSame('closed', $dispute->fresh()->status);
 
         // 404 check: Non-existent dispute close
-        $this->actingAs($admin)->postJson('/api/v1/admin/disputes/999999/close')->assertNotFound();
+        $this->actingAs($admin)->postJson('/api/admin/disputes/999999/close')->assertNotFound();
     }
 
     // =========================================================================
@@ -748,7 +746,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         ]);
 
         // 1. Auto-resolve without evidence_reference -> 422 Unprocessable Content
-        $autoResolveRes = $this->actingAs($owner)->postJson('/api/v2/finance/reconciliation/auto-resolve', [
+        $autoResolveRes = $this->actingAs($owner)->postJson('/api/finance/reconciliation/auto-resolve', [
             'run_id' => $run->id,
             'notes' => 'Yêu cầu kế toán tự động bù trừ chỉ bằng ghi chú văn bản',
         ], ['X-Organization-Id' => (string) $org->id]);
@@ -757,7 +755,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             ->assertJsonValidationErrors(['evidence_reference']);
 
         // 2. Manual exception resolve endpoint without evidence_reference -> 422 Unprocessable Content
-        $manualResolveRes = $this->actingAs($owner)->postJson("/api/v2/finance/exceptions/{$exception->id}/resolve", [
+        $manualResolveRes = $this->actingAs($owner)->postJson("/api/finance/exceptions/{$exception->id}/resolve", [
             'action_type' => 'manual_override',
             'reason' => 'Ghi chú giải trình kiểm toán thủ công không đính kèm chứng từ sao kê',
             'note' => 'Cố gắng bypass D47 bằng note thủ công',
@@ -798,12 +796,12 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
         // 1. Owner A attempts to export reports of unauthorized Venue B -> 403 Forbidden
         $unauthExport = $this->actingAs($ownerA)
-            ->getJson('/api/v1/admin/reports/csv?venue_id='.$venueB->id);
+            ->getJson('/api/admin/reports/csv?venue_id='.$venueB->id);
         $unauthExport->assertStatus(403);
 
         // 2. Owner A exports reports of authorized Venue A -> 200 OK Streaming CSV
         $authExport = $this->actingAs($ownerA)
-            ->get('/api/v1/admin/reports/csv?venue_id='.$venueA->id);
+            ->get('/api/admin/reports/csv?venue_id='.$venueA->id);
         $authExport->assertOk();
 
         // Verify real streamed CSV content with headers and non-empty rows

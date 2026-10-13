@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
-use App\Contracts\Repositories\BookingRepositoryInterface;
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Contracts\Repositories\CourtPriceSlotRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
@@ -27,7 +26,6 @@ use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentBookingRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtBlockRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtPriceSlotRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
@@ -62,7 +60,6 @@ class RepositoryServiceProvider extends ServiceProvider
         CourtRepositoryInterface::class => EloquentCourtRepository::class,
         CourtPriceSlotRepositoryInterface::class => EloquentCourtPriceSlotRepository::class,
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
-        BookingRepositoryInterface::class => EloquentBookingRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         RefundRepositoryInterface::class => EloquentRefundRepository::class,

@@ -70,7 +70,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
       if (xsrfCookie) {
         headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
       }
-      const meRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/me`, { headers })
+      const meRes = await page.request.get(`${manifest.backend.url}/api/auth/me`, { headers })
       expect(meRes.status()).toBe(200)
       const me = (await meRes.json()) as {
         name?: string
@@ -294,7 +294,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     }
 
     const resendRes = await page.request.post(
-      `${manifest.backend.url}/api/v1/auth/email/verification-notification`,
+      `${manifest.backend.url}/api/auth/email/verification-notification`,
       {
         headers,
       },
@@ -328,7 +328,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
 
     // 4. Calling resend on verified user acknowledges already verified
     const alreadyVerifiedRes = await page.request.post(
-      `${manifest.backend.url}/api/v1/auth/email/verification-notification`,
+      `${manifest.backend.url}/api/auth/email/verification-notification`,
       {
         headers: headersVerified,
       },
@@ -506,7 +506,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
     }
 
-    const updateRes = await page.request.patch(`${manifest.backend.url}/api/v1/profile`, {
+    const updateRes = await page.request.patch(`${manifest.backend.url}/api/profile`, {
       data: {
         name: updatedName,
         phone: updatedPhone,
@@ -531,7 +531,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     const isRemoteProd =
       manifest.database.name === 'production_protected' || !manifest.database.host
     if (isRemoteProd) {
-      const meRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/me`, { headers })
+      const meRes = await page.request.get(`${manifest.backend.url}/api/auth/me`, { headers })
       expect(meRes.status()).toBe(200)
       const me = (await meRes.json()) as { name?: string; phone?: string }
       expect(me.name).toBe(updatedName)
@@ -589,9 +589,7 @@ test.describe('P1: Vòng đời tài khoản, Hồ sơ, Xác thực & Bảo mậ
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
     // 1. Query OAuth redirect endpoint for google
-    const redirectRes = await page.request.get(
-      `${manifest.backend.url}/api/v1/auth/google/redirect`,
-    )
+    const redirectRes = await page.request.get(`${manifest.backend.url}/api/auth/google/redirect`)
     expect(redirectRes.status()).toBe(200)
     const redirectData = await redirectRes.json()
     // When credentials not set, returns labeled demo_mode / message without crash

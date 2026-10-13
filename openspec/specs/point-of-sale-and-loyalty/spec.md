@@ -65,7 +65,7 @@ Memberships SHALL be tenant-scoped and benefits/version/validity preserved for e
 - **THEN** the operation SHALL roll back the point debit and all associated transaction changes
 
 #### Scenario: Legacy debit-only request
-- **WHEN** a client submits `/api/v2/loyalty/redeem` with arbitrary `source_type/source_id` and no supported validated checkout context
+- **WHEN** a client submits `/api/loyalty/redeem` with arbitrary `source_type/source_id` and no supported validated checkout context
 - **THEN** the API SHALL reject the request with an actionable error without changing points or order totals
 
 ### Requirement: Closed-loop tenant wallet

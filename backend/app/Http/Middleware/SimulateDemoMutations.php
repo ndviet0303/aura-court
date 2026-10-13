@@ -17,7 +17,7 @@ class SimulateDemoMutations
             return $next($request);
         }
 
-        if ($request->routeIs('verification.verify') || $request->is('api/v1/auth/email/verification-notification')) {
+        if ($request->routeIs('verification.verify') || $request->is('api/auth/email/verification-notification')) {
             return response()->json(['message' => 'Đã mô phỏng gửi email xác thực.'], 200)
                 ->header('X-Demo-Simulated', 'true');
         }

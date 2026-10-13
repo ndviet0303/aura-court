@@ -82,7 +82,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     }).trim()
 
     // 2. Direct API call to initiate deposit on direct-payment cohort
-    const depositRes = await page.request.post(`${manifest.backend.url}/api/v2/wallet/deposits`, {
+    const depositRes = await page.request.post(`${manifest.backend.url}/api/wallet/deposits`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'X-Organization-Id': String(org1Id),
@@ -424,7 +424,6 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
-      use App\\Domain\\Booking\\DTOs\\CreateBookingData;
       use App\\Models\\Court;
       use App\\Models\\PriceRule;
       use App\\Models\\User;
@@ -463,22 +462,21 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       $futureTime = Carbon::now(config('app.timezone'))->addDays(5)->setTime(14, 0, 0);
 
       $checkoutService = app(OrdinaryCheckoutService::class);
-      $data = CreateBookingData::fromArray($user->id, [
+
+      // Checkout derives payment_model from venue cohort config
+      $reservation = $checkoutService->checkout($user, ${org1Id}, [
         'court_id' => $court->id,
         'slots' => [$futureTime->toIso8601String()],
       ]);
 
-      // Call checkoutV1: derives payment_model from venue cohort config
-      $booking = $checkoutService->checkoutV1($data);
-
       // Assert payment model is dynamically derived as direct_owner_v1
-      // and status is pending_payment (waiting for direct owner payment attempt, not debited from wallet)
+      // and status is held (waiting for direct owner payment attempt, not debited from wallet)
       $walletAfter = $wallet->fresh()->balance;
 
       echo json_encode([
-        'booking_id' => $booking->id,
-        'payment_model' => $booking->payment_model,
-        'status' => $booking->status,
+        'reservation_id' => $reservation->id,
+        'payment_model' => $reservation->payment_model,
+        'status' => $reservation->status,
         'wallet_before' => 500000,
         'wallet_after' => $walletAfter,
       ]);
@@ -491,16 +489,16 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
         encoding: 'utf-8',
       }),
     ) as {
-      booking_id: number
+      reservation_id: number
       payment_model: string
       status: string
       wallet_before: number
       wallet_after: number
     }
 
-    expect(checkoutResult.booking_id).toBeGreaterThan(0)
+    expect(checkoutResult.reservation_id).toBeGreaterThan(0)
     expect(checkoutResult.payment_model).toBe('direct_owner_v1') // Strictly direct_owner_v1!
-    expect(checkoutResult.status).toBe('pending_payment')
+    expect(checkoutResult.status).toBe('held')
     // Legacy wallet was NOT debited:
     expect(checkoutResult.wallet_after).toBe(500000)
   })
@@ -723,7 +721,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await expect(card).not.toContainText('LEGACY-')
   })
 
-  test('8.6.7: Đánh giá sau khi chơi xong ghi theo reservation_id V2, không gắn booking_id', async ({
+  test('8.6.7: Đánh giá sau khi chơi xong ghi theo reservation_id, không gắn booking_id', async ({
     page,
   }) => {
     const manifest = getTestManifest()
@@ -732,7 +730,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     const venue1AId = manifest.fixtures?.organizations.org1?.venue1A?.id
     if (!org1Id || !venue1AId) throw new Error('E2E fixture missing: org1 or venue1A')
 
-    // 1. A confirmed V2 reservation whose only slot ended yesterday, the rows checkout writes
+    // 1. A confirmed reservation whose only slot ended yesterday, the rows checkout writes
     const court = arrangeCourt(manifest, {
       testKey: '8_6_7_review',
       venueId: venue1AId,
@@ -802,7 +800,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
     await reviewModal.locator('.star-btn').nth(3).click()
     await reviewModal.locator('textarea').fill('Sân sạch, đèn sáng, sẽ quay lại.')
     const reviewResponsePromise = page.waitForResponse(
-      (res) => res.url().includes('/api/v1/reviews') && res.request().method() === 'POST',
+      (res) => res.url().includes('/api/reviews') && res.request().method() === 'POST',
     )
     await reviewModal.locator('.btn-submit').click()
     expect((await reviewResponsePromise).status()).toBe(201)

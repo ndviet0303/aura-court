@@ -186,7 +186,7 @@
 3. **Post Authorized Stock Adjustment**:
    - Staff with `organization_owner` or `venue_manager` role executes adjustment API:
      ```bash
-     curl -X POST /api/v2/pos/products/{id}/adjust-stock \
+     curl -X POST /api/pos/products/{id}/adjust-stock \
        -H "Authorization: Bearer <token>" \
        -H "X-Organization-ID: <org_id>" \
        -d '{"adjustment": <diff>, "reason": "Physical count audit discrepancy approved by manager"}'
@@ -213,7 +213,7 @@
 2. **Apply Moderation Decision**:
    - Authorized moderators (`organization_owner`, `venue_manager`) hide offensive content:
      ```bash
-     curl -X POST /api/v2/social/posts/{id}/hide \
+     curl -X POST /api/social/posts/{id}/hide \
        -H "Authorization: Bearer <token>" \
        -H "X-Organization-ID: <org_id>" \
        -d '{"reason": "Inappropriate content violating community guidelines"}'
@@ -222,7 +222,7 @@
 3. **Resolve Disputes**:
    - For score or reputation disputes, review match logs and referee notes, then resolve via:
      ```bash
-     curl -X POST /api/v2/social/reputation/disputes/{id}/resolve \
+     curl -X POST /api/social/reputation/disputes/{id}/resolve \
        -H "Authorization: Bearer <token>" \
        -H "X-Organization-ID: <org_id>" \
        -d '{"decision": "upheld|dismissed", "note": "Verified by venue match coordinator"}'

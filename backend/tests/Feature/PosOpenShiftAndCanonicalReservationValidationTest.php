@@ -121,7 +121,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ];
 
         // 1. Without any shift: fails with 409
-        $responseNoShift = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', $payload, $headers);
+        $responseNoShift = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', $payload, $headers);
         $responseNoShift->assertStatus(409)
             ->assertJsonFragment(['message' => 'Cashier does not have an active open shift.']);
 
@@ -135,7 +135,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
             'closed_at' => now()->subHour(),
         ]);
 
-        $responseClosed = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', $payload, array_merge($headers, [
+        $responseClosed = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', $payload, array_merge($headers, [
             'Idempotency-Key' => 'shift-closed-'.uniqid(),
         ]));
         $responseClosed->assertStatus(409)
@@ -150,7 +150,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
             'opened_at' => now(),
         ]);
 
-        $responseSuccess = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', $payload, array_merge($headers, [
+        $responseSuccess = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', $payload, array_merge($headers, [
             'Idempotency-Key' => 'shift-open-'.uniqid(),
         ]));
         $responseSuccess->assertCreated()
@@ -182,7 +182,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
             'Idempotency-Key' => 'res-attach-'.uniqid(),
         ];
 
-        $response = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->productA->id, 'quantity' => 1],
             ],
@@ -224,7 +224,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ];
 
         // Cashier in Tenant A attempts to attach reservation from Tenant B
-        $response = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->productA->id, 'quantity' => 1],
             ],
@@ -253,7 +253,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ];
 
         // Legacy ID 999888 does not exist
-        $response = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->productA->id, 'quantity' => 1],
             ],
@@ -303,7 +303,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
             'Idempotency-Key' => 'mapped-legacy-'.uniqid(),
         ];
 
-        $response = $this->actingAs($this->cashierA)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashierA)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->productA->id, 'quantity' => 1],
             ],
@@ -332,14 +332,14 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         ];
 
         // 1. Customer role is rejected with 403 Forbidden
-        $responseCustomer = $this->actingAs($this->customer)->postJson('/api/v2/pos/orders', $payload, $headers);
+        $responseCustomer = $this->actingAs($this->customer)->postJson('/api/pos/orders', $payload, $headers);
         $responseCustomer->assertStatus(403);
 
-        $responseCustomerQuote = $this->actingAs($this->customer)->postJson('/api/v2/pos/quote', $payload, $headers);
+        $responseCustomerQuote = $this->actingAs($this->customer)->postJson('/api/pos/quote', $payload, $headers);
         $responseCustomerQuote->assertStatus(403);
 
         // 2. Unaffiliated user is rejected with 403 Forbidden
-        $responseStranger = $this->actingAs($this->unaffiliatedUser)->postJson('/api/v2/pos/orders', $payload, $headers);
+        $responseStranger = $this->actingAs($this->unaffiliatedUser)->postJson('/api/pos/orders', $payload, $headers);
         $responseStranger->assertStatus(403);
     }
 }

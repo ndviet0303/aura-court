@@ -31,7 +31,7 @@ class SecurityFixesTest extends TestCase
                 'name' => 'Attacker',
             ],
         ] as $payload) {
-            $this->postJson('/api/v1/auth/social-login', $payload)->assertNotFound();
+            $this->postJson('/api/auth/social-login', $payload)->assertNotFound();
         }
 
         $this->assertGuest();
@@ -41,14 +41,14 @@ class SecurityFixesTest extends TestCase
     public function test_verified_socialite_callback_still_authenticates_the_provider_identity(): void
     {
         config([
-            'services.google.redirect' => 'http://localhost/api/v1/auth/google/callback',
+            'services.google.redirect' => 'http://localhost/api/auth/google/callback',
             'app.frontend_url' => 'http://localhost:5173',
         ]);
 
         $provider = Mockery::mock(AbstractProvider::class);
         $provider->shouldReceive('redirectUrl')
             ->once()
-            ->with('http://localhost/api/v1/auth/google/callback')
+            ->with('http://localhost/api/auth/google/callback')
             ->andReturnSelf();
         $provider->shouldReceive('stateless')->once()->andReturnSelf();
         $provider->shouldReceive('user')->once()->andReturn(SocialiteUser::fake([
@@ -58,7 +58,7 @@ class SecurityFixesTest extends TestCase
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 
-        $this->get('/api/v1/auth/google/callback')
+        $this->get('/api/auth/google/callback')
             ->assertRedirect('http://localhost:5173/onboarding');
 
         $user = User::where('email', 'verified@example.com')->firstOrFail();
@@ -70,7 +70,7 @@ class SecurityFixesTest extends TestCase
     public function test_oauth_login_succeeds_even_when_avatar_url_exceeds_255_chars(): void
     {
         config([
-            'services.google.redirect' => 'http://localhost/api/v1/auth/google/callback',
+            'services.google.redirect' => 'http://localhost/api/auth/google/callback',
             'app.frontend_url' => 'http://localhost:5173',
         ]);
 
@@ -79,7 +79,7 @@ class SecurityFixesTest extends TestCase
         $provider = Mockery::mock(AbstractProvider::class);
         $provider->shouldReceive('redirectUrl')
             ->once()
-            ->with('http://localhost/api/v1/auth/google/callback')
+            ->with('http://localhost/api/auth/google/callback')
             ->andReturnSelf();
         $provider->shouldReceive('stateless')->once()->andReturnSelf();
         $provider->shouldReceive('user')->once()->andReturn(SocialiteUser::fake([
@@ -90,7 +90,7 @@ class SecurityFixesTest extends TestCase
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 
-        $this->get('/api/v1/auth/google/callback')
+        $this->get('/api/auth/google/callback')
             ->assertRedirect('http://localhost:5173/onboarding');
 
         $user = User::where('email', 'long_avatar@example.com')->firstOrFail();
@@ -102,7 +102,7 @@ class SecurityFixesTest extends TestCase
     {
         $user = User::factory()->create();
 
-        foreach (['/api/v1/wallet/topup', '/api/v1/wallet/credit'] as $endpoint) {
+        foreach (['/api/wallet/topup', '/api/wallet/credit'] as $endpoint) {
             $this->actingAs($user)
                 ->postJson($endpoint, [
                     'amount' => 50000000,
@@ -123,7 +123,7 @@ class SecurityFixesTest extends TestCase
             'onboarded' => true,
         ]);
 
-        $response = $this->actingAs($user)->postJson('/api/v1/auth/onboarding', [
+        $response = $this->actingAs($user)->postJson('/api/auth/onboarding', [
             'account_type' => 'court_owner',
             'organization_name' => 'Attacker Club',
             'phone' => '0987654321',
@@ -140,7 +140,7 @@ class SecurityFixesTest extends TestCase
             'onboarded' => false,
         ]);
 
-        $this->actingAs($user)->postJson('/api/v1/auth/onboarding', [
+        $this->actingAs($user)->postJson('/api/auth/onboarding', [
             'account_type' => 'customer',
             'phone' => '0912345678',
             'play_level' => 'intermediate',
@@ -150,7 +150,7 @@ class SecurityFixesTest extends TestCase
         $this->assertSame('customer', $user->fresh()->role);
 
         // Subsequent call must be blocked
-        $this->actingAs($user->fresh())->postJson('/api/v1/auth/onboarding', [
+        $this->actingAs($user->fresh())->postJson('/api/auth/onboarding', [
             'account_type' => 'court_owner',
             'organization_name' => 'Escalated Club',
         ])->assertStatus(400);

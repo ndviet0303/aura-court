@@ -56,7 +56,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       }),
     ) as T
 
-  // A confirmed V2 reservation for the customer on its own court, the rows checkout writes (D-e2e).
+  // A confirmed reservation for the customer on its own court, the rows checkout writes (D-e2e).
   const arrangeReservation = (testKey: string) => {
     const court = arrangeCourt(manifest, { testKey, venueId: venue1Id, price: 200000 })
     return runPhp<{ reservation_id: number; reservation_code: string; court_id: number }>(`
@@ -219,13 +219,13 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $controller = app(\\App\\Http\\Controllers\\Admin\\AdminDisputeController::class);
 
       // 1. Stranger (customer2) accesses dispute via show: rejected with 404
-      $reqStranger = \\Illuminate\\Http\\Request::create("/api/v1/disputes/${disputeId}", 'GET');
+      $reqStranger = \\Illuminate\\Http\\Request::create("/api/disputes/${disputeId}", 'GET');
       $reqStranger->setUserResolver(fn () => $stranger);
       $resStranger = $controller->show($reqStranger, ${disputeId});
 
       // 2. Foreign organization owner (Org 2 owner) accesses dispute: rejected with 404
       $ownerB = User::where('email', '${getActorCredentials(manifest, 'owner2').email}')->first() ?: $stranger;
-      $reqForeign = \\Illuminate\\Http\\Request::create("/api/v1/disputes/${disputeId}", 'GET');
+      $reqForeign = \\Illuminate\\Http\\Request::create("/api/disputes/${disputeId}", 'GET');
       $reqForeign->setUserResolver(fn () => $ownerB);
       $resForeign = $controller->show($reqForeign, ${disputeId});
 
@@ -403,7 +403,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
 
       // 1. Close Gate: Can dispute be closed while obligation is still approved?
       // Controller aborts with 409 Conflict if obligation is pending
-      $closeReq = \\Illuminate\\Http\\Request::create("/api/v1/admin/disputes/{$dispute->id}/close", 'POST');
+      $closeReq = \\Illuminate\\Http\\Request::create("/api/admin/disputes/{$dispute->id}/close", 'POST');
       $closeReq->setUserResolver(fn () => $admin);
 
       $closeBlocked = false;
@@ -426,7 +426,7 @@ test.describe('P1: Vòng đời khiếu nại, Bằng chứng, Nghĩa vụ bồi
       $disputeClosed = ($dispute->fresh()->status === 'closed');
 
       // 3. Reconsideration / Reopening: Complainant requests reopening with material evidence via controller
-      $reopenReq = \\Illuminate\\Http\\Request::create("/api/v1/disputes/{$dispute->id}/reopen", 'POST', [
+      $reopenReq = \\Illuminate\\Http\\Request::create("/api/disputes/{$dispute->id}/reopen", 'POST', [
         'reason' => 'Bổ sung video camera giám sát chứng minh thiệt hại nghiêm trọng hơn.',
         'material_evidence' => [
           ['url' => 'https://storage.local/cctv_footage.mp4', 'type' => 'video'],

@@ -12,7 +12,6 @@ vi.mock('../api/walletApi', () => ({
   walletApi: {
     getWallet: vi.fn(),
     getBalance: vi.fn(),
-    spend: vi.fn(),
     initiateDeposit: vi.fn(),
     getDepositStatus: vi.fn(),
     getDeposits: vi.fn(),

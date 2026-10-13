@@ -340,7 +340,7 @@ test.describe('P1: Gói dịch vụ nền tảng, Danh mục gói, Hạn mức q
         'signature' => $signature,
       ]);
 
-      $request = Request::create('/api/v2/webhooks/payos', 'POST', [], [], [], [
+      $request = Request::create('/api/webhooks/payos', 'POST', [], [], [], [
         'CONTENT_TYPE' => 'application/json',
         'HTTP_X_PAYOS_SIGNATURE' => $signature,
       ], $payload);

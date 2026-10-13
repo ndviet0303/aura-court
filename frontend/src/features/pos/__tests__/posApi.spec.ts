@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { posApi } from '../api/posApi'
 
 vi.mock('@/core/api/client', () => ({
-  apiV2: { get: vi.fn() },
+  api: { get: vi.fn() },
 }))
 
 describe('posApi.getActiveReservations', () => {
   it('labels the reservation on the venue clock, first slot start to last slot end', async () => {
-    // V2 reservation slots arrive as UTC instants: 03:00Z is 10:00 in Vietnam.
-    vi.mocked(apiV2.get).mockResolvedValue({
+    // Reservation slots arrive as UTC instants: 03:00Z is 10:00 in Vietnam.
+    vi.mocked(api.get).mockResolvedValue({
       data: [
         {
           id: 7,

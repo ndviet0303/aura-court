@@ -18,6 +18,7 @@ use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -123,15 +124,15 @@ class LoyaltyCheckoutTest extends TestCase
         return [$org, $user, $court, $wallet, $venue];
     }
 
-    public function test_v1_atomic_points_and_wallet_checkout(): void
+    public function test_atomic_points_and_wallet_checkout_from_slots(): void
     {
         $this->withoutExceptionHandling();
         [$org, $user, $court, $wallet] = $this->setupCheckoutEnv(2000, 500000);
         $date = now()->addDays(2)->setTime(10, 0);
 
         $res = $this->actingAs($user)
-            ->withHeader('Idempotency-Key', 'v1-checkout-key-1')
-            ->postJson('/api/v1/bookings', [
+            ->withHeader('Idempotency-Key', 'slot-checkout-key-1')
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 100,
@@ -139,16 +140,15 @@ class LoyaltyCheckoutTest extends TestCase
             ]);
 
         $res->assertCreated();
-        $res->assertJsonPath('booking.status', 'confirmed');
+        $res->assertJsonPath('reservation.status', 'confirmed');
         // Total amount payable is net: 200,000 - 5,000 = 195,000 VND
-        $res->assertJsonPath('booking.total_amount', 195000);
+        $res->assertJsonPath('reservation.total_amount', 195000);
 
-        $bookingCode = $res->json('booking.code');
-        $booking = Booking::where('code', $bookingCode)->firstOrFail();
+        $reservation = Reservation::where('code', $res->json('reservation.code'))->firstOrFail();
 
         // 1. Projections
-        $this->assertSame(5000, $booking->loyalty_discount_amount);
-        $this->assertSame(100, $booking->loyalty_points_redeemed);
+        $this->assertSame(5000, $reservation->loyalty_discount_amount);
+        $this->assertSame(100, $reservation->loyalty_points_redeemed);
 
         // 2. Wallet balance debited net 195,000 VND (500k - 195k = 305k)
         $this->assertSame(305000, $wallet->fresh()->balance);
@@ -156,7 +156,7 @@ class LoyaltyCheckoutTest extends TestCase
             'wallet_account_id' => $wallet->id,
             'amount' => 195000,
             'type' => 'debit',
-            'source_type' => 'booking_payment',
+            'source_type' => 'reservation_payment',
         ]);
 
         // 3. PointLedger debited 100 points (2000 - 100 = 1900)
@@ -167,20 +167,14 @@ class LoyaltyCheckoutTest extends TestCase
             'user_id' => $user->id,
             'delta' => -100,
             'balance_after' => 1900,
-            'source_type' => 'booking',
-            'source_id' => $booking->id,
+            'source_type' => 'reservation',
+            'source_id' => $reservation->id,
         ]);
 
-        // 4. Booking snapshot captured
-        $this->assertNotNull($booking->metadata['loyalty_snapshot']);
-        $this->assertSame(100, $booking->metadata['loyalty_snapshot']['points_spent']);
-        $this->assertSame(5000, $booking->metadata['loyalty_snapshot']['discount_vnd']);
-
-        // 5. Canonical V2 reservation mapping created
-        $this->assertDatabaseHas('legacy_booking_mappings', [
-            'legacy_booking_id' => $booking->id,
-            'organization_id' => $org->id,
-        ]);
+        // 4. Reservation snapshot captured
+        $this->assertNotNull($reservation->metadata['loyalty_snapshot']);
+        $this->assertSame(100, $reservation->metadata['loyalty_snapshot']['points_spent']);
+        $this->assertSame(5000, $reservation->metadata['loyalty_snapshot']['discount_vnd']);
     }
 
     public function test_v2_atomic_points_and_wallet_checkout(): void
@@ -192,7 +186,7 @@ class LoyaltyCheckoutTest extends TestCase
         $quoteRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $org->id)
             ->withHeader('Idempotency-Key', 'v2-quote-key-1')
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
             ]);
@@ -203,7 +197,7 @@ class LoyaltyCheckoutTest extends TestCase
         $checkoutRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $org->id)
             ->withHeader('Idempotency-Key', 'v2-checkout-key-1')
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'quote_token' => $quoteToken,
                 'loyalty_points' => 100,
                 'loyalty_policy_version' => 1,
@@ -247,19 +241,18 @@ class LoyaltyCheckoutTest extends TestCase
         $date = now()->addDays(2)->setTime(16, 0);
 
         $res = $this->actingAs($user)
-            ->withHeader('Idempotency-Key', 'v1-zero-payable-key')
-            ->postJson('/api/v1/bookings', [
+            ->withHeader('Idempotency-Key', 'zero-payable-key')
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 4000,
             ]);
 
         $res->assertCreated();
-        $res->assertJsonPath('booking.status', 'confirmed');
-        $res->assertJsonPath('booking.total_amount', 0);
+        $res->assertJsonPath('reservation.status', 'confirmed');
+        $res->assertJsonPath('reservation.total_amount', 0);
 
-        $bookingCode = $res->json('booking.code');
-        $booking = Booking::where('code', $bookingCode)->firstOrFail();
+        $reservation = Reservation::where('code', $res->json('reservation.code'))->firstOrFail();
 
         // 1. Wallet balance remains 0, zero wallet transactions created
         $this->assertSame(0, $wallet->fresh()->balance);
@@ -269,12 +262,10 @@ class LoyaltyCheckoutTest extends TestCase
         $userPointBalance = (int) PointLedger::where('organization_id', $org->id)->where('user_id', $user->id)->sum('delta');
         $this->assertSame(0, $userPointBalance);
 
-        // 3. Payment record reflects fully discounted zero payable
-        $payment = $booking->payments()->firstOrFail();
-        $this->assertSame('loyalty_points', $payment->provider);
-        $this->assertSame(0, $payment->amount);
-        $this->assertSame('paid', $payment->status);
-        $this->assertTrue($payment->payload['fully_discounted'] ?? false);
+        // 3. The points cover the full price and no wallet payment is posted
+        $this->assertSame(200000, $reservation->loyalty_discount_amount);
+        $this->assertSame(4000, $reservation->loyalty_points_redeemed);
+        $this->assertDatabaseMissing('journals', ['event_type' => 'reservation.wallet_payment', 'reference' => $reservation->code]);
     }
 
     public function test_insufficient_wallet_balance_rolls_back_point_debit(): void
@@ -287,8 +278,8 @@ class LoyaltyCheckoutTest extends TestCase
         $date = now()->addDays(2)->setTime(18, 0);
 
         $res = $this->actingAs($user)
-            ->withHeader('Idempotency-Key', 'v1-fail-wallet-key')
-            ->postJson('/api/v1/bookings', [
+            ->withHeader('Idempotency-Key', 'fail-wallet-key')
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 100,
@@ -304,8 +295,8 @@ class LoyaltyCheckoutTest extends TestCase
         // Wallet balance remains 50,000
         $this->assertSame(50000, $wallet->fresh()->balance);
 
-        // No booking created
-        $this->assertSame(0, Booking::where('user_id', $user->id)->count());
+        // No reservation created
+        $this->assertSame(0, Reservation::where('user_id', $user->id)->count());
     }
 
     public function test_inventory_conflict_rolls_back_point_debit(): void
@@ -330,11 +321,12 @@ class LoyaltyCheckoutTest extends TestCase
             'unit_price' => 200000,
             'status' => 'confirmed',
         ]);
+        app(LegacyBookingBackfillService::class)->backfillBooking($existingBooking);
 
         // Now user attempts to book the conflicting slot with points
         $res = $this->actingAs($user)
-            ->withHeader('Idempotency-Key', 'v1-conflict-key')
-            ->postJson('/api/v1/bookings', [
+            ->withHeader('Idempotency-Key', 'conflict-key')
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 100,
@@ -361,7 +353,7 @@ class LoyaltyCheckoutTest extends TestCase
         // 1. First checkout succeeds with 100 points
         $res1 = $this->actingAs($user)
             ->withHeader('Idempotency-Key', 'compete-key-1')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date1->toIso8601String()],
                 'loyalty_points' => 100,
@@ -374,7 +366,7 @@ class LoyaltyCheckoutTest extends TestCase
         // 2. Second checkout attempting to use 100 points must FAIL with 422
         $res2 = $this->actingAs($user)
             ->withHeader('Idempotency-Key', 'compete-key-2')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date2->toIso8601String()],
                 'loyalty_points' => 100,
@@ -385,7 +377,7 @@ class LoyaltyCheckoutTest extends TestCase
         $this->assertSame(0, (int) PointLedger::where('organization_id', $org->id)->where('user_id', $user->id)->sum('delta'));
     }
 
-    public function test_idempotent_replay_returns_existing_booking_without_duplicate_debit(): void
+    public function test_idempotent_replay_returns_existing_reservation_without_duplicate_debit(): void
     {
         [$org, $user, $court, $wallet] = $this->setupCheckoutEnv(2000, 500000);
         $date = now()->addDays(4)->setTime(10, 0);
@@ -395,48 +387,47 @@ class LoyaltyCheckoutTest extends TestCase
             'slots' => [$date->toIso8601String()],
             'loyalty_points' => 100,
             'loyalty_policy_version' => 1,
-            'idempotency_key' => 'stable-user-replay-key',
         ];
 
         // 1. Initial request
-        $res1 = $this->actingAs($user)->postJson('/api/v1/bookings', $payload);
+        $res1 = $this->actingAs($user)->withHeader('Idempotency-Key', 'stable-user-replay-key')->postJson('/api/reservations/checkout', $payload);
         $res1->assertCreated();
-        $code1 = $res1->json('booking.code');
+        $code1 = $res1->json('reservation.code');
 
         // Wallet debited 195k, points debited 100
         $this->assertSame(305000, $wallet->fresh()->balance);
         $this->assertSame(1900, (int) PointLedger::where('user_id', $user->id)->sum('delta'));
 
         // 2. Replay identical request with same key
-        $res2 = $this->actingAs($user)->postJson('/api/v1/bookings', $payload);
+        $res2 = $this->actingAs($user)->withHeader('Idempotency-Key', 'stable-user-replay-key')->postJson('/api/reservations/checkout', $payload);
         $res2->assertSuccessful();
-        $this->assertSame($code1, $res2->json('booking.code'));
+        $this->assertSame($code1, $res2->json('reservation.code'));
 
         // Assert NO duplicate wallet debit and NO duplicate point debit!
         $this->assertSame(305000, $wallet->fresh()->balance);
         $this->assertSame(1900, (int) PointLedger::where('user_id', $user->id)->sum('delta'));
-        $this->assertSame(1, PointLedger::where('source_type', 'booking')->count());
-        $this->assertSame(1, WalletTransaction::where('source_type', 'booking_payment')->count());
+        $this->assertSame(1, PointLedger::where('source_type', 'reservation')->count());
+        $this->assertSame(1, WalletTransaction::where('source_type', 'reservation_payment')->count());
 
         // 3. Conflicting request with same key but different slots fails with 409
         $conflictPayload = $payload;
         $conflictPayload['slots'] = [now()->addDays(4)->setTime(11, 0)->toIso8601String()];
-        $resConflict = $this->actingAs($user)->postJson('/api/v1/bookings', $conflictPayload);
+        $resConflict = $this->actingAs($user)->withHeader('Idempotency-Key', 'stable-user-replay-key')->postJson('/api/reservations/checkout', $conflictPayload);
         $resConflict->assertStatus(409);
     }
 
-    public function test_v1_and_v2_parity_no_point_regression(): void
+    public function test_checkout_without_points_has_no_point_regression(): void
     {
         [$org, $user, $court, $wallet] = $this->setupCheckoutEnv(2000, 500000);
         $date = now()->addDays(5)->setTime(15, 0);
 
-        // Ordinary V1 without points continues to work 100% normally
-        $res = $this->actingAs($user)->postJson('/api/v1/bookings', [
+        // Ordinary checkout without points continues to work 100% normally
+        $res = $this->actingAs($user)->withHeader('Idempotency-Key', 'no-points-key')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ]);
         $res->assertCreated();
-        $res->assertJsonPath('booking.total_amount', 200000);
+        $res->assertJsonPath('reservation.total_amount', 200000);
         $this->assertSame(300000, $wallet->fresh()->balance);
 
         // Point balance untouched (still 2000)

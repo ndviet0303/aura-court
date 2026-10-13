@@ -344,11 +344,12 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 12. Phối hợp với change khác (design 14)
 
-- [ ] 12.1 Sửa delta `openspec/changes/retire-v1-booking/specs/reservations-and-pricing/spec.md`:
+- [x] 12.1 Sửa delta `openspec/changes/retire-v1-booking/specs/reservations-and-pricing/spec.md`:
   - Dòng 6: bỏ "booking changes" khỏi danh sách việc client phải dùng V2.
   - Dòng 12: bỏ câu "The former cancellation/rescheduling retirement SHALL be superseded by policy-governed requests."
   - Dòng 27: scenario client cũ gọi các lệnh hủy, hoàn tiền và dời lịch đã bị bỏ.
   - Chạy `openspec validate retire-v1-booking --strict`.
+  - Đã làm cùng Phase C của `retire-v1-booking` (2026-10-13). Requirement đó cũng được đổi tên thành "Unversioned reservation API", nên change nào archive sau phải rebase cả tên requirement (design C7 của change đó).
 - [ ] 12.2 Thêm ghi chú vào `openspec/changes/retire-v1-booking/tasks.md`:
   - 3.3: `BookingCancelModal` và `BookingRescheduleModal` đã bị xóa;
   - 3.7: case "huỷ" và "dời lịch đắt hơn và rẻ hơn" không còn;

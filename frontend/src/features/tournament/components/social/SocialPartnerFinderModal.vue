@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 defineProps<{
   show: boolean
@@ -24,7 +24,7 @@ const loading = ref(false)
 async function loadPartners() {
   loading.value = true
   try {
-    const res = await apiV2.get<{ data: PartnerRequest[] }>('/social/partners')
+    const res = await api.get<{ data: PartnerRequest[] }>('/social/partners')
     if (res?.data) {
       partnerList.value = res.data
     }

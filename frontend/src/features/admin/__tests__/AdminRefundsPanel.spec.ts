@@ -12,7 +12,6 @@ import type { RefundObligation } from '@/features/admin/api/refundReviewApi'
 vi.mock('@/core/api/client', () => ({
   errorMessage: (_cause: unknown, fallback: string) => fallback,
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  apiV2: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }))
 
 vi.mock('@/features/admin/api/refundReviewApi', () => ({

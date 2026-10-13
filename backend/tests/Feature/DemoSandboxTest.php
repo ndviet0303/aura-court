@@ -34,12 +34,12 @@ class DemoSandboxTest extends TestCase
             'name' => 'Admin demo',
         ]);
 
-        $this->actingAs($admin)->patchJson('/api/v1/profile', ['name' => 'Tên mới'])
+        $this->actingAs($admin)->patchJson('/api/profile', ['name' => 'Tên mới'])
             ->assertOk();
 
         $this->assertSame('Tên mới', $admin->fresh()->name);
 
-        $this->actingAs($admin)->postJson('/api/v1/admin/courts', [
+        $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'Sân mô phỏng',
             'venue_id' => Venue::firstOrFail()->id,
             'description' => 'Không được lưu',

@@ -1,5 +1,4 @@
-import { api, apiV2 } from '@/core/api/client'
-import type { Booking } from '../types/booking'
+import { api } from '@/core/api/client'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 import type {
   RefundQuote,
@@ -46,88 +45,49 @@ export const bookingApi = {
 
   getWalletBalance: () => api.get<{ balance: number; currency?: string }>('/wallet/balance'),
 
-  createRecurring: (payload: { court_id: number; slots: string[]; weeks: number }) =>
-    api.post<{ bookings: { booking: Booking }[] }>('/bookings/recurring', payload),
-
-  getPayment: (code: string) =>
-    api.get<{
-      booking?: Booking
-      wallet?: { balance: number }
-      status: string
-      payment_model?: string
-      payment_attempt?: ReservationPaymentAttempt | null
-    }>('/bookings/' + code + '/payment'),
-
-  getPaymentStatus: (code: string) =>
-    api.get<{
-      status: string
-      payment: unknown
-      payment_model?: string
-      payment_attempt?: ReservationPaymentAttempt | null
-    }>('/bookings/' + code + '/payment-status'),
-
-  createBookingPayment: (code: string) =>
-    api.post<{
-      booking: { code: string; status: string }
-      payment_attempt: ReservationPaymentAttempt
-    }>('/bookings/' + code + '/payment'),
-
-  applyCoupon: (code: string, couponCode?: string | null) =>
-    api.post<{ booking: Booking; status: string }>(`/bookings/${code}/coupon`, {
-      coupon_code: couponCode || null,
-    }),
-
-  previewCoupon: <T = unknown>(payload: {
-    subtotal: number
-    code: string
-    venue_id?: number
-    court_id?: number
-  }) => api.post<T>('/coupons/preview', payload),
   previewLoyalty: (payload: import('../types/loyalty').LoyaltyPreviewPayload) =>
-    apiV2.post<import('../types/loyalty').LoyaltyPreviewResponse>('/loyalty/preview', payload),
+    api.post<import('../types/loyalty').LoyaltyPreviewResponse>('/loyalty/preview', payload),
 
   submitReview: (reservationCode: string, payload: { rating: number; body?: string }) =>
     api.post('/reviews', { reservation_code: reservationCode, ...payload }),
 
   createRecurringSeries: (payload: CreateRecurringSeriesPayload, key?: string) =>
-    apiV2.post<CreateRecurringSeriesResult>(
+    api.post<CreateRecurringSeriesResult>(
       '/recurring-series',
       payload,
       key ? { idempotencyKey: key } : undefined,
     ),
 
   previewRecurringSeries: (payload: RecurringSeriesPreviewPayload) =>
-    apiV2.post<RecurringSeriesPreview>('/recurring-series/preview', payload),
+    api.post<RecurringSeriesPreview>('/recurring-series/preview', payload),
 
   getRecurringSeries: <T = { data: import('../types/recurring').RecurringSeries[] }>() =>
-    apiV2.get<T>('/recurring-series'),
+    api.get<T>('/recurring-series'),
 
-  // V2 Reservations & Quotes
+  // Reservations & Quotes
   // The caller's own reservations across every organization (Laravel paginator).
   getMyReservations: () =>
-    apiV2.get<{ data: import('../types/v2Reservation').V2Reservation[] }>('/me/reservations'),
+    api.get<{ data: import('../types/reservation').Reservation[] }>('/me/reservations'),
 
-  getReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(
-    code: string,
-  ) => apiV2.get<T>(`/reservations/${code}`),
+  getReservation: <T = { reservation: import('../types/reservation').Reservation }>(code: string) =>
+    api.get<T>(`/reservations/${code}`),
 
-  getPriceQuote: <T = { quote: import('../types/v2Reservation').V2PriceQuote }>(payload: {
-    court_id: number
-    slots: string[]
-  }) => apiV2.post<T>('/price-quotes', payload),
+  getPriceQuote: <T = { quote: import('../types/reservation').PriceQuote }>(
+    payload: import('../types/reservation').PriceQuotePayload,
+  ) => api.post<T>('/price-quotes', payload),
 
-  holdReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(
-    payload: import('../types/v2Reservation').V2HoldReservationPayload,
-  ) => apiV2.post<T>('/reservations', payload),
+  holdReservation: <T = { reservation: import('../types/reservation').Reservation }>(
+    payload: import('../types/reservation').HoldReservationPayload,
+  ) => api.post<T>('/reservations', payload),
 
-  checkoutReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(
-    payload: import('../types/v2Reservation').V2HoldReservationPayload,
+  checkoutReservation: <T = { reservation: import('../types/reservation').Reservation }>(
+    payload: import('../types/reservation').HoldReservationPayload,
     key?: string,
-  ) => apiV2.post<T>('/reservations/checkout', payload, key ? { idempotencyKey: key } : undefined),
+  ) => api.post<T>('/reservations/checkout', payload, key ? { idempotencyKey: key } : undefined),
 
-  confirmReservation: <T = { reservation: import('../types/v2Reservation').V2Reservation }>(
+  confirmReservation: <T = { reservation: import('../types/reservation').Reservation }>(
     code: string,
-  ) => apiV2.post<T>(`/reservations/${code}/confirm`),
+  ) => api.post<T>(`/reservations/${code}/confirm`),
 
   createReservationPayment: <
     T = {
@@ -136,7 +96,7 @@ export const bookingApi = {
     },
   >(
     code: string,
-  ) => apiV2.post<T>(`/reservations/${code}/payment`),
+  ) => api.post<T>(`/reservations/${code}/payment`),
 
   getReservationPayment: <
     T = {
@@ -145,33 +105,33 @@ export const bookingApi = {
     },
   >(
     code: string,
-  ) => apiV2.get<T>(`/reservations/${code}/payment`),
+  ) => api.get<T>(`/reservations/${code}/payment`),
 
   // --- Cancellation / partial-cancel refund + reschedule (policy-aware flows, by reservation code) ---
 
   getRefundQuote: <T = { data: RefundQuote }>(code: string, slotIds: number[]) => {
     const query = slotIds.map((id) => `slot_ids[]=${encodeURIComponent(String(id))}`).join('&')
-    return apiV2.get<T>(`/reservations/${code}/refund-quote?${query}`)
+    return api.get<T>(`/reservations/${code}/refund-quote?${query}`)
   },
 
   createRefundRequest: <T = { data: RefundObligation }>(
     code: string,
     payload: CreateRefundRequestPayload,
   ) =>
-    apiV2.post<T>(`/reservations/${code}/refund-requests`, payload, {
+    api.post<T>(`/reservations/${code}/refund-requests`, payload, {
       idempotencyKey: payload.idempotency_key,
     }),
 
   previewReschedule: <T = { data: ReschedulePreview }>(
     code: string,
     payload: ReschedulePreviewPayload,
-  ) => apiV2.post<T>(`/reservations/${code}/reschedule-preview`, payload),
+  ) => api.post<T>(`/reservations/${code}/reschedule-preview`, payload),
 
   createRescheduleRequest: <T = { data: RescheduleResult }>(
     code: string,
     payload: CreateReschedulePayload,
   ) =>
-    apiV2.post<T>(`/reservations/${code}/reschedule-requests`, payload, {
+    api.post<T>(`/reservations/${code}/reschedule-requests`, payload, {
       idempotencyKey: payload.idempotency_key,
     }),
 

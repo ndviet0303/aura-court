@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Social;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MatchPostResource;
 use App\Models\Court;
@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
 
 class SocialController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(private readonly MatchService $matches, private readonly ReputationService $reputation, private readonly IdempotencyService $idempotency) {}
 

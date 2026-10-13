@@ -133,7 +133,7 @@ class SePayTransactionQueryServiceTest extends TestCase
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
         $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $hmacSecret);
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
@@ -150,6 +150,6 @@ class SePayTransactionQueryServiceTest extends TestCase
 
     private function connectionUrl(Venue $venue): string
     {
-        return "/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
+        return "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
     }
 }

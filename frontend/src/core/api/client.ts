@@ -43,10 +43,7 @@ function appendQueryParams(url: string, params?: QueryParams): string {
 }
 
 export const apiUrl = (path: string, params?: QueryParams) =>
-  appendQueryParams(`${apiOrigin}/api/v1${path.startsWith('/') ? path : `/${path}`}`, params)
-
-export const apiV2Url = (path: string, params?: QueryParams) =>
-  appendQueryParams(`${apiOrigin}/api/v2${path.startsWith('/') ? path : `/${path}`}`, params)
+  appendQueryParams(`${apiOrigin}/api${path.startsWith('/') ? path : `/${path}`}`, params)
 
 async function csrfCookie(): Promise<Response> {
   await runtimeConfigReady
@@ -179,7 +176,7 @@ function buildHeaders(
 }
 
 /**
- * API v1 Client
+ * API client. Mutations carry an automatic Idempotency-Key unless the caller passes one.
  */
 export const api = {
   csrf: csrfCookie,
@@ -198,7 +195,7 @@ export const api = {
       ...opts,
       method: 'POST',
       body: bodyPayload,
-      headers: buildHeaders(opts),
+      headers: buildHeaders(opts, true),
     })
   },
   put: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
@@ -208,7 +205,7 @@ export const api = {
       ...opts,
       method: 'PUT',
       body: bodyPayload,
-      headers: buildHeaders(opts),
+      headers: buildHeaders(opts, true),
     })
   },
   patch: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
@@ -218,65 +215,12 @@ export const api = {
       ...opts,
       method: 'PATCH',
       body: bodyPayload,
-      headers: buildHeaders(opts),
+      headers: buildHeaders(opts, true),
     })
   },
   delete: <T>(path: string, options?: ApiRequestOptions | string) => {
     const opts = parseOptions(options)
     return requestAt<T>(apiUrl(path, opts.params), {
-      ...opts,
-      method: 'DELETE',
-      headers: buildHeaders(opts),
-    })
-  },
-}
-
-/**
- * API v2 Client (with automatic idempotency header support for mutations)
- */
-export const apiV2 = {
-  csrf: csrfCookie,
-  get: <T>(path: string, options?: ApiRequestOptions) => {
-    const opts = parseOptions(options)
-    return requestAt<T>(apiV2Url(path, opts.params), {
-      ...opts,
-      method: 'GET',
-      headers: buildHeaders(opts),
-    })
-  },
-  post: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
-    const opts = parseOptions(options)
-    const { bodyPayload } = normalizeBody(body)
-    return requestAt<T>(apiV2Url(path, opts.params), {
-      ...opts,
-      method: 'POST',
-      body: bodyPayload,
-      headers: buildHeaders(opts, true),
-    })
-  },
-  put: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
-    const opts = parseOptions(options)
-    const { bodyPayload } = normalizeBody(body)
-    return requestAt<T>(apiV2Url(path, opts.params), {
-      ...opts,
-      method: 'PUT',
-      body: bodyPayload,
-      headers: buildHeaders(opts, true),
-    })
-  },
-  patch: <T>(path: string, body?: unknown, options?: ApiRequestOptions | string) => {
-    const opts = parseOptions(options)
-    const { bodyPayload } = normalizeBody(body)
-    return requestAt<T>(apiV2Url(path, opts.params), {
-      ...opts,
-      method: 'PATCH',
-      body: bodyPayload,
-      headers: buildHeaders(opts, true),
-    })
-  },
-  delete: <T>(path: string, options?: ApiRequestOptions | string) => {
-    const opts = parseOptions(options)
-    return requestAt<T>(apiV2Url(path, opts.params), {
       ...opts,
       method: 'DELETE',
       headers: buildHeaders(opts, true),

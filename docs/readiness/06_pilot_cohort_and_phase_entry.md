@@ -34,7 +34,7 @@ Every capability is gated by an independently reversible feature flag with stric
 | `social_matchmaking_tournaments` | Social matchmaking & brackets | `DISABLED` (Phase 3) | Product Lead | Reverts to manual tournament entry |
 | `tenant_pos_and_wallet` | POS checkout & wallet liability | `DISABLED` (Phase 4) | Product Lead | Falls back to external POS reconciliation |
 
-The `/api/v2` reservation path is always on and has no flag. Rolling back a release of the V1 retirement (`openspec/changes/retire-v1-booking`) means redeploying the previous backend and frontend release; no flag switches traffic back to `/api/v1`.
+The reservation API (`/api/price-quotes`, `/api/reservations`) is always on and has no flag. Since the V1 retirement (`openspec/changes/retire-v1-booking`) the API has no version prefix. Rolling that release back means redeploying the previous backend and frontend release together and pointing the OAuth redirect URIs and SePay webhooks back at their `/api/v1` paths; no flag switches traffic back.
 
 ---
 

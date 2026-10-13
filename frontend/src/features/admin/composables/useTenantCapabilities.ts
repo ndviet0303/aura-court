@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -77,7 +77,7 @@ export function useTenantCapabilities() {
 
     try {
       const url = orgId ? `/organizations/${orgId}/capabilities` : '/capabilities'
-      const res = await apiV2.get<CapabilitiesResponse>(url)
+      const res = await api.get<CapabilitiesResponse>(url)
 
       // Stale response discard: if a newer request was dispatched, logged out, or account/org switched, drop this result
       if (requestId !== latestRequestId || (requestUser && !auth.user)) {

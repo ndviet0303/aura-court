@@ -14,7 +14,7 @@ class IdempotencyService
     {
         $key = trim((string) $request->header('Idempotency-Key'));
         if ($key === '') {
-            abort(400, 'Idempotency-Key header is required for v2 state-changing commands.');
+            abort(400, 'Idempotency-Key header is required for state-changing commands.');
         }
 
         $organizationId = app(TenantContext::class)->getOrganizationId();

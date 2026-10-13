@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { tournamentApi } from '../api/tournamentApi'
 import type { TournamentItem } from '../types/tournament'
 
-vi.mock('@/core/api/client', () => ({ apiV2: { get: vi.fn(), post: vi.fn() } }))
+vi.mock('@/core/api/client', () => ({ api: { get: vi.fn(), post: vi.fn() } }))
 
 const settings = {
   sport: 'pickleball',
@@ -20,7 +20,7 @@ describe('tournamentApi mapping', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('reads venue, city, image, dates and lifecycle status from the stored settings', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [
         { id: 1, name: 'A', status: 'in_progress', participants_count: 8, settings },
         { id: 2, name: 'B', status: 'finalized', participants_count: 8, settings },
@@ -51,7 +51,7 @@ describe('tournamentApi mapping', () => {
   })
 
   it('counts loaded participants on the detail payload', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       tournament: {
         id: 5,
         status: 'open',
@@ -62,13 +62,13 @@ describe('tournamentApi mapping', () => {
 
     const detail = await tournamentApi.getById<TournamentItem>(5)
 
-    expect(apiV2.get).toHaveBeenCalledWith('/tournaments/5')
+    expect(api.get).toHaveBeenCalledWith('/tournaments/5')
     expect(detail.current_slots).toBe(3)
     expect(detail.participants).toHaveLength(3)
   })
 
   it('leaves values the API omits empty instead of inventing them', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       tournament: {
         id: 6,
         name: 'E',
@@ -106,7 +106,7 @@ describe('tournamentApi mapping', () => {
   })
 
   it('shows only the start day, in the venue timezone, when no end date is stored', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       tournament: { id: 7, status: 'open', starts_at: '2026-10-14T20:00:00.000000Z', settings: {} },
     })
 

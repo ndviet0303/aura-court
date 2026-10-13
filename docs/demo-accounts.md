@@ -65,7 +65,7 @@ bật bán lại slot, chia tiền, POS và ví, giải đấu và ghép trận;
 
 ## Lưu ý khi trình diễn
 
-- Tài khoản `@demo.auracourt.vn`: thao tác ghi qua API quản trị v1 (`/api/v1/admin/*`) chỉ được mô phỏng. API trả về thành
+- Tài khoản `@demo.auracourt.vn`: thao tác ghi qua API quản trị `/api/admin/*` chỉ được mô phỏng, trừ tranh chấp, KYC và gói hội viên (các route này ghi thật). API trả về thành
   công nhưng giao dịch bị rollback, tải lại trang sẽ không thấy thay đổi. Cần thao tác lưu thật thì dùng `admin@auracourt.vn`.
 - Thông báo trong ứng dụng được seed thẳng vào bảng `notifications`; seed không gửi email. Trên server có scheduler và
   queue chạy thật, job hết hạn giữ chỗ có thể gửi email tới `khach03`, `khach06`, `khach13@demo.auracourt.vn`.

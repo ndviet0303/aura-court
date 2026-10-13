@@ -124,19 +124,14 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Domain\\Booking\\DTOs\\CreateBookingData;
-      use App\\Domain\\Booking\\Actions\\CreateBooking;
+      use App\\Models\\User;
+      use App\\Services\\Booking\\OrdinaryCheckoutService;
 
-      $dto = new CreateBookingData(
-        userId: ${customerId},
-        courtId: ${court1A1Id},
-        slots: ['${targetSlotIso}'],
-        couponCode: null,
-        loyaltyPoints: null,
-      );
-
-      $booking = app(CreateBooking::class)->execute($dto);
-      echo json_encode(['booking_code' => $booking->code, 'status' => $booking->status]);
+      $reservation = app(OrdinaryCheckoutService::class)->checkout(User::findOrFail(${customerId}), ${courtA.organization_id}, [
+        'court_id' => ${court1A1Id},
+        'slots' => ['${targetSlotIso}'],
+      ]);
+      echo json_encode(['reservation_code' => $reservation->code, 'status' => $reservation->status]);
     `
 
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
@@ -148,12 +143,12 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     })
-    const bookResult = JSON.parse(bookOut) as { booking_code: string; status: string }
-    expect(bookResult.booking_code).toBeTruthy()
+    const bookResult = JSON.parse(bookOut) as { reservation_code: string; status: string }
+    expect(bookResult.reservation_code).toBeTruthy()
 
     // 2. Query Court 1-A-1 availability: 11:00 slot is booked/unavailable
     const court1Res = await page.request.get(
-      `${manifest.backend.url}/api/v1/availability?court_id=${court1A1Id}&date=${future.dateString}`,
+      `${manifest.backend.url}/api/availability?court_id=${court1A1Id}&date=${future.dateString}`,
     )
     expect(court1Res.ok()).toBe(true)
     const court1Slots = (await court1Res.json()) as Array<{ startsAt: string; available: boolean }>
@@ -162,7 +157,7 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
 
     // 3. Query Court 1-A-2 availability: 11:00 slot is completely AVAILABLE (independent inventory isolation)
     const court2Res = await page.request.get(
-      `${manifest.backend.url}/api/v1/availability?court_id=${court1A2Id}&date=${future.dateString}`,
+      `${manifest.backend.url}/api/availability?court_id=${court1A2Id}&date=${future.dateString}`,
     )
     expect(court2Res.ok()).toBe(true)
     const court2Slots = (await court2Res.json()) as Array<{ startsAt: string; available: boolean }>
@@ -213,7 +208,7 @@ test.describe('P0: Tìm kiếm sân, Lịch khả dụng & Cách ly tồn kho @p
     let date1Intercepted = false
 
     // Intercept availability requests: hold the first request (date 1) until date 2 finishes
-    await page.route('**/api/v1/availability*', async (route) => {
+    await page.route('**/api/availability*', async (route) => {
       if (!date1Intercepted) {
         date1Intercepted = true
         await date1Promise

@@ -96,21 +96,21 @@ class AdminRefundRetirementAndHistoryTest extends TestCase
         $walletBalanceBefore = (int) $wallet->fresh()->balance;
 
         // 1. Attempt to approve pending refund -> retired route returns 404
-        $approveRes = $this->patchJson("/api/v1/admin/refunds/{$pendingRefund->id}", [
+        $approveRes = $this->patchJson("/api/admin/refunds/{$pendingRefund->id}", [
             'status' => 'approved',
             'note' => 'Approve refund',
         ]);
         $approveRes->assertNotFound();
 
         // 2. Attempt to reject pending refund -> retired route returns 404
-        $rejectRes = $this->patchJson("/api/v1/admin/refunds/{$pendingRefund->id}", [
+        $rejectRes = $this->patchJson("/api/admin/refunds/{$pendingRefund->id}", [
             'status' => 'rejected',
             'note' => 'Reject refund',
         ]);
         $rejectRes->assertNotFound();
 
         // 3. Attempt to reject completed refund -> returns 404
-        $rejectCompletedRes = $this->patchJson("/api/v1/admin/refunds/{$completedRefund->id}", [
+        $rejectCompletedRes = $this->patchJson("/api/admin/refunds/{$completedRefund->id}", [
             'status' => 'rejected',
             'note' => 'Reject completed',
         ]);
@@ -166,7 +166,7 @@ class AdminRefundRetirementAndHistoryTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         Sanctum::actingAs($admin);
 
-        $response = $this->getJson('/api/v1/admin/refunds');
+        $response = $this->getJson('/api/admin/refunds');
         $response->assertOk();
         $response->assertJsonStructure(['data', 'current_page', 'total']);
         $this->assertGreaterThanOrEqual(2, $response->json('total'));
@@ -192,14 +192,14 @@ class AdminRefundRetirementAndHistoryTest extends TestCase
         ]);
 
         // 1. Unauthenticated request -> 401
-        $this->getJson('/api/v1/admin/refunds')->assertUnauthorized();
+        $this->getJson('/api/admin/refunds')->assertUnauthorized();
 
         // 2. Customer authenticated -> 403 Forbidden
         Sanctum::actingAs($customer);
-        $this->getJson('/api/v1/admin/refunds')->assertForbidden();
+        $this->getJson('/api/admin/refunds')->assertForbidden();
 
         // 3. Customer PATCH -> 404 (route is retired)
-        $this->patchJson("/api/v1/admin/refunds/{$refund->id}", [
+        $this->patchJson("/api/admin/refunds/{$refund->id}", [
             'status' => 'approved',
         ])->assertNotFound();
     }

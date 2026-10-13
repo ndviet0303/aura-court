@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -131,7 +132,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             'skill_levels' => ['TBY', 'TB'],
             'required_participants' => 8,
         ];
-        $response = $this->auth($this->ownerA)->postJson('/api/v2/social/matches', $payload);
+        $response = $this->auth($this->ownerA)->postJson('/api/social/matches', $payload);
         $response->assertStatus(201);
         $matchData = $response->json('match');
         $this->assertTrue($matchData['is_owner_hosted']);
@@ -159,7 +160,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             'max_skill' => 4,
         ];
 
-        $response = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->player1));
+        $response = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->player1));
         $response->assertStatus(201);
 
         $matchData = $response->json('match');
@@ -189,19 +190,19 @@ class OwnerHostedDropInSessionTest extends TestCase
         ];
 
         // 1. Customer attempts to create
-        $resCust = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->player1));
+        $resCust = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->player1));
         $resCust->assertStatus(403);
 
         // 2. Staff attempts to create
-        $resStaff = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->staffA));
+        $resStaff = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->staffA));
         $resStaff->assertStatus(403);
 
         // 3. Manager without owner role attempts to create
-        $resMgr = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->managerA));
+        $resMgr = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->managerA));
         $resMgr->assertStatus(403);
 
         // 4. Owner of facility B attempts to create for facility A's court
-        $resOwnerB = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->ownerB, $this->orgB));
+        $resOwnerB = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->ownerB, $this->orgB));
         $resOwnerB->assertStatus(403);
     }
 
@@ -229,7 +230,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             ->update(['role' => OrganizationMember::ROLE_CUSTOMER]);
 
         // Try ending or saving bill
-        $res = $this->postJson("/api/v2/social/matches/{$post->id}/bill/draft", [
+        $res = $this->postJson("/api/social/matches/{$post->id}/bill/draft", [
             'actual_headcount' => 6,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -265,7 +266,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             'required_participants' => 4,
         ];
 
-        $response = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->ownerA));
+        $response = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->ownerA));
         $response->assertStatus(409);
     }
 
@@ -274,7 +275,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $startsAt = now()->addDays(4)->setHour(18);
         $endsAt = now()->addDays(4)->setHour(20);
 
-        // Confirmed booking
+        // Confirmed legacy booking and its reservation mirror
         $booking = Booking::create([
             'organization_id' => $this->orgA->id,
             'user_id' => $this->player1->id,
@@ -294,6 +295,8 @@ class OwnerHostedDropInSessionTest extends TestCase
             'unit_price' => 150000,
             'status' => 'confirmed',
         ]);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
+
         $payload = [
             'court_id' => $this->courtA->id,
             'is_owner_hosted' => true,
@@ -306,7 +309,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             'required_participants' => 4,
         ];
 
-        $response = $this->postJson('/api/v2/social/matches', $payload, $this->headersFor($this->ownerA));
+        $response = $this->postJson('/api/social/matches', $payload, $this->headersFor($this->ownerA));
         $response->assertStatus(409);
     }
 
@@ -347,21 +350,21 @@ class OwnerHostedDropInSessionTest extends TestCase
         ]);
 
         // Filter for TBY
-        $resTBY = $this->getJson('/api/v2/social/matches?skill_level=TBY', $this->headersFor($this->player1));
+        $resTBY = $this->getJson('/api/social/matches?skill_level=TBY', $this->headersFor($this->player1));
         $resTBY->assertStatus(200);
         $matchesTBY = collect($resTBY->json('matches'));
         $this->assertTrue($matchesTBY->contains('id', $s1->id));
         $this->assertFalse($matchesTBY->contains('id', $s2->id));
 
         // Filter for newbie (neither accepts)
-        $resNewbie = $this->getJson('/api/v2/social/matches?skill_level=newbie', $this->headersFor($this->player1));
+        $resNewbie = $this->getJson('/api/social/matches?skill_level=newbie', $this->headersFor($this->player1));
         $resNewbie->assertStatus(200);
         $matchesNewbie = collect($resNewbie->json('matches'));
         $this->assertFalse($matchesNewbie->contains('id', $s1->id));
         $this->assertFalse($matchesNewbie->contains('id', $s2->id));
 
         // Filter for category 'đánh vãng lai'
-        $resCat = $this->getJson('/api/v2/social/matches?category='.urlencode('đánh vãng lai'), $this->headersFor($this->player1));
+        $resCat = $this->getJson('/api/social/matches?category='.urlencode('đánh vãng lai'), $this->headersFor($this->player1));
         $resCat->assertStatus(200);
         $matchesCat = collect($resCat->json('matches'));
         $this->assertTrue($matchesCat->contains('id', $s1->id));
@@ -387,13 +390,13 @@ class OwnerHostedDropInSessionTest extends TestCase
         ]);
 
         // Player 1 joins successfully
-        $res1 = $this->postJson("/api/v2/social/matches/{$post->id}/join", [], $this->headersFor($this->player1));
+        $res1 = $this->postJson("/api/social/matches/{$post->id}/join", [], $this->headersFor($this->player1));
         $res1->assertStatus(201);
         $this->assertSame(1, $post->fresh()->joined_count);
         $this->assertSame('full', $post->fresh()->status);
 
         // Player 2 attempts to join -> 409 conflict
-        $res2 = $this->postJson("/api/v2/social/matches/{$post->id}/join", [], $this->headersFor($this->player2));
+        $res2 = $this->postJson("/api/social/matches/{$post->id}/join", [], $this->headersFor($this->player2));
         $res2->assertStatus(409);
     }
 
@@ -416,12 +419,12 @@ class OwnerHostedDropInSessionTest extends TestCase
         ]);
 
         // Host ends session
-        $res = $this->postJson("/api/v2/social/matches/{$post->id}/end", [], $this->headersFor($this->ownerA));
+        $res = $this->postJson("/api/social/matches/{$post->id}/end", [], $this->headersFor($this->ownerA));
         $res->assertStatus(200);
         $this->assertSame('ended', $res->json('match.status'));
 
         // Cannot join ended session
-        $resJoin = $this->postJson("/api/v2/social/matches/{$post->id}/join", [], $this->headersFor($this->player2));
+        $resJoin = $this->postJson("/api/social/matches/{$post->id}/join", [], $this->headersFor($this->player2));
         $resJoin->assertStatus(409);
     }
 
@@ -444,7 +447,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         ]);
 
         // 1. Cannot save bill before session has ended
-        $resPremature = $this->postJson("/api/v2/social/matches/{$post->id}/bill/draft", [
+        $resPremature = $this->postJson("/api/social/matches/{$post->id}/bill/draft", [
             'actual_headcount' => 4,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -457,7 +460,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $post->update(['status' => 'ended']);
 
         // 2. Reject auxiliary charges (water, grips, drinks)
-        $resAux = $this->postJson("/api/v2/social/matches/{$post->id}/bill/draft", [
+        $resAux = $this->postJson("/api/social/matches/{$post->id}/bill/draft", [
             'actual_headcount' => 4,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -469,7 +472,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $resAux->assertStatus(422);
 
         // 3. Reject zero headcount
-        $resZeroHead = $this->postJson("/api/v2/social/matches/{$post->id}/bill/draft", [
+        $resZeroHead = $this->postJson("/api/social/matches/{$post->id}/bill/draft", [
             'actual_headcount' => 0,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -479,7 +482,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $resZeroHead->assertStatus(422);
 
         // 4. Reject fractional shuttlecock count
-        $resFrac = $this->postJson("/api/v2/social/matches/{$post->id}/bill/draft", [
+        $resFrac = $this->postJson("/api/social/matches/{$post->id}/bill/draft", [
             'actual_headcount' => 4,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -489,7 +492,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $resFrac->assertStatus(422);
 
         // 5. Valid draft succeeds
-        $resValid = $this->postJson("/api/v2/social/matches/{$post->id}/bill/draft", [
+        $resValid = $this->postJson("/api/social/matches/{$post->id}/bill/draft", [
             'actual_headcount' => 4,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -522,16 +525,16 @@ class OwnerHostedDropInSessionTest extends TestCase
         ]);
 
         // 2. Customers join (only 2 users registered)
-        $this->auth($this->player1)->postJson("/api/v2/social/matches/{$post->id}/join", [])->assertStatus(201);
-        $this->auth($this->player2)->postJson("/api/v2/social/matches/{$post->id}/join", [])->assertStatus(201);
+        $this->auth($this->player1)->postJson("/api/social/matches/{$post->id}/join", [])->assertStatus(201);
+        $this->auth($this->player2)->postJson("/api/social/matches/{$post->id}/join", [])->assertStatus(201);
 
         // 3. Host ends session
-        $this->auth($this->ownerA)->postJson("/api/v2/social/matches/{$post->id}/end", [])->assertStatus(200);
+        $this->auth($this->ownerA)->postJson("/api/social/matches/{$post->id}/end", [])->assertStatus(200);
 
         // 4. Actual headcount differs from registered count (e.g. 6 actual players after walk-ins)
         // 2 hours @ 150,000 = 300,000 court. 8 shuttles @ 25,000 = 200,000 shuttles. Total = 500,000.
         // 6 players => 500,000 / 6 = 83,333 VND (is_approximate = true)
-        $finalizeRes = $this->auth($this->ownerA)->postJson("/api/v2/social/matches/{$post->id}/bill/finalize", [
+        $finalizeRes = $this->auth($this->ownerA)->postJson("/api/social/matches/{$post->id}/bill/finalize", [
             'actual_headcount' => 6,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -550,7 +553,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $this->assertSame($this->ownerA->id, $finalizedById);
 
         // 5. Retry with exact same data succeeds idempotently
-        $retryRes = $this->auth($this->ownerA)->postJson("/api/v2/social/matches/{$post->id}/bill/finalize", [
+        $retryRes = $this->auth($this->ownerA)->postJson("/api/social/matches/{$post->id}/bill/finalize", [
             'actual_headcount' => 6,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -560,7 +563,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $retryRes->assertStatus(200);
 
         // 6. Conflicting edit after finalization is rejected (409)
-        $conflictRes = $this->auth($this->ownerA)->postJson("/api/v2/social/matches/{$post->id}/bill/finalize", [
+        $conflictRes = $this->auth($this->ownerA)->postJson("/api/social/matches/{$post->id}/bill/finalize", [
             'actual_headcount' => 7,
             'court_duration_minutes' => 120,
             'court_hourly_rate' => 150000,
@@ -570,13 +573,13 @@ class OwnerHostedDropInSessionTest extends TestCase
         $conflictRes->assertStatus(409);
 
         // 7. Registered participant can read the finalized bill
-        $playerRead = $this->auth($this->player1)->getJson("/api/v2/social/matches/{$post->id}/bill");
+        $playerRead = $this->auth($this->player1)->getJson("/api/social/matches/{$post->id}/bill");
         $playerRead->assertStatus(200);
         $this->assertSame(500000, $playerRead->json('bill.total_amount'));
         $this->assertSame(83333, $playerRead->json('bill.per_person_amount'));
 
         // 8. Unrelated stranger cannot read the bill
-        $strangerRead = $this->auth($this->stranger)->getJson("/api/v2/social/matches/{$post->id}/bill");
+        $strangerRead = $this->auth($this->stranger)->getJson("/api/social/matches/{$post->id}/bill");
         $strangerRead->assertStatus(403);
     }
 }

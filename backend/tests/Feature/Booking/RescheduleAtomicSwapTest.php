@@ -211,10 +211,10 @@ class RescheduleAtomicSwapTest extends TestCase
         $this->priceSlot($fixture, $start, $endTime, $price);
         $headers = ['X-Organization-ID' => (string) $fixture['organization']->id];
         $quote = $this->actingAs($fixture['payer'])->withHeaders($headers + ['Idempotency-Key' => 'q-'.$tag])
-            ->postJson('/api/v2/price-quotes', ['court_id' => $fixture['court']->id, 'slots' => [$start->toIso8601String()]])
+            ->postJson('/api/price-quotes', ['court_id' => $fixture['court']->id, 'slots' => [$start->toIso8601String()]])
             ->assertCreated()->json('quote');
         $reservation = $this->actingAs($fixture['payer'])->withHeaders($headers + ['Idempotency-Key' => 'c-'.$tag])
-            ->postJson('/api/v2/reservations/checkout', ['quote_id' => $quote['id']])
+            ->postJson('/api/reservations/checkout', ['quote_id' => $quote['id']])
             ->assertCreated()->json('reservation');
 
         $record = Reservation::where('code', $reservation['code'])->firstOrFail();
@@ -242,7 +242,7 @@ class RescheduleAtomicSwapTest extends TestCase
     {
         return $this->actingAs($fixture['payer'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson("/api/v2/reservations/{$code}/reschedule-preview", [
+            ->postJson("/api/reservations/{$code}/reschedule-preview", [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$newStart->toIso8601String()],
             ]);
@@ -261,7 +261,7 @@ class RescheduleAtomicSwapTest extends TestCase
 
         return $this->actingAs($fixture['payer'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson("/api/v2/reservations/{$code}/reschedule-requests", $payload);
+            ->postJson("/api/reservations/{$code}/reschedule-requests", $payload);
     }
 
     private function tenant(): array
@@ -352,7 +352,7 @@ class RescheduleAtomicSwapTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

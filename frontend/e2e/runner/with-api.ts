@@ -7,7 +7,6 @@ function apiContext(page: Page) {
   const api = createE2EApiClient(page, manifest)
   return {
     api,
-    apiV2: createE2EApiClient(page, manifest, 'v2'),
     authApi: {
       login: async (credentials: { email: string; password: string }) => {
         await api.csrf()
@@ -16,9 +15,7 @@ function apiContext(page: Page) {
       logout: () => logoutE2EActor(page, manifest),
     },
     apiUrl: (path: string) =>
-      `${manifest.backend.url}/api/v1${path.startsWith('/') ? path : `/${path}`}`,
-    apiV2Url: (path: string) =>
-      `${manifest.backend.url}/api/v2${path.startsWith('/') ? path : `/${path}`}`,
+      `${manifest.backend.url}/api${path.startsWith('/') ? path : `/${path}`}`,
   }
 }
 

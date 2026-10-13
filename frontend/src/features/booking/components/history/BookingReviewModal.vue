@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { V2Reservation } from '../../types/v2Reservation'
+import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
 
 defineProps<{
   show: boolean
-  booking: V2Reservation | null
+  booking: Reservation | null
   rating: number
   body: string
   submitting?: boolean

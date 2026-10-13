@@ -113,7 +113,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 100,
@@ -141,7 +141,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
         // Requested: 10 points -> 10 * 100 / 3 = 333.333... -> floor 333 VND
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 10,
@@ -161,7 +161,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
         // 1. Zero points
-        $resZero = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resZero = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 0,
@@ -169,7 +169,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $resZero->assertStatus(422);
 
         // 2. Negative points
-        $resNeg = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resNeg = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => -50,
@@ -177,7 +177,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $resNeg->assertStatus(422);
 
         // 3. Fractional points
-        $resFrac = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resFrac = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 12.5,
@@ -192,7 +192,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 100, // exceeds balance of 50
@@ -210,7 +210,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 1,
@@ -230,7 +230,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
         // 4500 points -> 225,000 VND discount > 200,000 VND payable
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 4500,
@@ -248,7 +248,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
         // 1. When points are requested, returns 422
-        $resPoints = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resPoints = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 100,
@@ -257,7 +257,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         $resPoints->assertJsonValidationErrors(['loyalty_policy']);
 
         // 2. Read-only discovery without points succeeds with policy null
-        $resDiscovery = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resDiscovery = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
         ]);
@@ -291,7 +291,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'points' => 100,
@@ -326,7 +326,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         // Coupon discount: 50,000 VND -> net payable before points: 150,000 VND
         // Points: 100 points -> 5,000 VND discount
         // Final remaining: 145,000 VND
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'coupon_code' => 'SAVE50K',
@@ -372,7 +372,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
         ]);
         $coupon->update(['can_combine_with_membership' => false]);
 
-        $combined = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $combined = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'coupon_code' => 'SAVE50K',
@@ -389,7 +389,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         $futureTime = now()->addDay()->setTime(10, 0)->toIso8601String();
 
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'court_id' => $court->id,
             'slots' => [$futureTime],
             'expected_policy_version' => 1, // client has stale version 1
@@ -420,7 +420,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'expires_at' => now()->addMinutes(15),
         ]);
 
-        $resForeign = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resForeign = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'quote_token' => $foreignQuote->quote_token,
             'points' => 100,
         ]);
@@ -440,7 +440,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'expires_at' => now()->subMinutes(10), // expired!
         ]);
 
-        $resExpired = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resExpired = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'quote_token' => $expiredQuote->quote_token,
             'points' => 100,
         ]);
@@ -461,7 +461,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'expires_at' => now()->addMinutes(15),
         ]);
 
-        $resValid = $this->actingAs($user)->postJson('/api/v2/loyalty/preview', [
+        $resValid = $this->actingAs($user)->postJson('/api/loyalty/preview', [
             'quote_token' => $validQuote->quote_token,
             'points' => 100,
         ]);
@@ -477,7 +477,7 @@ class LoyaltyPreviewPolicyTest extends TestCase
 
         $initialLedgerCount = PointLedger::count();
 
-        $res = $this->actingAs($user)->postJson('/api/v2/loyalty/redeem', [
+        $res = $this->actingAs($user)->postJson('/api/loyalty/redeem', [
             'points' => 100,
             'source_type' => 'custom',
             'source_id' => 999,

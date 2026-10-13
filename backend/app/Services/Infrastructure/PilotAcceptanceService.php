@@ -10,7 +10,7 @@ class PilotAcceptanceService
     public const SUITES = [
         'tenant_isolation' => ['tests/Feature/TenantIsolationAndRoleMatrixTest.php'],
         'financial_integrity' => ['tests/Feature/FinancialFoundationTest.php'],
-        'reservations_and_v1' => ['tests/Feature/V2ReservationsAndPricingTest.php', 'tests/Feature/Readiness/LegacyMigrationRehearsalTest.php'],
+        'reservations_and_v1' => ['tests/Feature/ReservationsAndPricingTest.php', 'tests/Feature/Readiness/LegacyMigrationRehearsalTest.php'],
         'security_static' => ['lint'],
     ];
 

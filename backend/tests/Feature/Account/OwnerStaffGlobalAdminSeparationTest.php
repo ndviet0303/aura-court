@@ -89,13 +89,13 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         $court = $this->createCourt($venue, 'Court 1');
 
         // 1. Can list venues (sees their own venue)
-        $venuesRes = $this->actingAs($owner)->getJson('/api/v1/admin/venues');
+        $venuesRes = $this->actingAs($owner)->getJson('/api/admin/venues');
         $venuesRes->assertOk();
         $this->assertCount(1, $venuesRes->json());
         $this->assertEquals($venue->id, $venuesRes->json('0.id'));
 
         // 2. Can update their venue
-        $updateRes = $this->actingAs($owner)->patchJson("/api/v1/admin/venues/{$venue->id}", [
+        $updateRes = $this->actingAs($owner)->patchJson("/api/admin/venues/{$venue->id}", [
             'address' => '456 Updated Street',
         ]);
         $updateRes->assertOk();
@@ -105,12 +105,12 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         ]);
 
         // 3. Can list courts
-        $courtsRes = $this->actingAs($owner)->getJson('/api/v1/admin/courts');
+        $courtsRes = $this->actingAs($owner)->getJson('/api/admin/courts');
         $courtsRes->assertOk();
         $this->assertCount(1, $courtsRes->json());
 
         // 4. Can set court prices (must be 60 minutes)
-        $priceRes = $this->actingAs($owner)->postJson("/api/v1/admin/courts/{$court->id}/prices", [
+        $priceRes = $this->actingAs($owner)->postJson("/api/admin/courts/{$court->id}/prices", [
             'weekday' => 1,
             'starts_at' => '08:00',
             'ends_at' => '09:00',
@@ -120,7 +120,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         $priceRes->assertCreated();
 
         // 5. Can view report
-        $reportRes = $this->actingAs($owner)->getJson('/api/v1/admin/reports');
+        $reportRes = $this->actingAs($owner)->getJson('/api/admin/reports');
         $reportRes->assertOk();
     }
 
@@ -152,7 +152,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         $courtBeta = $this->createCourt($venueBeta, 'Beta Court 1');
 
         // 1. Venues list only contains Alpha, not Beta
-        $venuesRes = $this->actingAs($ownerAlpha)->getJson('/api/v1/admin/venues');
+        $venuesRes = $this->actingAs($ownerAlpha)->getJson('/api/admin/venues');
         $venuesRes->assertOk();
         $venueIds = collect($venuesRes->json())->pluck('id')->toArray();
         $this->assertContains($venueAlpha->id, $venueIds);
@@ -160,17 +160,17 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 2. Cannot update Beta venue
         $this->actingAs($ownerAlpha)
-            ->patchJson("/api/v1/admin/venues/{$venueBeta->id}", ['address' => 'Hacked Address'])
+            ->patchJson("/api/admin/venues/{$venueBeta->id}", ['address' => 'Hacked Address'])
             ->assertStatus(403);
 
         // 3. Cannot deactivate Beta venue
         $this->actingAs($ownerAlpha)
-            ->deleteJson("/api/v1/admin/venues/{$venueBeta->id}")
+            ->deleteJson("/api/admin/venues/{$venueBeta->id}")
             ->assertStatus(403);
 
         // 4. Cannot create court in Beta venue
         $this->actingAs($ownerAlpha)
-            ->postJson('/api/v1/admin/courts', [
+            ->postJson('/api/admin/courts', [
                 'venue_id' => $venueBeta->id,
                 'name' => 'Hacked Court',
             ])
@@ -178,7 +178,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 5. Cannot set prices on Beta court
         $this->actingAs($ownerAlpha)
-            ->postJson("/api/v1/admin/courts/{$courtBeta->id}/prices", [
+            ->postJson("/api/admin/courts/{$courtBeta->id}/prices", [
                 'weekday' => 1,
                 'starts_at' => '08:00',
                 'ends_at' => '10:00',
@@ -188,11 +188,11 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 6. Cannot query or export reports for Beta venue
         $this->actingAs($ownerAlpha)
-            ->getJson("/api/v1/admin/reports?venue_id={$venueBeta->id}")
+            ->getJson("/api/admin/reports?venue_id={$venueBeta->id}")
             ->assertStatus(403);
 
         $this->actingAs($ownerAlpha)
-            ->getJson("/api/v1/admin/reports.csv?venue_id={$venueBeta->id}")
+            ->getJson("/api/admin/reports.csv?venue_id={$venueBeta->id}")
             ->assertStatus(403);
     }
 
@@ -220,17 +220,17 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 1. Can update assigned Venue A
         $this->actingAs($manager)
-            ->patchJson("/api/v1/admin/venues/{$venueA->id}", ['address' => 'Updated Venue A'])
+            ->patchJson("/api/admin/venues/{$venueA->id}", ['address' => 'Updated Venue A'])
             ->assertOk();
 
         // 2. Cannot update sibling Venue B
         $this->actingAs($manager)
-            ->patchJson("/api/v1/admin/venues/{$venueB->id}", ['address' => 'Hacked Venue B'])
+            ->patchJson("/api/admin/venues/{$venueB->id}", ['address' => 'Hacked Venue B'])
             ->assertStatus(403);
 
         // 3. Can set prices on Court A
         $this->actingAs($manager)
-            ->postJson("/api/v1/admin/courts/{$courtA->id}/prices", [
+            ->postJson("/api/admin/courts/{$courtA->id}/prices", [
                 'weekday' => 2,
                 'starts_at' => '14:00',
                 'ends_at' => '15:00',
@@ -240,7 +240,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 4. Cannot set prices on sibling Court B
         $this->actingAs($manager)
-            ->postJson("/api/v1/admin/courts/{$courtB->id}/prices", [
+            ->postJson("/api/admin/courts/{$courtB->id}/prices", [
                 'weekday' => 2,
                 'starts_at' => '14:00',
                 'ends_at' => '15:00',
@@ -250,11 +250,11 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 5. Cannot export reports for sibling Venue B
         $this->actingAs($manager)
-            ->getJson("/api/v1/admin/reports?venue_id={$venueB->id}")
+            ->getJson("/api/admin/reports?venue_id={$venueB->id}")
             ->assertStatus(403);
 
         $this->actingAs($manager)
-            ->getJson("/api/v1/admin/reports.csv?venue_id={$venueB->id}")
+            ->getJson("/api/admin/reports.csv?venue_id={$venueB->id}")
             ->assertStatus(403);
     }
 
@@ -273,7 +273,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $inviteRes = $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/members", [
+        $inviteRes = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/members", [
             'email' => 'new_owner@test.local',
             'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
         ]);
@@ -306,19 +306,19 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         ]);
 
         // 1. KYC review denied
-        $this->actingAs($owner)->getJson('/api/v1/admin/kyc')->assertStatus(403);
+        $this->actingAs($owner)->getJson('/api/admin/kyc')->assertStatus(403);
 
-        // 2. Disputes arbitration denied
-        $this->actingAs($owner)->getJson('/api/v1/admin/disputes')->assertStatus(403);
+        // 2. The dispute queue opens, scoped to the owner's organization (DisputeTenantAndPartyScopingTest)
+        $this->actingAs($owner)->getJson('/api/admin/disputes')->assertOk();
 
         // 3. Partner application review denied
-        $this->actingAs($owner)->getJson('/api/v1/admin/partner/applications')->assertStatus(403);
+        $this->actingAs($owner)->getJson('/api/admin/partner/applications')->assertStatus(403);
 
         // 4. Publication queue denied
-        $this->actingAs($owner)->getJson('/api/v1/admin/venues/publication-queue')->assertStatus(403);
+        $this->actingAs($owner)->getJson('/api/admin/venues/publication-queue')->assertStatus(403);
 
         // 5. Payment review denied
-        $this->actingAs($owner)->getJson('/api/v1/admin/payments')->assertStatus(403);
+        $this->actingAs($owner)->getJson('/api/admin/payments')->assertStatus(403);
     }
 
     /**
@@ -338,12 +338,12 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 1. Cashier cannot modify organization settings
         $this->actingAs($cashier)
-            ->patchJson("/api/v1/organizations/{$org->id}", ['name' => 'Hacked Club'])
+            ->patchJson("/api/organizations/{$org->id}", ['name' => 'Hacked Club'])
             ->assertStatus(403);
 
         // 2. Cashier cannot add or manage organization members
         $this->actingAs($cashier)
-            ->postJson("/api/v1/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/members", [
                 'email' => 'cashier_friend@test.local',
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
@@ -351,7 +351,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 3. Cashier cannot access payouts administration
         $this->actingAs($cashier)
-            ->getJson('/api/v2/finance/payouts')
+            ->getJson('/api/finance/payouts')
             ->assertStatus(403);
     }
 }

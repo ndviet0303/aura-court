@@ -62,18 +62,23 @@ class TenantScopedHoldExpiryTest extends TestCase
 
         $sweep = app(ExpirePendingBookings::class);
         $this->assertSame(0, $sweep->execute(200, []));
-        $this->assertSame(2, $sweep->execute(200, [$fixture['org1']['org']->id]));
-        foreach ($holds['org1'] as $model) {
-            $this->assertSame('expired', $model->fresh()->status);
-        }
+        $this->assertSame(1, $sweep->execute(200, [$fixture['org1']['org']->id]));
+        $this->assertSweptOnlyTheReservation($holds['org1']);
         $this->assertSame('pending_payment', $holds['org2']['booking']->fresh()->status);
         foreach (['bookingSlot', 'reservation', 'reservationSlot'] as $key) {
             $this->assertSame('held', $holds['org2'][$key]->fresh()->status);
         }
         $this->assertSame(0, $sweep->execute(200, [$fixture['org1']['org']->id]));
-        $this->assertSame(2, $sweep->execute());
-        foreach ($holds['org2'] as $model) {
-            $this->assertSame('expired', $model->fresh()->status);
-        }
+        $this->assertSame(1, $sweep->execute());
+        $this->assertSweptOnlyTheReservation($holds['org2']);
+    }
+
+    /** V1 rows are frozen history: the sweep expires the reservation and never touches the legacy booking. */
+    private function assertSweptOnlyTheReservation(array $hold): void
+    {
+        $this->assertSame('expired', $hold['reservation']->fresh()->status);
+        $this->assertSame('expired', $hold['reservationSlot']->fresh()->status);
+        $this->assertSame('pending_payment', $hold['booking']->fresh()->status);
+        $this->assertSame('held', $hold['bookingSlot']->fresh()->status);
     }
 }

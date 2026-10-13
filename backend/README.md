@@ -16,14 +16,15 @@ php artisan serve --host=127.0.0.1 --port=8000
 
 ## Endpoint chính
 
-Tất cả endpoint phiên bản hiện tại nằm dưới `/api/v1`:
+Tất cả endpoint nằm dưới `/api` (không có số phiên bản):
 
 - `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`
 - `POST /auth/forgot-password`, `POST /auth/reset-password`
 - `GET /courts`, `GET /availability`
-- `GET/POST /bookings`, đặt định kỳ, hủy, đổi lịch và trạng thái thanh toán
-- `POST /webhooks/sepay`
-- Nhóm `/admin/*` cho sân, giá, khóa sân, booking, thanh toán, refund và báo cáo
+- `POST /price-quotes`, `POST /reservations` (giữ chỗ), `POST /reservations/checkout`, `GET /reservations/{id}`, `GET /me/reservations`
+- `POST /recurring-series` cho đặt định kỳ
+- `POST /webhooks/sepay`, `POST /webhooks/sepay/connections/{routingId}`
+- Nhóm `/admin/*` cho sân, giá, khóa sân, đặt sân (`/admin/reservations`), thanh toán, refund và báo cáo
 
 `GET /` trả trạng thái API dạng JSON. `GET /up` dùng cho health check.
 

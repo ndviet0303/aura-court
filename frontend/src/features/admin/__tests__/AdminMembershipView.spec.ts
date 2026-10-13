@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminMembershipView from '@/features/admin/views/AdminMembershipView.vue'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/membership' }),
@@ -16,12 +16,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn<() => Promise<unknown>>(),
-    post: vi.fn<() => Promise<unknown>>(),
-    patch: vi.fn<() => Promise<unknown>>(),
-    delete: vi.fn<() => Promise<unknown>>(),
-  },
-  apiV2: {
     get: vi.fn<() => Promise<unknown>>(),
     post: vi.fn<() => Promise<unknown>>(),
     patch: vi.fn<() => Promise<unknown>>(),
@@ -116,7 +110,7 @@ describe('AdminMembershipView', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    vi.mocked(apiV2.get).mockImplementation(((url: string) => {
+    vi.mocked(api.get).mockImplementation(((url: string) => {
       if (url.includes('/admin/memberships/plans')) return Promise.resolve(samplePlans)
       if (url.includes('/admin/memberships/loyalty-config')) {
         return Promise.resolve({
@@ -140,9 +134,9 @@ describe('AdminMembershipView', () => {
       return Promise.resolve([])
     }) as any)
 
-    vi.mocked(apiV2.patch).mockResolvedValue({ message: 'Success' } as any)
-    vi.mocked(apiV2.post).mockResolvedValue({ message: 'Success' } as any)
-    vi.mocked(apiV2.delete).mockResolvedValue({ message: 'Success' } as any)
+    vi.mocked(api.patch).mockResolvedValue({ message: 'Success' } as any)
+    vi.mocked(api.post).mockResolvedValue({ message: 'Success' } as any)
+    vi.mocked(api.delete).mockResolvedValue({ message: 'Success' } as any)
   })
 
   it('renders page header, 4 KPI stats, and existing VIP membership plans correctly', async () => {

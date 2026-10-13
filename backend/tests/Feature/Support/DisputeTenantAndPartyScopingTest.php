@@ -92,7 +92,7 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $disputeAlpha = $this->createDispute($orgA, $venueA, $user1, $user2, 'DSP-ALPHA-01');
 
         // Owner of Tenant Beta attempts to view Tenant Alpha's dispute
-        $res = $this->actingAs($ownerB)->getJson("/api/v1/disputes/{$disputeAlpha->id}");
+        $res = $this->actingAs($ownerB)->getJson("/api/disputes/{$disputeAlpha->id}");
         // MUST be 404 without disclosing case data
         $res->assertStatus(404);
         $res->assertJsonPath('message', 'Hồ sơ tranh chấp không tồn tại.');
@@ -113,7 +113,7 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $disputeAlpha = $this->createDispute($orgA, $venueA, $user1, $user2, 'DSP-ALPHA-02');
 
         // Owner of Tenant Beta attempts to arbitrate Tenant Alpha's dispute
-        $res = $this->actingAs($ownerB)->postJson("/api/v1/disputes/{$disputeAlpha->id}/arbitrate", [
+        $res = $this->actingAs($ownerB)->postJson("/api/disputes/{$disputeAlpha->id}/arbitrate", [
             'decision' => 'resolve',
             'notes' => 'Hacked resolution',
         ]);
@@ -139,14 +139,14 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $disputeB = $this->createDispute($orgB, $venueB, $user1, $user2, 'DSP-BBB-01');
 
         // Owner Alpha lists disputes
-        $resA = $this->actingAs($ownerA)->getJson('/api/v1/disputes');
+        $resA = $this->actingAs($ownerA)->getJson('/api/disputes');
 
         $codesA = collect($resA->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-AAA-01', $codesA);
         $this->assertNotContains('DSP-BBB-01', $codesA);
 
         // Owner Beta lists disputes
-        $resB = $this->actingAs($ownerB)->getJson('/api/v1/disputes');
+        $resB = $this->actingAs($ownerB)->getJson('/api/disputes');
 
         $codesB = collect($resB->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-BBB-01', $codesB);
@@ -171,22 +171,22 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $disputeCarol = $this->createDispute($orgA, $venueA, $bob, $carol, 'DSP-BOB-CAROL');
 
         // Alice lists disputes: only sees dispute where she is complainant
-        $aliceList = $this->actingAs($alice)->getJson('/api/v1/disputes');
+        $aliceList = $this->actingAs($alice)->getJson('/api/disputes');
         $aliceCodes = collect($aliceList->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-ALICE-BOB', $aliceCodes);
         $this->assertNotContains('DSP-BOB-CAROL', $aliceCodes);
 
         // Alice can view her own dispute
-        $this->actingAs($alice)->getJson("/api/v1/disputes/{$disputeAlice->id}")->assertOk();
+        $this->actingAs($alice)->getJson("/api/disputes/{$disputeAlice->id}")->assertOk();
 
         // Alice CANNOT view Bob & Carol's dispute
-        $this->actingAs($alice)->getJson("/api/v1/disputes/{$disputeCarol->id}")->assertStatus(404);
+        $this->actingAs($alice)->getJson("/api/disputes/{$disputeCarol->id}")->assertStatus(404);
 
         // Bob sees the dispute he filed, but not the venue's case that merely names him as respondent
-        $bobCodes = collect($this->actingAs($bob)->getJson('/api/v1/disputes')->json('data'))->pluck('dispute_code')->toArray();
+        $bobCodes = collect($this->actingAs($bob)->getJson('/api/disputes')->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-BOB-CAROL', $bobCodes);
         $this->assertNotContains('DSP-ALICE-BOB', $bobCodes);
-        $this->actingAs($bob)->getJson("/api/v1/disputes/{$disputeAlice->id}")->assertStatus(404);
+        $this->actingAs($bob)->getJson("/api/disputes/{$disputeAlice->id}")->assertStatus(404);
     }
 
     /**
@@ -210,12 +210,12 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $this->createDispute($orgB, $venueB, $u1, $u2, 'DSP-B3');
 
         // Owner A stats: pending_count MUST be 2
-        $resA = $this->actingAs($ownerA)->getJson('/api/v1/disputes/stats');
+        $resA = $this->actingAs($ownerA)->getJson('/api/disputes/stats');
         $resA->assertOk();
         $this->assertSame(2, $resA->json('stats.pending_count'));
 
         // Owner B stats: pending_count MUST be 3
-        $resB = $this->actingAs($ownerB)->getJson('/api/v1/disputes/stats');
+        $resB = $this->actingAs($ownerB)->getJson('/api/disputes/stats');
         $resB->assertOk();
         $this->assertSame(3, $resB->json('stats.pending_count'));
     }
@@ -237,14 +237,14 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         // Platform admin sees both disputes in general list
-        $res = $this->actingAs($admin)->getJson('/api/v1/admin/disputes');
+        $res = $this->actingAs($admin)->getJson('/api/admin/disputes');
         $res->assertOk();
         $codes = collect($res->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-A-GLOBAL', $codes);
         $this->assertContains('DSP-B-GLOBAL', $codes);
 
         // Filter by organization_id = orgA
-        $resFiltered = $this->actingAs($admin)->getJson("/api/v1/admin/disputes?organization_id={$orgA->id}");
+        $resFiltered = $this->actingAs($admin)->getJson("/api/admin/disputes?organization_id={$orgA->id}");
         $resFiltered->assertOk();
         $filteredCodes = collect($resFiltered->json('data'))->pluck('dispute_code')->toArray();
         $this->assertContains('DSP-A-GLOBAL', $filteredCodes);
@@ -265,7 +265,7 @@ class DisputeTenantAndPartyScopingTest extends TestCase
         $reservation = Reservation::create(['organization_id' => $orgB->id, 'user_id' => $customer->id, 'court_id' => $court->id, 'code' => 'RSV-BETA-1', 'status' => 'completed', 'currency' => 'VND', 'total_amount' => 100000, 'payment_model' => 'direct_owner_v1']);
         $this->createDispute($orgB, $venueB, $customer, $owner, 'DSP-BETA-RSV')->update(['reservation_id' => $reservation->id]);
 
-        $res = $this->actingAs($owner)->getJson('/api/v2/admin/disputes', ['X-Organization-Id' => (string) $orgA->id]);
+        $res = $this->actingAs($owner)->getJson('/api/admin/disputes', ['X-Organization-Id' => (string) $orgA->id]);
 
         $res->assertOk();
         $row = collect($res->json('data'))->firstWhere('dispute_code', 'DSP-BETA-RSV');

@@ -177,7 +177,6 @@ export interface ArrangedStock {
 export interface ExpiredHoldsResult {
   status: string
   expired_count: number
-  backdated_bookings: string[]
   backdated_reservations: string[]
 }
 
@@ -511,7 +510,6 @@ export function arrangePosStock(
 export function expireHolds(
   manifest: RunManifest,
   options: {
-    bookingCode?: string
     reservationCode?: string
     minutes?: number
   } = {},
@@ -524,9 +522,6 @@ export function expireHolds(
     `--minutes=${options.minutes || 30}`,
   ]
 
-  if (options.bookingCode) {
-    args.push(`--booking-code=${options.bookingCode}`)
-  }
   if (options.reservationCode) {
     args.push(`--reservation-code=${options.reservationCode}`)
   }
@@ -661,7 +656,7 @@ function sendProductionPosWebhook(
       fwrite(STDERR, "Production POS webhook credential is not configured.\\n");
       exit(1);
     }
-    $client = curl_init('https://court-api.ziet.dev/api/v1/webhooks/sepay');
+    $client = curl_init('https://court-api.ziet.dev/api/webhooks/sepay');
     curl_setopt_array($client, [
       CURLOPT_POST => true, CURLOPT_POSTFIELDS => $scope['rawBody'],
       CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true,
@@ -706,8 +701,8 @@ export async function sendSyntheticPaymentWebhook(
     return sendProductionPosWebhook(manifest, options, rawBody)
   }
   const webhookUrl = isPos
-    ? `${manifest.backend.url}/api/v1/webhooks/sepay`
-    : `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${options.routingId}`
+    ? `${manifest.backend.url}/api/webhooks/sepay`
+    : `${manifest.backend.url}/api/webhooks/sepay/connections/${options.routingId}`
   const secret = isPos ? 'test_sepay_hmac_secret_e2e' : options.secret
   const signatureHash = crypto
     .createHmac('sha256', secret)

@@ -33,18 +33,18 @@ class VenueFeatureTest extends TestCase
         $admin = $this->admin();
         $payload = ['name' => 'Aura Hà Nội', 'address' => '1 Phố Test', 'google_maps_url' => 'https://maps.google.com/maps?q=aura'];
 
-        $first = $this->actingAs($admin)->postJson('/api/v1/admin/venues', $payload)->assertCreated();
-        $second = $this->actingAs($admin)->postJson('/api/v1/admin/venues', $payload)->assertCreated();
+        $first = $this->actingAs($admin)->postJson('/api/admin/venues', $payload)->assertCreated();
+        $second = $this->actingAs($admin)->postJson('/api/admin/venues', $payload)->assertCreated();
         $firstSlug = $first->json('slug');
         $second->assertJsonPath('slug', $firstSlug.'-2');
 
-        $this->actingAs($admin)->patchJson('/api/v1/admin/venues/'.$first->json('id'), ['name' => 'Aura Hồ Chí Minh', ...$payload])
+        $this->actingAs($admin)->patchJson('/api/admin/venues/'.$first->json('id'), ['name' => 'Aura Hồ Chí Minh', ...$payload])
             ->assertOk()->assertJsonPath('slug', $firstSlug)->assertJsonPath('share_url', config('app.frontend_url').'/venues/'.$firstSlug.'/directions');
     }
 
     public function test_venue_rejects_non_google_maps_urls(): void
     {
-        $this->actingAs($this->admin())->postJson('/api/v1/admin/venues', [
+        $this->actingAs($this->admin())->postJson('/api/admin/venues', [
             'name' => 'Sai link', 'address' => 'Địa chỉ', 'google_maps_url' => 'https://example.com/maps',
         ])->assertUnprocessable()->assertJsonValidationErrors('google_maps_url');
     }
@@ -55,19 +55,22 @@ class VenueFeatureTest extends TestCase
         $court = Court::create(['name' => 'Sân inactive', 'venue_id' => $venue->id, 'is_active' => true]);
         $venue->update(['is_active' => false]);
 
-        $this->getJson('/api/v1/venues/'.$venue->slug)->assertNotFound();
-        $this->getJson('/api/v1/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
+        $this->getJson('/api/venues/'.$venue->slug)->assertNotFound();
+        $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
 
         $customer = User::factory()->create();
-        $this->actingAs($customer)->postJson('/api/v1/bookings', ['court_id' => $court->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()]])->assertNotFound();
+        $this->actingAs($customer)->withHeader('Idempotency-Key', 'inactive-venue-checkout')
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()]])
+            ->assertNotFound()->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 
     public function test_regular_user_cannot_manage_venues_and_demo_mutations_roll_back(): void
     {
-        $this->actingAs(User::factory()->create())->getJson('/api/v1/admin/venues')->assertForbidden();
+        $this->actingAs(User::factory()->create())->getJson('/api/admin/venues')->assertForbidden();
 
         $demo = User::factory()->create(['role' => 'admin', 'email' => 'venue-demo@demo.auracourt.vn']);
-        $this->actingAs($demo)->postJson('/api/v1/admin/venues', [
+        $this->actingAs($demo)->postJson('/api/admin/venues', [
             'name' => 'Demo venue', 'address' => 'Địa chỉ demo', 'google_maps_url' => 'https://maps.app.goo.gl/demo',
         ])->assertCreated()->assertHeader('X-Demo-Simulated', 'true');
         $this->assertDatabaseMissing('venues', ['address' => 'Địa chỉ demo']);

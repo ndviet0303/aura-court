@@ -139,7 +139,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
         // Grand Total = 136,080 VND
         // Cash tendered = 150,000 VND => Change due = 13,920 VND
 
-        $response = $this->actingAs($this->cashier)->postJson('/api/v2/pos/quote', [
+        $response = $this->actingAs($this->cashier)->postJson('/api/pos/quote', [
             'items' => [
                 [
                     'product_id' => $this->rentalProduct->id,
@@ -171,7 +171,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
     {
         $headers = ['X-Organization-Id' => $this->organization->id];
 
-        $response = $this->actingAs($this->cashier)->postJson('/api/v2/pos/quote', [
+        $response = $this->actingAs($this->cashier)->postJson('/api/pos/quote', [
             'items' => [
                 [
                     'product_id' => $this->drinkProduct->id,
@@ -229,7 +229,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
         // Grand total = 97,200 VND
         // Cash tendered = 100,000 VND => Change due = 2,800 VND
 
-        $response = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 [
                     'product_id' => $this->rentalProduct->id,
@@ -290,8 +290,8 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
         $this->assertSame($order->total_amount, $journal->total_credit);
         $this->assertSame($order->receipt['grand_total'], $journal->total_credit);
 
-        // 5. Reload via GET /api/v2/pos/orders/{id} confirms saved receipt agrees
-        $showResponse = $this->actingAs($this->cashier)->getJson("/api/v2/pos/orders/{$orderId}", [
+        // 5. Reload via GET /api/pos/orders/{id} confirms saved receipt agrees
+        $showResponse = $this->actingAs($this->cashier)->getJson("/api/pos/orders/{$orderId}", [
             'X-Organization-Id' => $this->organization->id,
         ]);
 

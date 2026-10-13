@@ -3,7 +3,6 @@
 namespace App\Services\Reservation;
 
 use App\Exceptions\CommitmentConflictException;
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\MatchPost;
 use App\Models\ReservationSlot;
@@ -81,21 +80,7 @@ class CourtCommitmentConflictService
         $overlapStartUtc = $overlapStart?->copy()->utc();
         $overlapEndUtc = $overlapEnd?->copy()->utc();
 
-        $bookings = BookingSlot::query()
-            ->whereIn('court_id', $courtIds)
-            ->where('ends_at', '>', $overlapStartUtc ?? $notBeforeUtc)
-            ->when($overlapEndUtc, fn ($query) => $query->where('starts_at', '<', $overlapEndUtc))
-            ->whereHas('booking', fn ($query) => $query->whereIn('status', ['confirmed', 'pending_payment']))
-            ->with(['booking', 'court.venue.organization'])
-            ->get()
-            ->map(fn (BookingSlot $slot): array => [
-                'court' => $slot->court,
-                'starts_at' => $slot->starts_at,
-                'ends_at' => $slot->ends_at,
-                'reference' => $slot->booking?->code ?: "BK-{$slot->booking_id}",
-            ]);
-
-        $reservations = ReservationSlot::query()
+        return ReservationSlot::query()
             ->whereIn('court_id', $courtIds)
             ->where('ends_at', '>', $overlapStartUtc ?? $notBeforeUtc)
             ->when($overlapEndUtc, fn ($query) => $query->where('starts_at', '<', $overlapEndUtc))
@@ -108,8 +93,6 @@ class CourtCommitmentConflictService
                 'ends_at' => $slot->ends_at,
                 'reference' => $slot->reservation?->code ?: "RES-{$slot->reservation_id}",
             ]);
-
-        return $bookings->concat($reservations);
     }
 
     private function abortOnConflicts(array $references, string $message): void

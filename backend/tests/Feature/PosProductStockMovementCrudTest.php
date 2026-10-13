@@ -70,7 +70,7 @@ class PosProductStockMovementCrudTest extends TestCase
         ];
 
         // 1. Create Product
-        $createRes = $this->actingAs($this->managerA)->postJson('/api/v2/pos/products', [
+        $createRes = $this->actingAs($this->managerA)->postJson('/api/pos/products', [
             'sku' => 'GRIP-YONEX-01',
             'barcode' => '8938500123456',
             'name' => 'Quấn cán Yonex Super Grap',
@@ -102,7 +102,7 @@ class PosProductStockMovementCrudTest extends TestCase
         ]);
 
         // 2. Read Product
-        $showRes = $this->actingAs($this->cashierA)->getJson("/api/v2/pos/products/{$productId}", [
+        $showRes = $this->actingAs($this->cashierA)->getJson("/api/pos/products/{$productId}", [
             'X-Organization-Id' => $this->tenantA->id,
         ]);
         $showRes->assertOk()
@@ -110,7 +110,7 @@ class PosProductStockMovementCrudTest extends TestCase
             ->assertJsonPath('product.name', 'Quấn cán Yonex Super Grap');
 
         // 3. Update Product
-        $updateRes = $this->actingAs($this->managerA)->putJson("/api/v2/pos/products/{$productId}", [
+        $updateRes = $this->actingAs($this->managerA)->putJson("/api/pos/products/{$productId}", [
             'name' => 'Quấn cán Yonex Super Grap AC102EX',
             'price' => 38000,
         ], array_merge($headers, ['Idempotency-Key' => 'prod-upd-'.uniqid()]));
@@ -120,7 +120,7 @@ class PosProductStockMovementCrudTest extends TestCase
             ->assertJsonPath('product.price', 38000);
 
         // 4. Soft Delete Product
-        $delRes = $this->actingAs($this->managerA)->deleteJson("/api/v2/pos/products/{$productId}", [], [
+        $delRes = $this->actingAs($this->managerA)->deleteJson("/api/pos/products/{$productId}", [], [
             'X-Organization-Id' => $this->tenantA->id,
         ]);
         $delRes->assertOk();
@@ -137,7 +137,7 @@ class PosProductStockMovementCrudTest extends TestCase
         ];
 
         // Create product in Tenant A
-        $this->actingAs($this->managerA)->postJson('/api/v2/pos/products', [
+        $this->actingAs($this->managerA)->postJson('/api/pos/products', [
             'sku' => 'BALL-DUNLOP',
             'barcode' => '8930000000001',
             'name' => 'Bóng Tennis Dunlop Fort',
@@ -146,7 +146,7 @@ class PosProductStockMovementCrudTest extends TestCase
         ], $headersA)->assertCreated();
 
         // Duplicate SKU in same tenant fails with 422
-        $dupSkuRes = $this->actingAs($this->managerA)->postJson('/api/v2/pos/products', [
+        $dupSkuRes = $this->actingAs($this->managerA)->postJson('/api/pos/products', [
             'sku' => 'BALL-DUNLOP',
             'barcode' => '8930000000002',
             'name' => 'Bóng Tennis Dunlop Khác',
@@ -157,7 +157,7 @@ class PosProductStockMovementCrudTest extends TestCase
             ->assertJsonValidationErrors('sku');
 
         // Duplicate barcode in same tenant fails with 422
-        $dupBarcodeRes = $this->actingAs($this->managerA)->postJson('/api/v2/pos/products', [
+        $dupBarcodeRes = $this->actingAs($this->managerA)->postJson('/api/pos/products', [
             'sku' => 'BALL-DUNLOP-NEW',
             'barcode' => '8930000000001',
             'name' => 'Bóng Tennis Dunlop Mới',
@@ -176,7 +176,7 @@ class PosProductStockMovementCrudTest extends TestCase
             'status' => 'active',
         ]);
 
-        $tenantBRes = $this->actingAs($managerB)->postJson('/api/v2/pos/products', [
+        $tenantBRes = $this->actingAs($managerB)->postJson('/api/pos/products', [
             'sku' => 'BALL-DUNLOP',
             'barcode' => '8930000000001',
             'name' => 'Dunlop Balls in Tenant B',
@@ -207,7 +207,7 @@ class PosProductStockMovementCrudTest extends TestCase
         ];
 
         // 1. Inflow / Receipt adjustment: +10 units
-        $inRes = $this->actingAs($this->managerA)->postJson("/api/v2/pos/products/{$product->id}/stock", [
+        $inRes = $this->actingAs($this->managerA)->postJson("/api/pos/products/{$product->id}/stock", [
             'quantity_delta' => 10,
             'type' => 'receipt',
             'reference' => 'PO-YONEX-2026-09',
@@ -226,7 +226,7 @@ class PosProductStockMovementCrudTest extends TestCase
         ]);
 
         // 2. Outflow / Disposal adjustment: -5 units
-        $outRes = $this->actingAs($this->managerA)->postJson("/api/v2/pos/products/{$product->id}/stock", [
+        $outRes = $this->actingAs($this->managerA)->postJson("/api/pos/products/{$product->id}/stock", [
             'quantity_delta' => -5,
             'type' => 'disposal',
             'note' => 'Hàng mẫu và hàng hỏng',
@@ -236,7 +236,7 @@ class PosProductStockMovementCrudTest extends TestCase
             ->assertJsonPath('product.stock_quantity', 20);
 
         // 3. ATOMIC CHECK: Attempt to decrement by -50 when only 20 available
-        $overflowRes = $this->actingAs($this->managerA)->postJson("/api/v2/pos/products/{$product->id}/stock", [
+        $overflowRes = $this->actingAs($this->managerA)->postJson("/api/pos/products/{$product->id}/stock", [
             'quantity_delta' => -50,
             'type' => 'disposal',
         ], array_merge($headers, ['Idempotency-Key' => 'adj-overflow-'.uniqid()]));
@@ -248,7 +248,7 @@ class PosProductStockMovementCrudTest extends TestCase
         $this->assertSame(20, $product->fresh()->stock_quantity);
 
         // 4. Query movements audit history
-        $movementsRes = $this->actingAs($this->managerA)->getJson("/api/v2/pos/inventory/movements?product_id={$product->id}", [
+        $movementsRes = $this->actingAs($this->managerA)->getJson("/api/pos/inventory/movements?product_id={$product->id}", [
             'X-Organization-Id' => $this->tenantA->id,
         ]);
 

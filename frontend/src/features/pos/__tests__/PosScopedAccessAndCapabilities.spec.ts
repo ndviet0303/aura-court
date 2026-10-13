@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import PosView from '../views/PosView.vue'
 import { i18n } from '@/i18n'
 import { posApi } from '../api/posApi'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
 
@@ -19,12 +19,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -100,7 +94,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
   it('resolves capabilities before loading products and active shift', async () => {
     const callOrder: string[] = []
 
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('capabilities')) {
         callOrder.push('capabilities')
         return {
@@ -135,7 +129,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
   })
 
   it('displays retryable error banner when capability fetch fails and avoids concluding POS is disabled', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('capabilities')) {
         throw new Error('500 Internal Server Error')
       }
@@ -160,7 +154,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
   })
 
   it('displays disabled banner and blocks checkout when POS capability is disabled', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('capabilities')) {
         return {
           organization_id: 2,
@@ -193,7 +187,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
     const { promise: slowFirstPromise, resolve: resolveFirstCall } = (
       Promise as any
     ).withResolvers()
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/organizations/1/capabilities')) {
         // Slow response from Org 1 (POS enabled)
         await slowFirstPromise
@@ -235,7 +229,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
     const { fetchCapabilities, resetCapabilities, isPosEnabled, currentOrgId } =
       useTenantCapabilities()
 
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       organization_id: 5,
       capabilities: { tenant_pos_and_wallet: true },
       role: 'organization_owner',
@@ -259,7 +253,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
 
     const { promise: slowPromise, resolve: resolveCall } = (Promise as any).withResolvers()
 
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/organizations/1/capabilities')) {
         await slowPromise
         return {
@@ -295,7 +289,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
     const { fetchCapabilities, isPosEnabled, currentOrgId, currentAccountId, loading, loaded } =
       useTenantCapabilities()
 
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/organizations/1/capabilities')) {
         return {
           organization_id: 1,

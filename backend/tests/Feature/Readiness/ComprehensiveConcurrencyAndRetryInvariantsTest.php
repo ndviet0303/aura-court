@@ -3,8 +3,6 @@
 namespace Tests\Feature\Readiness;
 
 use App\Domain\Subscription\Actions\ConfirmSubscriptionPayment;
-use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
@@ -128,37 +126,33 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $successCount = 0;
         $conflictCount = 0;
 
-        // User 0 attempts first via V1
-        $res0 = $this->actingAs($users[0])->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$isoSlot],
-        ]);
+        // User 0 checks out first
+        $res0 = $this->actingAs($users[0])
+            ->withHeaders([
+                'X-Organization-ID' => (string) $org->id,
+                'Idempotency-Key' => 'overlap-checkout-'.Str::random(10),
+            ])
+            ->postJson('/api/reservations/checkout', [
+                'court_id' => $court->id,
+                'slots' => [$isoSlot],
+            ]);
         if ($res0->status() === 201) {
             $successCount++;
         } else {
             $this->fail('User 0 initial booking should succeed.');
         }
 
-        // Remaining 4 users contend on the exact same court and slot (V1 and V2)
+        // Remaining 4 users contend on the exact same court and slot (checkout and hold)
         for ($i = 1; $i < count($users); $i++) {
-            if ($i % 2 === 1) {
-                // Via V1
-                $res = $this->actingAs($users[$i])->postJson('/api/v1/bookings', [
+            $res = $this->actingAs($users[$i])
+                ->withHeaders([
+                    'X-Organization-ID' => (string) $org->id,
+                    'Idempotency-Key' => 'overlap-'.$i.'-'.Str::random(10),
+                ])
+                ->postJson($i % 2 === 1 ? '/api/reservations/checkout' : '/api/reservations', [
                     'court_id' => $court->id,
                     'slots' => [$isoSlot],
                 ]);
-            } else {
-                // Via V2
-                $res = $this->actingAs($users[$i])
-                    ->withHeaders([
-                        'X-Organization-ID' => (string) $org->id,
-                        'Idempotency-Key' => 'overlap-v2-'.Str::random(10),
-                    ])
-                    ->postJson('/api/v2/reservations', [
-                        'court_id' => $court->id,
-                        'slots' => [$isoSlot],
-                    ]);
-            }
 
             if ($res->status() === 409) {
                 $conflictCount++;
@@ -170,11 +164,6 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $this->assertSame(4, $conflictCount, 'All competing attempts must receive 409 conflict.');
 
         // Invariant 2: Exactly 1 active slot entitlement in database
-        $activeLegacySlots = BookingSlot::where('court_id', $court->id)
-            ->whereIn('status', ['held', 'confirmed'])
-            ->count();
-        $this->assertSame(1, $activeLegacySlots, 'Only 1 active legacy slot can exist in DB.');
-
         $activeReservationSlots = ReservationSlot::where('court_id', $court->id)
             ->whereIn('status', ['held', 'confirmed'])
             ->count();
@@ -245,7 +234,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // Subtotal 120,000 - coupon 20,000 - points 20,000 = 80,000 payable
         $res1 = $this->actingAs($payer)
             ->withHeader('Idempotency-Key', 'partial-benefit-book-1')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$slot1->toIso8601String()],
                 'coupon_code' => 'DISC20K',
@@ -253,7 +242,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'loyalty_policy_version' => 1,
             ]);
         $res1->assertCreated();
-        $this->assertSame(80000, $res1->json('booking.total_amount'));
+        $this->assertSame(80000, $res1->json('reservation.total_amount'));
 
         // Point balance is now 0 and coupon usage is 1
         $this->assertSame(1, (int) $coupon->fresh()->usage_count);
@@ -263,7 +252,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // 2. Concurrent / second booking attempt tries to reuse the single-use coupon on Slot 2 -> REJECTED
         $res2 = $this->actingAs($payer)
             ->withHeader('Idempotency-Key', 'concurrent-coupon-reuse-2')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$slot2->toIso8601String()],
                 'coupon_code' => 'DISC20K',
@@ -274,14 +263,14 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // 3. Concurrent / third booking attempt tries to reuse the 10 loyalty points on Slot 3 -> REJECTED
         $res3 = $this->actingAs($payer)
             ->withHeader('Idempotency-Key', 'concurrent-points-reuse-3')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$slot3->toIso8601String()],
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
             ]);
         $res3->assertStatus(422);
-        $res3->assertJsonValidationErrors(['loyalty_points']);
+        $res3->assertJsonPath('message', 'Số dư điểm không đủ để thực hiện quy đổi.');
 
         // Invariants:
         // - Points not decremented below zero
@@ -291,8 +280,8 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // - Coupon usage is exactly 1 (no double discount)
         $this->assertSame(1, (int) $coupon->fresh()->usage_count, 'Coupon usage count must be exactly 1.');
 
-        // - Only 1 booking created
-        $this->assertSame(1, Booking::where('user_id', $payer->id)->count(), 'Only 1 booking can be created with benefits.');
+        // - Only 1 reservation created
+        $this->assertSame(1, Reservation::where('user_id', $payer->id)->count(), 'Only 1 reservation can be created with benefits.');
     }
 
     // =========================================================================
@@ -353,14 +342,14 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         ];
 
         // Cashier 1 checks out the final unit
-        $res1 = $this->actingAs($cashier1)->postJson('/api/v2/pos/orders', $payload, [
+        $res1 = $this->actingAs($cashier1)->postJson('/api/pos/orders', $payload, [
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'race-cashier-1-'.Str::random(10),
         ]);
         $res1->assertCreated();
 
         // Cashier 2 concurrently attempts to purchase the same unit
-        $res2 = $this->actingAs($cashier2)->postJson('/api/v2/pos/orders', $payload, [
+        $res2 = $this->actingAs($cashier2)->postJson('/api/pos/orders', $payload, [
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'race-cashier-2-'.Str::random(10),
         ]);
@@ -471,7 +460,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'X-Organization-ID' => (string) $org->id,
                 'Idempotency-Key' => 'transfer-commit-buyer-1',
             ])
-            ->postJson('/api/v2/marketplace/listings/'.$listing->id.'/purchase', [
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
                 'buyer_payment_reference' => $attempt1->reference,
                 'seller_refund_reference' => $executionRef,
                 'seller_refund_accepted' => true,
@@ -486,7 +475,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'X-Organization-ID' => (string) $org->id,
                 'Idempotency-Key' => 'transfer-commit-buyer-2',
             ])
-            ->postJson('/api/v2/marketplace/listings/'.$listing->id.'/purchase', [
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
                 'buyer_payment_reference' => $attempt1->reference,
                 'seller_refund_reference' => $executionRef,
                 'seller_refund_accepted' => true,
@@ -554,7 +543,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
 
         $preview = $this->actingAs($payer)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/recurring-series/preview', $payload)
+            ->postJson('/api/recurring-series/preview', $payload)
             ->assertOk()
             ->json();
 
@@ -563,7 +552,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'X-Organization-ID' => (string) $org->id,
                 'Idempotency-Key' => 'rec-series-create-'.Str::random(10),
             ])
-            ->postJson('/api/v2/recurring-series', array_merge($payload, [
+            ->postJson('/api/recurring-series', array_merge($payload, [
                 'accepted' => [
                     'total' => $preview['total_amount'],
                     'occurrences' => array_map(
@@ -684,7 +673,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 
         // 1. Initial webhook delivery
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], $raw)->assertOk();
 
@@ -761,7 +750,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // 1. Initial valid refund request for the 200,000 VND slot
         $res1 = $this->actingAs($payer)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", [
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
                 'slot_ids' => [$slot->id],
                 'reason' => 'Customer schedule change',
                 'idempotency_key' => 'refund-req-initial-1',
@@ -773,7 +762,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // 2. Concurrent refund request on the same slot / booking -> REJECTED with 409 conflict
         $res2 = $this->actingAs($payer)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", [
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
                 'slot_ids' => [$slot->id],
                 'reason' => 'Duplicate refund request attempt',
                 'idempotency_key' => 'refund-req-duplicate-2',
@@ -803,7 +792,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         // 5. Attempting cash refund without recipient bank account -> REJECTED with 422
         $resMissingRecipient = $this->actingAs($payer)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", [
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
                 'slot_ids' => [$slot->id],
                 'reason' => 'No bank account provided',
                 'idempotency_key' => 'refund-no-recipient-1',
@@ -875,7 +864,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'X-Organization-Id' => (string) $org->id,
                 'Idempotency-Key' => 'tourn-reg-player-1',
             ])
-            ->postJson("/api/v2/tournaments/{$tournament->id}/register");
+            ->postJson("/api/tournaments/{$tournament->id}/register");
         $res1->assertCreated();
 
         // Player 2 registers for the last place (slot 2 of 2) -> SUCCEEDS
@@ -884,7 +873,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'X-Organization-Id' => (string) $org->id,
                 'Idempotency-Key' => 'tourn-reg-player-2',
             ])
-            ->postJson("/api/v2/tournaments/{$tournament->id}/register");
+            ->postJson("/api/tournaments/{$tournament->id}/register");
         $res2->assertCreated();
 
         // Player 3 concurrently attempts to register when capacity is reached -> REJECTED
@@ -893,7 +882,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 'X-Organization-Id' => (string) $org->id,
                 'Idempotency-Key' => 'tourn-reg-player-3',
             ])
-            ->postJson("/api/v2/tournaments/{$tournament->id}/register");
+            ->postJson("/api/tournaments/{$tournament->id}/register");
 
         // Fails with 409 / 422 tournament full error
         $this->assertTrue(in_array($res3->status(), [409, 422], true), "Expected 409 or 422, got {$res3->status()}");
@@ -1113,7 +1102,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

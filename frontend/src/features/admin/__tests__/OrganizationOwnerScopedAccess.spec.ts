@@ -4,19 +4,13 @@ import { setActivePinia, createPinia } from 'pinia'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/features/auth/api/authApi'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { i18n } from '@/i18n'
 import OrganizationOwnerView from '../views/OrganizationOwnerView.vue'
 import { useOrganizationOwner } from '../composables/useOrganizationOwner'
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -191,7 +185,6 @@ describe('Organization Owner & Scoped Access (Task 3.1 & 3.4)', () => {
       await loadOrgData(1)
 
       expect(api.get).not.toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(currentOrg.value?.name).toBe('Aura Tenant Organization')
       expect(currentOrg.value?.venues?.length).toBe(1)
       expect(currentOrg.value?.venues?.[0]?.name).toBe('Tenant Court Center')

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Payment;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
-use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\LoyaltyRule;
@@ -33,14 +32,14 @@ class PartialBenefitReservationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_v1_partial_hold_reserves_point_and_coupon_then_consumes_once_on_confirmation(): void
+    public function test_partial_hold_reserves_point_and_coupon_then_consumes_once_on_confirmation(): void
     {
         $fixture = $this->tenant();
         $start = now()->addDays(3)->setTime(10, 0, 0);
 
         $response = $this->actingAs($fixture['payer'])
-            ->withHeader('Idempotency-Key', 'partial-v1-confirm')
-            ->postJson('/api/v1/bookings', [
+            ->withHeader('Idempotency-Key', 'partial-confirm')
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
                 'coupon_code' => 'SAVE20K',
@@ -50,46 +49,48 @@ class PartialBenefitReservationTest extends TestCase
 
         // Subtotal 120000 − coupon 20000 − points (10 × 2000) 20000 = 80000 payable.
         $response->assertCreated()
-            ->assertJsonPath('booking.status', 'pending_payment')
-            ->assertJsonPath('booking.payment_model', 'direct_owner_v1')
-            ->assertJsonPath('booking.total_amount', 80000);
+            ->assertJsonPath('reservation.status', 'held')
+            ->assertJsonPath('reservation.payment_model', 'direct_owner_v1')
+            ->assertJsonPath('reservation.total_amount', 80000);
 
-        $booking = Booking::where('code', $response->json('booking.code'))->firstOrFail();
+        $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
 
         // Coupon use reserved (not yet consumed) and points reserved as a hold debit.
         $this->assertSame(1, (int) $fixture['coupon']->fresh()->usage_count);
-        $this->assertSame(-10, (int) PointLedger::where('source_type', 'booking')->where('source_id', $booking->id)->sum('delta'));
+        $this->assertSame($fixture['coupon']->id, $reservation->metadata['coupon_usage']['coupon_id']);
+        $this->assertNull($reservation->metadata['coupon_usage']['released_at']);
+        $this->assertSame(-10, (int) PointLedger::where('source_type', 'reservation')->where('source_id', $reservation->id)->sum('delta'));
         $this->assertSame(0, $this->pointBalance($fixture));
 
-        $reservation = Reservation::findOrFail($booking->legacyMapping()->firstOrFail()->reservation_id);
         $attempt = OwnerPaymentAttempt::where('purpose_id', $reservation->code)->firstOrFail();
         $this->assertSame(80000, (int) $attempt->amount);
 
-        $this->sendOwnerPayment($fixture['connection'], $fixture['secret'], $attempt->reference, 80000, 'partial-v1-receipt');
+        $this->sendOwnerPayment($fixture['connection'], $fixture['secret'], $attempt->reference, 80000, 'partial-receipt');
 
         // Confirmation consumes the reservations once: coupon stays used, points stay spent, no release.
-        $this->assertSame('confirmed', $booking->fresh()->status);
-        $this->assertSame('confirmed', $reservation->fresh()->status);
+        $reservation->refresh();
+        $this->assertSame('confirmed', $reservation->status);
+        $this->assertNull($reservation->metadata['coupon_usage']['released_at']);
         $this->assertSame(1, (int) $fixture['coupon']->fresh()->usage_count);
         $this->assertSame(0, $this->pointBalance($fixture));
-        $this->assertSame(0, PointLedger::where('source_type', 'booking_release')->where('source_id', $booking->id)->count());
+        $this->assertSame(0, PointLedger::where('source_type', 'reservation_release')->where('source_id', $reservation->id)->count());
         $this->assertDatabaseCount('owner_payment_allocations', 1);
     }
 
-    public function test_v1_partial_hold_releases_point_and_coupon_exactly_once_on_expiry(): void
+    public function test_partial_hold_releases_point_and_coupon_exactly_once_on_expiry(): void
     {
         $fixture = $this->tenant();
         $start = now()->addDays(3)->setTime(10, 0, 0);
 
-        $booking = Booking::where('code', $this->actingAs($fixture['payer'])
-            ->withHeader('Idempotency-Key', 'partial-v1-expire')
-            ->postJson('/api/v1/bookings', [
+        $reservation = Reservation::where('code', $this->actingAs($fixture['payer'])
+            ->withHeader('Idempotency-Key', 'partial-expire')
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
                 'coupon_code' => 'SAVE20K',
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
-            ])->assertCreated()->json('booking.code'))->firstOrFail();
+            ])->assertCreated()->json('reservation.code'))->firstOrFail();
 
         $this->assertSame(1, (int) $fixture['coupon']->fresh()->usage_count);
         $this->assertSame(0, $this->pointBalance($fixture));
@@ -98,16 +99,20 @@ class PartialBenefitReservationTest extends TestCase
         $this->assertSame(1, app(ExpirePendingBookings::class)->execute());
 
         // Expiry releases both benefits exactly once.
-        $this->assertSame('expired', $booking->fresh()->status);
+        $reservation->refresh();
+        $releasedAt = $reservation->metadata['coupon_usage']['released_at'];
+        $this->assertSame('expired', $reservation->status);
+        $this->assertNotNull($releasedAt);
         $this->assertSame(0, (int) $fixture['coupon']->fresh()->usage_count);
         $this->assertSame(10, $this->pointBalance($fixture));
-        $this->assertSame(1, PointLedger::where('source_type', 'booking_release')->where('source_id', $booking->id)->count());
+        $this->assertSame(1, PointLedger::where('source_type', 'reservation_release')->where('source_id', $reservation->id)->count());
 
         // Re-running the sweep is idempotent: no double release.
         $this->assertSame(0, app(ExpirePendingBookings::class)->execute());
+        $this->assertSame($releasedAt, $reservation->fresh()->metadata['coupon_usage']['released_at']);
         $this->assertSame(0, (int) $fixture['coupon']->fresh()->usage_count);
         $this->assertSame(10, $this->pointBalance($fixture));
-        $this->assertSame(1, PointLedger::where('source_type', 'booking_release')->where('source_id', $booking->id)->count());
+        $this->assertSame(1, PointLedger::where('source_type', 'reservation_release')->where('source_id', $reservation->id)->count());
     }
 
     public function test_reserved_points_block_a_second_hold_beyond_available_balance(): void
@@ -118,7 +123,7 @@ class PartialBenefitReservationTest extends TestCase
 
         $this->actingAs($fixture['payer'])
             ->withHeader('Idempotency-Key', 'concurrent-hold-1')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$first->toIso8601String()],
                 'loyalty_points' => 10,
@@ -130,15 +135,15 @@ class PartialBenefitReservationTest extends TestCase
         // The reserved points are unavailable to a competing hold on another slot.
         $this->actingAs($fixture['payer'])
             ->withHeader('Idempotency-Key', 'concurrent-hold-2')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$second->toIso8601String()],
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
-            ])->assertStatus(422)->assertJsonValidationErrors(['loyalty_points']);
+            ])->assertStatus(422)->assertJsonPath('message', 'Số dư điểm không đủ để thực hiện quy đổi.');
 
-        $this->assertSame(1, Booking::where('user_id', $fixture['payer']->id)->count());
-        $this->assertSame(1, PointLedger::where('source_type', 'booking')->count());
+        $this->assertSame(1, Reservation::where('user_id', $fixture['payer']->id)->count());
+        $this->assertSame(1, PointLedger::where('source_type', 'reservation')->count());
     }
 
     public function test_stale_loyalty_policy_version_is_rejected_on_direct_hold(): void
@@ -148,16 +153,16 @@ class PartialBenefitReservationTest extends TestCase
 
         $this->actingAs($fixture['payer'])
             ->withHeader('Idempotency-Key', 'stale-policy-hold')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 99,
-            ])->assertStatus(422)->assertJsonValidationErrors(['loyalty_policy_version']);
+            ])->assertStatus(422)->assertJsonPath('message', 'Chính sách đổi điểm đã thay đổi. Vui lòng tải lại xem trước.');
 
-        $this->assertSame(0, Booking::where('user_id', $fixture['payer']->id)->count());
+        $this->assertSame(0, Reservation::where('user_id', $fixture['payer']->id)->count());
         $this->assertSame(10, $this->pointBalance($fixture));
-        $this->assertSame(0, PointLedger::where('source_type', 'booking')->count());
+        $this->assertSame(0, PointLedger::where('source_type', 'reservation')->count());
     }
 
     public function test_late_owner_receipt_after_expiry_does_not_reconfirm_or_reconsume(): void
@@ -165,16 +170,15 @@ class PartialBenefitReservationTest extends TestCase
         $fixture = $this->tenant();
         $start = now()->addDays(3)->setTime(10, 0, 0);
 
-        $booking = Booking::where('code', $this->actingAs($fixture['payer'])
+        $reservation = Reservation::where('code', $this->actingAs($fixture['payer'])
             ->withHeader('Idempotency-Key', 'lost-response-hold')
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
                 'coupon_code' => 'SAVE20K',
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
-            ])->assertCreated()->json('booking.code'))->firstOrFail();
-        $reservation = Reservation::findOrFail($booking->legacyMapping()->firstOrFail()->reservation_id);
+            ])->assertCreated()->json('reservation.code'))->firstOrFail();
         $attempt = OwnerPaymentAttempt::where('purpose_id', $reservation->code)->firstOrFail();
 
         // Owner's transfer response is lost; the hold expires and releases benefits.
@@ -186,7 +190,6 @@ class PartialBenefitReservationTest extends TestCase
         // A late receipt arrives afterwards: it must not reconfirm or re-consume anything.
         $this->sendOwnerPayment($fixture['connection'], $fixture['secret'], $attempt->reference, 80000, 'late-receipt');
 
-        $this->assertSame('expired', $booking->fresh()->status);
         $this->assertSame('expired', $reservation->fresh()->status);
         $this->assertSame(10, $this->pointBalance($fixture));
         $this->assertSame(0, (int) $fixture['coupon']->fresh()->usage_count);
@@ -324,7 +327,7 @@ class PartialBenefitReservationTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $response = $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $secret),

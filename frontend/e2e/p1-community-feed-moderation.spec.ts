@@ -85,8 +85,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const postContent = `Bài viết thử nghiệm bình luận và thảo luận - ${Date.now()}`
     const postRes = await withE2EApi(
       page,
-      async ({ apiV2 }, content) => {
-        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      async ({ api }, content) => {
+        return await api.post('/social/feed', { content, audience: 'organization' })
       },
       postContent,
     )
@@ -98,8 +98,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const commentContent = `Bình luận thảo luận chuyên sâu số 1 - ${Date.now()}`
     const commentRes = await withE2EApi(
       page,
-      async ({ apiV2 }, { pid, text }) => {
-        return await apiV2.post('/social/feed/' + pid + '/comments', { content: text })
+      async ({ api }, { pid, text }) => {
+        return await api.post('/social/feed/' + pid + '/comments', { content: text })
       },
       { pid: postId, text: commentContent },
     )
@@ -131,8 +131,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     // 6. Delete comment via socialApi
     const deleteRes = await withE2EApi(
       page,
-      async ({ apiV2 }, cid) => {
-        return await apiV2.delete('/social/feed/comments/' + cid)
+      async ({ api }, cid) => {
+        return await api.delete('/social/feed/comments/' + cid)
       },
       commentId,
     )
@@ -169,8 +169,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const postContent = `Bài viết thử nghiệm reaction biểu cảm - ${Date.now()}`
     const postRes = await withE2EApi(
       page,
-      async ({ apiV2 }, content) => {
-        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      async ({ api }, content) => {
+        return await api.post('/social/feed', { content, audience: 'organization' })
       },
       postContent,
     )
@@ -179,8 +179,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     // 3. React with 'like' -> verify action: 'added'
     const reactLike1 = await withE2EApi(
       page,
-      async ({ apiV2 }, pid) => {
-        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'like' })
+      async ({ api }, pid) => {
+        return await api.post('/social/feed/' + pid + '/react', { type: 'like' })
       },
       postId,
     )
@@ -190,8 +190,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     // 4. React with 'like' again -> verify action: 'removed' (toggle off)
     const reactLike2 = await withE2EApi(
       page,
-      async ({ apiV2 }, pid) => {
-        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'like' })
+      async ({ api }, pid) => {
+        return await api.post('/social/feed/' + pid + '/react', { type: 'like' })
       },
       postId,
     )
@@ -201,8 +201,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     // 5. React with 'fire' -> count is 1
     const reactFire = await withE2EApi(
       page,
-      async ({ apiV2 }, pid) => {
-        return await apiV2.post('/social/feed/' + pid + '/react', { type: 'fire' })
+      async ({ api }, pid) => {
+        return await api.post('/social/feed/' + pid + '/react', { type: 'fire' })
       },
       postId,
     )
@@ -271,8 +271,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const postContent = `Bài viết có dấu hiệu quảng cáo spam - ${Date.now()}`
     const postRes = await withE2EApi(
       page,
-      async ({ apiV2 }, content) => {
-        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      async ({ api }, content) => {
+        return await api.post('/social/feed', { content, audience: 'organization' })
       },
       postContent,
     )
@@ -288,8 +288,8 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     await page.goto('/matchmaking', { waitUntil: 'domcontentloaded' })
     const reportRes = await withE2EApi(
       page,
-      async ({ apiV2 }, pid) => {
-        return await apiV2.post('/social/feed/' + pid + '/report', {
+      async ({ api }, pid) => {
+        return await api.post('/social/feed/' + pid + '/report', {
           reason: 'Spam liên tục và vi phạm quy định cộng đồng',
         })
       },
@@ -334,17 +334,17 @@ test.describe('P1: Bảng tin cộng đồng, Bình luận, Tương tác, Báo c
     const toxicPostContent = `Nội dung độc hại vi phạm chính sách - ${Date.now()}`
     const postRes = await withE2EApi(
       page,
-      async ({ apiV2 }, content) => {
-        return await apiV2.post('/social/feed', { content, audience: 'organization' })
+      async ({ api }, content) => {
+        return await api.post('/social/feed', { content, audience: 'organization' })
       },
       toxicPostContent,
     )
     const postId = (postRes as any)?.post?.id
 
     // 2. Negative Authorization: Customer attempts to call moderation endpoint -> 403 Forbidden
-    const customerModerationDenied = await withE2EApi(page, async ({ apiV2 }) => {
+    const customerModerationDenied = await withE2EApi(page, async ({ api }) => {
       try {
-        await apiV2.get('/social/feed/reports?status=' + 'pending')
+        await api.get('/social/feed/reports?status=' + 'pending')
         return false
       } catch (err: any) {
         return err?.status === 403 || err?.response?.status === 403

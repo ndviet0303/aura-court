@@ -141,7 +141,7 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
       // Session B queries backend availability for the court and date to prove the held slot is locked
       const backendUrl = manifest.backend.url
       const availResponse = await pageB.request.get(
-        `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${targetDate}`,
+        `${backendUrl}/api/availability?court_id=${courtId}&date=${targetDate}`,
       )
       expect(availResponse.status()).toBe(200)
       const slotsData = await availResponse.json()
@@ -320,7 +320,7 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
 
     // 2. Query availability for today in Vietnam timezone
     const responseToday = await page.request.get(
-      `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${todayVn}`,
+      `${backendUrl}/api/availability?court_id=${courtId}&date=${todayVn}`,
     )
     expect(responseToday.status()).toBe(200)
 
@@ -339,7 +339,7 @@ test.describe('P2: Đồng bộ thời gian thực, Cơ chế Polling Fallback &
 
     // 3. Verify midnight boundary & day crossing transition with tomorrow's slots
     const responseTomorrow = await page.request.get(
-      `${backendUrl}/api/v1/availability?court_id=${courtId}&date=${tomorrowVn}`,
+      `${backendUrl}/api/availability?court_id=${courtId}&date=${tomorrowVn}`,
     )
     expect(responseTomorrow.status()).toBe(200)
 

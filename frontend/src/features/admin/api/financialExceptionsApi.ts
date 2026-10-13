@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type { FinancialException, ExceptionStats, AuditLog } from '../types/exceptions'
 
 export interface ListExceptionsParams {
@@ -22,15 +22,15 @@ export const financialExceptionsApi = {
     if (params?.per_page) query.set('per_page', String(params.per_page))
 
     const qs = query.toString()
-    return apiV2.get<{ data: FinancialException[]; meta?: unknown }>(
+    return api.get<{ data: FinancialException[]; meta?: unknown }>(
       `/finance/exceptions${qs ? `?${qs}` : ''}`,
     )
   },
 
-  getStats: () => apiV2.get<{ stats: ExceptionStats }>('/finance/exceptions/stats'),
+  getStats: () => api.get<{ stats: ExceptionStats }>('/finance/exceptions/stats'),
 
   resolveException: (id: number | string, payload: ResolveExceptionPayload) =>
-    apiV2.post<{ message: string; exception: FinancialException }>(
+    api.post<{ message: string; exception: FinancialException }>(
       `/finance/exceptions/${id}/resolve`,
       payload,
     ),
@@ -41,6 +41,6 @@ export const financialExceptionsApi = {
     if (perPage) query.set('per_page', String(perPage))
 
     const qs = query.toString()
-    return apiV2.get<{ data: AuditLog[] }>(`/finance/audit-logs${qs ? `?${qs}` : ''}`)
+    return api.get<{ data: AuditLog[] }>(`/finance/audit-logs${qs ? `?${qs}` : ''}`)
   },
 }

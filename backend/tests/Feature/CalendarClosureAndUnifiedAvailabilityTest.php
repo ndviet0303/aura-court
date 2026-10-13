@@ -14,6 +14,7 @@ use App\Models\ReservationSlot;
 use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -78,7 +79,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
         return compact('org', 'venue', 'zone', 'court', 'tomorrow', 'weekday');
     }
 
-    public function test_court_block_creation_rejects_when_conflicting_with_confirmed_v1_bookings(): void
+    public function test_court_block_creation_rejects_when_conflicting_with_confirmed_legacy_bookings(): void
     {
         $env = $this->setupCourtEnvironment();
         $admin = $this->admin();
@@ -87,7 +88,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
         $slotStart = $env['tomorrow']->copy()->setTime(18, 0, 0);
         $slotEnd = $env['tomorrow']->copy()->setTime(19, 0, 0);
 
-        // 1. Create confirmed V1 booking
+        // 1. Create a confirmed legacy booking and its reservation mirror
         $booking = Booking::create([
             'code' => 'BK-CONF-1800',
             'user_id' => $user->id,
@@ -103,17 +104,18 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
             'unit_price' => 150000,
             'status' => 'confirmed',
         ]);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
 
         // 2. Admin attempts to create a maintenance block overlapping this booking
-        $response = $this->actingAs($admin)->postJson("/api/v1/admin/courts/{$env['court']->id}/blocks", [
+        $response = $this->actingAs($admin)->postJson("/api/admin/courts/{$env['court']->id}/blocks", [
             'starts_at' => $env['tomorrow']->copy()->setTime(17, 30, 0)->toIso8601String(),
             'ends_at' => $env['tomorrow']->copy()->setTime(19, 30, 0)->toIso8601String(),
             'reason' => 'Thay thế đèn LED',
         ]);
 
-        // 3. Rejected with 409 and reports conflicting booking reference
+        // 3. Rejected with 409 and reports the mirror of the conflicting booking
         $response->assertStatus(409)
-            ->assertJsonPath('conflicting_bookings.0', 'BK-CONF-1800');
+            ->assertJsonPath('conflicting_bookings.0', 'LEGACY-BK-CONF-1800');
 
         $this->assertDatabaseMissing('court_blocks', [
             'court_id' => $env['court']->id,
@@ -151,7 +153,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
         ]);
 
         // 2. Admin attempts to create maintenance block overlapping this reservation
-        $response = $this->actingAs($admin)->postJson("/api/v1/admin/courts/{$env['court']->id}/blocks", [
+        $response = $this->actingAs($admin)->postJson("/api/admin/courts/{$env['court']->id}/blocks", [
             'starts_at' => $slotStart->copy()->subMinutes(15)->toIso8601String(),
             'ends_at' => $slotEnd->copy()->addMinutes(15)->toIso8601String(),
             'reason' => 'Bảo trì sàn thảm',
@@ -176,7 +178,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
         $blockEnd = $env['tomorrow']->copy()->setTime(10, 0, 0);
 
         // 1. Create maintenance block when no bookings exist
-        $response = $this->actingAs($admin)->postJson("/api/v1/admin/courts/{$env['court']->id}/blocks", [
+        $response = $this->actingAs($admin)->postJson("/api/admin/courts/{$env['court']->id}/blocks", [
             'starts_at' => $blockStart->toIso8601String(),
             'ends_at' => $blockEnd->toIso8601String(),
             'reason' => 'Dọn dẹp định kỳ',
@@ -190,7 +192,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
 
         // 2. Check public availability search
         $dateStr = $env['tomorrow']->format('Y-m-d');
-        $availRes = $this->getJson("/api/v1/availability?court_id={$env['court']->id}&date={$dateStr}");
+        $availRes = $this->getJson("/api/availability?court_id={$env['court']->id}&date={$dateStr}");
         $availRes->assertOk();
 
         $slots = collect($availRes->json());
@@ -227,18 +229,21 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
             'reason' => 'Khóa bảo trì',
         ]);
 
-        // 1. Direct V1 booking is rejected
-        $bookingRes = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $env['court']->id,
-            'slots' => [$blockStart->toIso8601String()],
-        ]);
+        // 1. Direct checkout is rejected
+        $bookingRes = $this->actingAs($user)
+            ->withHeader('X-Organization-ID', (string) $env['org']->id)
+            ->withHeader('Idempotency-Key', uniqid('checkout-'))
+            ->postJson('/api/reservations/checkout', [
+                'court_id' => $env['court']->id,
+                'slots' => [$blockStart->toIso8601String()],
+            ]);
         $bookingRes->assertStatus(409);
 
-        // 2. Direct V2 quote request is rejected
+        // 2. Direct quote request is rejected
         $quoteRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $env['org']->id)
             ->withHeader('Idempotency-Key', uniqid('quote-'))
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $env['court']->id,
                 'slots' => [$blockStart->toIso8601String()],
             ]);
@@ -276,7 +281,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
 
         // V1 availability check reflects V2 reservation
         $dateStr = $env['tomorrow']->format('Y-m-d');
-        $availRes = $this->getJson("/api/v1/availability?court_id={$env['court']->id}&date={$dateStr}");
+        $availRes = $this->getJson("/api/availability?court_id={$env['court']->id}&date={$dateStr}");
         $availRes->assertOk();
 
         $slots = collect($availRes->json());

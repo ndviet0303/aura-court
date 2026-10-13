@@ -101,7 +101,7 @@ class VenueLifecycleTransitionsTest extends TestCase
         Sanctum::actingAs($owner);
 
         // 1. Owner closes venue temporarily
-        $res1 = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
+        $res1 = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
             'status' => 'temporarily_closed',
             'reason' => 'Sửa chữa điện lưới.',
         ]);
@@ -116,7 +116,7 @@ class VenueLifecycleTransitionsTest extends TestCase
         ]);
 
         // 2. Owner closes venue permanently
-        $res2 = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
+        $res2 = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
             'status' => 'closed',
             'reason' => 'Chấm dứt hợp đồng mặt bằng.',
         ]);
@@ -136,7 +136,7 @@ class VenueLifecycleTransitionsTest extends TestCase
 
         // Non-admin attempts to suspend
         Sanctum::actingAs($owner);
-        $res1 = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
+        $res1 = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
             'status' => 'suspended',
             'reason' => 'Hack attempt',
         ]);
@@ -144,7 +144,7 @@ class VenueLifecycleTransitionsTest extends TestCase
 
         // Admin suspends venue via admin endpoint
         Sanctum::actingAs($admin);
-        $res2 = $this->postJson("/api/v1/admin/venues/{$venue->id}/lifecycle", [
+        $res2 = $this->postJson("/api/admin/venues/{$venue->id}/lifecycle", [
             'status' => 'suspended',
             'reason' => 'Vi phạm quy chế an toàn sân bãi.',
         ]);
@@ -154,7 +154,7 @@ class VenueLifecycleTransitionsTest extends TestCase
 
         // Owner cannot lift platform suspension
         Sanctum::actingAs($owner);
-        $res3 = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
+        $res3 = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
             'status' => 'published',
         ]);
         $res3->assertStatus(403);
@@ -166,7 +166,7 @@ class VenueLifecycleTransitionsTest extends TestCase
 
         // Temporarily close
         Sanctum::actingAs($owner);
-        $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
+        $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
             'status' => 'temporarily_closed',
             'reason' => 'Bảo trì',
         ]);
@@ -178,7 +178,7 @@ class VenueLifecycleTransitionsTest extends TestCase
         ]);
 
         // Attempt restoration
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", [
             'status' => 'published',
         ]);
 

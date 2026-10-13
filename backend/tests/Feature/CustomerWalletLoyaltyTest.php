@@ -38,7 +38,7 @@ class CustomerWalletLoyaltyTest extends TestCase
         $this->membership($orgA, $user, 'Diamond VIP Club', now()->subMonths(2), now()->subDay());
         $this->membership($orgB, $user, 'Silver Standard', now()->subDay(), now()->addMonth());
 
-        $this->actingAs($user)->getJson("/api/v1/wallet?organization_id={$orgA->id}")
+        $this->actingAs($user)->getJson("/api/wallet?organization_id={$orgA->id}")
             ->assertOk()
             ->assertJsonPath('id', "wallet-org-{$orgA->id}")
             ->assertJsonPath('organization_id', $orgA->id)
@@ -48,7 +48,7 @@ class CustomerWalletLoyaltyTest extends TestCase
             ->assertJsonCount(2, 'transactions')
             ->assertJsonPath('transactions.0.amount', 488000);
 
-        $this->actingAs($user)->getJson("/api/v1/wallet?organization_id={$orgB->id}")
+        $this->actingAs($user)->getJson("/api/wallet?organization_id={$orgB->id}")
             ->assertOk()
             ->assertJsonPath('balance', 0)
             ->assertJsonPath('points', 500)
@@ -61,7 +61,7 @@ class CustomerWalletLoyaltyTest extends TestCase
         $defaultOrgId = app(WalletPaymentService::class)->getOrCreateWallet($user->id)->organization_id;
         $this->membership(Organization::findOrFail($defaultOrgId), $user, 'Gold Elite All-Access', now()->subMonths(2), now()->subDay());
 
-        $this->actingAs($user)->getJson('/api/v1/wallet')
+        $this->actingAs($user)->getJson('/api/wallet')
             ->assertOk()
             ->assertJsonPath('id', 'wallet-main')
             ->assertJsonPath('organization_id', $defaultOrgId)
@@ -73,10 +73,10 @@ class CustomerWalletLoyaltyTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->getJson('/api/v1/wallet?organization_id=abc')
+        $this->actingAs($user)->getJson('/api/wallet?organization_id=abc')
             ->assertUnprocessable()
             ->assertJsonValidationErrors('organization_id');
-        $this->actingAs($user)->getJson('/api/v1/wallet?organization_id=999999')
+        $this->actingAs($user)->getJson('/api/wallet?organization_id=999999')
             ->assertUnprocessable()
             ->assertJsonValidationErrors('organization_id');
     }

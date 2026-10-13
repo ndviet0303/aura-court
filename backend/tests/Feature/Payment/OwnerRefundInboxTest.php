@@ -38,7 +38,7 @@ class OwnerRefundInboxTest extends TestCase
         // The payer creates a refund obligation through the canonical v2 request path.
         Sanctum::actingAs($payer);
         $created = $this->withHeader('X-Organization-ID', (string) $organization->id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", [
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
                 'slot_ids' => [$slotIds[0]],
                 'reason' => 'Cancel one court hour',
                 'idempotency_key' => 'inbox-refund-1',
@@ -57,7 +57,7 @@ class OwnerRefundInboxTest extends TestCase
         // An organization owner sees the obligation in the org-scoped inbox.
         Sanctum::actingAs($owner);
         $inbox = $this->withHeader('X-Organization-ID', (string) $organization->id)
-            ->getJson('/api/v2/refund-requests?'.http_build_query(['organization_id' => $organization->id]))
+            ->getJson('/api/refund-requests?'.http_build_query(['organization_id' => $organization->id]))
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $refundId)
@@ -67,7 +67,7 @@ class OwnerRefundInboxTest extends TestCase
 
         // The status filter narrows the inbox by obligation status.
         $this->withHeader('X-Organization-ID', (string) $organization->id)
-            ->getJson('/api/v2/refund-requests?'.http_build_query([
+            ->getJson('/api/refund-requests?'.http_build_query([
                 'organization_id' => $organization->id,
                 'status' => OwnerRefundObligation::STATUS_APPROVED,
             ]))
@@ -77,7 +77,7 @@ class OwnerRefundInboxTest extends TestCase
         // A customer/non-owner member cannot review refund obligations.
         Sanctum::actingAs($payer);
         $this->withHeader('X-Organization-ID', (string) $organization->id)
-            ->getJson('/api/v2/refund-requests?'.http_build_query(['organization_id' => $organization->id]))
+            ->getJson('/api/refund-requests?'.http_build_query(['organization_id' => $organization->id]))
             ->assertForbidden();
     }
 
@@ -209,7 +209,7 @@ class OwnerRefundInboxTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $secret),

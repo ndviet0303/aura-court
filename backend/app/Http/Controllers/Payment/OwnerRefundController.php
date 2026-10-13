@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\LegacyBookingMapping;
@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 
 class OwnerRefundController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function quote(Request $request, string $reservation, OwnerRefundService $refunds): JsonResponse
     {

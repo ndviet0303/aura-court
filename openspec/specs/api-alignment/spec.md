@@ -82,7 +82,7 @@ Customer/owner/staff booking pages and Vietnamese/English policies SHALL show ca
 - **THEN** online payment SHALL be unavailable with setup guidance, without demo success or a QR to Aura Court's account
 
 ### Requirement: Administrative venue lists use the supported API contract
-Administrative pages that require the existing venue list SHALL obtain it from the supported `/api/v1/admin/venues` contract under its existing authorization. They MUST NOT call the undefined `/api/v2/admin/venues` route or silently substitute an empty successful result when loading fails.
+Administrative pages that require the existing venue list SHALL obtain it from the supported `/api/admin/venues` contract under its existing authorization. They MUST NOT silently substitute an empty successful result when loading fails.
 
 #### Scenario: Venue and court management load
 - **WHEN** an authorized administrator opens `/admin/venues` or `/admin/manage`

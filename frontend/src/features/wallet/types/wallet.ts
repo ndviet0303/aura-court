@@ -41,9 +41,3 @@ export interface Transaction {
   reference: string
   method_label?: string
 }
-
-export interface SpendWalletPayload {
-  amount: number
-  order_id?: number
-  reference?: string
-}

@@ -21,16 +21,16 @@ class PartnerApplicationCorrectionJourneyTest extends TestCase
         $applicant = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($applicant);
 
-        $this->getJson('/api/v1/partner/application/current')
+        $this->getJson('/api/partner/application/current')
             ->assertOk()
             ->assertJsonPath('data', null);
 
-        $applicationId = $this->postJson('/api/v1/partner/application/start', [])
+        $applicationId = $this->postJson('/api/partner/application/start', [])
             ->assertCreated()
             ->assertJsonPath('data.status', 'draft')
             ->json('data.id');
 
-        $applicationPath = "/api/v1/partner/application/{$applicationId}";
+        $applicationPath = "/api/partner/application/{$applicationId}";
         $this->putJson($applicationPath, [
             'business_type' => 'individual',
             'business_name' => 'Hoa Lu Sports Club',
@@ -90,14 +90,14 @@ class PartnerApplicationCorrectionJourneyTest extends TestCase
 
         $admin = User::factory()->create(['role' => 'admin']);
         Sanctum::actingAs($admin);
-        $this->postJson("/api/v1/admin/partner/applications/{$applicationId}/review", [
+        $this->postJson("/api/admin/partner/applications/{$applicationId}/review", [
             'decision' => 'revision_required',
             'reason' => 'Please clarify the venue address.',
             'expected_version' => $application->version + 1,
         ])->assertOk()->assertJsonPath('data.status', 'revision_required');
 
         Sanctum::actingAs($applicant);
-        $current = $this->getJson('/api/v1/partner/application/current')
+        $current = $this->getJson('/api/partner/application/current')
             ->assertOk()
             ->assertJsonPath('data.status', 'revision_required')
             ->json('data');

@@ -2,8 +2,6 @@
 
 namespace App\Services\Payment;
 
-use App\Models\Booking;
-use App\Models\LegacyBookingMapping;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
@@ -12,7 +10,6 @@ use App\Models\Reservation;
 use App\Models\SplitGroup;
 use App\Models\SplitShare;
 use App\Models\User;
-use App\Services\Reservation\LegacyBookingBackfillService;
 use App\Services\Reservation\ReservationService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -362,20 +359,6 @@ class SplitPaymentService
                 ])->save();
                 $reservation->slots()->withoutGlobalScope('tenant_isolation')->where('status', 'held')->update(['status' => 'confirmed']);
                 $reservation->entitlements()->withoutGlobalScope('tenant_isolation')->where('status', 'held')->update(['status' => 'active']);
-
-                $mapping = LegacyBookingMapping::query()
-                    ->withoutGlobalScope('tenant_isolation')
-                    ->where('reservation_id', $reservation->id)
-                    ->lockForUpdate()
-                    ->first();
-                if ($mapping) {
-                    $legacyBooking = Booking::query()->whereKey($mapping->legacy_booking_id)->lockForUpdate()->first();
-                    if ($legacyBooking && $legacyBooking->status === 'pending_payment') {
-                        $legacyBooking->forceFill(['status' => 'confirmed'])->save();
-                        $legacyBooking->slots()->withoutGlobalScope('tenant_isolation')->where('status', 'held')->update(['status' => 'confirmed']);
-                        app(LegacyBookingBackfillService::class)->syncProjection($legacyBooking);
-                    }
-                }
             }
         }
     }

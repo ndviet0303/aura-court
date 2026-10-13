@@ -42,7 +42,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'split-create-'.uniqid(),
             ])
-            ->postJson('/api/v2/reservations/'.$reservation->id.'/split', [
+            ->postJson('/api/reservations/'.$reservation->id.'/split', [
                 'shares' => [
                     ['amount' => 80000],
                     ['amount' => 120000],
@@ -78,7 +78,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
 
         $getResponse = $this->actingAs($fixture['host'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->getJson('/api/v2/split-groups/'.$group->id);
+            ->getJson('/api/split-groups/'.$group->id);
 
         $getResponse->assertOk();
         $sharesData = collect($getResponse->json('split.shares'));
@@ -105,7 +105,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'split-pay-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-shares/'.$share->id.'/pay', [
+            ->postJson('/api/split-shares/'.$share->id.'/pay', [
                 'amount' => 100000,
                 'payment_reference' => 'FAKE-UNVERIFIED-REF-123',
             ]);
@@ -159,7 +159,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
         $this->assertSame($initialBalance, (int) $hostWallet->fresh()->balance);
     }
 
-    public function test_completed_split_confirms_the_mapped_legacy_booking(): void
+    public function test_completed_split_confirms_the_mapped_reservation_and_leaves_the_legacy_booking_unchanged(): void
     {
         $fixture = $this->tenant();
         $reservation = $this->createHeldReservation($fixture, 200000);
@@ -202,9 +202,10 @@ class SplitPaymentReceiptVerificationTest extends TestCase
         }
 
         $this->assertSame('confirmed', $reservation->fresh()->status);
-        $this->assertSame('confirmed', $booking->fresh()->status);
-        $this->assertSame('confirmed', $legacySlot->fresh()->status);
-        $this->assertSame('confirmed', $mapping->fresh()->legacy_status);
+        $this->assertSame('confirmed', $slot->fresh()->status);
+        $this->assertSame('pending_payment', $booking->fresh()->status);
+        $this->assertSame('held', $legacySlot->fresh()->status);
+        $this->assertSame('pending_payment', $mapping->fresh()->legacy_status);
     }
 
     public function test_host_shortfall_coverage_creates_payment_obligation_and_requires_verified_receipt(): void
@@ -230,7 +231,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'split-cover-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-groups/'.$group->id.'/cover-shortfall');
+            ->postJson('/api/split-groups/'.$group->id.'/cover-shortfall');
         $this->assertSame('pending', $group->fresh()->status);
         $this->assertFalse($group->fresh()->host_covers_shortfall);
 
@@ -245,7 +246,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'split-fake-pay-'.uniqid(),
             ])
-            ->postJson('/api/v2/split-groups/'.$group->id.'/cover-shortfall', [
+            ->postJson('/api/split-groups/'.$group->id.'/cover-shortfall', [
                 'payment_reference' => 'FAKE-COVERAGE-REF',
             ]);
         $fakePayResponse->assertStatus(422);
@@ -429,7 +430,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

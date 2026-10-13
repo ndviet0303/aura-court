@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type { HostKyc, KycStats, KycFilterParams, ReviewKycPayload } from '../types/kyc'
 
 export const adminKycApi = {
@@ -9,27 +9,27 @@ export const adminKycApi = {
     if (params?.perPage) query.set('per_page', String(params.perPage))
 
     const qs = query.toString()
-    const res = await apiV2.get<{ data: HostKyc[] }>(`/admin/kyc${qs ? `?${qs}` : ''}`)
+    const res = await api.get<{ data: HostKyc[] }>(`/admin/kyc${qs ? `?${qs}` : ''}`)
     return res
   },
 
   getStats: async (): Promise<{ stats: KycStats }> => {
-    const res = await apiV2.get<{ stats: KycStats }>('/admin/kyc/stats')
+    const res = await api.get<{ stats: KycStats }>('/admin/kyc/stats')
     return res
   },
 
   getDetail: async (id: number): Promise<{ data: HostKyc }> => {
-    return apiV2.get<{ data: HostKyc }>(`/admin/kyc/${id}`)
+    return api.get<{ data: HostKyc }>(`/admin/kyc/${id}`)
   },
 
   reviewKyc: async (
     id: number,
     payload: ReviewKycPayload,
   ): Promise<{ message: string; data: HostKyc }> => {
-    return apiV2.post<{ message: string; data: HostKyc }>(`/admin/kyc/${id}/review`, payload)
+    return api.post<{ message: string; data: HostKyc }>(`/admin/kyc/${id}/review`, payload)
   },
 
   getDocumentUrl: async (kycId: number, documentId: number): Promise<{ url: string }> => {
-    return apiV2.get<{ url: string }>(`/admin/kyc/${kycId}/documents/${documentId}/url`)
+    return api.get<{ url: string }>(`/admin/kyc/${kycId}/documents/${documentId}/url`)
   },
 }

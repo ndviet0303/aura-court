@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Booking;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\RecurringSeriesPreviewRequest;
 use App\Models\MarketplaceListing;
@@ -26,7 +26,7 @@ use Illuminate\Support\Str;
 
 class AdvancedBookingController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(
         private readonly RecurringSeriesService $recurring,
@@ -53,7 +53,7 @@ class AdvancedBookingController extends Controller
     {
         $user = $request->user();
         if (! $user->hasVerifiedEmail()) {
-            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
         $organization = $this->organization($request);
         $data = $request->validate([
@@ -89,7 +89,7 @@ class AdvancedBookingController extends Controller
     {
         $user = $request->user();
         if (! $user->hasVerifiedEmail()) {
-            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
         $this->organization($request);
 

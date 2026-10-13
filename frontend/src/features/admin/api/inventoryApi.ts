@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type {
   InventoryProduct,
   StockMovement,
@@ -9,10 +9,10 @@ import type {
 
 export const inventoryApi = {
   getProducts: (params?: Record<string, any>) =>
-    apiV2.get<InventoryProduct[]>('/pos/products', { params }),
+    api.get<InventoryProduct[]>('/pos/products', { params }),
 
   createProduct: async (payload: ProductFormPayload): Promise<InventoryProduct> => {
-    const res = await apiV2.post<{ product: InventoryProduct }>('/pos/products', payload)
+    const res = await api.post<{ product: InventoryProduct }>('/pos/products', payload)
     return res.product || (res as unknown as InventoryProduct)
   },
 
@@ -20,14 +20,14 @@ export const inventoryApi = {
     id: number,
     payload: Partial<ProductFormPayload>,
   ): Promise<InventoryProduct> => {
-    const res = await apiV2.put<{ product: InventoryProduct }>(`/pos/products/${id}`, payload)
+    const res = await api.put<{ product: InventoryProduct }>(`/pos/products/${id}`, payload)
     return res.product || (res as unknown as InventoryProduct)
   },
 
-  deleteProduct: (id: number) => apiV2.delete<{ message: string }>(`/pos/products/${id}`),
+  deleteProduct: (id: number) => api.delete<{ message: string }>(`/pos/products/${id}`),
 
   adjustStock: async (payload: StockActionPayload): Promise<InventoryProduct> => {
-    const res = await apiV2.post<{ product: InventoryProduct }>(
+    const res = await api.post<{ product: InventoryProduct }>(
       `/pos/products/${payload.productId}/stock`,
       {
         quantity: payload.quantity,
@@ -40,7 +40,7 @@ export const inventoryApi = {
   },
 
   getMovements: (params?: Record<string, any>) =>
-    apiV2.get<StockMovement[]>('/pos/inventory/movements', { params }),
+    api.get<StockMovement[]>('/pos/inventory/movements', { params }),
 
-  getKpis: () => apiV2.get<InventoryKpis>('/pos/inventory/kpis'),
+  getKpis: () => api.get<InventoryKpis>('/pos/inventory/kpis'),
 }

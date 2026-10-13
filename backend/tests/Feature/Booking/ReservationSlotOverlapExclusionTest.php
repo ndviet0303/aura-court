@@ -174,14 +174,14 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         $this->priceSlot($fixture, $start, $endTime, $price);
 
         return $this->actingAs($user)->withHeaders($this->headers($fixture, 'q-'.$tag))
-            ->postJson('/api/v2/price-quotes', ['court_id' => $fixture['court']->id, 'slots' => [$start->toIso8601String()]])
+            ->postJson('/api/price-quotes', ['court_id' => $fixture['court']->id, 'slots' => [$start->toIso8601String()]])
             ->assertCreated()->json('quote');
     }
 
     private function checkout(array $fixture, User $user, int $quoteId, string $tag)
     {
         return $this->actingAs($user)->withHeaders($this->headers($fixture, 'c-'.$tag))
-            ->postJson('/api/v2/reservations/checkout', ['quote_id' => $quoteId]);
+            ->postJson('/api/reservations/checkout', ['quote_id' => $quoteId]);
     }
 
     private function bookAndConfirm(array $fixture, CarbonInterface $start, string $endTime, int $price, string $tag): Reservation
@@ -223,7 +223,7 @@ class ReservationSlotOverlapExclusionTest extends TestCase
 
         return $this->actingAs($fixture['payer'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson("/api/v2/reservations/{$code}/reschedule-requests", $payload);
+            ->postJson("/api/reservations/{$code}/reschedule-requests", $payload);
     }
 
     private function tenant(int $slotDuration): array
@@ -324,7 +324,7 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

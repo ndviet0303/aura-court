@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type {
   SettlementRecord,
   PayoutRecord,
@@ -8,7 +8,7 @@ import type {
 import type { SplitGroup } from '../types/split'
 
 export const financeApi = {
-  getBeneficiaries: () => apiV2.get<BeneficiaryAccount[]>('/finance/beneficiaries'),
+  getBeneficiaries: () => api.get<BeneficiaryAccount[]>('/finance/beneficiaries'),
 
   storeBeneficiary: (payload: {
     bank_code: string
@@ -17,7 +17,7 @@ export const financeApi = {
     tax_id?: string
     provider?: string
   }) =>
-    apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>(
+    api.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>(
       '/finance/beneficiaries',
       payload,
     ),
@@ -30,45 +30,45 @@ export const financeApi = {
     tax_id?: string
     provider?: string
   }) =>
-    apiV2.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>(
+    api.post<{ beneficiary: BeneficiaryAccount } | BeneficiaryAccount>(
       '/finance/beneficiaries',
       payload,
     ),
 
   getSettlements: () =>
-    apiV2.get<{ data: SettlementRecord[] } | SettlementRecord[]>('/finance/settlements'),
+    api.get<{ data: SettlementRecord[] } | SettlementRecord[]>('/finance/settlements'),
 
   snapshotSettlement: (payload: { period_start: string; period_end: string }) =>
-    apiV2.post<{ settlement: SettlementRecord } | SettlementRecord>(
+    api.post<{ settlement: SettlementRecord } | SettlementRecord>(
       '/finance/settlements/snapshot',
       payload,
     ),
 
-  getPayouts: () => apiV2.get<{ data: PayoutRecord[] } | PayoutRecord[]>('/finance/payouts'),
+  getPayouts: () => api.get<{ data: PayoutRecord[] } | PayoutRecord[]>('/finance/payouts'),
 
   createPayout: (payload: { settlement_id: number; beneficiary_id: number }) =>
-    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>('/finance/payouts', payload),
+    api.post<{ payout: PayoutRecord } | PayoutRecord>('/finance/payouts', payload),
 
   approvePayout: (payoutId: number | string) =>
-    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/approve`, {}),
+    api.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/approve`, {}),
 
   submitPayout: (payoutId: number | string) =>
-    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/submit`, {}),
+    api.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/submit`, {}),
 
   queryPayoutStatus: (payoutId: number | string) =>
-    apiV2.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/status`, {}),
+    api.post<{ payout: PayoutRecord } | PayoutRecord>(`/finance/payouts/${payoutId}/status`, {}),
 
-  getExceptions: <T = { data: FinanceExceptionItem[] }>() => apiV2.get<T>('/finance/exceptions'),
+  getExceptions: <T = { data: FinanceExceptionItem[] }>() => api.get<T>('/finance/exceptions'),
 
   resolveException: (id: number | string, payload: { note: string }) =>
-    apiV2.post(`/finance/exceptions/${id}/resolve`, payload),
+    api.post(`/finance/exceptions/${id}/resolve`, payload),
 
-  getSplitGroup: (splitId: number) => apiV2.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
+  getSplitGroup: (splitId: number) => api.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
 
-  getInvoice: <T = unknown>(id: number | string) => apiV2.get<T>(`/monthly-invoices/${id}`),
+  getInvoice: <T = unknown>(id: number | string) => api.get<T>(`/monthly-invoices/${id}`),
 
-  getRecurringSeries: <T = unknown>() => apiV2.get<T>('/recurring-series'),
+  getRecurringSeries: <T = unknown>() => api.get<T>('/recurring-series'),
 
   createReservationSplit: <T = unknown>(reservationId: number | string, payload: any) =>
-    apiV2.post<T>(`/reservations/${reservationId}/split`, payload),
+    api.post<T>(`/reservations/${reservationId}/split`, payload),
 }

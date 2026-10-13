@@ -1,10 +1,10 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { venueClockRange } from '@/core/utils/venueTime'
 import type { Product, PosShift, CustomerProfile, CourtReservation } from '../types/pos'
 
 export const posApi = {
   getProducts: async (): Promise<Product[]> => {
-    const res = await apiV2.get<Product[]>('/pos/products')
+    const res = await api.get<Product[]>('/pos/products')
     return Array.isArray(res) ? res : []
   },
 
@@ -16,7 +16,7 @@ export const posApi = {
     barcode?: string
     description?: string
   }): Promise<Product> => {
-    const res = await apiV2.post<{ product: Product } | Product>('/pos/products', payload)
+    const res = await api.post<{ product: Product } | Product>('/pos/products', payload)
     return (res as any)?.product || res
   },
 
@@ -24,7 +24,7 @@ export const posApi = {
     productId: number,
     payload: { quantity_delta: number; type?: 'receipt' | 'adjustment' },
   ): Promise<Product> => {
-    const res = await apiV2.post<{ product: Product } | Product>(
+    const res = await api.post<{ product: Product } | Product>(
       `/pos/products/${productId}/stock`,
       payload,
     )
@@ -48,7 +48,7 @@ export const posApi = {
     cash_tendered?: number
     rounding_amount?: number
   }) => {
-    const res = await apiV2.post<{ quote: any }>('/pos/quote', payload)
+    const res = await api.post<{ quote: any }>('/pos/quote', payload)
     return (res as any)?.quote || res
   },
 
@@ -75,16 +75,12 @@ export const posApi = {
     idempotencyKey?: string,
   ) => {
     const config = idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined
-    const res = await apiV2.post<{ order: any; receipt?: any } | any>(
-      '/pos/orders',
-      payload,
-      config,
-    )
+    const res = await api.post<{ order: any; receipt?: any } | any>('/pos/orders', payload, config)
     return res
   },
 
   getOrder: async (orderId: number | string) => {
-    return await apiV2.get<{ order: any; receipt: any }>(`/pos/orders/${orderId}`)
+    return await api.get<{ order: any; receipt: any }>(`/pos/orders/${orderId}`)
   },
 
   confirmQrPayment: async (
@@ -96,30 +92,27 @@ export const posApi = {
       notes?: string
     } = {},
   ) => {
-    return await apiV2.post<{ order: any; receipt: any }>(
+    return await api.post<{ order: any; receipt: any }>(
       `/pos/orders/${orderId}/confirm-qr`,
       payload,
     )
   },
 
   cancelQrPayment: async (orderId: number | string, payload: { reason?: string } = {}) => {
-    return await apiV2.post<{ order: any; receipt: any }>(
-      `/pos/orders/${orderId}/cancel-qr`,
-      payload,
-    )
+    return await api.post<{ order: any; receipt: any }>(`/pos/orders/${orderId}/cancel-qr`, payload)
   },
   getShifts: async (): Promise<PosShift[]> => {
-    const res = await apiV2.get<{ data?: PosShift[] } | PosShift[]>('/pos/shifts')
+    const res = await api.get<{ data?: PosShift[] } | PosShift[]>('/pos/shifts')
     return Array.isArray(res) ? res : (res as any)?.data || []
   },
 
   getActiveShift: async (): Promise<PosShift | null> => {
-    const res = await apiV2.get<{ shift: PosShift | null }>('/pos/shifts/active')
+    const res = await api.get<{ shift: PosShift | null }>('/pos/shifts/active')
     return res?.shift ?? null
   },
 
   openShift: async (payload: { opening_cash: number }): Promise<PosShift> => {
-    const res = await apiV2.post<{ shift: PosShift } | PosShift>('/pos/shifts', payload)
+    const res = await api.post<{ shift: PosShift } | PosShift>('/pos/shifts', payload)
     return (res as any)?.shift || res
   },
 
@@ -127,7 +120,7 @@ export const posApi = {
     shiftId: number,
     payload: { declared_cash: number; note?: string },
   ): Promise<PosShift> => {
-    const res = await apiV2.post<{ shift: PosShift } | PosShift>(
+    const res = await api.post<{ shift: PosShift } | PosShift>(
       `/pos/shifts/${shiftId}/close`,
       payload,
     )
@@ -138,7 +131,7 @@ export const posApi = {
     shiftId: number,
     payload: { status: string; note?: string },
   ): Promise<PosShift> => {
-    const res = await apiV2.post<{ shift: PosShift } | PosShift>(
+    const res = await api.post<{ shift: PosShift } | PosShift>(
       `/pos/shifts/${shiftId}/review`,
       payload,
     )
@@ -146,18 +139,18 @@ export const posApi = {
   },
 
   getTab: async (reservationId: number | string) => {
-    return apiV2.get<{ tab: any }>(`/service-tabs/${reservationId}`)
+    return api.get<{ tab: any }>(`/service-tabs/${reservationId}`)
   },
 
   addItemToTab: async (payload: {
     reservation_id: number
     items: Array<{ product_id: number; quantity: number }>
   }) => {
-    return apiV2.post<{ tab: any; message: string }>('/service-tabs', payload)
+    return api.post<{ tab: any; message: string }>('/service-tabs', payload)
   },
 
   removeItemFromTab: async (reservationId: number | string, itemId: number) => {
-    return apiV2.delete<{ tab: any; message: string }>(
+    return api.delete<{ tab: any; message: string }>(
       `/service-tabs/${reservationId}/items/${itemId}`,
     )
   },
@@ -170,19 +163,19 @@ export const posApi = {
       customer_id?: number
     },
   ) => {
-    return apiV2.post<{ tab: any; order: any; receipt: any; message: string }>(
+    return api.post<{ tab: any; order: any; receipt: any; message: string }>(
       `/service-tabs/${tabId}/settle`,
       payload,
     )
   },
 
   cancelTab: async (tabId: number, reason?: string) => {
-    return apiV2.post<{ tab: any; message: string }>(`/service-tabs/${tabId}/cancel`, { reason })
+    return api.post<{ tab: any; message: string }>(`/service-tabs/${tabId}/cancel`, { reason })
   },
 
   getActiveReservations: async (): Promise<CourtReservation[]> => {
     try {
-      const res = await apiV2.get<{ data?: any[] } | any[]>('/reservations?status=confirmed')
+      const res = await api.get<{ data?: any[] } | any[]>('/reservations?status=confirmed')
       const list = Array.isArray(res) ? res : res?.data || []
       return list.map((r: any) => {
         let courtName = r.court?.name
@@ -217,7 +210,7 @@ export const posApi = {
     try {
       const q = query ? query.trim() : ''
       const url = q ? `/customers?q=${encodeURIComponent(q)}` : '/customers'
-      const res = await apiV2.get<{ customers?: any[] } | any[]>(url)
+      const res = await api.get<{ customers?: any[] } | any[]>(url)
       const list = Array.isArray(res) ? res : (res as any)?.customers || []
 
       return list.map((c: any) => ({

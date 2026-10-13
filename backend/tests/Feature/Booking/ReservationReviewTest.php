@@ -22,7 +22,7 @@ class ReservationReviewTest extends TestCase
         $customer = $fixture['org1']['owner'];
         $reservation = $this->reservation($customer, $fixture['org2']['court'], 'completed', now()->subDays(2), 'RSV-REVIEW-OTHER-ORG');
 
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $reservation->code, 'rating' => 4, 'body' => 'Sân đẹp'])
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $reservation->code, 'rating' => 4, 'body' => 'Sân đẹp'])
             ->assertCreated()
             ->assertJsonPath('reservation_id', $reservation->id)
             ->assertJsonPath('court_id', $fixture['org2']['court']->id)
@@ -38,10 +38,10 @@ class ReservationReviewTest extends TestCase
         $customer = $fixture['org1']['owner'];
         $reservation = $this->reservation($customer, $fixture['org1']['court1'], 'confirmed', now()->subDays(2), 'RSV-REVIEW-PROHIBITED');
 
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $reservation->code, 'booking_code' => 'BK-OLD', 'rating' => 5])
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $reservation->code, 'booking_code' => 'BK-OLD', 'rating' => 5])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['booking_code']);
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['booking_code' => 'BK-OLD', 'rating' => 5])
+        $this->actingAs($customer)->postJson('/api/reviews', ['booking_code' => 'BK-OLD', 'rating' => 5])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['booking_code', 'reservation_code']);
         $this->assertDatabaseCount('reviews', 0);
@@ -52,7 +52,7 @@ class ReservationReviewTest extends TestCase
         $fixture = $this->createMultiOrgVenueFixture();
         $reservation = $this->reservation($fixture['org1']['owner'], $fixture['org1']['court1'], 'confirmed', now()->subDays(2), 'RSV-REVIEW-NOT-MINE');
 
-        $this->actingAs($fixture['org2']['owner'])->postJson('/api/v1/reviews', ['reservation_code' => $reservation->code, 'rating' => 5])
+        $this->actingAs($fixture['org2']['owner'])->postJson('/api/reviews', ['reservation_code' => $reservation->code, 'rating' => 5])
             ->assertNotFound();
         $this->assertDatabaseCount('reviews', 0);
     }
@@ -66,12 +66,12 @@ class ReservationReviewTest extends TestCase
         $held = $this->reservation($customer, $court, 'held', now()->subDays(3), 'RSV-REVIEW-HELD');
         $done = $this->reservation($customer, $court, 'in_use', now()->subDays(2), 'RSV-REVIEW-DONE');
 
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $upcoming->code, 'rating' => 5])
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $upcoming->code, 'rating' => 5])
             ->assertUnprocessable()->assertJsonPath('message', 'Chỉ có thể đánh giá sau khi đã chơi xong.');
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $held->code, 'rating' => 5])
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $held->code, 'rating' => 5])
             ->assertUnprocessable()->assertJsonPath('message', 'Chỉ có thể đánh giá booking đã hoàn tất.');
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $done->code, 'rating' => 5])->assertCreated();
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $done->code, 'rating' => 3])->assertConflict();
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $done->code, 'rating' => 5])->assertCreated();
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $done->code, 'rating' => 3])->assertConflict();
 
         $this->assertSame(1, Review::query()->count());
     }
@@ -85,9 +85,9 @@ class ReservationReviewTest extends TestCase
         $cancelled = $this->mirror($customer, $court, 'cancelled', 'BK-REVIEW-CANCEL', now()->subDays(2));
         $this->assertSame('legacy', $noShow->status);
 
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $cancelled->code, 'rating' => 5])
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $cancelled->code, 'rating' => 5])
             ->assertUnprocessable();
-        $this->actingAs($customer)->postJson('/api/v1/reviews', ['reservation_code' => $noShow->code, 'rating' => 2])
+        $this->actingAs($customer)->postJson('/api/reviews', ['reservation_code' => $noShow->code, 'rating' => 2])
             ->assertCreated();
 
         $bookingId = Booking::query()->where('code', 'BK-REVIEW-NOSHOW')->value('id');

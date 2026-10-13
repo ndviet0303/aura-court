@@ -36,10 +36,10 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
-        $submitRes = $this->postJson("/api/v1/partner/application/{$appId}/submit", [
+        $submitRes = $this->postJson("/api/partner/application/{$appId}/submit", [
             'expected_version' => 1,
             'consents' => $this->validConsents(),
         ]);
@@ -53,14 +53,14 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         $incompleteConsents = [
             ['consent_type' => 'cooperation_terms', 'terms_version' => '2026.1'],
         ];
 
-        $submitRes = $this->postJson("/api/v1/partner/application/{$appId}/submit", [
+        $submitRes = $this->postJson("/api/partner/application/{$appId}/submit", [
             'expected_version' => 1,
             'consents' => $incompleteConsents,
         ]);
@@ -74,11 +74,11 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now(), 'name' => 'Tran Thi B']);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         // Populate all business details for individual
-        $this->putJson("/api/v1/partner/application/{$appId}", [
+        $this->putJson("/api/partner/application/{$appId}", [
             'business_type' => 'individual',
             'business_name' => 'Sân Cầu Lông Hoa Lư',
             'legal_name' => 'Tran Thi B',
@@ -111,7 +111,7 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         foreach ($requiredDocs as $type => $name) {
             $mime = str_ends_with($name, '.pdf') ? 'application/pdf' : 'image/jpeg';
             $file = UploadedFile::fake()->create($name, 200, $mime);
-            $this->postJson("/api/v1/partner/application/{$appId}/documents", [
+            $this->postJson("/api/partner/application/{$appId}/documents", [
                 'document_type' => $type,
                 'file' => $file,
             ])->assertStatus(201);
@@ -122,7 +122,7 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         $currentVersion = $kyc->version;
 
         // Submit application
-        $submitRes = $this->postJson("/api/v1/partner/application/{$appId}/submit", [
+        $submitRes = $this->postJson("/api/partner/application/{$appId}/submit", [
             'expected_version' => $currentVersion,
             'consents' => $this->validConsents(),
         ]);
@@ -139,14 +139,14 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         $this->assertCount(5, $freshKyc->consents);
 
         // Test Mutation Locking: Cannot modify application while in pending status
-        $blockedSave = $this->putJson("/api/v1/partner/application/{$appId}", [
+        $blockedSave = $this->putJson("/api/partner/application/{$appId}", [
             'business_name' => 'Tên Mới Sau Khi Nộp',
             'expected_version' => $freshKyc->version,
         ]);
         $blockedSave->assertStatus(409);
 
         // Cannot attach/replace documents while in pending status
-        $blockedDoc = $this->postJson("/api/v1/partner/application/{$appId}/documents", [
+        $blockedDoc = $this->postJson("/api/partner/application/{$appId}/documents", [
             'document_type' => 'representative_id_front',
             'file' => UploadedFile::fake()->create('hack.jpg', 100, 'image/jpeg'),
         ]);

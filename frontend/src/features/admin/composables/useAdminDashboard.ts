@@ -1,5 +1,5 @@
 import { ref, computed, onMounted, watch } from 'vue'
-import { apiOrigin } from '@/core/api/client'
+import { apiUrl } from '@/core/api/client'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -20,7 +20,7 @@ export interface AdminReport {
   }[]
 }
 
-// Item of GET v2/admin/reservations (C4).
+// Item of GET /admin/reservations (C4).
 export interface AdminReservation {
   id: number
   code: string
@@ -87,12 +87,9 @@ export function useAdminDashboard() {
   const statusFilter = ref('')
   const chartTab = ref<'hourly' | 'court'>('hourly')
 
-  const csvUrl = computed(() => {
-    const query = new URLSearchParams()
-    if (from.value) query.set('from', from.value)
-    if (to.value) query.set('to', to.value)
-    return `${apiOrigin}/api/v1/admin/reports.csv?${query}`
-  })
+  const csvUrl = computed(() =>
+    apiUrl('/admin/reports.csv', { from: from.value || undefined, to: to.value || undefined }),
+  )
 
   function formatDate(d: Date): string {
     const year = d.getFullYear()

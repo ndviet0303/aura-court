@@ -153,7 +153,7 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
 
     // 4. Negative test: Unsigned / unauthenticated document download is rejected with 403
     const unsignedDownloadRes = await page.request.get(
-      `${manifest.backend.url}/api/v1/partner/documents/download?id=${uploadRes.data.id}`,
+      `${manifest.backend.url}/api/partner/documents/download?id=${uploadRes.data.id}`,
     )
     expect(unsignedDownloadRes.status()).toBe(403)
   })
@@ -444,7 +444,7 @@ test.describe('P1: Đăng ký đối tác, Tài liệu xác minh, Xét duyệt &
     await expect(page).toHaveURL(/.*admin\/manage/)
 
     // 6. Security boundary: New owner is strictly DENIED on global platform audit logs
-    const auditRes = await page.request.get(`${manifest.backend.url}/api/v1/admin/audit-logs`)
+    const auditRes = await page.request.get(`${manifest.backend.url}/api/admin/audit-logs`)
     expect([401, 403]).toContain(auditRes.status())
 
     // 7. Cleanup: restore customer to clean state so subsequent tests are isolated

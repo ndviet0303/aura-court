@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Court;
@@ -12,7 +13,6 @@ use App\Models\TenantMembershipPlan;
 use App\Models\User;
 use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
-use App\Services\Booking\BookingService;
 use App\Services\Booking\DiscountService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
@@ -100,40 +100,29 @@ class GrowthFeaturesTest extends TestCase
     {
         Notification::fake();
         $owner = User::factory()->create();
-        $this->fundUserWallet($owner, 500000);
         $waiting = User::factory()->create();
         $venue = Venue::firstOrFail();
+        $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Danh Sách Chờ', 'is_active' => true]);
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
-        // Create pending payment booking holding the slot
-        $booking = Booking::create([
-            'code' => 'BKPENDINGWAIT',
-            'user_id' => $owner->id,
-            'court_id' => $court->id,
-            'total_amount' => 100000,
-            'status' => 'pending_payment',
-            'payment_expires_at' => now()->subMinute(),
-        ]);
-        $booking->slots()->create([
-            'court_id' => $court->id,
-            'starts_at' => $date,
-            'ends_at' => $date->copy()->addHour(),
-            'unit_price' => 100000,
-            'status' => 'held',
-        ]);
+        // An unpaid hold occupies the slot
+        $this->actingAs($owner)->withHeader('Idempotency-Key', 'waitlist-hold')
+            ->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])
+            ->assertCreated();
 
-        $this->actingAs($waiting)->postJson('/api/v1/waitlist', ['court_id' => $court->id, 'starts_at' => $date->toIso8601String()])->assertCreated();
+        $this->actingAs($waiting)->postJson('/api/waitlist', ['court_id' => $court->id, 'starts_at' => $date->toIso8601String()])->assertCreated();
 
-        // Expire pending bookings releases held inventory and notifies waitlist
-        app(BookingService::class)->expirePending();
+        // Expiring the hold releases held inventory and notifies waitlist
+        $this->travel(31)->minutes();
+        $this->assertSame(1, app(ExpirePendingBookings::class)->execute());
 
         $this->assertDatabaseHas('waitlist_entries', ['user_id' => $waiting->id, 'status' => 'notified']);
         Notification::assertSentTo($waiting, AuraBookingNotification::class, fn (AuraBookingNotification $notification) => $notification->event === 'waitlist_available');
     }
 
-    public function test_completed_booking_can_be_reviewed_and_calendar_downloaded(): void
+    public function test_completed_booking_can_be_reviewed(): void
     {
         $user = User::factory()->create();
         $court = Court::create(['venue_id' => Venue::firstOrFail()->id, 'name' => 'Sân Đánh Giá', 'is_active' => true]);
@@ -142,9 +131,8 @@ class GrowthFeaturesTest extends TestCase
         $booking->slots()->create(['court_id' => $court->id, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'unit_price' => 120000, 'status' => 'confirmed']);
         $mapping = app(LegacyBookingBackfillService::class)->backfillBooking($booking);
 
-        $this->actingAs($user)->postJson('/api/v1/reviews', ['reservation_code' => $mapping->reservation->code, 'rating' => 5, 'body' => 'Rất tốt'])->assertCreated();
+        $this->actingAs($user)->postJson('/api/reviews', ['reservation_code' => $mapping->reservation->code, 'rating' => 5, 'body' => 'Rất tốt'])->assertCreated();
         $this->assertDatabaseHas('reviews', ['reservation_id' => $mapping->reservation_id, 'booking_id' => $booking->id, 'rating' => 5]);
-        $this->actingAs($user)->get('/api/v1/bookings/'.$booking->code.'/calendar.ics')->assertOk()->assertHeader('Content-Type', 'text/calendar; charset=UTF-8')->assertSee('BEGIN:VCALENDAR');
     }
 
     public function test_notification_center_can_mark_notifications_read(): void
@@ -152,22 +140,9 @@ class GrowthFeaturesTest extends TestCase
         $user = User::factory()->create();
         $user->notify(new AuraBookingNotification('test', 'Thông báo test', 'Nội dung test', '/booking'));
 
-        $response = $this->actingAs($user)->getJson('/api/v1/notifications')->assertOk();
+        $response = $this->actingAs($user)->getJson('/api/notifications')->assertOk();
         $id = $response->json('notifications.data.0.id');
-        $this->actingAs($user)->postJson('/api/v1/notifications/'.$id.'/read')->assertOk();
+        $this->actingAs($user)->postJson('/api/notifications/'.$id.'/read')->assertOk();
         $this->assertDatabaseMissing('notifications', ['id' => $id, 'read_at' => null]);
-    }
-
-    public function test_expiring_booking_receives_one_reminder(): void
-    {
-        Notification::fake();
-        $user = User::factory()->create();
-        $court = Court::create(['name' => 'Sân Nhắc Thanh Toán', 'is_active' => true]);
-        $booking = Booking::create(['code' => 'BKEXPIRING01', 'user_id' => $user->id, 'court_id' => $court->id, 'total_amount' => 100000, 'status' => 'pending_payment', 'payment_expires_at' => now()->addMinutes(4)]);
-
-        $this->assertSame(1, app(BookingService::class)->notifyExpiring());
-        $this->assertNotNull($booking->fresh()->payment_expiring_notified_at);
-        Notification::assertSentTo($user, AuraBookingNotification::class, fn (AuraBookingNotification $notification) => $notification->event === 'booking_expiring');
-        $this->assertSame(0, app(BookingService::class)->notifyExpiring());
     }
 }

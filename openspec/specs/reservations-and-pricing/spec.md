@@ -6,28 +6,52 @@ Defines tenant-aware reservation and quote behaviour for V1 and V2 APIs with dir
 
 ## Requirements
 
-### Requirement: Versioned reservation API compatibility
-V1 and V2 SHALL remain supported projections of one authoritative reservation/inventory identity during migration. New direct-owner checkout SHALL create a pending-payment booking with exclusive expiring holds and receiver-bound payment instructions; confirmation SHALL require verified payment, or a documented zero-payable outcome. The former cancellation/rescheduling retirement SHALL be superseded by policy-governed requests. Historical wallet bookings SHALL retain recorded amounts, payment model and terms; old idempotency records MUST NOT authorize a different new command.
+### Requirement: Unversioned reservation API
+The platform SHALL serve one reservation command and query API under `/api`, with no version segment in any path. The V1 booking API SHALL be retired only when all of the following hold:
+- every historical booking is mapped to exactly one reservation;
+- every active booking slot at a future time has an active mapped reservation slot;
+- every first-party client uses the reservation API for checkout, payment, history, reviews and disputes;
+- the retiring change records the project owner's approval and the evidence it relied on.
+
+After retirement, every V1 booking-specific endpoint SHALL reject requests without creating, reading or changing any record. Historical bookings SHALL stay unchanged as read-only history, and their live state SHALL be kept on the mapped reservation.
+
+New direct-owner checkout SHALL create a pending-payment booking with exclusive expiring holds and receiver-bound payment instructions. Confirmation SHALL require verified payment, or a documented zero-payable outcome. Historical wallet bookings SHALL retain recorded amounts, payment model and terms, and SHALL remain readable through their mapped reservation. Old idempotency records MUST NOT authorize a different new command.
 
 #### Scenario: Legacy client retrieves a historical booking
-- **WHEN** a client retrieves a migrated historical wallet booking
-- **THEN** the original code, status, financial references and ownership history SHALL remain readable
+- **WHEN** a customer or administrator views a migrated historical wallet booking
+- **THEN** its original code, financial references and ownership history SHALL remain readable through its mapped reservation, which SHALL show its current status
 
 #### Scenario: New client creates a reservation
-- **WHEN** an eligible client creates the same direct-payment booking through either supported version
-- **THEN** the result SHALL reference one pending obligation and inventory hold without debiting a wallet
+- **WHEN** an eligible client creates a direct-payment booking
+- **THEN** it SHALL do so through the reservation API, and the result SHALL reference one pending obligation and inventory hold without debiting a wallet
 
 #### Scenario: Insufficient payment
 - **WHEN** only partial or unverified funds are received
 - **THEN** the booking SHALL remain unconfirmed and unpaid inventory SHALL follow its captured expiry policy
 
 #### Scenario: Stale client invokes a retired command
-- **WHEN** a stale old key is used against the new cancellation/change workflow
-- **THEN** the server SHALL reject incompatible replay or return only its original outcome, never mutate the new model by replaying an old response
+- **WHEN** a client calls a removed cancellation, refund or reschedule command, or replays an old idempotency key against a different command
+- **THEN** the server SHALL reject it or return only its original outcome, never mutate the new model by replaying an old response
 
 #### Scenario: New client creates a reservation with insufficient balance
 - **WHEN** a direct-cohort customer has insufficient legacy wallet balance but requests a valid direct-owner booking
 - **THEN** the server SHALL create the policy-bound pending direct payment without a wallet debit; confirmation SHALL still require verified owner payment or a legitimate zero-payable result
+
+#### Scenario: Retirement preconditions not met
+- **WHEN** any booking lacks a reservation mapping, an active future booking slot lacks an active mapped reservation slot, or the owner's approval is not recorded
+- **THEN** the V1 booking API SHALL keep serving and V1 retirement SHALL NOT proceed
+
+#### Scenario: Stale client calls a retired V1 booking endpoint
+- **WHEN** after retirement a client calls a V1 booking-specific endpoint to list, create, pay for, change or export a booking
+- **THEN** the request SHALL be rejected, and no booking, slot, payment, reservation, idempotency or notification record SHALL be created or changed
+
+#### Scenario: Stale client calls a versioned path
+- **WHEN** a client calls a path under `/api/v1` or `/api/v2`
+- **THEN** the server SHALL answer not found without creating or changing any record
+
+#### Scenario: Historical booking without a mapping
+- **WHEN** the backfill cannot map a historical booking to a reservation
+- **THEN** the booking SHALL be reported with its reason, SHALL remain unchanged, and SHALL block retirement until it is resolved
 
 ### Requirement: Immutable price quotes
 The platform SHALL calculate quotes from effective-dated tenant/venue/court rules using holiday/date exception, peak, weekly then explicitly configured base precedence, with deterministic scope/priority tie-breaking. Prices and allowed coupon, membership and loyalty benefits SHALL snapshot versions and validity. A random unmatched slot price MUST NOT be a fallback. Later changes SHALL not alter an accepted booking. An expired quote SHALL be recalculated and accepted again before payment.
@@ -45,7 +69,7 @@ The platform SHALL calculate quotes from effective-dated tenant/venue/court rule
 - **THEN** the accepted snapshot SHALL remain stable; an expired unaccepted quote requires renewed consent
 
 ### Requirement: Active inventory exclusivity
-No overlapping active entitlement or exclusive hold SHALL exist for the same court-time across V1/V2 bookings, recurring occurrences, owner-hosted sessions and tournaments using that court. Interval duration, venue calendar, book-ahead horizon, continuity policy and final eligibility SHALL be checked atomically at allocation and replacement. Held and confirmed states SHALL both exclude competitors.
+No overlapping active entitlement or exclusive hold SHALL exist for the same court-time across V1/V2 bookings, recurring occurrences, owner-hosted sessions and tournaments using that court. Interval duration, venue calendar, book-ahead horizon, continuity policy and final eligibility SHALL be checked atomically at allocation and replacement. Held and confirmed states SHALL both exclude competitors. The data store itself SHALL reject two held or confirmed reservation slots on the same court whose half-open time intervals overlap, independent of application-level checks. A store-level rejection SHALL surface to the client as the same availability conflict as an application-level rejection.
 
 #### Scenario: Concurrent reservation attempts
 - **WHEN** 100 eligible requests target one available court-time
@@ -58,6 +82,22 @@ No overlapping active entitlement or exclusive hold SHALL exist for the same cou
 #### Scenario: Configured booking window
 - **WHEN** slots violate a venue's book-ahead or continuity rule
 - **THEN** all versions SHALL reject the selection consistently
+
+#### Scenario: Writer bypasses the application check
+- **WHEN** a held or confirmed slot from 10:00 to 12:00 exists on a court, and a different reservation writes a held slot from 11:00 to 12:00 on that court without passing the application availability check
+- **THEN** the data store SHALL reject the write, and no part of that reservation, its entitlements or its payment records SHALL persist
+
+#### Scenario: Adjacent intervals do not conflict
+- **WHEN** one reservation holds 10:00 to 11:00 and another reservation requests 11:00 to 12:00 on the same court
+- **THEN** both SHALL be accepted, because half-open intervals that only touch do not overlap
+
+#### Scenario: Replacement held while its original stays protected
+- **WHEN** a confirmed reservation is rescheduled to a different court-time and the replacement is held pending an extra payment
+- **THEN** both the original and the replacement SHALL exclude competitors at the data store until the swap commits
+
+#### Scenario: Released slots free the interval
+- **WHEN** a slot becomes cancelled or expired
+- **THEN** its interval SHALL no longer block new holds on that court
 
 ### Requirement: Idempotent v2 business commands
 Every v2 command that creates or changes business state SHALL require an `Idempotency-Key`. Retrying the same key with the same authenticated principal and request content SHALL return the original result without repeating the state change; reuse with different content SHALL be rejected.

@@ -31,7 +31,7 @@ class CustomerActiveMembershipTest extends TestCase
         ]);
 
         // The profile page sends no organization header, so the endpoint must resolve the membership's tenant itself.
-        $this->actingAs($user)->getJson('/api/v1/membership')
+        $this->actingAs($user)->getJson('/api/membership')
             ->assertOk()
             ->assertJsonPath('membership.id', $active->id)
             ->assertJsonPath('membership.organization_id', $org->id)
@@ -43,17 +43,17 @@ class CustomerActiveMembershipTest extends TestCase
     public function test_membership_is_null_when_the_customer_has_no_active_plan(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->getJson('/api/v1/membership')
+        $this->actingAs($user)->getJson('/api/membership')
             ->assertOk()
             ->assertExactJson(['membership' => null]);
 
         $org = Organization::create(['name' => 'Expired Membership Org', 'slug' => 'expired-membership-org-'.uniqid()]);
         $this->membership($org, $user, 'Gold Elite All-Access', now()->subMonths(2), now()->subDay());
 
-        $this->actingAs($user)->getJson('/api/v1/membership')
+        $this->actingAs($user)->getJson('/api/membership')
             ->assertOk()
             ->assertExactJson(['membership' => null]);
-        $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $org->id])->getJson('/api/v1/membership')
+        $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $org->id])->getJson('/api/membership')
             ->assertOk()
             ->assertExactJson(['membership' => null]);
     }

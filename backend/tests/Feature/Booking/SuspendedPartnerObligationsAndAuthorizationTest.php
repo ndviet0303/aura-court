@@ -13,6 +13,7 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -39,6 +40,12 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
             'organization_id' => $org->id,
             'user_id' => $owner->id,
             'role' => 'organization_owner',
+            'status' => 'active',
+        ]);
+        OrganizationMember::create([
+            'organization_id' => $org->id,
+            'user_id' => $customer->id,
+            'role' => 'customer',
             'status' => 'active',
         ]);
 
@@ -104,6 +111,7 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
             'unit_price' => 100000,
             'status' => 'confirmed',
         ]);
+        $existing = Reservation::findOrFail(app(LegacyBookingBackfillService::class)->backfillBooking($existingBooking)->reservation_id);
 
         // Now partner is SUSPENDED!
         $org->update([
@@ -113,7 +121,7 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
 
         // 1. Customer attempts to create a NEW booking -> Must be refused with 422
         Sanctum::actingAs($customer);
-        $newBookingRes = $this->postJson('/api/v1/bookings', [
+        $newBookingRes = $this->withHeader('Idempotency-Key', 'suspended-new-booking')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetSlot->toIso8601String()],
         ]);
@@ -121,19 +129,20 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
             ->assertJsonValidationErrors(['partner']);
 
         // 2. Customer can still view their existing booking
-        $showRes = $this->getJson("/api/v1/bookings/{$existingBooking->code}");
+        $tenant = ['X-Organization-ID' => (string) $org->id];
+        $showRes = $this->withHeaders($tenant)->getJson("/api/reservations/{$existing->code}");
         $showRes->assertStatus(200)
-            ->assertJsonPath('code', 'BK-EXISTING-01');
+            ->assertJsonPath('reservation.legacy_mapping.0.legacy_code', 'BK-EXISTING-01');
 
         // 3. Organization owner can view the existing booking
         Sanctum::actingAs($owner);
-        $ownerShowRes = $this->getJson("/api/v1/bookings/{$existingBooking->code}");
+        $ownerShowRes = $this->withHeaders($tenant)->getJson("/api/reservations/{$existing->code}");
         $ownerShowRes->assertStatus(200)
-            ->assertJsonPath('code', 'BK-EXISTING-01');
+            ->assertJsonPath('reservation.legacy_mapping.0.legacy_code', 'BK-EXISTING-01');
 
         // 4. Cross-tenant user CANNOT view the booking (403)
         Sanctum::actingAs($crossTenantUser);
-        $crossTenantRes = $this->getJson("/api/v1/bookings/{$existingBooking->code}");
+        $crossTenantRes = $this->withHeaders($tenant)->getJson("/api/reservations/{$existing->code}");
         $crossTenantRes->assertStatus(403);
 
         // 5. Create a legacy unpaid hold
@@ -153,23 +162,20 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
         // 6. Retired commands are rejected (404) across customer, staff, and admin actors
         // Customer actor
         Sanctum::actingAs($customer);
-        $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
-        $this->postJson("/api/v1/bookings/{$existingBooking->code}/reschedule", ['court_id' => $court->id, 'slots' => [$targetSlot->toIso8601String()]])->assertNotFound();
-        $this->postJson("/api/v2/reservations/{$legacyHold->code}/cancel")->assertNotFound();
+        $this->postJson("/api/reservations/{$legacyHold->code}/cancel")->assertNotFound();
 
         // Staff / Owner actor
         Sanctum::actingAs($owner);
-        $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel")->assertNotFound();
-        $this->postJson("/api/v2/reservations/{$legacyHold->code}/cancel")->assertNotFound();
+        $this->postJson("/api/reservations/{$legacyHold->code}/cancel")->assertNotFound();
 
         // Admin actor
         Sanctum::actingAs($admin);
-        $this->postJson("/api/v1/bookings/{$existingBooking->code}/cancel")->assertNotFound();
-        $this->postJson("/api/v2/reservations/{$legacyHold->code}/cancel")->assertNotFound();
+        $this->postJson("/api/reservations/{$legacyHold->code}/cancel")->assertNotFound();
 
         // 7. Verify invariants: states, wallet balances, and inventory remain untouched
         $this->assertSame('confirmed', $existingBooking->fresh()->status);
         $this->assertSame('confirmed', $existingBooking->slots()->first()->status);
+        $this->assertSame('confirmed', $existing->fresh()->status);
         $this->assertSame('held', $legacyHold->fresh()->status);
         $this->assertSame(500000, (int) $wallet->fresh()->balance);
         $this->assertDatabaseMissing('refunds', ['booking_id' => $existingBooking->id]);

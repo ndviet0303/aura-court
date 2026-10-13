@@ -3,6 +3,7 @@
 namespace Tests\Feature\Readiness;
 
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
+use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Events\CourtStatusUpdated;
 use App\Jobs\ProcessOutboxMessage;
 use App\Models\Booking;
@@ -30,11 +31,11 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Services\Attendance\AttendanceService;
-use App\Services\Booking\BookingService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\OutboxService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\POS\PosService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -247,7 +248,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         // 4. Authorized staff confirms court readiness inspection -> CourtStatusUpdated dispatched with status 'available'
         $confirmResponse = $this->actingAs($staff)
             ->withHeaders(['X-Organization-Id' => (string) $org->id])
-            ->postJson("/api/v2/attendance/courts/{$court->id}/confirm-ready", [
+            ->postJson("/api/attendance/courts/{$court->id}/confirm-ready", [
                 'notes' => 'Net inspected, surface clean and swept ready for play',
             ]);
 
@@ -390,7 +391,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         ]);
 
         // 2. Query availability BEFORE sweep: slot is occupied by the held reservation -> available is false
-        $availBeforeRes = $this->getJson("/api/v1/availability?court_id={$court->id}&date={$targetDate->toDateString()}");
+        $availBeforeRes = $this->getJson("/api/availability?court_id={$court->id}&date={$targetDate->toDateString()}");
         $availBeforeRes->assertOk();
         $slotBefore = collect($availBeforeRes->json())->first(function ($s) use ($targetDate) {
             return Carbon::parse($s['startsAt'])->timestamp === $targetDate->copy()->utc()->timestamp;
@@ -399,7 +400,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $this->assertFalse($slotBefore['available'], 'Held slot must NOT be available prior to sweep.');
 
         // 3. Run the host scheduler sweep (the scheduled 'booking:expire-pending' callback)
-        $expiredCount = app(BookingService::class)->expirePending();
+        $expiredCount = app(ExpirePendingBookings::class)->execute();
         $this->assertGreaterThanOrEqual(1, $expiredCount, 'Host scheduler sweep must release the expired hold.');
 
         // Verify entity statuses transitioned to 'expired'
@@ -407,7 +408,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $this->assertSame('expired', $heldSlot->fresh()->status);
 
         // 4. Query availability AFTER sweep: slot is released back to available!
-        $availAfterRes = $this->getJson("/api/v1/availability?court_id={$court->id}&date={$targetDate->toDateString()}");
+        $availAfterRes = $this->getJson("/api/availability?court_id={$court->id}&date={$targetDate->toDateString()}");
         $availAfterRes->assertOk();
         $slotAfter = collect($availAfterRes->json())->first(function ($s) use ($targetDate) {
             return Carbon::parse($s['startsAt'])->timestamp === $targetDate->copy()->utc()->timestamp;
@@ -416,7 +417,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $this->assertTrue($slotAfter['available'], 'Held slot must be released BACK TO AVAILABLE after sweep.');
 
         // 5. Idempotent re-run: immediate second execution returns 0 and does not alter availability
-        $secondRunCount = app(BookingService::class)->expirePending();
+        $secondRunCount = app(ExpirePendingBookings::class)->execute();
         $this->assertSame(0, $secondRunCount, 'Idempotent sweep re-run must process 0 remaining items.');
     }
 
@@ -459,7 +460,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $shift = $posService->openShift($cashier, $org->id, 200000, $venue->id, 'REG-REL-01');
 
         // 2. Create a pending QR order reserving 5 units
-        $orderRes = $this->actingAs($cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes = $this->actingAs($cashier)->postJson('/api/pos/orders', [
             'venue_id' => $venue->id,
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 5],
@@ -475,7 +476,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 
         // Verify available stock is now constrained: 20 total - 5 reserved = 15 available
         // Trying to buy 16 units should fail with 409
-        $conflictRes = $this->actingAs($cashier)->postJson('/api/v2/pos/orders', [
+        $conflictRes = $this->actingAs($cashier)->postJson('/api/pos/orders', [
             'venue_id' => $venue->id,
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 16],
@@ -505,7 +506,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 
         // 5. Reserved inventory is RELEASED BACK TO PRODUCT STOCK:
         // Now buying 20 units succeeds cleanly without stock constraint error!
-        $reorderRes = $this->actingAs($cashier)->postJson('/api/v2/pos/orders', [
+        $reorderRes = $this->actingAs($cashier)->postJson('/api/pos/orders', [
             'venue_id' => $venue->id,
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 20],
@@ -965,7 +966,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             ]);
         }
 
-        $url = "/api/v1/availability?court_id={$court->id}&date={$targetDate->toDateString()}";
+        $url = "/api/availability?court_id={$court->id}&date={$targetDate->toDateString()}";
 
         // Warm up cache / route resolution once
         $warmup = $this->getJson($url);
@@ -998,7 +999,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 
     /**
      * 5b. Real NFR measurements:
-     * - Measure actual execution times for booking retrieval (V1 booking and V2 reservation):
+     * - Measure actual execution times for booking retrieval (legacy booking through its mapped reservation, and V2 reservation):
      *   * Assert execution time is within latency threshold (< 500ms in testing environment).
      *   * Explicitly record actual duration in assertion messages (never mock or fabricate NFR pass).
      */
@@ -1012,7 +1013,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $tz = 'Asia/Ho_Chi_Minh';
         $targetDate = now($tz)->addDays(4)->setTime(10, 0)->startOfHour();
 
-        // 1. Setup V1 booking with slots and payments
+        // 1. Setup legacy booking with slots and payments, read through its mapped reservation
         $booking = Booking::create([
             'organization_id' => $org->id,
             'user_id' => $customer->id,
@@ -1037,6 +1038,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             'status' => 'paid',
             'received_at' => now(),
         ]);
+        $legacyReservation = Reservation::findOrFail(app(LegacyBookingBackfillService::class)->backfillBooking($booking)->reservation_id);
 
         // 2. Setup V2 canonical reservation with slots and entitlements
         $reservation = Reservation::create([
@@ -1069,36 +1071,39 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         ]);
 
         // Warm up
-        $this->actingAs($customer)->getJson("/api/v1/bookings/{$booking->code}")->assertOk();
         $this->actingAs($customer)->withHeaders(['X-Organization-Id' => (string) $org->id])
-            ->getJson("/api/v2/reservations/{$reservation->code}")->assertOk();
+            ->getJson("/api/reservations/{$legacyReservation->code}")->assertOk();
+        $this->actingAs($customer)->withHeaders(['X-Organization-Id' => (string) $org->id])
+            ->getJson("/api/reservations/{$reservation->code}")->assertOk();
 
-        // 3. Measure Real V1 Booking Retrieval Latency
-        $v1StartTime = hrtime(true);
-        $v1Response = $this->actingAs($customer)->getJson("/api/v1/bookings/{$booking->code}");
-        $v1EndTime = hrtime(true);
+        // 3. Measure Real Legacy Booking Retrieval Latency
+        $legacyStartTime = hrtime(true);
+        $legacyResponse = $this->actingAs($customer)
+            ->withHeaders(['X-Organization-Id' => (string) $org->id])
+            ->getJson("/api/reservations/{$legacyReservation->code}");
+        $legacyEndTime = hrtime(true);
 
-        $v1Response->assertOk();
-        $this->assertSame($booking->code, $v1Response->json('code'));
+        $legacyResponse->assertOk();
+        $this->assertSame($booking->code, $legacyResponse->json('reservation.legacy_mapping.0.legacy_code'));
 
-        $v1DurationMs = round(($v1EndTime - $v1StartTime) / 1_000_000, 2);
+        $legacyDurationMs = round(($legacyEndTime - $legacyStartTime) / 1_000_000, 2);
 
         $this->assertGreaterThan(
             0.0,
-            $v1DurationMs,
-            "Measured V1 booking retrieval duration must be a real positive time (> 0ms), actual: {$v1DurationMs}ms."
+            $legacyDurationMs,
+            "Measured legacy booking retrieval duration must be a real positive time (> 0ms), actual: {$legacyDurationMs}ms."
         );
         $this->assertLessThan(
             500.0,
-            $v1DurationMs,
-            "NFR LATENCY VIOLATION: V1 booking retrieval took {$v1DurationMs}ms, exceeding required threshold < 500ms."
+            $legacyDurationMs,
+            "NFR LATENCY VIOLATION: Legacy booking retrieval took {$legacyDurationMs}ms, exceeding required threshold < 500ms."
         );
 
         // 4. Measure Real V2 Reservation Retrieval Latency
         $v2StartTime = hrtime(true);
         $v2Response = $this->actingAs($customer)
             ->withHeaders(['X-Organization-Id' => (string) $org->id])
-            ->getJson("/api/v2/reservations/{$reservation->code}");
+            ->getJson("/api/reservations/{$reservation->code}");
         $v2EndTime = hrtime(true);
 
         $v2Response->assertOk();

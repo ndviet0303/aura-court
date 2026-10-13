@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Social;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Models\FeedComment;
 use App\Models\FeedPost;
@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 
 class CommunityFeedController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(
         private readonly CommunityFeedService $feed,

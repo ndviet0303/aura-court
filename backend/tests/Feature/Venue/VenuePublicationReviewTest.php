@@ -75,7 +75,7 @@ class VenuePublicationReviewTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
 
         $res->assertStatus(422)
             ->assertJsonValidationErrors(['readiness']);
@@ -125,7 +125,7 @@ class VenuePublicationReviewTest extends TestCase
 
         // 1. Owner submits venue for publication
         Sanctum::actingAs($owner);
-        $submitRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $submitRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
 
         $submitRes->assertStatus(201)
             ->assertJsonPath('data.status', 'pending')
@@ -137,12 +137,12 @@ class VenuePublicationReviewTest extends TestCase
 
         // 2. Admin inspects publication queue
         Sanctum::actingAs($admin);
-        $queueRes = $this->getJson('/api/v1/admin/venues/publication-queue');
+        $queueRes = $this->getJson('/api/admin/venues/publication-queue');
         $queueRes->assertStatus(200)
             ->assertJsonPath('meta.total', 1);
 
         // 3. Admin approves publication
-        $reviewRes = $this->postJson("/api/v1/admin/venues/revisions/{$revisionId}/review", [
+        $reviewRes = $this->postJson("/api/admin/venues/revisions/{$revisionId}/review", [
             'decision' => 'approve',
             'reason' => 'Đạt tiêu chuẩn xuất bản cơ sở thể thao.',
         ]);
@@ -198,12 +198,12 @@ class VenuePublicationReviewTest extends TestCase
         $this->selectVerifiedReceiver($venue, $owner);
 
         Sanctum::actingAs($owner);
-        $submitRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $submitRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
         $revisionId = $submitRes->json('data.id');
 
         // Reviewer requests corrections
         Sanctum::actingAs($admin);
-        $revRes = $this->postJson("/api/v1/admin/venues/revisions/{$revisionId}/review", [
+        $revRes = $this->postJson("/api/admin/venues/revisions/{$revisionId}/review", [
             'decision' => 'revision_required',
             'reason' => 'Ảnh đại diện sân chụp mờ, vui lòng tải ảnh rõ nét hơn.',
             'feedback_fields' => ['images' => 'Vui lòng bổ sung ảnh sân rõ nét.'],

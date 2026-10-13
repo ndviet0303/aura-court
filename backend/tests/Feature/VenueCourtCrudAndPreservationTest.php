@@ -13,6 +13,7 @@ use App\Models\ReservationSlot;
 use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -32,7 +33,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $org = Organization::create(['name' => 'Aura Group', 'slug' => 'aura-group-'.uniqid()]);
 
         // 1. Create venue with amenities
-        $createRes = $this->actingAs($admin)->postJson('/api/v1/admin/venues', [
+        $createRes = $this->actingAs($admin)->postJson('/api/admin/venues', [
             'name' => 'Aura Stadium Hanoi',
             'address' => '88 Cau Giay, Hanoi',
             'google_maps_url' => 'https://maps.google.com/maps?q=aura+stadium',
@@ -53,7 +54,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
 
         // 2. Update venue amenities
-        $updateRes = $this->actingAs($admin)->patchJson("/api/v1/admin/venues/{$venueId}", [
+        $updateRes = $this->actingAs($admin)->patchJson("/api/admin/venues/{$venueId}", [
             'address' => '88 Cau Giay, Updated, Hanoi',
             'amenities' => ['wifi', 'parking', 'shower', 'cafe', 'lounge'],
         ]);
@@ -61,7 +62,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $updateRes->assertOk();
 
         // 3. Public view reflects the saved amenities and details
-        $publicRes = $this->getJson("/api/v1/venues/{$slug}");
+        $publicRes = $this->getJson("/api/venues/{$slug}");
         $publicRes->assertOk()
             ->assertJsonPath('address', '88 Cau Giay, Updated, Hanoi')
             ->assertJsonPath('amenities', ['wifi', 'parking', 'shower', 'cafe', 'lounge']);
@@ -81,7 +82,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
 
         // 1. Create sport zone
-        $createRes = $this->actingAs($admin)->postJson('/api/v1/admin/sport-zones', [
+        $createRes = $this->actingAs($admin)->postJson('/api/admin/sport-zones', [
             'venue_id' => $venue->id,
             'name' => ['vi' => 'Khu Pickleball VIP', 'en' => 'Pickleball VIP Zone'],
             'sport_type' => 'pickleball',
@@ -96,7 +97,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $zoneId = $createRes->json('id');
 
         // 2. Update sport zone
-        $updateRes = $this->actingAs($admin)->patchJson("/api/v1/admin/sport-zones/{$zoneId}", [
+        $updateRes = $this->actingAs($admin)->patchJson("/api/admin/sport-zones/{$zoneId}", [
             'slot_duration' => 90,
         ]);
 
@@ -104,7 +105,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ->assertJsonPath('slot_duration', 90);
 
         // 3. Public view of sport zone
-        $publicRes = $this->getJson("/api/v1/sport-zones/{$zoneId}");
+        $publicRes = $this->getJson("/api/sport-zones/{$zoneId}");
         $publicRes->assertOk()
             ->assertJsonPath('id', $zoneId)
             ->assertJsonPath('sport_type', 'pickleball')
@@ -132,7 +133,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
 
         // 1. Create Court with custom amenities
-        $courtRes = $this->actingAs($admin)->postJson('/api/v1/admin/courts', [
+        $courtRes = $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'San 01 BWF Da Nang',
             'venue_id' => $venue->id,
             'sport_zone_id' => $zone->id,
@@ -148,7 +149,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $courtSlug = $courtRes->json('slug');
 
         // 2. Public detail view of court via /courts/{slug}
-        $detailRes = $this->getJson("/api/v1/courts/{$courtSlug}");
+        $detailRes = $this->getJson("/api/courts/{$courtSlug}");
         $detailRes->assertOk()
             ->assertJsonPath('id', $courtId)
             ->assertJsonPath('slug', $courtSlug)
@@ -156,14 +157,14 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ->assertJsonPath('venue.name', 'Aura Da Nang');
 
         // 3. Public list includes court
-        $listRes = $this->getJson('/api/v1/courts');
+        $listRes = $this->getJson('/api/courts');
         $listRes->assertOk();
         $courtInList = collect($listRes->json())->firstWhere('id', $courtId);
         $this->assertNotNull($courtInList);
         $this->assertSame(['wifi', 'pro_shop', 'air_conditioning'], $courtInList['amenities']);
 
         // 4. Update court permitted details
-        $updateRes = $this->actingAs($admin)->patchJson("/api/v1/admin/courts/{$courtId}", [
+        $updateRes = $this->actingAs($admin)->patchJson("/api/admin/courts/{$courtId}", [
             'description' => 'Updated BWF Thảm chuẩn quốc tế',
             'amenities' => ['wifi', 'pro_shop', 'air_conditioning', 'led_lighting'],
         ]);
@@ -172,7 +173,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ->assertJsonPath('amenities', ['wifi', 'pro_shop', 'air_conditioning', 'led_lighting']);
 
         // 5. Refreshed public court view reflects saved details
-        $refreshedRes = $this->getJson("/api/v1/courts/{$courtSlug}");
+        $refreshedRes = $this->getJson("/api/courts/{$courtSlug}");
         $refreshedRes->assertOk()
             ->assertJsonPath('amenities', ['wifi', 'pro_shop', 'air_conditioning', 'led_lighting']);
     }
@@ -201,10 +202,10 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'slug' => 'catalog-court-'.uniqid(),
             'is_active' => true,
         ]);
-        $url = '/api/v1/courts?venue_id='.$venue->id;
+        $url = '/api/courts?venue_id='.$venue->id;
         $this->getJson($url)->assertOk()->assertJsonPath('0.name', 'Original Court');
 
-        $this->actingAs($admin)->patchJson('/api/v1/admin/courts/'.$court->id, [
+        $this->actingAs($admin)->patchJson('/api/admin/courts/'.$court->id, [
             'name' => 'Updated Court',
         ])->assertOk();
 
@@ -231,7 +232,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'is_active' => true,
         ]);
 
-        $created = $this->actingAs($admin)->postJson('/api/v1/admin/courts', [
+        $created = $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'Court with specifications',
             'venue_id' => $venue->id,
             'surface_type' => 'synthetic',
@@ -250,14 +251,14 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'status' => 'confirmed',
         ]);
 
-        $this->actingAs($admin)->patchJson("/api/v1/admin/courts/{$courtId}", [
+        $this->actingAs($admin)->patchJson("/api/admin/courts/{$courtId}", [
             'surface_type' => 'wood',
             'capacity' => 6,
         ])->assertOk()
             ->assertJsonPath('surface_type', 'wood')
             ->assertJsonPath('capacity', 6);
 
-        $this->getJson("/api/v1/courts/{$created->json('slug')}")
+        $this->getJson("/api/courts/{$created->json('slug')}")
             ->assertOk()
             ->assertJsonPath('surface_type', 'wood')
             ->assertJsonPath('capacity', 6);
@@ -279,7 +280,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($admin)->postJson('/api/v1/admin/courts', [
+        $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'Invalid Court',
             'venue_id' => $venue->id,
             'surface_type' => 'liquid',
@@ -323,7 +324,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'status' => 'active',
         ]);
 
-        // 1. Create historical V1 booking on this court
+        // 1. Create a historical legacy booking on this court and its reservation mirror
         $booking = Booking::create([
             'code' => 'BK-HIST-001',
             'user_id' => $user->id,
@@ -334,13 +335,14 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         BookingSlot::create([
             'booking_id' => $booking->id,
             'court_id' => $court->id,
-            'starts_at' => now()->subDay()->setHour(14),
-            'ends_at' => now()->subDay()->setHour(15),
+            'starts_at' => now()->subDay()->setHour(16),
+            'ends_at' => now()->subDay()->setHour(17),
             'unit_price' => 250000,
             'status' => 'confirmed',
         ]);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
 
-        // Create historical V2 reservation on this court
+        // Create a historical reservation on this court
         $reservation = Reservation::create([
             'organization_id' => $org->id,
             'user_id' => $user->id,
@@ -361,7 +363,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
 
         // 2. Operator deactivates the court
-        $deactivateRes = $this->actingAs($admin)->deleteJson("/api/v1/admin/courts/{$court->id}");
+        $deactivateRes = $this->actingAs($admin)->deleteJson("/api/admin/courts/{$court->id}");
         $deactivateRes->assertOk();
 
         // 3. Court lifecycle preservation: record remains in DB with is_active = false
@@ -373,37 +375,43 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'court_id' => $court->id]);
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'court_id' => $court->id]);
 
-        $bookingCheck = $this->actingAs($user)->getJson("/api/v1/bookings/{$booking->code}");
+        $bookingCheck = $this->actingAs($user)
+            ->withHeader('X-Organization-ID', (string) $org->id)
+            ->getJson('/api/reservations/LEGACY-BK-HIST-001');
         $bookingCheck->assertOk()
-            ->assertJsonPath('court.id', $court->id);
+            ->assertJsonPath('reservation.court.id', $court->id)
+            ->assertJsonPath('reservation.legacy_mapping.0.legacy_code', 'BK-HIST-001');
 
         // 5. Inactive court is hidden from public list
-        $publicList = $this->getJson('/api/v1/courts');
+        $publicList = $this->getJson('/api/courts');
         $publicList->assertOk();
         $this->assertNull(collect($publicList->json())->firstWhere('id', $court->id));
 
         // 6. Admin list STILL includes inactive court (for administrative record)
-        $adminList = $this->actingAs($admin)->getJson('/api/v1/admin/courts');
+        $adminList = $this->actingAs($admin)->getJson('/api/admin/courts');
         $adminList->assertOk();
         $adminCourt = collect($adminList->json())->firstWhere('id', $court->id);
         $this->assertNotNull($adminCourt);
         $this->assertFalse($adminCourt['is_active']);
 
         // 7. Public detail is hidden for a deactivated court (consistent with public list + new-booking rejection)
-        $detailCheck = $this->getJson("/api/v1/courts/{$court->slug}");
+        $detailCheck = $this->getJson("/api/courts/{$court->slug}");
         $detailCheck->assertNotFound();
 
         // 8. New bookings and reservations on the deactivated court are rejected
-        $newBookingAttempt = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [now()->addDay()->setTime(10, 0, 0)->toIso8601String()],
-        ]);
+        $newBookingAttempt = $this->actingAs($user)
+            ->withHeader('X-Organization-ID', (string) $org->id)
+            ->withHeader('Idempotency-Key', uniqid('checkout-'))
+            ->postJson('/api/reservations/checkout', [
+                'court_id' => $court->id,
+                'slots' => [now()->addDay()->setTime(10, 0, 0)->toIso8601String()],
+            ]);
         $newBookingAttempt->assertNotFound();
 
         $newQuoteAttempt = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $org->id)
             ->withHeader('Idempotency-Key', uniqid('quote-'))
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $court->id,
                 'slots' => [now()->addDay()->setTime(10, 0, 0)->toIso8601String()],
             ]);
@@ -435,14 +443,14 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
 
         // 1. Admin courts list contains price_slots_count
-        $listRes = $this->actingAs($admin)->getJson('/api/v1/admin/courts');
+        $listRes = $this->actingAs($admin)->getJson('/api/admin/courts');
         $listRes->assertOk();
         $courtData = collect($listRes->json())->firstWhere('id', $court->id);
         $this->assertNotNull($courtData);
         $this->assertEquals(1, $courtData['price_slots_count']);
 
         // 2. Admin can fetch single court prices on demand
-        $pricesRes = $this->actingAs($admin)->getJson("/api/v1/admin/courts/{$court->id}/prices");
+        $pricesRes = $this->actingAs($admin)->getJson("/api/admin/courts/{$court->id}/prices");
         $pricesRes->assertOk();
         $pricesRes->assertJsonCount(1);
         $pricesRes->assertJsonFragment([

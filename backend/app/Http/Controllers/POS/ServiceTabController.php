@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\POS;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\POS\ServiceTabService;
@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 class ServiceTabController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(
         private readonly ServiceTabService $tabs,

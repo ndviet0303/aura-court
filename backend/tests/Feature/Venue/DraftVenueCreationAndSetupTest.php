@@ -57,7 +57,7 @@ class DraftVenueCreationAndSetupTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Create venue
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/venues", [
             'name' => 'Sân Cầu Lông Ba Đình',
             'address' => '10 Chu Van An, Ba Dinh, Ha Noi',
             'city' => 'Hà Nội',
@@ -77,7 +77,7 @@ class DraftVenueCreationAndSetupTest extends TestCase
         ]);
 
         // Update draft venue
-        $updateRes = $this->putJson("/api/v1/partner/organizations/{$org->id}/venues/{$venueId}", [
+        $updateRes = $this->putJson("/api/partner/organizations/{$org->id}/venues/{$venueId}", [
             'address' => '12 Chu Van An, Ba Dinh, Ha Noi',
         ]);
 
@@ -94,7 +94,7 @@ class DraftVenueCreationAndSetupTest extends TestCase
 
         Sanctum::actingAs($nonOwner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/venues", [
             'name' => 'Illegal Venue',
             'address' => 'Somewhere',
         ]);

@@ -88,7 +88,7 @@ class SocialNotificationDeliveryTest extends TestCase
         // Alice sends request to Bob
         $res = $this->actingAs($this->alice)
             ->withHeaders($this->headers('req-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
         $res->assertCreated();
@@ -118,7 +118,7 @@ class SocialNotificationDeliveryTest extends TestCase
         // Alice sends request to Bob
         $this->actingAs($this->alice)
             ->withHeaders($this->headers('dup-req-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
 
@@ -199,7 +199,7 @@ class SocialNotificationDeliveryTest extends TestCase
         // Host invites player
         $inviteRes = $this->actingAs($this->host)
             ->withHeaders($this->headers('inv-'))
-            ->postJson("/api/v2/social/matches/{$match->id}/invite", [
+            ->postJson("/api/social/matches/{$match->id}/invite", [
                 'invitee_id' => $this->invitee->id,
             ]);
         $inviteRes->assertCreated();
@@ -208,7 +208,7 @@ class SocialNotificationDeliveryTest extends TestCase
         $this->processPendingOutboxMessages();
 
         // Scenario: Notification reload -> Invitee reloads after committed match invitation
-        $notifListRes = $this->actingAs($this->invitee)->getJson('/api/v2/notifications');
+        $notifListRes = $this->actingAs($this->invitee)->getJson('/api/notifications');
         $notifListRes->assertOk();
         $this->assertSame(1, $notifListRes->json('unread'));
         $this->assertSame(1, $notifListRes->json('notifications.total'));
@@ -219,11 +219,11 @@ class SocialNotificationDeliveryTest extends TestCase
         $this->assertSame('match_invitation', $notifItem['data']['type']);
 
         // Invitee marks notification as read
-        $readRes = $this->actingAs($this->invitee)->postJson("/api/v2/notifications/{$notifItem['id']}/read");
+        $readRes = $this->actingAs($this->invitee)->postJson("/api/notifications/{$notifItem['id']}/read");
         $readRes->assertOk();
 
         // Unread count becomes 0
-        $reloadedList = $this->actingAs($this->invitee)->getJson('/api/v2/notifications');
+        $reloadedList = $this->actingAs($this->invitee)->getJson('/api/notifications');
         $this->assertSame(0, $reloadedList->json('unread'));
     }
 
@@ -252,7 +252,7 @@ class SocialNotificationDeliveryTest extends TestCase
         // Invitee accepts
         $respRes = $this->actingAs($this->invitee)
             ->withHeaders($this->headers('resp-'))
-            ->postJson("/api/v2/social/invitations/{$invitation->id}/respond", [
+            ->postJson("/api/social/invitations/{$invitation->id}/respond", [
                 'status' => 'accepted',
             ]);
         $respRes->assertOk();
@@ -287,7 +287,7 @@ class SocialNotificationDeliveryTest extends TestCase
         // Manager adds Alice as participant
         $addRes = $this->actingAs($manager)
             ->withHeaders($this->headers('tour-p-'))
-            ->postJson("/api/v2/tournaments/{$tournament->id}/participants", [
+            ->postJson("/api/tournaments/{$tournament->id}/participants", [
                 'user_id' => $this->alice->id,
             ]);
         $addRes->assertCreated();

@@ -9,10 +9,12 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
+use App\Models\Reservation;
 use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -24,6 +26,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
     private function createCustomerWithWallet(int $orgId, int $balance = 500000): User
     {
         $user = User::factory()->create(['role' => 'customer']);
+        OrganizationMember::create(['organization_id' => $orgId, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $orgId);
         $walletService->credit($wallet, $balance, 'test_topup', 1, 'Fund for test');
@@ -79,19 +82,19 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
 
         // 1. Create booking (slots 2 days in future at 10:00)
         $slotTime = now()->addDays(2)->setTime(10, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', 'policy-snapshot-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
         $bookRes->assertStatus(201);
 
-        $bookingId = $bookRes->json('booking.id');
-        $booking = Booking::findOrFail($bookingId);
+        $booking = Reservation::findOrFail($bookRes->json('reservation.id'));
 
-        // Verify new policy snapshot was captured without obsolete cancellation fields
-        $this->assertNotNull($booking->policy_snapshot);
-        $this->assertArrayNotHasKey('cancellation_grace_hours', $booking->policy_snapshot);
-        $this->assertNotNull($booking->price_snapshot);
+        // Verify the new reservation carries no obsolete cancellation fields; a wallet checkout
+        // captures no venue booking policy (only direct-owner checkout does).
+        $this->assertArrayNotHasKey('cancellation_grace_hours', $booking->metadata ?? []);
+        $this->assertArrayNotHasKey('cancellation_grace_hours', $booking->metadata['booking_policy_snapshot'] ?? []);
+        $this->assertNotNull($booking->slots()->firstOrFail()->snapshot);
 
         // 2. Pre-existing historical booking with captured cancellation grace hours
         $historicalBooking = Booking::create([
@@ -111,14 +114,12 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
             'status' => 'confirmed',
         ]);
 
-        // 3. Customer attempts to cancel either booking: routes are retired and return 404
-        $this->postJson("/api/v1/bookings/{$booking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
-        $this->postJson("/api/v1/bookings/{$historicalBooking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
+        app(LegacyBookingBackfillService::class)->backfillBooking($historicalBooking);
 
-        // 4. Invariants: Bookings remain confirmed, wallet balance untouched, snapshots preserved
+        // 3. Invariants: Bookings remain confirmed, wallet balance untouched, snapshots preserved
         $booking->refresh();
         $this->assertEquals('confirmed', $booking->status);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
+        $this->assertDatabaseMissing('owner_refund_obligations', ['reservation_id' => $booking->id]);
 
         $historicalBooking->refresh();
         $this->assertEquals('confirmed', $historicalBooking->status);
@@ -129,12 +130,13 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $wallet = $walletService->getOrCreateWallet($customer->id, $org->id);
         $this->assertEquals(400000, (int) $wallet->balance);
 
-        // Historical read succeeds for both
-        $this->getJson("/api/v1/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
-        $this->getJson("/api/v1/bookings/{$historicalBooking->code}")->assertOk()->assertJsonPath('code', $historicalBooking->code);
+        // Historical read succeeds for both; the legacy booking through its mapped reservation
+        $this->getJson("/api/reservations/{$booking->code}")->assertOk()->assertJsonPath('reservation.code', $booking->code);
+        $this->getJson('/api/reservations/LEGACY-'.$historicalBooking->code)->assertOk()
+            ->assertJsonPath('reservation.legacy_mapping.0.legacy_code', $historicalBooking->code);
     }
 
-    public function test_existing_booking_preserves_snapshot_and_rejects_retired_commands_after_venue_suspension(): void
+    public function test_existing_booking_is_preserved_and_new_checkout_rejected_after_venue_suspension(): void
     {
         $owner = User::factory()->create(['role' => 'customer']);
 
@@ -181,31 +183,32 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         Sanctum::actingAs($customer);
 
         $slotTime = now()->addDays(2)->setTime(10, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', 'suspension-checkout-1')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
         $bookRes->assertStatus(201);
-        $booking = Booking::findOrFail($bookRes->json('booking.id'));
+        $booking = Reservation::findOrFail($bookRes->json('reservation.id'));
 
         // Venue gets suspended!
         $venue->update(['status' => 'suspended', 'is_active' => false]);
 
-        // Customer attempts to cancel existing booking: returns 404
-        $cancelRes = $this->postJson("/api/v1/bookings/{$booking->code}/cancel", [
-            'reason' => 'Sân bị ngưng',
-        ]);
-        $cancelRes->assertNotFound();
+        // New checkout on the suspended venue is rejected
+        $this->withHeader('Idempotency-Key', 'suspension-checkout-2')->postJson('/api/reservations/checkout', [
+            'court_id' => $court->id,
+            'slots' => [now()->addDays(2)->setTime(11, 0, 0)->toIso8601String()],
+        ])->assertNotFound()->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+        $this->assertSame(1, Reservation::count());
 
         $booking->refresh();
         $this->assertEquals('confirmed', $booking->status);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
+        $this->assertDatabaseMissing('owner_refund_obligations', ['reservation_id' => $booking->id]);
 
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($customer->id, $org->id);
         $this->assertEquals(400000, (int) $wallet->balance);
 
         // Historical read succeeds
-        $this->getJson("/api/v1/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
+        $this->getJson("/api/reservations/{$booking->code}")->assertOk()->assertJsonPath('reservation.code', $booking->code);
     }
 }

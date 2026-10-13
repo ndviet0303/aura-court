@@ -34,7 +34,7 @@ class AdminReservationListTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'platform_admin']);
 
-        $response = $this->actingAs($admin)->getJson('/api/v2/admin/reservations')
+        $response = $this->actingAs($admin)->getJson('/api/admin/reservations')
             ->assertOk()
             ->assertJsonPath('total', 4)
             ->assertJsonPath('per_page', 30);
@@ -52,9 +52,9 @@ class AdminReservationListTest extends TestCase
     {
         $owner = $this->fixture['org1']['owner'];
 
-        $this->assertCodes($this->actingAs($owner)->getJson('/api/v2/admin/reservations'), ['RSV-ADM-V1', 'RSV-ADM-V2', 'LEGACY-BK-ADM-LEGACY']);
-        $this->assertCodes($this->actingAs($owner)->getJson('/api/v2/admin/reservations?venue_id='.$this->fixture['org1']['venue2']->id), ['RSV-ADM-V2']);
-        $this->actingAs($owner)->getJson('/api/v2/admin/reservations?venue_id='.$this->fixture['org2']['venue']->id)
+        $this->assertCodes($this->actingAs($owner)->getJson('/api/admin/reservations'), ['RSV-ADM-V1', 'RSV-ADM-V2', 'LEGACY-BK-ADM-LEGACY']);
+        $this->assertCodes($this->actingAs($owner)->getJson('/api/admin/reservations?venue_id='.$this->fixture['org1']['venue2']->id), ['RSV-ADM-V2']);
+        $this->actingAs($owner)->getJson('/api/admin/reservations?venue_id='.$this->fixture['org2']['venue']->id)
             ->assertForbidden()->assertJsonPath('message', 'Unauthorized venue.');
     }
 
@@ -62,8 +62,8 @@ class AdminReservationListTest extends TestCase
     {
         $staff = $this->member(OrganizationMember::ROLE_STAFF, ['venue_ids' => [$this->fixture['org1']['venue2']->id]]);
 
-        $this->assertCodes($this->actingAs($staff)->getJson('/api/v2/admin/reservations'), ['RSV-ADM-V2']);
-        $this->actingAs($staff)->getJson('/api/v2/admin/reservations?venue_id='.$this->fixture['org1']['venue1']->id)
+        $this->assertCodes($this->actingAs($staff)->getJson('/api/admin/reservations'), ['RSV-ADM-V2']);
+        $this->actingAs($staff)->getJson('/api/admin/reservations?venue_id='.$this->fixture['org1']['venue1']->id)
             ->assertForbidden();
     }
 
@@ -72,24 +72,24 @@ class AdminReservationListTest extends TestCase
         // A cashier passes venue_admin but has no authorized venues.
         $cashier = $this->member(OrganizationMember::ROLE_CASHIER);
 
-        $this->actingAs($cashier)->getJson('/api/v2/admin/reservations')->assertOk()->assertJsonPath('total', 0)->assertJsonPath('data', []);
+        $this->actingAs($cashier)->getJson('/api/admin/reservations')->assertOk()->assertJsonPath('total', 0)->assertJsonPath('data', []);
     }
 
     public function test_status_and_date_filters_and_thirty_per_page(): void
     {
         $admin = User::factory()->create(['role' => 'platform_admin']);
 
-        $this->assertCodes($this->actingAs($admin)->getJson('/api/v2/admin/reservations?status=cancelled'), ['RSV-ADM-V2']);
-        $this->assertCodes($this->actingAs($admin)->getJson('/api/v2/admin/reservations?status=legacy'), ['LEGACY-BK-ADM-LEGACY']);
-        $this->assertCodes($this->actingAs($admin)->getJson('/api/v2/admin/reservations?date='.now()->addDays(3)->toDateString()), ['RSV-ADM-ORG2']);
-        $this->actingAs($admin)->getJson('/api/v2/admin/reservations?status=pending_payment')->assertUnprocessable()->assertJsonValidationErrors(['status']);
+        $this->assertCodes($this->actingAs($admin)->getJson('/api/admin/reservations?status=cancelled'), ['RSV-ADM-V2']);
+        $this->assertCodes($this->actingAs($admin)->getJson('/api/admin/reservations?status=legacy'), ['LEGACY-BK-ADM-LEGACY']);
+        $this->assertCodes($this->actingAs($admin)->getJson('/api/admin/reservations?date='.now()->addDays(3)->toDateString()), ['RSV-ADM-ORG2']);
+        $this->actingAs($admin)->getJson('/api/admin/reservations?status=pending_payment')->assertUnprocessable()->assertJsonValidationErrors(['status']);
 
         $customer = User::factory()->create();
         foreach (range(1, 27) as $i) {
             Reservation::create(['organization_id' => $this->fixture['org2']['org']->id, 'user_id' => $customer->id, 'court_id' => $this->fixture['org2']['court']->id, 'code' => "RSV-ADM-BULK-{$i}", 'status' => 'expired', 'currency' => 'VND', 'total_amount' => 0, 'payment_model' => 'legacy_wallet_v1']);
         }
-        $this->actingAs($admin)->getJson('/api/v2/admin/reservations')->assertJsonPath('total', 31)->assertJsonCount(30, 'data')->assertJsonPath('last_page', 2);
-        $this->actingAs($admin)->getJson('/api/v2/admin/reservations?page=2')->assertJsonCount(1, 'data');
+        $this->actingAs($admin)->getJson('/api/admin/reservations')->assertJsonPath('total', 31)->assertJsonCount(30, 'data')->assertJsonPath('last_page', 2);
+        $this->actingAs($admin)->getJson('/api/admin/reservations?page=2')->assertJsonCount(1, 'data');
     }
 
     private function assertCodes($response, array $codes): void

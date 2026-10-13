@@ -36,7 +36,7 @@ class OwnerReservationPaymentTest extends TestCase
 
         [$firstConnection, $firstSecret] = $this->createVerifiedConnection($venue, '0123456789');
         $reservation = $this->createDirectReservation($owner->id, $organization->id, $court->id, 'RSV-OLD-RECEIVER');
-        $url = "/api/v2/reservations/{$reservation->code}/payment";
+        $url = "/api/reservations/{$reservation->code}/payment";
         $firstResponse = $this->postJson($url)->assertCreated();
         $firstAttempt = $firstResponse->json('payment_attempt');
         $firstResponse->assertJsonPath('payment_attempt.status', OwnerPaymentAttempt::STATUS_PENDING)
@@ -53,7 +53,7 @@ class OwnerReservationPaymentTest extends TestCase
         $this->assertNotSame($firstConnection->id, $secondConnection->id);
 
         $newReservation = $this->createDirectReservation($owner->id, $organization->id, $court->id, 'RSV-NEW-RECEIVER');
-        $newPayment = $this->postJson("/api/v2/reservations/{$newReservation->code}/payment")
+        $newPayment = $this->postJson("/api/reservations/{$newReservation->code}/payment")
             ->assertCreated()
             ->assertJsonPath('payment_attempt.receiver.account_number', '9988776655')
             ->json('payment_attempt');
@@ -99,11 +99,11 @@ class OwnerReservationPaymentTest extends TestCase
         ]);
 
         Sanctum::actingAs($fixture['org2']['owner']);
-        $this->getJson("/api/v2/reservations/{$reservation->code}/payment")->assertNotFound();
+        $this->getJson("/api/reservations/{$reservation->code}/payment")->assertNotFound();
 
         Sanctum::actingAs($owner);
         config(['features.flags.direct_owner_payments' => false]);
-        $this->postJson("/api/v2/reservations/{$reservation->code}/payment")->assertNotFound();
+        $this->postJson("/api/reservations/{$reservation->code}/payment")->assertNotFound();
         $this->assertDatabaseCount('owner_payment_attempts', 0);
     }
 
@@ -130,13 +130,13 @@ class OwnerReservationPaymentTest extends TestCase
             'expires_at' => now()->addDay(),
         ]);
 
-        $this->postJson('/api/v1/wallet/deposits', [
+        $this->postJson('/api/wallet/deposits', [
             'organization_id' => $organization->id,
             'amount' => 100000,
             'idempotency_key' => 'new-pooled-deposit',
         ])->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
 
-        $this->getJson("/api/v1/wallet/deposits?organization_id={$organization->id}")
+        $this->getJson("/api/wallet/deposits?organization_id={$organization->id}")
             ->assertOk()
             ->assertJsonCount(1, 'deposits')
             ->assertJsonPath('deposits.0.reference', 'LEGACY-DEP-1');
@@ -184,7 +184,7 @@ class OwnerReservationPaymentTest extends TestCase
 
     private function createVerifiedConnection(Venue $venue, string $accountNumber): array
     {
-        $url = "/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
+        $url = "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
         $created = $this->postJson($url, [
             'bank_code' => 'MBBank',
             'account_name' => 'Aura Court Owner',
@@ -212,7 +212,7 @@ class OwnerReservationPaymentTest extends TestCase
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
         $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-        $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $response = $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => $signature,

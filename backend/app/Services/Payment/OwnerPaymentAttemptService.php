@@ -2,9 +2,7 @@
 
 namespace App\Services\Payment;
 
-use App\Models\Booking;
 use App\Models\FinanceException;
-use App\Models\LegacyBookingMapping;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
@@ -14,7 +12,6 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
-use App\Services\Reservation\LegacyBookingBackfillService;
 use App\Services\Reservation\RescheduleService;
 use App\Services\Social\MarketplaceService;
 use Carbon\Carbon;
@@ -406,20 +403,6 @@ class OwnerPaymentAttemptService
                     ])->save();
                     $bookingReservation->slots()->where('status', 'held')->update(['status' => 'confirmed']);
                     $bookingReservation->entitlements()->where('status', 'held')->update(['status' => 'active']);
-
-                    $mapping = LegacyBookingMapping::query()
-                        ->withoutGlobalScope('tenant_isolation')
-                        ->where('reservation_id', $bookingReservation->id)
-                        ->lockForUpdate()
-                        ->first();
-                    if ($mapping) {
-                        $legacyBooking = Booking::query()->whereKey($mapping->legacy_booking_id)->lockForUpdate()->first();
-                        if ($legacyBooking && $legacyBooking->payment_model === 'direct_owner_v1' && $legacyBooking->status === 'pending_payment') {
-                            $legacyBooking->forceFill(['status' => 'confirmed'])->save();
-                            $legacyBooking->slots()->where('status', 'held')->update(['status' => 'confirmed']);
-                            app(LegacyBookingBackfillService::class)->syncProjection($legacyBooking);
-                        }
-                    }
                 }
                 if ($rescheduleReplacement) {
                     app(RescheduleService::class)->commitSwap($rescheduleReplacement);

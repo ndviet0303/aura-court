@@ -55,39 +55,21 @@ parameters:
 			path: app/Domain/Admin/Actions/CreateVenue.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Booking/Actions/ApplyBookingCoupon.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Booking/Actions/ApplyBookingCoupon.php
-
-		-
-			message: '#^Parameter \#1 \$coupon of method App\\Services\\Booking\\DiscountService\:\:release\(\) expects App\\Models\\Coupon\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Booking/Actions/ApplyBookingCoupon.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$court_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 1
 			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 1
 			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
 			identifier: method.notFound
-			count: 2
+			count: 1
 			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
 
 		-
@@ -95,24 +77,6 @@ parameters:
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
-
-		-
-			message: '#^Parameter \#1 \$coupon of method App\\Services\\Booking\\DiscountService\:\:release\(\) expects App\\Models\\Coupon\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Booking/Actions/NotifyExpiringBookings.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 2
-			path: app/Domain/Booking/DTOs/CreateBookingData.php
 
 		-
 			message: '#^Call to an undefined method App\\Services\\Finance\\PayoutService\:\:approvePayout\(\)\.$#'
@@ -607,12 +571,6 @@ parameters:
 			path: app/Http/Controllers/Admin/AdminController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Admin/AdminController.php
-
-		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Venue\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -857,54 +815,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Support\\HigherOrderCollectionProxy\<string, Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\>\:\:\$slots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ends_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/BookingController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/BookingController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/BookingController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/BookingController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Http/Controllers/Booking/BookingController.php
-
-		-
-			message: '#^Property App\\Http\\Controllers\\Booking\\BookingController\:\:\$payments is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Http/Controllers/Booking/BookingController.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Booking/BookingController.php
 
 		-
 			message: '#^Parameter \#1 \$venue of method App\\Domain\\Venue\\Actions\\VerifyEffectiveBookingEligibility\:\:evaluateVenue\(\) expects App\\Models\\Venue\|int, Illuminate\\Database\\Eloquent\\Model given\.$#'
@@ -1495,24 +1405,6 @@ parameters:
 			path: app/Http/Controllers/Promotion/PromotionController.php
 
 		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Organization\|\(Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\)\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Reservation/LegacyBookingAdapterController.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Reservation/LegacyBookingAdapterController.php
-
-		-
-			message: '#^Parameter \#1 \$organization of method App\\Services\\Infrastructure\\TenantContext\:\:setOrganization\(\) expects App\\Models\\Organization\|null, \(Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\)\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Reservation/LegacyBookingAdapterController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1528,91 +1420,91 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasMember\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Reservation\\V2PriceRuleController\:\:organization\(\) should return App\\Models\\Organization but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			message: '#^Method App\\Http\\Controllers\\Reservation\\PriceRuleController\:\:organization\(\) should return App\\Models\\Organization but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 1
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|null given\.$#'
 			identifier: argument.type
 			count: 1
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
 			message: '#^Parameter \#1 \$organization of method App\\Services\\Infrastructure\\TenantContext\:\:setOrganization\(\) expects App\\Models\\Organization\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 1
-			path: app/Http/Controllers/Reservation/V2PriceRuleController.php
+			path: app/Http/Controllers/Reservation/PriceRuleController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasMember\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Reservation\\V2ReservationController\:\:organization\(\) should return App\\Models\\Organization but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			message: '#^Method App\\Http\\Controllers\\Reservation\\ReservationController\:\:organization\(\) should return App\\Models\\Organization but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|null given\.$#'
 			identifier: argument.type
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Parameter \#1 \$organization of method App\\Services\\Infrastructure\\TenantContext\:\:setOrganization\(\) expects App\\Models\\Organization\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Http/Controllers/Reservation/V2ReservationController.php
+			path: app/Http/Controllers/Reservation/ReservationController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -2587,18 +2479,6 @@ parameters:
 			path: app/Infrastructure/Repositories/Eloquent/EloquentOrganizationLockRepository.php
 
 		-
-			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentPaymentRepository\:\:createForBooking\(\) should return App\\Models\\Payment but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentPaymentRepository.php
-
-		-
-			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentPaymentRepository\:\:getLatestForBooking\(\) should return App\\Models\\Payment\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentPaymentRepository.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 1
@@ -2609,12 +2489,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Infrastructure/Repositories/Eloquent/EloquentReconciliationRepository.php
-
-		-
-			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentRefundRepository\:\:createForBooking\(\) should return App\\Models\\Refund but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentRefundRepository.php
 
 		-
 			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentVenueLifecycleRepository\:\:createPublicationRevision\(\) should return App\\Models\\VenuePublicationRevision but returns Illuminate\\Database\\Eloquent\\Model\.$#'
@@ -2889,7 +2763,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
 			identifier: property.notFound
-			count: 5
+			count: 4
 			path: app/Services/Attendance/AttendanceService.php
 
 		-
@@ -3019,67 +2893,7 @@ parameters:
 			path: app/Services/Booking/DiscountService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$timezone\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Parameter \#2 \$payment of method App\\Services\\Finance\\FinancialPostingService\:\:postWalletBookingPayment\(\) expects App\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Property App\\Services\\Booking\\OrdinaryCheckoutService\:\:\$courtBlocks is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Property App\\Services\\Booking\\OrdinaryCheckoutService\:\:\$courts is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Property App\\Services\\Booking\\OrdinaryCheckoutService\:\:\$operatingCalendar is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Property App\\Services\\Booking\\OrdinaryCheckoutService\:\:\$waitlists is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>eligibility_group" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>version" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/Booking/OrdinaryCheckoutService.php
@@ -3087,7 +2901,7 @@ parameters:
 		-
 			message: '#^Variable \$policy in isset\(\) always exists and is not nullable\.$#'
 			identifier: isset.variable
-			count: 2
+			count: 1
 			path: app/Services/Booking/OrdinaryCheckoutService.php
 
 		-
@@ -3733,18 +3547,6 @@ parameters:
 			path: app/Services/Payment/OwnerRefundService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Payment/PaymentService.php
-
-		-
-			message: '#^Property App\\Services\\Payment\\PaymentService\:\:\$financials is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Services/Payment/PaymentService.php
-
-		-
 			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
 			identifier: greater.alwaysTrue
 			count: 1
@@ -3813,7 +3615,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 6
+			count: 5
 			path: app/Services/Payment/SplitPaymentService.php
 
 		-
@@ -3963,23 +3765,11 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
 			identifier: property.notFound
-			count: 2
-			path: app/Services/Reservation/CourtCommitmentConflictService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\BookingSlot\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Services/Reservation/CourtCommitmentConflictService.php
 
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ReservationSlot\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/Reservation/CourtCommitmentConflictService.php
-
-		-
-			message: '#^Parameter \#1 \$source of method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:concat\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Services/Reservation/CourtCommitmentConflictService.php
@@ -4003,30 +3793,6 @@ parameters:
 			path: app/Services/Reservation/LegacyBookingBackfillService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legacy_booking_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Reservation/LegacyBookingBackfillService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legacy_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Reservation/LegacyBookingBackfillService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legacy_status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Reservation/LegacyBookingBackfillService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legacy_total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Reservation/LegacyBookingBackfillService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
 			identifier: property.notFound
 			count: 2
@@ -4042,12 +3808,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Services/Reservation/LegacyBookingBackfillService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int\<0, max\>, starts_at\: Carbon\\Carbon\|null, ends_at\: Carbon\\Carbon\|null, unit_price\: int\<0, max\>\}, Closure\(App\\Models\\ReservationSlot\)\: array\{id\: int\<0, max\>, starts_at\: Carbon\\Carbon\|null, ends_at\: Carbon\\Carbon\|null, unit_price\: int\<0, max\>\} given\.$#'
-			identifier: argument.type
-			count: 1
 			path: app/Services/Reservation/LegacyBookingBackfillService.php
 
 		-

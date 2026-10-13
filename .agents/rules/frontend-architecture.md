@@ -41,7 +41,7 @@ src/
 
 - Views are **thin orchestrators** — ideally <150 lines, max 200 lines of `<script>`.
 - Views compose feature components and call composables. They do NOT contain:
-  - Direct API calls (`api.get()`, `apiV2.post()`)
+  - Direct API calls (`api.get()`, `api.post()`)
   - Complex business logic
   - Reusable UI patterns
   - Types/interfaces (unless page-local and trivial)
@@ -69,7 +69,7 @@ const { tournaments, loading, error, filters, loadMore } = useTournamentList()
 <!-- ❌ Bad — monolithic view with 3000+ lines -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { apiV2 } from '@/lib/api'
+import { api } from '@/lib/api'
 
 interface Tournament { /* ... 30 lines of types ... */ }
 const tournaments = ref<Tournament[]>([])
@@ -80,21 +80,21 @@ const tournaments = ref<Tournament[]>([])
 ## API Layer
 
 - **All API calls** go through domain-specific API modules: `features/{domain}/api/{domain}Api.ts`
-- Views and components **never** import `api` or `apiV2` directly.
+- Views and components **never** import `api` directly.
 - API modules return typed promises and handle response mapping.
 - Shared HTTP client stays in `core/api/client.ts`.
 
 ```ts
 // ✅ features/booking/api/bookingApi.ts
 import { api } from '@/core/api/client'
-import type { Booking, CreateBookingPayload, BookingWithPayment } from '../types/booking'
+import type { Reservation, PriceQuote, PriceQuotePayload } from '../types/reservation'
 
 export const bookingApi = {
-  list: () => api.get<Booking[]>('/bookings'),
-  create: (payload: CreateBookingPayload) =>
-    api.post<BookingWithPayment>('/bookings', payload),
-  cancel: (code: string, reason?: string) =>
-    api.post<Booking>(`/bookings/${code}/cancel`, { reason }),
+  getMyReservations: () => api.get<{ data: Reservation[] }>('/me/reservations'),
+  getPriceQuote: (payload: PriceQuotePayload) =>
+    api.post<{ quote: PriceQuote }>('/price-quotes', payload),
+  getReservation: (code: string) =>
+    api.get<{ reservation: Reservation }>(`/reservations/${code}`),
 }
 ```
 

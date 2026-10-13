@@ -271,7 +271,7 @@ class BookingPaymentSeeder extends Seeder
                 ]);
             }
 
-            // Every seeded booking gets its reservation mirror, like checkoutV1 does.
+            // Every seeded booking gets its reservation mirror through the legacy backfill.
             $mapping = $backfill->backfillBooking($booking);
             $reservation = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
             $reservation->forceFill(array_filter([

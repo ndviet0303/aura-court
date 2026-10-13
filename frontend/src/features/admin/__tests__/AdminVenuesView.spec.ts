@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminVenuesView from '../views/AdminVenuesView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/venues' }),
@@ -17,12 +17,6 @@ vi.mock('qrcode', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -73,12 +67,6 @@ describe('AdminVenuesView', () => {
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/admin/venues') return mockVenues
       if (url.startsWith('/admin/sport-zones')) return []
-      return []
-    })
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') {
-        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
-      }
       return []
     })
   })
@@ -182,7 +170,7 @@ describe('AdminVenuesView', () => {
     expect(wrapper.text()).toContain('Tải Mã QR (PNG)')
   })
 
-  it('calls v1 /admin/venues endpoint and never the undefined v2 endpoint', async () => {
+  it('calls the /admin/venues endpoint', async () => {
     mount(AdminVenuesView, {
       global: {
         plugins: [i18n],
@@ -191,7 +179,6 @@ describe('AdminVenuesView', () => {
     await flushPromises()
 
     expect(api.get).toHaveBeenCalledWith('/admin/venues')
-    expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
   })
 
   it('opens owner receiving connection readiness from the venue card', async () => {

@@ -1,5 +1,5 @@
 import { ref, watch, onScopeDispose } from 'vue'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { MonthlyInvoiceData, OccurrenceItem } from '../types/finance'
 import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
@@ -21,7 +21,7 @@ export function usePaymentCycleDetail(invoiceId: number | string) {
     if (!silent) loading.value = true
     error.value = ''
     try {
-      const res = await apiV2.get<{
+      const res = await api.get<{
         invoice: MonthlyInvoiceData
         occurrences: OccurrenceItem[]
         payment_attempt: ReservationPaymentAttempt | null

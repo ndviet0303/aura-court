@@ -19,7 +19,6 @@ const {
   filteredCourts,
   filteredSlots,
   carouselDays,
-  totalPrice,
   error,
   notice,
   loading,
@@ -125,7 +124,6 @@ const {
           :direct-owner-payments="directOwnerPayments"
           :date="date"
           :selected-slots="store.selectedSlots"
-          :total-price="totalPrice"
           :loading="checkoutLoading"
           :error="error"
           :notice="notice"

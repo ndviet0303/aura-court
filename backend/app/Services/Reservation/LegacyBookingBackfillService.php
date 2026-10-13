@@ -183,19 +183,6 @@ class LegacyBookingBackfillService
         return $this->mapBooking($booking);
     }
 
-    public function syncProjection(Booking $booking): void
-    {
-        $mapping = LegacyBookingMapping::query()->withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->first();
-        if (! $mapping) {
-            return;
-        }
-
-        $mapping->forceFill([
-            'legacy_status' => $booking->status,
-            'source_checksum' => $this->bookingChecksum($booking->load('slots')), // callers may hold a stale slots relation
-        ])->save();
-    }
-
     public function validate(?int $organizationId = null): array
     {
         $bookings = Booking::query()
@@ -217,25 +204,6 @@ class LegacyBookingBackfillService
             'valid' => $bookings->count() === $mappings->count()
                 && (int) $bookings->sum('total_amount') === (int) $mappings->sum('legacy_total_amount')
                 && $slotIds->count() === $slotMappings->count(),
-        ];
-    }
-
-    public function project(Reservation $reservation): array
-    {
-        $mapping = $reservation->legacyMapping()->firstOrFail();
-
-        return [
-            'id' => $mapping->legacy_booking_id,
-            'code' => $mapping->legacy_code,
-            'status' => $mapping->legacy_status,
-            'total_amount' => $mapping->legacy_total_amount,
-            'reservation_code' => $reservation->code,
-            'slots' => $reservation->slots->map(fn (ReservationSlot $slot) => [
-                'id' => $slot->id,
-                'starts_at' => $slot->starts_at,
-                'ends_at' => $slot->ends_at,
-                'unit_price' => $slot->unit_price,
-            ])->values(),
         ];
     }
 

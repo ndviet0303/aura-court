@@ -1,8 +1,6 @@
 export {
   api,
-  apiV2,
   apiUrl,
-  apiV2Url,
   errorMessage,
   idempotencyKey,
   getApiOrigin,

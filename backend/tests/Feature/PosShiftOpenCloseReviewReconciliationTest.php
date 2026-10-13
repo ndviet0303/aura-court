@@ -80,7 +80,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
     {
         // 1. OPEN SHIFT
         // Negative opening cash fails
-        $negOpen = $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $negOpen = $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => -5000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -89,7 +89,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         $negOpen->assertStatus(422);
 
         // Valid shift open with 500,000 VND
-        $openRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $openRes = $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => 500000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -103,7 +103,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         $shiftId = $openRes->json('shift.id');
 
         // Opening second shift while open fails with 409
-        $dupOpen = $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $dupOpen = $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => 200000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -113,7 +113,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
 
         // 2. REAL SALES UNDER THIS SHIFT
         // Cash Sale 1: 5 bottles of water = 50,000 VND
-        $sale1 = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $sale1 = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [['product_id' => $this->productA->id, 'quantity' => 5]],
             'payment_method' => 'cash',
             'cash_tendered' => 50000,
@@ -125,7 +125,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         $order1Id = $sale1->json('order.id');
 
         // Cash Sale 2: 2 towels = 100,000 VND
-        $sale2 = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $sale2 = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [['product_id' => $this->productB->id, 'quantity' => 2]],
             'payment_method' => 'cash',
             'cash_tendered' => 100000,
@@ -137,7 +137,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         $order2Id = $sale2->json('order.id');
 
         // Verify active shift expected cash: 500,000 + 150,000 cash sales = 650,000 VND
-        $activeRes = $this->actingAs($this->cashier)->getJson('/api/v2/pos/shifts/active', [
+        $activeRes = $this->actingAs($this->cashier)->getJson('/api/pos/shifts/active', [
             'X-Organization-Id' => $this->tenant->id,
         ]);
         $activeRes->assertOk()
@@ -147,7 +147,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
 
         // 3. CLOSE SHIFT WITH VARIANCE
         // Cashier counts 640,000 VND (Deficit of -10,000 VND)
-        $closeRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shiftId}/close", [
+        $closeRes = $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shiftId}/close", [
             'declared_cash' => 640000,
             'note' => 'Thiếu 10k do hoàn nhầm tiền lẻ cho khách mua nước',
         ], [
@@ -175,7 +175,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         ]);
 
         // 4. MANAGER REVIEWS AND APPROVES RECONCILIATION
-        $reviewRes = $this->actingAs($this->manager)->postJson("/api/v2/pos/shifts/{$shiftId}/review", [
+        $reviewRes = $this->actingAs($this->manager)->postJson("/api/pos/shifts/{$shiftId}/review", [
             'status' => 'approved',
             'note' => 'Quản lý xác nhận chấp thuận khoản chênh lệch 10k',
         ], [

@@ -98,7 +98,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         ]);
 
         // Court 1: Within quota
-        $res1 = $this->actingAs($owner)->postJson('/api/v1/admin/courts', [
+        $res1 = $this->actingAs($owner)->postJson('/api/admin/courts', [
             'name' => 'Sân 1',
             'venue_id' => $venue->id,
             'is_active' => true,
@@ -106,7 +106,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         $res1->assertStatus(201);
 
         // Court 2: Within quota (reaches limit 2)
-        $res2 = $this->actingAs($owner)->postJson('/api/v1/admin/courts', [
+        $res2 = $this->actingAs($owner)->postJson('/api/admin/courts', [
             'name' => 'Sân 2',
             'venue_id' => $venue->id,
             'is_active' => true,
@@ -114,7 +114,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         $res2->assertStatus(201);
 
         // Court 3: Exceeds quota (2 + 1 > 2) -> MUST fail with 422 validation error
-        $res3 = $this->actingAs($owner)->postJson('/api/v1/admin/courts', [
+        $res3 = $this->actingAs($owner)->postJson('/api/admin/courts', [
             'name' => 'Sân 3',
             'venue_id' => $venue->id,
             'is_active' => true,
@@ -146,7 +146,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         // Admin of both or platform admin attempts to move Court A to Venue B
         $platformAdmin = User::factory()->create(['role' => 'admin']);
 
-        $res = $this->actingAs($platformAdmin)->patchJson("/api/v1/admin/courts/{$courtA->id}", [
+        $res = $this->actingAs($platformAdmin)->patchJson("/api/admin/courts/{$courtA->id}", [
             'venue_id' => $venueB->id,
         ]);
 
@@ -208,7 +208,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         ]);
 
         // Activating suspended staff2 would increase active staff count to 2 (> 1) -> MUST fail
-        $res = $this->actingAs($owner)->patchJson("/api/v1/organizations/{$org->id}/members/{$member2->id}", [
+        $res = $this->actingAs($owner)->patchJson("/api/organizations/{$org->id}/members/{$member2->id}", [
             'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);

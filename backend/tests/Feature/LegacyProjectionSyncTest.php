@@ -4,11 +4,12 @@ namespace Tests\Feature;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Booking;
+use App\Models\BookingAttendance;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
-use App\Models\Payment;
+use App\Models\OrganizationMember;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
@@ -17,7 +18,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/** V1 writers that still run keep the V2 mirror and its mapping in sync (Phase A readers use the mirror). */
+/** Legacy bookings are frozen history: live operations act on the mapped mirror and leave the legacy rows and the audit intact. */
 class LegacyProjectionSyncTest extends TestCase
 {
     use RefreshDatabase;
@@ -41,42 +42,35 @@ class LegacyProjectionSyncTest extends TestCase
         $this->admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
     }
 
-    public function test_admin_no_show_updates_the_mapping_and_keeps_the_audit_valid(): void
+    public function test_no_show_on_a_mapped_booking_keeps_the_legacy_rows_and_the_audit_valid(): void
     {
         $booking = $this->mappedBooking('confirmed', 'confirmed', now()->subDays(2));
+        $mirror = $this->mirror($booking);
+        $staff = User::factory()->create(['email_verified_at' => now()]);
+        OrganizationMember::create(['organization_id' => $this->org->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active']);
 
-        $this->actingAs($this->admin)->patchJson("/api/v1/admin/bookings/{$booking->id}/no-show")->assertOk();
+        $this->actingAs($staff)
+            ->withHeaders(['X-Organization-ID' => (string) $this->org->id])
+            ->postJson('/api/attendance/no-show', ['code' => $mirror->code])
+            ->assertOk()
+            ->assertJsonPath('attendance.status', BookingAttendance::STATUS_NO_SHOW);
 
-        $this->assertSame('no_show', $this->mapping($booking)->legacy_status);
-        $this->assertAuditValid();
-    }
-
-    public function test_manual_payment_confirmation_confirms_the_mirror(): void
-    {
-        $booking = $this->mappedBooking('pending_payment', 'held', now()->addDays(2));
-        $payment = Payment::create(['booking_id' => $booking->id, 'provider' => 'vietqr', 'amount' => 100000, 'transfer_code' => $booking->code, 'status' => 'manual_review']);
-
-        $this->actingAs($this->admin)->patchJson("/api/v1/admin/payments/{$payment->id}", ['status' => 'paid'])->assertOk();
-
+        $this->assertSame('confirmed', $mirror->fresh()->status);
         $this->assertSame('confirmed', $booking->fresh()->status);
-        $mapping = $this->mapping($booking);
-        $mirror = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
-        $this->assertSame('confirmed', $mirror->status);
-        $this->assertNotNull($mirror->confirmed_at);
-        $this->assertSame(['confirmed'], $mirror->slots()->withoutGlobalScope('tenant_isolation')->pluck('status')->all());
-        $this->assertSame(['active'], $mirror->entitlements()->withoutGlobalScope('tenant_isolation')->pluck('status')->all());
-        $this->assertSame('confirmed', $mapping->legacy_status);
+        $this->assertSame('confirmed', $this->mapping($booking)->legacy_status);
         $this->assertAuditValid();
     }
 
     public function test_expiring_a_mapped_pending_booking_keeps_the_audit_valid(): void
     {
         $booking = $this->mappedBooking('pending_payment', 'held', now()->addDays(2));
-        $booking->forceFill(['payment_expires_at' => now()->subMinute()])->save();
+        $this->travel(11)->minutes();
 
         $this->assertSame(1, app(ExpirePendingBookings::class)->execute());
 
-        $this->assertSame('expired', $this->mapping($booking)->legacy_status);
+        $this->assertSame('expired', $this->mirror($booking)->status);
+        $this->assertSame('pending_payment', $booking->fresh()->status);
+        $this->assertSame('pending_payment', $this->mapping($booking)->legacy_status);
         $this->assertAuditValid();
     }
 
@@ -107,6 +101,11 @@ class LegacyProjectionSyncTest extends TestCase
     private function mapping(Booking $booking): LegacyBookingMapping
     {
         return LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
+    }
+
+    private function mirror(Booking $booking): Reservation
+    {
+        return Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($this->mapping($booking)->reservation_id);
     }
 
     private function assertAuditValid(): void

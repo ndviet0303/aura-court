@@ -21,7 +21,7 @@ const isBookingActive = computed(() => {
   return (
     path.startsWith('/booking') ||
     path.startsWith('/recurring-booking') ||
-    path.startsWith('/payment') ||
+    path.startsWith('/reservations') ||
     path.startsWith('/wallet')
   )
 })

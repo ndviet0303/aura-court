@@ -302,7 +302,7 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
         .digest('hex')
 
     const webhookRes = await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,

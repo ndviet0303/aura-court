@@ -2,7 +2,6 @@
 
 namespace App\Services\Social;
 
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
@@ -1007,14 +1006,6 @@ class MatchService
             ->where('ends_at', '>', $startsAtUtc)
             ->exists();
         abort_if($blockExists, 409, 'Sân đang có lịch bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
-
-        $bookingExists = BookingSlot::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endsAtUtc)
-            ->where('ends_at', '>', $startsAtUtc)
-            ->whereHas('booking', fn ($b) => $b->whereIn('status', ['confirmed', 'pending_payment']))
-            ->exists();
-        abort_if($bookingExists, 409, 'Sân đã có lịch đặt trước trong khoảng thời gian đã chọn.');
 
         $reservationExists = ReservationSlot::query()
             ->where('court_id', $court->id)

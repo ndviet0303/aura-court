@@ -82,7 +82,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'services.payments.simulate_qr_provider' => false,
         ]);
 
-        $response = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
             ],
@@ -99,7 +99,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
     public function test_pending_qr_order_creation_does_not_finalize_inventory_or_financial_effects(): void
     {
         $idempotencyKey = 'qr-init-'.uniqid();
-        $response = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $response = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 3],
             ],
@@ -148,7 +148,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
     public function test_verified_qr_confirmation_atomically_decrements_stock_and_posts_financial_effects(): void
     {
         $idempotencyKey = 'qr-confirm-'.uniqid();
-        $createRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $createRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 4],
             ],
@@ -162,7 +162,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
         $order = PosOrder::findOrFail($orderId);
         $this->assertSame('pending_payment', $order->status);
         // 1) Before seeding, assert that posting an unverified self-declared reference is rejected with 422
-        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'UNVERIFIED-FAKE-REF',
             'amount' => 80000,
             'provider' => 'vietqr',
@@ -185,7 +185,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
         ]);
 
         // 3) Then the cashier confirms with verified transaction ID and it succeeds with 200
-        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'MB-TXN-998877',
             'amount' => 80000,
             'provider' => 'vietqr',
@@ -229,7 +229,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
         ]);
 
         // Re-confirming completed order rejects with 409
-        $dupConfirm = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $dupConfirm = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'MB-TXN-998877',
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -240,7 +240,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
 
     public function test_cancellation_and_expiry_preserves_stock_and_prevents_financial_effects(): void
     {
-        $createRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $createRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 5],
             ],
@@ -253,7 +253,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
         $orderId = $createRes->json('order.id');
 
         // Cashier or timeout cancels the QR order
-        $cancelRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/cancel-qr", [
+        $cancelRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/cancel-qr", [
             'reason' => 'Customer timed out or changed payment method',
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -281,7 +281,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'event_id' => "pos:{$orderId}",
         ]);
         // Cannot confirm a cancelled order
-        $confirmCancelled = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $confirmCancelled = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'TX-LATE-123',
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -292,7 +292,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
 
     public function test_webhook_automatically_confirms_pending_pos_qr_order(): void
     {
-        $createRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $createRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
             ],

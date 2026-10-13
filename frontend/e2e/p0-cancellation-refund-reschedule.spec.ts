@@ -192,7 +192,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     const quoteResponsePromise = page.waitForResponse(
       (res) =>
-        res.url().includes(`/api/v2/reservations/${reservationCode}/refund-quote`) &&
+        res.url().includes(`/api/reservations/${reservationCode}/refund-quote`) &&
         res.request().method() === 'GET',
     )
     await cancelModal.locator('[data-testid="cancel-quote-btn"]').click()
@@ -228,7 +228,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await cancelModal.locator('[data-testid="cancel-recipient-number"]').fill('0987654321')
     const refundResponsePromise = page.waitForResponse(
       (res) =>
-        res.url().includes(`/api/v2/reservations/${reservationCode}/refund-requests`) &&
+        res.url().includes(`/api/reservations/${reservationCode}/refund-requests`) &&
         res.request().method() === 'POST',
     )
     await cancelModal.locator('[data-testid="cancel-submit-btn"]').click()
@@ -293,9 +293,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       // Owner approves request via API
       const approveJson = (await withE2EApi(
         ownerPage,
-        async ({ apiV2 }, { id, organizationId }) => {
+        async ({ api }, { id, organizationId }) => {
           try {
-            return await apiV2.post(
+            return await api.post(
               `/refund-requests/${id}/approve`,
               {},
               {
@@ -317,8 +317,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       // 8. Owner reports bank transfer execution
       const reportJson = (await withE2EApi(
         ownerPage,
-        async ({ apiV2 }, { id, organizationId }) => {
-          return await apiV2.post(
+        async ({ api }, { id, organizationId }) => {
+          return await api.post(
             `/refund-requests/${id}/report-execution`,
             {
               transfer_reference: 'MB-REF-46890123',
@@ -342,8 +342,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // 9. Customer acknowledges receipt of the refund
     const ackRes = (await withE2EApi(
       page,
-      async ({ apiV2 }, { id }) => {
-        return await apiV2.post(`/refund-requests/${id}/acknowledge`, {
+      async ({ api }, { id }) => {
+        return await api.post(`/refund-requests/${id}/acknowledge`, {
           accepted: true,
           note: 'Đã nhận đủ tiền hoàn qua tài khoản MBBank',
         })
@@ -427,7 +427,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
 
     // Warm the real catalog before adding fixtures: the scenario must work with an existing cache.
-    expect((await page.request.get(`${manifest.backend.url}/api/v1/courts`)).ok()).toBe(true)
+    expect((await page.request.get(`${manifest.backend.url}/api/courts`)).ok()).toBe(true)
     const courtCheap = arrangeCourt(manifest, {
       testKey: '4_7_cheap',
       venueId: venue1A.id,
@@ -1162,7 +1162,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    // 1. COMMITTED CHECKOUT RETRY (Booking creation with loyalty points)
+    // 1. COMMITTED CHECKOUT RETRY (Reservation checkout with loyalty points)
     // Send checkout request via API with a unique Idempotency-Key
     const checkoutKey = `idemp_checkout_${Date.now()}`
     const futureSlot = getFuturePlayDate(4, 15, 0)
@@ -1171,7 +1171,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       page,
       async ({ api }, { courtId, slotTime, key }) => {
         return await api.post(
-          '/bookings',
+          '/reservations/checkout',
           {
             court_id: courtId,
             slots: [slotTime],
@@ -1186,20 +1186,20 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       },
       { courtId: court.court_id, slotTime: futureSlot.slotTime, key: checkoutKey },
     )) as {
-      booking: { id: number; code: string; status: string }
+      reservation: { id: number; code: string; status: string }
     }
 
-    expect(firstCheckoutRes.booking).toBeDefined()
-    const firstBookingId = firstCheckoutRes.booking.id
-    const firstBookingCode = firstCheckoutRes.booking.code
-    expect(firstBookingCode).toBeTruthy()
+    expect(firstCheckoutRes.reservation).toBeDefined()
+    const firstReservationId = firstCheckoutRes.reservation.id
+    const firstReservationCode = firstCheckoutRes.reservation.code
+    expect(firstReservationCode).toBeTruthy()
 
     // Client lost response or experienced timeout, retries with the EXACT same key & payload
     const retryCheckoutRes = (await withE2EApi(
       page,
       async ({ api }, { courtId, slotTime, key }) => {
         return await api.post(
-          '/bookings',
+          '/reservations/checkout',
           {
             court_id: courtId,
             slots: [slotTime],
@@ -1214,35 +1214,35 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       },
       { courtId: court.court_id, slotTime: futureSlot.slotTime, key: checkoutKey },
     )) as {
-      booking: { id: number; code: string; status: string }
+      reservation: { id: number; code: string; status: string }
     }
 
-    // Verify retry returns exact same booking without error or second creation
-    expect(retryCheckoutRes.booking.id).toBe(firstBookingId)
-    expect(retryCheckoutRes.booking.code).toBe(firstBookingCode)
+    // Verify retry returns exact same reservation without error or second creation
+    expect(retryCheckoutRes.reservation.id).toBe(firstReservationId)
+    expect(retryCheckoutRes.reservation.code).toBe(firstReservationCode)
 
-    // Authoritative DB check: exactly 1 booking exists for this key, points debited ONCE (not twice)
+    // Authoritative DB check: the dedicated court holds exactly 1 reservation, points debited ONCE (not twice)
     const checkoutIdempCheckScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\IdempotencyRecord;
       use App\\Models\\PointLedger;
+      use App\\Models\\Reservation;
 
-      $booking = Booking::where('code', '${firstBookingCode}')->firstOrFail();
-      $bookingCount = Booking::where('code', '${firstBookingCode}')->count();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${firstReservationCode}')->firstOrFail();
+      $reservationCount = Reservation::withoutGlobalScope('tenant_isolation')->where('court_id', ${court.court_id})->count();
       $idempCount = IdempotencyRecord::where('key', '${checkoutKey}')->count();
       $debitPoints = PointLedger::where('user_id', ${manifest.fixtures?.users.customer.id})
-        ->where('source_type', 'booking')
-        ->where('source_id', $booking->id)
+        ->where('source_type', 'reservation')
+        ->where('source_id', $reservation->id)
         ->where('delta', '<', 0)
         ->sum('delta');
 
       echo json_encode([
-        'booking_count' => $bookingCount,
+        'reservation_count' => $reservationCount,
         'idemp_record_count' => $idempCount,
         'points_debited' => abs((int) $debitPoints),
       ]);
@@ -1254,35 +1254,30 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         encoding: 'utf-8',
       }),
     ) as {
-      booking_count: number
+      reservation_count: number
       idemp_record_count: number
       points_debited: number
     }
 
-    expect(checkoutIdempState.booking_count).toBe(1)
+    expect(checkoutIdempState.reservation_count).toBe(1)
     expect(checkoutIdempState.idemp_record_count).toBe(1)
     expect(checkoutIdempState.points_debited).toBe(50) // debited ONCE (no double benefit consumption)
 
-    // Confirm the booking with a payment webhook so it becomes confirmed for subsequent operations
+    // Confirm the reservation with a payment webhook so it becomes confirmed for subsequent operations
     const paymentCheckScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Reservation;
-      use App\\Models\\LegacyBookingMapping;
       use App\\Models\\OwnerPaymentAttempt;
 
-      $mapping = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_code', '${firstBookingCode}')->firstOrFail();
-      $reservation = $mapping->reservation;
-      $attempt = OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', $reservation->code)->latest('id')->firstOrFail();
+      $attempt = OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', '${firstReservationCode}')->latest('id')->firstOrFail();
 
       echo json_encode([
         'attempt_amount' => (int) $attempt->amount,
         'attempt_reference' => $attempt->reference,
         'account_number' => $attempt->receivingConnection?->accountNumber(),
-        'reservation_code' => $reservation->code,
       ]);
     `
     const paymentInfo = JSON.parse(
@@ -1295,7 +1290,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       attempt_amount: number
       attempt_reference: string
       account_number: string
-      reservation_code: string
     }
 
     const webhookTransactionId = `TXN-IDEMP-${Date.now()}`
@@ -1370,15 +1364,15 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     const firstReschedRes = (await withE2EApi(
       page,
-      async ({ api }, { bookingCode, courtId, slotTime, key }) => {
-        return await api.post(`/bookings/${bookingCode}/reschedule-requests`, {
+      async ({ api }, { reservationCode, courtId, slotTime, key }) => {
+        return await api.post(`/reservations/${reservationCode}/reschedule-requests`, {
           court_id: courtId,
           slots: [slotTime],
           idempotency_key: key,
         })
       },
       {
-        bookingCode: firstBookingCode,
+        reservationCode: firstReservationCode,
         courtId: reschedCourt.court_id,
         slotTime: reschedSlot.slotTime,
         key: reschedKey,
@@ -1396,15 +1390,15 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // Client retries the exact same reschedule request (simulating network timeout)
     const retryReschedRes = (await withE2EApi(
       page,
-      async ({ api }, { bookingCode, courtId, slotTime, key }) => {
-        return await api.post(`/bookings/${bookingCode}/reschedule-requests`, {
+      async ({ api }, { reservationCode, courtId, slotTime, key }) => {
+        return await api.post(`/reservations/${reservationCode}/reschedule-requests`, {
           court_id: courtId,
           slots: [slotTime],
           idempotency_key: key,
         })
       },
       {
-        bookingCode: firstBookingCode,
+        reservationCode: firstReservationCode,
         courtId: reschedCourt.court_id,
         slotTime: reschedSlot.slotTime,
         key: reschedKey,
@@ -1454,11 +1448,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const refundSlot = getFuturePlayDate(6, 17, 0)
     const refundCheckoutKey = `idemp_ref_chk_${Date.now()}`
 
-    const refundBookingRes = (await withE2EApi(
+    const refundCheckoutRes = (await withE2EApi(
       page,
       async ({ api }, { courtId, slotTime, key }) => {
         return await api.post(
-          '/bookings',
+          '/reservations/checkout',
           {
             court_id: courtId,
             slots: [slotTime],
@@ -1470,11 +1464,11 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       },
       { courtId: refundCourt.court_id, slotTime: refundSlot.slotTime, key: refundCheckoutKey },
     )) as {
-      booking: { code: string }
+      reservation: { code: string }
     }
-    const refundBookingCode = refundBookingRes.booking.code
+    const refundReservationCode = refundCheckoutRes.reservation.code
 
-    // Confirm booking
+    // Confirm reservation
     const refundPayInfo = JSON.parse(
       execFileSync(
         'php',
@@ -1486,17 +1480,16 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\LegacyBookingMapping;
       use App\\Models\\OwnerPaymentAttempt;
+      use App\\Models\\Reservation;
 
-      $mapping = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_code', '${refundBookingCode}')->firstOrFail();
-      $attempt = OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', $mapping->reservation->code)->latest('id')->firstOrFail();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${refundReservationCode}')->firstOrFail();
+      $attempt = OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', $reservation->code)->latest('id')->firstOrFail();
       echo json_encode([
         'amount' => (int) $attempt->amount,
         'reference' => $attempt->reference,
         'account_number' => $attempt->receivingConnection?->accountNumber(),
-        'reservation_code' => $mapping->reservation->code,
-        'slot_id' => $mapping->reservation->slots()->first()?->id,
+        'slot_id' => $reservation->slots()->first()?->id,
       ]);
     `,
         ],
@@ -1510,7 +1503,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       amount: number
       reference: string
       account_number: string
-      reservation_code: string
       slot_id: number
     }
 
@@ -1527,9 +1519,9 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     const refundReqKey = `idemp_refund_${Date.now()}`
     const firstRefundReq = (await withE2EApi(
       page,
-      async ({ api }, { bookingCode, slotId, key }) => {
+      async ({ api }, { reservationCode, slotId, key }) => {
         try {
-          return await api.post(`/bookings/${bookingCode}/refund-requests`, {
+          return await api.post(`/reservations/${reservationCode}/refund-requests`, {
             slot_ids: [slotId],
             reason: 'Thay đổi kế hoạch đột xuất',
             idempotency_key: key,
@@ -1546,7 +1538,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         }
       },
       {
-        bookingCode: refundPayInfo.reservation_code,
+        reservationCode: refundReservationCode,
         slotId: refundPayInfo.slot_id,
         key: refundReqKey,
       },
@@ -1566,8 +1558,8 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
     // Client retries the exact same refund request with the same idempotency key
     const retryRefundReq = (await withE2EApi(
       page,
-      async ({ api }, { bookingCode, slotId, key }) => {
-        return await api.post(`/bookings/${bookingCode}/refund-requests`, {
+      async ({ api }, { reservationCode, slotId, key }) => {
+        return await api.post(`/reservations/${reservationCode}/refund-requests`, {
           slot_ids: [slotId],
           reason: 'Thay đổi kế hoạch đột xuất',
           idempotency_key: key,
@@ -1579,7 +1571,7 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
         })
       },
       {
-        bookingCode: refundPayInfo.reservation_code,
+        reservationCode: refundReservationCode,
         slotId: refundPayInfo.slot_id,
         key: refundReqKey,
       },

@@ -37,29 +37,29 @@ class PartnerEndpointsAndLegacyRoutingTest extends TestCase
         ]);
 
         // Unauthenticated request fails
-        $this->getJson("/api/v1/partner/application/{$kyc->id}")
+        $this->getJson("/api/partner/application/{$kyc->id}")
             ->assertStatus(401);
 
         // Applicant 2 cannot access Applicant 1's application
         Sanctum::actingAs($applicant2);
-        $this->getJson("/api/v1/partner/application/{$kyc->id}")
+        $this->getJson("/api/partner/application/{$kyc->id}")
             ->assertStatus(404);
-        $this->getJson("/api/v1/partner/application/{$kyc->id}/completeness")
+        $this->getJson("/api/partner/application/{$kyc->id}/completeness")
             ->assertStatus(404);
-        $this->getJson("/api/v1/partner/application/{$kyc->id}/history")
+        $this->getJson("/api/partner/application/{$kyc->id}/history")
             ->assertStatus(404);
 
         // Applicant 1 can access their own application, completeness, and history
         Sanctum::actingAs($applicant1);
-        $this->getJson("/api/v1/partner/application/{$kyc->id}")
+        $this->getJson("/api/partner/application/{$kyc->id}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $kyc->id);
 
-        $this->getJson("/api/v1/partner/application/{$kyc->id}/completeness")
+        $this->getJson("/api/partner/application/{$kyc->id}/completeness")
             ->assertStatus(200)
             ->assertJsonStructure(['data' => ['is_complete', 'missing_fields', 'missing_documents']]);
 
-        $this->getJson("/api/v1/partner/application/{$kyc->id}/history")
+        $this->getJson("/api/partner/application/{$kyc->id}/history")
             ->assertStatus(200)
             ->assertJsonStructure(['data']);
     }
@@ -69,7 +69,7 @@ class PartnerEndpointsAndLegacyRoutingTest extends TestCase
         $customer = User::factory()->create(['role' => 'customer']);
 
         Sanctum::actingAs($customer);
-        $this->getJson('/api/v1/admin/partner/applications')
+        $this->getJson('/api/admin/partner/applications')
             ->assertStatus(403);
     }
 
@@ -104,17 +104,17 @@ class PartnerEndpointsAndLegacyRoutingTest extends TestCase
         Sanctum::actingAs($admin);
 
         // List
-        $listRes = $this->getJson('/api/v1/admin/partner/applications?status=pending');
+        $listRes = $this->getJson('/api/admin/partner/applications?status=pending');
         $listRes->assertStatus(200)
             ->assertJsonPath('meta.total', 1);
 
         // Show
-        $showRes = $this->getJson("/api/v1/admin/partner/applications/{$kyc->id}");
+        $showRes = $this->getJson("/api/admin/partner/applications/{$kyc->id}");
         $showRes->assertStatus(200)
             ->assertJsonPath('data.kyc_code', 'KYC-ADMIN-01');
 
         // Review approve
-        $reviewRes = $this->postJson("/api/v1/admin/partner/applications/{$kyc->id}/review", [
+        $reviewRes = $this->postJson("/api/admin/partner/applications/{$kyc->id}/review", [
             'decision' => 'approve',
             'reason' => 'Đạt tiêu chuẩn xét duyệt đối tác.',
             'expected_version' => 1,
@@ -143,21 +143,21 @@ class PartnerEndpointsAndLegacyRoutingTest extends TestCase
         Sanctum::actingAs($admin);
 
         // Suspend
-        $suspendRes = $this->postJson("/api/v1/admin/partner/{$org->id}/suspend", [
+        $suspendRes = $this->postJson("/api/admin/partner/{$org->id}/suspend", [
             'reason' => 'Tạm ngừng để xác minh khiếu nại chất lượng sân.',
         ]);
         $suspendRes->assertStatus(200)
             ->assertJsonPath('data.partner_status', 'suspended');
 
         // Restore
-        $restoreRes = $this->postJson("/api/v1/admin/partner/{$org->id}/restore", [
+        $restoreRes = $this->postJson("/api/admin/partner/{$org->id}/restore", [
             'notes' => 'Đã giải quyết xong khiếu nại.',
         ]);
         $restoreRes->assertStatus(200)
             ->assertJsonPath('data.partner_status', 'approved');
 
         // Terminate
-        $termRes = $this->postJson("/api/v1/admin/partner/{$org->id}/terminate", [
+        $termRes = $this->postJson("/api/admin/partner/{$org->id}/terminate", [
             'reason' => 'Chấm dứt hợp đồng.',
         ]);
         $termRes->assertStatus(200)
@@ -194,8 +194,8 @@ class PartnerEndpointsAndLegacyRoutingTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        // Call the legacy endpoint /api/v1/kyc/{id}/review or /api/v1/admin/kyc/{id}/review
-        $res = $this->postJson("/api/v1/admin/kyc/{$kyc->id}/review", [
+        // Call the legacy endpoint /api/kyc/{id}/review or /api/admin/kyc/{id}/review
+        $res = $this->postJson("/api/admin/kyc/{$kyc->id}/review", [
             'decision' => 'approve',
             'reviewer_notes' => 'Legacy admin review approval',
         ]);

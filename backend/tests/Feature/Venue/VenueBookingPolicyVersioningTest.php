@@ -89,17 +89,17 @@ class VenueBookingPolicyVersioningTest extends TestCase
     {
         [$owner, $organization, $venue] = $this->createOwnedVenue();
         Sanctum::actingAs($owner);
-        $prefix = "/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}";
+        $prefix = "/api/partner/organizations/{$organization->id}/venues/{$venue->id}";
 
         $this->getJson("{$prefix}/readiness")
             ->assertOk()
             ->assertJsonPath('data.checklist.policies_configured', false)
             ->assertJsonFragment(['code' => 'BOOKING_POLICY_REQUIRED']);
 
-        $this->getJson('/api/v1/admin/venues')
+        $this->getJson('/api/admin/venues')
             ->assertOk()
             ->assertJsonFragment(['id' => $venue->id, 'status' => 'draft']);
-        $this->patchJson("/api/v1/admin/venues/{$venue->id}", ['is_active' => true])
+        $this->patchJson("/api/admin/venues/{$venue->id}", ['is_active' => true])
             ->assertStatus(409);
 
         $settings = $this->policySettings();
@@ -130,7 +130,7 @@ class VenueBookingPolicyVersioningTest extends TestCase
     {
         [$owner, $organization, $venue] = $this->createOwnedVenue();
         Sanctum::actingAs($owner);
-        $url = "/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}/booking-policy";
+        $url = "/api/partner/organizations/{$organization->id}/venues/{$venue->id}/booking-policy";
 
         $this->putJson($url, ['settings' => ['booking' => ['hold_ttl_minutes' => 15]]])
             ->assertUnprocessable();
@@ -150,7 +150,7 @@ class VenueBookingPolicyVersioningTest extends TestCase
         [$owner, $organization, $venue] = $this->createOwnedVenue();
         $stranger = User::factory()->create(['role' => 'customer']);
         Sanctum::actingAs($stranger);
-        $url = "/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}/booking-policy";
+        $url = "/api/partner/organizations/{$organization->id}/venues/{$venue->id}/booking-policy";
 
         $this->getJson($url)->assertForbidden();
         $this->putJson($url, ['settings' => $this->policySettings()])->assertForbidden();
@@ -181,7 +181,7 @@ class VenueBookingPolicyVersioningTest extends TestCase
         ]);
         Sanctum::actingAs($owner);
 
-        $this->postJson('/api/v1/admin/venues', [
+        $this->postJson('/api/admin/venues', [
             'name' => 'New Policy Venue',
             'address' => '456 Test Street',
             'google_maps_url' => 'https://maps.google.com/maps?q=456+Test+Street',

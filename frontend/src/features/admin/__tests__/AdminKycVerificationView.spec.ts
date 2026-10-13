@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminKycVerificationView from '@/features/admin/views/AdminKycVerificationView.vue'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/kyc' }),
@@ -15,12 +15,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -88,7 +82,7 @@ describe('AdminKycVerificationView', () => {
       },
     ]
 
-    vi.mocked(apiV2.get).mockImplementation(((url: string) => {
+    vi.mocked(api.get).mockImplementation(((url: string) => {
       if (url.includes('/admin/kyc/stats')) {
         return Promise.resolve({
           stats: {
@@ -104,7 +98,7 @@ describe('AdminKycVerificationView', () => {
       return Promise.resolve({ data: testKycPayload })
     }) as any)
 
-    vi.mocked(apiV2.post).mockResolvedValue({
+    vi.mocked(api.post).mockResolvedValue({
       message: 'Hồ sơ KYC đã được phê duyệt và kích hoạt chủ sân thành công.',
       data: testKycPayload[0],
     })

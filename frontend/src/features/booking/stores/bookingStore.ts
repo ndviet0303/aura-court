@@ -2,19 +2,14 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { i18n } from '@/i18n'
 import { bookingApi } from '../api/bookingApi'
-import type { Booking, PaymentInfo } from '../types/booking'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 import { loyaltyFields, type LoyaltySelection } from '../utils/reservation'
-
-const paymentStorageKey = 'aura-court-payment'
 
 export const useBookingStore = defineStore('booking', () => {
   const courts = ref<Court[]>([])
   const slots = ref<AvailabilitySlot[]>([])
   const selectedCourt = ref<number | null>(null)
   const selectedSlots = ref<AvailabilitySlot[]>([])
-  const current = ref<Booking | null>(null)
-  const payment = ref<PaymentInfo | null>(null)
   const walletBalance = ref<number>(0)
   const error = ref('')
   const courtsLoading = ref(false)
@@ -87,17 +82,6 @@ export const useBookingStore = defineStore('booking', () => {
     selectedSlots.value.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
   }
 
-  function restorePayment() {
-    if (payment.value) return payment.value
-    try {
-      const saved = sessionStorage.getItem(paymentStorageKey)
-      if (saved) payment.value = JSON.parse(saved) as PaymentInfo
-    } catch {
-      sessionStorage.removeItem(paymentStorageKey)
-    }
-    return payment.value
-  }
-
   let inFlightWalletBalance: Promise<number> | null = null
 
   async function fetchWalletBalance() {
@@ -118,32 +102,13 @@ export const useBookingStore = defineStore('booking', () => {
     return inFlightWalletBalance
   }
 
-  async function loadPayment(code: string) {
-    const result = await bookingApi.getPayment(code)
-    if (result.booking) {
-      current.value = result.booking
-    }
-    if (result.wallet && typeof result.wallet.balance === 'number') {
-      walletBalance.value = result.wallet.balance
-    }
-    return result
-  }
-
-  async function createBookingPayment(code: string) {
-    return bookingApi.createBookingPayment(code)
-  }
-
-  function clearPayment() {
-    payment.value = null
-    sessionStorage.removeItem(paymentStorageKey)
-  }
-
-  // V2 checkout of the selected slots; the server prices them in the same transaction.
-  async function checkoutReservation(loyalty?: LoyaltySelection) {
+  // Checks out the selected slots; the server prices them in the same transaction.
+  async function checkoutReservation(loyalty?: LoyaltySelection, couponCode?: string | null) {
     const { reservation } = await bookingApi.checkoutReservation(
       {
         court_id: selectedCourt.value ?? undefined,
         slots: selectedSlots.value.map((slot) => slot.startsAt),
+        ...(couponCode ? { coupon_code: couponCode } : {}),
         ...loyaltyFields(loyalty),
       },
       loyalty?.idempotency_key,
@@ -151,26 +116,11 @@ export const useBookingStore = defineStore('booking', () => {
     return reservation
   }
 
-  async function refreshPaymentStatus() {
-    if (!current.value?.code) return null
-    return bookingApi.getPaymentStatus(current.value.code)
-  }
-
-  async function applyCoupon(couponCode?: string) {
-    const code = current.value?.code
-    if (!code) throw new Error('Chưa có booking.')
-    const result = await bookingApi.applyCoupon(code, couponCode)
-    current.value = result.booking
-    return result
-  }
-
   return {
     courts,
     slots,
     selectedCourt,
     selectedSlots,
-    current,
-    payment,
     walletBalance,
     error,
     loading,
@@ -180,12 +130,6 @@ export const useBookingStore = defineStore('booking', () => {
     loadAvailability,
     toggle,
     checkoutReservation,
-    applyCoupon,
-    restorePayment,
-    loadPayment,
-    createBookingPayment,
-    clearPayment,
-    refreshPaymentStatus,
     fetchWalletBalance,
   }
 })
