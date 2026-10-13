@@ -275,3 +275,10 @@ Decisions made while applying the change, with the options considered. Contracts
 - **C7. Reconciliation with `direct-owner-cutover` (its task 12.1).**
   - That change's wording is applied to this delta: the client list drops "booking changes", the superseded-by-policy sentence is gone, and the stale-client scenario names the removed cancellation, refund and reschedule commands.
   - This change renames the requirement (`Versioned reservation API compatibility` → `Unversioned reservation API`). Whichever change archives second rebases its MODIFIED block, header included, onto the main spec (its design 14).
+- **C8. Malformed ids in organization resolution (found by the 6.10 suite run).**
+  - `ResolvesOrganization` looked up `courts` and `price_quotes` with the raw `court_id`/`quote_id` before the controller validated them, so `court_id = "abc"` raised a PostgreSQL type error (500) instead of 422. V1 validated first, so this only surfaced once the tests moved to the reservation checkout.
+  - **Chosen:** look the ids up only when they are integers, and leave malformed values to the controller's validation. The alternative, validating inside the trait, would duplicate each controller's rules.
+- **C9. Request-time subscription expiry on reservation checkout.**
+  - V1 checked booking eligibility before its transaction, so a request after `ends_at` was rejected and also committed the `expired` transition, its audit log and the owner outbox message. Reservation checkout checks eligibility inside the idempotency and checkout transactions, so the rejection rolled the transition back.
+  - **Options:** (A) check eligibility once before the idempotent transaction when `court_id` is present; (B) keep the rollback and rely on the batch job (`ProcessExpiredSubscriptions`), dropping the test's transition assertions.
+  - **Chosen: A.** It keeps the behaviour V1 had, and the spec scenario "Expiry without scheduler execution" is about requests arriving before the job runs. The check inside the quote still runs, so the quote-token path is unchanged.

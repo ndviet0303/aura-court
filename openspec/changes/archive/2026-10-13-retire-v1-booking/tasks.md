@@ -7,9 +7,10 @@
 
 - [x] 1.1 Tìm mọi writer ghi `bookings`/`booking_slots` mà không đi qua `checkoutV1`/`backfillBooking`: E2E arrange commands, seeders, factory dùng trong command, console. Sửa cho chúng gọi `backfillBooking()` hoặc ghi thẳng sang V2.
   - Giải thích được nguồn gốc 12 booking `direct_owner` chưa có mapping trên bt-server.
-- [ ] 1.2 Chạy `BackfillLegacyReservations` trên bt-server và snapshot production.
+- [x] 1.2 Chạy `BackfillLegacyReservations` trên bt-server và snapshot production.
   - Ghi lại: số booking, số mapping, danh sách booking không map được kèm lý do.
   - Booking không map được thì để nguyên và đưa vào báo cáo, không được ép map.
+  - 2026-10-13: đóng theo yêu cầu của chủ dự án. Không chạy lệnh (artisan không chạy được tới prod). Kiểm tra read-only trên prod (bt-server là môi trường đích duy nhất): 72 booking, 72 mapping, 0 booking chưa map, 0 drift `created_at`, nên không còn booking nào cần backfill.
 - [x] 1.3 Feature test cho scenario "Historical booking without a mapping": booking không map được phải được báo cáo, không bị đổi, và làm `v1:retirement-readiness` fail.
 
 ## 2. Phase A — backend readers
@@ -46,26 +47,29 @@
 
 ## 4. Phase A — release
 
-- [ ] 4.1 Release phần additive của backend trước (cột mới, route admin mới, reports), sau đó release payload review/dispute cùng lúc với frontend.
+- [x] 4.1 Release phần additive của backend trước (cột mới, route admin mới, reports), sau đó release payload review/dispute cùng lúc với frontend.
+  - 2026-10-13: đóng theo yêu cầu của chủ dự án. Không release tách hai bước: Phase A và Phase C đi chung một lần deploy từ `feat/unversioned-api`. Backend chỉ deploy khi chạy tay `glab ci run -b main`.
 - [x] 4.2 Xác nhận trên mọi môi trường: số booking = số mapping, ngoại trừ các booking đã báo cáo ở 1.2 và đang chặn cổng.
   - Prod 2026-10-13: 72 booking, 72 mapping (design C1).
 
 ## 5. Phase B — cổng bằng chứng
 
 - [x] 5.1 Lên lịch chạy `v1:adoption-snapshot --days=30` hằng ngày (cron host theo quy ước hiện có).
-- [ ] 5.2 Ghi lại snapshot mỗi tuần vào change. Cổng chỉ mở khi đủ cả bốn điều kiện:
+- [x] 5.2 Ghi lại snapshot mỗi tuần vào change. Cổng chỉ mở khi đủ cả bốn điều kiện:
   - 30 ngày liền `legacy_booking_count = 0`;
   - không còn booking V1 `pending_payment`;
   - không còn booking V1 `confirmed` ở thời điểm tương lai;
   - số mapping = số booking.
   - Bỏ qua theo quyết định của chủ dự án ngày 2026-10-13 (design C1).
+  - 2026-10-13: đóng theo quyết định bỏ qua cổng 30 ngày (design C1). Chưa ghi snapshot tuần nào.
 - [x] 5.3 Chạy precheck: không có `booking_slot` active ở tương lai nào thiếu reservation slot active được map. Kết quả phải bằng 0.
   - Prod 2026-10-13: 0 (design C1).
-- [ ] 5.4 `php artisan v1:retirement-readiness --approved-change=openspec/changes/retire-v1-booking` trả `ready: true`. Ghi output vào change.
+- [x] 5.4 `php artisan v1:retirement-readiness --approved-change=openspec/changes/retire-v1-booking` trả `ready: true`. Ghi output vào change.
   - Lệnh ghép path với `base_path('../')`, tức là tính từ root repo, nên phải chạy trước khi archive change này.
   - Bỏ qua theo quyết định của chủ dự án ngày 2026-10-13 (design C1).
-- [ ] 5.5 Change riêng cho coupon trên V2 checkout (spec `reservations-and-pricing`: V1/V2 dùng chung coupon, hold giữ lượt coupon) đã apply và archive, kèm Playwright checkout có coupon trên luồng V2. Đây là điều kiện trước Phase C.
-  - Backend và frontend đã làm luôn trong change này, không tách change (design C4). Còn thiếu Playwright checkout có coupon.
+  - 2026-10-13: đóng theo quyết định bỏ qua cổng (design C1). Chưa chạy lệnh trên prod; thay bằng precheck 5.3 và đếm mapping read-only ở 1.2.
+- [x] 5.5 Change riêng cho coupon trên V2 checkout (spec `reservations-and-pricing`: V1/V2 dùng chung coupon, hold giữ lượt coupon) đã apply và archive, kèm Playwright checkout có coupon trên luồng V2. Đây là điều kiện trước Phase C.
+  - Backend và frontend đã làm luôn trong change này, không tách change (design C4). Playwright: `p0-booking-payment-journey.spec.ts` 4.5.2 nhập mã ở lịch sân, checkout reservation, kiểm tra QR 80.000 và `usage_count = 1` (pass 2026-10-13).
 
 ## 6. Phase C — retire
 
@@ -90,13 +94,18 @@
   - booking legacy vẫn đọc được qua reservation, với code, số tiền và trạng thái gốc;
   - webhook SePay cho POS và nạp ví vẫn ghi `payments` và vẫn chống trùng.
   - Có trong `tests/Feature/Readiness/RetiredV1BookingRoutesTest.php`, kèm `reservation_slots` và `price_quotes` trong danh sách bảng theo dõi, và test cho kịch bản "Stale client calls a versioned path" (`/api/v1`, `/api/v2` → 404, không ghi gì). Coupon trên reservation có trong `tests/Feature/Booking/ReservationCouponTest.php`.
-- [ ] 6.9 Xoá test chỉ phục vụ endpoint V1 đã bỏ. Giữ test dùng `Booking` làm dữ liệu lịch sử. Cập nhật allowlist kiến trúc và baseline PHPStan cho các entry không còn khớp (chỉ được giảm).
+- [x] 6.9 Xoá test chỉ phục vụ endpoint V1 đã bỏ. Giữ test dùng `Booking` làm dữ liệu lịch sử. Cập nhật allowlist kiến trúc và baseline PHPStan cho các entry không còn khớp (chỉ được giảm).
   - Allowlist kiến trúc và baseline PHPStan đã cập nhật (chỉ giảm; baseline 740 → 700 entry). Việc sửa test dừng giữa chừng theo yêu cầu owner (2026-10-13, "bỏ qua test chỉ sửa thôi check sau"): nhóm checkout/ví/loyalty xong 6/9 file; nhóm slot policy/lịch và nhóm tài khoản/hết hạn/lịch sử còn dở. Cần chạy lại cả bộ PHPUnit để biết test nào còn fail.
-- [ ] 6.10 Static gates backend và frontend pass. Bộ PHPUnit trên PostgreSQL và Playwright ở 3.7 pass.
+  - 2026-10-13: xong. Xoá test chỉ gọi route V1 (`OwnerRefundObligationTest` refund V1, `BookingApiTest` cancel V1, nhánh V1 của `TenantMembershipCheckoutBenefitsTest`). Các test còn lại chuyển sang reservation API hoặc dựng booking lịch sử bằng `backfillBooking()`; literal của `ReportParityTest` giữ nguyên. Lần chạy cả bộ lộ ra hai lỗi code, đã sửa (design C8, C9).
+- [x] 6.10 Static gates backend và frontend pass. Bộ PHPUnit trên PostgreSQL và Playwright ở 3.7 pass.
   - Đã pass: PHPStan level 0 và level 5, Pint, test kiến trúc, `vue-tsc`, eslint, oxlint, prettier. Chưa chạy: cả bộ PHPUnit, cả bộ vitest, Playwright. Job `build_and_deploy` cần `backend_test` và `frontend_check`, nên chưa được push lên `main` cho tới khi hai bộ này pass.
+  - 2026-10-13, local: PHPUnit trên PostgreSQL 857/858 pass (chỉ `DatabaseSafetyGuardTest` fail vì DB không tên `booking_test`, đúng thiết kế); vitest 443/443; PHPStan level 0 và 5, Pint, test kiến trúc, vue-tsc, eslint, oxlint, prettier pass. Playwright Khu 4 và Khu 7 (gồm các case 3.7 và 4.5.2): 42/43, case còn lại (8.1.1) pass khi chạy lại, lỗi do lần tải trang đầu chậm.
 
 ## 7. Phase C — release và sau release
 
-- [ ] 7.1 Release Phase C. Xác nhận số `bookings` và `booking_slots` không đổi sau 7 ngày (projection đã đóng băng) và số booking = số mapping.
-- [ ] 7.2 Theo dõi log 7 ngày, tìm request 404 tới các path V1 đã bỏ. Nếu có lưu lượng đáng kể thì ghi lại nguồn gọi. Không được khôi phục route.
-- [ ] 7.3 Cập nhật `docs/operations/phase-hardening-handover.md` và `docs/readiness/*`: V1 đã retire, cổng đã qua, và từ giờ lịch sử đọc qua reservation.
+- [x] 7.1 Release Phase C. Xác nhận số `bookings` và `booking_slots` không đổi sau 7 ngày (projection đã đóng băng) và số booking = số mapping.
+  - 2026-10-13: đóng theo yêu cầu của chủ dự án trước khi release Phase C. Chưa theo dõi 7 ngày sau release; số liệu lúc đóng: 72 booking = 72 mapping.
+- [x] 7.2 Theo dõi log 7 ngày, tìm request 404 tới các path V1 đã bỏ. Nếu có lưu lượng đáng kể thì ghi lại nguồn gọi. Không được khôi phục route.
+  - 2026-10-13: đóng theo yêu cầu của chủ dự án trước khi release. Chưa theo dõi log 404 (SSH tới bt-server bị timeout).
+- [x] 7.3 Cập nhật `docs/operations/phase-hardening-handover.md` và `docs/readiness/*`: V1 đã retire, cổng đã qua, và từ giờ lịch sử đọc qua reservation.
+  - 2026-10-13: `phase-hardening-handover.md` (đoạn cuối) và `docs/readiness/06_*` đã ghi V1 retire, cổng 30 ngày bị bỏ qua theo quyết định của chủ dự án, lịch sử đọc qua reservation. Các doc readiness khác không nhắc booking V1.
