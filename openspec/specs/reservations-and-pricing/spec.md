@@ -7,7 +7,7 @@ Defines tenant-aware reservation and quote behaviour for V1 and V2 APIs with dir
 ## Requirements
 
 ### Requirement: Unversioned reservation API
-The platform SHALL serve one reservation command and query API under `/api`, with no version segment in any path. The V1 booking API SHALL be retired only when all of the following hold:
+The platform SHALL serve one reservation command and query API under `/api`, with no version segment in any path. Third-party callbacks registered in external consoles (Google and Facebook OAuth callbacks, SePay platform and per-connection webhooks) SHALL keep their registered `/api/v1/...` paths. The V1 booking API SHALL be retired only when all of the following hold:
 - every historical booking is mapped to exactly one reservation;
 - every active booking slot at a future time has an active mapped reservation slot;
 - every first-party client uses the reservation API for checkout, payment, history, reviews and disputes;

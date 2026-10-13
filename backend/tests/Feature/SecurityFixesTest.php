@@ -41,14 +41,14 @@ class SecurityFixesTest extends TestCase
     public function test_verified_socialite_callback_still_authenticates_the_provider_identity(): void
     {
         config([
-            'services.google.redirect' => 'http://localhost/api/auth/google/callback',
+            'services.google.redirect' => 'http://localhost/api/v1/auth/google/callback',
             'app.frontend_url' => 'http://localhost:5173',
         ]);
 
         $provider = Mockery::mock(AbstractProvider::class);
         $provider->shouldReceive('redirectUrl')
             ->once()
-            ->with('http://localhost/api/auth/google/callback')
+            ->with('http://localhost/api/v1/auth/google/callback')
             ->andReturnSelf();
         $provider->shouldReceive('stateless')->once()->andReturnSelf();
         $provider->shouldReceive('user')->once()->andReturn(SocialiteUser::fake([
@@ -58,7 +58,7 @@ class SecurityFixesTest extends TestCase
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 
-        $this->get('/api/auth/google/callback')
+        $this->get('/api/v1/auth/google/callback')
             ->assertRedirect('http://localhost:5173/onboarding');
 
         $user = User::where('email', 'verified@example.com')->firstOrFail();
@@ -70,7 +70,7 @@ class SecurityFixesTest extends TestCase
     public function test_oauth_login_succeeds_even_when_avatar_url_exceeds_255_chars(): void
     {
         config([
-            'services.google.redirect' => 'http://localhost/api/auth/google/callback',
+            'services.google.redirect' => 'http://localhost/api/v1/auth/google/callback',
             'app.frontend_url' => 'http://localhost:5173',
         ]);
 
@@ -79,7 +79,7 @@ class SecurityFixesTest extends TestCase
         $provider = Mockery::mock(AbstractProvider::class);
         $provider->shouldReceive('redirectUrl')
             ->once()
-            ->with('http://localhost/api/auth/google/callback')
+            ->with('http://localhost/api/v1/auth/google/callback')
             ->andReturnSelf();
         $provider->shouldReceive('stateless')->once()->andReturnSelf();
         $provider->shouldReceive('user')->once()->andReturn(SocialiteUser::fake([
@@ -90,7 +90,7 @@ class SecurityFixesTest extends TestCase
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 
-        $this->get('/api/auth/google/callback')
+        $this->get('/api/v1/auth/google/callback')
             ->assertRedirect('http://localhost:5173/onboarding');
 
         $user = User::where('email', 'long_avatar@example.com')->firstOrFail();

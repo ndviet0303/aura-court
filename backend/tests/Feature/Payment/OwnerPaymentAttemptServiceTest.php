@@ -520,6 +520,6 @@ class OwnerPaymentAttemptServiceTest extends TestCase
 
     private function webhookUrl(ReceivingConnection $connection): string
     {
-        return '/api/webhooks/sepay/connections/'.$connection->routing_id;
+        return '/api/v1/webhooks/sepay/connections/'.$connection->routing_id;
     }
 }

@@ -63,7 +63,6 @@ Route::post('auth/login', [AuthController::class, 'login']);
 Route::get('platform/plans', [PlatformPlanController::class, 'catalog']);
 Route::middleware('web')->group(function () {
     Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
-    Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);
 });
 Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -104,10 +103,14 @@ Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('sport-zones', [SportZoneController::class, 'index']);
 Route::get('sport-zones/{sportZone}', [SportZoneController::class, 'show']);
 Route::get('availability', AvailabilityController::class);
-Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
-Route::post('webhooks/sepay/connections/{routingId}', ReceivingConnectionWebhookController::class)
-    ->withoutMiddleware('throttle:api')
-    ->name('webhooks.sepay.connection');
+// Google, Facebook and SePay consoles have these URLs registered, so they keep their pre-unversioning v1 paths.
+Route::prefix('v1')->group(function () {
+    Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->middleware('web');
+    Route::post('webhooks/sepay', SepayWebhookController::class)->withoutMiddleware('throttle:api');
+    Route::post('webhooks/sepay/connections/{routingId}', ReceivingConnectionWebhookController::class)
+        ->withoutMiddleware('throttle:api')
+        ->name('webhooks.sepay.connection');
+});
 
 Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::get('auth/me', function (Request $request, WalletPaymentService $walletService) {

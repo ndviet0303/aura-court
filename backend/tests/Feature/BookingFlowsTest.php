@@ -89,7 +89,7 @@ class BookingFlowsTest extends TestCase
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $raw, 'test-secret');
 
-        $this->call('POST', '/api/webhooks/sepay', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SEPAY_SIGNATURE' => $signature], $raw)->assertOk();
+        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SEPAY_SIGNATURE' => $signature], $raw)->assertOk();
 
         $this->assertDatabaseHas('payments', ['external_transaction_id' => 'tx-deposit-1', 'status' => 'paid']);
         $this->assertDatabaseHas('wallet_accounts', ['user_id' => $user->id, 'balance' => 500000]);

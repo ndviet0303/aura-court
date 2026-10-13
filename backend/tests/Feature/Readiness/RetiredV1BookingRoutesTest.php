@@ -97,8 +97,9 @@ class RetiredV1BookingRoutesTest extends TestCase
             ['GET', '/api/v2/me/reservations', []],
             ['POST', '/api/v2/price-quotes', $slots],
             ['POST', '/api/v2/reservations', $slots],
-            ['POST', '/api/v1/webhooks/sepay', ['id' => 'tx-stale-client', 'content' => 'POS STALE', 'transferAmount' => 40000, 'transferType' => 'in']],
-            ['GET', '/api/v1/auth/google/callback', []],
+            // Third-party callbacks keep only their registered v1 paths.
+            ['POST', '/api/webhooks/sepay', ['id' => 'tx-stale-client', 'content' => 'POS STALE', 'transferAmount' => 40000, 'transferType' => 'in']],
+            ['GET', '/api/auth/google/callback', []],
         ];
 
         foreach ($probes as [$method, $uri, $payload]) {
@@ -219,7 +220,7 @@ class RetiredV1BookingRoutesTest extends TestCase
         config(['services.sepay.hmac_secret' => 'retired-v1-sepay-secret']);
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
 
-        $this->call('POST', '/api/webhooks/sepay', [], [], [], [
+        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => hash_hmac('sha256', $raw, 'retired-v1-sepay-secret'),
         ], $raw)->assertOk()->assertJson(['success' => true]);

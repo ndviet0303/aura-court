@@ -70,7 +70,7 @@ class RestrictedAccountLifecycleTest extends TestCase
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 
-        $response = $this->get('/api/auth/google/callback');
+        $response = $this->get('/api/v1/auth/google/callback');
 
         $response->assertRedirect();
         $this->assertStringContainsString('error=account_restricted', $response->headers->get('Location'));

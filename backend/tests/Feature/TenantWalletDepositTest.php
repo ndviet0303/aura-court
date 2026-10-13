@@ -206,7 +206,7 @@ class TenantWalletDepositTest extends TestCase
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
 
         // Send with wrong signature
-        $response = $this->call('POST', '/api/webhooks/sepay', [], [], [], [
+        $response = $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => 'wrong-signature',
         ], $raw);
@@ -289,7 +289,7 @@ class TenantWalletDepositTest extends TestCase
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $raw, 'test-secret');
 
-        $this->call('POST', '/api/webhooks/sepay', [], [], [], [
+        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
         ], $raw)->assertOk();
@@ -299,7 +299,7 @@ class TenantWalletDepositTest extends TestCase
         $this->assertSame(250000, $wallet->fresh()->balance);
 
         // Re-delivering same external transaction id does NOT double credit
-        $this->call('POST', '/api/webhooks/sepay', [], [], [], [
+        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
         ], $raw)->assertOk();

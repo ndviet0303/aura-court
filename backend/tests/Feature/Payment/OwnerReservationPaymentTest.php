@@ -212,7 +212,7 @@ class OwnerReservationPaymentTest extends TestCase
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
         $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-        $response = $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => $signature,

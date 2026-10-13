@@ -324,7 +324,7 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

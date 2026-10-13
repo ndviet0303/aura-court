@@ -164,10 +164,10 @@ class AuthController extends Controller
             $scheme = $request->getScheme();
             $port = $request->getPort() ? ':'.$request->getPort() : ':8000';
 
-            return "{$scheme}://{$host}{$port}/api/auth/{$provider}/callback";
+            return "{$scheme}://{$host}{$port}/api/v1/auth/{$provider}/callback";
         }
 
-        return $configured ?: ($request->getSchemeAndHttpHost()."/api/auth/{$provider}/callback");
+        return $configured ?: ($request->getSchemeAndHttpHost()."/api/v1/auth/{$provider}/callback");
     }
 
     protected function resolveFrontendUrl(Request $request): string
