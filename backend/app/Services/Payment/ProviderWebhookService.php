@@ -19,6 +19,7 @@ class ProviderWebhookService
 
     public function receive(string $providerName, Request $request): array
     {
+        abort_unless(array_key_exists($providerName, $this->providers->all()), 404);
         $provider = $this->providers->provider($providerName);
         $raw = $request->getContent();
         $signature = (string) ($request->header('X-Signature') ?? $request->header('X-PayOS-Signature') ?? '');

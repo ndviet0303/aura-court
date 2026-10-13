@@ -104,7 +104,7 @@ class OwnerReceivingConnectionTest extends TestCase
         ];
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $endpoint = '/api/webhooks/sepay/connections/'.$connection->routing_id;
+        $endpoint = '/api/v1/webhooks/sepay/connections/'.$connection->routing_id;
 
         $this->sendWebhook($endpoint, $timestamp, $rawBody, $firstSecret)->assertUnauthorized();
         $this->assertSame(ReceivingConnection::STATUS_PENDING_VERIFICATION, $connection->fresh()->status);

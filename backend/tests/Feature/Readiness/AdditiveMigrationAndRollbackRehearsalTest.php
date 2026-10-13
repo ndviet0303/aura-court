@@ -512,7 +512,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
     /**
      * Scenario 4: Pause new commands while preserving ingestion & reconciliation.
      * - When new booking creation is paused/blocked (e.g. maintenance or cutover flag),
-     *   incoming provider webhook ingestion (POST /api/webhooks/sepay) and
+     *   incoming provider webhook ingestion (POST /api/v1/webhooks/sepay) and
      *   reconciliation runs (ReconciliationService::run) continue operating normally without dropping receipts.
      */
     public function test_04_pause_new_commands_while_preserving_provider_webhook_ingestion_and_reconciliation(): void
@@ -563,7 +563,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
         $this->assertSame(0, Reservation::count());
 
         // 3. Ingestion Check: While new booking commands are blocked, provider webhook ingestion
-        // at POST /api/webhooks/sepay MUST succeed and process receipts without dropping
+        // at POST /api/v1/webhooks/sepay MUST succeed and process receipts without dropping
         $webhookPayload = [
             'id' => 'tx-sepay-ingress-100',
             'code' => "ORD NAP {$customer->id} {$intent->reference}",
@@ -573,7 +573,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
         $rawContent = json_encode($webhookPayload, JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $rawContent, 'sepay-rehearsal-secret');
 
-        $webhookResponse = $this->call('POST', '/api/webhooks/sepay', [], [], [], [
+        $webhookResponse = $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
         ], $rawContent);

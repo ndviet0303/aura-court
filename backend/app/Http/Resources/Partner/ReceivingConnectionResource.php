@@ -30,7 +30,7 @@ class ReceivingConnectionResource extends JsonResource
             'verified_at' => $connection->verified_at?->toIso8601String(),
             'effective_from' => $connection->effective_from?->toIso8601String(),
             'effective_until' => $connection->effective_until?->toIso8601String(),
-            'webhook_url' => url('/api/webhooks/sepay/connections/'.$connection->routing_id),
+            'webhook_url' => url('/api/v1/webhooks/sepay/connections/'.$connection->routing_id),
             'onboarding' => [
                 'product' => 'SePay Webhooks',
                 'event' => 'Inbound transfers only',
