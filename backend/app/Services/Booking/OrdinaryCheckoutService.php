@@ -69,7 +69,7 @@ class OrdinaryCheckoutService
     {
         $startsAt = $data->slots;
         if (count($startsAt) < 1 || count($startsAt) > 12) {
-            throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 12 slot.']);
+            throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 12 giờ.']);
         }
 
         $calendarCourt = Court::with('venue')->findOrFail($data->courtId);
@@ -78,21 +78,21 @@ class OrdinaryCheckoutService
             try {
                 $time = Carbon::parse($value)->setTimezone($zone);
             } catch (\Throwable) {
-                throw ValidationException::withMessages(['slots' => 'Thời gian slot không hợp lệ.']);
+                throw ValidationException::withMessages(['slots' => 'Giờ bắt đầu không hợp lệ.']);
             }
 
             if ($time->minute !== 0 || $time->second !== 0) {
-                throw ValidationException::withMessages(['slots' => 'Slot phải bắt đầu đúng giờ.']);
+                throw ValidationException::withMessages(['slots' => 'Giờ bắt đầu phải tròn giờ, ví dụ 19:00.']);
             }
             if ($time->isPast()) {
-                throw ValidationException::withMessages(['slots' => 'Không thể đặt slot trong quá khứ.']);
+                throw ValidationException::withMessages(['slots' => 'Không thể đặt giờ đã qua.']);
             }
 
             return $time;
         })->sort()->values();
 
         if ($local->unique(fn (Carbon $time) => $time->toIso8601String())->count() !== $local->count()) {
-            throw ValidationException::withMessages(['slots' => 'Không được chọn slot trùng nhau.']);
+            throw ValidationException::withMessages(['slots' => 'Không được chọn trùng giờ.']);
         }
 
         $eligibility = app(VerifyEffectiveBookingEligibility::class);
@@ -439,7 +439,7 @@ class OrdinaryCheckoutService
                 || (str_contains($msg, 'unique') && str_contains($msg, 'booking_slots'))
                 || Str::contains($msg, ['reservation_entitlements_active_unique', 'reservation_slots_no_overlap'])
             ) {
-                abort(409, 'Một hoặc nhiều slot vừa được người khác đặt.');
+                abort(409, 'Một hoặc nhiều giờ bạn chọn vừa được người khác đặt.');
             }
             throw $exception;
         }

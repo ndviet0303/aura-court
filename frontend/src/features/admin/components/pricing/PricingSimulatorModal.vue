@@ -187,7 +187,7 @@ const localEstimatedQuote = computed(() => {
                         hour: '2-digit',
                         minute: '2-digit',
                       })
-                    : `Slot ${idx + 1}`
+                    : `Giờ ${idx + 1}`
                 }}
                 -
                 {{

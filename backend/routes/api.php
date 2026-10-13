@@ -452,7 +452,6 @@ Route::prefix('v2')->middleware([ResolveTenantContext::class])->group(function (
             Route::post('attendance/courts/{court}/confirm-ready', [AttendanceController::class, 'confirmReady']);
             Route::post('attendance/no-show', [AttendanceController::class, 'markNoShow']);
             Route::post('attendance/reassign-court', [AttendanceController::class, 'reassignCourt']);
-            Route::post('attendance/extend-session', [AttendanceController::class, 'extendSession']);
             Route::get('attendance/{code}', [AttendanceController::class, 'show']);
 
             Route::get('service-tabs', [ServiceTabController::class, 'index']);

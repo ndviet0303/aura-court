@@ -167,7 +167,7 @@ export function useResaleMarketplace() {
         cutoffAt: tomorrow.toISOString(),
         isFeatured: false,
         status: 'listed',
-        notes: 'Slot buổi chiều mát mẻ, nhượng lại cho nhóm bạn đánh đơn/đôi.',
+        notes: 'Giờ chiều mát mẻ, nhượng lại cho nhóm bạn đánh đơn/đôi.',
       },
       {
         id: 903,
@@ -187,7 +187,7 @@ export function useResaleMarketplace() {
         cutoffAt: nextDay.toISOString(),
         isFeatured: false,
         status: 'listed',
-        notes: 'Slot sáng cuối tuần đẹp, nhượng lại do trùng lịch thi đấu.',
+        notes: 'Giờ sáng cuối tuần đẹp, nhượng lại do trùng lịch thi đấu.',
       },
       {
         id: 904,
@@ -227,7 +227,7 @@ export function useResaleMarketplace() {
         cutoffAt: day3.toISOString(),
         isFeatured: false,
         status: 'listed',
-        notes: 'Slot chiều tiêu chuẩn, tặng kèm 1 ống cầu mới.',
+        notes: 'Giờ chiều tiêu chuẩn, tặng kèm 1 ống cầu mới.',
       },
       {
         id: 906,
@@ -482,7 +482,7 @@ export function useResaleMarketplace() {
   async function cancelListing(listingId: number) {
     if (
       !confirm(
-        'Bạn có chắc chắn muốn rút tin nhượng này về không? Slot sẽ được trả lại quyền sử dụng cho bạn.',
+        'Bạn có chắc chắn muốn rút tin nhượng này về không? Giờ chơi này sẽ trở lại thành lịch của bạn.',
       )
     ) {
       return

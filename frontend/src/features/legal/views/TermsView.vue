@@ -162,8 +162,8 @@ onUnmounted(() => {
                     chức sử dụng nền tảng đặt sân hoặc sử dụng cơ sở vật chất của Aura Court.
                   </li>
                   <li>
-                    <strong>"Khung giờ" (Slot):</strong> Khoảng thời gian thi đấu tối thiểu 60 phút
-                    được xác nhận thành công trên hệ thống.
+                    <strong>"Khung giờ":</strong> Khoảng thời gian thi đấu 1h được xác nhận thành
+                    công trên hệ thống. Một lần đặt sân gồm một hoặc nhiều khung giờ.
                   </li>
                   <li>
                     <strong>"Mã đặt sân" (Booking Code / QR):</strong> Chuỗi ký tự và mã QR định
@@ -199,8 +199,8 @@ onUnmounted(() => {
                 </li>
                 <li>
                   <strong>Quyền quản trị tài khoản:</strong> Aura Court bảo lưu quyền tạm khóa hoặc
-                  chấm dứt tài khoản nếu phát hiện hành vi đầu cơ slot, spam đơn ảo hoặc vi phạm quy
-                  chế ứng xử tại sân.
+                  chấm dứt tài khoản nếu phát hiện hành vi đầu cơ giờ sân, spam đơn ảo hoặc vi phạm
+                  quy chế ứng xử tại sân.
                 </li>
               </ul>
             </div>
@@ -326,8 +326,8 @@ onUnmounted(() => {
                 </li>
                 <li>
                   <strong>Chuyển nhượng vé (P2P Resale):</strong> Trường hợp người chơi không thể
-                  tham gia thi đấu đúng giờ đã đặt, quý khách có thể chủ động đăng bán lại slot đặt
-                  sân trên Chợ Nhượng Vé Aura Court để tìm người mua lại theo quy định sàn.
+                  tham gia thi đấu đúng giờ đã đặt, quý khách có thể chủ động đăng bán lại giờ đã
+                  đặt trên Chợ Nhượng Vé Aura Court để tìm người mua lại theo quy định sàn.
                 </li>
                 <li>
                   <strong>Sự cố bất khả kháng từ sân:</strong> Trường hợp sự cố kỹ thuật đột xuất từ

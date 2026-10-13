@@ -130,7 +130,7 @@ class PriceQuoteService
         $timezone = $court->venue?->timezone ?: config('app.timezone');
 
         if (empty($slots)) {
-            throw ValidationException::withMessages(['slots' => 'Danh sách slot không được để trống.']);
+            throw ValidationException::withMessages(['slots' => 'Danh sách giờ chọn không được để trống.']);
         }
 
         $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
@@ -222,7 +222,7 @@ class PriceQuoteService
                 }
             }
         }
-        throw ValidationException::withMessages(['slots' => "Slot {$time->format('d/m H:i')} chưa mở bán."]);
+        throw ValidationException::withMessages(['slots' => "Khung giờ {$time->format('d/m H:i')} chưa mở bán."]);
     }
 
     private function matches(PriceRule $rule, Carbon $time, int $duration = 60): bool
@@ -271,7 +271,7 @@ class PriceQuoteService
     private function resolveSlots(array $slots, int $duration = 60, ?string $zone = null): Collection
     {
         if (count($slots) < 1 || count($slots) > 24) {
-            throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 24 slot.']);
+            throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 24 giờ.']);
         }
 
         $zone ??= config('app.timezone');
@@ -280,21 +280,21 @@ class PriceQuoteService
             try {
                 $time = Carbon::parse((string) $value)->setTimezone($zone);
             } catch (\Throwable) {
-                throw ValidationException::withMessages(['slots' => 'Thời gian slot không hợp lệ.']);
+                throw ValidationException::withMessages(['slots' => 'Giờ bắt đầu không hợp lệ.']);
             }
 
             if ($time->minute % 30 !== 0 || $time->second !== 0) {
-                throw ValidationException::withMessages(['slots' => 'Slot phải bắt đầu theo mốc 30 phút.']);
+                throw ValidationException::withMessages(['slots' => 'Giờ bắt đầu phải theo mốc 30 phút.']);
             }
             if ($time->isPast()) {
-                throw ValidationException::withMessages(['slots' => 'Không thể báo giá slot trong quá khứ.']);
+                throw ValidationException::withMessages(['slots' => 'Không thể báo giá giờ đã qua.']);
             }
 
             return $time;
         })->sort()->values();
 
         if ($local->unique(fn (Carbon $time): string => $time->toIso8601String())->count() !== $local->count()) {
-            throw ValidationException::withMessages(['slots' => 'Không được chọn slot trùng nhau.']);
+            throw ValidationException::withMessages(['slots' => 'Không được chọn trùng giờ.']);
         }
 
         return $local;

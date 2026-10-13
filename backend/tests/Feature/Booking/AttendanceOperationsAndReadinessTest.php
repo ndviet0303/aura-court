@@ -482,7 +482,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         $this->assertSame('no_show', $pastRes->fresh()->metadata['operational_status']);
     }
 
-    public function test_incident_court_reassignment_preserves_pricing_and_payment_while_extension_checks_conflict(): void
+    public function test_incident_court_reassignment_preserves_pricing_and_payment_and_extension_is_retired(): void
     {
         $fixture = $this->tenant();
         $tz = 'Asia/Ho_Chi_Minh';
@@ -519,36 +519,16 @@ class AttendanceOperationsAndReadinessTest extends TestCase
             ]);
         $conflictReassign->assertStatus(409);
 
-        // 3. Session extension conflict check (Task 8.6 / D53):
-        // Create another customer's booking on Court 2 for the immediately following hour
-        $nextHour = $now->copy()->addHour();
-        $competingRes = $this->createConfirmedReservation($fixture, $fixture['court2'], $fixture['secondary'], $nextHour);
-
-        // Requesting 30-minute extension on Court 2 into the booked interval: MUST FAIL with 409
-        $conflictExtend = $this->actingAs($fixture['staff'])
+        // 3. On-site extension is retired: extra time is booked as new slots.
+        // 405 because only GET attendance/{code} still matches this path.
+        $endsAt = $reservation->fresh()->slots->max('ends_at');
+        $this->actingAs($fixture['staff'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
             ->postJson('/api/v2/attendance/extend-session', [
                 'code' => $reservation->code,
                 'additional_minutes' => 30,
-            ]);
-
-        $conflictExtend->assertStatus(409);
-        $this->assertStringContainsString('next interval is already booked', $conflictExtend->json('message'));
-
-        // Cancel competing booking to free the slot
-        $competingRes->update(['status' => 'cancelled']);
-        $competingRes->slots()->update(['status' => 'cancelled']);
-
-        // Extending now SUCCEEDS
-        $validExtend = $this->actingAs($fixture['staff'])
-            ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson('/api/v2/attendance/extend-session', [
-                'code' => $reservation->code,
-                'additional_minutes' => 30,
-            ]);
-
-        $validExtend->assertOk();
-        $this->assertTrue($validExtend->json('extended'));
-        $this->assertSame($nextHour->copy()->addMinutes(30)->toIso8601String(), Carbon::parse($reservation->fresh()->ends_at)->setTimezone($tz)->toIso8601String());
+            ])
+            ->assertStatus(405);
+        $this->assertEquals($endsAt, $reservation->fresh()->slots->max('ends_at'));
     }
 }

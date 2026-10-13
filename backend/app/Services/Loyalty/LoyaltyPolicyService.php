@@ -233,7 +233,7 @@ class LoyaltyPolicyService
 
             if (empty($params['slots']) || ! is_array($params['slots'])) {
                 throw ValidationException::withMessages([
-                    'slots' => 'Cần cung cấp danh sách slot để tính toán giá.',
+                    'slots' => 'Cần chọn giờ chơi để tính giá.',
                 ]);
             }
 

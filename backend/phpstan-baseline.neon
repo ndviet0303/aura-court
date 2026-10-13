@@ -2859,13 +2859,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ends_at\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Services/Attendance/AttendanceService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 10
+			count: 9
 			path: app/Services/Attendance/AttendanceService.php
 
 		-

@@ -133,24 +133,6 @@ class AttendanceController extends Controller
         return response()->json($result);
     }
 
-    public function extendSession(Request $request): JsonResponse
-    {
-        $organization = $this->organization($request);
-        $data = $request->validate([
-            'code' => 'required|string|max:255',
-            'additional_minutes' => 'required|integer|min:1',
-        ]);
-
-        $result = $this->attendance->extendSession(
-            staff: $request->user(),
-            organizationId: $organization->id,
-            codeOrId: $data['code'],
-            additionalMinutes: (int) $data['additional_minutes'],
-        );
-
-        return response()->json($result);
-    }
-
     public function show(Request $request, string $code): JsonResponse
     {
         $organization = $this->organization($request);
