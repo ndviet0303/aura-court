@@ -1,50 +1,72 @@
 <script setup lang="ts">
-import type { ResaleListing } from '../types/marketplace'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
+import type { ResaleListing } from '../types/marketplace'
+import { useResaleLock } from '../composables/useResaleLock'
+import ResalePaymentDetails from './ResalePaymentDetails.vue'
 
-defineProps<{
-  show: boolean
+const props = defineProps<{
   listing: ResaleListing | null
-  paymentMethod: 'wallet' | 'transfer'
-  processing?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'update:paymentMethod', method: 'wallet' | 'transfer'): void
-  (e: 'confirm'): void
+  (e: 'changed'): void
 }>()
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+const { t } = useI18n()
+const lock = useResaleLock(() => emit('changed'))
+const { state, phase, remainingSeconds, busy, error, disputeOpened } = lock
+const acceptFree = ref(false)
+const isFree = computed(() => props.listing?.resalePrice === 0)
+const countdown = computed(() => {
+  const s = remainingSeconds.value
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+})
+
+watch(
+  () => props.listing?.id,
+  (id) => {
+    acceptFree.value = false
+    if (id) void lock.open(id)
+    else lock.close()
+  },
+  { immediate: true },
+)
+
+const unresolvedKey = computed(() =>
+  state.value?.last_release?.by === 'seller' ? 'sellerNotReceived' : 'lapsed',
+)
+
+function close() {
+  lock.close()
+  emit('close')
 }
 </script>
 
 <template>
-  <div v-if="show && listing" class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-card modal-md">
-      <!-- Modal Header -->
+  <div v-if="listing" class="modal-backdrop" @click.self="close">
+    <div class="modal-card" role="dialog" aria-modal="true" data-testid="resale-buy-modal">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <span class="material-symbols-outlined modal-icon">verified_user</span>
-          <h3 class="modal-title">Xác Nhận Mua Lại Suất Chơi</h3>
+          <span class="material-symbols-outlined modal-icon">swap_horiz</span>
+          <h3 class="modal-title">{{ t('resale.p2p.modalTitle') }}</h3>
         </div>
-        <button type="button" class="modal-close-btn" @click="emit('close')">
+        <button
+          type="button"
+          class="modal-close-btn"
+          :aria-label="t('resale.p2p.close')"
+          @click="close"
+        >
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
 
-      <!-- Modal Body -->
       <div class="modal-body">
-        <!-- Target Court Summary -->
         <div class="target-card">
-          <div class="target-head">
-            <strong class="target-court">{{ listing.courtName }}</strong>
-            <span class="badge-escrow">
-              <span class="material-symbols-outlined icon-14">shield</span>
-              <span>Aura Escrow Bảo Vệ</span>
-            </span>
-          </div>
+          <strong class="target-court">{{ listing.courtName }}</strong>
           <div class="target-details">
             <span class="detail-item">
               <span class="material-symbols-outlined icon-14">location_on</span>
@@ -61,87 +83,119 @@ function formatMoney(amount: number): string {
           </div>
         </div>
 
-        <!-- Payment Method Selection -->
-        <div class="payment-method-block">
-          <label class="block-label">Phương thức thanh toán:</label>
-          <div class="methods-grid">
-            <label class="method-option" :class="{ selected: paymentMethod === 'wallet' }">
-              <input
-                type="radio"
-                name="resale_payment"
-                value="wallet"
-                :checked="paymentMethod === 'wallet'"
-                @change="emit('update:paymentMethod', 'wallet')"
-              />
-              <span class="material-symbols-outlined method-icon">account_balance_wallet</span>
-              <div class="method-text">
-                <span class="method-name">Ví Aura Club</span>
-                <span class="method-sub">Khấu trừ số dư ví tức thì</span>
-              </div>
-            </label>
-
-            <label class="method-option" :class="{ selected: paymentMethod === 'transfer' }">
-              <input
-                type="radio"
-                name="resale_payment"
-                value="transfer"
-                :checked="paymentMethod === 'transfer'"
-                @change="emit('update:paymentMethod', 'transfer')"
-              />
-              <span class="material-symbols-outlined method-icon">qr_code_2</span>
-              <div class="method-text">
-                <span class="method-name">VietQR / Chuyển khoản</span>
-                <span class="method-sub">Quét mã ngân hàng 24/7</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Price Breakdown -->
         <div class="price-breakdown">
           <div class="p-row">
-            <span>Giá gốc lịch sân:</span>
-            <span class="orig-price-strike">{{ formatMoney(listing.originalPrice) }}</span>
+            <span>{{ t('resale.p2p.originalPrice') }}</span>
+            <span class="font-mono">{{ formatCurrency(listing.originalPrice) }}</span>
           </div>
           <div class="p-row">
-            <span>Giá chuyển nhượng:</span>
-            <strong class="price-main font-mono">{{ formatMoney(listing.resalePrice) }}</strong>
-          </div>
-          <div class="p-row">
-            <span>Phí trung gian Escrow:</span>
-            <span class="text-green">0 ₫ (Miễn phí)</span>
+            <span>{{ t('resale.p2p.feeRow') }}</span>
+            <span class="text-green">{{ t('resale.p2p.feeNone') }}</span>
           </div>
           <div class="p-row total-row">
-            <strong>Tổng thanh toán:</strong>
-            <strong class="total-price font-mono">{{ formatMoney(listing.resalePrice) }}</strong>
+            <strong>{{ t('resale.p2p.askingPrice') }}</strong>
+            <strong class="total-price font-mono">
+              {{ isFree ? t('resale.p2p.free') : formatCurrency(listing.resalePrice) }}
+            </strong>
           </div>
         </div>
 
-        <!-- Escrow Protection Guarantee -->
-        <div class="escrow-notice-box">
-          <span class="material-symbols-outlined shield-ico">verified</span>
-          <div class="notice-txt">
-            <strong>Cam kết hoàn tiền 100%:</strong>
-            <span>
-              Tiền sẽ được giữ an toàn trên hệ thống Aura Escrow và chỉ giải ngân sau khi bạn hoàn
-              tất buổi chơi thành công.</span
-            >
-          </div>
+        <p class="direct-notice" data-testid="resale-direct-notice">
+          <span class="material-symbols-outlined notice-icon">info</span>
+          <span>{{ t('resale.p2p.directNotice') }}</span>
+        </p>
+
+        <div v-if="error" class="state-box tone-error" role="alert">{{ error }}</div>
+
+        <template v-if="phase === 'idle' || phase === 'expired'">
+          <p v-if="phase === 'expired'" class="state-box">{{ t('resale.p2p.expired') }}</p>
+          <label v-if="isFree" class="free-accept">
+            <input v-model="acceptFree" type="checkbox" data-testid="resale-free-accept" />
+            <span>{{ t('resale.p2p.freeAccept') }}</span>
+          </label>
+          <p v-else class="state-box">{{ t('resale.p2p.lockHint') }}</p>
+        </template>
+
+        <ResalePaymentDetails
+          v-else-if="phase === 'holding' && state?.payment"
+          :payment="state.payment"
+          :receiver="state.receiver"
+          :countdown="countdown"
+        />
+
+        <div
+          v-else-if="phase === 'reported'"
+          class="state-box tone-wait"
+          data-testid="resale-reported"
+        >
+          <strong>{{ t('resale.p2p.reportedTitle') }}</strong>
+          <span>{{ t('resale.p2p.reportedDesc') }}</span>
+        </div>
+
+        <div v-else-if="phase === 'sold'" class="state-box tone-ok" data-testid="resale-sold">
+          <strong>{{ t('resale.p2p.soldTitle') }}</strong>
+          <span>{{ t('resale.p2p.soldDesc') }}</span>
+        </div>
+
+        <div
+          v-else-if="phase === 'unresolved'"
+          class="state-box tone-error"
+          data-testid="resale-unresolved"
+        >
+          <strong>{{ t(`resale.p2p.${unresolvedKey}`) }}</strong>
+          <span v-if="state?.last_release?.reason">
+            {{ t('resale.p2p.releaseReason', { reason: state.last_release.reason }) }}
+          </span>
+          <span>{{
+            disputeOpened ? t('resale.p2p.disputeOpened') : t('resale.p2p.disputeHint')
+          }}</span>
         </div>
       </div>
 
-      <!-- Modal Footer -->
       <div class="modal-footer">
-        <AuraButton variant="secondary" size="md" @click="emit('close')"> Đóng </AuraButton>
-        <AuraButton
-          variant="primary"
-          size="md"
-          :loading="processing"
-          icon="verified"
-          @click="emit('confirm')"
-        >
-          Thanh Toán {{ formatMoney(listing.resalePrice) }}
-        </AuraButton>
+        <template v-if="phase === 'holding'">
+          <AuraButton variant="secondary" size="md" :disabled="busy" @click="lock.cancel()">
+            {{ t('resale.p2p.cancelHoldBtn') }}
+          </AuraButton>
+          <AuraButton
+            variant="primary"
+            size="md"
+            icon="task_alt"
+            :loading="busy"
+            data-testid="resale-paid-btn"
+            @click="lock.reportPaid()"
+          >
+            {{ t('resale.p2p.paidBtn') }}
+          </AuraButton>
+        </template>
+        <template v-else>
+          <AuraButton variant="secondary" size="md" @click="close">
+            {{ t('resale.p2p.close') }}
+          </AuraButton>
+          <AuraButton
+            v-if="phase === 'unresolved' && !disputeOpened"
+            variant="danger"
+            size="md"
+            icon="support_agent"
+            :loading="busy"
+            data-testid="resale-dispute-btn"
+            @click="lock.openDispute()"
+          >
+            {{ t('resale.p2p.disputeBtn') }}
+          </AuraButton>
+          <AuraButton
+            v-else-if="phase === 'idle' || phase === 'expired'"
+            variant="primary"
+            size="md"
+            icon="lock_clock"
+            :loading="busy"
+            :disabled="isFree && !acceptFree"
+            data-testid="resale-lock-btn"
+            @click="lock.lock(isFree)"
+          >
+            {{ isFree ? t('resale.p2p.freeAcceptBtn') : t('resale.p2p.lockBtn') }}
+          </AuraButton>
+        </template>
       </div>
     </div>
   </div>
@@ -162,7 +216,8 @@ function formatMoney(amount: number): string {
 
 .modal-card {
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
+  max-height: calc(100vh - 32px);
   background: var(--surface);
   border: 1px solid var(--outline);
   border-radius: 24px;
@@ -170,26 +225,23 @@ function formatMoney(amount: number): string {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-header {
+.modal-header,
+.modal-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--outline);
+}
+
+.modal-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--outline);
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--outline);
 }
 
 .modal-title-wrap {
@@ -217,37 +269,26 @@ function formatMoney(amount: number): string {
   cursor: pointer;
   padding: 4px;
   display: flex;
-  align-items: center;
   border-radius: 8px;
-  transition: all 0.15s ease;
-}
-
-.modal-close-btn:hover {
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.05));
-  color: var(--ink);
 }
 
 .modal-body {
-  padding: 20px 24px;
+  padding: 18px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+  overflow-y: auto;
 }
 
-.target-card {
+.target-card,
+.price-breakdown {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 14px 16px;
   border-radius: 16px;
   background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
   border: 1px solid var(--outline);
-}
-
-.target-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .target-court {
@@ -255,21 +296,8 @@ function formatMoney(amount: number): string {
   color: var(--ink);
 }
 
-.badge-escrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
 .target-details {
   display: flex;
-  align-items: center;
   gap: 14px;
   flex-wrap: wrap;
   font-size: 12px;
@@ -287,103 +315,16 @@ function formatMoney(amount: number): string {
   font-weight: 700;
 }
 
-html.dark .detail-item.highlight {
-  color: var(--accent, #c9a15a);
-}
-
 .icon-14 {
   font-size: 14px;
-}
-
-.payment-method-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.block-label {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.methods-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.method-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.method-option input {
-  margin-top: 3px;
-}
-
-.method-option.selected {
-  border-color: var(--primary, #6b2d3f);
-  background: rgba(107, 45, 63, 0.04);
-}
-
-html.dark .method-option.selected {
-  border-color: var(--accent, #c9a15a);
-  background: rgba(201, 161, 90, 0.06);
-}
-
-.method-icon {
-  font-size: 20px;
-  color: var(--accent, #c9a15a);
-}
-
-.method-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.method-name {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.method-sub {
-  font-size: 10.5px;
-  color: var(--muted);
-}
-
-.price-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
-  border: 1px solid var(--outline);
-  font-size: 13px;
 }
 
 .p-row {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
   color: var(--muted);
-}
-
-.orig-price-strike {
-  text-decoration: line-through;
-}
-
-.price-main {
-  color: var(--ink);
-  font-size: 14px;
 }
 
 .text-green {
@@ -395,7 +336,6 @@ html.dark .method-option.selected {
   padding-top: 8px;
   border-top: 1px solid var(--outline);
   color: var(--ink);
-  font-size: 14px;
 }
 
 .total-price {
@@ -403,85 +343,56 @@ html.dark .method-option.selected {
   color: var(--primary, #6b2d3f);
 }
 
-html.dark .total-price {
+.direct-notice {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(201, 161, 90, 0.08);
+  border: 1px solid rgba(201, 161, 90, 0.25);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.notice-icon {
+  font-size: 18px;
   color: var(--accent, #c9a15a);
 }
 
-.escrow-notice-box {
+.free-accept {
   display: flex;
+  gap: 8px;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(16, 185, 129, 0.06);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.shield-ico {
-  font-size: 20px;
-  color: #10b981;
-}
-
-.notice-txt {
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.notice-txt strong {
-  color: #10b981;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--outline);
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.01));
-}
-
-.btn-cancel {
-  padding: 10px 18px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: var(--ink);
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  color: var(--ink);
 }
 
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 22px;
-  border-radius: 12px;
-  border: 0;
-  background: var(--primary, #6b2d3f);
-  color: #ffffff;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.state-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.03));
+  font-size: 12.5px;
+  color: var(--ink);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover, #562332);
+.tone-wait {
+  background: rgba(239, 108, 0, 0.1);
+  color: #9a5a00;
 }
 
-.spin-icon {
-  animation: spin 1s linear infinite;
-  font-size: 18px;
+.tone-ok {
+  background: rgba(46, 125, 50, 0.12);
+  color: #20733c;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.tone-error {
+  background: rgba(198, 40, 40, 0.1);
+  color: #9d2828;
 }
 </style>

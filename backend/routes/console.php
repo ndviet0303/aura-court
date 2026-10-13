@@ -8,6 +8,7 @@ use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\POS\PosService;
+use App\Services\Social\PeerToPeerResaleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -52,6 +53,13 @@ Schedule::call(function () {
     ->withoutOverlapping(10)
     ->everyMinute()
     ->onFailure($reportScheduleFailure('pos:release-expired-orders'));
+
+// 1d. Peer-to-peer resale: release lapsed buyer locks and withdraw unsold listings past their cutoff
+Schedule::call(fn () => app(PeerToPeerResaleService::class)->sweep())
+    ->name('marketplace:sweep-resale-locks')
+    ->withoutOverlapping(10)
+    ->everyMinute()
+    ->onFailure($reportScheduleFailure('marketplace:sweep-resale-locks'));
 
 // 2. Worker-free failure recovery for outbox and provider events
 Schedule::call(fn () => app(ScheduledRecoveryService::class)->recoverOutbox())

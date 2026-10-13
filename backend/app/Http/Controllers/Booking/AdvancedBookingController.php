@@ -11,7 +11,6 @@ use App\Models\Organization;
 use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
 use App\Models\Reservation;
-use App\Models\ReservationEntitlement;
 use App\Models\SplitGroup;
 use App\Models\SplitShare;
 use App\Services\Booking\RecurringSeriesService;
@@ -204,50 +203,10 @@ class AdvancedBookingController extends Controller
             abort_unless($request->user(), 401, 'Unauthenticated.');
             $query->where('seller_id', $request->user()->id);
         } else {
-            $query->where('status', 'listed')->where('cutoff_at', '>', now());
+            $query->availableTo($request->user()?->id);
         }
 
         return $query->paginate(30);
-    }
-
-    public function createListing(Request $request, ReservationEntitlement $entitlement)
-    {
-        $organization = $this->organization($request);
-        abort_unless($entitlement->organization_id === $organization->id && $entitlement->user_id === $request->user()->id, 404);
-        $data = $request->validate(['asking_price' => 'required|integer|min:1']);
-
-        return $this->idempotency->run($request, fn () => response()->json(['listing' => $this->marketplace->list($entitlement, $request->user(), $data['asking_price'])], 201));
-    }
-
-    public function checkoutListing(Request $request, MarketplaceListing $listing)
-    {
-        $organization = $this->organization($request);
-        abort_unless($listing->organization_id === $organization->id, 404);
-
-        $attempt = $this->marketplace->checkout($listing, $request->user());
-
-        return response()->json([
-            'listing' => $listing,
-            'payment_attempt' => app(ReservationPaymentService::class)->instructions($attempt),
-        ]);
-    }
-
-    public function purchaseListing(Request $request, MarketplaceListing $listing)
-    {
-        $organization = $this->organization($request);
-        abort_unless($listing->organization_id === $organization->id, 404);
-        $data = $request->validate([
-            'buyer_payment_reference' => 'required|string|max:160',
-            'seller_refund_reference' => 'nullable|string|max:160',
-            'seller_refund_accepted' => 'sometimes|boolean',
-        ]);
-
-        $sellerRefundAccepted = false;
-        if (! empty($data['seller_refund_reference']) && ($data['seller_refund_accepted'] ?? true)) {
-            $sellerRefundAccepted = true;
-        }
-
-        return $this->idempotency->run($request, fn () => response()->json(['transfer' => $this->marketplace->purchase($listing, $request->user(), (string) $request->header('Idempotency-Key'), $data['buyer_payment_reference'], $data['seller_refund_reference'] ?? null, $sellerRefundAccepted)]));
     }
 
     public function withdrawListing(Request $request, MarketplaceListing $listing)

@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { formatTime } from '@/i18n'
 import type { MyResaleListing } from '../types/marketplace'
 import { AuraButton } from '@/shared/components'
+import { usePolling } from '../composables/usePolling'
+import { useResaleSellerActions } from '../composables/useResaleLock'
 
-defineProps<{
+const props = defineProps<{
   listings: MyResaleListing[]
   processing?: boolean
 }>()
@@ -10,7 +14,22 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'withdraw', listingId: number): void
   (e: 'create-new'): void
+  (e: 'refresh'): void
 }>()
+
+const { t } = useI18n()
+const {
+  busyId,
+  error: sellerError,
+  confirmReceipt,
+  reportNotReceived,
+} = useResaleSellerActions(() => emit('refresh'))
+// A buyer may report payment at any moment while holding one of my hours.
+usePolling(
+  () => props.listings.some((l) => l.status === 'checkout'),
+  10000,
+  () => emit('refresh'),
+)
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -31,6 +50,8 @@ function formatMoney(amount: number): string {
         Pass Thêm 1h Mới
       </AuraButton>
     </div>
+
+    <p v-if="sellerError" class="seller-error" role="alert">{{ sellerError }}</p>
 
     <!-- Empty state -->
     <div v-if="listings.length === 0" class="empty-state-card">
@@ -55,17 +76,21 @@ function formatMoney(amount: number): string {
                 {{
                   item.status === 'listed'
                     ? 'schedule'
-                    : item.status === 'sold'
-                      ? 'check_circle'
-                      : 'remove_circle_outline'
+                    : item.status === 'checkout'
+                      ? 'lock_clock'
+                      : item.status === 'sold'
+                        ? 'check_circle'
+                        : 'remove_circle_outline'
                 }}
               </span>
               <span>{{
                 item.status === 'listed'
                   ? 'Đang rao bán'
-                  : item.status === 'sold'
-                    ? 'Đã bán'
-                    : 'Đã rút tin'
+                  : item.status === 'checkout'
+                    ? t('resale.p2p.statusCheckout')
+                    : item.status === 'sold'
+                      ? 'Đã bán'
+                      : 'Đã rút tin'
               }}</span>
             </span>
           </div>
@@ -79,6 +104,16 @@ function formatMoney(amount: number): string {
               <span class="material-symbols-outlined icon-14">calendar_today</span>
               <span>{{ item.dateStr }} ({{ item.timeSlot }})</span>
             </span>
+          </div>
+
+          <div v-if="item.status === 'checkout'" class="lock-box" data-testid="resale-seller-lock">
+            <span v-if="item.lockedUntil">
+              {{ t('resale.p2p.sellerHolding', { time: formatTime(item.lockedUntil) }) }}
+            </span>
+            <strong v-if="item.paymentReportedAt" class="reported">
+              {{ t('resale.p2p.sellerReported') }}
+            </strong>
+            <span>{{ t('resale.p2p.sellerCheckBank') }}</span>
           </div>
         </div>
 
@@ -99,6 +134,26 @@ function formatMoney(amount: number): string {
           >
             Rút tin
           </AuraButton>
+          <template v-else-if="item.status === 'checkout'">
+            <AuraButton
+              variant="primary"
+              size="sm"
+              icon="task_alt"
+              :loading="busyId === item.id"
+              data-testid="resale-confirm-receipt"
+              @click="confirmReceipt(item.id)"
+            >
+              {{ t('resale.p2p.confirmReceiptBtn') }}
+            </AuraButton>
+            <AuraButton
+              variant="danger"
+              size="sm"
+              :disabled="busyId !== null"
+              @click="reportNotReceived(item.id)"
+            >
+              {{ t('resale.p2p.notReceivedBtn') }}
+            </AuraButton>
+          </template>
           <span v-else class="text-muted-status">Không còn khả dụng</span>
         </div>
       </div>
@@ -233,6 +288,32 @@ function formatMoney(amount: number): string {
   color: #10b981;
 }
 
+.status-checkout {
+  background: rgba(239, 108, 0, 0.12);
+  color: #9a5a00;
+}
+
+.lock-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(239, 108, 0, 0.08);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.reported {
+  color: #9a5a00;
+}
+
+.seller-error {
+  margin: 0;
+  color: #c62828;
+  font-size: 13px;
+}
+
 .status-sold {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
@@ -294,68 +375,13 @@ html.dark .price-val {
 .actions-cell {
   display: flex;
   align-items: center;
-}
-
-.btn-withdraw {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: #ef4444;
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-withdraw:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: #ef4444;
-}
-
-.btn-withdraw .material-symbols-outlined {
-  font-size: 16px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .text-muted-status {
   font-size: 12px;
   color: var(--muted);
   font-style: italic;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background: var(--primary, #6b2d3f);
-  color: #ffffff;
-  border: 0;
-}
-
-.btn-primary:hover {
-  background: var(--primary-hover, #562332);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1px solid var(--outline);
-  color: var(--ink);
-}
-
-.btn-outline:hover {
-  border-color: var(--primary, #6b2d3f);
-  color: var(--primary, #6b2d3f);
 }
 </style>

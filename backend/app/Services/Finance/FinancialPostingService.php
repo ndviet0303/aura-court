@@ -229,40 +229,6 @@ class FinancialPostingService
         ]);
     }
 
-    public function postMarketplaceSale(int $organizationId, int $listingId, int $buyerAmount, int $sellerRefund, int $fee, string $buyerReference): Journal
-    {
-        $existing = Journal::query()
-            ->where('organization_id', $organizationId)
-            ->where('event_type', 'marketplace.sale')
-            ->where('event_id', "marketplace:{$listingId}")
-            ->first();
-        if ($existing) {
-            return $existing->load('entries');
-        }
-        if ($fee > 0) {
-            throw new \InvalidArgumentException('New marketplace sales cannot charge a platform fee.');
-        }
-        $accounts = $this->ledger->systemAccounts($organizationId);
-        $entries = [
-            ['account_id' => $accounts['cash_clearing']->id, 'side' => 'debit', 'amount' => $buyerAmount],
-            ['account_id' => $accounts['tenant_payable']->id, 'side' => 'credit', 'amount' => $sellerRefund],
-        ];
-
-        return $this->ledger->post([
-            'organization_id' => $organizationId,
-            'event_type' => 'marketplace.sale',
-            'event_id' => "marketplace:{$listingId}",
-            'reference' => $buyerReference,
-            'currency' => config('finance.currency', 'VND'),
-            'description' => 'Marketplace entitlement transfer',
-            'metadata' => [
-                'buyer_reference' => $buyerReference,
-                'seller_refund' => $sellerRefund,
-                'marketplace_fee' => 0,
-            ],
-        ], $entries);
-    }
-
     public function postPosSale(int $organizationId, int $orderId, int $amount, string $paymentMethod, string $reference): Journal
     {
         $eventId = "pos:{$orderId}";

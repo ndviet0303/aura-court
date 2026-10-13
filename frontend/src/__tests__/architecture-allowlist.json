@@ -73,8 +73,7 @@
     "features/finance/components/reconciliation/ReconciliationInvestigationDrawer.vue",
     711
   ],
-  ["component-lines", "features/marketplace/components/MarketplaceBuyModal.vue", 487],
-  ["component-lines", "features/marketplace/components/MarketplaceSellModal.vue", 501],
+  ["component-lines", "features/marketplace/components/MarketplaceSellModal.vue", 444],
   ["component-lines", "features/partner-registration/components/BusinessInfoStep.vue", 469],
   ["component-lines", "features/pos/components/PosCartPanel.vue", 1135],
   ["component-lines", "features/pos/components/PosProductGrid.vue", 560],
@@ -161,7 +160,7 @@
   ["view-lines", "features/home/views/HomeView.vue", 1084],
   ["view-lines", "features/legal/views/PrivacyView.vue", 1159],
   ["view-lines", "features/legal/views/TermsView.vue", 1252],
-  ["view-lines", "features/marketplace/views/ResaleMarketplaceView.vue", 530],
+  ["view-lines", "features/marketplace/views/ResaleMarketplaceView.vue", 526],
   ["view-lines", "features/platform-subscriptions/views/PlatformSubscriptionView.vue", 265],
   ["view-lines", "features/pos/views/PosView.vue", 772],
   ["view-lines", "features/social/views/CreateMatchView.vue", 320],

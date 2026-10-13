@@ -23,7 +23,12 @@ const discountPercent = computed(() => {
 </script>
 
 <template>
-  <div class="resale-card" :class="{ 'is-featured': listing.isFeatured }">
+  <div
+    class="resale-card"
+    :class="{ 'is-featured': listing.isFeatured }"
+    data-testid="resale-listing-card"
+    :data-listing-id="listing.id"
+  >
     <!-- Card Header -->
     <div class="card-header">
       <div class="venue-info">
@@ -72,15 +77,15 @@ const discountPercent = computed(() => {
         </div>
       </div>
 
-      <!-- Seller & Escrow Guarantee -->
+      <!-- Seller; money goes straight to them -->
       <div class="seller-row">
         <div class="seller-info">
           <span class="material-symbols-outlined seller-avatar-icon">account_circle</span>
           <span class="seller-name">{{ listing.sellerName }}</span>
         </div>
         <div class="escrow-chip">
-          <span class="material-symbols-outlined escrow-icon">verified_user</span>
-          <span>Aura Escrow</span>
+          <span class="material-symbols-outlined escrow-icon">swap_horiz</span>
+          <span>{{ $t('resale.p2p.directChip') }}</span>
         </div>
       </div>
     </div>
@@ -95,7 +100,11 @@ const discountPercent = computed(() => {
           <span class="original-price">{{ formatCurrency(listing.originalPrice || 0) }}</span>
           <span class="discount-pill">-{{ discountPercent }}%</span>
         </div>
-        <div class="resale-price">{{ formatCurrency(listing.resalePrice) }}</div>
+        <div class="resale-price">
+          {{
+            listing.resalePrice === 0 ? $t('resale.p2p.free') : formatCurrency(listing.resalePrice)
+          }}
+        </div>
       </div>
 
       <AuraButton
@@ -105,7 +114,7 @@ const discountPercent = computed(() => {
         class="btn-buy"
         @click="emit('buy', listing)"
       >
-        {{ $t('resale.buyNowBtn') }}
+        {{ listing.heldByMe ? $t('resale.p2p.continueBtn') : $t('resale.buyNowBtn') }}
       </AuraButton>
     </div>
   </div>

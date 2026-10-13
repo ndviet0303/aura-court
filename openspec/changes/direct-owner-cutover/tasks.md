@@ -212,13 +212,15 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 7. Bán lại slot giữa người mua và người bán (design 5, 12)
 
-- [ ] 7.1 Migration thêm `marketplace_listings.seller_receiver_ciphertext` (text, nullable). `down()` xóa cột.
-- [ ] 7.2 Đăng bán:
+- [x] 7.1 Migration thêm `marketplace_listings.seller_receiver_ciphertext` (text, nullable). `down()` xóa cột.
+  - Ghi chú: `up()` đã chạy qua bộ PHPUnit trên DB test riêng; `down()` chưa chạy riêng (không chạy artisan cạnh `.env` production), cần kiểm ở gate migrate/rollback.
+- [x] 7.2 Đăng bán:
   - Mỗi listing là một entitlement, tức một slot đã đặt (1 giờ trong dữ liệu seed). Booking nhiều giờ thì đăng bán từng giờ, như hiện nay.
   - Listing có giá bắt buộc khai mã ngân hàng, số tài khoản và tên chủ tài khoản. Validate rồi lưu mã hóa.
   - Listing mới có `fee_bps = 0`.
   - Resource danh sách không bao giờ trả thông tin nhận tiền.
-- [ ] 7.3 Route `checkout` chuyển thành khóa listing:
+  - Ghi chú: service không bắt buộc tài khoản nhận tiền khi đăng bán (để `MarketplaceSeeder` vẫn chạy, seed bổ sung ở 10.6); việc bắt buộc nằm ở `StoreResaleListingRequest`, và khóa listing có giá mà thiếu tài khoản trả 409. Giá 0 chỉ được khi chính sách sân bật `transfer.free_transfer_allowed`. Endpoint đăng bán chuyển sang `ResaleListingController` mới.
+- [x] 7.3 Route `checkout` chuyển thành khóa listing:
   - Chạy dưới row lock và chỉ từ trạng thái `listed`. Listing đang `checkout` mà khóa đã hết hạn thì được nhả trước.
   - Đặt status `checkout` và ghi metadata:
     - `locked_by`;
@@ -227,7 +229,8 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
   - Chỉ người khóa và người bán nhận VietQR của người bán với đúng giá bán. Dùng helper URL ảnh tách ra từ `ReservationPaymentService::instructions`.
   - Người thứ hai khóa cùng lúc nhận 409 và không thấy tài khoản người bán.
   - Listing miễn phí chuyển quyền ngay khi người mua chấp nhận, trong cùng giao dịch khóa.
-- [ ] 7.4 Thêm ba endpoint, theo luồng Controller → FormRequest → Action/Service của dự án:
+  - Ghi chú: helper ảnh VietQR là `App\Services\Payment\VietQrImage`. Listing miễn phí cần `accept_free_transfer=true` (thiếu thì 422). Logic nằm trong `PeerToPeerResaleService` mới; phần đọc trạng thái (`GET marketplace/listings/{listing}`, chỉ cho người bán, người đang khóa và người mua từng khóa) nằm trong `ResaleListingState`.
+- [x] 7.4 Thêm ba endpoint, theo luồng Controller → FormRequest → Action/Service của dự án:
   - `payment-sent` (người mua): báo đã chuyển tiền.
   - `release`: người mua nhả khóa trước khi báo đã trả, hoặc người bán báo chưa nhận được tiền.
   - `confirm-receipt` (người bán):
@@ -236,20 +239,24 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
     - Ghi bản ghi transfer `completed` với `fee=0`, `seller_refund=0`, `settlement_mode=peer_to_peer`, không có bút toán.
 
   Mỗi bước gửi thông báo cho bên còn lại.
-- [ ] 7.5 Xóa:
+  - Ghi chú: `settlement_mode=peer_to_peer` lưu trong `entitlement_transfers.metadata` (bảng không có cột riêng). Người bán xác nhận khi người mua chưa báo đã trả vẫn được. Sau khi người mua báo đã trả, khóa giữ tới cutoff và người mua không tự nhả được nữa. `reservation.user_id` chỉ đổi sang người mua khi người mua giữ mọi slot còn hiệu lực.
+- [x] 7.5 Xóa:
   - route `marketplace/listings/{listing}/purchase` và `MarketplaceService::purchase`;
   - `verifySellerReimbursementEvidence`;
   - nhánh `transfer_consideration` trong `processReceipt` và purpose này trong `PURPOSES`;
   - `hasConfirmableListing` và `confirmPaidAttempt`, nếu chúng chỉ phục vụ đường cũ.
 
   Bản ghi `compensated` và hoa hồng cũ giữ nguyên.
-- [ ] 7.6 Sweep chạy mỗi phút:
+  - Ghi chú: xóa thêm `MarketplaceService::checkout` và `FinancialPostingService::postMarketplaceSale` (không còn ai gọi). Attempt mang purpose không còn hỗ trợ giờ thành ngoại lệ `unsupported_purpose` thay vì được ghi nhận.
+- [x] 7.6 Sweep chạy mỗi phút:
   - nhả các khóa đã hết hạn;
   - listing qua cutoff mà chưa bán thì chuyển sang `withdrawn`.
 
   Mọi lệnh đọc khóa coi khóa đã hết hạn là đã nhả, không chờ sweep.
-- [ ] 7.7 Khiếu nại về bán lại tạo support case có `reference_type` trỏ tới listing.
-- [ ] 7.8 Frontend:
+  - Ghi chú: lịch `marketplace:sweep-resale-locks` (mục 1d trong `routes/console.php`). Đọc lười qua `MarketplaceListing::lockActive()`, accessor `effective_status` và scope `availableTo`.
+- [x] 7.7 Khiếu nại về bán lại tạo support case có `reference_type` trỏ tới listing.
+  - Ghi chú: `reference_type=marketplace_listing`, `reference_id` là id listing; chỉ người bán hoặc người mua từng khóa được mở. Tổ chức, sân và bên bị khiếu nại lấy từ sân của listing (vẫn là chủ sân, đúng luồng support case hiện có).
+- [x] 7.8 Frontend:
   - Sửa `useResaleMarketplace`, `marketplaceApi` và các kiểu dữ liệu liên quan.
   - Form đăng bán thêm phần tài khoản nhận tiền.
   - Thêm các nút khóa, đã chuyển tiền, nhả và đã nhận tiền. Poll trạng thái.
@@ -257,7 +264,8 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
     - Xóa `getFallbackListings`. Hàm này hiện bốn tin pass giả (id 901–904, có tin dài 2 giờ) khi API trả rỗng hoặc lỗi.
     - Bỏ giá dự phòng 200000 (dòng 363, 421).
   - UI ghi rõ tiền đi thẳng giữa người mua và người bán.
-- [ ] 7.9 Test:
+  - Ghi chú: thêm `useResaleLock` (poll 5 giây khi đang giữ chỗ hoặc đã báo trả), `ResalePaymentDetails` và `ResaleReceiverFields`. Bỏ `seller_refund_accepted` và lựa chọn ví. Người bán nhập lý do "chưa nhận được tiền" qua `window.prompt`, theo kiểu `confirm()` sẵn có.
+- [x] 7.9 Test:
   - Phủ các scenario của spec `advanced-booking-marketplace`:
     - mỗi lúc chỉ một người khóa được, người thứ hai nhận 409;
     - nhả khóa;
@@ -268,6 +276,7 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
     - bán một giờ trong booking hai giờ thì giờ còn lại vẫn thuộc người bán.
   - Sửa `MarketplaceTransferVerificationTest`, `ComprehensiveConcurrencyAndRetryInvariantsTest` và `AdvancedBookingMarketplaceTest`.
   - Viết lại Playwright `p1-resale-marketplace`.
+  - Ghi chú: Playwright `p1-resale-marketplace` đã viết lại nhưng CHƯA chạy. Kịch bản listing miễn phí chỉ có trong PHPUnit. Thêm `GatedMarketplaceAndSplitRegressionTest`, `RestrictedAccountLifecycleTest`, `ZeroCommissionRetirementRegressionTest` và vitest `useResaleLock.spec.ts`. JSON listing bỏ `locked_by`, `reference`, `buyer_ids`, `last_release` khỏi `metadata`.
 
 ## 8. Phí giải đấu qua QR chủ sân (design 6)
 

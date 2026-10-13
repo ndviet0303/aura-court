@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { UserBookingSlot } from '../types/marketplace'
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import type { ResaleReceiver, UserBookingSlot } from '../types/marketplace'
 import { AuraButton } from '@/shared/components'
+import ResaleReceiverFields from './ResaleReceiverFields.vue'
 
 const props = defineProps<{
   show: boolean
@@ -13,8 +15,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'update:askingPrice', price: number): void
-  (e: 'confirm'): void
+  (e: 'confirm', receiver: ResaleReceiver | null): void
 }>()
+
+const { t } = useI18n()
+const receiver = ref<ResaleReceiver | null>(null)
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -25,13 +30,19 @@ function setDiscountPreset(percent: number) {
   if (price) emit('update:askingPrice', Math.round((price * (1 - percent / 100)) / 10000) * 10000)
 }
 
-const feeAmount = computed(() => {
-  return Math.round(props.askingPrice * 0.05)
-})
+const isFree = computed(() => props.askingPrice === 0)
+const priceValid = computed(
+  () =>
+    !!props.bookingSlot &&
+    Number.isInteger(props.askingPrice) &&
+    props.askingPrice >= 0 &&
+    props.askingPrice <= props.bookingSlot.originalPrice,
+)
+const canSubmit = computed(() => priceValid.value && (isFree.value || receiver.value !== null))
 
-const estimatedPayout = computed(() => {
-  return Math.max(0, props.askingPrice - feeAmount.value)
-})
+function submit() {
+  if (canSubmit.value) emit('confirm', isFree.value ? null : receiver.value)
+}
 </script>
 
 <template>
@@ -41,7 +52,7 @@ const estimatedPayout = computed(() => {
       <div class="modal-header">
         <div class="modal-title-wrap">
           <span class="material-symbols-outlined modal-icon">sell</span>
-          <h3 class="modal-title">Niêm Yết Pass Lại Suất Chơi</h3>
+          <h3 class="modal-title">Đăng Pass Lại 1 Giờ Chơi</h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">
           <span class="material-symbols-outlined">close</span>
@@ -83,7 +94,7 @@ const estimatedPayout = computed(() => {
             <input
               :value="askingPrice"
               type="number"
-              min="10000"
+              min="0"
               :max="bookingSlot.originalPrice"
               step="10000"
               class="form-input font-mono"
@@ -103,29 +114,23 @@ const estimatedPayout = computed(() => {
           </div>
         </div>
 
-        <!-- Payout Calculation Box -->
+        <ResaleReceiverFields v-if="!isFree" @update:receiver="receiver = $event" />
+        <p v-else class="notice-text">{{ t('resale.p2p.freeListingNote') }}</p>
+
         <div class="payout-calc-box">
           <div class="p-row">
-            <span>Giá niêm yết bán:</span>
+            <span>{{ t('resale.p2p.buyerPaysYou') }}</span>
             <strong class="font-mono text-ink">{{ formatMoney(askingPrice) }}</strong>
           </div>
           <div class="p-row">
-            <span>Phí sàn P2P (5%):</span>
-            <span class="text-muted font-mono">-{{ formatMoney(feeAmount) }}</span>
-          </div>
-          <div class="p-row total-payout-row">
-            <strong>Thực nhận về ví sau khi bán:</strong>
-            <strong class="payout-highlight font-mono">{{ formatMoney(estimatedPayout) }}</strong>
+            <span>{{ t('resale.p2p.feeRow') }}</span>
+            <span class="text-ink">{{ t('resale.p2p.feeNone') }}</span>
           </div>
         </div>
 
-        <!-- Rules Notice -->
         <div class="policy-notice">
           <span class="material-symbols-outlined notice-icon">info</span>
-          <p class="notice-text">
-            Suất chơi sẽ được hiển thị công khai trên chợ. Bạn có thể rút tin bất cứ lúc nào trước
-            khi có người mua.
-          </p>
+          <p class="notice-text">{{ t('resale.p2p.directNotice') }}</p>
         </div>
       </div>
 
@@ -136,9 +141,9 @@ const estimatedPayout = computed(() => {
           variant="gold"
           size="md"
           :loading="processing"
-          :disabled="askingPrice <= 0 || askingPrice > bookingSlot.originalPrice"
+          :disabled="!canSubmit"
           icon="publish"
-          @click="emit('confirm')"
+          @click="submit"
         >
           Đăng Lên Chợ Ngay
         </AuraButton>
@@ -406,18 +411,6 @@ html.dark .meta-item.highlight {
   color: var(--ink);
 }
 
-.total-payout-row {
-  padding-top: 8px;
-  border-top: 1px solid var(--outline);
-  color: var(--ink);
-  font-size: 14px;
-}
-
-.payout-highlight {
-  font-size: 17px;
-  color: #10b981;
-}
-
 .policy-notice {
   display: flex;
   align-items: flex-start;
@@ -447,54 +440,5 @@ html.dark .meta-item.highlight {
   padding: 16px 24px;
   border-top: 1px solid var(--outline);
   background: var(--surface-subtle, rgba(0, 0, 0, 0.01));
-}
-
-.btn-cancel {
-  padding: 10px 18px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 22px;
-  border-radius: 12px;
-  border: 0;
-  background: var(--primary, #6b2d3f);
-  color: #ffffff;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover, #562332);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.spin-icon {
-  animation: spin 1s linear infinite;
-  font-size: 18px;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

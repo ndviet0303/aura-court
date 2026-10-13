@@ -12,6 +12,7 @@ use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
+use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
 use App\Http\Controllers\Court\CourtController;
 use App\Http\Controllers\Court\ReviewController;
@@ -419,9 +420,12 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
 
         Route::middleware('feature:marketplace_slot_resale')->group(function () {
             Route::get('marketplace/listings', [AdvancedBookingController::class, 'listings']);
-            Route::post('marketplace/entitlements/{entitlement}/list', [AdvancedBookingController::class, 'createListing']);
-            Route::post('marketplace/listings/{listing}/checkout', [AdvancedBookingController::class, 'checkoutListing']);
-            Route::post('marketplace/listings/{listing}/purchase', [AdvancedBookingController::class, 'purchaseListing']);
+            Route::post('marketplace/entitlements/{entitlement}/list', [ResaleListingController::class, 'store']);
+            Route::get('marketplace/listings/{listing}', [ResaleListingController::class, 'show']);
+            Route::post('marketplace/listings/{listing}/checkout', [ResaleListingController::class, 'lock']);
+            Route::post('marketplace/listings/{listing}/payment-sent', [ResaleListingController::class, 'paymentSent']);
+            Route::post('marketplace/listings/{listing}/release', [ResaleListingController::class, 'release']);
+            Route::post('marketplace/listings/{listing}/confirm-receipt', [ResaleListingController::class, 'confirmReceipt']);
             Route::post('marketplace/listings/{listing}/withdraw', [AdvancedBookingController::class, 'withdrawListing']);
         });
 

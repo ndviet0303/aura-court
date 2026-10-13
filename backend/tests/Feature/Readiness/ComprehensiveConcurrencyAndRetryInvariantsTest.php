@@ -39,6 +39,7 @@ use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\POS\PosService;
 use App\Services\Social\MarketplaceService;
+use App\Services\Social\PeerToPeerResaleService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
@@ -419,7 +420,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
     // SCENARIO 5: Marketplace Transfer
     // =========================================================================
 
-    public function test_scenario_5_marketplace_transfer_concurrent_purchases_yields_exactly_one_winner(): void
+    public function test_scenario_5_marketplace_concurrent_locks_yield_exactly_one_buyer_and_one_transfer(): void
     {
         $fixture = $this->setupTenantWithReceivingConnection();
         config(['features.flags.marketplace_slot_resale' => true]);
@@ -436,57 +437,31 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $sellerEntitlement = $reservation->entitlements()->firstOrFail();
         $this->assertSame(200000, $sellerEntitlement->amount);
 
-        $marketplace = app(MarketplaceService::class);
-        $listing = $marketplace->list($sellerEntitlement, $seller, 150000);
+        $listing = app(MarketplaceService::class)->list($sellerEntitlement, $seller, 150000, ['bank_code' => 'TPB', 'account_number' => '0123456789', 'account_name' => 'SELLER']);
         $this->assertSame('listed', $listing->status);
+        $lock = fn (User $buyer, string $key) => $this->actingAs($buyer)
+            ->withHeaders(['X-Organization-ID' => (string) $org->id, 'Idempotency-Key' => $key])
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/checkout');
 
-        // Buyer 1 initiates checkout to get payment attempt
-        $attempt1 = $marketplace->checkout($listing, $buyer1);
+        // Buyer 1 locks first; buyer 2 racing for the same listing gets 409 and never sees the seller's account
+        $lock($buyer1, 'resale-lock-buyer-1')->assertOk()->assertJsonPath('receiver.account_number', '0123456789');
+        $res2 = $lock($buyer2, 'resale-lock-buyer-2')->assertStatus(409);
+        $this->assertStringNotContainsString('0123456789', (string) $res2->getContent());
 
-        // Buyer 1 pays via verified SePay webhook
-        $this->sendOwnerPayment($fixture, $attempt1->reference, 150000, 'buyer1-pay-evt');
-        $this->assertSame(OwnerPaymentAttempt::STATUS_PAID, $attempt1->fresh()->status);
-
-        // Owner executes seller reimbursement
-        $executionRef = 'ACREIMB'.Str::upper(Str::random(12));
-        $this->sendOwnerPayment($fixture, $executionRef, 150000, 'seller-reimb-evt');
-
-        // Buyer 1 commits purchase
-        $res1 = $this->actingAs($buyer1)
-            ->withHeaders([
-                'X-Organization-ID' => (string) $org->id,
-                'Idempotency-Key' => 'transfer-commit-buyer-1',
-            ])
-            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
-                'buyer_payment_reference' => $attempt1->reference,
-                'seller_refund_reference' => $executionRef,
-                'seller_refund_accepted' => true,
-            ]);
-        $res1->assertOk();
-        $this->assertSame('completed', $res1->json('transfer.status'));
+        // Buyer 1 pays the seller directly; the seller confirms receipt exactly once
+        $resale = app(PeerToPeerResaleService::class);
+        $resale->paymentSent($listing, $buyer1);
+        $resale->confirmReceipt($listing, $seller);
         $this->assertSame('sold', $listing->fresh()->status);
-
-        // Buyer 2 concurrently attempts to purchase the same listing -> REJECTED with 409
-        $res2 = $this->actingAs($buyer2)
-            ->withHeaders([
-                'X-Organization-ID' => (string) $org->id,
-                'Idempotency-Key' => 'transfer-commit-buyer-2',
-            ])
-            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
-                'buyer_payment_reference' => $attempt1->reference,
-                'seller_refund_reference' => $executionRef,
-                'seller_refund_accepted' => true,
-            ]);
-        $res2->assertStatus(409);
-        $this->assertStringContainsString('no longer available', (string) $res2->getContent());
-
-        // Also direct service call must reject
-        try {
-            $marketplace->purchase($listing->fresh(), $buyer2, 'direct-purchase-race', $attempt1->reference, $executionRef, true);
-            $this->fail('Expected purchase on sold listing to throw HttpException 409.');
-        } catch (HttpException $e) {
-            $this->assertSame(409, $e->getStatusCode());
+        foreach ([fn () => $resale->confirmReceipt($listing, $seller), fn () => $resale->lock($listing, $buyer2)] as $retry) {
+            try {
+                $retry();
+                $this->fail('Expected a sold listing to refuse another transfer.');
+            } catch (HttpException $e) {
+                $this->assertSame(409, $e->getStatusCode());
+            }
         }
+        $lock($buyer2, 'resale-lock-buyer-2-again')->assertStatus(409);
 
         // Invariants:
         // - Exactly 1 completed transfer

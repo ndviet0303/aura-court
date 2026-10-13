@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
-use App\Services\Social\MarketplaceService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
@@ -29,7 +28,6 @@ class OwnerPaymentAttemptService
         'recurring_period',
         'split_share',
         'pos_order',
-        'transfer_consideration',
         'tournament_registration',
     ];
 
@@ -38,7 +36,6 @@ class OwnerPaymentAttemptService
         'recurring_period' => [RecurringSeriesService::class, 'hasConfirmablePeriod', 'recurring_hold_unavailable'],
         'split_share' => [SplitPaymentService::class, 'hasConfirmableShare', 'split_share_unavailable'],
         'pos_order' => [PosQrPaymentService::class, 'hasConfirmableOrder', 'pos_order_unavailable'],
-        'transfer_consideration' => [MarketplaceService::class, 'hasConfirmableListing', 'transfer_listing_unavailable'],
     ];
 
     public function createAttempt(
@@ -464,6 +461,9 @@ class OwnerPaymentAttemptService
         } elseif ($eventAt->gt($attempt->expires_at)) {
             $status = 'late';
             $exceptionCode = 'transfer_after_expiry';
+        } elseif (! in_array($attempt->purpose, self::PURPOSES, true)) {
+            $status = 'exception';
+            $exceptionCode = 'unsupported_purpose';
         } elseif ($attempt->status !== OwnerPaymentAttempt::STATUS_PENDING) {
             $status = 'exception';
             $exceptionCode = 'attempt_not_pending';

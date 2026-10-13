@@ -314,16 +314,6 @@
       "count": 2
     }
   },
-  "src/features/marketplace/api/marketplaceApi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/features/marketplace/composables/useResaleMarketplace.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    }
-  },
   "src/features/partner-registration/__tests__/PartnerApplicationStatusView.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 14

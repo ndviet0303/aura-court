@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\FinanceException;
+use App\Models\EntitlementTransfer;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
@@ -12,6 +12,7 @@ use App\Models\Venue;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Social\MarketplaceService;
+use App\Services\Social\PeerToPeerResaleService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -153,20 +154,16 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         $entitlement = $reservation->entitlements()->firstOrFail();
         $this->assertSame('active', $entitlement->status);
 
-        // Seller lists entitlement for resale
-        $listing = app(MarketplaceService::class)->list($entitlement, $seller, $entitlement->amount);
+        // Seller lists entitlement for resale with their own receiving account
+        $listing = app(MarketplaceService::class)->list($entitlement, $seller, $entitlement->amount, ['bank_code' => 'TPB', 'account_number' => '0123456789', 'account_name' => 'SELLER']);
         $this->assertSame('listed', $listing->status);
 
-        // Buyer purchases entitlement with successful seller refund
-        $transfer = app(MarketplaceService::class)->purchase(
-            $listing,
-            $buyer,
-            'idemp-transfer-success-'.uniqid(),
-            'pay-ref-buyer-'.uniqid(),
-            null,
-            true // seller refund accepted
-        );
+        // Buyer locks, pays the seller directly, and the seller confirms receipt
+        $resale = app(PeerToPeerResaleService::class);
+        $resale->lock($listing, $buyer);
+        $resale->confirmReceipt($listing, $seller);
 
+        $transfer = EntitlementTransfer::where('marketplace_listing_id', $listing->id)->sole();
         $this->assertSame('completed', $transfer->status);
         $this->assertSame('sold', $listing->fresh()->status);
         $this->assertSame('transferred', $entitlement->fresh()->status);
@@ -176,37 +173,5 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         $this->assertSame('active', $buyerEntitlement->status);
         $this->assertSame($buyer->id, $buyerEntitlement->user_id);
         $this->assertSame($entitlement->amount, $buyerEntitlement->amount);
-    }
-
-    public function test_marketplace_transfer_compensates_and_relists_when_seller_refund_fails(): void
-    {
-        [$organization, $seller, $court, $reservation] = $this->setupTenantAndReservation(enablePilot: false);
-
-        $buyer = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $buyer->id, 'role' => 'customer', 'status' => 'active']);
-
-        $entitlement = $reservation->entitlements()->firstOrFail();
-        $listing = app(MarketplaceService::class)->list($entitlement, $seller, $entitlement->amount);
-
-        // Buyer purchases but seller refund is rejected
-        $transfer = app(MarketplaceService::class)->purchase(
-            $listing,
-            $buyer,
-            'idemp-transfer-fail-'.uniqid(),
-            'pay-ref-buyer-fail-'.uniqid(),
-            null,
-            false // seller refund rejected
-        );
-
-        $this->assertSame('compensated', $transfer->status);
-        $this->assertSame('listed', $listing->fresh()->status);
-        $this->assertSame('active', $entitlement->fresh()->status); // seller retains entitlement
-
-        // FinanceException is logged for manual review
-        $this->assertDatabaseHas('finance_exceptions', [
-            'type' => 'marketplace_transfer_failed',
-            'reference' => (string) $transfer->id,
-            'status' => 'open',
-        ]);
     }
 }
