@@ -187,6 +187,8 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 
         Event::fake([CourtStatusUpdated::class]);
         $tz = 'Asia/Ho_Chi_Minh';
+        // Venue-local midday, so now + 10 minutes stays on the same venue day.
+        Carbon::setTestNow(now($tz)->setTime(12, 0));
         $targetDate = now($tz)->copy()->addMinutes(10);
 
         // 1. Create a held reservation -> CourtStatusUpdated dispatched with status 'booked'
