@@ -154,7 +154,7 @@ class AdminDisputeController extends Controller
         }
 
         $disputeCode = 'DSP-'.strtoupper(Str::random(10));
-        $court = $reservation?->court ?? (($data['reference_type'] ?? null) === 'marketplace_listing' ? $this->resale->disputeCourt((int) ($data['reference_id'] ?? 0), $user) : null);
+        $court = $reservation->court ?? (($data['reference_type'] ?? null) === 'marketplace_listing' ? $this->resale->disputeCourt((int) ($data['reference_id'] ?? 0), $user) : null);
         $venue = $court?->venue;
         $org = $venue?->organization;
 

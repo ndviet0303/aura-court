@@ -139,7 +139,7 @@ class TournamentService
             $this->validateAdmission($tournament);
 
             $targetUserId = (int) ($data['user_id'] ?? $actor->id);
-            abort_if($this->activeParticipant($tournament, $targetUserId), 422, 'Participant is already registered.');
+            abort_if($this->activeParticipant($tournament, $targetUserId) !== null, 422, 'Participant is already registered.');
 
             // The organizer adding a player to a paid tournament collects nothing, so the waiver is explicit and audited.
             $waiverReason = null;

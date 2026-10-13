@@ -83,6 +83,7 @@ class Court extends Model
         return $this->hasMany(CourtPriceSlot::class);
     }
 
+    /** @return BelongsTo<Venue, $this> */
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);

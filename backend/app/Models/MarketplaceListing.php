@@ -39,16 +39,19 @@ class MarketplaceListing extends Model
         return ['original_price' => 'integer', 'asking_price' => 'integer', 'cutoff_at' => UtcDateTime::class, 'sold_at' => UtcDateTime::class, 'metadata' => 'array'];
     }
 
+    /** @return BelongsTo<ReservationEntitlement, $this> */
     public function entitlement(): BelongsTo
     {
         return $this->belongsTo(ReservationEntitlement::class, 'reservation_entitlement_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
     }
 
+    /** @return HasMany<EntitlementTransfer, $this> */
     public function transfers(): HasMany
     {
         return $this->hasMany(EntitlementTransfer::class);

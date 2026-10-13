@@ -135,7 +135,7 @@ class SocialController extends Controller
     public function getDefaultRates(Request $request, MatchPost $post)
     {
         $court = $post->court ?? ($post->court_id ? Court::find($post->court_id) : null);
-        abort_unless($court, 404, 'Không tìm thấy sân.');
+        abort_unless($court !== null, 404, 'Không tìm thấy sân.');
 
         return response()->json(['rates' => $this->matches->getDefaultRates($court, $post->starts_at)]);
     }

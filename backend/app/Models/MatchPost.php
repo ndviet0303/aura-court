@@ -92,6 +92,7 @@ class MatchPost extends Model
         return $this->belongsTo(User::class, 'creator_id');
     }
 
+    /** @return BelongsTo<Court, $this> */
     public function court(): BelongsTo
     {
         return $this->belongsTo(Court::class, 'court_id');

@@ -64,7 +64,7 @@ class MatchService
             $courtId = $data['court_id'] ?? null;
             abort_unless($courtId, 422, 'Cần chọn sân cho buổi giao lưu.');
             $court = Court::with('venue')->findOrFail($courtId);
-            abort_unless($court->venue, 400, 'Sân không có thông tin cơ sở.');
+            abort_unless($court->venue !== null, 400, 'Sân không có thông tin cơ sở.');
 
             $orgId = $court->venue->organization_id;
             abort_unless(

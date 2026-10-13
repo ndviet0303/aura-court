@@ -59,14 +59,14 @@ class TournamentRegistrationPaymentService
                 return null;
             }
             $live = $this->latestFor($tournament, $user->id);
-            if ($live?->status === OwnerPaymentAttempt::STATUS_PENDING && $live->expires_at?->isFuture()) {
+            if ($live?->status === OwnerPaymentAttempt::STATUS_PENDING && $live->expires_at->isFuture()) {
                 return $live;
             }
 
             $this->tournaments->validateAdmission($tournament);
             $fee = TournamentService::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
             $connection = $tournament->venue_id ? $this->connections->connectionFor((int) $tournament->organization_id, (int) $tournament->venue_id) : null;
-            abort_unless($connection, 409, 'Cơ sở tổ chức giải chưa có tài khoản nhận tiền đã xác minh nên chưa thể thu phí đăng ký.');
+            abort_unless($connection !== null, 409, 'Cơ sở tổ chức giải chưa có tài khoản nhận tiền đã xác minh nên chưa thể thu phí đăng ký.');
 
             $expiresAt = now()->addMinutes(15);
             $closes = TournamentService::registrationClosesAt($tournament);
