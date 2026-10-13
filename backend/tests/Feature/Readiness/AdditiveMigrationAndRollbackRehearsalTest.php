@@ -555,7 +555,8 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
                 'court_id' => $court->id,
                 'slots' => [$tomorrow->toIso8601String()],
             ]);
-        $blockedBookingResponse->assertStatus(422);
+        $blockedBookingResponse->assertStatus(404)
+            ->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');
 
         // Verify database has no new bookings
         $this->assertSame($initialBookingCount, Booking::count());

@@ -135,12 +135,12 @@ class FinalMutationEligibilityAndCacheTest extends TestCase
 
         Sanctum::actingAs($customer);
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
 
         $this->assertNotEquals(201, $bookRes->status());
-        $this->assertDatabaseMissing('bookings', ['court_id' => $court->id]);
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 }

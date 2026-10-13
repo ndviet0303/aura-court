@@ -10,7 +10,6 @@ use App\Models\PriceRule;
 use App\Models\TenantMembership;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -19,7 +18,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_owner_membership_plan_is_reloaded_and_applies_only_to_its_tenant_in_v1_v2_and_pos(): void
+    public function test_owner_membership_plan_is_reloaded_and_applies_only_to_its_tenant_in_reservations_and_pos(): void
     {
         config([
             'features.flags.direct_owner_payments' => false,
@@ -118,17 +117,6 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             ->assertJsonPath('membership.organization_id', $tenant['organization']->id)
             ->assertJsonPath('membership.plan.discount_percent', 10);
 
-        $this->fundWallet($tenant['customer'], (int) $tenant['organization']->id, 300000);
-        $v1Time = now()->addDays(5)->setTime(10, 0)->startOfHour();
-        $v1 = $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v1-booking'])
-            ->postJson('/api/bookings', [
-                'court_id' => $tenant['court']->id,
-                'slots' => [$v1Time->toIso8601String()],
-            ])->assertCreated();
-        $this->assertSame(90000, (int) $v1->json('booking.total_amount'));
-        $this->assertSame(10000, (int) $v1->json('booking.membership_discount_amount'));
-        $this->assertSame(10, (int) $v1->json('booking.policy_snapshot.membership_snapshot.benefit_value.value'));
-
         $v2Time = now()->addDays(6)->setTime(11, 0)->startOfHour();
         $quote = $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v2-quote'])
             ->postJson('/api/price-quotes', [
@@ -204,12 +192,5 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
         $court = Court::create(['venue_id' => $venue->id, 'name' => $name.' court', 'is_active' => true]);
 
         return compact('organization', 'owner', 'customer', 'venue', 'court');
-    }
-
-    private function fundWallet(User $user, int $organizationId, int $amount): void
-    {
-        $walletService = app(WalletPaymentService::class);
-        $wallet = $walletService->getOrCreateWallet($user->id, $organizationId);
-        $walletService->credit($wallet, $amount, 'test_topup', random_int(1, PHP_INT_MAX), 'Membership checkout fixture');
     }
 }

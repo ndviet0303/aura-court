@@ -84,12 +84,12 @@ class UnifiedBookingEligibilityTest extends TestCase
 
         // 4. Direct booking attempt on draft court must fail with 404
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
         $bookRes->assertStatus(404);
-        $this->assertDatabaseMissing('bookings', ['court_id' => $court->id]);
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 
     public function test_cached_availability_after_suspension_refuses_new_booking(): void
@@ -157,14 +157,14 @@ class UnifiedBookingEligibilityTest extends TestCase
 
         // Customer attempts to submit booking with the previously-loaded slot
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/bookings', [
+        $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
 
         // Must be rejected!
         $this->assertNotEquals(201, $bookRes->status());
-        $this->assertDatabaseMissing('bookings', ['court_id' => $court->id]);
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 
     public function test_expired_subscription_is_rechecked_on_cached_public_lists_and_quote(): void

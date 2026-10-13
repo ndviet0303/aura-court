@@ -59,7 +59,10 @@ class VenueFeatureTest extends TestCase
         $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
 
         $customer = User::factory()->create();
-        $this->actingAs($customer)->postJson('/api/bookings', ['court_id' => $court->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()]])->assertNotFound();
+        $this->actingAs($customer)->withHeader('Idempotency-Key', 'inactive-venue-checkout')
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()]])
+            ->assertNotFound()->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }
 
     public function test_regular_user_cannot_manage_venues_and_demo_mutations_roll_back(): void

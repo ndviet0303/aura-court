@@ -60,18 +60,6 @@ class BookingApiTest extends TestCase
         $this->assertDatabaseMissing('reservations', ['user_id' => $user->id]);
     }
 
-    public function test_cancellation_endpoint_is_retired_and_returns_404(): void
-    {
-        $user = User::factory()->create();
-        $court = Court::create(['name' => 'Sân B', 'is_active' => true]);
-        $booking = $user->bookings()->create(['code' => 'BKTEST123', 'court_id' => $court->id, 'total_amount' => 100000, 'status' => 'confirmed']);
-        $booking->slots()->create(['court_id' => $court->id, 'starts_at' => now()->addHour(), 'ends_at' => now()->addHours(2), 'unit_price' => 100000, 'status' => 'confirmed']);
-
-        $this->actingAs($user)->postJson("/api/bookings/{$booking->code}/cancel")->assertNotFound();
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
-        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
-    }
-
     public function test_customer_can_fetch_wallet_balance(): void
     {
         $user = User::factory()->create();
