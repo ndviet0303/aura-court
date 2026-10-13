@@ -249,13 +249,13 @@ async function handleCreateTournament(payload: any) {
       />
     </section>
 
-    <!-- Tab 4: Overview -->
     <section v-else-if="activeSubNav === 'tournament-overview'" class="tab-content-section">
       <TournamentOverviewPanel
         :tournament="tournament"
         :participants="participants"
         :matches="matches"
         :loading="loadingDetails"
+        @participant-added="selectTournament(tournament.id)"
       />
     </section>
 

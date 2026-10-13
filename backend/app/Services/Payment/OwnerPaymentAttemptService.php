@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
+use App\Services\Tournament\TournamentRegistrationPaymentService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
@@ -23,19 +24,14 @@ class OwnerPaymentAttemptService
 {
     public function __construct(private readonly FinancialPostingService $financials) {}
 
-    private const PURPOSES = [
-        'booking',
-        'recurring_period',
-        'split_share',
-        'pos_order',
-        'tournament_registration',
-    ];
+    private const PURPOSES = ['booking', 'recurring_period', 'split_share', 'pos_order', 'tournament_registration'];
 
     /** Purposes confirmed by their own service: [service, check that locks and re-reads it, exception when it is gone]. */
     private const CONFIRMERS = [
         'recurring_period' => [RecurringSeriesService::class, 'hasConfirmablePeriod', 'recurring_hold_unavailable'],
         'split_share' => [SplitPaymentService::class, 'hasConfirmableShare', 'split_share_unavailable'],
         'pos_order' => [PosQrPaymentService::class, 'hasConfirmableOrder', 'pos_order_unavailable'],
+        'tournament_registration' => [TournamentRegistrationPaymentService::class, 'hasConfirmableRegistration', 'tournament_registration_unavailable'],
     ];
 
     public function createAttempt(

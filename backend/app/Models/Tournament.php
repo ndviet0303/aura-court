@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['uuid', 'organization_id', 'created_by', 'name', 'format', 'status', 'version', 'starts_at', 'settings'])]
+#[Fillable(['uuid', 'organization_id', 'venue_id', 'created_by', 'name', 'format', 'status', 'version', 'starts_at', 'settings'])]
 class Tournament extends Model
 {
     use BelongsToTenant;

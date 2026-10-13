@@ -1,6 +1,10 @@
 import { getCanonicalBackendEnv } from './runner/test-data.ts'
 import { test, expect } from '@playwright/test'
-import { getTestManifest } from './runner/test-data.ts'
+import {
+  getTestManifest,
+  formatVietnamDate,
+  sendSyntheticPaymentWebhook,
+} from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
@@ -513,5 +517,152 @@ test.describe('P1: Giải đấu trọn gói, Sức chứa, Phân quyền trọn
     await expect(page.locator('text=' + tourneyData.tourney_name).first()).toBeVisible({
       timeout: 15000,
     })
+  })
+  test('9.4.6: Giải có lệ phí: QR của chủ sân -> Webhook test -> VĐV được ghi danh, không trừ ví', async ({
+    page,
+  }) => {
+    const manifest = getTestManifest()
+    const owner = getActorCredentials(manifest, 'owner1')
+    const customer = getActorCredentials(manifest, 'customer2')
+    const org1 = manifest.fixtures?.organizations.org1
+    const venue1A = org1?.venue1A
+    if (!org1?.id || !venue1A?.routingId)
+      throw new Error('Org1 venue1A routingId missing from manifest')
+
+    const backendDir = path.resolve(import.meta.dirname, '../../backend')
+    const backendEnv = {
+      APP_ENV: 'testing',
+      DB_CONNECTION: 'pgsql',
+      DB_HOST: manifest.database.host,
+      DB_PORT: String(manifest.database.port),
+      DB_DATABASE: manifest.database.name,
+      DB_USERNAME: manifest.database.user,
+      DB_PASSWORD: manifest.database.password || '',
+      LARAVEL_STORAGE_PATH: manifest.storagePath,
+    }
+    const runPhp = (script: string) =>
+      execFileSync('php', ['-r', script], {
+        cwd: backendDir,
+        env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
+        encoding: 'utf-8',
+      })
+
+    // 1. A paid tournament collected on venue 1A's verified receiving connection
+    const tourneyData = JSON.parse(
+      runPhp(`
+      require "vendor/autoload.php";
+      $app = require_once "bootstrap/app.php";
+      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
+      $kernel->bootstrap();
+
+      use App\\Models\\Tournament;
+      use App\\Models\\User;
+      use App\\Models\\Venue;
+
+      $host = User::where('email', '${owner.email}')->firstOrFail();
+      $venue = Venue::findOrFail(${venue1A.id});
+      $name = 'Giải Có Lệ Phí E2E ' . uniqid();
+      $tourney = Tournament::create([
+        'organization_id' => ${org1.id},
+        'venue_id' => $venue->id,
+        'created_by' => $host->id,
+        'name' => $name,
+        'format' => 'single_elimination',
+        'status' => 'open',
+        'starts_at' => now()->addDays(7),
+        'settings' => ['entry_fee' => '50.000 ₫', 'max_participants' => 4, 'venue' => $venue->name],
+      ]);
+
+      echo json_encode(['tourney_id' => $tourney->id, 'tourney_name' => $name]);
+    `),
+    ) as { tourney_id: number; tourney_name: string }
+
+    // 2. Customer registers in the UI and is shown the owner QR instead of a wallet debit
+    await page.goto('/login', { waitUntil: 'domcontentloaded' })
+    await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
+    await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
+    await page.locator('button[type="submit"]').click()
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
+
+    await page.goto('/tournaments', { waitUntil: 'domcontentloaded' })
+    const card = page.locator('.tournament-card', { hasText: tourneyData.tourney_name })
+    await expect(card).toBeVisible({ timeout: 15000 })
+    await card
+      .getByRole('button', { name: /đăng ký|register/i })
+      .first()
+      .click()
+    await page.locator('#reg-athlete-name').fill('Khách E2E')
+    await page.locator('#reg-athlete-phone').fill('0900000000')
+
+    const registerResponse = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/tournaments/`) &&
+        res.url().endsWith('/register') &&
+        res.request().method() === 'POST',
+      { timeout: 25000 },
+    )
+    await page.locator('.modal-footer .aura-btn--primary').click()
+    const registered = (await (await registerResponse).json()) as {
+      registered: boolean
+      payment: {
+        amount: number
+        transfer_content: string
+        status: string
+        qr_url: string
+        receiver: { account_number: string }
+      }
+    }
+    expect(registered.registered).toBe(false)
+    expect(registered.payment.status).toBe('pending')
+    expect(registered.payment.amount).toBe(50000)
+
+    const paymentPanel = page.locator('[data-testid="tournament-payment"]')
+    await expect(paymentPanel).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('[data-testid="owner-payment-qr"]')).toHaveAttribute(
+      'src',
+      registered.payment.qr_url,
+    )
+    await expect(paymentPanel).toContainText(registered.payment.transfer_content)
+
+    // 3. Synthetic owner webhook (Authorization: Apikey) pays the attempt
+    const webhookRes = await sendSyntheticPaymentWebhook(manifest, {
+      routingId: venue1A.routingId,
+      secret: `whsec_e2e_1a_${manifest.runId}`,
+      accountNumber: registered.payment.receiver.account_number,
+      amount: registered.payment.amount,
+      code: registered.payment.transfer_content,
+      referenceCode: registered.payment.transfer_content,
+      transactionId: `TXN-TRN-${Date.now()}`,
+      transactionDate: formatVietnamDate(new Date(Date.now() + 10000)),
+    })
+    expect(webhookRes.statusCode).toBe(200)
+
+    // 4. The panel polls every 5 seconds and closes once the receipt registers the player
+    await expect(paymentPanel).toHaveCount(0, { timeout: 20000 })
+
+    const outcome = JSON.parse(
+      runPhp(`
+      require "vendor/autoload.php";
+      $app = require_once "bootstrap/app.php";
+      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
+      $kernel->bootstrap();
+
+      use App\\Models\\Tournament;
+      use App\\Models\\User;
+      use App\\Models\\WalletAccount;
+      use App\\Models\\WalletTransaction;
+
+      $user = User::where('email', '${customer.email}')->firstOrFail();
+      $tourney = Tournament::withoutGlobalScopes()->findOrFail(${tourneyData.tourney_id});
+      echo json_encode([
+        'participants' => $tourney->participants()->where('user_id', $user->id)->whereNotIn('status', ['withdrawn', 'rejected'])->count(),
+        'wallet_debits' => WalletTransaction::whereIn('wallet_account_id', WalletAccount::where('user_id', $user->id)->select('id'))
+          ->where('created_at', '>=', $tourney->created_at)->count(),
+      ]);
+    `),
+    ) as { participants: number; wallet_debits: number }
+
+    expect(outcome.participants).toBe(1)
+    expect(outcome.wallet_debits).toBe(0)
   })
 })

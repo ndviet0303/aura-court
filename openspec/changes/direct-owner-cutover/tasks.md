@@ -280,29 +280,35 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 8. Phí giải đấu qua QR chủ sân (design 6)
 
-- [ ] 8.1 Migration thêm `tournaments.venue_id`: nullable, FK tới `venues` với restrict on delete, có index. `down()` xóa cột.
-- [ ] 8.2 Tạo và sửa giải:
+- [x] 8.1 Migration thêm `tournaments.venue_id`: nullable, FK tới `venues` với restrict on delete, có index. `down()` xóa cột.
+  - Ghi chú: `down()` (drop FK, index, cột) chưa chạy riêng; schema conformance/FK-index test xanh.
+- [x] 8.2 Tạo và sửa giải:
   - `venue_id` bắt buộc khi phí lớn hơn 0. Cơ sở phải thuộc tổ chức của giải và có kết nối nhận tiền đã xác minh.
   - `settings['venue']` vẫn giữ tên hiển thị.
   - Sửa `TournamentController` (khoảng dòng 83 và 99).
   - `TournamentCreateModal.vue` đổi ô nhập tự do thành select cơ sở của tổ chức.
-- [ ] 8.3 Thêm service mới `TournamentRegistrationPaymentService`:
+  - Ghi chú: hiện không có endpoint sửa giải, nên chỉ áp dụng ở `create` qua `TournamentRegistrationPaymentService::assertVenueCanCollect` (dùng `PosQrPaymentService::connectionFor` làm kiểm tra kết nối đã xác minh).
+- [x] 8.3 Thêm service mới `TournamentRegistrationPaymentService`:
   - Dưới khóa dòng giải, đếm người đã xác nhận cộng số attempt `tournament_registration` đang chờ và còn hạn, rồi so với sức chứa.
   - Tạo hoặc trả lại attempt của người gọi, idempotent theo cặp (giải, người dùng).
   - Hạn 15 phút, không vượt quá hạn đăng ký.
   - Trả về `instructions()`.
 
   Thêm route `GET tournaments/{tournament}/registration` để trang thanh toán poll.
-- [ ] 8.4 `processReceipt` thêm nhánh `tournament_registration`:
+  - Ghi chú: controller gọi service thanh toán, service này phụ thuộc `TournamentService` (không vòng lặp). `register` trả 201 (miễn phí), 202 (chờ QR), 200 (đã ghi danh).
+- [x] 8.4 `processReceipt` thêm nhánh `tournament_registration`:
   - tạo participant giống đường miễn phí và ghi kèm receipt;
   - giải đã đóng hoặc attempt hết hạn thì ghi exception `tournament_registration_unavailable`.
-- [ ] 8.5 `TournamentService`:
+  - Ghi chú: chuyển khoản sau hạn đã được `applyAttemptChecks` chung xử lý trước nhánh purpose (exception `transfer_after_expiry`, attempt `late`); `tournament_registration_unavailable` phủ giải đã đóng/đầy/đã bắt đầu hoặc người đã ghi danh. Receipt được ghi qua allocation/receipt/attempt và `payment_reference` trong biên nhận đăng ký, không thêm cột.
+- [x] 8.5 `TournamentService`:
   - Bỏ mọi lệnh trừ ví trong `register` và `addParticipant`, bỏ phụ thuộc `WalletPaymentService`.
   - Ban tổ chức thêm người vào giải có phí thì bắt buộc có `waiver_reason`. Lý do được ghi vào participant (cột đã có sẵn) và audit log.
-- [ ] 8.6 Frontend:
+  - Ghi chú: bỏ luôn các guard `WalletAvailabilityService` và phụ thuộc `FinancialPostingService` khỏi `TournamentService`; `FinancialPostingService::postTournamentRegistrationPayment` giữ lại vì test khác còn dùng. Audit action `tournament.entry_fee_waived`.
+- [x] 8.6 Frontend:
   - Trang thanh toán giải hiện QR và poll trạng thái.
   - Modal thêm người có ô nhập lý do miễn phí.
-- [ ] 8.7 Test:
+  - Ghi chú: "trang thanh toán" là `TournamentPaymentPanel` trong modal đăng ký (dùng lại `OwnerPaymentInstructionsPanel`), không phải route riêng. Trước đây chưa có UI thêm người, nên thêm `TournamentAddParticipantModal` (tìm khách qua `/customers?q=`) mở từ tab Tổng quan.
+- [x] 8.7 Test:
   - Sức chứa tính cả attempt đang chờ.
   - Đăng ký idempotent.
   - Receipt gửi hai lần chỉ tạo một participant.
@@ -311,6 +317,7 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
   - Không còn bút toán ví.
   - Sửa `TournamentCompleteLifecycleTest` và `TournamentRegistrationAndLifecycleTest`.
   - Playwright `p1-tournaments-lifecycle` thêm case giải có phí, thanh toán qua webhook tổng hợp.
+  - Ghi chú: case Playwright 9.4.6 chỉ sửa, chưa chạy. Sửa thêm `ComprehensiveConcurrencyAndRetryInvariantsTest` scenario 9 sang luồng QR chủ sân.
 
 ## 9. Chỉ công khai sân có giá (design 9)
 

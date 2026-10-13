@@ -142,7 +142,7 @@
   ["view-lines", "features/admin/views/AdminMembershipView.vue", 336],
   ["view-lines", "features/admin/views/AdminPublicationQueueView.vue", 253],
   ["view-lines", "features/admin/views/AdminStaffView.vue", 361],
-  ["view-lines", "features/admin/views/AdminTournamentBracketView.vue", 464],
+  ["view-lines", "features/admin/views/AdminTournamentBracketView.vue", 463],
   ["view-lines", "features/admin/views/AdminVenuesView.vue", 423],
   ["view-lines", "features/admin/views/OrganizationOwnerView.vue", 267],
   ["view-lines", "features/admin/views/PricingCalendarView.vue", 398],

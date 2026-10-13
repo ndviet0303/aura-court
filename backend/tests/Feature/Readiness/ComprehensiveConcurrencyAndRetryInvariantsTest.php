@@ -690,89 +690,40 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
 
     public function test_scenario_9_last_tournament_place_capacity_reached_rejects_concurrent_entrant(): void
     {
-        $org = Organization::create([
-            'name' => 'Tournament Org',
-            'slug' => 'tournament-org-'.Str::lower(Str::random(8)),
-            'status' => 'active',
-            'partner_status' => 'approved',
-        ]);
-        $owner = User::factory()->create(['role' => 'customer']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
+        $fixture = $this->setupTenantWithReceivingConnection();
+        $org = $fixture['organization'];
+        $players = User::factory()->count(3)->create(['role' => 'customer']);
+        foreach ($players as $player) {
+            OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player->id, 'role' => 'customer', 'status' => 'active']);
+        }
+        config(['features.flags.social_matchmaking_tournaments' => true]);
 
-        $player1 = User::factory()->create(['role' => 'customer']);
-        $player2 = User::factory()->create(['role' => 'customer']);
-        $player3 = User::factory()->create(['role' => 'customer']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player1->id, 'role' => 'customer', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player2->id, 'role' => 'customer', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player3->id, 'role' => 'customer', 'status' => 'active']);
-
-        // Fund all 3 players' wallets with 500,000 VND
-        $walletService = app(WalletPaymentService::class);
-        $w1 = $walletService->getOrCreateWallet($player1->id, $org->id);
-        $w2 = $walletService->getOrCreateWallet($player2->id, $org->id);
-        $w3 = $walletService->getOrCreateWallet($player3->id, $org->id);
-        $walletService->credit($w1, 500000, 'test_fund', 1, 'Fund');
-        $walletService->credit($w2, 500000, 'test_fund', 2, 'Fund');
-        $walletService->credit($w3, 500000, 'test_fund', 3, 'Fund');
-        config([
-            'features.pilot_organizations' => [(string) $org->id],
-            'features.flags.social_matchmaking_tournaments' => true,
-            'features.flags.tenant_pos_and_wallet' => true,
-        ]);
-
-        // Tournament with max_participants = 2, entry_fee = 100,000 VND
+        // Tournament with max_participants = 2, entry_fee = 100,000 VND paid to the venue owner.
         $tournament = Tournament::create([
             'organization_id' => $org->id,
-            'created_by' => $owner->id,
-            'name' => 'Championship Final Slot Cup',
+            'venue_id' => $fixture['venue']->id,
+            'created_by' => $fixture['owner']->id,
+            'name' => 'Championship Final Place Cup',
             'format' => 'single_elimination',
             'status' => 'open',
-            'settings' => [
-                'entry_fee' => '100000',
-                'max_participants' => 2,
-            ],
+            'settings' => ['entry_fee' => '100000', 'max_participants' => 2],
         ]);
-
-        // Player 1 registers (takes slot 1 of 2)
-        $res1 = $this->actingAs($player1)
-            ->withHeaders([
-                'X-Organization-Id' => (string) $org->id,
-                'Idempotency-Key' => 'tourn-reg-player-1',
-            ])
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $res1->assertCreated();
-
-        // Player 2 registers for the last place (slot 2 of 2) -> SUCCEEDS
-        $res2 = $this->actingAs($player2)
-            ->withHeaders([
-                'X-Organization-Id' => (string) $org->id,
-                'Idempotency-Key' => 'tourn-reg-player-2',
-            ])
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $res2->assertCreated();
-
-        // Player 3 concurrently attempts to register when capacity is reached -> REJECTED
-        $res3 = $this->actingAs($player3)
-            ->withHeaders([
-                'X-Organization-Id' => (string) $org->id,
-                'Idempotency-Key' => 'tourn-reg-player-3',
-            ])
+        $register = fn (User $player) => $this->actingAs($player)
+            ->withHeaders(['X-Organization-Id' => (string) $org->id, 'Idempotency-Key' => 'tourn-reg-'.$player->id])
             ->postJson("/api/tournaments/{$tournament->id}/register");
 
-        // Fails with 409 / 422 tournament full error
+        // Players 1 and 2 hold both places while they pay.
+        $register($players[0])->assertAccepted();
+        $register($players[1])->assertAccepted();
+
+        // Player 3 is refused: pending payments count against capacity.
+        $res3 = $register($players[2]);
         $this->assertTrue(in_array($res3->status(), [409, 422], true), "Expected 409 or 422, got {$res3->status()}");
         $this->assertStringContainsString('maximum participant capacity', (string) $res3->getContent());
 
-        // Invariants:
-        // - Exactly 1 winner of the final slot (Player 2)
-        $this->assertSame(2, $tournament->participants()->count(), 'Tournament must have exactly 2 participants.');
-
-        // - Player 3 wallet was NOT debited
-        $this->assertSame(500000, (int) $w3->fresh()->balance, 'Player 3 wallet must remain untouched.');
-
-        // - Player 1 and Player 2 wallets were debited exactly 100,000 VND
-        $this->assertSame(400000, (int) $w1->fresh()->balance);
-        $this->assertSame(400000, (int) $w2->fresh()->balance);
+        $this->assertSame(2, OwnerPaymentAttempt::where('purpose', 'tournament_registration')->where('purpose_id', $tournament->uuid)->count());
+        $this->assertFalse(OwnerPaymentAttempt::where('user_id', $players[2]->id)->exists());
+        $this->assertSame(0, $tournament->participants()->count());
     }
 
     // =========================================================================

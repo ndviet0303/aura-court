@@ -9,6 +9,7 @@ use App\Models\TournamentFixture;
 use App\Models\TournamentGrant;
 use App\Models\TournamentParticipant;
 use App\Services\Infrastructure\IdempotencyService;
+use App\Services\Tournament\TournamentRegistrationPaymentService;
 use App\Services\Tournament\TournamentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -17,7 +18,11 @@ class TournamentController extends Controller
 {
     use ResolvesOrganization;
 
-    public function __construct(private readonly TournamentService $tournaments, private readonly IdempotencyService $idempotency) {}
+    public function __construct(
+        private readonly TournamentService $tournaments,
+        private readonly TournamentRegistrationPaymentService $registrations,
+        private readonly IdempotencyService $idempotency,
+    ) {}
 
     public function index(Request $request)
     {
@@ -81,6 +86,7 @@ class TournamentController extends Controller
             'participant_ids.*' => 'integer',
             'sport' => 'nullable|string',
             'venue' => 'nullable|string',
+            'venue_id' => 'nullable|integer',
             'city' => 'nullable|string',
             'prize_pool' => 'nullable|string',
             'entry_fee' => 'nullable|string',
@@ -101,6 +107,11 @@ class TournamentController extends Controller
         );
         // 16 is the cap registration enforces when none is set.
         $settings['max_participants'] = (int) ($data['max_participants'] ?? 16);
+        // Paid entry is collected on this venue's receiving account; settings.venue stays the display name.
+        $venue = $this->registrations->assertVenueCanCollect($organization->id, $data['venue_id'] ?? null, TournamentService::parseEntryFee($data['entry_fee'] ?? 0));
+        if ($venue) {
+            $settings['venue'] = $venue->name;
+        }
 
         return $this->idempotency->run($request, fn () => response()->json([
             'tournament' => $this->tournaments->createAndGenerate(
@@ -109,7 +120,8 @@ class TournamentController extends Controller
                 $data['name'],
                 $data['format'],
                 $participantIds,
-                $settings
+                $settings,
+                $venue?->id,
             ),
         ], 201));
     }
@@ -171,7 +183,6 @@ class TournamentController extends Controller
         $data = $request->validate([
             'user_id' => 'nullable|integer|exists:users,id',
             'seed' => 'nullable|integer|min:1|max:128',
-            'fee_waiver' => 'nullable|boolean',
             'waiver_reason' => 'nullable|string|max:255',
         ]);
 
@@ -191,14 +202,14 @@ class TournamentController extends Controller
         abort_unless($tournament->organization_id === $organization->id, 404);
 
         return $this->idempotency->run($request, function () use ($tournament, $request) {
-            $result = $this->tournaments->register($tournament, $request->user(), $request->all());
+            $result = $this->registrations->register($tournament, $request->user());
+            $message = match (true) {
+                $result['already_registered'] => 'Bạn đã đăng ký giải đấu này.',
+                $result['registered'] => 'Đăng ký tham gia giải đấu thành công.',
+                default => 'Quét mã QR để thanh toán phí đăng ký. Bạn được ghi danh ngay khi chủ sân nhận được tiền.',
+            };
 
-            return response()->json([
-                'message' => $result['already_registered'] ? 'Bạn đã đăng ký giải đấu này.' : 'Đăng ký tham gia giải đấu thành công.',
-                'participant' => $result['participant'],
-                'receipt' => $result['receipt'],
-                'already_registered' => $result['already_registered'],
-            ], $result['already_registered'] ? 200 : 201);
+            return response()->json(['message' => $message] + $result, $result['already_registered'] ? 200 : ($result['registered'] ? 201 : 202));
         });
     }
 
@@ -207,34 +218,7 @@ class TournamentController extends Controller
         $organization = $this->organization($request);
         abort_unless($tournament->organization_id === $organization->id, 404);
 
-        $participant = TournamentParticipant::where('tournament_id', $tournament->id)
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if (! $participant) {
-            return response()->json([
-                'registered' => false,
-                'participant' => null,
-                'receipt' => null,
-            ]);
-        }
-
-        $entryFee = TournamentService::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
-
-        return response()->json([
-            'registered' => true,
-            'participant' => $participant->load('user'),
-            'receipt' => [
-                'receipt_code' => "RCP-TRN-{$tournament->id}-{$participant->id}",
-                'tournament_id' => $tournament->id,
-                'tournament_name' => $tournament->name,
-                'participant_id' => $participant->id,
-                'entry_fee' => $entryFee,
-                'currency' => 'VND',
-                'status' => 'confirmed',
-                'registered_at' => $participant->created_at?->toIso8601String(),
-            ],
-        ]);
+        return response()->json($this->registrations->status($tournament, $request->user()));
     }
 
     public function poll(Request $request, Tournament $tournament)

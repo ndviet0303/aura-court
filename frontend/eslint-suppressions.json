@@ -406,7 +406,7 @@
   },
   "src/features/tournament/api/tournamentApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 18
+      "count": 13
     }
   },
   "src/features/tournament/composables/useLiveScore.ts": {

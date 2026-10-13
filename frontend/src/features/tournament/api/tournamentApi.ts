@@ -1,6 +1,11 @@
 import { api } from '@/core/api/client'
 import { formatDate } from '@/i18n'
-import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
+import type {
+  TournamentCustomerOption,
+  TournamentItem,
+  TournamentRegistrationPayload,
+  TournamentRegistrationStatus,
+} from '../types/tournament'
 
 // Backend lifecycle (draft/open/ready/in_progress/finalized) -> the card/tab vocabulary.
 const STATUS_LABELS: Record<string, TournamentItem['status']> = {
@@ -191,16 +196,28 @@ export const tournamentApi = {
   scoreFixture: (tournamentId: number | string, fixtureId: number | string, scorePayload: any) =>
     api.post(`/tournaments/${tournamentId}/fixtures/${fixtureId}/score`, scorePayload),
 
-  register: (tournamentId: number | string, payload?: any) =>
-    api.post<{ participant: any; receipt: any; already_registered: boolean; message: string }>(
+  // A paid tournament answers 202 with `payment`; the player is registered once the owner receipt lands.
+  register: (tournamentId: number | string, payload?: TournamentRegistrationPayload) =>
+    api.post<TournamentRegistrationStatus & { message: string; already_registered: boolean }>(
       `/tournaments/${tournamentId}/register`,
       payload,
     ),
 
   getRegistration: (tournamentId: number | string) =>
-    api.get<{ registered: boolean; participant?: any; receipt?: any }>(
-      `/tournaments/${tournamentId}/registration`,
-    ),
+    api.get<TournamentRegistrationStatus>(`/tournaments/${tournamentId}/registration`),
+
+  addParticipant: (
+    tournamentId: number | string,
+    payload: { user_id: number; waiver_reason?: string },
+  ) => api.post(`/tournaments/${tournamentId}/participants`, payload),
+
+  async searchCustomers(q: string): Promise<TournamentCustomerOption[]> {
+    const res = await api.get<unknown>(`/customers?q=${encodeURIComponent(q.trim())}`)
+    const list = (
+      Array.isArray(res) ? res : ((res as { customers?: unknown[] })?.customers ?? [])
+    ) as TournamentCustomerOption[]
+    return list.filter((c) => c.user_id)
+  },
 
   getEvents: (tournamentId: number | string) =>
     api.get<any[]>(`/tournaments/${tournamentId}/events`),

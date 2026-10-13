@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type {
   TournamentItem,
   CircuitLeaderboardItem,
@@ -7,6 +7,8 @@ import type {
 import { tournamentApi } from '../api/tournamentApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
+import { i18n } from '@/i18n'
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 
 export function useTournamentsList() {
   const auth = useAuthStore()
@@ -23,6 +25,9 @@ export function useTournamentsList() {
 
   const selectedTournamentForRegister = ref<TournamentItem | null>(null)
   const selectedTournamentForBracket = ref<TournamentItem | null>(null)
+  // Paid entry: the owner-QR payment shown in the register modal until the receipt registers the player.
+  const registrationPayment = ref<ReservationPaymentAttempt | null>(null)
+  watch(selectedTournamentForRegister, () => (registrationPayment.value = null))
 
   const tournaments = ref<TournamentItem[]>([])
   const circuitLeaderboard = ref<CircuitLeaderboardItem[]>([])
@@ -127,6 +132,10 @@ export function useTournamentsList() {
     try {
       const tourneyUuid = targetTournament.uuid || targetTournament.id
       const res = await tournamentApi.register(tourneyUuid, payload)
+      if (!res?.registered && res?.payment) {
+        registrationPayment.value = res.payment
+        return
+      }
 
       if (res?.participant) {
         if (!registeredTournamentIds.value.includes(targetTournament.id)) {
@@ -143,6 +152,16 @@ export function useTournamentsList() {
     } finally {
       processing.value = false
     }
+  }
+
+  async function registrationPaid() {
+    const paid = selectedTournamentForRegister.value
+    if (!paid) return
+    if (!registeredTournamentIds.value.includes(paid.id))
+      registeredTournamentIds.value.push(paid.id)
+    showNotice(i18n.global.t('tournament.paidNotice', { name: paid.name }))
+    selectedTournamentForRegister.value = null
+    await loadTournaments()
   }
 
   onMounted(() => {
@@ -169,5 +188,7 @@ export function useTournamentsList() {
     showNotice,
     resetFilters,
     registerAthlete,
+    registrationPayment,
+    registrationPaid,
   }
 }

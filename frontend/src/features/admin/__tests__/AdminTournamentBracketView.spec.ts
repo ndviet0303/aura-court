@@ -136,6 +136,7 @@ describe('AdminTournamentBracketView', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/admin/venues') return [{ id: 7, name: 'Sân Cầu Giấy' }]
       if (url.match(/\/tournaments\/\d+/)) {
         return mockTournamentDetails
       }
@@ -378,8 +379,24 @@ describe('AdminTournamentBracketView', () => {
 
     expect(api.post).toHaveBeenCalledWith(
       '/tournaments',
-      expect.objectContaining({ venue: '', city: '', prize_pool: '', entry_fee: '' }),
+      expect.objectContaining({ venue_id: null, city: '', prize_pool: '', entry_fee: '' }),
     )
+  })
+
+  it('requires a venue before creating a paid tournament', async () => {
+    const wrapper = mount(AdminTournamentBracketView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const headerBtns = wrapper.findAll('.header-controls button')
+    await headerBtns[headerBtns.length - 1]?.trigger('click')
+    await flushPromises()
+    const inputs = wrapper.findAll('.modal-card input.form-input')
+    await inputs[0]?.setValue('Giải Có Phí')
+    await inputs[inputs.length - 1]?.setValue('50.000')
+    const submit = wrapper.find('.modal-footer .aura-btn--primary')
+
+    expect(submit.attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('tài khoản nhận tiền đã xác minh')
   })
 
   it('interacts with live referee scoring and controls', async () => {

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown, DatePicker, type DropdownOption } from '@/shared/components'
+import { adminApi } from '../../api/adminApi'
 
 defineProps<{
   show: boolean
@@ -18,7 +19,8 @@ const { t } = useI18n()
 const name = ref('')
 const sport = ref('badminton')
 const format = ref('single_elimination')
-const venue = ref('')
+const venueId = ref<number | null>(null)
+const venueOptions = ref<DropdownOption[]>([])
 const city = ref('')
 const prizePool = ref('')
 const entryFee = ref('')
@@ -45,8 +47,24 @@ const formatOptions = computed<DropdownOption[]>(() => [
   },
 ])
 
+// A paid tournament is collected on the chosen venue's receiving account.
+const hasFee = computed(() => /[1-9]/.test(entryFee.value))
+
 const isFormValid = computed(() => {
-  return name.value.trim().length >= 3 && startDate.value && endDate.value
+  return (
+    name.value.trim().length >= 3 &&
+    startDate.value &&
+    endDate.value &&
+    (!hasFee.value || venueId.value !== null)
+  )
+})
+
+onMounted(async () => {
+  const venues = await adminApi.getVenues().catch(() => [])
+  venueOptions.value = (Array.isArray(venues) ? venues : []).map((v) => ({
+    value: v.id,
+    label: v.name,
+  }))
 })
 
 function handleSubmit() {
@@ -55,7 +73,7 @@ function handleSubmit() {
     name: name.value.trim(),
     sport: sport.value,
     format: format.value,
-    venue: venue.value.trim(),
+    venue_id: venueId.value,
     city: city.value.trim(),
     prize_pool: prizePool.value.trim(),
     entry_fee: entryFee.value.trim(),
@@ -118,8 +136,18 @@ function handleSubmit() {
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('admin.tournaments.venueLabel') }}</label>
-          <input v-model="venue" type="text" class="form-input" />
+          <label class="form-label" :class="{ required: hasFee }">{{
+            t('admin.tournaments.venueLabel')
+          }}</label>
+          <SelectDropdown
+            :model-value="venueId"
+            :options="venueOptions"
+            :placeholder="t('admin.tournaments.venuePlaceholder')"
+            :aria-label="t('admin.tournaments.venueLabel')"
+            variant="bordered"
+            @update:model-value="venueId = Number($event)"
+          />
+          <small v-if="hasFee" class="form-hint">{{ t('admin.tournaments.venueFeeHint') }}</small>
         </div>
 
         <div class="form-group">
@@ -255,6 +283,11 @@ function handleSubmit() {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink, #0f172a);
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--muted, #64748b);
 }
 
 .form-label.required::after {

@@ -92,6 +92,42 @@ describe('Task 1.2 Regression: Local tournament registration and payment confirm
     expect(list.registeredTournamentIds.value).toContain(sampleTournament.id)
   })
 
+  it('paid entry keeps the modal open on the owner QR until the receipt registers the player', async () => {
+    const payment = {
+      id: 5,
+      provider: 'sepay',
+      reference: 'ACTOURNAMENT0000001',
+      transfer_content: 'ACTOURNAMENT0000001',
+      amount: 300000,
+      currency: 'VND',
+      status: 'pending',
+      expires_at: null,
+      paid_at: null,
+      receiver: { bank_code: 'MBBank', account_name: 'Venue Owner', account_number: '0987654321' },
+      qr_url: 'https://img.vietqr.io/x.png',
+    }
+    vi.mocked(tournamentApi.register).mockResolvedValue({
+      registered: false,
+      participant: null,
+      receipt: null,
+      payment,
+      already_registered: false,
+      message: 'Quét mã QR để thanh toán lệ phí đăng ký.',
+    })
+
+    const list = useTournamentsList()
+    list.selectedTournamentForRegister.value = sampleTournament
+    await list.registerAthlete({ name: 'Nguyễn Văn A' })
+
+    expect(list.selectedTournamentForRegister.value).toEqual(sampleTournament)
+    expect(list.registrationPayment.value).toEqual(payment)
+    expect(list.registeredTournamentIds.value).not.toContain(sampleTournament.id)
+
+    await list.registrationPaid()
+    expect(list.registeredTournamentIds.value).toContain(sampleTournament.id)
+    expect(list.selectedTournamentForRegister.value).toBeNull()
+  })
+
   it('Task 8.9 Fix: persisted tournament registration is preserved on reload from server participants', async () => {
     const tournamentWithParticipant: TournamentItem = {
       ...sampleTournament,
