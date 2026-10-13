@@ -376,7 +376,7 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
   - Xác thực Api_Key, giá trị bằng `SEED_DEMO_RECEIVER_WEBHOOK_KEY`. Nên sinh key bằng `openssl rand -hex 32`.
   - Sự kiện: In_only.
 - [ ] 14.3 Portainer stack 77: xóa biến `PILOT_ORGANIZATION_IDS=73,74` và xác nhận stack không còn biến `FEATURE_*` nào.
-- [ ] 14.4 Chốt thời điểm reseed và push `main`. Mỗi lần push `main` là một lần deploy prod.
+- [ ] 14.4 Chốt thời điểm reseed và deploy. Push `main` không còn tự deploy; prod chỉ đổi khi chạy pipeline trên `main` (change `manual-ci-pipeline`).
 - [ ] 14.5 Bỏ các FR dời lịch khỏi báo cáo, như đã làm với hủy sân và hoàn tiền.
   - Trong bản cũ, đó là FR-BKG-11 "Yêu cầu thay đổi booking" và FR-BKG-12 "Xử lý thay đổi booking".
   - Ghi rõ slot dài 1 giờ.
@@ -387,7 +387,7 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 - [ ] 15.2 Backup prod bằng `pg_dump` vào `backend/storage/app/backups/`.
 - [ ] 15.3 Sau khi người dùng chốt giờ, reseed prod bằng dump/restore. Bước này phải xong trước khi deploy.
 - [ ] 15.4 Merge `--no-ff` vào `main`, xóa nhánh và push `origin`.
-  - Chờ đúng pipeline của lần push đó chạy xong.
+  - Chạy pipeline trên `main` (`glab ci run -b main`) và chờ nó chạy xong.
   - Kiểm tra revision trong `build-info.json`.
 - [ ] 15.5 Người dùng tắt webhook nền tảng cũ trong SePay.
 - [ ] 15.6 Diễn tập trên prod bằng các khoản chuyển thật nhỏ. Ghi lại kết quả nhưng không ghi bí mật.
