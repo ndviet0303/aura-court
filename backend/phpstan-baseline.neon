@@ -337,24 +337,6 @@ parameters:
 			path: app/Domain/Tournament/Actions/ScoreFixture.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$credential_version\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$effective_from\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$effective_until\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -373,43 +355,7 @@ parameters:
 			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$owner_attested_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$priceSlots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$verified_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$webhook_secret_ciphertext\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
@@ -3235,61 +3181,13 @@ parameters:
 			path: app/Services/Loyalty/LoyaltyPolicyService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$line_total\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/POS/PosService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/POS/PosService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Services/POS/PosService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/POS/PosService.php
@@ -3307,19 +3205,7 @@ parameters:
 			path: app/Services/POS/PosService.php
 
 		-
-			message: '#^Offset ''qr_data'' on array\{order_code\: mixed, created_at\: string, cashier_name\: string, customer_name\: string\|null, court_info\: non\-falsy\-string\|null, items\: array\<array\{product_id\: mixed, name\: mixed, quantity\: mixed, rental_duration_hours\: mixed, price\: mixed, vat_rate\: mixed, tax_amount\: mixed, total\: mixed\}\>, subtotal\: mixed, discount_amount\: mixed, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: app/Services/POS/PosService.php
@@ -3387,12 +3273,6 @@ parameters:
 		-
 			message: '#^Offset ''source'' on array\{payload\: array, credential_version\: int, evidence_id\: int, event_fingerprint\: string, receiver_matches\: bool\} on left side of \?\? does not exist\.$#'
 			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Services/Payment/OwnerPaymentAttemptService.php
-
-		-
-			message: '#^Parameter \#2 \$paidAt of method App\\Services\\Social\\MarketplaceService\:\:confirmPaidAttempt\(\) expects Illuminate\\Support\\Carbon\|null, Carbon\\Carbon\|null given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Services/Payment/OwnerPaymentAttemptService.php
 

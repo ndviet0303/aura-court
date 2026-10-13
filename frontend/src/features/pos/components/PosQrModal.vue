@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 
+// The order carries the owner-payment attempt; only the owner's verified bank receipt completes it.
 const props = defineProps<{
   show: boolean
-  order: any | null
+  order: { payment_attempt?: ReservationPaymentAttempt | null } | null
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'confirm'): void
   (e: 'cancel'): void
 }>()
 
@@ -20,32 +21,7 @@ function formatMoney(val: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0)
 }
 
-const qrData = computed(() => {
-  return props.order?.metadata?.receipt?.qr_data || props.order?.receipt?.qr_data || null
-})
-
-const orderCode = computed(() => {
-  return (
-    props.order?.payment_reference ||
-    props.order?.metadata?.receipt?.order_code ||
-    `POS-${props.order?.id || ''}`
-  )
-})
-
-const amount = computed(() => {
-  return props.order?.total_amount || 0
-})
-
-const qrUrl = computed(() => {
-  if (qrData.value?.qr_url) {
-    return qrData.value.qr_url
-  }
-  const bank = qrData.value?.bank || 'MBBank'
-  const account = qrData.value?.account || '0901234567'
-  const name = encodeURIComponent(qrData.value?.account_name || 'AURA COURT SYSTEM')
-  const memo = encodeURIComponent(orderCode.value)
-  return `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount.value}&addInfo=${memo}&accountName=${name}`
-})
+const attempt = computed(() => props.order?.payment_attempt ?? null)
 </script>
 
 <template>
@@ -67,30 +43,34 @@ const qrUrl = computed(() => {
           <span>{{ t('admin.pos.qrWaitingTransfer') }}</span>
         </div>
 
-        <div class="qr-image-wrapper">
-          <img :src="qrUrl" alt="VietQR" class="qr-image" />
+        <div v-if="attempt" class="qr-image-wrapper">
+          <img :src="attempt.qr_url" alt="VietQR" class="qr-image" />
         </div>
 
         <div class="qr-info-box">
           <div class="info-row">
             <span class="info-label">{{ t('admin.pos.qrBankLabel') }}</span>
-            <strong class="info-val">{{ qrData?.bank || 'MBBank' }}</strong>
+            <strong class="info-val">{{ attempt?.receiver.bank_code }}</strong>
           </div>
           <div class="info-row">
             <span class="info-label">{{ t('admin.pos.qrAccountLabel') }}</span>
-            <strong class="info-val font-mono">{{ qrData?.account || '0901234567' }}</strong>
+            <strong class="info-val font-mono">{{ attempt?.receiver.account_number }}</strong>
           </div>
           <div class="info-row">
             <span class="info-label">{{ t('admin.pos.qrAccountNameLabel') }}</span>
-            <strong class="info-val">{{ qrData?.account_name || 'AURA COURT SYSTEM' }}</strong>
+            <strong class="info-val">{{ attempt?.receiver.account_name }}</strong>
           </div>
           <div class="info-row highlight">
             <span class="info-label">{{ t('admin.pos.qrAmountLabel') }}</span>
-            <strong class="info-val text-green font-bold">{{ formatMoney(amount) }}</strong>
+            <strong class="info-val text-green font-bold">{{
+              formatMoney(attempt?.amount ?? 0)
+            }}</strong>
           </div>
           <div class="info-row highlight-memo">
             <span class="info-label">{{ t('admin.pos.qrMemoLabel') }}</span>
-            <strong class="info-val text-blue font-mono select-all">{{ orderCode }}</strong>
+            <strong class="info-val text-blue font-mono select-all">{{
+              attempt?.reference
+            }}</strong>
           </div>
         </div>
 
@@ -102,11 +82,6 @@ const qrUrl = computed(() => {
       <div class="modal-footer">
         <button type="button" class="btn-cancel" :disabled="loading" @click="emit('cancel')">
           {{ t('admin.pos.qrCancelBtn') }}
-        </button>
-        <button type="button" class="btn-confirm" :disabled="loading" @click="emit('confirm')">
-          <span v-if="loading" class="material-symbols-outlined spin">progress_activity</span>
-          <span v-else class="material-symbols-outlined">check_circle</span>
-          <span>{{ t('admin.pos.qrConfirmReceivedBtn') }}</span>
         </button>
       </div>
     </div>
@@ -313,41 +288,8 @@ const qrUrl = computed(() => {
   background: rgba(239, 68, 68, 0.25);
 }
 
-.btn-confirm {
-  flex: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: #0284c7;
-  border: none;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-confirm:hover:not(:disabled) {
-  background: #0369a1;
-}
-
-.btn-confirm:disabled,
 .btn-cancel:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

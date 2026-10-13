@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Tests\Concerns\PaysOwnerByQr;
 use Tests\TestCase;
 
 /**
@@ -58,6 +59,7 @@ use Tests\TestCase;
  */
 class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 {
+    use PaysOwnerByQr;
     use RefreshDatabase;
 
     private function createTenantFixture(string $prefix = 'rel'): array
@@ -458,6 +460,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 
         $posService = app(PosService::class);
         $shift = $posService->openShift($cashier, $org->id, 200000, $venue->id, 'REG-REL-01');
+        $this->connectOwnerReceiver($venue);
 
         // 2. Create a pending QR order reserving 5 units
         $orderRes = $this->actingAs($cashier)->postJson('/api/pos/orders', [

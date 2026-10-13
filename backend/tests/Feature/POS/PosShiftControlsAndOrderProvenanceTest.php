@@ -5,19 +5,22 @@ namespace Tests\Feature\POS;
 use App\Models\CashShift;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\Payment;
+use App\Models\OwnerPaymentReceipt;
 use App\Models\PosOrder;
 use App\Models\PosProduct;
+use App\Models\ReceivingConnection;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Services\POS\PosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PaysOwnerByQr;
 use Tests\TestCase;
 
 class PosShiftControlsAndOrderProvenanceTest extends TestCase
 {
+    use PaysOwnerByQr;
     use RefreshDatabase;
 
     private Organization $tenant;
@@ -33,6 +36,10 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
     private PosProduct $drinkProduct;
 
     private PosProduct $serviceProduct;
+
+    private ReceivingConnection $connection;
+
+    private string $secret;
 
     protected function setUp(): void
     {
@@ -118,8 +125,8 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         config([
             'features.flags.tenant_pos_and_wallet' => true,
             'features.pilot_organizations' => [(string) $this->tenant->id],
-            'services.payments.simulate_qr_provider' => true,
         ]);
+        [$this->connection, $this->secret] = $this->connectOwnerReceiver($this->venue);
     }
 
     public function test_qr_payment_enforces_amount_and_provenance_verification(): void
@@ -149,46 +156,21 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $order = PosOrder::findOrFail($orderId);
         $this->assertSame('pending_payment', $order->status);
 
-        // 3. Amount mismatch rejection (passed amount less than order total)
-        $mismatchRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
+        // 3. The cashier cannot complete the order on their word; only a verified owner receipt does.
+        $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'TXN-FAKE-123',
-            'amount' => 10000, // Expected 30,000
-        ], [
-            'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-bad-'.uniqid(),
-        ]);
-        $mismatchRes->assertStatus(422);
-
-        // 4. When simulate_qr_provider is false, unverified self-declared reference rejected
-        config(['services.payments.simulate_qr_provider' => false]);
-        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
-            'external_transaction_id' => 'TXN-UNVERIFIED-999',
             'amount' => 30000,
-        ], [
-            'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-unverified-'.uniqid(),
-        ]);
-        $unverifiedRes->assertStatus(422);
-        $this->assertStringContainsString('not been verified by payment provider', $unverifiedRes->json('message'));
+        ], ['X-Organization-Id' => $this->tenant->id])->assertNotFound();
 
-        // 5. With genuine verified transaction, verification succeeds
-        Payment::create([
-            'booking_id' => null,
-            'provider' => 'vietqr',
-            'external_transaction_id' => 'TXN-VERIFIED-GENUINE',
-            'amount' => 30000,
-            'status' => 'paid',
-        ]);
+        // 4. A short transfer is an exception and leaves the order pending
+        $short = $this->payOwner($this->connection, $this->secret, $order->payment_reference, 10000, 'TXN-SHORT');
+        $this->assertSame([OwnerPaymentReceipt::STATUS_EXCEPTION, 'partial_amount'], [$short->status, $short->exception_code]);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+        $this->assertSame(20, $this->drinkProduct->fresh()->stock_quantity);
 
-        $verifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
-            'external_transaction_id' => 'TXN-VERIFIED-GENUINE',
-            'amount' => 30000,
-        ], [
-            'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-ok-'.uniqid(),
-        ]);
-        $verifiedRes->assertOk();
-        $this->assertSame('completed', $verifiedRes->json('order.status'));
+        // 5. The exact verified transfer completes the order
+        $this->payOwner($this->connection, $this->secret, $order->payment_reference, 30000, 'TXN-VERIFIED-GENUINE');
+        $this->assertSame('completed', $order->fresh()->status);
         $this->assertSame(18, $this->drinkProduct->fresh()->stock_quantity); // 20 - 2 = 18
     }
 
@@ -294,27 +276,9 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $order = PosOrder::findOrFail($orderId);
         $this->assertSame('handed_over', $order->handover_status);
 
-        // 5. Late confirmation of order after shift is closed:
-        // Confirms successfully, tags late payment metadata, does NOT mutate closed shift expected cash
-        Payment::create([
-            'booking_id' => null,
-            'provider' => 'vietqr',
-            'external_transaction_id' => 'LATE-TXN-112233',
-            'amount' => 15000,
-            'transfer_code' => "POS {$order->payment_reference}",
-            'status' => 'paid',
-            'received_at' => now(),
-        ]);
-
-        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
-            'external_transaction_id' => 'LATE-TXN-112233',
-            'amount' => 15000,
-        ], [
-            'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-late-'.uniqid(),
-        ]);
-        $confirmRes->assertOk();
-        $this->assertSame('completed', $confirmRes->json('order.status'));
+        // 5. A payment landing after the shift closed completes the order, tags it late and does NOT mutate the closed shift
+        $this->payOwner($this->connection, $this->secret, $order->payment_reference, 15000, 'LATE-TXN-112233');
+        $this->assertSame('completed', $order->fresh()->status);
         $this->assertTrue((bool) $order->fresh()->metadata['late_payment_after_shift_close']);
 
         // Closed shift numbers remain unmodified
@@ -485,42 +449,16 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertTrue($sendRes->json('sent'));
         $this->assertSame('guest@example.com', $sendRes->json('recipient'));
 
-        // 5. Cashier attempts to confirm the QR portion with an unverified self-declared reference ('MIXED-FAKE-REF') -> assertStatus(422)
-        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
-            'external_transaction_id' => 'MIXED-FAKE-REF',
-            'amount' => 5000,
-        ], [
-            'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-unverified-mixed-'.uniqid(),
-        ]);
-        $unverifiedRes->assertStatus(422);
-        $this->assertStringContainsString('Payment has not been verified by payment provider.', $unverifiedRes->json('message'));
-
-        // 6. Seed genuine payment
-        Payment::create([
-            'booking_id' => null,
-            'provider' => 'vietqr',
-            'external_transaction_id' => 'MIXED-TXN-5000',
-            'amount' => 5000,
-            'transfer_code' => "POS {$order->payment_reference}",
-            'status' => 'paid',
-            'received_at' => now(),
-        ]);
-
-        // Cashier confirms QR portion with verified reference -> assertOk(), order completed
-        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
-            'external_transaction_id' => 'MIXED-TXN-5000',
-            'amount' => 5000,
-        ], [
-            'X-Organization-Id' => $this->tenant->id,
-            'Idempotency-Key' => 'confirm-genuine-mixed-'.uniqid(),
-        ]);
-        $confirmRes->assertOk();
-        $this->assertSame('completed', $confirmRes->json('order.status'));
+        // 5. The QR portion is paid to the owner's account; only that verified receipt completes the order
+        $this->actingAs($this->cashier)->getJson("/api/pos/orders/{$orderId}", ['X-Organization-Id' => $this->tenant->id])
+            ->assertJsonPath('payment_attempt.amount', 5000);
+        $receipt = $this->payOwner($this->connection, $this->secret, $order->payment_reference, 5000, 'MIXED-TXN-5000');
         $this->assertSame('completed', $order->fresh()->status);
         $this->assertSame(19, $this->drinkProduct->fresh()->stock_quantity);
         $this->assertSame(1, StockMovement::where('reference_type', PosOrder::class)->where('reference_id', $orderId)->count());
-        $this->assertDatabaseHas('journals', ['organization_id' => $this->tenant->id, 'event_type' => 'pos.sale', 'event_id' => "pos:{$orderId}", 'total_debit' => 15000, 'total_credit' => 15000]);
+        // Cash is POS revenue; the QR portion is revenue of the owner receipt only.
+        $this->assertDatabaseHas('journals', ['organization_id' => $this->tenant->id, 'event_type' => 'pos.sale', 'event_id' => "pos:{$orderId}", 'total_debit' => 10000, 'total_credit' => 10000]);
+        $this->assertDatabaseHas('journals', ['event_type' => 'owner.direct_receipt', 'event_id' => "owner-receipt:{$receipt->id}", 'total_debit' => 5000]);
         $this->assertSame(2, $order->fresh()->payments()->where('status', 'paid')->count());
         $this->assertSame(10000, (int) $order->fresh()->payments()->where('method', 'cash')->first()->amount);
         $this->assertSame(5000, (int) $order->fresh()->payments()->where('method', 'qr')->first()->amount);

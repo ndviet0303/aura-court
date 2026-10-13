@@ -76,7 +76,7 @@
   ["component-lines", "features/marketplace/components/MarketplaceBuyModal.vue", 487],
   ["component-lines", "features/marketplace/components/MarketplaceSellModal.vue", 501],
   ["component-lines", "features/partner-registration/components/BusinessInfoStep.vue", 469],
-  ["component-lines", "features/pos/components/PosCartPanel.vue", 1151],
+  ["component-lines", "features/pos/components/PosCartPanel.vue", 1135],
   ["component-lines", "features/pos/components/PosProductGrid.vue", 560],
   ["component-lines", "features/pos/components/PosShiftModal.vue", 904],
   ["component-lines", "features/profile/components/ProfileGeneralTab.vue", 543],
@@ -163,7 +163,7 @@
   ["view-lines", "features/legal/views/TermsView.vue", 1252],
   ["view-lines", "features/marketplace/views/ResaleMarketplaceView.vue", 530],
   ["view-lines", "features/platform-subscriptions/views/PlatformSubscriptionView.vue", 265],
-  ["view-lines", "features/pos/views/PosView.vue", 774],
+  ["view-lines", "features/pos/views/PosView.vue", 772],
   ["view-lines", "features/social/views/CreateMatchView.vue", 320],
   ["view-lines", "features/social/views/DropInSessionBillView.vue", 679],
   ["view-lines", "features/social/views/MatchmakingView.vue", 334],
@@ -172,5 +172,5 @@
   ["view-lines", "features/tournament/views/TournamentsView.vue", 405],
   ["view-lines", "features/wallet/views/WalletView.vue", 406],
   ["view-script-lines", "features/home/views/HomeView.vue", 332],
-  ["view-script-lines", "features/pos/views/PosView.vue", 553]
+  ["view-script-lines", "features/pos/views/PosView.vue", 550]
 ]

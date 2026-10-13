@@ -7,6 +7,7 @@ use App\Services\Booking\RecurringSeriesService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\Payment\SplitPaymentService;
+use App\Services\POS\PosService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +37,21 @@ Schedule::call(fn () => app(SplitPaymentService::class)->expireDue())
     ->withoutOverlapping(10)
     ->everyMinute()
     ->onFailure($reportScheduleFailure('split:expire-due'));
+
+// 1c. POS QR order expiry: cancel unpaid orders past their TTL, release their stock and expire their owner-payment attempts
+Schedule::call(function () {
+    $pos = app(PosService::class);
+    Organization::query()->where('status', 'active')->pluck('id')->each(function (int $id) use ($pos) {
+        try {
+            $pos->releaseExpiredPendingOrders($id);
+        } catch (Throwable $exception) {
+            Log::error("POS pending-order release failed for organization {$id}: {$exception->getMessage()}", ['organization_id' => $id, 'exception' => $exception]);
+        }
+    });
+})->name('pos:release-expired-orders')
+    ->withoutOverlapping(10)
+    ->everyMinute()
+    ->onFailure($reportScheduleFailure('pos:release-expired-orders'));
 
 // 2. Worker-free failure recovery for outbox and provider events
 Schedule::call(fn () => app(ScheduledRecoveryService::class)->recoverOutbox())

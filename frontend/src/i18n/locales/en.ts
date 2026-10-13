@@ -2611,11 +2611,11 @@ export default {
       qrAmountLabel: 'Amount:',
       qrMemoLabel: 'Transfer Memo:',
       qrInstructions:
-        'Customer scans QR code with banking app. The system will update automatically upon webhook receipt, or cashier can confirm below.',
+        "Customer scans the code with a banking app and transfers the exact amount and memo. The order completes on its own once the venue owner's bank reports the money.",
       qrCancelBtn: 'Cancel Transaction',
-      qrConfirmReceivedBtn: 'Confirm Payment Received',
       qrOrderWaiting: 'Order is awaiting QR payment. Please scan code to complete.',
-      qrConfirmFailed: 'QR payment confirmation failed.',
+      qrExpiredNotice:
+        'The QR order expired or was cancelled before payment arrived. Cart retained.',
       qrCancelledNotice: 'QR payment cancelled. Cart retained.',
       qrCancelFailed: 'Failed to cancel QR order.',
 

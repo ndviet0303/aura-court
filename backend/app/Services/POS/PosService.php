@@ -7,8 +7,6 @@ use App\Models\Coupon;
 use App\Models\LoyaltyRule;
 use App\Models\MembershipEntitlement;
 use App\Models\OrganizationMember;
-use App\Models\OwnerPaymentReceipt;
-use App\Models\Payment;
 use App\Models\PointLedger;
 use App\Models\PosOrder;
 use App\Models\PosOrderItem;
@@ -33,6 +31,7 @@ use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PosService
@@ -43,6 +42,7 @@ class PosService
         private readonly DiscountService $discounts,
         private readonly LoyaltyPointService $loyaltyPoints,
         private readonly WalletAvailabilityService $walletAvailability,
+        private readonly PosQrPaymentService $posQr,
     ) {}
 
     public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
@@ -357,34 +357,12 @@ class PosService
         ];
     }
 
-    public function isQrProviderAvailable(int $organizationId): bool
-    {
-        if (config('services.payments.qr_enabled') === false) {
-            return false;
-        }
-
-        $hasSepay = ! empty(config('services.sepay.account'))
-            || ! empty(config('services.sepay.api_key'))
-            || ! empty(config('services.sepay.hmac_secret'));
-
-        $hasPayOs = ! empty(config('services.payos.client_id'))
-            && ! empty(config('services.payos.api_key'));
-
-        $simulated = app()->environment('testing') && config('services.payments.simulate_qr_provider', true);
-
-        return $hasSepay || $hasPayOs || $simulated;
-    }
-
     public function completeOrder(User $cashier, int $organizationId, array $data): PosOrder
     {
         abort_if((bool) ($data['offline'] ?? false), 409, 'Offline POS drafts cannot finalize payment or inventory.');
         $method = (string) ($data['payment_method'] ?? '');
         abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'mixed'], true), 422, 'Unsupported POS payment method.');
         $this->walletAvailability->assertAvailable($organizationId, in_array('wallet', [$method, ...array_column((array) ($data['tenders'] ?? []), 'method')], true));
-
-        if ($method === 'qr') {
-            abort_unless($this->isQrProviderAvailable($organizationId), 422, 'QR payment provider verification is unavailable.');
-        }
 
         $activeShift = CashShift::where('organization_id', $organizationId)
             ->where('cashier_id', $cashier->id)
@@ -395,7 +373,16 @@ class PosService
 
         $reservationId = empty($data['reservation_id']) ? null : $this->backfill->resolveCanonicalReservationId((int) $data['reservation_id'], $organizationId);
 
-        return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift): PosOrder {
+        // QR pays the venue owner's verified connection; without one the tender is refused before any mutation.
+        $isPendingQr = $method === 'qr' || ($method === 'mixed' && in_array('qr', array_column((array) ($data['tenders'] ?? []), 'method'), true));
+        $qrConnection = null;
+        if ($isPendingQr) {
+            $venueId = $data['venue_id'] ?? $activeShift->venue_id ?? ($reservationId ? Reservation::query()->find($reservationId)?->court()->value('venue_id') : null);
+            $qrConnection = $this->posQr->connectionFor($organizationId, $this->posQr->venueIdFor($cashier, $organizationId, $venueId));
+            abort_unless($qrConnection !== null, 422, PosQrPaymentService::UNAVAILABLE);
+        }
+
+        return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift, $isPendingQr, $qrConnection): PosOrder {
             $quote = $this->calculateQuote($organizationId, $data, $cashier);
 
             $subtotal = $quote['subtotal'];
@@ -437,9 +424,6 @@ class PosService
                     $tAmount = (int) ($tender['amount'] ?? 0);
                     abort_unless(in_array($tMethod, ['cash', 'qr', 'wallet'], true), 422, "Unsupported tender method: {$tMethod}");
                     abort_unless($tAmount > 0, 422, 'Tender amount must be positive.');
-                    if ($tMethod === 'qr') {
-                        abort_unless($this->isQrProviderAvailable($organizationId), 422, 'QR payment provider verification is unavailable.');
-                    }
                     $tenderSum += $tAmount;
                 }
                 abort_unless($tenderSum === $grandTotal, 422, "Total tender allocations ({$tenderSum}) must equal order total ({$grandTotal}).");
@@ -481,12 +465,11 @@ class PosService
                 $this->discounts->assertCombinationAllowed($reservedCoupon, $quote['coupon_discount_amount'], $quote['membership_discount_amount']);
             }
 
-            $orderCode = $data['payment_reference'] ?? "POS-{$cashier->id}-".strtoupper(uniqid());
+            // A QR order's reference is the server-generated transfer code; any client-sent reference is ignored.
+            $orderCode = $isPendingQr ? 'AC'.Str::upper(Str::random(18)) : ($data['payment_reference'] ?? "POS-{$cashier->id}-".strtoupper(uniqid()));
             $customer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
             $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
-            $hasQrTender = ($method === 'qr') || ($method === 'mixed' && collect($tenders)->contains(fn ($t) => ($t['method'] ?? '') === 'qr'));
-            $isPendingQr = $hasQrTender;
             $orderStatus = $isPendingQr ? 'pending_payment' : 'completed';
 
             $receipt = [
@@ -521,17 +504,7 @@ class PosService
                 'is_paid' => ! $isPendingQr,
             ];
 
-            if ($isPendingQr) {
-                $qrAmount = $method === 'mixed' ? (int) collect($tenders)->firstWhere('method', 'qr')['amount'] : $grandTotal;
-                $receipt['qr_data'] = [
-                    'bank' => config('services.sepay.bank', 'MBBank'),
-                    'account' => config('services.sepay.account', '0901234567'),
-                    'account_name' => config('services.sepay.account_name', 'AURA COURT SYSTEM'),
-                    'amount' => $qrAmount,
-                    'memo' => $orderCode,
-                    'qr_url' => 'https://img.vietqr.io/image/'.config('services.sepay.bank', 'MBBank').'-'.config('services.sepay.account', '0901234567').'-compact2.png?amount='.$qrAmount.'&addInfo='.urlencode($orderCode).'&accountName='.urlencode(config('services.sepay.account_name', 'AURA COURT SYSTEM')),
-                ];
-            }
+            $expiresAt = now()->addMinutes(15);
 
             $order = PosOrder::create([
                 'organization_id' => $organizationId,
@@ -539,7 +512,7 @@ class PosService
                 'customer_id' => $data['customer_id'] ?? null,
                 'cashier_id' => $cashier->id,
                 'cash_shift_id' => $activeShift?->id,
-                'venue_id' => $data['venue_id'] ?? $activeShift?->venue_id ?? $reservation?->court?->venue_id ?? null,
+                'venue_id' => $qrConnection->venue_id ?? $data['venue_id'] ?? $activeShift?->venue_id ?? $reservation?->court?->venue_id ?? null,
                 'register_id' => $data['register_id'] ?? $activeShift?->register_id ?? null,
                 'reservation_id' => $reservationId,
                 'status' => $orderStatus,
@@ -556,7 +529,7 @@ class PosService
                 'metadata' => [
                     'vat_breakdown' => $vatBreakdown,
                     'receipt' => $receipt,
-                    'expires_at' => $isPendingQr ? now()->addMinutes(15)->toIso8601String() : null,
+                    'expires_at' => $isPendingQr ? $expiresAt->toIso8601String() : null,
                     'coupon_usage' => $quote['coupon_id'] ? [
                         'coupon_id' => (int) $quote['coupon_id'],
                         'promotion_campaign_id' => $quote['promotion_campaign_id'] ? (int) $quote['promotion_campaign_id'] : null,
@@ -621,7 +594,6 @@ class PosService
                         'metadata' => [
                             'cash_tendered' => $tMethod === 'cash' ? ($tender['cash_tendered'] ?? $tAmount) : null,
                             'change_due' => $tMethod === 'cash' ? ($tender['change_due'] ?? 0) : null,
-                            'qr_data' => $tMethod === 'qr' ? ($receipt['qr_data'] ?? null) : null,
                         ],
                     ]);
 
@@ -641,12 +613,14 @@ class PosService
                     'metadata' => [
                         'cash_tendered' => $cashTendered,
                         'change_due' => $changeDue,
-                        'qr_data' => $isPendingQr ? ($receipt['qr_data'] ?? null) : null,
                     ],
                 ]);
             }
 
-            if (! $isPendingQr && $method !== 'wallet') {
+            if ($isPendingQr) {
+                $qrAmount = $method === 'mixed' ? (int) collect($tenders)->firstWhere('method', 'qr')['amount'] : $grandTotal;
+                $this->posQr->open($order, $qrConnection, $qrAmount, $expiresAt);
+            } elseif ($method !== 'wallet') {
                 $this->financials->postPosSale($organizationId, $order->id, $grandTotal, $method, $order->payment_reference);
             }
 
@@ -658,139 +632,13 @@ class PosService
         });
     }
 
-    public function confirmQrPayment(PosOrder $order, array $verificationData = []): PosOrder
-    {
-        abort_unless(in_array($order->payment_method, ['qr', 'mixed'], true), 422, 'Only orders with QR payment can be confirmed via QR verification.');
-        abort_unless($order->status === 'pending_payment', 409, 'Order is not awaiting payment.');
-
-        // Amount verification
-        $qrPayment = $order->payments()->where('method', 'qr')->where('status', 'pending')->first();
-        $expectedAmount = $qrPayment ? (int) $qrPayment->amount : (int) $order->total_amount;
-        if (isset($verificationData['amount']) && (int) $verificationData['amount'] < $expectedAmount) {
-            abort(422, 'Payment amount is less than expected amount.');
-        }
-
-        // Provenance verification (Task 8.7 / D54)
-        $externalRef = trim((string) ($verificationData['external_transaction_id'] ?? $verificationData['provider_reference'] ?? ''));
-        $isWebhook = ($verificationData['source'] ?? null) === 'vietqr_webhook';
-
-        if (! $isWebhook) {
-            if ($externalRef === '') {
-                abort(422, 'Payment has not been verified by payment provider.');
-            }
-
-            $hasVerifiedReceipt = OwnerPaymentReceipt::query()
-                ->where('organization_id', $order->organization_id)
-                ->where(function ($q) use ($order, $externalRef) {
-                    $q->where('purpose_id', (string) $order->id)
-                        ->orWhere('payment_code', $order->payment_reference);
-                    if ($externalRef !== '') {
-                        $q->orWhere('reference_code', $externalRef);
-                    }
-                })
-                ->where('status', OwnerPaymentReceipt::STATUS_ALLOCATED)
-                ->exists();
-
-            $hasWebhookPayment = Payment::query()
-                ->where('status', 'paid')
-                ->where(function ($q) use ($order, $externalRef) {
-                    $q->where('external_transaction_id', $externalRef);
-                    if (! empty($order->payment_reference)) {
-                        $q->orWhere('external_transaction_id', $order->payment_reference);
-                        if ($externalRef === $order->payment_reference) {
-                            $q->orWhere('transfer_code', 'like', "%{$order->payment_reference}%");
-                        }
-                    }
-                })
-                ->exists();
-
-            if (! $hasVerifiedReceipt && ! $hasWebhookPayment) {
-                abort(422, 'Payment has not been verified by payment provider.');
-            }
-        }
-
-        return DB::transaction(function () use ($order, $externalRef): PosOrder {
-            $order = PosOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
-            abort_unless($order->status === 'pending_payment', 409, 'Order is not awaiting payment.');
-
-            $order->load(['items.product', 'payments']);
-
-            // Verify and decrement stock atomically for tracked products
-            foreach ($order->items as $item) {
-                $product = PosProduct::where('organization_id', $order->organization_id)
-                    ->whereKey($item->product_id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                if ($product->isTracked()) {
-                    abort_unless($product->stock_quantity >= $item->quantity, 409, "Insufficient stock for {$product->sku}.");
-                    $product->decrement('stock_quantity', $item->quantity);
-
-                    StockMovement::create([
-                        'organization_id' => $order->organization_id,
-                        'product_id' => $product->id,
-                        'type' => 'sale',
-                        'quantity_delta' => -$item['quantity'],
-                        'unit_cost' => $product->cost,
-                        'reference_type' => PosOrder::class,
-                        'reference_id' => $order->id,
-                        'created_by' => $order->cashier_id,
-                    ]);
-                }
-            }
-
-            $finalRef = $externalRef !== '' ? $externalRef : $order->payment_reference;
-
-            $order->payments()->where('method', 'qr')->update([
-                'status' => 'paid',
-                'provider_reference' => $finalRef,
-            ]);
-
-            $meta = $order->metadata ?? [];
-            if (isset($meta['receipt'])) {
-                $meta['receipt']['status'] = 'completed';
-                $meta['receipt']['is_paid'] = true;
-                $meta['receipt']['verified_at'] = now()->toIso8601String();
-            }
-            if (($meta['coupon_usage']['status'] ?? null) === 'reserved') {
-                $meta['coupon_usage']['status'] = 'consumed';
-                $meta['coupon_usage']['consumed_at'] = now()->toIso8601String();
-            }
-
-            // Late payment confirmation check: If the shift was closed, record note in metadata
-            $shift = $order->shift;
-            if ($shift && $shift->status === 'closed') {
-                $meta['late_payment_after_shift_close'] = true;
-                $meta['original_closed_shift_id'] = $shift->id;
-            }
-
-            $order->update([
-                'status' => 'completed',
-                'completed_at' => now(),
-                'metadata' => $meta,
-            ]);
-
-            $this->financials->postPosSale(
-                $order->organization_id,
-                $order->id,
-                $order->total_amount,
-                $order->payment_method,
-                $order->payment_reference
-            );
-
-            if ($order->customer_id && $this->loyaltyPoints->getActiveBaseEarnRule($order->organization_id) !== null) {
-                $this->awardPoints($order->organization_id, $order->customer_id, $order->total_amount, PosOrder::class, $order->id);
-            }
-
-            return $order->fresh(['items', 'payments']);
-        });
-    }
-
     public function cancelPendingQr(PosOrder $order, string $reason = 'cancelled'): PosOrder
     {
         abort_unless($order->status === 'pending_payment', 409, 'Only pending orders can be cancelled.');
 
         return DB::transaction(function () use ($order, $reason): PosOrder {
+            // Receipt processing locks the attempt before the order; keep that order. An abort below rolls this back.
+            $this->posQr->expire($order);
             $order = PosOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
             abort_unless($order->status === 'pending_payment', 409, 'Only pending orders can be cancelled.');
 

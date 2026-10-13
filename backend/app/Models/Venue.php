@@ -102,6 +102,7 @@ class Venue extends Model
         return $this->hasOne(VenueBookingPolicy::class)->latestOfMany('version');
     }
 
+    /** @return BelongsTo<ReceivingConnection, $this> */
     public function currentReceivingConnection(): BelongsTo
     {
         return $this->belongsTo(ReceivingConnection::class, 'current_receiving_connection_id');

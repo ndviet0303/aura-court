@@ -53,6 +53,7 @@ class PosOrder extends Model
         ];
     }
 
+    /** @return HasMany<PosOrderItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(PosOrderItem::class, 'order_id');
@@ -73,6 +74,7 @@ class PosOrder extends Model
         return $this->belongsTo(User::class, 'cashier_id');
     }
 
+    /** @return BelongsTo<CashShift, $this> */
     public function shift(): BelongsTo
     {
         return $this->belongsTo(CashShift::class, 'cash_shift_id');

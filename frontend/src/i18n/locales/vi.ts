@@ -2613,11 +2613,11 @@ export default {
       qrAmountLabel: 'Số tiền:',
       qrMemoLabel: 'Nội dung CK:',
       qrInstructions:
-        'Khách hàng quét mã bằng ứng dụng ngân hàng. Hệ thống sẽ tự động cập nhật khi nhận được webhook hoặc thu ngân có thể bấm xác nhận bên dưới.',
+        'Khách quét mã bằng ứng dụng ngân hàng và chuyển đúng số tiền, đúng nội dung. Đơn tự hoàn tất khi ngân hàng của chủ sân báo đã nhận tiền.',
       qrCancelBtn: 'Hủy giao dịch',
-      qrConfirmReceivedBtn: 'Xác nhận đã nhận tiền',
       qrOrderWaiting: 'Đơn hàng đang chờ thanh toán QR. Vui lòng quét mã để hoàn tất.',
-      qrConfirmFailed: 'Xác nhận thanh toán QR thất bại.',
+      qrExpiredNotice:
+        'Đơn QR đã hết hạn hoặc bị hủy trước khi nhận được tiền. Giỏ hàng được giữ nguyên.',
       qrCancelledNotice: 'Đã hủy thanh toán QR. Giỏ hàng được giữ nguyên.',
       qrCancelFailed: 'Hủy đơn hàng QR thất bại.',
 

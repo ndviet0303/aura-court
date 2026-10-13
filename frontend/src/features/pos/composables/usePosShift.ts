@@ -31,8 +31,9 @@ export function usePosShift() {
       const newShift = await posApi.openShift({
         opening_cash: openingCash,
       })
-      activeShift.value = newShift
-      return newShift
+      // The active-shift read carries qr_available, which the open response does not.
+      activeShift.value = (await posApi.getActiveShift()) ?? newShift
+      return activeShift.value
     } catch (e) {
       error.value = errorMessage(e, 'Không thể mở ca làm việc. Vui lòng thử lại.')
       throw e

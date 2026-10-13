@@ -4,13 +4,10 @@ namespace Tests\Feature\Readiness;
 
 use App\Models\Booking;
 use App\Models\BookingSlot;
-use App\Models\CashShift;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Payment;
-use App\Models\PosOrder;
-use App\Models\PosProduct;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletTransaction;
@@ -135,34 +132,6 @@ class RetiredV1BookingRoutesTest extends TestCase
         $this->assertSame('BK-RETIRED-001', $listed['legacy_mapping'][0]['legacy_code']);
         $this->assertSame('completed', $listed['legacy_mapping'][0]['legacy_status']);
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'code' => 'BK-RETIRED-001', 'total_amount' => 150000, 'status' => 'completed']);
-    }
-
-    public function test_sepay_webhook_settles_a_pos_qr_order_once(): void
-    {
-        [$organization] = $this->tenant();
-        config(['features.flags.tenant_pos_and_wallet' => true, 'features.pilot_organizations' => [(string) $organization->id]]);
-        $cashier = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $cashier->id, 'role' => OrganizationMember::ROLE_CASHIER, 'status' => 'active']);
-        CashShift::create(['organization_id' => $organization->id, 'cashier_id' => $cashier->id, 'opening_cash' => 0, 'opened_at' => now(), 'status' => 'open']);
-        $product = PosProduct::create(['organization_id' => $organization->id, 'sku' => 'WATER-500', 'name' => 'Water 500ml', 'price' => 20000, 'cost' => 10000, 'stock_quantity' => 10, 'is_active' => true]);
-        $order = PosOrder::findOrFail($this->actingAs($cashier)->postJson('/api/pos/orders', [
-            'items' => [['product_id' => $product->id, 'quantity' => 2]],
-            'payment_method' => 'qr',
-        ], [
-            'X-Organization-Id' => $organization->id,
-            'Idempotency-Key' => 'retired-v1-pos-qr',
-        ])->assertCreated()->json('order.id'));
-        $this->assertSame('pending_payment', $order->status);
-
-        $webhook = ['id' => 'tx-sepay-pos-1', 'content' => "POS {$order->payment_reference}", 'transferAmount' => 40000, 'transferType' => 'in'];
-        $this->deliverSepay($webhook);
-        $this->deliverSepay($webhook);
-
-        $this->assertSame('completed', $order->fresh()->status);
-        $this->assertSame(8, $product->fresh()->stock_quantity);
-        $this->assertSame(1, Payment::where('external_transaction_id', 'tx-sepay-pos-1')->count());
-        $this->assertDatabaseHas('payments', ['external_transaction_id' => 'tx-sepay-pos-1', 'amount' => 40000, 'status' => 'paid']);
-        $this->assertSame(1, DB::table('journals')->where('event_type', 'pos.sale')->where('event_id', "pos:{$order->id}")->count());
     }
 
     public function test_sepay_webhook_credits_a_wallet_deposit_once(): void

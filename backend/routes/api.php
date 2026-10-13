@@ -504,7 +504,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('pos/quote', [PosController::class, 'quote'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders', [PosController::class, 'completeOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::get('pos/orders/{order}', [PosController::class, 'showOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders/{order}/confirm-qr', [PosController::class, 'confirmQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders/{order}/cancel-qr', [PosController::class, 'cancelQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders/{order}/receipt/print', [PosController::class, 'printReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders/{order}/receipt/send', [PosController::class, 'sendReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');

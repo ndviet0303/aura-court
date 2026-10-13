@@ -34,6 +34,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
+use Tests\Concerns\PaysOwnerByQr;
 use Tests\TestCase;
 
 /**
@@ -49,6 +50,7 @@ use Tests\TestCase;
  */
 class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 {
+    use PaysOwnerByQr;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -62,7 +64,6 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'features.flags.direct_owner_payments' => false,
             'features.flags.marketplace_split_payments' => true,
             'features.flags.marketplace_payouts' => true,
-            'services.payments.simulate_qr_provider' => true,
         ]);
     }
 
@@ -327,6 +328,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         [$org, $venue, $cashier] = $this->createPosTenantFixture();
         $shift = app(PosService::class)->openShift($cashier, $org->id, 100000, $venue->id, 'REG-02');
+        $this->connectOwnerReceiver($venue);
 
         $product = PosProduct::create([
             'organization_id' => $org->id,

@@ -165,35 +165,42 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 6. QR ở POS về tài khoản chủ sân (design 4, 12)
 
-- [ ] 6.1 Thêm service mới `PosQrPaymentService`, không nhồi thêm vào `PosService`. Service tạo attempt `pos_order` trên kết nối đã xác minh của cơ sở:
+- [x] 6.1 Thêm service mới `PosQrPaymentService`, không nhồi thêm vào `PosService`. Service tạo attempt `pos_order` trên kết nối đã xác minh của cơ sở:
   - `purpose_id` là id đơn;
   - số tiền là phần trả bằng QR;
   - hạn của attempt là hạn của đơn;
   - mã `AC` do server sinh và lưu vào `payment_reference`. Mã tham chiếu client gửi lên bị bỏ qua.
 
   Service trả về `ReservationPaymentService::instructions($attempt)`.
-- [ ] 6.2 Cơ sở chưa có kết nối đã xác minh:
+  - Ghi chú: `PosService::completeOrder` chỉ gọi `PosQrPaymentService::open` ở cuối transaction; `instructions` trả về ở field `payment_attempt` của response `POST pos/orders` và `GET pos/orders/{id}` (receipt không còn `qr_data`). Cơ sở của đơn: `venue_id` gửi lên, rồi venue của ca, rồi venue của reservation, cuối cùng là venue duy nhất cashier được gán (UI mở ca không kèm venue). Không xác định được một venue thì coi như chưa có kết nối.
+- [x] 6.2 Cơ sở chưa có kết nối đã xác minh:
   - Server từ chối tender QR kèm hướng dẫn cài đặt.
   - Config POS báo UI ẩn QR. Điều kiện này thay cho `isQrProviderAvailable`, vốn dựa vào tài khoản nền tảng.
-- [ ] 6.3 `OwnerPaymentAttemptService::processReceipt` thêm nhánh `pos_order` và gọi sang `PosQrPaymentService`. Nhánh này khóa đơn rồi xử lý:
+  - Ghi chú: Tín hiệu cho UI là `shift.qr_available` trên `GET pos/shifts/active` (POS không có endpoint config riêng). Từ chối là 422 với hướng dẫn tiếng Việt, trước mọi thay đổi dữ liệu.
+- [x] 6.3 `OwnerPaymentAttemptService::processReceipt` thêm nhánh `pos_order` và gọi sang `PosQrPaymentService`. Nhánh này khóa đơn rồi xử lý:
   - Đơn còn `pending_payment` và attempt còn hạn: chạy routine hoàn tất sẵn có (dòng thanh toán QR, xuất kho, loyalty). Không gọi `postPosSale` cho phần QR.
   - Đơn đã hủy hoặc hết hạn: ghi exception `pos_order_unavailable`.
-- [ ] 6.4 Xóa:
+  - Ghi chú: `processReceipt` chuyển sang bảng `CONFIRMERS` (purpose → service, hàm kiểm tra, mã exception) để giữ trần 555 dòng (nay 541); hành vi các nhánh cũ không đổi. Đơn mixed: phần không phải QR ghi `postPosSale` lúc hoàn tất, phần QR chỉ có journal `owner.direct_receipt`. Hủy/hết hạn expire attempt trước nên receipt muộn thường thành `attempt_not_pending`/`transfer_after_expiry`; `pos_order_unavailable` cho đơn bị hủy khi attempt còn sống.
+- [x] 6.4 Xóa:
   - route `pos/orders/{order}/confirm-qr`;
   - `PosService::confirmQrPayment`;
   - nhánh `POS-` của `ProcessQrPayment`;
   - khối QR dùng tài khoản nền tảng trong `PosService::completeOrder` (khoảng dòng 526–536).
 
   Route `cancel-qr` giữ lại và expire luôn attempt.
-- [ ] 6.5 `ServiceTabService::settleTab` ở tổ chức direct chỉ nhận tiền mặt. `qr` và ví bị từ chối trước khi thay đổi dữ liệu.
-- [ ] 6.6 Lên lịch `PosService::releaseExpiredPendingOrders` chạy mỗi phút cho các tổ chức active trong `routes/console.php`, có `withoutOverlapping` như các lịch hiện có. Hàm này expire luôn attempt tương ứng.
-- [ ] 6.7 Frontend POS:
+  - Ghi chú: Xóa luôn `isQrProviderAvailable` và khối kiểm tra provider trong tender hỗn hợp. Thứ tự khóa khi hủy: attempt trước, đơn sau (giống receipt processing).
+- [x] 6.5 `ServiceTabService::settleTab` ở tổ chức direct chỉ nhận tiền mặt. `qr` và ví bị từ chối trước khi thay đổi dữ liệu.
+  - Ghi chú: Ví đã bị chặn bởi `WalletAvailabilityService` (mục 5); QR bị từ chối 409 khi `direct_owner_payments` bật, hướng dẫn tạo đơn POS. `ServiceTabService` giữ đúng 439 dòng.
+- [x] 6.6 Lên lịch `PosService::releaseExpiredPendingOrders` chạy mỗi phút cho các tổ chức active trong `routes/console.php`, có `withoutOverlapping` như các lịch hiện có. Hàm này expire luôn attempt tương ứng.
+  - Ghi chú: Lịch `pos:release-expired-orders` (`withoutOverlapping(10)`, `onFailure` như các lịch khác); lỗi từng tổ chức được log, không chặn tổ chức khác. Hết hạn đi qua `cancelPendingQr` nên expire attempt.
+- [x] 6.7 Frontend POS:
   - Hiện VietQR từ `instructions` và poll đơn tới khi hoàn tất.
   - Bỏ nút xác nhận QR thủ công.
   - Ẩn tender ví khi `direct_owner_payments` bật.
   - Ẩn QR khi cơ sở chưa có kết nối.
   - Tab dịch vụ ở cohort direct chỉ còn tiền mặt.
-- [ ] 6.8 Test:
+  - Ghi chú: Poll `GET pos/orders/{id}` mỗi 3 giây; hoàn tất thì hiện receipt của server, hủy/hết hạn thì báo `qrExpiredNotice`. Nút tender dựng từ danh sách để ẩn QR/ví (PosCartPanel 1151 → 1135 dòng). Tab dịch vụ ở cohort direct luôn gửi `cash`. Mở ca xong đọc lại ca active để có `qr_available`. Trần PosView hạ còn 772/550.
+- [x] 6.8 Test:
   - Viết lại `PosVerifiedPendingQrCollectionTest` theo đường owner attempt:
     - QR ghi đúng tài khoản chủ sân;
     - receipt gửi hai lần chỉ tạo một lần hoàn tất và một sự kiện kho/sổ;
@@ -201,6 +208,7 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
     - đơn hết hạn nhả kho đúng một lần, receipt đến muộn thành exception.
   - Sửa `PosShiftControlsAndOrderProvenanceTest` vì `confirm-qr` đã bị xóa.
   - Playwright `p0-pos-shift-service` dùng webhook kết nối với header Api_Key.
+  - Ghi chú: Thêm trait `tests/Concerns/PaysOwnerByQr`. Sửa thêm hai test readiness (kết nối venue trước khi tạo đơn QR) và xóa `RetiredV1BookingRoutesTest::test_sepay_webhook_settles_a_pos_qr_order_once` (nhánh `POS-` đã xóa). Playwright `p0-pos-shift-service` mới sửa, chưa chạy: `confirm-qr` giờ 404, gửi lại cùng event webhook không trừ kho lần hai. PHPStan: thêm generic cho `Venue::currentReceivingConnection`, `PosOrder::items`/`shift`, `PosOrderItem::product`; baseline chỉ bớt mục cũ (−120 dòng).
 
 ## 7. Bán lại slot giữa người mua và người bán (design 5, 12)
 

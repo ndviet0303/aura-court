@@ -477,7 +477,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         $settleRes->assertStatus(422);
     }
 
-    public function test_direct_cohort_refuses_wallet_tab_settlement_without_mutation(): void
+    public function test_direct_cohort_settles_tabs_in_cash_only_without_mutation(): void
     {
         config(['features.flags.direct_owner_payments' => true]);
         $reservation = $this->createReservation();
@@ -499,9 +499,20 @@ class ServiceTabAndStockReservationTest extends TestCase
             ->postJson("/api/service-tabs/{$tab->id}/settle", ['payment_method' => 'wallet', 'customer_id' => $this->customer->id])
             ->assertConflict()
             ->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+        $this->actingAs($this->cashier)
+            ->withHeaders($this->headers())
+            ->postJson("/api/service-tabs/{$tab->id}/settle", ['payment_method' => 'qr'])
+            ->assertConflict()
+            ->assertJsonPath('message', 'Tab dịch vụ ở cơ sở thanh toán trực tiếp chỉ nhận tiền mặt. Muốn thu bằng QR, hãy tạo đơn POS.');
 
         $this->assertSame(ServiceTab::STATUS_UNPAID, $tab->fresh()->status);
         $this->assertSame(200000, (int) $wallet->fresh()->balance);
         $this->assertSame(0, PosOrder::count());
+
+        $this->actingAs($this->cashier)
+            ->withHeaders($this->headers())
+            ->postJson("/api/service-tabs/{$tab->id}/settle", ['payment_method' => 'cash'])
+            ->assertOk();
+        $this->assertSame(ServiceTab::STATUS_SETTLED, $tab->fresh()->status);
     }
 }
