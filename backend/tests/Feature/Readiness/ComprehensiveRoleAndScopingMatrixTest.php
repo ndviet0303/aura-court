@@ -276,31 +276,32 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
     {
         Sanctum::actingAs($this->suspendedUser);
 
-        $initialBookings = Booking::count();
         $initialReservations = Reservation::count();
         $slotTime = Carbon::tomorrow()->setTime(9, 0)->toIso8601String();
 
-        // 1. V1 Booking attempt
-        $v1Response = $this->postJson('/api/v1/bookings', [
-            'court_id' => $this->courtAlpha->id,
-            'slots' => [$slotTime],
-        ]);
-
-        $v1Response->assertStatus(403);
-        $v1Response->assertJsonPath('error', 'account_restricted');
-        $this->assertSame($initialBookings, Booking::count(), 'Suspended account must not create V1 bookings.');
-
-        // 2. V2 Reservation attempt
-        $v2Response = $this->withHeaders([
+        // 1. Booking checkout attempt
+        $checkoutResponse = $this->withHeaders([
             'X-Organization-Id' => (string) $this->orgAlpha->id,
-        ])->postJson('/api/v2/reservations', [
+        ])->postJson('/api/reservations/checkout', [
             'court_id' => $this->courtAlpha->id,
             'slots' => [$slotTime],
         ]);
 
-        $v2Response->assertStatus(403);
-        $v2Response->assertJsonPath('error', 'account_restricted');
-        $this->assertSame($initialReservations, Reservation::count(), 'Suspended account must not create V2 reservations.');
+        $checkoutResponse->assertStatus(403);
+        $checkoutResponse->assertJsonPath('error', 'account_restricted');
+        $this->assertSame($initialReservations, Reservation::count(), 'Suspended account must not check out bookings.');
+
+        // 2. Reservation hold attempt
+        $holdResponse = $this->withHeaders([
+            'X-Organization-Id' => (string) $this->orgAlpha->id,
+        ])->postJson('/api/reservations', [
+            'court_id' => $this->courtAlpha->id,
+            'slots' => [$slotTime],
+        ]);
+
+        $holdResponse->assertStatus(403);
+        $holdResponse->assertJsonPath('error', 'account_restricted');
+        $this->assertSame($initialReservations, Reservation::count(), 'Suspended account must not hold reservations.');
     }
 
     /**
@@ -315,12 +316,12 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         Sanctum::actingAs($this->suspendedUser);
 
         // 1. Admin venues endpoint
-        $venuesRes = $this->getJson('/api/v1/admin/venues');
+        $venuesRes = $this->getJson('/api/admin/venues');
         $venuesRes->assertStatus(403);
         $venuesRes->assertJsonPath('error', 'account_restricted');
 
         // 2. Filing disputes
-        $disputeRes = $this->postJson('/api/v1/disputes', [
+        $disputeRes = $this->postJson('/api/disputes', [
             'title' => 'Khiếu nại kiểm thử',
             'summary' => 'Tóm tắt sự cố',
             'dispute_type' => 'court_quality',
@@ -330,7 +331,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $disputeRes->assertJsonPath('error', 'account_restricted');
 
         // 3. Partner application start
-        $partnerRes = $this->postJson('/api/v1/partner/application/start', [
+        $partnerRes = $this->postJson('/api/partner/application/start', [
             'business_type' => 'household',
             'tax_code' => '0123456789',
         ]);
@@ -345,12 +346,12 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         Sanctum::actingAs($this->suspendedUser);
 
         // GET auth/me returns 200 with suspended status
-        $meRes = $this->getJson('/api/v1/auth/me');
+        $meRes = $this->getJson('/api/auth/me');
         $meRes->assertOk();
         $this->assertSame('suspended', $meRes->json('status'));
 
         // POST auth/logout returns 200
-        $logoutRes = $this->postJson('/api/v1/auth/logout');
+        $logoutRes = $this->postJson('/api/auth/logout');
         $logoutRes->assertOk();
     }
 
@@ -366,10 +367,10 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->ownerAlpha);
 
         // GET platform plans (admin catalog)
-        $this->getJson('/api/v1/admin/platform-plans')->assertStatus(403);
+        $this->getJson('/api/admin/platform-plans')->assertStatus(403);
 
         // POST create platform plan
-        $this->postJson('/api/v1/admin/platform-plans', [
+        $this->postJson('/api/admin/platform-plans', [
             'name' => 'Hacked Enterprise Plan',
             'code' => 'hacked_plan',
             'price' => 999999,
@@ -377,7 +378,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         ])->assertStatus(403);
 
         // POST publish platform plan
-        $this->postJson('/api/v1/admin/platform-plans/1/publish', [
+        $this->postJson('/api/admin/platform-plans/1/publish', [
             'expected_version' => 1,
         ])->assertStatus(403);
     }
@@ -390,20 +391,20 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->ownerAlpha);
 
         // 1. Audit logs
-        $this->getJson('/api/v1/admin/audit-logs')->assertStatus(403);
+        $this->getJson('/api/admin/audit-logs')->assertStatus(403);
 
         // 2. KYC platform reviews
-        $this->getJson('/api/v1/admin/kyc')->assertStatus(403);
-        $this->getJson('/api/v1/admin/kyc/stats')->assertStatus(403);
+        $this->getJson('/api/admin/kyc')->assertStatus(403);
+        $this->getJson('/api/admin/kyc/stats')->assertStatus(403);
 
         // 3. Global payment reviews
-        $this->getJson('/api/v1/admin/payments')->assertStatus(403);
+        $this->getJson('/api/admin/payments')->assertStatus(403);
 
         // 4. Partner application reviews
-        $this->getJson('/api/v1/admin/partner/applications')->assertStatus(403);
+        $this->getJson('/api/admin/partner/applications')->assertStatus(403);
 
-        // 5. Global platform admin dispute queue
-        $this->getJson('/api/v1/admin/disputes')->assertStatus(403);
+        // 5. The dispute queue is scoped to the owner's organization, not global (DisputeTenantAndPartyScopingTest)
+        $this->getJson('/api/admin/disputes')->assertOk();
     }
 
     /**
@@ -432,11 +433,11 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->ownerAlpha);
 
         // 1. Owner Alpha attempts to read Org Beta dispute details -> 404 (does not disclose)
-        $detailRes = $this->getJson("/api/v1/disputes/{$disputeBeta->id}");
+        $detailRes = $this->getJson("/api/disputes/{$disputeBeta->id}");
         $detailRes->assertStatus(404);
 
         // 2. Owner Alpha attempts to arbitrate Org Beta dispute -> 404
-        $arbitrateRes = $this->postJson("/api/v1/disputes/{$disputeBeta->id}/arbitrate", [
+        $arbitrateRes = $this->postJson("/api/disputes/{$disputeBeta->id}/arbitrate", [
             'decision' => 'resolve',
             'notes' => 'Owner Alpha can thiệp trái phép',
         ]);
@@ -445,13 +446,13 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         // 3. Owner Alpha attempts to query Org Beta settlements -> 403
         $settlementsRes = $this->withHeaders([
             'X-Organization-Id' => (string) $this->orgBeta->id,
-        ])->getJson('/api/v2/finance/settlements');
+        ])->getJson('/api/finance/settlements');
         $settlementsRes->assertStatus(403);
 
         // 4. Owner Alpha attempts to export Org Beta settlements CSV -> 403
         $settlementsCsvRes = $this->withHeaders([
             'X-Organization-Id' => (string) $this->orgBeta->id,
-        ])->getJson('/api/v2/finance/settlements.csv');
+        ])->getJson('/api/finance/settlements.csv');
         $settlementsCsvRes->assertStatus(403);
     }
 
@@ -467,7 +468,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->managerAlpha);
 
         // 1. Can update assigned Venue Alpha
-        $patchRes = $this->patchJson("/api/v1/admin/venues/{$this->venueAlpha->id}", [
+        $patchRes = $this->patchJson("/api/admin/venues/{$this->venueAlpha->id}", [
             'address' => 'Updated Alpha Address 888',
         ]);
         $patchRes->assertOk();
@@ -477,7 +478,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         ]);
 
         // 2. Can set price on Court Alpha
-        $priceRes = $this->postJson("/api/v1/admin/courts/{$this->courtAlpha->id}/prices", [
+        $priceRes = $this->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
             'weekday' => 1,
             'starts_at' => '10:00',
             'ends_at' => '11:00',
@@ -487,7 +488,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $priceRes->assertCreated();
 
         // 3. Can query reports for Venue Alpha
-        $reportRes = $this->getJson("/api/v1/admin/reports?venue_id={$this->venueAlpha->id}");
+        $reportRes = $this->getJson("/api/admin/reports?venue_id={$this->venueAlpha->id}");
         $reportRes->assertOk();
     }
 
@@ -499,11 +500,11 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->managerAlpha);
 
         // 1. Sibling venue in SAME organization (Venue Alpha 2) is denied (403)
-        $this->patchJson("/api/v1/admin/venues/{$this->venueAlpha2->id}", [
+        $this->patchJson("/api/admin/venues/{$this->venueAlpha2->id}", [
             'address' => 'Hacked Sibling Address',
         ])->assertStatus(403);
 
-        $this->postJson("/api/v1/admin/courts/{$this->courtAlpha2->id}/prices", [
+        $this->postJson("/api/admin/courts/{$this->courtAlpha2->id}/prices", [
             'weekday' => 1,
             'starts_at' => '10:00',
             'ends_at' => '11:00',
@@ -511,14 +512,14 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_active' => true,
         ])->assertStatus(403);
 
-        $this->getJson("/api/v1/admin/reports?venue_id={$this->venueAlpha2->id}")->assertStatus(403);
+        $this->getJson("/api/admin/reports?venue_id={$this->venueAlpha2->id}")->assertStatus(403);
 
         // 2. Foreign venue in DIFFERENT organization (Venue Beta) is denied (403)
-        $this->patchJson("/api/v1/admin/venues/{$this->venueBeta->id}", [
+        $this->patchJson("/api/admin/venues/{$this->venueBeta->id}", [
             'address' => 'Hacked Foreign Address',
         ])->assertStatus(403);
 
-        $this->postJson("/api/v1/admin/courts/{$this->courtBeta->id}/prices", [
+        $this->postJson("/api/admin/courts/{$this->courtBeta->id}/prices", [
             'weekday' => 1,
             'starts_at' => '10:00',
             'ends_at' => '11:00',
@@ -526,7 +527,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_active' => true,
         ])->assertStatus(403);
 
-        $this->getJson("/api/v1/admin/reports?venue_id={$this->venueBeta->id}")->assertStatus(403);
+        $this->getJson("/api/admin/reports?venue_id={$this->venueBeta->id}")->assertStatus(403);
     }
 
     /**
@@ -536,7 +537,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
     {
         // Verify manager can initially set price on Court Alpha
         $this->actingAs($this->managerAlpha)
-            ->postJson("/api/v1/admin/courts/{$this->courtAlpha->id}/prices", [
+            ->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
                 'weekday' => 2,
                 'starts_at' => '07:00',
                 'ends_at' => '08:00',
@@ -546,7 +547,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 1. Shift grant: Owner Alpha shifts manager to Venue Alpha 2, revoking Venue Alpha
         $updateGrantRes = $this->actingAs($this->ownerAlpha)
-            ->patchJson("/api/v1/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}", [
+            ->patchJson("/api/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}", [
                 'role' => OrganizationMember::ROLE_VENUE_MANAGER,
                 'venue_id' => $this->venueAlpha2->id,
                 'venue_ids' => [$this->venueAlpha2->id],
@@ -555,7 +556,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // Immediate effect: subsequent request to Venue Alpha returns 403
         $this->actingAs($this->managerAlpha->fresh())
-            ->postJson("/api/v1/admin/courts/{$this->courtAlpha->id}/prices", [
+            ->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
                 'weekday' => 3,
                 'starts_at' => '07:00',
                 'ends_at' => '08:00',
@@ -565,7 +566,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // But manager can now manage Court Alpha 2
         $this->actingAs($this->managerAlpha->fresh())
-            ->postJson("/api/v1/admin/courts/{$this->courtAlpha2->id}/prices", [
+            ->postJson("/api/admin/courts/{$this->courtAlpha2->id}/prices", [
                 'weekday' => 3,
                 'starts_at' => '07:00',
                 'ends_at' => '08:00',
@@ -575,12 +576,12 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 2. Removal: Owner Alpha deletes manager membership
         $deleteMemberRes = $this->actingAs($this->ownerAlpha)
-            ->deleteJson("/api/v1/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}");
+            ->deleteJson("/api/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}");
         $deleteMemberRes->assertOk();
 
         // Immediate effect: manager is completely denied across all venues in the org
         $this->actingAs($this->managerAlpha->fresh())
-            ->postJson("/api/v1/admin/courts/{$this->courtAlpha2->id}/prices", [
+            ->postJson("/api/admin/courts/{$this->courtAlpha2->id}/prices", [
                 'weekday' => 4,
                 'starts_at' => '07:00',
                 'ends_at' => '08:00',
@@ -589,7 +590,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             ])->assertStatus(403);
 
         $this->actingAs($this->managerAlpha->fresh())
-            ->getJson('/api/v1/admin/venues')
+            ->getJson('/api/admin/venues')
             ->assertStatus(403);
     }
 
@@ -621,19 +622,19 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 1. Complainant Alice views dispute detail
         $this->actingAs($this->customerAlice)
-            ->getJson("/api/v1/disputes/{$dispute->id}")
+            ->getJson("/api/disputes/{$dispute->id}")
             ->assertOk()
             ->assertJsonPath('data.dispute_code', $dispute->dispute_code);
 
         // 2. Respondent Owner Alpha views dispute detail
         $this->actingAs($this->ownerAlpha)
-            ->getJson("/api/v1/disputes/{$dispute->id}")
+            ->getJson("/api/disputes/{$dispute->id}")
             ->assertOk()
             ->assertJsonPath('data.dispute_code', $dispute->dispute_code);
 
         // 3. Complainant Alice uploads private evidence
         $aliceUpload = $this->actingAs($this->customerAlice)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'explanation' => 'Hình ảnh chụp vị trí sân ướt và đọng nước.',
                 'evidence' => [
                     ['url' => 'https://storage.local/court_water_leak.jpg', 'type' => 'image'],
@@ -651,7 +652,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->assertSame('Hình ảnh chụp vị trí sân ướt và đọng nước.', $lastEvidence['explanation']);
         // 4. Respondent Owner Alpha uploads private rebuttal evidence
         $ownerUpload = $this->actingAs($this->ownerAlpha)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'explanation' => 'Biên bản kiểm tra kỹ thuật định kỳ sân.',
                 'evidence' => [
                     ['url' => 'https://storage.local/inspection_sheet.pdf', 'type' => 'document'],
@@ -693,11 +694,11 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->outsider);
 
         // 1. Outsider cannot view dispute details (404 Not Found to prevent leaking case existence)
-        $detailRes = $this->getJson("/api/v1/disputes/{$dispute->id}");
+        $detailRes = $this->getJson("/api/disputes/{$dispute->id}");
         $detailRes->assertStatus(404);
 
         // 2. Outsider cannot upload evidence (403 Forbidden)
-        $uploadRes = $this->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+        $uploadRes = $this->postJson("/api/disputes/{$dispute->id}/evidence", [
             'explanation' => 'Spam evidence from outsider',
             'evidence' => [['url' => 'https://storage.local/fake.jpg', 'type' => 'image']],
         ]);
@@ -728,7 +729,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 1. Complainant Alice tries to arbitrate -> 422 Conflict of interest
         $aliceArb = $this->actingAs($this->customerAlice)
-            ->postJson("/api/v1/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve',
                 'notes' => 'Tự phán quyết cho bản thân',
             ]);
@@ -739,7 +740,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 2. Respondent Owner Alpha tries to arbitrate -> 422 Conflict of interest
         $ownerArb = $this->actingAs($this->ownerAlpha)
-            ->postJson("/api/v1/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'dismiss',
                 'notes' => 'Tự bác bỏ khiếu nại đối với cơ sở của mình',
             ]);
@@ -750,7 +751,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 3. Neutral Platform Admin arbitrates smoothly
         $adminArb = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve',
                 'notes' => 'Phán quyết công tâm từ ban quản trị nền tảng độc lập.',
             ]);
@@ -779,7 +780,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         // Customer Bob attempts to delete Alice's post
         $deleteRes = $this->actingAs($this->customerBob)
             ->withHeaders(['X-Organization-Id' => (string) $this->orgAlpha->id])
-            ->deleteJson("/api/v2/social/feed/{$post->id}");
+            ->deleteJson("/api/social/feed/{$post->id}");
         $deleteRes->assertStatus(403);
         $this->assertDatabaseHas('feed_posts', [
             'id' => $post->id,
@@ -789,7 +790,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         // Customer Bob attempts to hide Alice's post
         $hideRes = $this->actingAs($this->customerBob)
             ->withHeaders(['X-Organization-Id' => (string) $this->orgAlpha->id])
-            ->postJson("/api/v2/social/feed/{$post->id}/hide", [
+            ->postJson("/api/social/feed/{$post->id}/hide", [
                 'reason' => 'Không thích bài viết này',
             ]);
         $hideRes->assertStatus(403);
@@ -814,7 +815,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         // Venue Manager Alpha hides the post with audited reason
         $hideRes = $this->actingAs($this->managerAlpha)
             ->withHeaders(['X-Organization-Id' => (string) $this->orgAlpha->id])
-            ->postJson("/api/v2/social/feed/{$post->id}/hide", [
+            ->postJson("/api/social/feed/{$post->id}/hide", [
                 'reason' => 'Nội dung vi phạm tiêu chuẩn cộng đồng sân bãi.',
             ]);
         $hideRes->assertOk();
@@ -850,19 +851,19 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 1. JSON report query for authorized venue
         $jsonRes = $this->actingAs($this->ownerAlpha)
-            ->getJson("/api/v1/admin/reports?venue_id={$this->venueAlpha->id}");
+            ->getJson("/api/admin/reports?venue_id={$this->venueAlpha->id}");
         $jsonRes->assertOk();
         $jsonRes->assertJsonPath('booking_revenue', 150000);
 
         // 2. CSV report export for authorized venue (.csv route)
         $csvRes1 = $this->actingAs($this->ownerAlpha)
-            ->get("/api/v1/admin/reports.csv?venue_id={$this->venueAlpha->id}");
+            ->get("/api/admin/reports.csv?venue_id={$this->venueAlpha->id}");
         $csvRes1->assertOk();
         $this->assertStringContainsString('text/csv', (string) $csvRes1->headers->get('Content-Type'));
 
         // 3. CSV report export (/csv route)
         $csvRes2 = $this->actingAs($this->ownerAlpha)
-            ->get("/api/v1/admin/reports/csv?venue_id={$this->venueAlpha->id}");
+            ->get("/api/admin/reports/csv?venue_id={$this->venueAlpha->id}");
         $csvRes2->assertOk();
         $this->assertStringContainsString('text/csv', (string) $csvRes2->headers->get('Content-Type'));
 
@@ -880,15 +881,15 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->actingAs($this->ownerAlpha);
 
         // 1. JSON report query with foreign venue -> 403
-        $this->getJson("/api/v1/admin/reports?venue_id={$this->venueBeta->id}")
+        $this->getJson("/api/admin/reports?venue_id={$this->venueBeta->id}")
             ->assertStatus(403);
 
         // 2. CSV export (.csv) with foreign venue -> 403
-        $this->get("/api/v1/admin/reports.csv?venue_id={$this->venueBeta->id}")
+        $this->get("/api/admin/reports.csv?venue_id={$this->venueBeta->id}")
             ->assertStatus(403);
 
         // 3. CSV export (/csv) with foreign venue -> 403
-        $this->get("/api/v1/admin/reports/csv?venue_id={$this->venueBeta->id}")
+        $this->get("/api/admin/reports/csv?venue_id={$this->venueBeta->id}")
             ->assertStatus(403);
     }
 
@@ -905,7 +906,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 1. Export with explicit venue_id = Venue Alpha
         $exportAlpha = $this->actingAs($this->ownerAlpha)
-            ->get("/api/v1/admin/reports.csv?venue_id={$this->venueAlpha->id}");
+            ->get("/api/admin/reports.csv?venue_id={$this->venueAlpha->id}");
         $exportAlpha->assertOk();
         $contentAlpha = $exportAlpha->streamedContent();
 
@@ -914,7 +915,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
 
         // 2. Export without specifying venue_id: scoped to Owner Alpha's authorized venues
         $exportDefault = $this->actingAs($this->ownerAlpha)
-            ->get('/api/v1/admin/reports.csv');
+            ->get('/api/admin/reports.csv');
         $exportDefault->assertOk();
         $contentDefault = $exportDefault->streamedContent();
 

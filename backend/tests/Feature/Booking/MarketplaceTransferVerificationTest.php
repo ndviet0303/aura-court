@@ -154,7 +154,7 @@ class MarketplaceTransferVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'fake-buyer-ref-test-'.uniqid(),
             ])
-            ->postJson('/api/v2/marketplace/listings/'.$listing->id.'/purchase', [
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
                 'buyer_payment_reference' => 'FAKE-UNVERIFIED-BUYER-REF',
                 'seller_refund_reference' => 'SOME-SELLER-REF',
                 'seller_refund_accepted' => true,
@@ -193,7 +193,7 @@ class MarketplaceTransferVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'fake-flag-test-'.uniqid(),
             ])
-            ->postJson('/api/v2/marketplace/listings/'.$listing->id.'/purchase', [
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
                 'buyer_payment_reference' => $attempt->reference,
                 'seller_refund_accepted' => true, // Client self-declared flag with no reference!
             ]);
@@ -232,7 +232,7 @@ class MarketplaceTransferVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'fake-non-empty-seller-ref-'.uniqid(),
             ])
-            ->postJson('/api/v2/marketplace/listings/'.$listing->id.'/purchase', [
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
                 'buyer_payment_reference' => $attempt->reference,
                 'seller_refund_reference' => 'FABRICATED-SELLER-REIMBURSE-REF-999',
                 'seller_refund_accepted' => true,
@@ -284,7 +284,7 @@ class MarketplaceTransferVerificationTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'idemp-atomic-transfer-'.uniqid(),
             ])
-            ->postJson('/api/v2/marketplace/listings/'.$listing->id.'/purchase', [
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
                 'buyer_payment_reference' => $attempt->reference,
                 'seller_refund_reference' => $executionRef,
                 'seller_refund_accepted' => true,
@@ -424,7 +424,7 @@ class MarketplaceTransferVerificationTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

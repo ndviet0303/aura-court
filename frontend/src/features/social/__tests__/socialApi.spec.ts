@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { socialApi } from '../api/socialApi'
 
-vi.mock('@/core/api/client', () => ({ apiV2: { get: vi.fn() } }))
+vi.mock('@/core/api/client', () => ({ api: { get: vi.fn() } }))
 
 describe('socialApi.getFeed', () => {
   it('counts reaction rows per type for the feed badges', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [
         {
           id: 1,

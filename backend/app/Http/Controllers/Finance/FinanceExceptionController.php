@@ -8,7 +8,7 @@ use App\Domain\Finance\Actions\GetFinanceExceptionStats;
 use App\Domain\Finance\Actions\ResolveFinanceException;
 use App\Domain\Finance\DTOs\FinanceExceptionFilterData;
 use App\Domain\Finance\DTOs\ResolveFinanceExceptionData;
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\ListFinanceExceptionsRequest;
 use App\Http\Requests\Finance\ResolveFinanceExceptionRequest;
@@ -21,7 +21,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class FinanceExceptionController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(
         private readonly GetFinanceExceptions $getExceptions,

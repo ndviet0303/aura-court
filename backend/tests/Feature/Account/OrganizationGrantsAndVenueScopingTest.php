@@ -80,7 +80,7 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
         $venue2 = $this->createVenue($org, 'Venue Two', 'venue-two');
 
         // Invite a manager assigned only to Venue 1
-        $res = $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/members", [
+        $res = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/members", [
             'email' => 'manager_assigned@test.local',
             'role' => OrganizationMember::ROLE_VENUE_MANAGER,
             'venue_id' => $venue1->id,
@@ -130,7 +130,7 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
         $this->assertFalse($managerUser->canManageVenue($venueB));
 
         // Owner revokes Venue A grant and shifts manager to Venue B
-        $updateRes = $this->actingAs($owner)->patchJson("/api/v1/organizations/{$org->id}/members/{$member->id}", [
+        $updateRes = $this->actingAs($owner)->patchJson("/api/organizations/{$org->id}/members/{$member->id}", [
             'role' => OrganizationMember::ROLE_VENUE_MANAGER,
             'venue_id' => $venueB->id,
             'venue_ids' => [$venueB->id],
@@ -144,7 +144,7 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
 
         // Direct request by manager to set prices on Court A is now denied
         $this->actingAs($managerUser)
-            ->postJson("/api/v1/admin/courts/{$courtA->id}/prices", [
+            ->postJson("/api/admin/courts/{$courtA->id}/prices", [
                 'weekday' => 1,
                 'starts_at' => '09:00',
                 'ends_at' => '10:00',
@@ -154,7 +154,7 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
 
         // But setting prices on Court B works
         $this->actingAs($managerUser)
-            ->postJson("/api/v1/admin/courts/{$courtB->id}/prices", [
+            ->postJson("/api/admin/courts/{$courtB->id}/prices", [
                 'weekday' => 1,
                 'starts_at' => '09:00',
                 'ends_at' => '10:00',
@@ -190,21 +190,21 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
 
         // When acting on Org 10, user can list its members and manage Venue 10
         $this->actingAs($user)
-            ->getJson("/api/v1/organizations/{$org10->id}/members")
+            ->getJson("/api/organizations/{$org10->id}/members")
             ->assertOk();
 
         $this->actingAs($user)
-            ->patchJson("/api/v1/admin/venues/{$venue10->id}", ['address' => 'Updated 10'])
+            ->patchJson("/api/admin/venues/{$venue10->id}", ['address' => 'Updated 10'])
             ->assertOk();
 
         // When attempting to access Org 20 members, denied with 403
         $this->actingAs($user)
-            ->getJson("/api/v1/organizations/{$org20->id}/members")
+            ->getJson("/api/organizations/{$org20->id}/members")
             ->assertStatus(403);
 
         // Attempting to mutate Venue 20, denied with 403
         $this->actingAs($user)
-            ->patchJson("/api/v1/admin/venues/{$venue20->id}", ['address' => 'Hacked 20'])
+            ->patchJson("/api/admin/venues/{$venue20->id}", ['address' => 'Hacked 20'])
             ->assertStatus(403);
     }
 }

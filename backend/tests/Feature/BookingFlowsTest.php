@@ -5,11 +5,11 @@ namespace Tests\Feature;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Booking\BookingService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,7 +54,7 @@ class BookingFlowsTest extends TestCase
     {
         $customer = User::factory()->create(['role' => 'customer']);
 
-        $this->actingAs($customer)->getJson('/api/v1/admin/reports')->assertForbidden();
+        $this->actingAs($customer)->getJson('/api/admin/reports')->assertForbidden();
     }
 
     public function test_admin_can_create_court_price_and_block(): void
@@ -62,13 +62,13 @@ class BookingFlowsTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $venue = Venue::firstOrFail();
 
-        $court = $this->actingAs($admin)->postJson('/api/v1/admin/courts', ['name' => 'Sân Test', 'venue_id' => $venue->id])->assertCreated()->json();
+        $court = $this->actingAs($admin)->postJson('/api/admin/courts', ['name' => 'Sân Test', 'venue_id' => $venue->id])->assertCreated()->json();
         $courtId = $court['id'];
 
-        $this->actingAs($admin)->postJson("/api/v1/admin/courts/{$courtId}/prices", [
+        $this->actingAs($admin)->postJson("/api/admin/courts/{$courtId}/prices", [
             'weekday' => 1, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 150000,
         ])->assertCreated();
-        $this->actingAs($admin)->postJson("/api/v1/admin/courts/{$courtId}/blocks", [
+        $this->actingAs($admin)->postJson("/api/admin/courts/{$courtId}/blocks", [
             'starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(),
             'ends_at' => now()->addDay()->setTime(11, 0)->toIso8601String(),
             'reason' => 'Bảo trì',
@@ -89,7 +89,7 @@ class BookingFlowsTest extends TestCase
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $raw, 'test-secret');
 
-        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SEPAY_SIGNATURE' => $signature], $raw)->assertOk();
+        $this->call('POST', '/api/webhooks/sepay', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SEPAY_SIGNATURE' => $signature], $raw)->assertOk();
 
         $this->assertDatabaseHas('payments', ['external_transaction_id' => 'tx-deposit-1', 'status' => 'paid']);
         $this->assertDatabaseHas('wallet_accounts', ['user_id' => $user->id, 'balance' => 500000]);
@@ -99,16 +99,14 @@ class BookingFlowsTest extends TestCase
     {
         $first = User::factory()->create();
         $second = User::factory()->create();
-        $this->fundUserWallet($first, 500000);
-        $this->fundUserWallet($second, 500000);
 
         $venue = Venue::firstOrFail();
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Conflict', 'is_active' => true]);
         $date = Carbon::now()->addDays(3)->setTime(10, 0)->startOfHour();
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
-        $this->actingAs($first)->postJson('/api/v1/bookings', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertCreated();
-        $this->actingAs($second)->postJson('/api/v1/bookings', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertStatus(409);
+        $this->actingAs($first)->withHeader('Idempotency-Key', uniqid('hold-'))->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertCreated();
+        $this->actingAs($second)->withHeader('Idempotency-Key', uniqid('hold-'))->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertStatus(409);
     }
 
     public function test_booking_rejects_past_and_unaligned_slots(): void
@@ -119,9 +117,9 @@ class BookingFlowsTest extends TestCase
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Validation', 'is_active' => true]);
         $past = now()->subDay()->setTime(10, 0);
 
-        $this->actingAs($user)->postJson('/api/v1/bookings', ['court_id' => $court->id, 'slots' => [$past->toIso8601String()]])->assertUnprocessable();
-        $future = now()->addDay()->setTime(10, 30);
-        $this->actingAs($user)->postJson('/api/v1/bookings', ['court_id' => $court->id, 'slots' => [$future->toIso8601String()]])->assertUnprocessable();
+        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$past->toIso8601String()]])->assertUnprocessable();
+        $future = now()->addDay()->setTime(10, 15);
+        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$future->toIso8601String()]])->assertUnprocessable();
     }
 
     public function test_admin_can_list_and_delete_a_block(): void
@@ -131,8 +129,8 @@ class BookingFlowsTest extends TestCase
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Block CRUD', 'is_active' => true]);
         $block = $court->blocks()->create(['starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'reason' => 'Bảo trì']);
 
-        $this->actingAs($admin)->getJson("/api/v1/admin/courts/{$court->id}/blocks")->assertOk()->assertJsonPath('data.0.id', $block->id);
-        $this->actingAs($admin)->deleteJson("/api/v1/admin/courts/{$court->id}/blocks/{$block->id}")->assertOk();
+        $this->actingAs($admin)->getJson("/api/admin/courts/{$court->id}/blocks")->assertOk()->assertJsonPath('data.0.id', $block->id);
+        $this->actingAs($admin)->deleteJson("/api/admin/courts/{$court->id}/blocks/{$block->id}")->assertOk();
         $this->assertDatabaseMissing('court_blocks', ['id' => $block->id]);
     }
 
@@ -141,35 +139,19 @@ class BookingFlowsTest extends TestCase
         $user = User::factory()->create();
         $this->fundUserWallet($user, 500000);
         $venue = Venue::firstOrFail();
+        OrganizationMember::create(['organization_id' => $venue->organization_id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Payment Reload', 'is_active' => true]);
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
-        $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
+        $code = $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])
+            ->assertCreated()
+            ->json('reservation.code');
 
-        $this->actingAs($user)->getJson("/api/v1/bookings/{$booking->code}/payment")
+        $this->actingAs($user)->getJson("/api/reservations/{$code}/payment")
             ->assertOk()
-            ->assertJsonPath('booking.code', $booking->code)
-            ->assertJsonPath('status', 'confirmed');
-    }
-
-    public function test_customer_cannot_cancel_booking_returns_404_with_no_side_effects(): void
-    {
-        $user = User::factory()->create();
-        $this->fundUserWallet($user, 500000);
-        $venue = Venue::firstOrFail();
-        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Cancel Refund', 'is_active' => true]);
-        $date = now()->addDays(2)->setTime(10, 0);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        $booking = app(BookingService::class)->create($user->id, $court->id, [$date->toIso8601String()]);
-
-        $wallet = app(WalletPaymentService::class)->getOrCreateWallet($user->id, $venue->organization_id);
-        $balanceBefore = $wallet->fresh()->balance;
-
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/cancel")->assertNotFound();
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
-        $this->assertDatabaseHas('booking_slots', ['booking_id' => $booking->id, 'status' => 'confirmed']);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $booking->id]);
-        $this->assertSame($balanceBefore, $wallet->fresh()->balance);
+            ->assertJsonPath('reservation.code', $code)
+            ->assertJsonPath('reservation.status', 'confirmed');
     }
 
     public function test_recurring_booking_creates_all_weeks_atomically(): void
@@ -181,32 +163,14 @@ class BookingFlowsTest extends TestCase
         $date = now()->addDays(3)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
-        $response = $this->actingAs($user)->postJson('/api/v1/bookings/recurring', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'weeks' => 2]);
-        $response->assertCreated()->assertJsonCount(2, 'bookings');
-        $this->assertDatabaseCount('bookings', 2);
-    }
-
-    public function test_customer_cannot_reschedule_booking_returns_404_with_no_side_effects(): void
-    {
-        $user = User::factory()->create();
-        $this->fundUserWallet($user, 1000000);
-        $venue = Venue::firstOrFail();
-        $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Reschedule', 'is_active' => true]);
-        $oldDate = now()->addDays(2)->setTime(10, 0);
-        $newDate = now()->addDays(3)->setTime(10, 0);
-        foreach ([$oldDate, $newDate] as $date) {
-            CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        }
-        $booking = app(BookingService::class)->create($user->id, $court->id, [$oldDate->toIso8601String()]);
-
-        $wallet = app(WalletPaymentService::class)->getOrCreateWallet($user->id, $venue->organization_id);
-        $balanceBefore = $wallet->fresh()->balance;
-
-        $response = $this->actingAs($user)->postJson("/api/v1/bookings/{$booking->code}/reschedule", ['court_id' => $court->id, 'slots' => [$newDate->toIso8601String()]]);
-        $response->assertNotFound();
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'confirmed']);
-        $this->assertDatabaseCount('bookings', 1);
-        $this->assertSame($balanceBefore, $wallet->fresh()->balance);
+        $response = $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('series-'))->postJson('/api/recurring-series', [
+            'court_id' => $court->id,
+            'frequency' => 'weekly',
+            'starts_at' => $date->toIso8601String(),
+            'occurrences' => 2,
+        ]);
+        $response->assertCreated()->assertJsonCount(2, 'series.occurrences');
+        $this->assertDatabaseCount('reservations', 2);
     }
 
     public function test_unverified_customer_cannot_create_booking(): void
@@ -218,6 +182,7 @@ class BookingFlowsTest extends TestCase
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
-        $this->actingAs($user)->postJson('/api/v1/bookings', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertForbidden();
+        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertForbidden();
+        $this->assertDatabaseCount('reservations', 0);
     }
 }

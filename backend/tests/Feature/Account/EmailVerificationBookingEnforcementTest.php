@@ -2,9 +2,6 @@
 
 namespace Tests\Feature\Account;
 
-use App\Domain\Booking\Actions\CreateRecurringBooking;
-use App\Domain\Booking\DTOs\CreateBookingData;
-use App\Models\Booking;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\Reservation;
@@ -24,7 +21,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_unverified_customer_calling_v1_booking_is_denied(): void
+    public function test_unverified_customer_calling_booking_is_denied(): void
     {
         $fixture = $this->createMultiOrgVenueFixture();
         $court = $fixture['org1']['court1'];
@@ -42,18 +39,16 @@ class EmailVerificationBookingEnforcementTest extends TestCase
 
         $slot = Carbon::tomorrow()->setTime(9, 0, 0)->toIso8601String();
 
-        $initialBookings = Booking::count();
-
-        $response = $this->postJson('/api/v1/bookings', [
+        $response = $this->withHeader('Idempotency-Key', 'test-booking-'.uniqid())->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slot],
         ]);
 
         $response->assertStatus(403);
-        $this->assertSame($initialBookings, Booking::count());
+        $this->assertSame(0, Reservation::count());
     }
 
-    public function test_unverified_customer_calling_v1_recurring_is_denied(): void
+    public function test_unverified_customer_calling_recurring_is_denied(): void
     {
         $fixture = $this->createMultiOrgVenueFixture();
         $court = $fixture['org1']['court1'];
@@ -65,15 +60,17 @@ class EmailVerificationBookingEnforcementTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $slot = Carbon::tomorrow()->setTime(10, 0, 0)->toIso8601String();
+        $start = Carbon::tomorrow()->setTime(10, 0, 0)->toIso8601String();
 
-        $response = $this->postJson('/api/v1/bookings/recurring', [
+        $response = $this->withHeader('Idempotency-Key', 'test-recurring-'.uniqid())->postJson('/api/recurring-series', [
             'court_id' => $court->id,
-            'slots' => [$slot],
-            'weeks' => 4,
+            'frequency' => 'weekly',
+            'starts_at' => $start,
+            'occurrences' => 4,
         ]);
 
         $response->assertStatus(403);
+        $this->assertSame(0, Reservation::count());
     }
 
     public function test_unverified_customer_calling_v2_reservations_directly_fails_with_guidance(): void
@@ -100,7 +97,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'test-idemp-'.uniqid(),
-        ])->postJson('/api/v2/reservations', [
+        ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
         ]);
@@ -135,7 +132,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'test-checkout-'.uniqid(),
-        ])->postJson('/api/v2/reservations/checkout', [
+        ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slot],
         ]);
@@ -168,7 +165,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'test-recurring-'.uniqid(),
-        ])->postJson('/api/v2/recurring-series', [
+        ])->postJson('/api/recurring-series', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'starts_at' => $start,
@@ -192,31 +189,19 @@ class EmailVerificationBookingEnforcementTest extends TestCase
 
         $slot = Carbon::tomorrow()->setTime(17, 0, 0)->toIso8601String();
 
-        // 1. Direct OrdinaryCheckoutService::checkoutV1
+        // 1. Direct OrdinaryCheckoutService::checkout without actor
         $checkoutService = app(OrdinaryCheckoutService::class);
         try {
-            $checkoutService->checkoutV1(new CreateBookingData(
-                userId: $user->id,
-                courtId: $court->id,
-                slots: [$slot],
-            ));
-            $this->fail('checkoutV1 directly must not bypass email verification');
-        } catch (HttpException $e) {
-            $this->assertEquals(403, $e->getStatusCode());
-        }
-
-        // 2. Direct OrdinaryCheckoutService::checkoutV2 without actor
-        try {
-            $checkoutService->checkoutV2($user, $org->id, [
+            $checkoutService->checkout($user, $org->id, [
                 'court_id' => $court->id,
                 'slots' => [$slot],
             ], actor: null);
-            $this->fail('checkoutV2 directly must not bypass email verification');
+            $this->fail('checkout directly must not bypass email verification');
         } catch (HttpException $e) {
             $this->assertEquals(403, $e->getStatusCode());
         }
 
-        // 3. Direct ReservationService::hold without actor
+        // 2. Direct ReservationService::hold without actor
         $reservationService = app(ReservationService::class);
         try {
             $reservationService->hold($user, $org->id, [
@@ -228,7 +213,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
             $this->assertEquals(403, $e->getStatusCode());
         }
 
-        // 4. Direct RecurringSeriesService::createAndConfirm
+        // 3. Direct RecurringSeriesService::createAndConfirm
         $recurringService = app(RecurringSeriesService::class);
         try {
             $recurringService->createAndConfirm($user, $org->id, [
@@ -238,15 +223,6 @@ class EmailVerificationBookingEnforcementTest extends TestCase
                 'occurrences' => 4,
             ]);
             $this->fail('createAndConfirm directly must not bypass email verification');
-        } catch (HttpException $e) {
-            $this->assertEquals(403, $e->getStatusCode());
-        }
-
-        // 5. Direct CreateRecurringBooking action
-        $createRecurringAction = app(CreateRecurringBooking::class);
-        try {
-            $createRecurringAction->execute($user->id, $court->id, [$slot], 4);
-            $this->fail('CreateRecurringBooking action directly must not bypass email verification');
         } catch (HttpException $e) {
             $this->assertEquals(403, $e->getStatusCode());
         }
@@ -295,7 +271,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'test-walkin-'.uniqid(),
-        ])->postJson('/api/v2/reservations', [
+        ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
             'customer_id' => $walkinCustomer->id,

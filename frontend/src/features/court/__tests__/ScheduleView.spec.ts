@@ -7,7 +7,7 @@ import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { courtApi } from '../api/courtApi'
 import { bookingApi } from '@/features/booking/api/bookingApi'
-import type { V2Reservation } from '@/features/booking/types/v2Reservation'
+import type { Reservation } from '@/features/booking/types/reservation'
 
 const mockRoute = vi.hoisted(() => ({
   params: { slug: 'san-1-tham-bwf-cau-giay' },
@@ -214,10 +214,10 @@ describe('ScheduleView', () => {
     expect(bookingApi.checkoutReservation).not.toHaveBeenCalled()
   })
 
-  it('checks out the selected slots through V2 and opens the reservation', async () => {
+  it('checks out the selected slots and opens the reservation', async () => {
     useAuthStore().user = { id: 1, name: 'Player', email: 'p@example.com', role: 'customer' }
     vi.mocked(bookingApi.checkoutReservation).mockResolvedValue({
-      reservation: { code: 'RSV-NEW-1', status: 'held' } as V2Reservation,
+      reservation: { code: 'RSV-NEW-1', status: 'held' } as Reservation,
     })
 
     const wrapper = mount(ScheduleView, {

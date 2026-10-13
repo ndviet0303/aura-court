@@ -74,16 +74,16 @@ function toggleSlot(id: number) {
 const feeTypeLabel = computed(() => {
   const c = quote.value?.calculation
   if (!c) return ''
-  if (c.fee_type === 'none') return t('v2Reservations.refund.feeTypeNone')
-  if (c.fee_type === 'fixed') return t('v2Reservations.refund.feeTypeFixed')
-  return t('v2Reservations.refund.feeTypePercentage', { value: c.fee_value })
+  if (c.fee_type === 'none') return t('reservations.refund.feeTypeNone')
+  if (c.fee_type === 'fixed') return t('reservations.refund.feeTypeFixed')
+  return t('reservations.refund.feeTypePercentage', { value: c.fee_value })
 })
 
 async function runQuote() {
   if (!props.booking) return
   const ids = targetSlotIds.value
   if (ids.length === 0) {
-    error.value = t('v2Reservations.refund.selectSlots')
+    error.value = t('reservations.refund.selectSlots')
     return
   }
   quoting.value = true
@@ -93,7 +93,7 @@ async function runQuote() {
     quote.value = res.data
   } catch (cause: unknown) {
     quote.value = null
-    error.value = errorMessage(cause, t('v2Reservations.refund.quoteError'))
+    error.value = errorMessage(cause, t('reservations.refund.quoteError'))
   } finally {
     quoting.value = false
   }
@@ -103,18 +103,18 @@ async function submit() {
   if (!props.booking || !quote.value) return
   const ids = targetSlotIds.value
   if (ids.length === 0) {
-    error.value = t('v2Reservations.refund.selectSlots')
+    error.value = t('reservations.refund.selectSlots')
     return
   }
   if (!reason.value.trim()) {
-    error.value = t('v2Reservations.refund.reasonRequired')
+    error.value = t('reservations.refund.reasonRequired')
     return
   }
   if (
     needsRecipient.value &&
     !(recipient.value.bank_code && recipient.value.account_name && recipient.value.account_number)
   ) {
-    error.value = t('v2Reservations.refund.recipientRequired')
+    error.value = t('reservations.refund.recipientRequired')
     return
   }
   if (!requestKey.value) requestKey.value = idempotencyKey()
@@ -133,7 +133,7 @@ async function submit() {
     obligation.value = res.data
     emit('updated')
   } catch (cause: unknown) {
-    error.value = errorMessage(cause, t('v2Reservations.refund.submitError'))
+    error.value = errorMessage(cause, t('reservations.refund.submitError'))
   } finally {
     submitting.value = false
   }
@@ -142,7 +142,7 @@ async function submit() {
 const statusLabel = computed(() => {
   const s = obligation.value?.status
   if (!s) return ''
-  const key = `v2Reservations.refund.status.${s}`
+  const key = `reservations.refund.status.${s}`
   const label = t(key)
   return label === key ? s : label
 })
@@ -166,8 +166,8 @@ watch(
     <div class="modal-card">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title">{{ t('v2Reservations.refund.cancelTitle') }}</h3>
-          <p class="modal-sub">{{ t('v2Reservations.refund.cancelSubtitle') }}</p>
+          <h3 class="modal-title">{{ t('reservations.refund.cancelTitle') }}</h3>
+          <p class="modal-sub">{{ t('reservations.refund.cancelSubtitle') }}</p>
         </div>
         <button class="modal-close-btn" type="button" @click="emit('close')">
           <span class="material-symbols-outlined">close</span>
@@ -178,18 +178,18 @@ watch(
         <!-- Submitted result: truthful server status, never "completed" -->
         <div v-if="obligation" class="result-box" data-testid="cancel-result">
           <p class="result-status" data-testid="cancel-result-status">
-            {{ t('v2Reservations.refund.statusLabel') }}: {{ statusLabel }}
+            {{ t('reservations.refund.statusLabel') }}: {{ statusLabel }}
           </p>
           <p class="result-code">
-            {{ t('v2Reservations.refund.referenceLabel') }}:
+            {{ t('reservations.refund.referenceLabel') }}:
             <strong class="font-mono">{{ obligation.reference_code }}</strong>
           </p>
           <p class="result-amount">
-            {{ t('v2Reservations.refund.refundLabel') }}:
+            {{ t('reservations.refund.refundLabel') }}:
             <strong class="font-mono">{{ formatCurrency(obligation.refund_amount) }}</strong>
           </p>
           <div class="notice-warn" data-testid="cancel-not-verified">
-            {{ t('v2Reservations.refund.notVerifiedHint') }}
+            {{ t('reservations.refund.notVerifiedHint') }}
           </div>
         </div>
 
@@ -204,7 +204,7 @@ watch(
                 data-testid="cancel-scope-whole"
                 @change="quote = null"
               />
-              <span>{{ t('v2Reservations.refund.scopeWhole') }}</span>
+              <span>{{ t('reservations.refund.scopeWhole') }}</span>
             </label>
             <label class="scope-option">
               <input
@@ -214,12 +214,12 @@ watch(
                 data-testid="cancel-scope-partial"
                 @change="quote = null"
               />
-              <span>{{ t('v2Reservations.refund.scopePartial') }}</span>
+              <span>{{ t('reservations.refund.scopePartial') }}</span>
             </label>
           </div>
 
           <div v-if="scope === 'partial'" class="slots-box">
-            <p class="form-label">{{ t('v2Reservations.refund.selectSlotsLabel') }}</p>
+            <p class="form-label">{{ t('reservations.refund.selectSlotsLabel') }}</p>
             <label v-for="s in slotsWithId" :key="s.id" class="slot-option">
               <input
                 type="checkbox"
@@ -239,35 +239,35 @@ watch(
             data-testid="cancel-quote-btn"
             @click="runQuote"
           >
-            {{ quoting ? t('v2Reservations.refund.quoting') : t('v2Reservations.refund.quoteBtn') }}
+            {{ quoting ? t('reservations.refund.quoting') : t('reservations.refund.quoteBtn') }}
           </button>
 
           <!-- Captured policy calculation -->
           <div v-if="quote" class="preview-box" data-testid="cancel-quote">
             <div class="preview-row">
-              <span>{{ t('v2Reservations.refund.deadlineLabel') }}</span>
+              <span>{{ t('reservations.refund.deadlineLabel') }}</span>
               <span class="font-mono" data-testid="cancel-deadline">{{
                 quote.calculation.due_at
               }}</span>
             </div>
             <div class="preview-row">
-              <span>{{ t('v2Reservations.refund.grossLabel') }}</span>
+              <span>{{ t('reservations.refund.grossLabel') }}</span>
               <span class="font-mono">{{ formatCurrency(quote.calculation.gross_amount) }}</span>
             </div>
             <div class="preview-row">
-              <span>{{ t('v2Reservations.refund.feeLabel') }} ({{ feeTypeLabel }})</span>
+              <span>{{ t('reservations.refund.feeLabel') }} ({{ feeTypeLabel }})</span>
               <span class="font-mono" data-testid="cancel-fee">{{
                 formatCurrency(quote.calculation.fee_amount)
               }}</span>
             </div>
             <div class="preview-row emphasis">
-              <span>{{ t('v2Reservations.refund.refundLabel') }}</span>
+              <span>{{ t('reservations.refund.refundLabel') }}</span>
               <span class="font-mono" data-testid="cancel-refund">{{
                 formatCurrency(quote.calculation.refund_amount)
               }}</span>
             </div>
             <div v-if="quote.points_to_restore" class="preview-row">
-              <span>{{ t('v2Reservations.refund.pointsRestoreLabel') }}</span>
+              <span>{{ t('reservations.refund.pointsRestoreLabel') }}</span>
               <span class="font-mono">{{ quote.points_to_restore }}</span>
             </div>
             <p
@@ -275,42 +275,42 @@ watch(
               class="hint"
               data-testid="cancel-no-money"
             >
-              {{ t('v2Reservations.refund.noMoneyBack') }}
+              {{ t('reservations.refund.noMoneyBack') }}
             </p>
 
             <div class="form-row">
               <label class="form-label" for="cancel-reason">{{
-                t('v2Reservations.refund.reasonLabel')
+                t('reservations.refund.reasonLabel')
               }}</label>
               <textarea
                 id="cancel-reason"
                 v-model="reason"
                 class="form-input"
                 rows="2"
-                :placeholder="t('v2Reservations.refund.reasonPlaceholder')"
+                :placeholder="t('reservations.refund.reasonPlaceholder')"
                 data-testid="cancel-reason"
               ></textarea>
             </div>
 
             <div v-if="needsRecipient" class="recipient-box">
-              <p class="recipient-title">{{ t('v2Reservations.refund.recipientHeading') }}</p>
-              <p class="hint">{{ t('v2Reservations.refund.recipientHint') }}</p>
+              <p class="recipient-title">{{ t('reservations.refund.recipientHeading') }}</p>
+              <p class="hint">{{ t('reservations.refund.recipientHint') }}</p>
               <input
                 v-model="recipient.bank_code"
                 class="form-input"
-                :placeholder="t('v2Reservations.refund.bankCode')"
+                :placeholder="t('reservations.refund.bankCode')"
                 data-testid="cancel-recipient-bank"
               />
               <input
                 v-model="recipient.account_name"
                 class="form-input"
-                :placeholder="t('v2Reservations.refund.accountName')"
+                :placeholder="t('reservations.refund.accountName')"
                 data-testid="cancel-recipient-name"
               />
               <input
                 v-model="recipient.account_number"
                 class="form-input"
-                :placeholder="t('v2Reservations.refund.accountNumber')"
+                :placeholder="t('reservations.refund.accountNumber')"
                 data-testid="cancel-recipient-number"
               />
             </div>
@@ -325,7 +325,7 @@ watch(
 
       <div class="modal-footer">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
-          {{ obligation ? t('v2Reservations.refund.close') : t('v2Reservations.refund.cancel') }}
+          {{ obligation ? t('reservations.refund.close') : t('reservations.refund.cancel') }}
         </button>
         <button
           v-if="!obligation"
@@ -336,9 +336,7 @@ watch(
           @click="submit"
         >
           {{
-            submitting
-              ? t('v2Reservations.refund.submitting')
-              : t('v2Reservations.refund.submitBtn')
+            submitting ? t('reservations.refund.submitting') : t('reservations.refund.submitBtn')
           }}
         </button>
       </div>

@@ -122,7 +122,7 @@ class Court extends Model
     {
         $attributes = parent::toArray();
 
-        if (request() && request()->is('api/*/admin/*')) {
+        if (request() && request()->is('api/admin/*')) {
             return $attributes;
         }
 

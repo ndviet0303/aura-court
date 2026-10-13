@@ -2,13 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Booking;
+use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\User;
 use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
-use App\Services\Booking\BookingService;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,7 +32,7 @@ class WaitlistLifecycleTest extends TestCase
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Open Waitlist', 'is_active' => true]);
         $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
 
-        $res = $this->actingAs($user)->postJson('/api/v1/waitlist', [
+        $res = $this->actingAs($user)->postJson('/api/waitlist', [
             'court_id' => $court->id,
             'starts_at' => $date->toIso8601String(),
         ]);
@@ -55,13 +54,13 @@ class WaitlistLifecycleTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
         // 1. Owner books the slot
-        $this->actingAs($owner)->postJson('/api/v1/bookings', [
+        $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ])->assertCreated();
 
         // 2. Waiter joins waitlist
-        $joinRes = $this->actingAs($waiter)->postJson('/api/v1/waitlist', [
+        $joinRes = $this->actingAs($waiter)->postJson('/api/waitlist', [
             'court_id' => $court->id,
             'starts_at' => $date->toIso8601String(),
         ]);
@@ -73,7 +72,7 @@ class WaitlistLifecycleTest extends TestCase
         ]);
 
         // 3. Duplicate join is rejected
-        $dupRes = $this->actingAs($waiter)->postJson('/api/v1/waitlist', [
+        $dupRes = $this->actingAs($waiter)->postJson('/api/waitlist', [
             'court_id' => $court->id,
             'starts_at' => $date->toIso8601String(),
         ]);
@@ -94,20 +93,20 @@ class WaitlistLifecycleTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
         // Book slot
-        $this->actingAs($owner)->postJson('/api/v1/bookings', [
+        $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ])->assertCreated();
 
         // Join waitlist
-        $joinRes = $this->actingAs($waiter)->postJson('/api/v1/waitlist', [
+        $joinRes = $this->actingAs($waiter)->postJson('/api/waitlist', [
             'court_id' => $court->id,
             'starts_at' => $date->toIso8601String(),
         ])->assertCreated();
         $entryId = $joinRes->json('id');
 
         // Leave waitlist via DELETE
-        $delRes = $this->actingAs($waiter)->deleteJson("/api/v1/waitlist/{$entryId}");
+        $delRes = $this->actingAs($waiter)->deleteJson("/api/waitlist/{$entryId}");
         $delRes->assertOk();
 
         $this->assertDatabaseHas('waitlist_entries', [
@@ -132,21 +131,21 @@ class WaitlistLifecycleTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
         // 1. Owner books
-        $bookRes = $this->actingAs($owner)->postJson('/api/v1/bookings', [
+        $bookRes = $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ]);
         $bookRes->assertCreated();
-        $bookingCode = $bookRes->json('booking.code');
+        $bookingCode = $bookRes->json('reservation.code');
 
         // 2. Waiter joins waitlist
-        $this->actingAs($waiter)->postJson('/api/v1/waitlist', [
+        $this->actingAs($waiter)->postJson('/api/waitlist', [
             'court_id' => $court->id,
             'starts_at' => $date->toIso8601String(),
         ])->assertCreated();
 
         // 3. Attempting to cancel confirmed booking returns 404 and does NOT notify waitlist
-        $this->actingAs($owner)->postJson("/api/v1/bookings/{$bookingCode}/cancel")->assertNotFound();
+        $this->actingAs($owner)->postJson("/api/reservations/{$bookingCode}/cancel")->assertNotFound();
         Notification::assertNotSentTo($waiter, AuraBookingNotification::class);
         $this->assertDatabaseHas('waitlist_entries', [
             'user_id' => $waiter->id,
@@ -159,29 +158,19 @@ class WaitlistLifecycleTest extends TestCase
         $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(14, 0)->startOfHour();
         CourtPriceSlot::create(['court_id' => $court2->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 100000, 'is_active' => true]);
 
-        $pendingBooking = Booking::create([
-            'code' => 'BK-PENDING-WAIT-02',
-            'user_id' => $owner->id,
+        $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-hold')->postJson('/api/reservations', [
             'court_id' => $court2->id,
-            'total_amount' => 100000,
-            'status' => 'pending_payment',
-            'payment_expires_at' => now()->subMinute(),
-        ]);
-        $pendingBooking->slots()->create([
-            'court_id' => $court2->id,
-            'starts_at' => $date2,
-            'ends_at' => $date2->copy()->addHour(),
-            'unit_price' => 100000,
-            'status' => 'held',
-        ]);
+            'slots' => [$date2->toIso8601String()],
+        ])->assertCreated();
 
-        $this->actingAs($waiter)->postJson('/api/v1/waitlist', [
+        $this->actingAs($waiter)->postJson('/api/waitlist', [
             'court_id' => $court2->id,
             'starts_at' => $date2->toIso8601String(),
         ])->assertCreated();
 
-        // Expire pending booking -> releases held inventory and notifies waitlist
-        app(BookingService::class)->expirePending();
+        // Expire pending hold -> releases held inventory and notifies waitlist
+        $this->travel(31)->minutes();
+        app(ExpirePendingBookings::class)->execute();
 
         // 4. Waitlist entry marked 'notified' and notification sent without automatic booking promises
         $this->assertDatabaseHas('waitlist_entries', [
@@ -197,11 +186,11 @@ class WaitlistLifecycleTest extends TestCase
         });
 
         // 5. The waiter must complete normal checkout themselves
-        $waiterBookRes = $this->actingAs($waiter)->postJson('/api/v1/bookings', [
+        $waiterBookRes = $this->actingAs($waiter)->withHeader('Idempotency-Key', 'waiter-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court2->id,
             'slots' => [$date2->toIso8601String()],
         ]);
         $waiterBookRes->assertCreated();
-        $waiterBookRes->assertJsonPath('booking.status', 'confirmed');
+        $waiterBookRes->assertJsonPath('reservation.status', 'confirmed');
     }
 }

@@ -22,10 +22,6 @@ vi.mock('@/core/api/client', () => ({
     get: vi.fn().mockResolvedValue([]),
     post: vi.fn().mockResolvedValue({}),
   },
-  apiV2: {
-    get: vi.fn().mockResolvedValue([]),
-    post: vi.fn().mockResolvedValue({}),
-  },
   errorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 

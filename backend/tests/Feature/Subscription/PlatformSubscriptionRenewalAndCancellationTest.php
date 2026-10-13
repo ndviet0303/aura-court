@@ -60,7 +60,7 @@ class PlatformSubscriptionRenewalAndCancellationTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Cancel renewal
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/cancel-renewal", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/cancel-renewal", [
             'reason' => 'Không có nhu cầu tiếp tục tháng sau.',
         ]);
 
@@ -108,7 +108,7 @@ class PlatformSubscriptionRenewalAndCancellationTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Initiate renewal payment
-        $renewRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/renew");
+        $renewRes = $this->postJson("/api/partner/organizations/{$org->id}/subscription/renew");
         $renewRes->assertStatus(201);
         $refCode = $renewRes->json('data.reference_code');
 
@@ -155,7 +155,7 @@ class PlatformSubscriptionRenewalAndCancellationTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $renewRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/renew");
+        $renewRes = $this->postJson("/api/partner/organizations/{$org->id}/subscription/renew");
         $refCode = $renewRes->json('data.reference_code');
 
         $attempt = PlatformPaymentAttempt::where('reference_code', $refCode)->firstOrFail();

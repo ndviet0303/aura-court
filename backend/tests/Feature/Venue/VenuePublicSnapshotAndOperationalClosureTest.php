@@ -99,11 +99,11 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 
         // Submit & approve Revision 1
         Sanctum::actingAs($owner);
-        $subRes1 = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $subRes1 = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
         $rev1Id = $subRes1->json('data.id');
 
         Sanctum::actingAs($admin);
-        $this->postJson("/api/v1/admin/venues/revisions/{$rev1Id}/review", ['decision' => 'approve']);
+        $this->postJson("/api/admin/venues/revisions/{$rev1Id}/review", ['decision' => 'approve']);
 
         $snapshot1 = $venue->fresh()->approved_public_snapshot;
         $this->assertCount(1, $snapshot1['courts']);
@@ -125,7 +125,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 
         // Owner submits Revision 2
         Sanctum::actingAs($owner);
-        $subRes2 = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $subRes2 = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
         $rev2Id = $subRes2->json('data.id');
         $this->assertEquals(2, $subRes2->json('data.revision_number'));
 
@@ -134,7 +134,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 
         // Admin approves Revision 2
         Sanctum::actingAs($admin);
-        $this->postJson("/api/v1/admin/venues/revisions/{$rev2Id}/review", ['decision' => 'approve']);
+        $this->postJson("/api/admin/venues/revisions/{$rev2Id}/review", ['decision' => 'approve']);
 
         // Now public snapshot contains both courts!
         $snapshot2 = $venue->fresh()->approved_public_snapshot;
@@ -181,7 +181,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         ]);
 
         Sanctum::actingAs($owner);
-        $subRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $subRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
         $revId = $subRes->json('data.id');
 
         // Subscription expires while in review queue
@@ -192,7 +192,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 
         // Admin tries to approve
         Sanctum::actingAs($admin);
-        $res = $this->postJson("/api/v1/admin/venues/revisions/{$revId}/review", ['decision' => 'approve']);
+        $res = $this->postJson("/api/admin/venues/revisions/{$revId}/review", ['decision' => 'approve']);
 
         $res->assertStatus(422)
             ->assertJsonValidationErrors(['readiness']);
@@ -242,15 +242,15 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         ]);
 
         Sanctum::actingAs($owner);
-        $subRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
+        $subRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
         $revId = $subRes->json('data.id');
 
         Sanctum::actingAs($admin);
-        $res1 = $this->postJson("/api/v1/admin/venues/revisions/{$revId}/review", ['decision' => 'approve']);
+        $res1 = $this->postJson("/api/admin/venues/revisions/{$revId}/review", ['decision' => 'approve']);
         $res1->assertStatus(200);
 
         // Second review on already-settled revision returns 409
-        $res2 = $this->postJson("/api/v1/admin/venues/revisions/{$revId}/review", ['decision' => 'approve']);
+        $res2 = $this->postJson("/api/admin/venues/revisions/{$revId}/review", ['decision' => 'approve']);
         $res2->assertStatus(409);
     }
 
@@ -294,7 +294,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Immediate temporary closure (e.g. rain/maintenance)
-        $closeRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/operational-status", [
+        $closeRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/operational-status", [
             'status' => 'temporarily_closed',
             'reason' => 'Bảo trì hệ thống mặt sân sau bão.',
         ]);
@@ -306,7 +306,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         $this->assertEquals('Bảo trì hệ thống mặt sân sau bão.', $fresh->status_reason);
 
         // Immediate reopen
-        $reopenRes = $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/operational-status", [
+        $reopenRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/operational-status", [
             'status' => 'published',
         ]);
 

@@ -48,7 +48,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
             'is_active' => false,
         ]);
 
-        $res = $this->getJson('/api/v1/platform/plans');
+        $res = $this->getJson('/api/platform/plans');
         $res->assertStatus(200)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.code', 'PRO_MONTHLY')
@@ -97,7 +97,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/select-plan", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.2',
         ]);
@@ -129,7 +129,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
         ]);
 
         Sanctum::actingAs($owner);
-        $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+        $this->postJson("/api/partner/organizations/{$org->id}/subscription/select-plan", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.6',
         ])->assertOk()
@@ -157,7 +157,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
             'is_active' => true,
         ]);
 
-        $res1 = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+        $res1 = $this->postJson("/api/partner/organizations/{$org->id}/subscription/select-plan", [
             'plan_id' => $invalidPlan1->id,
             'accepted_terms_version' => '1.0',
         ]);
@@ -175,7 +175,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
             'is_active' => true,
         ]);
 
-        $res2 = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+        $res2 = $this->postJson("/api/partner/organizations/{$org->id}/subscription/select-plan", [
             'plan_id' => $invalidPlan2->id,
             'accepted_terms_version' => '1.0',
         ]);
@@ -193,7 +193,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
             'is_active' => true,
         ]);
 
-        $res3 = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+        $res3 = $this->postJson("/api/partner/organizations/{$org->id}/subscription/select-plan", [
             'plan_id' => $validPlan->id,
             'accepted_terms_version' => '2025.0', // Stale/mismatched terms!
         ]);
@@ -218,7 +218,7 @@ class PlatformPlanCatalogAndSelectionTest extends TestCase
 
         Sanctum::actingAs($nonOwner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/select-plan", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/select-plan", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '1.0',
         ]);

@@ -51,7 +51,7 @@ class PlatformTrialActivationTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Activate trial
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/activate-trial", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/activate-trial", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.TRIAL',
         ]);
@@ -70,7 +70,7 @@ class PlatformTrialActivationTest extends TestCase
         ]);
 
         // Current status reflects active trial and trial used
-        $currentRes = $this->getJson("/api/v1/partner/organizations/{$org->id}/subscription/current");
+        $currentRes = $this->getJson("/api/partner/organizations/{$org->id}/subscription/current");
         $currentRes->assertStatus(200)
             ->assertJsonPath('has_active_subscription', true)
             ->assertJsonPath('has_used_trial', true);
@@ -110,14 +110,14 @@ class PlatformTrialActivationTest extends TestCase
         Sanctum::actingAs($owner);
 
         // First trial activation succeeds
-        $res1 = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/activate-trial", [
+        $res1 = $this->postJson("/api/partner/organizations/{$org->id}/subscription/activate-trial", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.TRIAL',
         ]);
         $res1->assertStatus(201);
 
         // Second trial activation (replay) MUST be rejected!
-        $res2 = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/activate-trial", [
+        $res2 = $this->postJson("/api/partner/organizations/{$org->id}/subscription/activate-trial", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.TRIAL',
         ]);
@@ -144,7 +144,7 @@ class PlatformTrialActivationTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/activate-trial", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/activate-trial", [
             'plan_id' => $paidOnlyPlan->id,
             'accepted_terms_version' => '1.0',
         ]);
@@ -172,7 +172,7 @@ class PlatformTrialActivationTest extends TestCase
 
         Sanctum::actingAs($nonOwner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/activate-trial", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/activate-trial", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '1.0',
         ]);

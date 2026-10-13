@@ -136,7 +136,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
                 'X-Organization-ID' => (string) $this->tenantA->id,
                 'Idempotency-Key' => uniqid('walkin-'),
             ])
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
                 'customer_id' => $this->customerCharlie->id,
@@ -179,7 +179,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
                 'X-Organization-ID' => (string) $this->tenantA->id,
                 'Idempotency-Key' => uniqid('cust-book-'),
             ])
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
             ]);
@@ -197,7 +197,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
                 'X-Organization-ID' => (string) $this->tenantA->id,
                 'Idempotency-Key' => uniqid('walkin-conflict-'),
             ])
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
                 'customer_id' => $this->customerCharlie->id,
@@ -232,7 +232,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
                 'X-Organization-ID' => (string) $this->tenantA->id,
                 'Idempotency-Key' => uniqid('unauth-walkin-'),
             ])
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
                 'customer_id' => $otherUser->id,
@@ -251,7 +251,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
                 'X-Organization-ID' => (string) $this->tenantA->id,
                 'Idempotency-Key' => uniqid('cross-tenant-walkin-'),
             ])
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
                 'customer_id' => $this->customerOtherTenant->id,
@@ -272,7 +272,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
                 'X-Organization-ID' => (string) $this->tenantA->id,
                 'Idempotency-Key' => uniqid('nobalance-walkin-'),
             ])
-            ->postJson('/api/v2/reservations/checkout', [
+            ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
                 'customer_id' => $this->customerCharlie->id,

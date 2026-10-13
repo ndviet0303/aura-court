@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Contracts\Repositories\BookingRepositoryInterface;
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\RefundRepositoryInterface;
@@ -15,7 +14,6 @@ use App\Domain\Admin\Actions\ReviewPayment;
 use App\Domain\Admin\Actions\UpdateVenue;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
@@ -30,7 +28,6 @@ use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
 use App\Services\Infrastructure\AuditLogger;
-use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -42,7 +39,6 @@ class AdminController extends Controller
     public function __construct(
         private readonly VenueRepositoryInterface $venues,
         private readonly CourtBlockRepositoryInterface $courtBlocks,
-        private readonly BookingRepositoryInterface $bookings,
         private readonly PaymentRepositoryInterface $payments,
         private readonly RefundRepositoryInterface $refunds,
         private readonly AuditLogger $audits,
@@ -58,7 +54,7 @@ class AdminController extends Controller
     {
         $version = Cache::get('venues_version', 1);
         $user = $request->user();
-        $isAdminRoute = $request->is('api/*/admin/venues');
+        $isAdminRoute = $request->is('api/admin/venues');
         if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
             abort_unless($user->organizationMembers()->where('status', 'active')->whereIn('role', [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
@@ -213,27 +209,6 @@ class AdminController extends Controller
 
         return (bool) preg_match('/^(?:(?:www|maps)\.)?google\.(?:[a-z]{2,3}|(?:com|co)\.[a-z]{2})$/', $host)
             && (bool) preg_match('#^/maps(?:/|$)#', $path);
-    }
-
-    public function bookings(Request $request)
-    {
-        $user = $request->user();
-        $filters = ['status' => $request->status, 'date' => $request->date];
-
-        if ($user && ! $user->isPlatformAdmin()) {
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
-            if ($request->filled('venue_id')) {
-                $requestedVenueId = (int) $request->input('venue_id');
-                abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue.');
-                $filters['venue_id'] = $requestedVenueId;
-            } else {
-                $filters['venue_ids'] = $authorizedVenueIds;
-            }
-        } elseif ($request->filled('venue_id')) {
-            $filters['venue_id'] = (int) $request->input('venue_id');
-        }
-
-        return $this->bookings->paginateAdminBookings($filters, 30);
     }
 
     public function pricesIndex(Request $request, Court $court)
@@ -395,23 +370,6 @@ class AdminController extends Controller
         $this->audits->record($request, 'payment.reviewed', $updated, ['status' => $data['status']]);
 
         return $updated;
-    }
-
-    public function noShow(Request $request, Booking $booking)
-    {
-        $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            $venueId = $booking->court?->venue_id;
-            abort_unless($venueId && $user->canManageVenue($venueId), 403, 'Unauthorized booking venue.');
-        }
-
-        abort_unless($booking->status === 'confirmed', 409, 'Booking không ở trạng thái có thể đánh dấu no-show.');
-        abort_unless($booking->slots()->where('starts_at', '>', now()->utc())->doesntExist(), 409, 'Chưa kết thúc toàn bộ khung giờ.');
-        $this->bookings->updateStatus($booking, 'no_show');
-        app(LegacyBookingBackfillService::class)->syncProjection($booking->fresh()); // Phase A readers use the mirror
-        $this->audits->record($request, 'booking.no_show', $booking);
-
-        return $booking->fresh(['court', 'slots']);
     }
 
     public function report(Request $request)

@@ -135,7 +135,7 @@ class FinalMutationEligibilityAndCacheTest extends TestCase
 
         Sanctum::actingAs($customer);
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->postJson('/api/bookings', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);

@@ -610,7 +610,7 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
 
     // 2. Test Receipt Print formatting endpoint via authenticated API call
     const printRes = await page.request.post(
-      `${manifest.backend.url}/api/v2/pos/orders/${arranged.order_id}/receipt/print`,
+      `${manifest.backend.url}/api/pos/orders/${arranged.order_id}/receipt/print`,
       {
         headers: {
           Authorization: `Bearer ${arranged.token}`,
@@ -630,7 +630,7 @@ test.describe('P1: Quản lý hàng hóa POS, Biến động kho, Mặt hàng cu
 
     // 3. Test Receipt Send endpoint (email dispatch)
     const sendRes = await page.request.post(
-      `${manifest.backend.url}/api/v2/pos/orders/${arranged.order_id}/receipt/send`,
+      `${manifest.backend.url}/api/pos/orders/${arranged.order_id}/receipt/send`,
       {
         headers: {
           Authorization: `Bearer ${arranged.token}`,

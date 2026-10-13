@@ -1,16 +1,25 @@
-import type { V2HoldReservationPayload, V2Reservation } from '../types/v2Reservation'
+import type { HoldReservationPayload, PriceQuote, Reservation } from '../types/reservation'
 
-type Displayable = Pick<V2Reservation, 'code' | 'status' | 'legacy_mapping'>
+type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping'>
 
-// A mirrored V1 booking is stored as `LEGACY-<code>`; customers only ever see the original code.
+// A mirrored legacy booking is stored as `LEGACY-<code>`; customers only ever see the original code.
 export const displayCode = (r: Displayable): string => r.legacy_mapping?.[0]?.legacy_code ?? r.code
 
 export const displayStatus = (r: Displayable): string =>
   r.status === 'legacy' ? (r.legacy_mapping?.[0]?.legacy_status ?? r.status) : r.status
 
-// Mirrors POST /reviews eligibility: V2 statuses, or the legacy booking status for a terminal mirror.
+// Mirrors POST /reviews eligibility: reservation statuses, or the legacy booking status for a terminal mirror.
 export const canReview = (r: Displayable): boolean =>
   ['confirmed', 'in_use', 'completed', 'no_show'].includes(displayStatus(r))
+
+// The discount lines (i18n label and amount) a priced quote carries, for the price breakdowns.
+export const quoteDiscounts = (snapshot?: PriceQuote['benefit_snapshot']) =>
+  (
+    [
+      ['reservations.calculator.membershipDiscount', snapshot?.membership_discount_amount],
+      ['reservations.calculator.couponDiscount', snapshot?.coupon_discount_amount],
+    ] as const
+  ).flatMap(([label, amount]) => (amount ? [{ label, amount }] : []))
 
 export type LoyaltySelection = {
   loyalty_points?: number
@@ -20,7 +29,7 @@ export type LoyaltySelection = {
 } | null
 
 // The checkout API rejects loyalty_points < 1, so loyalty fields are sent only for a real redemption.
-export function loyaltyFields(selection?: LoyaltySelection): V2HoldReservationPayload {
+export function loyaltyFields(selection?: LoyaltySelection): HoldReservationPayload {
   const points = selection?.loyalty_points ?? 0
   if (points <= 0) return {}
   return {

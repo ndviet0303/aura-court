@@ -356,7 +356,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'checkout-with-unpaid-tab-'.uniqid(),
             ])
-            ->postJson('/api/v2/attendance/check-out', [
+            ->postJson('/api/attendance/check-out', [
                 'code' => $reservation->code,
                 'notes' => 'Customer leaves early, tab will be paid later',
             ]);
@@ -385,7 +385,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'post-checkout-tab-settle-'.uniqid(),
             ])
-            ->postJson("/api/v2/service-tabs/{$tab->id}/settle", [
+            ->postJson("/api/service-tabs/{$tab->id}/settle", [
                 'payment_method' => 'cash',
                 'cash_tendered' => 150000,
             ]);
@@ -424,7 +424,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
             // 2. Customer or outsider trying to confirm court ready is REJECTED with 403
             $outsiderAttempt = $this->actingAs($fixture['outsider'])
                 ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-                ->postJson("/api/v2/attendance/courts/{$fixture['court1']->id}/confirm-ready", [
+                ->postJson("/api/attendance/courts/{$fixture['court1']->id}/confirm-ready", [
                     'notes' => 'Attempted by customer',
                 ]);
             $outsiderAttempt->assertStatus(403);
@@ -432,7 +432,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
             // 3. Authorized staff confirms court ready: SUCCEEDS
             $staffConfirm = $this->actingAs($fixture['staff'])
                 ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-                ->postJson("/api/v2/attendance/courts/{$fixture['court1']->id}/confirm-ready", [
+                ->postJson("/api/attendance/courts/{$fixture['court1']->id}/confirm-ready", [
                     'notes' => 'Net inspected, court swept clean and ready',
                 ]);
             $staffConfirm->assertOk();
@@ -459,7 +459,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         // Trying to mark no-show before window expiration: REJECTED with 422
         $prematureResponse = $this->actingAs($fixture['staff'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson('/api/v2/attendance/no-show', [
+            ->postJson('/api/attendance/no-show', [
                 'code' => $currentRes->code,
                 'reason' => 'Customer late 5 minutes',
             ]);
@@ -472,7 +472,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
 
         $validNoShow = $this->actingAs($fixture['staff'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson('/api/v2/attendance/no-show', [
+            ->postJson('/api/attendance/no-show', [
                 'code' => $pastRes->code,
                 'reason' => 'Customer failed to appear within 30-minute grace window',
             ]);
@@ -495,7 +495,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         // 1. Reassign to Court 2 due to light fixture issue on Court 1: SUCCEEDS
         $reassignRes = $this->actingAs($fixture['staff'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson('/api/v2/attendance/reassign-court', [
+            ->postJson('/api/attendance/reassign-court', [
                 'code' => $reservation->code,
                 'new_court_id' => $fixture['court2']->id,
                 'reason' => 'Light fixture flickering on Court 1',
@@ -512,7 +512,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         $resOnCourt1 = $this->createConfirmedReservation($fixture, $fixture['court1'], $fixture['secondary'], $now);
         $conflictReassign = $this->actingAs($fixture['staff'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson('/api/v2/attendance/reassign-court', [
+            ->postJson('/api/attendance/reassign-court', [
                 'code' => $reservation->code,
                 'new_court_id' => $fixture['court1']->id,
                 'reason' => 'Try to move back to Court 1',
@@ -524,7 +524,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         $endsAt = $reservation->fresh()->slots->max('ends_at');
         $this->actingAs($fixture['staff'])
             ->withHeaders(['X-Organization-ID' => (string) $fixture['organization']->id])
-            ->postJson('/api/v2/attendance/extend-session', [
+            ->postJson('/api/attendance/extend-session', [
                 'code' => $reservation->code,
                 'additional_minutes' => 30,
             ])

@@ -2,13 +2,9 @@
 
 namespace Tests\Feature\Payment;
 
-use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\Journal;
-use App\Models\LegacyBookingMapping;
-use App\Models\LegacyBookingSlotMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentReceipt;
@@ -41,7 +37,7 @@ class OwnerRefundObligationTest extends TestCase
 
         Sanctum::actingAs($payer);
         $quote = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->getJson("/api/v2/reservations/{$reservation->code}/refund-quote?".http_build_query(['slot_ids' => [$slotIds[0]]]))
+            ->getJson("/api/reservations/{$reservation->code}/refund-quote?".http_build_query(['slot_ids' => [$slotIds[0]]]))
             ->assertOk()
             ->assertJsonPath('data.calculation.gross_amount', 80000)
             ->assertJsonPath('data.calculation.fee_amount', 8000)
@@ -59,7 +55,7 @@ class OwnerRefundObligationTest extends TestCase
             ],
         ];
         $created = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", $request)
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", $request)
             ->assertCreated()
             ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_REQUESTED)
             ->assertJsonPath('data.gross_amount', 80000)
@@ -76,18 +72,18 @@ class OwnerRefundObligationTest extends TestCase
         $this->assertStringNotContainsString('1234567890', (string) OwnerRefundObligation::findOrFail($refundId)->recipient_ciphertext);
 
         $retry = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", $request)
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", $request)
             ->assertCreated()
             ->assertJsonPath('data.id', $refundId);
         $this->assertDatabaseCount('owner_refund_evidence', 1);
-        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", [
+        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)->postJson("/api/reservations/{$reservation->code}/refund-requests", [
             ...$request,
             'idempotency_key' => 'refund-overlap',
         ])->assertConflict();
 
         Sanctum::actingAs($owner);
         $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/approve")
+            ->postJson("/api/refund-requests/{$refundId}/approve")
             ->assertOk()
             ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_APPROVED);
         $this->assertSame('confirmed', $reservation->fresh()->status);
@@ -96,7 +92,7 @@ class OwnerRefundObligationTest extends TestCase
         $this->assertSame(1, (int) Coupon::findOrFail($fixture['coupon']->id)->usage_count);
         $this->assertSame(-5, (int) PointLedger::where('organization_id', $reservation->organization_id)->where('user_id', $payer->id)->sum('delta'));
 
-        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)->postJson("/api/v2/refund-requests/{$refundId}/report-execution", [
+        $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)->postJson("/api/refund-requests/{$refundId}/report-execution", [
             'transfer_reference' => 'OWNER-BANK-TRANSFER-1',
             'evidence' => 'Transferred through the bank app.',
         ])->assertOk()->assertJsonPath('data.status', OwnerRefundObligation::STATUS_OWNER_REPORTED);
@@ -104,7 +100,7 @@ class OwnerRefundObligationTest extends TestCase
 
         Sanctum::actingAs($payer);
         $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/acknowledge", ['accepted' => true])
+            ->postJson("/api/refund-requests/{$refundId}/acknowledge", ['accepted' => true])
             ->assertOk()
             ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_ACKNOWLEDGED);
         $refundJournal = Journal::query()->where('event_type', 'owner.direct_refund_acknowledged')->firstOrFail();
@@ -113,7 +109,7 @@ class OwnerRefundObligationTest extends TestCase
         $this->assertSame(72000, (int) $refundJournal->total_debit);
         $this->assertDatabaseCount('wallet_transactions', 0);
 
-        $second = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", [
+        $second = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)->postJson("/api/reservations/{$reservation->code}/refund-requests", [
             ...$request,
             'slot_ids' => [$slotIds[1]],
             'idempotency_key' => 'refund-second-hour',
@@ -121,7 +117,7 @@ class OwnerRefundObligationTest extends TestCase
         $secondId = (int) $second->json('data.id');
         Sanctum::actingAs($owner);
         $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$secondId}/approve")->assertOk();
+            ->postJson("/api/refund-requests/{$secondId}/approve")->assertOk();
 
         $reservation->refresh();
         $this->assertSame('cancelled', $reservation->status);
@@ -130,67 +126,6 @@ class OwnerRefundObligationTest extends TestCase
         $this->assertSame(160000, (int) OwnerRefundObligation::where('reservation_id', $reservation->id)->sum('gross_amount'));
         $this->assertSame(1, Journal::query()->where('event_type', 'owner.direct_refund_acknowledged')->count());
         $this->assertSame(160000, (int) OwnerPaymentReceipt::query()->where('payment_attempt_id', $fixture['attempt']->id)->value('amount'));
-    }
-
-    public function test_v1_booking_refund_routes_translate_legacy_slot_ids_to_the_same_canonical_reservation(): void
-    {
-        $fixture = $this->paidReservation();
-        $reservation = $fixture['reservation'];
-        $payer = $fixture['payer'];
-        $booking = Booking::create([
-            'code' => 'BK-DIRECT-REFUND-771',
-            'user_id' => $payer->id,
-            'court_id' => $reservation->court_id,
-            'total_amount' => 160000,
-            'status' => 'confirmed',
-            'payment_model' => 'direct_owner_v1',
-            'policy_snapshot' => ['venue_booking_policy' => $reservation->metadata['booking_policy_snapshot']],
-            'price_snapshot' => [],
-        ]);
-        $mapping = LegacyBookingMapping::create([
-            'organization_id' => $reservation->organization_id,
-            'reservation_id' => $reservation->id,
-            'legacy_booking_id' => $booking->id,
-            'legacy_code' => 'BK-DIRECT-REFUND-771',
-            'legacy_status' => 'confirmed',
-            'legacy_total_amount' => 160000,
-            'legacy_slot_count' => 2,
-            'source_checksum' => hash('sha256', 'v1-direct-refund'),
-            'migrated_at' => now(),
-        ]);
-        $legacySlots = collect();
-        foreach ($fixture['slots'] as $index => $slot) {
-            $legacy = BookingSlot::create([
-                'booking_id' => $booking->id,
-                'court_id' => $slot->court_id,
-                'starts_at' => $slot->starts_at,
-                'ends_at' => $slot->ends_at,
-                'unit_price' => $slot->unit_price,
-                'status' => 'confirmed',
-            ]);
-            LegacyBookingSlotMapping::create([
-                'organization_id' => $reservation->organization_id,
-                'legacy_booking_mapping_id' => $mapping->id,
-                'reservation_slot_id' => $slot->id,
-                'legacy_booking_slot_id' => $legacy->id,
-                'source_checksum' => hash('sha256', 'legacy-slot-'.$index),
-            ]);
-            $legacySlots->push($legacy);
-        }
-        Sanctum::actingAs($payer);
-        $quote = $this->getJson('/api/v1/bookings/BK-DIRECT-REFUND-771/refund-quote?'.http_build_query(['slot_ids' => [$legacySlots[0]->id]]))
-            ->assertOk()
-            ->assertJsonPath('data.calculation.refund_amount', 72000);
-        $this->assertSame($reservation->code, $quote->json('data.reservation_code'));
-
-        $created = $this->postJson('/api/v1/bookings/BK-DIRECT-REFUND-771/refund-requests', [
-            'slot_ids' => [$legacySlots[0]->id],
-            'reason' => 'V1 partial cancellation',
-            'idempotency_key' => 'v1-refund-771',
-            'recipient' => ['bank_code' => 'MBBank', 'account_name' => 'Payer Name', 'account_number' => '1234567890'],
-        ])->assertCreated();
-        $this->assertSame([$fixture['slots'][0]->id], $created->json('data.slot_ids'));
-        $this->assertSame([$legacySlots[0]->id], $created->json('data.legacy_slot_ids'));
     }
 
     private function paidReservation(): array
@@ -321,7 +256,7 @@ class OwnerRefundObligationTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $secret),

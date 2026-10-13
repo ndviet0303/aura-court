@@ -816,7 +816,7 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,
@@ -880,7 +880,7 @@ test.describe('P1: Sàn nhượng vé, Chuyển quyền đặt sân, Thẩm quy�
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,

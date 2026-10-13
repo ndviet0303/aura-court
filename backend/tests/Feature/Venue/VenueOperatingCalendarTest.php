@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueOperatingSchedule;
 use App\Models\VenueScheduleException;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
@@ -93,7 +94,7 @@ class VenueOperatingCalendarTest extends TestCase
             'is_active' => true,
         ]);
         $slotStart = Carbon::parse("{$date} 09:00", 'Asia/Ho_Chi_Minh')->toIso8601String();
-        $base = "/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}";
+        $base = "/api/partner/organizations/{$organization->id}/venues/{$venue->id}";
         $weeklyHours = [];
         for ($weekday = 1; $weekday <= 7; $weekday++) {
             $weeklyHours[(string) $weekday] = [
@@ -111,16 +112,17 @@ class VenueOperatingCalendarTest extends TestCase
             ->assertOk()
             ->assertJsonPath("data.weekly_hours.{$dayId}.intervals.0.start", '06:00');
 
-        $availabilityUrl = "/api/v1/availability?court_id={$court->id}&date={$date}";
+        $availabilityUrl = "/api/availability?court_id={$court->id}&date={$date}";
         $availability = $this->getJson($availabilityUrl)->assertOk();
         $this->assertFalse($availability->json('0.available'));
 
-        $this->postJson('/api/v1/bookings', [
+        $this->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
-        ])->assertUnprocessable();
-        $this->assertDatabaseMissing('bookings', ['court_id' => $court->id]);
-        $this->postJson('/api/v2/price-quotes', [
+        ], ['Idempotency-Key' => 'calendar-outside-hours-checkout'])
+            ->assertUnprocessable();
+        $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
+        $this->postJson('/api/price-quotes', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
         ], ['Idempotency-Key' => 'calendar-outside-hours'])
@@ -134,7 +136,7 @@ class VenueOperatingCalendarTest extends TestCase
             'intervals' => [['start' => '08:00', 'end' => '10:00']],
         ])->assertCreated();
         $this->getJson($availabilityUrl)->assertOk()->assertJsonPath('0.available', true);
-        $this->postJson('/api/v2/price-quotes', [
+        $this->postJson('/api/price-quotes', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
         ], ['Idempotency-Key' => 'calendar-special-hours'])
@@ -147,7 +149,7 @@ class VenueOperatingCalendarTest extends TestCase
             'timezone' => 'Asia/Ho_Chi_Minh',
         ])->assertCreated();
         $this->getJson($availabilityUrl)->assertOk()->assertJsonPath('0.available', false);
-        $this->postJson('/api/v2/price-quotes', [
+        $this->postJson('/api/price-quotes', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
         ], ['Idempotency-Key' => 'calendar-closed-exception'])
@@ -196,19 +198,19 @@ class VenueOperatingCalendarTest extends TestCase
             ['start' => '11:00', 'end' => '13:00'],
         ]];
 
-        $this->putJson("/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}/operating-schedule", [
+        $this->putJson("/api/partner/organizations/{$organization->id}/venues/{$venue->id}/operating-schedule", [
             'timezone' => 'Asia/Ho_Chi_Minh',
             'weekly_hours' => $weeklyHours,
         ])->assertUnprocessable();
 
-        $this->putJson("/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}/operating-schedule", [
+        $this->putJson("/api/partner/organizations/{$organization->id}/venues/{$venue->id}/operating-schedule", [
             'court_id' => $otherCourt->id,
             'timezone' => 'Asia/Ho_Chi_Minh',
             'weekly_hours' => $weeklyHours,
         ])->assertForbidden();
     }
 
-    public function test_schedule_exception_and_downtime_cannot_hide_confirmed_v1_or_v2_commitments(): void
+    public function test_schedule_exception_and_downtime_cannot_hide_confirmed_legacy_or_reservation_commitments(): void
     {
         $owner = User::factory()->create(['role' => 'customer']);
         $customer = User::factory()->create(['role' => 'customer']);
@@ -275,14 +277,16 @@ class VenueOperatingCalendarTest extends TestCase
             'total_amount' => 100000,
             'status' => 'confirmed',
         ]);
+        // The next hour: the mirror's reservation slot may not overlap RES-CALENDAR-PROTECTED (exclusion constraint).
         BookingSlot::create([
             'booking_id' => $booking->id,
             'court_id' => $court->id,
-            'starts_at' => $start->copy()->utc(),
-            'ends_at' => $end->copy()->utc(),
+            'starts_at' => $end->copy()->utc(),
+            'ends_at' => $end->copy()->addHour()->utc(),
             'unit_price' => 100000,
             'status' => 'confirmed',
         ]);
+        app(LegacyBookingBackfillService::class)->backfillBooking($booking);
         $reservation = Reservation::create([
             'organization_id' => $organization->id,
             'user_id' => $customer->id,
@@ -304,7 +308,7 @@ class VenueOperatingCalendarTest extends TestCase
         ]);
 
         Sanctum::actingAs($owner);
-        $base = "/api/v1/partner/organizations/{$organization->id}/venues/{$venue->id}";
+        $base = "/api/partner/organizations/{$organization->id}/venues/{$venue->id}";
         $closedHours = $hours;
         $closedHours[(string) $weekday] = ['closed' => false, 'intervals' => [['start' => '06:00', 'end' => '08:00']]];
 
@@ -312,10 +316,11 @@ class VenueOperatingCalendarTest extends TestCase
             'timezone' => 'Asia/Ho_Chi_Minh',
             'weekly_hours' => $closedHours,
         ])->assertStatus(409)
-            ->assertJsonFragment(['BK-CALENDAR-PROTECTED'])
+            ->assertJsonFragment(['LEGACY-BK-CALENDAR-PROTECTED'])
             ->assertJsonFragment(['RES-CALENDAR-PROTECTED']);
         $this->assertSame(1, VenueOperatingSchedule::where('venue_id', $venue->id)->where('scope_key', 'venue')->value('version'));
         $this->assertSame('confirmed', $booking->fresh()->status);
+        $this->assertSame('confirmed', Reservation::where('code', 'LEGACY-BK-CALENDAR-PROTECTED')->value('status'));
         $this->assertSame('confirmed', $reservation->fresh()->status);
 
         $this->putJson("{$base}/schedule-exceptions", [
@@ -324,16 +329,16 @@ class VenueOperatingCalendarTest extends TestCase
             'type' => 'closed',
             'timezone' => 'Asia/Ho_Chi_Minh',
         ])->assertStatus(409)
-            ->assertJsonFragment(['BK-CALENDAR-PROTECTED'])
+            ->assertJsonFragment(['LEGACY-BK-CALENDAR-PROTECTED'])
             ->assertJsonFragment(['RES-CALENDAR-PROTECTED']);
         $this->assertSame(0, VenueScheduleException::where('venue_id', $venue->id)->count());
 
-        $this->postJson("/api/v1/admin/courts/{$court->id}/blocks", [
+        $this->postJson("/api/admin/courts/{$court->id}/blocks", [
             'starts_at' => $start->copy()->toIso8601String(),
-            'ends_at' => $end->copy()->toIso8601String(),
+            'ends_at' => $end->copy()->addHour()->toIso8601String(),
             'reason' => 'Maintenance',
         ])->assertStatus(409)
-            ->assertJsonFragment(['BK-CALENDAR-PROTECTED'])
+            ->assertJsonFragment(['LEGACY-BK-CALENDAR-PROTECTED'])
             ->assertJsonFragment(['RES-CALENDAR-PROTECTED']);
     }
 }

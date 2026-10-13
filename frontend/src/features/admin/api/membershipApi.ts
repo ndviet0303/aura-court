@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type {
   MembershipPlan,
   LoyaltyConversionConfig,
@@ -9,29 +9,29 @@ import type {
 
 export const membershipApi = {
   // Membership Plans
-  getPlans: () => apiV2.get<MembershipPlan[]>('/admin/memberships/plans'),
+  getPlans: () => api.get<MembershipPlan[]>('/admin/memberships/plans'),
   createPlan: (payload: Partial<MembershipPlan>) =>
-    apiV2.post<MembershipPlan>('/admin/memberships/plans', payload),
+    api.post<MembershipPlan>('/admin/memberships/plans', payload),
   updatePlan: (id: string | number, payload: Partial<MembershipPlan>) =>
-    apiV2.patch<MembershipPlan>(`/admin/memberships/plans/${id}`, payload),
+    api.patch<MembershipPlan>(`/admin/memberships/plans/${id}`, payload),
   archivePlan: (id: string | number) =>
-    apiV2.post<{ message: string }>(`/admin/memberships/plans/${id}/archive`, {}),
+    api.post<{ message: string }>(`/admin/memberships/plans/${id}/archive`, {}),
 
   // Loyalty Points Configuration
-  getLoyaltyConfig: () => apiV2.get<LoyaltyConversionConfig>('/admin/memberships/loyalty-config'),
+  getLoyaltyConfig: () => api.get<LoyaltyConversionConfig>('/admin/memberships/loyalty-config'),
   updateLoyaltyConfig: (payload: Partial<LoyaltyConversionConfig>) =>
-    apiV2.patch<LoyaltyConversionConfig>('/admin/memberships/loyalty-config', payload),
+    api.patch<LoyaltyConversionConfig>('/admin/memberships/loyalty-config', payload),
 
   // Multiplier Rules
-  getMultiplierRules: () => apiV2.get<MultiplierRule[]>('/admin/memberships/multiplier-rules'),
+  getMultiplierRules: () => api.get<MultiplierRule[]>('/admin/memberships/multiplier-rules'),
   createMultiplierRule: (payload: Partial<MultiplierRule>) =>
-    apiV2.post<MultiplierRule>('/admin/memberships/multiplier-rules', payload),
+    api.post<MultiplierRule>('/admin/memberships/multiplier-rules', payload),
   updateMultiplierRule: (id: string, payload: Partial<MultiplierRule>) =>
-    apiV2.patch<MultiplierRule>(`/admin/memberships/multiplier-rules/${id}`, payload),
+    api.patch<MultiplierRule>(`/admin/memberships/multiplier-rules/${id}`, payload),
   deleteMultiplierRule: (id: string) =>
-    apiV2.delete<{ message: string }>(`/admin/memberships/multiplier-rules/${id}`),
+    api.delete<{ message: string }>(`/admin/memberships/multiplier-rules/${id}`),
 
   // Version Audits & History
-  getVersionHistory: () => apiV2.get<PlanVersionAudit[]>('/admin/memberships/version-history'),
-  getStats: () => apiV2.get<MembershipKpiStats>('/admin/memberships/stats'),
+  getVersionHistory: () => api.get<PlanVersionAudit[]>('/admin/memberships/version-history'),
+  getStats: () => api.get<MembershipKpiStats>('/admin/memberships/stats'),
 }

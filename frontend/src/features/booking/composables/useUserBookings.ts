@@ -1,13 +1,13 @@
 import { ref, computed } from 'vue'
 import { bookingApi } from '../api/bookingApi'
-import type { V2Reservation } from '../types/v2Reservation'
+import type { Reservation } from '../types/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { displayCode, displayStatus } from '../utils/reservation'
 
 export type BookingTab = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function useUserBookings() {
-  const bookings = ref<V2Reservation[]>([])
+  const bookings = ref<Reservation[]>([])
   const activeTab = ref<BookingTab>('all')
   const searchQuery = ref('')
   const error = ref('')
@@ -16,14 +16,14 @@ export function useUserBookings() {
 
   // Review modal state
   const showReviewModal = ref(false)
-  const reviewingBooking = ref<V2Reservation | null>(null)
+  const reviewingBooking = ref<Reservation | null>(null)
   const reviewRating = ref(5)
   const reviewBody = ref('')
   const submittingReview = ref(false)
 
   // QR Check-in modal state
   const showQrModal = ref(false)
-  const qrBooking = ref<V2Reservation | null>(null)
+  const qrBooking = ref<Reservation | null>(null)
 
   async function load() {
     loading.value = true
@@ -39,7 +39,7 @@ export function useUserBookings() {
   }
 
   // Statuses are read through the display rule, so a legacy mirror buckets by its booking status.
-  function isCompleted(b: V2Reservation): boolean {
+  function isCompleted(b: Reservation): boolean {
     const status = displayStatus(b)
     if (status === 'completed') return true
     if (status === 'confirmed' && b.slots && b.slots.length > 0) {
@@ -50,14 +50,14 @@ export function useUserBookings() {
     return false
   }
 
-  function isUpcoming(b: V2Reservation): boolean {
+  function isUpcoming(b: Reservation): boolean {
     const status = displayStatus(b)
     if (status === 'held') return true
     if (status === 'confirmed' || status === 'in_use') return !isCompleted(b)
     return false
   }
 
-  function isCancelled(b: V2Reservation): boolean {
+  function isCancelled(b: Reservation): boolean {
     return ['cancelled', 'expired', 'refunded'].includes(displayStatus(b))
   }
 
@@ -98,7 +98,7 @@ export function useUserBookings() {
   }
 
   // QR Modal Handlers
-  function openQr(b: V2Reservation) {
+  function openQr(b: Reservation) {
     qrBooking.value = b
     showQrModal.value = true
   }
@@ -109,7 +109,7 @@ export function useUserBookings() {
   }
 
   // Review Modal Handlers
-  function openReview(b: V2Reservation) {
+  function openReview(b: Reservation) {
     reviewingBooking.value = b
     reviewRating.value = b.review?.rating || 5
     reviewBody.value = b.review?.body || ''

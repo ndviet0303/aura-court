@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import RecurringBookingView from '../views/RecurringBookingView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 vi.mock('vue-router', () => ({
@@ -17,10 +17,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
   },
@@ -54,10 +50,6 @@ describe('RecurringBookingView', () => {
           },
         ]
       }
-      return []
-    })
-
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
       if (url === '/recurring-series') {
         return {
           data: [
@@ -162,7 +154,7 @@ describe('RecurringBookingView', () => {
         },
       ],
     }
-    vi.mocked(apiV2.post).mockImplementation(async (url: string) => {
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
       if (url === '/recurring-series/preview') return preview
       if (url === '/recurring-series') {
         return {
@@ -193,7 +185,7 @@ describe('RecurringBookingView', () => {
     await wrapper.find('form.wizard-form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(
+    expect(api.post).toHaveBeenCalledWith(
       '/recurring-series',
       expect.objectContaining({
         court_id: 1,
@@ -240,7 +232,7 @@ describe('RecurringBookingView', () => {
         },
       ],
     }
-    vi.mocked(apiV2.post).mockImplementation(async (url: string, body?: unknown) => {
+    vi.mocked(api.post).mockImplementation(async (url: string, body?: unknown) => {
       if (url === '/recurring-series/preview') return preview
       if (url === '/recurring-series') {
         if ((body as { accept_partial?: boolean })?.accept_partial) {
@@ -289,7 +281,7 @@ describe('RecurringBookingView', () => {
     await wrapper.find('[data-testid="recurring-accept-remaining"]').trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenNthCalledWith(
+    expect(api.post).toHaveBeenNthCalledWith(
       3,
       '/recurring-series',
       expect.objectContaining({ accept_partial: true }),

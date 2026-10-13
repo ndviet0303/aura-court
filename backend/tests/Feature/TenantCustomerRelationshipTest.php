@@ -37,7 +37,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // 1. Create registered customer relationship
         $res1 = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Nguyen Van A (Customer)',
                 'user_id' => $registeredUser->id,
                 'phone' => '0901112222',
@@ -61,7 +61,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // 2. Create guest contact persistence (user_id is null)
         $res2 = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Tran Thi Guest',
                 'phone' => '0909998888',
                 'email' => 'guest@example.com',
@@ -99,7 +99,7 @@ class TenantCustomerRelationshipTest extends TestCase
 
         $response = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Pure Walk-in Guest',
                 'phone' => '0987654321',
                 'is_guest' => true,
@@ -130,7 +130,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // First customer record succeeds
         $this->actingAs($staff)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Player One',
                 'user_id' => $user->id,
                 'phone' => '0912345678',
@@ -140,7 +140,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Duplicate user_id in same tenant fails
         $dupUserRes = $this->actingAs($staff)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Player One Duplicate',
                 'user_id' => $user->id,
                 'phone' => '0912345679',
@@ -152,7 +152,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Duplicate phone in same tenant fails
         $dupPhoneRes = $this->actingAs($staff)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Guest With Same Phone',
                 'phone' => '0912345678',
                 'is_guest' => true,
@@ -189,7 +189,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // 1. Create customer relationship in Org A
         $this->actingAs($staffA)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Shared Customer in Org A',
                 'user_id' => $sharedUser->id,
                 'phone' => $sharedPhone,
@@ -199,7 +199,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // 2. Coexistence: same user and same phone in Org B succeeds without conflict
         $this->actingAs($staffB)
             ->withHeader('X-Organization-ID', (string) $orgB->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Shared Customer in Org B',
                 'user_id' => $sharedUser->id,
                 'phone' => $sharedPhone,
@@ -209,7 +209,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // 3. Isolation: Querying Org A returns only Org A's customer records
         $listResA = $this->actingAs($staffA)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->getJson('/api/v2/customers');
+            ->getJson('/api/customers');
 
         $listResA->assertOk()
             ->assertJsonPath('organization_id', $orgA->id)
@@ -219,7 +219,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Isolation: Querying Org B returns only Org B's customer records
         $listResB = $this->actingAs($staffB)
             ->withHeader('X-Organization-ID', (string) $orgB->id)
-            ->getJson('/api/v2/customers');
+            ->getJson('/api/customers');
 
         $listResB->assertOk()
             ->assertJsonPath('organization_id', $orgB->id)
@@ -248,7 +248,7 @@ class TenantCustomerRelationshipTest extends TestCase
 
         $listRes = $this->actingAs($manager)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/customers');
+            ->getJson('/api/customers');
 
         $listRes->assertOk()
             ->assertJsonCount(0, 'customers');
@@ -257,7 +257,7 @@ class TenantCustomerRelationshipTest extends TestCase
         $player = User::factory()->create(['name' => 'Customer Alice']);
         $this->actingAs($manager)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Customer Alice',
                 'user_id' => $player->id,
                 'phone' => '0911223344',
@@ -273,7 +273,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // 4. Customer Alice cannot perform employee actions (e.g. creating customers)
         $this->actingAs($player)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/customers', [
+            ->postJson('/api/customers', [
                 'name' => 'Unauthorized Attempt',
                 'phone' => '0999999999',
             ])
@@ -312,7 +312,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Search by phone
         $resPhone = $this->actingAs($owner)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/customers?q=090123');
+            ->getJson('/api/customers?q=090123');
 
         $resPhone->assertOk()
             ->assertJsonCount(1, 'customers')
@@ -321,7 +321,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Search by name
         $resName = $this->actingAs($owner)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/customers?q=Dung');
+            ->getJson('/api/customers?q=Dung');
 
         $resName->assertOk()
             ->assertJsonCount(1, 'customers')
@@ -330,7 +330,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Search with no match
         $resEmpty = $this->actingAs($owner)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/customers?q=NonExistent');
+            ->getJson('/api/customers?q=NonExistent');
 
         $resEmpty->assertOk()
             ->assertJsonCount(0, 'customers');
@@ -419,7 +419,7 @@ class TenantCustomerRelationshipTest extends TestCase
         // Query customers as cashier
         $response = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->getJson('/api/v2/customers');
+            ->getJson('/api/customers');
 
         $response->assertOk()
             ->assertJsonCount(3, 'customers');
@@ -485,17 +485,17 @@ class TenantCustomerRelationshipTest extends TestCase
             ->withHeader('X-Organization-ID', (string) $o->id)
             ->getJson($uri);
 
-        $get($staff, $org, '/api/v2/customers')->assertOk()->assertJsonCount(1, 'customers');
-        $get($staff, $org, "/api/v2/customers/{$customer->id}")->assertOk()->assertJsonPath('customer.id', $customer->id);
+        $get($staff, $org, '/api/customers')->assertOk()->assertJsonCount(1, 'customers');
+        $get($staff, $org, "/api/customers/{$customer->id}")->assertOk()->assertJsonPath('customer.id', $customer->id);
 
-        foreach (['/api/v2/customers', "/api/v2/customers/{$customer->id}"] as $uri) {
+        foreach (['/api/customers', "/api/customers/{$customer->id}"] as $uri) {
             $get($customerMember, $org, $uri)->assertForbidden();
             $get($otherStaff, $org, $uri)->assertForbidden()->assertJsonPath('code', 'ORGANIZATION_ACCESS_DENIED');
             $get($stranger, $org, $uri)->assertForbidden()->assertJsonPath('code', 'ORGANIZATION_ACCESS_DENIED');
         }
 
         // Staff of another tenant reading through their own tenant cannot reach this tenant's customer.
-        $get($otherStaff, $otherOrg, "/api/v2/customers/{$customer->id}")->assertNotFound();
-        $get($otherStaff, $otherOrg, '/api/v2/customers')->assertOk()->assertJsonCount(0, 'customers');
+        $get($otherStaff, $otherOrg, "/api/customers/{$customer->id}")->assertNotFound();
+        $get($otherStaff, $otherOrg, '/api/customers')->assertOk()->assertJsonCount(0, 'customers');
     }
 }

@@ -60,7 +60,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
             'is_active' => true,
         ]);
 
-        $inviteRes = $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $inviteRes = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'newstaff@alpha.local',
             'role' => OrganizationMember::ROLE_VENUE_MANAGER,
             'venue_id' => $venue->id,
@@ -120,7 +120,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         ]);
 
         // Send invite
-        $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'manager@alpha.local',
             'role' => OrganizationMember::ROLE_VENUE_MANAGER,
             'venue_id' => $venue->id,
@@ -133,7 +133,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $this->assertFalse($invitee->hasRoleInOrganization($org->id, OrganizationMember::ROLE_VENUE_MANAGER));
 
         // 2. First accept by token
-        $acceptRes1 = $this->actingAs($invitee)->postJson("/api/v1/invitations/{$invitation->token}/accept");
+        $acceptRes1 = $this->actingAs($invitee)->postJson("/api/invitations/{$invitation->token}/accept");
         $acceptRes1->assertOk();
         $acceptRes1->assertJsonPath('invitation.status', 'accepted');
         $acceptRes1->assertJsonPath('member.status', 'active');
@@ -159,7 +159,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         ]);
 
         // 3. Second accept (duplicate call): MUST be idempotent!
-        $acceptRes2 = $this->actingAs($invitee)->postJson("/api/v1/invitations/{$invitation->token}/accept");
+        $acceptRes2 = $this->actingAs($invitee)->postJson("/api/invitations/{$invitation->token}/accept");
         $acceptRes2->assertOk();
         $acceptRes2->assertJsonPath('invitation.status', 'accepted');
         $acceptRes2->assertJsonPath('member.status', 'active');
@@ -182,7 +182,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'victim@alpha.local',
             'role' => OrganizationMember::ROLE_STAFF,
         ])->assertStatus(201);
@@ -191,7 +191,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $stranger = $this->createCustomerUser('stranger@other.local', 'Stranger');
 
         $this->actingAs($stranger)
-            ->postJson("/api/v1/invitations/{$invitation->token}/accept")
+            ->postJson("/api/invitations/{$invitation->token}/accept")
             ->assertStatus(403);
 
         $this->assertSame('pending', $invitation->fresh()->status);
@@ -211,7 +211,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'expired_user@alpha.local',
             'role' => OrganizationMember::ROLE_STAFF,
         ])->assertStatus(201);
@@ -222,7 +222,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $invitee = User::where('email', 'expired_user@alpha.local')->firstOrFail();
 
         $this->actingAs($invitee)
-            ->postJson("/api/v1/invitations/{$invitation->token}/accept")
+            ->postJson("/api/invitations/{$invitation->token}/accept")
             ->assertStatus(422);
 
         $this->assertSame('expired', $invitation->fresh()->status);
@@ -242,7 +242,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'revoked_user@alpha.local',
             'role' => OrganizationMember::ROLE_STAFF,
         ])->assertStatus(201);
@@ -251,13 +251,13 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $invitee = User::where('email', 'revoked_user@alpha.local')->firstOrFail();
 
         // Revoke
-        $revokeRes = $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations/{$invitation->id}/revoke");
+        $revokeRes = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations/{$invitation->id}/revoke");
         $revokeRes->assertOk();
         $this->assertSame('revoked', $invitation->fresh()->status);
 
         // Attempting to accept revoked invitation fails
         $this->actingAs($invitee)
-            ->postJson("/api/v1/invitations/{$invitation->token}/accept")
+            ->postJson("/api/invitations/{$invitation->token}/accept")
             ->assertStatus(422);
 
         // Member was cleaned up
@@ -282,7 +282,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
-        $inviteRes = $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $inviteRes = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'new_owner_invite@org.local',
             'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
         ]);
@@ -295,7 +295,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
 
         // Accept invitation
         $invitation = OrganizationInvitation::where('email', 'new_owner_invite@org.local')->firstOrFail();
-        $this->actingAs($newAccount)->postJson("/api/v1/invitations/{$invitation->token}/accept")->assertOk();
+        $this->actingAs($newAccount)->postJson("/api/invitations/{$invitation->token}/accept")->assertOk();
 
         // Still customer globally, but organization_owner in org
         $this->assertEquals('customer', $newAccount->fresh()->role);
@@ -320,18 +320,18 @@ class OrganizationInvitationLifecycleTest extends TestCase
         ]);
 
         // 1. Demoting last owner fails
-        $this->actingAs($owner)->patchJson("/api/v1/organizations/{$org->id}/members/{$member->id}", [
+        $this->actingAs($owner)->patchJson("/api/organizations/{$org->id}/members/{$member->id}", [
             'role' => OrganizationMember::ROLE_VENUE_MANAGER,
         ])->assertStatus(422);
 
         // 2. Suspending last owner fails
-        $this->actingAs($owner)->patchJson("/api/v1/organizations/{$org->id}/members/{$member->id}", [
+        $this->actingAs($owner)->patchJson("/api/organizations/{$org->id}/members/{$member->id}", [
             'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
             'status' => 'suspended',
         ])->assertStatus(422);
 
         // 3. Removing last owner fails
-        $this->actingAs($owner)->deleteJson("/api/v1/organizations/{$org->id}/members/{$member->id}")
+        $this->actingAs($owner)->deleteJson("/api/organizations/{$org->id}/members/{$member->id}")
             ->assertStatus(422);
 
         // Still active owner
@@ -380,7 +380,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         ]);
 
         // Attempting to invite a second staff member must fail due to quota
-        $res = $this->actingAs($owner)->postJson("/api/v1/organizations/{$org->id}/invitations", [
+        $res = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'staff2@quota.local',
             'role' => OrganizationMember::ROLE_STAFF,
         ]);

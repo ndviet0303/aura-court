@@ -17,11 +17,11 @@ export async function setupApiClientRoute(page: Page, manifest: RunManifest): Pr
         return match ? decodeURIComponent(match[3]) : '';
       }
 
-      async function request(method, path, data, options = {}) {
-        const isV2 = Boolean(options.v2 || (typeof path === 'string' && (path.startsWith('/api/v2') || path.startsWith('v2/'))));
+      async function request(method, path, data, opt) {
+        const options = typeof opt === 'string' ? { idempotencyKey: opt } : opt || {};
         let cleanPath = String(path || '');
         if (!cleanPath.startsWith('/api/')) {
-          cleanPath = (isV2 ? '/api/v2' : '/api/v1') + (cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
+          cleanPath = '/api' + (cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
         }
         const apiOrigin = window.__E2E_API_ORIGIN__ || '${backendUrl}';
         let url = apiOrigin + cleanPath;
@@ -38,6 +38,8 @@ export async function setupApiClientRoute(page: Page, manifest: RunManifest): Pr
           'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
           ...(options.headers || {})
         };
+        if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
+        else if (method !== 'GET' && !headers['Idempotency-Key']) headers['Idempotency-Key'] = crypto.randomUUID();
 
         let body = undefined;
         if (data instanceof FormData) {
@@ -76,28 +78,8 @@ export async function setupApiClientRoute(page: Page, manifest: RunManifest): Pr
         delete: (p, opt) => request('DELETE', p, undefined, opt)
       };
 
-      export const apiV2 = {
-        get: (p, opt) => request('GET', p, undefined, { ...opt, v2: true }),
-        post: (p, d, opt) => request('POST', p, d, opt ? { ...opt, v2: true } : { v2: true }),
-        put: (p, d, opt) => request('PUT', p, d, opt ? { ...opt, v2: true } : { v2: true }),
-        patch: (p, d, opt) => request('PATCH', p, d, opt ? { ...opt, v2: true } : { v2: true }),
-        delete: (p, opt) => request('DELETE', p, undefined, { ...opt, v2: true })
-      };
-
       export const apiUrl = (p, params) => {
-        let u = '${backendUrl}/api/v1' + (p.startsWith('/') ? p : '/' + p);
-        if (params) {
-          const sp = new URLSearchParams();
-          for (const [k, v] of Object.entries(params)) {
-            if (v !== undefined && v !== null) sp.append(k, String(v));
-          }
-          u += (u.includes('?') ? '&' : '?') + sp.toString();
-        }
-        return u;
-      };
-
-      export const apiV2Url = (p, params) => {
-        let u = '${backendUrl}/api/v2' + (p.startsWith('/') ? p : '/' + p);
+        let u = '${backendUrl}/api' + (p.startsWith('/') ? p : '/' + p);
         if (params) {
           const sp = new URLSearchParams();
           for (const [k, v] of Object.entries(params)) {
@@ -127,7 +109,7 @@ export async function setupApiClientRoute(page: Page, manifest: RunManifest): Pr
       export const authApi = {
         logout: async () => {
           try {
-            await fetch('${backendUrl}/api/v1/auth/logout', {
+            await fetch('${backendUrl}/api/auth/logout', {
               method: 'POST',
               headers: {
                 'Accept': 'application/json',

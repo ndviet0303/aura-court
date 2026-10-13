@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import BookingView from '@/features/booking/views/BookingView.vue'
 import { bookingApi } from '@/features/booking/api/bookingApi'
 import { i18n } from '@/i18n'
-import type { V2Reservation } from '@/features/booking/types/v2Reservation'
+import type { Reservation } from '@/features/booking/types/reservation'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({
@@ -190,7 +190,7 @@ describe('BookingView (/booking)', () => {
 
   it('renders policy-aware cancel and reschedule controls on confirmed bookings and shows the policy notice', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
-      data: mockBookings as unknown as V2Reservation[],
+      data: mockBookings as unknown as Reservation[],
     })
 
     const wrapper = mount(BookingView, {
@@ -259,7 +259,7 @@ describe('BookingView (/booking)', () => {
       ],
     }
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
-      data: [mockBookings[1], legacy] as unknown as V2Reservation[],
+      data: [mockBookings[1], legacy] as unknown as Reservation[],
     })
 
     const wrapper = mount(BookingView, { global: { plugins: [i18n] } })
@@ -294,7 +294,7 @@ describe('BookingView (/booking)', () => {
       ],
     }
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
-      data: [legacy] as unknown as V2Reservation[],
+      data: [legacy] as unknown as Reservation[],
     })
     const reviewSpy = vi.spyOn(bookingApi, 'submitReview').mockResolvedValue({})
 

@@ -25,7 +25,7 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
     // Inject network failure on login request and verify request invocation
     let loginRequestAttempted = false
-    await page.route('**/api/v1/auth/login', (route) => {
+    await page.route('**/api/auth/login', (route) => {
       loginRequestAttempted = true
       route.abort('failed')
     })
@@ -63,7 +63,7 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
     // Inject 401 session expiration on profile mutation and track invocation
     let profileMutationAttempted = false
-    await page.route('**/api/v1/profile', (route) => {
+    await page.route('**/api/profile', (route) => {
       if (route.request().method() === 'PATCH' || route.request().method() === 'PUT') {
         profileMutationAttempted = true
         route.fulfill({
@@ -103,7 +103,7 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // 2. Inject 403 Forbidden on restricted action and track invocation
-    await page.route('**/api/v1/admin/**', (route) => {
+    await page.route('**/api/admin/**', (route) => {
       route.fulfill({
         status: 403,
         contentType: 'application/json',
@@ -127,7 +127,7 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
     // Inject 500 Internal Server Error and track invocation
     let login500Attempted = false
-    await page.route('**/api/v1/auth/login', (route) => {
+    await page.route('**/api/auth/login', (route) => {
       login500Attempted = true
       route.fulfill({
         status: 500,
@@ -160,7 +160,7 @@ test.describe('P2: Tiêm lỗi mạng & Khả năng phục hồi phi chức năn
 
   test('10.1.5: Tính năng bị tắt / Phản hồi suy giảm dịch vụ 404 / 503', async ({ page }) => {
     let tournamentsAttempted = false
-    await page.route('**/api/v2/tournaments**', (route) => {
+    await page.route('**/api/tournaments**', (route) => {
       tournamentsAttempted = true
       route.fulfill({
         status: 503,

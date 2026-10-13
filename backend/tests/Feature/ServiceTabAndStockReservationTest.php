@@ -186,7 +186,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Staff attaches 3 water bottles to the reservation tab
         $res = $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->waterProduct->id, 'quantity' => 3],
@@ -217,7 +217,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Add 2 grips to tab
         $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->gripProduct->id, 'quantity' => 2],
@@ -234,7 +234,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Staff removes item
         $deleteRes = $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->deleteJson("/api/v2/service-tabs/{$reservation->id}/items/{$item->id}");
+            ->deleteJson("/api/service-tabs/{$reservation->id}/items/{$item->id}");
 
         $deleteRes->assertOk();
         $deleteRes->assertJsonPath('tab.total_amount', 0);
@@ -253,7 +253,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Grip has 10 in stock. Reserve 9 on the tab.
         $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->gripProduct->id, 'quantity' => 9],
@@ -265,7 +265,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Cashier tries to complete a POS sale for 2 grips (more than available)
         $conflictSale = $this->actingAs($this->cashier)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/pos/orders', [
+            ->postJson('/api/pos/orders', [
                 'items' => [
                     ['product_id' => $this->gripProduct->id, 'quantity' => 2],
                 ],
@@ -279,7 +279,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Selling 1 grip (the remaining available stock) succeeds
         $okSale = $this->actingAs($this->cashier)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/pos/orders', [
+            ->postJson('/api/pos/orders', [
                 'items' => [
                     ['product_id' => $this->gripProduct->id, 'quantity' => 1],
                 ],
@@ -299,7 +299,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Total = (3 * 15,000) + (1 * 45,000) = 90,000 VND
         $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->waterProduct->id, 'quantity' => 3],
@@ -315,7 +315,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         $settleHeaders = $this->headers();
         $res = $this->actingAs($this->cashier)
             ->withHeaders($settleHeaders)
-            ->postJson("/api/v2/service-tabs/{$tab->id}/settle", [
+            ->postJson("/api/service-tabs/{$tab->id}/settle", [
                 'payment_method' => 'cash',
                 'cash_tendered' => 100000,
             ]);
@@ -353,7 +353,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // 5. Retrying settlement with same idempotency key or repeat is idempotent: NO duplicate stock decrement
         $retry = $this->actingAs($this->cashier)
             ->withHeaders($settleHeaders)
-            ->postJson("/api/v2/service-tabs/{$tab->id}/settle", [
+            ->postJson("/api/service-tabs/{$tab->id}/settle", [
                 'payment_method' => 'cash',
                 'cash_tendered' => 100000,
             ]);
@@ -377,7 +377,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Add 1 grip (45,000 VND) to tab
         $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->gripProduct->id, 'quantity' => 1],
@@ -390,7 +390,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Settle tab via wallet
         $res = $this->actingAs($this->cashier)
             ->withHeaders($this->headers())
-            ->postJson("/api/v2/service-tabs/{$tab->id}/settle", [
+            ->postJson("/api/service-tabs/{$tab->id}/settle", [
                 'payment_method' => 'wallet',
                 'customer_id' => $this->customer->id,
             ]);
@@ -412,7 +412,7 @@ class ServiceTabAndStockReservationTest extends TestCase
 
         $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->waterProduct->id, 'quantity' => 1],
@@ -424,7 +424,7 @@ class ServiceTabAndStockReservationTest extends TestCase
 
         $res = $this->actingAs($this->cashier)
             ->withHeaders($this->headers())
-            ->postJson("/api/v2/service-tabs/{$tab->id}/settle", [
+            ->postJson("/api/service-tabs/{$tab->id}/settle", [
                 'payment_method' => 'cash',
                 'cash_tendered' => 20000,
             ]);
@@ -441,7 +441,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Reserve 5 waters
         $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->waterProduct->id, 'quantity' => 5],
@@ -455,7 +455,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         // Staff cancels tab
         $res = $this->actingAs($this->staff)
             ->withHeaders($this->headers())
-            ->postJson("/api/v2/service-tabs/{$tab->id}/cancel", [
+            ->postJson("/api/service-tabs/{$tab->id}/cancel", [
                 'reason' => 'Khách hủy không sử dụng đồ uống',
             ]);
 
@@ -470,7 +470,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         $this->openShift();
         $settleRes = $this->actingAs($this->cashier)
             ->withHeaders($this->headers())
-            ->postJson("/api/v2/service-tabs/{$tab->id}/settle", [
+            ->postJson("/api/service-tabs/{$tab->id}/settle", [
                 'payment_method' => 'cash',
                 'cash_tendered' => 100000,
             ]);

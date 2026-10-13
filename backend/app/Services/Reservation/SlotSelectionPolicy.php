@@ -2,7 +2,6 @@
 
 namespace App\Services\Reservation;
 
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\MatchPost;
@@ -35,13 +34,11 @@ class SlotSelectionPolicy
     /**
      * @param  array<int, array{start: \DateTimeInterface|string, end: \DateTimeInterface|string}>  $intervals
      * @param  int|null  $excludeReservationId  reservation whose own slots are ignored (reschedule replacement)
-     * @param  array<int, int>  $excludeBookingSlotIds  legacy booking-slot ids to ignore (reschedule original projection)
      */
     public function assertAllowed(
         Court $court,
         array $intervals,
         ?int $excludeReservationId = null,
-        array $excludeBookingSlotIds = [],
     ): void {
         if ($intervals === []) {
             return;
@@ -118,23 +115,12 @@ class SlotSelectionPolicy
             }
         }
 
-        // 7. True-interval overlap vs active V1 and V2 inventory (start < otherEnd AND end > otherStart).
+        // 7. True-interval overlap vs active reservation inventory (start < otherEnd AND end > otherStart).
         foreach ($slots as $slot) {
             $startUtc = $slot['start']->copy()->utc();
             $endUtc = $slot['end']->copy()->utc();
 
-            $v1Conflict = BookingSlot::query()
-                ->where('court_id', $court->id)
-                ->where('starts_at', '<', $endUtc)
-                ->where('ends_at', '>', $startUtc)
-                ->whereIn('status', ['held', 'confirmed'])
-                ->when($excludeBookingSlotIds !== [], fn ($query) => $query->whereNotIn('id', $excludeBookingSlotIds))
-                ->exists();
-            if ($v1Conflict) {
-                abort(409, 'The selected court-time is no longer available.');
-            }
-
-            $v2Conflict = ReservationSlot::query()
+            $reservationConflict = ReservationSlot::query()
                 ->where('court_id', $court->id)
                 ->where('starts_at', '<', $endUtc)
                 ->where('ends_at', '>', $startUtc)
@@ -142,7 +128,7 @@ class SlotSelectionPolicy
                 ->when($excludeReservationId !== null, fn ($query) => $query->where('reservation_id', '!=', $excludeReservationId))
                 ->whereHas('reservation', fn ($reservation) => $reservation->whereIn('status', ['held', 'confirmed']))
                 ->exists();
-            if ($v2Conflict) {
+            if ($reservationConflict) {
                 abort(409, 'The selected court-time is no longer available.');
             }
 

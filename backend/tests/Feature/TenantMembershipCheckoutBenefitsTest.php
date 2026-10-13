@@ -63,7 +63,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
 
         $headers = ['X-Organization-ID' => (string) $tenant['organization']->id];
         $createdPlan = $this->actingAs($tenant['owner'])->withHeaders($headers)
-            ->postJson('/api/v2/admin/memberships/plans', [
+            ->postJson('/api/admin/memberships/plans', [
                 'name' => 'Court Gold',
                 'price' => 250000,
                 'billingCycle' => 'monthly',
@@ -78,13 +78,13 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
         }
         $planId = (int) $createdPlan->json('id');
 
-        $this->actingAs($tenant['owner'])->withHeaders($headers)->getJson('/api/v2/admin/memberships/plans')
+        $this->actingAs($tenant['owner'])->withHeaders($headers)->getJson('/api/admin/memberships/plans')
             ->assertOk()
             ->assertJsonPath('0.id', $planId)
             ->assertJsonPath('0.courtDiscountPercent', 10);
 
         $this->actingAs($tenant['owner'])->withHeaders($headers + ['Idempotency-Key' => 'assign-foreign-tier'])
-            ->postJson('/api/v2/memberships', [
+            ->postJson('/api/memberships', [
                 'user_id' => $otherTenant['customer']->id,
                 'plan_id' => $planId,
                 'months' => 1,
@@ -96,7 +96,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
         ]);
 
         $this->actingAs($tenant['owner'])->withHeaders($headers + ['Idempotency-Key' => 'assign-primary-tier'])
-            ->postJson('/api/v2/memberships', [
+            ->postJson('/api/memberships', [
                 'user_id' => $tenant['customer']->id,
                 'plan_id' => $planId,
                 'months' => 1,
@@ -113,7 +113,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             'benefit_code' => 'discount_percent',
         ]);
 
-        $this->actingAs($tenant['customer'])->withHeaders($headers)->getJson('/api/v1/membership')
+        $this->actingAs($tenant['customer'])->withHeaders($headers)->getJson('/api/membership')
             ->assertOk()
             ->assertJsonPath('membership.organization_id', $tenant['organization']->id)
             ->assertJsonPath('membership.plan.discount_percent', 10);
@@ -121,7 +121,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
         $this->fundWallet($tenant['customer'], (int) $tenant['organization']->id, 300000);
         $v1Time = now()->addDays(5)->setTime(10, 0)->startOfHour();
         $v1 = $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v1-booking'])
-            ->postJson('/api/v1/bookings', [
+            ->postJson('/api/bookings', [
                 'court_id' => $tenant['court']->id,
                 'slots' => [$v1Time->toIso8601String()],
             ])->assertCreated();
@@ -131,7 +131,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
 
         $v2Time = now()->addDays(6)->setTime(11, 0)->startOfHour();
         $quote = $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v2-quote'])
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $tenant['court']->id,
                 'slots' => [$v2Time->toIso8601String()],
             ])->assertCreated()
@@ -140,12 +140,12 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             ->assertJsonPath('quote.benefit_snapshot.membership_discount_amount', 10000);
 
         $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v2-hold'])
-            ->postJson('/api/v2/reservations', ['quote_token' => $quote->json('quote.quote_token')])
+            ->postJson('/api/reservations', ['quote_token' => $quote->json('quote.quote_token')])
             ->assertCreated()
             ->assertJsonPath('reservation.total_amount', 90000)
             ->assertJsonPath('reservation.metadata.benefit_snapshot.membership_discount_amount', 10000);
 
-        $this->actingAs($tenant['owner'])->withHeaders($headers)->postJson('/api/v2/pos/quote', [
+        $this->actingAs($tenant['owner'])->withHeaders($headers)->postJson('/api/pos/quote', [
             'customer_id' => $tenant['customer']->id,
             'items' => [['product_id' => $primaryProduct->id, 'quantity' => 1]],
         ])->assertOk()
@@ -156,7 +156,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
         $otherHeaders = ['X-Organization-ID' => (string) $otherTenant['organization']->id];
         $otherTime = now()->addDays(7)->setTime(12, 0)->startOfHour();
         $this->actingAs($tenant['customer'])->withHeaders($otherHeaders + ['Idempotency-Key' => 'member-other-v2-quote'])
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $otherTenant['court']->id,
                 'slots' => [$otherTime->toIso8601String()],
             ])->assertCreated()
@@ -164,7 +164,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             ->assertJsonPath('quote.total_amount', 100000)
             ->assertJsonPath('quote.benefit_snapshot', null);
 
-        $this->actingAs($otherTenant['owner'])->withHeaders($otherHeaders)->postJson('/api/v2/pos/quote', [
+        $this->actingAs($otherTenant['owner'])->withHeaders($otherHeaders)->postJson('/api/pos/quote', [
             'customer_id' => $tenant['customer']->id,
             'items' => [['product_id' => $otherProduct->id, 'quantity' => 1]],
         ])->assertOk()

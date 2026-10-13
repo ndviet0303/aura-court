@@ -5,7 +5,7 @@ import PosView from '../views/PosView.vue'
 import PosCustomerModal from '../components/PosCustomerModal.vue'
 import { i18n } from '@/i18n'
 import { posApi } from '../api/posApi'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {}, params: {} }),
@@ -41,10 +41,6 @@ vi.mock('@/core/api/client', () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
-  apiV2: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
 }))
 
 describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong reservation identity', () => {
@@ -64,7 +60,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
 
   const mockReservations = [
     {
-      id: 999, // Booking ID from V1
+      id: 999,
       court_name: 'Sân 11 - Sài Gòn Central',
       court_number: 11,
       customer_name: 'Khách hàng Demo',
@@ -87,7 +83,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
       opening_cash: 500000,
     })
     vi.mocked(posApi.getActiveReservations).mockResolvedValue(mockReservations)
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       organization_id: 1,
       capabilities: { tenant_pos_and_wallet: true },
       role: 'cashier',
@@ -221,15 +217,15 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
     expect(wrapper.find('.receipt-printable').exists()).toBe(true)
   })
 
-  it('resolves canonical reservation identity: posApi fetches canonical reservations from /reservations on apiV2', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+  it('resolves canonical reservation identity: posApi fetches canonical reservations from /reservations', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/reservations')) {
         return {
           data: [
             {
-              id: 77, // Canonical V2 reservation ID
-              court: { name: 'Court V2' },
-              customer_name: 'Customer V2',
+              id: 77, // Canonical reservation ID
+              court: { name: 'Canonical Court' },
+              customer_name: 'Canonical Customer',
               status: 'confirmed',
             },
           ],
@@ -248,10 +244,10 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
     )
     const reservations = await actualPosApi.getActiveReservations()
 
-    // posApi fetched from canonical /reservations on apiV2 (not legacy /admin/bookings)
-    expect(apiV2.get).toHaveBeenCalledWith('/reservations?status=confirmed')
+    // posApi fetched from canonical /reservations (not legacy /admin/bookings)
+    expect(api.get).toHaveBeenCalledWith('/reservations?status=confirmed')
     expect(reservations[0]?.id).toBe(77)
-    // Now verify PosView checkout payload sends this V1 booking ID as reservation_id to V2
+    // Now verify PosView checkout sends this reservation ID as reservation_id
     vi.mocked(posApi.getActiveReservations).mockResolvedValue(reservations)
     vi.mocked(posApi.completeOrder).mockResolvedValue({ id: 1 })
 
@@ -274,8 +270,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
     await wrapper.find('.checkout-submit-btn').trigger('click')
     await flushPromises()
 
-    // DEFECT REPRODUCTION: payload sends reservation_id: 77 or activeReservations reservation ID
-    // (which is V1 booking ID, not V2 reservation)
+    // The payload takes reservation_id from activeReservations, the canonical reservation ID
     expect(posApi.completeOrder).toHaveBeenCalled()
     const callArg = vi.mocked(posApi.completeOrder).mock.calls[0]?.[0]
     expect(callArg).toBeDefined()
@@ -283,7 +278,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
 
   it('Task 2.4: displays disabled capability banner and blocks simulated checkout when POS is disabled', async () => {
     // Mock capabilities returning tenant_pos_and_wallet: false
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('capabilities')) {
         return {
           organization_id: 2,
@@ -322,7 +317,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
   })
 
   it('Task 2.6: posApi.searchCustomers queries /customers and wires real customer profile to POS selection', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/customers')) {
         return {
           organization_id: 1,
@@ -350,7 +345,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
     const customers = await actualPosApi.searchCustomers('VIP')
 
     // 1. Verifies /customers endpoint is called with query
-    expect(apiV2.get).toHaveBeenCalledWith('/customers?q=VIP')
+    expect(api.get).toHaveBeenCalledWith('/customers?q=VIP')
     expect(customers.length).toBe(1)
     expect(customers[0]).toEqual({
       id: 99,

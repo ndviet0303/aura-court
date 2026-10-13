@@ -279,54 +279,14 @@
       "count": 1
     }
   },
-  "src/features/booking/__tests__/PaymentAuthoritative.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
-  "src/features/booking/__tests__/PaymentViewDirectOwner.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/booking/__tests__/V2ReservationPaymentModal.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    }
-  },
-  "src/features/booking/components/v2/V2QuoteCalculatorCard.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
   "src/features/booking/composables/useRecurringBooking.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
     }
   },
-  "src/features/booking/composables/useV2Reservations.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/features/booking/types/booking.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
-  "src/features/booking/types/v2Reservation.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/features/court/api/courtApi.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/court/components/schedule/ScheduleBookingSummary.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
     }
   },
   "src/features/court/composables/useCourtDetail.ts": {
@@ -355,11 +315,6 @@
     }
   },
   "src/features/home/__tests__/HomeView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/features/home/views/HomeView.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
     }
@@ -466,7 +421,7 @@
   },
   "src/features/tournament/__tests__/tournament-regressions.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 4
+      "count": 3
     }
   },
   "src/features/tournament/api/tournamentApi.ts": {

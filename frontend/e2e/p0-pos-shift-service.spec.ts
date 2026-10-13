@@ -147,7 +147,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     const orderResponsePromise = page.waitForResponse(
       (res) =>
-        res.url().includes('/v2/pos/orders') &&
+        res.url().includes('/api/pos/orders') &&
         res.request().method() === 'POST' &&
         (res.status() === 200 || res.status() === 201),
       { timeout: 20000 },
@@ -285,7 +285,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 5. Click checkout -> creates pending QR order
     const qrResponsePromise = page.waitForResponse(
       (res) =>
-        res.url().includes('/v2/pos/orders') &&
+        res.url().includes('/api/pos/orders') &&
         res.request().method() === 'POST' &&
         (res.status() === 200 || res.status() === 201),
       { timeout: 20000 },
@@ -305,9 +305,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 7. NEGATIVE PROOF: Attempting client-only confirm before payment receipt MUST fail with 422
     const unverifiedAttempt = await withE2EApi(
       page,
-      async ({ apiV2 }, oId) => {
+      async ({ api }, oId) => {
         try {
-          await apiV2.post(`/pos/orders/${oId}/confirm-qr`, {
+          await api.post(`/pos/orders/${oId}/confirm-qr`, {
             external_transaction_id: 'FAKE_TXN_123',
           })
           return { success: true }
@@ -398,9 +398,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 10. Idempotency verification: re-confirming already completed order does NOT decrement stock again
     await withE2EApi(
       page,
-      async ({ apiV2 }, oId) => {
+      async ({ api }, oId) => {
         try {
-          const res = await apiV2.post(`/pos/orders/${oId}/confirm-qr`, {})
+          const res = await api.post(`/pos/orders/${oId}/confirm-qr`, {})
           return { success: true, data: res.data }
         } catch (err: any) {
           return { success: false, status: err?.status }
@@ -435,7 +435,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await page.locator('.pay-method-btn', { hasText: 'VietQR' }).click()
     const cancelOrderResponsePromise = page.waitForResponse(
       (res) =>
-        res.url().includes('/v2/pos/orders') &&
+        res.url().includes('/api/pos/orders') &&
         res.request().method() === 'POST' &&
         (res.status() === 200 || res.status() === 201),
       { timeout: 20000 },
@@ -490,7 +490,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await page.locator('.pay-method-btn', { hasText: 'VietQR' }).click()
     const expOrderResponsePromise = page.waitForResponse(
       (res) =>
-        res.url().includes('/v2/pos/orders') &&
+        res.url().includes('/api/pos/orders') &&
         res.request().method() === 'POST' &&
         (res.status() === 200 || res.status() === 201),
       { timeout: 20000 },
@@ -600,7 +600,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await shiftModal.locator('input[type="number"]').fill('1000000')
     const shiftOpenResponse = page.waitForResponse(
       (response) =>
-        new URL(response.url()).pathname === '/api/v2/pos/shifts' &&
+        new URL(response.url()).pathname === '/api/pos/shifts' &&
         response.request().method() === 'POST' &&
         response.ok(),
       { timeout: 15000 },
@@ -615,8 +615,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 3. Create an unresolved pending QR order during this shift
     const pendingOrderRes = await withE2EApi(
       page,
-      async ({ apiV2 }, pId) => {
-        return await apiV2.post('/pos/orders', {
+      async ({ api }, pId) => {
+        return await api.post('/pos/orders', {
           payment_method: 'qr',
           items: [{ product_id: pId, quantity: 1 }],
         })
@@ -629,9 +629,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 4. NEGATIVE PROOF: "đơn pending chưa xử lý" - Attempting close without disposition fails with 409
     const unhandledCloseAttempt = await withE2EApi(
       page,
-      async ({ apiV2 }, sId) => {
+      async ({ api }, sId) => {
         try {
-          await apiV2.post(`/pos/shifts/${sId}/close`, { declared_cash: 980000 })
+          await api.post(`/pos/shifts/${sId}/close`, { declared_cash: 980000 })
           return { success: true }
         } catch (err: any) {
           return { success: false, status: err?.status, message: err?.message }
@@ -657,8 +657,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // Close shift with declared_cash: 980000, note, and pending_disposition: 'cancel'
     const closeRes = await withE2EApi(
       page,
-      async ({ apiV2 }, { sId }) => {
-        return await apiV2.post(`/pos/shifts/${sId}/close`, {
+      async ({ api }, { sId }) => {
+        return await api.post(`/pos/shifts/${sId}/close`, {
           declared_cash: 980000,
           note: 'Đếm thiếu 20.000đ tại cuối ca',
           pending_disposition: 'cancel',
@@ -680,9 +680,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     const cashierReviewAttempt = await withE2EApi(
       page,
-      async ({ apiV2 }, sId) => {
+      async ({ api }, sId) => {
         try {
-          await apiV2.post(`/pos/shifts/${sId}/review`, {
+          await api.post(`/pos/shifts/${sId}/review`, {
             status: 'approved',
             note: 'Thu ngân tự duyệt',
           })
@@ -717,8 +717,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
       const reviewPromise = withE2EApi(
         managerPage,
-        async ({ apiV2 }, { sId, oId }) => {
-          return await apiV2.post(
+        async ({ api }, { sId, oId }) => {
+          return await api.post(
             `/pos/shifts/${sId}/review`,
             {
               status: 'approved',
@@ -880,17 +880,17 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
     // Ensure shift is open for cashier before service tab operations
-    await withE2EApi(page, async ({ apiV2 }) => {
+    await withE2EApi(page, async ({ api }) => {
       try {
-        return await apiV2.post('/pos/shifts', { opening_cash: 500000 })
+        return await api.post('/pos/shifts', { opening_cash: 500000 })
       } catch {
         // already open
       }
     })
     // 4. NEGATIVE PROOF: Check-in with invalid booking code is rejected
-    const invalidCheckIn = await withE2EApi(page, async ({ apiV2 }) => {
+    const invalidCheckIn = await withE2EApi(page, async ({ api }) => {
       try {
-        await apiV2.post('/attendance/check-in', {
+        await api.post('/attendance/check-in', {
           code: 'RSV_NONEXISTENT_999',
           notes: 'Khách không tồn tại',
         })
@@ -902,11 +902,11 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(invalidCheckIn.success).toBe(false)
     expect([404, 422]).toContain(invalidCheckIn.status)
 
-    // 5. Perform valid check-in via API (v2/attendance/check-in)
+    // 5. Perform valid check-in via API (/attendance/check-in)
     const checkInResult = await withE2EApi(
       page,
-      async ({ apiV2 }, bookingCode) => {
-        return await apiV2.post('/attendance/check-in', {
+      async ({ api }, bookingCode) => {
+        return await api.post('/attendance/check-in', {
           code: bookingCode,
           notes: 'Khách đến đúng giờ',
         })
@@ -919,9 +919,9 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 6. NEGATIVE PROOF: Adding items to tab with quantity exceeding available stock is rejected with 409
     const overStockAttempt = await withE2EApi(
       page,
-      async ({ apiV2 }, { resId, prodId }) => {
+      async ({ api }, { resId, prodId }) => {
         try {
-          await apiV2.post('/service-tabs', {
+          await api.post('/service-tabs', {
             reservation_id: resId,
             items: [{ product_id: prodId, quantity: 999 }],
           })
@@ -939,8 +939,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 7. Open service tab and add 2 valid items (2 x 25,000 = 50,000 VND)
     const addTabResult = await withE2EApi(
       page,
-      async ({ apiV2 }, { resId, prodId }) => {
-        return await apiV2.post('/service-tabs', {
+      async ({ api }, { resId, prodId }) => {
+        return await api.post('/service-tabs', {
           reservation_id: resId,
           items: [{ product_id: prodId, quantity: 2 }],
         })
@@ -957,8 +957,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     const itemIdToRemove = items[0].id
     const removeResult = await withE2EApi(
       page,
-      async ({ apiV2 }, { resId, itemId }) => {
-        return await apiV2.delete(`/service-tabs/${resId}/items/${itemId}`)
+      async ({ api }, { resId, itemId }) => {
+        return await api.delete(`/service-tabs/${resId}/items/${itemId}`)
       },
       { resId: reservation.reservation_id, itemId: itemIdToRemove },
     )
@@ -985,8 +985,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       // Settle directly via API if dropdown not supported on current viewport
       await withE2EApi(
         page,
-        async ({ apiV2 }, tId) => {
-          return await apiV2.post(`/service-tabs/${tId}/settle`, {
+        async ({ api }, tId) => {
+          return await api.post(`/service-tabs/${tId}/settle`, {
             payment_method: 'cash',
             cash_tendered: 50000,
           })
@@ -998,8 +998,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 10. Re-settle retry: idempotent response returns duplicate: true, preventing double collection
     const retrySettle = await withE2EApi(
       page,
-      async ({ apiV2 }, tId) => {
-        return await apiV2.post(`/service-tabs/${tId}/settle`, { payment_method: 'cash' })
+      async ({ api }, tId) => {
+        return await api.post(`/service-tabs/${tId}/settle`, { payment_method: 'cash' })
       },
       tabId,
     )

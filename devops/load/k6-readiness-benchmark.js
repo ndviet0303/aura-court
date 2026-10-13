@@ -54,7 +54,7 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
 
 export function testCourtAvailability() {
-  const res = http.get(`${BASE_URL}/api/v1/courts`);
+  const res = http.get(`${BASE_URL}/api/courts`);
   check(res, {
     'status is 200': (r) => r.status === 200,
   });
@@ -69,16 +69,17 @@ export function testBookingFlow() {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${__ENV.TEST_TOKEN || 'demo-token'}`,
+      'Idempotency-Key': `k6-${__VU}-${__ITER}`,
     },
   };
-  const res = http.post(`${BASE_URL}/api/v1/bookings`, payload, params);
+  const res = http.post(`${BASE_URL}/api/reservations/checkout`, payload, params);
   check(res, {
     'write handled gracefully (created or conflict)': (r) => [201, 409, 422].includes(r.status),
   });
 }
 
 export function testSessionBrowsing() {
-  const res = http.get(`${BASE_URL}/api/v1/availability?date=${new Date().toISOString().split('T')[0]}`);
+  const res = http.get(`${BASE_URL}/api/availability?date=${new Date().toISOString().split('T')[0]}`);
   check(res, {
     'availability status 200': (r) => r.status === 200,
   });

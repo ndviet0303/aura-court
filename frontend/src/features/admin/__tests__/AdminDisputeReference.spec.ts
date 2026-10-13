@@ -3,16 +3,15 @@ import { mount } from '@vue/test-utils'
 import DisputeDetailWorkbench from '../components/disputes/DisputeDetailWorkbench.vue'
 import { disputeApi } from '../api/disputeApi'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('@/core/api/client', () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  apiV2: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
   errorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
 async function referenceOf(raw: Record<string, unknown>) {
-  vi.mocked(apiV2.get).mockResolvedValue({ data: { id: 5, dispute_code: 'DSP-5', ...raw } })
+  vi.mocked(api.get).mockResolvedValue({ data: { id: 5, dispute_code: 'DSP-5', ...raw } })
   const item = await disputeApi.getDisputeDetail(5)
   const wrapper = mount(DisputeDetailWorkbench, {
     props: { item: item!, activeEvidenceTab: 'logs' },

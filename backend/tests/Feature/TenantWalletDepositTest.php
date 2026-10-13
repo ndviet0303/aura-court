@@ -21,7 +21,7 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'Deposit Org', 'slug' => 'dep-org-'.uniqid()]);
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $response = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 200000,
             'organization_id' => $org->id,
             'provider' => 'sepay',
@@ -58,13 +58,13 @@ class TenantWalletDepositTest extends TestCase
         $user = User::factory()->create();
         $idemKey = 'deposit-key-'.uniqid();
 
-        $first = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $first = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 300000,
             'organization_id' => $org->id,
             'idempotency_key' => $idemKey,
         ])->assertStatus(201)->json();
 
-        $second = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $second = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 300000,
             'organization_id' => $org->id,
             'idempotency_key' => $idemKey,
@@ -80,13 +80,13 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'Unverified Org', 'slug' => 'unver-org-'.uniqid()]);
         $user = User::factory()->create();
 
-        $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $init = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 500000,
             'organization_id' => $org->id,
         ])->assertCreated()->json();
 
         // Customer returns from provider without a verified webhook event
-        $statusResponse = $this->actingAs($user)->getJson('/api/v1/wallet/deposits/'.$init['reference']);
+        $statusResponse = $this->actingAs($user)->getJson('/api/wallet/deposits/'.$init['reference']);
 
         $statusResponse->assertOk()
             ->assertJsonPath('reference', $init['reference'])
@@ -103,17 +103,17 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'History Org', 'slug' => 'hist-org-'.uniqid()]);
         $user = User::factory()->create();
 
-        $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 100000,
             'organization_id' => $org->id,
         ])->assertCreated();
 
-        $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 200000,
             'organization_id' => $org->id,
         ])->assertCreated();
 
-        $response = $this->actingAs($user)->getJson('/api/v1/wallet/deposits?organization_id='.$org->id);
+        $response = $this->actingAs($user)->getJson('/api/wallet/deposits?organization_id='.$org->id);
         $response->assertOk();
         $this->assertCount(2, $response->json('deposits'));
     }
@@ -123,7 +123,7 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'Provider Org', 'slug' => 'prov-org-'.uniqid()]);
         $user = User::factory()->create();
 
-        $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $init = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 500000,
             'organization_id' => $org->id,
             'provider' => 'payos',
@@ -153,7 +153,7 @@ class TenantWalletDepositTest extends TestCase
         $this->assertSame(500000, $wallet->fresh()->balance);
 
         // Status API reflects updated wallet balance and succeeded status
-        $status = $this->actingAs($user)->getJson('/api/v1/wallet/deposits/'.$intent->reference);
+        $status = $this->actingAs($user)->getJson('/api/wallet/deposits/'.$intent->reference);
         $status->assertOk()
             ->assertJsonPath('status', 'succeeded')
             ->assertJsonPath('wallet_balance', 500000);
@@ -164,7 +164,7 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'Dup Org', 'slug' => 'dup-org-'.uniqid()]);
         $user = User::factory()->create();
 
-        $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $init = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 400000,
             'organization_id' => $org->id,
             'provider' => 'payos',
@@ -206,7 +206,7 @@ class TenantWalletDepositTest extends TestCase
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
 
         // Send with wrong signature
-        $response = $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
+        $response = $this->call('POST', '/api/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => 'wrong-signature',
         ], $raw);
@@ -220,7 +220,7 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'Order Org', 'slug' => 'order-org-'.uniqid()]);
         $user = User::factory()->create();
 
-        $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $init = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 600000,
             'organization_id' => $org->id,
             'provider' => 'payos',
@@ -271,7 +271,7 @@ class TenantWalletDepositTest extends TestCase
         $org = Organization::create(['name' => 'SePay Tenant Org', 'slug' => 'sepay-tenant-'.uniqid()]);
         $user = User::factory()->create();
 
-        $init = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $init = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 250000,
             'organization_id' => $org->id,
             'provider' => 'sepay',
@@ -289,7 +289,7 @@ class TenantWalletDepositTest extends TestCase
         $raw = json_encode($payload, JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $raw, 'test-secret');
 
-        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
         ], $raw)->assertOk();
@@ -299,7 +299,7 @@ class TenantWalletDepositTest extends TestCase
         $this->assertSame(250000, $wallet->fresh()->balance);
 
         // Re-delivering same external transaction id does NOT double credit
-        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
         ], $raw)->assertOk();
@@ -313,7 +313,7 @@ class TenantWalletDepositTest extends TestCase
         $orgB = Organization::create(['name' => 'Org Beta', 'slug' => 'org-beta-'.uniqid()]);
         $user = User::factory()->create();
 
-        $initA = $this->actingAs($user)->postJson('/api/v1/wallet/deposits', [
+        $initA = $this->actingAs($user)->postJson('/api/wallet/deposits', [
             'amount' => 300000,
             'organization_id' => $orgA->id,
             'provider' => 'payos',

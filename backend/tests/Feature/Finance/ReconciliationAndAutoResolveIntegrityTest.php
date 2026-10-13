@@ -251,7 +251,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
             ->firstOrFail();
 
         // 1. Attempt auto-resolve via HTTP endpoint with only notes (no evidence_reference)
-        $response = $this->actingAs($this->owner)->postJson('/api/v2/finance/reconciliation/auto-resolve', [
+        $response = $this->actingAs($this->owner)->postJson('/api/finance/reconciliation/auto-resolve', [
             'run_id' => $run->id,
             'notes' => 'Yêu cầu bù trừ tự động bằng ghi chú của kế toán',
         ], ['X-Organization-Id' => $this->organization->id]);
@@ -353,8 +353,8 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
 
     /**
      * D47 Manual Path Bypass Gate:
-     * POST /api/v2/finance/exceptions/{id}/resolve with note-only on reconciliation_mismatch fails.
-     * POST /api/v2/finance/exceptions/{id}/resolve with evidence and cleared data triggers rerun and successfully resolves.
+     * POST /api/finance/exceptions/{id}/resolve with note-only on reconciliation_mismatch fails.
+     * POST /api/finance/exceptions/{id}/resolve with evidence and cleared data triggers rerun and successfully resolves.
      */
     public function test_manual_resolve_endpoint_rejects_note_only_for_reconciliation_mismatch_and_requires_evidence_and_rerun(): void
     {
@@ -380,7 +380,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
 
         // 1. Attempt note-only resolution (cannot bypass D47)
         $noteOnlyResponse = $this->actingAs($this->owner)->postJson(
-            "/api/v2/finance/exceptions/{$exception->id}/resolve",
+            "/api/finance/exceptions/{$exception->id}/resolve",
             [
                 'action_type' => 'manual_override',
                 'reason' => 'Ghi chú giải trình kiểm toán thủ công không kèm chứng từ',
@@ -396,7 +396,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
 
         // 2. Attempt resolution with evidence reference, BUT underlying mismatch is not cleared yet
         $prematureResponse = $this->actingAs($this->owner)->postJson(
-            "/api/v2/finance/exceptions/{$exception->id}/resolve",
+            "/api/finance/exceptions/{$exception->id}/resolve",
             [
                 'action_type' => 'manual_override',
                 'reason' => 'Giải trình kiểm toán thủ công kèm chứng từ nhưng chưa sửa dữ liệu',
@@ -415,7 +415,7 @@ class ReconciliationAndAutoResolveIntegrityTest extends TestCase
 
         // 4. Resolve with evidence and cleared data triggers rerun and successfully resolves
         $successResponse = $this->actingAs($this->owner)->postJson(
-            "/api/v2/finance/exceptions/{$exception->id}/resolve",
+            "/api/finance/exceptions/{$exception->id}/resolve",
             [
                 'action_type' => 'manual_override',
                 'reason' => 'Đã xác minh đối chiếu sao kê ngân hàng và phân bổ hoàn tất',

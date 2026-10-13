@@ -144,7 +144,7 @@ export function useRecurringBooking() {
   // Rendered from the server preview so monthly cadence and the platform cap are
   // handled server-side; each entry carries its per-occurrence conflict flag.
   // The server returns UTC instants; display them in the venue timezone to match
-  // the rest of the app (see useV2Reservations / court schedule formatters).
+  // the rest of the app (see useReservations / court schedule formatters).
   const previewSessions = computed(() => {
     const occurrences = preview.value?.occurrences ?? []
     return occurrences.map((o) => {

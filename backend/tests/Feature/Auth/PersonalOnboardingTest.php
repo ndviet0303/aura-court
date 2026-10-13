@@ -22,7 +22,7 @@ class PersonalOnboardingTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $res = $this->postJson('/api/v1/auth/onboarding', [
+        $res = $this->postJson('/api/auth/onboarding', [
             'account_type' => 'customer',
             'phone' => '0987654321',
             'play_level' => 'intermediate',
@@ -52,7 +52,7 @@ class PersonalOnboardingTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $res = $this->postJson('/api/v1/auth/onboarding', [
+        $res = $this->postJson('/api/auth/onboarding', [
             'account_type' => 'court_owner',
             'phone' => '0912345678',
             'organization_name' => 'Should Not Be Created Directly',
@@ -83,7 +83,7 @@ class PersonalOnboardingTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $res = $this->postJson('/api/v1/auth/onboarding', [
+        $res = $this->postJson('/api/auth/onboarding', [
             'account_type' => 'customer',
         ]);
 
@@ -101,7 +101,7 @@ class PersonalOnboardingTest extends TestCase
         Sanctum::actingAs($customer);
 
         // Can start partner application without repeating personal onboarding!
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $startRes->assertStatus(201)
             ->assertJsonPath('data.status', 'draft');
 

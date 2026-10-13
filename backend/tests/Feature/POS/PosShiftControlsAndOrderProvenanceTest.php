@@ -125,7 +125,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
     public function test_qr_payment_enforces_amount_and_provenance_verification(): void
     {
         // 1. Open shift
-        $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => 500000,
             'venue_id' => $this->venue->id,
             'register_id' => 'REG-01',
@@ -135,7 +135,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         ])->assertCreated();
 
         // 2. Create pending QR order for 2 drinks (30,000 VND)
-        $orderRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 2],
             ],
@@ -150,7 +150,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame('pending_payment', $order->status);
 
         // 3. Amount mismatch rejection (passed amount less than order total)
-        $mismatchRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $mismatchRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'TXN-FAKE-123',
             'amount' => 10000, // Expected 30,000
         ], [
@@ -161,7 +161,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
 
         // 4. When simulate_qr_provider is false, unverified self-declared reference rejected
         config(['services.payments.simulate_qr_provider' => false]);
-        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'TXN-UNVERIFIED-999',
             'amount' => 30000,
         ], [
@@ -180,7 +180,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'status' => 'paid',
         ]);
 
-        $verifiedRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $verifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'TXN-VERIFIED-GENUINE',
             'amount' => 30000,
         ], [
@@ -195,7 +195,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
     public function test_shift_controls_orders_association_and_expected_cash_reconciliation(): void
     {
         // 1. Open Shift 1
-        $shiftRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $shiftRes = $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => 200000,
             'venue_id' => $this->venue->id,
             'register_id' => 'POS-REG-A',
@@ -208,7 +208,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $shift = CashShift::findOrFail($shiftId);
 
         // 2. Complete a cash sale (2 drinks = 30,000 VND)
-        $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 2],
             ],
@@ -220,7 +220,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         ])->assertCreated();
 
         // 3. Record cash movement (cash_in 50,000 for change float)
-        $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shiftId}/cash-movement", [
+        $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shiftId}/cash-movement", [
             'type' => 'cash_in',
             'amount' => 50000,
             'reason' => 'Adding change float',
@@ -230,7 +230,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         ])->assertOk();
 
         // 4. Record cash movement (cash_out 20,000 for emergency cleaning supplies)
-        $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shiftId}/cash-movement", [
+        $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shiftId}/cash-movement", [
             'type' => 'cash_out',
             'amount' => 20000,
             'reason' => 'Broom and mop soap',
@@ -241,7 +241,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
 
         // Expected cash: 200,000 (opening) + 30,000 (cash sale) + 50,000 (cash in) - 20,000 (cash out) = 260,000 VND
         // Close shift with declared cash = 260,000 (variance = 0)
-        $closeRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shiftId}/close", [
+        $closeRes = $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shiftId}/close", [
             'declared_cash' => 260000,
             'note' => 'Shift balanced cleanly',
         ], [
@@ -259,7 +259,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $shift = app(PosService::class)->openShift($this->cashier, $this->tenant->id, 100000, $this->venue->id, 'REG-02');
 
         // 2. Create pending QR order (1 drink = 15,000 VND)
-        $orderRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 1],
             ],
@@ -272,7 +272,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $orderId = $orderRes->json('order.id');
 
         // 3. Trying to close shift without disposition fails with 409
-        $failClose = $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
+        $failClose = $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -282,7 +282,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertStringContainsString('without disposition', $failClose->json('message'));
 
         // 4. Closing with disposition = 'handover' succeeds
-        $handoverClose = $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
+        $handoverClose = $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 100000,
             'pending_disposition' => 'handover',
         ], [
@@ -306,7 +306,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'received_at' => now(),
         ]);
 
-        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'LATE-TXN-112233',
             'amount' => 15000,
         ], [
@@ -329,7 +329,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $shift = app(PosService::class)->openShift($this->cashier, $this->tenant->id, 300000, $this->venue->id, 'REG-03');
 
         // 2. Customer buys 2 drinks for 30,000 VND cash
-        $orderRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 2],
             ],
@@ -343,7 +343,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame(18, $this->drinkProduct->fresh()->stock_quantity);
 
         // 3. Customer returns 1 drink for cash refund (15,000 VND)
-        $refundRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/refund", [
+        $refundRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/refund", [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 1, 'restock' => true],
             ],
@@ -370,7 +370,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame(15000, $movements[0]['amount']);
 
         // Expected cash on close: 300,000 (opening) + 30,000 (sale) - 15,000 (refund) = 315,000 VND
-        $closeRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/shifts/{$shift->id}/close", [
+        $closeRes = $this->actingAs($this->cashier)->postJson("/api/pos/shifts/{$shift->id}/close", [
             'declared_cash' => 315000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -384,14 +384,14 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
     public function test_service_products_bypass_stock_and_expired_orders_are_released(): void
     {
         // 1. Service product has stock_quantity = 0. Selling it succeeds without stock constraint error!
-        $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => 100000,
         ], [
             'X-Organization-Id' => $this->tenant->id,
             'Idempotency-Key' => 'svc-shift-'.uniqid(),
         ])->assertCreated();
 
-        $orderRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->serviceProduct->id, 'quantity' => 1],
             ],
@@ -406,7 +406,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame(0, $this->serviceProduct->fresh()->stock_quantity);
 
         // 2. Pending QR order for drink product (reserves 3 items)
-        $qrOrderRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $qrOrderRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 3],
             ],
@@ -433,7 +433,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
     public function test_receipt_draft_warning_and_mixed_tender_payment(): void
     {
         // 1. Open shift
-        $this->actingAs($this->cashier)->postJson('/api/v2/pos/shifts', [
+        $this->actingAs($this->cashier)->postJson('/api/pos/shifts', [
             'opening_cash' => 100000,
             'venue_id' => $this->venue->id,
         ], [
@@ -442,7 +442,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         ])->assertCreated();
 
         // 2. Mixed tender payment: 1 drink (15,000 VND) paid via 10,000 Cash + 5,000 QR
-        $mixedRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $mixedRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'venue_id' => $this->venue->id,
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 1],
@@ -468,7 +468,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertDatabaseMissing('journals', ['organization_id' => $this->tenant->id, 'event_type' => 'pos.sale', 'event_id' => "pos:{$orderId}"]);
 
         // 3. Receipt print on unpaid order indicates draft warning
-        $printRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/receipt/print", [], [
+        $printRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/receipt/print", [], [
             'X-Organization-Id' => $this->tenant->id,
         ]);
         $printRes->assertOk();
@@ -476,7 +476,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertStringContainsString('UNPAID DRAFT RECEIPT', $printRes->json('receipt.warning'));
 
         // 4. Receipt send endpoint
-        $sendRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/receipt/send", [
+        $sendRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/receipt/send", [
             'email' => 'guest@example.com',
         ], [
             'X-Organization-Id' => $this->tenant->id,
@@ -486,7 +486,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame('guest@example.com', $sendRes->json('recipient'));
 
         // 5. Cashier attempts to confirm the QR portion with an unverified self-declared reference ('MIXED-FAKE-REF') -> assertStatus(422)
-        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $unverifiedRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'MIXED-FAKE-REF',
             'amount' => 5000,
         ], [
@@ -508,7 +508,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         ]);
 
         // Cashier confirms QR portion with verified reference -> assertOk(), order completed
-        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/confirm-qr", [
+        $confirmRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/confirm-qr", [
             'external_transaction_id' => 'MIXED-TXN-5000',
             'amount' => 5000,
         ], [
@@ -526,7 +526,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame(5000, (int) $order->fresh()->payments()->where('method', 'qr')->first()->amount);
 
         // Now print receipt again -> assertOk(), printable === true, receipt.is_paid === true, and warning is null
-        $printPaidRes = $this->actingAs($this->cashier)->postJson("/api/v2/pos/orders/{$orderId}/receipt/print", [], [
+        $printPaidRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/receipt/print", [], [
             'X-Organization-Id' => $this->tenant->id,
         ]);
         $printPaidRes->assertOk();
@@ -555,7 +555,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         ]);
 
         // 2. Cashier creates first order for 1 unit with payment_method = 'qr' -> SUCCEEDS (order status pending_payment)
-        $orderRes1 = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes1 = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'venue_id' => $this->venue->id,
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1],
@@ -571,7 +571,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame('pending_payment', $order1->status);
 
         // 3. Cashier tries to create a second order for 1 unit (either cash or qr) -> REJECTED with 409 ('Insufficient stock ... 1 reserved by pending orders/tabs')
-        $orderRes2 = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes2 = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'venue_id' => $this->venue->id,
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1],
@@ -604,7 +604,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $this->assertSame('cancelled', $order1->fresh()->status);
 
         // 6. Now cashier creates the second order for 1 unit -> SUCCEEDS (stock decremented or reserved)
-        $orderRes3 = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $orderRes3 = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'venue_id' => $this->venue->id,
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1],

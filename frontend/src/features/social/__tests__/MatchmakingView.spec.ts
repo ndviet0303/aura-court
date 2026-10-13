@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import MatchmakingView from '../views/MatchmakingView.vue'
 import { playLevelLabel } from '../composables/useMatchmaking'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { useAuthStore } from '@/stores/auth'
 
 const pushMock = vi.fn()
@@ -20,10 +20,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
   },
@@ -66,14 +62,14 @@ describe('MatchmakingView', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.startsWith('/social/matches')) {
         return { matches: mockMatches }
       }
       return {}
     })
 
-    vi.mocked(apiV2.post).mockResolvedValue({ success: true })
+    vi.mocked(api.post).mockResolvedValue({ success: true })
   })
 
   it('renders hero stats, filters, and match cards', async () => {
@@ -166,11 +162,11 @@ describe('MatchmakingView', () => {
     await confirmBtn?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith('/social/matches/1/join')
+    expect(api.post).toHaveBeenCalledWith('/social/matches/1/join')
   })
 
   it('detects table tennis from metadata before tennis', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) =>
+    vi.mocked(api.get).mockImplementation(async (url: string) =>
       url.startsWith('/social/matches')
         ? {
             matches: [

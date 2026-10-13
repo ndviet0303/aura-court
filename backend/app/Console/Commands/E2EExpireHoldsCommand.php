@@ -3,8 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
-use App\Models\Booking;
-use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\Reservation;
@@ -15,7 +13,6 @@ class E2EExpireHoldsCommand extends Command
 {
     protected $signature = 'e2e:expire-holds
         {--run-id= : Unique run ID}
-        {--booking-code= : Optional specific booking code to backdate}
         {--reservation-code= : Optional specific reservation code to backdate}
         {--minutes=30 : Number of minutes to backdate timestamps}';
 
@@ -76,34 +73,11 @@ class E2EExpireHoldsCommand extends Command
 
         $minutes = max(1, (int) $this->option('minutes'));
         $targetTime = now()->subMinutes($minutes);
-        $bookingCode = trim((string) $this->option('booking-code'));
         $reservationCode = trim((string) $this->option('reservation-code'));
 
-        $backdatedBookings = [];
         $backdatedReservations = [];
 
-        DB::transaction(function () use ($bookingCode, $reservationCode, $targetTime, $organizationIds, &$backdatedBookings, &$backdatedReservations) {
-            if ($bookingCode !== '') {
-                $booking = Booking::where('code', $bookingCode)->when($organizationIds !== null, fn ($query) => $query->whereHas('court.venue', fn ($venues) => $venues->whereIn('organization_id', $organizationIds)))->first();
-                if ($booking) {
-                    $booking->update(['payment_expires_at' => $targetTime]);
-                    $backdatedBookings[] = $booking->code;
-
-                    // Backdate associated owner payment attempt
-                    $mapping = LegacyBookingMapping::where('legacy_booking_id', $booking->id)->first();
-                    $reservation = $mapping ? Reservation::find($mapping->reservation_id) : Reservation::where('code', $booking->code)->first();
-                    if ($reservation) {
-                        OwnerPaymentAttempt::where('purpose', 'booking')
-                            ->where('purpose_id', $reservation->code)
-                            ->update(['expires_at' => $targetTime]);
-                        $reservation->update(['hold_expires_at' => $targetTime]);
-                        $backdatedReservations[] = $reservation->code;
-                    }
-                    OwnerPaymentAttempt::where('purpose', 'booking')
-                        ->where('purpose_id', (string) $booking->id)
-                        ->update(['expires_at' => $targetTime]);
-                }
-            }
+        DB::transaction(function () use ($reservationCode, $targetTime, $organizationIds, &$backdatedReservations) {
             if ($reservationCode !== '') {
                 $reservation = Reservation::where('code', $reservationCode)->when($organizationIds !== null, fn ($query) => $query->whereIn('organization_id', $organizationIds))->first();
                 if ($reservation) {
@@ -116,14 +90,8 @@ class E2EExpireHoldsCommand extends Command
                 }
             }
 
-            if ($bookingCode === '' && $reservationCode === '') {
-                // Backdate all pending bookings and held reservations
-                $pendingBookings = Booking::where('status', 'pending_payment')->when($organizationIds !== null, fn ($query) => $query->whereHas('court.venue', fn ($venues) => $venues->whereIn('organization_id', $organizationIds)))->get();
-                foreach ($pendingBookings as $b) {
-                    $b->update(['payment_expires_at' => $targetTime]);
-                    $backdatedBookings[] = $b->code;
-                }
-
+            if ($reservationCode === '') {
+                // Backdate all held reservations
                 $heldReservations = Reservation::where('status', 'held')->when($organizationIds !== null, fn ($query) => $query->whereIn('organization_id', $organizationIds))->get();
                 foreach ($heldReservations as $r) {
                     $r->update(['hold_expires_at' => $targetTime]);
@@ -140,7 +108,6 @@ class E2EExpireHoldsCommand extends Command
         $out = [
             'status' => 'success',
             'expired_count' => $expiredCount,
-            'backdated_bookings' => $backdatedBookings,
             'backdated_reservations' => $backdatedReservations,
         ];
 

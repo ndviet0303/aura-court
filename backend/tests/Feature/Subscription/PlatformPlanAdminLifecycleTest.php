@@ -18,24 +18,24 @@ class PlatformPlanAdminLifecycleTest extends TestCase
         $admin = User::factory()->create(['role' => 'platform_admin']);
         Sanctum::actingAs($admin);
 
-        $created = $this->postJson('/api/v1/admin/platform-plans', $this->planPayload())
+        $created = $this->postJson('/api/admin/platform-plans', $this->planPayload())
             ->assertCreated()
             ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.version', 1)
             ->assertJsonPath('data.is_active', false);
         $versionOneId = (int) $created->json('data.id');
 
-        $this->getJson('/api/v1/platform/plans')->assertOk()->assertJsonCount(0, 'data');
-        $this->postJson("/api/v1/admin/platform-plans/{$versionOneId}/publish", [
+        $this->getJson('/api/platform/plans')->assertOk()->assertJsonCount(0, 'data');
+        $this->postJson("/api/admin/platform-plans/{$versionOneId}/publish", [
             'expected_version' => 1,
         ])->assertOk()->assertJsonPath('data.status', 'published');
 
-        $this->getJson('/api/v1/platform/plans')
+        $this->getJson('/api/platform/plans')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.version', 1);
 
-        $revision = $this->patchJson("/api/v1/admin/platform-plans/{$versionOneId}", [
+        $revision = $this->patchJson("/api/admin/platform-plans/{$versionOneId}", [
             'expected_version' => 1,
             'name' => 'Pro 2027',
             'price' => 700000,
@@ -52,9 +52,9 @@ class PlatformPlanAdminLifecycleTest extends TestCase
             'status' => 'published',
             'is_active' => true,
         ]);
-        $this->getJson('/api/v1/platform/plans')->assertJsonPath('data.0.version', 1);
+        $this->getJson('/api/platform/plans')->assertJsonPath('data.0.version', 1);
 
-        $this->postJson("/api/v1/admin/platform-plans/{$versionTwoId}/publish", [
+        $this->postJson("/api/admin/platform-plans/{$versionTwoId}/publish", [
             'expected_version' => 2,
         ])->assertOk()->assertJsonPath('data.status', 'published');
 
@@ -63,16 +63,16 @@ class PlatformPlanAdminLifecycleTest extends TestCase
             'status' => 'retired',
             'is_active' => false,
         ]);
-        $this->getJson('/api/v1/platform/plans')
+        $this->getJson('/api/platform/plans')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $versionTwoId)
             ->assertJsonPath('data.0.version', 2);
 
-        $this->postJson("/api/v1/admin/platform-plans/{$versionTwoId}/retire", [
+        $this->postJson("/api/admin/platform-plans/{$versionTwoId}/retire", [
             'expected_version' => 2,
         ])->assertOk()->assertJsonPath('data.status', 'retired');
-        $this->getJson('/api/v1/platform/plans')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/platform/plans')->assertOk()->assertJsonCount(0, 'data');
 
         $this->assertSame(2, PlatformPlan::query()->count());
         $this->assertSame(0, DB::table('tenant_membership_plans')->count());
@@ -82,19 +82,19 @@ class PlatformPlanAdminLifecycleTest extends TestCase
     {
         $owner = User::factory()->create(['role' => 'customer']);
         Sanctum::actingAs($owner);
-        $this->getJson('/api/v1/admin/platform-plans')->assertForbidden();
-        $this->postJson('/api/v1/admin/platform-plans', $this->planPayload())->assertForbidden();
+        $this->getJson('/api/admin/platform-plans')->assertForbidden();
+        $this->postJson('/api/admin/platform-plans', $this->planPayload())->assertForbidden();
 
         $admin = User::factory()->create(['role' => 'admin']);
         Sanctum::actingAs($admin);
         $payload = $this->planPayload();
         $payload['price'] = 0;
         $payload['trial_enabled'] = false;
-        $planId = $this->postJson('/api/v1/admin/platform-plans', $payload)
+        $planId = $this->postJson('/api/admin/platform-plans', $payload)
             ->assertCreated()
             ->json('data.id');
 
-        $this->postJson("/api/v1/admin/platform-plans/{$planId}/publish", [
+        $this->postJson("/api/admin/platform-plans/{$planId}/publish", [
             'expected_version' => 1,
         ])->assertUnprocessable()->assertJsonValidationErrors(['price']);
 

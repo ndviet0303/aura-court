@@ -1,5 +1,4 @@
 import { api } from '@/core/api/client'
-import type { SpendWalletPayload } from '../types/wallet'
 
 export const walletApi = {
   getWallet: (organizationId?: number) =>
@@ -16,8 +15,6 @@ export const walletApi = {
     }),
 
   getBalance: () => api.get<{ balance: number; currency: string }>('/wallet/balance'),
-
-  spend: (payload: SpendWalletPayload) => api.post('/wallet/spend', payload),
 
   initiateDeposit: (payload: {
     amount: number

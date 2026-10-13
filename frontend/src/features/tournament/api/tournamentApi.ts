@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { formatDate } from '@/i18n'
 import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
 
@@ -169,41 +169,41 @@ export const tournamentApi = {
     status?: string
     search?: string
   }): Promise<T> {
-    const res = await apiV2.get<any>('/tournaments', { params })
+    const res = await api.get<any>('/tournaments', { params })
     const rawList = Array.isArray(res) ? res : res?.data || []
     return rawList.map(mapRawTournament) as unknown as T
   },
 
   async getById<T = TournamentItem>(id: number | string): Promise<T> {
-    const res = await apiV2.get<any>(`/tournaments/${id}`)
+    const res = await api.get<any>(`/tournaments/${id}`)
     const raw = res?.tournament || res?.data || res
     return mapRawTournament(raw) as unknown as T
   },
 
-  create: <T = TournamentItem>(payload: any) => apiV2.post<T>('/tournaments', payload),
+  create: <T = TournamentItem>(payload: any) => api.post<T>('/tournaments', payload),
 
   regenerateBracket: <T = TournamentItem>(tournamentId: number | string) =>
-    apiV2.post<T>(`/tournaments/${tournamentId}/regenerate`),
+    api.post<T>(`/tournaments/${tournamentId}/regenerate`),
 
   checkInParticipant: (participantId: number | string, payload?: TournamentRegistrationPayload) =>
-    apiV2.post(`/tournament-participants/${participantId}/check-in`, payload),
+    api.post(`/tournament-participants/${participantId}/check-in`, payload),
 
   scoreFixture: (tournamentId: number | string, fixtureId: number | string, scorePayload: any) =>
-    apiV2.post(`/tournaments/${tournamentId}/fixtures/${fixtureId}/score`, scorePayload),
+    api.post(`/tournaments/${tournamentId}/fixtures/${fixtureId}/score`, scorePayload),
 
   register: (tournamentId: number | string, payload?: any) =>
-    apiV2.post<{ participant: any; receipt: any; already_registered: boolean; message: string }>(
+    api.post<{ participant: any; receipt: any; already_registered: boolean; message: string }>(
       `/tournaments/${tournamentId}/register`,
       payload,
     ),
 
   getRegistration: (tournamentId: number | string) =>
-    apiV2.get<{ registered: boolean; participant?: any; receipt?: any }>(
+    api.get<{ registered: boolean; participant?: any; receipt?: any }>(
       `/tournaments/${tournamentId}/registration`,
     ),
 
   getEvents: (tournamentId: number | string) =>
-    apiV2.get<any[]>(`/tournaments/${tournamentId}/events`),
+    api.get<any[]>(`/tournaments/${tournamentId}/events`),
 
-  poll: (tournamentId: number | string) => apiV2.get<any>(`/tournaments/${tournamentId}/poll`),
+  poll: (tournamentId: number | string) => api.get<any>(`/tournaments/${tournamentId}/poll`),
 }

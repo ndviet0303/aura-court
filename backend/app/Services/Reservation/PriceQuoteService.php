@@ -3,7 +3,6 @@
 namespace App\Services\Reservation;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
@@ -32,7 +31,7 @@ class PriceQuoteService
         'base' => 1,
     ];
 
-    public function create(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
+    public function create(int $userId, int $organizationId, int $courtId, array $slots, ?string $couponCode = null): PriceQuote
     {
         $eligibility = app(VerifyEffectiveBookingEligibility::class);
         $court = $eligibility->assertEligible($courtId, publicFacing: true);
@@ -67,21 +66,14 @@ class PriceQuoteService
             abort(409, 'Sân đang bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
         }
 
-        $v1Overlapping = BookingSlot::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $blockEnds)
-            ->where('ends_at', '>', $blockStarts)
-            ->whereHas('booking', fn ($b) => $b->whereIn('status', ['confirmed', 'pending_payment']))
-            ->exists();
-
-        $v2Overlapping = ReservationSlot::query()
+        $overlapping = ReservationSlot::query()
             ->where('court_id', $court->id)
             ->where('starts_at', '<', $blockEnds)
             ->where('ends_at', '>', $blockStarts)
             ->whereHas('reservation', fn ($r) => $r->whereIn('status', ['held', 'confirmed']))
             ->exists();
 
-        if ($v1Overlapping || $v2Overlapping) {
+        if ($overlapping) {
             abort(409, 'The selected court-time is no longer available.');
         }
 
@@ -89,17 +81,17 @@ class PriceQuoteService
         $subtotal = (int) collect($snapshot)->sum('unit_price');
         $appliedRuleIds = collect($snapshot)->pluck('rule.id')->filter()->values()->all();
         $ruleVersion = max([1, ...collect($snapshot)->map(fn (array $slot) => (int) ($slot['rule']['version'] ?? 1))->all()]);
-        $benefit = $this->discounts->preview(
-            User::findOrFail($userId),
-            $subtotal,
-            organizationId: $organizationId,
-            venueId: (int) $court->venue_id,
-            courtId: (int) $court->id,
-        );
+        $user = User::findOrFail($userId);
+        // preview() lets a code below its minimum spend through with no discount; a quote must refuse it.
+        $this->discounts->resolveEligibleCoupon($couponCode, $organizationId, $subtotal, $user, (int) $court->venue_id, (int) $court->id);
+        $benefit = $this->discounts->preview($user, $subtotal, $couponCode, $organizationId, (int) $court->venue_id, (int) $court->id);
         $benefitSnapshot = $benefit['membership_snapshot'] ? [
             ...$benefit['membership_snapshot'],
             'membership_discount_amount' => (int) $benefit['membership_discount'],
-        ] : null;
+        ] : [];
+        if ($benefit['coupon']) {
+            $benefitSnapshot += ['coupon_id' => (int) $benefit['coupon']->id, 'coupon_code' => $benefit['coupon']->code, 'coupon_discount_amount' => (int) $benefit['coupon_discount']];
+        }
 
         return PriceQuote::create([
             'organization_id' => $organizationId,
@@ -110,7 +102,7 @@ class PriceQuoteService
             'currency' => 'VND',
             'subtotal' => $subtotal,
             'total_amount' => (int) $benefit['total'],
-            'benefit_snapshot' => $benefitSnapshot,
+            'benefit_snapshot' => $benefitSnapshot ?: null,
             'rule_version' => $ruleVersion,
             'slot_snapshot' => $snapshot,
             'applied_rule_ids' => array_values(array_unique($appliedRuleIds)),

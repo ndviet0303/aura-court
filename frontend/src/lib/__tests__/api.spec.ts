@@ -24,7 +24,7 @@ describe('API Client & Helpers', () => {
           return new Response(null, { status: 204 })
         }
 
-        if (url.endsWith('/api/v1/bookings')) {
+        if (url.endsWith('/api/reservations/checkout')) {
           bookingCalls += 1
         }
 
@@ -41,14 +41,17 @@ describe('API Client & Helpers', () => {
 
     const { api } = await import('../api')
 
-    await expect(api.post('/bookings', {})).resolves.toEqual({ ok: true })
+    await expect(api.post('/reservations/checkout', {})).resolves.toEqual({ ok: true })
     expect(fetchMock).toHaveBeenCalledTimes(4)
 
-    const retriedRequest = fetchMock.mock.calls[3]?.[1]
-    expect(new Headers(retriedRequest?.headers).get('X-XSRF-TOKEN')).toBe('refreshed')
+    const firstHeaders = new Headers(fetchMock.mock.calls[1]?.[1]?.headers)
+    const retriedHeaders = new Headers(fetchMock.mock.calls[3]?.[1]?.headers)
+    expect(retriedHeaders.get('X-XSRF-TOKEN')).toBe('refreshed')
+    // The retry replays the same command, so it must keep the same Idempotency-Key.
+    expect(retriedHeaders.get('Idempotency-Key')).toBe(firstHeaders.get('Idempotency-Key'))
   })
 
-  it('preserves Content-Type and custom headers on apiV2 requests', async () => {
+  it('preserves Content-Type and adds an Idempotency-Key to mutations', async () => {
     const fetchMock = vi.fn<typeof fetch>(
       async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         const url = String(input)
@@ -66,16 +69,18 @@ describe('API Client & Helpers', () => {
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    const { apiV2 } = await import('../api')
-    await apiV2.post('/recurring-series', { court_id: 1 })
+    const { api } = await import('../api')
+    await api.post('/recurring-series', { court_id: 1 })
+    await api.post('/recurring-series', { court_id: 1 }, 'caller-key')
 
-    const postCall = fetchMock.mock.calls[1]
-    const headers = postCall?.[1]?.headers as Record<string, string>
+    const headers = fetchMock.mock.calls[1]?.[1]?.headers as Record<string, string>
     expect(headers['Content-Type']).toBe('application/json')
     expect(headers['Idempotency-Key']).toBeDefined()
+    const callerHeaders = fetchMock.mock.calls[2]?.[1]?.headers as Record<string, string>
+    expect(callerHeaders['Idempotency-Key']).toBe('caller-key')
   })
 
-  it('appends query params correctly for GET requests in api and apiV2', async () => {
+  it('appends query params to unversioned GET requests', async () => {
     const fetchMock = vi.fn<typeof fetch>(async (input: RequestInfo | URL): Promise<Response> => {
       const url = String(input)
       if (url === '/runtime-config.json') {
@@ -91,14 +96,14 @@ describe('API Client & Helpers', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const { api, apiV2 } = await import('../api')
+    const { api } = await import('../api')
     const res1 = await api.get<{ url: string }>('/courts', { params: { status: 'open', page: 2 } })
-    expect(res1.url).toBe('https://api.example.test/api/v1/courts?status=open&page=2')
+    expect(res1.url).toBe('https://api.example.test/api/courts?status=open&page=2')
 
-    const res2 = await apiV2.get<{ url: string }>('/marketplace/listings', {
+    const res2 = await api.get<{ url: string }>('/marketplace/listings', {
       params: { venue: 'center' },
     })
-    expect(res2.url).toBe('https://api.example.test/api/v2/marketplace/listings?venue=center')
+    expect(res2.url).toBe('https://api.example.test/api/marketplace/listings?venue=center')
   })
 
   it('extracts error messages from various error formats using errorMessage', async () => {

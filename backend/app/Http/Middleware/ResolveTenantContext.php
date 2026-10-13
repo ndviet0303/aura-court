@@ -32,7 +32,7 @@ class ResolveTenantContext
             // If user is authenticated, ensure they belong to this organization or are platform admin
             if ($request->user() && ! $request->user()->isPlatformAdmin()) {
                 $isMember = $organization->hasMember($request->user()->id);
-                if (! $isMember && ! $request->is('api/v1/courts*') && ! $request->is('api/v1/availability*') && ! $request->is('api/v2/loyalty*')) {
+                if (! $isMember && ! $request->is('api/loyalty*')) {
                     abort(response()->json([
                         'message' => 'Unauthorized access to organization.',
                         'code' => 'ORGANIZATION_ACCESS_DENIED',

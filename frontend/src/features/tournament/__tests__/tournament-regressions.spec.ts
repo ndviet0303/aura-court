@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useTournamentsList } from '../composables/useTournamentsList'
 import type { TournamentItem } from '../types/tournament'
-import { usePaymentProcessing } from '@/features/booking/composables/usePaymentProcessing'
 import { tournamentApi } from '../api/tournamentApi'
 import { useAuthStore } from '@/stores/auth'
 
@@ -31,10 +30,6 @@ vi.mock('../api/tournamentApi', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
   },
@@ -95,65 +90,6 @@ describe('Task 1.2 Regression: Local tournament registration and payment confirm
 
     // 2. Tournament was added to registered list
     expect(list.registeredTournamentIds.value).toContain(sampleTournament.id)
-  })
-
-  it('Task 8.9 Fix: handleWalletPay calls tournamentApi.register and stores authoritative receipt', async () => {
-    vi.mocked(tournamentApi.getById).mockResolvedValue(sampleTournament)
-    vi.mocked(tournamentApi.register).mockResolvedValue({
-      participant: { id: 88, user_id: 1, name: 'Nguyễn Văn A' },
-      receipt: { receipt_code: 'RCP-TRN-1-88', entry_fee: 300000, status: 'confirmed' },
-      already_registered: false,
-      message: 'Đăng ký tham gia giải đấu thành công.',
-    } as any)
-
-    const payment = usePaymentProcessing()
-    await payment.startTimers() // initializes session
-
-    expect(payment.isTournament.value).toBe(true)
-
-    // Trigger wallet payment for tournament
-    await payment.handleWalletPay()
-
-    // Authoritative backend registration endpoint was called
-    expect(tournamentApi.register).toHaveBeenCalledWith(
-      'tourney-uuid-1',
-      expect.objectContaining({
-        name: 'Athlete Demo',
-      }),
-    )
-    expect(payment.status.value).toBe('confirmed')
-    expect(payment.showSuccessModal.value).toBe(true)
-  })
-
-  it('charges the published fee, and nothing for a free or unpublished one', async () => {
-    // The free cases TournamentService::parseEntryFee charges 0 for; a 300.000 ₫ stand-in once showed instead.
-    for (const [entry_fee, amount] of [
-      ['300.000 ₫ / VĐV', 300000],
-      ['0', 0],
-      ['Miễn phí', 0],
-      ['', 0],
-      [undefined, 0],
-    ] as const) {
-      vi.mocked(tournamentApi.getById).mockResolvedValue({ ...sampleTournament, entry_fee })
-      const payment = usePaymentProcessing()
-      await payment.startTimers()
-
-      expect(payment.paymentAmount.value).toBe(amount)
-      expect(payment.payment.value?.amount).toBe(amount)
-    }
-  })
-
-  it('offers nothing to pay when the tournament cannot be loaded', async () => {
-    vi.mocked(tournamentApi.getById).mockRejectedValue(new Error('Not found'))
-    const payment = usePaymentProcessing()
-    await payment.startTimers()
-
-    expect(payment.tournament.value).toBeNull()
-    expect(payment.payment.value).toBeNull()
-    expect(payment.error.value).toBe('Not found')
-
-    await payment.handleWalletPay()
-    expect(tournamentApi.register).not.toHaveBeenCalled()
   })
 
   it('Task 8.9 Fix: persisted tournament registration is preserved on reload from server participants', async () => {

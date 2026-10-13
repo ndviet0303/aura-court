@@ -460,7 +460,7 @@ class OwnerPaymentAttemptServiceTest extends TestCase
 
     private function createVerifiedConnection(Venue $venue): array
     {
-        $url = "/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
+        $url = "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
         $created = $this->postJson($url, [
             'bank_code' => 'MBBank',
             'account_name' => 'Aura Court Owner',
@@ -520,6 +520,6 @@ class OwnerPaymentAttemptServiceTest extends TestCase
 
     private function webhookUrl(ReceivingConnection $connection): string
     {
-        return '/api/v1/webhooks/sepay/connections/'.$connection->routing_id;
+        return '/api/webhooks/sepay/connections/'.$connection->routing_id;
     }
 }

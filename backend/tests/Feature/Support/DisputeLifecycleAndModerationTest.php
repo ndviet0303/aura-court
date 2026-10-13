@@ -241,7 +241,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         // 1. Moderator dismisses report with reasoned judgment (keep)
         $dismissRes = $this->actingAs($this->ownerA)
             ->withHeaders(['X-Organization-Id' => (string) $this->tenantA->id])
-            ->postJson("/api/v2/social/feed/reports/{$report->id}/dismiss", [
+            ->postJson("/api/social/feed/reports/{$report->id}/dismiss", [
                 'reason' => 'Nội dung chia sẻ kỹ thuật hoàn toàn hợp lệ, không vi phạm.',
             ]);
 
@@ -269,7 +269,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         // 2. Hide post
         $hideRes = $this->actingAs($this->ownerA)
             ->withHeaders(['X-Organization-Id' => (string) $this->tenantA->id])
-            ->postJson("/api/v2/social/feed/{$post->id}/hide", [
+            ->postJson("/api/social/feed/{$post->id}/hide", [
                 'reason' => 'Cần ẩn tạm thời để bổ sung xác minh thêm.',
             ]);
         $hideRes->assertOk();
@@ -291,7 +291,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         // 3. Restore post
         $restoreRes = $this->actingAs($this->ownerA)
             ->withHeaders(['X-Organization-Id' => (string) $this->tenantA->id])
-            ->postJson("/api/v2/social/feed/{$post->id}/restore", [
+            ->postJson("/api/social/feed/{$post->id}/restore", [
                 'reason' => 'Đã xác minh đầy đủ thông tin, khôi phục hiển thị.',
             ]);
         $restoreRes->assertOk();
@@ -327,7 +327,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Complainant tries to arbitrate -> 422 Conflict of interest
         $resComplainant = $this->actingAs($this->customerAlice)
-            ->postJson("/api/v1/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve',
                 'notes' => 'Tự phán quyết cho mình',
             ]);
@@ -338,7 +338,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Respondent (Owner A) tries to arbitrate -> 422 Conflict of interest
         $resRespondent = $this->actingAs($this->ownerA)
-            ->postJson("/api/v1/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'dismiss',
                 'notes' => 'Tự bác bỏ khiếu nại',
             ]);
@@ -350,7 +350,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         // Platform admin reassigns reviewer to neutral admin/manager
         $newReviewer = $this->createCustomerUser('reviewer@test.local', 'Independent Reviewer');
         $reassignRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$dispute->id}/reassign", [
+            ->postJson("/api/admin/disputes/{$dispute->id}/reassign", [
                 'new_reviewer_id' => $newReviewer->id,
                 'reason' => 'Chuyển người xử lý do xung đột lợi ích giữa chủ sân và khách hàng',
             ]);
@@ -364,7 +364,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Platform admin can now arbitrate smoothly
         $arbitrateRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve',
                 'notes' => 'Phán quyết phân xử độc lập công tâm từ ban quản trị.',
             ]);
@@ -382,7 +382,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $expiredReservation = $this->createReservation($this->customerAlice, $this->courtA, now()->subDays(35));
 
         $lateRes = $this->actingAs($this->customerAlice)
-            ->postJson('/api/v1/disputes', [
+            ->postJson('/api/disputes', [
                 'title' => 'Khiếu nại đặt sân quá hạn',
                 'summary' => 'Nội dung tóm tắt khiếu nại đã quá hạn 30 ngày theo quy định.',
                 'dispute_type' => 'court_quality',
@@ -395,7 +395,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $validReservation = $this->createReservation($this->customerAlice, $this->courtA, now()->subDays(5));
 
         $unauthRes = $this->actingAs($this->stranger)
-            ->postJson('/api/v1/disputes', [
+            ->postJson('/api/disputes', [
                 'title' => 'Người lạ cố tình khiếu nại',
                 'summary' => 'Tóm tắt nội dung khiếu nại hợp lệ về độ dài.',
                 'dispute_type' => 'court_quality',
@@ -405,7 +405,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // 3. Incomplete filing: high severity or court_quality with NO evidence -> status becomes awaiting_evidence
         $intakeRes = $this->actingAs($this->customerAlice)
-            ->postJson('/api/v1/disputes', [
+            ->postJson('/api/disputes', [
                 'title' => 'Sân chất lượng kém ngập nước',
                 'summary' => 'Mặt sân trơn trượt ngập nước mưa không thể thi đấu an toàn.',
                 'dispute_type' => 'court_quality',
@@ -434,7 +434,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // 4. Duplicate check: Trying to file another dispute for same reservation while one is active -> 409
         $dupRes = $this->actingAs($this->customerAlice)
-            ->postJson('/api/v1/disputes', [
+            ->postJson('/api/disputes', [
                 'title' => 'Gửi trùng khiếu nại cho cùng booking',
                 'summary' => 'Tóm tắt nội dung khiếu nại trùng lặp cho đơn đặt sân.',
                 'dispute_type' => 'payment_issue',
@@ -465,14 +465,14 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Stranger cannot upload evidence
         $strangerRes = $this->actingAs($this->stranger)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'evidence' => ['https://example.com/bogus.jpg'],
             ]);
         $strangerRes->assertStatus(403);
 
         // Alice (complainant) uploads evidence and explanation
         $uploadRes = $this->actingAs($this->customerAlice)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'explanation' => 'Hình ảnh chụp mặt sân bị nứt và lưới rách.',
                 'evidence' => [
                     ['url' => 'https://storage.local/court_crack.jpg', 'type' => 'image'],
@@ -514,7 +514,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         );
 
         $arbitrateRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve_and_refund',
                 'refund_amount' => 200000,
                 'refund_method' => 'owner_direct',
@@ -567,7 +567,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Arbitrate with refund
         $arbRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve_and_refund',
                 'refund_amount' => 150000,
                 'notes' => 'Hoàn tiền cho khách hàng',
@@ -583,7 +583,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // 1. Trying to close while obligation is still in 'approved' status -> 409 Conflict
         $closeRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$dispute->id}/close");
+            ->postJson("/api/admin/disputes/{$dispute->id}/close");
 
         $closeRes->assertStatus(409)
             ->assertJsonFragment([
@@ -599,7 +599,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // 3. Close dispute now succeeds when obligation is acknowledged
         $closeSuccessRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$dispute->id}/close");
+            ->postJson("/api/admin/disputes/{$dispute->id}/close");
 
         $closeSuccessRes->assertOk();
         $this->assertFalse($closeSuccessRes->json('data.has_pending_execution'));
@@ -623,7 +623,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         );
 
         $arbRes2 = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/disputes/{$disputeRejected->id}/arbitrate", [
+            ->postJson("/api/disputes/{$disputeRejected->id}/arbitrate", [
                 'decision' => 'resolve_and_refund',
                 'refund_amount' => 100000,
                 'notes' => 'Hoàn tiền cho vụ việc thứ hai',
@@ -640,7 +640,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         ]);
 
         $closeRejectedRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$disputeRejected->id}/close");
+            ->postJson("/api/admin/disputes/{$disputeRejected->id}/close");
 
         $closeRejectedRes->assertOk();
         $this->assertFalse($closeRejectedRes->json('data.has_pending_execution'));
@@ -672,7 +672,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // 1. Validation fails without material evidence or short reason
         $failRes = $this->actingAs($this->customerAlice)
-            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+            ->postJson("/api/disputes/{$dispute->id}/reopen", [
                 'reason' => 'Hi',
                 'material_evidence' => [],
             ]);
@@ -680,14 +680,14 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // 2. Stranger cannot reopen -> 403 or 404 (denies access without disclosing dispute)
         $strangerRes = $this->actingAs($this->stranger)
-            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+            ->postJson("/api/disputes/{$dispute->id}/reopen", [
                 'reason' => 'Lý do hợp lệ trên năm ký tự',
                 'material_evidence' => ['https://example.com/proof.pdf'],
             ]);
         $this->assertContains($strangerRes->status(), [403, 404]);
         // 3. Complainant reopens with material evidence and reasoned request
         $reopenRes = $this->actingAs($this->customerAlice)
-            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+            ->postJson("/api/disputes/{$dispute->id}/reopen", [
                 'reason' => 'Bổ sung video camera giám sát thời điểm xảy ra va chạm sân trơn trượt.',
                 'material_evidence' => [
                     ['url' => 'https://storage.local/cctv_footage.mp4', 'type' => 'video'],
@@ -727,12 +727,12 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Owner B (Tenant Beta) tries to view Dispute A -> 404 (or denied access without leakage)
         $viewRes = $this->actingAs($this->ownerB)
-            ->getJson("/api/v1/disputes/{$disputeTenantA->id}");
+            ->getJson("/api/disputes/{$disputeTenantA->id}");
         $viewRes->assertStatus(404);
 
         // Owner B tries to arbitrate Dispute A -> 404
         $arbRes = $this->actingAs($this->ownerB)
-            ->postJson("/api/v1/disputes/{$disputeTenantA->id}/arbitrate", [
+            ->postJson("/api/disputes/{$disputeTenantA->id}/arbitrate", [
                 'decision' => 'dismiss',
                 'notes' => 'Owner B can thiệp trái phép',
             ]);
@@ -740,7 +740,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Owner B tries to reassign Dispute A -> 404
         $reassignRes = $this->actingAs($this->ownerB)
-            ->postJson("/api/v1/disputes/{$disputeTenantA->id}/reassign", [
+            ->postJson("/api/disputes/{$disputeTenantA->id}/reassign", [
                 'new_reviewer_id' => $this->ownerB->id,
                 'reason' => 'Cố tình chuyển cho mình',
             ]);
@@ -748,7 +748,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         // Owner A can view Dispute A
         $ownerAView = $this->actingAs($this->ownerA)
-            ->getJson("/api/v1/disputes/{$disputeTenantA->id}");
+            ->getJson("/api/disputes/{$disputeTenantA->id}");
         $ownerAView->assertOk()
             ->assertJsonPath('data.dispute_code', 'DSP-TENANT-A');
     }
@@ -762,7 +762,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $reservation = $this->createReservation($this->customerAlice, $this->courtA, now()->subDays(2)->setTime(16, 0));
 
         $fileRes = $this->actingAs($this->customerAlice)
-            ->postJson('/api/v1/disputes', [
+            ->postJson('/api/disputes', [
                 'title' => 'Sân ngập nước không được đổi giờ',
                 'summary' => 'Sân bị ngập nước và chủ sân không hỗ trợ đổi giờ chơi.',
                 'dispute_type' => 'court_quality',
@@ -778,14 +778,14 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $this->assertEquals(['dispute.filed'], $this->ownerA->notifications()->get()->pluck('data.event')->all());
 
         $this->actingAs($this->ownerA)
-            ->postJson("/api/v1/disputes/{$disputeId}/evidence", [
+            ->postJson("/api/disputes/{$disputeId}/evidence", [
                 'explanation' => 'Sân đã được thoát nước trước giờ chơi.',
                 'evidence' => [['url' => 'https://storage.local/drained.jpg', 'type' => 'image']],
             ])
             ->assertOk();
 
         $this->actingAs($this->ownerA)
-            ->postJson("/api/v1/disputes/{$disputeId}/arbitrate", [
+            ->postJson("/api/disputes/{$disputeId}/arbitrate", [
                 'decision' => 'dismiss',
                 'notes' => 'Chủ sân tự bác bỏ khiếu nại.',
             ])
@@ -793,7 +793,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
             ->assertJsonPath('message', 'Conflict of interest: Reviewer cannot arbitrate a dispute in which they are an involved party.');
 
         $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$disputeId}/arbitrate", [
+            ->postJson("/api/admin/disputes/{$disputeId}/arbitrate", [
                 'decision' => 'resolve',
                 'notes' => 'Chấp thuận khiếu nại về chất lượng sân.',
             ])
@@ -821,7 +821,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $dispute->update(['respondent_id' => null]);
 
         $this->actingAs($this->platformAdmin)
-            ->postJson("/api/v1/admin/disputes/{$dispute->id}/arbitrate", [
+            ->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve_and_refund',
                 'refund_amount' => 150000,
                 'refund_method' => 'owner_direct',
@@ -863,19 +863,19 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $dispute = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerAlice, $this->ownerA, 'pending', 'DSP-FORMER-OWNER');
         $activeOwner = $this->replaceOwner($this->tenantA, $this->ownerA);
 
-        $this->actingAs($this->ownerA)->getJson("/api/v1/disputes/{$dispute->id}")->assertStatus(404);
+        $this->actingAs($this->ownerA)->getJson("/api/disputes/{$dispute->id}")->assertStatus(404);
         $this->assertNotContains(
             'DSP-FORMER-OWNER',
-            collect($this->actingAs($this->ownerA)->getJson('/api/v1/disputes')->json('data'))->pluck('dispute_code')
+            collect($this->actingAs($this->ownerA)->getJson('/api/disputes')->json('data'))->pluck('dispute_code')
         );
         $this->actingAs($this->ownerA)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'explanation' => 'Tôi không còn quản lý cơ sở này.',
             ])
             ->assertStatus(403);
 
         $this->actingAs($activeOwner)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'explanation' => 'Chủ mới tiếp nhận và phản hồi khiếu nại.',
                 'evidence' => [['url' => 'https://storage.local/handover.jpg', 'type' => 'image']],
             ])
@@ -883,7 +883,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
 
         $dispute->update(['status' => 'dismissed']);
         $this->actingAs($activeOwner)
-            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+            ->postJson("/api/disputes/{$dispute->id}/reopen", [
                 'reason' => 'Chủ mới có chứng cứ mới sau quyết định.',
                 'material_evidence' => [['url' => 'https://storage.local/after-handover.jpg', 'type' => 'image']],
             ])
@@ -901,14 +901,14 @@ class DisputeLifecycleAndModerationTest extends TestCase
             ->where('user_id', $this->ownerA->id)
             ->update(['role' => OrganizationMember::ROLE_VENUE_MANAGER]);
 
-        $this->actingAs($this->ownerA)->getJson("/api/v1/disputes/{$dispute->id}")->assertOk();
+        $this->actingAs($this->ownerA)->getJson("/api/disputes/{$dispute->id}")->assertOk();
         $this->actingAs($this->ownerA)
-            ->postJson("/api/v1/disputes/{$dispute->id}/evidence", [
+            ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'evidence' => [['url' => 'https://storage.local/late.jpg', 'type' => 'image']],
             ])
             ->assertStatus(403);
         $this->actingAs($this->ownerA)
-            ->postJson("/api/v1/disputes/{$dispute->id}/reopen", [
+            ->postJson("/api/disputes/{$dispute->id}/reopen", [
                 'reason' => 'Có chứng cứ mới về tình trạng sân.',
                 'material_evidence' => [['url' => 'https://storage.local/new.jpg', 'type' => 'image']],
             ])

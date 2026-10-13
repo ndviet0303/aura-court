@@ -223,3 +223,55 @@ Decisions made while applying the change, with the options considered. Contracts
     - A V1 booking confirmed through `ReviewPayment`, or marked no-show, before I14 shipped is a checksum collision in the 1.2 audit. The run reports it and does not repair it; the owner reviews each one. Until then, a confirmed booking with a held mirror is left out of the report.
     - Revenue is filtered on `reservations.created_at`. Mirrors created before I9 need the I13 alignment.
 
+
+## Implementation Decisions (Phase C, 2026-10-13)
+
+- **C1. Approval and gate (tasks 5.2–5.4, 6.1).**
+  - The project owner approved Phase C on 2026-10-13 in the working session ("bỏ hẳn v1 đi, chỉ dùng v2 thôi rồi đổi tên") and chose to drop the version prefix (C5).
+  - That decision skipped the 30-day adoption gate (5.2) and the production `v1:retirement-readiness` run (5.4). The retirement relied on the 5.3 precheck instead.
+  - 5.3 on production (read-only, 2026-10-13):
+    - 72 bookings and 72 mappings, 0 unmapped;
+    - 0 active future booking slots without an active mapped reservation slot;
+    - 3 V1 bookings still `pending_payment` (`DEMO-BK-066`, `067`, `069`), each mapped to a held reservation that expires between 2026-10-18 and 2026-10-20;
+    - 16 V1 bookings confirmed for future times;
+    - no booking ever used a coupon.
+  - 0.1: `reservation_slots_no_overlap` exists on production (checked 2026-10-13). `harden-db-integrity` is applied but not archived yet.
+- **C2. Frozen V1 rows.**
+  - After Phase C nothing writes `bookings`, `booking_slots` or the mapping tables, except `backfillBooking()` for seeds and fixtures.
+  - The 3 pending demo bookings therefore stay `pending_payment` in `bookings` while the sweep expires their reservations. Their live status is the reservation's.
+  - **Options:** a one-off data fix that expires them in `bookings`, or leave them. **Chosen: leave them.** The tables are frozen history by design (decision 2), and every reader reads the mirror.
+- **C3. Expiry sweep kept, V1 reminder removed (task 6.3).**
+  - Task 6.3 lists `ExpirePendingBookings` for deletion, but it is also the only sweep for held reservations.
+  - **Options:** delete it and write a new reservation sweep, or keep it and drop its V1 loop. **Chosen: keep it.** The scheduled task keeps the name `booking:expire-pending`.
+  - It releases the reserved coupon use (C4) and reserved points, then notifies the waitlist and the customer.
+  - `NotifyExpiringBookings`, the V1-only reminder, is deleted with its schedule. Reservations never had a reminder, and none is added.
+- **C4. Coupons on reservations (task 5.5) folded in.**
+  - Quote, hold and checkout accept `coupon_code`. The quote validates it strictly, minimum spend included.
+  - Hold and checkout reserve one use under a row lock and record it in `metadata.coupon_usage`. Confirmation keeps it. Expiry or release of a held reservation gives it back exactly once (`released_at`).
+  - The Playwright coupon case from 5.5 is not written yet (6.10).
+- **C5. Unversioned API.**
+  - **Options:** `/api/*` with no version, keep `/api/v2`, or move to `/api/v3`. **Chosen by the owner: `/api/*`.**
+  - The two route groups merge. Former V1 routes stay top-level. Former V2 routes stay in the `ResolveTenantContext` group, so each route keeps its middleware.
+  - Where both versions defined the same path, one is kept:
+
+    | Path | Kept | Why |
+    |---|---|---|
+    | `/api/admin/disputes*` | former V2 | owner or manager, scoped to their organization; the frontend already used it |
+    | `/api/disputes*` | former V1 | customer disputes |
+    | `/api/admin/kyc*` | former V2 | platform admin only |
+    | `/api/organizations*`, `/api/notifications*`, `GET /api/wallet`, `/api/wallet/deposits*`, `/api/admin/reports*` | former V1 | the frontend used these |
+    | `GET /api/capabilities` | former V2 | organization-scoped capabilities |
+    | `POST /api/webhooks/sepay` | former V1 | SePay wallet deposits and POS QR; the former V2 `webhooks/{provider}` route still serves other providers such as `payos`, and nothing called `/api/v2/webhooks/sepay` |
+
+  - `PosController::wallet`, the former `GET v2/wallet`, is deleted. `GET /api/wallet` serves the wallet.
+  - Code that matched a version segment now matches the unversioned path: `request()->is(...)` in `Venue`, `Court`, `SportZone`, `SportZoneController`, `AdminController`, `ResolveTenantContext` and `SimulateDemoMutations`. Without this, admin venue serialization and tenant scoping broke.
+  - Renamed: `V2ReservationController` → `ReservationController`, `V2PriceRuleController` → `PriceRuleController`, `ResolvesV2Organization` → `ResolvesOrganization`.
+  - Kept names: the `v1:*` and `v2:*` artisan commands, `V1AdoptionService`, and the `AURA_V2_RESERVATION_` QR prefix, which is printed on existing QR codes.
+  - External URLs change at deploy: the Google and Facebook OAuth redirect URIs, and the SePay webhook URLs.
+  - Idempotency records store method and path, so a retry that crosses the deploy boundary does not replay. This is acceptable.
+  - The frontend now has one HTTP client, which sends an `Idempotency-Key` on every mutation as the former V2 client did. Former V1 routes that do not read the header ignore it.
+  - Demo-account write simulation still covers only the former V1 admin routes, as before.
+- **C6. Dispute arbitration gap, not changed.** `/api/admin/disputes/{id}/arbitrate` lets an owner of the dispute's organization decide, while the support-case spec reserves decisions for platform reviewers. This predates the change and stays out of scope.
+- **C7. Reconciliation with `direct-owner-cutover` (its task 12.1).**
+  - That change's wording is applied to this delta: the client list drops "booking changes", the superseded-by-policy sentence is gone, and the stale-client scenario names the removed cancellation, refund and reschedule commands.
+  - This change renames the requirement (`Versioned reservation API compatibility` → `Unversioned reservation API`). Whichever change archives second rebases its MODIFIED block, header included, onto the main spec (its design 14).

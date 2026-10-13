@@ -28,7 +28,7 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
 
         Sanctum::actingAs($applicant);
 
-        $response = $this->postJson('/api/v1/partner/application/start', []);
+        $response = $this->postJson('/api/partner/application/start', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['user']);
@@ -61,7 +61,7 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
 
         Sanctum::actingAs($applicant);
 
-        $response = $this->postJson('/api/v1/partner/application/start', []);
+        $response = $this->postJson('/api/partner/application/start', []);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.status', 'draft')
@@ -81,7 +81,7 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
 
         Sanctum::actingAs($applicant);
 
-        $response = $this->postJson('/api/v1/partner/application/start', []);
+        $response = $this->postJson('/api/partner/application/start', []);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.status', 'draft');
@@ -97,7 +97,7 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
         ]);
 
         Sanctum::actingAs($applicant);
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $startRes->assertStatus(201);
         $kycId = $startRes->json('data.id');
 

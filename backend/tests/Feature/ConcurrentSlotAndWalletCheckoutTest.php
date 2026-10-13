@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Booking;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\Reservation;
-use App\Models\ReservationEntitlement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
@@ -55,63 +53,27 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court2->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '09:00', 'ends_at' => '10:00', 'price' => 200000, 'is_active' => true]);
 
         // Attempt checkout 1
-        $res1 = $this->actingAs($user)->postJson('/api/v1/bookings', [
+        $res1 = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-overdraft-1')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date1->toIso8601String()],
         ]);
         $res1->assertCreated();
 
         // Attempt checkout 2 with same user, now out of funds
-        $res2 = $this->actingAs($user)->postJson('/api/v1/bookings', [
+        $res2 = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-overdraft-2')->postJson('/api/reservations/checkout', [
             'court_id' => $court2->id,
             'slots' => [$date2->toIso8601String()],
         ]);
         $res2->assertStatus(422);
-        $res2->assertJsonValidationErrors(['wallet']);
+        $res2->assertJsonPath('message', 'Số dư ví không đủ để thanh toán lịch đặt. Vui lòng nạp thêm tiền vào ví.');
 
         // Assert wallet balance is exactly 0 and not negative
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $organization->id);
         $this->assertSame(0, (int) $wallet->balance);
 
-        // Assert only 1 booking confirmed
-        $this->assertSame(1, Booking::where('user_id', $user->id)->where('status', 'confirmed')->count());
-    }
-
-    public function test_cross_version_v1_and_v2_slot_contention_guarantees_exactly_one_winner(): void
-    {
-        [$organization, $venue, $court] = $this->setupTenant();
-        $user1 = User::factory()->create();
-        $user2 = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user1->id, 'role' => 'customer', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user2->id, 'role' => 'customer', 'status' => 'active']);
-
-        $this->fundUserWallet($user1, $organization->id, 500000);
-        $this->fundUserWallet($user2, $organization->id, 500000);
-
-        $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(14, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 200000, 'is_active' => true]);
-
-        // User 1 books via V1
-        $resV1 = $this->actingAs($user1)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
-        $resV1->assertCreated();
-
-        // User 2 attempts to book the same slot via V2
-        $resV2 = $this->actingAs($user2)->withHeaders([
-            'X-Organization-ID' => (string) $organization->id,
-            'Idempotency-Key' => uniqid('v2-contention-'),
-        ])->postJson('/api/v2/reservations', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
-        $resV2->assertStatus(409);
-
-        // Invariant: Exactly one active booking and entitlement
-        $this->assertSame(1, Booking::where('court_id', $court->id)->where('status', 'confirmed')->count());
-        $this->assertSame(1, ReservationEntitlement::where('court_id', $court->id)->whereIn('status', ['held', 'active'])->count());
+        // Assert only 1 reservation confirmed
+        $this->assertSame(1, Reservation::where('user_id', $user->id)->where('status', 'confirmed')->count());
     }
 
     public function test_unpaid_legacy_hold_confirmation_is_rejected(): void
@@ -139,52 +101,10 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $confirmResponse = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => uniqid('unpaid-conf-'),
-        ])->postJson("/api/v2/reservations/{$reservation->code}/confirm");
+        ])->postJson("/api/reservations/{$reservation->code}/confirm");
 
         $confirmResponse->assertStatus(409);
         $this->assertStringContainsString('insufficient wallet balance', $confirmResponse->json('message'));
         $this->assertSame('held', $reservation->fresh()->status);
-    }
-
-    public function test_v1_historical_api_compatibility_contracts(): void
-    {
-        [$organization, $venue, $court] = $this->setupTenant();
-        $user = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
-        $this->fundUserWallet($user, $organization->id, 1000000);
-
-        $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 200000, 'is_active' => true]);
-
-        // 1. Create booking returns {booking: {id, code, status, total_amount, ...}}
-        $createRes = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
-        $createRes->assertCreated();
-        $createRes->assertJsonStructure([
-            'booking' => ['id', 'code', 'status', 'total_amount', 'court_id', 'user_id', 'slots'],
-        ]);
-        $code = $createRes->json('booking.code');
-
-        // 2. Fetch booking details returns {booking: ...}
-        $showRes = $this->actingAs($user)->getJson("/api/v1/bookings/{$code}");
-        $showRes->assertOk();
-        $showRes->assertJsonPath('code', $code);
-        $showRes->assertJsonPath('status', 'confirmed');
-
-        // 3. Booking history list returns paginated bookings
-        $listRes = $this->actingAs($user)->getJson('/api/v1/bookings');
-        $listRes->assertOk();
-        // 4. Cancel booking returns 404 and preserves booking and wallet balance
-        $walletService = app(WalletPaymentService::class);
-        $wallet = $walletService->getOrCreateWallet($user->id, $organization->id);
-        $balanceBefore = (int) $wallet->fresh()->balance;
-
-        $cancelRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel");
-        $cancelRes->assertNotFound();
-        $this->assertSame('confirmed', Booking::where('code', $code)->value('status'));
-        $this->assertSame($balanceBefore, (int) $wallet->fresh()->balance);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $createRes->json('booking.id')]);
     }
 }

@@ -6,9 +6,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return response()->json([
         'name' => 'Aura Court API',
-        'version' => 'v1',
         'status' => 'ok',
-        'docs' => '/api/v1',
+        'docs' => '/api',
     ]);
 });
 

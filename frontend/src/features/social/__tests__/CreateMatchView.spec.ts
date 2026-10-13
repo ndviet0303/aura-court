@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import CreateMatchView from '../views/CreateMatchView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 const pushMock = vi.fn()
 
@@ -21,41 +21,37 @@ vi.mock('@/core/api/client', () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
-  apiV2: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
   errorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
 describe('CreateMatchView', () => {
+  const courts = [
+    {
+      id: 1,
+      name: 'Sân VIP 1',
+      sport_type: 'badminton',
+      venue: {
+        id: 1,
+        name: 'Aura Central',
+        slug: 'aura-central',
+        address: '123 Le Loi',
+        google_maps_url: null,
+        is_active: true,
+        share_url: '',
+      },
+    },
+  ]
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
     vi.mocked(api.get).mockImplementation(async (url: string) => {
-      if (url.startsWith('/courts')) {
-        return [
-          {
-            id: 1,
-            name: 'Sân VIP 1',
-            sport_type: 'badminton',
-            venue: {
-              id: 1,
-              name: 'Aura Central',
-              slug: 'aura-central',
-              address: '123 Le Loi',
-              google_maps_url: null,
-              is_active: true,
-              share_url: '',
-            },
-          },
-        ]
-      }
+      if (url.startsWith('/courts')) return courts
       return []
     })
 
-    vi.mocked(apiV2.post).mockResolvedValue({
+    vi.mocked(api.post).mockResolvedValue({
       match: { id: 888, title: 'Aura Central Court - Sân VIP 1' },
     })
   })
@@ -110,7 +106,7 @@ describe('CreateMatchView', () => {
     await form.trigger('submit')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith('/social/matches', expect.any(Object))
+    expect(api.post).toHaveBeenCalledWith('/social/matches', expect.any(Object))
 
     // Fast-forward timers for redirect
     vi.advanceTimersByTime(1200)
@@ -119,7 +115,8 @@ describe('CreateMatchView', () => {
   })
 
   it('Task 8.2: loads persisted friends from /social/friends, toggles selection, and sends batch invitations with individual failure reporting', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url.startsWith('/courts')) return courts
       if (url.startsWith('/social/friends')) {
         return {
           friends: [
@@ -132,7 +129,7 @@ describe('CreateMatchView', () => {
       return []
     })
 
-    vi.mocked(apiV2.post).mockImplementation(async (url: string) => {
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
       if (url === '/social/matches') {
         return { match: { id: 777, title: 'Match Test 8.2' } }
       }
@@ -156,7 +153,7 @@ describe('CreateMatchView', () => {
     await flushPromises()
 
     // 1. Verifies friends were loaded from persisted /social/friends endpoint
-    expect(apiV2.get).toHaveBeenCalledWith('/social/friends')
+    expect(api.get).toHaveBeenCalledWith('/social/friends')
     expect(wrapper.text()).toContain('Lê Văn An')
     expect(wrapper.text()).toContain('Trần Thị Bình')
 
@@ -175,7 +172,7 @@ describe('CreateMatchView', () => {
     await flushPromises()
 
     // 4. Batch invitations sent with individual IDs
-    expect(apiV2.post).toHaveBeenCalledWith('/social/matches/777/invite', {
+    expect(api.post).toHaveBeenCalledWith('/social/matches/777/invite', {
       invitee_ids: [101, 102],
     })
 
@@ -220,7 +217,7 @@ describe('CreateMatchView', () => {
     await flushPromises()
 
     // 4. Verify payload sent to /social/matches
-    expect(apiV2.post).toHaveBeenCalledWith(
+    expect(api.post).toHaveBeenCalledWith(
       '/social/matches',
       expect.objectContaining({
         is_owner_hosted: true,

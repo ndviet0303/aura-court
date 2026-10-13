@@ -93,10 +93,10 @@ class AdvancedBookingMarketplaceTest extends TestCase
     private function reservation(Organization $organization, User $user, int $courtId, bool $future = false): Reservation
     {
         $date = now(config('app.timezone'))->addDays($future ? 4 : 2)->setTime(8, 0);
-        $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/v2/reservations', ['court_id' => $courtId, 'slots' => [$date->toIso8601String()]]);
+        $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/reservations', ['court_id' => $courtId, 'slots' => [$date->toIso8601String()]]);
         $response->assertCreated();
         $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
-        $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('confirm-')])->postJson('/api/v2/reservations/'.$reservation->code.'/confirm')->assertOk();
+        $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('confirm-')])->postJson('/api/reservations/'.$reservation->code.'/confirm')->assertOk();
 
         return $reservation->fresh('entitlements');
     }

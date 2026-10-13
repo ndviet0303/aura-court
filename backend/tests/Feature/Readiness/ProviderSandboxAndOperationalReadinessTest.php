@@ -80,7 +80,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $reservation = $this->createDirectReservation($owner->id, $organization->id, $court->id, 'RSV-SANDBOX-001', 120000);
 
         // Initiate payment attempt
-        $paymentResponse = $this->postJson("/api/v2/reservations/{$reservation->code}/payment")
+        $paymentResponse = $this->postJson("/api/reservations/{$reservation->code}/payment")
             ->assertCreated();
 
         $attemptData = $paymentResponse->json('payment_attempt');
@@ -235,7 +235,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         ];
 
         $rawBody1 = json_encode($payload1, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SIGNATURE' => $payload1['signature'],
         ], $rawBody1)->assertOk();
@@ -303,7 +303,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         ];
 
         $rawBody2 = json_encode($payload2, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SIGNATURE' => $payload2['signature'],
         ], $rawBody2)->assertOk();
@@ -318,7 +318,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $this->assertSame($expectedExtendedEnd->toDateString(), $subscription->ends_at->toDateString());
 
         // Verify duplicate confirmation event is idempotent and does not extend duration twice
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SIGNATURE' => $payload2['signature'],
         ], $rawBody2)->assertOk();
@@ -343,7 +343,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
 
         // Initial setup with secret V1
         $initialSecret = 'whsec_v1_'.Str::random(40);
-        $created = $this->postJson("/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection", [
+        $created = $this->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection", [
             'bank_code' => 'MBBank',
             'account_name' => 'Venue Owner V1',
             'account_number' => '1234500001',
@@ -353,7 +353,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $connectionId = (int) $created->json('data.id');
         $connection = ReceivingConnection::findOrFail($connectionId);
 
-        $this->postJson("/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/credential", [
+        $this->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/credential", [
             'hmac_secret' => $initialSecret,
         ])->assertOk()->assertJsonPath('data.credential_version', 1);
 
@@ -367,7 +367,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
             'referenceCode' => 'VERIFY-V1',
         ];
         $this->sendSePayWebhook($connection, $initialSecret, $verifyPayload)->assertOk();
-        $this->postJson("/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/select")->assertOk();
+        $this->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/select")->assertOk();
 
         $connection->refresh();
         $this->assertSame(ReceivingConnection::STATUS_VERIFIED, $connection->status);
@@ -375,7 +375,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
 
         // Owner rotates secret to Secret V2
         $rotatedSecret = 'whsec_v2_'.Str::random(40);
-        $rotateResponse = $this->postJson("/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/credential", [
+        $rotateResponse = $this->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/credential", [
             'hmac_secret' => $rotatedSecret,
         ])->assertOk();
 
@@ -545,7 +545,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         ];
 
         $refundCreated = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/reservations/{$reservation->code}/refund-requests", $requestPayload)
+            ->postJson("/api/reservations/{$reservation->code}/refund-requests", $requestPayload)
             ->assertCreated();
 
         $refundId = (int) $refundCreated->json('data.id');
@@ -555,7 +555,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         // 2. Owner approves the refund obligation
         Sanctum::actingAs($owner);
         $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/approve")
+            ->postJson("/api/refund-requests/{$refundId}/approve")
             ->assertOk()
             ->assertJsonPath('data.status', OwnerRefundObligation::STATUS_APPROVED);
 
@@ -565,7 +565,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         // Negative check 5a: Payer tries to acknowledge BEFORE owner reports external transfer
         Sanctum::actingAs($payer);
         $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/acknowledge", ['accepted' => true])
+            ->postJson("/api/refund-requests/{$refundId}/acknowledge", ['accepted' => true])
             ->assertStatus(409); // Conflict: Only reported owner transfer can be acknowledged
 
         $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->fresh()->status);
@@ -573,7 +573,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         // Negative check 5b: Owner attempts to report execution with MISSING external proof / reference
         Sanctum::actingAs($owner);
         $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/report-execution", [
+            ->postJson("/api/refund-requests/{$refundId}/report-execution", [
                 'transfer_reference' => '', // Empty proof
                 'evidence' => '',
             ])
@@ -586,7 +586,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $proofDescription = 'Chuyển khoản qua ngân hàng MBBank tham chiếu '.$bankTransferRef;
 
         $reportResponse = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/report-execution", [
+            ->postJson("/api/refund-requests/{$refundId}/report-execution", [
                 'transfer_reference' => $bankTransferRef,
                 'evidence' => $proofDescription,
             ])
@@ -605,7 +605,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         // 4. Now payer acknowledges with external proof verified
         Sanctum::actingAs($payer);
         $ackResponse = $this->withHeader('X-Organization-ID', (string) $reservation->organization_id)
-            ->postJson("/api/v2/refund-requests/{$refundId}/acknowledge", [
+            ->postJson("/api/refund-requests/{$refundId}/acknowledge", [
                 'accepted' => true,
                 'note' => 'Received bank refund in full',
             ])
@@ -717,7 +717,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
 
     private function createVerifiedReceivingConnection(Venue $venue, string $accountNumber): array
     {
-        $url = "/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
+        $url = "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
         $created = $this->postJson($url, [
             'bank_code' => 'MBBank',
             'account_name' => 'Aura Court Sandbox Owner',
@@ -753,7 +753,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $timestamp = (string) now()->timestamp;
         $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
 
-        $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $response = $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => $signature,

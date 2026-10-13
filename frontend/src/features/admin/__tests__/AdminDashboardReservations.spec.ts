@@ -3,12 +3,11 @@ import { mount, flushPromises } from '@vue/test-utils'
 import AdminView from '../views/AdminView.vue'
 import { RESERVATION_STATUSES } from '../composables/useAdminDashboard'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('@/core/api/client', () => ({
-  apiOrigin: '',
+  apiUrl: (p: string) => `/api${p}`,
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  apiV2: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
   errorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
@@ -23,7 +22,7 @@ const legacyMirror = {
   legacy_mapping: [{ legacy_code: 'BK-OLD1', legacy_status: 'no_show' }],
 }
 
-const v2Reservation = {
+const reservation = {
   id: 2,
   code: 'RSV-NEW1',
   status: 'held',
@@ -49,26 +48,26 @@ function mountDashboard() {
   })
 }
 
-describe('Admin dashboard reservations list (GET v2/admin/reservations)', () => {
+describe('Admin dashboard reservations list (GET /admin/reservations)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(api.get).mockImplementation(async (path: string) =>
-      path === '/admin/payments'
-        ? []
-        : { bookings: 0, confirmed: 0, revenue: 0, pendingRefunds: 0 },
-    )
-    vi.mocked(apiV2.get).mockResolvedValue({ data: [legacyMirror, v2Reservation], current_page: 1 })
+    vi.mocked(api.get).mockImplementation(async (path: string) => {
+      if (path === '/admin/reservations')
+        return { data: [legacyMirror, reservation], current_page: 1 }
+      if (path === '/admin/payments') return []
+      return { bookings: 0, confirmed: 0, revenue: 0, pendingRefunds: 0 }
+    })
   })
 
-  it('reads the V2 admin reservations endpoint and never the V1 bookings list', async () => {
+  it('reads the admin reservations endpoint and never the legacy bookings list', async () => {
     mountDashboard()
     await flushPromises()
 
-    expect(apiV2.get).toHaveBeenCalledWith('/admin/reservations', {
+    expect(api.get).toHaveBeenCalledWith('/admin/reservations', {
       params: { status: undefined },
     })
-    const v1Paths = vi.mocked(api.get).mock.calls.map(([path]) => path)
-    expect(v1Paths.some((path) => path.startsWith('/admin/bookings'))).toBe(false)
+    const paths = vi.mocked(api.get).mock.calls.map(([path]) => path)
+    expect(paths.some((path) => path.startsWith('/admin/bookings'))).toBe(false)
   })
 
   it('shows a legacy mirror by its original booking code and status', async () => {
@@ -95,7 +94,7 @@ describe('Admin dashboard reservations list (GET v2/admin/reservations)', () => 
     await select.setValue('legacy')
     await flushPromises()
 
-    expect(apiV2.get).toHaveBeenLastCalledWith('/admin/reservations', {
+    expect(api.get).toHaveBeenCalledWith('/admin/reservations', {
       params: { status: 'legacy' },
     })
   })

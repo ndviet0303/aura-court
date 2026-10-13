@@ -23,7 +23,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/v1/partner/application/start', []);
+        $response = $this->postJson('/api/partner/application/start', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['user']);
@@ -38,7 +38,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/v1/partner/application/start', []);
+        $response = $this->postJson('/api/partner/application/start', []);
 
         $response->assertStatus(403);
     }
@@ -61,7 +61,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/v1/partner/application/start', []);
+        $response = $this->postJson('/api/partner/application/start', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['user']);
@@ -77,7 +77,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
         Sanctum::actingAs($user);
 
         // Initial start creates draft
-        $response1 = $this->postJson('/api/v1/partner/application/start', []);
+        $response1 = $this->postJson('/api/partner/application/start', []);
 
         $response1->assertStatus(201)
             ->assertJsonPath('data.status', 'draft')
@@ -87,7 +87,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
         $appId = $response1->json('data.id');
 
         // Calling start again resumes the existing draft without duplicate
-        $response2 = $this->postJson('/api/v1/partner/application/start', []);
+        $response2 = $this->postJson('/api/partner/application/start', []);
 
         $response2->assertStatus(201)
             ->assertJsonPath('data.id', $appId)
@@ -101,7 +101,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         $payload = [
@@ -127,7 +127,7 @@ class PartnerApplicationStartAndSaveTest extends TestCase
             'expected_version' => 1,
         ];
 
-        $saveRes = $this->putJson("/api/v1/partner/application/{$appId}", $payload);
+        $saveRes = $this->putJson("/api/partner/application/{$appId}", $payload);
 
         $saveRes->assertStatus(200)
             ->assertJsonPath('data.status', 'draft')
@@ -142,17 +142,17 @@ class PartnerApplicationStartAndSaveTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         // First save bumps version to 2
-        $this->putJson("/api/v1/partner/application/{$appId}", [
+        $this->putJson("/api/partner/application/{$appId}", [
             'business_name' => 'Name 1',
             'expected_version' => 1,
         ])->assertStatus(200);
 
         // Second save still using expected_version 1 must fail with 409
-        $staleRes = $this->putJson("/api/v1/partner/application/{$appId}", [
+        $staleRes = $this->putJson("/api/partner/application/{$appId}", [
             'business_name' => 'Name 2',
             'expected_version' => 1,
         ]);
@@ -166,11 +166,11 @@ class PartnerApplicationStartAndSaveTest extends TestCase
         $stranger = User::factory()->create(['email_verified_at' => now()]);
 
         Sanctum::actingAs($owner);
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         Sanctum::actingAs($stranger);
-        $res = $this->putJson("/api/v1/partner/application/{$appId}", [
+        $res = $this->putJson("/api/partner/application/{$appId}", [
             'business_name' => 'Hacked',
         ]);
 

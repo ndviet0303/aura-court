@@ -298,7 +298,7 @@ class PlatformPaymentConfirmationAndReconciliationTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $res = $this->postJson('/api/v1/partner/subscription/confirm-payment', [
+        $res = $this->postJson('/api/partner/subscription/confirm-payment', [
             'reference_code' => 'SUB-PAY-MISMATCH-001',
             'provider_transaction_id' => 'TXN-MISMATCH-01',
             'amount' => 500000,
@@ -357,14 +357,14 @@ class PlatformPaymentConfirmationAndReconciliationTest extends TestCase
         $tamperedPayload = $payload;
         $tamperedPayload['data']['amount'] = 500001;
         $tampered = json_encode($tamperedPayload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], $tampered)->assertUnauthorized();
         $this->assertSame('pending', $attempt->fresh()->status);
         $this->assertDatabaseCount('platform_provider_receipts', 0);
         $this->assertDatabaseCount('journals', 0);
 
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], $raw)->assertOk();
 
@@ -426,7 +426,7 @@ class PlatformPaymentConfirmationAndReconciliationTest extends TestCase
             'signature' => $this->payosSignature($data, 'platform-test-webhook-secret'),
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $this->call('POST', '/api/v2/webhooks/payos', [], [], [], [
+        $this->call('POST', '/api/webhooks/payos', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], $raw)->assertOk();
         $event = ProviderEvent::where('event_id', 'payos-event-platform-mismatch')->firstOrFail();

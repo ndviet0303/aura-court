@@ -49,8 +49,8 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     // 3. Customer 1 sends friend request to Customer 2 via authenticated API caller
     const sendRequestResult = await withE2EApi(
       page,
-      async ({ apiV2 }, addresseeId) => {
-        return await apiV2.post('/social/friends/requests', { addressee_id: addresseeId })
+      async ({ api }, addresseeId) => {
+        return await api.post('/social/friends/requests', { addressee_id: addresseeId })
       },
       customer2.id,
     )
@@ -94,8 +94,8 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     expect(acceptResult.updated_at).toBeTruthy()
 
     // 5. Customer 1 verifies Customer 2 is in friends list
-    const cust1Friends = await withE2EApi(page, async ({ apiV2 }) => {
-      return await apiV2.get('/social/friends')
+    const cust1Friends = await withE2EApi(page, async ({ api }) => {
+      return await api.get('/social/friends')
     })
 
     const foundCust2 = (cust1Friends as any)?.friends?.some(
@@ -106,8 +106,8 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     // 6. Reload page: confirms bidirectional friendship persistence after reload
     await page.reload({ waitUntil: 'domcontentloaded' })
 
-    const reloadedCust1Friends = await withE2EApi(page, async ({ apiV2 }) => {
-      return await apiV2.get('/social/friends')
+    const reloadedCust1Friends = await withE2EApi(page, async ({ api }) => {
+      return await api.get('/social/friends')
     })
     const persistedCust2 = (reloadedCust1Friends as any)?.friends?.some(
       (f: any) => f.id === customer2.id || f.friend?.id === customer2.id,
@@ -117,8 +117,8 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     // 7. Cleanup / Remove friend
     const removeRes = await withE2EApi(
       page,
-      async ({ apiV2 }, fid) => {
-        return await apiV2.delete('/social/friends/' + fid)
+      async ({ api }, fid) => {
+        return await api.delete('/social/friends/' + fid)
       },
       friendshipId,
     )
@@ -154,8 +154,8 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
     // 3. Create and publish activity via socialApi with full validation
     const createResult = await withE2EApi(
       page,
-      async ({ apiV2 }, { title, date }) => {
-        return await apiV2.post('/social/matches', {
+      async ({ api }, { title, date }) => {
+        return await api.post('/social/matches', {
           title,
           sport_type: 'badminton',
           category: 'giao lưu',
@@ -222,8 +222,8 @@ test.describe('P1: Giao lưu cộng đồng, Bạn bè, Hoạt động sân, Dan
 
     await withE2EApi(
       page,
-      async ({ apiV2 }, { title, date }) => {
-        return await apiV2.post('/social/matches', {
+      async ({ api }, { title, date }) => {
+        return await api.post('/social/matches', {
           title,
           sport_type: 'pickleball',
           category: 'giao lưu',

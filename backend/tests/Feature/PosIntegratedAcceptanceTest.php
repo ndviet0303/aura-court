@@ -91,7 +91,7 @@ class PosIntegratedAcceptanceTest extends TestCase
     public function test_pos_errors_do_not_commit_partial_inventory_or_financial_effects(): void
     {
         // 1. Attempting to buy 5 units when only 1 is available
-        $outOfStockRes = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', [
+        $outOfStockRes = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', [
             'items' => [['product_id' => $this->product->id, 'quantity' => 5]],
             'payment_method' => 'cash',
             'cash_tendered' => 500000,
@@ -114,7 +114,7 @@ class PosIntegratedAcceptanceTest extends TestCase
         // 2. Closed shift cashier attempting checkout rejects with 409
         $this->shift1->update(['status' => 'closed', 'closed_at' => now()]);
 
-        $closedShiftRes = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', [
+        $closedShiftRes = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', [
             'items' => [['product_id' => $this->product->id, 'quantity' => 1]],
             'payment_method' => 'cash',
             'cash_tendered' => 50000,
@@ -132,7 +132,7 @@ class PosIntegratedAcceptanceTest extends TestCase
         // Reopen shift1 for cashier1
         $this->shift1->update(['status' => 'open', 'closed_at' => null]);
 
-        $offlineRes = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', [
+        $offlineRes = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', [
             'items' => [['product_id' => $this->product->id, 'quantity' => 1]],
             'payment_method' => 'cash',
             'cash_tendered' => 50000,
@@ -169,7 +169,7 @@ class PosIntegratedAcceptanceTest extends TestCase
         ];
 
         // First submission
-        $res1 = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', $payload, $headers);
+        $res1 = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', $payload, $headers);
         $res1->assertCreated();
         $order1Id = $res1->json('order.id');
         $orderCode1 = $res1->json('receipt.order_code');
@@ -178,7 +178,7 @@ class PosIntegratedAcceptanceTest extends TestCase
         $this->assertSame(8, $this->product->fresh()->stock_quantity);
 
         // Second submission with exact same idempotency key (e.g. network retry)
-        $res2 = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', $payload, $headers);
+        $res2 = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', $payload, $headers);
         $this->assertTrue(in_array($res2->status(), [200, 201], true)); // Replayed response from idempotency cache
         $order2Id = $res2->json('order.id');
         $orderCode2 = $res2->json('receipt.order_code');
@@ -212,14 +212,14 @@ class PosIntegratedAcceptanceTest extends TestCase
         ];
 
         // Cashier 1 checks out the last remaining unit
-        $res1 = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', $payload, [
+        $res1 = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', $payload, [
             'X-Organization-Id' => $this->tenant->id,
             'Idempotency-Key' => 'race-cashier-1-'.uniqid(),
         ]);
         $res1->assertCreated();
 
         // Cashier 2 attempts to checkout at the same time
-        $res2 = $this->actingAs($this->cashier2)->postJson('/api/v2/pos/orders', $payload, [
+        $res2 = $this->actingAs($this->cashier2)->postJson('/api/pos/orders', $payload, [
             'X-Organization-Id' => $this->tenant->id,
             'Idempotency-Key' => 'race-cashier-2-'.uniqid(),
         ]);
@@ -234,7 +234,7 @@ class PosIntegratedAcceptanceTest extends TestCase
     {
         $this->product->update(['stock_quantity' => 20]);
 
-        $checkoutRes = $this->actingAs($this->cashier1)->postJson('/api/v2/pos/orders', [
+        $checkoutRes = $this->actingAs($this->cashier1)->postJson('/api/pos/orders', [
             'items' => [['product_id' => $this->product->id, 'quantity' => 2]],
             'payment_method' => 'cash',
             'cash_tendered' => 100000,
@@ -247,8 +247,8 @@ class PosIntegratedAcceptanceTest extends TestCase
         $orderId = $checkoutRes->json('order.id');
         $originalReceipt = $checkoutRes->json('receipt');
 
-        // Customer / Cashier retrieves receipt via GET /api/v2/pos/orders/{order}
-        $reloadRes = $this->actingAs($this->cashier1)->getJson("/api/v2/pos/orders/{$orderId}", [
+        // Customer / Cashier retrieves receipt via GET /api/pos/orders/{order}
+        $reloadRes = $this->actingAs($this->cashier1)->getJson("/api/pos/orders/{$orderId}", [
             'X-Organization-Id' => $this->tenant->id,
         ]);
 

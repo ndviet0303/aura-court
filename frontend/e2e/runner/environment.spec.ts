@@ -892,33 +892,36 @@ test('Task 2.5: Test-only CLI backdates hold expiry and sweeps release of held r
       CACHE_STORE: 'file',
     }
 
-    // Create a pending booking holding a slot
-    const createBookingScript = `
+    // Create a held reservation holding a slot
+    const createReservationScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
-      use App\\Models\\BookingSlot;
       use App\\Models\\Court;
+      use App\\Models\\Reservation;
+      use App\\Models\\ReservationSlot;
       use App\\Models\\User;
 
       $user = User::where('role', 'customer')->firstOrFail();
       $court = Court::findOrFail(${court.court_id});
 
-      $booking = Booking::create([
-        'code' => 'BK-TEST-EXPIRY-${Date.now()}',
+      $reservation = Reservation::create([
+        'organization_id' => ${court.organization_id},
         'user_id' => $user->id,
         'court_id' => $court->id,
+        'code' => 'RSV-TEST-EXPIRY-${Date.now()}',
+        'status' => 'held',
+        'currency' => 'VND',
         'total_amount' => 100000,
-        'status' => 'pending_payment',
-        'payment_model' => 'direct',
-        'payment_expires_at' => now()->addMinutes(15),
+        'hold_expires_at' => now()->addMinutes(15),
+        'payment_model' => 'direct_owner_v1',
       ]);
 
-      BookingSlot::create([
-        'booking_id' => $booking->id,
+      ReservationSlot::create([
+        'organization_id' => ${court.organization_id},
+        'reservation_id' => $reservation->id,
         'court_id' => $court->id,
         'starts_at' => now()->addDays(2)->setTime(10, 0),
         'ends_at' => now()->addDays(2)->setTime(11, 0),
@@ -927,41 +930,40 @@ test('Task 2.5: Test-only CLI backdates hold expiry and sweeps release of held r
       ]);
 
       echo json_encode([
-        'booking_code' => $booking->code,
-        'booking_id' => $booking->id,
+        'reservation_code' => $reservation->code,
       ]);
     `
 
-    const createOut = execFileSync('php', ['-r', createBookingScript], {
+    const createOut = execFileSync('php', ['-r', createReservationScript], {
       cwd: env.backendDir,
       env: { ...process.env, ...backendEnv },
       encoding: 'utf-8',
     })
 
-    const created = JSON.parse(createOut) as { booking_code: string; booking_id: number }
-    assert.ok(created.booking_code, 'Booking must be created')
+    const created = JSON.parse(createOut) as { reservation_code: string }
+    assert.ok(created.reservation_code, 'Reservation must be created')
 
     // Backdate and sweep hold expiration via test-only CLI
     const expiryResult = expireHolds(manifest, {
-      bookingCode: created.booking_code,
+      reservationCode: created.reservation_code,
       minutes: 30,
     })
     assert.equal(expiryResult.status, 'success')
-    assert.ok(expiryResult.expired_count >= 1, 'At least 1 booking must be expired')
+    assert.ok(expiryResult.expired_count >= 1, 'At least 1 reservation must be expired')
 
-    // Verify that the booking status is now 'expired' and held slot is 'expired'
+    // Verify that the reservation status is now 'expired' and held slot is 'expired'
     const verifyScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
+      use App\\Models\\Reservation;
 
-      $booking = Booking::where('code', '${created.booking_code}')->with('slots')->firstOrFail();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${created.reservation_code}')->with('slots')->firstOrFail();
       echo json_encode([
-        'booking_status' => $booking->status,
-        'slot_status' => $booking->slots->first()?->status,
+        'reservation_status' => $reservation->status,
+        'slot_status' => $reservation->slots->first()?->status,
       ]);
     `
 
@@ -971,8 +973,12 @@ test('Task 2.5: Test-only CLI backdates hold expiry and sweeps release of held r
       encoding: 'utf-8',
     })
 
-    const verified = JSON.parse(verifyOut) as { booking_status: string; slot_status: string }
-    assert.equal(verified.booking_status, 'expired', 'Booking status must transition to expired')
+    const verified = JSON.parse(verifyOut) as { reservation_status: string; slot_status: string }
+    assert.equal(
+      verified.reservation_status,
+      'expired',
+      'Reservation status must transition to expired',
+    )
     assert.equal(verified.slot_status, 'expired', 'Held slot status must transition to expired')
   } finally {
     if (env.manifest) {
@@ -1060,7 +1066,7 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
       PILOT_ORGANIZATION_IDS: pilotOrganizationIds(manifest.fixtures!),
     }
 
-    // 1. Create booking and payment attempt in backend
+    // 1. Create reservation and payment attempt in backend
     const createScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
@@ -1069,31 +1075,21 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
 
       use App\\Models\\Court;
       use App\\Models\\User;
-      use App\\Models\\Reservation;
-      use App\\Models\\LegacyBookingMapping;
-      use App\\Domain\\Booking\\DTOs\\CreateBookingData;
-      use App\\Domain\\Booking\\Actions\\CreateBooking;
+      use App\\Services\\Booking\\OrdinaryCheckoutService;
       use App\\Services\\Payment\\ReservationPaymentService;
 
       $user = User::where('email', 'like', 'customer_%')->firstOrFail();
       $court = Court::where('slug', 'like', '%court-1a1%')->firstOrFail();
 
       $targetSlot = now()->addDays(2)->setTime(10, 0)->toIso8601String();
-      $dto = new CreateBookingData(
-        userId: $user->id,
-        courtId: $court->id,
-        slots: [$targetSlot],
-        couponCode: null,
-        loyaltyPoints: null,
-      );
-
-      $booking = app(CreateBooking::class)->execute($dto);
-      $mapping = LegacyBookingMapping::query()->withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
-      $reservation = Reservation::query()->withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
+      $reservation = app(OrdinaryCheckoutService::class)->checkout($user, (int) $court->venue->organization_id, [
+        'court_id' => $court->id,
+        'slots' => [$targetSlot],
+      ]);
       $attempt = app(ReservationPaymentService::class)->initiate($reservation, $user);
 
       echo json_encode([
-        'booking_code' => $booking->code,
+        'reservation_code' => $reservation->code,
         'attempt_reference' => $attempt->reference,
         'amount' => $attempt->amount,
       ]);
@@ -1106,11 +1102,11 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
     })
 
     const bookingData = JSON.parse(createOut) as {
-      booking_code: string
+      reservation_code: string
       attempt_reference: string
       amount: number
     }
-    assert.ok(bookingData.booking_code)
+    assert.ok(bookingData.reservation_code)
     assert.ok(bookingData.attempt_reference)
 
     // 2. Deliver valid authenticated synthetic payment webhook
@@ -1128,24 +1124,24 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
       200,
       'Webhook endpoint must accept valid signed event with HTTP 200',
     )
-    // 3. Verify real receipt processor transitioned booking, slots, attempt, and receipt
+    // 3. Verify real receipt processor transitioned reservation, slots, attempt, and receipt
     const verifyScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\Booking;
       use App\\Models\\OwnerPaymentAttempt;
       use App\\Models\\OwnerPaymentReceipt;
+      use App\\Models\\Reservation;
 
-      $booking = Booking::where('code', '${bookingData.booking_code}')->with('slots')->firstOrFail();
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${bookingData.reservation_code}')->with('slots')->firstOrFail();
       $attempt = OwnerPaymentAttempt::where('reference', '${bookingData.attempt_reference}')->firstOrFail();
       $receipt = OwnerPaymentReceipt::where('payment_code', '${bookingData.attempt_reference}')->first();
 
       echo json_encode([
-        'booking_status' => $booking->status,
-        'slot_status' => $booking->slots->first()?->status,
+        'reservation_status' => $reservation->status,
+        'slot_status' => $reservation->slots->first()?->status,
         'attempt_status' => $attempt->status,
         'receipt_status' => $receipt?->status,
         'receipt_exception' => $receipt?->exception_code,
@@ -1161,17 +1157,17 @@ test('Task 2.6: Synthetic signed webhook event drives real receipt processor and
     })
 
     const outcome = JSON.parse(verifyOut) as {
-      booking_status: string
+      reservation_status: string
       slot_status: string
       attempt_status: string
       receipt_status: string
     }
     assert.equal(
-      outcome.booking_status,
+      outcome.reservation_status,
       'confirmed',
-      'Booking must be confirmed after real receipt processing',
+      'Reservation must be confirmed after real receipt processing',
     )
-    assert.equal(outcome.slot_status, 'confirmed', 'Booking slot must transition to confirmed')
+    assert.equal(outcome.slot_status, 'confirmed', 'Reservation slot must transition to confirmed')
     assert.equal(outcome.attempt_status, 'paid', 'Owner payment attempt must transition to paid')
     assert.equal(outcome.receipt_status, 'allocated', 'Owner payment receipt must be allocated')
   } finally {
@@ -1246,31 +1242,21 @@ test('Task 2.6: Duplicate webhook event delivery is idempotent and creates no do
 
       use App\\Models\\Court;
       use App\\Models\\User;
-      use App\\Models\\Reservation;
-      use App\\Models\\LegacyBookingMapping;
-      use App\\Domain\\Booking\\DTOs\\CreateBookingData;
-      use App\\Domain\\Booking\\Actions\\CreateBooking;
+      use App\\Services\\Booking\\OrdinaryCheckoutService;
       use App\\Services\\Payment\\ReservationPaymentService;
 
       $user = User::where('email', 'like', 'customer_%')->firstOrFail();
       $court = Court::where('slug', 'like', '%court-1a1%')->firstOrFail();
 
       $targetSlot = now()->addDays(2)->setTime(10, 0)->toIso8601String();
-      $dto = new CreateBookingData(
-        userId: $user->id,
-        courtId: $court->id,
-        slots: [$targetSlot],
-        couponCode: null,
-        loyaltyPoints: null,
-      );
-
-      $booking = app(CreateBooking::class)->execute($dto);
-      $mapping = LegacyBookingMapping::query()->withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->firstOrFail();
-      $reservation = Reservation::query()->withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
+      $reservation = app(OrdinaryCheckoutService::class)->checkout($user, (int) $court->venue->organization_id, [
+        'court_id' => $court->id,
+        'slots' => [$targetSlot],
+      ]);
       $attempt = app(ReservationPaymentService::class)->initiate($reservation, $user);
 
       echo json_encode([
-        'booking_code' => $booking->code,
+        'reservation_code' => $reservation->code,
         'attempt_reference' => $attempt->reference,
         'amount' => $attempt->amount,
       ]);
@@ -1283,7 +1269,7 @@ test('Task 2.6: Duplicate webhook event delivery is idempotent and creates no do
     })
 
     const bookingData = JSON.parse(createOut) as {
-      booking_code: string
+      reservation_code: string
       attempt_reference: string
       amount: number
     }
@@ -1360,11 +1346,11 @@ test('Task 2.6: Runner enforces zero external network egress and blocks producti
     const manifest = await env.start({ skipFrontend: true })
 
     // Verify no unauthenticated production reset endpoint exists
-    const resetRes = await fetch(`${manifest.backend.url}/api/v1/reset`, { method: 'POST' })
+    const resetRes = await fetch(`${manifest.backend.url}/api/reset`, { method: 'POST' })
     assert.notEqual(resetRes.status, 200, 'Production reset endpoint must not be exposed')
     assert.ok(resetRes.status === 404 || resetRes.status === 405, 'Reset route must fail closed')
 
-    const paidRes = await fetch(`${manifest.backend.url}/api/v1/paid`, { method: 'POST' })
+    const paidRes = await fetch(`${manifest.backend.url}/api/paid`, { method: 'POST' })
     assert.notEqual(paidRes.status, 200, 'Production paid shortcut endpoint must not be exposed')
     assert.ok(
       paidRes.status === 404 || paidRes.status === 405,
@@ -1505,7 +1491,7 @@ test('Task 2.7: Actor session authentication and reuse with real persistence', a
       loginHeaders['Cookie'] = cookieHeaderParts.join('; ')
     }
 
-    const loginRes = await fetch(`${manifest.backend.url}/api/v1/auth/login`, {
+    const loginRes = await fetch(`${manifest.backend.url}/api/auth/login`, {
       method: 'POST',
       headers: loginHeaders,
       body: JSON.stringify({

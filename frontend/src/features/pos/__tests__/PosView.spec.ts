@@ -14,12 +14,6 @@ vi.mock('vue-router', () => ({
 }))
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn().mockResolvedValue({
       organization_id: 1,
       capabilities: { tenant_pos_and_wallet: true },

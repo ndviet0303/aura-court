@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\POS;
 
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Models\CashShift;
 use App\Models\LoyaltyRule;
@@ -12,7 +12,6 @@ use App\Models\PosProduct;
 use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
 use App\Models\TenantMembershipPlan;
-use App\Models\WalletAccount;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\POS\PosService;
 use Illuminate\Http\Request;
@@ -20,7 +19,7 @@ use Illuminate\Validation\Rule;
 
 class PosController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(private readonly PosService $pos, private readonly IdempotencyService $idempotency) {}
 
@@ -678,13 +677,6 @@ class PosController extends Controller
         $data = $request->validate(['name' => 'required|string|max:160', 'earn_points_per_100_vnd' => 'required|integer|min:0', 'redeem_points_per_100_vnd' => 'required|integer|min:1']);
 
         return $this->idempotency->run($request, fn () => response()->json(['rule' => LoyaltyRule::create($data + ['organization_id' => $organization->id, 'version' => (int) LoyaltyRule::where('organization_id', $organization->id)->where('name', $data['name'])->max('version') + 1, 'status' => 'published', 'published_at' => now()])], 201));
-    }
-
-    public function wallet(Request $request)
-    {
-        $organization = $this->organization($request);
-
-        return WalletAccount::firstOrCreate(['organization_id' => $organization->id, 'user_id' => $request->user()->id, 'currency' => 'VND'], ['balance' => 0, 'status' => 'active']);
     }
 
     public function benefits(Request $request)

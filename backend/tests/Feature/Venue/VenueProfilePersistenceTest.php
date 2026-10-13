@@ -58,7 +58,7 @@ class VenueProfilePersistenceTest extends TestCase
             'ends_at' => now()->addMonth(),
         ]);
         Sanctum::actingAs($owner);
-        $base = "/api/v1/partner/organizations/{$organization->id}/venues";
+        $base = "/api/partner/organizations/{$organization->id}/venues";
 
         $created = $this->postJson($base, [
             'name' => 'Profile Venue',
@@ -141,7 +141,7 @@ class VenueProfilePersistenceTest extends TestCase
         $revisionId = $submit->json('data.id');
         $this->assertSame('Reviewed public description.', $submit->json('data.configuration_snapshot.venue.description'));
         Sanctum::actingAs($reviewer);
-        $this->postJson("/api/v1/admin/venues/revisions/{$revisionId}/review", ['decision' => 'approve'])
+        $this->postJson("/api/admin/venues/revisions/{$revisionId}/review", ['decision' => 'approve'])
             ->assertOk();
 
         Sanctum::actingAs($owner);
@@ -149,7 +149,7 @@ class VenueProfilePersistenceTest extends TestCase
             'description' => 'Unreviewed replacement text.',
             'images' => ['https://images.test/unreviewed.jpg'],
         ])->assertOk();
-        $this->getJson("/api/v1/venues/{$slug}")
+        $this->getJson("/api/venues/{$slug}")
             ->assertOk()
             ->assertJsonPath('description', 'Reviewed public description.')
             ->assertJsonPath('phone', '+84236111222')
@@ -158,10 +158,10 @@ class VenueProfilePersistenceTest extends TestCase
         $secondRevision = $this->postJson("{$detailUrl}/submit-publication")->assertCreated();
         $revisionId = $secondRevision->json('data.id');
         Sanctum::actingAs($reviewer);
-        $this->postJson("/api/v1/admin/venues/revisions/{$revisionId}/review", ['decision' => 'approve'])
+        $this->postJson("/api/admin/venues/revisions/{$revisionId}/review", ['decision' => 'approve'])
             ->assertOk();
 
-        $this->getJson("/api/v1/venues/{$slug}")
+        $this->getJson("/api/venues/{$slug}")
             ->assertOk()
             ->assertJsonPath('description', 'Unreviewed replacement text.')
             ->assertJsonPath('images.0', 'https://images.test/unreviewed.jpg');

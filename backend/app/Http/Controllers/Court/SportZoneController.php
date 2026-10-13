@@ -15,7 +15,7 @@ class SportZoneController extends Controller
     {
         $user = $request->user();
         $scopedVenueIds = null;
-        $isAdminRoute = $request->is('api/*/admin/sport-zones');
+        $isAdminRoute = $request->is('api/admin/sport-zones');
         if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
             $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
             if ($request->filled('venue_id')) {
@@ -79,7 +79,7 @@ class SportZoneController extends Controller
 
     public function show(Request $request, SportZone $sportZone)
     {
-        if (! $request->is('api/*/admin/sport-zones/*')) {
+        if (! $request->is('api/admin/sport-zones/*')) {
             abort_unless($sportZone->is_active, 404);
             abort_unless(app(VerifyEffectiveBookingEligibility::class)->evaluateVenue($sportZone->venue_id)['eligible'], 404);
         }

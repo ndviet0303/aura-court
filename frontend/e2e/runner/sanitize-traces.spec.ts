@@ -33,7 +33,7 @@ test('sanitizeZipArchive scrubs secrets inside zip entries', () => {
 
   const traceNetworkContent = JSON.stringify({
     request: {
-      url: 'http://127.0.0.1:8000/api/v1/auth/login',
+      url: 'http://127.0.0.1:8000/api/auth/login',
       headers: {
         authorization: 'Bearer jwt_secret_token_123456789',
         cookie: 'aura_session=cookie_val_99999',

@@ -6,7 +6,6 @@ import AdminView from '@/features/admin/views/AdminView.vue'
 import CourtsView from '@/features/court/views/CourtsView.vue'
 import ScheduleView from '@/features/court/views/ScheduleView.vue'
 import CourtDetailView from '@/features/court/views/CourtDetailView.vue'
-import PaymentView from '@/features/booking/views/PaymentView.vue'
 import AdminManageView from '@/features/admin/views/AdminManageView.vue'
 import ForgotPasswordView from '@/features/auth/views/ForgotPasswordView.vue'
 import ResetPasswordView from '@/features/auth/views/ResetPasswordView.vue'
@@ -183,7 +182,7 @@ const router = createRouter({
     {
       path: '/reservations/:code?',
       name: 'reservations',
-      component: () => import('@/features/booking/views/V2ReservationView.vue'),
+      component: () => import('@/features/booking/views/ReservationView.vue'),
       meta: {
         auth: true,
         titleKey: 'seo.reservationsTitle',
@@ -288,17 +287,6 @@ const router = createRouter({
       },
     },
     {
-      path: '/payment/:code?',
-      name: 'payment',
-      component: PaymentView,
-      meta: {
-        auth: true,
-        titleKey: 'seo.paymentTitle',
-        descriptionKey: 'seo.paymentDesc',
-        indexable: false,
-      },
-    },
-    {
       path: '/split-bill/:code?',
       name: 'split-bill',
       component: () => import('@/features/finance/views/GroupSplitBillView.vue'),
@@ -379,7 +367,7 @@ const router = createRouter({
         {
           path: 'pricing',
           name: 'admin-pricing',
-          component: () => import('@/features/admin/views/V2PricingCalendarView.vue'),
+          component: () => import('@/features/admin/views/PricingCalendarView.vue'),
           meta: {
             orgRoles: ['organization_owner', 'venue_manager'],
             titleKey: 'seo.adminPricingTitle',

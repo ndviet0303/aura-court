@@ -56,7 +56,7 @@ class RecurringSeriesPreviewTest extends TestCase
         Sanctum::actingAs($user);
         $monday = $this->futureMonday();
 
-        $res = $this->postJson('/api/v2/recurring-series/preview', [
+        $res = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1, 3, 5],
@@ -86,7 +86,7 @@ class RecurringSeriesPreviewTest extends TestCase
         Sanctum::actingAs($user);
         $monday = $this->futureMonday();
 
-        $res = $this->postJson('/api/v2/recurring-series/preview', [
+        $res = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1, 2, 3, 4, 5],
@@ -106,7 +106,7 @@ class RecurringSeriesPreviewTest extends TestCase
         Sanctum::actingAs($user);
         $start = Carbon::now(config('app.timezone'))->addMonth()->startOfMonth()->addDays(14)->setTime(9, 0); // the 15th
 
-        $res = $this->postJson('/api/v2/recurring-series/preview', [
+        $res = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'monthly',
             'starts_at' => $start->toIso8601String(),
@@ -126,7 +126,7 @@ class RecurringSeriesPreviewTest extends TestCase
         $monday = $this->futureMonday();
 
         // count (3) fewer than the ~11 weeks until would allow -> count wins.
-        $countWins = $this->postJson('/api/v2/recurring-series/preview', [
+        $countWins = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1],
@@ -137,7 +137,7 @@ class RecurringSeriesPreviewTest extends TestCase
         $countWins->assertOk()->assertJsonPath('count', 3)->assertJsonPath('truncated_by', 'count');
 
         // until (2 weeks -> 2 occurrences) fewer than occurrences(10) -> until wins.
-        $untilWins = $this->postJson('/api/v2/recurring-series/preview', [
+        $untilWins = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1],
@@ -164,7 +164,7 @@ class RecurringSeriesPreviewTest extends TestCase
         $this->assertDatabaseCount('reservations', 1);
 
         Sanctum::actingAs($user);
-        $res = $this->postJson('/api/v2/recurring-series/preview', [
+        $res = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1],
@@ -197,7 +197,7 @@ class RecurringSeriesPreviewTest extends TestCase
             'occurrences' => 6,
         ];
 
-        $preview = $this->postJson('/api/v2/recurring-series/preview', $payload);
+        $preview = $this->postJson('/api/recurring-series/preview', $payload);
         $preview->assertOk()->assertJsonPath('count', 6);
         $previewStarts = collect($preview->json('occurrences'))->pluck('starts_at')->all();
         // Two-hour sessions, alternating Mon/Wed, not truncated to twelve nor single weekday.
@@ -208,7 +208,7 @@ class RecurringSeriesPreviewTest extends TestCase
         }
 
         $create = $this->withHeader('Idempotency-Key', 'series-'.uniqid())
-            ->postJson('/api/v2/recurring-series', $payload);
+            ->postJson('/api/recurring-series', $payload);
         $create->assertCreated();
 
         $series = RecurringSeries::query()->latest('id')->firstOrFail();
@@ -240,12 +240,12 @@ class RecurringSeriesPreviewTest extends TestCase
             'occurrences' => 8,
         ];
 
-        $preview = $this->postJson('/api/v2/recurring-series/preview', $payload);
+        $preview = $this->postJson('/api/recurring-series/preview', $payload);
         $preview->assertOk()->assertJsonPath('count', 8);
         $previewStarts = collect($preview->json('occurrences'))->pluck('starts_at')->all();
 
         $this->withHeader('Idempotency-Key', 'series-'.uniqid())
-            ->postJson('/api/v2/recurring-series', $payload)
+            ->postJson('/api/recurring-series', $payload)
             ->assertCreated();
 
         $series = RecurringSeries::query()->latest('id')->firstOrFail();
@@ -305,7 +305,7 @@ class RecurringSeriesPreviewTest extends TestCase
             'occurrences' => 1,
         ];
 
-        $preview = $this->postJson('/api/v2/recurring-series/preview', $payload);
+        $preview = $this->postJson('/api/recurring-series/preview', $payload);
         // Two hourly slots at the 150000 base rule are summed per occurrence.
         $preview->assertOk()
             ->assertJsonPath('occurrences.0.price', 2 * 150000)
@@ -363,7 +363,7 @@ class RecurringSeriesPreviewTest extends TestCase
 
         // A one-hour session starting at the SECOND hour (11:00-12:00) now overlaps the reserved slot.
         Sanctum::actingAs($user);
-        $res = $this->postJson('/api/v2/recurring-series/preview', [
+        $res = $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1],
@@ -383,7 +383,7 @@ class RecurringSeriesPreviewTest extends TestCase
         $start = $this->futureMonday()->setTime(10, 0);
 
         // 90-minute session on a 60-minute-slot zone is not a whole multiple -> rejected.
-        $this->postJson('/api/v2/recurring-series/preview', [
+        $this->postJson('/api/recurring-series/preview', [
             'court_id' => $court->id,
             'frequency' => 'weekly',
             'weekdays' => [1],

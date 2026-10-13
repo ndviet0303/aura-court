@@ -146,7 +146,7 @@ class CanonicalReportingAndExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?from='.now()->startOfMonth()->toDateString().'&to='.now()->endOfMonth()->toDateString());
+            ->getJson('/api/admin/reports?from='.now()->startOfMonth()->toDateString().'&to='.now()->endOfMonth()->toDateString());
 
         $response->assertOk();
         $response->assertJsonPath('bookings', 1);
@@ -198,7 +198,7 @@ class CanonicalReportingAndExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?from='.now()->startOfMonth()->toDateString().'&to='.now()->endOfMonth()->toDateString());
+            ->getJson('/api/admin/reports?from='.now()->startOfMonth()->toDateString().'&to='.now()->endOfMonth()->toDateString());
 
         $response->assertOk();
         $response->assertJsonPath('bookings', 1);
@@ -254,7 +254,7 @@ class CanonicalReportingAndExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id);
+            ->getJson('/api/admin/reports?venue_id='.$this->venueAlpha->id);
 
         $response->assertOk();
         $response->assertJsonPath('booking_revenue', 300000);
@@ -288,7 +288,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // 1. Venue owner inspects reports: platform_fees is 0, owner_revenue does NOT include 600k
         $ownerResponse = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id);
+            ->getJson('/api/admin/reports?venue_id='.$this->venueAlpha->id);
 
         $ownerResponse->assertOk();
         $ownerResponse->assertJsonPath('owner_revenue', 300000);
@@ -298,7 +298,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // 2. Platform admin inspects reports: platform_fees is 600k, owner_revenue remains 300k
         $adminResponse = $this->actingAs($this->platformAdmin)
-            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id);
+            ->getJson('/api/admin/reports?venue_id='.$this->venueAlpha->id);
 
         $adminResponse->assertOk();
         $adminResponse->assertJsonPath('owner_revenue', 300000);
@@ -315,11 +315,11 @@ class CanonicalReportingAndExportTest extends TestCase
     {
         // 1. Non-platform admin tries to query unauthorized venue Beta -> 403 Forbidden
         $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueBeta->id)
+            ->getJson('/api/admin/reports?venue_id='.$this->venueBeta->id)
             ->assertStatus(403);
 
         $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports/csv?venue_id='.$this->venueBeta->id)
+            ->getJson('/api/admin/reports/csv?venue_id='.$this->venueBeta->id)
             ->assertStatus(403);
 
         // 2. Events inside vs outside date range
@@ -342,7 +342,7 @@ class CanonicalReportingAndExportTest extends TestCase
         $oldReservation->forceFill(['created_at' => now()->subMonths(3)])->save();
 
         $response = $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id.'&from='.$currentFrom.'&to='.$currentTo);
+            ->getJson('/api/admin/reports?venue_id='.$this->venueAlpha->id.'&from='.$currentFrom.'&to='.$currentTo);
 
         $response->assertOk();
         $response->assertJsonPath('bookings', 1);
@@ -486,7 +486,7 @@ class CanonicalReportingAndExportTest extends TestCase
 
         // Also test as Venue Owner: should NOT contain platform_subscription row
         $ownerExport = $this->actingAs($this->ownerAlpha)
-            ->get('/api/v1/admin/reports.csv?venue_id='.$this->venueAlpha->id);
+            ->get('/api/admin/reports.csv?venue_id='.$this->venueAlpha->id);
 
         $ownerExport->assertOk();
         $ownerLines = array_filter(explode("\n", trim($ownerExport->streamedContent())));
@@ -501,23 +501,24 @@ class CanonicalReportingAndExportTest extends TestCase
      * A 'legacy' mirror is counted by its mapping status, any other mirror by its own: a V1 no-show keeps its
      * mirror confirmed, as a V2 no-show does. Mirrors are shown with their V1 code (display rule).
      */
-    public function test_report_uses_mapping_status_and_v1_code_for_mapped_mirrors(): void
+    public function test_report_uses_mapping_status_and_legacy_code_for_mapped_mirrors(): void
     {
         $this->mappedBooking('BK-MIRROR-OK', 250000);
         $noShow = $this->mappedBooking('BK-MIRROR-NOSHOW', 300000);
+        // History from a V1 no-show: the legacy row and its mapping say no_show, the mirror stayed confirmed.
         $noShow->forceFill(['status' => 'no_show'])->save();
-        app(LegacyBookingBackfillService::class)->syncProjection($noShow->fresh('slots'));
+        LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $noShow->id)->update(['legacy_status' => 'no_show']);
         $this->mappedBooking('BK-MIRROR-GONE', 400000, 'cancelled');
         $this->assertSame('legacy', Reservation::withoutGlobalScope('tenant_isolation')->where('code', 'LEGACY-BK-MIRROR-GONE')->value('status'));
 
         $this->actingAs($this->ownerAlpha)
-            ->getJson('/api/v1/admin/reports?venue_id='.$this->venueAlpha->id)
+            ->getJson('/api/admin/reports?venue_id='.$this->venueAlpha->id)
             ->assertOk()
             ->assertJsonPath('bookings', 2)
             ->assertJsonPath('booking_revenue', 550000);
 
         $csv = $this->actingAs($this->ownerAlpha)
-            ->get('/api/v1/admin/reports.csv?venue_id='.$this->venueAlpha->id)
+            ->get('/api/admin/reports.csv?venue_id='.$this->venueAlpha->id)
             ->assertOk()
             ->streamedContent();
         $rows = array_map('str_getcsv', array_slice(array_filter(explode("\n", trim($csv))), 1));

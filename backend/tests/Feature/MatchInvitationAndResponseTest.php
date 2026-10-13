@@ -81,7 +81,7 @@ class MatchInvitationAndResponseTest extends TestCase
         // Host invites Player 1 (valid), non-existent ID 99999 (invalid), and Host himself (invalid)
         $response = $this->actingAs($this->host)
             ->withHeaders($this->headers('batch-inv-'))
-            ->postJson("/api/v2/social/matches/{$this->match->id}/invite", [
+            ->postJson("/api/social/matches/{$this->match->id}/invite", [
                 'invitee_ids' => [
                     $this->player1->id,
                     99999,
@@ -136,7 +136,7 @@ class MatchInvitationAndResponseTest extends TestCase
 
         $response = $this->actingAs($this->host)
             ->withHeaders($this->headers('full-inv-'))
-            ->postJson("/api/v2/social/matches/{$this->match->id}/invite", [
+            ->postJson("/api/social/matches/{$this->match->id}/invite", [
                 'invitee_ids' => [$this->player1->id],
             ]);
 
@@ -158,7 +158,7 @@ class MatchInvitationAndResponseTest extends TestCase
 
         $response = $this->actingAs($this->player1)
             ->withHeaders($this->headers('resp-acc-'))
-            ->postJson("/api/v2/social/invitations/{$invitation->id}/respond", [
+            ->postJson("/api/social/invitations/{$invitation->id}/respond", [
                 'status' => 'accepted',
             ]);
 
@@ -186,7 +186,7 @@ class MatchInvitationAndResponseTest extends TestCase
 
         $response = $this->actingAs($this->player1)
             ->withHeaders($this->headers('resp-dec-'))
-            ->postJson("/api/v2/social/invitations/{$invitation->id}/respond", [
+            ->postJson("/api/social/invitations/{$invitation->id}/respond", [
                 'status' => 'declined',
             ]);
 
@@ -214,7 +214,7 @@ class MatchInvitationAndResponseTest extends TestCase
         // Stranger attempts to accept invitation meant for player1
         $response = $this->actingAs($this->stranger)
             ->withHeaders($this->headers('unauth-resp-'))
-            ->postJson("/api/v2/social/invitations/{$invitation->id}/respond", [
+            ->postJson("/api/social/invitations/{$invitation->id}/respond", [
                 'status' => 'accepted',
             ]);
 

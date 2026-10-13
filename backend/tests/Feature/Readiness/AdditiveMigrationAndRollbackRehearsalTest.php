@@ -298,11 +298,11 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
     }
 
     /**
-     * Scenario 2: Legacy V1 response equivalence.
-     * - Compare GET /api/v1/bookings/{code} before and after migration.
-     * - Exact JSON structure, status, pricing, slots, court details match identical structure.
+     * Scenario 2: Legacy history equivalence after migration.
+     * - Historical bookings are read through their mapped reservation (GET /api/reservations/{code}).
+     * - Status, pricing, slots and court details match the source booking, and re-running the backfill serves an identical response.
      */
-    public function test_02_legacy_v1_response_equivalence_before_and_after_migration(): void
+    public function test_02_legacy_history_read_through_mapped_reservation_matches_source_booking(): void
     {
         [$org, $venue, $court, $customer] = $this->createTenantEnvironment('sc2');
 
@@ -315,19 +315,6 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
             'create_payment' => true,
         ]);
 
-        // Pre-migration baseline response from /api/v1/bookings/{code}
-        $responseBefore = $this->actingAs($customer)->getJson("/api/v1/bookings/{$booking->code}");
-        $responseBefore->assertOk();
-
-        $payloadBefore = $responseBefore->json();
-        $this->assertSame('BK-EQUIV-2026', $payloadBefore['code']);
-        $this->assertSame('confirmed', $payloadBefore['status']);
-        $this->assertSame(240000, $payloadBefore['total_amount']);
-        $this->assertSame($court->id, $payloadBefore['court']['id']);
-        $this->assertSame($venue->id, $payloadBefore['court']['venue']['id']);
-        $this->assertCount(2, $payloadBefore['slots']);
-        $this->assertCount(1, $payloadBefore['payments']);
-
         // Execute additive migration backfill
         $backfillService = app(LegacyBookingBackfillService::class);
         $backfillService->backfill($org->id);
@@ -337,22 +324,29 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
             'organization_id' => $org->id,
         ]);
 
-        // Post-migration response from /api/v1/bookings/{code}
-        $responseAfter = $this->actingAs($customer)->getJson("/api/v1/bookings/{$booking->code}");
-        $responseAfter->assertOk();
+        $responseBefore = $this->actingAs($customer)->getJson('/api/reservations/LEGACY-'.$booking->code);
+        $responseBefore->assertOk();
 
-        // Exact equivalence assertion
-        $responseAfter->assertExactJson($payloadBefore);
+        $payloadBefore = $responseBefore->json('reservation');
+        $this->assertSame('BK-EQUIV-2026', $payloadBefore['legacy_mapping'][0]['legacy_code']);
+        $this->assertSame('confirmed', $payloadBefore['legacy_mapping'][0]['legacy_status']);
+        $this->assertSame('confirmed', $payloadBefore['status']);
+        $this->assertSame(240000, $payloadBefore['total_amount']);
+        $this->assertSame($court->id, $payloadBefore['court']['id']);
+        $this->assertSame($venue->id, $payloadBefore['court']['venue']['id']);
+        $this->assertCount(2, $payloadBefore['slots']);
+        foreach ($booking->slots()->orderBy('starts_at')->get() as $i => $slot) {
+            $this->assertSame($slot->unit_price, $payloadBefore['slots'][$i]['unit_price']);
+            $this->assertTrue($slot->starts_at->equalTo(Carbon::parse($payloadBefore['slots'][$i]['starts_at'])));
+        }
+        // The payment stays on the historical booking row.
+        $this->assertSame(1, Payment::where('booking_id', $booking->id)->count());
 
-        // Explicit structural assertions
-        $payloadAfter = $responseAfter->json();
-        $this->assertSame($payloadBefore['code'], $payloadAfter['code']);
-        $this->assertSame($payloadBefore['status'], $payloadAfter['status']);
-        $this->assertSame($payloadBefore['total_amount'], $payloadAfter['total_amount']);
-        $this->assertSame($payloadBefore['court']['name'], $payloadAfter['court']['name']);
-        $this->assertSame($payloadBefore['court']['venue']['name'], $payloadAfter['court']['venue']['name']);
-        $this->assertSame($payloadBefore['slots'], $payloadAfter['slots']);
-        $this->assertSame($payloadBefore['payments'], $payloadAfter['payments']);
+        // Re-running the backfill verifies the mapping checksum and changes nothing.
+        $backfillService->backfill($org->id);
+        $this->actingAs($customer)->getJson('/api/reservations/LEGACY-'.$booking->code)
+            ->assertOk()
+            ->assertExactJson($responseBefore->json());
     }
 
     /**
@@ -518,7 +512,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
     /**
      * Scenario 4: Pause new commands while preserving ingestion & reconciliation.
      * - When new booking creation is paused/blocked (e.g. maintenance or cutover flag),
-     *   incoming provider webhook ingestion (POST /api/v1/webhooks/sepay) and
+     *   incoming provider webhook ingestion (POST /api/webhooks/sepay) and
      *   reconciliation runs (ReconciliationService::run) continue operating normally without dropping receipts.
      */
     public function test_04_pause_new_commands_while_preserving_provider_webhook_ingestion_and_reconciliation(): void
@@ -556,17 +550,19 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
         $initialBookingCount = Booking::count();
 
         // Customer attempts to create new booking while command is paused -> rejected
-        $blockedBookingResponse = $this->actingAs($customer)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$tomorrow->toIso8601String()],
-        ]);
-        $blockedBookingResponse->assertStatus(404);
+        $blockedBookingResponse = $this->actingAs($customer)->withHeader('Idempotency-Key', 'paused-checkout')
+            ->postJson('/api/reservations/checkout', [
+                'court_id' => $court->id,
+                'slots' => [$tomorrow->toIso8601String()],
+            ]);
+        $blockedBookingResponse->assertStatus(422);
 
         // Verify database has no new bookings
         $this->assertSame($initialBookingCount, Booking::count());
+        $this->assertSame(0, Reservation::count());
 
         // 3. Ingestion Check: While new booking commands are blocked, provider webhook ingestion
-        // at POST /api/v1/webhooks/sepay MUST succeed and process receipts without dropping
+        // at POST /api/webhooks/sepay MUST succeed and process receipts without dropping
         $webhookPayload = [
             'id' => 'tx-sepay-ingress-100',
             'code' => "ORD NAP {$customer->id} {$intent->reference}",
@@ -576,7 +572,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
         $rawContent = json_encode($webhookPayload, JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $rawContent, 'sepay-rehearsal-secret');
 
-        $webhookResponse = $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
+        $webhookResponse = $this->call('POST', '/api/webhooks/sepay', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_SIGNATURE' => $signature,
         ], $rawContent);

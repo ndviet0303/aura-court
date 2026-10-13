@@ -89,9 +89,9 @@ test.describe('Ma trận kiểm thử chấp nhận 7 phân hệ chức năng @s
   test('Khu 5: Ví và thanh toán - bảo vệ phân quyền trên trang thanh toán và ví', async ({
     page,
   }) => {
-    await page.goto('/payment', { waitUntil: 'domcontentloaded' })
-    // Unauthenticated user redirected to login
-    await expect(page).toHaveURL(/.*login.*redirect=.*payment/)
+    // Payment lives in the reservation page; unauthenticated users are redirected to login
+    await page.goto('/reservations', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/login.*redirect=.*reservations/)
   })
 
   test('Khu 6: Quầy POS, kho và ca làm việc - các route admin POS thực thi đúng ma trận vai trò', async ({

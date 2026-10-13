@@ -42,17 +42,17 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
         Sanctum::actingAs($applicant);
 
         // auth/me exposes partner application status
-        $this->getJson('/api/v1/auth/me')
+        $this->getJson('/api/auth/me')
             ->assertStatus(200)
             ->assertJsonPath('capabilities.has_partner_application', true)
             ->assertJsonPath('capabilities.partner_application_status', 'pending');
 
         // Cannot access platform admin
-        $this->getJson('/api/v1/admin/partner/applications')
+        $this->getJson('/api/admin/partner/applications')
             ->assertStatus(403);
 
         // Cannot access organization attendance/admin without membership
-        $this->getJson('/api/v2/attendance/SOME_CODE')
+        $this->getJson('/api/attendance/SOME_CODE')
             ->assertStatus(400); // Organization context required
     }
 
@@ -80,7 +80,7 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
         Sanctum::actingAs($ownerUser);
 
         // 1. auth/me returns customer role and organization capabilities
-        $meRes = $this->getJson('/api/v1/auth/me');
+        $meRes = $this->getJson('/api/auth/me');
         $meRes->assertStatus(200)
             ->assertJsonPath('role', 'customer')
             ->assertJsonPath('capabilities.is_platform_admin', false)
@@ -91,13 +91,13 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
             ->assertJsonPath('organizations.0.role', 'organization_owner');
 
         // 2. Owner cannot access platform admin endpoints (e.g. KYC review)
-        $this->getJson('/api/v1/admin/partner/applications')
+        $this->getJson('/api/admin/partner/applications')
             ->assertStatus(403);
 
         // 3. Owner can access their own organization endpoints in v2
         $showOrgRes = $this->withHeaders([
             'X-Organization-ID' => (string) $org->id,
-        ])->getJson("/api/v2/organizations/{$org->id}");
+        ])->getJson("/api/organizations/{$org->id}");
         $showOrgRes->assertStatus(200);
 
         // 4. Cross-tenant negative case: Owner CANNOT access another tenant's organization
@@ -110,7 +110,7 @@ class OrganizationAccessAndCapabilitiesTest extends TestCase
 
         $crossTenantRes = $this->withHeaders([
             'X-Organization-ID' => (string) $otherOrg->id,
-        ])->getJson("/api/v2/organizations/{$otherOrg->id}");
+        ])->getJson("/api/organizations/{$otherOrg->id}");
 
         $crossTenantRes->assertStatus(403);
     }

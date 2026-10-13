@@ -2,7 +2,6 @@
 
 namespace App\Services\Booking;
 
-use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\MonthlyInvoice;
 use App\Models\OwnerPaymentAllocation;
@@ -41,7 +40,7 @@ class RecurringSeriesService
             abort(403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
         }
         if (! $user->hasVerifiedEmail()) {
-            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
 
         $court = Court::with(['venue', 'sportZone'])->findOrFail((int) $data['court_id']);
@@ -768,14 +767,7 @@ class RecurringSeriesService
         $startUtc = $start->copy()->utc();
         $endUtc = $end->copy()->utc();
 
-        $v1Conflict = BookingSlot::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endUtc)
-            ->where('ends_at', '>', $startUtc)
-            ->whereHas('booking', fn ($booking) => $booking->whereIn('status', ['confirmed', 'pending_payment']))
-            ->exists();
-
-        $v2Conflict = ReservationSlot::query()
+        $conflict = ReservationSlot::query()
             ->where('court_id', $court->id)
             ->where('starts_at', '<', $endUtc)
             ->where('ends_at', '>', $startUtc)
@@ -783,7 +775,7 @@ class RecurringSeriesService
             ->whereHas('reservation', fn ($reservation) => $reservation->whereIn('status', ['held', 'confirmed']))
             ->exists();
 
-        return ($v1Conflict || $v2Conflict) ? 'court_time_conflict' : null;
+        return $conflict ? 'court_time_conflict' : null;
     }
 
     private function createInvoices(RecurringSeries $series): void

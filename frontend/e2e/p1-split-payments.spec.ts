@@ -378,7 +378,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       }).trim()
 
       const res = await page.request.post(
-        `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+        `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
         {
           headers: {
             'X-SePay-Timestamp': timestamp,
@@ -675,7 +675,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,
@@ -779,7 +779,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,
@@ -1016,7 +1016,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,

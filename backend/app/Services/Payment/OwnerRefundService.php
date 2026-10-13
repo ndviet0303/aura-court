@@ -3,7 +3,6 @@
 namespace App\Services\Payment;
 
 use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Coupon;
 use App\Models\LegacyBookingMapping;
 use App\Models\LegacyBookingSlotMapping;
@@ -21,7 +20,6 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\DiscountService;
 use App\Services\Finance\FinancialPostingService;
-use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
@@ -277,25 +275,6 @@ class OwnerRefundService
                 $reservation->forceFill(['status' => 'cancelled', 'cancelled_at' => $now])->save();
             }
 
-            $legacyBooking = null;
-            if ($locked->booking_id) {
-                $legacyBooking = Booking::query()->whereKey($locked->booking_id)->lockForUpdate()->first();
-                if ($legacyBooking) {
-                    $legacySlotIds = LegacyBookingSlotMapping::query()
-                        ->whereIn('reservation_slot_id', $slotIds)
-                        ->pluck('legacy_booking_slot_id');
-                    BookingSlot::query()->whereIn('id', $legacySlotIds)->update(['status' => 'cancelled']);
-                    $remainingLegacySlots = $legacyBooking->slots()->whereIn('status', ['held', 'confirmed'])->exists();
-                    if (! $remainingLegacySlots) {
-                        $legacyBooking->forceFill([
-                            'status' => 'cancelled',
-                            'cancelled_at' => $now,
-                            'cancellation_reason' => 'owner_refund_approved:'.$locked->reference_code,
-                        ])->save();
-                    }
-                }
-            }
-
             $pointsToRestore = $this->pointsForSlots($reservation, $slotIds);
             if ($pointsToRestore > 0) {
                 User::query()->whereKey($reservation->user_id)->lockForUpdate()->firstOrFail();
@@ -333,9 +312,6 @@ class OwnerRefundService
             }
 
             $this->releaseCouponIfFullyCancelled($reservation, $locked, $owner);
-            if ($legacyBooking) {
-                app(LegacyBookingBackfillService::class)->syncProjection($legacyBooking->fresh());
-            }
 
             $locked->forceFill([
                 'status' => OwnerRefundObligation::STATUS_APPROVED,
@@ -643,9 +619,6 @@ class OwnerRefundService
         $metadata['coupon_usage_released_at'] = now()->toIso8601String();
         $metadata['coupon_usage_released_by_refund'] = $refund->reference_code;
         $reservation->forceFill(['metadata' => $metadata])->save();
-        if ($refund->booking_id) {
-            Booking::query()->whereKey($refund->booking_id)->whereNull('coupon_usage_released_at')->update(['coupon_usage_released_at' => now()]);
-        }
     }
 
     public function recordEvidence(OwnerRefundObligation $refund, string $type, ?int $actorId, array $content): void

@@ -161,13 +161,13 @@ class Venue extends Model
     {
         $attributes = parent::toArray();
         $publicSnapshot = request()
-            && request()->is('api/*/venues', 'api/*/venues/*')
+            && request()->is('api/venues', 'api/venues/*', 'api/*/venues', 'api/*/venues/*')
             && $this->isPublished()
             && is_array($this->approved_public_snapshot['venue'] ?? null)
                 ? $this->approved_public_snapshot['venue']
                 : null;
 
-        if (request() && request()->is('api/*/admin/*')) {
+        if (request() && request()->is('api/admin/*')) {
             return $attributes;
         }
 

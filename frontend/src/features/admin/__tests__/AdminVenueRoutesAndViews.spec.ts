@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/features/auth/api/authApi'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import { i18n } from '@/i18n'
 import AdminVenuesView from '../views/AdminVenuesView.vue'
 import AdminManageView from '../views/AdminManageView.vue'
@@ -22,12 +22,6 @@ vi.mock('qrcode', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -101,13 +95,6 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
         return {
           members: [{ id: 10, user_id: 100, name: 'Staff John', role: 'Staff', venue_id: 1 }],
         }
-      return []
-    })
-
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') {
-        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
-      }
       return []
     })
 
@@ -235,7 +222,7 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
     })
   })
 
-  describe('View Rendering with Authorized Admin & v1 Venue Contract', () => {
+  describe('View Rendering with Authorized Admin & Venue Contract', () => {
     const adminUser = {
       id: 2,
       name: 'Platform Admin',
@@ -244,7 +231,7 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       onboarded: true,
     }
 
-    it('AdminVenuesView loads venues through v1 and renders venue list properly', async () => {
+    it('AdminVenuesView loads venues and renders venue list properly', async () => {
       const auth = useAuthStore()
       auth.user = adminUser
       auth.loaded = true
@@ -260,13 +247,12 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       await flushPromises()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(wrapper.text()).toContain('Aura Downtown Arena')
       expect(wrapper.text()).toContain('Riverside Club')
       expect(wrapper.find('.alert-pill-error').exists()).toBe(false)
     })
 
-    it('AdminManageView loads venues through v1 and renders management content', async () => {
+    it('AdminManageView loads venues and renders management content', async () => {
       const auth = useAuthStore()
       auth.user = adminUser
       auth.loaded = true
@@ -282,7 +268,6 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       await flushPromises()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(wrapper.find('.alert-pill-error').exists()).toBe(false)
     })
 
@@ -336,7 +321,7 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       })
     })
 
-    it('AdminStaffView loads venues through v1 and associates staff with venues', async () => {
+    it('AdminStaffView loads venues and associates staff with venues', async () => {
       const auth = useAuthStore()
       auth.user = adminUser
       auth.loaded = true
@@ -349,12 +334,11 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       await flushPromises()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(wrapper.text()).toContain('Staff John')
       expect(wrapper.find('.alert-error').exists()).toBe(false)
     })
 
-    it('AdminScheduleView loads venues through v1 and renders schedule view', async () => {
+    it('AdminScheduleView loads venues and renders schedule view', async () => {
       const auth = useAuthStore()
       auth.user = adminUser
       auth.loaded = true
@@ -367,11 +351,10 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       await flushPromises()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
       expect(wrapper.find('.alert-pill-error').exists()).toBe(false)
     })
 
-    it('AdminShiftReconciliationView loads venues through v1', async () => {
+    it('AdminShiftReconciliationView loads venues', async () => {
       const auth = useAuthStore()
       auth.user = adminUser
       auth.loaded = true
@@ -384,7 +367,6 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       await flushPromises()
 
       expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(apiV2.get).not.toHaveBeenCalledWith('/admin/venues')
     })
   })
 

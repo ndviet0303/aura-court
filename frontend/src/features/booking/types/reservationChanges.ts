@@ -2,8 +2,8 @@
 // reschedule customer flows. Shapes mirror the backend contract exposed by
 // OwnerRefundController / RescheduleController and OwnerRefundService::serialize.
 
-// Minimal shape shared by v1 Booking and v2 Reservation so the customer
-// cancel/reschedule modals can drive either surface by code.
+// Minimal reservation shape the customer cancel/reschedule modals need,
+// addressed by reservation code.
 export type ChangeableBookingSlot = {
   id?: number
   starts_at: string

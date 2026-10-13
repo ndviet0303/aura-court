@@ -103,7 +103,7 @@ class VenueReadinessChecklistTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Check readiness: No subscription, partner pending, no courts
-        $res = $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
+        $res = $this->getJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
 
         $res->assertStatus(200)
             ->assertJsonPath('data.is_ready', false)
@@ -118,7 +118,7 @@ class VenueReadinessChecklistTest extends TestCase
         $this->assertContains('BOOKING_POLICY_REQUIRED', $missingCodes);
         $this->assertContains('RECEIVING_CONNECTION_REQUIRED', $missingCodes);
 
-        $this->postJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/receiving-connection/{$receiver->id}/select")
+        $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/receiving-connection/{$receiver->id}/select")
             ->assertConflict();
 
         // A stale or manually corrupted verified flag cannot replace the owner's recorded authorization.
@@ -128,7 +128,7 @@ class VenueReadinessChecklistTest extends TestCase
             'verified_at' => now(),
             'effective_from' => now(),
         ])->save();
-        $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness")
+        $this->getJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/readiness")
             ->assertOk()
             ->assertJsonPath('data.checklist.receiving_connection_selected', false);
     }
@@ -173,7 +173,7 @@ class VenueReadinessChecklistTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $res = $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
+        $res = $this->getJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
         $res->assertStatus(200)
             ->assertJsonPath('data.is_ready', false);
 
@@ -235,7 +235,7 @@ class VenueReadinessChecklistTest extends TestCase
         // Note: Organization has 0 staff and 0 POS products.
         Sanctum::actingAs($owner);
 
-        $res = $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
+        $res = $this->getJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
 
         $res->assertStatus(200)
             ->assertJsonPath('data.is_ready', true)
@@ -250,7 +250,7 @@ class VenueReadinessChecklistTest extends TestCase
     private function selectVerifiedReceiver(Venue $venue, User $owner): void
     {
         Sanctum::actingAs($owner);
-        $baseUrl = "/api/v1/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
+        $baseUrl = "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection";
         $created = $this->postJson($baseUrl, [
             'bank_code' => 'MBBank',
             'account_name' => 'Venue Owner',
@@ -272,7 +272,7 @@ class VenueReadinessChecklistTest extends TestCase
         ];
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret),

@@ -12,7 +12,7 @@ class SetLocaleTest extends TestCase
     public function test_sets_vietnamese_by_default(): void
     {
         $middleware = new SetLocale;
-        $request = Request::create('/api/v1/courts', 'GET');
+        $request = Request::create('/api/courts', 'GET');
         $request->headers->remove('Accept-Language');
 
         $middleware->handle($request, function ($req) {
@@ -25,7 +25,7 @@ class SetLocaleTest extends TestCase
     public function test_sets_vietnamese_from_accept_language(): void
     {
         $middleware = new SetLocale;
-        $request = Request::create('/api/v1/courts', 'GET');
+        $request = Request::create('/api/courts', 'GET');
         $request->headers->set('Accept-Language', 'vi-VN,vi;q=0.9');
 
         $middleware->handle($request, function ($req) {
@@ -38,7 +38,7 @@ class SetLocaleTest extends TestCase
     public function test_sets_english_from_accept_language_header(): void
     {
         $middleware = new SetLocale;
-        $request = Request::create('/api/v1/courts', 'GET');
+        $request = Request::create('/api/courts', 'GET');
         $request->headers->set('Accept-Language', 'en-US,en;q=0.9');
 
         $middleware->handle($request, function ($req) {
@@ -51,7 +51,7 @@ class SetLocaleTest extends TestCase
     public function test_sets_locale_from_x_locale_header(): void
     {
         $middleware = new SetLocale;
-        $request = Request::create('/api/v1/courts', 'GET');
+        $request = Request::create('/api/courts', 'GET');
         $request->headers->set('X-Locale', 'en');
 
         $middleware->handle($request, function ($req) {

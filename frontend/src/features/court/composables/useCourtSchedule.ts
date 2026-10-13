@@ -115,10 +115,6 @@ export function useCourtSchedule() {
 
   const totalSlotsCount = computed(() => store.slots.length)
 
-  const totalPrice = computed(() => {
-    return store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0)
-  })
-
   const totalHours = computed(() => store.selectedSlots.length)
 
   async function fetchAvailability() {
@@ -236,7 +232,7 @@ export function useCourtSchedule() {
     }
   }
 
-  async function proceedToBooking(loyaltyPayload?: LoyaltySelection) {
+  async function proceedToBooking(loyaltyPayload?: LoyaltySelection, couponCode?: string | null) {
     if (
       loading.value ||
       !court.value ||
@@ -252,7 +248,7 @@ export function useCourtSchedule() {
     checkoutLoading.value = true
     error.value = ''
     try {
-      const reservation = await store.checkoutReservation(loyaltyPayload)
+      const reservation = await store.checkoutReservation(loyaltyPayload, couponCode)
       router.push({ name: 'reservations', params: { code: reservation.code } })
     } catch (cause) {
       error.value = errorMessage(cause, 'Không thể khởi tạo đơn đặt sân. Vui lòng thử lại.')
@@ -297,7 +293,6 @@ export function useCourtSchedule() {
     availableSlotsCount,
     totalSlotsCount,
     carouselDays,
-    totalPrice,
     totalHours,
     error,
     notice,

@@ -90,7 +90,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         ]);
 
         // Attempting wallet checkout without customer fails with 422
-        $noCustRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $noCustRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
             ],
@@ -104,7 +104,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         // Subtotal: 2 * 150,000 = 300,000 VND
         // VAT 8%: 24,000 VND
         // Grand Total: 324,000 VND
-        $checkoutRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $checkoutRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'customer_id' => $this->customer->id,
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
@@ -185,7 +185,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         ]);
 
         // Order total is 162,000 VND (150,000 + 8% VAT = 162,000)
-        $res = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $res = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'customer_id' => $this->customer->id,
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 1],
@@ -213,7 +213,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
     {
         // 2 items * 150,000 = 300,000 + 24,000 VAT = 324,000 VND
         // 1. Underpaid cash fails with 422
-        $underpaidRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $underpaidRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
             ],
@@ -228,7 +228,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             ->assertJsonFragment(['message' => 'Tiền mặt khách đưa không đủ để thanh toán.']);
 
         // 2. Exact or surplus tender succeeds and computes exact change
-        $cashRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $cashRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
             ],
@@ -299,7 +299,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         // Taxable: 270,000 VND
         // 8% VAT: 21,600 VND
         // Grand total: 291,600 VND
-        $quoteRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/quote', [
+        $quoteRes = $this->actingAs($this->cashier)->postJson('/api/pos/quote', [
             'customer_id' => $this->customer->id,
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
@@ -314,7 +314,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             ->assertJsonPath('quote.grand_total', 291600);
 
         // 3. Attempting synthetic extra discount beyond 30,000 rejects with 422
-        $syntheticRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $syntheticRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'customer_id' => $this->customer->id,
             'items' => [
                 ['product_id' => $this->product->id, 'quantity' => 2],
@@ -342,7 +342,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         ]);
 
         // Attempting to combine coupon with active membership discount fails with 422
-        $conflictRes = $this->actingAs($this->cashier)->postJson('/api/v2/pos/orders', [
+        $conflictRes = $this->actingAs($this->cashier)->postJson('/api/pos/orders', [
             'customer_id' => $this->customer->id,
             'coupon_code' => 'COUPON50K',
             'items' => [

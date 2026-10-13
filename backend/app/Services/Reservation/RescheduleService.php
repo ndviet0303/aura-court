@@ -3,10 +3,7 @@
 namespace App\Services\Reservation;
 
 use App\Models\Booking;
-use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\LegacyBookingMapping;
-use App\Models\LegacyBookingSlotMapping;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerRefundObligation;
@@ -137,11 +134,6 @@ class RescheduleService
                 $venue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
                 ['snapshot' => $policySnapshot, 'expires_at' => $holdExpiresAt] = $this->captureHold($venue);
 
-                $excludeBookingSlotIds = LegacyBookingSlotMapping::query()
-                    ->withoutGlobalScope('tenant_isolation')
-                    ->whereIn('reservation_slot_id', $locked->slots()->pluck('id'))
-                    ->pluck('legacy_booking_slot_id')
-                    ->all();
                 $this->slotPolicy->assertAllowed(
                     $court,
                     collect($quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
@@ -149,7 +141,6 @@ class RescheduleService
                         'end' => $slotSnapshot['ends_at'],
                     ])->all(),
                     excludeReservationId: (int) $locked->id,
-                    excludeBookingSlotIds: $excludeBookingSlotIds,
                 );
 
                 $changeSnapshot = [
@@ -245,7 +236,6 @@ class RescheduleService
             ])->save();
             $original->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => 'cancelled']);
             $original->entitlements()->whereIn('status', ['held', 'active'])->update(['status' => 'cancelled']);
-            $this->cancelLegacyProjection($original, $replacement->code, $now);
         }
 
         if ($replacement->status !== 'confirmed') {
@@ -408,38 +398,6 @@ class RescheduleService
         ]);
 
         return $replacement->load(['court.venue', 'slots', 'entitlements']);
-    }
-
-    private function cancelLegacyProjection(Reservation $original, string $replacementCode, Carbon $now): void
-    {
-        $mapping = LegacyBookingMapping::query()
-            ->withoutGlobalScope('tenant_isolation')
-            ->where('reservation_id', $original->id)
-            ->first();
-        if (! $mapping) {
-            return;
-        }
-
-        $booking = Booking::query()->whereKey($mapping->legacy_booking_id)->lockForUpdate()->first();
-        if (! $booking) {
-            return;
-        }
-
-        $legacySlotIds = LegacyBookingSlotMapping::query()
-            ->withoutGlobalScope('tenant_isolation')
-            ->whereIn('reservation_slot_id', $original->slots()->pluck('id'))
-            ->pluck('legacy_booking_slot_id');
-        BookingSlot::query()->whereIn('id', $legacySlotIds)->update(['status' => 'cancelled']);
-
-        if (! $booking->slots()->whereIn('status', ['held', 'confirmed'])->exists()) {
-            $booking->forceFill([
-                'status' => 'cancelled',
-                'cancelled_at' => $now,
-                'cancellation_reason' => 'rescheduled_to:'.$replacementCode,
-            ])->save();
-        }
-
-        app(LegacyBookingBackfillService::class)->syncProjection($booking->fresh());
     }
 
     private function pendingAttempt(Reservation $replacement): ?OwnerPaymentAttempt

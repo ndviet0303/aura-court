@@ -30,8 +30,7 @@ class AvailabilityController extends Controller
         $dayStartUtc = $date->copy()->startOfDay()->utc();
         $dayEndUtc = $date->copy()->endOfDay()->utc();
 
-        $v1Slots = $court->bookings()->whereIn('status', ['pending_payment', 'confirmed', 'refund_pending'])->with('slots')->get()->flatMap->slots;
-        $v2Slots = ReservationSlot::query()
+        $reservedSlots = ReservationSlot::query()
             ->where('court_id', $court->id)
             ->whereHas('reservation', fn ($r) => $r->whereIn('status', ['held', 'confirmed']))
             ->where('starts_at', '>=', $dayStartUtc->copy()->subHours(24))
@@ -53,7 +52,7 @@ class AvailabilityController extends Controller
             ? ['start' => $start, 'price' => $priceSnapshots[$index]['unit_price']]
             : null)->filter()->values();
 
-        return $pricedStarts->map(function (array $slot) use ($v1Slots, $v2Slots, $court, $duration, $toUtcCarbon, $operatingCalendar) {
+        return $pricedStarts->map(function (array $slot) use ($reservedSlots, $court, $duration, $toUtcCarbon, $operatingCalendar) {
             $start = $slot['start'];
             $end = $start->copy()->addMinutes($duration);
             $startUtc = $start->copy()->utc();
@@ -63,14 +62,13 @@ class AvailabilityController extends Controller
 
             $blocked = $court->blocks->contains(fn ($block) => $toUtcCarbon($block->starts_at)->timestamp < $endTs && $toUtcCarbon($block->ends_at)->timestamp > $startTs);
             $withinOperatingHours = $operatingCalendar->isOpen($court, $start, $end);
-            $bookedV1 = $v1Slots->contains(fn ($item) => $toUtcCarbon($item->starts_at)->timestamp === $startTs && in_array($item->status, ['held', 'confirmed']));
-            $bookedV2 = $v2Slots->contains(fn ($item) => $toUtcCarbon($item->starts_at)->timestamp === $startTs);
+            $booked = $reservedSlots->contains(fn ($item) => $toUtcCarbon($item->starts_at)->timestamp === $startTs);
 
             return [
                 'startsAt' => $start->toIso8601String(),
                 'endsAt' => $end->toIso8601String(),
                 'price' => (int) $slot['price'],
-                'available' => $withinOperatingHours && ! $blocked && ! $bookedV1 && ! $bookedV2 && $start->isFuture(),
+                'available' => $withinOperatingHours && ! $blocked && ! $booked && $start->isFuture(),
             ];
         })->values();
     }

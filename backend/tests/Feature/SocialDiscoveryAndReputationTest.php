@@ -81,7 +81,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 1. Get initial profile
         $getRes = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('prof-get-'))
-            ->getJson('/api/v2/social/profile');
+            ->getJson('/api/social/profile');
         $getRes->assertOk();
         $this->assertSame(1, $getRes->json('skill_level'));
         $this->assertSame(60, $getRes->json('reputation_score'));
@@ -89,7 +89,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 2. Skill level out of bounds fails validation
         $invalidRes = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('prof-inv-'))
-            ->putJson('/api/v2/social/profile', [
+            ->putJson('/api/social/profile', [
                 'skill_level' => 6, // max is 5
             ]);
         $invalidRes->assertStatus(422);
@@ -97,7 +97,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 3. Valid update
         $updateRes = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('prof-ok-'))
-            ->putJson('/api/v2/social/profile', [
+            ->putJson('/api/social/profile', [
                 'skill_level' => 4,
                 'city' => 'Hà Nội',
                 'visibility' => 'organization',
@@ -160,7 +160,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Query discovery with city 'Hà Nội': should return M1 only (M2 wrong city, M3 full)
         $resHanoi = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('disc-hn-'))
-            ->getJson('/api/v2/social/matches?city='.urlencode('Hà Nội'));
+            ->getJson('/api/social/matches?city='.urlencode('Hà Nội'));
         $resHanoi->assertOk();
         $matches = collect($resHanoi->json('matches'));
         $this->assertTrue($matches->contains('id', $m1->id));
@@ -170,7 +170,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Query discovery with skill filter min_skill=4: M1 matches (max_skill=4 >= 4), M2 excluded (max_skill=3 < 4)
         $resSkill = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('disc-sk-'))
-            ->getJson('/api/v2/social/matches?min_skill=4');
+            ->getJson('/api/social/matches?min_skill=4');
         $resSkill->assertOk();
         $skillMatches = collect($resSkill->json('matches'));
         $this->assertTrue($skillMatches->contains('id', $m1->id));
@@ -194,7 +194,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Player A joins -> reaches 2/2 (becomes full)
         $joinA = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('join-a-'))
-            ->postJson("/api/v2/social/matches/{$match->id}/join");
+            ->postJson("/api/social/matches/{$match->id}/join");
         $joinA->assertCreated();
 
         $this->assertSame(2, $match->fresh()->joined_count);
@@ -203,7 +203,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Player B tries to join -> 409 Conflict (Match is full)
         $joinB = $this->actingAs($this->playerB)
             ->withHeaders($this->headers('join-b-'))
-            ->postJson("/api/v2/social/matches/{$match->id}/join");
+            ->postJson("/api/social/matches/{$match->id}/join");
         $joinB->assertStatus(409);
         $this->assertStringContainsString('full', $joinB->json('message'));
     }
@@ -225,20 +225,20 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 1. Not visible in public discovery
         $discRes = $this->actingAs($this->stranger)
             ->withHeaders($this->headers('disc-inv-'))
-            ->getJson('/api/v2/social/matches');
+            ->getJson('/api/social/matches');
         $discRes->assertOk();
         $this->assertFalse(collect($discRes->json('matches'))->contains('id', $inviteOnlyMatch->id));
 
         // 2. Stranger gets 404 when attempting to view directly
         $strangerShow = $this->actingAs($this->stranger)
             ->withHeaders($this->headers('show-stranger-'))
-            ->getJson("/api/v2/social/matches/{$inviteOnlyMatch->id}");
+            ->getJson("/api/social/matches/{$inviteOnlyMatch->id}");
         $strangerShow->assertStatus(404);
 
         // 3. Creator can view directly
         $creatorShow = $this->actingAs($this->creator)
             ->withHeaders($this->headers('show-creator-'))
-            ->getJson("/api/v2/social/matches/{$inviteOnlyMatch->id}");
+            ->getJson("/api/social/matches/{$inviteOnlyMatch->id}");
         $creatorShow->assertOk();
 
         // 4. Invite Player A
@@ -253,13 +253,13 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Player A can now view the match
         $inviteeShow = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('show-invitee-'))
-            ->getJson("/api/v2/social/matches/{$inviteOnlyMatch->id}");
+            ->getJson("/api/social/matches/{$inviteOnlyMatch->id}");
         $inviteeShow->assertOk();
 
         // Stranger cannot join directly -> 404
         $strangerJoin = $this->actingAs($this->stranger)
             ->withHeaders($this->headers('join-stranger-'))
-            ->postJson("/api/v2/social/matches/{$inviteOnlyMatch->id}/join");
+            ->postJson("/api/social/matches/{$inviteOnlyMatch->id}/join");
         $strangerJoin->assertStatus(404);
     }
 
@@ -296,7 +296,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 1. Staff/Manager records attendance (+2 reputation)
         $recRes = $this->actingAs($this->moderator)
             ->withHeaders($this->headers('rep-rec-'))
-            ->postJson('/api/v2/social/reputation/activity', [
+            ->postJson('/api/social/reputation/activity', [
                 'user_id' => $this->playerA->id,
                 'type' => 'attendance',
                 'source_type' => 'reservation',
@@ -309,7 +309,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 2. Staff/Manager records no_show (-15 reputation)
         $noShowRes = $this->actingAs($this->moderator)
             ->withHeaders($this->headers('rep-noshow-'))
-            ->postJson('/api/v2/social/reputation/activity', [
+            ->postJson('/api/social/reputation/activity', [
                 'user_id' => $this->playerA->id,
                 'type' => 'no_show',
                 'source_type' => 'reservation',
@@ -326,7 +326,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 3. Unauthorized user (Stranger) tries to dispute Player A's activity -> 403
         $unauthDispute = $this->actingAs($this->stranger)
             ->withHeaders($this->headers('disp-unauth-'))
-            ->postJson("/api/v2/social/reputation/activities/{$noShowActivity->id}/dispute", [
+            ->postJson("/api/social/reputation/activities/{$noShowActivity->id}/dispute", [
                 'reason' => 'Không phải lỗi của tôi',
             ]);
         $unauthDispute->assertStatus(403);
@@ -334,7 +334,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // 4. Player A files legitimate dispute
         $disputeRes = $this->actingAs($this->playerA)
             ->withHeaders($this->headers('disp-ok-'))
-            ->postJson("/api/v2/social/reputation/activities/{$noShowActivity->id}/dispute", [
+            ->postJson("/api/social/reputation/activities/{$noShowActivity->id}/dispute", [
                 'reason' => 'Tôi có mặt đúng giờ nhưng nhân viên quên quét check-in',
             ]);
         $disputeRes->assertCreated();
@@ -344,7 +344,7 @@ class SocialDiscoveryAndReputationTest extends TestCase
         // Upheld penalty applies to the original fault context, recording an audited resolution
         $resolveRes = $this->actingAs($this->moderator)
             ->withHeaders($this->headers('disp-resolve-'))
-            ->postJson("/api/v2/social/reputation/disputes/{$disputeId}/resolve", [
+            ->postJson("/api/social/reputation/disputes/{$disputeId}/resolve", [
                 'decision' => 'upheld',
                 'resolution' => 'Đã kiểm tra camera, khách có mặt đúng giờ',
             ]);

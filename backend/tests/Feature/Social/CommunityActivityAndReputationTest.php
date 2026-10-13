@@ -191,7 +191,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 1. Host customer creates match post using their confirmed reservation
         $res = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Buổi giao lưu thứ 7',
                 'starts_at' => $startsAt->toIso8601String(),
                 'ends_at' => $endsAt->toIso8601String(),
@@ -210,7 +210,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 2. Double allocation: attempting to create a second match on the same reservation/entitlement fails with 409
         $doubleRes = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Buổi giao lưu trùng',
                 'starts_at' => $startsAt->toIso8601String(),
                 'ends_at' => $endsAt->toIso8601String(),
@@ -229,7 +229,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 1. Stranger tries to use hostCustomer's reservation -> 403
         $unauthRes = $this->auth($this->stranger)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Stranger Match',
                 'starts_at' => $startsAt->toIso8601String(),
                 'ends_at' => $endsAt->toIso8601String(),
@@ -240,7 +240,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 2. Activity time exceeds reservation bounds -> 422
         $exceedRes = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Exceeding Match',
                 'starts_at' => $startsAt->copy()->subHour()->toIso8601String(),
                 'ends_at' => $endsAt->toIso8601String(),
@@ -258,7 +258,7 @@ class CommunityActivityAndReputationTest extends TestCase
     {
         // 1. starts_at in the past -> 422
         $pastRes = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Past Match',
                 'starts_at' => now()->subDay()->toIso8601String(),
                 'ends_at' => now()->subDay()->addHours(2)->toIso8601String(),
@@ -268,7 +268,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 2. starts_at >= ends_at -> 422
         $invTimeRes = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Inverted Time',
                 'starts_at' => now()->addDays(2)->toIso8601String(),
                 'ends_at' => now()->addDays(1)->toIso8601String(),
@@ -278,7 +278,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 3. registration_deadline > starts_at -> 422
         $invDeadlineRes = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Late Deadline',
                 'starts_at' => now()->addDays(2)->setHour(14)->toIso8601String(),
                 'ends_at' => now()->addDays(2)->setHour(16)->toIso8601String(),
@@ -289,7 +289,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 4. min_skill > max_skill -> 422
         $invSkillRes = $this->auth($this->hostCustomer)
-            ->postJson('/api/v2/social/matches', [
+            ->postJson('/api/social/matches', [
                 'title' => 'Inverted Skill',
                 'starts_at' => now()->addDays(2)->setHour(14)->toIso8601String(),
                 'ends_at' => now()->addDays(2)->setHour(16)->toIso8601String(),
@@ -325,7 +325,7 @@ class CommunityActivityAndReputationTest extends TestCase
         ]);
 
         $failJoin = $this->auth($this->playerA)
-            ->postJson("/api/v2/social/matches/{$match->id}/join");
+            ->postJson("/api/social/matches/{$match->id}/join");
         $failJoin->assertStatus(422);
         $this->assertStringContainsString('Player skill level does not meet activity requirements.', $failJoin->json('message'));
 
@@ -337,14 +337,14 @@ class CommunityActivityAndReputationTest extends TestCase
         ]);
 
         $successJoin = $this->auth($this->playerB)
-            ->postJson("/api/v2/social/matches/{$match->id}/join");
+            ->postJson("/api/social/matches/{$match->id}/join");
         $successJoin->assertStatus(201);
         $this->assertSame(2, $match->fresh()->joined_count);
 
         // Fast forward past registration deadline
         $match->update(['registration_deadline' => now()->subMinute()]);
         $lateJoin = $this->auth($this->stranger)
-            ->postJson("/api/v2/social/matches/{$match->id}/join");
+            ->postJson("/api/social/matches/{$match->id}/join");
         $lateJoin->assertStatus(422);
         $this->assertStringContainsString('Registration deadline has passed.', $lateJoin->json('message'));
     }
@@ -506,21 +506,21 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 1. Player A requests to join -> status is 'pending_approval', joined_count does NOT increment
         $joinRes = $this->auth($this->playerA)
-            ->postJson("/api/v2/matches/{$match->id}/join");
+            ->postJson("/api/matches/{$match->id}/join");
         $joinRes->assertCreated();
         $this->assertSame(MatchParticipation::STATUS_PENDING_APPROVAL, $joinRes->json('participation.status'));
         $this->assertSame(1, $match->fresh()->joined_count);
 
         // 2. Unauthorized user cannot approve -> 403
         $unauthApprove = $this->auth($this->stranger)
-            ->postJson("/api/v2/matches/{$match->id}/approve-participant", [
+            ->postJson("/api/matches/{$match->id}/approve-participant", [
                 'user_id' => $this->playerA->id,
             ]);
         $unauthApprove->assertStatus(403);
 
         // 3. Organizer approves Player A -> status becomes 'joined', joined_count increments to 2 (full)
         $approveRes = $this->auth($this->hostCustomer)
-            ->postJson("/api/v2/matches/{$match->id}/approve-participant", [
+            ->postJson("/api/matches/{$match->id}/approve-participant", [
                 'user_id' => $this->playerA->id,
             ]);
         $approveRes->assertOk();
@@ -530,7 +530,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 4. Player B tries to join full match -> 409
         $fullJoin = $this->auth($this->playerB)
-            ->postJson("/api/v2/matches/{$match->id}/join");
+            ->postJson("/api/matches/{$match->id}/join");
         $fullJoin->assertStatus(409);
     }
 
@@ -550,11 +550,11 @@ class CommunityActivityAndReputationTest extends TestCase
         ]);
 
         $this->auth($this->playerA)
-            ->postJson("/api/v2/matches/{$match->id}/join");
+            ->postJson("/api/matches/{$match->id}/join");
 
         // Organizer rejects Player A
         $rejectRes = $this->auth($this->hostCustomer)
-            ->postJson("/api/v2/matches/{$match->id}/reject-participant", [
+            ->postJson("/api/matches/{$match->id}/reject-participant", [
                 'user_id' => $this->playerA->id,
             ]);
         $rejectRes->assertOk();
@@ -562,13 +562,13 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // Organizer closes roster
         $closeRes = $this->auth($this->hostCustomer)
-            ->postJson("/api/v2/matches/{$match->id}/close-roster");
+            ->postJson("/api/matches/{$match->id}/close-roster");
         $closeRes->assertOk();
         $this->assertTrue($match->fresh()->isRosterClosed());
 
         // Subsequent join rejected with 422
         $subJoin = $this->auth($this->playerB)
-            ->postJson("/api/v2/matches/{$match->id}/join");
+            ->postJson("/api/matches/{$match->id}/join");
         $subJoin->assertStatus(422);
         $this->assertStringContainsString('Roster is closed.', $subJoin->json('message'));
     }
@@ -597,7 +597,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 1. Staff/Operator records Player A as present
         $attRes = $this->auth($this->manager)
-            ->postJson("/api/v2/matches/{$match->id}/record-attendance", [
+            ->postJson("/api/matches/{$match->id}/record-attendance", [
                 'user_id' => $this->playerA->id,
                 'status' => 'present',
                 'notes' => 'Checked in on time',
@@ -608,7 +608,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 2. Staff records Player A as withdrawn -> releases quota, decrements joined_count, match reopens
         $withRes = $this->auth($this->manager)
-            ->postJson("/api/v2/matches/{$match->id}/record-attendance", [
+            ->postJson("/api/matches/{$match->id}/record-attendance", [
                 'user_id' => $this->playerA->id,
                 'status' => 'withdrawn',
                 'notes' => 'Injured during warm up',
@@ -630,7 +630,7 @@ class CommunityActivityAndReputationTest extends TestCase
     {
         // 1. Non-existent source model -> 422
         $fakeSourceRes = $this->auth($this->manager)
-            ->postJson('/api/v2/social/reputation/activity', [
+            ->postJson('/api/social/reputation/activity', [
                 'user_id' => $this->playerA->id,
                 'type' => 'attendance',
                 'source_type' => 'reservation',
@@ -661,7 +661,7 @@ class CommunityActivityAndReputationTest extends TestCase
         ]);
 
         $wrongOrgRes = $this->auth($this->manager)
-            ->postJson('/api/v2/social/reputation/activity', [
+            ->postJson('/api/social/reputation/activity', [
                 'user_id' => $this->playerA->id,
                 'type' => 'attendance',
                 'source_type' => 'reservation',
@@ -680,7 +680,7 @@ class CommunityActivityAndReputationTest extends TestCase
         ]);
 
         $nonPartRes = $this->auth($this->manager)
-            ->postJson('/api/v2/social/reputation/activity', [
+            ->postJson('/api/social/reputation/activity', [
                 'user_id' => $this->playerB->id, // Player B is not the reservation user
                 'type' => 'attendance',
                 'source_type' => 'reservation',
@@ -702,7 +702,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 1. Staff records no_show (-15 reputation)
         $noShowRes = $this->auth($this->manager)
-            ->postJson('/api/v2/social/reputation/activity', [
+            ->postJson('/api/social/reputation/activity', [
                 'user_id' => $this->playerA->id,
                 'type' => 'no_show',
                 'source_type' => 'reservation',
@@ -716,7 +716,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 2. Player A files dispute
         $dispRes = $this->auth($this->playerA)
-            ->postJson("/api/v2/social/reputation/activities/{$activity->id}/dispute", [
+            ->postJson("/api/social/reputation/activities/{$activity->id}/dispute", [
                 'reason' => 'Khách đến đúng giờ, check-in bị lỗi',
             ]);
         $dispRes->assertCreated();
@@ -724,7 +724,7 @@ class CommunityActivityAndReputationTest extends TestCase
 
         // 3. Manager upholds the dispute
         $resolveRes = $this->auth($this->manager)
-            ->postJson("/api/v2/social/reputation/disputes/{$disputeId}/resolve", [
+            ->postJson("/api/social/reputation/disputes/{$disputeId}/resolve", [
                 'decision' => 'upheld',
                 'resolution' => 'Camera xác nhận khách có mặt đúng giờ',
             ]);

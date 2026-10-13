@@ -4,10 +4,6 @@ export interface ProfileMembershipResponse {
   membership: Membership | null
 }
 
-export interface ProfileBookingsResponse {
-  bookings?: unknown[]
-}
-
 export interface SportOption {
   id: string
   label: string

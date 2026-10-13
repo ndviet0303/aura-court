@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\RuntimeExecution;
 
-use App\Services\Booking\BookingService;
+use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Services\Infrastructure\ObservabilityService;
 use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Console\Scheduling\Schedule;
@@ -67,7 +67,7 @@ class ScheduledCallbackResolutionTest extends TestCase
         $this->app->instance(ObservabilityService::class, $spy);
 
         // Force the booking-expiry closure to fail at resolution time, mirroring the D32 failure mode.
-        $this->app->bind(BookingService::class, fn () => throw new \RuntimeException('injected resolution failure'));
+        $this->app->bind(ExpirePendingBookings::class, fn () => throw new \RuntimeException('injected resolution failure'));
 
         $event = collect(app(Schedule::class)->events())
             ->first(fn ($e) => ($e->description ?? null) === 'booking:expire-pending');

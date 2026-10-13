@@ -65,7 +65,7 @@ class FriendshipLifecycleTest extends TestCase
     {
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('send-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
 
@@ -83,7 +83,7 @@ class FriendshipLifecycleTest extends TestCase
         // Alice sees outgoing request
         $aliceReqs = $this->actingAs($this->alice)
             ->withHeaders($this->headers('req-a-'))
-            ->getJson('/api/v2/social/friends/requests');
+            ->getJson('/api/social/friends/requests');
         $aliceReqs->assertOk();
         $this->assertCount(1, $aliceReqs->json('outgoing'));
         $this->assertCount(0, $aliceReqs->json('incoming'));
@@ -91,7 +91,7 @@ class FriendshipLifecycleTest extends TestCase
         // Bob sees incoming request
         $bobReqs = $this->actingAs($this->bob)
             ->withHeaders($this->headers('req-b-'))
-            ->getJson('/api/v2/social/friends/requests');
+            ->getJson('/api/social/friends/requests');
         $bobReqs->assertOk();
         $this->assertCount(0, $bobReqs->json('outgoing'));
         $this->assertCount(1, $bobReqs->json('incoming'));
@@ -102,7 +102,7 @@ class FriendshipLifecycleTest extends TestCase
     {
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('self-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->alice->id,
             ]);
 
@@ -119,7 +119,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('dup1-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
 
@@ -139,7 +139,7 @@ class FriendshipLifecycleTest extends TestCase
         // Alice tries to send request to Bob
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('dup2-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
 
@@ -157,7 +157,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('dup3-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
 
@@ -175,7 +175,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->bob)
             ->withHeaders($this->headers('accept-'))
-            ->postJson("/api/v2/social/friends/requests/{$friendship->id}/accept");
+            ->postJson("/api/social/friends/requests/{$friendship->id}/accept");
 
         $response->assertOk();
         $response->assertJsonPath('friendship.status', 'accepted');
@@ -188,7 +188,7 @@ class FriendshipLifecycleTest extends TestCase
         // Alice sees Bob in accepted friends
         $aliceFriends = $this->actingAs($this->alice)
             ->withHeaders($this->headers('list-a-'))
-            ->getJson('/api/v2/social/friends');
+            ->getJson('/api/social/friends');
         $aliceFriends->assertOk();
         $this->assertSame(1, $aliceFriends->json('total'));
         $this->assertSame($this->bob->id, $aliceFriends->json('friends.0.id'));
@@ -197,7 +197,7 @@ class FriendshipLifecycleTest extends TestCase
         // Bob sees Alice in accepted friends
         $bobFriends = $this->actingAs($this->bob)
             ->withHeaders($this->headers('list-b-'))
-            ->getJson('/api/v2/social/friends');
+            ->getJson('/api/social/friends');
         $bobFriends->assertOk();
         $this->assertSame(1, $bobFriends->json('total'));
         $this->assertSame($this->alice->id, $bobFriends->json('friends.0.id'));
@@ -215,13 +215,13 @@ class FriendshipLifecycleTest extends TestCase
         // Alice (sender) cannot accept her own request
         $senderAttempt = $this->actingAs($this->alice)
             ->withHeaders($this->headers('unauth1-'))
-            ->postJson("/api/v2/social/friends/requests/{$friendship->id}/accept");
+            ->postJson("/api/social/friends/requests/{$friendship->id}/accept");
         $senderAttempt->assertStatus(403);
 
         // Eve (third party) cannot accept request meant for Bob
         $eveAttempt = $this->actingAs($this->eve)
             ->withHeaders($this->headers('unauth2-'))
-            ->postJson("/api/v2/social/friends/requests/{$friendship->id}/accept");
+            ->postJson("/api/social/friends/requests/{$friendship->id}/accept");
         $eveAttempt->assertStatus(403);
 
         // Relationship remains pending
@@ -238,7 +238,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->bob)
             ->withHeaders($this->headers('decline-'))
-            ->postJson("/api/v2/social/friends/requests/{$friendship->id}/decline");
+            ->postJson("/api/social/friends/requests/{$friendship->id}/decline");
 
         $response->assertOk();
         $response->assertJsonPath('friendship.status', 'declined');
@@ -249,10 +249,10 @@ class FriendshipLifecycleTest extends TestCase
         ]);
 
         // Neither sees each other as friends
-        $aliceFriends = $this->actingAs($this->alice)->withHeaders($this->headers('f-a-'))->getJson('/api/v2/social/friends');
+        $aliceFriends = $this->actingAs($this->alice)->withHeaders($this->headers('f-a-'))->getJson('/api/social/friends');
         $this->assertSame(0, $aliceFriends->json('total'));
 
-        $bobFriends = $this->actingAs($this->bob)->withHeaders($this->headers('f-b-'))->getJson('/api/v2/social/friends');
+        $bobFriends = $this->actingAs($this->bob)->withHeaders($this->headers('f-b-'))->getJson('/api/social/friends');
         $this->assertSame(0, $bobFriends->json('total'));
     }
 
@@ -266,7 +266,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->eve)
             ->withHeaders($this->headers('unauth-dec-'))
-            ->postJson("/api/v2/social/friends/requests/{$friendship->id}/decline");
+            ->postJson("/api/social/friends/requests/{$friendship->id}/decline");
 
         $response->assertStatus(403);
         $this->assertSame('pending', $friendship->fresh()->status);
@@ -283,13 +283,13 @@ class FriendshipLifecycleTest extends TestCase
         // Bob deletes the friendship
         $response = $this->actingAs($this->bob)
             ->withHeaders($this->headers('del-'))
-            ->deleteJson("/api/v2/social/friends/{$friendship->id}");
+            ->deleteJson("/api/social/friends/{$friendship->id}");
 
         $response->assertOk();
         $this->assertDatabaseMissing('friendships', ['id' => $friendship->id]);
 
         // Neither sees each other as friends anymore
-        $aliceFriends = $this->actingAs($this->alice)->withHeaders($this->headers('f-a2-'))->getJson('/api/v2/social/friends');
+        $aliceFriends = $this->actingAs($this->alice)->withHeaders($this->headers('f-a2-'))->getJson('/api/social/friends');
         $this->assertSame(0, $aliceFriends->json('total'));
     }
 
@@ -304,7 +304,7 @@ class FriendshipLifecycleTest extends TestCase
         // Alice cancels the request
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('cancel-'))
-            ->deleteJson("/api/v2/social/friends/{$friendship->id}");
+            ->deleteJson("/api/social/friends/{$friendship->id}");
 
         $response->assertOk();
         $this->assertDatabaseMissing('friendships', ['id' => $friendship->id]);
@@ -320,7 +320,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->eve)
             ->withHeaders($this->headers('unauth-del-'))
-            ->deleteJson("/api/v2/social/friends/{$friendship->id}");
+            ->deleteJson("/api/social/friends/{$friendship->id}");
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('friendships', ['id' => $friendship->id]);
@@ -335,7 +335,7 @@ class FriendshipLifecycleTest extends TestCase
         // Search for Bob by name
         $searchRes = $this->actingAs($this->alice)
             ->withHeaders($this->headers('search-1-'))
-            ->getJson('/api/v2/social/friends?q=Bob');
+            ->getJson('/api/social/friends?q=Bob');
 
         $searchRes->assertOk();
         $this->assertSame(1, $searchRes->json('total'));
@@ -344,7 +344,7 @@ class FriendshipLifecycleTest extends TestCase
         // Search for Charlie by phone
         $searchPhone = $this->actingAs($this->alice)
             ->withHeaders($this->headers('search-2-'))
-            ->getJson('/api/v2/social/friends?q=0903000003');
+            ->getJson('/api/social/friends?q=0903000003');
 
         $searchPhone->assertOk();
         $this->assertSame(1, $searchPhone->json('total'));
@@ -361,7 +361,7 @@ class FriendshipLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->alice)
             ->withHeaders($this->headers('re-req-'))
-            ->postJson('/api/v2/social/friends/requests', [
+            ->postJson('/api/social/friends/requests', [
                 'addressee_id' => $this->bob->id,
             ]);
 

@@ -31,7 +31,7 @@ class MyReservationsTest extends TestCase
         $this->reservation($fixture['org1']['owner'], $fixture['org1']['court1'], 'RSV-NOT-MINE', now()->addDays(3));
 
         $response = $this->actingAs($customer)->withHeader('X-Organization-ID', (string) $fixture['org1']['org']->id)
-            ->getJson('/api/v2/me/reservations')
+            ->getJson('/api/me/reservations')
             ->assertOk()
             ->assertJsonPath('total', 3)
             ->assertJsonPath('per_page', 20);

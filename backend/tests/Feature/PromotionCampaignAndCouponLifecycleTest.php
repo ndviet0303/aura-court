@@ -36,7 +36,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $endsAt = now()->addDays(7)->toIso8601String();
 
         Sanctum::actingAs($owner);
-        $created = $this->withHeaders($headers)->postJson('/api/v1/admin/coupons', [
+        $created = $this->withHeaders($headers)->postJson('/api/admin/coupons', [
             'code' => 'first10',
             'discount_type' => 'percent',
             'discount_value' => 10,
@@ -55,16 +55,16 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
 
         $couponId = (int) $created->json('coupon.id');
         $campaignId = (int) $created->json('coupon.promotion_campaign_id');
-        $this->withHeaders($headers)->getJson('/api/v1/admin/coupons')
+        $this->withHeaders($headers)->getJson('/api/admin/coupons')
             ->assertOk()->assertJsonPath('data.0.id', $couponId);
 
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'FIRST10',
         ])->assertUnprocessable();
 
         Sanctum::actingAs($owner);
-        $this->withHeaders($headers)->patchJson("/api/v1/admin/coupons/{$couponId}", [
+        $this->withHeaders($headers)->patchJson("/api/admin/coupons/{$couponId}", [
             'discount_value' => 15,
             'campaign_name' => 'Updated first booking welcome',
         ])->assertOk()
@@ -72,20 +72,20 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             ->assertJsonPath('coupon.campaign.version', 2)
             ->assertJsonPath('coupon.campaign.name', 'Updated first booking welcome');
 
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/activate")
             ->assertOk()->assertJsonPath('campaign.status', PromotionCampaign::STATUS_ACTIVE);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/coupons/{$couponId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/coupons/{$couponId}/activate")
             ->assertOk()->assertJsonPath('coupon.status', 'active');
-        $this->withHeaders($headers)->postJson("/api/v1/admin/coupons/{$couponId}/suspend")
+        $this->withHeaders($headers)->postJson("/api/admin/coupons/{$couponId}/suspend")
             ->assertOk()->assertJsonPath('coupon.status', 'suspended');
-        $this->withHeaders($headers)->postJson("/api/v1/admin/coupons/{$couponId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/coupons/{$couponId}/activate")
             ->assertOk()->assertJsonPath('coupon.status', 'active');
 
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'FIRST10',
         ])->assertOk()->assertJsonPath('total', 85000);
-        $this->actingAs($fixture['returningCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['returningCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'FIRST10',
         ])->assertUnprocessable()->assertJsonValidationErrors(['coupon_code']);
@@ -99,16 +99,16 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             'status' => Coupon::STATUS_ACTIVE,
             'eligibility_group' => Coupon::GROUP_RETURNING,
         ]);
-        $this->actingAs($fixture['returningCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['returningCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'RETURN10',
         ])->assertOk()->assertJsonPath('total', 90000);
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'RETURN10',
         ])->assertUnprocessable()->assertJsonValidationErrors(['coupon_code']);
         Sanctum::actingAs($owner);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/coupons/{$returningCoupon->id}/retire")
+        $this->withHeaders($headers)->postJson("/api/admin/coupons/{$returningCoupon->id}/retire")
             ->assertOk()->assertJsonPath('coupon.status', 'retired');
 
         $reserved = app(DiscountService::class)->reserve($fixture['newCustomer']->id, 100000, 'FIRST10', $organization->id);
@@ -117,7 +117,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $this->assertSame(1, (int) Coupon::findOrFail($couponId)->usage_count);
         $this->assertSame(1, (int) PromotionCampaign::findOrFail($campaignId)->usage_count);
 
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'FIRST10',
         ])->assertUnprocessable();
@@ -126,16 +126,16 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $this->assertSame(0, (int) PromotionCampaign::findOrFail($campaignId)->usage_count);
 
         Sanctum::actingAs($owner);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/suspend")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/suspend")
             ->assertOk()->assertJsonPath('campaign.status', PromotionCampaign::STATUS_SUSPENDED);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/retire")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/retire")
             ->assertOk()->assertJsonPath('campaign.status', PromotionCampaign::STATUS_RETIRED);
         $this->assertDatabaseHas('coupons', [
             'id' => $couponId,
             'status' => 'retired',
             'is_active' => false,
         ]);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/activate")
             ->assertConflict();
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'promotion.campaign.created', 'auditable_id' => $campaignId]);
@@ -162,7 +162,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         ]);
 
         Sanctum::actingAs($fixture['owner']);
-        $this->withHeader('X-Organization-ID', (string) $otherOrganization->id)->getJson('/api/v1/admin/coupons')
+        $this->withHeader('X-Organization-ID', (string) $otherOrganization->id)->getJson('/api/admin/coupons')
             ->assertForbidden();
 
         $pricingStaff = User::factory()->create(['email_verified_at' => now()]);
@@ -174,7 +174,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             'permissions' => ['pricing' => true],
         ]);
         Sanctum::actingAs($pricingStaff);
-        $this->withHeader('X-Organization-ID', (string) $fixture['organization']->id)->postJson('/api/v1/admin/coupons', [
+        $this->withHeader('X-Organization-ID', (string) $fixture['organization']->id)->postJson('/api/admin/coupons', [
             'code' => 'STAFF10',
             'discount_type' => 'fixed',
             'discount_value' => 10000,
@@ -189,7 +189,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             'permissions' => [],
         ]);
         Sanctum::actingAs($noGrantStaff);
-        $this->withHeader('X-Organization-ID', (string) $fixture['organization']->id)->getJson('/api/v1/admin/coupons')
+        $this->withHeader('X-Organization-ID', (string) $fixture['organization']->id)->getJson('/api/admin/coupons')
             ->assertForbidden();
     }
 
@@ -201,7 +201,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $headers = ['X-Organization-ID' => (string) $organization->id];
 
         Sanctum::actingAs($owner);
-        $created = $this->withHeaders($headers)->postJson('/api/v1/admin/promotions', [
+        $created = $this->withHeaders($headers)->postJson('/api/admin/promotions', [
             'name' => 'Returning player offer',
             'description' => 'A campaign for customers with a prior successful booking.',
             'eligibility_group' => 'returning_customers',
@@ -215,17 +215,17 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             ->assertJsonPath('campaign.version', 1);
         $campaignId = (int) $created->json('campaign.id');
 
-        $this->withHeaders($headers)->patchJson("/api/v1/admin/promotions/{$campaignId}", [
+        $this->withHeaders($headers)->patchJson("/api/admin/promotions/{$campaignId}", [
             'name' => 'Returning player offer v2',
             'usage_limit' => 25,
         ])->assertOk()
             ->assertJsonPath('campaign.name', 'Returning player offer v2')
             ->assertJsonPath('campaign.version', 2);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/activate")
             ->assertOk()->assertJsonPath('campaign.status', 'active');
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/suspend")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/suspend")
             ->assertOk()->assertJsonPath('campaign.status', 'suspended');
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/retire")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/retire")
             ->assertOk()->assertJsonPath('campaign.status', 'retired');
 
         $this->assertDatabaseHas('promotion_campaigns', [
@@ -246,7 +246,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $headers = ['X-Organization-ID' => (string) $organization->id];
 
         Sanctum::actingAs($owner);
-        $created = $this->withHeaders($headers)->postJson('/api/v1/admin/coupons', [
+        $created = $this->withHeaders($headers)->postJson('/api/admin/coupons', [
             'code' => 'ENDED10',
             'discount_type' => 'percent',
             'discount_value' => 10,
@@ -259,9 +259,9 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
 
         $couponId = (int) $created->json('coupon.id');
         $campaignId = (int) $created->json('coupon.promotion_campaign_id');
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/activate")
             ->assertOk()->assertJsonPath('campaign.status', PromotionCampaign::STATUS_ACTIVE);
-        $this->withHeaders($headers)->postJson("/api/v1/admin/coupons/{$couponId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/coupons/{$couponId}/activate")
             ->assertUnprocessable();
         $this->assertDatabaseHas('coupons', ['id' => $couponId, 'status' => Coupon::STATUS_DRAFT, 'is_active' => false]);
     }
@@ -274,25 +274,25 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $headers = ['X-Organization-ID' => (string) $organization->id];
         Sanctum::actingAs($owner);
 
-        $campaign = $this->withHeaders($headers)->postJson('/api/v1/admin/promotions', [
+        $campaign = $this->withHeaders($headers)->postJson('/api/admin/promotions', [
             'name' => 'Past campaign',
             'eligibility_group' => 'all_customers',
             'starts_at' => now()->subDays(5)->toIso8601String(),
             'ends_at' => now()->subDay()->toIso8601String(),
         ])->assertCreated();
         $campaignId = (int) $campaign->json('campaign.id');
-        $coupon = $this->withHeaders($headers)->postJson('/api/v1/admin/coupons', [
+        $coupon = $this->withHeaders($headers)->postJson('/api/admin/coupons', [
             'code' => 'PAST10',
             'discount_type' => 'percent',
             'discount_value' => 10,
             'promotion_campaign_id' => $campaignId,
         ])->assertCreated();
 
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/activate")
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/activate")
             ->assertUnprocessable();
-        $this->withHeaders($headers)->postJson('/api/v1/admin/coupons/'.$coupon->json('coupon.id').'/activate')
+        $this->withHeaders($headers)->postJson('/api/admin/coupons/'.$coupon->json('coupon.id').'/activate')
             ->assertConflict();
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'PAST10',
         ])->assertUnprocessable();
@@ -308,7 +308,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $headers = ['X-Organization-ID' => (string) $organization->id];
 
         Sanctum::actingAs($fixture['owner']);
-        $created = $this->withHeaders($headers)->postJson('/api/v1/admin/coupons', [
+        $created = $this->withHeaders($headers)->postJson('/api/admin/coupons', [
             'code' => 'COURT10',
             'discount_type' => 'percent',
             'discount_value' => 10,
@@ -325,29 +325,29 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
 
         $couponId = (int) $created->json('coupon.id');
         $campaignId = (int) $created->json('coupon.promotion_campaign_id');
-        $this->withHeaders($headers)->postJson("/api/v1/admin/promotions/{$campaignId}/activate")->assertOk();
-        $this->withHeaders($headers)->postJson("/api/v1/admin/coupons/{$couponId}/activate")->assertOk();
+        $this->withHeaders($headers)->postJson("/api/admin/promotions/{$campaignId}/activate")->assertOk();
+        $this->withHeaders($headers)->postJson("/api/admin/coupons/{$couponId}/activate")->assertOk();
 
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'COURT10',
             'venue_id' => $venue->id,
             'court_id' => $court->id,
         ])->assertOk()->assertJsonPath('total', 90000);
 
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'COURT10',
             'venue_id' => $venue->id,
             'court_id' => $otherCourt->id,
         ])->assertUnprocessable()->assertJsonValidationErrors(['coupon_code']);
 
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'COURT10',
         ])->assertUnprocessable()->assertJsonValidationErrors(['coupon_code']);
 
-        $this->actingAs($fixture['returningCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['returningCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'COURT10',
             'venue_id' => $venue->id,
@@ -371,7 +371,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             'total_amount' => 100000,
             'payment_model' => 'legacy_wallet_v1',
         ]);
-        $this->actingAs($customerWithOtherCourtBooking)->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($customerWithOtherCourtBooking)->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'COURT10',
             'venue_id' => $venue->id,
@@ -399,7 +399,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         ]);
         $foreignCourt = Court::create(['venue_id' => $foreignVenue->id, 'name' => 'Foreign Court', 'is_active' => true]);
         $this->actingAs($fixture['newCustomer'])->withHeader('X-Organization-ID', (string) $otherOrganization->id)
-            ->postJson('/api/v1/coupons/preview', [
+            ->postJson('/api/coupons/preview', [
                 'subtotal' => 100000,
                 'code' => 'COURT10',
                 'venue_id' => $foreignVenue->id,
@@ -412,7 +412,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             'discount_value' => 10000,
             'is_active' => true,
         ]);
-        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/v1/coupons/preview', [
+        $this->actingAs($fixture['newCustomer'])->withHeaders($headers)->postJson('/api/coupons/preview', [
             'subtotal' => 100000,
             'code' => 'LEGACYGLOBAL',
         ])->assertUnprocessable()->assertJsonValidationErrors(['coupon_code']);
@@ -475,7 +475,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         }
 
         $this->actingAs($fixture['newCustomer'])->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson('/api/v1/coupons/preview', [
+            ->postJson('/api/coupons/preview', [
                 'subtotal' => 100000,
                 'code' => $coupon->code,
                 'venue_id' => $fixture['venue']->id,

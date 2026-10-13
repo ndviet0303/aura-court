@@ -101,8 +101,8 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
 
     const previewResult = (await withE2EApi(
       page,
-      async ({ apiV2 }, { courtId, startDate }) => {
-        return await apiV2.post('/recurring-series/preview', {
+      async ({ api }, { courtId, startDate }) => {
+        return await api.post('/recurring-series/preview', {
           court_id: courtId,
           frequency: 'weekly',
           weekdays: [1],
@@ -271,8 +271,8 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
 
     const preview = (await withE2EApi(
       page,
-      async ({ apiV2 }, { courtId, startDate }) => {
-        return await apiV2.post('/recurring-series/preview', {
+      async ({ api }, { courtId, startDate }) => {
+        return await api.post('/recurring-series/preview', {
           court_id: courtId,
           frequency: 'weekly',
           weekdays: [2], // Tuesday
@@ -291,7 +291,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     // 4. Attempt to submit with all_or_nothing policy: MUST be rejected with 409!
     const submitAttempt = await withE2EApi(
       page,
-      async ({ apiV2 }, { courtId, startDate, preview }) => {
+      async ({ api }, { courtId, startDate, preview }) => {
         try {
           const payload = {
             court_id: courtId,
@@ -309,7 +309,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
             },
             accept_partial: false,
           }
-          const res = await apiV2.post('/recurring-series', payload)
+          const res = await api.post('/recurring-series', payload)
           return { success: true, res }
         } catch (err: any) {
           return {
@@ -466,8 +466,8 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     // 3. Preview 4-week series on Wednesday (Week 1, Week 2 [conflicted], Week 3, Week 4)
     const preview = (await withE2EApi(
       page,
-      async ({ apiV2 }, { courtId, startDate }) => {
-        return await apiV2.post('/recurring-series/preview', {
+      async ({ api }, { courtId, startDate }) => {
+        return await api.post('/recurring-series/preview', {
           court_id: courtId,
           frequency: 'weekly',
           weekdays: [3], // Wednesday
@@ -485,8 +485,8 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     // 4. Submit without accept_partial -> Returns partial_conflict status with excluded occurrences
     const initialSubmit = (await withE2EApi(
       page,
-      async ({ apiV2 }, { courtId, startDate, preview }) => {
-        return await apiV2.post('/recurring-series', {
+      async ({ api }, { courtId, startDate, preview }) => {
+        return await api.post('/recurring-series', {
           court_id: courtId,
           frequency: 'weekly',
           weekdays: [3],
@@ -526,8 +526,8 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     // 5. Accept partial negotiation: submit with accept_partial: true
     const acceptedSubmit = (await withE2EApi(
       page,
-      async ({ apiV2 }, { courtId, startDate, preview }) => {
-        return await apiV2.post('/recurring-series', {
+      async ({ api }, { courtId, startDate, preview }) => {
+        return await api.post('/recurring-series', {
           court_id: courtId,
           frequency: 'weekly',
           weekdays: [3],
@@ -728,7 +728,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     }).trim()
 
     const webhookRes = await page.request.post(
-      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
           'X-SePay-Timestamp': timestamp,

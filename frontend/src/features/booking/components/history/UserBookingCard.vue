@@ -4,20 +4,20 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { VENUE_TIME_ZONE, venueClockRange } from '@/core/utils/venueTime'
-import type { V2Reservation } from '../../types/v2Reservation'
+import type { Reservation } from '../../types/reservation'
 import { canReview, displayCode, displayStatus } from '../../utils/reservation'
 
 const { t, locale } = useI18n()
 
 const props = defineProps<{
-  booking: V2Reservation
+  booking: Reservation
 }>()
 
 const emit = defineEmits<{
-  (e: 'review', booking: V2Reservation): void
-  (e: 'qr', booking: V2Reservation): void
-  (e: 'cancel', booking: V2Reservation): void
-  (e: 'reschedule', booking: V2Reservation): void
+  (e: 'review', booking: Reservation): void
+  (e: 'qr', booking: Reservation): void
+  (e: 'cancel', booking: Reservation): void
+  (e: 'reschedule', booking: Reservation): void
 }>()
 
 function formatDate(iso: string): string {

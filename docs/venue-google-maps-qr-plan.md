@@ -22,13 +22,13 @@
 ### API
 
 - Public:
-  - `GET /api/v1/venues/{slug}` chỉ trả địa điểm đang hoạt động.
+  - `GET /api/venues/{slug}` chỉ trả địa điểm đang hoạt động.
   - Court response bổ sung object `venue`.
 - Admin:
-  - `GET /api/v1/admin/venues`
-  - `POST /api/v1/admin/venues`
-  - `PATCH /api/v1/admin/venues/{venue}`
-  - `DELETE /api/v1/admin/venues/{venue}` để chuyển `is_active=false`.
+  - `GET /api/admin/venues`
+  - `POST /api/admin/venues`
+  - `PATCH /api/admin/venues/{venue}`
+  - `DELETE /api/admin/venues/{venue}` để chuyển `is_active=false`.
 - Venue response gồm `id`, `name`, `slug`, `address`, `google_maps_url`, `is_active`, `share_url`.
 - Tạo/cập nhật venue yêu cầu tên, địa chỉ và Google Maps URL.
 - Chỉ chấp nhận HTTPS thuộc Google Maps: `google.com/.../maps`, các Google country domain có path Maps, `maps.app.goo.gl`, hoặc legacy `goo.gl/maps`; không resolve short URL ở backend.

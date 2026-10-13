@@ -66,7 +66,7 @@ class PartnerApplicationReviewActionTest extends TestCase
 
         // Applicant can now save updates because status is revision_required
         Sanctum::actingAs($applicant);
-        $saveRes = $this->putJson("/api/v1/partner/application/{$kyc->id}", [
+        $saveRes = $this->putJson("/api/partner/application/{$kyc->id}", [
             'business_name' => 'Court Review Test Updated',
             'expected_version' => 4,
         ]);
@@ -115,7 +115,7 @@ class PartnerApplicationReviewActionTest extends TestCase
 
         // Applicant attempts to start new application immediately: must be blocked by cooloff
         Sanctum::actingAs($applicant);
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $startRes->assertStatus(422)
             ->assertJsonValidationErrors(['reapplication']);
 
@@ -124,7 +124,7 @@ class PartnerApplicationReviewActionTest extends TestCase
             'reapplication_policy' => ['allowed' => false, 'cooloff_days' => 0],
         ]);
 
-        $startRes2 = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes2 = $this->postJson('/api/partner/application/start', []);
         $startRes2->assertStatus(422)
             ->assertJsonValidationErrors(['reapplication']);
 
@@ -133,7 +133,7 @@ class PartnerApplicationReviewActionTest extends TestCase
             'reapplication_policy' => ['allowed' => true, 'cooloff_days' => 0, 'eligible_at' => now()->subDay()->toIso8601String()],
         ]);
 
-        $startRes3 = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes3 = $this->postJson('/api/partner/application/start', []);
         $startRes3->assertStatus(201)
             ->assertJsonPath('data.status', 'draft');
 

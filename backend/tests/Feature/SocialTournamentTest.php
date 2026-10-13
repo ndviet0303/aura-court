@@ -22,7 +22,7 @@ class SocialTournamentTest extends TestCase
         $outsider = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $outsider->id, 'role' => 'customer', 'status' => 'active']);
         $post = MatchPost::create(['organization_id' => $organization->id, 'creator_id' => $owner->id, 'title' => 'Private match', 'visibility' => 'invite_only', 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'required_participants' => 4, 'joined_count' => 1]);
-        $this->actingAs($outsider)->withHeader('X-Organization-ID', (string) $organization->id)->getJson('/api/v2/social/matches/'.$post->id)->assertNotFound();
+        $this->actingAs($outsider)->withHeader('X-Organization-ID', (string) $organization->id)->getJson('/api/social/matches/'.$post->id)->assertNotFound();
     }
 
     public function test_reputation_uses_only_the_20_most_recent_qualifying_activities(): void
@@ -59,7 +59,7 @@ class SocialTournamentTest extends TestCase
         }
         $tournament = app(TournamentService::class)->createAndGenerate($owner, $organization->id, 'Conflict', 'single_elimination', $players->pluck('id')->all());
         $fixture = $tournament->fixtures->firstWhere('status', 'pending');
-        $this->actingAs($owner)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => 'score-conflict'])->postJson("/api/v2/tournaments/{$tournament->id}/fixtures/{$fixture->id}/score", ['expected_version' => 0, 'winner_id' => $fixture->participant_one_id, 'score' => ['winner' => 1]])->assertConflict();
+        $this->actingAs($owner)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => 'score-conflict'])->postJson("/api/tournaments/{$tournament->id}/fixtures/{$fixture->id}/score", ['expected_version' => 0, 'winner_id' => $fixture->participant_one_id, 'score' => ['winner' => 1]])->assertConflict();
     }
 
     private function tenant(): array

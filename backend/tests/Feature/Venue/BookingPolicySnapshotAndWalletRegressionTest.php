@@ -79,7 +79,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
 
         // 1. Create booking (slots 2 days in future at 10:00)
         $slotTime = now()->addDays(2)->setTime(10, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->postJson('/api/bookings', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
@@ -112,8 +112,8 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         ]);
 
         // 3. Customer attempts to cancel either booking: routes are retired and return 404
-        $this->postJson("/api/v1/bookings/{$booking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
-        $this->postJson("/api/v1/bookings/{$historicalBooking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
+        $this->postJson("/api/bookings/{$booking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
+        $this->postJson("/api/bookings/{$historicalBooking->code}/cancel", ['reason' => 'Thay đổi lịch cá nhân'])->assertNotFound();
 
         // 4. Invariants: Bookings remain confirmed, wallet balance untouched, snapshots preserved
         $booking->refresh();
@@ -130,8 +130,8 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $this->assertEquals(400000, (int) $wallet->balance);
 
         // Historical read succeeds for both
-        $this->getJson("/api/v1/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
-        $this->getJson("/api/v1/bookings/{$historicalBooking->code}")->assertOk()->assertJsonPath('code', $historicalBooking->code);
+        $this->getJson("/api/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
+        $this->getJson("/api/bookings/{$historicalBooking->code}")->assertOk()->assertJsonPath('code', $historicalBooking->code);
     }
 
     public function test_existing_booking_preserves_snapshot_and_rejects_retired_commands_after_venue_suspension(): void
@@ -181,7 +181,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         Sanctum::actingAs($customer);
 
         $slotTime = now()->addDays(2)->setTime(10, 0, 0)->toIso8601String();
-        $bookRes = $this->postJson('/api/v1/bookings', [
+        $bookRes = $this->postJson('/api/bookings', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
         ]);
@@ -192,7 +192,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $venue->update(['status' => 'suspended', 'is_active' => false]);
 
         // Customer attempts to cancel existing booking: returns 404
-        $cancelRes = $this->postJson("/api/v1/bookings/{$booking->code}/cancel", [
+        $cancelRes = $this->postJson("/api/bookings/{$booking->code}/cancel", [
             'reason' => 'Sân bị ngưng',
         ]);
         $cancelRes->assertNotFound();
@@ -206,6 +206,6 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $this->assertEquals(400000, (int) $wallet->balance);
 
         // Historical read succeeds
-        $this->getJson("/api/v1/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
+        $this->getJson("/api/bookings/{$booking->code}")->assertOk()->assertJsonPath('code', $booking->code);
     }
 }

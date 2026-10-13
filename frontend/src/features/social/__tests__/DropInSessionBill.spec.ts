@@ -3,15 +3,11 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import DropInSessionBillModal from '../components/DropInSessionBillModal.vue'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type { SocialMatch, DropInSessionBill } from '../types/social'
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn<() => Promise<unknown>>(),
-    post: vi.fn<() => Promise<unknown>>(),
-  },
-  apiV2: {
     get: vi.fn<(url: string) => Promise<unknown>>(),
     post: vi.fn<(url: string, payload?: unknown) => Promise<unknown>>(),
     put: vi.fn<(url: string, payload?: unknown) => Promise<unknown>>(),
@@ -92,7 +88,7 @@ describe('DropInSessionBillModal', () => {
     vi.clearAllMocks()
     window.confirm = vi.fn<() => boolean>().mockReturnValue(true)
 
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/social/matches/101/bill')) {
         return { bill: null }
       }
@@ -107,7 +103,7 @@ describe('DropInSessionBillModal', () => {
   })
 
   it('renders active session state and allows host to end session', async () => {
-    vi.mocked(apiV2.post).mockResolvedValue({
+    vi.mocked(api.post).mockResolvedValue({
       match: { ...mockMatchOpen, status: 'ended' },
     })
 
@@ -132,7 +128,7 @@ describe('DropInSessionBillModal', () => {
     await endBtn?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith('/social/matches/101/end')
+    expect(api.post).toHaveBeenCalledWith('/social/matches/101/end')
   })
 
   it('renders draft form for host after session ends and calculates realtime preview', async () => {
@@ -141,7 +137,7 @@ describe('DropInSessionBillModal', () => {
       id: 103,
     }
 
-    vi.mocked(apiV2.post).mockResolvedValue({
+    vi.mocked(api.post).mockResolvedValue({
       bill: { ...mockFinalizedBill, status: 'draft' },
     })
 
@@ -169,7 +165,7 @@ describe('DropInSessionBillModal', () => {
     await saveDraftBtn?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(
+    expect(api.post).toHaveBeenCalledWith(
       '/social/matches/103/bill/draft',
       expect.objectContaining({
         actual_headcount: expect.any(Number),
@@ -205,7 +201,7 @@ describe('DropInSessionBillModal', () => {
   })
 
   it('displays real API error without fallback to mock demo bill', async () => {
-    vi.mocked(apiV2.get).mockRejectedValueOnce(
+    vi.mocked(api.get).mockRejectedValueOnce(
       new Error('403 Forbidden: Bạn không có quyền truy cập'),
     )
 

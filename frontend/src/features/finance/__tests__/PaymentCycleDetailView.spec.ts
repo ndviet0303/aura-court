@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import PaymentCycleDetailView from '../views/PaymentCycleDetailView.vue'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -22,10 +22,6 @@ vi.mock('@/core/api/client', () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
-  apiV2: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
   errorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
@@ -34,7 +30,7 @@ describe('PaymentCycleDetailView', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/monthly-invoices/101') {
         return {
           invoice: {
@@ -119,12 +115,12 @@ describe('PaymentCycleDetailView', () => {
     expect(modal.find('img').exists()).toBe(false)
     expect(modal.find('.btn-confirm-pay').exists()).toBe(false)
     expect(wrapper.text()).toContain('CHỜ THANH TOÁN')
-    expect(apiV2.post).not.toHaveBeenCalled()
+    expect(api.post).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
   it('shows a guaranteed period as unpaid without inventing payment instructions', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       invoice: {
         id: 101,
         organization_id: 1,
@@ -147,12 +143,12 @@ describe('PaymentCycleDetailView', () => {
     await wrapper.find('.btn-action-primary').trigger('click')
     expect(wrapper.find('.modal-payment').text()).toContain('chưa được xác minh đã thanh toán')
     expect(wrapper.find('.modal-payment img').exists()).toBe(false)
-    expect(apiV2.post).not.toHaveBeenCalled()
+    expect(api.post).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
   it('distinguishes a confirmed zero-payable period from a receipt-paid invoice', async () => {
-    vi.mocked(apiV2.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       invoice: {
         id: 101,
         organization_id: 1,
@@ -179,7 +175,7 @@ describe('PaymentCycleDetailView', () => {
   })
 
   it('renders the direct-owner payment attempt and confirms via server refresh, not a client reference', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/monthly-invoices/101') {
         return {
           invoice: {
@@ -232,13 +228,13 @@ describe('PaymentCycleDetailView', () => {
       'https://qr.example/rec-101',
     )
 
-    const getCallsBefore = vi.mocked(apiV2.get).mock.calls.length
+    const getCallsBefore = vi.mocked(api.get).mock.calls.length
     await wrapper.find('[data-testid="owner-payment-refresh"]').trigger('click')
     await flushPromises()
 
     // Refresh re-loads the invoice from the server; it NEVER posts a self-declared payment.
-    expect(vi.mocked(apiV2.get).mock.calls.length).toBeGreaterThan(getCallsBefore)
-    expect(apiV2.post).not.toHaveBeenCalled()
+    expect(vi.mocked(api.get).mock.calls.length).toBeGreaterThan(getCallsBefore)
+    expect(api.post).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })

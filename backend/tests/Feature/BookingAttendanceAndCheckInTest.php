@@ -14,6 +14,7 @@ use App\Models\ReservationSlot;
 use App\Models\ServiceTab;
 use App\Models\User;
 use App\Models\Venue;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -140,7 +141,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // 1. Check in via direct reservation code
         $res = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', [
+            ->postJson('/api/attendance/check-in', [
                 'code' => $reservation->code,
                 'notes' => 'Checked in at front desk',
             ]);
@@ -167,7 +168,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
 
         $res = $this->actingAs($this->cashierA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', [
+            ->postJson('/api/attendance/check-in', [
                 'code' => $qrString,
             ]);
 
@@ -183,14 +184,14 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // First scan
         $first = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservation->code]);
+            ->postJson('/api/attendance/check-in', ['code' => $reservation->code]);
         $first->assertCreated();
         $firstAttendanceId = $first->json('attendance.id');
 
         // Second scan (duplicate)
         $second = $this->actingAs($this->cashierA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservation->code]);
+            ->postJson('/api/attendance/check-in', ['code' => $reservation->code]);
 
         $second->assertOk();
         $second->assertJsonPath('duplicate', true);
@@ -212,7 +213,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // Staff of Tenant A attempts to check in Tenant B's reservation
         $res = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservationB->code]);
+            ->postJson('/api/attendance/check-in', ['code' => $reservationB->code]);
 
         // Protected details are not disclosed
         $res->assertNotFound();
@@ -225,7 +226,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
 
         $res = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $cancelledRes->code]);
+            ->postJson('/api/attendance/check-in', ['code' => $cancelledRes->code]);
 
         $res->assertStatus(422);
         $res->assertJsonPath('message', 'Cancelled booking cannot be checked in.');
@@ -260,7 +261,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
 
         $res = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservation->code]);
+            ->postJson('/api/attendance/check-in', ['code' => $reservation->code]);
 
         $res->assertStatus(422);
         $res->assertJsonPath('message', 'Booking is not scheduled for the current venue-local day.');
@@ -274,7 +275,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // Customer attempts to self-check-in via staff endpoint
         $res = $this->actingAs($this->customer)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservation->code]);
+            ->postJson('/api/attendance/check-in', ['code' => $reservation->code]);
 
         $res->assertForbidden();
     }
@@ -288,7 +289,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // 1. Check in -> court operational status transitions to occupied
         $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservation->code])
+            ->postJson('/api/attendance/check-in', ['code' => $reservation->code])
             ->assertCreated();
 
         Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) use ($reservation) {
@@ -300,7 +301,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // 2. Check out -> court operational status transitions to awaiting_inspection (Task 8.5 [D52])
         $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code])
+            ->postJson('/api/attendance/check-out', ['code' => $reservation->code])
             ->assertOk();
 
         Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) use ($reservation) {
@@ -312,7 +313,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // 3. Staff confirms court ready -> transitions to available
         $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson("/api/v2/attendance/courts/{$this->courtA->id}/confirm-ready")
+            ->postJson("/api/attendance/courts/{$this->courtA->id}/confirm-ready")
             ->assertOk();
 
         Event::assertDispatched(CourtStatusUpdated::class, function (CourtStatusUpdated $event) {
@@ -328,13 +329,13 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // Cannot checkout before check-in
         $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code])
+            ->postJson('/api/attendance/check-out', ['code' => $reservation->code])
             ->assertStatus(422);
 
         // Check in
         $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $reservation->code])
+            ->postJson('/api/attendance/check-in', ['code' => $reservation->code])
             ->assertCreated();
 
         // Create an unpaid service tab attached to this reservation
@@ -349,7 +350,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // Checkout is NOT blocked by unpaid tab; succeeds and records unpaid receivable (Task 8.4 [D51])
         $checkout = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code]);
+            ->postJson('/api/attendance/check-out', ['code' => $reservation->code]);
 
         $checkout->assertOk();
         $checkout->assertJsonPath('attendance.status', 'checked_out');
@@ -366,7 +367,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         // Repeated checkout is idempotent
         $dupCheckout = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-out', ['code' => $reservation->code]);
+            ->postJson('/api/attendance/check-out', ['code' => $reservation->code]);
         $dupCheckout->assertOk();
         $dupCheckout->assertJsonPath('duplicate', true);
     }
@@ -392,19 +393,21 @@ class BookingAttendanceAndCheckInTest extends TestCase
             'unit_price' => 140000,
             'status' => 'confirmed',
         ]);
+        // Every historical booking is mapped (retire-v1-booking C1/C2); check-in no longer backfills lazily.
+        app(LegacyBookingBackfillService::class)->backfillBooking($legacyBooking);
 
         // Check in via QR string containing legacy booking code
         $qrString = "AURA_BOOKING_{$legacyBooking->code}";
 
         $res = $this->actingAs($this->staffA)
             ->withHeaders($this->headers($this->tenantA))
-            ->postJson('/api/v2/attendance/check-in', ['code' => $qrString]);
+            ->postJson('/api/attendance/check-in', ['code' => $qrString]);
 
         $res->assertCreated();
         $res->assertJsonPath('attendance.status', 'checked_in');
         $res->assertJsonPath('attendance.legacy_booking_id', $legacyBooking->id);
 
-        // Verify canonical reservation exists and is linked
+        // The check-in resolved the canonical mirror reservation
         $this->assertDatabaseHas('legacy_booking_mappings', [
             'organization_id' => $this->tenantA->id,
             'legacy_booking_id' => $legacyBooking->id,

@@ -48,7 +48,7 @@ describe('NotificationsView', () => {
           event: 'payment.success',
           title: 'Thanh toán thành công VietQR',
           body: 'Đã nhận 200.000đ',
-          action_url: '/payment',
+          action_url: '/reservations',
         },
         read_at: '2026-09-01T11:00:00Z',
         created_at: '2026-09-01T11:00:00Z',

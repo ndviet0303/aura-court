@@ -14,6 +14,6 @@ php artisan v1:adoption-snapshot --days=30
 
 Run `hardening:drill peak-load` against the pilot configuration and run `hardening:drill database-failover` during the managed PostgreSQL failover window. The backup script records a SHA-256 checksum and can restore into an isolated target when `RESTORE_DB` is supplied.
 
-The on-call handover must include the image digest, migration batch, PostgreSQL/Redis owners, PayOS/KYC and payout escalation owners, alert routing, feature-flag rollback commands, RPO/RTO evidence, reconciliation exception procedure, and the `/api/v1` compatibility owner.
+The on-call handover must include the image digest, migration batch, PostgreSQL/Redis owners, PayOS/KYC and payout escalation owners, alert routing, feature-flag rollback commands, RPO/RTO evidence, and reconciliation exception procedure.
 
-`v1:retirement-readiness` remains a hard stop until a separate approved change under `openspec/changes/` contains its proposal and task artifacts plus a recent adoption snapshot, and every V1 booking has a complete, non-drifted legacy mapping (`legacy_mapping_valid`). Bookings that block it are listed in `unmapped_bookings` with their reason.
+V1 booking is retired (`openspec/changes/retire-v1-booking`, approved by the project owner on 2026-10-13). The owner skipped the 30-day adoption gate, so `v1:retirement-readiness` was not a release gate. It still audits legacy mappings: every V1 booking needs a complete, non-drifted mapping (`legacy_mapping_valid`), and bookings without one are listed in `unmapped_bookings` with their reason. `bookings` and `booking_slots` are frozen history; read them through their mapped reservations.

@@ -10,6 +10,7 @@ use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
+use App\Services\Booking\QuoteCouponService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
@@ -26,6 +27,7 @@ class ReservationService
         private readonly PriceQuoteService $quotes,
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly SlotSelectionPolicy $slotPolicy,
+        private readonly QuoteCouponService $quoteCoupons,
     ) {}
 
     public function hold(User $user, int $organizationId, array $data, ?User $actor = null): Reservation
@@ -34,7 +36,7 @@ class ReservationService
             abort(403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
         }
         if ($actor === null && ! $user->hasVerifiedEmail()) {
-            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/v1/auth/email/verification-notification.');
+            abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
 
         return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data): Reservation {
@@ -45,6 +47,7 @@ class ReservationService
                     $organizationId,
                     (int) ($data['court_id'] ?? 0),
                     (array) ($data['slots'] ?? []),
+                    $data['coupon_code'] ?? null,
                 );
                 $quote = PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
@@ -64,6 +67,7 @@ class ReservationService
                 ->first();
             abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             $lockedVenue = Venue::query()->whereKey($lockedCourt->venue_id)->lockForUpdate()->firstOrFail();
+            $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
             $bookingPolicySnapshot = null;
@@ -89,6 +93,9 @@ class ReservationService
             $metadata = (array) ($data['metadata'] ?? []);
             if ($quote->benefit_snapshot) {
                 $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
+            }
+            if ($couponUsage !== null) {
+                $metadata['coupon_usage'] = $couponUsage;
             }
             if ($directOwnerPayments) {
                 $metadata['booking_policy_snapshot'] = $bookingPolicySnapshot;
@@ -213,6 +220,9 @@ class ReservationService
 
     public function release(Reservation $reservation, string $status): void
     {
+        if ($reservation->status === 'held') {
+            $this->quoteCoupons->release($reservation);
+        }
         $reservation->update([
             'status' => $status,
             'cancelled_at' => $status === 'cancelled' ? now() : $reservation->cancelled_at,

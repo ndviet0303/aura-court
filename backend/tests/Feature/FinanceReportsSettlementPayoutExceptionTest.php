@@ -87,27 +87,27 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
 
         // Owner can access
         $this->actingAs($this->owner)
-            ->getJson('/api/v2/finance/settlements', $headers)
+            ->getJson('/api/finance/settlements', $headers)
             ->assertOk();
 
         // Venue manager can access
         $this->actingAs($this->manager)
-            ->getJson('/api/v2/finance/settlements', $headers)
+            ->getJson('/api/finance/settlements', $headers)
             ->assertOk();
 
         // Cashier is forbidden
         $this->actingAs($this->cashier)
-            ->getJson('/api/v2/finance/settlements', $headers)
+            ->getJson('/api/finance/settlements', $headers)
             ->assertStatus(403);
 
         // Staff is forbidden
         $this->actingAs($this->staff)
-            ->getJson('/api/v2/finance/settlements', $headers)
+            ->getJson('/api/finance/settlements', $headers)
             ->assertStatus(403);
 
         // Unaffiliated customer is forbidden
         $this->actingAs($this->customer)
-            ->getJson('/api/v2/finance/settlements', $headers)
+            ->getJson('/api/finance/settlements', $headers)
             ->assertStatus(403);
     }
 
@@ -117,7 +117,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $headers = ['X-Organization-Id' => $this->organization->id];
 
         $this->actingAs($this->owner)
-            ->getJson('/api/v2/finance/settlements', $headers)
+            ->getJson('/api/finance/settlements', $headers)
             ->assertStatus(404);
 
         config(['features.flags.marketplace_payouts' => true]);
@@ -176,7 +176,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
 
         // Settlements CSV
         $settlementsCsv = $this->actingAs($this->owner)
-            ->get('/api/v2/finance/settlements.csv', $headers);
+            ->get('/api/finance/settlements.csv', $headers);
         $settlementsCsv->assertOk()
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
         $this->assertStringContainsString('Period Start', $settlementsCsv->streamedContent());
@@ -184,7 +184,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
 
         // Payouts CSV
         $payoutsCsv = $this->actingAs($this->owner)
-            ->get('/api/v2/finance/payouts.csv', $headers);
+            ->get('/api/finance/payouts.csv', $headers);
         $payoutsCsv->assertOk()
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
         $this->assertStringContainsString('Beneficiary', $payoutsCsv->streamedContent());
@@ -192,7 +192,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
 
         // Exceptions CSV
         $exceptionsCsv = $this->actingAs($this->owner)
-            ->get('/api/v2/finance/exceptions.csv', $headers);
+            ->get('/api/finance/exceptions.csv', $headers);
         $exceptionsCsv->assertOk()
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
         $this->assertStringContainsString('reconciliation_mismatch', $exceptionsCsv->streamedContent());
@@ -205,7 +205,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
             'Idempotency-Key' => 'snap-'.uniqid(),
         ];
 
-        $res = $this->actingAs($this->owner)->postJson('/api/v2/finance/settlements/snapshot', [
+        $res = $this->actingAs($this->owner)->postJson('/api/finance/settlements/snapshot', [
             'period_start' => '2026-09-01',
             'period_end' => '2026-09-05',
         ], $headers);
@@ -213,7 +213,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $res->assertCreated()
             ->assertJsonPath('settlement.currency', 'VND');
         $this->assertNotNull($res->json('settlement.id'));
-        $list = $this->actingAs($this->owner)->getJson('/api/v2/finance/settlements', $headers);
+        $list = $this->actingAs($this->owner)->getJson('/api/finance/settlements', $headers);
         $list->assertOk()
             ->assertJsonStructure(['data' => [['id', 'period_start', 'period_end', 'status', 'gross_amount']]]);
     }
@@ -246,7 +246,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         ]);
 
         // 1. Create Draft Payout
-        $createRes = $this->actingAs($this->owner)->postJson('/api/v2/finance/payouts', [
+        $createRes = $this->actingAs($this->owner)->postJson('/api/finance/payouts', [
             'settlement_id' => $settlement->id,
             'beneficiary_id' => $beneficiary->id,
         ], array_merge($headers, ['Idempotency-Key' => 'pay-draft-'.uniqid()]));
@@ -258,7 +258,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $payoutId = $createRes->json('payout.id');
 
         // 2. Approve Payout
-        $approveRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/approve", [], array_merge($headers, ['Idempotency-Key' => 'pay-appr-'.uniqid()]));
+        $approveRes = $this->actingAs($this->owner)->postJson("/api/finance/payouts/{$payoutId}/approve", [], array_merge($headers, ['Idempotency-Key' => 'pay-appr-'.uniqid()]));
         $approveRes->assertOk()
             ->assertJsonPath('payout.status', 'approved');
 
@@ -284,13 +284,13 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $this->app->instance(PaymentProviderManager::class, $providerManager);
 
         // 3. Submit Payout
-        $submitRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/submit", [], array_merge($headers, ['Idempotency-Key' => 'pay-sub-'.uniqid()]));
+        $submitRes = $this->actingAs($this->owner)->postJson("/api/finance/payouts/{$payoutId}/submit", [], array_merge($headers, ['Idempotency-Key' => 'pay-sub-'.uniqid()]));
         $submitRes->assertOk()
             ->assertJsonPath('payout.status', 'submitted')
             ->assertJsonPath('payout.provider_payout_id', 'payout-sub-999');
 
         // 4. Query Payout Status
-        $statusRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/payouts/{$payoutId}/status", [], array_merge($headers, ['Idempotency-Key' => 'pay-stat-'.uniqid()]));
+        $statusRes = $this->actingAs($this->owner)->postJson("/api/finance/payouts/{$payoutId}/status", [], array_merge($headers, ['Idempotency-Key' => 'pay-stat-'.uniqid()]));
         $statusRes->assertOk()
             ->assertJsonPath('payout.status', 'paid');
     }
@@ -312,16 +312,16 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         ]);
 
         // Stats
-        $statsRes = $this->actingAs($this->owner)->getJson('/api/v2/finance/exceptions/stats', $headers);
+        $statsRes = $this->actingAs($this->owner)->getJson('/api/finance/exceptions/stats', $headers);
         $statsRes->assertOk()
             ->assertJsonStructure(['stats' => ['pending_count', 'critical_count']]);
         // List
-        $listRes = $this->actingAs($this->owner)->getJson('/api/v2/finance/exceptions', $headers);
+        $listRes = $this->actingAs($this->owner)->getJson('/api/finance/exceptions', $headers);
         $listRes->assertOk()
             ->assertJsonStructure(['data' => [['id', 'type', 'severity', 'status']]]);
 
         // Resolve
-        $resolveRes = $this->actingAs($this->owner)->postJson("/api/v2/finance/exceptions/{$exception->id}/resolve", [
+        $resolveRes = $this->actingAs($this->owner)->postJson("/api/finance/exceptions/{$exception->id}/resolve", [
             'action_type' => 'manual_override',
             'reason' => 'Xác nhận do điều chỉnh giá giờ vàng hợp lệ',
             'note' => 'Đã ghi chú vào hồ sơ kiểm toán',
@@ -336,7 +336,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
     {
         $headers = ['X-Organization-Id' => $this->organization->id];
 
-        $stats = $this->actingAs($this->owner)->getJson('/api/v2/finance/reconciliation/stats', $headers);
+        $stats = $this->actingAs($this->owner)->getJson('/api/finance/reconciliation/stats', $headers);
         // An organization with no finance activity reports zeros and nulls, never placeholder figures.
         $stats->assertOk()
             ->assertJsonStructure(['provider_total', 'journal_total', 'settlement_total', 'payout_total', 'sync_status'])
@@ -350,7 +350,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
             ->assertJsonPath('last_reconciled_at', null)
             ->assertJsonCount(7, 'health_trend')
             ->assertJsonPath('health_trend.6.status', null);
-        $runs = $this->actingAs($this->owner)->getJson('/api/v2/finance/reconciliation/runs', $headers);
+        $runs = $this->actingAs($this->owner)->getJson('/api/finance/reconciliation/runs', $headers);
         $runs->assertOk()
             ->assertJsonStructure(['data']);
     }

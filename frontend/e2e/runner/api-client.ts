@@ -27,7 +27,7 @@ export class E2EApiError extends Error {
 }
 
 /** Real HTTP requests share the browser's cookies without intercepting the application. */
-export function createE2EApiClient(page: Page, manifest: RunManifest, version: 'v1' | 'v2' = 'v1') {
+export function createE2EApiClient(page: Page, manifest: RunManifest) {
   const backendUrl = manifest.backend.url.replace(/\/$/, '')
   const csrf = () =>
     page.request.get(`${backendUrl}/sanctum/csrf-cookie`, {
@@ -47,11 +47,11 @@ export function createE2EApiClient(page: Page, manifest: RunManifest, version: '
     const options = typeof opt === 'string' ? { idempotencyKey: opt } : opt || {}
     const headers: Record<string, string> = { ...options.headers }
     if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey
-    else if (version === 'v2' && method !== 'GET' && !headers['Idempotency-Key'])
+    else if (method !== 'GET' && !headers['Idempotency-Key'])
       headers['Idempotency-Key'] = randomUUID()
     const cleanPath = path.startsWith('/') ? path : `/${path}`
     const url = new URL(
-      `${backendUrl}${cleanPath.startsWith('/api/') ? cleanPath : `/api/${version}${cleanPath}`}`,
+      `${backendUrl}${cleanPath.startsWith('/api/') ? cleanPath : `/api${cleanPath}`}`,
     )
     for (const [key, value] of Object.entries(options.params || {})) {
       if (value !== null && value !== undefined) url.searchParams.append(key, String(value))

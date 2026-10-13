@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -11,8 +11,12 @@ import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
 import { resolveCourtImage } from '@/lib/courtImage'
 import { getVenueLocalDate, formatSlotRange } from '../utils/homeAvailability'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
+import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
+import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
+import type { LoyaltySelection } from '@/features/booking/utils/reservation'
 const { t, locale } = useI18n()
 const store = useBookingStore()
+const coupon = reactive(useCheckoutCoupon())
 const auth = useAuthStore()
 const router = useRouter()
 const selected = ref<number | null>(null)
@@ -236,9 +240,6 @@ const timeOptions = computed(() => [
   { value: 'evening', label: t('home.search.evening') },
 ])
 
-const total = computed(() =>
-  store.selectedSlots.reduce((sum: number, slot: AvailabilitySlot) => sum + slot.price, 0),
-)
 const image = (index: number) => resolveCourtImage(store.courts[index])
 const visibleSlots = computed(() =>
   store.slots.filter((slot: AvailabilitySlot) => {
@@ -293,10 +294,7 @@ async function chooseCourt(courtId?: string | number) {
   scrollToSelectedChip()
 }
 
-const loyaltyPayload = ref<any>(null)
-function onLoyaltyChange(data: any) {
-  loyaltyPayload.value = data
-}
+const loyaltyPayload = ref<LoyaltySelection>(null)
 
 async function submit() {
   if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } })
@@ -304,7 +302,7 @@ async function submit() {
   loading.value = true
   error.value = ''
   try {
-    const reservation = await store.checkoutReservation(loyaltyPayload.value)
+    const reservation = await store.checkoutReservation(loyaltyPayload.value, coupon.appliedCode)
     router.push({ name: 'reservations', params: { code: reservation.code } })
   } catch (cause: unknown) {
     error.value = errorMessage(cause, t('common.error'))
@@ -659,7 +657,7 @@ onMounted(async () => {
       :aria-label="
         t('home.floating.summary', {
           count: store.selectedSlots.length,
-          total: formatCurrency(total),
+          total: formatCurrency(coupon.total),
         })
       "
     >
@@ -685,16 +683,24 @@ onMounted(async () => {
         </div>
         <div class="dock-total-box">
           <span class="dock-total-lbl">{{ t('home.floating.totalLabel') }}</span>
-          <strong class="dock-total-val">{{ formatCurrency(total) }}</strong>
+          <strong class="dock-total-val">{{ formatCurrency(coupon.total) }}</strong>
         </div>
       </div>
 
       <!-- Dock Loyalty Point Selector -->
       <div v-if="auth.user && selected" class="dock-loyalty-container">
+        <CouponCodeField
+          v-model="coupon.code"
+          :loading="coupon.loading"
+          :error="coupon.error"
+          :discount="coupon.discount"
+          @apply="coupon.apply"
+        />
         <LoyaltyPointSelector
           :court-id="selected"
           :slots="store.selectedSlots.map((s: AvailabilitySlot) => s.startsAt)"
-          @change="onLoyaltyChange"
+          :coupon-code="coupon.appliedCode ?? undefined"
+          @change="loyaltyPayload = $event"
         />
       </div>
       <!-- Dock Actions Right -->
@@ -708,7 +714,11 @@ onMounted(async () => {
         >
           <span class="material-symbols-outlined icon-18">close</span>
         </button>
-        <button class="btn btn-floating-proceed" :disabled="loading" @click="submit">
+        <button
+          class="btn btn-floating-proceed"
+          :disabled="loading || coupon.loading"
+          @click="submit"
+        >
           <span v-if="loading" class="material-symbols-outlined spin-icon icon-18"
             >progress_activity</span
           >
@@ -1040,28 +1050,6 @@ onMounted(async () => {
 
 .court-chip-name {
   white-space: nowrap;
-}
-
-.court-chip-zone {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: var(--surface-subtle);
-  color: var(--muted);
-  border: 1px solid var(--outline);
-}
-
-.court-chip.active .court-chip-zone {
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  border-color: transparent;
-}
-
-:global(html.dark) .court-chip.active .court-chip-zone {
-  background: rgba(0, 0, 0, 0.2);
-  color: inherit;
-  border-color: transparent;
 }
 
 @media (max-width: 640px) {

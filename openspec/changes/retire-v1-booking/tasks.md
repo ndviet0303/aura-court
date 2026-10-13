@@ -1,6 +1,7 @@
 ## 0. Điều kiện trước khi bắt đầu
 
-- [ ] 0.1 `harden-db-integrity` đã apply và archive. Exclusion constraint `reservation_slots_no_overlap` phải có mặt trên mọi môi trường đích.
+- [x] 0.1 `harden-db-integrity` đã apply và archive. Exclusion constraint `reservation_slots_no_overlap` phải có mặt trên mọi môi trường đích.
+  - 2026-10-13: constraint đã có trên prod; `harden-db-integrity` đã archive (`archive/2026-10-13-harden-db-integrity`).
 
 ## 1. Phase A — mapping đầy đủ
 
@@ -46,7 +47,8 @@
 ## 4. Phase A — release
 
 - [ ] 4.1 Release phần additive của backend trước (cột mới, route admin mới, reports), sau đó release payload review/dispute cùng lúc với frontend.
-- [ ] 4.2 Xác nhận trên mọi môi trường: số booking = số mapping, ngoại trừ các booking đã báo cáo ở 1.2 và đang chặn cổng.
+- [x] 4.2 Xác nhận trên mọi môi trường: số booking = số mapping, ngoại trừ các booking đã báo cáo ở 1.2 và đang chặn cổng.
+  - Prod 2026-10-13: 72 booking, 72 mapping (design C1).
 
 ## 5. Phase B — cổng bằng chứng
 
@@ -56,32 +58,42 @@
   - không còn booking V1 `pending_payment`;
   - không còn booking V1 `confirmed` ở thời điểm tương lai;
   - số mapping = số booking.
-- [ ] 5.3 Chạy precheck: không có `booking_slot` active ở tương lai nào thiếu reservation slot active được map. Kết quả phải bằng 0.
+  - Bỏ qua theo quyết định của chủ dự án ngày 2026-10-13 (design C1).
+- [x] 5.3 Chạy precheck: không có `booking_slot` active ở tương lai nào thiếu reservation slot active được map. Kết quả phải bằng 0.
+  - Prod 2026-10-13: 0 (design C1).
 - [ ] 5.4 `php artisan v1:retirement-readiness --approved-change=openspec/changes/retire-v1-booking` trả `ready: true`. Ghi output vào change.
   - Lệnh ghép path với `base_path('../')`, tức là tính từ root repo, nên phải chạy trước khi archive change này.
+  - Bỏ qua theo quyết định của chủ dự án ngày 2026-10-13 (design C1).
 - [ ] 5.5 Change riêng cho coupon trên V2 checkout (spec `reservations-and-pricing`: V1/V2 dùng chung coupon, hold giữ lượt coupon) đã apply và archive, kèm Playwright checkout có coupon trên luồng V2. Đây là điều kiện trước Phase C.
+  - Backend và frontend đã làm luôn trong change này, không tách change (design C4). Còn thiếu Playwright checkout có coupon.
 
 ## 6. Phase C — retire
 
-- [ ] 6.1 Ghi lại sự phê duyệt của chủ dự án cho Phase C trong change: ai duyệt, ngày nào, dựa trên snapshot nào.
-- [ ] 6.2 Bỏ các route V1 booking: `GET/POST bookings`, `bookings/recurring`, `GET bookings/{code}`, `bookings/{code}/sync-v2`, `legacy/reservations/{reservation}`, `payment-status`, `GET/POST payment`, `refund-quote`, `GET/POST refund-requests`, `reschedule-preview`, `reschedule-requests`, `coupon`, `calendar.ics`, `admin/bookings`, `admin/bookings/{booking}/no-show`.
-- [ ] 6.3 Xoá code chỉ phục vụ V1:
+- [x] 6.1 Ghi lại sự phê duyệt của chủ dự án cho Phase C trong change: ai duyệt, ngày nào, dựa trên snapshot nào.
+  - Design C1: chủ dự án duyệt ngày 2026-10-13, dựa trên precheck 5.3 trên prod. Cùng lúc chọn bỏ số phiên bản khỏi API (design C5).
+- [x] 6.2 Bỏ các route V1 booking: `GET/POST bookings`, `bookings/recurring`, `GET bookings/{code}`, `bookings/{code}/sync-v2`, `legacy/reservations/{reservation}`, `payment-status`, `GET/POST payment`, `refund-quote`, `GET/POST refund-requests`, `reschedule-preview`, `reschedule-requests`, `coupon`, `calendar.ics`, `admin/bookings`, `admin/bookings/{booking}/no-show`.
+- [x] 6.3 Xoá code chỉ phục vụ V1:
   - `checkoutV1` và các helper riêng của nó, `CreateBooking`;
   - phần V1 của `BookingController`, `LegacyBookingAdapterController`;
   - lời gọi `backfillBooking` trong checkout;
   - nhánh xác nhận booking trong `ReviewPayment`;
   - `EloquentRefundRepository::createForBooking`;
   - `ExpirePendingBookings`, `NotifyExpiringBookings` và lịch chạy của chúng trong `routes/console.php`.
-- [ ] 6.4 Bỏ mọi caller `syncProjection`: `ExpirePendingBookings`, `OwnerRefundService`, `SplitPaymentService`, `OwnerPaymentAttemptService`, `RescheduleService`, `PosService`, `ServiceTabService`. Bỏ luôn nhánh backfill trong `AttendanceService` (khoảng dòng 81–95).
-- [ ] 6.5 Bỏ nhánh truy vấn `booking_slots` ở 6 chỗ kiểm tra trùng lịch: `SlotSelectionPolicy`, `CourtCommitmentConflictService`, `PriceQuoteService`, `RecurringSeriesService`, `MatchService`, `AvailabilityController`.
-- [ ] 6.6 Sửa `E2EArrangeTestDataCommand` và `E2EExpireHoldsCommand` để không còn ghi hay expire booking V1.
-- [ ] 6.7 Frontend: xoá các lời gọi V1 trong `bookingApi`, `bookingStore.createBooking`, phần V1 của `usePaymentProcessing`, route `/payment/:code`, và code chết (`profileApi.getBookings`, `adminApi.updatePayment/markNoShow`, `bookingApi.createRecurring`).
-- [ ] 6.8 Test:
+  - `ExpirePendingBookings` được giữ lại làm sweep cho reservation, bỏ phần V1 (design C3).
+- [x] 6.4 Bỏ mọi caller `syncProjection`: `ExpirePendingBookings`, `OwnerRefundService`, `SplitPaymentService`, `OwnerPaymentAttemptService`, `RescheduleService`, `PosService`, `ServiceTabService`. Bỏ luôn nhánh backfill trong `AttendanceService` (khoảng dòng 81–95).
+- [x] 6.5 Bỏ nhánh truy vấn `booking_slots` ở 6 chỗ kiểm tra trùng lịch: `SlotSelectionPolicy`, `CourtCommitmentConflictService`, `PriceQuoteService`, `RecurringSeriesService`, `MatchService`, `AvailabilityController`.
+- [x] 6.6 Sửa `E2EArrangeTestDataCommand` và `E2EExpireHoldsCommand` để không còn ghi hay expire booking V1.
+- [x] 6.7 Frontend: xoá các lời gọi V1 trong `bookingApi`, `bookingStore.createBooking`, phần V1 của `usePaymentProcessing`, route `/payment/:code`, và code chết (`profileApi.getBookings`, `adminApi.updatePayment/markNoShow`, `bookingApi.createRecurring`).
+  - Làm cùng C5: frontend chỉ còn một HTTP client gọi `/api` (`apiV2` bị xoá). `usePaymentProcessing`, `PaymentView` và route `/payment/:code?` bị xoá; link cũ chuyển sang `/reservations/:code?`. Các thành phần V2 đổi tên (bỏ tiền tố V2), namespace i18n `v2Reservations` → `reservations`. Ô nhập mã giảm giá gửi `coupon_code` qua báo giá và checkout (5.5).
+- [x] 6.8 Test:
   - mỗi route ở 6.2 trả 404 và không tạo hay đổi dòng nào trong `bookings`, `booking_slots`, `payments`, `reservations`, `idempotency_records`, `notifications`;
   - booking legacy vẫn đọc được qua reservation, với code, số tiền và trạng thái gốc;
   - webhook SePay cho POS và nạp ví vẫn ghi `payments` và vẫn chống trùng.
+  - Có trong `tests/Feature/Readiness/RetiredV1BookingRoutesTest.php`, kèm `reservation_slots` và `price_quotes` trong danh sách bảng theo dõi, và test cho kịch bản "Stale client calls a versioned path" (`/api/v1`, `/api/v2` → 404, không ghi gì). Coupon trên reservation có trong `tests/Feature/Booking/ReservationCouponTest.php`.
 - [ ] 6.9 Xoá test chỉ phục vụ endpoint V1 đã bỏ. Giữ test dùng `Booking` làm dữ liệu lịch sử. Cập nhật allowlist kiến trúc và baseline PHPStan cho các entry không còn khớp (chỉ được giảm).
+  - Allowlist kiến trúc và baseline PHPStan đã cập nhật (chỉ giảm; baseline 740 → 700 entry). Việc sửa test dừng giữa chừng theo yêu cầu owner (2026-10-13, "bỏ qua test chỉ sửa thôi check sau"): nhóm checkout/ví/loyalty xong 6/9 file; nhóm slot policy/lịch và nhóm tài khoản/hết hạn/lịch sử còn dở. Cần chạy lại cả bộ PHPUnit để biết test nào còn fail.
 - [ ] 6.10 Static gates backend và frontend pass. Bộ PHPUnit trên PostgreSQL và Playwright ở 3.7 pass.
+  - Đã pass: PHPStan level 0 và level 5, Pint, test kiến trúc, `vue-tsc`, eslint, oxlint, prettier. Chưa chạy: cả bộ PHPUnit, cả bộ vitest, Playwright. Job `build_and_deploy` cần `backend_test` và `frontend_check`, nên chưa được push lên `main` cho tới khi hai bộ này pass.
 
 ## 7. Phase C — release và sau release
 

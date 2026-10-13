@@ -294,7 +294,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
 
         $this->actingAs($fixture['payer'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->getJson('/api/v2/monthly-invoices/'.$invoice->id)
+            ->getJson('/api/monthly-invoices/'.$invoice->id)
             ->assertOk()
             ->assertJsonPath('payment_attempt.reference', $attempt->reference)
             ->assertJsonPath('payment_attempt.transfer_content', $attempt->reference)
@@ -317,7 +317,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => 'forged-invoice-claim',
             ])
-            ->postJson('/api/v2/monthly-invoices/'.$invoice->id.'/pay', [
+            ->postJson('/api/monthly-invoices/'.$invoice->id.'/pay', [
                 'payment_reference' => 'CLIENT-FABRICATED-PAID',
             ])->assertNotFound();
 
@@ -338,7 +338,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
 
         $this->actingAs($fixture['owner'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson("/api/v1/admin/contracts/{$seriesId}/invoices/{$invoice->id}/pay", [
+            ->postJson("/api/admin/contracts/{$seriesId}/invoices/{$invoice->id}/pay", [
                 'payment_reference' => 'OWNER-FABRICATED-PAID',
             ])->assertNotFound();
 
@@ -355,7 +355,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
 
         $response = $this->actingAs($fixture['owner'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson('/api/v1/admin/contracts', [
+            ->postJson('/api/admin/contracts', [
                 'court_id' => $fixture['court']->id,
                 'customer_name' => 'Unverified Contract Payer',
                 'phone' => '0900009012',
@@ -440,7 +440,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         $this->travelTo($occurrences[0]->starts_at->copy()->addHour());
         $cancel = fn () => $this->actingAs($fixture['owner'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson("/api/v1/admin/contracts/{$seriesId}/cancel", ['reason' => 'Khách dừng hợp đồng'])
+            ->postJson("/api/admin/contracts/{$seriesId}/cancel", ['reason' => 'Khách dừng hợp đồng'])
             ->assertOk()
             ->assertJsonPath('status', 'cancelled');
         $cancel();
@@ -501,7 +501,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
 
         $this->actingAs($fixture['owner'])
             ->withHeader('X-Organization-ID', (string) $other->id)
-            ->postJson("/api/v1/admin/contracts/{$seriesId}/cancel")
+            ->postJson("/api/admin/contracts/{$seriesId}/cancel")
             ->assertOk();
 
         $occurrence = RecurringOccurrence::withoutGlobalScopes()->where('recurring_series_id', $seriesId)->sole();
@@ -524,7 +524,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
 
         $this->actingAs($fixture['owner'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson("/api/v1/admin/contracts/{$seriesId}/cancel")
+            ->postJson("/api/admin/contracts/{$seriesId}/cancel")
             ->assertOk();
 
         $this->assertSame('released', RecurringOccurrence::where('recurring_series_id', $seriesId)->sole()->status);
@@ -626,7 +626,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         $this->travelTo(RecurringOccurrence::where('recurring_series_id', $seriesId)->sole()->starts_at->copy()->addHour());
         $this->actingAs($fixture['owner'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson("/api/v1/admin/contracts/{$seriesId}/cancel")
+            ->postJson("/api/admin/contracts/{$seriesId}/cancel")
             ->assertOk();
         $invoice->update(['due_at' => now()->subDays(2)]);
         app(RecurringSeriesService::class)->markOverdueAndReleaseFuture();
@@ -749,7 +749,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
 
         return $this->actingAs($fixture['payer'])
             ->withHeader('X-Organization-ID', (string) $fixture['organization']->id)
-            ->postJson('/api/v2/recurring-series/preview', $payload)
+            ->postJson('/api/recurring-series/preview', $payload)
             ->assertOk()
             ->json();
     }
@@ -782,7 +782,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
                 'X-Organization-ID' => (string) $fixture['organization']->id,
                 'Idempotency-Key' => $idempotencyKey,
             ])
-            ->postJson('/api/v2/recurring-series', $payload);
+            ->postJson('/api/recurring-series', $payload);
     }
 
     /**
@@ -835,7 +835,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $timestamp = (string) now()->timestamp;
-        $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
+        $this->call('POST', '/api/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
             'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),

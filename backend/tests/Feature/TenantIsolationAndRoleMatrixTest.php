@@ -36,17 +36,17 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         // Owner 2 attempts to read Org 1 details
         $this->actingAs($owner2)
-            ->getJson("/api/v1/organizations/{$org1->id}")
+            ->getJson("/api/organizations/{$org1->id}")
             ->assertStatus(403);
 
         // Owner 2 attempts to modify Org 1
         $this->actingAs($owner2)
-            ->patchJson("/api/v1/organizations/{$org1->id}", ['name' => 'Hacked Name'])
+            ->patchJson("/api/organizations/{$org1->id}", ['name' => 'Hacked Name'])
             ->assertStatus(403);
 
         // Owner 1 can access Org 1
         $this->actingAs($owner1)
-            ->getJson("/api/v1/organizations/{$org1->id}")
+            ->getJson("/api/organizations/{$org1->id}")
             ->assertOk()
             ->assertJsonPath('organization.name', 'Organization Alpha');
     }
@@ -69,7 +69,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         // 1. Customer cannot add member
         $this->actingAs($customer)
-            ->postJson("/api/v1/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/members", [
                 'email' => $newUser->email,
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
@@ -77,7 +77,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         // 2. Cashier cannot add member
         $this->actingAs($cashier)
-            ->postJson("/api/v1/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/members", [
                 'email' => $newUser->email,
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
@@ -85,12 +85,12 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         // 3. Manager can view members
         $this->actingAs($manager)
-            ->getJson("/api/v1/organizations/{$org->id}/members")
+            ->getJson("/api/organizations/{$org->id}/members")
             ->assertOk();
 
         // 4. Owner can add member
         $this->actingAs($owner)
-            ->postJson("/api/v1/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/members", [
                 'email' => $newUser->email,
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
@@ -171,7 +171,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         // 1. In Org A: user has cashier access
         $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->getJson('/api/v2/pos/shifts/active')
+            ->getJson('/api/pos/shifts/active')
             ->assertOk();
 
         // 2. Scenario: Organization switch
@@ -179,12 +179,12 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         // Cashier actions MUST be unavailable and direct privileged requests rejected with 403
         $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgB->id)
-            ->getJson('/api/v2/pos/shifts/active')
+            ->getJson('/api/pos/shifts/active')
             ->assertStatus(403);
 
         $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgB->id)
-            ->postJson('/api/v2/pos/shifts', ['opening_cash' => 100000])
+            ->postJson('/api/pos/shifts', ['opening_cash' => 100000])
             ->assertStatus(403);
 
         // 3. Staff role tests: staff can view active shift, but cannot open shift or review reconciliation
@@ -193,26 +193,26 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $this->actingAs($staffUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->getJson('/api/v2/pos/shifts/active')
+            ->getJson('/api/pos/shifts/active')
             ->assertOk();
 
         $this->actingAs($staffUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->postJson('/api/v2/pos/shifts', ['opening_cash' => 100000])
+            ->postJson('/api/pos/shifts', ['opening_cash' => 100000])
             ->assertStatus(403);
 
         // 4. Cashier role tests: cashier can open shift, but cannot review reconciliation
         $openShiftRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
             ->withHeader('Idempotency-Key', 'open-shift-cashier')
-            ->postJson('/api/v2/pos/shifts', ['opening_cash' => 100000])
+            ->postJson('/api/pos/shifts', ['opening_cash' => 100000])
             ->assertCreated();
         $createdShiftId = $openShiftRes->json('shift.id');
 
         // Attempting to review shift as cashier -> 403 Forbidden
         $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->postJson("/api/v2/pos/shifts/{$createdShiftId}/review", ['status' => 'approved'])
+            ->postJson("/api/pos/shifts/{$createdShiftId}/review", ['status' => 'approved'])
             ->assertStatus(403);
         // 5. Manager role tests: manager can review shift reconciliation (fails with 404 shift not found, not 403 forbidden)
         $managerUser = User::factory()->create();
@@ -220,7 +220,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $this->actingAs($managerUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->postJson('/api/v2/pos/shifts/999999/review', ['status' => 'approved'])
+            ->postJson('/api/pos/shifts/999999/review', ['status' => 'approved'])
             ->assertNotFound();
 
         // 6. Owner role tests: owner can update organization settings
@@ -229,14 +229,14 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $this->actingAs($ownerUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->patchJson("/api/v2/organizations/{$orgA->id}", ['name' => 'Org A Updated'])
+            ->patchJson("/api/organizations/{$orgA->id}", ['name' => 'Org A Updated'])
             ->assertOk()
             ->assertJsonPath('organization.name', 'Org A Updated');
 
         // Non-owner cannot update organization settings
         $this->actingAs($managerUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->patchJson("/api/v2/organizations/{$orgA->id}", ['name' => 'Org A Hacked'])
+            ->patchJson("/api/organizations/{$orgA->id}", ['name' => 'Org A Hacked'])
             ->assertStatus(403);
 
         // 7. Elevated platform admin tests: can access without being an organization member
@@ -244,7 +244,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $this->actingAs($platformAdmin)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
-            ->getJson('/api/v2/pos/shifts/active')
+            ->getJson('/api/pos/shifts/active')
             ->assertOk();
     }
 
@@ -266,7 +266,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         // 1. Pilot organization has POS enabled
         $pilotRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $pilotOrg->id)
-            ->getJson('/api/v2/capabilities');
+            ->getJson('/api/capabilities');
 
         $pilotRes->assertOk()
             ->assertJsonPath('organization_id', $pilotOrg->id)
@@ -277,7 +277,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         // 2. Standard non-pilot organization has POS disabled
         $standardRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $standardOrg->id)
-            ->getJson('/api/v2/capabilities');
+            ->getJson('/api/capabilities');
 
         $standardRes->assertOk()
             ->assertJsonPath('organization_id', $standardOrg->id)
@@ -288,7 +288,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         // 3. Direct route guard test: POS routes on standard org fail with 404
         $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $standardOrg->id)
-            ->getJson('/api/v2/pos/products')
+            ->getJson('/api/pos/products')
             ->assertStatus(404);
     }
 }

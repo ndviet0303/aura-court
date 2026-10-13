@@ -167,7 +167,7 @@ export async function authenticateActorSession(
   await page.goto(`${frontendUrl}/login`)
 
   // 2. Perform login via frontend form or API within page context
-  const loginRes = await page.request.post(`${manifest.backend.url}/api/v1/auth/login`, {
+  const loginRes = await page.request.post(`${manifest.backend.url}/api/auth/login`, {
     data: {
       email: credential.email,
       password: credential.password,
@@ -190,7 +190,7 @@ export async function authenticateActorSession(
   assertNonDemoPersistence(loginRes.headers())
 
   // Verify authenticated identity via /auth/me
-  const meRes = await page.request.get(`${manifest.backend.url}/api/v1/auth/me`, {
+  const meRes = await page.request.get(`${manifest.backend.url}/api/auth/me`, {
     headers: {
       Accept: 'application/json',
       Referer: frontendUrl,

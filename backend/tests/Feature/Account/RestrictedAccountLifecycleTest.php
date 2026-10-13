@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Account;
 
-use App\Models\Booking;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
 use App\Models\Reservation;
@@ -37,7 +36,7 @@ class RestrictedAccountLifecycleTest extends TestCase
                 'email_verified_at' => now(),
             ]);
 
-            $response = $this->postJson('/api/v1/auth/login', [
+            $response = $this->postJson('/api/auth/login', [
                 'email' => "user_{$status}@example.com",
                 'password' => 'secret123',
             ]);
@@ -71,14 +70,14 @@ class RestrictedAccountLifecycleTest extends TestCase
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 
-        $response = $this->get('/api/v1/auth/google/callback');
+        $response = $this->get('/api/auth/google/callback');
 
         $response->assertRedirect();
         $this->assertStringContainsString('error=account_restricted', $response->headers->get('Location'));
         $this->assertGuest();
     }
 
-    public function test_existing_session_cannot_create_v1_booking_when_account_becomes_restricted(): void
+    public function test_existing_session_cannot_create_booking_when_account_becomes_restricted(): void
     {
         $fixture = $this->createMultiOrgVenueFixture();
         $court = $fixture['org1']['court1'];
@@ -101,17 +100,17 @@ class RestrictedAccountLifecycleTest extends TestCase
 
         $slot = Carbon::tomorrow()->setTime(9, 0, 0)->toIso8601String();
 
-        $initialBookings = Booking::count();
+        $initialReservations = Reservation::count();
         $initialTransactions = WalletTransaction::count();
         $initialPoints = PointLedger::count();
 
-        $response = $this->postJson('/api/v1/bookings', [
+        $response = $this->withHeader('Idempotency-Key', 'test-booking-'.uniqid())->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slot],
         ]);
 
         $response->assertStatus(403);
-        $this->assertSame($initialBookings, Booking::count(), 'No new booking must be created.');
+        $this->assertSame($initialReservations, Reservation::count(), 'No new booking must be created.');
         $this->assertSame($initialTransactions, WalletTransaction::count(), 'No wallet transaction must occur.');
         $this->assertSame($initialPoints, PointLedger::count(), 'No points must be earned or deducted.');
         $this->assertEquals(5000000, $wallet->fresh()->balance, 'Wallet balance must be preserved.');
@@ -139,7 +138,7 @@ class RestrictedAccountLifecycleTest extends TestCase
 
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
-        ])->postJson('/api/v2/reservations', [
+        ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
         ]);
@@ -161,18 +160,19 @@ class RestrictedAccountLifecycleTest extends TestCase
         Sanctum::actingAs($user);
         $user->update(['status' => 'banned']);
 
-        $slot = Carbon::tomorrow()->setTime(14, 0, 0)->toIso8601String();
+        $start = Carbon::tomorrow()->setTime(14, 0, 0)->toIso8601String();
 
-        $initialBookings = Booking::count();
+        $initialReservations = Reservation::count();
 
-        $response = $this->postJson('/api/v1/bookings/recurring', [
+        $response = $this->withHeader('Idempotency-Key', 'test-recurring-'.uniqid())->postJson('/api/recurring-series', [
             'court_id' => $court->id,
-            'slots' => [$slot],
-            'weeks' => 4,
+            'frequency' => 'weekly',
+            'starts_at' => $start,
+            'occurrences' => 4,
         ]);
 
         $response->assertStatus(403);
-        $this->assertSame($initialBookings, Booking::count(), 'No recurring bookings must be created.');
+        $this->assertSame($initialReservations, Reservation::count(), 'No recurring bookings must be created.');
     }
 
     public function test_staff_assisted_walkin_blocks_restricted_customer(): void
@@ -205,7 +205,7 @@ class RestrictedAccountLifecycleTest extends TestCase
         $response = $this->withHeaders([
             'X-Organization-Id' => (string) $org->id,
             'Idempotency-Key' => 'test-walkin-'.uniqid(),
-        ])->postJson('/api/v2/reservations', [
+        ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
             'customer_id' => $customer->id,
@@ -224,12 +224,12 @@ class RestrictedAccountLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         // GET auth/me should succeed and report locked status
-        $meRes = $this->getJson('/api/v1/auth/me');
+        $meRes = $this->getJson('/api/auth/me');
         $meRes->assertStatus(200);
         $this->assertEquals('locked', $meRes->json('status'));
 
         // POST auth/logout should succeed
-        $logoutRes = $this->postJson('/api/v1/auth/logout');
+        $logoutRes = $this->postJson('/api/auth/logout');
         $logoutRes->assertStatus(200);
     }
 

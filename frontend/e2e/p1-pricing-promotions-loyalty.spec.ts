@@ -209,7 +209,7 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
       LARAVEL_STORAGE_PATH: manifest.storagePath,
     }
 
-    // 1. Arrange an existing confirmed V2 reservation booked at historical price of 100,000 VND
+    // 1. Arrange an existing confirmed reservation booked at historical price of 100,000 VND
     const arrangeBookingScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
@@ -882,8 +882,8 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     // 4. Archive plan via API
     const archiveRes = (await withE2EApi(
       page,
-      async ({ apiV2 }, planId) => {
-        return await apiV2.post(`/admin/memberships/plans/${planId}/archive`)
+      async ({ api }, planId) => {
+        return await api.post(`/admin/memberships/plans/${planId}/archive`)
       },
       arrangedPlan.plan_id,
     )) as { message?: string }
@@ -891,8 +891,8 @@ test.describe('P1: Bảng giá động, Vòng đời khuyến mãi & Quản lý 
     expect(archiveRes.message).toContain('Đã lưu trữ gói hội viên thành công!')
 
     // 5. Query version history: archived plan preserves subscriber note
-    const historyRes = (await withE2EApi(page, async ({ apiV2 }) => {
-      return await apiV2.get('/admin/memberships/version-history')
+    const historyRes = (await withE2EApi(page, async ({ api }) => {
+      return await api.get('/admin/memberships/version-history')
     })) as Array<{
       planId: number
       status: string

@@ -42,7 +42,7 @@ class AdminMembershipTest extends TestCase
     {
         // 1. Create Plan
         $createRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->postJson('/api/v2/admin/memberships/plans', [
+            ->postJson('/api/admin/memberships/plans', [
                 'name' => 'Gold Elite Pass',
                 'code' => 'GOLD',
                 'description' => 'Gói VIP All-Access',
@@ -64,7 +64,7 @@ class AdminMembershipTest extends TestCase
 
         // 2. List Plans
         $listRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->getJson('/api/v2/admin/memberships/plans');
+            ->getJson('/api/admin/memberships/plans');
 
         $listRes->assertOk()
             ->assertJsonCount(1)
@@ -72,7 +72,7 @@ class AdminMembershipTest extends TestCase
 
         // 3. Update Plan
         $updateRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->patchJson("/api/v2/admin/memberships/plans/{$planId}", [
+            ->patchJson("/api/admin/memberships/plans/{$planId}", [
                 'name' => 'Gold Elite Pass Pro',
                 'price' => 699000,
             ]);
@@ -83,7 +83,7 @@ class AdminMembershipTest extends TestCase
 
         // 4. Archive Plan
         $archiveRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->postJson("/api/v2/admin/memberships/plans/{$planId}/archive");
+            ->postJson("/api/admin/memberships/plans/{$planId}/archive");
 
         $archiveRes->assertOk();
     }
@@ -92,14 +92,14 @@ class AdminMembershipTest extends TestCase
     {
         // 1. Get Loyalty Config
         $configRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->getJson('/api/v2/admin/memberships/loyalty-config');
+            ->getJson('/api/admin/memberships/loyalty-config');
 
         $configRes->assertOk()
             ->assertJsonStructure(['spendAmountVnd', 'pointsEarned', 'pointsRedeemed', 'rewardValueVnd']);
 
         // 2. Update Loyalty Config
         $updateConfigRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->patchJson('/api/v2/admin/memberships/loyalty-config', [
+            ->patchJson('/api/admin/memberships/loyalty-config', [
                 'spendAmountVnd' => 2000,
                 'pointsEarned' => 2,
                 'pointsRedeemed' => 200,
@@ -112,7 +112,7 @@ class AdminMembershipTest extends TestCase
 
         // 3. Create Multiplier Rule
         $createRuleRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->postJson('/api/v2/admin/memberships/multiplier-rules', [
+            ->postJson('/api/admin/memberships/multiplier-rules', [
                 'name' => 'Happy Hours',
                 'multiplier' => 2.5,
                 'tag' => 'Off-peak',
@@ -129,14 +129,14 @@ class AdminMembershipTest extends TestCase
 
         // 4. List Multiplier Rules
         $rulesRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->getJson('/api/v2/admin/memberships/multiplier-rules');
+            ->getJson('/api/admin/memberships/multiplier-rules');
 
         $rulesRes->assertOk()
             ->assertJsonCount(1);
 
         // 5. Update Multiplier Rule
         $updateRuleRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->patchJson("/api/v2/admin/memberships/multiplier-rules/{$ruleId}", [
+            ->patchJson("/api/admin/memberships/multiplier-rules/{$ruleId}", [
                 'isActive' => false,
             ]);
 
@@ -145,7 +145,7 @@ class AdminMembershipTest extends TestCase
 
         // 6. Delete Multiplier Rule
         $deleteRuleRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->deleteJson("/api/v2/admin/memberships/multiplier-rules/{$ruleId}");
+            ->deleteJson("/api/admin/memberships/multiplier-rules/{$ruleId}");
 
         $deleteRuleRes->assertOk();
     }
@@ -153,19 +153,19 @@ class AdminMembershipTest extends TestCase
     public function test_can_fetch_version_history_and_stats(): void
     {
         $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->postJson('/api/v2/admin/memberships/plans', [
+            ->postJson('/api/admin/memberships/plans', [
                 'name' => 'VIP Member Tier',
                 'price' => 500000,
             ]);
 
         $historyRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->getJson('/api/v2/admin/memberships/version-history');
+            ->getJson('/api/admin/memberships/version-history');
 
         $historyRes->assertOk()
             ->assertJsonStructure([['id', 'planName', 'version', 'status']]);
 
         $statsRes = $this->withHeader('X-Organization-Id', (string) $this->org->id)
-            ->getJson('/api/v2/admin/memberships/stats');
+            ->getJson('/api/admin/memberships/stats');
 
         // A plan without members or ledger rows must report real zeros, not placeholder figures.
         $statsRes->assertOk()

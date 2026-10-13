@@ -23,19 +23,19 @@ const emit = defineEmits<{
     <div class="panel-header">
       <span class="material-symbols-outlined">account_balance</span>
       <div>
-        <h3>{{ t('v2Reservations.payment.title') }}</h3>
-        <p>{{ t('v2Reservations.payment.instructions') }}</p>
+        <h3>{{ t('reservations.payment.title') }}</h3>
+        <p>{{ t('reservations.payment.instructions') }}</p>
       </div>
     </div>
 
-    <div v-if="loading" class="panel-state">{{ t('v2Reservations.payment.loading') }}</div>
+    <div v-if="loading" class="panel-state">{{ t('reservations.payment.loading') }}</div>
     <div v-if="error" class="panel-error" role="alert">{{ error }}</div>
     <div
       v-if="reservationStatus === 'confirmed' || attempt?.status === 'paid'"
       class="panel-state status-paid"
       data-testid="owner-payment-paid"
     >
-      {{ t('v2Reservations.payment.paid') }}
+      {{ t('reservations.payment.paid') }}
     </div>
 
     <template v-else-if="attempt">
@@ -46,32 +46,32 @@ const emit = defineEmits<{
       >
         {{
           attempt.status === 'expired'
-            ? t('v2Reservations.payment.expired')
-            : t('v2Reservations.payment.waiting')
+            ? t('reservations.payment.expired')
+            : t('reservations.payment.waiting')
         }}
       </div>
       <div v-if="attempt.status === 'pending'" class="payment-layout">
         <img
           :src="attempt.qr_url"
-          :alt="t('v2Reservations.payment.qrAlt')"
+          :alt="t('reservations.payment.qrAlt')"
           referrerpolicy="no-referrer"
           data-testid="owner-payment-qr"
         />
         <dl>
           <div>
-            <dt>{{ t('v2Reservations.payment.receiver') }}</dt>
+            <dt>{{ t('reservations.payment.receiver') }}</dt>
             <dd>{{ attempt.receiver.bank_code }}</dd>
           </div>
           <div>
-            <dt>{{ t('v2Reservations.payment.accountName') }}</dt>
+            <dt>{{ t('reservations.payment.accountName') }}</dt>
             <dd>{{ attempt.receiver.account_name }}</dd>
           </div>
           <div>
-            <dt>{{ t('v2Reservations.payment.accountNumber') }}</dt>
+            <dt>{{ t('reservations.payment.accountNumber') }}</dt>
             <dd class="font-mono">{{ attempt.receiver.account_number }}</dd>
           </div>
           <div>
-            <dt>{{ t('v2Reservations.payment.amount') }}</dt>
+            <dt>{{ t('reservations.payment.amount') }}</dt>
             <dd class="font-mono">
               {{
                 new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
@@ -82,14 +82,14 @@ const emit = defineEmits<{
             </dd>
           </div>
           <div>
-            <dt>{{ t('v2Reservations.payment.transferContent') }}</dt>
+            <dt>{{ t('reservations.payment.transferContent') }}</dt>
             <dd class="font-mono select-all">{{ attempt.transfer_content }}</dd>
           </div>
         </dl>
       </div>
       <p v-if="attempt.expires_at && attempt.status === 'pending'" class="panel-expiry">
         {{
-          t('v2Reservations.payment.expiresAt', {
+          t('reservations.payment.expiresAt', {
             time: d(new Date(attempt.expires_at), 'datetime'),
           })
         }}
@@ -103,9 +103,7 @@ const emit = defineEmits<{
         data-testid="owner-payment-refresh"
         @click="emit('refresh')"
       >
-        {{
-          refreshing ? t('v2Reservations.payment.refreshing') : t('v2Reservations.payment.refresh')
-        }}
+        {{ refreshing ? t('reservations.payment.refreshing') : t('reservations.payment.refresh') }}
       </button>
     </div>
     <div
@@ -118,7 +116,7 @@ const emit = defineEmits<{
         data-testid="owner-payment-retry"
         @click="emit('retry')"
       >
-        {{ t('v2Reservations.payment.retry') }}
+        {{ t('reservations.payment.retry') }}
       </button>
     </div>
   </section>

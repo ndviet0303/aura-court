@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
@@ -7,16 +7,19 @@ import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
 import { useBookingStore } from '@/stores/booking'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
+import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
+import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
+import type { LoyaltySelection } from '@/features/booking/utils/reservation'
 import type { Court, AvailabilitySlot } from '../../types/court'
 const { locale } = useI18n()
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
+const coupon = reactive(useCheckoutCoupon())
 
 const props = defineProps<{
   court: Court
   date: string
   selectedSlots: AvailabilitySlot[]
-  totalPrice: number
   directOwnerPayments?: boolean
   loading?: boolean
   error?: string
@@ -25,17 +28,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'checkout', payload?: any): void
+  (e: 'checkout', loyalty?: LoyaltySelection, couponCode?: string | null): void
   (e: 'removeSlot', slot: AvailabilitySlot): void
   (e: 'resendVerification'): void
   (e: 'clearError'): void
 }>()
 
-const loyaltyPayload = ref<any>(null)
-function handleLoyaltyChange(data: any) {
-  loyaltyPayload.value = data
-}
-
+const loyaltyPayload = ref<LoyaltySelection>(null)
 const isUnverified = computed(() => isUnverifiedEmailError(props.error))
 
 const formattedDate = computed(() => {
@@ -50,10 +49,6 @@ const formattedDate = computed(() => {
   } catch {
     return props.date
   }
-})
-
-const durationHours = computed(() => {
-  return props.selectedSlots.length
 })
 </script>
 
@@ -93,8 +88,8 @@ const durationHours = computed(() => {
     <div class="selected-slots-section">
       <div class="section-label-row">
         <span class="section-sub-label">{{ $t('schedule.selectedSlotsLabel') }}</span>
-        <span v-if="durationHours > 0" class="duration-badge">
-          {{ $t('schedule.totalPlayDuration', { count: durationHours }) }}
+        <span v-if="selectedSlots.length > 0" class="duration-badge">
+          {{ $t('schedule.totalPlayDuration', { count: selectedSlots.length }) }}
         </span>
       </div>
 
@@ -196,10 +191,18 @@ const durationHours = computed(() => {
 
     <!-- Summary Total & Checkout -->
     <div class="summary-footer">
+      <CouponCodeField
+        v-if="auth.user && selectedSlots.length > 0"
+        v-model="coupon.code"
+        :loading="coupon.loading"
+        :error="coupon.error"
+        :discount="coupon.discount"
+        @apply="coupon.apply"
+      />
       <div class="price-breakdown">
         <div class="breakdown-row">
           <span>{{ $t('schedule.playDuration') }}</span>
-          <strong>{{ $t('schedule.hours', { count: durationHours }) }}</strong>
+          <strong>{{ $t('schedule.hours', { count: selectedSlots.length }) }}</strong>
         </div>
         <div v-if="auth.user && !directOwnerPayments" class="breakdown-row wallet-status-row">
           <div class="wallet-status-left">
@@ -209,12 +212,12 @@ const durationHours = computed(() => {
           <div class="wallet-status-right">
             <strong
               class="font-mono"
-              :class="bookingStore.walletBalance >= totalPrice ? 'text-emerald' : 'text-danger'"
+              :class="bookingStore.walletBalance >= coupon.total ? 'text-emerald' : 'text-danger'"
             >
               {{ formatCurrency(bookingStore.walletBalance) }}
             </strong>
             <RouterLink
-              v-if="bookingStore.walletBalance < totalPrice && selectedSlots.length > 0"
+              v-if="bookingStore.walletBalance < coupon.total && selectedSlots.length > 0"
               to="/wallet"
               class="badge-topup-link"
               :title="$t('payment.topupNowCta') || 'Nạp ví ngay'"
@@ -225,23 +228,23 @@ const durationHours = computed(() => {
         </div>
         <div class="breakdown-row total-row">
           <span>{{ $t('schedule.totalPayment') }}</span>
-          <strong class="total-num font-mono">{{ formatCurrency(totalPrice) }}</strong>
+          <strong class="total-num font-mono">{{ formatCurrency(coupon.total) }}</strong>
         </div>
       </div>
 
-      <!-- Loyalty Point Selector before checkout button -->
       <LoyaltyPointSelector
         v-if="auth.user && selectedSlots.length > 0 && court"
         :court-id="court.id"
         :slots="selectedSlots.map((s) => s.startsAt)"
-        @change="handleLoyaltyChange"
+        :coupon-code="coupon.appliedCode ?? undefined"
+        @change="loyaltyPayload = $event"
       />
 
       <button
         type="button"
         class="btn-checkout"
-        :disabled="selectedSlots.length === 0 || loading"
-        @click="emit('checkout', loyaltyPayload)"
+        :disabled="selectedSlots.length === 0 || loading || coupon.loading"
+        @click="emit('checkout', loyaltyPayload, coupon.appliedCode)"
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>
@@ -343,7 +346,6 @@ const durationHours = computed(() => {
   color: #f7a8b8;
 }
 
-.venue-info,
 .venue-info-link,
 .date-info {
   display: inline-flex;
@@ -364,12 +366,10 @@ const durationHours = computed(() => {
 :global(html.dark) .venue-info-link:hover {
   color: #e58e9f;
 }
-:global(html.dark) .venue-info span,
 :global(html.dark) .venue-info-link span,
 :global(html.dark) .date-info span {
   color: #ded7ce;
 }
-:global(html.dark) .venue-info .icon-14,
 :global(html.dark) .venue-info-link .icon-14,
 :global(html.dark) .date-info .icon-14 {
   color: var(--accent, #c9a15a);

@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminScheduleView from '../views/AdminScheduleView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/schedule' }),
@@ -18,11 +18,6 @@ vi.mock('@/core/api/client', () => ({
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
-    get: vi.fn(),
-    post: vi.fn(),
     delete: vi.fn(),
   },
   errorMessage: (err: unknown, fallback: string) => fallback,
@@ -77,12 +72,6 @@ describe('AdminScheduleView', () => {
             },
           ],
         }
-      }
-      return []
-    })
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/venues') {
-        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
       }
       return []
     })

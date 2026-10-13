@@ -27,12 +27,12 @@ class PartnerEvidenceAttachmentAndCompletenessTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         // First upload
         $file1 = UploadedFile::fake()->create('id_front_v1.jpg', 300, 'image/jpeg');
-        $upload1 = $this->postJson("/api/v1/partner/application/{$appId}/documents", [
+        $upload1 = $this->postJson("/api/partner/application/{$appId}/documents", [
             'document_type' => 'representative_id_front',
             'file' => $file1,
         ]);
@@ -46,7 +46,7 @@ class PartnerEvidenceAttachmentAndCompletenessTest extends TestCase
 
         // Second upload of same document type replaces the first
         $file2 = UploadedFile::fake()->create('id_front_v2.png', 400, 'image/png');
-        $upload2 = $this->postJson("/api/v1/partner/application/{$appId}/documents", [
+        $upload2 = $this->postJson("/api/partner/application/{$appId}/documents", [
             'document_type' => 'representative_id_front',
             'file' => $file2,
         ]);
@@ -80,17 +80,17 @@ class PartnerEvidenceAttachmentAndCompletenessTest extends TestCase
         ]);
         Sanctum::actingAs($user);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $appId = $startRes->json('data.id');
 
         // Initial draft is incomplete
-        $check1 = $this->getJson("/api/v1/partner/application/{$appId}/completeness");
+        $check1 = $this->getJson("/api/partner/application/{$appId}/completeness");
         $check1->assertStatus(200)
             ->assertJsonPath('data.is_complete', false);
         $this->assertContains('representative_id_front', $check1->json('data.missing_documents'));
 
         // Populate business details where applicant is NOT the legal representative
-        $this->putJson("/api/v1/partner/application/{$appId}", [
+        $this->putJson("/api/partner/application/{$appId}", [
             'business_type' => 'company',
             'business_name' => 'Arena Corp',
             'legal_name' => 'Arena Company Ltd',
@@ -142,10 +142,10 @@ class PartnerEvidenceAttachmentAndCompletenessTest extends TestCase
         $newUser = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($newUser);
 
-        $startRes = $this->postJson('/api/v1/partner/application/start', []);
+        $startRes = $this->postJson('/api/partner/application/start', []);
         $newAppId = $startRes->json('data.id');
 
-        $this->putJson("/api/v1/partner/application/{$newAppId}", [
+        $this->putJson("/api/partner/application/{$newAppId}", [
             'business_name' => 'Beta Sport',
             'tax_code' => '0399998888', // Duplicate!
         ])->assertStatus(200);

@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminPayoutsView from '@/features/finance/views/AdminPayoutsView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/payouts' }),
@@ -15,12 +15,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  apiV2: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -115,7 +109,6 @@ describe('AdminPayoutsView', () => {
     }
 
     vi.mocked(api.get).mockImplementation(mockGet)
-    vi.mocked(apiV2.get).mockImplementation(mockGet)
 
     const mockPost = async (url: string, payload: any) => {
       if (
@@ -166,7 +159,6 @@ describe('AdminPayoutsView', () => {
     }
 
     vi.mocked(api.post).mockImplementation(mockPost)
-    vi.mocked(apiV2.post).mockImplementation(mockPost)
   })
 
   it('renders header, settlement metrics, table and beneficiary info correctly', async () => {
@@ -286,7 +278,6 @@ describe('AdminPayoutsView', () => {
       return { data: [] }
     }
     vi.mocked(api.get).mockImplementation(customGet)
-    vi.mocked(apiV2.get).mockImplementation(customGet)
 
     const wrapper = mount(AdminPayoutsView, {
       global: { plugins: [i18n] },
@@ -320,7 +311,6 @@ describe('AdminPayoutsView', () => {
       return { data: [] }
     }
     vi.mocked(api.get).mockImplementation(customGet)
-    vi.mocked(apiV2.get).mockImplementation(customGet)
 
     const wrapper = mount(AdminPayoutsView, {
       global: { plugins: [i18n] },
@@ -355,7 +345,6 @@ describe('AdminPayoutsView', () => {
       return { data: [] }
     }
     vi.mocked(api.get).mockImplementation(customGet)
-    vi.mocked(apiV2.get).mockImplementation(customGet)
 
     const wrapper = mount(AdminPayoutsView, {
       global: { plugins: [i18n] },

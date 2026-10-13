@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import QRCode from 'qrcode'
 import AdminTournamentBracketView from '../views/AdminTournamentBracketView.vue'
 import { i18n } from '@/i18n'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -22,10 +22,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn().mockResolvedValue({ data: [] }),
-    post: vi.fn().mockResolvedValue({ status: 'ok' }),
-  },
-  apiV2: {
     get: vi.fn().mockResolvedValue({ data: [] }),
     post: vi.fn().mockResolvedValue({ status: 'ok' }),
   },
@@ -139,13 +135,13 @@ describe('AdminTournamentBracketView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.match(/\/tournaments\/\d+/)) {
         return mockTournamentDetails
       }
       return mockTournamentsList
     })
-    vi.mocked(apiV2.post).mockResolvedValue({ status: 'ok' })
+    vi.mocked(api.post).mockResolvedValue({ status: 'ok' })
   })
 
   it('renders title, setup wizard steps, and interactive bracket tree correctly', async () => {
@@ -209,7 +205,7 @@ describe('AdminTournamentBracketView', () => {
     await actionBtn?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(expect.stringContaining('/regenerate'))
+    expect(api.post).toHaveBeenCalledWith(expect.stringContaining('/regenerate'))
   })
 
   it('opens match details modal and saves updated match score', async () => {
@@ -301,7 +297,7 @@ describe('AdminTournamentBracketView', () => {
     await checkinBtns[1]?.trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(expect.stringContaining('/check-in'), expect.anything())
+    expect(api.post).toHaveBeenCalledWith(expect.stringContaining('/check-in'), expect.anything())
   })
 
   it('opens and interacts with QR code scanner modal', async () => {
@@ -380,7 +376,7 @@ describe('AdminTournamentBracketView', () => {
     await wrapper.find('.modal-footer .aura-btn--primary').trigger('click')
     await flushPromises()
 
-    expect(apiV2.post).toHaveBeenCalledWith(
+    expect(api.post).toHaveBeenCalledWith(
       '/tournaments',
       expect.objectContaining({ venue: '', city: '', prize_pool: '', entry_fee: '' }),
     )
@@ -410,7 +406,7 @@ describe('AdminTournamentBracketView', () => {
   })
 
   it('shows empty states, never invented values, when the API omits data', async () => {
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.match(/\/tournaments\/\d+/)) {
         return {
           tournament: {
@@ -476,7 +472,7 @@ describe('AdminTournamentBracketView', () => {
     await inputs[1]?.setValue(17)
     await saveBtn.trigger('click')
     await flushPromises()
-    expect(apiV2.post).toHaveBeenCalledWith(
+    expect(api.post).toHaveBeenCalledWith(
       '/tournaments/1/fixtures/101/score',
       expect.objectContaining({ winner_id: 1, score: { p1: 21, p2: 17 } }),
     )

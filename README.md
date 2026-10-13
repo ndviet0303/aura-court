@@ -17,7 +17,7 @@ Aura Court là monorepo đặt sân cầu lông gồm:
 | API health check | <https://court-api.ziet.dev/up> |
 | API root | <https://court-api.ziet.dev/> |
 
-API root trả JSON trạng thái, còn toàn bộ endpoint phiên bản hiện tại nằm dưới `/api/v1`.
+API root trả JSON trạng thái, còn toàn bộ endpoint nằm dưới `/api` (không có số phiên bản).
 
 ## Tính năng chính
 
@@ -213,7 +213,7 @@ curl -fsS https://court-api.ziet.dev/
 curl -fsS https://court.ziet.dev/runtime-config.json
 ```
 
-Khi kiểm tra bằng Chrome DevTools, Network phải trả `200` cho frontend, `/runtime-config.json`, `/api/v1/courts` và `/api/v1/availability`; Console không được có lỗi CORS.
+Khi kiểm tra bằng Chrome DevTools, Network phải trả `200` cho frontend, `/runtime-config.json`, `/api/courts` và `/api/availability`; Console không được có lỗi CORS.
 
 ## Xử lý lỗi DNS trên máy có Tailscale
 

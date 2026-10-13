@@ -16,7 +16,7 @@ use App\Domain\Membership\Actions\GetAdminMultiplierRules;
 use App\Domain\Membership\Actions\UpdateAdminLoyaltyConfig;
 use App\Domain\Membership\Actions\UpdateAdminMembershipPlan;
 use App\Domain\Membership\Actions\UpdateAdminMultiplierRule;
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreMembershipPlanRequest;
 use App\Http\Requests\Admin\StoreMultiplierRuleRequest;
@@ -28,7 +28,7 @@ use Illuminate\Http\Request;
 
 class AdminMembershipController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function __construct(
         private readonly TenantMembershipPlanRepositoryInterface $planRepository,

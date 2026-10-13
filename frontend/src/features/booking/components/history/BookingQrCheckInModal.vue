@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { V2Reservation } from '../../types/v2Reservation'
+import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
 import { venueClockRange, venueDate } from '@/core/utils/venueTime'
 
 defineProps<{
   show: boolean
-  booking: V2Reservation | null
+  booking: Reservation | null
 }>()
 
 const emit = defineEmits<{

@@ -23,7 +23,7 @@ class AuthFlowsTest extends TestCase
         Notification::fake();
         $user = User::factory()->create(['email' => 'reset@example.com']);
 
-        $this->postJson('/api/v1/auth/forgot-password', ['email' => $user->email])
+        $this->postJson('/api/auth/forgot-password', ['email' => $user->email])
             ->assertOk()
             ->assertJsonPath('message', 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.');
 
@@ -39,7 +39,7 @@ class AuthFlowsTest extends TestCase
             ->assertRedirectContains('/reset-password?token='.$token)
             ->assertRedirectContains('email='.urlencode($user->email));
 
-        $this->postJson('/api/v1/auth/reset-password', [
+        $this->postJson('/api/auth/reset-password', [
             'token' => $token,
             'email' => $user->email,
             'password' => 'NewPassword123!',
@@ -60,7 +60,7 @@ class AuthFlowsTest extends TestCase
             'password_confirmation' => 'SecurePass123!',
         ];
 
-        $response = $this->postJson('/api/v1/auth/register', $payload);
+        $response = $this->postJson('/api/auth/register', $payload);
         $response->assertCreated()
             ->assertJsonPath('user.email', 'newuser@example.com');
 
@@ -136,35 +136,35 @@ class AuthFlowsTest extends TestCase
         ]);
 
         // Login via session
-        $loginRes = $this->postJson('/api/v1/auth/login', [
+        $loginRes = $this->postJson('/api/auth/login', [
             'email' => 'loginuser@example.com',
             'password' => 'Password123!',
         ]);
         $loginRes->assertOk()->assertJsonPath('user.email', 'loginuser@example.com');
 
         // Can access protected route
-        $this->getJson('/api/v1/auth/me')->assertOk();
+        $this->getJson('/api/auth/me')->assertOk();
 
         // Logout
-        $this->postJson('/api/v1/auth/logout')->assertOk();
+        $this->postJson('/api/auth/logout')->assertOk();
         $this->app['auth']->forgetGuards();
 
         // Protected request is now rejected
-        $this->getJson('/api/v1/auth/me')->assertUnauthorized();
+        $this->getJson('/api/auth/me')->assertUnauthorized();
         // Bearer token authentication test
         $token = $user->createToken('test-token')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/api/v1/auth/me')
+            ->getJson('/api/auth/me')
             ->assertOk();
 
         // Logout with bearer token
         $this->withHeader('Authorization', 'Bearer '.$token)
-            ->postJson('/api/v1/auth/logout')
+            ->postJson('/api/auth/logout')
             ->assertOk();
         $this->app['auth']->forgetGuards();
         // Protected request with revoked token fails
         $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/api/v1/auth/me')
+            ->getJson('/api/auth/me')
             ->assertUnauthorized();
     }
 
@@ -177,7 +177,7 @@ class AuthFlowsTest extends TestCase
         $token = Password::broker()->createToken($user);
 
         // 1. Consume token once
-        $firstReset = $this->postJson('/api/v1/auth/reset-password', [
+        $firstReset = $this->postJson('/api/auth/reset-password', [
             'token' => $token,
             'email' => $user->email,
             'password' => 'SecondPassword123!',
@@ -187,7 +187,7 @@ class AuthFlowsTest extends TestCase
         $this->assertTrue(Hash::check('SecondPassword123!', $user->fresh()->password));
 
         // 2. Replay the same token: MUST fail and return actionable error message
-        $replayReset = $this->postJson('/api/v1/auth/reset-password', [
+        $replayReset = $this->postJson('/api/auth/reset-password', [
             'token' => $token,
             'email' => $user->email,
             'password' => 'ThirdPassword123!',
@@ -200,7 +200,7 @@ class AuthFlowsTest extends TestCase
         $this->assertTrue(Hash::check('SecondPassword123!', $user->fresh()->password));
 
         // 3. Completely invalid token
-        $invalidReset = $this->postJson('/api/v1/auth/reset-password', [
+        $invalidReset = $this->postJson('/api/auth/reset-password', [
             'token' => 'invalid-token-xyz',
             'email' => $user->email,
             'password' => 'FourthPassword123!',
@@ -218,7 +218,7 @@ class AuthFlowsTest extends TestCase
         ]);
 
         // Wrong current password
-        $this->actingAs($user)->patchJson('/api/v1/profile/password', [
+        $this->actingAs($user)->patchJson('/api/profile/password', [
             'current_password' => 'WrongPassword!',
             'password' => 'NewPassword999!',
             'password_confirmation' => 'NewPassword999!',
@@ -227,7 +227,7 @@ class AuthFlowsTest extends TestCase
         $this->assertTrue(Hash::check('CurrentPassword123!', $user->fresh()->password));
 
         // Correct current password
-        $this->actingAs($user)->patchJson('/api/v1/profile/password', [
+        $this->actingAs($user)->patchJson('/api/profile/password', [
             'current_password' => 'CurrentPassword123!',
             'password' => 'NewPassword999!',
             'password_confirmation' => 'NewPassword999!',
@@ -254,8 +254,8 @@ class AuthFlowsTest extends TestCase
             'avatar_url' => 'https://example.com/new.png',
         ];
 
-        // 1. Update profile via PATCH /api/v1/profile
-        $updateRes = $this->actingAs($user)->patchJson('/api/v1/profile', $payload);
+        // 1. Update profile via PATCH /api/profile
+        $updateRes = $this->actingAs($user)->patchJson('/api/profile', $payload);
         $updateRes->assertOk()
             ->assertJsonPath('name', 'Updated Athlete Name')
             ->assertJsonPath('phone', '0909999999')
@@ -270,8 +270,8 @@ class AuthFlowsTest extends TestCase
         $this->assertSame(['badminton', 'pickleball'], $freshUser->favorite_sports);
         $this->assertSame('https://example.com/new.png', $freshUser->avatar_url);
 
-        // 3. Reload journey via GET /api/v1/auth/me
-        $reloadRes = $this->actingAs($user)->getJson('/api/v1/auth/me');
+        // 3. Reload journey via GET /api/auth/me
+        $reloadRes = $this->actingAs($user)->getJson('/api/auth/me');
         $reloadRes->assertOk()
             ->assertJsonPath('name', 'Updated Athlete Name')
             ->assertJsonPath('phone', '0909999999')
@@ -287,7 +287,7 @@ class AuthFlowsTest extends TestCase
         ]);
 
         // Invalid play_level value
-        $response = $this->actingAs($user)->patchJson('/api/v1/profile', [
+        $response = $this->actingAs($user)->patchJson('/api/profile', [
             'play_level' => 'non_existent_tier',
         ]);
 
@@ -303,19 +303,19 @@ class AuthFlowsTest extends TestCase
 
         // 1. Invalid verification link with English locale
         $resEn = $this->withHeader('X-Locale', 'en')
-            ->getJson("/api/v1/auth/verify-email/{$user->id}/invalid-hash");
+            ->getJson("/api/auth/verify-email/{$user->id}/invalid-hash");
         $resEn->assertStatus(403)
             ->assertJsonPath('message', 'The verification link is invalid.');
 
         // 2. Invalid verification link with Vietnamese locale
         $resVi = $this->withHeader('X-Locale', 'vi')
-            ->getJson("/api/v1/auth/verify-email/{$user->id}/invalid-hash");
+            ->getJson("/api/auth/verify-email/{$user->id}/invalid-hash");
         $resVi->assertStatus(403)
             ->assertJsonPath('message', 'Liên kết xác thực không hợp lệ.');
 
         // 3. Login failure with English locale
         $loginEn = $this->withHeader('X-Locale', 'en')
-            ->postJson('/api/v1/auth/login', [
+            ->postJson('/api/auth/login', [
                 'email' => $user->email,
                 'password' => 'WrongPassword!',
             ]);
@@ -324,7 +324,7 @@ class AuthFlowsTest extends TestCase
 
         // 4. Login failure with Vietnamese locale
         $loginVi = $this->withHeader('X-Locale', 'vi')
-            ->postJson('/api/v1/auth/login', [
+            ->postJson('/api/auth/login', [
                 'email' => $user->email,
                 'password' => 'WrongPassword!',
             ]);

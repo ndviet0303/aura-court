@@ -194,7 +194,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         $fixtureA = $tourneyA->fixtures()->first();
         $scoreResA = $this->actingAs($this->customerOfficial)
             ->withHeaders($this->headers('score-a-'))
-            ->postJson("/api/v2/tournaments/{$tourneyA->id}/fixtures/{$fixtureA->id}/score", [
+            ->postJson("/api/tournaments/{$tourneyA->id}/fixtures/{$fixtureA->id}/score", [
                 'expected_version' => $tourneyA->version,
                 'winner_id' => $fixtureA->participant_one_id,
                 'score' => ['p1' => 21, 'p2' => 15],
@@ -205,7 +205,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         $fixtureB = $tourneyB->fixtures()->first();
         $scoreResB = $this->actingAs($this->customerOfficial)
             ->withHeaders($this->headers('score-b-'))
-            ->postJson("/api/v2/tournaments/{$tourneyB->id}/fixtures/{$fixtureB->id}/score", [
+            ->postJson("/api/tournaments/{$tourneyB->id}/fixtures/{$fixtureB->id}/score", [
                 'expected_version' => $tourneyB->version,
                 'winner_id' => $fixtureB->participant_one_id,
                 'score' => ['p1' => 21, 'p2' => 15],
@@ -215,13 +215,13 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 3. Customer official attempts organizer action (bracket regeneration) on Tournament A -> 403 FORBIDDEN
         $regenRes = $this->actingAs($this->customerOfficial)
             ->withHeaders($this->headers('regen-a-'))
-            ->postJson("/api/v2/tournaments/{$tourneyA->id}/regenerate");
+            ->postJson("/api/tournaments/{$tourneyA->id}/regenerate");
         $regenRes->assertStatus(403);
 
         // 4. Org owner grants 'organizer' role to customerOrganizer via API
         $createGrantRes = $this->actingAs($this->owner)
             ->withHeaders($this->headers('grant-add-'))
-            ->postJson("/api/v2/tournaments/{$tourneyA->id}/grants", [
+            ->postJson("/api/tournaments/{$tourneyA->id}/grants", [
                 'user_id' => $this->customerOrganizer->id,
                 'role' => 'organizer',
             ]);
@@ -234,20 +234,20 @@ class TournamentCompleteLifecycleTest extends TestCase
         // CustomerOrganizer lists active grants on Tournament A
         $listGrantsRes = $this->actingAs($this->customerOrganizer)
             ->withHeaders($this->headers('grants-list-'))
-            ->getJson("/api/v2/tournaments/{$tourneyA->id}/grants");
+            ->getJson("/api/tournaments/{$tourneyA->id}/grants");
         $listGrantsRes->assertOk();
         $this->assertCount(2, $listGrantsRes->json('grants'));
 
         // CustomerOrganizer regenerates bracket on Tournament A -> 200 OK
         $regenByOrganizerRes = $this->actingAs($this->customerOrganizer)
             ->withHeaders($this->headers('regen-by-org-'))
-            ->postJson("/api/v2/tournaments/{$tourneyA->id}/regenerate");
+            ->postJson("/api/tournaments/{$tourneyA->id}/regenerate");
         $regenByOrganizerRes->assertOk();
 
         // 5. Revoke grant
         $revokeRes = $this->actingAs($this->owner)
             ->withHeaders($this->headers('grant-del-'))
-            ->deleteJson("/api/v2/tournaments/{$tourneyA->id}/grants/{$newGrantId}");
+            ->deleteJson("/api/tournaments/{$tourneyA->id}/grants/{$newGrantId}");
         $revokeRes->assertOk();
 
         $this->assertFalse($tourneyA->fresh()->isAuthorizedOfficial($this->customerOrganizer, 'organizer'));
@@ -277,7 +277,7 @@ class TournamentCompleteLifecycleTest extends TestCase
 
         $lateReg = $this->actingAs($this->player1)
             ->withHeaders($this->headers('late-reg-'))
-            ->postJson("/api/v2/tournaments/{$expiredTourney->id}/register");
+            ->postJson("/api/tournaments/{$expiredTourney->id}/register");
         $lateReg->assertStatus(422);
         $lateReg->assertJsonPath('message', 'Registration deadline has passed.');
 
@@ -297,7 +297,7 @@ class TournamentCompleteLifecycleTest extends TestCase
 
         $startedReg = $this->actingAs($this->player1)
             ->withHeaders($this->headers('started-reg-'))
-            ->postJson("/api/v2/tournaments/{$startedTourney->id}/register");
+            ->postJson("/api/tournaments/{$startedTourney->id}/register");
         $startedReg->assertStatus(422);
         $startedReg->assertJsonPath('message', 'Tournament has already started.');
 
@@ -315,11 +315,11 @@ class TournamentCompleteLifecycleTest extends TestCase
         ]);
 
         // Register 2 players
-        $this->actingAs($this->player1)->withHeaders($this->headers('cap-1-'))->postJson("/api/v2/tournaments/{$cappedTourney->id}/register")->assertStatus(201);
-        $this->actingAs($this->player2)->withHeaders($this->headers('cap-2-'))->postJson("/api/v2/tournaments/{$cappedTourney->id}/register")->assertStatus(201);
+        $this->actingAs($this->player1)->withHeaders($this->headers('cap-1-'))->postJson("/api/tournaments/{$cappedTourney->id}/register")->assertStatus(201);
+        $this->actingAs($this->player2)->withHeaders($this->headers('cap-2-'))->postJson("/api/tournaments/{$cappedTourney->id}/register")->assertStatus(201);
 
         // Player 3 exceeds capacity -> 409
-        $capOverflow = $this->actingAs($this->player3)->withHeaders($this->headers('cap-3-'))->postJson("/api/v2/tournaments/{$cappedTourney->id}/register");
+        $capOverflow = $this->actingAs($this->player3)->withHeaders($this->headers('cap-3-'))->postJson("/api/tournaments/{$cappedTourney->id}/register");
         $capOverflow->assertStatus(409);
         $this->assertStringContainsString('maximum participant capacity', $capOverflow->json('message'));
 
@@ -339,7 +339,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // Admin adds participant with fee_waiver: true BUT empty waiver_reason -> 422
         $waiverFail = $this->actingAs($this->owner)
             ->withHeaders($this->headers('wf-'))
-            ->postJson("/api/v2/tournaments/{$paidTourney->id}/participants", [
+            ->postJson("/api/tournaments/{$paidTourney->id}/participants", [
                 'user_id' => $this->player1->id,
                 'fee_waiver' => true,
                 'waiver_reason' => '',
@@ -349,7 +349,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // Admin adds participant with valid waiver reason -> 201 Created and waiver_reason saved
         $waiverOk = $this->actingAs($this->owner)
             ->withHeaders($this->headers('wo-'))
-            ->postJson("/api/v2/tournaments/{$paidTourney->id}/participants", [
+            ->postJson("/api/tournaments/{$paidTourney->id}/participants", [
                 'user_id' => $this->player1->id,
                 'fee_waiver' => true,
                 'waiver_reason' => 'Wildcard invitation from tournament director',
@@ -376,17 +376,17 @@ class TournamentCompleteLifecycleTest extends TestCase
         ]);
 
         // 1. Fill tournament
-        $p1Res = $this->actingAs($this->player1)->withHeaders($this->headers('reg-p1-'))->postJson("/api/v2/tournaments/{$tourney->id}/register")->assertStatus(201);
-        $p2Res = $this->actingAs($this->player2)->withHeaders($this->headers('reg-p2-'))->postJson("/api/v2/tournaments/{$tourney->id}/register")->assertStatus(201);
+        $p1Res = $this->actingAs($this->player1)->withHeaders($this->headers('reg-p1-'))->postJson("/api/tournaments/{$tourney->id}/register")->assertStatus(201);
+        $p2Res = $this->actingAs($this->player2)->withHeaders($this->headers('reg-p2-'))->postJson("/api/tournaments/{$tourney->id}/register")->assertStatus(201);
         $p2Id = $p2Res->json('participant.id');
 
         // Player 3 is rejected due to capacity
-        $this->actingAs($this->player3)->withHeaders($this->headers('reg-p3-fail-'))->postJson("/api/v2/tournaments/{$tourney->id}/register")->assertStatus(409);
+        $this->actingAs($this->player3)->withHeaders($this->headers('reg-p3-fail-'))->postJson("/api/tournaments/{$tourney->id}/register")->assertStatus(409);
 
         // 2. Player 2 withdraws
         $withdrawnRes = $this->actingAs($this->player2)
             ->withHeaders($this->headers('p2-withdraw-'))
-            ->postJson("/api/v2/tournament-participants/{$p2Id}/check-in", [
+            ->postJson("/api/tournament-participants/{$p2Id}/check-in", [
                 'status' => 'withdrawn',
             ]);
         $withdrawnRes->assertOk();
@@ -395,7 +395,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 3. Now Player 3 can register into the released slot!
         $p3Success = $this->actingAs($this->player3)
             ->withHeaders($this->headers('reg-p3-ok-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/register");
+            ->postJson("/api/tournaments/{$tourney->id}/register");
         $p3Success->assertStatus(201);
 
         // Active participant count is 2 (p1 and p3)
@@ -417,7 +417,7 @@ class TournamentCompleteLifecycleTest extends TestCase
             'settings' => ['entry_fee' => '0 ₫', 'max_participants' => 8],
         ]);
 
-        $pRes = $this->actingAs($this->player1)->withHeaders($this->headers('reg-att-'))->postJson("/api/v2/tournaments/{$tourney->id}/register")->assertStatus(201);
+        $pRes = $this->actingAs($this->player1)->withHeaders($this->headers('reg-att-'))->postJson("/api/tournaments/{$tourney->id}/register")->assertStatus(201);
         $pId = $pRes->json('participant.id');
 
         // Grant official role to customerOfficial
@@ -432,28 +432,28 @@ class TournamentCompleteLifecycleTest extends TestCase
         // Official sets status to 'present'
         $resPresent = $this->actingAs($this->customerOfficial)
             ->withHeaders($this->headers('att-1-'))
-            ->postJson("/api/v2/tournament-participants/{$pId}/check-in", ['status' => 'present']);
+            ->postJson("/api/tournament-participants/{$pId}/check-in", ['status' => 'present']);
         $resPresent->assertOk();
         $this->assertSame('present', $resPresent->json('participant.status'));
 
         // Official sets status to 'absent'
         $resAbsent = $this->actingAs($this->customerOfficial)
             ->withHeaders($this->headers('att-2-'))
-            ->postJson("/api/v2/tournament-participants/{$pId}/check-in", ['status' => 'absent']);
+            ->postJson("/api/tournament-participants/{$pId}/check-in", ['status' => 'absent']);
         $resAbsent->assertOk();
         $this->assertSame('absent', $resAbsent->json('participant.status'));
 
         // Participant self check-in back to 'checked_in'
         $resCheckedIn = $this->actingAs($this->player1)
             ->withHeaders($this->headers('att-3-'))
-            ->postJson("/api/v2/tournament-participants/{$pId}/check-in", ['status' => 'checked_in']);
+            ->postJson("/api/tournament-participants/{$pId}/check-in", ['status' => 'checked_in']);
         $resCheckedIn->assertOk();
         $this->assertSame('checked_in', $resCheckedIn->json('participant.status'));
 
         // Unauthorized user gets 403
         $this->actingAs($this->player2)
             ->withHeaders($this->headers('att-4-'))
-            ->postJson("/api/v2/tournament-participants/{$pId}/check-in", ['status' => 'checked_in'])
+            ->postJson("/api/tournament-participants/{$pId}/check-in", ['status' => 'checked_in'])
             ->assertStatus(403);
     }
 
@@ -572,7 +572,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 1. Initial score submission: Player 1 wins
         $res1 = $this->actingAs($this->owner)
             ->withHeaders($this->headers('sc-1-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
                 'expected_version' => $tourney->version,
                 'winner_id' => $p1Id,
                 'score' => ['p1' => 21, 'p2' => 19],
@@ -587,7 +587,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // Attempt score correction without reason -> 422 Unprocessable
         $resNoReason = $this->actingAs($this->owner)
             ->withHeaders($this->headers('sc-no-reason-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $p2Id,
                 'score' => ['p1' => 19, 'p2' => 21],
@@ -598,7 +598,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 2. Score correction: Correct to Player 2 winning with reason
         $res2 = $this->actingAs($this->owner)
             ->withHeaders($this->headers('sc-2-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $p2Id,
                 'score' => ['p1' => 19, 'p2' => 21],
@@ -654,7 +654,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 1. Play Semi 1: Player 1 wins over Player 2
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('semi1-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$semi1->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$semi1->id}/score", [
                 'expected_version' => $tourney->version,
                 'winner_id' => $semi1->participant_one_id,
                 'score' => ['p1' => 2, 'p2' => 0],
@@ -664,7 +664,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 2. Play Semi 2: Player 3 wins over Player 4
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('semi2-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$semi2->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$semi2->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $semi2->participant_one_id,
                 'score' => ['p1' => 2, 'p2' => 0],
@@ -675,7 +675,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 3. Score correction while Final is PENDING: SUCCEEDS and updates downstream participant
         $correctSemi1 = $this->actingAs($this->owner)
             ->withHeaders($this->headers('correct-semi1-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$semi1->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$semi1->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $semi1->participant_two_id, // Player 2 is now winner
                 'score' => ['p1' => 0, 'p2' => 2],
@@ -690,7 +690,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         $finalWinner = $final->fresh()->participant_one_id;
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('final-score-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$final->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$final->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $finalWinner,
                 'score' => ['p1' => 2, 'p2' => 1],
@@ -700,7 +700,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 5. Attempt to correct Semi 1 now that Final is ALREADY COMPLETED -> 409 CONFLICT!
         $blockedCorrection = $this->actingAs($this->owner)
             ->withHeaders($this->headers('blocked-correct-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$semi1->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$semi1->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $semi1->participant_one_id,
                 'score' => ['p1' => 2, 'p2' => 0],
@@ -730,13 +730,13 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 1. Attempt to finalize while fixture is pending -> 422
         $preFinalize = $this->actingAs($this->owner)
             ->withHeaders($this->headers('fin-pre-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/finalize");
+            ->postJson("/api/tournaments/{$tourney->id}/finalize");
         $preFinalize->assertStatus(422);
 
         // 2. Complete the match
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('score-fin-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
                 'expected_version' => $tourney->version,
                 'winner_id' => $fixture->participant_one_id,
                 'score' => ['p1' => 21, 'p2' => 10],
@@ -746,7 +746,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 3. Finalize tournament -> 200 OK
         $finRes = $this->actingAs($this->owner)
             ->withHeaders($this->headers('fin-ok-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/finalize");
+            ->postJson("/api/tournaments/{$tourney->id}/finalize");
         $finRes->assertOk();
         $this->assertSame('finalized', $finRes->json('tournament.status'));
         $this->assertNotNull($finRes->json('tournament.settings.finalized_at'));
@@ -755,7 +755,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // A. Score change rejected
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('fin-score-block-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $fixture->participant_two_id,
                 'score' => ['p1' => 10, 'p2' => 21],
@@ -765,13 +765,13 @@ class TournamentCompleteLifecycleTest extends TestCase
         // B. Bracket regenerate rejected
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('fin-regen-block-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/regenerate")
+            ->postJson("/api/tournaments/{$tourney->id}/regenerate")
             ->assertStatus(409);
 
         // C. Add participant rejected
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('fin-part-block-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/participants", [
+            ->postJson("/api/tournaments/{$tourney->id}/participants", [
                 'user_id' => $this->player3->id,
             ])
             ->assertStatus(409);
@@ -779,19 +779,19 @@ class TournamentCompleteLifecycleTest extends TestCase
         // 5. Reopening: Customer cannot reopen (403)
         $this->actingAs($this->customerOfficial)
             ->withHeaders($this->headers('reopen-cust-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/reopen", ['reason' => 'I want to fix'])
+            ->postJson("/api/tournaments/{$tourney->id}/reopen", ['reason' => 'I want to fix'])
             ->assertStatus(403);
 
         // 6. Owner must provide min 5 chars reason
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('reopen-short-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/reopen", ['reason' => 'fix'])
+            ->postJson("/api/tournaments/{$tourney->id}/reopen", ['reason' => 'fix'])
             ->assertStatus(422);
 
         // 7. Owner reopens successfully with valid reason
         $reopenRes = $this->actingAs($this->owner)
             ->withHeaders($this->headers('reopen-ok-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/reopen", [
+            ->postJson("/api/tournaments/{$tourney->id}/reopen", [
                 'reason' => 'Overturning disqualified finalist after positive doping test cleared on appeal',
             ]);
         $reopenRes->assertOk();
@@ -807,7 +807,7 @@ class TournamentCompleteLifecycleTest extends TestCase
         // Modifications are now allowed again!
         $this->actingAs($this->owner)
             ->withHeaders($this->headers('score-post-reopen-'))
-            ->postJson("/api/v2/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
+            ->postJson("/api/tournaments/{$tourney->id}/fixtures/{$fixture->id}/score", [
                 'expected_version' => $tourney->fresh()->version,
                 'winner_id' => $fixture->participant_two_id,
                 'score' => ['p1' => 10, 'p2' => 21],

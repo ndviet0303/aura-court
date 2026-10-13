@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
-use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
@@ -48,11 +46,10 @@ class OrdinaryWalletCheckoutTest extends TestCase
         return [$organization, $user, $court];
     }
 
-    public function test_v1_ordinary_checkout_atomically_debits_wallet_and_syncs_v2_canonical_mapping(): void
+    public function test_ordinary_checkout_from_slots_atomically_debits_wallet_and_confirms_reservation(): void
     {
         [$organization, $user, $court] = $this->tenant();
-        $venue = $court->venue;
-        $wallet = $this->fundUserWallet($user, $venue->organization_id, 500000);
+        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
 
         $date = Carbon::now()->addDays(2)->setTime(10, 0)->startOfHour();
         CourtPriceSlot::create([
@@ -64,20 +61,17 @@ class OrdinaryWalletCheckoutTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
+        $response = $this->actingAs($user)->withHeader('Idempotency-Key', 'ordinary-slot-checkout')
+            ->postJson('/api/reservations/checkout', [
+                'court_id' => $court->id,
+                'slots' => [$date->toIso8601String()],
+            ]);
 
         $response->assertCreated();
-        $response->assertJsonStructure([
-            'booking' => ['id', 'code', 'total_amount', 'status', 'court', 'slots', 'payments'],
-        ]);
-        $response->assertJsonPath('booking.status', 'confirmed');
-        $response->assertJsonPath('booking.total_amount', 120000);
+        $response->assertJsonPath('reservation.status', 'confirmed');
+        $response->assertJsonPath('reservation.total_amount', 120000);
 
-        $bookingCode = $response->json('booking.code');
-        $booking = Booking::where('code', $bookingCode)->firstOrFail();
+        $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
 
         // 1. Wallet balance debited
         $this->assertSame(380000, $wallet->fresh()->balance);
@@ -85,63 +79,20 @@ class OrdinaryWalletCheckoutTest extends TestCase
             'wallet_account_id' => $wallet->id,
             'amount' => 120000,
             'type' => 'debit',
-            'source_type' => 'booking_payment',
+            'source_type' => 'reservation_payment',
+            'source_id' => $reservation->id,
         ]);
 
-        // 2. Payment created and paid
-        $this->assertDatabaseHas('payments', [
-            'booking_id' => $booking->id,
-            'provider' => 'wallet',
-            'status' => 'paid',
-            'amount' => 120000,
-        ]);
-
-        // 3. Balanced ledger journal created
+        // 2. Balanced ledger journal created
         $this->assertDatabaseHas('journals', [
-            'organization_id' => $venue->organization_id,
-            'event_type' => 'booking.wallet_payment',
-            'reference' => $booking->code,
+            'organization_id' => $organization->id,
+            'event_type' => 'reservation.wallet_payment',
+            'reference' => $reservation->code,
         ]);
 
-        // 4. Canonical V2 reservation mapping created
-        $this->assertDatabaseHas('legacy_booking_mappings', [
-            'legacy_booking_id' => $booking->id,
-            'organization_id' => $venue->organization_id,
-        ]);
-        $mapping = LegacyBookingMapping::where('legacy_booking_id', $booking->id)->firstOrFail();
-        $this->assertNotNull($mapping->reservation_id);
-        $this->assertDatabaseHas('reservations', [
-            'id' => $mapping->reservation_id,
-            'status' => 'confirmed',
-        ]);
-    }
-
-    public function test_v1_ordinary_checkout_fails_with_insufficient_wallet_balance(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $venue = $court->venue;
-        // Wallet has only 50k, but slot costs 120k
-        $this->fundUserWallet($user, $venue->organization_id, 50000);
-
-        $date = Carbon::now()->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $date->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 120000,
-            'is_active' => true,
-        ]);
-
-        $response = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['wallet']);
-        $this->assertDatabaseCount('bookings', 0);
-        $this->assertDatabaseCount('booking_slots', 0);
+        // 3. Slots confirmed and entitlements active
+        $this->assertDatabaseHas('reservation_slots', ['reservation_id' => $reservation->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('reservation_entitlements', ['reservation_id' => $reservation->id, 'status' => 'active']);
     }
 
     public function test_v2_canonical_checkout_atomically_debits_wallet_and_creates_active_entitlements(): void
@@ -164,7 +115,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
 
         // 1. Create quote
         $quoteRes = $this->actingAs($user)->withHeaders($headers)
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
             ]);
@@ -175,7 +126,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $checkoutRes = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => 'v2-canonical-checkout-2',
-        ])->postJson('/api/v2/reservations/checkout', [
+        ])->postJson('/api/reservations/checkout', [
             'quote_id' => $quoteId,
         ]);
 
@@ -229,7 +180,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $checkoutRes = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => 'v2-insufficient-checkout',
-        ])->postJson('/api/v2/reservations/checkout', [
+        ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ]);
@@ -237,292 +188,6 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $checkoutRes->assertStatus(422);
         $this->assertDatabaseCount('reservations', 0);
         $this->assertDatabaseCount('reservation_entitlements', 0);
-    }
-
-    public function test_v1_and_v2_cross_version_slot_conflict_prevention(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $this->fundUserWallet($user, $organization->id, 1000000);
-
-        $date = Carbon::now(config('app.timezone'))->addDays(3)->setTime(16, 0)->startOfHour();
-
-        // Price setup for both V1 and V2
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $date->dayOfWeekIso,
-            'starts_at' => '16:00',
-            'ends_at' => '17:00',
-            'price' => 150000,
-            'is_active' => true,
-        ]);
-        PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 150000,
-        ]);
-
-        // 1. User checks out slot in V1
-        $v1Res = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
-        $v1Res->assertCreated();
-
-        // 2. Another customer attempts to check out the same slot in V2 -> 409 Conflict
-        $secondUser = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $secondUser->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
-        $this->fundUserWallet($secondUser, $organization->id, 1000000);
-        $v2Res = $this->actingAs($secondUser)->withHeaders([
-            'X-Organization-ID' => (string) $organization->id,
-            'Idempotency-Key' => 'v2-conflict-attempt',
-        ])->postJson('/api/v2/reservations/checkout', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ]);
-
-        $v2Res->assertStatus(409);
-    }
-
-    public function test_rescheduling_to_more_expensive_slot_returns_404_with_no_side_effects(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $oldDate = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        $newDate = Carbon::now(config('app.timezone'))->addDays(3)->setTime(10, 0)->startOfHour();
-
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $oldDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $newDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 150000, 'is_active' => true]);
-
-        // 1. Initial booking: costs 100k, wallet balance becomes 400k
-        $initialRes = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$oldDate->toIso8601String()],
-        ]);
-        $initialRes->assertCreated();
-        $oldBookingCode = $initialRes->json('booking.code');
-        $this->assertSame(400000, $wallet->fresh()->balance);
-
-        // 2. Reduce wallet balance to 70k
-        $wallet->update(['balance' => 70000]);
-
-        // 3. Reschedule attempt: route is retired and returns 404
-        $rescheduleRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$oldBookingCode}/reschedule", [
-            'court_id' => $court->id,
-            'slots' => [$newDate->toIso8601String()],
-        ]);
-
-        $rescheduleRes->assertNotFound();
-
-        // 4. Wallet balance and booking unchanged, no new booking or refund
-        $this->assertSame(70000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $oldBookingCode, 'status' => 'confirmed']);
-        $this->assertDatabaseMissing('booking_slots', ['starts_at' => $newDate->toIso8601String()]);
-        $this->assertDatabaseMissing('journals', ['event_type' => 'booking.wallet_refund', 'reference' => $oldBookingCode]);
-    }
-
-    public function test_rescheduling_to_cheaper_slot_returns_404_with_no_side_effects(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $oldDate = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        $newDate = Carbon::now(config('app.timezone'))->addDays(3)->setTime(10, 0)->startOfHour();
-
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $oldDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 150000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $newDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-
-        // 1. Initial booking: 150k, balance becomes 350k
-        $initialRes = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$oldDate->toIso8601String()],
-        ]);
-        $initialRes->assertCreated();
-        $oldBookingCode = $initialRes->json('booking.code');
-        $this->assertSame(350000, $wallet->fresh()->balance);
-
-        // 2. Reschedule to cheaper slot: returns 404
-        $rescheduleRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$oldBookingCode}/reschedule", [
-            'court_id' => $court->id,
-            'slots' => [$newDate->toIso8601String()],
-        ]);
-
-        $rescheduleRes->assertNotFound();
-        $this->assertSame(350000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $oldBookingCode, 'status' => 'confirmed']);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $initialRes->json('booking.id')]);
-    }
-
-    public function test_rescheduling_to_equal_price_slot_returns_404_with_no_side_effects(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $oldDate = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        $newDate = Carbon::now(config('app.timezone'))->addDays(3)->setTime(10, 0)->startOfHour();
-
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $oldDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $newDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-
-        // Initial booking: 100k
-        $initialRes = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$oldDate->toIso8601String()],
-        ]);
-        $initialRes->assertCreated();
-        $oldBookingCode = $initialRes->json('booking.code');
-        $this->assertSame(400000, $wallet->fresh()->balance);
-
-        // Equal price reschedule: returns 404
-        $rescheduleRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$oldBookingCode}/reschedule", [
-            'court_id' => $court->id,
-            'slots' => [$newDate->toIso8601String()],
-        ]);
-
-        $rescheduleRes->assertNotFound();
-        // Repeated request also returns 404
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$oldBookingCode}/reschedule", [
-            'court_id' => $court->id,
-            'slots' => [$newDate->toIso8601String()],
-        ])->assertNotFound();
-
-        // Original booking and wallet unchanged
-        $this->assertSame(400000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $oldBookingCode, 'status' => 'confirmed']);
-    }
-
-    public function test_rescheduling_attempt_returns_404_and_preserves_original_booking_and_balance(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $oldDate = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        $newDate = Carbon::now(config('app.timezone'))->addDays(3)->setTime(10, 0)->startOfHour();
-
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $oldDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $newDate->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-
-        // Initial booking
-        $initialRes = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$oldDate->toIso8601String()],
-        ]);
-        $initialRes->assertCreated();
-        $oldBookingCode = $initialRes->json('booking.code');
-        $balanceBefore = $wallet->fresh()->balance;
-
-        // Another user takes the new slot
-        $rival = User::factory()->create();
-        $this->fundUserWallet($rival, $organization->id, 500000);
-        $this->actingAs($rival)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$newDate->toIso8601String()],
-        ])->assertCreated();
-
-        // Reschedule attempt returns 404 regardless of slot availability
-        $rescheduleRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$oldBookingCode}/reschedule", [
-            'court_id' => $court->id,
-            'slots' => [$newDate->toIso8601String()],
-        ]);
-
-        $rescheduleRes->assertNotFound();
-        $this->assertSame($balanceBefore, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $oldBookingCode, 'status' => 'confirmed']);
-    }
-
-    public function test_whole_cancellation_returns_404_and_preserves_wallet_and_booking(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
-
-        // Booking costs 120k
-        $res = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ])->assertCreated();
-        $code = $res->json('booking.code');
-        $this->assertSame(380000, $wallet->fresh()->balance);
-
-        // Cancel returns 404
-        $cancelRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel");
-        $cancelRes->assertNotFound();
-        $this->assertSame(380000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $code, 'status' => 'confirmed']);
-        $this->assertDatabaseHas('booking_slots', ['booking_id' => $res->json('booking.id'), 'status' => 'confirmed']);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $res->json('booking.id')]);
-        $this->assertDatabaseMissing('journals', [
-            'organization_id' => $organization->id,
-            'event_type' => 'booking.wallet_refund',
-            'reference' => $code,
-        ]);
-    }
-
-    public function test_repeated_cancellation_requests_return_404_with_no_side_effects(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-
-        $res = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date->toIso8601String()],
-        ])->assertCreated();
-        $code = $res->json('booking.code');
-        $this->assertSame(400000, $wallet->fresh()->balance);
-
-        // First cancellation returns 404
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel")->assertNotFound();
-        $this->assertSame(400000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $code, 'status' => 'confirmed']);
-
-        // Second cancellation (retry) returns 404 with no side effects
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel")->assertNotFound();
-        $this->assertSame(400000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $code, 'status' => 'confirmed']);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $res->json('booking.id')]);
-    }
-
-    public function test_partial_cancellation_returns_404_and_preserves_slots_and_balance(): void
-    {
-        [$organization, $user, $court] = $this->tenant();
-        $wallet = $this->fundUserWallet($user, $organization->id, 500000);
-
-        $date1 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(11, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date1->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '11:00', 'ends_at' => '12:00', 'price' => 120000, 'is_active' => true]);
-
-        // Book 2 consecutive slots: 100k + 120k = 220k
-        $res = $this->actingAs($user)->postJson('/api/v1/bookings', [
-            'court_id' => $court->id,
-            'slots' => [$date1->toIso8601String(), $date2->toIso8601String()],
-        ])->assertCreated();
-        $code = $res->json('booking.code');
-        $slot1Id = $res->json('booking.slots.0.id');
-        $this->assertSame(280000, $wallet->fresh()->balance);
-
-        // Partially cancel slot 1 returns 404
-        $cancelSlotsRes = $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel-slots", [
-            'slot_ids' => [$slot1Id],
-        ]);
-        $cancelSlotsRes->assertNotFound();
-
-        // Retry also returns 404
-        $this->actingAs($user)->postJson("/api/v1/bookings/{$code}/cancel-slots", [
-            'slot_ids' => [$slot1Id],
-        ])->assertNotFound();
-
-        // Balance and slots unchanged
-        $this->assertSame(280000, $wallet->fresh()->balance);
-        $this->assertDatabaseHas('bookings', ['code' => $code, 'status' => 'confirmed']);
-        $this->assertDatabaseHas('booking_slots', ['id' => $slot1Id, 'status' => 'confirmed']);
-        $this->assertDatabaseMissing('refunds', ['booking_id' => $res->json('booking.id')]);
     }
 
     public function test_v2_reservation_cancellation_returns_404_with_no_side_effects_including_used_idempotency_keys(): void
@@ -542,7 +207,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $res = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => 'v2-cancel-test-checkout',
-        ])->postJson('/api/v2/reservations/checkout', [
+        ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
         ])->assertCreated();
@@ -553,7 +218,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $cancelRes = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => 'v2-cancel-test-cancel',
-        ])->postJson("/api/v2/reservations/{$code}/cancel");
+        ])->postJson("/api/reservations/{$code}/cancel");
         $cancelRes->assertNotFound();
         $this->assertSame(300000, $wallet->fresh()->balance);
         $this->assertDatabaseHas('reservations', ['code' => $code, 'status' => 'confirmed']);
@@ -562,7 +227,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $retryRes = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => 'v2-cancel-test-retry',
-        ])->postJson("/api/v2/reservations/{$code}/cancel");
+        ])->postJson("/api/reservations/{$code}/cancel");
         $retryRes->assertNotFound();
         $this->assertSame(300000, $wallet->fresh()->balance);
         $this->assertDatabaseHas('reservations', ['code' => $code, 'status' => 'confirmed']);
@@ -571,7 +236,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $usedKeyRes = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
             'Idempotency-Key' => 'v2-cancel-test-checkout',
-        ])->postJson("/api/v2/reservations/{$code}/cancel");
+        ])->postJson("/api/reservations/{$code}/cancel");
         $usedKeyRes->assertNotFound();
         $this->assertSame(300000, $wallet->fresh()->balance);
         $this->assertDatabaseHas('reservations', ['code' => $code, 'status' => 'confirmed']);

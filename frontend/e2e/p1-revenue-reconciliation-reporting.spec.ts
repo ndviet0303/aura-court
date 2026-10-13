@@ -113,14 +113,14 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       $to = Carbon::now()->endOfMonth()->toDateString();
 
       // Owner query
-      $ownerReq = Illuminate\\Http\\Request::create('/api/v1/admin/reports', 'GET', [
+      $ownerReq = Illuminate\\Http\\Request::create('/api/admin/reports', 'GET', [
         'venue_id' => $venue->id,
         'from' => $from,
         'to' => $to,
       ]);
       $ownerReq->setUserResolver(fn () => $ownerUser);
 
-      $adminReq = Illuminate\\Http\\Request::create('/api/v1/admin/reports', 'GET', [
+      $adminReq = Illuminate\\Http\\Request::create('/api/admin/reports', 'GET', [
         'venue_id' => $venue->id,
         'from' => $from,
         'to' => $to,
@@ -183,7 +183,7 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
       $venueBeta = Venue::where('organization_id', ${org2Id})->findOrFail(${venue2Id});
 
       // Owner of Org 1 attempts to query unauthorized venue Beta
-      $req = Illuminate\\Http\\Request::create('/api/v1/admin/reports', 'GET', [
+      $req = Illuminate\\Http\\Request::create('/api/admin/reports', 'GET', [
         'venue_id' => $venueBeta->id,
       ]);
       $req->setUserResolver(fn () => $ownerUser);
@@ -276,7 +276,7 @@ test.describe('P1: Doanh thu, Đối soát, Ngoại lệ tài chính & Báo cáo
         'paid_at' => now(),
       ]);
 
-      $req = Illuminate\\Http\\Request::create('/api/v1/admin/reports/csv', 'GET', [
+      $req = Illuminate\\Http\\Request::create('/api/admin/reports/csv', 'GET', [
         'venue_id' => $venue->id,
       ]);
       $req->setUserResolver(fn () => $adminUser);

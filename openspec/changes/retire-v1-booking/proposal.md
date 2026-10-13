@@ -59,6 +59,12 @@ Chia làm ba phase. Phase sau chỉ được bắt đầu khi phase trước đ�
   - `V1AdoptionService` và công cụ backfill/pilot.
   - `GET/PATCH admin/payments` cho giao dịch cần duyệt tay, admin refunds, `GET availability` (đọc reservation).
 
+**Bổ sung khi làm Phase C (2026-10-13, chủ dự án duyệt, xem design "Decision record"):**
+- **BREAKING:** bỏ số phiên bản khỏi mọi API: `/api/v1/*` và `/api/v2/*` thành `/api/*`. Tên lớp và file bỏ chữ V2 (`ReservationController`, `PriceRuleController`, `ResolvesOrganization`). Sau deploy phải đổi redirect URI Google/Facebook sang `/api/auth/{provider}/callback` và webhook SePay sang `/api/webhooks/sepay`, `/api/webhooks/sepay/connections/{routingId}`.
+- Bỏ qua cổng 30 ngày (5.2, 5.4) theo quyết định của chủ dự án. Điều kiện còn giữ: mọi booking có mapping, và mọi booking slot active ở tương lai có reservation slot active được map (5.3).
+- Coupon trên luồng reservation (5.5) làm luôn trong change này, không tách change riêng.
+- `ExpirePendingBookings` được giữ lại làm sweep cho reservation đang giữ chỗ, không xoá như 6.3. Nó không còn đụng tới bảng V1.
+
 ## Capabilities
 
 ### New Capabilities
@@ -67,14 +73,15 @@ Không có.
 
 ### Modified Capabilities
 
-- `reservations-and-pricing`: yêu cầu "Versioned reservation API compatibility" đổi từ "V1 và V2 cùng được hỗ trợ trong giai đoạn chuyển đổi" thành: V2 là API duy nhất. V1 chỉ được giữ cho tới khi cổng retirement mở. Sau đó endpoint V1 từ chối mọi request, còn lịch sử booking đọc qua reservation đã map.
-- `platform-readiness`: yêu cầu "Rehearsed data migration and rollback" đổi theo: giai đoạn tương thích `/api/v1` chỉ kết thúc qua cổng retirement. Lịch sử booking legacy vẫn phải đọc được, và số booking phải khớp với số reservation đã map.
+- `reservations-and-pricing`: yêu cầu "Versioned reservation API compatibility" đổi tên thành "Unversioned reservation API": chỉ còn một API dưới `/api`, không có số phiên bản. V1 chỉ được retire khi mọi booking đã có mapping, mọi slot active tương lai đã có reservation slot được map và change ghi lại sự phê duyệt của chủ dự án. Sau đó endpoint V1 từ chối mọi request, còn lịch sử booking đọc qua reservation đã map.
+- `platform-readiness`: yêu cầu "Rehearsed data migration and rollback" đổi theo: giai đoạn tương thích V1 chỉ kết thúc khi V1 được retire. Lịch sử booking legacy vẫn phải đọc được, số booking phải khớp với số reservation đã map, và rollback phải trả URL OAuth và webhook về path cũ.
+- `api-alignment`, `point-of-sale-and-loyalty`: chỉ đổi path viết cứng (`/api/v1/admin/venues`, `/api/v2/loyalty/redeem`) sang path không phiên bản.
 
 ## Impact
 
 - **Backend:**
   - Phase A: migration thêm `reservation_id` cho `reviews` và `dispute_cases`; `ReviewController`, `AdminDisputeController`, `DiscountService`, admin reports, `AvailabilityController`; route mới `GET api/v2/admin/reservations`.
-  - Phase C: xoá `BookingController` (phần V1), `LegacyBookingAdapterController`, `CreateBooking`, `checkoutV1`, `ExpirePendingBookings`, `NotifyExpiringBookings`; sửa 6 chỗ kiểm tra trùng lịch và 7 nhóm caller `syncProjection`.
+  - Phase C: xoá `BookingController`, `LegacyBookingAdapterController`, `CreateBooking`, `checkoutV1`, `NotifyExpiringBookings`; `ExpirePendingBookings` chỉ còn expire reservation; sửa 6 chỗ kiểm tra trùng lịch và 7 nhóm caller `syncProjection`; bỏ số phiên bản khỏi route và đổi tên lớp V2.
 - **Frontend:**
   - Phase A: `useCourtSchedule`, `bookingStore`, `usePaymentProcessing`, `useUserBookings`, `BookingCancelModal`, `BookingRescheduleModal`, `useAdminDashboard`, router.
   - Phase C: xoá `bookingApi` V1 và các code chết (`profileApi.getBookings`, `adminApi.updatePayment/markNoShow`, `bookingApi.createRecurring`).
@@ -83,5 +90,5 @@ Không có.
 - **Non-goals:**
   - Xoá bảng `bookings`, `booking_slots`, `payments`, `refunds` hoặc hai bảng mapping.
   - Tắt webhook SePay hay luồng nạp ví/POS.
-  - Viết lại các spec khác có nhắc "V1/V2" (`account-lifecycle`, `on-site-attendance`, `runtime-execution`, `point-of-sale-and-loyalty`, ledger reconciliation). Các câu đó vẫn đúng với booking V1 lịch sử.
+  - Viết lại các spec khác có nhắc "V1/V2" (`account-lifecycle`, `on-site-attendance`, `runtime-execution`, `point-of-sale-and-loyalty`, ledger reconciliation). Các câu đó vẫn đúng với booking V1 lịch sử. Riêng path viết cứng `/api/v1`, `/api/v2` thì đổi, vì path đó không còn tồn tại.
   - Sửa câu "V1/V2 direct checkout SHALL share…" trong "Authoritative ordinary checkout and promotion result". Sau Phase C câu đó không còn đối tượng áp dụng nhưng cũng không sai, nên để dọn khi archive.

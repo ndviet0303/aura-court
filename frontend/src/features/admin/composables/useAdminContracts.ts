@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
+import { apiUrl } from '@/core/api/client'
 import { contractsApi } from '../api/contractsApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { RecurringContractItem, ContractStats } from '../types/contract'
@@ -177,7 +178,7 @@ export function useAdminContracts() {
   }
 
   function exportExcel() {
-    window.open('/api/v1/admin/contracts.csv', '_blank')
+    window.open(apiUrl('/admin/contracts.csv'), '_blank')
     showNotice('Đang tải xuống tệp danh sách hợp đồng định kỳ...')
   }
 

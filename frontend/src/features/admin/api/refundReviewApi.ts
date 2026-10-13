@@ -1,8 +1,8 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 /**
  * Serialized owner refund-obligation as returned by
- * `GET /api/v2/refund-requests` and the review action endpoints
+ * `GET /api/refund-requests` and the review action endpoints
  * (see `OwnerRefundService::serialize`). This is the new
  * `owner_refund_obligations` shape — NOT the legacy `refunds` table.
  */
@@ -49,18 +49,18 @@ type ObligationListEnvelope = { data: RefundObligation[] }
 
 /**
  * Owner refund-obligation review actions. Sanctum cookie auth (no extra
- * headers); v2 mutations auto-attach an Idempotency-Key via the client.
+ * headers); mutations auto-attach an Idempotency-Key via the client.
  */
 export const refundReviewApi = {
   listRefundInbox: (organizationId: number, status?: string) =>
-    apiV2.get<ObligationListEnvelope>('/refund-requests', {
+    api.get<ObligationListEnvelope>('/refund-requests', {
       params: { organization_id: organizationId, ...(status ? { status } : {}) },
     }),
-  approveRefund: (id: number) => apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/approve`),
+  approveRefund: (id: number) => api.post<ObligationEnvelope>(`/refund-requests/${id}/approve`),
   rejectRefund: (id: number, reason: string) =>
-    apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/reject`, { reason }),
+    api.post<ObligationEnvelope>(`/refund-requests/${id}/reject`, { reason }),
   reportRefundExecution: (id: number, body: { transfer_reference: string; evidence: string }) =>
-    apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/report-execution`, body),
+    api.post<ObligationEnvelope>(`/refund-requests/${id}/report-execution`, body),
   acknowledgeRefund: (id: number, body: { accepted: boolean; note?: string }) =>
-    apiV2.post<ObligationEnvelope>(`/refund-requests/${id}/acknowledge`, body),
+    api.post<ObligationEnvelope>(`/refund-requests/${id}/acknowledge`, body),
 }

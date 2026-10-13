@@ -1,10 +1,6 @@
-import type { Court, AvailabilitySlot } from '@/features/court/types/court'
-import type { User } from '@/core/types/common'
+import type { AvailabilitySlot } from '@/features/court/types/court'
 
 export type { AvailabilitySlot }
-
-export type BookingStatus =
-  'pending_payment' | 'confirmed' | 'cancelled' | 'expired' | 'refunded' | 'refund_pending'
 
 export type PromotionCampaign = {
   id: number
@@ -44,73 +40,4 @@ export type Coupon = {
   is_active?: boolean
   starts_at?: string | null
   ends_at?: string | null
-}
-
-export type BookingSlot = {
-  id?: number
-  starts_at: string
-  ends_at: string
-  unit_price: number
-}
-
-export type Review = {
-  id: number
-  booking_id: number
-  rating: number
-  body?: string | null
-  user?: User
-}
-
-export type Booking = {
-  id: number
-  code: string
-  status: BookingStatus | string
-  payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1' | string
-  total_amount: number
-  discount_amount?: number
-  membership_discount_amount?: number
-  loyalty_discount_amount?: number
-  loyalty_points_redeemed?: number
-  loyalty_snapshot?: any
-  net_payable?: number
-  payment_expires_at?: string
-  court: Court
-  slots: BookingSlot[]
-  coupon?: Coupon | null
-  review?: Review | null
-}
-
-export type PaymentInfo = {
-  code: string
-  amount: number
-  bank: string
-  accountNumber: string
-  qrUrl: string
-  expiresAt: string
-  type?: 'booking' | 'tournament' | 'direct_owner' | string
-  title?: string
-  tournament?: any
-  athleteDetails?: {
-    name?: string
-    phone?: string
-    partnerName?: string
-    notes?: string
-  }
-  receipt?: any
-  participant?: any
-}
-
-export type Refund = {
-  id: number
-  amount: number
-  status: string
-  note?: string
-  booking: Booking & { user?: User }
-}
-
-export type CardDetails = {
-  cardNumber?: string
-  cardExpiry?: string
-  cardCvc?: string
-  cardName?: string
 }

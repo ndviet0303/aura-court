@@ -1,4 +1,4 @@
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type {
   DisputeCase,
   DisputeStats,
@@ -124,18 +124,18 @@ export const disputeApi = {
     if (params?.perPage) query.set('per_page', String(params.perPage))
 
     const qs = query.toString()
-    const res = await apiV2.get<{ data: any[] }>(`/admin/disputes${qs ? `?${qs}` : ''}`)
+    const res = await api.get<{ data: any[] }>(`/admin/disputes${qs ? `?${qs}` : ''}`)
     const list = res?.data || []
     return list.map(transformDisputeCase)
   },
 
   getStats: async (): Promise<DisputeStats> => {
-    const res = await apiV2.get<{ stats: any }>('/admin/disputes/stats')
+    const res = await api.get<{ stats: any }>('/admin/disputes/stats')
     return transformDisputeStats(res?.stats)
   },
 
   getDisputeDetail: async (id: number): Promise<DisputeCase | null> => {
-    const res = await apiV2.get<{ data: any }>(`/admin/disputes/${id}`)
+    const res = await api.get<{ data: any }>(`/admin/disputes/${id}`)
     return res?.data ? transformDisputeCase(res.data) : null
   },
 
@@ -154,7 +154,7 @@ export const disputeApi = {
       notes: payload.notes,
       digital_signature_hash: payload.digitalSignatureHash,
     }
-    const res = await apiV2.post<{ message: string; data: any }>(
+    const res = await api.post<{ message: string; data: any }>(
       `/admin/disputes/${id}/arbitrate`,
       body,
     )

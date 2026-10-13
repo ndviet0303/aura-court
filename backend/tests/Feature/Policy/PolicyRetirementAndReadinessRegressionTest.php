@@ -9,12 +9,14 @@ use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
 use App\Models\ReceivingConnection;
+use App\Models\Reservation;
 use App\Models\TenantMembershipPlan;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Models\VenueOperatingSchedule;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
@@ -56,7 +58,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         Sanctum::actingAs($owner);
 
         // 1. Direct field write rejection
-        $res1 = $this->patchJson("/api/v1/organizations/{$org->id}", [
+        $res1 = $this->patchJson("/api/organizations/{$org->id}", [
             'name' => 'Updated Org Name',
             'cancellation_grace_hours' => 4,
         ]);
@@ -64,7 +66,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         $res1->assertJsonValidationErrors(['cancellation_grace_hours']);
 
         // 2. Settings nested write rejection
-        $res2 = $this->patchJson("/api/v1/organizations/{$org->id}", [
+        $res2 = $this->patchJson("/api/organizations/{$org->id}", [
             'name' => 'Updated Org Name',
             'settings' => [
                 'cancellation_grace_hours' => 4,
@@ -82,7 +84,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
 
         // 1. Membership plan store rejection (camelCase & snake_case)
         $planRes1 = $this->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/admin/memberships/plans', [
+            ->postJson('/api/admin/memberships/plans', [
                 'name' => 'VIP Plan 1',
                 'price' => 200000,
                 'cancellationFeeWaived' => true,
@@ -91,7 +93,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         $planRes1->assertJsonValidationErrors(['cancellationFeeWaived']);
 
         $planRes2 = $this->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson('/api/v2/admin/memberships/plans', [
+            ->postJson('/api/admin/memberships/plans', [
                 'name' => 'VIP Plan 2',
                 'price' => 200000,
                 'cancellation_fee_waived' => true,
@@ -110,7 +112,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         ]);
 
         $updateRes = $this->withHeader('X-Organization-ID', (string) $org->id)
-            ->patchJson("/api/v2/admin/memberships/plans/{$existingPlan->id}", [
+            ->patchJson("/api/admin/memberships/plans/{$existingPlan->id}", [
                 'cancellationFeeWaived' => true,
             ]);
         $updateRes->assertStatus(422);
@@ -184,7 +186,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $res = $this->getJson("/api/v1/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
+        $res = $this->getJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/readiness");
         $res->assertOk()
             ->assertJsonPath('data.is_ready', true)
             ->assertJsonCount(0, 'data.missing_items');
@@ -232,31 +234,35 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
                 'status' => 'confirmed',
             ]);
 
+            // Historical bookings are read through their mapped reservation.
+            app(LegacyBookingBackfillService::class)->backfillBooking($historicalBooking);
             Sanctum::actingAs($customer);
-            $histShowRes = $this->getJson("/api/v1/bookings/{$historicalBooking->code}");
-            $histShowRes->assertOk();
+            $this->getJson('/api/reservations/LEGACY-'.$historicalBooking->code)
+                ->assertOk()
+                ->assertJsonPath('reservation.legacy_mapping.0.legacy_code', $historicalBooking->code);
             $this->assertEquals(24, $historicalBooking->fresh()->policy_snapshot['cancellation_grace_hours']);
 
             // 2. Continued ordinary wallet checkout
-            $checkoutRes = $this->actingAs($customer)->postJson('/api/v1/bookings', [
-                'court_id' => $court->id,
-                'slots' => [$date->toIso8601String()],
-            ])->assertCreated();
+            $checkoutRes = $this->actingAs($customer)->withHeader('Idempotency-Key', uniqid('idem-'))
+                ->postJson('/api/reservations/checkout', [
+                    'court_id' => $court->id,
+                    'slots' => [$date->toIso8601String()],
+                ])->assertCreated();
 
-            $newBookingCode = $checkoutRes->json('booking.code');
-            $newBooking = Booking::where('code', $newBookingCode)->firstOrFail();
-            $this->assertSame('confirmed', $newBooking->status);
+            $newBookingCode = $checkoutRes->json('reservation.code');
+            $newReservation = Reservation::where('code', $newBookingCode)->firstOrFail();
+            $this->assertSame('confirmed', $newReservation->status);
             $this->assertSame(400000, (int) $wallet->fresh()->balance);
 
             // New snapshot does not have cancellation_grace_hours
-            $this->assertArrayNotHasKey('cancellation_grace_hours', $newBooking->policy_snapshot ?? []);
+            $this->assertArrayNotHasKey('cancellation_grace_hours', $newReservation->metadata['booking_policy_snapshot'] ?? []);
             // 3. Continued check-in behavior (during arrival window)
             Carbon::setTestNow($date);
             Sanctum::actingAs($staff);
             $checkInRes = $this->withHeaders([
                 'X-Organization-ID' => (string) $org->id,
                 'Idempotency-Key' => uniqid('idem-'),
-            ])->postJson('/api/v2/attendance/check-in', [
+            ])->postJson('/api/attendance/check-in', [
                 'code' => $newBookingCode,
             ]);
             $checkInRes->assertCreated();

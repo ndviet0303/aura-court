@@ -1,4 +1,4 @@
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 import type { Court, Venue, SportZone, PriceSlot, CourtBlock } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
 import type { CourtForm, PriceForm, BlockForm, VenueForm } from '../types/admin'
@@ -96,10 +96,8 @@ export const adminApi = {
     date?: string
     venue_id?: number
     page?: number
-  }) => apiV2.get<T>('/admin/reservations', { params }),
+  }) => api.get<T>('/admin/reservations', { params }),
   getPayments: <T = any>() => api.get<T>('/admin/payments'),
-  updatePayment: (paymentId: number | string, payload: { status: string }) =>
-    api.patch(`/admin/payments/${paymentId}`, payload),
 
   // Coupons
   getCoupons: <T = Coupon[]>(organizationId?: number) =>
@@ -158,15 +156,15 @@ export const adminApi = {
     api.post<T>(`/organizations/${orgId}/invitations/${invitationId}/revoke`),
   acceptInvitationByToken: <T = any>(token: string) => api.post<T>(`/invitations/${token}/accept`),
 
-  // Pricing Rules Calendar (V2)
+  // Pricing Rules Calendar
   getPriceRules: <T = { rules: any[] }>(params?: Record<string, any>) =>
-    apiV2.get<T>('/price-rules', { params }),
+    api.get<T>('/price-rules', { params }),
   getPricingCalendar: <T = { rules: any[] }>(params?: Record<string, any>) =>
-    apiV2.get<T>('/pricing/calendar', { params }),
-  createPriceRule: <T = { rule: any }>(payload: any) => apiV2.post<T>('/price-rules', payload),
+    api.get<T>('/pricing/calendar', { params }),
+  createPriceRule: <T = { rule: any }>(payload: any) => api.post<T>('/price-rules', payload),
   updatePriceRule: <T = { rule: any }>(id: number | string, payload: any) =>
-    apiV2.patch<T>(`/price-rules/${id}`, payload),
-  deletePriceRule: (id: number | string) => apiV2.delete(`/price-rules/${id}`),
+    api.patch<T>(`/price-rules/${id}`, payload),
+  deletePriceRule: (id: number | string) => api.delete(`/price-rules/${id}`),
   quotePrice: <T = { quote: any }>(payload: { court_id: number; slots: string[] }) =>
-    apiV2.post<T>('/price-quotes', payload),
+    api.post<T>('/price-quotes', payload),
 }

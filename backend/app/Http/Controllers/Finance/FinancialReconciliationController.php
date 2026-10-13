@@ -10,7 +10,7 @@ use App\Domain\Finance\Actions\TriggerReconciliation;
 use App\Domain\Finance\DTOs\AutoResolveReconciliationData;
 use App\Domain\Finance\DTOs\ReconciliationFilterData;
 use App\Domain\Finance\DTOs\TriggerReconciliationData;
-use App\Http\Controllers\Concerns\ResolvesV2Organization;
+use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\AutoResolveReconciliationRequest;
 use App\Http\Requests\Finance\ReconciliationFilterRequest;
@@ -23,7 +23,7 @@ use Illuminate\Http\Request;
 
 class FinancialReconciliationController extends Controller
 {
-    use ResolvesV2Organization;
+    use ResolvesOrganization;
 
     public function stats(Request $request, GetReconciliationStats $action): JsonResponse
     {

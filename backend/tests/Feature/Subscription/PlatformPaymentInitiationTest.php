@@ -52,7 +52,7 @@ class PlatformPaymentInitiationTest extends TestCase
         Sanctum::actingAs($owner);
 
         // Initiate payment
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/initiate-payment", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/initiate-payment", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.PAID',
             'return_url' => 'https://app.auracourt.vn/partner/subscription/callback?status=success',
@@ -81,7 +81,7 @@ class PlatformPaymentInitiationTest extends TestCase
         // 2. Entitlement is NOT yet granted before verification!
         $this->assertEquals(0, PlatformSubscription::where('organization_id', $org->id)->count());
 
-        $currentRes = $this->getJson("/api/v1/partner/organizations/{$org->id}/subscription/current");
+        $currentRes = $this->getJson("/api/partner/organizations/{$org->id}/subscription/current");
         $currentRes->assertStatus(200)
             ->assertJsonPath('has_active_subscription', false)
             ->assertJsonPath('can_take_bookings', false)
@@ -108,7 +108,7 @@ class PlatformPaymentInitiationTest extends TestCase
 
         Sanctum::actingAs($nonOwner);
 
-        $res = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/initiate-payment", [
+        $res = $this->postJson("/api/partner/organizations/{$org->id}/subscription/initiate-payment", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '1.0',
         ]);
@@ -129,7 +129,7 @@ class PlatformPaymentInitiationTest extends TestCase
         ]);
 
         Sanctum::actingAs($stranger);
-        $this->getJson("/api/v1/partner/organizations/{$org->id}/subscription/current")
+        $this->getJson("/api/partner/organizations/{$org->id}/subscription/current")
             ->assertForbidden();
     }
 
@@ -155,7 +155,7 @@ class PlatformPaymentInitiationTest extends TestCase
         ]);
 
         Sanctum::actingAs($owner);
-        $response = $this->postJson("/api/v1/partner/organizations/{$org->id}/subscription/initiate-payment", [
+        $response = $this->postJson("/api/partner/organizations/{$org->id}/subscription/initiate-payment", [
             'plan_id' => $plan->id,
             'accepted_terms_version' => '2026.6',
         ])->assertCreated();

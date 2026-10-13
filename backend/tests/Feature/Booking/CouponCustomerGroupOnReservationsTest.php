@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Coupon;
 use App\Models\Court;
+use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\Reservation;
 use App\Models\User;
@@ -59,10 +60,10 @@ class CouponCustomerGroupOnReservationsTest extends TestCase
     {
         [$org, $court] = $this->court();
         $customer = User::factory()->create();
-        // What the V1 admin no-show does: legacy_status follows, the mirror stays confirmed as a V2 no-show does.
+        // What a pre-Phase-C V1 admin no-show left: legacy_status followed, the mirror stayed confirmed as a V2 no-show does.
         $booking = $this->mirroredBooking($court, $customer, 'confirmed');
         $booking->update(['status' => 'no_show']);
-        app(LegacyBookingBackfillService::class)->syncProjection($booking);
+        LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->where('legacy_booking_id', $booking->id)->update(['legacy_status' => 'no_show']);
         $this->assertSame('confirmed', $this->reservationsOf($customer)->value('status'));
         $this->coupon($org, Coupon::GROUP_RETURNING, 'BACK10');
         $this->coupon($org, Coupon::GROUP_FIRST_TIME, 'FIRST10');

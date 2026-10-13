@@ -53,7 +53,7 @@ class SevenGroupsRegressionTest extends TestCase
 
         // 1. Get quote
         $quoteRes = $this->actingAs($customer)->withHeaders($headers + ['Idempotency-Key' => 'quote-unpaid-1'])
-            ->postJson('/api/v2/price-quotes', [
+            ->postJson('/api/price-quotes', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
             ]);
@@ -63,7 +63,7 @@ class SevenGroupsRegressionTest extends TestCase
 
         // 2. Hold reservation
         $holdRes = $this->actingAs($customer)->withHeaders($headers + ['Idempotency-Key' => 'hold-unpaid-1'])
-            ->postJson('/api/v2/reservations', [
+            ->postJson('/api/reservations', [
                 'quote_id' => $quoteId,
             ]);
         $holdRes->assertCreated();
@@ -73,7 +73,7 @@ class SevenGroupsRegressionTest extends TestCase
         // 3. Confirm reservation
         // 3. Confirm reservation without funds -> rejected with 409 Conflict
         $confirmRes = $this->actingAs($customer)->withHeaders($headers + ['Idempotency-Key' => 'confirm-unpaid-1'])
-            ->postJson("/api/v2/reservations/{$code}/confirm");
+            ->postJson("/api/reservations/{$code}/confirm");
 
         // Confirmation is rejected because wallet balance is 0 VND:
         $confirmRes->assertStatus(409);
@@ -85,7 +85,7 @@ class SevenGroupsRegressionTest extends TestCase
         $walletService->credit($wallet, 500000, 'test_topup', 1, 'Topup for confirm');
 
         $confirmPaidRes = $this->actingAs($customer)->withHeaders($headers + ['Idempotency-Key' => 'confirm-paid-1'])
-            ->postJson("/api/v2/reservations/{$code}/confirm");
+            ->postJson("/api/reservations/{$code}/confirm");
         $confirmPaidRes->assertOk();
         $this->assertSame('confirmed', $reservation->fresh()->status);
         $this->assertSame('confirmed', $reservation->slots()->first()->status);
@@ -137,7 +137,7 @@ class SevenGroupsRegressionTest extends TestCase
         $response = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $organization->id)
             ->withHeader('Idempotency-Key', 'pos-wrong-identity-1')
-            ->postJson('/api/v2/pos/orders', $payload);
+            ->postJson('/api/pos/orders', $payload);
 
         // Domain validation returns 422 unprocessable instead of unhandled 500 foreign key crash
         $response->assertUnprocessable();
@@ -170,7 +170,7 @@ class SevenGroupsRegressionTest extends TestCase
         $response = $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $organization->id)
             ->withHeader('Idempotency-Key', 'pos-stock-shortfall-1')
-            ->postJson('/api/v2/pos/orders', $payload);
+            ->postJson('/api/pos/orders', $payload);
 
         // Backend rejects with 409 Conflict
         $response->assertStatus(409);
@@ -194,7 +194,7 @@ class SevenGroupsRegressionTest extends TestCase
         // Customer attempts to self-register / pay fee for tournament
         $response = $this->actingAs($customer)
             ->withHeader('X-Organization-ID', (string) $organization->id)
-            ->postJson('/api/v2/tournaments/1/register', [
+            ->postJson('/api/tournaments/1/register', [
                 'name' => 'Athlete Customer',
                 'phone' => '0901234567',
             ]);

@@ -202,7 +202,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       allocation_count: number
     }
 
-    // A native V2 reservation: no V1 booking behind it
+    // A native reservation: no V1 booking behind it
     expect(state.legacy_mapping_count).toBe(0)
     expect(state.payment_model).toBe('direct_owner_v1')
     expect(state.reservation_status).toBe('confirmed')
@@ -1122,23 +1122,19 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Domain\\Booking\\DTOs\\CreateBookingData;
-      use App\\Domain\\Booking\\Actions\\CreateBooking;
+      use App\\Models\\User;
+      use App\\Services\\Booking\\OrdinaryCheckoutService;
       use Illuminate\\Validation\\ValidationException;
 
       $caught = false;
       $errorMsg = '';
       try {
-        $dto = new CreateBookingData(
-          userId: ${customerId},
-          courtId: ${courtId},
-          slots: ['${future.slotTime}'],
-          couponCode: null,
-          loyaltyPoints: 999999,
-          loyaltyPolicyVersion: 999,
-          idempotencyKey: 'inv_test_' . uniqid(),
-        );
-        app(CreateBooking::class)->execute($dto);
+        app(OrdinaryCheckoutService::class)->checkout(User::findOrFail(${customerId}), ${orgId}, [
+          'court_id' => ${courtId},
+          'slots' => ['${future.slotTime}'],
+          'loyalty_points' => 999999,
+          'loyalty_policy_version' => 999,
+        ]);
       } catch (ValidationException $e) {
         $caught = true;
         $errorMsg = json_encode($e->errors(), JSON_UNESCAPED_UNICODE);
@@ -1163,7 +1159,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     const afterInvalidState = checkPointState()
     expect(afterInvalidState.debit_entries).toBe(initialDebitEntries + 1)
 
-    // 9. Booking creation with valid coupon applies discount and increments coupon usage
+    // 9. Reservation checkout with valid coupon applies discount and increments coupon usage
     const futureCoupon = getFuturePlayDate(5, 11)
     const couponBookingScript = `
       require "vendor/autoload.php";
@@ -1171,24 +1167,19 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Domain\\Booking\\DTOs\\CreateBookingData;
-      use App\\Domain\\Booking\\Actions\\CreateBooking;
       use App\\Models\\Coupon;
+      use App\\Models\\User;
+      use App\\Services\\Booking\\OrdinaryCheckoutService;
 
-      $dto = new CreateBookingData(
-        userId: ${customerId},
-        courtId: ${courtId},
-        slots: ['${futureCoupon.slotTime}'],
-        couponCode: '${coupon.code}',
-        loyaltyPoints: null,
-        loyaltyPolicyVersion: null,
-        idempotencyKey: 'cpn_test_' . uniqid(),
-      );
-      $bkg = app(CreateBooking::class)->execute($dto);
+      $reservation = app(OrdinaryCheckoutService::class)->checkout(User::findOrFail(${customerId}), ${orgId}, [
+        'court_id' => ${courtId},
+        'slots' => ['${futureCoupon.slotTime}'],
+        'coupon_code' => '${coupon.code}',
+      ]);
       $cpn = Coupon::find(${coupon.coupon_id});
 
       echo json_encode([
-        'coupon_discount' => (int) $bkg->discount_amount,
+        'coupon_discount' => (int) data_get($reservation->metadata, 'benefit_snapshot.coupon_discount_amount', 0),
         'coupon_usage' => $cpn ? $cpn->usage_count : 0,
       ]);
     `
@@ -1200,6 +1191,98 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     const cpnResult = JSON.parse(cpnBookingOut) as { coupon_discount: number; coupon_usage: number }
     expect(cpnResult.coupon_discount).toBe(20000)
     expect(cpnResult.coupon_usage).toBe(1)
+  })
+
+  test('4.5.2: Nhập mã giảm giá ở lịch sân -> checkout reservation giữ lượt coupon và QR đúng số tiền đã giảm', async ({
+    page,
+  }) => {
+    const manifest = getTestManifest()
+    const customer = getActorCredentials(manifest, 'customer')
+    const venue1A = manifest.fixtures?.organizations.org1?.venue1A
+    const orgId = manifest.fixtures?.organizations.org1?.id
+    if (!venue1A || !orgId) {
+      throw new Error('E2E fixture missing: venue1A or organizationId')
+    }
+
+    const court = arrangeCourt(manifest, {
+      testKey: '4_5_2_coupon',
+      venueId: venue1A.id,
+      price: 100000,
+    })
+    const coupon = arrangeCoupon(manifest, {
+      testKey: '4_5_2_cpn',
+      discountValue: 20000,
+      venueId: venue1A.id,
+      organizationId: orgId,
+    })
+    const backendDir = path.resolve(import.meta.dirname, '../../backend')
+
+    await page.goto('/login', { waitUntil: 'domcontentloaded' })
+    await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
+    await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
+    await page.locator('button[type="submit"]').click()
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
+
+    await page.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
+    const targetCard = page.locator('.date-carousel .date-card-btn').nth(1)
+    await targetCard.waitFor({ state: 'visible', timeout: 20000 })
+    await targetCard.click()
+    await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
+    const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
+    await expect(availableSlot).toBeVisible({ timeout: 25000 })
+    await availableSlot.click()
+
+    // The quote prices the selection with the code; nothing is reserved yet.
+    const summary = page.locator('.schedule-summary-card')
+    await summary.locator('.coupon-text-input').fill(coupon.code)
+    await summary.locator('.btn-apply-coupon').click()
+    await expect(summary.locator('.coupon-discount')).toContainText(/20\.000/, { timeout: 15000 })
+    await expect(summary.locator('.total-num')).toContainText(/80\.000/)
+
+    await summary.locator('.btn-checkout').click()
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 20000 })
+    const reservationCode = page.url().split('/reservations/')[1]?.split('?')[0]
+    const paymentModal = page.locator('[data-testid="reservation-payment-modal"]')
+    await expect(paymentModal.locator('[data-testid="reservation-payment-qr"]')).toBeVisible({
+      timeout: 25000,
+    })
+    await expect(paymentModal.locator('.payment-details')).toContainText(/80\.000/)
+
+    const stateScript = `
+      require "vendor/autoload.php";
+      $app = require_once "bootstrap/app.php";
+      $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
+
+      use App\\Models\\Coupon;
+      use App\\Models\\Reservation;
+
+      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
+      echo json_encode([
+        'status' => $reservation->status,
+        'total_amount' => (int) $reservation->total_amount,
+        'coupon_discount' => (int) data_get($reservation->metadata, 'benefit_snapshot.coupon_discount_amount', 0),
+        'coupon_usage_id' => data_get($reservation->metadata, 'coupon_usage.coupon_id'),
+        'usage_count' => (int) Coupon::findOrFail(${coupon.coupon_id})->usage_count,
+      ]);
+    `
+    const state = JSON.parse(
+      execFileSync('php', ['-r', stateScript], {
+        cwd: backendDir,
+        env: getCanonicalBackendEnv(manifest),
+        encoding: 'utf-8',
+      }),
+    ) as {
+      status: string
+      total_amount: number
+      coupon_discount: number
+      coupon_usage_id: number | null
+      usage_count: number
+    }
+    expect(state.status).toBe('held')
+    expect(state.total_amount).toBe(80000)
+    expect(state.coupon_discount).toBe(20000)
+    expect(state.coupon_usage_id).toBe(coupon.coupon_id)
+    expect(state.usage_count).toBe(1)
   })
 
   test('4.5.1: Điểm tích lũy phủ toàn bộ giá -> đặt sân xác nhận ngay, không mở thanh toán (zero-payable)', async ({

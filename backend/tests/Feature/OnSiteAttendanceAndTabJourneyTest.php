@@ -160,7 +160,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // =========================================================================
         $openShiftRes = $this->actingAs($this->cashier)
             ->withHeaders($this->headers('shift-open-'))
-            ->postJson('/api/v2/pos/shifts', [
+            ->postJson('/api/pos/shifts', [
                 'opening_cash' => 500000,
             ]);
 
@@ -201,7 +201,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // =========================================================================
         $checkInRes = $this->actingAs($this->staff)
             ->withHeaders($this->headers('check-in-'))
-            ->postJson('/api/v2/attendance/check-in', [
+            ->postJson('/api/attendance/check-in', [
                 'code' => "AURA_V2_RESERVATION_{$reservation->code}",
                 'notes' => 'Khách đến đúng giờ, vào sân số 1',
             ]);
@@ -224,7 +224,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // Total = 120,000 VND
         $tabRes = $this->actingAs($this->staff)
             ->withHeaders($this->headers('tab-add-'))
-            ->postJson('/api/v2/service-tabs', [
+            ->postJson('/api/service-tabs', [
                 'reservation_id' => $reservation->id,
                 'items' => [
                     ['product_id' => $this->drink->id, 'quantity' => 2],
@@ -248,7 +248,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // =========================================================================
         $checkoutRes = $this->actingAs($this->staff)
             ->withHeaders($this->headers('checkout-unpaid-'))
-            ->postJson('/api/v2/attendance/check-out', [
+            ->postJson('/api/attendance/check-out', [
                 'code' => $reservation->code,
             ]);
 
@@ -267,7 +267,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // Staff court inspection step: Staff confirms court ready
         $confirmRes = $this->actingAs($this->staff)
             ->withHeaders($this->headers('confirm-ready-'))
-            ->postJson("/api/v2/attendance/courts/{$this->court->id}/confirm-ready");
+            ->postJson("/api/attendance/courts/{$this->court->id}/confirm-ready");
 
         $confirmRes->assertOk();
         $this->assertSame('available', $confirmRes->json('status'));
@@ -276,7 +276,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // =========================================================================
         $settleRes = $this->actingAs($this->cashier)
             ->withHeaders($this->headers('tab-settle-'))
-            ->postJson("/api/v2/service-tabs/{$tabId}/settle", [
+            ->postJson("/api/service-tabs/{$tabId}/settle", [
                 'payment_method' => 'cash',
                 'cash_tendered' => 150000,
             ]);
@@ -305,7 +305,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // =========================================================================
         $checkoutRes = $this->actingAs($this->staff)
             ->withHeaders($this->headers('checkout-dup-'))
-            ->postJson('/api/v2/attendance/check-out', [
+            ->postJson('/api/attendance/check-out', [
                 'code' => $reservation->code,
             ]);
 
@@ -318,7 +318,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // Expected cash = 500,000 opening + 120,000 net cash collected = 620,000 VND
         $activeShiftRes = $this->actingAs($this->cashier)
             ->withHeaders(['X-Organization-ID' => (string) $this->tenant->id])
-            ->getJson('/api/v2/pos/shifts/active');
+            ->getJson('/api/pos/shifts/active');
         $activeShiftRes->assertOk();
         $activeShiftRes->assertJsonPath('shift.opening_cash', 500000);
         $activeShiftRes->assertJsonPath('shift.cash_sales', 120000);
@@ -327,7 +327,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // Cashier counts exactly 620,000 VND and closes the shift
         $closeShiftRes = $this->actingAs($this->cashier)
             ->withHeaders($this->headers('close-shift-'))
-            ->postJson("/api/v2/pos/shifts/{$shiftId}/close", [
+            ->postJson("/api/pos/shifts/{$shiftId}/close", [
                 'declared_cash' => 620000,
                 'note' => 'Đầy đủ tiền mặt, không lệch đồng nào',
             ]);
@@ -340,7 +340,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         // =========================================================================
         $reviewRes = $this->actingAs($this->manager)
             ->withHeaders($this->headers('review-shift-'))
-            ->postJson("/api/v2/pos/shifts/{$shiftId}/review", [
+            ->postJson("/api/pos/shifts/{$shiftId}/review", [
                 'status' => 'approved',
                 'note' => 'Khớp tiền 100% đối soát ca thành công',
             ]);

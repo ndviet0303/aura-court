@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminRecurringContractsView from '../views/AdminRecurringContractsView.vue'
 import { i18n } from '@/i18n'
-import { api, apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -16,10 +16,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/core/api/client', () => ({
   api: {
-    get: vi.fn().mockResolvedValue([]),
-    post: vi.fn().mockResolvedValue({}),
-  },
-  apiV2: {
     get: vi.fn().mockResolvedValue([]),
     post: vi.fn().mockResolvedValue({}),
   },
@@ -111,15 +107,6 @@ describe('AdminRecurringContractsView', () => {
       }
       if (url.startsWith('/courts')) {
         return mockCourts
-      }
-      return []
-    })
-    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
-      if (url === '/admin/contracts') {
-        return { data: sampleContracts }
-      }
-      if (url === '/admin/venues') {
-        throw new Error('404 Not Found: /api/v2/admin/venues is undefined')
       }
       return []
     })

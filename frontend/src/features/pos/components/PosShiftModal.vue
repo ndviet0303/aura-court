@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PosShift } from '../types/pos'
 import { posApi } from '../api/posApi'
-import { apiV2 } from '@/core/api/client'
+import { api } from '@/core/api/client'
 
 const props = defineProps<{
   show: boolean
@@ -100,7 +100,7 @@ function handleClose() {
 async function handleReviewReconciliation(shiftId: number) {
   submittingReview.value = true
   try {
-    await apiV2.post(`/pos/shifts/${shiftId}/review`, {
+    await api.post(`/pos/shifts/${shiftId}/review`, {
       status: reviewStatus.value,
       note: reviewNote.value || 'Quản lý duyệt đối soát ca',
     })
