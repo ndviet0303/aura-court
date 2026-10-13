@@ -11,6 +11,7 @@ use App\Models\TournamentParticipant;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Tournament\TournamentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class TournamentController extends Controller
 {
@@ -92,18 +93,14 @@ class TournamentController extends Controller
 
         $participantIds = $data['participant_ids'] ?? [];
 
-        $settings = [
-            'sport' => $data['sport'] ?? 'badminton',
-            'venue' => $data['venue'] ?? 'Aura Central Court',
-            'city' => $data['city'] ?? 'Hồ Chí Minh',
-            'prize_pool' => $data['prize_pool'] ?? '20.000.000 ₫',
-            'entry_fee' => $data['entry_fee'] ?? '300.000 ₫ / VĐV',
-            'max_participants' => (int) ($data['max_participants'] ?? 16),
-            'start_date' => $data['start_date'] ?? now()->addDays(7)->toDateString(),
-            'end_date' => $data['end_date'] ?? now()->addDays(10)->toDateString(),
-            'category' => $data['category'] ?? 'Open',
-            'description' => $data['description'] ?? '',
-        ];
+        // Store only what the organizer filled in. No entry fee means free entry, since
+        // registration charges settings.entry_fee ?? 0.
+        $settings = array_filter(
+            Arr::only($data, ['sport', 'venue', 'city', 'prize_pool', 'entry_fee', 'start_date', 'end_date', 'category', 'description']),
+            fn ($value) => filled($value),
+        );
+        // 16 is the cap registration enforces when none is set.
+        $settings['max_participants'] = (int) ($data['max_participants'] ?? 16);
 
         return $this->idempotency->run($request, fn () => response()->json([
             'tournament' => $this->tournaments->createAndGenerate(

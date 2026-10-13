@@ -16,9 +16,10 @@ class Tournament extends Model
 
     protected $appends = ['entry_fee', 'max_participants'];
 
-    public function getEntryFeeAttribute(): string
+    // Null when no fee was published; registration then charges nothing.
+    public function getEntryFeeAttribute(): ?string
     {
-        return (string) ($this->settings['entry_fee'] ?? '300.000 ₫ / VĐV');
+        return isset($this->settings['entry_fee']) ? (string) $this->settings['entry_fee'] : null;
     }
 
     public function getMaxParticipantsAttribute(): int
