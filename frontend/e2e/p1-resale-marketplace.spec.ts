@@ -461,7 +461,8 @@ test.describe('P1: Chợ nhượng sân P2P: Giữ chỗ, Chuyển tiền thẳn
         ->latest('id')->firstOrFail();
       $transfer = EntitlementTransfer::where('marketplace_listing_id', $listing->id)->latest('id')->firstOrFail();
 
-      Carbon::setTestNow($buyerEntitlement->starts_at->copy()->addMinutes(10));
+      // The arrival window opens at the reservation's first slot, not at the transferred second hour.
+      Carbon::setTestNow($kept->starts_at->copy()->addMinutes(10));
       $attendance = app(AttendanceService::class);
       $sellerCheckinRejected = false;
       try {

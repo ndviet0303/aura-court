@@ -420,12 +420,20 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 13. Cổng kiểm tra local
 
-- [ ] 13.1 Chạy toàn bộ PHPUnit trên DB `*_test` bằng một file phpunit config tạm.
+- [x] 13.1 Chạy toàn bộ PHPUnit trên DB `*_test` bằng một file phpunit config tạm.
   - Chạy `migrate:fresh`, rồi rollback từng bước qua hai migration mới.
-- [ ] 13.2 Chạy Pint, và PHPStan level 5 với `.env` tạm, kết quả phải 0 lỗi. Không sinh lại baseline.
+  - Kết quả: 860 test, chỉ fail `DatabaseSafetyGuardTest::test_safety_guard_allows_booking_test` (lỗi đã biết, do tên DB tạm). Rollback `--step=2` rồi migrate lại, 2 vòng, đều pass.
+- [x] 13.2 Chạy Pint, và PHPStan level 5 với `.env` tạm, kết quả phải 0 lỗi. Không sinh lại baseline.
   - Test kiến trúc backend phải pass. Allowlist chỉ được giảm.
-- [ ] 13.3 Frontend: type-check, ESLint, oxlint, Prettier, `vitest --maxWorkers=1` (chạy riêng, không song song với việc khác) và `architecture.spec.ts`. Không tăng allowlist.
-- [ ] 13.4 Playwright p0 và p1 pass, với webhook tổng hợp dùng header Api_Key.
+  - Level 0 và level 5 đều 0 lỗi (7f09de10). Baseline chỉ bỏ entry, không thêm: từ 651 còn 504.
+- [x] 13.3 Frontend: type-check, ESLint, oxlint, Prettier, `vitest --maxWorkers=1` (chạy riêng, không song song với việc khác) và `architecture.spec.ts`. Không tăng allowlist.
+  - vitest: 88 file, 441 test đều pass.
+- [x] 13.4 Playwright p0 và p1 pass, với webhook tổng hợp dùng header Api_Key.
+  - Chạy local `E2E_TARGET=local`, 126 test. Lần đầu fail 3 test, đã sửa:
+    - POS 5.2: lần gửi lại webhook phải giữ nguyên body (cùng `transactionDate`). Webhook thật được SePay gửi lại với body y hệt, nên server trả 409 khi body đổi là đúng.
+    - Resale 7.9.3: cửa sổ check-in tính từ slot đầu của đơn đặt, không phải từ giờ được chuyển nhượng.
+    - Ví 8.6.2 là bug thật: response đăng nhập không có `capabilities`, nên ví bị ẩn tới khi F5. Đã sửa: store gọi lại `/auth/me` sau khi đăng nhập.
+  - Lần chạy lại: 125 pass. 4.3 (tranh chấp slot) timeout khi 4 lane chạy song song; chạy riêng 3/3 pass, và đã pass ở lần chạy đầu.
 
 ## 14. Việc người dùng tự làm (ngoài chat)
 

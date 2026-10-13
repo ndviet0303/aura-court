@@ -29,9 +29,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(email: string, password: string) {
     const result = await authApi.login({ email, password })
-    user.value = result.user
+    // The login payload carries no capabilities (wallet_enabled, venues); /auth/me is the full user.
+    user.value = await authApi.me().catch(() => result.user)
     loaded.value = true
-    return result.user
+    return user.value
   }
 
   async function register(

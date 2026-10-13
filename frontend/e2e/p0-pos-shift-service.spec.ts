@@ -8,6 +8,7 @@ import {
   arrangeCourt,
   arrangePosStock,
   sendSyntheticPaymentWebhook,
+  formatVietnamDate,
 } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 
@@ -356,6 +357,8 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     // 8. Send genuine synthetic payment webhook matching order payment_reference
     const totalAmount = Number(qrOrderData?.order?.total_amount || 220000)
     const webhookTxnId = `TXN-POS-QR-${manifest.runId}-${orderId}`
+    // A provider retry resends the identical body, so both deliveries share one transaction date
+    const transactionDate = formatVietnamDate(new Date(Date.now() + 5000))
     const webhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: `whsec_e2e_1a_${manifest.runId}`,
@@ -363,6 +366,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       amount: totalAmount,
       code: paymentRef,
       transactionId: webhookTxnId,
+      transactionDate,
     })
     expect(
       webhookRes.ok,
@@ -409,6 +413,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       amount: totalAmount,
       code: paymentRef,
       transactionId: webhookTxnId,
+      transactionDate,
     })
     expect(replayRes.ok).toBe(true)
     // A replayed receipt is deduplicated by provider event id, so stock moves once
