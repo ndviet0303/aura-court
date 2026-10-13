@@ -39,7 +39,7 @@
   ],
   ["component-lines", "features/admin/components/staff/StaffAuditLogs.vue", 427],
   ["component-lines", "features/admin/components/staff/StaffDirectoryTable.vue", 687],
-  ["component-lines", "features/admin/components/tournament/AthleteCheckInPanel.vue", 1090],
+  ["component-lines", "features/admin/components/tournament/AthleteCheckInPanel.vue", 1060],
   ["component-lines", "features/admin/components/tournament/RefereeConsolePanel.vue", 501],
   ["component-lines", "features/admin/components/tournament/TournamentBracketTree.vue", 509],
   ["component-lines", "features/admin/components/venues/OwnerReceivingConnectionPanel.vue", 501],

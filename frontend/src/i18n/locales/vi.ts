@@ -2646,6 +2646,8 @@ export default {
       scanSuccessAlert: 'Đã điểm danh thành công',
       passCodeLabel: 'Mã thẻ: {code}',
       digitalPassModalTitle: 'Thẻ Vận Động Viên Số',
+      passSubtitle: 'THẺ THI ĐẤU CHÍNH THỨC',
+      passAthleteBadge: 'VẬN ĐỘNG VIÊN',
       liveMatchLabel: 'Trận Đang Đấu: {code}',
       testConflictBtn: 'Thử nghiệm xung đột điểm',
       switchEndsBtn: 'Đổi sân (Switch Ends)',

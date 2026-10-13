@@ -1,9 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
+import QRCode from 'qrcode'
 import AdminTournamentBracketView from '../views/AdminTournamentBracketView.vue'
 import { i18n } from '@/i18n'
 import { apiV2 } from '@/core/api/client'
+
+vi.mock('qrcode', () => ({
+  default: {
+    toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,mockqr'),
+  },
+}))
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ path: '/admin/tournaments', query: {} }),
@@ -318,6 +325,29 @@ describe('AdminTournamentBracketView', () => {
 
     expect(wrapper.find('.modal-qr-scanner-card').exists()).toBe(true)
     expect(wrapper.text()).toContain('Quét Mã QR Thẻ VĐV')
+  })
+
+  it('shows the real tournament name and a QR of the pass code on the digital pass', async () => {
+    const wrapper = mount(AdminTournamentBracketView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    const subTabs = wrapper.findAll('.sub-tab-btn')
+    await subTabs[1]?.trigger('click')
+    await flushPromises()
+
+    // First action of the first card (Sarah Jenkins, ATH-001) opens her pass
+    await wrapper.find('.athlete-feed-card .ath-actions-col button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.pass-org-name').text()).toBe('Aura Summer Open 2026')
+    expect(wrapper.find('.pass-org-sub').text()).toBe('THẺ THI ĐẤU CHÍNH THỨC')
+    expect(wrapper.find('.pass-type-badge').text()).toBe('VẬN ĐỘNG VIÊN')
+    expect(QRCode.toDataURL).toHaveBeenCalledWith('ATH-001', expect.anything())
+    expect(wrapper.find('.pass-qr-img').attributes('src')).toBe('data:image/png;base64,mockqr')
   })
 
   it('opens create tournament modal and renders form inputs', async () => {

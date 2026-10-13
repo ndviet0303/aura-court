@@ -222,6 +222,7 @@ async function handleCreateTournament(payload: any) {
     <section v-else-if="activeSubNav === 'athlete-check-in'" class="tab-content-section">
       <AthleteCheckInPanel
         :athletes="filteredAthletes"
+        :tournament-name="tournament.name"
         :filter-status="checkInFilterStatus"
         :search-query="checkInSearchQuery"
         :metrics="checkInMetrics"
