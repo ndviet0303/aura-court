@@ -49,24 +49,20 @@ export interface FixtureMatch {
   nextMatchSlot?: 1 | 2
 }
 
+// Optional fields are missing when the API has no value; screens show an empty state then.
 export interface TournamentAdminData {
   id: number
   name: string
-  category: string
-  sport: string
-  format: 'single_elimination' | 'round_robin' | 'double_elimination'
-  status: 'draft' | 'open' | 'ongoing' | 'completed'
-  prizePool: string
-  prizePoolUsd: string
-  startDate: string
-  endDate: string
+  category?: string
+  sport?: string
+  format?: 'single_elimination' | 'round_robin' | 'double_elimination'
+  status?: 'draft' | 'open' | 'ongoing' | 'completed'
+  prizePool?: string
   datesFormatted: string
-  venue: string
-  city: string
-  courtsAvailable: number
-  maxSlots: number
-  entryFee: string
-  description: string
-  version: number
-  seedingRule: 'standard' | 'random' | 'club_split'
+  venue?: string
+  city?: string
+  maxSlots?: number
+  entryFee?: string
+  description?: string
+  version?: number
 }

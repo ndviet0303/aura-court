@@ -57,7 +57,7 @@ const showPenaltyModal = ref(false)
         <strong class="match-code-tag font-mono">{{
           t('admin.tournaments.liveMatchLabel', { code: liveMatch.matchCode })
         }}</strong>
-        <span class="court-location-tag">{{ liveMatch.courtName }}</span>
+        <span v-if="liveMatch.courtName" class="court-location-tag">{{ liveMatch.courtName }}</span>
       </div>
 
       <div class="referee-top-actions">
@@ -128,11 +128,8 @@ const showPenaltyModal = ref(false)
       <div class="arena-center-divider">
         <div class="set-indicator-pill font-mono">SET {{ liveMatch.currentSet }}</div>
         <div class="sets-history-row font-mono">
-          <span class="set-history-score"
-            >{{ liveMatch.playerA.sets[0] || 21 }} - {{ liveMatch.playerB.sets[0] || 18 }}</span
-          >
-          <span class="set-history-score"
-            >{{ liveMatch.playerA.sets[1] || 19 }} - {{ liveMatch.playerB.sets[1] || 21 }}</span
+          <span v-for="(points, i) in liveMatch.playerA.sets" :key="i" class="set-history-score"
+            >{{ points }} - {{ liveMatch.playerB.sets[i] ?? '—' }}</span
           >
         </div>
       </div>

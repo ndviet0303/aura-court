@@ -29,13 +29,15 @@ describe('AdminTournamentBracketView', () => {
   const mockTournamentDetails = {
     id: 1,
     name: 'Aura Summer Open 2026',
-    sport: 'badminton',
-    venue: 'Aura Court 1',
-    city: 'TP. Hồ Chí Minh',
     status: 'open',
-    max_slots: 16,
-    prize_pool: '20.000.000 ₫',
-    entry_fee: '300.000 ₫ / VĐV',
+    max_participants: 16,
+    settings: {
+      sport: 'badminton',
+      venue: 'Aura Court 1',
+      city: 'TP. Hồ Chí Minh',
+      prize_pool: '20.000.000 ₫',
+      entry_fee: '300.000 ₫ / VĐV',
+    },
     participants: [
       {
         id: 1,
@@ -116,18 +118,14 @@ describe('AdminTournamentBracketView', () => {
     {
       id: 1,
       name: 'Aura Summer Open 2026',
-      sport: 'badminton',
-      venue: 'Aura Court 1',
-      city: 'TP. Hồ Chí Minh',
       status: 'open',
+      settings: { sport: 'badminton', venue: 'Aura Court 1', city: 'TP. Hồ Chí Minh' },
     },
     {
       id: 2,
       name: 'Pickleball Masters 2026',
-      sport: 'pickleball',
-      venue: 'Aura Court 2',
-      city: 'Đà Nẵng',
       status: 'ready',
+      settings: { sport: 'pickleball', venue: 'Aura Court 2', city: 'Đà Nẵng' },
     },
   ]
 
@@ -184,7 +182,7 @@ describe('AdminTournamentBracketView', () => {
     await subTabs[3]?.trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('Tổng Quan Hoạt Động Giải Đấu')
-    expect(wrapper.findAll('.kpi-card').length).toBe(4)
+    expect(wrapper.findAll('.kpi-card').length).toBe(3)
   })
 
   it('triggers bracket re-generation algorithm with feedback', async () => {
@@ -359,5 +357,78 @@ describe('AdminTournamentBracketView', () => {
     await flushPromises()
 
     expect(Number(wrapper.find('#score-a').text())).toBe(initialScore + 1)
+  })
+
+  it('shows empty states, never invented values, when the API omits data', async () => {
+    vi.mocked(apiV2.get).mockImplementation(async (url: string) => {
+      if (url.match(/\/tournaments\/\d+/)) {
+        return {
+          tournament: {
+            id: 1,
+            name: 'Sparse Cup',
+            status: 'open',
+            format: 'single_elimination',
+            settings: {},
+            participants: [
+              { id: 1, seed: 1, user: { name: 'An' } },
+              { id: 2, seed: 2, user: { name: 'Bình' } },
+            ],
+            fixtures: [
+              {
+                id: 101,
+                round: 1,
+                position: 1,
+                status: 'pending',
+                participant_one_id: 1,
+                participant_two_id: 2,
+              },
+            ],
+          },
+        }
+      }
+      return { data: [{ id: 1, name: 'Sparse Cup', status: 'open', settings: {} }] }
+    })
+    const wrapper = mount(AdminTournamentBracketView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const invented = [
+      'Aura',
+      '20.000.000',
+      '300.000',
+      'Hồ Chí Minh',
+      '09:00',
+      'Sân 1',
+      '0901234567',
+    ]
+    const seen: string[] = [wrapper.text()]
+    const subTabs = wrapper.findAll('.sub-tab-btn')
+    for (const tab of subTabs.slice(1)) {
+      await tab.trigger('click')
+      await flushPromises()
+      seen.push(wrapper.text())
+    }
+    for (const value of invented) expect(seen.join(' ')).not.toContain(value)
+    expect(wrapper.findAll('.kpi-val').map((el) => el.text())).toContain('—')
+
+    await subTabs[2]?.trigger('click')
+    expect(wrapper.findAll('.set-history-score')).toHaveLength(0)
+    expect(wrapper.find('.court-location-tag').exists()).toBe(false)
+
+    // The score modal starts empty and only saves an entered result for the real players.
+    await subTabs[0]?.trigger('click')
+    await wrapper.find('.match-node-card').trigger('click')
+    const inputs = wrapper.findAll('.score-input')
+    expect(inputs.map((input) => (input.element as HTMLInputElement).value)).toEqual(['', ''])
+    const saveBtn = wrapper.find('.modal-footer .aura-btn--primary')
+    expect(saveBtn.attributes('disabled')).toBeDefined()
+
+    await inputs[0]?.setValue(21)
+    await inputs[1]?.setValue(17)
+    await saveBtn.trigger('click')
+    await flushPromises()
+    expect(apiV2.post).toHaveBeenCalledWith(
+      '/tournaments/1/fixtures/101/score',
+      expect.objectContaining({ winner_id: 1, score: { p1: 21, p2: 17 } }),
+    )
   })
 })
