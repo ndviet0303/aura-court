@@ -16,7 +16,7 @@ const emit = defineEmits<{
   (e: 'paid'): void
 }>()
 
-const { t } = useI18n()
+const { t, d } = useI18n()
 const loading = ref(false)
 const refreshing = ref(false)
 const error = ref('')
@@ -188,7 +188,7 @@ onUnmounted(stopPolling)
           >
             {{
               t('v2Reservations.payment.expiresAt', {
-                time: new Date(paymentAttempt.expires_at).toLocaleString(),
+                time: d(new Date(paymentAttempt.expires_at), 'datetime'),
               })
             }}
           </p>

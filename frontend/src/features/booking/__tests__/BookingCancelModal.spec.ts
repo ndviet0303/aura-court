@@ -146,6 +146,8 @@ describe('BookingCancelModal', () => {
     })
     const wrapper = mountModal()
     await wrapper.get('[data-testid="cancel-scope-partial"]').setValue()
+    // Slot labels read the venue clock: 18:00Z is 01:00 in Vietnam.
+    expect(wrapper.findAll('.slot-option')[0]!.text()).toContain('01:00 - 02:00')
     // Pick slots 1 and 3 (skipping 2) so a wrong payload would be observable.
     await wrapper.get('[data-testid="cancel-slot-1"]').trigger('change')
     await wrapper.get('[data-testid="cancel-slot-3"]').trigger('change')

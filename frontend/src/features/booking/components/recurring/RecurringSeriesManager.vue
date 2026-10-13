@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringSeries } from '../../types/recurring'
-import { venueClock, venueDate } from '../../utils/venueTime'
+import { venueClock, venueDate } from '@/core/utils/venueTime'
 
 defineProps<{
   seriesList: RecurringSeries[]
@@ -30,6 +30,12 @@ function formatFrequency(freq: string): string {
     default:
       return freq
   }
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  paid: 'Đã đóng',
+  overdue: 'Quá hạn',
+  cancelled: 'Đã huỷ',
 }
 
 function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number | string) {
@@ -192,13 +198,7 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
                   }"
                 >
                   ●
-                  {{
-                    inv.status === 'paid'
-                      ? 'Đã đóng'
-                      : inv.status === 'overdue'
-                        ? 'Quá hạn'
-                        : 'Chờ thanh toán'
-                  }}
+                  {{ STATUS_LABELS[inv.status] ?? 'Chờ thanh toán' }}
                 </span>
 
                 <AuraButton

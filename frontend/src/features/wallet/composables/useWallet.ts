@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type {
   VenueWallet,
   Transaction,
@@ -260,13 +260,7 @@ export function useWallet(organizationId?: number) {
       if (activeDeposit.value?.reference) {
         const statusRes = await walletApi.getDepositStatus(activeDeposit.value.reference)
         if (statusRes.status === 'succeeded') {
-          await loadWalletData()
-          isDepositModalOpen.value = false
-          depositStep.value = 'select'
-          showNotice(
-            `Nạp tiền thành công! Đã cộng ${statusRes.amount.toLocaleString('vi-VN')} VND vào ví.`,
-          )
-          activeDeposit.value = null
+          await finishSucceededDeposit(statusRes.amount)
           return
         }
 
@@ -297,6 +291,46 @@ export function useWallet(organizationId?: number) {
       processing.value = false
     }
   }
+
+  async function finishSucceededDeposit(amount: number) {
+    await loadWalletData()
+    isDepositModalOpen.value = false
+    depositStep.value = 'select'
+    showNotice(`Nạp tiền thành công! Đã cộng ${amount.toLocaleString('vi-VN')} VND vào ví.`)
+    activeDeposit.value = null
+  }
+
+  // Poll while the SePay QR is on screen so the webhook credit closes the modal by itself.
+  let depositPoll: ReturnType<typeof setInterval> | undefined
+
+  function stopDepositPolling() {
+    if (depositPoll) clearInterval(depositPoll)
+    depositPoll = undefined
+  }
+
+  async function pollDepositStatus(reference: string) {
+    try {
+      const statusRes = await walletApi.getDepositStatus(reference)
+      if (statusRes.status === 'succeeded' && activeDeposit.value?.reference === reference) {
+        await finishSucceededDeposit(statusRes.amount)
+      }
+    } catch {
+      // Transient errors keep polling; the manual confirm button surfaces them.
+    }
+  }
+
+  watch(
+    () =>
+      isDepositModalOpen.value && depositStep.value === 'sepay_pay'
+        ? (activeDeposit.value?.reference ?? null)
+        : null,
+    (reference) => {
+      stopDepositPolling()
+      if (reference) depositPoll = setInterval(() => pollDepositStatus(reference), 5000)
+    },
+  )
+
+  onUnmounted(stopDepositPolling)
 
   async function copyToClipboard(text: string, successMsg = 'Đã sao chép vào bộ nhớ tạm') {
     try {

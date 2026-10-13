@@ -168,6 +168,72 @@ describe('Wallet Deposit and Balance Management', () => {
     expect(wallet.notice.value).toContain('chờ ngân hàng/SePay xác thực')
   })
 
+  it('polls deposit status while the QR is open and closes the modal once credited', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(walletApi.getWallet).mockResolvedValue({
+        id: 'wallet-org-1',
+        organization_id: 1,
+        balance: 200000,
+        currency: 'VND',
+        points: 0,
+        membership_tier: null,
+        transactions: [],
+      })
+      vi.mocked(walletApi.initiateDeposit).mockResolvedValueOnce({
+        id: 5,
+        reference: 'DEP-POLL-01',
+        organization_id: 1,
+        amount: 100000,
+        currency: 'VND',
+        status: 'pending',
+        provider: 'sepay',
+        transfer_info: {
+          bank: 'TPBank',
+          account_number: '83403032005',
+          account_name: 'AURA COURT',
+          code: 'ORD5',
+          amount: 100000,
+          qr_url: 'https://img.vietqr.io/image/test.png',
+        },
+        created_at: '2026-10-12T10:00:00Z',
+      })
+      const status = {
+        id: 5,
+        reference: 'DEP-POLL-01',
+        organization_id: 1,
+        amount: 100000,
+        currency: 'VND',
+        provider: 'sepay',
+        wallet_balance: 200000,
+        created_at: '2026-10-12T10:00:00Z',
+      }
+      vi.mocked(walletApi.getDepositStatus)
+        .mockResolvedValueOnce({ ...status, status: 'pending' })
+        .mockResolvedValueOnce({ ...status, status: 'succeeded' })
+
+      const wallet = useWallet()
+      await wallet.loadWalletData()
+      wallet.openDepositModal()
+      wallet.depositAmount.value = 100000
+      await wallet.proceedToPaymentStep()
+
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(wallet.isDepositModalOpen.value).toBe(true)
+
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(walletApi.getDepositStatus).toHaveBeenCalledTimes(2)
+      expect(walletApi.getDepositStatus).toHaveBeenCalledWith('DEP-POLL-01')
+      expect(wallet.isDepositModalOpen.value).toBe(false)
+      expect(wallet.notice.value).toContain('Nạp tiền thành công')
+
+      await vi.advanceTimersByTimeAsync(10000)
+      expect(walletApi.getDepositStatus).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('updates balance when deposit status returns succeeded', async () => {
     vi.mocked(walletApi.getWallet)
       .mockResolvedValueOnce({

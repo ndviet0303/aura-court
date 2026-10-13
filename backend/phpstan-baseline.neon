@@ -595,12 +595,6 @@ parameters:
 			path: app/Domain/Venue/Actions/VerifyEffectiveBookingEligibility.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Admin/AdminContractController.php
-
-		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\RecurringSeries\|null given\.$#'
 			identifier: argument.type
 			count: 2
@@ -2617,24 +2611,6 @@ parameters:
 			path: app/Infrastructure/Repositories/Eloquent/EloquentReconciliationRepository.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentRecurringContractRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$due_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentRecurringContractRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentRecurringContractRepository.php
-
-		-
 			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentRefundRepository\:\:createForBooking\(\) should return App\\Models\\Refund but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 1
@@ -3135,13 +3111,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 5
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$metadata\.$#'
-			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
@@ -3158,18 +3128,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_model\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$period_end\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$period_start\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/Booking/RecurringSeriesService.php
@@ -3205,21 +3163,9 @@ parameters:
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reservation\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slot_duration\.$#'
 			identifier: property.notFound
 			count: 3
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
@@ -3235,19 +3181,7 @@ parameters:
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:currentBookingPolicy\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:occurrences\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: app/Services/Booking/RecurringSeriesService.php
@@ -3266,18 +3200,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#1 \$attempt of method App\\Services\\Booking\\RecurringSeriesService\:\:hasConfirmablePeriod\(\) expects App\\Models\\OwnerPaymentAttempt, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\RecurringOccurrence\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: non\-falsy\-string\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\RecurringOccurrence\)\: non\-falsy\-string given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Services/Booking/RecurringSeriesService.php

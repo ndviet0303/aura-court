@@ -99,7 +99,7 @@ export interface MonthlyInvoiceData {
   period_end: string
   due_at: string
   amount: number
-  status: 'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable'
+  status: 'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable' | 'cancelled'
   payment_reference?: string
   paid_at?: string
   series?: {

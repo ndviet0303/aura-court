@@ -6,6 +6,7 @@ use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Domain\Admin\Actions\CancelAdminContract;
 use App\Domain\Admin\Actions\GetAdminContracts;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CancelAdminContractRequest;
 use App\Services\Infrastructure\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,7 +57,7 @@ class AdminContractController extends Controller
         return response()->json($contract);
     }
 
-    public function cancel(Request $request, int $id, CancelAdminContract $action): JsonResponse
+    public function cancel(CancelAdminContractRequest $request, int $id, CancelAdminContract $action): JsonResponse
     {
         $contract = $this->contracts->findById($id);
         abort_unless($contract, 404, 'Hợp đồng không tồn tại.');
@@ -65,8 +66,8 @@ class AdminContractController extends Controller
             abort_unless($contract->court && $user->canManageVenue($contract->court->venue_id), 403, 'Unauthorized contract venue.');
         }
 
-        $reason = $request->input('reason', 'Admin huỷ theo yêu cầu');
-        $contract = $action->execute($id, $reason);
+        $reason = $request->validated('reason') ?? 'Admin huỷ theo yêu cầu';
+        $contract = $action->execute($contract, $user, $reason);
 
         $this->audits->record($request, 'contract.cancelled', $contract, [
             'reason' => $reason,

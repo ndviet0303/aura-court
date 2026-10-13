@@ -21,7 +21,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
-const { t, locale } = useI18n()
+const { t, locale, d } = useI18n()
 const saving = ref(false)
 const syncing = ref(false)
 const selecting = ref(false)
@@ -493,7 +493,7 @@ async function syncTransactions() {
               t('admin.venues.receivingConnection.version', { version: event.credential_version })
             }}</span
           >
-          <time>{{ event.created_at ? new Date(event.created_at).toLocaleString() : '' }}</time>
+          <time>{{ event.created_at ? d(new Date(event.created_at), 'datetime') : '' }}</time>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n'
+import { VENUE_TIME_ZONE } from '@/core/utils/venueTime'
 import vi from './locales/vi'
 import en from './locales/en'
 
@@ -20,6 +21,20 @@ export function getSavedLocale(): AppLocale {
   return 'vi'
 }
 
+// Named formats for $d / d(): the app locale's layout, on the venue clock.
+const venueDatetimeFormats = {
+  date: { timeZone: VENUE_TIME_ZONE, day: '2-digit', month: '2-digit', year: 'numeric' },
+  time: { timeZone: VENUE_TIME_ZONE, hour: '2-digit', minute: '2-digit' },
+  datetime: {
+    timeZone: VENUE_TIME_ZONE,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  },
+} satisfies Record<string, Intl.DateTimeFormatOptions>
+
 export const i18n = createI18n({
   legacy: false,
   locale: getSavedLocale(),
@@ -28,6 +43,7 @@ export const i18n = createI18n({
     vi,
     en,
   },
+  datetimeFormats: { vi: venueDatetimeFormats, en: venueDatetimeFormats },
 })
 
 export function setAppLocale(locale: AppLocale): void {

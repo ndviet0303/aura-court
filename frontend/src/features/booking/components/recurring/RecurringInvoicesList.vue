@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuraButton, SkeletonLoader } from '@/shared/components'
 import type { RecurringInvoice, InvoiceStatus } from '../../types/recurring'
-import { venueDate } from '../../utils/venueTime'
+import { venueDate } from '@/core/utils/venueTime'
 
 const props = defineProps<{
   invoices: RecurringInvoice[]
@@ -20,6 +20,14 @@ const filteredInvoices = computed(() => {
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  paid: 'Đã thanh toán',
+  zero_payable: 'Không cần thanh toán (0 ₫)',
+  guaranteed: 'Được bảo lãnh (chưa thanh toán)',
+  overdue: 'Quá hạn',
+  cancelled: 'Đã huỷ',
 }
 
 function openInvoiceDetail(inv: RecurringInvoice) {
@@ -146,17 +154,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
             }"
           >
             ●
-            {{
-              inv.status === 'paid'
-                ? 'Đã thanh toán'
-                : inv.status === 'zero_payable'
-                  ? 'Không cần thanh toán (0 ₫)'
-                  : inv.status === 'guaranteed'
-                    ? 'Được bảo lãnh (chưa thanh toán)'
-                    : inv.status === 'overdue'
-                      ? 'Quá hạn'
-                      : 'Chờ thanh toán'
-            }}
+            {{ STATUS_LABELS[inv.status] ?? 'Chờ thanh toán' }}
           </span>
         </div>
 

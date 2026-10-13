@@ -16,7 +16,6 @@ use App\Models\User;
 use App\Models\VenueBookingPolicy;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\OutboxService;
-use App\Services\Payment\OwnerPaymentAttemptService;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationService;
@@ -33,6 +32,7 @@ class RecurringSeriesService
         private readonly PriceQuoteService $quotes,
         private readonly ReservationService $reservations,
         private readonly OutboxService $outbox,
+        private readonly RecurringReleaseService $releases,
     ) {}
 
     public function createAndConfirm(User $user, int $organizationId, array $data): RecurringSeries|array
@@ -547,17 +547,10 @@ class RecurringSeriesService
                     ->whereIn('status', ['held', 'confirmed'])
                     ->lockForUpdate()
                     ->get();
-                foreach ($occurrences as $occurrence) {
-                    $occurrence->reservation?->update(['status' => 'cancelled', 'cancelled_at' => now()]);
-                    $occurrence->reservation?->slots()->whereIn('status', ['held', 'confirmed'])->update(['status' => 'cancelled']);
-                    $occurrence->reservation?->entitlements()->whereIn('status', ['held', 'active'])->update(['status' => 'cancelled']);
-                    $occurrence->update(['status' => 'released', 'released_at' => now()]);
-                    $released++;
-                }
+                $released += $this->releases->releaseOccurrences($occurrences);
                 // Expire the period's still-pending payment attempt(s) so no stale hold lingers.
-                app(OwnerPaymentAttemptService::class)->expirePendingForPurpose('recurring_period', 'rec_series:'.$series->id.':invoice:'.$locked->id);
-                app(OwnerPaymentAttemptService::class)->expirePendingForPurpose('recurring_period', 'rec_series:'.$series->id.':full');
-                $series->update(['status' => 'delinquent']);
+                $this->releases->expirePendingAttempts($series->id, [$locked->id]);
+                $series->update(['status' => $series->status === 'cancelled' ? 'cancelled' : 'delinquent']); // An admin cancel stays final.
             });
         });
 
