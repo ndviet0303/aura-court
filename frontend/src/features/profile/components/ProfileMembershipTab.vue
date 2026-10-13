@@ -1,23 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import type { User, Membership } from '@/core/types/common'
+import type { Membership } from '@/core/types/common'
 
-const props = defineProps<{
-  user: User | null
+defineProps<{
+  /** Active tenant membership from GET /membership; null when the customer has none. */
   membership: Membership | null
 }>()
-
-const activeTierName = computed(() => {
-  if (props.membership?.plan?.name) return props.membership.plan.name
-  if (props.user?.role === 'admin') return 'AURA PLATINUM LEADER'
-  return 'GOLD ATHLETE MEMBER'
-})
-
-const discountPercent = computed(() => {
-  if (props.membership?.plan?.discount_percent) return props.membership.plan.discount_percent
-  return 10
-})
 </script>
 
 <template>
@@ -34,35 +22,31 @@ const discountPercent = computed(() => {
 
     <!-- Active Tier Highlight Card -->
     <div class="tier-highlight-card">
-      <div class="tier-card-header">
-        <div class="tier-badge-group">
-          <span class="material-symbols-outlined tier-crown-icon">military_tech</span>
-          <span class="tier-title font-mono">{{ activeTierName }}</span>
+      <template v-if="membership">
+        <div class="tier-card-header">
+          <div class="tier-badge-group">
+            <span class="material-symbols-outlined tier-crown-icon">military_tech</span>
+            <span class="tier-title font-mono">{{ membership.plan.name }}</span>
+          </div>
         </div>
-        <div class="tier-points-pill font-mono">
-          <span class="material-symbols-outlined pt-icon">toll</span>
-          <span>1,250 Aura Points</span>
-        </div>
-      </div>
 
-      <div class="tier-benefit-highlight">
-        <div class="discount-callout">
-          <span class="discount-value font-mono">-{{ discountPercent }}%</span>
-          <span class="discount-label">{{ $t('profile.vipDiscountCallout') }}</span>
+        <div class="tier-benefit-highlight">
+          <div v-if="membership.plan.discount_percent" class="discount-callout">
+            <span class="discount-value font-mono">-{{ membership.plan.discount_percent }}%</span>
+            <span class="discount-label">{{ $t('profile.vipDiscount') }}</span>
+          </div>
+          <div class="tier-status-meta">
+            <span class="status-active-pill">
+              <span class="status-dot"></span>
+              {{ $t('wallet.activeCard') }}
+            </span>
+            <span class="expiry-text">
+              {{ $t('profile.vipExpires') }}: {{ $d(new Date(membership.ends_at), 'date') }}
+            </span>
+          </div>
         </div>
-        <div class="tier-status-meta">
-          <span class="status-active-pill">
-            <span class="status-dot"></span>
-            {{ $t('wallet.activeCard') }}
-          </span>
-          <span v-if="membership?.ends_at" class="expiry-text">
-            {{ $t('profile.vipExpires') }}: {{ $d(new Date(membership.ends_at), 'date') }}
-          </span>
-          <span v-else class="expiry-text">
-            {{ $t('profile.vipTier') }}
-          </span>
-        </div>
-      </div>
+      </template>
+      <p v-else class="section-sub">{{ $t('profile.vipNone') }}</p>
     </div>
 
     <!-- Perks Grid -->
@@ -238,29 +222,6 @@ html.dark .tier-crown-icon {
 
 html.dark .tier-title {
   color: #faf7f3;
-}
-
-.tier-points-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline, #e2dad0);
-  font-size: 13px;
-  font-weight: 750;
-  color: var(--pink-dark, #db2777);
-}
-
-html.dark .tier-points-pill {
-  background: #141113;
-  border-color: #3b3238;
-  color: #dfba72;
-}
-
-.pt-icon {
-  font-size: 16px;
 }
 
 .tier-benefit-highlight {
