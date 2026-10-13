@@ -22,6 +22,21 @@ const progressPercent = computed(() => {
   if (totalMatches.value === 0) return 0
   return Math.round((completedMatches.value / totalMatches.value) * 100)
 })
+
+const formatLabel = computed(() => {
+  if (props.tournament.format === 'single_elimination')
+    return t('admin.tournaments.formatSingleElim')
+  if (props.tournament.format === 'round_robin') return t('admin.tournaments.formatRoundRobin')
+  return '—'
+})
+const sportLabel = computed(() => {
+  const { sport, category } = props.tournament
+  return [sport, category && `(${category})`].filter(Boolean).join(' ') || '—'
+})
+const venueLabel = computed(() => {
+  const { venue, city } = props.tournament
+  return [venue, city && `(${city})`].filter(Boolean).join(' ') || '—'
+})
 </script>
 
 <template>
@@ -34,9 +49,9 @@ const progressPercent = computed(() => {
       </div>
     </div>
 
-    <!-- 4 KPI Cards with Skeleton Loading -->
+    <!-- KPI Cards with Skeleton Loading -->
     <div v-if="loading" class="kpi-cards-grid">
-      <div v-for="i in 4" :key="i" class="kpi-card">
+      <div v-for="i in 3" :key="i" class="kpi-card">
         <SkeletonLoader type="title" width="40%" height="20px" />
         <SkeletonLoader type="text" width="60%" height="14px" />
       </div>
@@ -51,7 +66,7 @@ const progressPercent = computed(() => {
         }}</strong>
         <span class="kpi-trend text-green">
           <span class="material-symbols-outlined icon-12">check</span>
-          {{ totalParticipants }}/{{ tournament.maxSlots }}
+          {{ totalParticipants }}/{{ tournament.maxSlots ?? '—' }}
           {{ t('admin.tournaments.slotsOccupied') }}
         </span>
       </div>
@@ -59,8 +74,10 @@ const progressPercent = computed(() => {
       <div class="kpi-card">
         <span class="material-symbols-outlined kpi-icon">payments</span>
         <span class="kpi-label">{{ t('admin.tournaments.kpiPrizePool') }}</span>
-        <strong class="kpi-val font-mono">{{ tournament.prizePool }}</strong>
-        <span class="kpi-trend font-mono">{{ tournament.entryFee }}</span>
+        <strong class="kpi-val font-mono">{{ tournament.prizePool || '—' }}</strong>
+        <span v-if="tournament.entryFee" class="kpi-trend font-mono">{{
+          tournament.entryFee
+        }}</span>
       </div>
 
       <div class="kpi-card">
@@ -73,18 +90,6 @@ const progressPercent = computed(() => {
           t('admin.tournaments.kpiMatchesProgress', { percent: progressPercent })
         }}</span>
       </div>
-
-      <div class="kpi-card">
-        <span class="material-symbols-outlined kpi-icon">stadium</span>
-        <span class="kpi-label">{{ t('admin.tournaments.kpiCourtsInUse') }}</span>
-        <strong class="kpi-val font-mono">{{
-          t('admin.tournaments.kpiCourtsVal', {
-            active: tournament.courtsAvailable || 4,
-            total: tournament.courtsAvailable || 4,
-          })
-        }}</strong>
-        <span class="kpi-trend text-green">{{ tournament.venue }} ({{ tournament.city }})</span>
-      </div>
     </div>
 
     <!-- Tournament Meta Information Section -->
@@ -93,23 +98,25 @@ const progressPercent = computed(() => {
       <div class="info-rows-grid">
         <div class="info-cell">
           <span class="cell-label">{{ t('admin.tournaments.formatLabel') }}:</span>
-          <strong class="cell-val">{{
-            tournament.format === 'single_elimination'
-              ? t('admin.tournaments.formatSingleElim')
-              : t('admin.tournaments.formatRoundRobin')
-          }}</strong>
+          <strong class="cell-val">{{ formatLabel }}</strong>
         </div>
         <div class="info-cell">
           <span class="cell-label">{{ t('admin.tournaments.sportLabel') }}:</span>
-          <strong class="cell-val">{{ tournament.sport }} ({{ tournament.category }})</strong>
+          <strong class="cell-val">{{ sportLabel }}</strong>
+        </div>
+        <div class="info-cell">
+          <span class="cell-label">{{ t('admin.tournaments.venueLabel') }}:</span>
+          <strong class="cell-val">{{ venueLabel }}</strong>
         </div>
         <div class="info-cell">
           <span class="cell-label">{{ t('admin.tournaments.datesLabel') }}:</span>
-          <strong class="cell-val font-mono">{{ tournament.datesFormatted }}</strong>
+          <strong class="cell-val font-mono">{{ tournament.datesFormatted || '—' }}</strong>
         </div>
         <div class="info-cell">
           <span class="cell-label">{{ t('admin.tournaments.statusLabel') }}:</span>
-          <span class="status-badge" :class="tournament.status">{{ tournament.status }}</span>
+          <span class="status-badge" :class="tournament.status">{{
+            tournament.status || '—'
+          }}</span>
         </div>
       </div>
       <p v-if="tournament.description" class="tournament-desc">{{ tournament.description }}</p>
@@ -154,7 +161,7 @@ const progressPercent = computed(() => {
 
 .kpi-cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
 

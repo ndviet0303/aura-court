@@ -47,21 +47,21 @@ const categoryOptions = computed(() => [
       <div v-if="tournament" class="t-info">
         <div class="title-row">
           <h1 class="t-title">{{ tournament.name }}</h1>
-          <span class="status-pill font-mono">
+          <span v-if="tournament.status" class="status-pill font-mono">
             <span class="status-dot"></span>
             {{ tournament.status.toUpperCase() }}
           </span>
         </div>
         <div class="meta-row">
-          <span class="meta-tag">
+          <span v-if="tournament.location" class="meta-tag">
             <span class="material-symbols-outlined meta-ico">location_on</span>
             {{ tournament.location }}
           </span>
-          <span class="meta-tag">
+          <span v-if="tournament.dates" class="meta-tag">
             <span class="material-symbols-outlined meta-ico">calendar_month</span>
             {{ tournament.dates }}
           </span>
-          <span class="meta-tag">
+          <span v-if="tournament.playersCount != null" class="meta-tag">
             <span class="material-symbols-outlined meta-ico">group</span>
             {{ $t('tournament.playersParticipating', { count: tournament.playersCount }) }}
           </span>

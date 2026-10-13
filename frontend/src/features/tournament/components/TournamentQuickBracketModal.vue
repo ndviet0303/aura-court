@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AuraButton } from '@/shared/components'
+import { getAvatarUrl } from '@/lib/avatar'
 import type { TournamentItem } from '../types/tournament'
 
 const props = defineProps<{
@@ -47,11 +48,11 @@ const participantsList = computed(() => {
       <!-- Modal Body -->
       <div class="modal-body">
         <div class="tournament-summary-strip">
-          <div class="summary-item">
+          <div v-if="tournament.venue" class="summary-item">
             <span class="material-symbols-outlined s-ico">location_on</span>
             <span>{{ tournament.venue }}</span>
           </div>
-          <div class="summary-item">
+          <div v-if="tournament.dates" class="summary-item">
             <span class="material-symbols-outlined s-ico">calendar_month</span>
             <span>{{ tournament.dates }}</span>
           </div>
@@ -59,7 +60,7 @@ const participantsList = computed(() => {
             <span class="material-symbols-outlined s-ico">group</span>
             <span>{{ tournament.current_slots }}/{{ tournament.max_slots }} VĐV</span>
           </div>
-          <div class="summary-item">
+          <div v-if="tournament.prize_pool" class="summary-item">
             <span class="material-symbols-outlined s-ico">payments</span>
             <span class="text-pink font-bold">{{ tournament.prize_pool }}</span>
           </div>
@@ -73,18 +74,11 @@ const participantsList = computed(() => {
               :key="p.id || idx"
               class="participant-mini-card"
             >
-              <span class="seed-num font-mono">#{{ p.seed || idx + 1 }}</span>
-              <img
-                :src="
-                  p.avatar ||
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'
-                "
-                :alt="p.name"
-                class="p-mini-avt"
-              />
+              <span v-if="p.seed" class="seed-num font-mono">#{{ p.seed }}</span>
+              <img :src="p.avatar || getAvatarUrl(p.name)" :alt="p.name" class="p-mini-avt" />
               <div class="p-mini-info">
                 <span class="p-mini-name">{{ p.name }}</span>
-                <span class="p-mini-club">{{ p.club || 'Aura Club' }}</span>
+                <span v-if="p.club" class="p-mini-club">{{ p.club }}</span>
               </div>
             </div>
           </div>

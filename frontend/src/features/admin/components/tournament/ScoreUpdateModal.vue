@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', match: FixtureMatch, scoreP1?: number, scoreP2?: number): void
+  (e: 'save', match: FixtureMatch, scoreP1: number, scoreP2: number): void
 }>()
 
 const { t } = useI18n()
@@ -20,9 +20,13 @@ const { t } = useI18n()
 const courtName = ref('')
 const scheduledTime = ref('')
 const status = ref<string>('pending')
-const score1 = ref<number>(21)
-const score2 = ref<number>(18)
+// '' until a score is entered; v-model.number yields '' for an empty input.
+const score1 = ref<number | ''>('')
+const score2 = ref<number | ''>('')
 const selectedWinnerId = ref<number | undefined>(undefined)
+const canSave = computed(
+  () => score1.value !== '' && score2.value !== '' && selectedWinnerId.value !== undefined,
+)
 
 const statusOptions = computed<DropdownOption[]>(() => [
   { value: 'pending', label: t('admin.tournaments.statusPending') || 'Chờ thi đấu' },
@@ -36,38 +40,39 @@ watch(
   (m) => {
     if (m) {
       courtName.value = m.courtName || ''
-      scheduledTime.value = m.scheduledTime || '09:00'
+      scheduledTime.value = m.scheduledTime || ''
       status.value = m.status || 'pending'
-      score1.value = m.player1?.sets?.[0] ?? 21
-      score2.value = m.player2?.sets?.[0] ?? 18
-      selectedWinnerId.value =
-        m.winnerId || (score1.value >= score2.value ? m.player1?.id : m.player2?.id)
+      score1.value = m.player1?.sets?.[0] ?? ''
+      score2.value = m.player2?.sets?.[0] ?? ''
+      selectedWinnerId.value = m.winnerId
+      if (!m.winnerId) onScoreChange()
     }
   },
   { immediate: true },
 )
 
+// Picks the winner only from a strictly higher entered score; a tie stays undecided.
 function onScoreChange() {
-  if (props.match) {
-    if (score1.value > score2.value && props.match.player1?.id) {
-      selectedWinnerId.value = props.match.player1.id
-    } else if (score2.value > score1.value && props.match.player2?.id) {
-      selectedWinnerId.value = props.match.player2.id
-    }
+  const [s1, s2] = [score1.value, score2.value]
+  if (!props.match || s1 === '' || s2 === '') return
+  if (s1 > s2 && props.match.player1?.id) {
+    selectedWinnerId.value = props.match.player1.id
+  } else if (s2 > s1 && props.match.player2?.id) {
+    selectedWinnerId.value = props.match.player2.id
   }
 }
 
 function handleSave() {
-  if (props.match) {
-    const updated: FixtureMatch = {
-      ...props.match,
-      courtName: courtName.value,
-      scheduledTime: scheduledTime.value,
-      status: status.value as any,
-      winnerId: selectedWinnerId.value,
-    }
-    emit('save', updated, Number(score1.value), Number(score2.value))
+  const [s1, s2] = [score1.value, score2.value]
+  if (!props.match || s1 === '' || s2 === '' || !canSave.value) return
+  const updated: FixtureMatch = {
+    ...props.match,
+    courtName: courtName.value,
+    scheduledTime: scheduledTime.value,
+    status: status.value as any,
+    winnerId: selectedWinnerId.value,
   }
+  emit('save', updated, s1, s2)
 }
 </script>
 
@@ -169,7 +174,7 @@ function handleSave() {
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.cancel') }}
         </AuraButton>
-        <AuraButton variant="primary" :disabled="saving" @click="handleSave">
+        <AuraButton variant="primary" :disabled="saving || !canSave" @click="handleSave">
           <span v-if="saving" class="material-symbols-outlined icon-16 spin">sync</span>
           <span v-else class="material-symbols-outlined icon-16">save</span>
           <span>{{ saving ? t('common.saving') : t('common.save') }}</span>

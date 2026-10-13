@@ -198,9 +198,7 @@ function handleScanCode() {
             <span v-if="ath.seed" class="ath-seed-tag font-mono">{{
               t('admin.tournaments.seedLabel', { seed: ath.seed })
             }}</span>
-            <span class="ath-category-tag">{{
-              ath.category || t('admin.tournaments.defaultCategory')
-            }}</span>
+            <span v-if="ath.category" class="ath-category-tag">{{ ath.category }}</span>
           </div>
 
           <div class="ath-meta-details">
@@ -208,9 +206,9 @@ function handleScanCode() {
               <span class="material-symbols-outlined icon-14">corporate_fare</span>
               {{ ath.club || t('admin.tournaments.freeAgentClub') }}
             </span>
-            <span class="meta-phone font-mono">
+            <span v-if="ath.phone" class="meta-phone font-mono">
               <span class="material-symbols-outlined icon-14">call</span>
-              {{ ath.phone || '0901234567' }}
+              {{ ath.phone }}
             </span>
             <span v-if="ath.checkInTime" class="meta-time font-mono">
               <span class="material-symbols-outlined icon-14">schedule</span>
@@ -347,8 +345,8 @@ function handleScanCode() {
                   <span v-if="selectedPassAthlete.seed" class="pass-seed-tag">
                     {{ t('admin.tournaments.seedLabel', { seed: selectedPassAthlete.seed }) }}
                   </span>
-                  <span class="pass-category-tag">
-                    {{ selectedPassAthlete.category || t('admin.tournaments.defaultCategory') }}
+                  <span v-if="selectedPassAthlete.category" class="pass-category-tag">
+                    {{ selectedPassAthlete.category }}
                   </span>
                 </div>
                 <div class="pass-club-text">

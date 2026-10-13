@@ -86,8 +86,8 @@ function handleSelectMatch(match: BracketMatch) {
           @click="handleSelectMatch(m)"
         >
           <div class="node-meta">
-            <span>{{ m.label }} · {{ m.time }}</span>
-            <span class="court-txt">{{ m.court }}</span>
+            <span>{{ m.time ? `${m.label} · ${m.time}` : m.label }}</span>
+            <span v-if="m.court" class="court-txt">{{ m.court }}</span>
           </div>
 
           <div class="player-slot" :class="{ winner: m.player1.isWinner }">
@@ -120,8 +120,8 @@ function handleSelectMatch(match: BracketMatch) {
           @click="handleSelectMatch(m)"
         >
           <div class="node-meta">
-            <span>{{ m.label }} · {{ m.time }}</span>
-            <span class="court-txt">{{ m.court }}</span>
+            <span>{{ m.time ? `${m.label} · ${m.time}` : m.label }}</span>
+            <span v-if="m.court" class="court-txt">{{ m.court }}</span>
           </div>
 
           <div class="player-slot" :class="{ winner: m.player1.isWinner }">
@@ -156,11 +156,11 @@ function handleSelectMatch(match: BracketMatch) {
           @click="handleSelectMatch(finalMatch)"
         >
           <div class="node-meta">
-            <span class="live-tag">
+            <span v-if="finalMatch.status === 'live'" class="live-tag">
               <span class="live-pulse-dot"></span>
-              LIVE · {{ finalMatch.time }}
+              LIVE{{ finalMatch.time ? ` · ${finalMatch.time}` : '' }}
             </span>
-            <span class="court-txt">{{ finalMatch.court }}</span>
+            <span v-if="finalMatch.court" class="court-txt">{{ finalMatch.court }}</span>
           </div>
 
           <div class="player-slot" :class="{ winner: finalMatch.player1.isWinner }">

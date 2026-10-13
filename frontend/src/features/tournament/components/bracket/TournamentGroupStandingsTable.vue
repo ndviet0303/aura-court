@@ -46,13 +46,13 @@ defineProps<{
 
         <div class="table-body">
           <div
-            v-for="s in standings"
-            :key="s.rank"
+            v-for="(s, i) in standings"
+            :key="i"
             class="standing-row"
             :class="{ qualified: s.isQualified }"
           >
             <div class="rank-col">
-              <span class="rank-num font-mono">#{{ s.rank }}</span>
+              <span class="rank-num font-mono">{{ s.rank ? `#${s.rank}` : '—' }}</span>
               <span v-if="s.isQualified" class="q-tag">Q</span>
             </div>
 
@@ -61,7 +61,7 @@ defineProps<{
               <strong class="p-name">{{ s.name }}</strong>
             </div>
 
-            <span class="club-txt">{{ s.club }}</span>
+            <span class="club-txt">{{ s.club || '—' }}</span>
             <span class="font-mono text-center">{{ s.mp }}</span>
             <span class="font-mono text-center">{{ s.w }} / {{ s.l }}</span>
             <span class="font-mono text-center">{{ s.setsRatio }}</span>

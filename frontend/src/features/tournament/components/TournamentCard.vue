@@ -80,7 +80,7 @@ const slotPercentage = computed(() => {
       </span>
 
       <!-- Sport / Category Chip -->
-      <span class="category-chip">
+      <span v-if="tournament.category || tournament.sport" class="category-chip">
         <span class="material-symbols-outlined chip-ico">{{ sportIcon }}</span>
         <span>{{ tournament.category || tournament.sport }}</span>
       </span>
@@ -96,11 +96,11 @@ const slotPercentage = computed(() => {
       </RouterLink>
 
       <div class="meta-row">
-        <span class="meta-item">
+        <span v-if="tournament.venue" class="meta-item">
           <span class="material-symbols-outlined meta-ico">location_on</span>
-          <span>{{ tournament.venue }} ({{ tournament.city }})</span>
+          <span>{{ tournament.venue }}{{ tournament.city ? ` (${tournament.city})` : '' }}</span>
         </span>
-        <span class="meta-item">
+        <span v-if="tournament.dates" class="meta-item">
           <span class="material-symbols-outlined meta-ico">calendar_month</span>
           <span>{{ tournament.dates }}</span>
         </span>
@@ -139,7 +139,7 @@ const slotPercentage = computed(() => {
             <span class="material-symbols-outlined mini-ico">payments</span>
             {{ $t('tournament.totalPrizePool') }}
           </span>
-          <strong class="prize-val">{{ tournament.prize_pool }}</strong>
+          <strong class="prize-val">{{ tournament.prize_pool || '—' }}</strong>
         </div>
 
         <div class="slots-col">

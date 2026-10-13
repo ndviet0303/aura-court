@@ -24,11 +24,11 @@ class TournamentService
 
     public static function parseEntryFee(mixed $fee): int
     {
-        if (is_numeric($fee)) {
-            return (int) $fee;
+        if (is_int($fee)) {
+            return $fee;
         }
         if (is_string($fee)) {
-            $digits = preg_replace('/\D/', '', $fee);
+            $digits = preg_replace('/\D/', '', $fee); // not is_numeric(): it reads VND "300.000" as 300.0
 
             return $digits !== '' ? (int) $digits : 0;
         }

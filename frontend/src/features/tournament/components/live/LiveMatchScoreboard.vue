@@ -30,7 +30,7 @@ defineProps<{
           {{ pointState.text }}
         </div>
 
-        <div class="court-badge font-mono">
+        <div v-if="match.court_label" class="court-badge font-mono">
           <span class="material-symbols-outlined mini-ico">location_on</span>
           {{ match.court_label }}
         </div>
@@ -60,7 +60,7 @@ defineProps<{
           </span>
         </div>
         <div class="p-info">
-          <span class="p-seed">{{ match.player1.seed }} · {{ match.player1.club }}</span>
+          <span class="p-seed">{{ match.player1.seed }}</span>
           <h3 class="p-name">{{ match.player1.name }}</h3>
           <span v-if="match.player1.sets_won > 0" class="sets-won-tag"
             >Thắng {{ match.player1.sets_won }} Set</span
@@ -100,7 +100,7 @@ defineProps<{
       >
         <div class="p-big-score font-mono">{{ match.player2.current_score }}</div>
         <div class="p-info text-right">
-          <span class="p-seed">{{ match.player2.seed }} · {{ match.player2.club }}</span>
+          <span class="p-seed">{{ match.player2.seed }}</span>
           <h3 class="p-name">{{ match.player2.name }}</h3>
           <span v-if="match.player2.sets_won > 0" class="sets-won-tag"
             >Thắng {{ match.player2.sets_won }} Set</span

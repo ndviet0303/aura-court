@@ -66,7 +66,7 @@ function handleSubmit() {
         <div class="tourney-summary-box">
           <strong class="tourney-name">{{ tournament.name }}</strong>
           <div class="summary-details">
-            <span class="detail-tag">
+            <span v-if="tournament.category || tournament.sport" class="detail-tag">
               <span class="material-symbols-outlined mini-ico">sports_tennis</span>
               {{ tournament.category || tournament.sport }}
             </span>
@@ -74,7 +74,7 @@ function handleSubmit() {
               <span class="material-symbols-outlined mini-ico">payments</span>
               {{ $t('tournament.entryFeeLabel') }} {{ tournament.entry_fee || $t('payment.free') }}
             </span>
-            <span class="detail-tag">
+            <span v-if="tournament.venue" class="detail-tag">
               <span class="material-symbols-outlined mini-ico">location_on</span>
               {{ tournament.venue }}
             </span>
