@@ -125,9 +125,13 @@ describe('Task 1.2 Regression: Local tournament registration and payment confirm
     expect(payment.showSuccessModal.value).toBe(true)
   })
 
-  it('charges the published fee, and nothing when none is published', async () => {
+  it('charges the published fee, and nothing for a free or unpublished one', async () => {
+    // The free cases TournamentService::parseEntryFee charges 0 for; a 300.000 ₫ stand-in once showed instead.
     for (const [entry_fee, amount] of [
       ['300.000 ₫ / VĐV', 300000],
+      ['0', 0],
+      ['Miễn phí', 0],
+      ['', 0],
       [undefined, 0],
     ] as const) {
       vi.mocked(tournamentApi.getById).mockResolvedValue({ ...sampleTournament, entry_fee })
