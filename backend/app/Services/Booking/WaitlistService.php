@@ -20,7 +20,7 @@ class WaitlistService
             throw ValidationException::withMessages(['starts_at' => 'Thời gian không hợp lệ.']);
         }
         if ($start->minute !== 0 || $start->second !== 0 || $start->isPast()) {
-            throw ValidationException::withMessages(['starts_at' => 'Slot phải là một giờ trong tương lai.']);
+            throw ValidationException::withMessages(['starts_at' => 'Giờ đăng ký chờ phải bắt đầu tròn giờ và chưa qua.']);
         }
 
         $court = Court::query()->whereKey($courtId)->where('is_active', true)->firstOrFail();
@@ -34,7 +34,7 @@ class WaitlistService
             ->whereIn('status', ['held', 'confirmed'])
             ->exists();
         if (! $v1Occupied && ! $v2Occupied) {
-            throw ValidationException::withMessages(['starts_at' => 'Slot đang còn trống, bạn có thể đặt ngay.']);
+            throw ValidationException::withMessages(['starts_at' => 'Giờ này đang còn trống, bạn có thể đặt ngay.']);
         }
 
         try {
@@ -47,7 +47,7 @@ class WaitlistService
             ])->load('court');
         } catch (QueryException $exception) {
             if (str_contains(strtolower($exception->getMessage()), 'waitlist_entries')) {
-                throw ValidationException::withMessages(['starts_at' => 'Bạn đã có tên trong danh sách chờ của slot này.']);
+                throw ValidationException::withMessages(['starts_at' => 'Bạn đã có tên trong danh sách chờ của giờ này.']);
             }
             throw $exception;
         }
@@ -63,8 +63,8 @@ class WaitlistService
             $entry->update(['status' => 'notified', 'notified_at' => now()]);
             $entry->user->notify(new AuraBookingNotification(
                 'waitlist_available',
-                'Slot bạn chờ đã mở',
-                "{$entry->court->name} lúc ".($entry->starts_at?->setTimezone(config('app.timezone'))->format('d/m H:i')).' vừa có người hủy. Hãy đặt ngay trước khi slot được giữ bởi người khác.',
+                'Giờ bạn chờ đã trống',
+                "{$entry->court->name} lúc ".($entry->starts_at?->setTimezone(config('app.timezone'))->format('d/m H:i')).' vừa có người hủy. Hãy đặt ngay trước khi người khác giữ giờ này.',
                 '/courts/'.$entry->court_id.'/schedule',
             ));
         }

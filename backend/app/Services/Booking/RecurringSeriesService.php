@@ -733,11 +733,11 @@ class RecurringSeriesService
         $court->loadMissing('sportZone');
         $slotMinutes = (int) ($court->sportZone?->slot_duration ?: 60);
         if ($slotMinutes < 1 || $sessionMinutes < 1 || $sessionMinutes % $slotMinutes !== 0) {
-            throw ValidationException::withMessages(['ends_at' => 'Độ dài buổi phải là bội số của độ dài slot sân.']);
+            throw ValidationException::withMessages(['ends_at' => 'Độ dài buổi phải là bội số của 1h.']);
         }
         $count = intdiv($sessionMinutes, $slotMinutes);
         if ($count > 24) {
-            throw ValidationException::withMessages(['ends_at' => 'Một buổi định kỳ không được vượt quá 24 slot.']);
+            throw ValidationException::withMessages(['ends_at' => 'Một buổi định kỳ không được dài quá 24 giờ.']);
         }
 
         $starts = [];

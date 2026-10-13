@@ -23,12 +23,12 @@ function formatMoney(amount: number): string {
       <div class="header-titles">
         <h2 class="section-title">Danh Sách Tin Đã Đăng Nhượng Của Tôi</h2>
         <p class="section-sub">
-          Theo dõi trạng thái các slot sân bạn đang niêm yết chuyển nhượng trên chợ Aura.
+          Theo dõi trạng thái các giờ sân bạn đang niêm yết chuyển nhượng trên chợ Aura.
         </p>
       </div>
 
       <AuraButton variant="primary" size="sm" icon="add" @click="emit('create-new')">
-        Pass Thêm Slot Mới
+        Pass Thêm 1h Mới
       </AuraButton>
     </div>
 
@@ -37,7 +37,7 @@ function formatMoney(amount: number): string {
       <span class="material-symbols-outlined empty-icon">receipt_long</span>
       <h3>Bạn chưa có tin đăng pass sân nào</h3>
       <p>
-        Khi bạn bận và pass lại slot đã đặt, các tin niêm yết sẽ hiển thị tại đây để bạn quản lý.
+        Khi bạn bận và pass lại giờ đã đặt, các tin niêm yết sẽ hiển thị tại đây để bạn quản lý.
       </p>
       <AuraButton variant="primary" size="md" icon="sell" @click="emit('create-new')">
         Xem Các Lịch Có Thể Pass

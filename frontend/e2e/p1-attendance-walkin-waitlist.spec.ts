@@ -659,7 +659,7 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       $user = User::where('email', '${customer.email}')->firstOrFail();
       $user->notify(new AuraBookingNotification(
         'waitlist_available',
-        'Slot bạn chờ đã mở',
+        'Giờ bạn chờ đã trống',
         'Sân VIP 1 lúc 18:00 ngày mai vừa có người hủy. Hãy đặt ngay!',
         '/courts'
       ));

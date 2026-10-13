@@ -25,7 +25,7 @@ class CreateRecurringBooking
         }
         $base = collect($startsAt)->map(fn (string $value) => Carbon::parse($value))->sort()->values();
         if ($base->isEmpty()) {
-            throw ValidationException::withMessages(['slots' => 'Cần ít nhất một slot.']);
+            throw ValidationException::withMessages(['slots' => 'Cần chọn ít nhất 1h.']);
         }
         $series = collect();
 

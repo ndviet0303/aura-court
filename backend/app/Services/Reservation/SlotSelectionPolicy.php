@@ -63,7 +63,7 @@ class SlotSelectionPolicy
         // 1. Past-rejection (re-asserted under lock).
         foreach ($slots as $slot) {
             if ($slot['start']->copy()->setTimezone($timezone)->isPast()) {
-                throw ValidationException::withMessages(['slots' => 'Không thể đặt slot trong quá khứ.']);
+                throw ValidationException::withMessages(['slots' => 'Không thể đặt giờ đã qua.']);
             }
         }
 
@@ -113,7 +113,7 @@ class SlotSelectionPolicy
         if ($booking !== null && ! empty($booking['require_continuity']) && $slots->count() > 1) {
             for ($i = 1; $i < $slots->count(); $i++) {
                 if (! $slots[$i]['start']->equalTo($slots[$i - 1]['end'])) {
-                    throw ValidationException::withMessages(['slots' => 'Các slot phải liên tiếp trên cùng sân.']);
+                    throw ValidationException::withMessages(['slots' => 'Các giờ đặt phải liền nhau trên cùng sân.']);
                 }
             }
         }
