@@ -366,6 +366,26 @@ describe('AdminTournamentBracketView', () => {
     expect(wrapper.text()).toContain('Tạo Giải Đấu Mới')
   })
 
+  it('creates a tournament without an invented venue, city, prize or entry fee', async () => {
+    const wrapper = mount(AdminTournamentBracketView, {
+      global: {
+        plugins: [i18n],
+      },
+    })
+    await flushPromises()
+
+    const headerBtns = wrapper.findAll('.header-controls button')
+    await headerBtns[headerBtns.length - 1]?.trigger('click')
+    await wrapper.find('.modal-card input').setValue('Giải Mùa Thu')
+    await wrapper.find('.modal-footer .aura-btn--primary').trigger('click')
+    await flushPromises()
+
+    expect(apiV2.post).toHaveBeenCalledWith(
+      '/tournaments',
+      expect.objectContaining({ venue: '', city: '', prize_pool: '', entry_fee: '' }),
+    )
+  })
+
   it('interacts with live referee scoring and controls', async () => {
     const wrapper = mount(AdminTournamentBracketView, {
       global: {
