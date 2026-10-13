@@ -92,6 +92,8 @@ class PosProductSeeder extends Seeder
     {
         return [
             'aura-badminton-club' => ['owner@demo.auracourt.vn', [
+                // Cheapest item (5.400₫ with VAT): lets a presenter pay a real QR transfer at the Cầu Giấy counter.
+                ['POS-TRA-DA', null, 'Trà đá (ly)', 'drinks', 'ly', 5000, 1500, 200, 30, 'Quầy pha chế tại sân', 'Trà đá pha tại quầy, uống giải nhiệt giữa hiệp.'],
                 ['POS-LAVIE-500', '8935001701042', 'Nước suối LaVie 500ml', 'drinks', 'chai', 10000, 5000, 240, 48, 'NPP nước giải khát Minh Phát', 'Nước khoáng thiên nhiên, ướp lạnh tại quầy.'],
                 ['POS-REVIVE-500', '8935001701028', 'Revive Chanh Muối 500ml', 'drinks', 'chai', 15000, 9500, 120, 24, 'NPP nước giải khát Minh Phát', 'Nước uống bổ sung ion, bù nước sau trận.'],
                 ['POS-POCARI-500', '8935001701011', 'Pocari Sweat 500ml', 'drinks', 'chai', 18000, 12000, 72, 24, 'NPP nước giải khát Minh Phát', 'Nước bù điện giải cho buổi chơi cường độ cao.'],

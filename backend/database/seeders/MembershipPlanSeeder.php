@@ -234,7 +234,8 @@ class MembershipPlanSeeder extends Seeder
             ->where('organization_id', $org->id)
             ->where('status', 'completed')
             ->whereNotNull('customer_id')
-            ->where('payment_reference', 'like', 'POS-%')
+            // Counter sales: POS- for cash, AC for QR paid to the owner (settled tabs carry TAB- and never earn).
+            ->where(fn ($q) => $q->where('payment_reference', 'like', 'POS-%')->orWhere('payment_reference', 'like', 'AC%'))
             ->whereNotNull('completed_at')
             ->orderBy('completed_at')
             ->orderBy('id')

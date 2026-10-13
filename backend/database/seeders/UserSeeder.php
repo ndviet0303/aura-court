@@ -8,7 +8,6 @@ use App\Models\OrganizationMember;
 use App\Models\ReceivingConnection;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Crypt;
@@ -41,6 +40,8 @@ class UserSeeder extends Seeder
         $this->now = Carbon::now(config('app.timezone', 'Asia/Ho_Chi_Minh'));
         $this->demoPassword = $this->hashedPassword('SEED_DEMO_PASSWORD');
         $adminPassword = $this->hashedPassword('SEED_ADMIN_PASSWORD');
+        // Read before any write, so a missing value aborts the seed with nothing half-created.
+        $receiver = $this->receiver();
 
         $org = Organization::where('slug', 'aura-badminton-club')->firstOrFail();
         $partner = Organization::where('slug', 'hoang-gia-sports')->firstOrFail();
@@ -84,15 +85,13 @@ class UserSeeder extends Seeder
         $partnerOwner = $this->user('owner.hoanggia@demo.auracourt.vn', ['name' => 'Lâm Gia Huy', 'phone' => '0909777888', 'play_level' => 'advanced'], 50);
         $this->member($partner, $partnerOwner, OrganizationMember::ROLE_ORGANIZATION_OWNER, ['*']);
 
-        // 4. Customers with wallet balance so wallet checkout works out of the box.
-        $walletService = app(WalletPaymentService::class);
+        // 4. Customers. They pay venue owners directly by bank transfer, so no wallet balance is seeded.
         $demoUser = $this->user('user@example.com', [
             'name' => 'Nguyễn Minh Anh',
             'phone' => '0901234567',
             'play_level' => 'intermediate',
         ], 120);
         $this->member($org, $demoUser, OrganizationMember::ROLE_CUSTOMER);
-        $this->topUp($walletService, $demoUser, $org, 5000000);
 
         foreach (self::CUSTOMER_NAMES as $index => $name) {
             $number = $index + 1;
@@ -102,7 +101,6 @@ class UserSeeder extends Seeder
                 'play_level' => self::PLAY_LEVELS[$index % 3],
             ], 30 + 3 * $number);
             $this->member($org, $customer, OrganizationMember::ROLE_CUSTOMER);
-            $this->topUp($walletService, $customer, $org, 2000000 + ($number % 4) * 500000);
         }
 
         $referee = $this->user('referee@demo.auracourt.vn', ['name' => 'Hoàng Văn Trọng', 'phone' => '0907888999', 'play_level' => 'advanced'], 60);
@@ -124,16 +122,17 @@ class UserSeeder extends Seeder
             $this->user($email, ['name' => $name, 'phone' => $phone, 'play_level' => 'intermediate'], $ageDays);
         }
 
-        // 7. Verified bank accounts the owners attested for each venue (needed for direct owner payments and resale payouts).
+        // 7. Verified SePay connections the owners attested for each venue, all on the one configured demo account.
+        // Only the Cầu Giấy connection carries the webhook key registered in SePay, so only it auto-confirms payments.
         foreach (Venue::whereIn('organization_id', [$org->id, $partner->id])->orderBy('id')->get() as $venue) {
-            $isPartner = $venue->organization_id === $partner->id;
             $this->receivingConnection(
                 $venue,
-                $isPartner ? $partnerOwner : $owner,
-                $isPartner ? 'CONG TY TNHH THE THAO HOANG GIA' : 'CONG TY TNHH AURA SPORTS',
-                ($isPartner ? '190366889900' : '045100012').str_pad((string) $venue->id, 4, '0', STR_PAD_LEFT),
+                $venue->organization_id === $partner->id ? $partnerOwner : $owner,
+                $receiver,
+                $venue->is($caugiay) ? $receiver['webhook_key'] : null,
             );
         }
+        $this->command?->info('SePay webhook URL for Cầu Giấy: '.route('webhooks.sepay.connection', $caugiay->fresh()->currentReceivingConnection->routing_id));
 
         // 8. A staff invitation still waiting to be accepted.
         OrganizationInvitation::updateOrCreate(
@@ -182,35 +181,69 @@ class UserSeeder extends Seeder
         );
     }
 
-    private function topUp(WalletPaymentService $wallets, User $user, Organization $org, int $target): void
-    {
-        $wallet = $wallets->getOrCreateWallet($user->id, $org->id);
-        if ($wallet->balance < $target) {
-            $wallets->credit($wallet, $target - $wallet->balance, 'manual_seed', $user->id, 'Nạp ví demo');
-        }
-    }
-
-    private function receivingConnection(Venue $venue, User $owner, string $accountName, string $accountNumber): void
+    /**
+     * @param  array{bank: string, account: string, name: string, webhook_key: string}  $receiver
+     * @param  string|null  $webhookKey  the key registered in SePay; null gives the connection a random key no webhook knows
+     */
+    private function receivingConnection(Venue $venue, User $owner, array $receiver, ?string $webhookKey): void
     {
         $connection = ReceivingConnection::firstOrNew(['venue_id' => $venue->id, 'status' => ReceivingConnection::STATUS_VERIFIED]);
         if (! $connection->exists) {
+            $attestedAt = $this->now->copy()->subMonths(4)->setTime(9, 30);
             $connection->forceFill([
                 'organization_id' => $venue->organization_id,
                 'owner_user_id' => $owner->id,
                 'provider' => 'sepay',
                 'routing_id' => Uuid::uuid5(Uuid::NAMESPACE_URL, 'auracourt-demo/'.$venue->slug)->toString(),
-                'bank_code' => 'MBBank',
-                'account_name_ciphertext' => Crypt::encryptString($accountName),
-                'account_number_ciphertext' => Crypt::encryptString($accountNumber),
-                'account_last_four' => substr($accountNumber, -4),
-                'webhook_secret_ciphertext' => Crypt::encryptString('whsec_'.Str::random(32)),
+                'webhook_secret_ciphertext' => Crypt::encryptString($webhookKey ?? Str::random(40)),
                 'credential_version' => 1,
-                'owner_attested_at' => $this->now->copy()->subMonth(),
-                'verified_at' => $this->now->copy()->subMonth(),
-                'effective_from' => $this->now->copy()->subMonth(),
-            ])->save();
+                'owner_attested_at' => $attestedAt,
+                'verified_at' => $attestedAt,
+                'effective_from' => $attestedAt,
+                'created_at' => $attestedAt,
+            ]);
+        } elseif ($webhookKey !== null && $connection->webhookSecret() !== $webhookKey) {
+            $connection->forceFill([
+                'webhook_secret_ciphertext' => Crypt::encryptString($webhookKey),
+                'credential_version' => $connection->credential_version + 1,
+            ]);
         }
+        $connection->forceFill([
+            'bank_code' => $receiver['bank'],
+            'account_name_ciphertext' => Crypt::encryptString($receiver['name']),
+            'account_number_ciphertext' => Crypt::encryptString($receiver['account']),
+            'account_last_four' => substr($receiver['account'], -4),
+        ])->save();
         $venue->update(['current_receiving_connection_id' => $connection->id]);
+    }
+
+    /**
+     * The real demo bank account and Cầu Giấy webhook key come only from the environment. Outside local/testing a
+     * missing or malformed value aborts the seed; locally the connections get an obviously fake account and a random key.
+     *
+     * @return array{bank: string, account: string, name: string, webhook_key: string}
+     */
+    private function receiver(): array
+    {
+        $keys = [
+            'bank' => ['SEED_DEMO_RECEIVER_BANK', '/^[A-Za-z0-9_-]{1,32}$/', 'TPBank'],
+            'account' => ['SEED_DEMO_RECEIVER_ACCOUNT', '/^\d{4,34}$/', '0000000000'],
+            'name' => ['SEED_DEMO_RECEIVER_NAME', '/^.{1,160}$/u', 'AURA COURT DEMO'],
+            'webhook_key' => ['SEED_DEMO_RECEIVER_WEBHOOK_KEY', '/^[A-Za-z0-9_-]{32,512}$/', null],
+        ];
+        $receiver = [];
+        foreach ($keys as $field => [$key, $pattern, $fallback]) {
+            $value = trim((string) env($key));
+            if (preg_match($pattern, $value) !== 1) {
+                if (! app()->environment('local', 'testing')) {
+                    throw new RuntimeException("{$key} is not set or malformed. Seeding with APP_ENV=".app()->environment().' requires SEED_DEMO_RECEIVER_BANK, SEED_DEMO_RECEIVER_ACCOUNT, SEED_DEMO_RECEIVER_NAME and SEED_DEMO_RECEIVER_WEBHOOK_KEY (see backend/.env.example); there is no committed default.');
+                }
+                $value = $fallback ?? Str::random(40);
+            }
+            $receiver[$field] = $value;
+        }
+
+        return $receiver;
     }
 
     /**

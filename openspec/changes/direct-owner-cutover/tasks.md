@@ -336,26 +336,34 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 10. Seed khớp luồng thật (design 3, 11)
 
-- [ ] 10.1 `UserSeeder::receivingConnection` đọc bốn biến `SEED_DEMO_RECEIVER_*`.
+- [x] 10.1 `UserSeeder::receivingConnection` đọc bốn biến `SEED_DEMO_RECEIVER_*`.
   - Ngoài `local` và `testing`, thiếu bất kỳ biến nào thì seed dừng, theo mẫu `hashedPassword`.
   - Mọi kết nối cơ sở và tài khoản người bán lại đều dùng tài khoản này.
   - Chỉ `aura-court` nhận key từ env. Các kết nối khác dùng key ngẫu nhiên.
   - Seeder in ra URL webhook của Cầu Giấy (routing id uuid5 `auracourt-demo/aura-court`) và không bao giờ in key.
   - Thêm bốn khóa, để trống giá trị, vào `.env.example`.
-- [ ] 10.2 Bỏ nạp ví (`topUp`) và dữ liệu trả bằng ví ở `UserSeeder`, `BookingPaymentSeeder`, `RecurringSeriesSeeder`, `PosSalesSeeder`, `TournamentSeeder` và `MarketplaceSeeder`.
-- [ ] 10.3 Bỏ payout, settlement, beneficiary, hoàn tiền, hủy sân và khiếu nại xử lý bằng hoàn tiền ở `UserSeeder`, `DisputeFinanceSeeder`, `BookingPaymentSeeder`, `RecurringSeriesSeeder` và `MatchmakingSeeder`.
-- [ ] 10.4 Lịch sử đã thanh toán được ghi như code thật ghi: attempt `paid`, receipt `allocated`, bút toán `owner.direct_receipt`.
+  - Đã làm. Biến được kiểm tra định dạng và đọc ở đầu `run()`, nên thiếu biến thì seed dừng trước khi tạo tài khoản nào. Ở local, để trống thì dùng giá trị giả (`TPBank`, `0000000000`, key ngẫu nhiên). Seed lại với key khác thì kết nối nhận key mới và tăng `credential_version`.
+- [x] 10.2 Bỏ nạp ví (`topUp`) và dữ liệu trả bằng ví ở `UserSeeder`, `BookingPaymentSeeder`, `RecurringSeriesSeeder`, `PosSalesSeeder`, `TournamentSeeder` và `MarketplaceSeeder`.
+  - Đã làm. `UserSeeder` không còn `topUp`; bán POS bằng ví bị bỏ.
+- [x] 10.3 Bỏ payout, settlement, beneficiary, hoàn tiền, hủy sân và khiếu nại xử lý bằng hoàn tiền ở `UserSeeder`, `DisputeFinanceSeeder`, `BookingPaymentSeeder`, `RecurringSeriesSeeder` và `MatchmakingSeeder`.
+  - Đã làm. `DisputeFinanceSeeder` bỏ toàn bộ phần tài chính (provider event, beneficiary, settlement, payout, đối soát, nghĩa vụ hoàn tiền); khiếu nại DSP-5MB8VJ3RDP đổi sang `resolve`, chủ sân hỗ trợ trực tiếp. Lịch booking `refunded`/`cancelled`/`refund_pending`/`pending` đổi sang đã chơi, hết hạn hoặc sắp tới (vẫn 72 booking). Hợp đồng định kỳ bị hủy giữ các buổi đã trả, như `cancelSeries`. `MatchmakingSeeder` không cần sửa: trận bị hủy không có hoàn tiền hay ví.
+- [x] 10.4 Lịch sử đã thanh toán được ghi như code thật ghi: attempt `paid`, receipt `allocated`, bút toán `owner.direct_receipt`.
   - Không ghi bản ghi `payments` của nền tảng.
   - Đơn QR trong `PosSalesSeeder` (khoảng dòng 307–320) trỏ về kết nối của cơ sở, không trỏ về tài khoản nền tảng.
-- [ ] 10.5 Chính sách seed (`OrganizationVenueSeeder::bookingPolicy` và `E2ESeedFixturesCommand`, khoảng dòng 500–536):
+  - Đã làm qua trait `Database\Seeders\Concerns\PaysVenueOwner`: tạo attempt bằng `createAttempt`, gửi sự kiện SePay có header `Apikey` qua `verifyInboundWebhook` và `receiveVerifiedEvent`, rồi ghi allocation và gọi `postDirectOwnerReceipt`. Không gọi `processReceipt` vì các confirmer sẽ chạy lại side effect (xác nhận hold, hoàn tất đơn) trên dữ liệu seed đã ở trạng thái cuối. Áp dụng cho booking, kỳ định kỳ, đơn POS QR (mã `AC…`) và lệ phí giải.
+- [x] 10.5 Chính sách seed (`OrganizationVenueSeeder::bookingPolicy` và `E2ESeedFixturesCommand`, khoảng dòng 500–536):
   - Bỏ `cancellation`, `change`, `ancillary_credit_policy` và `transfer.seller_reimbursement_required`.
   - Thời lượng tối thiểu và tối đa giữ 60 và 240 phút.
-- [ ] 10.6 `MarketplaceSeeder`: listing P2P có tài khoản người bán, cùng vài transfer đã hoàn tất với `fee=0`.
-- [ ] 10.7 `TournamentSeeder`:
+  - Đã làm; bỏ luôn `cancellation_grace_hours` trong settings của cơ sở. `E2ESeedFixturesCommand` giảm từ 882 xuống 869 dòng, allowlist kiến trúc giảm theo.
+- [x] 10.6 `MarketplaceSeeder`: listing P2P có tài khoản người bán, cùng vài transfer đã hoàn tất với `fee=0`.
+  - Đã làm. Listing đi qua `MarketplaceService::list` với tài khoản nhận đã cấu hình. Ba giao dịch đã bán (RES-P2P-101..103, người mua của 102 là `user@example.com`) ghi theo dạng `PeerToPeerResaleService::transfer`: mã `RS…`, `fee=0`, `settlement_mode=peer_to_peer`.
+- [x] 10.7 `TournamentSeeder`:
   - mọi giải đều có `venue_id`;
   - thêm một giải sắp diễn ra ở Cầu Giấy, phí 2.000–10.000 VND, hạn đăng ký ít nhất 7 ngày sau lúc seed.
-- [ ] 10.8 `PosProductSeeder`: thêm một sản phẩm ở Cầu Giấy giá không quá 10.000 VND.
-- [ ] 10.9 Test seed:
+  - Đã làm. Giải mới "Giải Bóng Bàn Giao Lưu Aura Cầu Giấy": bắt đầu sau 12 ngày, hạn đăng ký sau 10 ngày, lệ phí 5.000 ₫ / VĐV; `user@example.com` chưa đăng ký để trình diễn.
+- [x] 10.8 `PosProductSeeder`: thêm một sản phẩm ở Cầu Giấy giá không quá 10.000 VND.
+  - Đã làm. "Trà đá (ly)" `POS-TRA-DA` 5.000 ₫ (5.400 ₫ gồm VAT). Danh mục POS tính theo tổ chức nên sản phẩm có ở mọi cơ sở của Aura, trong đó có Cầu Giấy.
+- [x] 10.9 Test seed:
   - không ví nào có số dư;
   - không có payout, settlement hay hoàn tiền;
   - không có attempt `booking_change`;
@@ -363,26 +371,30 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
   - mọi sân công khai đều có giá;
   - mọi khu sân có `slot_duration` 60; mọi slot đặt, entitlement và slot giá bắt đầu đúng giờ và dài 60 phút; mọi chính sách tính theo giờ chẵn;
   - thiếu biến env ngoài `local`/`testing` thì seed dừng.
+  - Đã làm trong `DatabaseSeederTest`, dùng giá trị env giả. Thêm kiểm tra: mọi attempt `paid`, số receipt `allocated`, allocation và bút toán `owner.direct_receipt` bằng nhau, chỉ `aura-court` giữ key env, không có khiếu nại `resolve_and_refund`. Ngày tạo của cơ sở và khu sân được ghim theo tổ chức, sửa lỗi thỉnh thoảng có mốc lúc nửa đêm.
 
 ## 11. Tài liệu
 
-- [ ] 11.1 `docs/demo-accounts.md`:
+- [x] 11.1 `docs/demo-accounts.md`:
   - Sửa đoạn về cờ (dòng 37–39) theo `PILOT_ORGANIZATION_IDS=*`.
   - Bỏ "ví" trong dòng của `user@example.com` (dòng 54) và ghi chú "Chi trả" (dòng 75).
   - Thêm kịch bản demo:
     - Mọi thứ cần tự xác nhận (booking, POS, giải đấu) đều làm ở Cầu Giấy.
     - Bán lại slot do người bán xác nhận.
     - Khách không đến được thì bán lại slot. Không có hủy hay dời lịch.
-- [ ] 11.2 Viết tài liệu vận hành SePay, gồm:
+  - Đã làm. Thêm mục "Tài khoản nhận tiền" (bốn biến `SEED_DEMO_RECEIVER_*`, không ghi giá trị) và "Kịch bản trình diễn". Bỏ câu về lượt giữ chỗ BK-066/067/069 và đối soát 01:00 vì seed không còn tạo chúng.
+- [x] 11.2 Viết tài liệu vận hành SePay, gồm:
   - mẫu mã thanh toán;
   - webhook Api_Key cho từng kết nối;
   - xoay key bằng endpoint rotate;
   - tắt webhook nền tảng cũ;
   - cách tra tiền không khớp trong SePay hoặc app ngân hàng.
-- [ ] 11.3 `docs/testing/playwright-coverage.md`:
+  - Đã làm: `docs/operations/sepay-owner-connections.md`, liên kết từ `docs/demo-accounts.md` (docs không có trang mục lục).
+- [x] 11.3 `docs/testing/playwright-coverage.md`:
   - Bỏ các dòng FR-BKG-11 đến FR-BKG-14 và FR-PAY-09 đến FR-PAY-11 (dòng 99–102, 118–120). Các dòng này đang trỏ tới spec Playwright đã xóa.
   - Bỏ mục P0-08 (dòng 204).
   - Ghi đúng mã FR theo bản báo cáo đã sửa.
+  - Đã làm. Commit trước đã đổi các dòng này sang `Retired`; nay bỏ hẳn, ma trận còn 119 FR, danh sách P0 còn 9 hành trình (giữ nguyên mã P0-09, P0-10). Các mã FR còn lại giữ nguyên vì chưa có bản báo cáo đã sửa (11.4). Sửa luôn endpoint webhook của FR-PAY-02.
 - [ ] 11.4 Khi có bản `dacn_report.docx` đã sửa, ghi bảng truy vết vào `report-traceability.md` của change này.
   - Bảng phủ các FR đã bỏ (hủy sân, hoàn tiền, dời lịch), luồng bán lại P2P và định nghĩa slot 1 giờ.
   - Không sửa file trong `openspec/changes/archive/`.
@@ -395,12 +407,13 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
   - Dòng 27: scenario client cũ gọi các lệnh hủy, hoàn tiền và dời lịch đã bị bỏ.
   - Chạy `openspec validate retire-v1-booking --strict`.
   - Đã làm cùng Phase C của `retire-v1-booking` (2026-10-13). Requirement đó cũng được đổi tên thành "Unversioned reservation API", nên change nào archive sau phải rebase cả tên requirement (design C7 của change đó).
-- [ ] 12.2 Thêm ghi chú vào `openspec/changes/retire-v1-booking/tasks.md`:
+- [x] 12.2 Thêm ghi chú vào `openspec/changes/retire-v1-booking/tasks.md`:
   - 3.3: `BookingCancelModal` và `BookingRescheduleModal` đã bị xóa;
   - 3.7: case "huỷ" và "dời lịch đắt hơn và rẻ hơn" không còn;
   - 6.2: route hoàn tiền và dời lịch đã bị change này xóa;
   - 6.4: `OwnerRefundService` và `RescheduleService` đã bị xóa;
   - 6.8: webhook nền tảng không còn ghi `payments` cho POS.
+  - Đã làm. Ghi chú thêm vào `openspec/changes/archive/2026-10-13-retire-v1-booking/tasks.md` theo yêu cầu, dù change đó đã archive.
 - [ ] 12.3 Khi archive:
   - Change archive sau rebase khối MODIFIED lên spec chính.
   - Sửa tay phần Purpose của `direct-owner-payments`, `reservations-and-pricing` và `wallet-payment`.

@@ -1,6 +1,6 @@
 [
   ["class-lines", "Console/Commands/E2EArrangeTestDataCommand.php", 328],
-  ["class-lines", "Console/Commands/E2ESeedFixturesCommand.php", 882],
+  ["class-lines", "Console/Commands/E2ESeedFixturesCommand.php", 869],
   ["class-lines", "Http/Controllers/Admin/AdminController.php", 706],
   ["class-lines", "Http/Controllers/Admin/AdminDisputeController.php", 410],
   ["class-lines", "Http/Controllers/Auth/AuthController.php", 313],

@@ -38,7 +38,9 @@ Trước khi thực hiện change này, thư mục `frontend/e2e/` có 12 test t
 
 ---
 
-## 2. Ma trận chi tiết 126 Yêu cầu chức năng (126 FR Matrix)
+## 2. Ma trận chi tiết 119 Yêu cầu chức năng (119 FR Matrix)
+
+Bản báo cáo sửa theo direct-owner-cutover bỏ 7 FR hủy booking, đổi lịch và hoàn tiền (FR-BKG-11 đến FR-BKG-14, FR-PAY-09 đến FR-PAY-11); các mã FR còn lại giữ nguyên. Khách không đến được thì bán lại slot (FR-BKG-19).
 
 | FR ID | Tên yêu cầu báo cáo | Main Spec | Bề mặt (UI/API) | Actor & Phạm vi | Mức ưu tiên | Test Playwright & Bước kiểm tra dự kiến | Kiểm thử Backend liên quan | Finding | Trạng thái | Môi trường / Revision |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -96,10 +98,6 @@ Trước khi thực hiện change này, thư mục `frontend/e2e/` có 12 test t
 | **FR-BKG-08** | Giải phóng giữ chỗ | `runtime-execution` | UI & Worker background | Customer | P0 | p0-booking-payment-journey.spec.ts (4.4): Quá hạn 10 phút không thanh toán -> Lệnh expiry sweep giải phóng slot -> Slot trở lại trạng thái trống | `AutomaticUnpaidExpiryTest`, `ScheduledCallbackResolutionTest` | D32 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-BKG-09** | Xác nhận booking | `direct-owner-payments` | UI & Webhook | Customer & Webhook | P0 | p0-booking-payment-journey.spec.ts (4.1): Webhook biên nhận hợp lệ gửi tới backend -> Booking chuyển sang confirmed -> UI tự động cập nhật hoặc reload ra vé | `DirectOwnerCheckoutCohortTest`, `ReceiptProcessor` | D30 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-BKG-10** | Tra cứu và quản lý booking | `reservations-and-pricing` | UI: `/booking` (Lịch sử đặt) | Customer | P0 | p0-booking-payment-journey.spec.ts (4.1): Mở danh sách đặt chỗ -> Hiển thị booking đã xác nhận, mã vé, QR check-in, chi tiết tiền và sân | `BookingApiTest`, `ReliabilityRealtimeAndSchedulerReadinessTest` | D30 | Covered | isolated-e2e / 6f0e0b8 |
-| **FR-BKG-11** | Yêu cầu thay đổi booking | `reservations-and-pricing` | — (đã gỡ) | Customer | P0 | Đã gỡ bởi direct-owner-cutover: booking là cuối cùng, không đổi lịch. p0-booking-payment-journey.spec.ts (4.1, bước 11b): Booking đã confirm chỉ có nút Pass sân (`/resale`), không có nút đổi lịch | — | D31 | Retired (direct-owner-cutover) | — |
-| **FR-BKG-12** | Xử lý thay đổi booking | `reservations-and-pricing` | — (đã gỡ) | Customer | P0 | Đã gỡ bởi direct-owner-cutover: không còn luồng đổi lịch; pass sân là cách xử lý duy nhất | — | D31 | Retired (direct-owner-cutover) | — |
-| **FR-BKG-13** | Yêu cầu hủy booking | `reservations-and-pricing` | — (đã gỡ) | Customer | P0 | Đã gỡ bởi direct-owner-cutover: booking là cuối cùng, không hủy. p0-booking-payment-journey.spec.ts (4.1, bước 11b): Không có nút hủy/hoàn tiền, chỉ có Pass sân | — | D40 | Retired (direct-owner-cutover) | — |
-| **FR-BKG-14** | Xử lý hủy booking | `reservations-and-pricing` | — (đã gỡ) | Customer & Owner | P0 | Đã gỡ bởi direct-owner-cutover: không còn luồng hủy và nghĩa vụ hoàn tiền | — | D40 | Retired (direct-owner-cutover) | — |
 | **FR-BKG-15** | Tạo yêu cầu đặt sân định kỳ | `advanced-booking-marketplace` | UI: `/recurring-booking` | Customer đã verified | P1 | p1-recurring-series.spec.ts (8.1.1): Chọn sân, thứ trong tuần, khung giờ và khoảng ngày lặp -> Bấm xem trước | `RecurringSeriesPreviewTest`, `RecurringSeriesService` | D34, D35 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-BKG-16** | Kiểm tra từng lần đặt định kỳ | `advanced-booking-marketplace` | UI: Preview định kỳ | Customer | P1 | p1-recurring-series.spec.ts (8.1.1): Danh sách tất cả các ngày trong chuỗi hiển thị rõ ràng, tính tổng tiền từng kỳ và tổng chuỗi | `RecurringDirectOwnerSeriesTest`, `RecurringSeriesAndInvoicesTest` | D34, D35 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-BKG-17** | Xử lý xung đột đặt định kỳ | `advanced-booking-marketplace` | UI: Preview định kỳ | Customer | P1 | p1-recurring-series.spec.ts (8.1.2, 8.1.3): Có buổi bị trùng lịch -> Áp dụng chính sách all-or-nothing hoặc partial | `RecurringDirectOwnerSeriesTest` | D36 | Covered | isolated-e2e / 6f0e0b8 |
@@ -108,16 +106,13 @@ Trước khi thực hiện change này, thư mục `frontend/e2e/` có 12 test t
 | **FR-BKG-20** | Tiếp nhận chuyển nhượng | `advanced-booking-marketplace` | UI: `/resale` | Buyer | P1 | p1-resale-marketplace.spec.ts (8.3.3, 8.3.5): Khách mua chọn vé chuyển nhượng -> Thanh toán tiền chuyển nhượng theo đúng receiver của chủ sân | `ResaleMarketplaceTest` | D37, D44 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-BKG-21** | Hoàn tất chuyển nhượng | `advanced-booking-marketplace` | UI & Backend | Buyer & Seller | P1 | p1-resale-marketplace.spec.ts (8.3.4, 8.3.5): Biên nhận thanh toán hợp lệ -> Thu hồi entitlement người bán, cấp entitlement và mã check-in cho người mua -> Không thu commission mới | `ResaleMarketplaceTest` | D38 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-01** | Tạo thông tin thanh toán booking | `direct-owner-payments` | UI: `/payment/:code` | Customer | P0 | p0-booking-payment-journey.spec.ts (4.1): Sinh mã thanh toán gắn với receiver cơ sở (chủ TK, STK, ngân hàng, mã QR động đúng số tiền) | `OwnerPaymentAttemptServiceTest`, `DirectOwnerCheckoutCohortTest` | D39 | Covered | isolated-e2e / 6f0e0b8 |
-| **FR-PAY-02** | Tiếp nhận kết quả giao dịch | `direct-owner-payments` | Webhook API `/api/webhooks/sepay` | Payment provider / Webhook | P0 | p0-booking-payment-journey.spec.ts (4.1, 4.2): Nhận payload webhook có chữ ký/secret hợp lệ -> Phân tích mã tham chiếu và số tiền | `ProviderSandboxAndOperationalReadinessTest` | D30 | Covered | isolated-e2e / 6f0e0b8 |
+| **FR-PAY-02** | Tiếp nhận kết quả giao dịch | `direct-owner-payments` | Webhook API `/api/v1/webhooks/sepay/connections/{routingId}` | Payment provider / Webhook | P0 | p0-booking-payment-journey.spec.ts (4.1, 4.2): Nhận payload webhook có header `Authorization: Apikey` hợp lệ của kết nối -> Phân tích mã tham chiếu và số tiền | `ProviderSandboxAndOperationalReadinessTest` | D30 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-03** | Đối chiếu thanh toán booking | `direct-owner-payments` | Backend matching logic | System | P0 | p0-booking-payment-journey.spec.ts (4.1, 4.2): Khớp số tiền, receiver ID, reference code với pending payment attempt -> Chuyển trạng thái paid | `ReconciliationAndAutoResolveIntegrityTest` | D30, D41 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-04** | Cập nhật trạng thái giao dịch | `direct-owner-payments` | UI & DB | Customer | P0 | p0-booking-payment-journey.spec.ts (4.1): Màn hình thanh toán tự chuyển từ Chờ sang Thành công -> Reload trang xác nhận trạng thái bền vững | `ProviderSandboxAndOperationalReadinessTest` | D30 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-05** | Xử lý thông báo giao dịch trùng | `direct-owner-payments` | Webhook API | System | P0 | p0-booking-payment-journey.spec.ts (4.2): Webhook gửi 2 lần cùng 1 giao dịch -> Chỉ xử lý 1 lần, lần 2 trả 200 idempotent không cấp vé 2 lần | `ComprehensiveConcurrencyAndRetryInvariantsTest`, `FinancialPostingBalancedAndRetrySafeTest` | D30 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-06** | Ghi nhận giao dịch bất thường | `direct-owner-payments` | Webhook API & Admin UI | System | P0 | p0-booking-payment-journey.spec.ts (4.2, 4.4): Tiền đến sai số tiền, nội dung hoặc sau khi timeout -> Đưa vào hàng đợi xử lý ngoại lệ tài chính | `ProviderSandboxAndOperationalReadinessTest`, `AdminFinancialExceptionsView` | D32 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-07** | Tạo yêu cầu chia sẻ chi phí | `advanced-booking-marketplace` | UI: `/split-bill` | Host customer | P1 | p1-split-payments.spec.ts (8.2.1): Host tạo nhóm chia tiền đặt sân -> Thêm danh sách người tham gia và số tiền mỗi người | `SplitPaymentReceiptVerificationTest`, `useGroupSplitBill` | D41, D42 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-08** | Theo dõi khoản đóng góp | `advanced-booking-marketplace` | UI: `/split-bill/:code` | Host & Participants | P1 | p1-split-payments.spec.ts (8.2.2, 8.2.3): Từng thành viên quét QR trả phần mình -> Cập nhật trạng thái từng người -> Đủ tiền confirm vé, thiếu tiền hoàn trả | `SplitPaymentReceiptVerificationTest` | D41, D42 | Covered | isolated-e2e / 6f0e0b8 |
-| **FR-PAY-09** | Tạo yêu cầu hoàn tiền | `direct-owner-payments` | — (đã gỡ) | Customer | P0 | Đã gỡ bởi direct-owner-cutover: không có hoàn tiền; pass sân trên Chợ nhượng sân là cách xử lý duy nhất | — | D40 | Retired (direct-owner-cutover) | — |
-| **FR-PAY-10** | Xác định số tiền hoàn | `direct-owner-payments` | — (đã gỡ) | System | P0 | Đã gỡ bởi direct-owner-cutover: chính sách sân không còn phí hủy/đổi | — | D40 | Retired (direct-owner-cutover) | — |
-| **FR-PAY-11** | Theo dõi thực hiện hoàn tiền | `direct-owner-payments` | — (đã gỡ) | Owner & Customer | P0 | Đã gỡ bởi direct-owner-cutover: hộp thư hoàn tiền của chủ sân đã bị xóa; lịch sử hoàn tiền cũ chỉ còn hiển thị đọc | — | D40 | Retired (direct-owner-cutover) | — |
 | **FR-PAY-12** | Thanh toán phí sử dụng nền tảng | `platform-subscriptions` | UI: `/partner/subscription` | Owner | P1 | p1-platform-subscription.spec.ts (7.3.2): Chủ sân thanh toán phí duy trì nền tảng qua QR của Platform Receiver (tách biệt tài khoản nhận tiền đặt sân) | `PlatformPaymentInitiationTest` | D11, D45 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-13** | Kích hoạt hoặc gia hạn gói | `platform-subscriptions` | Webhook platform | System | P1 | p1-platform-subscription.spec.ts (7.3.2): Webhook nền tảng xác thực thanh toán -> Gia hạn thời hạn subscription và mở rộng hạn mức quota | `PlatformPaymentConfirmationAndReconciliationTest` | D45 | Covered | isolated-e2e / 6f0e0b8 |
 | **FR-PAY-14** | Ghi nhận doanh thu booking | `financial-ledger-and-payouts` | Backend & Sổ cái | System | P1 | p1-revenue-reconciliation-reporting.spec.ts (9.6.1): Ghi nhận doanh thu trực tiếp thuộc về chủ sân, không trích commission nền tảng | `FinancialPostingBalancedAndRetrySafeTest` | D39, D48 | Covered | isolated-e2e / 6f0e0b8 |
@@ -173,7 +168,7 @@ Trước khi thực hiện change này, thư mục `frontend/e2e/` có 12 test t
 
 ## 3. Ma trận các năng lực bổ trợ hiện hành (Supplementary Capabilities Matrix)
 
-Các năng lực này đang hoạt động trong codebase nhưng nằm ngoài danh mục 126 FR của báo cáo cũ:
+Các năng lực này đang hoạt động trong codebase nhưng nằm ngoài danh mục FR của báo cáo:
 
 | STT | Năng lực bổ trợ (Capability) | Mô tả chi tiết | Bề mặt UI / Route | Vai trò | Mức ưu tiên | Test Playwright & Bước kiểm tra dự kiến | Finding liên kết | Trạng thái | Môi trường |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -190,9 +185,9 @@ Các năng lực này đang hoạt động trong codebase nhưng nằm ngoài da
 
 ---
 
-## 4. Danh mục 10 Hành trình P0 cốt lõi (P0 Critical Acceptance Journeys)
+## 4. Danh mục 9 Hành trình P0 cốt lõi (P0 Critical Acceptance Journeys)
 
-Theo thiết kế (`design.md`), bộ P0 độc lập cần được hoàn thành trước để thiết lập cổng CI gate:
+Theo thiết kế (`design.md`), bộ P0 độc lập cần được hoàn thành trước để thiết lập cổng CI gate. P0-08 (đổi lịch và hủy) đã bỏ cùng các FR tương ứng; các mã P0 khác giữ nguyên:
 
 1. **P0-01 (Auth & Session)**: Đăng nhập -> chuyển hướng đúng return path -> F5 reload giữ session -> đăng xuất an toàn; chặn tài khoản chưa xác thực email (D02) hoặc bị hạn chế (D01) tạo booking trái phép.
 2. **P0-02 (Role Matrix & Tenant Scoping)**: Ma trận truy cập Owner, Manager, Cashier, Staff, Customer, Platform Admin; cấm Chủ sân truy cập chức năng Platform Admin; cấm Chủ sân truy cập Tenant của tổ chức khác; cấm Quản lý sân truy cập Sibling Venue không được phân quyền.
@@ -201,15 +196,14 @@ Theo thiết kế (`design.md`), bộ P0 độc lập cần được hoàn thàn
 5. **P0-05 (Slot Concurrency Conflict)**: 2 trình duyệt khách hàng cùng chọn và xác nhận 1 slot tại cùng 1 thời điểm; đúng 1 khách hàng giữ chỗ thành công, khách còn lại nhận thông báo xung đột rõ ràng trên giao diện.
 6. **P0-06 (Expiry & Late Money Arrival)**: Slot giữ chỗ quá thời gian tự động giải phóng; nếu webhook tiền đến muộn sau khi slot đã nhả, hệ thống không hồi sinh booking mà đưa vào hàng đợi ngoại lệ tài chính (finance exception).
 7. **P0-07 (Coupon & Loyalty Balance)**: Áp dụng coupon và tiêu điểm tích lũy; số tiền giảm trừ chính xác; không tiêu điểm 2 lần khi checkout thất bại hoặc trùng thao tác; reload giữ nguyên snapshot.
-8. **P0-08 (Reschedule & Cancellation)**: Đã gỡ bởi direct-owner-cutover. Booking đã thanh toán là cuối cùng (không hủy, hoàn tiền hay đổi lịch); `p0-booking-payment-journey.spec.ts` (4.1, bước 11b) kiểm tra booking đã confirm chỉ có nút Pass sân dẫn tới `/resale`.
-9. **P0-09 (POS Shift & Sales)**: Mở ca thu ngân -> bán tiền mặt -> bán QR pending -> webhook xác thực đơn chuyển paid -> kiểm tra tồn kho hàng hóa bị trừ chính xác -> đóng ca đối chiếu chênh lệch tiền mặt.
-10. **P0-10 (Attendance & Service Tab Settlement)**: Check-in bằng mã booking -> kiểm tra điều kiện arrival window -> thêm dịch vụ (nước uống) vào tab của sân -> check-out thanh toán tab hoặc ghi nhận nợ.
+8. **P0-09 (POS Shift & Sales)**: Mở ca thu ngân -> bán tiền mặt -> bán QR pending -> webhook xác thực đơn chuyển paid -> kiểm tra tồn kho hàng hóa bị trừ chính xác -> đóng ca đối chiếu chênh lệch tiền mặt.
+9. **P0-10 (Attendance & Service Tab Settlement)**: Check-in bằng mã booking -> kiểm tra điều kiện arrival window -> thêm dịch vụ (nước uống) vào tab của sân -> check-out thanh toán tab hoặc ghi nhận nợ.
 
 ---
 
 ## 5. Quy tắc thực thi và cổng nghiệm thu (Gate Criteria)
 
-1. **Điều kiện hoàn thành P0**: 9 hành trình P0 còn hiệu lực (P0-08 đã gỡ) phải chạy pass độc lập và chạy liên tiếp 3 lần toàn bộ mà không cần retry.
+1. **Điều kiện hoàn thành P0**: 9 hành trình P0 phải chạy pass độc lập và chạy liên tiếp 3 lần toàn bộ mà không cần retry.
 2. **Cổng CI Merge Request**: Job kiểm thử P0 Playwright là bắt buộc (blocking) trên các merge request và nhánh deploy; nếu có test fail hoặc selection trống, pipeline phải fail ngay lập tức.
 3. **Báo cáo trung thực**: Mọi tính năng chưa có giao diện web thật được đánh dấu rõ là `API-only` hoặc `Blocked`, tuyệt đối không giả lập DOM pass để báo cáo xanh.
 ---
@@ -227,6 +221,6 @@ Nhằm đảm bảo tính truy xuất nguồn gốc (traceability) theo yêu c�
 | **GitLab CI Release Gate** | Pipeline jobs: `e2e_p0_gate`, `e2e_regression_scheduled`, `e2e_smoke_cross_browser` | Cổng chặn merge request nếu có P0 thất bại hoặc selection rỗng; tách biệt build/deploy độc lập | Quy tắc pipeline decoupled và enforce fail-closed |
 
 **Kết luận kiểm toán:**
-- Toàn bộ **126 FR** đã được đối chiếu chính xác với 30 file spec Playwright thực tế (7 FR hủy/hoàn tiền/đổi lịch được đánh dấu `Retired (direct-owner-cutover)`), loại bỏ 100% tham chiếu tới file không tồn tại (`critical-flows.spec.ts`, `p1-venue-lifecycle-readiness.spec.ts`, v.v.).
+- Toàn bộ **119 FR** đã được đối chiếu chính xác với 30 file spec Playwright thực tế, loại bỏ 100% tham chiếu tới file không tồn tại (`critical-flows.spec.ts`, `p1-venue-lifecycle-readiness.spec.ts`, v.v.).
 - Tất cả các cột dữ liệu được chuẩn hóa, phân định rõ kiểm thử trình duyệt Playwright và kiểm thử backend PHPUnit đối ứng.
 - Các năng lực bổ trợ (Supplementary) được ghi nhận trung thực: 9 mục Covered, 1 mục ghi nhận khoảng trống giao diện `Partial (UI Gap)` (SUP-10) theo đúng thực tế kiểm thử mà không giả lập kết quả.

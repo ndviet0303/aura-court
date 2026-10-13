@@ -12,6 +12,7 @@ use App\Models\Venue;
 use App\Services\Tournament\TournamentService;
 use Carbon\Carbon;
 use Database\Seeders\Concerns\KeepsWakingHours;
+use Database\Seeders\Concerns\PaysVenueOwner;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Ramsey\Uuid\Uuid;
@@ -20,11 +21,13 @@ use Ramsey\Uuid\Uuid;
  * One tournament per sport across both tenants and every lifecycle stage. Brackets come from
  * TournamentService::generateSingleElimination and results advance winners the way submitScore does,
  * so fixtures, champions and standings (TournamentService::recomputeStandings) agree.
- * Seeded registrations carry no wallet debit: backdated debits would break wallet running balances.
+ * Every tournament belongs to a venue, and each paid registration was paid to that venue owner's connection through a
+ * `tournament_registration` attempt, like TournamentRegistrationPaymentService.
  */
 class TournamentSeeder extends Seeder
 {
     use KeepsWakingHours;
+    use PaysVenueOwner;
 
     /**
      * players: 0 is user@example.com, n is khach{n}; list order is the seed.
@@ -213,6 +216,23 @@ class TournamentSeeder extends Seeder
             'description' => 'Giải pickleball dành cho cư dân khu Nam Sài Gòn do Hoàng Gia Sports tổ chức trên hai sân có mái che.',
             'rules' => 'Loại trực tiếp, trận 3 game 11 điểm, cách biệt 2 điểm. VĐV tự chuẩn bị vợt, BTC cung cấp bóng.',
         ],
+        [
+            // The live demo tournament: a token fee paid by real QR transfer to the Cầu Giấy connection, which auto-confirms.
+            'key' => 'bong-ban-giao-luu-cau-giay',
+            'venue' => 'aura-court',
+            'sport' => 'table_tennis',
+            'name' => 'Giải Bóng Bàn Giao Lưu Aura Cầu Giấy',
+            'category' => 'Đơn nam nữ phong trào',
+            'stage' => 'open',
+            'day' => 12,
+            'max' => 16,
+            'players' => [3, 8, 14],
+            'prize_pool' => 'Cúp và quà lưu niệm',
+            'entry_fee' => '5.000 ₫ / VĐV',
+            'image_url' => '/courts/table-tennis-2.jpg',
+            'description' => 'Giải giao lưu cuối tuần cho người chơi bóng bàn phong trào tại Aura Court Cầu Giấy. Lệ phí tượng trưng, chuyển khoản thẳng cho cơ sở. Đang nhận đăng ký.',
+            'rules' => 'Loại trực tiếp, trận 3 ván 11 điểm. Đóng đăng ký trước ngày khai mạc 2 ngày.',
+        ],
     ];
 
     /** Grants by tournament key: [email, role]. */
@@ -311,6 +331,7 @@ class TournamentSeeder extends Seeder
         return Tournament::forceCreate([
             'uuid' => $uuid,
             'organization_id' => $venue->organization_id,
+            'venue_id' => $venue->id,
             'created_by' => $creator->id,
             'name' => $spec['name'].' '.$start->year,
             'format' => $spec['format'] ?? 'single_elimination',
@@ -333,11 +354,16 @@ class TournamentSeeder extends Seeder
         $entrants = collect($spec['players'])->map(fn (int $number) => $players->get($number))->filter()->values();
         // Registrations spread evenly between the announcement and two days before kick-off (or now).
         $window = $this->past($tournament->starts_at->copy()->subDays(2))->getTimestamp() - $tournament->created_at->getTimestamp();
+        $fee = TournamentService::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
+        $venue = Venue::findOrFail($tournament->venue_id);
 
         return $entrants
-            ->map(function (User $user, int $index) use ($tournament, $started, $entrants, $window) {
+            ->map(function (User $user, int $index) use ($tournament, $started, $entrants, $window, $fee, $venue) {
                 $registeredAt = $tournament->created_at->copy()->addSeconds(intdiv($window * ($index + 1), $entrants->count() + 1));
                 $registeredAt = $this->awake($registeredAt, $tournament->created_at, $tournament->created_at->copy()->addSeconds($window));
+                if ($fee > 0) {
+                    $this->payOwner($venue, $user, 'tournament_registration', $tournament->uuid, $fee, $registeredAt->copy()->subMinutes(3), $registeredAt);
+                }
                 $participant = TournamentParticipant::forceCreate([
                     'organization_id' => $tournament->organization_id,
                     'tournament_id' => $tournament->id,

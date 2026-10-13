@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CashShift;
 use App\Models\Organization;
+use App\Models\OwnerPaymentAllocation;
 use App\Models\PosOrder;
 use App\Models\PosOrderItem;
 use App\Models\PosPayment;
@@ -15,26 +16,29 @@ use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\WalletAccount;
-use App\Models\WalletTransaction;
 use App\Services\POS\PosService;
 use Carbon\Carbon;
+use Database\Seeders\Concerns\PaysVenueOwner;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
  * POS activity inside the shifts CashShiftSeeder opened: sales, service tabs, restocks and stock movements.
  *
  * Rows copy the columns PosService::completeOrder / confirmQrPayment / adjustStock and ServiceTabService::settleTab
- * write, with totals from PosService::calculateQuote. They are inserted directly so they can be backdated, and like
- * the booking seeders no ledger journals are posted. Settled tab orders also carry the shift and venue (the service
- * leaves them empty) so every sale belongs to a shift. Closed shifts are then finished with
+ * write, with totals from PosService::calculateQuote. They are inserted directly so they can be backdated; cash sales post
+ * no ledger journals. QR sales are paid to the venue owner's connection through a `pos_order` attempt, like
+ * PosQrPaymentService, so they carry an owner receipt and journal. Settled tab orders also carry the shift and venue
+ * (the service leaves them empty) so every sale belongs to a shift. Closed shifts are then finished with
  * expected cash = opening cash + cash sales, keeping the variance their reconciliation recorded.
  */
 class PosSalesSeeder extends Seeder
 {
+    use PaysVenueOwner;
+
     private Carbon $now;
 
     private PosService $pos;
@@ -145,7 +149,7 @@ class PosSalesSeeder extends Seeder
     /**
      * Sales for every shift that has none yet: a steady flow of walk-in sales, one sale to a regular, a pre-game
      * purchase for up to two customers who played at the venue during the shift, and settled service tabs on the
-     * latest shifts. The open shift gets a few sales so far plus a wallet payment made just now.
+     * latest shifts. The open shift gets a few sales so far.
      *
      * @return list<array{at: Carbon, run: callable}>
      */
@@ -212,12 +216,6 @@ class PosSalesSeeder extends Seeder
                 $basket = $setup['baskets'][($index * 7 + $k * 5) % count($setup['baskets'])];
                 $events[] = ['at' => $at, 'run' => fn () => $this->sell($org, $open, $basket, $k === 2 ? 'qr' : 'cash', $at, $k === 1 ? $regular : null, null, $k)];
             }
-            // Wallet top-ups are stamped at seed time (UserSeeder), so the wallet payment happens now, after them.
-            $walletCustomer = $users[$setup['wallet_customer']] ?? null;
-            if ($walletCustomer && $setup['wallet_basket'] !== []) {
-                $at = $this->now->copy();
-                $events[] = ['at' => $at, 'run' => fn () => $this->sell($org, $open, $setup['wallet_basket'], 'wallet', $at, $walletCustomer, null, 3)];
-            }
         }
 
         return $events;
@@ -254,23 +252,14 @@ class PosSalesSeeder extends Seeder
         $quote = $this->pos->calculateQuote($org->id, ['items' => $items, 'payment_method' => 'cash']);
         $total = (int) $quote['grand_total'];
 
-        $wallet = null;
-        if ($method === 'wallet') {
-            $wallet = $customer ? WalletAccount::where('organization_id', $org->id)->where('user_id', $customer->id)->where('currency', 'VND')->first() : null;
-            $lastTransactionAt = $wallet ? WalletTransaction::where('wallet_account_id', $wallet->id)->max('created_at') : null;
-            if (! $wallet || $wallet->balance < $total || ($lastTransactionAt && Carbon::parse($lastTransactionAt, $at->getTimezone())->gt($at))) {
-                $method = 'cash';
-                $wallet = null;
-            }
-        }
-
         $cashier = $shift->cashier;
         $isQr = $method === 'qr';
         $completedAt = $isQr ? $at->copy()->addMinutes(1 + $k % 2) : $at->copy();
         $step = [10000, 50000, 100000][$k % 3];
         $cashTendered = $method === 'cash' ? (int) (ceil($total / $step) * $step) : null;
         $changeDue = $method === 'cash' ? $cashTendered - $total : 0;
-        $code = sprintf('POS-%d-%s', $cashier->id, $this->stamp($at));
+        // A QR order's reference is the transfer code PosService generates for the owner attempt.
+        $code = $isQr ? 'AC'.Str::upper(Str::random(18)) : sprintf('POS-%d-%s', $cashier->id, $this->stamp($at));
 
         $receipt = [
             'order_code' => $code,
@@ -303,22 +292,8 @@ class PosSalesSeeder extends Seeder
             'status' => 'completed',
             'is_paid' => true,
         ];
-        $providerReference = $code;
         if ($isQr) {
-            $bank = config('services.sepay.bank', 'MBBank');
-            $account = config('services.sepay.account', '0901234567');
-            $accountName = config('services.sepay.account_name', 'AURA COURT SYSTEM');
-            $receipt['qr_data'] = [
-                'bank' => $bank,
-                'account' => $account,
-                'account_name' => $accountName,
-                'amount' => $total,
-                'memo' => $code,
-                'qr_url' => 'https://img.vietqr.io/image/'.$bank.'-'.$account.'-compact2.png?amount='.$total.'&addInfo='.urlencode($code).'&accountName='.urlencode((string) $accountName),
-            ];
-            // Confirmed by the SePay webhook: the payment keeps the bank transaction id.
             $receipt['verified_at'] = $completedAt->toIso8601String();
-            $providerReference = (string) (20000000 + crc32($code) % 9000000);
         }
 
         $order = (new PosOrder)->forceFill([
@@ -383,28 +358,19 @@ class PosSalesSeeder extends Seeder
             'method' => $method,
             'amount' => $total,
             'status' => 'paid',
-            'provider_reference' => $providerReference,
-            'metadata' => ['cash_tendered' => $cashTendered, 'change_due' => $changeDue, 'qr_data' => $receipt['qr_data'] ?? null],
+            'provider_reference' => $code,
+            'metadata' => ['cash_tendered' => $cashTendered, 'change_due' => $changeDue],
             'created_at' => $at,
             'updated_at' => $completedAt,
         ])->save();
 
-        if ($wallet) {
-            $balanceAfter = (int) $wallet->balance - $total;
-            (new WalletTransaction)->forceFill([
-                'organization_id' => $org->id,
-                'wallet_account_id' => $wallet->id,
-                'type' => 'debit',
-                'amount' => $total,
-                'balance_after' => $balanceAfter,
-                'source_type' => 'wallet_spend',
-                'source_id' => abs(crc32("pos:{$order->id}")),
-                'reference' => "pos:{$order->id}",
-                'created_at' => $at,
-                'updated_at' => $at,
-            ])->save();
-            $wallet->timestamps = false;
-            $wallet->forceFill(['balance' => $balanceAfter, 'updated_at' => $at])->save();
+        if ($isQr) {
+            $attempt = $this->payOwner($shift->venue()->firstOrFail(), null, 'pos_order', (string) $order->id, $total, $at, $completedAt, $code);
+            $order->timestamps = false;
+            $order->forceFill(['metadata' => [
+                ...$order->metadata,
+                'owner_payment_allocation_id' => OwnerPaymentAllocation::where('payment_attempt_id', $attempt->id)->value('id'),
+            ]])->saveQuietly();
         }
     }
 
@@ -641,12 +607,6 @@ class PosSalesSeeder extends Seeder
                 $failures[] = "product {$product->sku}: stock {$product->stock_quantity} does not match its movements or reservations";
             }
         }
-        foreach (WalletAccount::where('organization_id', $org->id)->get() as $wallet) {
-            $last = WalletTransaction::where('wallet_account_id', $wallet->id)->orderByDesc('created_at')->orderByDesc('id')->value('balance_after');
-            if ($last !== null && (int) $last !== (int) $wallet->balance) {
-                $failures[] = "wallet {$wallet->id}: balance {$wallet->balance} != last balance_after {$last}";
-            }
-        }
         $doubleOpen = CashShift::where('organization_id', $org->id)->where('status', 'open')->groupBy('cashier_id')->havingRaw('count(*) > 1')->pluck('cashier_id');
         if ($doubleOpen->isNotEmpty()) {
             $failures[] = 'cashiers with more than one open shift: '.$doubleOpen->implode(', ');
@@ -756,8 +716,6 @@ class PosSalesSeeder extends Seeder
                 // Buys in the oldest shift, so that sale's loyalty points have expired by now.
                 'archive_customer' => $khach(8),
                 'open_shift_regular' => $khach(15),
-                'wallet_customer' => $khach(2),
-                'wallet_basket' => [['POS-POCARI-500', 2], ['POS-PROBAR-60', 1]],
                 // aura-court has badminton, pickleball and table tennis courts.
                 'baskets' => [
                     [['POS-LAVIE-500', 2]],
@@ -808,8 +766,6 @@ class PosSalesSeeder extends Seeder
                 'regulars' => [$khach(10), $khach(14)],
                 'archive_customer' => $khach(10),
                 'open_shift_regular' => $khach(10),
-                'wallet_customer' => $khach(10),
-                'wallet_basket' => [],
                 // Pickleball, tennis and 5-a-side football.
                 'baskets' => [
                     [['HG-LAVIE-500', 2]],

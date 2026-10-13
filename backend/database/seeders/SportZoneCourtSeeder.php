@@ -223,6 +223,7 @@ class SportZoneCourtSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
+            $zone->forceFill(['created_at' => $venue->created_at])->save();
             $sportZones[$sz['key']] = $zone;
         }
 

@@ -504,17 +504,6 @@ class E2ESeedFixturesCommand extends Command
                     'max_duration_minutes' => 240,
                     'require_continuity' => true,
                 ],
-                'cancellation' => [
-                    'deadline_hours' => 24,
-                    'fee_type' => 'none',
-                    'fee_value' => 0,
-                    'refund_due_hours' => 24,
-                ],
-                'change' => [
-                    'deadline_hours' => 24,
-                    'fee_type' => 'none',
-                    'fee_value' => 0,
-                ],
                 'arrival' => [
                     'early_minutes' => 15,
                     'late_grace_minutes' => 15,
@@ -530,9 +519,7 @@ class E2ESeedFixturesCommand extends Command
                     'cutoff_hours' => 24,
                     'max_consideration_percent' => 100,
                     'free_transfer_allowed' => true,
-                    'seller_reimbursement_required' => true,
                 ],
-                'ancillary_credit_policy' => 'refund',
             ];
 
             VenueBookingPolicy::create([
