@@ -52,6 +52,14 @@ function formatDate(dateStr: string): string {
   }
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  paid: 'ĐÃ THANH TOÁN',
+  zero_payable: 'KHÔNG CẦN THANH TOÁN (0 ₫)',
+  guaranteed: 'ĐƯỢC BẢO LÃNH (CHƯA THANH TOÁN)',
+  overdue: 'QUÁ HẠN THANH TOÁN',
+  cancelled: 'ĐÃ HUỶ',
+}
+
 function formatFrequency(freq?: string): string {
   switch (freq) {
     case 'weekly':
@@ -102,17 +110,7 @@ function formatFrequency(freq?: string): string {
                   : 'hourglass_top'
             }}
           </span>
-          {{
-            invoice.status === 'paid'
-              ? 'ĐÃ THANH TOÁN'
-              : invoice.status === 'zero_payable'
-                ? 'KHÔNG CẦN THANH TOÁN (0 ₫)'
-                : invoice.status === 'guaranteed'
-                  ? 'ĐƯỢC BẢO LÃNH (CHƯA THANH TOÁN)'
-                  : invoice.status === 'overdue'
-                    ? 'QUÁ HẠN THANH TOÁN'
-                    : 'CHỜ THANH TOÁN'
-          }}
+          {{ STATUS_LABELS[invoice.status] ?? 'CHỜ THANH TOÁN' }}
         </span>
       </div>
     </div>

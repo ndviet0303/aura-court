@@ -35,6 +35,7 @@ class MonthlyInvoice extends Model
         ];
     }
 
+    /** @return BelongsTo<RecurringSeries, $this> */
     public function series(): BelongsTo
     {
         return $this->belongsTo(RecurringSeries::class, 'recurring_series_id');
