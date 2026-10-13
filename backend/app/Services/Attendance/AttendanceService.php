@@ -548,62 +548,6 @@ class AttendanceService
         });
     }
 
-    public function extendSession(User $staff, int $organizationId, string|int $codeOrId, int $additionalMinutes): array
-    {
-        $isStaff = OrganizationMember::query()
-            ->where('organization_id', $organizationId)
-            ->where('user_id', $staff->id)
-            ->whereIn('role', [
-                OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_VENUE_MANAGER,
-                OrganizationMember::ROLE_ORGANIZATION_OWNER,
-            ])
-            ->exists();
-
-        abort_unless($isStaff, 403, 'Unauthorized to extend session.');
-        abort_unless($additionalMinutes > 0, 422, 'Extension minutes must be positive.');
-
-        $reservation = $this->resolveReservation($codeOrId, $organizationId);
-        $court = $reservation->court;
-        $lastSlot = $reservation->slots->sortByDesc('ends_at')->first();
-        abort_unless($lastSlot !== null, 422, 'Reservation has no slots.');
-
-        $currentEnd = ($lastSlot->ends_at instanceof Carbon ? $lastSlot->ends_at->copy() : Carbon::parse($lastSlot->ends_at, 'UTC'))->utc();
-        $newEnd = $currentEnd->copy()->addMinutes($additionalMinutes)->utc();
-
-        // Conflict check: Next interval MUST NOT overlap any existing booking on this court (Task 8.6 / D53)
-        $conflict = ReservationSlot::query()
-            ->where('court_id', $court->id)
-            ->whereIn('status', ['held', 'confirmed', 'active'])
-            ->where('reservation_id', '!=', $reservation->id)
-            ->where('starts_at', '<', $newEnd)
-            ->where('ends_at', '>', $currentEnd)
-            ->exists();
-
-        abort_if($conflict, 409, 'Cannot extend session: next interval is already booked by another customer.');
-
-        return DB::transaction(function () use ($reservation, $lastSlot, $newEnd, $additionalMinutes, $staff) {
-            $lastSlot->update(['ends_at' => $newEnd]);
-
-            $meta = (array) ($reservation->metadata ?? []);
-            $extensions = (array) ($meta['extensions'] ?? []);
-            $extensions[] = [
-                'additional_minutes' => $additionalMinutes,
-                'extended_to' => $newEnd->toIso8601String(),
-                'staff_id' => $staff->id,
-                'at' => now()->toIso8601String(),
-            ];
-            $meta['extensions'] = $extensions;
-            $reservation->update(['metadata' => $meta]);
-
-            return [
-                'reservation' => $reservation->fresh(['slots']),
-                'extended' => true,
-                'new_ends_at' => $newEnd->toIso8601String(),
-            ];
-        });
-    }
-
     public function getAttendance(int $organizationId, string|int $codeOrId): array
     {
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
