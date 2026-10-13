@@ -260,7 +260,7 @@ See `proposal.md` (Why) for motivation and the specs in this change for the requ
 ### 13. Rollout order: reseed, then deploy
 - The schema change is additive: two nullable columns, and no status values added or removed. The old image therefore runs safely on the new schema.
 - The reseed (dump/restore of a freshly migrated `booking_demo_btprod`) carries both the schema and the `migrations` rows. It runs first.
-- The push to `main` then deploys the image with the flag on. The reverse order would serve the new code against missing columns.
+- A pipeline run on `main` then deploys the image with the flag on. A push alone deploys nothing. The reverse order would serve the new code against missing columns.
 
 ### 14. Cross-change and archive handling
 - `retire-v1-booking` (in progress) also modifies "Versioned reservation API compatibility". Its delta is edited to use this change's wording:
@@ -308,7 +308,7 @@ See `proposal.md` (Why) for motivation and the specs in this change for the requ
 4. Back up prod with `pg_dump` into `backend/storage/app/backups/`.
 5. After the user confirms timing:
    - Reseed prod through the dump/restore procedure.
-   - Merge `--no-ff` into `main` and push, which deploys.
+   - Merge `--no-ff` into `main`, push, then run the pipeline on `main` to deploy.
    - Verify the revision.
    - Disable the old platform webhook in SePay.
 6. Rehearse on prod with real small transfers:

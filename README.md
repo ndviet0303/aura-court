@@ -141,7 +141,7 @@ SEPAY_HMAC_SECRET=...
 
 ## Deploy API bằng GitLab và Portainer
 
-Pipeline `.gitlab-ci.yml` build image `linux/amd64` và đẩy:
+Pipeline `.gitlab-ci.yml` chỉ chạy khi bấm chạy tay: push lên `main` hay `dev` không tự chạy và không deploy. Muốn deploy thì chạy pipeline trên `main` bằng nút **Run pipeline** (Build > Pipelines) hoặc `glab ci run -b main`. Pipeline chạy các job kiểm tra trước. Chỉ khi tất cả đều qua, nó mới build image `linux/amd64` và đẩy:
 
 ```text
 registry.gitlab.com/bantool/ziet-projects/booking/api:latest
